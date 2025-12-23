@@ -99,10 +99,75 @@ window.cambiarTab = function(tabName, element = null) {
     }
 };
 
+// GALERÍA PARA FOTOS DE TELA CON FLECHAS
+window.abrirGaleriaTela = function(prendaIndex, telaIndex, fotoIdx = 0) {
+    const galeriaTela = (window.telasGaleria && window.telasGaleria[prendaIndex] && window.telasGaleria[prendaIndex][telaIndex])
+        ? window.telasGaleria[prendaIndex][telaIndex]
+        : [];
+    if (!galeriaTela || galeriaTela.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Sin fotos', text: 'Esta tela no tiene imágenes para mostrar.' });
+        return;
+    }
+
+    let idx = Math.max(0, Math.min(fotoIdx, galeriaTela.length - 1));
+
+    const keyHandler = (e) => {
+        if (!window.__galeriaTelaActiva) return;
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            document.getElementById('gal-tela-prev')?.click();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            document.getElementById('gal-tela-next')?.click();
+        }
+    };
+
+    const renderModal = () => {
+        const url = galeriaTela[idx];
+        const contenido = `
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1rem;">
+                <div style="position:relative; width:100%; max-width:620px;">
+                    <img src="${url}" alt="Foto tela" style="width:100%; border-radius:8px; border:1px solid #e5e7eb; object-fit:contain; max-height:70vh;">
+                    <button id="gal-tela-prev" style="position:absolute; top:50%; left:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">‹</button>
+                    <button id="gal-tela-next" style="position:absolute; top:50%; right:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">›</button>
+                </div>
+                <div style="font-size:0.9rem; color:#4b5563;">${idx + 1} / ${galeriaTela.length}</div>
+            </div>
+        `;
+
+        Swal.fire({
+            html: contenido,
+            showConfirmButton: false,
+            showCloseButton: true,
+            width: '75%',
+            didOpen: () => {
+                window.__galeriaTelaActiva = true;
+                const prev = document.getElementById('gal-tela-prev');
+                const next = document.getElementById('gal-tela-next');
+                prev.onclick = () => { idx = (idx - 1 + galeriaTela.length) % galeriaTela.length; renderModal(); };
+                next.onclick = () => { idx = (idx + 1) % galeriaTela.length; renderModal(); };
+                window.addEventListener('keydown', keyHandler);
+            },
+            willClose: () => {
+                window.__galeriaTelaActiva = false;
+                window.removeEventListener('keydown', keyHandler);
+            }
+        });
+    };
+
+    renderModal();
+};
+
 // ============================================================
 // VARIABLES GLOBALES (fuera del DOMContentLoaded)
 // ============================================================
 let tallasDisponiblesCotizacion = []; // Tallas disponibles en la cotización
+let currentLogoCotizacion = null;
+let currentEspecificaciones = null;
+let currentEsReflectivo = false;
+let currentDatosReflectivo = null;
+let currentEsLogo = false;
+let currentTipoCotizacion = 'P';
 
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('cotizacion_search_editable');
@@ -193,6 +258,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.log('Datos de cotización obtenidos:', data);
                     prendasCargadas = data.prendas || [];
+                    
+                    // Determinar tipo y banderas antes de asignar a variables globales
+                    const tipoCotizacion = data.tipo_cotizacion_codigo || 'PL';
+                    const esReflectivo = tipoCotizacion === 'RF';
+                    const esLogo = tipoCotizacion === 'L';
+
+                    currentLogoCotizacion = data.logo || null;
+                    currentEspecificaciones = data.especificaciones || null;
+                    currentEsReflectivo = esReflectivo;
+                    currentDatosReflectivo = data.reflectivo || null;
+                    currentEsLogo = esLogo;
+                    currentTipoCotizacion = tipoCotizacion;
                     prendasEliminadas.clear(); // Limpiar eliminadas
                     
                     // Extraer todas las tallas disponibles de la cotización
@@ -231,10 +308,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     // Pasar tipo de cotización para renderizado diferente
-                    const tipoCotizacion = data.tipo_cotizacion_codigo || 'PL';
-                    const esReflectivo = tipoCotizacion === 'RF';
-                    const esLogo = tipoCotizacion === 'L';
-                    
                     console.log('🎯 Tipo de cotización:', tipoCotizacion);
                     console.log('📦 ¿Es Reflectivo?:', esReflectivo);
                     console.log('🎨 ¿Es Logo?:', esLogo);
@@ -267,7 +340,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.warn('⚠️ No se encontraron los elementos paso3_titulo_logo o paso3_alerta_logo');
                     }
                     
-                    renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones, esReflectivo, data.reflectivo, esLogo, tipoCotizacion);
+                    renderizarPrendasEditables(
+                        prendasCargadas,
+                        currentLogoCotizacion,
+                        currentEspecificaciones,
+                        currentEsReflectivo,
+                        currentDatosReflectivo,
+                        currentEsLogo,
+                        currentTipoCotizacion
+                    );
                 }
             })
             .catch(error => {
@@ -281,6 +362,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
     
     function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null, esLogo = false, tipoCotizacion = 'P') {
+        // Reset galerías por prenda
+        window.prendasGaleria = [];
+        window.telasGaleria = [];
+
+        // Estilos responsivos para botón "Agregar talla"
+        if (!document.getElementById('tallas-btn-responsive-style')) {
+            const style = document.createElement('style');
+            style.id = 'tallas-btn-responsive-style';
+            style.textContent = `
+                .btn-agregar-talla-texto { display: inline; }
+                @media (max-width: 640px) {
+                    .btn-agregar-talla-texto { display: none; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Helper para obtener URL segura de una foto (objeto o string)
+        const fotoToUrl = (foto) => {
+            if (!foto) return null;
+            if (typeof foto === 'string') return foto;
+            return foto.preview || foto.url || foto.ruta_webp || foto.ruta_original || null;
+        };
+
         if (!prendas || prendas.length === 0) {
             // Si no hay prendas pero hay LOGO, mostrar campos LOGO
             if (esLogo && logoCotizacion) {
@@ -314,7 +419,9 @@ document.addEventListener('DOMContentLoaded', function() {
             let html = '';
             
             // Renderizar cada prenda con su información de reflectivo
-            prendas.forEach((prenda, index) => {
+        prendas.forEach((prenda, index) => {
+        // Inicializar contenedor de galería de telas por prenda
+        window.telasGaleria[index] = [];
                 console.log(`👕 Prenda ${index + 1}:`, prenda);
                 console.log(`   - Tallas:`, prenda.tallas);
                 console.log(`   - Tipo de tallas:`, typeof prenda.tallas);
@@ -558,10 +665,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const tallas = prenda.tallas || [];
-            const fotos = prenda.fotos || [];
-            const telaFotos = prenda.telaFotos || [];
-            const fotoPrincipal = fotos.length > 0 ? fotos[0] : null;
-            const fotosAdicionales = fotos.slice(1);
+
+            // Incorporar fotos nuevas agregadas desde el navegador
+            const nuevasFotosPrenda = (window.prendasFotosNuevas && window.prendasFotosNuevas[index]) ? window.prendasFotosNuevas[index] : [];
+            const fotos = [...(prenda.fotos || []), ...nuevasFotosPrenda];
+
+            // Telas: incorporar fotos nuevas por tela
+            const telaFotosBase = prenda.telaFotos || [];
+            let telaFotos = [...telaFotosBase];
+            if (window.telasFotosNuevas && window.telasFotosNuevas[index]) {
+                Object.entries(window.telasFotosNuevas[index]).forEach(([telaIdx, fotosArr]) => {
+                    fotosArr.forEach(f => {
+                        // Marcar tela_id por índice para que el render las asigne
+                        telaFotos.push({
+                            ...f,
+                            tela_id: prenda.telas?.[telaIdx]?.id ?? prenda.telaFotos?.[telaIdx]?.tela_id ?? null
+                        });
+                    });
+                });
+            }
+            // Normalizar fotos de prenda
+            const fotosNormalizadas = (fotos || []).map(f => fotoToUrl(f)).filter(Boolean);
+            window.prendasGaleria[index] = fotosNormalizadas; // Guardar para navegación con flechas
+            let fotoPrincipal = fotosNormalizadas.length > 0 ? fotosNormalizadas[0] : null;
+            let fotosAdicionales = fotosNormalizadas.slice(1);
+            if (!fotoPrincipal && fotosAdicionales.length > 0) {
+                fotoPrincipal = fotosAdicionales[0];
+                fotosAdicionales = fotosAdicionales.slice(1);
+            }
             const variantes = prenda.variantes || {};
 
             // LOG PARA DEBUGUEO
@@ -585,9 +716,13 @@ document.addEventListener('DOMContentLoaded', function() {
             let tallasHtml = '';
             if (tallas.length > 0) {
                 tallasHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">';
-                tallasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; width: 100%;">';
-                tallasHtml += '<div style="display: flex; gap: 1rem; flex: 1;"><div style="flex: 1.5;">Talla - Introduce cantidades</div><div style="flex: 1;">Cantidad</div><div style="width: 100px; text-align: center;">Acción</div></div>';
-                tallasHtml += '<button type="button" onclick="mostrarModalAgregarTalla(' + index + ')" style="background: #4ade80; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; flex-shrink: 0;">+ Talla</button>';
+                tallasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0052a3 0%, #0ea5e9 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 700; display: flex; justify-content: space-between; align-items: center; width: 100%;">';
+                tallasHtml += '<div style="display: flex; gap: 1rem; flex: 1;"><div style="flex: 1.5;">Talla</div><div style="flex: 1;">Cantidad</div><div style="width: 100px; text-align: center;">Acción</div></div>';
+                tallasHtml += `
+                    <button type="button" onclick="mostrarModalAgregarTalla(${index})" style="background: white; color: #0b4f91; border: none; padding: 0.45rem 0.65rem; border-radius: 999px; cursor: pointer; font-size: 1rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; white-space: nowrap; flex-shrink: 0; box-shadow: 0 3px 10px rgba(0,0,0,0.18); width: 36px; height: 36px;">
+                        <span style="display:inline-flex; align-items:center; justify-content:center; width: 18px; height: 18px; border-radius: 50%; background: rgba(14,165,233,0.18); color: #0b4f91; font-size: 1rem; line-height: 1;">+</span>
+                    </button>
+                `;
                 tallasHtml += '</div>';
                 
                 tallas.forEach(talla => {
@@ -760,11 +895,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 telasHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">';
-                telasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center; width: 100%;">';
+                telasHtml += '<div style="position: relative; padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr 1fr 120px; gap: 1rem; align-items: center; width: 100%;">';
                 telasHtml += '<div>Telas</div>';
                 telasHtml += '<div>Color</div>';
                 telasHtml += '<div>Referencia</div>';
-                telasHtml += '<div style="text-align: center;">Fotos:</div>';
+                telasHtml += '<div style="text-align: center;">Fotos</div>';
+                telasHtml += `<button type="button" onclick="agregarFilaTela(${index})" style="position:absolute; top: 10px; right: 12px; background: white; color: #0052a3; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: 900; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.18);" title="Agregar tela">＋</button>`;
                 telasHtml += '</div>';
                 
                 telasParaTabla.forEach((tela, telaIdx) => {
@@ -775,41 +911,69 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Usar fotos distribuidas por orden
                         fotosDeTela = fotosDistribuidas[telaIdx] || [];
                     } else {
-                        // Filtrar fotos por tela_id
+                        // Filtrar fotos por tela_id (cuando exista)
                         const telaId = tela.id;
-                        fotosDeTela = telaId ? telaFotos.filter(f => f.tela_id === telaId) : [];
+                        fotosDeTela = telaId ? (telaFotos || []).filter(f => f.tela_id === telaId) : [];
                     }
+
+                    // Agregar fotos nuevas en memoria asociadas por índice de tela
+                    const fotosNuevas = (window.telasFotosNuevas && window.telasFotosNuevas[index] && window.telasFotosNuevas[index][telaIdx]) ? window.telasFotosNuevas[index][telaIdx] : [];
+                    fotosDeTela = [...fotosDeTela, ...fotosNuevas];
+
+                    // Quitar duplicados por URL para evitar que se repitan al renderizar
+                    const vistos = new Set();
+                    fotosDeTela = fotosDeTela.filter(f => {
+                        const u = fotoToUrl(f);
+                        if (!u) return false;
+                        if (vistos.has(u)) return false;
+                        vistos.add(u);
+                        return true;
+                    });
+
+                    // Normalizar URLs para galería de tela
+                    const fotosTelaNormalizadas = fotosDeTela.map(f => fotoToUrl(f)).filter(Boolean);
+                    if (!window.telasGaleria[index]) window.telasGaleria[index] = [];
+                    window.telasGaleria[index][telaIdx] = fotosTelaNormalizadas;
                     
                     console.log(`   - Tela ${telaIdx} (id=${tela.id}): fotos encontradas=${fotosDeTela.length}`);
                     
                     let fotosTelaHtml = '';
                     if (fotosDeTela.length > 0) {
-                        // Mostrar máximo 1-2 fotos pequeñas
-                        const fotosMostrar = fotosDeTela.slice(0, 2);
-                        fotosTelaHtml = '<div style="display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center;">';
-                        fotosMostrar.forEach((telaFoto, fotoIdx) => {
-                            const fotoUrl = telaFoto.url || telaFoto.ruta_webp || telaFoto.ruta_original;
-                            if (fotoUrl) {
-                                fotosTelaHtml += `
-                                    <div style="position: relative; display: inline-block; width: 60px; height: 60px;">
-                                        <img src="${fotoUrl}" alt="Foto de tela" 
-                                             style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
-                                             ondblclick="abrirModalImagen('${fotoUrl}', 'Foto de tela')"
-                                             title="Doble click para ver a mayor tamaño">
-                                        <button type="button"
-                                                onclick="eliminarImagenTela(this)"
-                                                style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
-                                    </div>
-                                `;
-                            }
-                        });
-                        if (fotosDeTela.length > 2) {
-                            fotosTelaHtml += `<div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border: 1px solid #d0d0d0; border-radius: 4px; background: #f5f5f5; font-size: 0.75rem; color: #666; text-align: center; padding: 0.25rem;">+${fotosDeTela.length - 2}</div>`;
-                        }
-                        fotosTelaHtml += '</div>';
+                        // Mantener orden original (primera agregada primero)
+                        const fotoPrincipalTela = fotosDeTela[0];
+                        const restantes = Math.max(0, fotosDeTela.length - 1);
+                        const fotoUrl = fotoPrincipalTela?.url || fotoPrincipalTela?.ruta_webp || fotoPrincipalTela?.ruta_original || fotoPrincipalTela?.preview || '';
+                        fotosTelaHtml = `
+                            <div style="width: 100%; max-width: 110px; margin: 0 auto; border: 2px solid #1e40af; border-radius: 10px; background: #f0f7ff; padding: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; gap: 0.4rem;">
+                                <div style="position: relative; width: 90px; height: 90px; overflow: hidden; border-radius: 8px; border: 1px solid #d0d0d0; box-shadow: 0 1px 4px rgba(0,0,0,0.08); background: white;">
+                                    ${fotoUrl ? `
+                                        <img src="${fotoUrl}" alt="Foto de tela"
+                                             style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.2s;"
+                                             onclick="abrirGaleriaTela(${index}, ${telaIdx}, 0); return false;"
+                                             title="Click para ver galería; use flechas ← →">
+                                    ` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.8rem;">Sin foto</div>'}
+                                    ${restantes > 0 ? `<span style="position:absolute; bottom:6px; right:6px; background:#1e40af; color:white; padding:2px 6px; border-radius:12px; font-size:0.75rem; font-weight:700;">+${restantes}</span>` : ''}
+                                    <button type="button"
+                                            onclick="eliminarImagenTela(this)"
+                                            style="position: absolute; top: 6px; right: 6px; background: #dc3545; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 8;"
+                                            title="Eliminar imagen">×</button>
+                                </div>
+                                <button type="button"
+                                        onclick="abrirModalAgregarFotosTela(${index}, ${telaIdx})"
+                                        style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: 900; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(14,165,233,0.2);"
+                                        title="Agregar foto de tela">＋</button>
+                            </div>
+                        `;
                     } else {
-                        // Si no hay fotos para esta tela específica
-                        fotosTelaHtml = '<div style="font-size: 0.75rem; color: #999;">Sin fotos</div>';
+                        fotosTelaHtml = `
+                            <div style="width: 100%; max-width: 110px; margin: 0 auto; border: 2px dashed #1e40af; border-radius: 10px; background: #f0f7ff; padding: 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.35rem;">
+                                <div style="font-size: 0.8rem; color: #1e3a8a; font-weight: 600; text-align: center;">Sin fotos</div>
+                                <button type="button"
+                                        onclick="abrirModalAgregarFotosTela(${index}, ${telaIdx})"
+                                        style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: 900; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(14,165,233,0.2);"
+                                        title="Agregar foto de tela">＋</button>
+                            </div>
+                        `;
                     }
                     
                     // Obtener valores de tela desde el objeto mapeado
@@ -819,7 +983,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     console.log(`   - Tela ${telaIdx}: nombre="${nombreTela}", color="${colorTela}", referencia="${referenciaTela}"`);
                     
-                    telasHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; width: 100%;">
+                    telasHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 1fr 1fr 120px; gap: 1rem; align-items: center; transition: background 0.2s; width: 100%;">
                         <div style="display: flex; flex-direction: column;">
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Tela</label>
                             <input type="text" value="${nombreTela}" data-field="tela_nombre" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" placeholder="Ej: Algodón">
@@ -832,58 +996,53 @@ document.addEventListener('DOMContentLoaded', function() {
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Referencia</label>
                             <input type="text" value="${referenciaTela}" data-field="tela_ref" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" placeholder="Ej: REF-001">
                         </div>
-                        <div style="display: flex; justify-content: center; align-items: center;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
                             ${fotosTelaHtml}
+                            <button type="button"
+                                    onclick="eliminarFilaTela(${index}, ${telaIdx})"
+                                    style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: 900; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.18);"
+                                    title="Eliminar fila">×</button>
                         </div>
                     </div>`;
                 });
                 telasHtml += '</div>';
             }
 
-            // Generar HTML de foto principal y adicionales de prendas (MINIATURAS RESPONSIVAS)
+            // Generar HTML de fotos de prenda (mostrar 1 y badge +N)
             let fotosHtml = '';
             if (fotoPrincipal) {
-                // Obtener el objeto foto completo del array
-                const fotoObjPrincipal = prenda.fotos && prenda.fotos[0] ? prenda.fotos[0] : { url: fotoPrincipal };
-                const fotoURLEncoded = encodeURIComponent(JSON.stringify(fotoObjPrincipal));
-                
+                const fotosMostrar = fotosNormalizadas.slice(0, 1);
+                const restantes = fotosNormalizadas.length - fotosMostrar.length;
+
                 fotosHtml += `
-                    <div style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <div style="position: relative; display: inline-block;">
-                            <img src="${fotoPrincipal}" alt="${prenda.nombre_producto}" 
-                                 class="prenda-foto-principal" 
-                                 data-foto-url="${fotoURLEncoded}"
-                                 data-prenda-index="${index}"
-                                 style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #d0d0d0; transition: all 0.2s;"
-                                 onclick="abrirModalImagen('${fotoPrincipal}', '${prenda.nombre_producto}')">
+                    <div style="position: relative; width: 100%; border: 2px solid #1e40af; border-radius: 10px; background: #f0f7ff; padding: 0.75rem 0.75rem 0.6rem 0.75rem; box-shadow: 0 6px 16px rgba(0,0,0,0.06);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <div style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">Galería de la prenda</div>
                             <button type="button"
-                                    onclick="eliminarImagenPrenda(this)"
-                                    style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
+                                    onclick="abrirModalAgregarFotosPrenda(${index})"
+                                    style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: 900; font-size: 1.2rem; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(14,165,233,0.25);"
+                                    title="Agregar foto">
+                                ＋
+                            </button>
                         </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.65rem;">
+                            ${fotosMostrar.map((foto) => `
+                                <div style="position: relative; width: 100%; aspect-ratio: 1 / 1; max-height: 180px; overflow: hidden; border-radius: 8px; border: 1px solid #d1d5db; box-shadow: 0 2px 6px rgba(0,0,0,0.08); background: white;">
+                                    <img src="${foto}" alt="Foto prenda"
+                                         class="prenda-foto-thumb"
+                                         data-prenda-index="${index}"
+                                         data-foto-idx="${fotosNormalizadas.indexOf(foto)}"
+                                         style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.2s;"
+                                         onclick="abrirGaleriaPrenda(${index}, ${fotosNormalizadas.indexOf(foto)})">
+                                    <button type="button"
+                                            onclick="eliminarImagenPrenda(this)"
+                                            style="position: absolute; top: 8px; right: 8px; background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; transform: translate(0,0); opacity: 0.95;" title="Eliminar imagen">×</button>
+                                </div>
+                            `).join('')}
+                            ${restantes > 0 ? `<div style="width: 100%; aspect-ratio: 1/1; max-height: 180px; display:flex; align-items:center; justify-content:center; border: 1px dashed #1e40af; border-radius: 8px; background: #e0f2fe; color: #1e40af; font-weight: 700; font-size: 0.95rem;">+${restantes} más</div>` : ''}
+                        </div>
+                    </div>
                 `;
-                if (fotosAdicionales.length > 0) {
-                    fotosHtml += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 0.4rem;">';
-                    fotosAdicionales.forEach((foto, idx) => {
-                        // Obtener el objeto foto completo
-                        const fotoObj = prenda.fotos && prenda.fotos[idx + 1] ? prenda.fotos[idx + 1] : { url: foto };
-                        const fotoURLEncoded2 = encodeURIComponent(JSON.stringify(fotoObj));
-                        
-                        fotosHtml += `
-                            <div style="position: relative; display: inline-block; width: 100%;">
-                                <img src="${foto}" alt="Foto adicional prenda" 
-                                     data-foto-url="${fotoURLEncoded2}"
-                                     data-prenda-index="${index}"
-                                     style="width: 100%; height: 100px; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
-                                     onclick="abrirModalImagen('${foto}', '${prenda.nombre_producto}')">
-                                <button type="button"
-                                        onclick="eliminarImagenPrenda(this)"
-                                        style="position: absolute; top: 2px; right: 2px; background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
-                            </div>
-                        `;
-                    });
-                    fotosHtml += '</div>';
-                }
-                fotosHtml += '</div>';
             }
 
             
@@ -892,35 +1051,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="prenda-card-editable" data-prenda-index="${index}">
                     <div class="prenda-header">
                         <div class="prenda-title">
-                            🧥 Prenda ${index + 1}: ${nombreProenda}
+                            Prenda ${index + 1}: ${nombreProenda}
                         </div>
                         <div class="prenda-actions">
-                            <button type="button" class="btn-eliminar-prenda" onclick="eliminarPrendaDelPedido(${index})">
-                                🗑️ Eliminar Prenda
+                            <button type="button"
+                                    class="btn-eliminar-prenda"
+                                    onclick="eliminarPrendaDelPedido(${index})"
+                                    style="background: linear-gradient(135deg, #dc3545 0%, #b91c1c 100%); color: white; border: none; border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font-weight: 800; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 3px 10px rgba(185,28,28,0.25);">
+                                <span style="display:inline-flex; align-items:center; justify-content:center; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.18); font-size: 0.9rem; line-height: 1;">✕</span>
+                                <span style="font-size: 0.9rem;">Eliminar</span>
                             </button>
                         </div>
                     </div>
 
-                    <div class="prenda-content">
-                        <div class="prenda-info-section">
-                            <div class="form-group-editable">
-                                <label>Nombre del Producto:</label>
+                    <div class="prenda-content" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start;">
+                        <div class="prenda-info-section" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="form-group-editable" style="width: 100%;">
+                                <label style="font-weight: 600;">Nombre del Producto:</label>
                                 <input type="text" 
                                        name="nombre_producto[${index}]" 
                                        value="${prenda.nombre_producto || ''}"
                                        class="prenda-nombre"
-                                       data-prenda="${index}">
+                                       data-prenda="${index}" style="width: 100%;">
                             </div>
 
-                            <div class="form-group-editable">
-                                <label>Descripción:</label>
+                            <div class="form-group-editable" style="width: 100%;">
+                                <label style="font-weight: 600;">Descripción:</label>
                                 <textarea name="descripcion[${index}]" 
                                           class="prenda-descripcion"
-                                          data-prenda="${index}" style="min-height: 80px;">${prenda.descripcion || ''}</textarea>
+                                          data-prenda="${index}" style="min-height: 110px; width: 100%;">${prenda.descripcion || ''}</textarea>
                             </div>
                         </div>
 
-                        <div class="prenda-fotos-section">
+                        <div class="prenda-fotos-section" style="width: 100%;">
                             ${fotosHtml}
                         </div>
                     </div>
@@ -1134,6 +1297,23 @@ document.addEventListener('DOMContentLoaded', function() {
         prendasContainer.innerHTML = html;
         
         console.log('Prendas y logo renderizados con información completa');
+
+        // Log comparativo de estilos entre imagen principal y miniaturas
+        setTimeout(() => {
+            const principal = prendasContainer.querySelector('.prenda-foto-principal');
+            const thumb = prendasContainer.querySelector('.prenda-foto-thumb');
+            if (principal && thumb) {
+                const props = ['width', 'height', 'borderRadius', 'border', 'boxShadow', 'objectFit'];
+                const logStyles = (el) => {
+                    const cs = getComputedStyle(el);
+                    return props.reduce((acc, p) => { acc[p] = cs[p]; return acc; }, {});
+                };
+                console.log('🎨 Estilos imagen principal:', logStyles(principal));
+                console.log('🎨 Estilos miniatura:', logStyles(thumb));
+            } else {
+                console.warn('⚠️ No se encontraron imágenes para comparar estilos');
+            }
+        }, 50);
         
         // ============================================================
         // CARGAR TÉCNICAS EN EL TAB LOGO (SI ES COTIZACIÓN COMBINADA)
@@ -1676,6 +1856,173 @@ document.addEventListener('DOMContentLoaded', function() {
             renderizarFotosLogo();
         }
     };
+
+    // ====== FUNCIONES PARA AGREGAR FOTOS DE PRENDAS Y TELAS ======
+    window.abrirModalAgregarFotosPrenda = function(prendaIndex) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.multiple = true;
+        
+        input.addEventListener('change', (e) => {
+            manejarArchivosFotosPrenda(e.target.files, prendaIndex);
+        });
+        
+        input.click();
+    };
+
+    window.manejarArchivosFotosPrenda = function(files, prendaIndex) {
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Crear objeto de foto
+                    const fotoObj = {
+                        url: e.target.result,
+                        preview: e.target.result,
+                        file: file,
+                        isNew: true
+                    };
+                    
+                    // Guardar en estructura de prendas
+                    if (!window.prendasFotosNuevas) window.prendasFotosNuevas = {};
+                    if (!window.prendasFotosNuevas[prendaIndex]) {
+                        window.prendasFotosNuevas[prendaIndex] = [];
+                    }
+                    window.prendasFotosNuevas[prendaIndex].push(fotoObj);
+                    
+                    console.log(`📸 Foto agregada a prenda ${prendaIndex}:`, file.name);
+                    
+                    // Re-renderizar la sección de prendas
+                    renderizarPrendas();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Fotos agregadas',
+            text: `Se agregaron ${Array.from(files).filter(f => f.type.startsWith('image/')).length} imagen(es) correctamente`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    };
+
+    window.abrirModalAgregarFotosTela = function(prendaIndex, telaIndex) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.multiple = true;
+        
+        input.addEventListener('change', (e) => {
+            manejarArchivosFotosTela(e.target.files, prendaIndex, telaIndex);
+        });
+        
+        input.click();
+    };
+
+    window.manejarArchivosFotosTela = function(files, prendaIndex, telaIndex) {
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Crear objeto de foto
+                    const fotoObj = {
+                        url: e.target.result,
+                        preview: e.target.result,
+                        file: file,
+                        isNew: true
+                    };
+                    
+                    // Guardar en estructura de telas
+                    if (!window.telasFotosNuevas) window.telasFotosNuevas = {};
+                    if (!window.telasFotosNuevas[prendaIndex]) {
+                        window.telasFotosNuevas[prendaIndex] = {};
+                    }
+                    if (!window.telasFotosNuevas[prendaIndex][telaIndex]) {
+                        window.telasFotosNuevas[prendaIndex][telaIndex] = [];
+                    }
+                    window.telasFotosNuevas[prendaIndex][telaIndex].push(fotoObj);
+                    
+                    console.log(`📸 Foto agregada a tela ${telaIndex} de prenda ${prendaIndex}:`, file.name);
+                    
+                    // Re-renderizar la sección de prendas
+                    renderizarPrendas();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Fotos de tela agregadas',
+            text: `Se agregaron ${Array.from(files).filter(f => f.type.startsWith('image/')).length} imagen(es) correctamente`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    };
+
+    // Agregar una nueva fila de tela a la prenda (estructura en memoria)
+    window.agregarFilaTela = function(prendaIndex) {
+        if (!prendasCargadas || !prendasCargadas[prendaIndex]) return;
+        const prenda = prendasCargadas[prendaIndex];
+
+        // Asegurar estructuras
+        if (!prenda.variantes) prenda.variantes = {};
+        if (!Array.isArray(prenda.variantes.telas_multiples)) prenda.variantes.telas_multiples = [];
+        if (!Array.isArray(prenda.telas)) prenda.telas = [];
+
+        // Agregar una tela vacía
+        prenda.variantes.telas_multiples.push({
+            nombre_tela: '',
+            tela: '',
+            color: '',
+            referencia: ''
+        });
+        prenda.telas.push({
+            id: null,
+            nombre_tela: '',
+            color: '',
+            referencia: ''
+        });
+
+        // Mantener estructura de fotos nuevas por prenda
+        if (!window.telasFotosNuevas) window.telasFotosNuevas = {};
+        if (!window.telasFotosNuevas[prendaIndex]) window.telasFotosNuevas[prendaIndex] = {};
+
+        renderizarPrendas();
+    };
+
+    window.eliminarFilaTela = function(prendaIndex, telaIndex) {
+        if (!prendasCargadas || !prendasCargadas[prendaIndex]) return;
+        const prenda = prendasCargadas[prendaIndex];
+
+        if (Array.isArray(prenda.variantes?.telas_multiples) && prenda.variantes.telas_multiples[telaIndex]) {
+            prenda.variantes.telas_multiples.splice(telaIndex, 1);
+        }
+        if (Array.isArray(prenda.telas) && prenda.telas[telaIndex]) {
+            prenda.telas.splice(telaIndex, 1);
+        }
+        if (window.telasFotosNuevas && window.telasFotosNuevas[prendaIndex]) {
+            delete window.telasFotosNuevas[prendaIndex][telaIndex];
+        }
+
+        renderizarPrendas();
+    };
+
+    // ====== RENDER UTIL PARA FOTOS NUEVAS ======
+    function renderizarPrendas() {
+        renderizarPrendasEditables(
+            prendasCargadas,
+            currentLogoCotizacion,
+            currentEspecificaciones,
+            currentEsReflectivo,
+            currentDatosReflectivo,
+            currentEsLogo,
+            currentTipoCotizacion
+        );
+    }
 
     // ====== FUNCIONES DE TÉCNICAS LOGO ======
     window.agregarTecnicaLogo = function() {
@@ -3893,3 +4240,63 @@ if (typeof window.abrirModalImagen === 'undefined') {
         });
     };
 }
+
+// ============================================================
+// GALERÍA CON FLECHAS PARA FOTOS DE PRENDA
+// ============================================================
+window.abrirGaleriaPrenda = function(prendaIndex, fotoIdx = 0) {
+    const galeria = (window.prendasGaleria && window.prendasGaleria[prendaIndex]) ? window.prendasGaleria[prendaIndex] : [];
+    if (!galeria || galeria.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Sin fotos', text: 'Esta prenda no tiene imágenes para mostrar.' });
+        return;
+    }
+
+    let idx = Math.max(0, Math.min(fotoIdx, galeria.length - 1));
+
+    // Handler global para flechas
+    const keyHandler = (e) => {
+        if (!window.__galeriaPrendaActiva) return;
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            document.getElementById('gal-prev')?.click();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            document.getElementById('gal-next')?.click();
+        }
+    };
+
+    const renderModal = () => {
+        const url = galeria[idx];
+        const contenido = `
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1rem;">
+                <div style="position:relative; width:100%; max-width:720px;">
+                    <img src="${url}" alt="Foto prenda" style="width:100%; border-radius:8px; border:1px solid #e5e7eb; object-fit:contain; max-height:75vh;">
+                    <button id="gal-prev" style="position:absolute; top:50%; left:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">‹</button>
+                    <button id="gal-next" style="position:absolute; top:50%; right:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">›</button>
+                </div>
+                <div style="font-size:0.9rem; color:#4b5563;">${idx + 1} / ${galeria.length}</div>
+            </div>
+        `;
+
+        Swal.fire({
+            html: contenido,
+            showConfirmButton: false,
+            showCloseButton: true,
+            width: '80%',
+            didOpen: () => {
+                window.__galeriaPrendaActiva = true;
+                const prev = document.getElementById('gal-prev');
+                const next = document.getElementById('gal-next');
+                prev.onclick = () => { idx = (idx - 1 + galeria.length) % galeria.length; renderModal(); };
+                next.onclick = () => { idx = (idx + 1) % galeria.length; renderModal(); };
+                window.addEventListener('keydown', keyHandler);
+            },
+            willClose: () => {
+                window.__galeriaPrendaActiva = false;
+                window.removeEventListener('keydown', keyHandler);
+            }
+        });
+    };
+
+    renderModal();
+};

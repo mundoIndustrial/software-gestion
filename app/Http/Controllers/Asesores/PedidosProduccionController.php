@@ -1453,7 +1453,12 @@ class PedidosProduccionController extends Controller
                     // Obtener fotos de prenda con URLs completas
                     $fotos = $prenda->fotos->map(function($foto) {
                         // El campo 'url' puede contener la ruta relativa o completa
-                        return '/storage/' . ltrim($foto->ruta_webp, '/');
+                        $rutaFoto = $foto->ruta_webp ?? $foto->url;
+                        // Agregar /storage/ si no lo tiene
+                        if (strpos($rutaFoto, '/storage/') === false) {
+                            $rutaFoto = '/storage/' . ltrim($rutaFoto, '/');
+                        }
+                        return asset($rutaFoto);
                     })->toArray();
                     
                     // Obtener telas
@@ -1484,12 +1489,16 @@ class PedidosProduccionController extends Controller
                             }
                         }
                         
+                        // Construir URLs con asset() para que tengan permisos correctos
+                        $rutaWebp = $telaFoto->ruta_webp ?? $telaFoto->url;
+                        $rutaOriginal = $telaFoto->ruta_original;
+                        
                         return [
                             'id' => $telaFoto->id,
                             'tela_id' => $telaId,
-                            'url' => '/storage/' . ltrim($telaFoto->ruta_webp ?? $telaFoto->url, '/'),
-                            'ruta_original' => '/storage/' . ltrim($telaFoto->ruta_original, '/'),
-                            'ruta_webp' => '/storage/' . ltrim($telaFoto->ruta_webp, '/'),
+                            'url' => asset($rutaWebp),
+                            'ruta_original' => asset($rutaOriginal),
+                            'ruta_webp' => asset('storage/' . ltrim($rutaWebp, '/')),
                         ];
                     })->toArray();
                     
