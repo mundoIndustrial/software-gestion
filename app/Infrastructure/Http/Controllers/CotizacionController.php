@@ -550,9 +550,35 @@ final class CotizacionController extends Controller
                 'cliente_id' => $clienteId,
             ]);
 
+            // 🔍 LÓGICA: Si es COMBINADA (PL) pero NO hay logo, cambiar a PRENDA (P)
+            $tipoCotizacion = $request->input('tipo_cotizacion', 'P');
+            $logoData = $request->input('logo', []);
+            
+            // Verificar si hay datos de logo
+            $tieneLogoDatos = !empty($logoData) && (
+                !empty($logoData['descripcion']) ||
+                !empty($logoData['tecnicas']) ||
+                !empty($logoData['imagenes']) ||
+                !empty($logoData['ubicaciones'])
+            );
+            
+            Log::info('CotizacionController@store: Análisis de Logo', [
+                'tipo_cotizacion_original' => $tipoCotizacion,
+                'tiene_logo_datos' => $tieneLogoDatos,
+                'logo_data' => $logoData,
+            ]);
+            
+            // Si es COMBINADA pero no hay logo, cambiar a PRENDA
+            if ($tipoCotizacion === 'PL' && !$tieneLogoDatos) {
+                Log::info('CotizacionController@store: COMBINADA sin logo detectada, cambiando a PRENDA', [
+                    'cotizacion_id_futuro' => 'pendiente',
+                ]);
+                $tipoCotizacion = 'P';
+            }
+
             $dto = CrearCotizacionDTO::desdeArray([
                 'usuario_id' => Auth::id(),
-                'tipo' => $request->input('tipo_cotizacion', 'P'),
+                'tipo' => $tipoCotizacion,
                 'cliente_id' => $clienteId,
                 'prendas' => $request->input('prendas', []),
                 'logo' => $request->input('logo', []),
@@ -640,6 +666,45 @@ final class CotizacionController extends Controller
                 'numero_cotizacion' => $numeroCotizacion,
             ]);
 
+            // 🔍 LÓGICA: Si es COMBINADA (PL) pero NO hay logo, cambiar a PRENDA (P)
+            $tipoCotizacionEnviado = $request->input('tipo_cotizacion');
+            $logoData = $request->input('logo', []);
+            
+            // Verificar si hay datos de logo
+            $tieneLogoDatos = !empty($logoData) && (
+                !empty($logoData['descripcion']) ||
+                !empty($logoData['tecnicas']) ||
+                !empty($logoData['imagenes']) ||
+                !empty($logoData['ubicaciones'])
+            );
+            
+            Log::info('CotizacionController@update: Análisis de Logo', [
+                'tipo_cotizacion_enviado' => $tipoCotizacionEnviado,
+                'tiene_logo_datos' => $tieneLogoDatos,
+                'logo_data' => $logoData,
+            ]);
+            
+            // Determinar el tipo_cotizacion_id correcto
+            $tipoCotizacionId = $cotizacion->tipo_cotizacion_id; // Mantener el actual por defecto
+            
+            // Si se envía tipo_cotizacion explícitamente, usar la lógica
+            if ($tipoCotizacionEnviado === 'PL') {
+                // Si es COMBINADA pero no hay logo, cambiar a PRENDA
+                if (!$tieneLogoDatos) {
+                    Log::info('CotizacionController@update: COMBINADA sin logo detectada, actualizando a PRENDA', [
+                        'cotizacion_id' => $id,
+                    ]);
+                    $tipoCotizacionId = 3; // ID de PRENDA (P)
+                } else {
+                    // Si hay logo, confirmar que es combinada
+                    $tipoCotizacionId = 1; // ID de COMBINADA (PL)
+                }
+            } elseif ($tipoCotizacionEnviado === 'P') {
+                $tipoCotizacionId = 3; // ID de PRENDA (P)
+            } elseif ($tipoCotizacionEnviado === 'L') {
+                $tipoCotizacionId = 2; // ID de LOGO (L)
+            }
+
             // Actualizar datos básicos
             $datosActualizar = [
                 'cliente_id' => $clienteId,
@@ -647,6 +712,7 @@ final class CotizacionController extends Controller
                 'es_borrador' => $esBorrador,
                 'estado' => $estado,
                 'numero_cotizacion' => $numeroCotizacion,
+                'tipo_cotizacion_id' => $tipoCotizacionId,
                 'fecha_envio' => !$esBorrador ? \Carbon\Carbon::now('America/Bogota') : null,
             ];
             

@@ -177,9 +177,10 @@ class PedidoProduccionController extends Controller
             // Extraer forma de pago de especificaciones
             $formaDePago = null;
             if ($cotizacion->especificaciones) {
-                $especificaciones = is_array($cotizacion->especificaciones) 
-                    ? $cotizacion->especificaciones 
-                    : json_decode($cotizacion->especificaciones, true);
+                $especificaciones = $cotizacion->especificaciones;
+                if (!is_array($especificaciones)) {
+                    $especificaciones = json_decode($especificaciones, true) ?? [];
+                }
                 
                 \Log::info('🔍 [PedidoProduccionController] Especificaciones decodificadas', [
                     'especificaciones' => $especificaciones,
@@ -326,73 +327,6 @@ class PedidoProduccionController extends Controller
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
-                        ]);
-                    }
-
-                    // Si hay fotos de reflectivo seleccionadas, agregarlas a la primera prenda
-                    if (!empty($validated['reflectivo_fotos_ids'])) {
-                        \Log::info('📸 [PedidoProduccionController] Procesando fotos de reflectivo', [
-                            'fotos_ids' => $validated['reflectivo_fotos_ids']
-                        ]);
-                        
-                        // Obtener las fotos del reflectivo desde la BD
-                        $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $validated['cotizacion_id'])->first();
-                        
-                        if ($reflectivo) {
-                            $fotosReflectivo = \App\Models\ReflectivoCotizacionFoto::whereIn('id', $validated['reflectivo_fotos_ids'])
-                                ->where('reflectivo_cotizacion_id', $reflectivo->id)
-                                ->get();
-                            
-                            \Log::info('📸 Fotos de reflectivo encontradas', [
-                                'cantidad' => $fotosReflectivo->count()
-                            ]);
-                            
-                            // Agregar las fotos del reflectivo a la primera prenda (índice 0)
-                            if ($fotosReflectivo->count() > 0) {
-                                if (!isset($fotosData[0])) {
-                                    $fotosData[0] = [];
-                                }
-                                
-                                foreach ($fotosReflectivo as $foto) {
-                                    $fotosData[0][] = [
-                                        'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->ruta_original, '/'),
-                                        'ruta_original' => $foto->ruta_original,
-                                        'ruta_webp' => $foto->ruta_webp,
-                                        'orden' => $foto->orden ?? 0,
-                                    ];
-                                }
-                                
-                                \Log::info('✅ Fotos de reflectivo agregadas a fotosData[0]', [
-                                    'total_fotos_prenda_0' => count($fotosData[0])
-                                ]);
-                            }
-                        }
-                    }
-
-                    // Llamar a endpoint de guardado de fotos
-                    $request->merge([
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'fotos' => $fotosData,
-                        'telas' => $telasData,
-                        'logos' => $logosData,
-                    ]);
-
-                    $resultadoFotos = $this->guardarFotosPedido($request);
-                    $fotoResponse = json_decode($resultadoFotos->getContent(), true);
-
-                    if (!$fotoResponse['success']) {
-                        \Log::warning('⚠️ Error al guardar fotos, pero pedido ya creado', [
-                            'error' => $fotoResponse['message'] ?? 'desconocido',
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('❌ Error guardando fotos', [
-                        'error' => $e->getMessage(),
-                    ]);
-                    // No lanzar excepción, el pedido ya fue creado
-                }
-            }
-
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido creado exitosamente',
@@ -467,24 +401,9 @@ class PedidoProduccionController extends Controller
                     'success' => false,
                     'message' => 'No se encontraron prendas para este pedido'
                 ], 404);
-                        ]);
-                    }
-                }
-                                'ubicacion' => $logo['ubicacion'] ?? null,
-                                'ancho' => $logo['ancho'] ?? null,
-                                'alto' => $logo['alto'] ?? null,
-                                'tamaño' => $logo['tamaño'] ?? null,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    }
-                }
-
-                $indexPrenda++;
             }
 
-            \DB::commit();
+            \DB::beginTransaction();
 
             \Log::info('✅ [guardarFotosPedido] Todas las fotos guardadas exitosamente');
 
