@@ -630,15 +630,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     tipo: 'Manga',
                     valor: variantes.tipo_manga,
                     obs: variantes.obs_manga,
-                    campo: 'tipo_manga'
+                    campo: 'tipo_manga',
+                    esCheckbox: false
                 });
             }
             if (variantes.tipo_broche) {
                 variacionesArray.push({
-                    tipo: variantes.tipo_broche,
+                    tipo: 'Broche/Botón',
                     valor: variantes.tipo_broche,
                     obs: variantes.obs_broche,
-                    campo: 'tipo_broche'
+                    campo: 'tipo_broche',
+                    esCheckbox: false
                 });
             }
             if (variantes.tiene_bolsillos !== undefined) {
@@ -662,9 +664,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (variacionesArray.length > 0) {
                 variacionesHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">';
-                variacionesHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1.5fr 150px 1.5fr 100px; gap: 1rem; align-items: center; width: 100%;">';
-                variacionesHtml += '<div>📋 Variaciones de la Prenda</div>';
-                variacionesHtml += '<div>Valor</div>';
+                variacionesHtml += '<div style="padding: 0.5rem 0.75rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1fr 80px 1.2fr 45px; gap: 0.5rem; align-items: center; width: 100%; font-size: 0.85rem;">';
+                variacionesHtml += '<div>📋 Variaciones</div>';
+                variacionesHtml += '<div style="text-align: center;">Valor</div>';
                 variacionesHtml += '<div>Observaciones</div>';
                 variacionesHtml += '<div style="text-align: center;">Acción</div>';
                 variacionesHtml += '</div>';
@@ -672,14 +674,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 variacionesArray.forEach((variacion, varIdx) => {
                     let inputHtml = '';
                     if (variacion.esCheckbox) {
-                        // Para campos booleanos, mostrar checkbox
+                        // Para campos booleanos, mostrar checkbox grande
                         const isChecked = variacion.valor === true || variacion.valor === 'Sí' || variacion.valor === 1 ? 'checked' : '';
                         inputHtml = `<input type="checkbox" 
                                            ${isChecked}
                                            data-field="${variacion.campo}" 
                                            data-prenda="${index}"
                                            data-variacion="${varIdx}"
-                                           style="width: 20px; height: 20px; cursor: pointer; accent-color: #0066cc;">`;
+                                           style="width: 24px; height: 24px; cursor: pointer; accent-color: #0066cc;">`;
                     } else {
                         // Para campos de texto, mostrar input text
                         inputHtml = `<input type="text" 
@@ -687,34 +689,28 @@ document.addEventListener('DOMContentLoaded', function() {
                                            data-field="${variacion.campo}" 
                                            data-prenda="${index}"
                                            data-variacion="${varIdx}"
-                                           style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;">`;
+                                           style="width: 100%; padding: 0.4rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.85rem; transition: border-color 0.2s; box-sizing: border-box;">`;
                     }
                     
-                    variacionesHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1.5fr 150px 1.5fr 100px; gap: 1rem; align-items: start; transition: background 0.2s; width: 100%;" data-variacion="${varIdx}" data-prenda="${index}">
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Tipo</label>
-                            <div style="font-weight: 500; color: #1f2937;">${variacion.tipo}</div>
+                    variacionesHtml += `<div style="padding: 0.6rem 0.75rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 80px 1.2fr 45px; gap: 0.5rem; align-items: center; transition: background 0.2s; width: 100%; font-size: 0.85rem;" data-variacion="${varIdx}" data-prenda="${index}">
+                        <div style="font-weight: 500; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${variacion.tipo}</div>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            ${inputHtml}
                         </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Valor</label>
-                            <div style="display: flex; justify-content: center; align-items: center;">
-                                ${inputHtml}
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Observaciones</label>
+                        <div style="display: flex; align-items: center;">
                             <textarea 
                                    data-field="${variacion.campo}_obs" 
                                    data-prenda="${index}"
                                    data-variacion="${varIdx}"
-                                   style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.85rem; min-height: 50px; resize: vertical; font-family: inherit;" placeholder="Agregar observaciones...">${variacion.obs || ''}</textarea>
+                                   style="width: 100%; padding: 0.4rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.8rem; min-height: 36px; resize: vertical; font-family: inherit; box-sizing: border-box;" placeholder="...">${variacion.obs || ''}</textarea>
                         </div>
-                        <div style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%;">
+                        <div style="display: flex; justify-content: center; align-items: center;">
                             <button type="button" 
                                     class="btn-eliminar-variacion" 
                                     onclick="eliminarVariacionDePrenda(${index}, ${varIdx})"
-                                    style="background: #dc3545; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem; white-space: nowrap;">
-                                ✕ Eliminar
+                                    title="Eliminar variación"
+                                    style="background: #dc3545; color: white; border: none; padding: 0.4rem; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; min-width: auto; flex-shrink: 0;">
+                                ✕
                             </button>
                         </div>
                     </div>`;
