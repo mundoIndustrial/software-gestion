@@ -991,7 +991,8 @@ function mostrarSelectorVariantes(input) {
         if (innerContainer.innerHTML === '') {
             innerContainer.innerHTML = `
                 <label style="font-weight: 600; color: #0066cc; font-size: 0.85rem;">TIPO DE PRENDA</label>
-                <select name="productos_prenda[][tipo_jean]" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600;">
+                <input type="hidden" name="productos_prenda[][variantes][es_jean_pantalon]" class="es-jean-pantalon-hidden" value="0">
+                <select name="productos_prenda[][variantes][tipo_jean_pantalon]" onchange="marcarEsJeanPantalon(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600;">
                     <option value="">Selecciona</option>
                     <option value="SKINNY">SKINNY</option>
                     <option value="SLIM">SLIM</option>
@@ -1009,6 +1010,23 @@ function mostrarSelectorVariantes(input) {
         container.style.display = 'none';
         innerContainer.innerHTML = '';
     }
+}
+
+// Marcar es_jean_pantalon cuando se selecciona un tipo
+function marcarEsJeanPantalon(select) {
+    const container = select.closest('.tipo-jean-pantalon-inline-container');
+    if (!container) return;
+    
+    const hiddenInput = container.querySelector('.es-jean-pantalon-hidden');
+    if (!hiddenInput) return;
+    
+    // Si tiene un valor seleccionado (no vacío), marcar como 1
+    hiddenInput.value = select.value && select.value !== '' ? '1' : '0';
+    
+    console.log('✅ es_jean_pantalon actualizado:', {
+        tipo_jean_seleccionado: select.value,
+        es_jean_pantalon: hiddenInput.value
+    });
 }
 
 // Gestión de imágenes (delegado a scripts heredados)

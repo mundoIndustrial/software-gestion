@@ -167,31 +167,44 @@ function agregarFotos(files, dropZone) {
     
     // Contar imágenes guardadas (desde cargarBorrador)
     const fotosGuardadas = Array.from(dropZone.closest('.producto-card').querySelectorAll('[data-foto]:not([data-foto-nueva])')).length;
-    const fotosNuevas = window.fotosSeleccionadas[productoId].length;
-    let totalFotos = fotosGuardadas + fotosNuevas;
+    const fotosNuevasActuales = window.fotosSeleccionadas[productoId].length;
+    const totalFotosActuales = fotosGuardadas + fotosNuevasActuales;
     
-    console.log(`📊 Fotos guardadas: ${fotosGuardadas}, Fotos nuevas: ${fotosNuevas}, Total: ${totalFotos}`);
+    console.log(`📊 Fotos guardadas: ${fotosGuardadas}, Fotos nuevas actuales: ${fotosNuevasActuales}, Total actual: ${totalFotosActuales}`);
     
-    Array.from(files).forEach((file, fileIndex) => {
-        // Validar límite de 3 fotos TOTAL (guardadas + nuevas)
-        if (totalFotos < 3) {
-            window.fotosSeleccionadas[productoId].push(file);
-            totalFotos++; // Incrementar contador después de agregar
-            
-            // Guardar con índice de prenda (similar a telaConIndice)
-            if (!window.imagenesEnMemoria.prendaConIndice) {
-                window.imagenesEnMemoria.prendaConIndice = [];
-            }
-            window.imagenesEnMemoria.prendaConIndice.push({
-                file: file,
-                prendaIndex: prendaIndex
-            });
-            
-            console.log(`✅ Foto ${fileIndex + 1} de prenda guardada: ${file.name} (Prenda ${prendaIndex})`);
-        } else {
-            console.warn(`⚠️ Límite de 3 fotos alcanzado. No se puede agregar más fotos.`);
+    // Calcular cuántas fotos podemos agregar
+    const espacioDisponible = 3 - totalFotosActuales;
+    
+    if (espacioDisponible <= 0) {
+        console.warn(`⚠️ Límite de 3 fotos alcanzado. No se puede agregar más fotos.`);
+        return;
+    }
+    
+    console.log(`✅ Espacio disponible para ${espacioDisponible} foto(s)`);
+    
+    // Agregar solo las fotos que caben en el límite
+    const fotosParaAgregar = Array.from(files).slice(0, espacioDisponible);
+    
+    fotosParaAgregar.forEach((file, fileIndex) => {
+        window.fotosSeleccionadas[productoId].push(file);
+        
+        // Guardar con índice de prenda (similar a telaConIndice)
+        if (!window.imagenesEnMemoria.prendaConIndice) {
+            window.imagenesEnMemoria.prendaConIndice = [];
         }
+        window.imagenesEnMemoria.prendaConIndice.push({
+            file: file,
+            prendaIndex: prendaIndex
+        });
+        
+        console.log(`✅ Foto ${fileIndex + 1} de ${fotosParaAgregar.length} agregada: ${file.name} (Prenda ${prendaIndex})`);
     });
+    
+    // Mostrar mensaje si no se pudieron agregar todas las fotos seleccionadas
+    if (files.length > fotosParaAgregar.length) {
+        const noAgregadas = files.length - fotosParaAgregar.length;
+        console.warn(`⚠️ Solo se agregaron ${fotosParaAgregar.length} de ${files.length} fotos. Límite de 3 fotos alcanzado.`);
+    }
     actualizarPreviewFotos(dropZone);
 }
 
@@ -227,25 +240,23 @@ function actualizarPreviewFotos(input) {
     // Las imágenes guardadas ya están en el contenedor desde cargarBorrador()
     const fotos = window.fotosSeleccionadas[productoId] || [];
     
-    console.log(`📸 Mostrando ${fotos.length} fotos nuevas para producto ${productoId}`);
+    console.log(`📸 Procesando ${fotos.length} fotos para producto ${productoId}`);
     
     if (fotos.length === 0) {
         console.log('ℹ️ No hay fotos nuevas para mostrar');
         return;
     }
     
-    fotos.forEach((file, index) => {
-        // Verificar si esta foto ya está en el preview (evitar duplicados)
-        const yaExiste = Array.from(container.querySelectorAll('[data-foto-nueva]')).some(el => 
-            el.dataset.fileName === file.name
-        );
-        
-        if (yaExiste) {
-            console.log(`⚠️ Foto ${file.name} ya existe en el preview`);
-            return;
-        }
-        
-        // Generar un ID único para esta foto (usando timestamp + índice)
+    // Obtener las fotos que ya están en el preview
+    const fotosEnPreview = Array.from(container.querySelectorAll('[data-foto-nueva]')).map(el => el.dataset.fileName);
+    
+    // Filtrar solo las fotos que NO están en el preview
+    const fotosNuevasParaMostrar = fotos.filter(file => !fotosEnPreview.includes(file.name));
+    
+    console.log(`📸 Mostrando ${fotosNuevasParaMostrar.length} fotos nuevas (${fotosEnPreview.length} ya en preview)`);
+    
+    fotosNuevasParaMostrar.forEach((file, index) => {
+        // Generar un ID único para esta foto (usando timestamp + random)
         const fotoId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         
         const reader = new FileReader();

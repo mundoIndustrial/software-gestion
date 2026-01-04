@@ -668,6 +668,43 @@ function cargarBorrador(cotizacion) {
                             }
                         }
                         
+                        // JEAN PANTALÓN - Tipo de jean
+                        if (variantes.tipo_jean_pantalon || variantes.es_jean_pantalon) {
+                            console.log('🔵 Detectado jean pantalón:', {
+                                tipo: variantes.tipo_jean_pantalon,
+                                es_jean: variantes.es_jean_pantalon
+                            });
+                            
+                            // Buscar el input de tipo de prenda para activar el selector
+                            const tipoPrendaInput = productoActual.querySelector('.prenda-search-input');
+                            if (tipoPrendaInput) {
+                                // Mostrar el selector si contiene JEAN o PANTALÓN
+                                const valorTipoPrenda = tipoPrendaInput.value.toUpperCase();
+                                if (valorTipoPrenda.includes('JEAN') || valorTipoPrenda.includes('PANTALÓN') || valorTipoPrenda.includes('PANTALON')) {
+                                    if (typeof mostrarSelectorVariantes === 'function') {
+                                        mostrarSelectorVariantes(tipoPrendaInput);
+                                    }
+                                    
+                                    // Esperar a que el selector se cree y luego establecer los valores
+                                    setTimeout(() => {
+                                        const tipoJeanSelect = productoActual.querySelector('select[name*="tipo_jean_pantalon"]');
+                                        const esJeanHidden = productoActual.querySelector('input[name*="es_jean_pantalon"]');
+                                        
+                                        if (tipoJeanSelect && variantes.tipo_jean_pantalon) {
+                                            tipoJeanSelect.value = variantes.tipo_jean_pantalon;
+                                            tipoJeanSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                            console.log('✅ Tipo jean pantalón cargado:', variantes.tipo_jean_pantalon);
+                                        }
+                                        
+                                        if (esJeanHidden) {
+                                            esJeanHidden.value = variantes.es_jean_pantalon ? '1' : '0';
+                                            console.log('✅ es_jean_pantalon cargado:', esJeanHidden.value);
+                                        }
+                                    }, 300);
+                                }
+                            }
+                        }
+                        
                         // Guardar variaciones en variable global para Paso 4
                         // Obtener tallas seleccionadas DESDE el objeto prenda
                         let tallasSeleccionadas = [];
