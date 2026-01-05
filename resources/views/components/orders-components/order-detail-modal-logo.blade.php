@@ -8,7 +8,7 @@
 <div class="order-detail-modal-container" style="display: flex; flex-direction: column; width: 100%; height: 100%;">
     <div class="order-detail-card">
         <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
-        <div id="order-date" class="order-date">
+        <div id="order-date-logo" class="order-date">
             <div class="fec-label">FECHA</div>
             <div class="date-boxes">
                 <div class="date-box day-box"></div>
@@ -16,12 +16,12 @@
                 <div class="date-box year-box"></div>
             </div>
         </div>
-        <div id="order-asesora" class="order-asesora">ASESORA: <span id="asesora-value"></span></div>
-        <div id="order-forma-pago" class="order-forma-pago" style="display: none;">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
-        <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
-        <div id="order-descripcion" class="order-descripcion" style="margin: 1rem 0;">
+        <div id="order-asesora-logo" class="order-asesora">ASESORA: <span id="asesora-value-logo"></span></div>
+        <div id="order-forma-pago-logo" class="order-forma-pago" style="display: none;">FORMA DE PAGO: <span id="forma-pago-value-logo"></span></div>
+        <div id="order-cliente-logo" class="order-cliente">CLIENTE: <span id="cliente-value-logo"></span></div>
+        <div id="order-descripcion-logo" class="order-descripcion" style="margin: 1rem 0;">
             <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; font-size: 0.875rem;">DESCRIPCIÓN:</label>
-            <div id="descripcion-text" style="
+            <div id="descripcion-text-logo" style="
                 width: 100%;
                 min-height: 80px;
                 padding: 0.75rem;
@@ -43,7 +43,7 @@
                     <div id="logo-observaciones-tecnicas" style="font-size: 0.875rem; color: #111827; white-space: pre-wrap; word-break: break-word;"></div>
                 </div>
                 <div>
-                    <div style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; font-size: 0.875rem;">UBICACIONES:</div>
+                    <div style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; font-size: 0.875rem;">SECCIONES:</div>
                     <div id="logo-ubicaciones" style="font-size: 0.875rem; color: #111827; white-space: pre-wrap; word-break: break-word;"></div>
                 </div>
             </div>
@@ -61,20 +61,20 @@
                 </svg>
             </button>
         </div>
-        <div id="order-pedido" class="pedido-number"></div>
+        <div id="order-pedido-logo" class="pedido-number"></div>
 
         <div class="separator-line"></div>
 
         <div class="signature-section">
             <div class="signature-field">
                 <span>ENCARGADO DE ORDEN:</span>
-                <span id="encargado-value"></span>
+                <span id="encargado-value-logo"></span>
             </div>
             <div class="vertical-separator"></div>
             <div class="signature-field">
                 <span>PRENDAS ENTREGADAS:</span>
-                <span id="prendas-entregadas-value"></span>
-                <a href="#" id="ver-entregas" style="color: red; font-weight: bold;">VER ENTREGAS</a>
+                <span id="prendas-entregadas-value-logo"></span>
+                <a href="#" id="ver-entregas-logo" style="color: red; font-weight: bold;">VER ENTREGAS</a>
             </div>
         </div>
     </div>
@@ -82,10 +82,10 @@
 
 <!-- Botones flotantes para cambiar a galería de fotos -->
 <div style="position: fixed; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 10000;">
-    <button id="btn-factura" type="button" title="Ver factura" onclick="toggleFacturaLogo()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+    <button id="btn-factura-logo" type="button" title="Ver factura" onclick="toggleFacturaLogo()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
         <i class="fas fa-receipt"></i>
     </button>
-    <button id="btn-galeria" type="button" title="Ver galería" onclick="toggleGaleriaLogo()" style="width: 56px; height: 56px; border-radius: 50%; background: white; border: 2px solid #ddd; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+    <button id="btn-galeria-logo" type="button" title="Ver galería" onclick="toggleGaleriaLogo()" style="width: 56px; height: 56px; border-radius: 50%; background: white; border: 2px solid #ddd; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
         <i class="fas fa-images"></i>
     </button>
 </div>
@@ -96,51 +96,142 @@ let currentImageIndexLogo = 0;
 let currentPedidoNumberLogo = null; // Variable global para guardar el número de pedido
 
 function toggleFacturaLogo() {
-    // Mostrar factura y ocultar galería
-    const container = document.querySelector('.order-detail-modal-container');
-    container.style.padding = '1.5cm';  // Restaurar padding original
-    container.style.alignItems = 'center';  // Restaurar center
-    container.style.justifyContent = 'center';  // Restaurar center
+    console.log('🎬 [TOGGLE FACTURA LOGO] Iniciando cambio a factura...');
+    console.trace('📍 [TOGGLE FACTURA LOGO] Stack trace de quién llamó esta función');
     
-    document.querySelector('.order-detail-card').style.display = 'block';
+    // ⚠️ IMPORTANTE: Buscar SOLO dentro del modal de logo
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
+    if (!modalWrapper) {
+        console.error('❌ [TOGGLE FACTURA LOGO] No se encontró el wrapper del modal de logo');
+        return;
+    }
+    
+    // Mostrar factura y ocultar galería
+    const container = modalWrapper.querySelector('.order-detail-modal-container');
+    if (container) {
+        container.style.padding = '1.5cm';  // Restaurar padding original
+        container.style.alignItems = 'center';  // Restaurar center
+        container.style.justifyContent = 'center';  // Restaurar center
+        container.style.height = 'auto';  // ✅ Restaurar altura automática
+        container.style.width = '100%';
+    }
+    
+    // ✅ RESTAURAR el tamaño original del wrapper
+    modalWrapper.style.maxWidth = '672px';
+    modalWrapper.style.width = '90%';
+    modalWrapper.style.height = 'auto';
+    console.log('✅ [TOGGLE FACTURA LOGO] Wrapper restaurado a tamaño original');
+    
+    const card = modalWrapper.querySelector('.order-detail-card');
+    if (card) card.style.display = 'block';
+    
     const galeria = document.getElementById('galeria-modal-logo');
     if (galeria) galeria.style.display = 'none';
     
     // Cambiar estilos de botones
-    document.getElementById('btn-factura').style.background = 'linear-gradient(135deg, #1e40af, #0ea5e9)';
-    document.getElementById('btn-factura').style.border = 'none';
-    document.getElementById('btn-factura').style.color = 'white';
-    document.getElementById('btn-galeria').style.background = 'white';
-    document.getElementById('btn-galeria').style.border = '2px solid #ddd';
-    document.getElementById('btn-galeria').style.color = '#333';
+    document.getElementById('btn-factura-logo').style.background = 'linear-gradient(135deg, #1e40af, #0ea5e9)';
+    document.getElementById('btn-factura-logo').style.border = 'none';
+    document.getElementById('btn-factura-logo').style.color = 'white';
+    document.getElementById('btn-galeria-logo').style.background = 'white';
+    document.getElementById('btn-galeria-logo').style.border = '2px solid #ddd';
+    document.getElementById('btn-galeria-logo').style.color = '#333';
 }
 
 function toggleGaleriaLogo() {
+    console.log('🎬 [TOGGLE GALERIA LOGO] Iniciando cambio a galería...');
+    
+    // ⚠️ IMPORTANTE: Buscar SOLO dentro del modal de logo
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
+    if (!modalWrapper) {
+        console.error('❌ [TOGGLE GALERIA LOGO] No se encontró el wrapper del modal de logo');
+        return;
+    }
+    
     // Ocultar factura y mostrar galería
-    document.querySelector('.order-detail-card').style.display = 'none';
+    const card = modalWrapper.querySelector('.order-detail-card');
+    console.log('📋 [TOGGLE GALERIA LOGO] Card encontrada:', !!card);
+    if (card) {
+        card.style.display = 'none';
+        console.log('✅ [TOGGLE GALERIA LOGO] Card ocultada, display:', card.style.display);
+    }
     
     // Configurar el contenedor para la galería
-    const container = document.querySelector('.order-detail-modal-container');
-    container.style.padding = '0';
-    container.style.alignItems = 'stretch';  // Cambiar de center a stretch
-    container.style.justifyContent = 'flex-start';  // Cambiar de center a flex-start
+    const container = modalWrapper.querySelector('.order-detail-modal-container');
+    console.log('📦 [TOGGLE GALERIA LOGO] Container encontrado:', !!container);
+    
+    if (container) {
+        console.log('📦 [TOGGLE GALERIA LOGO] Container antes:', {
+            padding: container.style.padding,
+            alignItems: container.style.alignItems,
+            justifyContent: container.style.justifyContent,
+            height: container.style.height,
+            width: container.style.width
+        });
+        
+        // ✅ Remover padding para que el header quede pegado arriba
+        container.style.padding = '0';
+        container.style.alignItems = 'stretch';
+        container.style.justifyContent = 'flex-start';
+        container.style.height = 'auto';
+        container.style.width = '100%';
+        
+        console.log('📦 [TOGGLE GALERIA LOGO] Container después:', {
+            padding: container.style.padding,
+            alignItems: container.style.alignItems,
+            justifyContent: container.style.justifyContent,
+            height: container.style.height,
+            width: container.style.width
+        });
+    }
     
     // Crear galería si no existe
     let galeria = document.getElementById('galeria-modal-logo');
+    console.log('🖼️ [TOGGLE GALERIA LOGO] Galería existente:', !!galeria);
+    
     if (!galeria) {
+        console.log('🔨 [TOGGLE GALERIA LOGO] Creando nueva galería...');
         galeria = document.createElement('div');
         galeria.id = 'galeria-modal-logo';
-        galeria.style.cssText = 'width: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100%;';
-        document.querySelector('.order-detail-modal-container').appendChild(galeria);
+        galeria.style.cssText = 'width: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 400px; max-height: 600px; overflow-y: auto;';
+        // ⚠️ IMPORTANTE: Agregar al container del modal de LOGO, no al de costura
+        if (container) {
+            container.appendChild(galeria);
+            console.log('✅ [TOGGLE GALERIA LOGO] Galería creada y agregada al DOM del modal de logo');
+        } else {
+            console.error('❌ [TOGGLE GALERIA LOGO] No se pudo agregar galería, container no encontrado');
+            return;
+        }
     }
-    galeria.style.display = 'block';
     
-    // Usar la variable global que se estableció en el event listener
-    const pedido = window.currentPedidoNumberLogo;
-    console.log('🖼️ [TOGGLE GALERIA] window.currentPedidoNumberLogo:', pedido);
+    galeria.style.display = 'flex';
+    console.log('🖼️ [TOGGLE GALERIA LOGO] Galería display establecido a flex');
+    console.log('🖼️ [TOGGLE GALERIA LOGO] Galería estado:', {
+        display: galeria.style.display,
+        width: galeria.style.width,
+        height: galeria.style.height,
+        offsetWidth: galeria.offsetWidth,
+        offsetHeight: galeria.offsetHeight
+    });
+    
+    // ✅ Obtener número de pedido directamente del DOM (usando ID único del modal logo)
+    const pedidoElement = document.getElementById('order-pedido-logo');
+    console.log('🖼️ [TOGGLE GALERIA LOGO] Elemento pedido:', pedidoElement);
+    
+    if (!pedidoElement) {
+        console.error('❌ [TOGGLE GALERIA LOGO] No se encontró elemento order-pedido-logo');
+        galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
+        return;
+    }
+    
+    const pedidoText = pedidoElement.textContent;
+    const pedidoMatch = pedidoText.match(/[A-Z]+-\d+/); // Buscar formato LOGO-00106
+    const pedido = pedidoMatch ? pedidoMatch[0] : null;
+    
+    console.log('🖼️ [TOGGLE GALERIA LOGO] Texto del pedido:', pedidoText);
+    console.log('🖼️ [TOGGLE GALERIA LOGO] Número de pedido extraído:', pedido);
     
     if (!pedido) {
-        console.error('❌ [TOGGLE GALERIA] No hay número de pedido disponible');
+        console.error('❌ [TOGGLE GALERIA LOGO] No se pudo extraer número de pedido');
         galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
         return;
     }
@@ -149,12 +240,21 @@ function toggleGaleriaLogo() {
     loadGaleriaLogo(galeria, pedido);
     
     // Cambiar estilos de botones
-    document.getElementById('btn-factura').style.background = 'white';
-    document.getElementById('btn-factura').style.border = '2px solid #ddd';
-    document.getElementById('btn-factura').style.color = '#333';
-    document.getElementById('btn-galeria').style.background = 'linear-gradient(135deg, #1e40af, #0ea5e9)';
-    document.getElementById('btn-galeria').style.border = 'none';
-    document.getElementById('btn-galeria').style.color = 'white';
+    document.getElementById('btn-factura-logo').style.background = 'white';
+    document.getElementById('btn-factura-logo').style.border = '2px solid #ddd';
+    document.getElementById('btn-factura-logo').style.color = '#333';
+    document.getElementById('btn-galeria-logo').style.background = 'linear-gradient(135deg, #1e40af, #0ea5e9)';
+    document.getElementById('btn-galeria-logo').style.border = 'none';
+    document.getElementById('btn-galeria-logo').style.color = 'white';
+    
+    console.log('🎬 [TOGGLE GALERIA LOGO] RESUMEN FINAL:');
+    console.log('  - Card display:', document.querySelector('.order-detail-card')?.style.display);
+    console.log('  - Galería display:', galeria.style.display);
+    console.log('  - Galería offsetHeight:', galeria.offsetHeight);
+    console.log('  - Galería offsetWidth:', galeria.offsetWidth);
+    console.log('  - Container height:', document.querySelector('.order-detail-modal-container')?.style.height);
+    console.log('  - Wrapper height:', document.getElementById('order-detail-modal-wrapper-logo')?.style.height);
+    console.log('✅ [TOGGLE GALERIA LOGO] Completado');
 }
 
 function loadGaleriaLogo(container, pedido) {
@@ -252,6 +352,13 @@ function loadGaleriaLogo(container, pedido) {
             html += '</div>';
             container.innerHTML = html;
             console.log('✅ [GALERIA LOGO] HTML de galería generado y renderizado en el DOM');
+            
+            // DEBUG: Verificar que el HTML está en el DOM y es visible
+            console.log('🔍 [DEBUG GALERIA] container.innerHTML length:', container.innerHTML.length);
+            console.log('🔍 [DEBUG GALERIA] container.style.display:', container.style.display);
+            console.log('🔍 [DEBUG GALERIA] container.offsetHeight:', container.offsetHeight);
+            console.log('🔍 [DEBUG GALERIA] container.offsetWidth:', container.offsetWidth);
+            console.log('🔍 [DEBUG GALERIA] Elemento visible en DOM:', container);
         })
         .catch(error => {
             console.error('❌ [GALERIA LOGO] Error al cargar imágenes:', error);
@@ -282,7 +389,7 @@ function openImageViewerLogo(index) {
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 10001;
+        z-index: 100000;
         animation: fadeIn 0.3s ease;
     `;
     

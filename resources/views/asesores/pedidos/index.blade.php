@@ -433,6 +433,22 @@
                 </div>
             </div>
 
+            <!-- BUSCADOR -->
+            <div style="flex: 1; max-width: 500px; position: relative;">
+                <input 
+                    type="text" 
+                    id="mainSearchInput" 
+                    placeholder="Buscar por número de pedido o cliente..." 
+                    style="width: 100%; padding: 10px 40px 10px 40px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.95); font-size: 0.9rem; transition: all 0.3s; color: #1e40af; font-weight: 500;"
+                    onfocus="this.style.background='white'; this.style.borderColor='white'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                    onblur="this.style.background='rgba(255,255,255,0.95)'; this.style.borderColor='rgba(255,255,255,0.3)'; this.style.boxShadow='none'"
+                >
+                <span class="material-symbols-rounded" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #1e40af; pointer-events: none;">search</span>
+                <button type="button" id="clearMainSearch" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #6b7280; cursor: pointer; padding: 4px; display: none; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#1e40af'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">close</span>
+                </button>
+            </div>
+
             <!-- BOTÓN REGISTRAR -->
             <a href="{{ route('asesores.pedidos-produccion.crear') }}" style="background: white; color: #1e40af; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -451,15 +467,17 @@
             <span class="material-symbols-rounded">shopping_cart</span>
             Todos
         </a>
-        <a href="{{ route('asesores.pedidos.index', ['tipo' => 'prendas']) }}" class="btn-filtro-rapido-asesores {{ request('tipo') === 'prendas' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">checkroom</span>
-            Prendas
-        </a>
         <a href="{{ route('asesores.pedidos.index', ['tipo' => 'logo']) }}" class="btn-filtro-rapido-asesores {{ request('tipo') === 'logo' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
             <span class="material-symbols-rounded">palette</span>
             Logo
         </a>
     </div>
+
+    <!-- Botón Flotante para Limpiar Todos los Filtros -->
+    <button id="btnClearAllFilters" class="floating-clear-filters" onclick="clearAllFilters()">
+        <span class="material-symbols-rounded" style="font-size: 24px;">filter_alt_off</span>
+        <div class="floating-clear-filters-tooltip">Limpiar todos los filtros</div>
+    </button>
 
     <!-- Tabla con Scroll Horizontal -->
     <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
@@ -569,7 +587,35 @@
                 </div>
             @else
                 @foreach($pedidos as $pedido)
-                    <div style="
+                    @php
+                        // Calcular número de pedido para búsqueda
+                        $numeroPedidoBusqueda = '';
+                        if (request('tipo') === 'logo') {
+                            if (get_class($pedido) === 'App\\Models\\LogoPedido') {
+                                $numeroPedidoBusqueda = $pedido->numero_pedido;
+                            } else {
+                                $numeroPedidoBusqueda = '#' . ($pedido->numero_pedido_mostrable ?? ($pedido->numero_pedido ?? '-'));
+                            }
+                        } else {
+                            if (get_class($pedido) === 'App\\Models\\LogoPedido') {
+                                $prod = $pedido->pedidoProduccion ?? null;
+                                if ($prod && isset($prod->numero_pedido)) {
+                                    $numeroPedidoBusqueda = '#' . $prod->numero_pedido;
+                                } elseif (!empty($pedido->numero_pedido_cost)) {
+                                    $numeroPedidoBusqueda = '#' . ltrim($pedido->numero_pedido_cost, '#');
+                                } else {
+                                    $numeroPedidoBusqueda = $pedido->numero_pedido ?? '-';
+                                }
+                            } else {
+                                $numeroPedidoBusqueda = isset($pedido->numero_pedido) ? ('#' . $pedido->numero_pedido) : ('#' . ($pedido->numero_pedido_mostrable ?? '-'));
+                            }
+                        }
+                        $clienteBusqueda = $pedido->cliente ?? '-';
+                    @endphp
+                    <div data-pedido-row 
+                         data-numero-pedido="{{ $numeroPedidoBusqueda }}" 
+                         data-cliente="{{ $clienteBusqueda }}" 
+                         style="
                         display: grid;
                         grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
                         gap: 1.2rem;
@@ -593,8 +639,10 @@
                             $pedidoId = $pedido->id;
                             $tipoDocumento = get_class($pedido) === 'App\Models\LogoPedido' ? 'L' : ($pedido->cotizacion?->tipoCotizacion?->codigo ?? '');
                             $esLogo = get_class($pedido) === 'App\Models\LogoPedido' ? '1' : '0';
+                            // Para pedidos combinados (PL), obtener el ID del logo_pedido asociado
+                            $logoPedidoId = get_class($pedido) === 'App\Models\LogoPedido' ? $pedido->id : ($pedido->logoPedidos->first()?->id ?? '');
                         @endphp
-                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" data-tipo-cotizacion="{{ $tipoDocumento }}" data-es-logo="{{ $esLogo }}" title="Ver Opciones" style="
+                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" data-logo-pedido-id="{{ $logoPedidoId }}" data-tipo-cotizacion="{{ $tipoDocumento }}" data-es-logo="{{ $esLogo }}" title="Ver Opciones" style="
                             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                             color: white;
                             border: none;
@@ -693,11 +741,11 @@
                             // Verificar si es LogoPedido (tiene campo 'numero_pedido' pero no 'prendas')
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 // Es un LogoPedido
-                                $area = $pedido->areaActual ?? 'Creacion de orden';
+                                $area = $pedido->areaActual ?? 'Creación de Orden';
                             } elseif ($pedido->logoPedidos && $pedido->logoPedidos->count() > 0) {
                                 // Es un PedidoProduccion con logo
                                 $logoPedido = $pedido->logoPedidos->first();
-                                $area = $logoPedido->areaActual ?? 'Creacion de orden';
+                                $area = $logoPedido->areaActual ?? 'Creación de Orden';
                             } else {
                                 // Es un PedidoProduccion normal
                                 $area = $pedido->procesoActualOptimizado() ?? '-';
@@ -724,11 +772,31 @@
                     <!-- Pedido -->
                     <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @php
-                            if (get_class($pedido) === 'App\Models\LogoPedido') {
-                                // LogoPedido ya tiene # al inicio (ejemplo: #LOGO-00001)
-                                echo $pedido->numero_pedido;
+                            // Si estamos en la pestaña de logo, mostramos el identificador de logo (#LOGO-...)
+                            if (request('tipo') === 'logo') {
+                                if (get_class($pedido) === 'App\\Models\\LogoPedido') {
+                                    echo $pedido->numero_pedido; // #LOGO-xxxxx
+                                } else {
+                                    // En lista 'logo' si hay un PedidoProduccion mostramos su numero_pedido_mostrable
+                                    echo '#' . ($pedido->numero_pedido_mostrable ?? ($pedido->numero_pedido ?? '-'));
+                                }
                             } else {
-                                echo '#' . $pedido->numero_pedido_mostrable;
+                                // En la vista principal (Todos) y otras pestañas, mostrar el numero_pedido de pedidos_produccion
+                                if (get_class($pedido) === 'App\\Models\\LogoPedido') {
+                                    // Intentar obtener el pedido de producción relacionado
+                                    $prod = $pedido->pedidoProduccion ?? null;
+                                    if ($prod && isset($prod->numero_pedido)) {
+                                        echo '#' . $prod->numero_pedido;
+                                    } elseif (!empty($pedido->numero_pedido_cost)) {
+                                        // Fallback al campo numero_pedido_cost si existe
+                                        echo '#' . ltrim($pedido->numero_pedido_cost, '#');
+                                    } else {
+                                        echo $pedido->numero_pedido ?? '-';
+                                    }
+                                } else {
+                                    // Es un PedidoProduccion
+                                    echo isset($pedido->numero_pedido) ? ('#' . $pedido->numero_pedido) : ('#' . ($pedido->numero_pedido_mostrable ?? '-'));
+                                }
                             }
                         @endphp
                     </div>
@@ -942,35 +1010,25 @@
             @endif
         </div>
     </div>
-
-    <!-- Paginación -->
-    @if($pedidos->hasPages())
-        <div style="margin-top: 1.5rem; display: flex; justify-content: center;">
-            {{ $pedidos->links() }}
-        </div>
-    @endif
 </div>
 
-<!-- Botón Flotante para Limpiar Filtros -->
-<button id="clearFiltersBtn" class="floating-clear-filters" onclick="resetFilters(); updateClearButtonVisibility();" title="Limpiar todos los filtros">
-    <span class="material-symbols-rounded">filter_alt_off</span>
-    <div class="floating-clear-filters-tooltip">Limpiar filtros</div>
-</button>
+<!-- Contenedor para Dropdowns (Fuera de la tabla) -->
+<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
 
-<!-- Modal de Filtros -->
+<!-- Modal de Filtros (necesario para pedidos-table-filters.js) -->
 <div id="filterModal" class="filter-modal-overlay" onclick="closeFilterModal(event)">
-    <div class="filter-modal" onclick="event.stopPropagation()">
-        <div class="filter-modal-header">
-            <h3 id="filterModalTitle">Filtrar por Estado</h3>
-            <button class="filter-modal-close" onclick="closeFilterModal()">&times;</button>
+    <div class="filter-modal" onclick="event.stopPropagation()" style="width: 420px; max-width: 90%;">
+        <div class="filter-modal-header" style="display:flex; justify-content:space-between; align-items:center; padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+            <h3 id="filterModalTitle" style="margin: 0; font-size: 1.125rem; color: #1e40af; font-weight: 700;">Filtrar</h3>
+            <button class="filter-modal-close" onclick="closeFilterModal()" style="background:none; border:none; font-size:24px; cursor:pointer; color: #6b7280;">&times;</button>
         </div>
-        <div class="filter-modal-body">
-            <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar...">
-            <div class="filter-options" id="filterOptions"></div>
+        <div class="filter-modal-body" style="padding: 1.5rem;">
+            <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar..." style="width:100%; padding:0.75rem; margin-bottom:1rem; border:2px solid #e5e7eb; border-radius:8px; font-size:0.95rem;">
+            <div class="filter-options" id="filterOptions" style="display:flex; flex-direction:column; gap:0.5rem; max-height:300px; overflow-y:auto;"></div>
         </div>
-        <div class="filter-modal-footer">
-            <button class="btn-filter-reset" onclick="resetFilters()">Limpiar</button>
-            <button class="btn-filter-apply" onclick="applyFilters()">Aplicar</button>
+        <div class="filter-modal-footer" style="display:flex; gap:8px; justify-content:flex-end; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
+            <button class="btn-filter-reset" onclick="resetFilters()" style="background:white; border:2px solid #e5e7eb; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; color:#374151;">Limpiar</button>
+            <button class="btn-filter-apply" onclick="applyFilters()" style="background:linear-gradient(135deg,#1e40af,#0ea5e9); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600;">Aplicar</button>
         </div>
     </div>
 </div>
@@ -989,7 +1047,7 @@
 </div>
 
 <!-- Modal de Detalle de Orden - LOGO -->
-<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; pointer-events: auto; display: none;">
+<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 672px; height: auto; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal-logo />
 </div>
 
@@ -1617,6 +1675,80 @@
             }
         }, 3000);
     }
+
+    /**
+     * Buscador principal: buscar por número de pedido o cliente
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('mainSearchInput');
+        const clearButton = document.getElementById('clearMainSearch');
+        
+        if (!searchInput) return;
+
+        // Función para buscar en las filas
+        function searchOrders() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('[data-pedido-row]');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const numeroPedido = (row.getAttribute('data-numero-pedido') || '').toLowerCase();
+                const cliente = (row.getAttribute('data-cliente') || '').toLowerCase();
+                
+                const matches = !searchTerm || 
+                               numeroPedido.includes(searchTerm) || 
+                               cliente.includes(searchTerm);
+
+                if (matches) {
+                    row.style.display = 'grid';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Mostrar/ocultar el botón de limpiar
+            if (searchTerm) {
+                clearButton.style.display = 'block';
+            } else {
+                clearButton.style.display = 'none';
+            }
+
+            // Mensaje si no hay resultados
+            const tableContainer = document.querySelector('.table-scroll-container');
+            let noResultsMsg = document.getElementById('noSearchResults');
+            
+            if (visibleCount === 0 && searchTerm) {
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.id = 'noSearchResults';
+                    noResultsMsg.style.cssText = 'padding: 2rem; text-align: center; color: #6b7280; font-size: 0.95rem;';
+                    noResultsMsg.innerHTML = `
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                        <p style="margin: 0; font-weight: 600;">No se encontraron resultados</p>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;">Intenta con otro término de búsqueda</p>
+                    `;
+                    tableContainer.appendChild(noResultsMsg);
+                }
+            } else if (noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+
+        // Buscar mientras se escribe (con delay)
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchOrders, 300);
+        });
+
+        // Limpiar búsqueda
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            searchOrders();
+            searchInput.focus();
+        });
+    });
 </script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>

@@ -13,6 +13,13 @@ console.log('📄 [MODAL] Cargando order-detail-modal-manager.js');
 window.openOrderDetailModal = function(orderId) {
     console.log('%c🔵 [MODAL] Abriendo modal para orden: ' + orderId, 'color: blue; font-weight: bold; font-size: 14px;');
     
+    // Cerrar el modal de logo si está abierto
+    const modalWrapperLogo = document.getElementById('order-detail-modal-wrapper-logo');
+    if (modalWrapperLogo) {
+        modalWrapperLogo.style.display = 'none';
+        console.log('🔒 [MODAL] Modal de logo cerrado');
+    }
+    
     // Obtener el overlay
     let overlay = document.getElementById('modal-overlay');
     console.log('🔍 [MODAL] Overlay encontrado:', !!overlay);
@@ -69,6 +76,11 @@ window.closeOrderDetailModal = function() {
     if (modalWrapper) {
         modalWrapper.style.display = 'none';
         console.log('✅ [MODAL] Wrapper ocultado');
+        
+        // Limpiar contenido del modal de costura
+        const descripcionText = modalWrapper.querySelector('#descripcion-text');
+        if (descripcionText) descripcionText.innerHTML = '';
+        console.log('🧹 [MODAL] Contenido limpiado');
     }
 };
 
@@ -86,6 +98,13 @@ window.closeModalOverlay = function() {
  */
 window.openOrderDetailModalLogo = function(orderId) {
     console.log('%c🔴 [MODAL LOGO] Abriendo modal logo para orden: ' + orderId, 'color: red; font-weight: bold; font-size: 14px;');
+    
+    // Cerrar el modal de costura si está abierto
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    if (modalWrapper) {
+        modalWrapper.style.display = 'none';
+        console.log('🔒 [MODAL LOGO] Modal de costura cerrado');
+    }
     
     // Obtener el overlay
     let overlay = document.getElementById('modal-overlay');
@@ -143,6 +162,13 @@ window.closeOrderDetailModalLogo = function() {
     if (modalWrapper) {
         modalWrapper.style.display = 'none';
         console.log('✅ [MODAL LOGO] Wrapper ocultado');
+        
+        // Limpiar contenido del modal de logo
+        const descripcionText = modalWrapper.querySelector('#descripcion-text');
+        if (descripcionText) descripcionText.innerHTML = '';
+        const galeriaContainer = modalWrapper.querySelector('#galeria-modal-logo');
+        if (galeriaContainer) galeriaContainer.innerHTML = '';
+        console.log('🧹 [MODAL LOGO] Contenido limpiado');
     }
 };
 
@@ -638,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Cliente
-            const clienteSpan = document.querySelector('#order-detail-modal-wrapper-logo #cliente-value');
+            const clienteSpan = document.querySelector('#order-detail-modal-wrapper-logo #cliente-value-logo');
             console.log('👤 [MODAL LOGO] Cliente span encontrado:', !!clienteSpan, 'valor:', orden.cliente);
             if (clienteSpan) {
                 clienteSpan.textContent = orden.cliente || '-';
@@ -646,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Asesora
-            const asesoraSpan = document.querySelector('#order-detail-modal-wrapper-logo #asesora-value');
+            const asesoraSpan = document.querySelector('#order-detail-modal-wrapper-logo #asesora-value-logo');
             console.log('👩 [MODAL LOGO] Asesora span encontrado:', !!asesoraSpan, 'valor:', orden.asesora);
             if (asesoraSpan) {
                 asesoraSpan.textContent = orden.asesora || '-';
@@ -654,15 +680,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Forma de pago
-            const formaPagoSpan = document.querySelector('#order-detail-modal-wrapper-logo #forma-pago-value');
+            const formaPagoSpan = document.querySelector('#order-detail-modal-wrapper-logo #forma-pago-value-logo');
             console.log('💳 [MODAL LOGO] Forma de pago span encontrado:', !!formaPagoSpan, 'valor:', orden.forma_de_pago);
             if (formaPagoSpan) {
                 formaPagoSpan.textContent = orden.forma_de_pago || '-';
                 console.log('✅ Forma de pago establecida:', formaPagoSpan.textContent);
             }
             
-            // Número de orden
-            const pedidoDiv = document.querySelector('#order-detail-modal-wrapper-logo #order-pedido');
+            // Número de orden (usando ID único del modal logo)
+            const pedidoDiv = document.querySelector('#order-detail-modal-wrapper-logo #order-pedido-logo');
             console.log('🔢 [MODAL LOGO] Pedido div encontrado:', !!pedidoDiv, 'valor:', orden.numero_pedido);
             if (pedidoDiv) {
                 pedidoDiv.textContent = `#${orden.numero_pedido}`;
@@ -670,7 +696,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Encargado de orden
-            const encargadoSpan = document.querySelector('#order-detail-modal-wrapper-logo #encargado-value');
+            const encargadoSpan = document.querySelector('#order-detail-modal-wrapper-logo #encargado-value-logo');
             console.log('👨‍💼 [MODAL LOGO] Encargado span encontrado:', !!encargadoSpan, 'valor:', orden.encargado_orden);
             if (encargadoSpan) {
                 encargadoSpan.textContent = orden.encargado_orden || '-';
@@ -678,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Prendas entregadas
-            const prendasSpan = document.querySelector('#order-detail-modal-wrapper-logo #prendas-entregadas-value');
+            const prendasSpan = document.querySelector('#order-detail-modal-wrapper-logo #prendas-entregadas-value-logo');
             console.log('👕 [MODAL LOGO] Prendas span encontrado:', !!prendasSpan, 'prendas:', orden.prendas);
             if (prendasSpan) {
                 const cantidadPrendas = orden.prendas ? (Array.isArray(orden.prendas) ? orden.prendas.length : Object.keys(orden.prendas).length) : 0;
@@ -687,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Descripción
-            const descripcionEl = document.querySelector('#order-detail-modal-wrapper-logo #descripcion-text');
+            const descripcionEl = document.querySelector('#order-detail-modal-wrapper-logo #descripcion-text-logo');
             console.log('📝 [MODAL LOGO] Descripción elemento encontrado:', !!descripcionEl, 'valor:', orden.descripcion);
             if (descripcionEl) {
                 descripcionEl.textContent = orden.descripcion || '-';
@@ -709,28 +735,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 obsTecEl.textContent = orden.observaciones_tecnicas || '-';
             }
 
-            // Ubicaciones (JSON array): [{opciones:[...], ubicacion:"...", observaciones:"..."}]
+            // Ubicaciones/Secciones (JSON array): [{seccion:"...", tallas:[...], ubicaciones:[...], observaciones:"..."}]
             const ubicacionesEl = document.querySelector('#order-detail-modal-wrapper-logo #logo-ubicaciones');
             if (ubicacionesEl) {
+                // ✅ BUSCAR EN "secciones" O "ubicaciones" (compatibilidad)
                 let ubicaciones = [];
                 try {
-                    ubicaciones = Array.isArray(orden.ubicaciones)
-                        ? orden.ubicaciones
-                        : (typeof orden.ubicaciones === 'string' ? (JSON.parse(orden.ubicaciones || '[]')) : []);
+                    const seccionesData = orden.secciones || orden.ubicaciones;
+                    ubicaciones = Array.isArray(seccionesData)
+                        ? seccionesData
+                        : (typeof seccionesData === 'string' ? (JSON.parse(seccionesData || '[]')) : []);
                 } catch (e) {
+                    console.error('❌ [MODAL LOGO] Error parseando secciones/ubicaciones:', e);
                     ubicaciones = [];
                 }
 
                 if (ubicaciones && ubicaciones.length > 0) {
                     const lineas = ubicaciones.map((u) => {
-                        const prenda = u?.ubicacion ? String(u.ubicacion).toUpperCase() : '';
-                        const ops = Array.isArray(u?.opciones) ? u.opciones.map(o => String(o).toUpperCase()).join(', ') : '';
+                        // ✅ MAPEAR NUEVA ESTRUCTURA: {seccion, tallas, ubicaciones, observaciones}
+                        const prenda = u?.seccion ? String(u.seccion).toUpperCase() : (u?.ubicacion ? String(u.ubicacion).toUpperCase() : '');
+                        const tallasArr = Array.isArray(u?.tallas) ? u.tallas : [];
+                        const ubicacionesArr = Array.isArray(u?.ubicaciones) ? u.ubicaciones : (Array.isArray(u?.opciones) ? u.opciones : []);
                         const obs = u?.observaciones ? String(u.observaciones) : '';
 
                         let linea = '';
                         if (prenda) linea += prenda;
-                        if (ops) linea += (linea ? ' - ' : '') + ops;
-                        if (obs) linea += (linea ? ': ' : '') + obs;
+                        
+                        // Mostrar tallas si existen
+                        if (tallasArr.length > 0) {
+                            const tallasStr = tallasArr.map(t => `${t.talla}: ${t.cantidad}`).join(', ');
+                            linea += (linea ? ' - Tallas: ' : 'Tallas: ') + tallasStr;
+                        }
+                        
+                        // Mostrar ubicaciones si existen
+                        if (ubicacionesArr.length > 0) {
+                            const ubicStr = ubicacionesArr.map(u => String(u).toUpperCase()).join(', ');
+                            linea += (linea ? ' - ' : '') + ubicStr;
+                        }
+                        
+                        if (obs) linea += (linea ? ' - Obs: ' : 'Obs: ') + obs;
                         return linea || '-';
                     });
                     ubicacionesEl.textContent = lineas.join('\n');

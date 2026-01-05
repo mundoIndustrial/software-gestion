@@ -670,23 +670,9 @@ class RegistroOrdenQueryController extends Controller
                         }
                     }
 
-                    // Fotos de logo
-                    $fotosLogo = \DB::table('prenda_fotos_logo_pedido')
-                        ->where('prenda_pedido_id', $prenda->id)
-                        ->orderBy('orden', 'asc')
-                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'orden']);
-
-                    foreach ($fotosLogo as $fl) {
-                        $ruta = $fl->ruta_webp ?? $fl->ruta_original ?? $fl->ruta_miniatura ?? null;
-                        $url = $normalize($ruta);
-                        if ($url) {
-                            $imagenesPrend[] = [
-                                'url' => $url,
-                                'type' => 'logo',
-                                'orden' => $fl->orden
-                            ];
-                        }
-                    }
+                    // ✅ SOLO incluir fotos de logo si tipo=logo (ya manejado arriba)
+                    // Para el modal de costura, NO incluir fotos de logo
+                    // Las fotos de logo se obtienen con tipo=logo en getLogoImages()
                     
                     // Solo agregar prenda si tiene imágenes
                     if (!empty($imagenesPrend)) {
@@ -1121,8 +1107,8 @@ class RegistroOrdenQueryController extends Controller
     }
 
     /**
-     * Obtener imágenes de logo desde la tabla logo_pedido_imagenes
-     * Busca directamente en logo_pedidos sin depender de pedidos_produccion
+     * Obtener imágenes de logo desde prenda_fotos_logo_pedido
+     * Busca las imágenes asociadas a las prendas del pedido
      */
     private function getLogoImages($pedido, $normalize)
     {
@@ -1131,74 +1117,78 @@ class RegistroOrdenQueryController extends Controller
                 'numero_pedido' => $pedido
             ]);
 
-            // Buscar logo_pedido directamente por numero_pedido (puede ser NULL para logos solamente)
+            // Normalizar el número de pedido (agregar # si no lo tiene)
+            $pedidoConHash = str_starts_with($pedido, '#') ? $pedido : '#' . $pedido;
+            $pedidoSinHash = ltrim($pedido, '#');
+
+            // Buscar logo_pedido por numero_pedido (con o sin #) o por ID
             $logoPedido = \DB::table('logo_pedidos')
-                ->where('numero_pedido', $pedido)
-                ->orWhere('id', $pedido) // Por si se pasa el ID
-                ->first(['id', 'numero_pedido', 'cliente', 'asesora', 'forma_de_pago']);
+                ->where(function($query) use ($pedidoConHash, $pedidoSinHash, $pedido) {
+                    $query->where('numero_pedido', $pedidoConHash)
+                          ->orWhere('numero_pedido', $pedidoSinHash)
+                          ->orWhere('id', $pedido);
+                })
+                ->first(['id', 'numero_pedido', 'pedido_id', 'cliente', 'asesora', 'forma_de_pago']);
 
             \Log::info('🎨 [getLogoImages] Logo pedido encontrado', [
                 'logo_pedido_id' => $logoPedido?->id,
-                'numero_pedido' => $logoPedido?->numero_pedido ?? 'NULL (logo solamente)'
+                'pedido_id' => $logoPedido?->pedido_id,
+                'numero_pedido' => $logoPedido?->numero_pedido
             ]);
 
-            // Agrupar imágenes por ubicación si existen
             $logos = [];
             
-            if ($logoPedido) {
-                // Obtener todas las imágenes asociadas a este logo_pedido
-                $imagenes = \DB::table('logo_pedido_imagenes')
-                    ->where('logo_pedido_id', $logoPedido->id)
-                    ->orderBy('orden', 'asc')
-                    ->get(['url', 'ruta_webp', 'ruta_original', 'orden', 'nombre_archivo']);
-
-                \Log::info('🎨 [getLogoImages] Imágenes encontradas', [
-                    'total' => $imagenes->count()
-                ]);
-
-                $imagenesFormateadas = [];
-                foreach ($imagenes as $img) {
-                    // Priorizar ruta_webp, luego ruta_original, luego url
-                    $ruta = $img->ruta_webp ?? $img->ruta_original ?? $img->url;
-                    $url = $normalize($ruta);
+            if ($logoPedido && $logoPedido->pedido_id) {
+                // Obtener el numero_pedido del pedido_produccion
+                $pedidoProduccion = \DB::table('pedidos_produccion')
+                    ->where('id', $logoPedido->pedido_id)
+                    ->first(['numero_pedido']);
+                
+                if ($pedidoProduccion) {
+                    // Obtener prendas del pedido
+                    $prendas = \DB::table('prendas_pedido')
+                        ->where('numero_pedido', $pedidoProduccion->numero_pedido)
+                        ->get(['id', 'nombre_prenda']);
                     
-                    if ($url) {
-                        $imagenesFormateadas[] = [
-                            'url' => $url,
-                            'nombre' => $img->nombre_archivo,
-                            'orden' => $img->orden
-                        ];
-                    }
-                }
-
-                if (!empty($imagenesFormateadas)) {
-                    // Obtener ubicaciones desde el JSON
-                    $ubicacionesJson = $logoPedido->ubicaciones;
-                    $ubicaciones = [];
+                    \Log::info('🎨 [getLogoImages] Prendas encontradas', [
+                        'total' => $prendas->count()
+                    ]);
                     
-                    if ($ubicacionesJson) {
-                        $ubicacionesData = is_string($ubicacionesJson) 
-                            ? json_decode($ubicacionesJson, true) 
-                            : (is_array($ubicacionesJson) ? $ubicacionesJson : []);
+                    // Obtener imágenes de cada prenda
+                    foreach ($prendas as $prenda) {
+                        $imagenes = \DB::table('prenda_fotos_logo_pedido')
+                            ->where('prenda_pedido_id', $prenda->id)
+                            ->orderBy('orden', 'asc')
+                            ->get(['ruta_original', 'ruta_webp', 'ubicacion', 'orden', 'ancho', 'alto']);
                         
-                        // Extraer nombres de ubicaciones
-                        if (is_array($ubicacionesData)) {
-                            foreach ($ubicacionesData as $ub) {
-                                if (is_array($ub) && isset($ub['ubicacion'])) {
-                                    $ubicaciones[] = $ub['ubicacion'];
-                                } elseif (is_object($ub) && isset($ub->ubicacion)) {
-                                    $ubicaciones[] = $ub->ubicacion;
+                        if ($imagenes->count() > 0) {
+                            $imagenesFormateadas = [];
+                            foreach ($imagenes as $img) {
+                                // Priorizar ruta_webp, luego ruta_original
+                                $ruta = $img->ruta_webp ?? $img->ruta_original;
+                                $url = $normalize($ruta);
+                                
+                                if ($url) {
+                                    $imagenesFormateadas[] = [
+                                        'url' => $url,
+                                        'nombre' => basename($ruta),
+                                        'orden' => $img->orden,
+                                        'ancho' => $img->ancho,
+                                        'alto' => $img->alto
+                                    ];
                                 }
+                            }
+                            
+                            if (!empty($imagenesFormateadas)) {
+                                $logos[] = [
+                                    'id' => $prenda->id,
+                                    'titulo' => $prenda->nombre_prenda,
+                                    'ubicacion' => $imagenes->first()->ubicacion ?? 'General',
+                                    'imagenes' => $imagenesFormateadas
+                                ];
                             }
                         }
                     }
-                    
-                    $logos[] = [
-                        'id' => $logoPedido->id,
-                        'titulo' => 'Logo/Bordado',
-                        'ubicacion' => !empty($ubicaciones) ? implode(', ', $ubicaciones) : 'General',
-                        'imagenes' => $imagenesFormateadas
-                    ];
                 }
             }
 

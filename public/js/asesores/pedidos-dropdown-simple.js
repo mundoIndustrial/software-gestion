@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function crearDropdownVer(button) {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
-        const pedidoId = button.getAttribute('data-pedido-id'); // ✅ NUEVO: Traer ID
+        const pedidoId = button.getAttribute('data-pedido-id'); // ID de pedidos_produccion
+        const logoPedidoId = button.getAttribute('data-logo-pedido-id'); // ✅ ID específico para logo_pedidos
         let tipoCotizacion = button.getAttribute('data-tipo-cotizacion');
         // Detectar si es LOGO explícito (atributo agregado a la vista)
         const esLogoAttr = button.getAttribute('data-es-logo');
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tipoCotizacion === 'L') {
             // Solo Logo
             dropdownHTML = `
-                <button onclick="verFacturaLogo(${pedidoId}); closeDropdown()" style="
+                <button onclick="verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -87,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-file-alt" style="color: #2563eb;"></i> Recibo de Costura
                 </button>
                 <div style="height: 1px; background: #e5e7eb;"></div>
-                <button onclick="verFacturaLogo(${pedidoId}); closeDropdown()" style="
+                <button onclick="verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;

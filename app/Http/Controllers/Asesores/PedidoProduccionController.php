@@ -570,7 +570,7 @@ class PedidoProduccionController extends Controller
                 'descripcion' => 'nullable|string',
                 'tecnicas' => 'nullable|array',
                 'observaciones_tecnicas' => 'nullable|string',
-                'ubicaciones' => 'nullable|array',
+                'ubicaciones' => 'nullable|array',  // Frontend envía "ubicaciones"
                 'fotos' => 'nullable|array',
             ]);
 
@@ -581,6 +581,9 @@ class PedidoProduccionController extends Controller
                 'ubicaciones_count' => count($validated['ubicaciones'] ?? []),
                 'fotos_count' => count($validated['fotos'] ?? []),
             ]);
+
+            // ✅ Mapear "ubicaciones" del frontend a "secciones" de la BD
+            $seccionesData = $validated['ubicaciones'] ?? [];
 
             // Recuperar el LogoPedido creado en el paso 1 (si viene), o crear uno standalone
             $logoPedido = null;
@@ -607,7 +610,7 @@ class PedidoProduccionController extends Controller
                     'descripcion' => $validated['descripcion'] ?? '',
                     'tecnicas' => $validated['tecnicas'] ?? [],
                     'observaciones_tecnicas' => $validated['observaciones_tecnicas'] ?? '',
-                    'ubicaciones' => $validated['ubicaciones'] ?? [],
+                    'secciones' => $seccionesData,  // ✅ Usar "secciones" (nombre correcto de columna)
                     'observaciones' => $request->input('observaciones', ''),
                 ]);
             } else {
@@ -619,7 +622,7 @@ class PedidoProduccionController extends Controller
                 $logoPedido->descripcion = $validated['descripcion'] ?? $logoPedido->descripcion ?? '';
                 $logoPedido->tecnicas = $validated['tecnicas'] ?? $logoPedido->tecnicas ?? [];
                 $logoPedido->observaciones_tecnicas = $validated['observaciones_tecnicas'] ?? $logoPedido->observaciones_tecnicas ?? '';
-                $logoPedido->ubicaciones = $validated['ubicaciones'] ?? $logoPedido->ubicaciones ?? [];
+                $logoPedido->secciones = $seccionesData ?? $logoPedido->secciones ?? [];  // ✅ Usar "secciones"
                 // Asegurar que tenga área y estado correcto
                 if (empty($logoPedido->area)) {
                     $logoPedido->area = 'creacion_de_orden';
@@ -627,6 +630,15 @@ class PedidoProduccionController extends Controller
                 if (empty($logoPedido->estado) || $logoPedido->estado === 'pendiente') {
                     $logoPedido->estado = \App\Enums\EstadoPedido::PENDIENTE_SUPERVISOR->value;
                 }
+                
+                \Log::info('🔍 [ANTES DE GUARDAR] Valores del modelo LogoPedido', [
+                    'id' => $logoPedido->id,
+                    'numero_pedido' => $logoPedido->numero_pedido,
+                    'tecnicas_antes_save' => $logoPedido->tecnicas,
+                    'secciones_antes_save' => $logoPedido->secciones,
+                    'seccionesData_variable' => $seccionesData,
+                ]);
+                
                 $logoPedido->save();
             }
 
@@ -635,6 +647,7 @@ class PedidoProduccionController extends Controller
                 'numero_pedido' => $logoPedido->numero_pedido,
                 'descripcion_guardada' => $logoPedido->descripcion ?? 'SIN DESCRIPCIÓN',
                 'tecnicas_guardadas' => $logoPedido->tecnicas,
+                'secciones_guardadas' => $logoPedido->secciones,
                 'observaciones_guardadas' => $logoPedido->observaciones_tecnicas,
             ]);
 

@@ -3489,27 +3489,169 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Si no viene en la respuesta, usar la variable global como fallback
                 const logoCotizacionIdAUsar = dataCrearPedido.logo_cotizacion_id || logoCotizacionId;
 
+                // ✅ ESTRATEGIA DE RECOLECCIÓN DE DATOS:
+                // 1. Si existe currentLogoCotizacion (creando desde cotización) → usar esos datos
+                // 2. Si no existe (creando desde formulario paso-tres) → leer del DOM
+                console.log('🔍 [RECOLECCIÓN] Verificando fuente de datos...');
+                console.log('   - currentLogoCotizacion existe:', !!currentLogoCotizacion);
+                console.log('   - currentLogoCotizacion data:', currentLogoCotizacion);
+                
+                let tecnicasActualizadas = [];
+                let seccionesActualizadas = [];
+                let observacionesTecnicasVar = '';
+                
+                if (currentLogoCotizacion && Object.keys(currentLogoCotizacion).length > 0) {
+                    // ✅ CASO 1: Creando desde cotización existente
+                    console.log('📦 [COTIZACIÓN] Usando datos de currentLogoCotizacion');
+                    
+                    // Técnicas
+                    if (currentLogoCotizacion.tecnicas) {
+                        tecnicasActualizadas = Array.isArray(currentLogoCotizacion.tecnicas) 
+                            ? currentLogoCotizacion.tecnicas 
+                            : [currentLogoCotizacion.tecnicas];
+                        console.log('✅ [COTIZACIÓN] Técnicas:', tecnicasActualizadas);
+                    }
+                    
+                    // Observaciones técnicas
+                    if (currentLogoCotizacion.observaciones_tecnicas) {
+                        observacionesTecnicasVar = currentLogoCotizacion.observaciones_tecnicas;
+                        console.log('✅ [COTIZACIÓN] Observaciones técnicas:', observacionesTecnicasVar);
+                    }
+                    
+                    // Ubicaciones/Secciones
+                    if (currentLogoCotizacion.ubicaciones && Array.isArray(currentLogoCotizacion.ubicaciones)) {
+                        seccionesActualizadas = currentLogoCotizacion.ubicaciones.map(ub => {
+                            const tallas = ub.tallas || [];
+                            const cantidadTotal = tallas.reduce((sum, t) => sum + (parseInt(t.cantidad) || 0), 0);
+                            
+                            return {
+                                seccion: ub.seccion || ub.ubicacion || '',
+                                tallas: tallas,
+                                ubicaciones: ub.ubicaciones || [],
+                                observaciones: ub.observaciones || '',
+                                cantidad: cantidadTotal
+                            };
+                        });
+                        console.log('✅ [COTIZACIÓN] Secciones/Ubicaciones:', seccionesActualizadas);
+                    }
+                    
+                } else {
+                    // ✅ CASO 2: Creando desde formulario paso-tres
+                    console.log('📝 [FORMULARIO] Leyendo datos del DOM (paso-tres)');
+                    
+                    // 🎨 Técnicas desde campo hidden
+                    const tecnicasHiddenField = document.getElementById('paso3_tecnicas_datos');
+                    if (tecnicasHiddenField && tecnicasHiddenField.value) {
+                        try {
+                            tecnicasActualizadas = JSON.parse(tecnicasHiddenField.value);
+                            console.log('✅ [FORMULARIO] Técnicas desde hidden:', tecnicasActualizadas);
+                        } catch (e) {
+                            console.warn('⚠️ Error parseando técnicas desde hidden:', e);
+                        }
+                    }
+                    
+                    // Fallback: badges visuales
+                    if (tecnicasActualizadas.length === 0) {
+                        const tecnicasBadges = document.querySelectorAll('#tecnicas_seleccionadas span');
+                        tecnicasBadges.forEach(badge => {
+                            const tecnicaText = badge.textContent.replace('×', '').trim();
+                            if (tecnicaText) tecnicasActualizadas.push(tecnicaText);
+                        });
+                        console.log('🎨 [FORMULARIO] Técnicas desde badges:', tecnicasActualizadas);
+                    }
+                    
+                    // Observaciones técnicas
+                    const obsInput = document.getElementById('observaciones_tecnicas');
+                    if (obsInput) {
+                        observacionesTecnicasVar = obsInput.value || '';
+                        console.log('✅ [FORMULARIO] Observaciones técnicas:', observacionesTecnicasVar);
+                    }
+                    
+                    // 📍 Secciones desde campo hidden
+                    const seccionesHiddenField = document.getElementById('paso3_secciones_datos');
+                    if (seccionesHiddenField && seccionesHiddenField.value) {
+                        try {
+                            const seccionesRaw = JSON.parse(seccionesHiddenField.value);
+                            seccionesActualizadas = seccionesRaw.map(seccion => {
+                                const cantidadTotal = seccion.tallas?.reduce((sum, t) => sum + (parseInt(t.cantidad) || 0), 0) || 0;
+                                return {
+                                    seccion: seccion.ubicacion,
+                                    tallas: seccion.tallas || [],
+                                    ubicaciones: seccion.opciones || [],
+                                    observaciones: seccion.observaciones || '',
+                                    cantidad: cantidadTotal
+                                };
+                            });
+                            console.log('📍 [FORMULARIO] Secciones desde hidden:', seccionesActualizadas);
+                        } catch (e) {
+                            console.warn('⚠️ Error parseando secciones:', e);
+                        }
+                    }
+                    
+                    // Fallback: cards visuales
+                    if (seccionesActualizadas.length === 0) {
+                        const seccionCards = document.querySelectorAll('#secciones_agregadas > div');
+                        seccionCards.forEach(card => {
+                            const headerSpan = card.querySelector('div:first-child span:first-child');
+                            const prenda = headerSpan?.textContent.trim() || '';
+                            
+                            const contentDiv = card.querySelector('div:last-child');
+                            const contentHtml = contentDiv?.innerHTML || '';
+                            
+                            const tallas = [];
+                            const tallasMatch = contentHtml.match(/<strong>Tallas:<\/strong>\s*([^<]+)/);
+                            if (tallasMatch) {
+                                const tallaMatches = tallasMatch[1].matchAll(/([A-Z0-9]+)\s*\((\d+)\)/g);
+                                for (const match of tallaMatches) {
+                                    tallas.push({ talla: match[1], cantidad: parseInt(match[2]) });
+                                }
+                            }
+                            
+                            const ubicacionesMatch = contentHtml.match(/<strong>Ubicaciones:<\/strong>\s*([^<]+)/);
+                            const ubicaciones = ubicacionesMatch ? ubicacionesMatch[1].split(',').map(u => u.trim()).filter(u => u) : [];
+                            
+                            const obsMatch = contentHtml.match(/<strong>Obs:<\/strong>\s*([^<]+)/);
+                            const observaciones = obsMatch ? obsMatch[1].trim() : '';
+                            
+                            const cantidadTotal = tallas.reduce((sum, t) => sum + t.cantidad, 0);
+                            
+                            if (prenda) {
+                                seccionesActualizadas.push({
+                                    seccion: prenda,
+                                    tallas: tallas,
+                                    ubicaciones: ubicaciones,
+                                    observaciones: observaciones,
+                                    cantidad: cantidadTotal
+                                });
+                            }
+                        });
+                        console.log('📍 [FORMULARIO] Secciones desde cards:', seccionesActualizadas);
+                    }
+                }
+
                 // ✅ NUEVO: Calcular cantidad total (suma de todas las tallas del logo)
                 let cantidadTotal = 0;
-                const tallaInputs = document.querySelectorAll('.logo-talla-cantidad');
-                console.log('📍 [CANTIDAD] Buscando inputs .logo-talla-cantidad, encontrados:', tallaInputs.length);
-                
-                tallaInputs.forEach((input, idx) => {
-                    const cantidad = parseInt(input.value) || 0;
-                    console.log('   Talla ' + idx + ': ' + cantidad);
-                    cantidadTotal += cantidad;
+                seccionesActualizadas.forEach(seccion => {
+                    seccion.tallas.forEach(talla => {
+                        cantidadTotal += talla.cantidad || 0;
+                    });
                 });
                 
                 console.log('📦 [LOGO] Cantidad total calculada (suma de tallas):', cantidadTotal);
 
-                // Ahora guardar los datos específicos de LOGO
-                const descripcionLogoPedido = document.getElementById('logo_descripcion')?.value || '';
-                const observacionesTecnicas = document.getElementById('logo_observaciones_tecnicas')?.value || '';
+                // Descripción del logo
+                let descripcionLogoPedido = '';
+                const descripcionInput = document.getElementById('logo_descripcion');
+                if (descripcionInput) {
+                    descripcionLogoPedido = descripcionInput.value || '';
+                } else if (currentLogoCotizacion && currentLogoCotizacion.descripcion) {
+                    descripcionLogoPedido = currentLogoCotizacion.descripcion;
+                }
 
-                console.log('🎨 [LOGO] Capturando descripción:', descripcionLogoPedido);
-                console.log('🎨 [LOGO] Técnicas seleccionadas (array):', logoTecnicasSeleccionadas);
-                console.log('🎨 [LOGO] Observaciones técnicas:', observacionesTecnicas);
-                console.log('🎨 [LOGO] Ubicaciones seleccionadas:', logoSeccionesSeleccionadas);
+                console.log('🎨 [LOGO] Descripción:', descripcionLogoPedido);
+                console.log('🎨 [LOGO] Técnicas seleccionadas (array):', tecnicasActualizadas);
+                console.log('🎨 [LOGO] Observaciones técnicas:', observacionesTecnicasVar);
+                console.log('🎨 [LOGO] Ubicaciones seleccionadas:', seccionesActualizadas);
 
                 // ✅ FIX: Para COMBINADA, usar logo_pedido_id que ya fue creado en el primer request
                 // Para LOGO SOLO, usar logo_pedido_id (que es el pedido_id del logo)
@@ -3527,15 +3669,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const bodyLogoPedido = {
                     pedido_id: pedidoIdParaGuardar,  // ✅ FIX: Usar logo_pedido_id para COMBINADA
                     logo_cotizacion_id: logoCotizacionIdAUsar,  // ← Usar valor del servidor
-                    cotizacion_id: cotizacionId,  // ✅ NUEVO: Enviar cotizacion_id para que se guarde en BD
-                    cliente: clienteInput.value,  // 🔍 NUEVO: Enviar cliente
-                    forma_de_pago: formaPagoInput.value,  // ✅ NUEVO: Enviar forma de pago
-                    descripcion: descripcionLogoPedido,
-                    cantidad: cantidadTotal, // ✅ NUEVO: Enviar cantidad total
-                    tecnicas: logoTecnicasSeleccionadas,
-                    observaciones_tecnicas: observacionesTecnicas,
-                    ubicaciones: logoSeccionesSeleccionadas,
-                    fotos: logoFotosSeleccionadas
+                    cotizacion_id: cotizacionId,  // ✅ Enviar cotizacion_id
+                    cliente: clienteInput.value,  // ✅ Enviar cliente
+                    forma_de_pago: formaPagoInput.value,  // ✅ Enviar forma de pago
+                    descripcion: descripcionLogoPedido,  // ✅ Descripción del logo
+                    cantidad: cantidadTotal,  // ✅ Cantidad total
+                    tecnicas: tecnicasActualizadas,  // ✅ Datos de cotización o formulario
+                    observaciones_tecnicas: observacionesTecnicasVar,  // ✅ Datos de cotización o formulario
+                    ubicaciones: seccionesActualizadas,  // ✅ Datos de cotización o formulario
+                    fotos: logoFotosSeleccionadas  // ✅ Fotos del logo
                 };
 
                 console.log('🎨 [LOGO] Datos del LOGO pedido a guardar:', bodyLogoPedido);

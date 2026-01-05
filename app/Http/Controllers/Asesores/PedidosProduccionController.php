@@ -69,6 +69,11 @@ class PedidosProduccionController extends Controller
      */
     public function index(Request $request)
     {
+        // ✅ FIX: Si filtran por tipo=logo, consultar logo_pedidos en lugar de pedidos_produccion
+        if ($request->has('tipo') && $request->tipo === 'logo') {
+            return $this->indexLogoPedidos($request);
+        }
+
         $query = PedidoProduccion::query()
             ->with([
                 'cotizacion' => function($q) {
@@ -82,13 +87,6 @@ class PedidosProduccionController extends Controller
 
         // Filtrar por asesor
         $query->where('asesor_id', Auth::id());
-
-        // Filtrar por tipo logo si se especifica
-        if ($request->has('tipo') && $request->tipo === 'logo') {
-            $query->whereHas('cotizacion', function($q) {
-                $q->whereIn('tipo', ['L', 'PL']); // Incluir tanto 'L' (Logo) como 'PL' (Combinada)
-            });
-        }
 
         // Filtrar por estado si se proporciona
         if ($request->has('estado')) {
@@ -111,6 +109,37 @@ class PedidosProduccionController extends Controller
         
         \Log::info('Total de pedidos encontrados: ' . $pedidos->total());
 
+        return view('asesores.pedidos.index', compact('pedidos'));
+    }
+
+    /**
+     * ✅ NUEVO: Listar pedidos de LOGO específicamente (consulta logo_pedidos)
+     */
+    private function indexLogoPedidos(Request $request)
+    {
+        $query = \App\Models\LogoPedido::query()
+            ->with(['cotizacion', 'procesos']);
+
+        // Filtrar por asesora (campo 'asesora' es el nombre del usuario)
+        // ⚠️ Nota: Algunos pedidos tienen asesora NULL, mostramos todos los del usuario actual
+        $nombreUsuario = Auth::user()->name;
+        $query->where(function($q) use ($nombreUsuario) {
+            $q->where('asesora', $nombreUsuario)
+              ->orWhereNull('asesora');  // Incluir también los que no tienen asesora asignada
+        });
+
+        // Filtrar por estado si se proporciona
+        if ($request->has('estado')) {
+            $estado = $request->input('estado');
+            \Log::info('[LOGO] Filtro estado recibido: "' . $estado . '"');
+            $query->where('estado', $estado);
+        }
+
+        $pedidos = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        \Log::info('[LOGO] Total de pedidos de logo encontrados: ' . $pedidos->total() . ' para usuario: ' . $nombreUsuario);
+
+        // Retornar la misma vista index (ya maneja LogoPedido)
         return view('asesores.pedidos.index', compact('pedidos'));
     }
 
@@ -634,10 +663,21 @@ class PedidosProduccionController extends Controller
                 // ✅ CREAR AUTOMÁTICAMENTE EL LOGO_PEDIDO
                 $numeroLogoPedido = $this->generarNumeroLogoPedido();
                 
-                // Obtener datos del logo_cotizacion
-                $logoCotizacion = DB::table('logo_cotizaciones')
-                    ->where('id', $logoCotizacionId)
-                    ->first();
+                // Obtener datos del logo_cotizacion usando el MODELO (con casts automáticos)
+                $logoCotizacion = \App\Models\LogoCotizacion::find($logoCotizacionId);
+                
+                // ✅ Preparar datos para inserción (DB::table NO hace cast automático)
+                $seccionesJson = $logoCotizacion->ubicaciones 
+                    ? (is_string($logoCotizacion->ubicaciones) 
+                        ? $logoCotizacion->ubicaciones 
+                        : json_encode($logoCotizacion->ubicaciones))
+                    : json_encode([]);
+                    
+                $tecnicasJson = $logoCotizacion->tecnicas 
+                    ? (is_string($logoCotizacion->tecnicas) 
+                        ? $logoCotizacion->tecnicas 
+                        : json_encode($logoCotizacion->tecnicas))
+                    : json_encode([]);
                 
                 $logoPedidoId = DB::table('logo_pedidos')->insertGetId([
                     'pedido_id' => $pedido->id, // ✅ ID del pedido de producción
@@ -654,9 +694,9 @@ class PedidosProduccionController extends Controller
                     'estado' => 'pendiente',
                     'area' => 'Logo/Bordado',
                     'descripcion' => $logoCotizacion->descripcion ?? '',
-                    'tecnicas' => $logoCotizacion->tecnicas ?? null,
+                    'tecnicas' => $tecnicasJson,
                     'observaciones_tecnicas' => $logoCotizacion->observaciones_tecnicas ?? '',
-                    'ubicaciones' => $logoCotizacion->ubicaciones ?? null,
+                    'secciones' => $seccionesJson,  // ✅ JSON string
                     'observaciones' => '',
                     'created_at' => now(),
                     'updated_at' => now()

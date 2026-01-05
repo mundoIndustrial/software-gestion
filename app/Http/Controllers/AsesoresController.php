@@ -137,11 +137,16 @@ class AsesoresController extends Controller
 
         $tipo = $request->query('tipo');
 
-        // Si es LOGO, mostrar LogoPedidos directamente (que tienen pedido_id = null)
+        // Si es LOGO, mostrar LogoPedidos directamente (TODOS: con y sin pedido_id)
         if ($tipo === 'logo') {
-            $query = LogoPedido::where('pedido_id', null)
-                ->where('asesora', auth()->user()->name) // Filtrar por usuario autenticado
+            $query = LogoPedido::query()
+                ->where(function($q) use ($userName) {
+                    $q->where('asesora', $userName)
+                      ->orWhereNull('asesora'); // Incluir pedidos sin asesora asignada
+                })
                 ->with('procesos');
+            
+            \Log::info('[LOGO] Filtrando logo_pedidos para usuario: ' . $userName);
         } else {
             // PRENDAS o TODOS: Mostrar PedidoProduccion
             $query = PedidoProduccion::where('asesor_id', $userId)
@@ -151,7 +156,8 @@ class AsesoresController extends Controller
                             $q2->orderBy('created_at', 'desc'); // Últimos primero
                         }]);
                     },
-                    'asesora' // Eager load la relación de usuario
+                    'asesora', // Eager load la relación de usuario
+                    'logoPedidos' // ✅ Cargar logo_pedidos para obtener el ID en la vista
                 ]);
 
             // Si es solo PRENDAS, excluir los que tienen logo

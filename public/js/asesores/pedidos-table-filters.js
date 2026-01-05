@@ -86,9 +86,12 @@ function getColumnValuesFromTableByName(columnName) {
         return !div.style.background?.includes('linear-gradient');
     });
     
-    console.log(`📊 Extrayendo valores de "${columnName}" (índice ${columnIndex}) de ${rows.length} filas`);
+    // IMPORTANTE: Solo considerar filas VISIBLES (no ocultas por otros filtros)
+    const visibleRows = rows.filter(row => row.style.display !== 'none');
     
-    rows.forEach((row, rowIndex) => {
+    console.log(`📊 Extrayendo valores de "${columnName}" (índice ${columnIndex}) de ${visibleRows.length} filas visibles (de ${rows.length} totales)`);
+    
+    visibleRows.forEach((row, rowIndex) => {
         // Obtener solo los divs directos (children) de la fila
         const cells = Array.from(row.children);
         
@@ -536,10 +539,13 @@ function updateFilterBadges() {
  * Mostrar/ocultar botón flotante de limpiar filtros
  */
 function updateClearButtonVisibility() {
-    const clearBtn = document.getElementById('clearFiltersBtn');
-    if (!clearBtn) return;
+    const clearBtn = document.getElementById('btnClearAllFilters');
+    if (!clearBtn) {
+        console.warn('❌ Botón flotante no encontrado');
+        return;
+    }
     
-    const hasFilters = Object.keys(selectedFilters).length > 0;
+    const hasFilters = Object.keys(selectedFilters).some(key => selectedFilters[key] && selectedFilters[key].length > 0);
     
     if (hasFilters) {
         clearBtn.classList.add('visible');
@@ -548,4 +554,141 @@ function updateClearButtonVisibility() {
         clearBtn.classList.remove('visible');
         console.log('❌ Botón flotante ocultado');
     }
+}
+
+/**
+ * Limpiar todos los filtros
+ */
+function clearAllFilters() {
+    selectedFilters = {};
+    saveFiltersToLocalStorage();
+    
+    // Aplicar cambios sin recargar
+    applyTableFilters();
+    updateFilterBadges();
+    updateClearButtonVisibility();
+    
+    // Actualizar URL sin recargar la página
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams();
+    
+    // Mantener solo los parámetros que no son filtros
+    const currentParams = new URLSearchParams(url.search);
+    currentParams.forEach((value, key) => {
+        if (!key.startsWith('filter[')) {
+            params.set(key, value);
+        }
+    });
+    
+    url.search = params.toString();
+    window.history.pushState({}, '', url.toString());
+    
+    console.log('✅ Todos los filtros limpiados sin recargar la página');
+}
+
+/**
+ * Cerrar modal de filtros
+ */
+function closeFilterModal(event) {
+    if (event && event.target.id !== 'filterModal') return;
+    
+    const modal = document.getElementById('filterModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+/**
+ * Aplicar filtros desde el modal
+ */
+function applyFilters() {
+    const optionsContainer = document.getElementById('filterOptions');
+    const checkboxes = optionsContainer.querySelectorAll('input[type="checkbox"]:not(#select-all-' + currentFilterColumnName + ')');
+    
+    const values = [];
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            values.push(cb.value);
+        }
+    });
+    
+    if (values.length > 0) {
+        selectedFilters[currentFilterColumnName] = values;
+    } else {
+        delete selectedFilters[currentFilterColumnName];
+    }
+    
+    saveFiltersToLocalStorage();
+    
+    // Cerrar el modal
+    closeFilterModal();
+    
+    // Aplicar filtros a la tabla sin recargar
+    applyTableFilters();
+    updateFilterBadges();
+    updateClearButtonVisibility();
+    
+    // Actualizar URL sin recargar la página
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams();
+    
+    // Mantener parámetros que no son filtros (como page, tipo, etc)
+    const currentParams = new URLSearchParams(url.search);
+    currentParams.forEach((value, key) => {
+        if (!key.startsWith('filter[')) {
+            params.set(key, value);
+        }
+    });
+    
+    // Agregar filtros actuales
+    Object.entries(selectedFilters).forEach(([column, vals]) => {
+        vals.forEach(val => {
+            params.append(`filter[${column}][]`, val);
+        });
+    });
+    
+    url.search = params.toString();
+    window.history.pushState({}, '', url.toString());
+    
+    console.log('✅ Filtros aplicados sin recargar la página');
+}
+
+/**
+ * Resetear filtros del modal actual
+ */
+function resetFilters() {
+    delete selectedFilters[currentFilterColumnName];
+    saveFiltersToLocalStorage();
+    
+    // Cerrar el modal
+    closeFilterModal();
+    
+    // Aplicar cambios sin recargar
+    applyTableFilters();
+    updateFilterBadges();
+    updateClearButtonVisibility();
+    
+    // Actualizar URL sin recargar la página
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams();
+    
+    // Mantener parámetros que no son filtros
+    const currentParams = new URLSearchParams(url.search);
+    currentParams.forEach((value, key) => {
+        if (!key.startsWith('filter[')) {
+            params.set(key, value);
+        }
+    });
+    
+    // Agregar filtros restantes
+    Object.entries(selectedFilters).forEach(([column, vals]) => {
+        vals.forEach(val => {
+            params.append(`filter[${column}][]`, val);
+        });
+    });
+    
+    url.search = params.toString();
+    window.history.pushState({}, '', url.toString());
+    
+    console.log('✅ Filtros reseteados sin recargar la página');
 }
