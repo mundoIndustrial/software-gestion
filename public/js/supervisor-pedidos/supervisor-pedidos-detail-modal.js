@@ -212,5 +212,365 @@ window.closeModalOverlay = function closeModalOverlay() {
     }
 };
 
+/**
+ * Variables globales para la galería de costura
+ */
+let allImagesCostura = [];
+let currentImageIndexCostura = 0;
+let currentPedidoNumberCostura = null;
+
+/**
+ * Alterna entre la vista de factura y la galería de fotos
+ * Implementadas abajo con window. para evitar duplicación
+ */
+
+// ===== VARIABLES GLOBALES PARA GALERÍA (YA EXISTEN) =====
+// allImagesCostura, currentImageIndexCostura, currentPedidoNumberCostura
+// Están declaradas arriba en la línea 218-219
+
+/**
+ * Cambia entre vista de factura y galería
+ */
+window.toggleFactura = function toggleFactura() {
+    console.log('🎬 [TOGGLE FACTURA] Iniciando cambio a factura...');
+    
+    // Buscar dentro del modal de costura
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    if (!modalWrapper) {
+        console.error('❌ [TOGGLE FACTURA] No se encontró el wrapper del modal de costura');
+        return;
+    }
+    
+    // Mostrar factura y ocultar galería
+    const container = modalWrapper.querySelector('.order-detail-modal-container');
+    if (container) {
+        container.style.padding = '1.5cm';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.height = 'auto';
+        container.style.width = '100%';
+    }
+    
+    // Restaurar el tamaño original del wrapper
+    modalWrapper.style.maxWidth = '672px';
+    modalWrapper.style.width = '90%';
+    modalWrapper.style.height = 'auto';
+    console.log('✅ [TOGGLE FACTURA] Wrapper restaurado a tamaño original');
+    
+    const card = modalWrapper.querySelector('.order-detail-card');
+    if (card) card.style.display = 'block';
+    
+    const galeria = document.getElementById('galeria-modal-costura');
+    if (galeria) galeria.style.display = 'none';
+    
+    // Cambiar estilos de botones
+    document.getElementById('btn-factura').style.background = 'linear-gradient(135deg, #1e40af, #0ea5e9)';
+    document.getElementById('btn-factura').style.border = 'none';
+    document.getElementById('btn-factura').style.color = 'white';
+    document.getElementById('btn-galeria').style.background = 'white';
+    document.getElementById('btn-galeria').style.border = '2px solid #ddd';
+    document.getElementById('btn-galeria').style.color = '#333';
+};
+
+/**
+ * Muestra la galería de costura
+ */
+window.toggleGaleria = function toggleGaleria() {
+    console.log('🎬 [TOGGLE GALERIA] Iniciando cambio a galería...');
+    
+    // Buscar dentro del modal de costura
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    if (!modalWrapper) {
+        console.error('❌ [TOGGLE GALERIA] No se encontró el wrapper del modal de costura');
+        return;
+    }
+    
+    // Ocultar factura y mostrar galería
+    const card = modalWrapper.querySelector('.order-detail-card');
+    console.log('📋 [TOGGLE GALERIA] Card encontrada:', !!card);
+    if (card) {
+        card.style.display = 'none';
+        console.log('✅ [TOGGLE GALERIA] Card ocultada');
+    }
+    
+    // Configurar el contenedor para la galería
+    const container = modalWrapper.querySelector('.order-detail-modal-container');
+    console.log('📦 [TOGGLE GALERIA] Container encontrado:', !!container);
+    
+    if (container) {
+        // Remover padding para que el header quede pegado arriba
+        container.style.padding = '0';
+        container.style.alignItems = 'stretch';
+        container.style.justifyContent = 'flex-start';
+        container.style.height = 'auto';
+        container.style.width = '100%';
+    }
+    
+    // Crear galería si no existe
+    let galeria = document.getElementById('galeria-modal-costura');
+    console.log('🖼️ [TOGGLE GALERIA] Galería existente:', !!galeria);
+    
+    if (!galeria) {
+        console.log('🔨 [TOGGLE GALERIA] Creando nueva galería...');
+        galeria = document.createElement('div');
+        galeria.id = 'galeria-modal-costura';
+        galeria.style.cssText = 'width: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 400px; max-height: 600px; overflow-y: auto;';
+        if (container) {
+            container.appendChild(galeria);
+            console.log('✅ [TOGGLE GALERIA] Galería creada y agregada al DOM');
+        } else {
+            console.error('❌ [TOGGLE GALERIA] No se pudo agregar galería, container no encontrado');
+            return;
+        }
+    }
+    
+    galeria.style.display = 'flex';
+    console.log('🖼️ [TOGGLE GALERIA] Galería display establecido a flex');
+    
+    // Obtener número de pedido directamente del DOM
+    const pedidoElement = document.getElementById('order-pedido');
+    console.log('🖼️ [TOGGLE GALERIA] Elemento pedido:', pedidoElement);
+    
+    if (!pedidoElement) {
+        console.error('❌ [TOGGLE GALERIA] No se encontró elemento order-pedido');
+        galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
+        return;
+    }
+    
+    const pedidoText = pedidoElement.textContent;
+    const pedidoMatch = pedidoText.match(/\d+/);
+    const pedido = pedidoMatch ? pedidoMatch[0] : null;
+    
+    console.log('🖼️ [TOGGLE GALERIA] Texto del pedido:', pedidoText);
+    console.log('🖼️ [TOGGLE GALERIA] Número de pedido extraído:', pedido);
+    
+    if (!pedido) {
+        console.error('❌ [TOGGLE GALERIA] No se pudo extraer número de pedido');
+        galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
+        return;
+    }
+    
+    // Cargar imágenes de costura
+    loadGaleria(galeria, pedido);
+    
+    // Cambiar estilos de botones
+    document.getElementById('btn-factura').style.background = 'white';
+    document.getElementById('btn-factura').style.border = '2px solid #ddd';
+    document.getElementById('btn-factura').style.color = '#333';
+    document.getElementById('btn-galeria').style.background = 'linear-gradient(135deg, #1e40af, #0ea5e9)';
+    document.getElementById('btn-galeria').style.border = 'none';
+    document.getElementById('btn-galeria').style.color = 'white';
+    
+    console.log('✅ [TOGGLE GALERIA] Completado');
+};
+
+/**
+ * Carga las imágenes de costura en la galería
+ * @param {HTMLElement} container - Contenedor donde mostrar la galería
+ * @param {string} pedido - Número de pedido
+ */
+window.loadGaleria = function loadGaleria(container, pedido) {
+    // Validar que tenemos el número de pedido
+    if (!pedido) {
+        console.error('❌ [GALERIA] No se proporcionó número de pedido');
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
+        return;
+    }
+    
+    console.log('🖼️ [GALERIA] Cargando galería para pedido:', pedido);
+    
+    // ✅ Remover el # del número de pedido si existe
+    const pedidoLimpio = pedido.replace('#', '');
+    
+    // Cargar imágenes de costura (prenda y tela)
+    const url = `/registros/${pedidoLimpio}/images`;
+    console.log('🖼️ [GALERIA] Haciendo fetch a:', url);
+    
+    fetch(url)
+        .then(response => {
+            console.log('🖼️ [GALERIA] Respuesta recibida:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('🖼️ [GALERIA] Datos recibidos:', data);
+            
+            // Construir array de todas las imágenes para el visor
+            allImagesCostura = [];
+            let html = '<div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 12px; margin: 0; border-radius: 0; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100;">';
+            html += '<h2 style="text-align: center; margin: 0; font-size: 1.6rem; font-weight: 700; color: white; letter-spacing: 1px;">GALERÍA DE COSTURA</h2>';
+            html += '</div>';
+            html += '<div style="padding: 20px; flex: 1; overflow-y: auto;">';
+            
+            console.log('📦 [GALERIA] Iniciando construcción de galería...');
+            
+            let totalFotos = 0;
+            
+            // Mostrar fotos de prendas y telas (agrupadas por prenda)
+            // Estructura: data.prendas = [{numero, nombre, imagenes: [{url, type, orden}]}]
+            if (data.prendas && data.prendas.length > 0) {
+                data.prendas.forEach((prenda, prendaIdx) => {
+                    if (prenda.imagenes && prenda.imagenes.length > 0) {
+                        // Separar imágenes de prenda y tela
+                        const imagenesPrend = prenda.imagenes.filter(img => img.type === 'prenda');
+                        const imagenesTela = prenda.imagenes.filter(img => img.type === 'tela');
+                        
+                        // Mostrar fotos de prenda
+                        if (imagenesPrend.length > 0) {
+                            const fotosAMostrar = imagenesPrend.slice(0, 4);
+                            const fotosOcultas = Math.max(0, imagenesPrend.length - 4);
+                            totalFotos += fotosAMostrar.length;
+                            
+                            console.log(`📸 [GALERIA] Prenda ${prendaIdx + 1} (${prenda.nombre}):`, {
+                                fotos_a_mostrar: fotosAMostrar.length,
+                                fotos_ocultas: fotosOcultas
+                            });
+                            
+                            html += `<div style="margin-bottom: 1.5rem; display: flex; gap: 12px; align-items: flex-start; padding: 0 20px;">
+                                <div style="border-left: 4px solid #2563eb; padding-left: 12px; display: flex; flex-direction: column; justify-content: flex-start; min-width: 120px;">
+                                    <h3 style="font-size: 0.65rem; font-weight: 700; color: #2563eb; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
+                                        PRENDA ${prendaIdx + 1}
+                                    </h3>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1;">`;
+                            
+                            fotosAMostrar.forEach(image => {
+                                const imageIndex = allImagesCostura.length;
+                                allImagesCostura.push(image.url);
+                                
+                                html += `<div style="aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: #f5f5f5; cursor: pointer; border: 2px solid #e5e5e5; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.08);" 
+                                    onmouseover="this.style.borderColor='#2563eb'; this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(37,99,235,0.2)';"
+                                    onmouseout="this.style.borderColor='#e5e5e5'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
+                                    onclick="mostrarImagenGrande(${imageIndex})">
+                                    <img src="${image.url}" alt="Foto prenda" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>`;
+                            });
+                            
+                            html += '</div></div>';
+                        }
+                        
+                        // Mostrar fotos de tela
+                        if (imagenesTela.length > 0) {
+                            const fotosAMostrar = imagenesTela.slice(0, 4);
+                            const fotosOcultas = Math.max(0, imagenesTela.length - 4);
+                            totalFotos += fotosAMostrar.length;
+                            
+                            console.log(`📸 [GALERIA] Tela de Prenda ${prendaIdx + 1}:`, {
+                                fotos_a_mostrar: fotosAMostrar.length,
+                                fotos_ocultas: fotosOcultas
+                            });
+                            
+                            html += `<div style="margin-bottom: 1.5rem; display: flex; gap: 12px; align-items: flex-start; padding: 0 20px;">
+                                <div style="border-left: 4px solid #1d4ed8; padding-left: 12px; display: flex; flex-direction: column; justify-content: flex-start; min-width: 120px;">
+                                    <h3 style="font-size: 0.65rem; font-weight: 700; color: #1d4ed8; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
+                                        TELA ${prendaIdx + 1}
+                                    </h3>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1;">`;
+                            
+                            fotosAMostrar.forEach(image => {
+                                const imageIndex = allImagesCostura.length;
+                                allImagesCostura.push(image.url);
+                                
+                                html += `<div style="aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: #f5f5f5; cursor: pointer; border: 2px solid #e5e5e5; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.08);" 
+                                    onmouseover="this.style.borderColor='#2563eb'; this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(37,99,235,0.2)';"
+                                    onmouseout="this.style.borderColor='#e5e5e5'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
+                                    onclick="mostrarImagenGrande(${imageIndex})">
+                                    <img src="${image.url}" alt="Foto tela" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>`;
+                            });
+                            
+                            html += '</div></div>';
+                        }
+                    }
+                });
+            }
+            
+            html += '</div>';
+            
+            if (totalFotos === 0) {
+                html = '<p style="text-align: center; color: #999; padding: 2rem;">No hay fotos de costura disponibles para este pedido</p>';
+            }
+            
+            container.innerHTML = html;
+            console.log('✅ [GALERIA] Galería cargada con', totalFotos, 'fotos');
+        })
+        .catch(error => {
+            console.error('❌ [GALERIA] Error cargando galería:', error);
+            container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error al cargar las fotos. Intenta nuevamente.</p>';
+        });
+};
+
+/**
+ * Muestra una imagen en grande en modal
+ */
+window.mostrarImagenGrande = function mostrarImagenGrande(index) {
+    console.log('🖼️ [IMAGEN GRANDE] Abriendo imagen', index);
+    currentImageIndexCostura = index;
+    
+    if (!allImagesCostura || allImagesCostura.length === 0) {
+        console.error('❌ [IMAGEN GRANDE] No hay imágenes disponibles');
+        return;
+    }
+    
+    // Crear modal si no existe
+    let modalImagen = document.getElementById('modal-imagen-grande-costura');
+    if (!modalImagen) {
+        modalImagen = document.createElement('div');
+        modalImagen.id = 'modal-imagen-grande-costura';
+        modalImagen.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 10001; padding: 20px;';
+        document.body.appendChild(modalImagen);
+    }
+    
+    const img = allImagesCostura[index];
+    modalImagen.innerHTML = `
+        <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+            <img src="${img}" alt="Foto grande" style="max-width: 90vw; max-height: 90vh; object-fit: contain;">
+            
+            <button onclick="cerrarImagenGrande()" style="position: absolute; top: 20px; right: 20px; background: white; border: none; color: black; font-size: 28px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                ✕
+            </button>
+            
+            <button onclick="cambiarImagen(-1)" style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: white; border: none; color: black; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                ‹
+            </button>
+            
+            <button onclick="cambiarImagen(1)" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: white; border: none; color: black; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                ›
+            </button>
+            
+            <div style="position: absolute; bottom: 20px; background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px;">
+                ${index + 1} / ${allImagesCostura.length}
+            </div>
+        </div>
+    `;
+    
+    modalImagen.style.display = 'flex';
+};
+
+/**
+ * Cierra el modal de imagen grande
+ */
+window.cerrarImagenGrande = function cerrarImagenGrande() {
+    const modalImagen = document.getElementById('modal-imagen-grande-costura');
+    if (modalImagen) {
+        modalImagen.style.display = 'none';
+    }
+};
+
+/**
+ * Cambia entre imágenes
+ */
+window.cambiarImagen = function cambiarImagen(direccion) {
+    currentImageIndexCostura += direccion;
+    
+    if (currentImageIndexCostura < 0) {
+        currentImageIndexCostura = allImagesCostura.length - 1;
+    } else if (currentImageIndexCostura >= allImagesCostura.length) {
+        currentImageIndexCostura = 0;
+    }
+    
+    mostrarImagenGrande(currentImageIndexCostura);
+};
+
 console.log('✅ [MODAL] supervisor-pedidos-detail-modal.js cargado correctamente');
 
