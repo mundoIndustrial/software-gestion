@@ -951,7 +951,7 @@ class PedidoProduccionController extends Controller
 
     /**
      * Genera números LOGO secuenciales usando la tabla numero_secuencias
-     * Formato: #LOGO-00001, #LOGO-00002, etc.
+     * Formato: 00001, 00002, etc.
      */
     private function generarNumeroLogoPedido()
     {
@@ -983,8 +983,8 @@ class PedidoProduccionController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            // Generar número con formato #LOGO-00001
-            $numeroLogo = sprintf('#LOGO-%05d', $siguiente);
+            // Generar número con formato 00001 (solo el número, sin prefijo)
+            $numeroLogo = sprintf('%05d', $siguiente);
             
             \Log::info('✅ Número LOGO generado', [
                 'numero' => $numeroLogo,

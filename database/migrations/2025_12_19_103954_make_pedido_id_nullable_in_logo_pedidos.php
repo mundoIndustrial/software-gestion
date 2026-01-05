@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('logo_pedidos', function (Blueprint $table) {
             // pedido_id es nullable para pedidos LOGO puros (sin pedidos_produccion)
             $table->unsignedBigInteger('pedido_id')->nullable()->change();
-            // numero_pedido DEBE tener un valor (se genera como #LOGO-00001)
+            // numero_pedido DEBE tener un valor (se genera como 00001)
             // NO hacerlo nullable
         });
     }

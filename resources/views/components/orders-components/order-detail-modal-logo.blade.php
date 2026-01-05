@@ -224,7 +224,7 @@ function toggleGaleriaLogo() {
     }
     
     const pedidoText = pedidoElement.textContent;
-    const pedidoMatch = pedidoText.match(/[A-Z]+-\d+/); // Buscar formato LOGO-00106
+    const pedidoMatch = pedidoText.match(/\d+/); // Buscar solo dígitos (ahora es 00120)
     const pedido = pedidoMatch ? pedidoMatch[0] : null;
     
     console.log('🖼️ [TOGGLE GALERIA LOGO] Texto del pedido:', pedidoText);

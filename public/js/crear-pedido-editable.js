@@ -1,5 +1,167 @@
 // Crear Pedido - Script EDITABLE con soporte para edición y eliminación de prendas
 
+// ============================================================
+// FUNCIÓN GLOBAL: Crear Pedido sin Cotización
+// ============================================================
+window.crearPedidoSinCotizacion = function() {
+    console.log('🎯 Iniciando creación de pedido sin cotización');
+    
+    // Ocultar la sección de cotización
+    document.getElementById('cotizacion_search_editable').closest('.form-section').style.display = 'none';
+    
+    // Mostrar la sección de información del pedido
+    document.getElementById('seccion-info-prenda').style.display = 'block';
+    
+    // Mostrar la sección de prendas
+    document.getElementById('seccion-prendas').style.display = 'block';
+    
+    // Configurar campos
+    document.getElementById('asesora_editable').value = window.asesorActualNombre || '{{ Auth::user()->name ?? "" }}';
+    
+    // Ocultar campo de número de cotización si existe
+    const numeroCotizacionGroup = document.getElementById('numero_cotizacion_editable')?.closest('.form-group');
+    if (numeroCotizacionGroup) {
+        numeroCotizacionGroup.style.display = 'none';
+    }
+    
+    // Inicializar contenedor de prendas vacío con botón para agregar
+    const prendasContainer = document.getElementById('prendas-container-editable');
+    if (prendasContainer) {
+        prendasContainer.innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <p style="color: #6b7280; margin-bottom: 1rem;">No hay prendas agregadas. Haz clic en el botón de abajo para agregar.</p>
+                <button type="button" onclick="agregarPrendaSinCotizacion()" class="btn btn-primary" style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    ➕ Agregar Prenda
+                </button>
+            </div>
+        `;
+    }
+    
+    // Mostrar botón submit
+    const btnSubmit = document.getElementById('btn-submit');
+    if (btnSubmit) {
+        btnSubmit.textContent = '✓ Crear Pedido';
+        btnSubmit.style.display = 'block';
+    }
+    
+    // Scroll a la sección de información
+    document.getElementById('seccion-info-prenda').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+// ============================================================
+// FUNCIÓN GLOBAL: Agregar Prenda sin Cotización
+// ============================================================
+window.agregarPrendaSinCotizacion = function() {
+    console.log('➕ Agregando prenda sin cotización');
+    
+    // Obtener el contenedor
+    const prendasContainer = document.getElementById('prendas-container-editable');
+    
+    // Obtener índice de la nueva prenda
+    const prendaCards = prendasContainer.querySelectorAll('.prenda-card-editable');
+    const nuevoIndex = prendaCards.length;
+    
+    // Crear HTML para la nueva prenda
+    const prendaHtml = `
+        <div class="prenda-card-editable" data-prenda-index="${nuevoIndex}" style="margin-bottom: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0; color: #1f2937; font-size: 1.1rem;">Prenda ${nuevoIndex + 1}</h3>
+                <button type="button" onclick="eliminarPrendaDelPedido(${nuevoIndex})" style="background: #dc3545; color: white; border: none; border-radius: 6px; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600;">
+                    ✕ Eliminar
+                </button>
+            </div>
+
+            <!-- Nombre del Producto -->
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: 600; margin-bottom: 0.5rem;">Nombre del Producto</label>
+                <input type="text" 
+                       name="nombre_producto[${nuevoIndex}]" 
+                       class="prenda-nombre"
+                       placeholder="Ej: POLO HOMBRE"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+
+            <!-- Descripción -->
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: 600; margin-bottom: 0.5rem;">Descripción</label>
+                <textarea name="descripcion[${nuevoIndex}]" 
+                          class="prenda-descripcion"
+                          placeholder="Describe la prenda..."
+                          style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; min-height: 100px;"></textarea>
+            </div>
+
+            <!-- Género -->
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: 600; margin-bottom: 0.5rem;">Género</label>
+                <select name="genero[${nuevoIndex}]" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                    <option value="">Seleccionar género</option>
+                    <option value="Dama">Dama</option>
+                    <option value="Caballero">Caballero</option>
+                    <option value="Unisex">Unisex</option>
+                </select>
+            </div>
+
+            <!-- Tallas y Cantidades -->
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: 600; margin-bottom: 0.5rem;">Tallas y Cantidades</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem;">
+                    ${['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(talla => `
+                        <div style="display: flex; flex-direction: column;">
+                            <label style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">${talla}</label>
+                            <input type="number" 
+                                   name="cantidades[${nuevoIndex}][${talla}]"
+                                   class="talla-cantidad"
+                                   data-talla="${talla}"
+                                   placeholder="0"
+                                   min="0"
+                                   style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center;">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Separador -->
+            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e5e7eb;">
+        </div>
+    `;
+    
+    // Si es la primera prenda, reemplazar el contenedor
+    if (nuevoIndex === 0) {
+        prendasContainer.innerHTML = '';
+    }
+    
+    // Agregar la nueva prenda
+    prendasContainer.innerHTML += prendaHtml;
+    
+    console.log(`✅ Prenda ${nuevoIndex + 1} agregada`);
+};
+
+// ============================================================
+// FUNCIÓN GLOBAL: Eliminar Prenda del Pedido
+// ============================================================
+window.eliminarPrendaDelPedido = function(index) {
+    console.log(`🗑️ Eliminando prenda ${index + 1}`);
+    
+    const prendaCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${index}"]`);
+    if (prendaCard) {
+        prendaCard.remove();
+        console.log(`✅ Prenda ${index + 1} eliminada`);
+        
+        // Si no hay más prendas, mostrar mensaje
+        const prendasContainer = document.getElementById('prendas-container-editable');
+        if (prendasContainer.querySelectorAll('.prenda-card-editable').length === 0) {
+            prendasContainer.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="color: #6b7280; margin-bottom: 1rem;">No hay prendas agregadas. Haz clic en el botón de abajo para agregar.</p>
+                    <button type="button" onclick="agregarPrendaSinCotizacion()" class="btn btn-primary" style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        ➕ Agregar Prenda
+                    </button>
+                </div>
+            `;
+        }
+    }
+};
+
 /**
  * FUNCIÓN HELPER: Procesa imágenes restantes después de eliminar una
  * Actualiza los índices y asegura que todos los datos sean consistentes
@@ -3366,7 +3528,146 @@ document.addEventListener('DOMContentLoaded', function() {
     
     formCrearPedido.addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        // Detectar si es un pedido sin cotización
+        const cotizacionId = document.getElementById('cotizacion_id_editable').value;
+        const seccionCotizacion = document.getElementById('cotizacion_search_editable').closest('.form-section');
+        const esSinCotizacion = seccionCotizacion.style.display === 'none';
+        
+        if (esSinCotizacion) {
+            handleSubmitPedidoSinCotizacion();
+        } else if (cotizacionId) {
+            handleSubmitPrendaConCotizacion();
+        } else {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona una cotización',
+                text: 'Por favor selecciona una cotización antes de continuar',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
 
+    // ============================================================
+    // MANEJADOR: Crear Pedido SIN Cotización
+    // ============================================================
+    function handleSubmitPedidoSinCotizacion() {
+        console.log('📦 [SIN COTIZACIÓN] Procesando creación de pedido...');
+        
+        const cliente = document.getElementById('cliente_editable').value;
+        const formaPago = document.getElementById('forma_de_pago_editable').value;
+        
+        if (!cliente) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cliente requerido',
+                text: 'Por favor ingresa el nombre del cliente',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        // Recopilar prendas
+        const prendasContainer = document.getElementById('prendas-container-editable');
+        const prendaCards = prendasContainer.querySelectorAll('.prenda-card-editable');
+        
+        if (prendaCards.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin prendas',
+                text: 'Por favor agrega al menos una prenda',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        const prendas = [];
+        
+        prendaCards.forEach((card, index) => {
+            const nombreProducto = card.querySelector('.prenda-nombre').value;
+            const descripcion = card.querySelector('.prenda-descripcion').value;
+            const genero = card.querySelector('select[name="genero[' + index + ']"]')?.value || '';
+            
+            // Recopilar cantidades por talla
+            const cantidadesPorTalla = {};
+            card.querySelectorAll('.talla-cantidad').forEach(input => {
+                const cantidad = parseInt(input.value) || 0;
+                const talla = input.getAttribute('data-talla');
+                if (cantidad > 0) {
+                    cantidadesPorTalla[talla] = cantidad;
+                }
+            });
+            
+            if (Object.keys(cantidadesPorTalla).length === 0) {
+                console.log(`⚠️ Prenda ${index + 1} no tiene cantidades, se omitirá`);
+                return;
+            }
+            
+            prendas.push({
+                index: index,
+                nombre_producto: nombreProducto,
+                descripcion: descripcion,
+                genero: genero,
+                cantidades: cantidadesPorTalla,
+                fotos: []  // Sin fotos en pedidos sin cotización
+            });
+        });
+        
+        if (prendas.length === 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sin prendas con cantidades',
+                text: 'Debes agregar cantidades a al menos una prenda',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        console.log('📦 [SIN COTIZACIÓN] Datos a enviar:', { cliente, formaPago, prendas });
+        
+        // Enviar al servidor
+        fetch('/asesores/pedidos-produccion/crear-sin-cotizacion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+            },
+            body: JSON.stringify({
+                cliente: cliente,
+                forma_de_pago: formaPago,
+                prendas: prendas
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('✅ [SIN COTIZACIÓN] Respuesta del servidor:', data);
+            
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: 'Pedido creado exitosamente\nNúmero de pedido: ' + data.numero_pedido,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = '/asesores/pedidos';
+                });
+            } else {
+                throw new Error(data.message || 'Error al crear el pedido');
+            }
+        })
+        .catch(error => {
+            console.error('❌ [SIN COTIZACIÓN] Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al crear el pedido',
+                text: error.message || 'Ocurrió un error inesperado',
+                confirmButtonText: 'OK'
+            });
+        });
+    }
+
+    // Manejador del submit original para prendas con cotización
+    function handleSubmitPrendaConCotizacion() {
         const cotizacionId = document.getElementById('cotizacion_id_editable').value;
         
         if (!cotizacionId) {
@@ -4081,7 +4382,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonText: 'OK'
             });
         });
-    });
+    }
 
     console.log('Script de formulario editable cargado correctamente');
 

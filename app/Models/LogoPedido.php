@@ -82,22 +82,21 @@ class LogoPedido extends Model
     }
 
     /**
-     * Genera el siguiente número de pedido en la secuencia LOGO-00001
+     * Genera el siguiente número de pedido en la secuencia (solo el número sin prefijo)
      */
     public static function generarNumeroPedido(): string
     {
-        $ultimoPedido = self::whereRaw('numero_pedido LIKE "LOGO-%"')
-                          ->orderByRaw('CAST(SUBSTR(numero_pedido, 6) AS UNSIGNED) DESC')
+        $ultimoPedido = self::orderByRaw('CAST(numero_pedido AS UNSIGNED) DESC')
                           ->first();
 
         if (!$ultimoPedido) {
             $numero = 1;
         } else {
-            $numeroActual = (int) substr($ultimoPedido->numero_pedido, 5);
+            $numeroActual = (int) $ultimoPedido->numero_pedido;
             $numero = $numeroActual + 1;
         }
 
-        return 'LOGO-' . str_pad($numero, 5, '0', STR_PAD_LEFT);
+        return str_pad($numero, 5, '0', STR_PAD_LEFT);
     }
 
     /**

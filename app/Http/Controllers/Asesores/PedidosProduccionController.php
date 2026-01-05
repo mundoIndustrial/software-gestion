@@ -1272,7 +1272,7 @@ class PedidosProduccionController extends Controller
     }
 
     /**
-     * Generar número único para LOGO PEDIDO con formato #LOGO-00001
+     * Generar número único para LOGO PEDIDO con formato 00001
      * ✅ NUEVO: Genera números LOGO secuenciales
      */
     private function generarNumeroLogoPedido()
@@ -1305,8 +1305,8 @@ class PedidosProduccionController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            // Generar número con formato #LOGO-00001
-            $numeroLogo = sprintf('#LOGO-%05d', $siguiente);
+            // Generar número con formato 00001 (solo el número, sin prefijo)
+            $numeroLogo = sprintf('%05d', $siguiente);
             
             \Log::info('✅ Número LOGO generado', [
                 'numero' => $numeroLogo,
@@ -1912,6 +1912,132 @@ class PedidosProduccionController extends Controller
                 'numero_pedido' => $pedido->numero_pedido,
                 'trace' => $e->getTraceAsString(),
             ]);
+        }
+    }
+
+    /**
+     * Crear pedido de producción SIN cotización (prendas libres)
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function crearSinCotizacion(Request $request): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            // Validar datos requeridos
+            $cliente = $request->input('cliente');
+            $formaPago = $request->input('forma_de_pago', '');
+            $prendas = $request->input('prendas', []);
+
+            if (!$cliente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cliente es requerido'
+                ], 422);
+            }
+
+            if (empty($prendas)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe agregar al menos una prenda'
+                ], 422);
+            }
+
+            \Log::info('📦 [SIN COTIZACIÓN] Creando pedido', [
+                'cliente' => $cliente,
+                'forma_de_pago' => $formaPago,
+                'prendas_count' => count($prendas),
+            ]);
+
+            // Crear pedido de producción
+            $pedido = PedidoProduccion::create([
+                'cotizacion_id' => null,  // Sin cotización
+                'numero_cotizacion' => null,
+                'numero_pedido' => $this->generarNumeroPedido(),
+                'cliente' => $cliente,
+                'asesor_id' => auth()->id(),
+                'forma_de_pago' => $formaPago,
+                'area' => null,
+                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
+                'fecha_de_creacion_de_orden' => now(),
+            ]);
+
+            \Log::info('✅ Pedido creado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
+
+            // Crear prendas del pedido
+            foreach ($prendas as $index => $prenda) {
+                $cantidadesPorTalla = $prenda['cantidades'] ?? [];
+                $cantidadTotal = array_sum($cantidadesPorTalla);
+
+                // Construir descripción
+                $descripcion = $this->construirDescripcionPrenda(
+                    $index + 1,
+                    $prenda,
+                    $cantidadesPorTalla
+                );
+
+                $prendaPedido = PrendaPedido::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
+                    'cantidad' => $cantidadTotal,
+                    'descripcion' => $descripcion,
+                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                    'color_id' => null,
+                    'tela_id' => null,
+                    'tipo_manga_id' => null,
+                    'tipo_broche_id' => null,
+                    'tiene_bolsillos' => 0,
+                    'tiene_reflectivo' => 0,
+                ]);
+
+                // Crear proceso inicial
+                ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'proceso' => 'Creación Orden',
+                    'estado_proceso' => 'Completado',
+                    'fecha_inicio' => now(),
+                    'fecha_fin' => now(),
+                ]);
+
+                \Log::info('✅ Prenda agregada al pedido', [
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'nombre' => $prenda['nombre_producto'],
+                    'cantidad_total' => $cantidadTotal,
+                ]);
+            }
+
+            DB::commit();
+
+            \Log::info('✅ Pedido creado exitosamente', [
+                'numero_pedido' => $pedido->numero_pedido,
+                'total_prendas' => count($prendas),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido creado exitosamente',
+                'numero_pedido' => $pedido->numero_pedido,
+                'pedido_id' => $pedido->id,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error('❌ Error al crear pedido sin cotización', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el pedido: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

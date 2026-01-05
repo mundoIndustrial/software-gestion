@@ -467,7 +467,7 @@
 <!-- Header Full Width -->
 <div class="page-header">
     <h1>📋 Crear Pedido de Producción (Editable)</h1>
-    <p>Selecciona una cotización y personaliza las prendas antes de crear el pedido</p>
+    <p>Selecciona una cotización y personaliza tu pedido</p>
 </div>
 
 <div style="width: 100%; padding: 1.5rem;">
@@ -482,11 +482,11 @@
 
             <div class="form-group">
                 <label for="cotizacion_search_editable" class="block text-sm font-medium text-gray-700 mb-2">
-                    Cotización <span class="text-red-500">*</span>
+                    Cotización
                 </label>
                 <div style="position: relative;">
                     <input type="text" id="cotizacion_search_editable" placeholder="🔍 Buscar por número, cliente o asesora..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off">
-                    <input type="hidden" id="cotizacion_id_editable" name="cotizacion_id" required>
+                    <input type="hidden" id="cotizacion_id_editable" name="cotizacion_id">
                     <div id="cotizacion_dropdown_editable" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                     </div>
                 </div>
@@ -494,10 +494,23 @@
                     <div style="font-size: 0.875rem; color: #1e40af;"><strong>Seleccionada:</strong> <span id="cotizacion_selected_text_editable"></span></div>
                 </div>
             </div>
+
+            <!-- Separador -->
+            <div style="text-align: center; margin: 1.5rem 0; position: relative;">
+                <div style="position: absolute; left: 0; right: 0; height: 1px; background: #d1d5db; top: 50%;"></div>
+                <span style="background: white; padding: 0 1rem; color: #6b7280; font-size: 0.875rem; position: relative;">O</span>
+            </div>
+
+            <!-- Botón Crear sin Cotización -->
+            <div style="text-align: center;">
+                <button type="button" id="btn-crear-sin-cotizacion" class="btn btn-secondary" onclick="crearPedidoSinCotizacion()" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                    ➕ Crear Pedido sin Cotización
+                </button>
+            </div>
         </div>
 
         <!-- PASO 2: Información del Pedido -->
-        <div class="form-section">
+        <div class="form-section" id="seccion-info-prenda">
             <h2>
                 <span>2</span> Información del Pedido
             </h2>
@@ -510,7 +523,7 @@
 
                 <div class="form-group">
                     <label for="cliente_editable">Cliente</label>
-                    <input type="text" id="cliente_editable" name="cliente" readonly>
+                    <input type="text" id="cliente_editable" name="cliente" required>
                 </div>
 
                 <div class="form-group">
@@ -520,7 +533,7 @@
 
                 <div class="form-group">
                     <label for="forma_de_pago_editable">Forma de Pago</label>
-                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago" readonly>
+                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago">
                 </div>
 
                 <div class="form-group">
@@ -531,7 +544,7 @@
         </div>
 
         <!-- PASO 3: Prendas Editables -->
-        <div class="form-section">
+        <div class="form-section" id="seccion-prendas">
             <div class="step-header">
                 <div class="step-number-container">
                     <span class="step-number">3</span>
@@ -550,10 +563,10 @@
             </div>
         </div>
 
-        <!-- PASO 4: Botones de Acción -->
+        <!-- PASO 6: Botones de Acción -->
         <div class="btn-actions">
-            <button type="submit" class="btn btn-primary">
-                ✓ Crear Pedido de Producción
+            <button type="submit" id="btn-submit" class="btn btn-primary" style="display: none;">
+                ✓ Crear Pedido
             </button>
             <a href="{{ route('asesores.pedidos-produccion.index') }}" class="btn btn-secondary">
                 ✕ Cancelar
@@ -565,7 +578,21 @@
 
 @push('scripts')
     <script>
-        // Pasar datos de PHP a JavaScript
+        // Configuración inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar las secciones de prenda
+            document.getElementById('seccion-info-prenda').style.display = 'block';
+            document.getElementById('seccion-prendas').style.display = 'block';
+            
+            // Configurar asesora
+            document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';
+            
+            // Mostrar botón submit
+            const btnSubmit = document.getElementById('btn-submit');
+            btnSubmit.textContent = '✓ Crear Pedido';
+            btnSubmit.style.display = 'block';
+        });
+
         window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
         window.cotizacionesData = {!! json_encode($cotizaciones->map(function($cot) {
             $formaPago = '';

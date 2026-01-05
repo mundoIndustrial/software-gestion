@@ -497,6 +497,8 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/pedidos-produccion/{id}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
     Route::get('/pedidos-produccion/{id}/plantilla', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'plantilla'])->name('pedidos-produccion.plantilla');
     Route::post('/pedidos-produccion/crear-desde-cotizacion/{cotizacionId}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearDesdeCotizacion'])->name('pedidos-produccion.crear-desde-cotizacion');
+    Route::post('/pedidos-produccion/crear-sin-cotizacion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearSinCotizacion'])->name('pedidos-produccion.crear-sin-cotizacion');
+    Route::post('/pedidos-produccion/crear-prenda-sin-cotizacion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearPrendaSinCotizacion'])->name('pedidos-produccion.crear-prenda-sin-cotizacion');
     
     // Incluir rutas del módulo de pedidos refactorizado
     require __DIR__ . '/asesores/pedidos.php';
