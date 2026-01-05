@@ -68,6 +68,19 @@
         </div>
     @endif
 
+    {{-- Tipo de Jean/Pantalón --}}
+    @if($variante->es_jean_pantalon && $variante->tipo_jean_pantalon)
+        @php
+            $nombrePrenda = strtoupper($variante->prenda->nombre_producto ?? '');
+            $esJean = str_contains($nombrePrenda, 'JEAN');
+            $tipoLabel = $esJean ? 'Jean' : 'Pantalón';
+        @endphp
+        <div style="margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #0066cc;">Tipo de {{ $tipoLabel }}:</span>
+            <span style="color: #1e293b; background: #f0f4f8; padding: 2px 8px; border-radius: 4px; font-weight: 500;">{{ $variante->tipo_jean_pantalon }}</span>
+        </div>
+    @endif
+
     {{-- Manga --}}
     @if($variante->tipo_manga_id)
         <div style="margin-bottom: 8px;">

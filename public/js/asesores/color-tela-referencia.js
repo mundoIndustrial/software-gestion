@@ -171,12 +171,12 @@ function seleccionarTela(id, nombre, referencia, element) {
     input.value = nombre;
     idInput.value = id;
     
-    // Llenar también el campo de referencia
-    const trPadre = td.closest('tr');
-    const refInput = trPadre.querySelector('.referencia-input');
-    if (refInput && !refInput.value) {
-        refInput.value = referencia;
-    }
+    // No autocompletar la referencia - dejar que sea manual
+    // const trPadre = td.closest('tr');
+    // const refInput = trPadre.querySelector('.referencia-input');
+    // if (refInput && !refInput.value) {
+    //     refInput.value = referencia;
+    // }
     
     td.querySelector('.tela-suggestions').style.display = 'none';
     
@@ -213,17 +213,17 @@ function buscarOCrearTela(btn) {
         
         idInput.value = nuevoId;
         
-        // Llenar también el campo de referencia
-        const trPadre = td.closest('tr');
-        const refInput = trPadre.querySelector('.referencia-input');
-        if (refInput) {
-            refInput.value = nuevaTela.referencia;
-        }
+        // No autocompletar la referencia - dejar que sea manual
+        // const trPadre = td.closest('tr');
+        // const refInput = trPadre.querySelector('.referencia-input');
+        // if (refInput) {
+        //     refInput.value = nuevaTela.referencia;
+        // }
         
         td.querySelector('.tela-suggestions').style.display = 'none';
         
         console.log(`✅ Nueva tela creada: ${valor} (ID: ${nuevoId})`);
-        alert(`✅ Tela "${valor}" creada exitosamente\nReferencia: ${nuevaTela.referencia}`);
+        alert(`✅ Tela "${valor}" creada exitosamente`);
     }
 }
 

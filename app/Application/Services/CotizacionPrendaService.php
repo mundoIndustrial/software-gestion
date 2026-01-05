@@ -244,6 +244,8 @@ class CotizacionPrendaService
                             'obs_reflectivo' => $variantes['obs_reflectivo'] ?? null,
                             'descripcion_adicional' => $variantes['descripcion_adicional'] ?? '',
                             'telas_multiples' => !empty($telasMultiples) ? json_encode($telasMultiples) : null,
+                            'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
+                            'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? null,
                         ]);
                         Log::info("✅ Variante guardada", [
                             'variante_id' => $variante->id,
@@ -254,6 +256,8 @@ class CotizacionPrendaService
                             'tipo_manga_id' => $tipoMangaId,
                             'tipo_broche_id' => $variantes['tipo_broche_id'] ?? null,
                             'telas_multiples_count' => count($telasMultiples),
+                            'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
+                            'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? null,
                         ]);
 
                         // ✅ PROCESAR prenda_telas_cot desde telas_multiples

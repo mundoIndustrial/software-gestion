@@ -382,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true);
 });
 
-// Función para cerrar el dropdown (usada en los botones del menú)
-function closeDropdown() {
+// Función para cerrar el dropdown (usada en los botones del menú) - GLOBAL
+window.closeDropdown = function() {
     document.querySelectorAll('.dropdown-menu').forEach(menu => {
         menu.style.display = 'none';
     });

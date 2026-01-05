@@ -640,7 +640,7 @@ class CotizacionPrendaController extends Controller
                             if ($archivoFoto && $archivoFoto->isValid()) {
                                 try {
                                     // Guardar en storage
-                                    $rutaGuardada = $archivoFoto->store('telas/cotizaciones', 'public');
+                                    $rutaGuardada = $archivoFoto->store("cotizaciones/{$cotizacionId}/telas", 'public');
                                     $rutaUrl = Storage::url($rutaGuardada);
 
                                     \Log::info('✅ Foto de tela guardada en storage', [

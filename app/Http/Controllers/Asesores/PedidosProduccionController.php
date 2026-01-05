@@ -617,7 +617,7 @@ class PedidosProduccionController extends Controller
 
             DB::commit();
 
-            // ✅ Si es combinada (PL), indicar al frontend que debe crear TAMBIÉN logo_pedido
+            // ✅ Si es combinada (PL), crear AUTOMÁTICAMENTE el logo_pedido
             // 🔍 LÓGICA: No crear logo_pedido si es tipo 'P' (PRENDA únicamente)
             if ($tipoCotizacionCodigo === 'PL') {
                 // Obtener logo_cotizacion_id para enviarlo al frontend
@@ -625,18 +625,63 @@ class PedidosProduccionController extends Controller
                     ->where('cotizacion_id', $cotizacionId)
                     ->value('id');
                 
-                \Log::info('📦 [crearDesdeCotizacion] Cotización COMBINADA detectada, permitiendo crear logo_pedido', [
+                \Log::info('📦 [crearDesdeCotizacion] Cotización COMBINADA detectada, creando AMBOS pedidos', [
                     'cotizacion_id' => $cotizacionId,
-                    'logo_cotizacion_id' => $logoCotizacionId
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'pedido_costura_id' => $pedido->id
+                ]);
+                
+                // ✅ CREAR AUTOMÁTICAMENTE EL LOGO_PEDIDO
+                $numeroLogoPedido = $this->generarNumeroLogoPedido();
+                
+                // Obtener datos del logo_cotizacion
+                $logoCotizacion = DB::table('logo_cotizaciones')
+                    ->where('id', $logoCotizacionId)
+                    ->first();
+                
+                $logoPedidoId = DB::table('logo_pedidos')->insertGetId([
+                    'pedido_id' => $pedido->id, // ✅ ID del pedido de producción
+                    'numero_pedido_cost' => $pedido->numero_pedido, // ✅ Número del pedido de costura
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'numero_pedido' => $numeroLogoPedido,
+                    'cotizacion_id' => $cotizacionId,
+                    'numero_cotizacion' => $cotizacion->numero_cotizacion,
+                    'cliente' => $cotizacion->cliente->nombre ?? 'Sin nombre',
+                    'asesora' => Auth::user()?->name,
+                    'forma_de_pago' => $formaPago ?? '',
+                    'encargado_orden' => Auth::user()?->name,
+                    'fecha_de_creacion_de_orden' => now(),
+                    'estado' => 'pendiente',
+                    'area' => 'Logo/Bordado',
+                    'descripcion' => $logoCotizacion->descripcion ?? '',
+                    'tecnicas' => $logoCotizacion->tecnicas ?? null,
+                    'observaciones_tecnicas' => $logoCotizacion->observaciones_tecnicas ?? '',
+                    'ubicaciones' => $logoCotizacion->ubicaciones ?? null,
+                    'observaciones' => '',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                
+                // ✅ Crear el proceso inicial para el logo
+                \App\Models\ProcesosPedidosLogo::crearProcesoInicial($logoPedidoId, Auth::id());
+                
+                \Log::info('✅ [crearDesdeCotizacion] AMBOS pedidos creados (COMBINADA)', [
+                    'pedido_costura_id' => $pedido->id,
+                    'pedido_costura_numero' => $pedido->numero_pedido,
+                    'logo_pedido_id' => $logoPedidoId,
+                    'logo_pedido_numero' => $numeroLogoPedido
                 ]);
                 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Pedido de PRENDAS creado. El pedido de LOGO se creará al completar el formulario.',
+                    'message' => 'Pedidos de COSTURA y LOGO creados exitosamente',
                     'pedido_id' => $pedido->id,
+                    'pedido_numero' => $pedido->numero_pedido,
+                    'logo_pedido_id' => $logoPedidoId,
+                    'logo_pedido_numero' => $numeroLogoPedido,
                     'tipo_cotizacion' => 'PL',
                     'es_combinada' => true,
-                    'logo_cotizacion_id' => $logoCotizacionId  // ✅ NUEVO: Enviar para que JavaScript lo use
+                    'logo_cotizacion_id' => $logoCotizacionId
                 ]);
             } else {
                 \Log::info('📦 [crearDesdeCotizacion] Cotización tipo PRENDA (P) o REFLECTIVO, NO se creará logo_pedido', [

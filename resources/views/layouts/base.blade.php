@@ -155,6 +155,9 @@
     <!-- Core JS - Crítico para funcionalidad (sin defer) -->
     <script src="{{ asset('js/sidebar.js') }}"></script>
     
+    <!-- Sistema de refresh automático de token CSRF (Previene error 419) -->
+    <script src="{{ asset('js/csrf-refresh.js') }}"></script>
+    
     <!-- Non-critical JS (diferido) -->
     <script defer src="{{ asset('js/sidebar-notifications.js') }}"></script>
     <script defer src="{{ asset('js/top-nav.js') }}"></script>

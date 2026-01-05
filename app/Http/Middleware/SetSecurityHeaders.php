@@ -18,6 +18,10 @@ class SetSecurityHeaders
     {
         $response = $next($request);
 
+        // ⚠️ IMPORTANTE: Remover cualquier CSP header previo para evitar conflictos
+        $response->headers->remove('Content-Security-Policy');
+        $response->headers->remove('Content-Security-Policy-Report-Only');
+
         // Content Security Policy (CSP) - More permissive for Laravel Echo and CDNs
         $csp = "default-src 'self'; "
             . "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "

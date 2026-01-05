@@ -173,10 +173,12 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
             <label style="font-weight: 600; color: #0066cc; font-size: 0.8rem; white-space: nowrap; margin-bottom: 2px; display: block;">
                 <i class="fas fa-link"></i> Tipo de ${tipoLabel}
             </label>
-            <select name="productos_friendly[][variantes][tipo]" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; font-size: 0.9rem; height: 36px; box-sizing: border-box; background-color: white; cursor: pointer; font-weight: 500;">
+            <input type="hidden" class="es-jean-pantalon-hidden" name="productos_friendly[][variantes][es_jean_pantalon]" value="1">
+            <select name="productos_friendly[][variantes][tipo_jean_pantalon]" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; font-size: 0.9rem; height: 36px; box-sizing: border-box; background-color: white; cursor: pointer; font-weight: 500;">
                 <option value="" style="color: #999;">Seleccionar...</option>
-                <option value="1" style="color: #1e293b;">Metálico</option>
-                <option value="2" style="color: #1e293b;">Plástico</option>
+                <option value="METÁLICO" style="color: #1e293b;">METÁLICO</option>
+                <option value="PLÁSTICO" style="color: #1e293b;">PLÁSTICO</option>
+                <option value="NO APLICA" style="color: #1e293b;">NO APLICA</option>
             </select>
         `;
         // Asegurar que el contenedor sea visible
@@ -397,16 +399,20 @@ function crearSelectorVariantesEnSeccion(inputElement, tipoPrenda, variaciones) 
         const tipoLabel = esJean ? 'JEAN' : 'PANTALÓN';
         const tipoJeanPantalon_inline_container = productoCard.querySelector('.tipo-jean-pantalon-inline-container');
         tipoJeanPantalon_inline_container.innerHTML = `
-            <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; white-space: nowrap;">
+            <label style="font-weight: 600; color: #0066cc; font-size: 0.8rem; white-space: nowrap; margin-bottom: 2px; display: block;">
                 <i class="fas fa-link"></i> Tipo de ${tipoLabel}
             </label>
-            <select name="productos_friendly[][variantes][tipo]" style="padding: 8px 12px; border: 1px solid #0066cc; border-radius: 4px; width: 100%; font-size: 1rem; height: 38px; box-sizing: border-box;">
-                <option value="">Seleccionar...</option>
-                <option value="1">Metálico</option>
-                <option value="2">Plástico</option>
+            <input type="hidden" class="es-jean-pantalon-hidden" name="productos_friendly[][variantes][es_jean_pantalon]" value="1">
+            <select name="productos_friendly[][variantes][tipo_jean_pantalon]" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; font-size: 0.9rem; height: 36px; box-sizing: border-box; background-color: white; cursor: pointer; font-weight: 500;">
+                <option value="" style="color: #999;">Seleccionar...</option>
+                <option value="METÁLICO" style="color: #1e293b;">METÁLICO</option>
+                <option value="PLÁSTICO" style="color: #1e293b;">PLÁSTICO</option>
+                <option value="NO APLICA" style="color: #1e293b;">NO APLICA</option>
             </select>
         `;
-        tipoJeanPantalon_inline.style.display = 'block';
+        tipoJeanPantalon_inline.style.display = 'flex';
+        tipoJeanPantalon_inline.style.visibility = 'visible';
+        tipoJeanPantalon_inline.style.opacity = '1';
     } else {
         tipoJeanPantalon_inline.style.display = 'none';
     }
@@ -428,7 +434,7 @@ function crearSelectorVariantesBasico(inputElement, nombrePrenda) {
         variantesSection.style.display = 'block';
     }
     
-    // Mostrar selector de JEAN/PANTALÓN si aplica (JEAN/JEANS)
+    // Mostrar selector de JEAN/PANTALÓN si aplica (JEAN/JEANS/PANTALON/PANTALONES)
     const nombreUpper = nombrePrenda.toUpperCase().trim();
     const esJean = /^JEAN/.test(nombreUpper.split(/\s+/)[0]);
     const esPantalon = /^PANTALÓ?N/.test(nombreUpper.split(/\s+/)[0]);
@@ -439,16 +445,20 @@ function crearSelectorVariantesBasico(inputElement, nombrePrenda) {
         const tipoLabel = esJean ? 'JEAN' : 'PANTALÓN';
         const tipoJeanPantalon_inline_container = productoCard.querySelector('.tipo-jean-pantalon-inline-container');
         tipoJeanPantalon_inline_container.innerHTML = `
-            <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; white-space: nowrap;">
+            <label style="font-weight: 600; color: #0066cc; font-size: 0.8rem; white-space: nowrap; margin-bottom: 2px; display: block;">
                 <i class="fas fa-link"></i> Tipo de ${tipoLabel}
             </label>
-            <select name="productos_friendly[][variantes][tipo]" style="padding: 8px 12px; border: 1px solid #0066cc; border-radius: 4px; width: 100%; font-size: 1rem; height: 38px; box-sizing: border-box;">
-                <option value="">Seleccionar...</option>
-                <option value="1">Metálico</option>
-                <option value="2">Plástico</option>
+            <input type="hidden" class="es-jean-pantalon-hidden" name="productos_friendly[][variantes][es_jean_pantalon]" value="1">
+            <select name="productos_friendly[][variantes][tipo_jean_pantalon]" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; font-size: 0.9rem; height: 36px; box-sizing: border-box; background-color: white; cursor: pointer; font-weight: 500;">
+                <option value="" style="color: #999;">Seleccionar...</option>
+                <option value="METÁLICO" style="color: #1e293b;">METÁLICO</option>
+                <option value="PLÁSTICO" style="color: #1e293b;">PLÁSTICO</option>
+                <option value="NO APLICA" style="color: #1e293b;">NO APLICA</option>
             </select>
         `;
-        tipoJeanPantalon_inline.style.display = 'block';
+        tipoJeanPantalon_inline.style.display = 'flex';
+        tipoJeanPantalon_inline.style.visibility = 'visible';
+        tipoJeanPantalon_inline.style.opacity = '1';
     } else {
         tipoJeanPantalon_inline.style.display = 'none';
     }

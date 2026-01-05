@@ -437,12 +437,36 @@ async function guardarCotizacion() {
             }
         }
         
+        // Verificar y obtener el token CSRF
+        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfTokenMeta?.getAttribute('content') || '';
+        
+        console.log('🔐 DEBUG - Token CSRF:', {
+            meta_encontrado: !!csrfTokenMeta,
+            token_existe: !!csrfToken,
+            token_length: csrfToken.length,
+            token_preview: csrfToken ? csrfToken.substring(0, 10) + '...' : 'VACÍO'
+        });
+        
+        if (!csrfToken) {
+            console.error('❌ TOKEN CSRF NO ENCONTRADO - La solicitud fallará');
+            Swal.fire({
+                title: 'Error de seguridad',
+                html: '<p>No se encontró el token CSRF.</p><p style="font-size: 0.85rem; color: #999; margin-top: 10px;">Por favor, recarga la página.</p>',
+                icon: 'error',
+                confirmButtonColor: '#1e40af'
+            });
+            if (btnGuardar) btnGuardar.disabled = false;
+            if (btnEnviar) btnEnviar.disabled = false;
+            return;
+        }
+        
         console.log('🌐 Enviando solicitud POST a:', window.routes.guardarCotizacion);
         const response = await fetch(window.routes.guardarCotizacion, {
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                'X-CSRF-TOKEN': csrfToken
                 // ⚠️ NO incluir 'Content-Type': 'application/json' - FormData lo establece automáticamente
             },
             body: formData
@@ -452,6 +476,44 @@ async function guardarCotizacion() {
         console.log('📡 Status de respuesta:', response.status);
         console.log('📡 Content-Type:', response.headers.get('content-type'));
         console.log('📡 OK:', response.ok);
+        
+        // Verificar errores de sesión/CSRF antes de parsear
+        if (response.status === 419) {
+            console.error('❌ ERROR 419: CSRF Token Mismatch - Sesión expirada');
+            Swal.fire({
+                title: 'Sesión expirada',
+                html: '<p>Tu sesión ha expirado por inactividad.</p>' +
+                      '<p style="margin-top: 10px;">Por favor, recarga la página para continuar.</p>',
+                icon: 'warning',
+                confirmButtonColor: '#1e40af',
+                confirmButtonText: 'Recargar página'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.reload();
+                }
+            });
+            if (btnGuardar) btnGuardar.disabled = false;
+            if (btnEnviar) btnEnviar.disabled = false;
+            return;
+        }
+        
+        if (response.status === 401) {
+            console.error('❌ ERROR 401: No autenticado');
+            Swal.fire({
+                title: 'Sesión no válida',
+                html: '<p>Debes iniciar sesión para continuar.</p>',
+                icon: 'error',
+                confirmButtonColor: '#1e40af',
+                confirmButtonText: 'Ir al inicio'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/';
+                }
+            });
+            if (btnGuardar) btnGuardar.disabled = false;
+            if (btnEnviar) btnEnviar.disabled = false;
+            return;
+        }
         
         const responseText = await response.text();
         console.log('📡 Texto de respuesta (primeros 500 caracteres):', responseText.substring(0, 500));

@@ -40,16 +40,6 @@
             </div>
         </div>
 
-        <div class="stat-card stat-pending">
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-content">
-                <h3>Pedidos Pendientes</h3>
-                <p class="stat-value">{{ $stats['pedidos_pendientes'] }}</p>
-                <span class="stat-label">En proceso</span>
-            </div>
-        </div>
     </div>
 
 

@@ -985,7 +985,9 @@ function mostrarSelectorVariantes(input) {
     const container = input.closest('.tipo-prenda-row').querySelector('.tipo-jean-pantalon-inline');
     const innerContainer = container.querySelector('.tipo-jean-pantalon-inline-container');
     
-    if (valor.includes('JEAN') || valor.includes('PANTALÓN') || valor.includes('PANTALONES') || valor.includes('PANTALON')) {
+    // Buscar variaciones de jean y pantalón (con y sin tilde, singular y plural)
+    if (valor.includes('JEAN') || valor.includes('JEANS') || valor.includes('JEANES') || 
+        valor.includes('PANTALON') || valor.includes('PANTALONES') || valor.includes('PANTALÓN') || valor.includes('PANTALÓNES')) {
         container.style.display = 'block';
         
         if (innerContainer.innerHTML === '') {
@@ -994,6 +996,8 @@ function mostrarSelectorVariantes(input) {
                 <input type="hidden" name="productos_prenda[][variantes][es_jean_pantalon]" class="es-jean-pantalon-hidden" value="0">
                 <select name="productos_prenda[][variantes][tipo_jean_pantalon]" onchange="marcarEsJeanPantalon(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600;">
                     <option value="">Selecciona</option>
+                    <option value="METÁLICO">METÁLICO</option>
+                    <option value="PLÁSTICO">PLÁSTICO</option>
                     <option value="SKINNY">SKINNY</option>
                     <option value="SLIM">SLIM</option>
                     <option value="RECTO">RECTO</option>

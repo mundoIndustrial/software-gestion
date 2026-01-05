@@ -35,7 +35,7 @@ class PDFCotizacionController extends Controller
                 'prendas.fotos:id,prenda_cot_id,ruta_original,ruta_webp',
                 'prendas.telaFotos:id,prenda_cot_id,ruta_original,ruta_webp',
                 'prendas.tallas:id,prenda_cot_id,talla,cantidad',
-                'prendas.variantes:id,prenda_cot_id,color,tipo_manga_id,tipo_broche_id,tiene_reflectivo,obs_reflectivo,tiene_bolsillos,obs_bolsillos,aplica_manga,obs_manga,obs_broche',
+                'prendas.variantes:id,prenda_cot_id,color,tipo_manga_id,tipo_broche_id,tiene_reflectivo,obs_reflectivo,tiene_bolsillos,obs_bolsillos,aplica_manga,obs_manga,obs_broche,es_jean_pantalon,tipo_jean_pantalon',
                 'prendas.variantes.manga:id,nombre',
                 'prendas.variantes.broche:id,nombre',
                 'prendas.telas.tela:id,nombre,referencia',
@@ -722,6 +722,15 @@ class PDFCotizacionController extends Controller
                     $nombreBroche = $variante->broche ? $variante->broche->nombre : 'Botón';
                     $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
                         <strong>.</strong> <strong>' . htmlspecialchars($nombreBroche) . ':</strong> ' . htmlspecialchars($variante->obs_broche) . '</div>';
+                }
+                
+                // Tipo de Jean/Pantalón
+                if ($variante->es_jean_pantalon && $variante->tipo_jean_pantalon) {
+                    $nombrePrenda = strtoupper($prenda->nombre_producto ?? '');
+                    $esJean = str_contains($nombrePrenda, 'JEAN');
+                    $tipoLabel = $esJean ? 'Jean' : 'Pantalón';
+                    $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
+                        <strong>.</strong> <strong>Tipo de ' . htmlspecialchars($tipoLabel) . ':</strong> ' . htmlspecialchars($variante->tipo_jean_pantalon) . '</div>';
                 }
             }
             

@@ -1280,8 +1280,8 @@ final class CotizacionController extends Controller
                                 foreach ($telaData['fotos'] as $archivoFoto) {
                                     if ($archivoFoto && $archivoFoto->isValid()) {
                                         try {
-                                            // Guardar en storage
-                                            $rutaGuardada = $archivoFoto->store('telas/cotizaciones', 'public');
+                                            // Guardar en storage dentro de la carpeta de la cotización
+                                            $rutaGuardada = $archivoFoto->store("cotizaciones/{$cotizacionId}/telas", 'public');
                                             $rutaUrl = Storage::url($rutaGuardada);
                                             
                                             // Guardar en tabla prenda_tela_fotos_cot con prenda_tela_cot_id

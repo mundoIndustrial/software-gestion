@@ -36,6 +36,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // ========================================
+    // RUTA PARA REFRESCAR TOKEN CSRF (Prevenir error 419)
+    // ========================================
+    Route::get('/refresh-csrf', function () {
+        return response()->json([
+            'token' => csrf_token(),
+            'timestamp' => now()->toIso8601String()
+        ]);
+    })->name('refresh.csrf');
+    
+    // ========================================
     // RUTAS DE FOTOS (Accesibles para todos los roles autenticados)
     // ========================================
     Route::post('/asesores/fotos/eliminar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'eliminarFotoInmediatamente'])->name('fotos.eliminar-inmediatamente');

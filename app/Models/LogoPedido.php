@@ -15,6 +15,7 @@ class LogoPedido extends Model
         'pedido_id',
         'logo_cotizacion_id',
         'numero_pedido',
+        'numero_pedido_cost',
         'descripcion',
         'cantidad',
         'tecnicas',

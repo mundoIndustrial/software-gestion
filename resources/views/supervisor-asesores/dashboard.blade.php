@@ -43,17 +43,6 @@
             </div>
         </div>
 
-        <div class="stat-card stat-pending">
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-content">
-                <h3>Pedidos Pendientes</h3>
-                <p class="stat-value" id="pedidosPendientes">0</p>
-                <span class="stat-label">En proceso</span>
-            </div>
-        </div>
-
         <div class="stat-card stat-month">
             <div class="stat-icon">
                 <i class="fas fa-file-invoice"></i>
@@ -203,7 +192,6 @@
                 document.getElementById('cotizacionesHoy').textContent = data.cotizaciones_hoy || 0;
                 document.getElementById('pedidosMes').textContent = data.pedidos_mes || 0;
                 document.getElementById('asesoresActivos').textContent = data.total_asesores || 0;
-                document.getElementById('pedidosPendientes').textContent = data.pedidos_pendientes || 0;
                 document.getElementById('cotizacionesMes').textContent = data.cotizaciones_mes || 0;
                 document.getElementById('totalPedidosMes').textContent = data.total_pedidos_mes || 0;
             })

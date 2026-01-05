@@ -142,7 +142,7 @@ todasLasUbicaciones = [...new Set([
     ...opcionesPrendas.CHAQUETA
 ])];
 
-console.log('✅ Ubicaciones iniciales cargadas:', todasLasUbicaciones);
+// console.log('✅ Ubicaciones iniciales cargadas:', todasLasUbicaciones); // DEBUG: Comentado para evitar logs innecesarios
 
 function agregarTecnica() {
     const selector = document.getElementById('selector_tecnicas');

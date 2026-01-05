@@ -178,18 +178,6 @@
             </ul>
         </div>
 
-        <div class="menu-section">
-            <span class="menu-section-title">Información</span>
-            <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="{{ route('asesores.clientes.index') }}"
-                       class="menu-link {{ request()->routeIs('asesores.clientes.*') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">group</span>
-                        <span class="menu-label">Clientes</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
     </div>
 
     <div class="sidebar-footer">

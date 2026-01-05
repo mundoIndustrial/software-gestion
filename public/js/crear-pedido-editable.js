@@ -577,8 +577,28 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Verificar si hay prendas y logo para mostrar los tabs correspondientes
         const tienePrendas = prendas && prendas.length > 0;
-        // 🔍 LÓGICA: Si tipo_cotizacion_id=3 (PRENDA), no mostrar tab de logo aunque exista
-        const tieneLogoPrendas = tipoCotizacion !== 'P' && logoCotizacion && (logoCotizacion.descripcion || logoCotizacion.tecnicas || logoCotizacion.ubicaciones || logoCotizacion.fotos);
+        
+        // 🔍 LÓGICA CORREGIDA: Si tipo_cotizacion es 'P' (solo PRENDA), no mostrar tab de logo
+        // Para 'PL' (COMBINADA) y 'L' (LOGO SOLO), SÍ mostrar tab de logo si existe información
+        const tieneLogoPrendas = tipoCotizacion !== 'P' && logoCotizacion && (
+            logoCotizacion.descripcion || 
+            (logoCotizacion.tecnicas && logoCotizacion.tecnicas.length > 0) || 
+            (logoCotizacion.ubicaciones && logoCotizacion.ubicaciones.length > 0) || 
+            (logoCotizacion.fotos && logoCotizacion.fotos.length > 0)
+        );
+        
+        // LOG para debugging
+        console.log('🔍 VERIFICACIÓN TABS:');
+        console.log('  - tipoCotizacion:', tipoCotizacion);
+        console.log('  - tienePrendas:', tienePrendas);
+        console.log('  - logoCotizacion:', logoCotizacion);
+        console.log('  - tieneLogoPrendas:', tieneLogoPrendas);
+        if (logoCotizacion) {
+            console.log('  - logoCotizacion.descripcion:', logoCotizacion.descripcion);
+            console.log('  - logoCotizacion.tecnicas:', logoCotizacion.tecnicas);
+            console.log('  - logoCotizacion.ubicaciones:', logoCotizacion.ubicaciones);
+            console.log('  - logoCotizacion.fotos:', logoCotizacion.fotos);
+        }
         
         // Crear estructura de tabs solo si hay prendas O hay logo
         if (tienePrendas || tieneLogoPrendas) {
@@ -3491,8 +3511,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('🎨 [LOGO] Observaciones técnicas:', observacionesTecnicas);
                 console.log('🎨 [LOGO] Ubicaciones seleccionadas:', logoSeccionesSeleccionadas);
 
+                // ✅ FIX: Para COMBINADA, usar logo_pedido_id que ya fue creado en el primer request
+                // Para LOGO SOLO, usar logo_pedido_id (que es el pedido_id del logo)
+                const pedidoIdParaGuardar = esCombinada 
+                    ? dataCrearPedido.logo_pedido_id  // ← Usar ID del logo_pedido ya creado
+                    : pedidoId;  // ← Para LOGO SOLO
+                
+                console.log('🔑 [FIX DUPLICADOS] ID a usar para guardar:', {
+                    esCombinada: esCombinada,
+                    'dataCrearPedido.logo_pedido_id': dataCrearPedido.logo_pedido_id,
+                    'pedidoId original': pedidoId,
+                    'pedidoIdParaGuardar': pedidoIdParaGuardar
+                });
+
                 const bodyLogoPedido = {
-                    pedido_id: pedidoId,
+                    pedido_id: pedidoIdParaGuardar,  // ✅ FIX: Usar logo_pedido_id para COMBINADA
                     logo_cotizacion_id: logoCotizacionIdAUsar,  // ← Usar valor del servidor
                     cotizacion_id: cotizacionId,  // ✅ NUEVO: Enviar cotizacion_id para que se guarde en BD
                     cliente: clienteInput.value,  // 🔍 NUEVO: Enviar cliente

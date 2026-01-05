@@ -1083,6 +1083,62 @@ function recopilarDatos() {
             console.log('ℹ️ Sin observaciones de variantes para agregar a descripcion_adicional');
         }
         
+        // ✅ CAPTURAR TIPO DE JEAN/PANTALÓN
+        console.log('🔍 Buscando campos jean/pantalón en producto:', nombre);
+        
+        // Buscar en formulario estático (productos_prenda)
+        let esJeanPantalonInput = item.querySelector('.es-jean-pantalon-hidden');
+        let tipoJeanPantalonSelect = item.querySelector('select[name*="tipo_jean_pantalon"]');
+        
+        console.log('   🔸 Búsqueda estática - Input hidden:', esJeanPantalonInput ? '✅ ENCONTRADO' : '❌ NO');
+        console.log('   🔸 Búsqueda estática - Select:', tipoJeanPantalonSelect ? '✅ ENCONTRADO' : '❌ NO');
+        
+        // Si no se encuentran, buscar en formulario dinámico (productos_friendly)
+        if (!esJeanPantalonInput) {
+            esJeanPantalonInput = item.querySelector('input[name*="[variantes][es_jean_pantalon]"]');
+            console.log('   🔸 Búsqueda dinámica - Input hidden:', esJeanPantalonInput ? '✅ ENCONTRADO' : '❌ NO');
+        }
+        if (!tipoJeanPantalonSelect) {
+            tipoJeanPantalonSelect = item.querySelector('select[name*="[variantes][tipo_jean_pantalon]"]');
+            console.log('   🔸 Búsqueda dinámica - Select:', tipoJeanPantalonSelect ? '✅ ENCONTRADO' : '❌ NO');
+        }
+        
+        // 🔍 DEBUG ADICIONAL: Verificar si el contenedor existe
+        const container = item.querySelector('.tipo-jean-pantalon-inline-container');
+        console.log('   🔸 Contenedor .tipo-jean-pantalon-inline-container:', container ? '✅ EXISTE' : '❌ NO EXISTE');
+        if (container) {
+            console.log('   🔸 Contenido COMPLETO del contenedor:', container.innerHTML);
+            console.log('   🔸 Elementos hijo en contenedor:', container.children.length);
+            
+            // Intentar encontrar directamente en el contenedor
+            const hiddenInContainer = container.querySelector('.es-jean-pantalon-hidden');
+            const selectInContainer = container.querySelector('select[name*="tipo_jean_pantalon"]');
+            console.log('   🔸 Búsqueda DENTRO del contenedor:');
+            console.log('      - Hidden:', hiddenInContainer ? '✅ ENCONTRADO' : '❌ NO');
+            console.log('      - Select:', selectInContainer ? '✅ ENCONTRADO' : '❌ NO');
+            
+            if (selectInContainer) {
+                console.log('      - Select name:', selectInContainer.getAttribute('name'));
+                console.log('      - Select value:', selectInContainer.value);
+            }
+        }
+        
+        if (esJeanPantalonInput || tipoJeanPantalonSelect) {
+            // Capturar es_jean_pantalon (0 o 1)
+            if (esJeanPantalonInput) {
+                variantes.es_jean_pantalon = esJeanPantalonInput.value;
+                console.log('✅ es_jean_pantalon capturado:', esJeanPantalonInput.value);
+            }
+            
+            // Capturar tipo_jean_pantalon (SKINNY, SLIM, RECTO, etc.)
+            if (tipoJeanPantalonSelect && tipoJeanPantalonSelect.value) {
+                variantes.tipo_jean_pantalon = tipoJeanPantalonSelect.value;
+                console.log('✅ tipo_jean_pantalon capturado:', tipoJeanPantalonSelect.value);
+            }
+        } else {
+            console.log('❌ No es jean/pantalón - campos NO encontrados');
+        }
+        
         // ✅ CAPTURAR GENERO_ID desde el input hidden (IMPORTANTE para "ambos")
         // NOTA: Solo se captura si tiene un valor definido
         const generoIdInput = item.querySelector('.genero-id-hidden');
@@ -1114,6 +1170,8 @@ function recopilarDatos() {
             '✅ Tela': variantes.tela || '(vacío)',
             '✅ Referencia': variantes.referencia || '(vacío)',
             '👥 Género ID': variantes.genero_id || '(NO CAPTURADO)',
+            '👖 Es Jean/Pantalón': variantes.es_jean_pantalon || '(NO CAPTURADO)',
+            '👖 Tipo Jean/Pantalón': variantes.tipo_jean_pantalon || '(NO CAPTURADO)',
             '🎽 Tipo Manga ID': variantes.tipo_manga_id || '(NO CAPTURADO)',
             '🎽 Manga Nombre': variantes.manga_nombre || '(NO CAPTURADO)',
             '🎽 Obs Manga': variantes.obs_manga || '(vacío)',
