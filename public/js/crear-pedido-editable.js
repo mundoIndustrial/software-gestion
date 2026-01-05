@@ -1131,7 +1131,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // ========== SECCIÓN DE LOGO COMPLETA (para cotizaciones combinadas) ==========
         // 🔍 LÓGICA: No renderizar logo si es tipo 'P' (PRENDA únicamente)
-        if (logoCotizacion && tipoCotizacion !== 'P') {
+        // ✅ IMPORTANTE: Usar la misma condición que tieneLogoPrendas para ser consistente
+        if (tieneLogoPrendas) {
             // Función helper para parsear datos JSON
             function parseArrayData(data) {
                 if (!data) return [];
@@ -3691,6 +3692,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('⚠️  [DECISIÓN] ¿esCombinada (SÍ combinada)?', esCombinada);
                 console.log('==========================================================\n');
                 
+                // ✅ VERIFICAR SI HAY DATOS DE LOGO PARA GUARDAR
+                const tieneDescripcion = descripcionLogoPedido && descripcionLogoPedido.trim().length > 0;
+                const tieneTecnicas = tecnicasActualizadas && tecnicasActualizadas.length > 0;
+                const tieneUbicaciones = seccionesActualizadas && seccionesActualizadas.length > 0;
+                const tieneCantidad = cantidadTotal > 0;
+                const tieneDataLogo = tieneDescripcion || tieneTecnicas || tieneUbicaciones || tieneCantidad;
+                
+                console.log('🔍 [VERIFICACIÓN DATA LOGO] Análisis:', {
+                    tieneDescripcion: tieneDescripcion,
+                    tieneTecnicas: tieneTecnicas,
+                    tieneUbicaciones: tieneUbicaciones,
+                    tieneCantidad: tieneCantidad,
+                    tieneDataLogo: tieneDataLogo
+                });
+                
                 if (!esCombinada) {
                     // Para LOGO SOLO, saltarse el segundo fetch y mostrar éxito directamente
                     console.log('📍 [LOGO SOLO] Es LOGO SOLO, no enviar segundo request');
@@ -3702,8 +3718,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 }
+                
+                // ✅ SI ES COMBINADA PERO NO HAY DATOS DE LOGO, NO ENVIAR SEGUNDO REQUEST
+                if (esCombinada && !tieneDataLogo) {
+                    console.log('📍 [COMBINADA] No hay datos de logo, mostrando solo pedido de prendas');
+                    return Promise.resolve({
+                        success: true,
+                        message: 'Pedido de PRENDAS creado (sin logo)',
+                        numero_pedido_produccion: dataCrearPedido.pedido_numero,
+                        pedido_produccion: {
+                            numero_pedido: dataCrearPedido.pedido_numero
+                        },
+                        _tieneDataLogo: tieneDataLogo  // ✅ Pasar información para usar después
+                    });
+                }
 
-                console.log('📍 [COMBINADA] ¡¡¡ ES COMBINADA, ENVIANDO SEGUNDO REQUEST !!!');
+                console.log('📍 [COMBINADA] ¡¡¡ ES COMBINADA CON DATOS DE LOGO, ENVIANDO SEGUNDO REQUEST !!!');
                 console.log('📍 [COMBINADA] URL: /asesores/pedidos/guardar-logo-pedido');
                 console.log('📍 [COMBINADA] BODY:', bodyLogoPedido);
                 
@@ -3717,11 +3747,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             })
             .then(response => {
-                console.log('✅ [RESPUESTA SEGUNDO REQUEST] Status:', response.status);
-                return response.json();
+                console.log('✅ [RESPUESTA] Type de respuesta:', typeof response);
+                console.log('✅ [RESPUESTA] ¿Es Response?:', response instanceof Response);
+                
+                // ✅ Si ya es un objeto (Promise.resolve), devolver tal cual
+                // Si es una Response real, parsearla
+                if (response instanceof Response) {
+                    console.log('✅ [RESPUESTA SEGUNDO REQUEST] Status:', response.status);
+                    return response.json();
+                } else {
+                    console.log('ℹ️ [RESPUESTA] No es segundo request, es respuesta local sin logo');
+                    return response;
+                }
             })
             .then(data => {
-                console.log('✅ [RESPUESTA SEGUNDO REQUEST JSON] Respuesta completa:', data);
+                console.log('✅ [RESPUESTA JSON] Respuesta completa:', data);
 
                 if (data.success) {
                     // Para LOGO SOLO, mostrar éxito con número de LOGO
@@ -3735,22 +3775,39 @@ document.addEventListener('DOMContentLoaded', function() {
                             window.location.href = '/asesores/pedidos';
                         });
                     } else if (esCombinada) {
-                        // Para COMBINADA (PL), mostrar AMBOS números
-                        const numeroPrendas = data.numero_pedido_produccion || data.pedido_produccion?.numero_pedido || 'N/A';
+                        // Para COMBINADA (PL), mostrar diferentes mensajes según si hay logo o no
+                        const numeroPrendas = data.numero_pedido_produccion || data.pedido_produccion?.numero_pedido || dataCrearPedido.pedido_numero || 'N/A';
                         const numeroLogo = data.numero_pedido_logo || data.logo_pedido?.numero_pedido || 'N/A';
+                        const hayDataLogo = data._tieneDataLogo !== undefined ? data._tieneDataLogo : tieneDataLogo;
                         
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Éxito!',
-                            html: '<p style="font-size: 16px; line-height: 1.8;">' +
-                                  'Pedidos creados exitosamente<br><br>' +
-                                  '<strong>📦 Pedido Producción:</strong> ' + numeroPrendas + '<br>' +
-                                  '<strong>🎨 Pedido Logo:</strong> ' + numeroLogo +
-                                  '</p>',
-                            confirmButtonText: 'OK'
-                        }).then(() => {
-                            window.location.href = '/asesores/pedidos';
-                        });
+                        // ✅ Si NO hay datos de logo, mostrar solo pedido de prendas
+                        if (!hayDataLogo) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                html: '<p style="font-size: 16px; line-height: 1.8;">' +
+                                      'Pedido de PRENDAS creado exitosamente<br><br>' +
+                                      '<strong>📦 Pedido:</strong> ' + numeroPrendas +
+                                      '</p>',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                window.location.href = '/asesores/pedidos';
+                            });
+                        } else {
+                            // Si HAY datos de logo, mostrar AMBOS números
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                html: '<p style="font-size: 16px; line-height: 1.8;">' +
+                                      'Pedidos creados exitosamente<br><br>' +
+                                      '<strong>📦 Pedido Producción:</strong> ' + numeroPrendas + '<br>' +
+                                      '<strong>🎨 Pedido Logo:</strong> ' + numeroLogo +
+                                      '</p>',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                window.location.href = '/asesores/pedidos';
+                            });
+                        }
                     }
                 } else {
                     Swal.fire({

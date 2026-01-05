@@ -375,7 +375,9 @@ document.addEventListener('DOMContentLoaded', () => {
             seccionBorTodas.style.display = 'block';
         }
     } else {
-        // Mostrar la sección inicial de cotizaciones (Todas)
+        // Mostrar tab de cotizaciones por defecto
+        mostrarTab('cotizaciones');
+        // Mostrar la primera sección de cotizaciones (Todas)
         const seccionTodas = document.getElementById('seccion-todas');
         if (seccionTodas) {
             seccionTodas.style.display = 'block';

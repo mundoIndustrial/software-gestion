@@ -91,22 +91,27 @@ class PrendaTelaFotoCot extends Model
      */
     public function getUrlAttribute(): string
     {
+        // Preferir siempre ruta_webp si existe
         $ruta = $this->ruta_webp ?? $this->ruta_original;
         if (!$ruta) {
             return '';
         }
+        
         // Si ya es una URL completa, devolverla tal cual
         if (str_starts_with($ruta, 'http')) {
             return $ruta;
         }
+        
         // Si ya comienza con /storage/, es accesible
         if (str_starts_with($ruta, '/storage/')) {
             return $ruta;
         }
-        // Si comienza con 'storage/', agregable /
+        
+        // Si comienza con 'storage/', agregar /
         if (str_starts_with($ruta, 'storage/')) {
             return '/' . $ruta;
         }
+        
         // Si es una ruta relativa, agregar /storage/
         return '/storage/' . ltrim($ruta, '/');
     }

@@ -1579,13 +1579,113 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
                 if (data.success) {
                     console.log(`✅ Foto de logo eliminada del servidor:`, rutaFoto);
                     
-                    // Eliminar del DOM
-                    const fotoElement = document.querySelector(`img[data-ruta="${rutaFoto}"]`);
-                    if (fotoElement) {
-                        const container = fotoElement.closest('[data-foto-logo]');
-                        if (container) {
-                            container.remove();
+                    // ✅ PASO 1: Eliminar TODOS los elementos con data-foto-logo del DOM que coincidan
+                    // Buscar más robustamente por atributo data-ruta
+                    const galeriaImagenes = document.getElementById('galeria_imagenes');
+                    if (galeriaImagenes) {
+                        // Buscar TODOS los elementos - usar selector más específico
+                        const allElements = galeriaImagenes.querySelectorAll('div[data-foto-guardada="true"][data-foto-logo="true"]');
+                        let eliminados = 0;
+                        
+                        allElements.forEach(element => {
+                            const img = element.querySelector('img');
+                            if (img) {
+                                const dataRuta = img.getAttribute('data-ruta');
+                                if (dataRuta) {
+                                    // Comparar rutas (normalizar para eliminar /storage/)
+                                    let rutaNormalizada1 = (rutaFoto || '').replace(/^\/storage\//, '').trim();
+                                    let rutaNormalizada2 = (dataRuta || '').replace(/^\/storage\//, '').trim();
+                                    
+                                    // Comparaciones múltiples para asegurar que coincida
+                                    if (rutaNormalizada1 === rutaNormalizada2 || 
+                                        rutaFoto === dataRuta ||
+                                        rutaFoto.endsWith(dataRuta) ||
+                                        dataRuta.endsWith(rutaFoto)) {
+                                        console.log(`🗑️ Eliminando elemento del DOM - data-ruta: ${dataRuta}, rutaFoto: ${rutaFoto}`);
+                                        element.remove();
+                                        eliminados++;
+                                    }
+                                }
+                            }
+                        });
+                        console.log(`✅ Total elementos eliminados del DOM (paso 1): ${eliminados}`);
+                        
+                        // Si no encontró con ambos atributos, buscar solo con data-ruta
+                        if (eliminados === 0) {
+                            console.log('⚠️ No encontrado con ambos atributos, buscando solo por data-ruta...');
+                            const allDivs = galeriaImagenes.querySelectorAll('div');
+                            allDivs.forEach(div => {
+                                const img = div.querySelector('img');
+                                if (img) {
+                                    const dataRuta = img.getAttribute('data-ruta');
+                                    if (dataRuta) {
+                                        let rutaNormalizada1 = (rutaFoto || '').replace(/^\/storage\//, '').trim();
+                                        let rutaNormalizada2 = (dataRuta || '').replace(/^\/storage\//, '').trim();
+                                        
+                                        if (rutaNormalizada1 === rutaNormalizada2 || rutaFoto === dataRuta) {
+                                            console.log(`🗑️ Eliminando por data-ruta (fallback) - ${dataRuta}`);
+                                            div.remove();
+                                            eliminados++;
+                                        }
+                                    }
+                                }
+                            });
+                            console.log(`✅ Total elementos eliminados del DOM (fallback): ${eliminados}`);
                         }
+                    }
+                    
+                    // ✅ PASO 2: Eliminar también de window.imagenesEnMemoria.logo
+                    if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
+                        const beforeCount = window.imagenesEnMemoria.logo.length;
+                        console.log('🔍 ANTES - window.imagenesEnMemoria.logo:', window.imagenesEnMemoria.logo);
+                        console.log(`🔍 Intentando eliminar: "${rutaFoto}"`);
+                        
+                        // Extraer solo el nombre del archivo para comparación más flexible
+                        const nombreArchivo = rutaFoto.split('/').pop();
+                        console.log(`🔍 Nombre del archivo a eliminar: "${nombreArchivo}"`);
+                        
+                        window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter((imagen, idx) => {
+                            console.log(`   [${idx}] Evaluando imagen:`, imagen);
+                            
+                            // Si es un string (ruta completa)
+                            if (typeof imagen === 'string') {
+                                let nombreEnMemoria = imagen.split('/').pop();
+                                console.log(`       String: nombre="${nombreEnMemoria}" | ¿Coincide nombre? ${nombreEnMemoria === nombreArchivo}`);
+                                
+                                // Comparar por nombre de archivo
+                                if (nombreEnMemoria === nombreArchivo) {
+                                    console.log(`       ❌ COINCIDE - Eliminando this string`);
+                                    return false;  // Eliminar
+                                }
+                                return true;  // Mantener
+                            }
+                            
+                            // Si es un objeto (con propiedades de ruta)
+                            if (imagen && typeof imagen === 'object') {
+                                const rutas = [imagen.ruta, imagen.file, imagen.url].filter(Boolean);
+                                let coincide = false;
+                                
+                                rutas.forEach(ruta => {
+                                    let nombreEnRuta = (ruta || '').split('/').pop();
+                                    console.log(`       Objeto - Comparando: "${nombreEnRuta}" vs "${nombreArchivo}"`);
+                                    if (nombreEnRuta === nombreArchivo || ruta === rutaFoto) {
+                                        coincide = true;
+                                        console.log(`          ✅ COINCIDE`);
+                                    }
+                                });
+                                
+                                if (coincide) {
+                                    console.log(`       ❌ COINCIDE - Eliminando este objeto`);
+                                    return false;  // Eliminar
+                                }
+                                return true;  // Mantener
+                            }
+                            
+                            return true;  // Mantener otros tipos
+                        });
+                        
+                        console.log('🔍 DESPUÉS - window.imagenesEnMemoria.logo:', window.imagenesEnMemoria.logo);
+                        console.log(`✅ Eliminación completada. Antes: ${beforeCount}, Después: ${window.imagenesEnMemoria.logo.length} (Eliminados: ${beforeCount - window.imagenesEnMemoria.logo.length})`);
                     }
                     
                     Swal.fire({

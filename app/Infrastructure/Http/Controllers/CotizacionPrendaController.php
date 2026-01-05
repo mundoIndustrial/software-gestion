@@ -72,7 +72,7 @@ class CotizacionPrendaController extends Controller
                     'asesor_id' => Auth::id(),
                     'cliente_id' => $clienteId,
                     'numero_cotizacion' => $numeroCotizacion,
-                    'tipo_cotizacion_id' => 3, // Cotización de Prenda
+                    'tipo_cotizacion_id' => 1, // Cotizaci\u00f3n Combinada (Prenda + Logo)
                     'tipo_venta' => $request->input('tipo_venta', 'M'),
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
@@ -108,7 +108,7 @@ class CotizacionPrendaController extends Controller
                 if (!$esBorrador) {
                     \App\Jobs\ProcesarEnvioCotizacionJob::dispatch(
                         $cotizacion->id,
-                        3 // tipo_cotizacion_id para Prenda
+                        1 // tipo_cotizacion_id para Combinada (Prenda + Logo)
                     )->onQueue('cotizaciones');
 
                     Log::info('📋 Job de envío encolado (número ya existe)', [
@@ -136,11 +136,16 @@ class CotizacionPrendaController extends Controller
                     'logoCotizacion.fotos'
                 ])->findOrFail($cotizacion->id);
 
+                // Determinar redirección según estado
+                $redirectUrl = $esBorrador 
+                    ? route('asesores.cotizaciones.index') . '?tab=borradores'
+                    : route('asesores.cotizaciones.index');
+
                 return response()->json([
                     'success' => true,
                     'message' => $esBorrador ? 'Cotización guardada como borrador' : 'Cotización enviada - Número: ' . $numeroCotizacion,
                     'data' => $cotizacionCompleta->toArray(),
-                    'redirect' => route('asesores.cotizaciones.index')
+                    'redirect' => $redirectUrl
                 ], 201);
 
             } catch (\Exception $e) {

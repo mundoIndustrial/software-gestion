@@ -28,6 +28,55 @@ Route::get('/test-echo', function () {
     return view('test-echo');
 })->name('test.echo');
 
+// ========================================
+// RUTAS DE STORAGE - Servir imágenes con fallback de extensiones
+// ========================================
+// Intercepta /storage/cotizaciones/{path} y sirve .webp si .png no existe
+Route::get('/storage/cotizaciones/{path}', function ($path) {
+    $disk = \Illuminate\Support\Facades\Storage::disk('public');
+    
+    // Reconstruir la ruta completa (puede tener múltiples segmentos)
+    $fullPath = 'cotizaciones/' . $path;
+    
+    // Intentar servir el archivo tal cual
+    if ($disk->exists($fullPath)) {
+        $contents = $disk->get($fullPath);
+        $mimeType = $disk->mimeType($fullPath);
+        
+        return response($contents, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Cache-Control', 'public, max-age=31536000')
+            ->header('Content-Disposition', 'inline');
+    }
+    
+    // Si no existe y termina en .png, intentar .webp
+    if (str_ends_with($fullPath, '.png')) {
+        $pathWebp = substr($fullPath, 0, -4) . '.webp';
+        if ($disk->exists($pathWebp)) {
+            $contents = $disk->get($pathWebp);
+            return response($contents, 200)
+                ->header('Content-Type', 'image/webp')
+                ->header('Cache-Control', 'public, max-age=31536000')
+                ->header('Content-Disposition', 'inline');
+        }
+    }
+    
+    // Si no existe y termina en .jpg/.jpeg, intentar .webp
+    if (str_ends_with($fullPath, '.jpg') || str_ends_with($fullPath, '.jpeg')) {
+        $pathWebp = preg_replace('/\.(jpg|jpeg)$/i', '.webp', $fullPath);
+        if ($disk->exists($pathWebp)) {
+            $contents = $disk->get($pathWebp);
+            return response($contents, 200)
+                ->header('Content-Type', 'image/webp')
+                ->header('Cache-Control', 'public, max-age=31536000')
+                ->header('Content-Disposition', 'inline');
+        }
+    }
+    
+    // Si no existe en ningún formato, devolver 404
+    abort(404, 'Imagen no encontrada');
+})->where('path', '.*')->name('storage.cotizaciones');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

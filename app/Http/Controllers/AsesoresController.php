@@ -512,8 +512,24 @@ class AsesoresController extends Controller
         $pedidoPrendaService = new PedidoPrendaService();
         $pedidoPrendaService->guardarPrendasEnPedido($pedidoBorrador, $productosConTelasProcessadas);
 
-        // ✅ GUARDAR LOGO Y SUS IMÁGENES (si existe)
-        if (!empty($request->get('logo.descripcion')) || $request->hasFile('logo.imagenes')) {
+        // ✅ GUARDAR LOGO Y SUS IMÁGENES (solo si hay datos de logo)
+        // Solo guardar si hay: descripción, técnicas, ubicaciones, observaciones O imágenes
+        $tieneDataLogo = !empty($request->get('logo.descripcion')) 
+            || $request->hasFile('logo.imagenes')
+            || !empty($request->get('logo.tecnicas'))
+            || !empty($request->get('logo.ubicaciones'))
+            || !empty($request->get('logo.observaciones_generales'));
+        
+        if ($tieneDataLogo) {
+            \Log::info('🎨 [PEDIDO COMBINADA] Guardando logo en el pedido', [
+                'pedido_id' => $pedidoBorrador->id,
+                'tiene_descripcion' => !empty($request->get('logo.descripcion')),
+                'tiene_imagenes' => $request->hasFile('logo.imagenes'),
+                'tiene_tecnicas' => !empty($request->get('logo.tecnicas')),
+                'tiene_ubicaciones' => !empty($request->get('logo.ubicaciones')),
+                'tiene_observaciones' => !empty($request->get('logo.observaciones_generales')),
+            ]);
+            
             $logoService = new PedidoLogoService();
             
             // Procesar imágenes del logo
@@ -549,6 +565,10 @@ class AsesoresController extends Controller
             
             // Guardar logo en el pedido
             $logoService->guardarLogoEnPedido($pedidoBorrador, $logoData);
+        } else {
+            \Log::info('ℹ️ [PEDIDO COMBINADA] No hay datos de logo, se crea solo pedido de prendas', [
+                'pedido_id' => $pedidoBorrador->id,
+            ]);
         }
 
         return $pedidoBorrador;

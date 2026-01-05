@@ -682,24 +682,9 @@ async function subirImagenesAlServidor(cotizacionId, archivos, tipo) {
 // ============ ENVIAR COTIZACIÓN ============
 
 async function enviarCotizacion() {
-    console.log('🔵 enviarCotizacion() - Primero GUARDAR la cotización antes de enviar');
+    console.log('🔵 enviarCotizacion() - Mostrar confirmación antes de guardar');
     
-    // ✅ PRIMERO GUARDAR LA COTIZACIÓN
-    const guardadoExitoso = await guardarCotizacion();
-    
-    if (!guardadoExitoso) {
-        console.error('❌ No se pudo guardar la cotización, abortando envío');
-        Swal.fire({
-            title: 'Error',
-            text: 'No se pudieron guardar los cambios. Por favor intenta de nuevo.',
-            icon: 'error',
-            confirmButtonColor: '#1e40af'
-        });
-        return;
-    }
-    
-    console.log('✅ Cotización guardada exitosamente, procediendo con el envío');
-    
+    // ✅ Validar datos ANTES de mostrar el modal
     const datos = recopilarDatos();
     
     if (!datos) {
@@ -711,10 +696,6 @@ async function enviarCotizacion() {
         });
         return;
     }
-    
-    // 📸 NO convertir a Base64 - mantener File objects
-    // Las imágenes se enviarán directamente como archivos en FormData
-    console.log('🖼️ Imágenes se enviarán como File objects (sin convertir a Base64)...');
     
     if (!datos.cliente.trim()) {
         Swal.fire({
@@ -826,6 +807,7 @@ async function enviarCotizacion() {
         btnEnviar.style.boxShadow = '';
     }
     
+    // ✅ MOSTRAR CONFIRMACIÓN SIN GUARDAR PRIMERO
     Swal.fire({
         title: '¿Listo para enviar?',
         html: '<p style="margin: 0; font-size: 0.95rem; color: #4b5563;">Una vez enviada la cotización <span style="color: #ef4444; font-weight: 700;">no podrá editarse</span>.</p>',
@@ -834,10 +816,16 @@ async function enviarCotizacion() {
         confirmButtonColor: '#10b981',
         cancelButtonColor: '#d1d5db',
         confirmButtonText: 'Sí, enviar',
-        cancelButtonText: 'Revisar primero'
+        cancelButtonText: 'Revisar primero',
+        allowOutsideClick: false,
+        allowEscapeKey: false
     }).then((result) => {
         if (result.isConfirmed) {
+            // ✅ SOLO SI CONFIRMA, GUARDAR Y LUEGO ENVIAR
             procederEnviarCotizacion();
+        } else if (result.isDismissed) {
+            // Usuario canceló o cerró el modal - no hacer nada
+            console.log('❌ Usuario canceló el envío');
         }
     });
 }
@@ -849,6 +837,29 @@ async function procederEnviarCotizacion() {
     if (btnGuardar) btnGuardar.disabled = true;
     if (btnEnviar) btnEnviar.disabled = true;
     
+    console.log('🔵 procederEnviarCotizacion() - Primero guardar como borrador antes de enviar');
+    
+    // ✅ GUARDAR PRIMERO COMO BORRADOR
+    const guardadoExitoso = await guardarCotizacion();
+    
+    if (!guardadoExitoso) {
+        console.error('❌ No se pudo guardar la cotización, abortando envío');
+        Swal.fire({
+            title: 'Error',
+            text: 'No se pudieron guardar los cambios. Por favor intenta de nuevo.',
+            icon: 'error',
+            confirmButtonColor: '#1e40af'
+        });
+        if (btnGuardar) btnGuardar.disabled = false;
+        if (btnEnviar) btnEnviar.disabled = false;
+        return;
+    }
+    
+    console.log('✅ Cotización guardada exitosamente, procediendo con el envío');
+    
+    if (btnGuardar) btnGuardar.disabled = true;
+    if (btnEnviar) btnEnviar.disabled = true;
+    
     Swal.fire({
         title: 'Enviando...',
         html: '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; animation: pulse 1.5s infinite;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; animation: pulse 1.5s infinite 0.3s;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; animation: pulse 1.5s infinite 0.6s;"></div></div><style>@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }</style>',
@@ -856,8 +867,6 @@ async function procederEnviarCotizacion() {
         allowEscapeKey: false,
         showConfirmButton: false
     });
-    
-    console.log('🔵 procederEnviarCotizacion() llamado');
     
     // ✅ Recopilar datos nuevamente para asegurar que están actualizados
     const datos = recopilarDatos();

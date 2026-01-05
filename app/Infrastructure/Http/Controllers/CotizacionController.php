@@ -2575,13 +2575,12 @@ final class CotizacionController extends Controller
 
             // Mapeo de tipos a rutas de redirección
             $mapeoTipos = [
-                1 => '/asesores/pedidos/create?tipo=PB&editar={id}',
-                2 => '/asesores/cotizaciones/bordado/crear?editar={id}',
-                3 => '/asesores/cotizaciones/prenda/{id}/editar',
+                1 => '/asesores/pedidos/create?tipo=PB&editar={id}',  // Combinada (Prenda + Logo)
+                2 => '/asesores/cotizaciones/bordado/crear?editar={id}',  // Logo only
                 4 => null, // Reflectivo se maneja especialmente
             ];
 
-            $tipoCotizacionId = $cotizacion->tipo_cotizacion_id ?? 3;
+            $tipoCotizacionId = $cotizacion->tipo_cotizacion_id ?? 1;  // Default to Combinada (ID 1)
 
             // Si es Reflectivo (tipo 4), mostrar la vista
             if ($tipoCotizacionId === 4) {
