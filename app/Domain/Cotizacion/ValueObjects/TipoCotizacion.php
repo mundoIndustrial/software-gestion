@@ -5,18 +5,16 @@ namespace App\Domain\Cotizacion\ValueObjects;
 /**
  * TipoCotizacion - Value Object que representa los tipos de cotización
  *
- * Tipos:
- * - PRENDA (P): Solo prendas
+ * Solo existen 3 tipos:
  * - LOGO (L): Solo logo/bordado
- * - PRENDA_LOGO (PL): Prendas con logo/bordado
- * - PRENDA_BORDADO (PB): Alias para Prendas con bordado (mapea a PL)
+ * - COMBINADO (PL): Prendas con logo/bordado
+ * - PRENDA_BORDADO (PB): Alias para Combinado (Prenda + Bordado)
  * - REFLECTIVO (RF): Solo reflectivo
  */
 enum TipoCotizacion: string
 {
-    case PRENDA = 'P';
     case LOGO = 'L';
-    case PRENDA_LOGO = 'PL';
+    case COMBINADO = 'PL';
     case PRENDA_BORDADO = 'PB';
     case REFLECTIVO = 'RF';
 
@@ -26,10 +24,9 @@ enum TipoCotizacion: string
     public function label(): string
     {
         return match ($this) {
-            self::PRENDA => 'Prenda',
             self::LOGO => 'Logo/Bordado',
-            self::PRENDA_LOGO => 'Prenda + Logo/Bordado',
-            self::PRENDA_BORDADO => 'Prenda + Bordado',
+            self::COMBINADO => 'Combinado (Prenda + Logo/Bordado)',
+            self::PRENDA_BORDADO => 'Combinado (Prenda + Bordado)',
             self::REFLECTIVO => 'Reflectivo',
         };
     }
@@ -40,19 +37,15 @@ enum TipoCotizacion: string
     public static function calcularDesde(bool $tienePrendas, bool $tieneLogo): self
     {
         if ($tienePrendas && $tieneLogo) {
-            return self::PRENDA_LOGO;
-        }
-
-        if ($tienePrendas) {
-            return self::PRENDA;
+            return self::COMBINADO;
         }
 
         if ($tieneLogo) {
             return self::LOGO;
         }
 
-        // Por defecto, si no hay nada, es PRENDA
-        return self::PRENDA;
+        // Por defecto, si no hay nada o solo prendas, es COMBINADO
+        return self::COMBINADO;
     }
 
     /**
@@ -61,8 +54,7 @@ enum TipoCotizacion: string
     public function requierePrendas(): bool
     {
         return in_array($this, [
-            self::PRENDA,
-            self::PRENDA_LOGO,
+            self::COMBINADO,
             self::PRENDA_BORDADO,
         ]);
     }
@@ -74,7 +66,7 @@ enum TipoCotizacion: string
     {
         return in_array($this, [
             self::LOGO,
-            self::PRENDA_LOGO,
+            self::COMBINADO,
             self::PRENDA_BORDADO,
         ]);
     }
@@ -93,9 +85,8 @@ enum TipoCotizacion: string
     public function descripcion(): string
     {
         return match ($this) {
-            self::PRENDA => 'Cotización de prendas (camisas, pantalones, etc.)',
             self::LOGO => 'Cotización de logo, bordado o diseño',
-            self::PRENDA_LOGO => 'Cotización de prendas con logo o bordado',
+            self::COMBINADO => 'Cotización de prendas con logo o bordado',
             self::PRENDA_BORDADO => 'Cotización de prendas con bordado',
             self::REFLECTIVO => 'Cotización de reflectivo',
         };

@@ -556,6 +556,10 @@ async function guardarCotizacion() {
                 console.log('✓ localStorage limpiado después del guardado');
             }
             
+            // ❌ CERRAR el modal de "Guardando..." primero
+            Swal.close();
+            
+            // ✅ Mostrar toast de éxito
             Swal.fire({
                 toast: true,
                 position: 'top-end',
@@ -565,6 +569,11 @@ async function guardarCotizacion() {
                 timer: 3000,
                 timerProgressBar: true
             });
+            
+            // Redirigir a la vista de borradores después de 2 segundos
+            setTimeout(() => {
+                window.location.href = '/asesores/cotizaciones?tab=borradores';
+            }, 2000);
             
             if (btnGuardar) btnGuardar.disabled = false;
             if (btnEnviar) btnEnviar.disabled = false;

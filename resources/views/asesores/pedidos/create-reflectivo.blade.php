@@ -1498,16 +1498,26 @@ function guardarEspecificacionesReflectivo() {
     if (tbodySeHaVendido) {
         const rows = tbodySeHaVendido.querySelectorAll('tr');
         rows.forEach(row => {
-            const valorInput = row.querySelector('input[name*="vendido_item"]');
-            const checkbox = row.querySelector('input[type="checkbox"][name*="tabla_orden[vendido]"]');
-            const obsInput = row.querySelector('input[name*="vendido_obs"]');
+            const valorInput = row.querySelector('input[name="tabla_orden[vendido_item]"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name="tabla_orden[vendido]"]');
+            const obsInput = row.querySelector('input[name="tabla_orden[vendido_obs]"]');
             
-            if (valorInput && valorInput.value.trim() && checkbox && checkbox.checked) {
+            console.log('  🔍 SE HA VENDIDO - Elemento encontrado:', {
+                valorInput: !!valorInput,
+                checkbox: !!checkbox,
+                obsInput: !!obsInput,
+                valor: valorInput?.value,
+                checked: checkbox?.checked
+            });
+            
+            // ✅ Si el checkbox está marcado, guardar aunque el valor esté vacío
+            if (checkbox && checkbox.checked) {
+                const valorTexto = valorInput?.value.trim() || 'Sí'; // Valor por defecto "Sí" si está vacío
                 especificaciones.se_ha_vendido.push({
-                    valor: valorInput.value.trim(),
+                    valor: valorTexto,
                     observacion: obsInput ? obsInput.value.trim() : ''
                 });
-                console.log(`  ✓ ${valorInput.value.trim()} agregado`);
+                console.log(`  ✓ ${valorTexto} agregado`);
             }
         });
     }
@@ -1518,16 +1528,26 @@ function guardarEspecificacionesReflectivo() {
     if (tbodyUltimaVenta) {
         const rows = tbodyUltimaVenta.querySelectorAll('tr');
         rows.forEach(row => {
-            const valorInput = row.querySelector('input[name*="ultima_venta_item"]');
-            const checkbox = row.querySelector('input[type="checkbox"][name*="ultima_venta"]');
-            const obsInput = row.querySelector('input[name*="ultima_venta_obs"]');
+            const valorInput = row.querySelector('input[name="tabla_orden[ultima_venta_item]"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name="tabla_orden[ultima_venta]"]');
+            const obsInput = row.querySelector('input[name="tabla_orden[ultima_venta_obs]"]');
             
-            if (valorInput && valorInput.value.trim() && checkbox && checkbox.checked) {
+            console.log('  🔍 ÚLTIMA VENTA - Elemento encontrado:', {
+                valorInput: !!valorInput,
+                checkbox: !!checkbox,
+                obsInput: !!obsInput,
+                valor: valorInput?.value,
+                checked: checkbox?.checked
+            });
+            
+            // ✅ Si el checkbox está marcado, guardar aunque el valor esté vacío
+            if (checkbox && checkbox.checked) {
+                const valorTexto = valorInput?.value.trim() || 'Sí'; // Valor por defecto "Sí" si está vacío
                 especificaciones.ultima_venta.push({
-                    valor: valorInput.value.trim(),
+                    valor: valorTexto,
                     observacion: obsInput ? obsInput.value.trim() : ''
                 });
-                console.log(`  ✓ ${valorInput.value.trim()} agregado`);
+                console.log(`  ✓ ${valorTexto} agregado`);
             }
         });
     }
@@ -1538,16 +1558,26 @@ function guardarEspecificacionesReflectivo() {
     if (tbodyFlete) {
         const rows = tbodyFlete.querySelectorAll('tr');
         rows.forEach(row => {
-            const valorInput = row.querySelector('input[name*="flete_item"]');
-            const checkbox = row.querySelector('input[type="checkbox"][name*="flete"]');
-            const obsInput = row.querySelector('input[name*="flete_obs"]');
+            const valorInput = row.querySelector('input[name="tabla_orden[flete_item]"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name="tabla_orden[flete]"]');
+            const obsInput = row.querySelector('input[name="tabla_orden[flete_obs]"]');
             
-            if (valorInput && valorInput.value.trim() && checkbox && checkbox.checked) {
+            console.log('  🔍 FLETE - Elemento encontrado:', {
+                valorInput: !!valorInput,
+                checkbox: !!checkbox,
+                obsInput: !!obsInput,
+                valor: valorInput?.value,
+                checked: checkbox?.checked
+            });
+            
+            // ✅ Si el checkbox está marcado, guardar aunque el valor esté vacío
+            if (checkbox && checkbox.checked) {
+                const valorTexto = valorInput?.value.trim() || 'Sí'; // Valor por defecto "Sí" si está vacío
                 especificaciones.flete.push({
-                    valor: valorInput.value.trim(),
+                    valor: valorTexto,
                     observacion: obsInput ? obsInput.value.trim() : ''
                 });
-                console.log(`  ✓ ${valorInput.value.trim()} agregado`);
+                console.log(`  ✓ ${valorTexto} agregado`);
             }
         });
     }
@@ -1816,15 +1846,38 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         // ✅ RECOPILAR TALLAS Y CANTIDADES
         const tallas = [];
         const cantidades = {};
-        const tallasContainer = prenda.querySelector('.tallas-agregadas-reflectivo');
-        if (tallasContainer) {
-            tallasContainer.querySelectorAll('div > span:first-child').forEach(span => {
-                const tallaText = span.textContent.trim();
-                if (tallaText) {
-                    tallas.push(tallaText);
-                    cantidades[tallaText] = 1; // Valor por defecto
-                }
+        
+        console.log(`🔍 [Prenda ${index + 1}] Buscando tallas...`);
+        
+        // Primero intentar leer desde el campo oculto
+        const tallasHidden = prenda.querySelector('.tallas-hidden-reflectivo');
+        console.log(`  - Campo oculto encontrado:`, !!tallasHidden);
+        console.log(`  - Valor del campo oculto:`, tallasHidden?.value);
+        
+        if (tallasHidden && tallasHidden.value) {
+            const tallasArray = tallasHidden.value.split(',').map(t => t.trim()).filter(t => t);
+            tallasArray.forEach(talla => {
+                tallas.push(talla);
+                cantidades[talla] = 1; // Valor por defecto
             });
+            console.log(`  ✅ Tallas desde campo oculto:`, tallasArray);
+        } else {
+            // Fallback: leer desde el DOM visual
+            const tallasContainer = prenda.querySelector('.tallas-agregadas-reflectivo');
+            console.log(`  - Contenedor visual encontrado:`, !!tallasContainer);
+            if (tallasContainer) {
+                const spans = tallasContainer.querySelectorAll('div > span:first-child');
+                console.log(`  - Cantidad de spans encontrados:`, spans.length);
+                spans.forEach(span => {
+                    const tallaText = span.textContent.trim();
+                    console.log(`    - Talla leída del span:`, tallaText);
+                    if (tallaText) {
+                        tallas.push(tallaText);
+                        cantidades[tallaText] = 1; // Valor por defecto
+                    }
+                });
+            }
+            console.log(`  📏 Tallas desde DOM visual:`, tallas);
         }
 
         // ✅ RECOPILAR UBICACIONES DE ESTA PRENDA ESPECÍFICA
@@ -2890,12 +2943,27 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.actualizarTallasHiddenReflectivo = function(container) {
-        if (!container) return;
+        if (!container) {
+            console.warn('⚠️ actualizarTallasHiddenReflectivo: container es null');
+            return;
+        }
         
         const tallasAgregadas = container.querySelector('.tallas-agregadas-reflectivo');
         const tallasHidden = container.querySelector('.tallas-hidden-reflectivo');
         
-        if (!tallasAgregadas || !tallasHidden) return;
+        console.log('🔍 actualizarTallasHiddenReflectivo:', {
+            tallasAgregadas: !!tallasAgregadas,
+            tallasHidden: !!tallasHidden,
+            tallasHiddenName: tallasHidden?.name
+        });
+        
+        if (!tallasAgregadas || !tallasHidden) {
+            console.warn('⚠️ No se encontraron elementos:', {
+                tallasAgregadas: !!tallasAgregadas,
+                tallasHidden: !!tallasHidden
+            });
+            return;
+        }
         
         const tallas = [];
         
@@ -2906,6 +2974,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         tallasHidden.value = tallas.join(', ');
+        console.log('✅ Campo oculto actualizado con tallas:', tallasHidden.value);
     };
 });
 </script>

@@ -344,14 +344,13 @@ final class Cotizacion
     public function toArray(): array
     {
         // Mapear tipo a tipo_cotizacion_id
-        // BD: ID 1 = PL (Combinada), ID 2 = L (Logo), ID 3 = P (Prenda), ID 4 = RF (Reflectivo)
+        // BD: Solo existen 3 tipos - ID 1 = PL (Combinada), ID 2 = L (Logo), ID 4 = RF (Reflectivo)
         $tipoCotizacionId = match($this->tipo->value) {
-            'P' => 3,    // Prenda únicamente
             'L' => 2,    // Logo/Bordado únicamente
             'PL' => 1,   // Combinada (Prenda + Logo/Bordado)
             'PB' => 1,   // Alias para Combinada (Prenda + Bordado)
             'RF' => 4,   // Reflectivo
-            default => 3,
+            default => 1, // Por defecto Combinada
         };
 
         return [

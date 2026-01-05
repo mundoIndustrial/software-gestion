@@ -550,31 +550,14 @@ final class CotizacionController extends Controller
                 'cliente_id' => $clienteId,
             ]);
 
-            // 🔍 LÓGICA: Si es COMBINADA (PL) pero NO hay logo, cambiar a PRENDA (P)
-            $tipoCotizacion = $request->input('tipo_cotizacion', 'P');
+            // Tipo de cotización: Logo (L), Combinado (PL), o Reflectivo (RF)
+            $tipoCotizacion = $request->input('tipo_cotizacion', 'PL');
             $logoData = $request->input('logo', []);
             
-            // Verificar si hay datos de logo
-            $tieneLogoDatos = !empty($logoData) && (
-                !empty($logoData['descripcion']) ||
-                !empty($logoData['tecnicas']) ||
-                !empty($logoData['imagenes']) ||
-                !empty($logoData['ubicaciones'])
-            );
-            
-            Log::info('CotizacionController@store: Análisis de Logo', [
-                'tipo_cotizacion_original' => $tipoCotizacion,
-                'tiene_logo_datos' => $tieneLogoDatos,
+            Log::info('CotizacionController@store: Tipo de cotización', [
+                'tipo_cotizacion' => $tipoCotizacion,
                 'logo_data' => $logoData,
             ]);
-            
-            // Si es COMBINADA pero no hay logo, cambiar a PRENDA
-            if ($tipoCotizacion === 'PL' && !$tieneLogoDatos) {
-                Log::info('CotizacionController@store: COMBINADA sin logo detectada, cambiando a PRENDA', [
-                    'cotizacion_id_futuro' => 'pendiente',
-                ]);
-                $tipoCotizacion = 'P';
-            }
 
             $dto = CrearCotizacionDTO::desdeArray([
                 'usuario_id' => Auth::id(),
@@ -687,22 +670,16 @@ final class CotizacionController extends Controller
             // Determinar el tipo_cotizacion_id correcto
             $tipoCotizacionId = $cotizacion->tipo_cotizacion_id; // Mantener el actual por defecto
             
-            // Si se envía tipo_cotizacion explícitamente, usar la lógica
-            if ($tipoCotizacionEnviado === 'PL') {
-                // Si es COMBINADA pero no hay logo, cambiar a PRENDA
-                if (!$tieneLogoDatos) {
-                    Log::info('CotizacionController@update: COMBINADA sin logo detectada, actualizando a PRENDA', [
-                        'cotizacion_id' => $id,
-                    ]);
-                    $tipoCotizacionId = 3; // ID de PRENDA (P)
-                } else {
-                    // Si hay logo, confirmar que es combinada
-                    $tipoCotizacionId = 1; // ID de COMBINADA (PL)
-                }
-            } elseif ($tipoCotizacionEnviado === 'P') {
-                $tipoCotizacionId = 3; // ID de PRENDA (P)
+            // Mapear tipo a tipo_cotizacion_id
+            // Solo 3 tipos: Logo (L=2), Combinado (PL=1), Reflectivo (RF=4)
+            if ($tipoCotizacionEnviado === 'PL' || $tipoCotizacionEnviado === 'PB') {
+                $tipoCotizacionId = 1; // Combinado
             } elseif ($tipoCotizacionEnviado === 'L') {
-                $tipoCotizacionId = 2; // ID de LOGO (L)
+                $tipoCotizacionId = 2; // Logo
+            } elseif ($tipoCotizacionEnviado === 'RF') {
+                $tipoCotizacionId = 4; // Reflectivo
+            } else {
+                $tipoCotizacionId = 1; // Por defecto Combinado
             }
 
             // Actualizar datos básicos

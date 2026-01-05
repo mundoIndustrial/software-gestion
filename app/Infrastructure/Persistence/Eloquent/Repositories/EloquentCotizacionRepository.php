@@ -211,16 +211,17 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
     private function mapearAEntity(CotizacionModel $modelo, $tipoCotizacion = null): Cotizacion
     {
         // Obtener el tipo de cotización
-        $tipo = \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::PRENDA; // Por defecto
+        $tipo = \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::COMBINADO; // Por defecto
         
         if ($tipoCotizacion) {
             // Mapear desde el código de la relación
-            $codigo = $tipoCotizacion->codigo ?? 'P';
+            $codigo = $tipoCotizacion->codigo ?? 'PL';
             $tipo = match($codigo) {
-                'P' => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::PRENDA,
                 'L' => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::LOGO,
-                'PL' => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::PRENDA_BORDADO,
-                default => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::PRENDA,
+                'PL' => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::COMBINADO,
+                'PB' => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::PRENDA_BORDADO,
+                'RF' => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::REFLECTIVO,
+                default => \App\Domain\Cotizacion\ValueObjects\TipoCotizacion::COMBINADO,
             };
         }
 
