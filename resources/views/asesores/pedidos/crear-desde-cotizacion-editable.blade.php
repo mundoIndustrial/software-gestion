@@ -668,6 +668,16 @@
                     // Ocultar selector de tipo combinada
                     seccionTipoCombinada.style.display = 'none';
                 }
+
+                // Manejar tipo PRENDA sin cotización
+                if (tipoPedido === 'P') {
+                    console.log('🎯 Seleccionado tipo PRENDA sin cotización');
+                    if (typeof crearPedidoTipoPrendaSinCotizacion === 'function') {
+                        crearPedidoTipoPrendaSinCotizacion();
+                    } else {
+                        console.error('❌ Función crearPedidoTipoPrendaSinCotizacion no disponible');
+                    }
+                }
             };
         });
 
@@ -712,6 +722,11 @@
     <!-- Gestor de pedido sin cotización (Fase 3b) -->
     <script src="{{ asset('js/modulos/crear-pedido/gestor-pedido-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/init-gestor-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <!-- Gestor de prenda sin cotización tipo PRENDA (Nuevo) -->
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/renderizador-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/funciones-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/integracion-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <!-- Módulo de Reflectivo -->
     <script src="{{ asset('js/modulos/crear-pedido/reflectivo-pedido.js') }}?v={{ time() }}"></script>
     <!-- Módulo de Logo -->

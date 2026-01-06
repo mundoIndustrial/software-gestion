@@ -74,7 +74,16 @@ class PedidoProduccion extends Model
             \Log::info('🎯 [PedidoProduccion.boot] Hook created disparado', [
                 'pedido_id' => $model->id,
                 'numero_pedido' => $model->numero_pedido,
+                'tiene_cotizacion' => !is_null($model->cotizacion_id),
             ]);
+            
+            // Solo disparar evento si hay cotización asociada
+            if (!$model->cotizacion_id) {
+                \Log::info('⏭️ [PedidoProduccion.boot] Sin cotización, saltando evento PedidoCreado', [
+                    'pedido_id' => $model->id,
+                ]);
+                return;
+            }
             
             $asesor = $model->asesora;
             

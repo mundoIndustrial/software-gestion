@@ -1399,10 +1399,29 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.manejarArchivosFotosPrenda = function(files, prendaIndex) {
-        // Inicializar almacenamiento si no existe
-        if (!window.prendasFotosNuevas) window.prendasFotosNuevas = {};
-        if (!window.prendasFotosNuevas[prendaIndex]) {
-            window.prendasFotosNuevas[prendaIndex] = [];
+        // Detectar si estamos en modo PRENDA sin cotización
+        const esModosPrendaSinCotizacion = window.gestorPrendaSinCotizacion && 
+                                          document.querySelector('input[name="tipo_pedido_editable"]:checked')?.value === 'nuevo' &&
+                                          document.getElementById('tipo_pedido_nuevo')?.value === 'P';
+        
+        // Inicializar almacenamiento según modo
+        let fotosNuevasObj;
+        if (esModosPrendaSinCotizacion) {
+            // Usar almacenamiento del gestor para PRENDA sin cotización
+            if (!window.gestorPrendaSinCotizacion.fotosNuevas) {
+                window.gestorPrendaSinCotizacion.fotosNuevas = {};
+            }
+            if (!window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex]) {
+                window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex] = [];
+            }
+            fotosNuevasObj = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
+        } else {
+            // Usar almacenamiento global para modo cotización
+            if (!window.prendasFotosNuevas) window.prendasFotosNuevas = {};
+            if (!window.prendasFotosNuevas[prendaIndex]) {
+                window.prendasFotosNuevas[prendaIndex] = [];
+            }
+            fotosNuevasObj = window.prendasFotosNuevas[prendaIndex];
         }
 
         let fotosAgregadas = 0;
@@ -1422,10 +1441,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                     
                     // Verificar si esta foto ya existe (por nombre de archivo)
-                    const yaExiste = window.prendasFotosNuevas[prendaIndex].some(f => f.fileName === file.name && f.url === e.target.result);
+                    const yaExiste = fotosNuevasObj.some(f => f.fileName === file.name && f.url === e.target.result);
                     
                     if (!yaExiste) {
-                        window.prendasFotosNuevas[prendaIndex].push(fotoObj);
+                        fotosNuevasObj.push(fotoObj);
                         fotosAgregadas++;
                         console.log(`📸 Foto agregada a prenda ${prendaIndex}:`, file.name);
                     } else {
@@ -1434,7 +1453,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Cuando se terminen de procesar todas las fotos, renderizar una sola vez
                     if (fotosAgregadas === fotosADeProcesar || fotosAgregadas > 0) {
-                        renderizarPrendas();
+                        // Renderizar según el modo
+                        if (esModosPrendaSinCotizacion) {
+                            // Sincronizar primero antes de renderizar
+                            window.sincronizarDatosTelas(prendaIndex);
+                            window.renderizarPrendasTipoPrendaSinCotizacion();
+                        } else {
+                            renderizarPrendas();
+                        }
                     }
                 };
                 reader.readAsDataURL(file);
@@ -1464,6 +1490,37 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.manejarArchivosFotosTela = function(files, prendaIndex, telaIndex) {
+        // Detectar si estamos en modo PRENDA sin cotización
+        const esModosPrendaSinCotizacion = window.gestorPrendaSinCotizacion && 
+                                          document.querySelector('input[name="tipo_pedido_editable"]:checked')?.value === 'nuevo' &&
+                                          document.getElementById('tipo_pedido_nuevo')?.value === 'P';
+        
+        // Inicializar almacenamiento según modo
+        let telasFotosObj;
+        if (esModosPrendaSinCotizacion) {
+            // Usar almacenamiento del gestor para PRENDA sin cotización
+            if (!window.gestorPrendaSinCotizacion.telasFotosNuevas) {
+                window.gestorPrendaSinCotizacion.telasFotosNuevas = {};
+            }
+            if (!window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex]) {
+                window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex] = {};
+            }
+            if (!window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex]) {
+                window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex] = [];
+            }
+            telasFotosObj = window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex];
+        } else {
+            // Usar almacenamiento global para modo cotización
+            if (!window.telasFotosNuevas) window.telasFotosNuevas = {};
+            if (!window.telasFotosNuevas[prendaIndex]) {
+                window.telasFotosNuevas[prendaIndex] = {};
+            }
+            if (!window.telasFotosNuevas[prendaIndex][telaIndex]) {
+                window.telasFotosNuevas[prendaIndex][telaIndex] = [];
+            }
+            telasFotosObj = window.telasFotosNuevas[prendaIndex][telaIndex];
+        }
+        
         Array.from(files).forEach(file => {
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
@@ -1476,20 +1533,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         isNew: true
                     };
                     
-                    // Guardar en estructura de telas
-                    if (!window.telasFotosNuevas) window.telasFotosNuevas = {};
-                    if (!window.telasFotosNuevas[prendaIndex]) {
-                        window.telasFotosNuevas[prendaIndex] = {};
-                    }
-                    if (!window.telasFotosNuevas[prendaIndex][telaIndex]) {
-                        window.telasFotosNuevas[prendaIndex][telaIndex] = [];
-                    }
-                    window.telasFotosNuevas[prendaIndex][telaIndex].push(fotoObj);
-                    
+                    telasFotosObj.push(fotoObj);
                     console.log(`📸 Foto agregada a tela ${telaIndex} de prenda ${prendaIndex}:`, file.name);
                     
                     // Re-renderizar la sección de prendas
-                    renderizarPrendas();
+                    if (esModosPrendaSinCotizacion) {
+                        // Sincronizar primero antes de renderizar
+                        window.sincronizarDatosTelas(prendaIndex);
+                        window.renderizarPrendasTipoPrendaSinCotizacion();
+                    } else {
+                        renderizarPrendas();
+                    }
                 };
                 reader.readAsDataURL(file);
             }

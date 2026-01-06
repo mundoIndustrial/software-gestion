@@ -2041,5 +2041,291 @@ class PedidosProduccionController extends Controller
         }
     }
 
+    /**
+     * Crear pedido PRENDA sin cotización
+     * Similar a crearSinCotizacion pero específicamente para prendas tipo PRENDA
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function crearPrendaSinCotizacion(Request $request): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            // Validar datos requeridos
+            $cliente = $request->input('cliente');
+            $formaPago = $request->input('forma_de_pago', '');
+            $prendas = $request->input('prendas', []);
+
+            if (!$cliente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cliente es requerido'
+                ], 422);
+            }
+
+            if (empty($prendas)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe agregar al menos una prenda'
+                ], 422);
+            }
+
+            \Log::info('📦 [PRENDA SIN COTIZACIÓN] Creando pedido de prenda', [
+                'cliente' => $cliente,
+                'forma_de_pago' => $formaPago,
+                'prendas_count' => count($prendas),
+            ]);
+
+            // Crear pedido de producción
+            $pedido = PedidoProduccion::create([
+                'cotizacion_id' => null,  // Sin cotización
+                'numero_cotizacion' => null,
+                'numero_pedido' => $this->generarNumeroPedido(),
+                'cliente' => $cliente,
+                'asesor_id' => auth()->id(),
+                'forma_de_pago' => $formaPago,
+                'area' => null,
+                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
+                'fecha_de_creacion_de_orden' => now(),
+            ]);
+
+            \Log::info('✅ Pedido PRENDA creado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
+
+            // Crear prendas del pedido
+            $cantidadTotalPedido = 0;
+            foreach ($prendas as $index => $prenda) {
+                $cantidadesPorTalla = $prenda['cantidadesPorTalla'] ?? [];
+                $cantidadTotal = array_sum($cantidadesPorTalla);
+                $cantidadTotalPedido += $cantidadTotal;
+
+                // Construir descripción
+                $descripcion = $this->construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla);
+
+                // Obtener IDs de colores y telas si fueron seleccionados
+                // Para prendas sin cotización, estos datos pueden no existir
+                $colorId = null;
+                $telaId = null;
+
+                $prendaPedido = PrendaPedido::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
+                    'cantidad' => $cantidadTotal,
+                    'descripcion' => $descripcion,
+                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                    'color_id' => $colorId,
+                    'tela_id' => $telaId,
+                    'tipo_manga_id' => null,
+                    'tipo_broche_id' => null,
+                    'tiene_bolsillos' => ($prenda['tiene_bolsillos'] ?? false) ? 1 : 0,
+                    'tiene_reflectivo' => ($prenda['tiene_reflectivo'] ?? false) ? 1 : 0,
+                ]);
+
+                \Log::info('✅ Prenda PRENDA creada', [
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'nombre_prenda' => $prenda['nombre_producto'],
+                    'cantidad' => $cantidadTotal,
+                ]);
+
+                // Crear proceso inicial
+                ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'proceso' => 'Creación Orden',
+                    'estado_proceso' => 'Completado',
+                    'fecha_inicio' => now(),
+                    'fecha_fin' => now(),
+                ]);
+
+                // Guardar fotos de prenda si existen
+                if (!empty($prenda['fotos']) && is_array($prenda['fotos'])) {
+                    foreach ($prenda['fotos'] as $orden => $foto) {
+                        $rutaFoto = is_string($foto) ? $foto : ($foto['url'] ?? $foto['ruta_webp'] ?? null);
+                        if ($rutaFoto) {
+                            DB::table('prenda_fotos_pedido')->insert([
+                                'prenda_pedido_id' => $prendaPedido->id,
+                                'ruta_original' => is_array($foto) ? ($foto['ruta_original'] ?? $rutaFoto) : $rutaFoto,
+                                'ruta_webp' => is_array($foto) ? ($foto['ruta_webp'] ?? $rutaFoto) : $rutaFoto,
+                                'orden' => $orden + 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                    \Log::info('✅ Fotos de prenda guardadas', [
+                        'prenda_id' => $prendaPedido->id,
+                        'cantidad_fotos' => count($prenda['fotos']),
+                    ]);
+                }
+
+                // Guardar fotos de telas si existen
+                if (!empty($prenda['telas']) && is_array($prenda['telas'])) {
+                    foreach ($prenda['telas'] as $tela) {
+                        if (!empty($tela['fotos']) && is_array($tela['fotos'])) {
+                            foreach ($tela['fotos'] as $orden => $fotoTela) {
+                                $rutaTela = is_string($fotoTela) ? $fotoTela : ($fotoTela['url'] ?? $fotoTela['ruta_webp'] ?? null);
+                                if ($rutaTela) {
+                                    DB::table('prenda_fotos_tela_pedido')->insert([
+                                        'prenda_pedido_id' => $prendaPedido->id,
+                                        'ruta_original' => is_array($fotoTela) ? ($fotoTela['ruta_original'] ?? $rutaTela) : $rutaTela,
+                                        'ruta_webp' => is_array($fotoTela) ? ($fotoTela['ruta_webp'] ?? $rutaTela) : $rutaTela,
+                                        'orden' => $orden + 1,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    \Log::info('✅ Fotos de telas guardadas', [
+                        'prenda_id' => $prendaPedido->id,
+                        'cantidad_telas' => count($prenda['telas']),
+                    ]);
+                }
+            }
+
+            // Actualizar cantidad total del pedido
+            $pedido->update([
+                'cantidad_total' => $cantidadTotalPedido
+            ]);
+
+            DB::commit();
+
+            \Log::info('✅ [PRENDA SIN COTIZACIÓN] Pedido completamente creado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cantidad_total' => $cantidadTotalPedido,
+                'prendas_count' => count($prendas),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido PRENDA creado exitosamente',
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cantidad_total' => $cantidadTotalPedido,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error('❌ Error al crear pedido PRENDA sin cotización', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el pedido: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Construir descripción para prenda sin cotización tipo PRENDA
+     */
+    private function construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla)
+    {
+        $lineas = [];
+
+        // Nombre de la prenda
+        if (!empty($prenda['nombre_producto'])) {
+            $lineas[] = strtoupper($prenda['nombre_producto']);
+        }
+
+        // Descripción
+        if (!empty($prenda['descripcion'])) {
+            $lineas[] = strtoupper($prenda['descripcion']);
+        }
+
+        // Género
+        if (!empty($prenda['genero'])) {
+            $genero = is_array($prenda['genero']) ? implode(', ', $prenda['genero']) : $prenda['genero'];
+            $lineas[] = "GENERO: " . strtoupper($genero);
+        }
+
+        // Telas/Colores
+        if (!empty($prenda['telas']) && is_array($prenda['telas'])) {
+            foreach ($prenda['telas'] as $tela) {
+                $telaDesc = '';
+                if (!empty($tela['nombre_tela'])) {
+                    $telaDesc .= strtoupper($tela['nombre_tela']);
+                }
+                if (!empty($tela['referencia'])) {
+                    $telaDesc .= ' REF:' . strtoupper($tela['referencia']);
+                }
+                if (!empty($tela['color'])) {
+                    $telaDesc .= ' - ' . strtoupper($tela['color']);
+                }
+                if (!empty($telaDesc)) {
+                    $lineas[] = "TELA: " . $telaDesc;
+                }
+            }
+        }
+
+        // Variaciones
+        if (!empty($prenda['variantes'])) {
+            $variantes = $prenda['variantes'];
+            
+            if (!empty($variantes['tipo_manga']) && $variantes['tipo_manga'] !== 'No aplica') {
+                $manga = "MANGA: " . strtoupper($variantes['tipo_manga']);
+                if (!empty($variantes['obs_manga'])) {
+                    $manga .= " - " . strtoupper($variantes['obs_manga']);
+                }
+                $lineas[] = $manga;
+            }
+
+            if (!empty($variantes['tipo_broche']) && $variantes['tipo_broche'] !== 'No aplica') {
+                $broche = "BROCHE: " . strtoupper($variantes['tipo_broche']);
+                if (!empty($variantes['obs_broche'])) {
+                    $broche .= " - " . strtoupper($variantes['obs_broche']);
+                }
+                $lineas[] = $broche;
+            }
+
+            if (!empty($variantes['tiene_bolsillos'])) {
+                $bolsillos = "BOLSILLOS: SÍ";
+                if (!empty($variantes['obs_bolsillos'])) {
+                    $bolsillos .= " - " . strtoupper($variantes['obs_bolsillos']);
+                }
+                $lineas[] = $bolsillos;
+            }
+
+            if (!empty($variantes['tiene_reflectivo'])) {
+                $reflectivo = "REFLECTIVO: SÍ";
+                if (!empty($variantes['obs_reflectivo'])) {
+                    $reflectivo .= " - " . strtoupper($variantes['obs_reflectivo']);
+                }
+                $lineas[] = $reflectivo;
+            }
+        }
+
+        // Tallas con cantidades
+        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
+            $tallasTexto = [];
+            foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                if ($cantidad > 0) {
+                    $tallasTexto[] = "$talla: $cantidad";
+                }
+            }
+            if (!empty($tallasTexto)) {
+                $lineas[] = "TALLAS: " . implode(', ', $tallasTexto);
+            }
+        }
+
+        // Cantidad total
+        $cantidadTotal = array_sum($cantidadesPorTalla);
+        if ($cantidadTotal > 0) {
+            $lineas[] = "CANTIDAD TOTAL: $cantidadTotal";
+        }
+
+        return !empty($lineas) ? implode("\n\n", $lineas) : '-';
+    }
+
 }
+
 
