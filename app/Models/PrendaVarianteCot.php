@@ -29,6 +29,7 @@ class PrendaVarianteCot extends Model
         'obs_reflectivo',
         'descripcion_adicional',
         'telas_multiples',
+        'prenda_bodega',
     ];
 
     protected $casts = [
@@ -37,6 +38,7 @@ class PrendaVarianteCot extends Model
         'aplica_manga' => 'boolean',
         'aplica_broche' => 'boolean',
         'tiene_reflectivo' => 'boolean',
+        'prenda_bodega' => 'boolean',
         'telas_multiples' => 'json',
     ];
 

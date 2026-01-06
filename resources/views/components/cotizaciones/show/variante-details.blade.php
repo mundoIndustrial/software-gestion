@@ -33,6 +33,16 @@
         <span style="color: #1e293b;">{{ $variante->color ?? '-' }}</span>
     </div>
 
+    {{-- Prenda de Bodega --}}
+    @if($variante->prenda_bodega)
+        <div style="margin-bottom: 8px; padding: 8px 12px; background: #dcfce7; border-radius: 6px; border-left: 3px solid #16a34a;">
+            <span style="font-weight: 600; color: #15803d;">
+                <i class="fas fa-warehouse" style="margin-right: 6px;"></i> Prenda de Bodega:
+            </span>
+            <span style="color: #166534; font-weight: 600;">✅ Sí</span>
+        </div>
+    @endif
+
     {{-- Telas Múltiples --}}
     @if(!empty($telasMultiples))
         <div style="margin-bottom: 12px;">

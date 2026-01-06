@@ -340,6 +340,7 @@ function actualizarResumenFriendly() {
                 // Obtener variaciones desde window.variacionesGuardadas (si existe)
                 let telasHTML = '';
                 let otrasVariacionesHTML = '';
+                let prendaBodegaHTML = '';
                 
                 if (window.variacionesGuardadas && window.variacionesGuardadas[index]) {
                     const varGuardadas = window.variacionesGuardadas[index];
@@ -395,6 +396,13 @@ function actualizarResumenFriendly() {
                         let reflectivoTexto = 'Reflectivo';
                         if (varGuardadas.obsReflectivo) reflectivoTexto += ` (${varGuardadas.obsReflectivo})`;
                         otrasVariaciones.push(reflectivoTexto);
+                    }
+
+                    // PRENDA DE BODEGA desde datos guardados
+                    if (varGuardadas.prendaBodega) {
+                        prendaBodegaHTML = `<div style="padding: 10px 12px; background: #dcfce7; border-radius: 6px; border-left: 3px solid #16a34a; margin-bottom: 10px;">
+                            <small style="color: #15803d; font-weight: 600;"><i class="fas fa-warehouse" style="margin-right: 6px;"></i> Viene de bodega: <strong>Sí</strong></small>
+                        </div>`;
                     }
                     
                     if (otrasVariaciones.length > 0) {
@@ -504,6 +512,14 @@ function actualizarResumenFriendly() {
                         }
                         otrasVariacionesDesdeDOM.push(reflectivoTexto);
                     }
+
+                    // PRENDA DE BODEGA - buscar el checkbox
+                    const prendaBodegaCheckbox = prenda.querySelector('input[name*="prenda_bodega"]');
+                    if (prendaBodegaCheckbox?.checked) {
+                        prendaBodegaHTML = `<div style="padding: 10px 12px; background: #dcfce7; border-radius: 6px; border-left: 3px solid #16a34a; margin-bottom: 10px;">
+                            <small style="color: #15803d; font-weight: 600;"><i class="fas fa-warehouse" style="margin-right: 6px;"></i> Viene de bodega: <strong>Sí</strong></small>
+                        </div>`;
+                    }
                     
                     if (otrasVariacionesDesdeDOM.length > 0) {
                         otrasVariacionesHTML = `<div style="padding-left: 10px; border-left: 2px solid #95a5a6;">
@@ -538,6 +554,11 @@ function actualizarResumenFriendly() {
                     html += `<div style="margin-bottom: 10px; padding-left: 10px; border-left: 2px solid #95a5a6;">
                         ${telasHTML}
                     </div>`;
+                }
+
+                // Agregar prenda de bodega si está marcada
+                if (prendaBodegaHTML) {
+                    html += prendaBodegaHTML;
                 }
                 
                 // Agregar otras variaciones
@@ -876,6 +897,8 @@ function recopilarDatos() {
             fotos_desde_fotosSeleccionadas: fotos,
             fotos_desde_prendaConIndice: fotosConIndice.length,
             telas: telas,
+            telas_length: telas.length,
+            telas_debug: telas.map((t, i) => ({indice: i, telaIndex: t.telaIndex, tiene_file: !!t.file, fileName: t.file?.name})),
             productoId: productoId,
             prendaIndex: index
         });
@@ -1164,6 +1187,16 @@ function recopilarDatos() {
             // genero_id = null en backend significa "aplica a ambos géneros"
             console.log('ℹ️ genero_id vacío/no encontrado - no se incluye en variantes (null = ambos)');
         }
+
+        // ✅ CAPTURAR PRENDA DE BODEGA (checkbox)
+        const prendaBodegaCheckbox = item.querySelector('input[name*="prenda_bodega"]');
+        if (prendaBodegaCheckbox) {
+            // Capturar si está checked (true/false)
+            variantes.prenda_bodega = prendaBodegaCheckbox.checked;
+            console.log('✅ prenda_bodega capturado:', prendaBodegaCheckbox.checked);
+        } else {
+            console.log('ℹ️ prenda_bodega checkbox no encontrado');
+        }
         
         console.log('📝 RESUMEN VARIANTES CAPTURADAS:', {
             '✅ Color': variantes.color || '(vacío)',
@@ -1182,6 +1215,7 @@ function recopilarDatos() {
             '⭐ Tiene Reflectivo': variantes.tiene_reflectivo || false,
             '⭐ Obs Reflectivo': variantes.obs_reflectivo || '(vacío)',
             '📝 Descripción Adicional': variantes.descripcion_adicional || '(vacío)',
+            '📦 Prenda de Bodega': variantes.prenda_bodega || false,
             'Todas las keys': Object.keys(variantes)
         });
         

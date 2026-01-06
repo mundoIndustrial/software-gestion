@@ -139,6 +139,7 @@ class SupervisorPedidosController extends Controller
         $query = PedidoProduccion::with(['asesora', 'prendas', 'cotizacion']);
 
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
+        // Por defecto mostrar órdenes PENDIENTES DE SUPERVISOR
         if ($request->filled('aprobacion')) {
             if ($request->aprobacion === 'pendiente') {
                 // Órdenes PENDIENTES DE SUPERVISOR: solo las que tienen estado 'PENDIENTE_SUPERVISOR'
@@ -155,8 +156,8 @@ class SupervisorPedidosController extends Controller
                 $query->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Finalizada', 'Anulada']);
             }
         } else {
-            // Por defecto, mostrar solo órdenes en estado PENDIENTE_SUPERVISOR
-            $query->where('estado', 'PENDIENTE_SUPERVISOR');
+            // Por defecto, redirigir a pendientes
+            return redirect()->route('supervisor-pedidos.index', ['aprobacion' => 'pendiente']);
         }
 
         // Búsqueda general por pedido o cliente

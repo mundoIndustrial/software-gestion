@@ -246,6 +246,7 @@ class CotizacionPrendaService
                             'telas_multiples' => !empty($telasMultiples) ? json_encode($telasMultiples) : null,
                             'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
                             'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? null,
+                            'prenda_bodega' => ($variantes['prenda_bodega'] === true || $variantes['prenda_bodega'] === 'true' || $variantes['prenda_bodega'] === '1' || $variantes['prenda_bodega'] === 1) ? true : false,
                         ]);
                         Log::info("✅ Variante guardada", [
                             'variante_id' => $variante->id,

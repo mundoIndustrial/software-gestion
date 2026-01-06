@@ -270,58 +270,78 @@ async function guardarCotizacion() {
                     }
                 }
                 
-                // ✅ TELAS (File objects desde window.telasSeleccionadas)
+                // ✅ TELAS (File objects desde datos.productos, window.telasSeleccionadas, o imagenesEnMemoria)
                 console.log(`🧵 Procesando telas para prenda ${index}...`);
+                console.log(`   DEBUG: datos.productos[${index}].telas =`, datos.productos?.[index]?.telas?.length || 0);
                 
-                // Obtener el producto ID de esta prenda
-                const prendaCard = document.querySelectorAll('.producto-card')[index];
-                if (prendaCard) {
-                    const productoId = prendaCard.dataset.productoId;
-                    console.log(`🧵 Producto ID: ${productoId}`);
+                let telasYaProcesadas = false;
+                
+                // OPCIÓN 1: Procesar telas desde datos.productos[index].telas (PRIMERO)
+                if (datos.productos && datos.productos[index] && datos.productos[index].telas && datos.productos[index].telas.length > 0) {
+                    console.log(`🧵 Opción 1: Procesando telas desde datos.productos[${index}].telas:`, datos.productos[index].telas.length);
+                    console.log(`   Telas data:`, datos.productos[index].telas);
+                    const telasDelProducto = datos.productos[index].telas;
+                    const telasPorIndice = {};
                     
-                    // Buscar telas en window.telasSeleccionadas
-                    if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
-                        const telasObj = window.telasSeleccionadas[productoId];
-                        console.log(`🧵 telasSeleccionadas encontrado para ${productoId}:`, telasObj);
-                        
-                        // Iterar sobre cada tela (los índices son las claves del objeto)
-                        for (let telaIdx in telasObj) {
-                            if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
-                                const fotosDelaTela = telasObj[telaIdx];
-                                console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
-                                
-                                // Agregar cada foto de esta tela al FormData
-                                fotosDelaTela.forEach((foto, fotoIdx) => {
-                                    console.log(`🔍 DEBUG Tela ${telaIdx} Foto ${fotoIdx + 1}:`, {
-                                        esFile: foto instanceof File,
-                                        tipo: typeof foto,
-                                        constructor: foto?.constructor?.name,
-                                        keys: Object.keys(foto || {}),
-                                        foto: foto
-                                    });
-                                    
-                                    if (foto instanceof File) {
-                                        // ✅ CORRECCIÓN: Usar prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]
-                                        // El backend espera este formato exacto para guardar en prenda_tela_fotos_cot
-                                        formData.append(`prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`, foto);
-                                        console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada a FormData: ${foto.name}`);
-                                        console.log(`   → Key usado: prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`);
-                                    } else {
-                                        console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object:`, foto);
-                                    }
-                                });
-                            }
+                    telasDelProducto.forEach(tela => {
+                        const telaIdx = tela.telaIndex || 0;
+                        if (!telasPorIndice[telaIdx]) {
+                            telasPorIndice[telaIdx] = [];
                         }
-                    } else {
-                        console.log(`⚠️ No hay telas en window.telasSeleccionadas para ${productoId}`);
+                        if (tela.file instanceof File) {
+                            telasPorIndice[telaIdx].push(tela.file);
+                        }
+                    });
+                    
+                    Object.keys(telasPorIndice).forEach(telaIdx => {
+                        telasPorIndice[telaIdx].forEach((foto, fotoIdx) => {
+                            formData.append(`prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`, foto);
+                            console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada desde datos.productos: ${foto.name}`);
+                        });
+                    });
+                    telasYaProcesadas = true;
+                }
+                
+                // OPCIÓN 2: Buscar telas en window.telasSeleccionadas (FALLBACK)
+                if (!telasYaProcesadas) {
+                    const prendaCard = document.querySelectorAll('.producto-card')[index];
+                    if (prendaCard) {
+                        const productoId = prendaCard.dataset.productoId;
+                        console.log(`🧵 Opción 2: Producto ID: ${productoId}`);
+                        
+                        if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
+                            const telasObj = window.telasSeleccionadas[productoId];
+                            console.log(`🧵 telasSeleccionadas encontrado para ${productoId}:`, telasObj);
+                            
+                            // Iterar sobre cada tela (los índices son las claves del objeto)
+                            for (let telaIdx in telasObj) {
+                                if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
+                                    const fotosDelaTela = telasObj[telaIdx];
+                                    console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
+                                    
+                                    // Agregar cada foto de esta tela al FormData
+                                    fotosDelaTela.forEach((foto, fotoIdx) => {
+                                        if (foto instanceof File) {
+                                            formData.append(`prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`, foto);
+                                            console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada a FormData: ${foto.name}`);
+                                        } else {
+                                            console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object:`, foto);
+                                        }
+                                    });
+                                }
+                            }
+                            telasYaProcesadas = true;
+                        } else {
+                            console.log(`⚠️ No hay telas en window.telasSeleccionadas para ${productoId}`);
+                        }
                     }
                 }
                 
-                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice (nuevas y existentes)
-                if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
+                // OPCIÓN 3: FALLBACK - Buscar en window.imagenesEnMemoria.telaConIndice (ÚLTIMO RECURSO)
+                if (!telasYaProcesadas && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                     const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
                     if (telasDeEstaPrenda.length > 0) {
-                        console.log(`🧵 Usando fallback: imagenesEnMemoria.telaConIndice`);
+                        console.log(`🧵 Opción 3: Usando fallback: imagenesEnMemoria.telaConIndice`);
                         const telasPorIndice = {};
                         telasDeEstaPrenda.forEach(item => {
                             const telaIdx = item.telaIndex || 0;

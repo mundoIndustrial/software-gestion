@@ -27,6 +27,19 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN DE PRENDA DE BODEGA -->
+            <div class="producto-section">
+                <div class="section-title"><i class="fas fa-warehouse"></i> PRENDA DE BODEGA</div>
+                <div class="form-row" style="display: flex; gap: 12px; align-items: center;">
+                    <div class="form-col full" style="flex: 1;">
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 0.85rem;">
+                            <input type="checkbox" name="productos_friendly[][variantes][prenda_bodega]" class="prenda-bodega-checkbox" value="true" style="width: 18px; height: 18px; accent-color: #0066cc; cursor: pointer;">
+                            <span style="color: #333; font-weight: 500;">Marcar si esta prenda viene de bodega</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- SECCIÓN DE DESCRIPCIÓN -->
             <div class="producto-section">
                 <div class="section-title"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</div>

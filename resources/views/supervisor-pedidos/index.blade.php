@@ -11,158 +11,159 @@
 @section('content')
 <div class="supervisor-pedidos-container">
 
-    <!-- Tabla de Órdenes -->
-    <div class="tabla-section">
-        <div class="tabla-header">
-            <h2>Órdenes de Producción</h2>
-            <span class="total-ordenes">Total: {{ $ordenes->total() }}</span>
-        </div>
-
-        @if($ordenes->count() > 0)
-            <div class="tabla-responsive">
-                <table class="tabla-ordenes">
-                    <thead>
-                        <tr>
-                            <th style="text-align: center; white-space: normal;">ACCIONES</th>
-                            <th>
-                                <div class="th-wrapper">
-                                    <span>ID ORDEN</span>
-                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('id-orden')" title="Filtrar ID Orden">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
-                                    </button>
+    <!-- Tabla de Órdenes - Nuevo Diseño -->
+    <div class="table-container">
+        <div class="modern-table-wrapper">
+            <div class="table-scroll-container">
+                <div class="table-head">
+                    <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
+                        @php
+                            $columns = [
+                                ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 200px', 'justify' => 'flex-start'],
+                                ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
+                                ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
+                                ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 160px', 'justify' => 'center'],
+                                ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
+                                ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
+                                ['key' => 'forma_pago', 'label' => 'Forma Pago', 'flex' => '0 0 140px', 'justify' => 'center'],
+                                ['key' => 'fecha_estimada', 'label' => 'Entrega Est.', 'flex' => '0 0 160px', 'justify' => 'center'],
+                            ];
+                        @endphp
+                        @foreach($columns as $column)
+                            <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
+                                <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                                    <span class="header-text">{{ $column['label'] }}</span>
+                                    @if($column['key'] !== 'acciones')
+                                        <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('{{ $column['key'] }}')" title="Filtrar {{ $column['label'] }}">
+                                            <span class="material-symbols-rounded">filter_alt</span>
+                                            <div class="filter-badge"></div>
+                                        </button>
+                                    @endif
                                 </div>
-                            </th>
-                            <th>
-                                <div class="th-wrapper">
-                                    <span>CLIENTE</span>
-                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('cliente')" title="Filtrar Cliente">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
-                                    </button>
-                                </div>
-                            </th>
-                            <th>
-                                <div class="th-wrapper">
-                                    <span>FECHA</span>
-                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('fecha')" title="Filtrar Fecha">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
-                                    </button>
-                                </div>
-                            </th>
-                            <th>
-                                <div class="th-wrapper">
-                                    <span>ESTADO</span>
-                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('estado')" title="Filtrar Estado">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
-                                    </button>
-                                </div>
-                            </th>
-                            <th>
-                                <div class="th-wrapper">
-                                    <span>ASESORA</span>
-                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('asesora')" title="Filtrar Asesora">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
-                                    </button>
-                                </div>
-                            </th>
-                            <th>
-                                <div class="th-wrapper">
-                                    <span>FORMA PAGO</span>
-                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('forma-pago')" title="Filtrar Forma Pago">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
-                                    </button>
-                                </div>
-                            </th>
-                            <th>
-                                <div class="th-wrapper">
-                                    <span>FECHA ESTIMADA</span>
-                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('fecha-estimada')" title="Filtrar Fecha Estimada">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
-                                    </button>
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($ordenes as $orden)
-                            <tr class="orden-row" data-orden-id="{{ $orden->id }}" data-estado="{{ $orden->estado }}">
-                                <td class="acciones">
-                                    <div class="acciones-group">
-                                        <!-- Ver Orden - Menu -->
-                                        <div class="ver-menu-container">
-                                            <button class="btn-accion btn-ver" 
-                                                    title="Ver orden"
-                                                    onclick="toggleVerMenu(event, {{ $orden->id }})">
-                                                <span class="material-symbols-rounded">visibility</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="modern-table">
+                    <div class="table-body">
+                        @if($ordenes->count() > 0)
+                            @foreach($ordenes as $orden)
+                                <div class="table-row" data-orden-id="{{ $orden->id }}" data-numero="{{ $orden->numero_pedido }}" data-cliente="{{ $orden->cliente }}" data-fecha="{{ $orden->fecha_de_creacion_de_orden->format('d/m/Y') }}" data-estado="{{ $orden->estado }}" data-asesora="{{ $orden->asesora?->name ?? 'N/A' }}" data-forma_pago="{{ $orden->forma_de_pago ?? 'N/A' }}" data-fecha_estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
+                                    
+                                    <!-- Acciones -->
+                                    <div class="table-cell acciones-column" style="flex: 0 0 200px; justify-content: center; position: relative; display: flex; gap: 0.5rem;">
+                                        <button class="action-view-btn" title="Ver opciones" onclick="toggleAcciones(event, {{ $orden->id }})">
+                                            <span class="material-symbols-rounded">visibility</span>
+                                        </button>
+                                        <div class="action-menu" id="menu-{{ $orden->id }}" style="display: none;">
+                                            <button class="action-menu-item" onclick="verOrdenDetalles({{ $orden->id }})">
+                                                <span class="material-symbols-rounded">description</span>
+                                                <span>Detalles</span>
                                             </button>
-                                            <div class="ver-submenu" id="ver-menu-{{ $orden->id }}" style="display: none;">
-                                                <button class="submenu-item" onclick="verOrdenDetalles({{ $orden->id }})">
-                                                    <span class="material-symbols-rounded">description</span>
-                                                    Detalles
-                                                </button>
-                                                <button class="submenu-item" onclick="abrirSeguimiento({{ $orden->id }})">
-                                                    <span class="material-symbols-rounded">local_shipping</span>
-                                                    Seguimiento
-                                                </button>
-                                            </div>
+                                            <button class="action-menu-item" onclick="abrirSeguimiento({{ $orden->id }})">
+                                                <span class="material-symbols-rounded">local_shipping</span>
+                                                <span>Seguimiento</span>
+                                            </button>
                                         </div>
-
-                                        <!-- Aprobar Orden (Enviar a Producción) -->
+                                        
                                         @if(request('aprobacion') === 'pendiente')
-                                            <button class="btn-accion btn-aprobar" 
-                                                    title="Aprobar orden"
-                                                    onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
+                                            <button class="btn-action btn-success" title="Aprobar orden" onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
                                                 <span class="material-symbols-rounded">check_circle</span>
                                             </button>
                                         @endif
-
-                                        <!-- Editar Orden -->
-                                        <button class="btn-accion btn-editar" 
-                                                title="Editar orden"
-                                                onclick="abrirModalEditar({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
+                                        
+                                        <button class="btn-action btn-edit" title="Editar orden" onclick="abrirModalEditar({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
                                             <span class="material-symbols-rounded">edit</span>
                                         </button>
-
-                                        <!-- Anular Orden -->
+                                        
                                         @if($orden->estado !== 'Anulada' && !$orden->aprobado_por_supervisor_en && (request('aprobacion') !== 'pendiente' && !request()->filled('estado')))
-                                            <button class="btn-accion btn-anular" 
-                                                    title="Anular orden"
-                                                    onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
+                                            <button class="btn-action btn-danger" title="Anular orden" onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
                                                 <span class="material-symbols-rounded">cancel</span>
                                             </button>
                                         @endif
                                     </div>
-                                </td>
-                                <td class="id-orden">
-                                    <strong>#{{ $orden->numero_pedido }}</strong>
-                                </td>
-                                <td class="cliente">{{ $orden->cliente }}</td>
-                                <td class="fecha">{{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}</td>
-                                <td class="estado">
-                                    <span class="badge badge-{{ strtolower(str_replace(' ', '-', $orden->estado)) }}">
-                                        {{ $orden->estado }}
-                                    </span>
-                                </td>
-                                <td class="asesora">{{ $orden->asesora?->name ?? 'N/A' }}</td>
-                                <td class="forma-pago">{{ $orden->forma_de_pago ?? 'N/A' }}</td>
-                                <td class="fecha-estimada" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
-                                    {{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                                    
+                                    <!-- Número -->
+                                    <div class="table-cell" style="flex: 0 0 140px;" data-numero="{{ $orden->numero_pedido }}">
+                                        <div class="cell-content" style="justify-content: center;">
+                                            <span style="font-weight: 600; color: #1e5ba8;">#{{ $orden->numero_pedido }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Cliente -->
+                                    <div class="table-cell" style="flex: 0 0 200px;" data-cliente="{{ $orden->cliente }}">
+                                        <div class="cell-content" style="justify-content: center;">
+                                            <span>{{ $orden->cliente }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Fecha -->
+                                    <div class="table-cell" style="flex: 0 0 160px;" data-fecha="{{ $orden->fecha_de_creacion_de_orden->format('d/m/Y') }}">
+                                        <div class="cell-content" style="justify-content: center;">
+                                            <span>{{ $orden->fecha_de_creacion_de_orden->format('d/m/Y') }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Estado -->
+                                    <div class="table-cell" style="flex: 0 0 150px;" data-estado="{{ $orden->estado }}">
+                                        <div class="cell-content" style="justify-content: center;">
+                                            @php
+                                                $estadoColors = [
+                                                    'No iniciado' => ['bg' => '#ecf0f1', 'color' => '#7f8c8d'],
+                                                    'En Ejecución' => ['bg' => '#fff3cd', 'color' => '#856404'],
+                                                    'Entregado' => ['bg' => '#d4edda', 'color' => '#155724'],
+                                                    'Anulada' => ['bg' => '#f8d7da', 'color' => '#721c24'],
+                                                    'PENDIENTE_SUPERVISOR' => ['bg' => '#fff3cd', 'color' => '#856404'],
+                                                ];
+                                                $colors = $estadoColors[$orden->estado] ?? ['bg' => '#e3f2fd', 'color' => '#1e40af'];
+                                            @endphp
+                                            <span style="background: {{ $colors['bg'] }}; color: {{ $colors['color'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">
+                                                {{ $orden->estado }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Asesora -->
+                                    <div class="table-cell" style="flex: 0 0 150px;" data-asesora="{{ $orden->asesora?->name ?? 'N/A' }}">
+                                        <div class="cell-content" style="justify-content: center;">
+                                            <span>{{ $orden->asesora?->name ?? 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Forma Pago -->
+                                    <div class="table-cell" style="flex: 0 0 140px;" data-forma_pago="{{ $orden->forma_de_pago ?? 'N/A' }}">
+                                        <div class="cell-content" style="justify-content: center;">
+                                            <span>{{ $orden->forma_de_pago ?? 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Fecha Estimada -->
+                                    <div class="table-cell" style="flex: 0 0 160px;" data-fecha_estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
+                                        <div class="cell-content" style="justify-content: center;">
+                                            <span>{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div style="padding: 40px; text-align: center; color: #9ca3af; width: 100%;">
+                                <p>No hay órdenes disponibles</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
 
             <!-- Paginación -->
-            <div class="paginacion">
-                {{ $ordenes->links('components.pagination') }}
+            <div class="table-pagination">
+                <div class="pagination-info">
+                    <span id="paginationInfo">Mostrando 1-15 de {{ $ordenes->total() }} registros</span>
+                </div>
+                <div class="pagination-controls">
+                    {{ $ordenes->links('pagination::bootstrap-4') }}
+                </div>
             </div>
-        @else
-            <div class="sin-datos">
-                <span class="material-symbols-rounded">inbox</span>
-                <p>No hay órdenes que mostrar</p>
-            </div>
-        @endif
+        </div>
     </div>
 </div>
 
@@ -338,6 +339,35 @@
 <script>
     // ===== VARIABLES GLOBALES =====
     let filtroActual = null;
+
+    // ===== TOGGLE MENU ACCIONES =====
+    function toggleAcciones(event, ordenId) {
+        event.stopPropagation();
+        const menu = document.getElementById(`menu-${ordenId}`);
+        
+        // Cerrar otros menús abiertos
+        document.querySelectorAll('.action-menu:not([style*="display: none"])').forEach(m => {
+            if (m.id !== `menu-${ordenId}`) {
+                m.style.display = 'none';
+            }
+        });
+        
+        // Toggle del menú actual
+        if (menu.style.display === 'none' || menu.style.display === '') {
+            menu.style.display = 'block';
+        } else {
+            menu.style.display = 'none';
+        }
+    }
+
+    // Cerrar menús al hacer clic afuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.action-menu') && !e.target.closest('.action-view-btn')) {
+            document.querySelectorAll('.action-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+    });
 
     // ===== MENU VER ORDEN =====
     function toggleVerMenu(event, ordenId) {

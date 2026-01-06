@@ -473,7 +473,9 @@ final class CotizacionController extends Controller
             ]);
             
             // Mapear productos_friendly -> prendas para compatibilidad frontend
-            $prendasRecibidas = $request->input('prendas', $request->input('productos_friendly', []));
+            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            $allData = $request->all();
+            $prendasRecibidas = $allData['prendas'] ?? $allData['productos_friendly'] ?? $request->input('prendas', $request->input('productos_friendly', []));
             $especificacionesRecibidas = $request->input('especificaciones', []);
             
             // Las especificaciones pueden venir como string JSON o array desde el frontend
@@ -559,11 +561,21 @@ final class CotizacionController extends Controller
                 'logo_data' => $logoData,
             ]);
 
+            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            $allData = $request->all();
+            $prendasRecibidas = $allData['prendas'] ?? $request->input('prendas', []);
+            
+            Log::info('CotizacionController@store: Prendas extraídas', [
+                'prendas_count' => is_array($prendasRecibidas) ? count($prendasRecibidas) : 0,
+                'prendas_type' => gettype($prendasRecibidas),
+                'prendas_keys' => is_array($prendasRecibidas) && !empty($prendasRecibidas) ? array_keys($prendasRecibidas) : [],
+            ]);
+
             $dto = CrearCotizacionDTO::desdeArray([
                 'usuario_id' => Auth::id(),
                 'tipo' => $tipoCotizacion,
                 'cliente_id' => $clienteId,
-                'prendas' => $request->input('prendas', []),
+                'prendas' => $prendasRecibidas,
                 'logo' => $request->input('logo', []),
                 'tipo_venta' => $request->input('tipo_venta', 'M'),
                 'especificaciones' => $especificacionesRecibidas,
@@ -754,7 +766,9 @@ final class CotizacionController extends Controller
             }
 
             // Procesar prendas y eliminar imágenes no incluidas SOLO si se envían nuevas imágenes
-            $prendasRecibidas = $request->input('prendas', []);
+            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            $allData = $request->all();
+            $prendasRecibidas = $allData['prendas'] ?? $request->input('prendas', []);
             $allFiles = $request->allFiles();
             
             foreach ($prendasRecibidas as $index => $prendaData) {
@@ -884,7 +898,9 @@ final class CotizacionController extends Controller
     private function procesarImagenesCotizacion(Request $request, int $cotizacionId): void
     {
         try {
-            $prendas = $request->input('prendas', []);
+            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            $allData = $request->all();
+            $prendas = $allData['prendas'] ?? $request->input('prendas', []);
             $allFiles = $request->allFiles();
             
             // DETECTAR si es UPDATE o CREATE
@@ -902,6 +918,37 @@ final class CotizacionController extends Controller
                 'prendas_array' => $prendas,
                 'prendas_type' => gettype($prendas),
             ]);
+            
+            // ======== DEBUG ALLFILES STRUCTURE ========
+            Log::info('🔍 ESTRUCTURA COMPLETA DE allFiles:', [
+                'all_files_keys' => array_keys($allFiles),
+                'tiene_prendas' => isset($allFiles['prendas']),
+                'prendas_is_array' => isset($allFiles['prendas']) ? is_array($allFiles['prendas']) : false,
+                'prendas_count' => isset($allFiles['prendas']) && is_array($allFiles['prendas']) ? count($allFiles['prendas']) : 0,
+            ]);
+            
+            if (isset($allFiles['prendas']) && is_array($allFiles['prendas'])) {
+                foreach ($allFiles['prendas'] as $idx => $prendaFiles) {
+                    Log::info("  🔹 allFiles['prendas'][$idx]:", [
+                        'keys' => array_keys((array)$prendaFiles),
+                        'tiene_telas' => isset($prendaFiles['telas']),
+                        'telas_type' => isset($prendaFiles['telas']) ? gettype($prendaFiles['telas']) : 'N/A',
+                        'telas_count' => isset($prendaFiles['telas']) && is_array($prendaFiles['telas']) ? count($prendaFiles['telas']) : 0,
+                    ]);
+                    
+                    if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
+                        foreach ($prendaFiles['telas'] as $telaIdx => $telaData) {
+                            Log::info("     🧵 allFiles['prendas'][$idx]['telas'][$telaIdx]:", [
+                                'keys' => array_keys((array)$telaData),
+                                'tiene_fotos' => isset($telaData['fotos']),
+                                'fotos_type' => isset($telaData['fotos']) ? gettype($telaData['fotos']) : 'N/A',
+                                'fotos_count' => isset($telaData['fotos']) && is_array($telaData['fotos']) ? count($telaData['fotos']) : 0,
+                                'fotos_items' => isset($telaData['fotos']) && is_array($telaData['fotos']) ? array_map(fn($f) => is_object($f) ? get_class($f) : gettype($f), $telaData['fotos']) : [],
+                            ]);
+                        }
+                    }
+                }
+            }
 
             foreach ($prendas as $index => $prenda) {
                 // Obtener la prenda guardada
@@ -1169,6 +1216,9 @@ final class CotizacionController extends Controller
                     
                     if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
                         foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
+                            // Reiniciar $ordenFotosTela para cada tela (evita duplicación)
+                            unset($ordenFotosTela);
+                            
                             // Buscar info de la tela (color/tela/ref) por índice
                             $telaInfo = [];
                             foreach ($telasMultiples as $tm) {
@@ -1254,8 +1304,41 @@ final class CotizacionController extends Controller
                                 // Obtener prenda_tela_cot_id del mapeo
                                 $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
                                 
-                                foreach ($telaData['fotos'] as $archivoFoto) {
-                                    if ($archivoFoto && $archivoFoto->isValid()) {
+                                // ✅ VERIFICAR si hay fotos en este índice de tela
+                                if (!isset($telaData['fotos']) || empty($telaData['fotos'])) {
+                                    Log::info('⏭️ No hay fotos para esta tela', [
+                                        'prenda_id' => $prendaModel->id,
+                                        'tela_index' => $telaIndex,
+                                        'telaData_keys' => array_keys($telaData),
+                                    ]);
+                                    continue; // Saltear si no hay fotos
+                                }
+                                
+                                $fotosArray = $telaData['fotos'];
+                                Log::info('📝 DEBUG fotos encontradas', [
+                                    'tela_index' => $telaIndex,
+                                    'fotos_type' => gettype($fotosArray),
+                                    'fotos_count' => is_array($fotosArray) ? count($fotosArray) : 'N/A',
+                                    'fotos_keys' => is_array($fotosArray) ? array_keys($fotosArray) : 'N/A',
+                                    'fotos_debug' => is_array($fotosArray) ? array_map(fn($f) => is_object($f) ? get_class($f) : gettype($f), $fotosArray) : 'N/A',
+                                ]);
+                                
+                                // Normalizar a array si es un único archivo
+                                if ($fotosArray instanceof \Illuminate\Http\UploadedFile) {
+                                    $fotosArray = [$fotosArray];
+                                }
+                                
+                                // ✅ Verificar que sea un array
+                                if (!is_array($fotosArray)) {
+                                    Log::warning('❌ fotosArray no es array', [
+                                        'tela_index' => $telaIndex,
+                                        'tipo' => gettype($fotosArray),
+                                    ]);
+                                    continue;
+                                }
+                                
+                                foreach ($fotosArray as $archivoFoto) {
+                                    if ($archivoFoto && $archivoFoto instanceof \Illuminate\Http\UploadedFile && $archivoFoto->isValid()) {
                                         try {
                                             // Guardar en storage dentro de la carpeta de la cotización
                                             $rutaGuardada = $archivoFoto->store("cotizaciones/{$cotizacionId}/telas", 'public');

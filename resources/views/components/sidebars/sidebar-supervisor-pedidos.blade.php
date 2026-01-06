@@ -14,21 +14,6 @@
     </div>
 
     <div class="sidebar-content">
-        <!-- Sección de Órdenes de Producción -->
-        <div class="menu-section">
-            <span class="menu-section-title">Órdenes de Producción</span>
-            <ul class="menu-list" role="navigation">
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index') }}"
-                       class="menu-link {{ request()->is('supervisor-pedidos') && !request()->has('aprobacion') ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">assignment</span>
-                        <span class="menu-label">Todas las Órdenes</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-
         <!-- Sección de Aprobación -->
         <div class="menu-section">
             <span class="menu-section-title">Estado de Aprobación</span>

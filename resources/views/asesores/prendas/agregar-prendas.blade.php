@@ -39,6 +39,23 @@
                     </div>
                 </div>
 
+                <!-- PRENDA DE BODEGA -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-warehouse"></i> PRENDA DE BODEGA
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input 
+                            type="checkbox" 
+                            id="prenda-bodega"
+                            class="w-5 h-5 border-2 border-blue-500 rounded cursor-pointer accent-blue-500"
+                        >
+                        <label for="prenda-bodega" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                            Marcar si esta prenda viene de bodega
+                        </label>
+                    </div>
+                </div>
+
                 <!-- DESCRIPCIÓN -->
                 <div>
                     <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -420,6 +437,7 @@ function agregarPrenda() {
     const color = document.getElementById('color').value.trim();
     const tela = document.getElementById('tela').value.trim();
     const referencia = document.getElementById('referencia').value.trim();
+    const prendaBodega = document.getElementById('prenda-bodega').checked;
     
     const tallas = {
         S: parseInt(document.getElementById('talla-s').value) || 0,
@@ -441,6 +459,7 @@ function agregarPrenda() {
         tela,
         referencia,
         tallas,
+        prendaBodega,
         variaciones: {
             manga: document.querySelector('.aplica-manga').checked ? document.querySelector('.manga-input').value : null,
             bolsillos: document.querySelector('.aplica-bolsillos').checked ? document.querySelector('.bolsillos-input').value : null,
@@ -486,6 +505,7 @@ function actualizarTabla() {
                 <p><strong>Tela:</strong> ${prenda.tela}</p>
                 <p><strong>Referencia:</strong> ${prenda.referencia || 'N/A'}</p>
                 ${prenda.descripcion ? `<p class="col-span-full"><strong>Descripción:</strong> ${prenda.descripcion}</p>` : ''}
+                <p class="col-span-full"><strong>Prenda de Bodega:</strong> <span style="color: ${prenda.prendaBodega ? '#10b981' : '#ef4444'}; font-weight: bold;">${prenda.prendaBodega ? '✅ Sí' : '❌ No'}</span></p>
             </div>
 
             <div class="bg-white dark:bg-gray-800 rounded p-3">
