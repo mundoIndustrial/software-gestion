@@ -51,4 +51,37 @@ class LogoCotizacion extends Model
     {
         return $this->hasMany(LogoFotoCot::class, 'logo_cotizacion_id')->orderBy('orden');
     }
+
+    /**
+     * Relación NUEVA: Un logo puede tener múltiples técnicas (bordado, estampado, etc)
+     */
+    public function tecnicas(): HasMany
+    {
+        return $this->hasMany(LogoCotizacionTecnica::class)
+            ->orderBy('orden');
+    }
+
+    /**
+     * Obtener todas las prendas de todas las técnicas
+     */
+    public function obtenerTodasLasPrendas()
+    {
+        return $this->tecnicas()
+            ->with('prendas')
+            ->get()
+            ->flatMap(function($tecnica) {
+                return $tecnica->prendas;
+            });
+    }
+
+    /**
+     * Obtener técnicas agrupadas por tipo
+     */
+    public function tecnicasAgrupadas()
+    {
+        return $this->tecnicas()
+            ->with('tipo')
+            ->get()
+            ->groupBy('tipo.nombre');
+    }
 }

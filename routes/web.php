@@ -555,6 +555,17 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
 });
 
 // ========================================
+// API ROUTES - LOGO COTIZACIÓN TÉCNICAS (DDD) - Fuera del grupo de asesores
+// ========================================
+Route::middleware(['auth', 'role:asesor,admin'])->prefix('api/logo-cotizacion-tecnicas')->name('api.logo-cotizacion-tecnicas.')->group(function () {
+    Route::get('tipos-disponibles', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'tiposDisponibles'])->name('tipos');
+    Route::post('agregar', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'agregarTecnica'])->name('agregar');
+    Route::get('cotizacion/{logoCotizacionId}', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'obtenerTecnicas'])->name('obtener');
+    Route::delete('{tecnicaId}', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'eliminarTecnica'])->name('eliminar');
+    Route::patch('{tecnicaId}/observaciones', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'actualizarObservaciones'])->name('actualizar-observaciones');
+});
+
+// ========================================
 // RUTAS PARA SUPERVISOR DE ASESORES
 // ========================================
 Route::middleware(['auth', 'role:supervisor_asesores,admin'])->prefix('supervisor-asesores')->name('supervisor-asesores.')->group(function () {

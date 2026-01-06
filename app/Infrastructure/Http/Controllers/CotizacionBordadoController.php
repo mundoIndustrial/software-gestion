@@ -52,6 +52,19 @@ class CotizacionBordadoController extends Controller
                 'tecnicas' => $cotizacion->logoCotizacion ? $cotizacion->logoCotizacion->tecnicas : 'N/A',
                 'descripcion' => $cotizacion->logoCotizacion ? $cotizacion->logoCotizacion->descripcion : 'N/A'
             ]);
+        } else {
+            // Crear nueva cotización en blanco (borrador temporal)
+            $cotizacion = Cotizacion::create([
+                'asesor_id' => Auth::id(),
+                'numero_cotizacion' => $this->generarNumeroCotizacionService->generarProxNumeroCotizacion(Auth::id()),
+                'es_borrador' => true,
+                'estado' => 'borrador'
+            ]);
+            
+            Log::info('✨ Nueva cotización creada para bordado', [
+                'cotizacion_id' => $cotizacion->id,
+                'asesor_id' => Auth::id()
+            ]);
         }
 
         return view('cotizaciones.bordado.create', [

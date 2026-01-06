@@ -478,14 +478,33 @@ OR
             <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
             <input type="date" id="fecha" name="fecha" style="display: none;">
             <input type="text" id="tipo_venta_bordado" name="tipo_venta_bordado" style="display: none;">
+            <input type="hidden" id="logoCotizacionId" name="logoCotizacionId" value="{{ $cotizacion->id ?? '' }}">
 
-            <!-- DESCRIPCIÓN -->
+            <!-- TÉCNICAS -->
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-sticky-note"></i> DESCRIPCIÓN
-                </div>
-                <div class="form-group-large">
-                    <textarea id="descripcion" name="descripcion" class="input-large" rows="3" placeholder="Describe el bordado, detalles especiales, diseño, etc."></textarea>
+                <div class="tecnicas-box">
+                    <h3 style="margin-bottom: 20px; color: #1e40af; font-weight: 600;">Técnicas</h3>
+                    
+                    <!-- Selector de Técnica -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Selecciona la técnica a aplicar:</label>
+                        <div style="display: flex; gap: 10px; align-items: flex-end;">
+                            <select id="selectTecnicanueva" style="flex: 1; padding: 10px 12px; border: 1px solid #ccc; border-radius: 0; font-size: 0.95rem; background: #fafafa; cursor: pointer; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23333%22 d=%22M0 0l6 8 6-8z%22/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 12px; padding-right: 35px;">
+                                <option value="">-- Selecciona una técnica --</option>
+                            </select>
+                            <button type="button" id="btnAgregarPrendas" onclick="abrirModalAgregarTecnica()" style="background: none; border: none; cursor: pointer; font-size: 1.8rem; color: #999; padding: 8px 16px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;" title="Selecciona una técnica primero" onmouseover="const sel = document.getElementById('selectTecnicanueva'); if(sel.value) { this.style.color='#1530a8'; this.style.transform='scale(1.1)'; } " onmouseout="const sel = document.getElementById('selectTecnicanueva'); if(sel.value) { this.style.color='#1e40af'; } else { this.style.color='#999'; } this.style.transform='scale(1)';">
+                                <i class="fas fa-plus-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de Prendas Agregadas por Técnica -->
+                    <div id="tecnicas_agregadas" style="margin-top: 15px;"></div>
+                    
+                    <!-- Sin Técnicas -->
+                    <div id="sin_tecnicas" style="padding: 20px; text-align: center; background: #f5f5f5; border-radius: 8px; color: #999; display: block;">
+                        <p>Selecciona una técnica y agrega prendas</p>
+                    </div>
                 </div>
             </div>
 
@@ -502,52 +521,6 @@ OR
                         <input type="file" id="imagenes_bordado" name="imagenes_bordado[]" accept="image/*" multiple style="display: none;">
                     </div>
                     <div class="galeria-imagenes" id="galeria_imagenes"></div>
-                </div>
-            </div>
-
-            <!-- TÉCNICAS -->
-            <div class="form-section">
-                <div class="tecnicas-box">
-                    <div class="tecnicas-header">
-                        <label>Técnicas disponibles</label>
-                        <button type="button" class="btn-add" onclick="agregarTecnica()">+</button>
-                    </div>
-                    
-                    <select id="selector_tecnicas" class="input-large" style="width: 100%; margin-bottom: 10px;">
-                        <option value="">-- SELECCIONA UNA TÉCNICA --</option>
-                        <option value="BORDADO">BORDADO</option>
-                        <option value="DTF">DTF</option>
-                        <option value="ESTAMPADO">ESTAMPADO</option>
-                        <option value="SUBLIMADO">SUBLIMADO</option>
-                    </select>
-                    
-                    <div class="tecnicas-seleccionadas" id="tecnicas_seleccionadas"></div>
-                    
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Observaciones</label>
-                    <textarea id="observaciones_tecnicas" name="observaciones_tecnicas" class="input-large" rows="2" placeholder="Observaciones..."></textarea>
-                </div>
-            </div>
-
-            <!-- UBICACIÓN -->
-            <div class="form-section">
-                <div class="ubicacion-box">
-                    <div class="ubicacion-header">
-                        <label>Ubicación</label>
-                        <button type="button" class="btn-add" onclick="agregarSeccion()">+</button>
-                    </div>
-                    
-                    <label for="seccion_prenda" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Escribe la prenda para agregarle las ubicaciones:</label>
-                    <input type="text" id="seccion_prenda" list="secciones_list" class="input-large" placeholder="Escribe o selecciona una sección" style="width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase()">
-                    <datalist id="secciones_list">
-                        <option value="CAMISA">
-                        <option value="JEAN_SUDADERA">
-                        <option value="GORRAS">
-                    </datalist>
-                    <div id="errorSeccionPrenda" style="display: none; color: #ef4444; font-size: 0.85rem; font-weight: 600; padding: 0.5rem; background: #fee2e2; border-radius: 4px; margin-bottom: 10px;">
-                        ⚠️ Debes seleccionar una ubicación
-                    </div>
-                    
-                    <div class="secciones-agregadas" id="secciones_agregadas"></div>
                 </div>
             </div>
 
@@ -588,7 +561,6 @@ OR
 <script>
 // Arrays para almacenar datos
 let tecnicasSeleccionadas = [];
-let seccionesSeleccionadas = [];
 let observacionesGenerales = [];
 let imagenesSeleccionadas = [];
 let imagenesABorrar = [];  // Rastrear IDs de imágenes a borrar
@@ -605,19 +577,12 @@ tecnicasSeleccionadas = new Proxy(originalTecnicas, {
     }
 });
 
-// Opciones por ubicación
-const opcionesPorUbicacion = {
-    'CAMISA': ['PECHO', 'ESPALDA', 'MANGA IZQUIERDA', 'MANGA DERECHA', 'CUELLO'],
-    'JEAN_SUDADERA': ['PIERNA IZQUIERDA', 'PIERNA DERECHA', 'BOLSILLO TRASERO', 'BOLSILLO RELOJERO'],
-    'GORRAS': ['FRENTE', 'LATERAL', 'TRASERA']
-};
-
-// Lista unificada para el nuevo selector
-let todasLasUbicaciones = [...new Set([
-    ...opcionesPorUbicacion.CAMISA,
-    ...opcionesPorUbicacion.JEAN_SUDADERA,
-    ...opcionesPorUbicacion.GORRAS
-])];
+// Lista unificada de ubicaciones
+let todasLasUbicaciones = [
+    'PECHO', 'ESPALDA', 'MANGA IZQUIERDA', 'MANGA DERECHA', 'CUELLO',
+    'PIERNA IZQUIERDA', 'PIERNA DERECHA', 'BOLSILLO TRASERO', 'BOLSILLO RELOJERO',
+    'FRENTE', 'LATERAL', 'TRASERA'
+];
 
 // Drag and drop para imágenes
 const dropZone = document.getElementById('drop_zone_imagenes');
@@ -788,405 +753,8 @@ function eliminarTecnica(index) {
     renderizarTecnicas();
 }
 
-// Ubicaciones
-function agregarSeccion() {
-    const selector = document.getElementById('seccion_prenda');
-    const ubicacion = selector.value.trim().toUpperCase();
-    const errorDiv = document.getElementById('errorSeccionPrenda');
-
-    if (!ubicacion) {
-        selector.style.border = '2px solid #ef4444';
-        selector.style.background = '#fee2e2';
-        selector.classList.add('shake');
-        errorDiv.style.display = 'block';
-
-        setTimeout(() => {
-            selector.style.border = '';
-            selector.style.background = '';
-            selector.classList.remove('shake');
-        }, 600);
-
-        setTimeout(() => {
-            errorDiv.style.display = 'none';
-        }, 3000);
-
-        return;
-    }
-
-    errorDiv.style.display = 'none';
-
-    abrirModalUbicaciones(ubicacion, [], [], (nuevasUbicaciones, tallas, obs) => {
-        seccionesSeleccionadas.push({
-            ubicacion: ubicacion,
-            opciones: nuevasUbicaciones,
-            tallas: tallas,
-            observaciones: obs
-        });
-        opcionesPorUbicacion[ubicacion] = nuevasUbicaciones;
-        renderizarSecciones();
-        cerrarModalUbicacion('modalUbicaciones');
-        selector.value = ''; // Limpiar el input
-    });
-}
-
-window.editarSeccion = function(index) {
-    const seccion = seccionesSeleccionadas[index];
-    if (!seccion) return;
-
-    abrirModalUbicaciones(seccion.ubicacion, seccion.opciones, seccion.tallas || [], (nuevasUbicaciones, tallas, obs) => {
-        seccionesSeleccionadas[index] = {
-            ...seccion,
-            opciones: nuevasUbicaciones,
-            tallas: tallas,
-            observaciones: obs
-        };
-        opcionesPorUbicacion[seccion.ubicacion] = nuevasUbicaciones;
-        renderizarSecciones();
-        cerrarModalUbicacion('modalUbicaciones');
-    }, seccion.observaciones);
-}
-
-window.eliminarSeccion = function(index) {
-    seccionesSeleccionadas.splice(index, 1);
-    renderizarSecciones();
-}
-
-function cerrarModalUbicacion(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.remove();
-}
-
-function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, onSave, observacionesIniciales = '') {
-    console.log('🎬 BORDADO - abrirModalUbicaciones iniciado');
-    console.log('📌 prenda:', prenda);
-    console.log('📌 ubicacionesIniciales:', ubicacionesIniciales);
-    console.log('📌 tallasIniciales:', tallasIniciales);
-    console.log('📌 observacionesIniciales:', observacionesIniciales);
-    console.log('📌 todasLasUbicaciones:', todasLasUbicaciones);
-    
-    let ubicacionesSeleccionadasModal = [...ubicacionesIniciales];
-    let tallasModal = [...tallasIniciales];
-
-    const modalId = 'modalUbicaciones';
-
-    const modalHtml = `
-        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;" id="${modalId}">
-            <div style="background: white; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;">
-                <div style="padding: 1.5rem 1.5rem 1rem 1.5rem; border-bottom: 1px solid #eee;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; color: #1e40af; font-size: 1.1rem;">${prenda}</h3>
-                        <button type="button" onclick="cerrarModalUbicacion('${modalId}')" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">×</button>
-                    </div>
-                </div>
-                
-                <div style="overflow-y: auto; padding: 1.5rem;">
-                    <!-- Tallas y Cantidades -->
-                    <div id="tallas-section-container" style="margin-bottom: 1.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <label style="font-weight: 600; color: #333;">Tallas y Cantidades:</label>
-                            <button type="button" id="btn-tallas-na" style="background: #7f8c8d; color: white; border: none; border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.7rem; cursor: pointer;">No Aplica</button>
-                        </div>
-                        <div id="tallas-content">
-                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                                <input type="text" id="talla-input" placeholder="Talla" style="width: 50%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase()">
-                                <input type="number" id="cantidad-input" placeholder="Cantidad" style="width: 40%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                                <button type="button" id="btn-add-talla" style="background: #27ae60; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">+</button>
-                            </div>
-                            <div id="tallas-container" style="display: flex; flex-direction: column; gap: 6px; border: 1px solid #eee; padding: 0.5rem; border-radius: 4px; min-height: 40px;"></div>
-                        </div>
-                    </div>
-
-                    <!-- Ubicaciones -->
-                    <div id="ubicaciones-section-container" style="margin-bottom: 1.5rem;">
-                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <label style="font-weight: 600; color: #333;">Ubicaciones:</label>
-                            <button type="button" id="btn-ubicaciones-na" style="background: #7f8c8d; color: white; border: none; border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.7rem; cursor: pointer;">No Aplica</button>
-                        </div>
-                        <div id="ubicaciones-content">
-                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                                <input type="text" id="ubicacion-input" list="ubicaciones-datalist" placeholder="Busca o escribe una ubicación..." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase()">
-                                <datalist id="ubicaciones-datalist"></datalist>
-                                <button type="button" id="btn-add-ubicacion" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">+</button>
-                            </div>
-                            <div id="ubicaciones-seleccionadas-container" style="display: flex; flex-direction: column; gap: 6px; border: 1px solid #eee; padding: 0.5rem; border-radius: 4px; min-height: 40px;"></div>
-                        </div>
-                    </div>
-
-                    <!-- Observaciones -->
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Observaciones:</label>
-                        <textarea id="obs-ubicacion-modal" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; min-height: 80px;">${observacionesIniciales}</textarea>
-                    </div>
-                </div>
-
-                <div style="margin-top: auto; padding: 1rem 1.5rem 1.5rem 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end;">
-                    <button type="button" id="btn-save-ubicaciones" style="background: #3498db; color: white; border: none; border-radius: 6px; padding: 0.6rem 1.2rem; cursor: pointer; font-weight: 600;">Guardar</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    console.log('✅ BORDADO - Modal HTML insertado en DOM');
-    console.log('📋 modalHtml:', modalHtml);
-
-    // --- Lógica del nuevo modal ---
-    const datalist = document.getElementById('ubicaciones-datalist');
-    console.log('📍 datalist element:', datalist);
-    todasLasUbicaciones.forEach(op => {
-        const option = document.createElement('option');
-        option.value = op;
-        datalist.appendChild(option);
-    });
-    console.log('✅ BORDADO - Opciones del datalist agregadas:', todasLasUbicaciones.length);
-
-    // Tallas
-    const tallasContent = document.getElementById('tallas-content');
-    const btnTallasNA = document.getElementById('btn-tallas-na');
-    const tallaInput = document.getElementById('talla-input');
-    const cantidadInput = document.getElementById('cantidad-input');
-    const addTallaButton = document.getElementById('btn-add-talla');
-    
-    console.log('📍 BORDADO - Selectores de Tallas:');
-    console.log('  tallasContent:', tallasContent);
-    console.log('  btnTallasNA:', btnTallasNA);
-    console.log('  tallaInput:', tallaInput);
-    console.log('  cantidadInput:', cantidadInput);
-    console.log('  addTallaButton:', addTallaButton);
-
-    btnTallasNA.addEventListener('click', () => {
-        console.log('🔘 BORDADO - btnTallasNA clicked');
-        const isApplied = tallasContent.style.display !== 'none';
-        if (isApplied) {
-            tallasContent.style.display = 'none';
-            btnTallasNA.textContent = 'Aplica';
-            btnTallasNA.style.background = '#27ae60';
-            tallasModal = []; // Limpiar datos
-            renderTallas();
-        } else {
-            tallasContent.style.display = 'block';
-            btnTallasNA.textContent = 'No Aplica';
-            btnTallasNA.style.background = '#7f8c8d';
-        }
-    });
-
-    const renderTallas = () => {
-        const container = document.getElementById('tallas-container');
-        container.innerHTML = '';
-        tallasModal.forEach((talla, index) => {
-            const item = document.createElement('div');
-            item.style.cssText = 'background: #e8f8f5; padding: 0.4rem 0.6rem; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;';
-
-            const tallaInput = document.createElement('input');
-            tallaInput.type = 'text';
-            tallaInput.value = talla.talla;
-            tallaInput.placeholder = 'Talla';
-            tallaInput.style.cssText = 'width: 50%; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;';
-            tallaInput.addEventListener('input', (e) => {
-                tallasModal[index].talla = e.target.value.trim().toUpperCase();
-            });
-
-            const cantidadInput = document.createElement('input');
-            cantidadInput.type = 'number';
-            cantidadInput.value = talla.cantidad;
-            cantidadInput.placeholder = 'Cant';
-            cantidadInput.style.cssText = 'width: 35%; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;';
-            cantidadInput.addEventListener('input', (e) => {
-                tallasModal[index].cantidad = parseInt(e.target.value, 10) || 0;
-            });
-
-            const deleteButton = document.createElement('button');
-            deleteButton.type = 'button';
-            deleteButton.innerHTML = '×';
-            deleteButton.style.cssText = 'background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0;';
-            deleteButton.addEventListener('click', () => {
-                tallasModal.splice(index, 1);
-                renderTallas();
-            });
-
-            item.appendChild(tallaInput);
-            item.appendChild(cantidadInput);
-            item.appendChild(deleteButton);
-            container.appendChild(item);
-        });
-    };
-
-    const agregarTalla = () => {
-        const talla = tallaInput.value.trim().toUpperCase();
-        const cantidad = parseInt(cantidadInput.value, 10);
-        if (talla && cantidad > 0) {
-            tallasModal.push({ talla, cantidad });
-            tallaInput.value = '';
-            cantidadInput.value = '';
-            renderTallas();
-            tallaInput.focus();
-        }
-    };
-
-    addTallaButton.addEventListener('click', agregarTalla);
-
-    // Ubicaciones
-    const ubicacionesContent = document.getElementById('ubicaciones-content');
-    const btnUbicacionesNA = document.getElementById('btn-ubicaciones-na');
-    const ubicacionInput = document.getElementById('ubicacion-input');
-    const addUbicacionButton = document.getElementById('btn-add-ubicacion');
-    
-    console.log('📍 BORDADO - Selectores de Ubicaciones:');
-    console.log('  ubicacionesContent:', ubicacionesContent);
-    console.log('  btnUbicacionesNA:', btnUbicacionesNA);
-    console.log('  ubicacionInput:', ubicacionInput);
-    console.log('  addUbicacionButton:', addUbicacionButton);
-
-    btnUbicacionesNA.addEventListener('click', () => {
-        console.log('🔘 BORDADO - btnUbicacionesNA clicked');
-        const isApplied = ubicacionesContent.style.display !== 'none';
-        if (isApplied) {
-            ubicacionesContent.style.display = 'none';
-            btnUbicacionesNA.textContent = 'Aplica';
-            btnUbicacionesNA.style.background = '#27ae60';
-            ubicacionesSeleccionadasModal = []; // Limpiar datos
-            renderizarUbicacionesSeleccionadas();
-        } else {
-            ubicacionesContent.style.display = 'block';
-            btnUbicacionesNA.textContent = 'No Aplica';
-            btnUbicacionesNA.style.background = '#7f8c8d';
-        }
-    });
-    
-    const renderizarUbicacionesSeleccionadas = () => {
-        const container = document.getElementById('ubicaciones-seleccionadas-container');
-        container.innerHTML = '';
-        ubicacionesSeleccionadasModal.forEach((ubicacion, index) => {
-            const item = document.createElement('div');
-            item.style.cssText = 'background: #e9f5ff; padding: 0.4rem 0.6rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;';
-            
-            const inputField = document.createElement('input');
-            inputField.type = 'text';
-            inputField.value = ubicacion;
-            inputField.style.cssText = 'flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 0.25rem; font-size: 0.85rem; background: white;';
-            inputField.addEventListener('input', (e) => {
-                if (index >= 0 && index < ubicacionesSeleccionadasModal.length) {
-                    ubicacionesSeleccionadasModal[index] = e.target.value.trim().toUpperCase();
-                }
-            });
-
-            const deleteButton = document.createElement('button');
-            deleteButton.type = 'button';
-            deleteButton.innerHTML = '×';
-            deleteButton.style.cssText = 'background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0;';
-            deleteButton.addEventListener('click', () => {
-                ubicacionesSeleccionadasModal.splice(index, 1);
-                renderizarUbicacionesSeleccionadas();
-            });
-
-            item.appendChild(inputField);
-            item.appendChild(deleteButton);
-            container.appendChild(item);
-        });
-    };
-
-    const agregarUbicacion = () => {
-        const nuevaUbicacion = ubicacionInput.value.trim().toUpperCase();
-        if (nuevaUbicacion && !ubicacionesSeleccionadasModal.includes(nuevaUbicacion)) {
-            ubicacionesSeleccionadasModal.push(nuevaUbicacion);
-            if (!todasLasUbicaciones.includes(nuevaUbicacion)) {
-                todasLasUbicaciones.push(nuevaUbicacion);
-                const option = document.createElement('option');
-                option.value = nuevaUbicacion;
-                datalist.appendChild(option);
-            }
-            ubicacionInput.value = '';
-            renderizarUbicacionesSeleccionadas();
-        }
-        ubicacionInput.focus();
-    };
-
-    addUbicacionButton.addEventListener('click', agregarUbicacion);
-    ubicacionInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            agregarUbicacion();
-        }
-    });
-
-    // Guardar
-    const saveButton = document.getElementById('btn-save-ubicaciones');
-    const obsTextarea = document.getElementById('obs-ubicacion-modal');
-    
-    console.log('📍 BORDADO - Selectores de Guardar:');
-    console.log('  saveButton:', saveButton);
-    console.log('  obsTextarea:', obsTextarea);
-
-    saveButton.addEventListener('click', () => {
-        console.log('💾 BORDADO - saveButton clicked');
-        console.log('  ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
-        console.log('  tallasModal:', tallasModal);
-        console.log('  obsTextarea.value:', obsTextarea.value);
-        // Se eliminan las validaciones para permitir guardar aunque no apliquen tallas o ubicaciones.
-        onSave(ubicacionesSeleccionadasModal, tallasModal, obsTextarea.value);
-    });
-
-    renderizarUbicacionesSeleccionadas();
-    renderTallas();
-    
-    console.log('✅ BORDADO - Modal abrirModalUbicaciones completamente inicializado');
-    console.log('📊 Estado final:');
-    console.log('  ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
-    console.log('  tallasModal:', tallasModal);
-    console.log('  observacionesIniciales:', observacionesIniciales);
-}
-
-function renderizarSecciones() {
-    const container = document.getElementById('secciones_agregadas');
-    container.innerHTML = '';
-
-    seccionesSeleccionadas.forEach((seccion, index) => {
-        const item = document.createElement('div');
-        item.style.cssText = `
-            background: #f0f7ff;
-            border: 1px solid #cce7ff;
-            border-radius: 8px;
-            padding: 0.75rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        `;
-
-        const header = document.createElement('div');
-        header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #1e40af;';
-        header.innerHTML = `
-            <span>${seccion.ubicacion}</span>
-            <div>
-                <button type="button" onclick="editarSeccion(${index})" style="background: none; border: none; cursor: pointer; color: #3498db; font-size: 0.9rem; margin-right: 0.5rem; vertical-align: middle;"><i class="fas fa-pencil-alt"></i></button>
-                <button type="button" onclick="eliminarSeccion(${index})" style="background: none; border: none; cursor: pointer; color: #e74c3c; font-size: 0.9rem; vertical-align: middle;"><i class="fas fa-trash-alt"></i></button>
-            </div>
-        `;
-
-        const tallasHtml = (seccion.tallas && seccion.tallas.length > 0)
-            ? `<strong>Tallas:</strong> ${seccion.tallas.map(t => `${t.talla} (${t.cantidad})`).join(', ')}<br>`
-            : '';
-
-        const content = document.createElement('div');
-        content.style.fontSize = '0.8rem';
-        content.innerHTML = `
-            ${tallasHtml}
-            <strong>Ubicaciones:</strong> ${seccion.opciones.join(', ')}<br>
-            ${seccion.observaciones ? `<strong>Obs:</strong> ${seccion.observaciones}` : ''}
-        `;
-
-        item.appendChild(header);
-        item.appendChild(content);
-        container.appendChild(item);
-    });
-}
-
-
-function eliminarSeccion(index) {
-    seccionesSeleccionadas.splice(index, 1);
-    renderizarSecciones();
-}
-
 // ============ OBSERVACIONES ============
+
 function agregarObservacion() {
     const contenedor = document.getElementById('observaciones_lista');
     const fila = document.createElement('div');
@@ -1257,13 +825,11 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
 
     const cliente = document.getElementById('cliente').value;
     const asesora = document.getElementById('asesora').value;
-    const descripcion = document.getElementById('descripcion').value;
     const observacionesTecnicas = document.getElementById('observaciones_tecnicas').value;
 
     console.log('📋 Valores sincronizados:', {
         cliente: cliente,
         asesora: asesora,
-        descripcion: descripcion,
         observacionesTecnicas: observacionesTecnicas
     });
 
@@ -1325,20 +891,17 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const data = {
         _token: document.querySelector('input[name="_token"]').value,
         cliente: cliente,
-        descripcion: descripcion,
         asesora: asesora,
         fecha: document.getElementById('header-fecha').value,
         action: action,
         observaciones_tecnicas: observacionesTecnicas,
         tecnicas: tecnicasSeleccionadas,
-        secciones: seccionesSeleccionadas,
         observaciones_generales: observacionesDelDOM,
         tipo_venta_bordado: document.getElementById('header-tipo-venta').value
     };
 
     console.log('📦 Datos a enviar:', data);
     console.log('🎨 Técnicas seleccionadas:', tecnicasSeleccionadas);
-    console.log('📍 Secciones seleccionadas:', seccionesSeleccionadas);
     console.log('📝 Observaciones generales:', observacionesDelDOM);
 
     // Verificar si hay imágenes nuevas
@@ -1488,11 +1051,9 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const datos = {
                 cliente: document.querySelector('[name="cliente"]')?.value || '',
-                descripcion: document.getElementById('descripcion')?.value || '',
                 asesora: document.querySelector('[name="asesora"]')?.value || '',
                 observaciones_tecnicas: document.querySelector('[name="observaciones_tecnicas"]')?.value || '',
                 tecnicas: tecnicasSeleccionadas,
-                secciones: seccionesSeleccionadas,
                 observaciones_generales: observacionesGenerales,
                 timestamp: new Date().toISOString()
             };
@@ -1543,13 +1104,6 @@ function cargarDatosBorrador(cotizacion) {
             console.log('⚠️ No se encontró cliente en cotizacion');
         }
 
-        // Cargar descripción
-        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.descripcion) {
-            console.log('📝 Descripción encontrada:', cotizacion.logo_cotizacion.descripcion);
-            document.getElementById('descripcion').value = cotizacion.logo_cotizacion.descripcion;
-        } else {
-            console.log('⚠️ No se encontró descripción en logo_cotizacion');
-        }
 
         // Cargar técnicas
         if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.tecnicas) {
@@ -1567,18 +1121,6 @@ function cargarDatosBorrador(cotizacion) {
             }
         } else {
             console.log('⚠️ No se encontraron técnicas en logo_cotizacion');
-        }
-
-        // Cargar ubicaciones
-        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.secciones) {
-            const secciones = typeof cotizacion.logo_cotizacion.secciones === 'string'
-                ? JSON.parse(cotizacion.logo_cotizacion.secciones)
-                : cotizacion.logo_cotizacion.secciones;
-
-            if (Array.isArray(secciones)) {
-                seccionesSeleccionadas = secciones;
-                renderizarSecciones();
-            }
         }
 
         // Cargar observaciones técnicas
@@ -1691,4 +1233,62 @@ function agregarObservacionDesdeBorrador(obs) {
     });
 }
 </script>
+
+<!-- MODAL PARA AGREGAR PRENDAS CON TÉCNICA SELECCIONADA -->
+<div id="modalAgregarTecnica" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 30px; max-width: 700px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        
+        <!-- Header del Modal -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.5rem; color: #1e40af;">Agregar Prendas</h2>
+                <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9rem;">Técnica seleccionada: <strong id="tecnicaSeleccionadaNombre">--</strong></p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" onclick="agregarFilaPrenda()" style="background: #1e40af; color: white; border: none; font-size: 1.3rem; cursor: pointer; padding: 8px 12px; border-radius: 6px; line-height: 1; transition: background 0.2s;" title="Agregar prenda" onmouseover="this.style.background='#1530a8'" onmouseout="this.style.background='#1e40af'">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button type="button" onclick="cerrarModalAgregarTecnica()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999; padding: 0; line-height: 1;">&times;</button>
+            </div>
+        </div>
+        
+        <!-- Lista de Prendas -->
+        <div id="listaPrendas" style="margin-bottom: 20px;">
+            <!-- Prendas dinámicas aquí -->
+        </div>
+        
+        <!-- Sin prendas -->
+        <div id="noPrendasMsg" style="padding: 20px; text-align: center; background: #f5f5f5; border-radius: 6px; color: #999; margin-bottom: 20px; display: block;">
+            <p>Agrega prendas haciendo clic en el botón de arriba</p>
+        </div>
+        
+        <!-- Botones de acción -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+            <button type="button" onclick="cerrarModalAgregarTecnica()" style="background: #f0f0f0; color: #333; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                Cancelar
+            </button>
+            <button type="button" onclick="guardarTecnica()" style="background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                Guardar Prendas
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Validación - Seleccionar Técnica -->
+<div id="modalValidacionTecnica" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center; flex-direction: column;">
+    <div style="background: white; border-radius: 8px; padding: 40px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+        <div style="font-size: 3rem; margin-bottom: 20px; color: #ff9800;">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <p style="color: #333; margin-bottom: 30px; font-size: 1.1rem; font-weight: 600;">Debes seleccionar una técnica antes de agregar prendas.</p>
+        <button type="button" onclick="cerrarModalValidacionTecnica()" style="background: #1e40af; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; width: 100%;">
+            Entendido
+        </button>
+    </div>
+</div>
+
+<!-- Script de integración de técnicas -->
+<script src="{{ asset('js/logo-cotizacion-tecnicas.js') }}"></script>
+
 @endsection
+
