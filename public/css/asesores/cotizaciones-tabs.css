@@ -9,9 +9,11 @@
     align-items: center;
     gap: 10px;
     margin: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     padding: 0;
     background: transparent;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
 /* Cada pastilla - TIPO PÍLDORA */

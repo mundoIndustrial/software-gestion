@@ -477,37 +477,75 @@
         <!-- PASO 1: Seleccionar Cotización -->
         <div class="form-section">
             <h2>
-                <span>1</span> Seleccionar Cotización
+                <span>1</span> Tipo de Pedido
             </h2>
 
-            <div class="form-group">
-                <label for="cotizacion_search_editable" class="block text-sm font-medium text-gray-700 mb-2">
-                    Cotización
-                </label>
-                <div style="position: relative;">
-                    <input type="text" id="cotizacion_search_editable" placeholder="🔍 Buscar por número, cliente o asesora..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off">
-                    <input type="hidden" id="cotizacion_id_editable" name="cotizacion_id">
-                    <div id="cotizacion_dropdown_editable" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <!-- Radio Buttons para elegir tipo de pedido -->
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <div style="display: flex; gap: 2rem; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500;">
+                        <input type="radio" name="tipo_pedido_editable" id="tipo_desde_cotizacion" value="cotizacion" checked style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>Desde Cotización</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500;">
+                        <input type="radio" name="tipo_pedido_editable" id="tipo_nuevo_pedido" value="nuevo" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>Nuevo Pedido</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Contenedor para opciones dinámicas -->
+            <div id="contenedor-opciones-pedido" style="margin-top: 1.5rem;">
+                <!-- Buscador de Cotización (se muestra solo si está seleccionado "Desde Cotización") -->
+                <div id="seccion-buscar-cotizacion" style="display: block;">
+                    <div class="form-group">
+                        <label for="cotizacion_search_editable" class="block text-sm font-medium text-gray-700 mb-2">
+                            Cotización
+                        </label>
+                        <div style="position: relative;">
+                            <input type="text" id="cotizacion_search_editable" placeholder="🔍 Buscar por número, cliente o asesora..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off">
+                            <input type="hidden" id="cotizacion_id_editable" name="cotizacion_id">
+                            <div id="cotizacion_dropdown_editable" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            </div>
+                        </div>
+                        <div id="cotizacion_selected_editable" style="margin-top: 0.75rem; padding: 0.75rem; background: #f0f9ff; border-left: 3px solid #0066cc; border-radius: 4px; display: none;">
+                            <div style="font-size: 0.875rem; color: #1e40af;"><strong>Seleccionada:</strong> <span id="cotizacion_selected_text_editable"></span></div>
+                        </div>
                     </div>
                 </div>
-                <div id="cotizacion_selected_editable" style="margin-top: 0.75rem; padding: 0.75rem; background: #f0f9ff; border-left: 3px solid #0066cc; border-radius: 4px; display: none;">
-                    <div style="font-size: 0.875rem; color: #1e40af;"><strong>Seleccionada:</strong> <span id="cotizacion_selected_text_editable"></span></div>
+
+                <!-- Selector de Tipo de Pedido (se muestra solo si está seleccionado "Nuevo Pedido") -->
+                <div id="seccion-tipo-pedido-nuevo" style="display: none;">
+                    <div class="form-group">
+                        <label for="tipo_pedido_nuevo" class="block text-sm font-medium text-gray-700 mb-2">
+                            Tipo de Pedido
+                        </label>
+                        <select id="tipo_pedido_nuevo" name="tipo_pedido_nuevo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="manejarCambiaTipoPedido()">
+                            <option value="">-- Selecciona un tipo de pedido --</option>
+                            <option value="P">PRENDA</option>
+                            <option value="B">BORDADO</option>
+                            <option value="R">REFLECTIVO</option>
+                            <option value="E">ESTAMPADO</option>
+                            <option value="C">COMBINADA</option>
+                        </select>
+                    </div>
+
+                    <!-- Selector de Combinada (se muestra solo si está seleccionado "COMBINADA") -->
+                    <div id="seccion-tipo-combinada" style="display: none; margin-top: 1rem;">
+                        <div class="form-group">
+                            <label for="tipo_combinada_nuevo" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tipo de Combinada
+                            </label>
+                            <select id="tipo_combinada_nuevo" name="tipo_combinada_nuevo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">-- Selecciona una opción --</option>
+                                <option value="PH">Por Hacer</option>
+                                <option value="SB">Sacado de Bodega</option>
+                                <option value="PHB">Por Hacer y Sacado de Bodega</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <!-- Separador -->
-            <div style="text-align: center; margin: 1.5rem 0; position: relative;">
-                <div style="position: absolute; left: 0; right: 0; height: 1px; background: #d1d5db; top: 50%;"></div>
-                <span style="background: white; padding: 0 1rem; color: #6b7280; font-size: 0.875rem; position: relative;">O</span>
-            </div>
-
-            <!-- Botón Crear sin Cotización -->
-            <div style="text-align: center;">
-                <button type="button" id="btn-crear-sin-cotizacion" class="btn btn-secondary" onclick="crearPedidoSinCotizacion()" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
-                    ➕ Crear Pedido sin Cotización
-                </button>
-            </div>
-        </div>
 
         <!-- PASO 2: Información del Pedido -->
         <div class="form-section" id="seccion-info-prenda">
@@ -516,7 +554,8 @@
             </h2>
 
             <div class="form-row">
-                <div class="form-group">
+                <!-- Campo Número de Cotización (solo se muestra si viene de cotización) -->
+                <div id="campo-numero-cotizacion" class="form-group">
                     <label for="numero_cotizacion_editable">Número de Cotización</label>
                     <input type="text" id="numero_cotizacion_editable" name="numero_cotizacion" readonly>
                 </div>
@@ -591,6 +630,45 @@
             const btnSubmit = document.getElementById('btn-submit');
             btnSubmit.textContent = '✓ Crear Pedido';
             btnSubmit.style.display = 'block';
+
+            // ========== MANEJAR CAMBIO DE TIPO DE PEDIDO ==========
+            const tipoDesdeRadio = document.getElementById('tipo_desde_cotizacion');
+            const tipoNuevoRadio = document.getElementById('tipo_nuevo_pedido');
+            const seccionBuscarCotizacion = document.getElementById('seccion-buscar-cotizacion');
+            const seccionTipoPedidoNuevo = document.getElementById('seccion-tipo-pedido-nuevo');
+            const selectTipoPedidoNuevo = document.getElementById('tipo_pedido_nuevo');
+            const seccionTipoCombinada = document.getElementById('seccion-tipo-combinada');
+            const campNumeroCotizacion = document.getElementById('campo-numero-cotizacion');
+
+            function actualizarVistaPedido() {
+                if (tipoDesdeRadio.checked) {
+                    // Mostrar buscador de cotización, ocultar selector de tipo y mostrar número de cotización
+                    seccionBuscarCotizacion.style.display = 'block';
+                    seccionTipoPedidoNuevo.style.display = 'none';
+                    campNumeroCotizacion.style.display = 'block';
+                } else {
+                    // Ocultar buscador de cotización, mostrar selector de tipo y ocultar número de cotización
+                    seccionBuscarCotizacion.style.display = 'none';
+                    seccionTipoPedidoNuevo.style.display = 'block';
+                    campNumeroCotizacion.style.display = 'none';
+                }
+            }
+
+            // Listener para cambios en radio buttons
+            tipoDesdeRadio.addEventListener('change', actualizarVistaPedido);
+            tipoNuevoRadio.addEventListener('change', actualizarVistaPedido);
+
+            // ========== MANEJAR CAMBIO DE TIPO DE PEDIDO (NUEVO) ==========
+            window.manejarCambiaTipoPedido = function() {
+                const tipoPedido = selectTipoPedidoNuevo.value;
+                if (tipoPedido === 'C') {
+                    // Mostrar selector de tipo combinada
+                    seccionTipoCombinada.style.display = 'block';
+                } else {
+                    // Ocultar selector de tipo combinada
+                    seccionTipoCombinada.style.display = 'none';
+                }
+            };
         });
 
         window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
@@ -615,5 +693,36 @@
         })->toArray()) !!};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Scripts de configuración y utilidades (Fase 1 - Refactorización) -->
+    <script src="{{ asset('js/modulos/crear-pedido/config-pedido-editable.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/helpers-pedido-editable.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-fotos-pedido.js') }}?v={{ time() }}"></script>
+    <!-- ⭐⭐ UTILIDADES GLOBALES (DEBE CARGAR PRIMERO - inicializa fotosEliminadas, FotoHelper, CantidadesManager, ESTILOS_FOTOS) -->
+    <script src="{{ asset('js/utilidades-crear-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Modales y diálogos -->
+    <script src="{{ asset('js/modulos/crear-pedido/modales-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Gestores de lógica (Fase 2 - Modularización) -->
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-prendas.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-logo.js') }}?v={{ time() }}"></script>
+    <!-- Inicialización de gestores (Fase 2) -->
+    <script src="{{ asset('js/modulos/crear-pedido/init-gestores-fase2.js') }}?v={{ time() }}"></script>
+    <!-- Validación y envío (Fase 3) -->
+    <script src="{{ asset('js/modulos/crear-pedido/validacion-envio-fase3.js') }}?v={{ time() }}"></script>
+    <!-- Gestor de pedido sin cotización (Fase 3b) -->
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-pedido-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/init-gestor-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <!-- Módulo de Reflectivo -->
+    <script src="{{ asset('js/modulos/crear-pedido/reflectivo-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Módulo de Logo -->
+    <script src="{{ asset('js/modulos/crear-pedido/logo-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Templates HTML (DEBE CARGARSE ANTES DE crear-pedido-editable.js) -->
+    <script src="{{ asset('js/templates-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Script principal -->
     <script src="{{ asset('js/crear-pedido-editable.js') }}?v={{ time() }}"></script>
+    <!-- Scripts de tests (solo en desarrollo) -->
+    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-1.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-2.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-3.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-3b.js') }}?v={{ time() }}"></script>
 @endpush
