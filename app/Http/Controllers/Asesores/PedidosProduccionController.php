@@ -2247,19 +2247,18 @@ class PedidosProduccionController extends Controller
                     'fecha_fin' => now(),
                 ]);
 
-                // Guardar fotos de prenda si existen
+                // Guardar fotos de prenda si existen - CONVERTIR A WEBP IGUAL QUE SUPERVISOR-PEDIDOS
                 if ($request->hasFile("prendas.$index.fotos")) {
                     $fotos = $request->file("prendas.$index.fotos", []);
                     foreach ($fotos as $orden => $foto) {
                         if ($foto && $foto->isValid()) {
-                            // Guardar la foto
-                            $rutaOriginal = $foto->store('prendas-pedido', 'public');
-                            $rutaWebp = $rutaOriginal;
-
+                            // Usar el mismo método que supervisor-pedidos para guardar como WebP
+                            $pathWebp = $this->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'prendas');
+                            
                             DB::table('prenda_fotos_pedido')->insert([
                                 'prenda_pedido_id' => $prendaPedido->id,
-                                'ruta_original' => $rutaOriginal,
-                                'ruta_webp' => $rutaWebp,
+                                'ruta_original' => $pathWebp,
+                                'ruta_webp' => $pathWebp,
                                 'orden' => $orden + 1,
                                 'created_at' => now(),
                                 'updated_at' => now(),
@@ -2272,20 +2271,20 @@ class PedidosProduccionController extends Controller
                     ]);
                 }
 
-                // Guardar fotos de telas si existen
+                // Guardar fotos de telas si existen - CONVERTIR A WEBP IGUAL QUE SUPERVISOR-PEDIDOS
                 if (!empty($prenda['telas']) && is_array($prenda['telas'])) {
                     foreach ($prenda['telas'] as $telaIdx => $tela) {
                         if ($request->hasFile("prendas.$index.telas.$telaIdx.fotos")) {
                             $fotosTela = $request->file("prendas.$index.telas.$telaIdx.fotos", []);
                             foreach ($fotosTela as $orden => $fotoTela) {
                                 if ($fotoTela && $fotoTela->isValid()) {
-                                    $rutaOriginal = $fotoTela->store('telas-pedido', 'public');
-                                    $rutaWebp = $rutaOriginal;
+                                    // Usar el mismo método que supervisor-pedidos para guardar como WebP
+                                    $pathWebp = $this->guardarImagenComoWebp($fotoTela, $pedido->numero_pedido, 'telas');
 
                                     DB::table('prenda_fotos_tela_pedido')->insert([
                                         'prenda_pedido_id' => $prendaPedido->id,
-                                        'ruta_original' => $rutaOriginal,
-                                        'ruta_webp' => $rutaWebp,
+                                        'ruta_original' => $pathWebp,
+                                        'ruta_webp' => $pathWebp,
                                         'orden' => $orden + 1,
                                         'created_at' => now(),
                                         'updated_at' => now(),
@@ -2486,6 +2485,57 @@ class PedidosProduccionController extends Controller
         }
 
         return !empty($partes) ? implode(" | ", $partes) : null;
+    }
+
+    /**
+     * Guardar imagen como WebP en carpeta del pedido
+     * Idéntico al método en SupervisorPedidosController
+     * 
+     * @param \Illuminate\Http\UploadedFile $file
+     * @param string|int $numeroPedido Número del pedido
+     * @param string $tipo Tipo de imagen: 'prendas', 'logos', 'telas'
+     * @return string Ruta relativa del archivo guardado
+     */
+    private function guardarImagenComoWebp($file, $numeroPedido, $tipo)
+    {
+        try {
+            // Generar nombre único
+            $nombreUnico = time() . '_' . uniqid() . '.webp';
+            
+            // Construir ruta: storage/app/public/pedidos/{numeroPedido}/{tipo}
+            $carpetaRelativa = "pedidos/{$numeroPedido}/{$tipo}";
+            $rutaCompleta = storage_path("app/public/{$carpetaRelativa}");
+            
+            // Crear directorio si no existe
+            if (!\File::exists($rutaCompleta)) {
+                \File::makeDirectory($rutaCompleta, 0755, true);
+                \Log::info('📁 Carpeta creada', ['ruta' => $rutaCompleta]);
+            }
+            
+            // Usar Intervention Image para convertir a webp
+            $manager = \Intervention\Image\ImageManager::gd();
+            $imagen = $manager->read($file->getRealPath());
+            
+            // Guardar como webp con calidad 85
+            $rutaArchivo = $rutaCompleta . '/' . $nombreUnico;
+            $imagen->toWebp(85)->save($rutaArchivo);
+            
+            \Log::info('✅ Imagen guardada como webp', [
+                'nombre' => $nombreUnico,
+                'numero_pedido' => $numeroPedido,
+                'tipo' => $tipo,
+                'ruta_completa' => $rutaArchivo,
+                'ruta_relativa' => $carpetaRelativa . '/' . $nombreUnico
+            ]);
+            
+            // Retornar ruta relativa para la base de datos
+            return $carpetaRelativa . '/' . $nombreUnico;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al convertir imagen a webp: ' . $e->getMessage());
+            // Fallback: guardar sin conversión en carpeta del pedido
+            return $file->store("pedidos/{$numeroPedido}/{$tipo}", 'public');
+        }
     }
 
 }

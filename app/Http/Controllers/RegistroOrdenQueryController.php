@@ -455,6 +455,18 @@ class RegistroOrdenQueryController extends Controller
             {
                 $prendas = $order->prendas;
 
+                // Helper para normalizar rutas a URL públicas
+                $normalize = function ($ruta) {
+                    if (empty($ruta)) return null;
+                    if (str_starts_with($ruta, 'http')) {
+                        return $ruta;
+                    }
+                    if (str_starts_with($ruta, '/storage/')) {
+                        return $ruta;
+                    }
+                    return '/storage/' . ltrim($ruta, '/');
+                };
+
                 // Formatear prendas con todos los datos necesarios
                 $prendasFormato = [];
                 foreach ($prendas as $index => $prenda) {
@@ -483,6 +495,24 @@ class RegistroOrdenQueryController extends Controller
                         $tipoBrocheNombre = $prenda->tipoBroche->nombre;
                     }
                     
+                    // ✅ NUEVO: Normalizar fotos de prenda (WebP)
+                    $fotosNormalizadas = [];
+                    if ($prenda->fotos) {
+                        foreach ($prenda->fotos as $foto) {
+                            $ruta = $foto->ruta_webp ?? $foto->ruta_original;
+                            $fotosNormalizadas[] = $normalize($ruta);
+                        }
+                    }
+                    
+                    // ✅ NUEVO: Normalizar fotos de tela (WebP)
+                    $telaFotosNormalizadas = [];
+                    if ($prenda->fotosTela) {
+                        foreach ($prenda->fotosTela as $fotoTela) {
+                            $ruta = $fotoTela->ruta_webp ?? $fotoTela->ruta_original;
+                            $telaFotosNormalizadas[] = $normalize($ruta);
+                        }
+                    }
+                    
                     $prendasFormato[] = [
                         'numero' => $index + 1,
                         'nombre' => $prenda->nombre_prenda ?? '-',
@@ -497,6 +527,9 @@ class RegistroOrdenQueryController extends Controller
                         'tipo_broche' => $tipoBrocheNombre,
                         'tiene_bolsillos' => $prenda->tiene_bolsillos ?? 0,
                         'tiene_reflectivo' => $prenda->tiene_reflectivo ?? 0,
+                        // ✅ NUEVO: Agregar fotos normalizadas
+                        'fotos' => $fotosNormalizadas,
+                        'tela_fotos' => $telaFotosNormalizadas,
                     ];
                 }
                 

@@ -196,6 +196,37 @@ function renderOrderDetail(orden) {
     // ✅ NUEVO: Guardar descripcion_prendas construida en el controlador
     window.prendasState.descripcionPrendasCompleta = orden.descripcion_prendas || '';
     
+    // ✅ NUEVO: Llenar prendasGaleria con fotos del servidor
+    if (!window.prendasGaleria) {
+        window.prendasGaleria = [];
+    }
+    if (!window.telasGaleria) {
+        window.telasGaleria = [];
+    }
+    
+    if (orden.prendas && Array.isArray(orden.prendas)) {
+        orden.prendas.forEach((prenda, index) => {
+            // Llenar galería de fotos de prenda
+            if (prenda.fotos && Array.isArray(prenda.fotos)) {
+                window.prendasGaleria[index] = prenda.fotos.filter(f => f); // Filtrar null/undefined
+                console.log(`📸 [GALERIA] Prenda ${index}: ${window.prendasGaleria[index]?.length || 0} fotos cargadas`);
+            } else {
+                window.prendasGaleria[index] = [];
+            }
+            
+            // Llenar galería de fotos de tela
+            if (prenda.tela_fotos && Array.isArray(prenda.tela_fotos)) {
+                if (!window.telasGaleria[index]) {
+                    window.telasGaleria[index] = {};
+                }
+                window.telasGaleria[index][0] = prenda.tela_fotos.filter(f => f); // Filtrar null/undefined
+                console.log(`🧵 [GALERIA TELA] Prenda ${index}: ${window.telasGaleria[index][0]?.length || 0} fotos de tela cargadas`);
+            }
+        });
+    }
+    
+    console.log('✅ [GALERIA] prendasGaleria y telasGaleria inicializadas');
+    
     // Llenar fecha
     const dayBox = document.querySelector('.day-box');
     const monthBox = document.querySelector('.month-box');

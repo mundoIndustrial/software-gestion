@@ -215,6 +215,15 @@ window.enviarPrendaSinCotizacion = function() {
                 if (prenda.variantes) {
                     formData.append(`prendas[${index}][variantes]`, JSON.stringify(prenda.variantes));
                 }
+
+                // Agregar telas como estructura para que coincida con FormData de fotos
+                if (prenda.variantes?.telas_multiples && Array.isArray(prenda.variantes.telas_multiples)) {
+                    prenda.variantes.telas_multiples.forEach((tela, telaIdx) => {
+                        formData.append(`prendas[${index}][telas][${telaIdx}][nombre_tela]`, tela.nombre_tela || '');
+                        formData.append(`prendas[${index}][telas][${telaIdx}][color]`, tela.color || '');
+                        formData.append(`prendas[${index}][telas][${telaIdx}][referencia]`, tela.referencia || '');
+                    });
+                }
             });
 
             // 📸 AGREGAR IMÁGENES DE PRENDAS
@@ -222,9 +231,12 @@ window.enviarPrendaSinCotizacion = function() {
             Object.entries(datosPrenda.fotosNuevas || {}).forEach(([prendaIndex, fotos]) => {
                 if (Array.isArray(fotos)) {
                     fotos.forEach((foto, fotoIndex) => {
-                        if (foto instanceof File) {
-                            formData.append(`prendas[${prendaIndex}][fotos][]`, foto);
-                            logWithEmoji('✅', `Imagen de prenda ${prendaIndex + 1} agregada: ${foto.name}`);
+                        // Foto puede ser un objeto {file, url, fileName, ...} o un File directo
+                        const archivo = foto instanceof File ? foto : (foto && foto.file instanceof File ? foto.file : null);
+                        
+                        if (archivo) {
+                            formData.append(`prendas[${prendaIndex}][fotos][]`, archivo);
+                            logWithEmoji('✅', `Imagen de prenda ${prendaIndex + 1} agregada: ${archivo.name}`);
                         } else if (typeof foto === 'string') {
                             // Si es una URL existente, guardarla igual
                             formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
@@ -239,9 +251,12 @@ window.enviarPrendaSinCotizacion = function() {
                 Object.entries(telas).forEach(([telaIndex, fotos]) => {
                     if (Array.isArray(fotos)) {
                         fotos.forEach((foto, fotoIndex) => {
-                            if (foto instanceof File) {
-                                formData.append(`prendas[${prendaIndex}][telas][${telaIndex}][fotos][]`, foto);
-                                logWithEmoji('✅', `Imagen de tela de prenda ${prendaIndex + 1} agregada: ${foto.name}`);
+                            // Foto puede ser un objeto {file, url, fileName, ...} o un File directo
+                            const archivo = foto instanceof File ? foto : (foto && foto.file instanceof File ? foto.file : null);
+                            
+                            if (archivo) {
+                                formData.append(`prendas[${prendaIndex}][telas][${telaIndex}][fotos][]`, archivo);
+                                logWithEmoji('✅', `Imagen de tela de prenda ${prendaIndex + 1} agregada: ${archivo.name}`);
                             } else if (typeof foto === 'string') {
                                 // Si es una URL existente
                                 formData.append(`prendas[${prendaIndex}][telas][${telaIndex}][fotos_existentes][]`, foto);
