@@ -2538,6 +2538,240 @@ class PedidosProduccionController extends Controller
         }
     }
 
+    /**
+     * Crear pedido REFLECTIVO sin cotización previa
+     */
+    public function crearReflectivoSinCotizacion(Request $request): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            // Validar datos requeridos
+            $cliente = $request->input('cliente');
+            $formaPago = $request->input('forma_de_pago', '');
+            $asesora = $request->input('asesora', '');
+            $prendas = $request->input('prendas', []);
+
+            if (!$cliente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cliente es requerido'
+                ], 422);
+            }
+
+            if (empty($prendas)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe agregar al menos una prenda'
+                ], 422);
+            }
+
+            \Log::info('📦 [REFLECTIVO SIN COTIZACIÓN] Creando pedido de reflectivo', [
+                'cliente' => $cliente,
+                'forma_de_pago' => $formaPago,
+                'asesora' => $asesora,
+                'prendas_count' => count($prendas),
+            ]);
+
+            // Crear pedido de producción
+            $pedido = PedidoProduccion::create([
+                'cotizacion_id' => null,  // Sin cotización
+                'numero_cotizacion' => null,
+                'numero_pedido' => $this->generarNumeroPedido(),
+                'cliente' => $cliente,
+                'asesor_id' => auth()->id(),
+                'forma_de_pago' => $formaPago,
+                'area' => null,
+                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
+                'fecha_de_creacion_de_orden' => now(),
+            ]);
+
+            \Log::info('✅ Pedido REFLECTIVO creado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
+
+            // Crear prendas del pedido
+            $cantidadTotalPedido = 0;
+            foreach ($prendas as $index => $prenda) {
+                $cantidadesPorTalla = $prenda['cantidades'] ?? $prenda['cantidadesPorTalla'] ?? [];
+                
+                // Aplanar cantidadesPorTalla si es necesario
+                if (is_array($cantidadesPorTalla) && !empty($cantidadesPorTalla)) {
+                    $cantidadesTemp = [];
+                    foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                        $cantidadesTemp[$talla] = (int)$cantidad;
+                    }
+                    $cantidadesPorTalla = $cantidadesTemp;
+                }
+                
+                $cantidadTotal = array_sum($cantidadesPorTalla);
+                $cantidadTotalPedido += $cantidadTotal;
+
+                \Log::info('📊 [REFLECTIVO SIN COTIZACIÓN] Procesando prenda', [
+                    'index' => $index,
+                    'nombre' => $prenda['nombre_producto'] ?? 'Sin nombre',
+                    'genero' => $prenda['genero'] ?? '',
+                    'cantidades_por_talla' => $cantidadesPorTalla,
+                    'cantidad_total' => $cantidadTotal,
+                ]);
+
+                // Construir descripción para reflectivo
+                $descripcionPrenda = $this->construirDescripcionReflectivoSinCotizacion($prenda, $cantidadesPorTalla);
+
+                // Crear prenda del pedido
+                $prendaPedido = PrendaPedido::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
+                    'cantidad' => $cantidadTotal,
+                    'descripcion' => $descripcionPrenda,
+                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                ]);
+
+                \Log::info('✅ Prenda REFLECTIVO creada correctamente', [
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'nombre_prenda' => $prenda['nombre_producto'],
+                    'cantidad' => $cantidadTotal,
+                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                ]);
+
+                // Crear proceso inicial
+                ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'proceso' => 'Creación Orden',
+                    'estado_proceso' => 'Completado',
+                    'fecha_inicio' => now(),
+                    'fecha_fin' => now(),
+                ]);
+
+                // Guardar fotos de reflectivo si existen
+                if ($request->hasFile("prendas.$index.fotos")) {
+                    $fotos = $request->file("prendas.$index.fotos", []);
+                    foreach ($fotos as $orden => $foto) {
+                        if ($foto && $foto->isValid()) {
+                            // Usar el mismo método que supervisor-pedidos para guardar como WebP
+                            $pathWebp = $this->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'reflectivo');
+
+                            DB::table('prenda_fotos_pedido')->insert([
+                                'prenda_pedido_id' => $prendaPedido->id,
+                                'ruta_original' => $pathWebp,
+                                'ruta_webp' => $pathWebp,
+                                'orden' => $orden + 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                    \Log::info('✅ Fotos de reflectivo guardadas', [
+                        'prenda_id' => $prendaPedido->id,
+                        'cantidad_fotos' => count($fotos),
+                    ]);
+                }
+            }
+
+            // Actualizar cantidad total del pedido
+            $pedido->update([
+                'cantidad_total' => $cantidadTotalPedido
+            ]);
+
+            DB::commit();
+
+            \Log::info('✅ [REFLECTIVO SIN COTIZACIÓN] Pedido completamente creado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cantidad_total' => $cantidadTotalPedido,
+                'prendas_count' => count($prendas),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido REFLECTIVO creado exitosamente',
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cantidad_total' => $cantidadTotalPedido,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error('❌ Error al crear pedido REFLECTIVO sin cotización', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el pedido REFLECTIVO: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Construir descripción para reflectivo sin cotización
+     */
+    private function construirDescripcionReflectivoSinCotizacion($prenda, $cantidadesPorTalla): string
+    {
+        $lineas = [];
+
+        // NO duplicar el tipo de prenda, ya está en nombre_prenda
+
+        // Descripción
+        if (!empty($prenda['descripcion'])) {
+            $lineas[] = strtoupper($prenda['descripcion']);
+        }
+
+        // Género
+        if (!empty($prenda['genero'])) {
+            $genero = is_array($prenda['genero']) ? implode(', ', $prenda['genero']) : $prenda['genero'];
+            $lineas[] = "GENERO: " . strtoupper($genero);
+        }
+
+        // Ubicaciones (si existen)
+        if (!empty($prenda['ubicaciones']) && is_array($prenda['ubicaciones'])) {
+            $ubicacionesTexto = ["UBICACION: "];
+            
+            foreach ($prenda['ubicaciones'] as $ubicacion) {
+                $ubicDesc = '';
+                if (!empty($ubicacion['nombre'])) {
+                    $ubicDesc .= strtoupper($ubicacion['nombre']);
+                }
+                if (!empty($ubicacion['observaciones'])) {
+                    $ubicDesc .= ': ' . strtoupper($ubicacion['observaciones']);
+                }
+                if (!empty($ubicDesc)) {
+                    $ubicacionesTexto[] = $ubicDesc;
+                }
+            }
+            
+            // Agregar todas las ubicaciones como un bloque
+            if (count($ubicacionesTexto) > 1) {
+                $lineas[] = implode("\n\n", $ubicacionesTexto);
+            }
+        }
+
+        // Tallas con cantidades
+        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
+            $tallasTexto = [];
+            foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                if ($cantidad > 0) {
+                    $tallasTexto[] = "$talla: $cantidad";
+                }
+            }
+            if (!empty($tallasTexto)) {
+                $lineas[] = "TALLAS: " . implode(', ', $tallasTexto);
+            }
+        }
+
+        // Cantidad total
+        $cantidadTotal = array_sum($cantidadesPorTalla);
+        if ($cantidadTotal > 0) {
+            $lineas[] = "CANTIDAD TOTAL: $cantidadTotal";
+        }
+
+        return !empty($lineas) ? implode("\n\n", $lineas) : '-';
+    }
+
 }
 
 

@@ -191,6 +191,21 @@
                 });
         }
 
+        // Detectar si es tipo REFLECTIVO sin cotización
+        if (tipoNuevo && tipoPrendaSelect === 'R') {
+            // Usar módulo especializado para REFLECTIVO sin cotización
+            console.log('🎯 Detectado: Pedido tipo REFLECTIVO sin cotización - usando módulo especializado');
+            return window.enviarReflectivoSinCotizacion()
+                .then(response => {
+                    // La redirección la maneja enviarReflectivoSinCotizacion
+                    return response;
+                })
+                .catch(error => {
+                    console.error('Error en envío REFLECTIVO:', error);
+                    return Promise.reject(error);
+                });
+        }
+
         // Flujo estándar para otros tipos de pedidos sin cotización
         if (!window.gestorPedidoSinCotizacion) {
             window.inicializarGestorSinCotizacion();

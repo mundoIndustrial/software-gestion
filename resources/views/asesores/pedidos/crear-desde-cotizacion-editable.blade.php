@@ -678,6 +678,16 @@
                         console.error('❌ Función crearPedidoTipoPrendaSinCotizacion no disponible');
                     }
                 }
+
+                // Manejar tipo REFLECTIVO sin cotización
+                if (tipoPedido === 'R') {
+                    console.log('🎯 Seleccionado tipo REFLECTIVO sin cotización');
+                    if (typeof crearPedidoTipoReflectivoSinCotizacion === 'function') {
+                        crearPedidoTipoReflectivoSinCotizacion();
+                    } else {
+                        console.error('❌ Función crearPedidoTipoReflectivoSinCotizacion no disponible');
+                    }
+                }
             };
         });
 
@@ -728,6 +738,10 @@
     <script src="{{ asset('js/modulos/crear-pedido/gestor-tallas-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/funciones-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/integracion-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <!-- Gestor de reflectivo sin cotización tipo REFLECTIVO (Nuevo) -->
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-reflectivo-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/renderizador-reflectivo-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/funciones-reflectivo-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <!-- Módulo de Reflectivo -->
     <script src="{{ asset('js/modulos/crear-pedido/reflectivo-pedido.js') }}?v={{ time() }}"></script>
     <!-- Módulo de Logo -->
