@@ -2076,6 +2076,7 @@ class PedidosProduccionController extends Controller
                 'cliente' => $cliente,
                 'forma_de_pago' => $formaPago,
                 'prendas_count' => count($prendas),
+                'prendas_data' => $prendas,
             ]);
 
             // Crear pedido de producción
@@ -2099,36 +2100,141 @@ class PedidosProduccionController extends Controller
             // Crear prendas del pedido
             $cantidadTotalPedido = 0;
             foreach ($prendas as $index => $prenda) {
-                $cantidadesPorTalla = $prenda['cantidadesPorTalla'] ?? [];
+                // CORREGIDO: Usar 'cantidades' que viene del FormData
+                $cantidadesPorTalla = $prenda['cantidades'] ?? $prenda['cantidadesPorTalla'] ?? [];
+                
+                // Si cantidadesPorTalla es un array de arrays, aplanarlo
+                if (is_array($cantidadesPorTalla) && !empty($cantidadesPorTalla)) {
+                    $cantidadesTemp = [];
+                    foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                        $cantidadesTemp[$talla] = (int)$cantidad;
+                    }
+                    $cantidadesPorTalla = $cantidadesTemp;
+                }
+                
                 $cantidadTotal = array_sum($cantidadesPorTalla);
                 $cantidadTotalPedido += $cantidadTotal;
 
-                // Construir descripción
-                $descripcion = $this->construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla);
+                \Log::info('📊 [PRENDA SIN COTIZACIÓN] Procesando prenda', [
+                    'index' => $index,
+                    'nombre' => $prenda['nombre_producto'] ?? 'Sin nombre',
+                    'cantidades_por_talla' => $cantidadesPorTalla,
+                    'cantidad_total' => $cantidadTotal,
+                ]);
 
-                // Obtener IDs de colores y telas si fueron seleccionados
-                // Para prendas sin cotización, estos datos pueden no existir
+                // Construir descripción usando la misma función que para cotizaciones
+                // CRÍTICO: Pasar los datos correctamente
+                $descripcionPrenda = $this->construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla);
+
+                // Extraer variantes - IGUAL QUE EN crearDesdeCotizacion
                 $colorId = null;
                 $telaId = null;
+                $tipoMangaId = null;
+                $tipoBrocheId = null;
+                $tieneBolsillos = 0;
+                $tieneReflectivo = 0;
 
+                // Si hay variantes, extraer los IDs
+                $variantes = $prenda['variantes'] ?? [];
+                if (is_string($variantes)) {
+                    $variantes = json_decode($variantes, true) ?? [];
+                }
+
+                if (is_array($variantes) && !empty($variantes)) {
+                    // Intentar obtener IDs directamente primero
+                    $colorId = $variantes['color_id'] ?? null;
+                    $telaId = $variantes['tela_id'] ?? null;
+                    $tipoMangaId = $variantes['tipo_manga_id'] ?? null;
+                    $tipoBrocheId = $variantes['tipo_broche_id'] ?? null;
+                    
+                    // Si no hay IDs pero hay nombres, crear los registros
+                    // COLOR: Buscar o crear por nombre
+                    if (!$colorId && !empty($variantes['color'])) {
+                        $color = \DB::table('colores_prenda')
+                            ->where('nombre', 'LIKE', '%' . $variantes['color'] . '%')
+                            ->first();
+                        
+                        if (!$color) {
+                            $colorId = \DB::table('colores_prenda')->insertGetId([
+                                'nombre' => $variantes['color'],
+                                'activo' => 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            \Log::info('✅ Color creado', ['nombre' => $variantes['color'], 'id' => $colorId]);
+                        } else {
+                            $colorId = $color->id;
+                        }
+                    }
+                    
+                    // TELA: Buscar o crear por nombre desde telas_multiples JSON
+                    if (!$telaId && !empty($variantes['telas_multiples'])) {
+                        $telasMultiples = is_string($variantes['telas_multiples']) 
+                            ? json_decode($variantes['telas_multiples'], true) 
+                            : $variantes['telas_multiples'];
+                            
+                        if (is_array($telasMultiples) && !empty($telasMultiples)) {
+                            $primeraTela = $telasMultiples[0];
+                            
+                            if (!empty($primeraTela['nombre_tela'])) {
+                                $tela = \DB::table('telas_prenda')
+                                    ->where('nombre', 'LIKE', '%' . $primeraTela['nombre_tela'] . '%')
+                                    ->first();
+                                
+                                if (!$tela) {
+                                    $telaId = \DB::table('telas_prenda')->insertGetId([
+                                        'nombre' => $primeraTela['nombre_tela'],
+                                        'activo' => 1,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                    \Log::info('✅ Tela creada', ['nombre' => $primeraTela['nombre_tela'], 'id' => $telaId]);
+                                } else {
+                                    $telaId = $tela->id;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // BOOLEANOS: Convertir correctamente
+                    $tieneBolsillos = isset($variantes['tiene_bolsillos']) ? ($variantes['tiene_bolsillos'] ? 1 : 0) : 0;
+                    $tieneReflectivo = isset($variantes['tiene_reflectivo']) ? ($variantes['tiene_reflectivo'] ? 1 : 0) : 0;
+                }
+
+                \Log::info('📍 [PRENDA SIN COTIZACIÓN] Variantes extraídas/creadas', [
+                    'color_id' => $colorId,
+                    'tela_id' => $telaId,
+                    'tipo_manga_id' => $tipoMangaId,
+                    'tipo_broche_id' => $tipoBrocheId,
+                    'tiene_bolsillos' => $tieneBolsillos,
+                    'tiene_reflectivo' => $tieneReflectivo,
+                ]);
+
+                // Crear prenda del pedido con TODOS los campos - IGUAL QUE EN crearDesdeCotizacion
                 $prendaPedido = PrendaPedido::create([
                     'numero_pedido' => $pedido->numero_pedido,
                     'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
                     'cantidad' => $cantidadTotal,
-                    'descripcion' => $descripcion,
+                    'descripcion' => $descripcionPrenda,
+                    'descripcion_variaciones' => $this->armarDescripcionVariacionesPrendaSinCotizacion($variantes),
                     'cantidad_talla' => json_encode($cantidadesPorTalla),
                     'color_id' => $colorId,
                     'tela_id' => $telaId,
-                    'tipo_manga_id' => null,
-                    'tipo_broche_id' => null,
-                    'tiene_bolsillos' => ($prenda['tiene_bolsillos'] ?? false) ? 1 : 0,
-                    'tiene_reflectivo' => ($prenda['tiene_reflectivo'] ?? false) ? 1 : 0,
+                    'tipo_manga_id' => $tipoMangaId,
+                    'tipo_broche_id' => $tipoBrocheId,
+                    'tiene_bolsillos' => $tieneBolsillos,
+                    'tiene_reflectivo' => $tieneReflectivo,
                 ]);
 
-                \Log::info('✅ Prenda PRENDA creada', [
+                \Log::info('✅ Prenda PRENDA creada correctamente', [
                     'prenda_pedido_id' => $prendaPedido->id,
                     'nombre_prenda' => $prenda['nombre_producto'],
                     'cantidad' => $cantidadTotal,
+                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                    'color_id' => $colorId,
+                    'tela_id' => $telaId,
+                    'tipo_manga_id' => $tipoMangaId,
+                    'tipo_broche_id' => $tipoBrocheId,
                 ]);
 
                 // Crear proceso inicial
@@ -2142,14 +2248,18 @@ class PedidosProduccionController extends Controller
                 ]);
 
                 // Guardar fotos de prenda si existen
-                if (!empty($prenda['fotos']) && is_array($prenda['fotos'])) {
-                    foreach ($prenda['fotos'] as $orden => $foto) {
-                        $rutaFoto = is_string($foto) ? $foto : ($foto['url'] ?? $foto['ruta_webp'] ?? null);
-                        if ($rutaFoto) {
+                if ($request->hasFile("prendas.$index.fotos")) {
+                    $fotos = $request->file("prendas.$index.fotos", []);
+                    foreach ($fotos as $orden => $foto) {
+                        if ($foto && $foto->isValid()) {
+                            // Guardar la foto
+                            $rutaOriginal = $foto->store('prendas-pedido', 'public');
+                            $rutaWebp = $rutaOriginal;
+
                             DB::table('prenda_fotos_pedido')->insert([
                                 'prenda_pedido_id' => $prendaPedido->id,
-                                'ruta_original' => is_array($foto) ? ($foto['ruta_original'] ?? $rutaFoto) : $rutaFoto,
-                                'ruta_webp' => is_array($foto) ? ($foto['ruta_webp'] ?? $rutaFoto) : $rutaFoto,
+                                'ruta_original' => $rutaOriginal,
+                                'ruta_webp' => $rutaWebp,
                                 'orden' => $orden + 1,
                                 'created_at' => now(),
                                 'updated_at' => now(),
@@ -2158,33 +2268,36 @@ class PedidosProduccionController extends Controller
                     }
                     \Log::info('✅ Fotos de prenda guardadas', [
                         'prenda_id' => $prendaPedido->id,
-                        'cantidad_fotos' => count($prenda['fotos']),
+                        'cantidad_fotos' => count($fotos),
                     ]);
                 }
 
                 // Guardar fotos de telas si existen
                 if (!empty($prenda['telas']) && is_array($prenda['telas'])) {
-                    foreach ($prenda['telas'] as $tela) {
-                        if (!empty($tela['fotos']) && is_array($tela['fotos'])) {
-                            foreach ($tela['fotos'] as $orden => $fotoTela) {
-                                $rutaTela = is_string($fotoTela) ? $fotoTela : ($fotoTela['url'] ?? $fotoTela['ruta_webp'] ?? null);
-                                if ($rutaTela) {
+                    foreach ($prenda['telas'] as $telaIdx => $tela) {
+                        if ($request->hasFile("prendas.$index.telas.$telaIdx.fotos")) {
+                            $fotosTela = $request->file("prendas.$index.telas.$telaIdx.fotos", []);
+                            foreach ($fotosTela as $orden => $fotoTela) {
+                                if ($fotoTela && $fotoTela->isValid()) {
+                                    $rutaOriginal = $fotoTela->store('telas-pedido', 'public');
+                                    $rutaWebp = $rutaOriginal;
+
                                     DB::table('prenda_fotos_tela_pedido')->insert([
                                         'prenda_pedido_id' => $prendaPedido->id,
-                                        'ruta_original' => is_array($fotoTela) ? ($fotoTela['ruta_original'] ?? $rutaTela) : $rutaTela,
-                                        'ruta_webp' => is_array($fotoTela) ? ($fotoTela['ruta_webp'] ?? $rutaTela) : $rutaTela,
+                                        'ruta_original' => $rutaOriginal,
+                                        'ruta_webp' => $rutaWebp,
                                         'orden' => $orden + 1,
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
                                 }
                             }
+                            \Log::info('✅ Fotos de tela guardadas', [
+                                'prenda_id' => $prendaPedido->id,
+                                'tela_index' => $telaIdx,
+                            ]);
                         }
                     }
-                    \Log::info('✅ Fotos de telas guardadas', [
-                        'prenda_id' => $prendaPedido->id,
-                        'cantidad_telas' => count($prenda['telas']),
-                    ]);
                 }
             }
 
@@ -2326,6 +2439,56 @@ class PedidosProduccionController extends Controller
         return !empty($lineas) ? implode("\n\n", $lineas) : '-';
     }
 
+    /**
+     * Armar descripción de variaciones para prendas sin cotización
+     * Similar a PedidoPrendaService::armarDescripcionVariaciones
+     */
+    private function armarDescripcionVariacionesPrendaSinCotizacion($variantes): ?string
+    {
+        if (empty($variantes) || !is_array($variantes)) {
+            return null;
+        }
+
+        $partes = [];
+
+        // ORDEN EXACTO COMO EN COTIZACIONES:
+        // 1. Bolsillos
+        // 2. Broche
+        // 3. Manga
+        // 4. Reflectivo
+
+        // Bolsillos - guardar la observación si existe (campo: tiene_bolsillos_obs)
+        if (!empty($variantes['tiene_bolsillos_obs'])) {
+            $partes[] = "Bolsillos: " . $variantes['tiene_bolsillos_obs'];
+        } else if (!empty($variantes['tiene_bolsillos'])) {
+            // Si no hay observación pero tiene bolsillos = true, agregar "Bolsillos: Sí"
+            $partes[] = "Bolsillos: Sí";
+        }
+
+        // Broche - guardar la observación si existe (campo: tipo_broche_obs), sino el tipo_broche
+        if (!empty($variantes['tipo_broche_obs'])) {
+            $partes[] = "Broche: " . $variantes['tipo_broche_obs'];
+        } else if (!empty($variantes['tipo_broche']) && $variantes['tipo_broche'] !== 'No aplica') {
+            $partes[] = "Broche: " . $variantes['tipo_broche'];
+        }
+
+        // Manga - guardar el tipo_manga (campo: tipo_manga)
+        if (!empty($variantes['tipo_manga']) && $variantes['tipo_manga'] !== 'No aplica') {
+            $partes[] = "Manga: " . $variantes['tipo_manga'];
+        }
+
+        // Reflectivo - guardar la observación si existe (campo: tiene_reflectivo_obs)
+        if (!empty($variantes['tiene_reflectivo_obs'])) {
+            $partes[] = "Reflectivo: " . $variantes['tiene_reflectivo_obs'];
+        } else if (!empty($variantes['tiene_reflectivo'])) {
+            // Si no hay observación pero tiene reflectivo = true, agregar "Reflectivo: Sí"
+            $partes[] = "Reflectivo: Sí";
+        }
+
+        return !empty($partes) ? implode(" | ", $partes) : null;
+    }
+
 }
+
 
 

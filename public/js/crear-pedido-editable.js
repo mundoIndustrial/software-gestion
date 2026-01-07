@@ -694,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Definir opciones según el tipo de variación
                         if (variacion.campo === 'tipo_manga') {
-                            opciones = ['No aplica', 'Manga Corta', 'Manga Larga', 'Manga Raglan', 'Manga Campana'];
+                            opciones = ['No aplica', 'Corta', 'Larga'];
                         } else if (variacion.campo === 'tipo_broche') {
                             opciones = ['No aplica', 'Broche', 'Botón'];
                         } else {
@@ -2902,17 +2902,27 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         // Detectar si es un pedido sin cotización
+        const tipoPedido = document.querySelector('input[name="tipo_pedido_editable"]:checked')?.value;
         const cotizacionId = document.getElementById('cotizacion_id_editable').value;
-        const seccionCotizacion = document.getElementById('cotizacion_search_editable').closest('.form-section');
-        const esSinCotizacion = seccionCotizacion.style.display === 'none';
         
-        if (esSinCotizacion) {
-            // Usar gestor de pedido sin cotización (FASE 3b)
+        console.log('🔍 [SUBMIT] Detectando tipo de pedido:', {
+            tipoPedido: tipoPedido,
+            cotizacionId: cotizacionId
+        });
+        
+        if (tipoPedido === 'nuevo') {
+            // Usar procesador de pedido sin cotización (NUEVO)
+            console.log('✅ [SUBMIT] Detectado: NUEVO PEDIDO - usando procesarSubmitSinCotizacion()');
             window.procesarSubmitSinCotizacion();
-        } else if (cotizacionId) {
-            // Usar gestor de validación/envío (FASE 3)
+        } else if (tipoPedido === 'cotizacion' && cotizacionId) {
+            // Usar gestor de validación/envío (DESDE COTIZACIÓN)
+            console.log('✅ [SUBMIT] Detectado: DESDE COTIZACIÓN - usando handleSubmitPrendaConCotizacion()');
             handleSubmitPrendaConCotizacion();
         } else {
+            console.error('❌ [SUBMIT] Error: Tipo de pedido inválido o falta cotización', {
+                tipoPedido,
+                cotizacionId
+            });
             mostrarAdvertencia('Selecciona una cotización', 'Por favor selecciona una cotización antes de continuar');
         }
     });

@@ -181,22 +181,83 @@ window.enviarPrendaSinCotizacion = function() {
                 return;
             }
 
-            const datosEnvio = {
-                cliente: cliente,
-                forma_de_pago: formaPago,
-                prendas: datosPrenda.prendas
-            };
+            logWithEmoji('📤', 'Enviando pedido PRENDA sin cotización', datosPrenda);
 
-            logWithEmoji('📤', 'Enviando pedido PRENDA sin cotización', datosEnvio);
+            // 🔴 USAR FormData PARA ENVIAR ARCHIVOS
+            const formData = new FormData();
+            formData.append('cliente', cliente);
+            formData.append('forma_de_pago', formaPago);
+            formData.append('_token', document.querySelector('input[name="_token"]')?.value || '');
+
+            // Agregar prendas como JSON
+            datosPrenda.prendas.forEach((prenda, index) => {
+                formData.append(`prendas[${index}][nombre_producto]`, prenda.nombre_producto || '');
+                formData.append(`prendas[${index}][descripcion]`, prenda.descripcion || '');
+                formData.append(`prendas[${index}][genero]`, prenda.genero || '');
+
+                // Cantidades por talla
+                if (prenda.cantidadesPorTalla) {
+                    Object.entries(prenda.cantidadesPorTalla).forEach(([talla, cantidad]) => {
+                        if (cantidad > 0) {
+                            formData.append(`prendas[${index}][cantidades][${talla}]`, cantidad);
+                        }
+                    });
+                }
+
+                // Tallas seleccionadas
+                if (prenda.tallas && Array.isArray(prenda.tallas)) {
+                    prenda.tallas.forEach(talla => {
+                        formData.append(`prendas[${index}][tallas][]`, talla);
+                    });
+                }
+
+                // Variantes (telas, etc)
+                if (prenda.variantes) {
+                    formData.append(`prendas[${index}][variantes]`, JSON.stringify(prenda.variantes));
+                }
+            });
+
+            // 📸 AGREGAR IMÁGENES DE PRENDAS
+            logWithEmoji('📸', 'Procesando imágenes de prendas...');
+            Object.entries(datosPrenda.fotosNuevas || {}).forEach(([prendaIndex, fotos]) => {
+                if (Array.isArray(fotos)) {
+                    fotos.forEach((foto, fotoIndex) => {
+                        if (foto instanceof File) {
+                            formData.append(`prendas[${prendaIndex}][fotos][]`, foto);
+                            logWithEmoji('✅', `Imagen de prenda ${prendaIndex + 1} agregada: ${foto.name}`);
+                        } else if (typeof foto === 'string') {
+                            // Si es una URL existente, guardarla igual
+                            formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
+                        }
+                    });
+                }
+            });
+
+            // 📸 AGREGAR IMÁGENES DE TELAS
+            logWithEmoji('📸', 'Procesando imágenes de telas...');
+            Object.entries(datosPrenda.telasFotosNuevas || {}).forEach(([prendaIndex, telas]) => {
+                Object.entries(telas).forEach(([telaIndex, fotos]) => {
+                    if (Array.isArray(fotos)) {
+                        fotos.forEach((foto, fotoIndex) => {
+                            if (foto instanceof File) {
+                                formData.append(`prendas[${prendaIndex}][telas][${telaIndex}][fotos][]`, foto);
+                                logWithEmoji('✅', `Imagen de tela de prenda ${prendaIndex + 1} agregada: ${foto.name}`);
+                            } else if (typeof foto === 'string') {
+                                // Si es una URL existente
+                                formData.append(`prendas[${prendaIndex}][telas][${telaIndex}][fotos_existentes][]`, foto);
+                            }
+                        });
+                    }
+                });
+            });
 
             // Enviar al servidor
             const response = await fetch('/asesores/pedidos-produccion/crear-prenda-sin-cotizacion', {
                 method: 'POST',
+                body: formData,
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || ''
-                },
-                body: JSON.stringify(datosEnvio)
+                }
             });
 
             const result = await response.json();

@@ -725,6 +725,7 @@
     <!-- Gestor de prenda sin cotización tipo PRENDA (Nuevo) -->
     <script src="{{ asset('js/modulos/crear-pedido/gestor-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/renderizador-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-tallas-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/funciones-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/integracion-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
     <!-- Módulo de Reflectivo -->

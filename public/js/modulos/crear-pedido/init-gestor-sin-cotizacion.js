@@ -169,8 +169,29 @@
 
     /**
      * Procesar envío de pedido sin cotización
+     * Detecta si es tipo PRENDA y lo maneja especialmente
      */
     window.procesarSubmitSinCotizacion = function() {
+        // Detectar si es tipo PRENDA sin cotización
+        const tipoPedido = document.querySelector('input[name="tipo_pedido_editable"]:checked')?.value;
+        const tipoNuevo = tipoPedido === 'nuevo';
+        const tipoPrendaSelect = document.getElementById('tipo_pedido_nuevo')?.value;
+        
+        if (tipoNuevo && tipoPrendaSelect === 'P') {
+            // Usar módulo especializado para PRENDA sin cotización
+            console.log('🎯 Detectado: Pedido tipo PRENDA sin cotización - usando módulo especializado');
+            return window.enviarPrendaSinCotizacion()
+                .then(response => {
+                    // La redirección la maneja enviarPrendaSinCotizacion
+                    return response;
+                })
+                .catch(error => {
+                    console.error('Error en envío PRENDA:', error);
+                    return Promise.reject(error);
+                });
+        }
+
+        // Flujo estándar para otros tipos de pedidos sin cotización
         if (!window.gestorPedidoSinCotizacion) {
             window.inicializarGestorSinCotizacion();
         }

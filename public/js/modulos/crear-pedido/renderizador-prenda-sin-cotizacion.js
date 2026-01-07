@@ -66,15 +66,16 @@ function sincronizarDatosAntesDERenderizar() {
         document.querySelectorAll(`[data-prenda-index="${prendaIndex}"] [data-field]`).forEach(field => {
             const nombreCampo = field.dataset.field;
             if (nombreCampo && !nombreCampo.includes('_obs')) {
-                const valor = field.value || field.textContent;
+                let valor = field.value || field.textContent;
+                
+                // Convertir a booleano si es campo tipo checkbox
+                if (nombreCampo.includes('tiene_')) {
+                    valor = (valor === 'Sí' || valor === 'true' || valor === true);
+                }
+                
                 if (prenda.variantes && nombreCampo in prenda.variantes) {
-                    if (nombreCampo.includes('tiene_')) {
-                        prenda.variantes[nombreCampo] = valor === 'Sí';
-                        prenda[nombreCampo] = valor === 'Sí';
-                    } else {
-                        prenda.variantes[nombreCampo] = valor;
-                        prenda[nombreCampo] = valor;
-                    }
+                    prenda.variantes[nombreCampo] = valor;
+                    prenda[nombreCampo] = valor;
                 }
             }
         });
@@ -118,10 +119,6 @@ function renderizarPrendasTipoPrendaSinCotizacion() {
             <button type="button" onclick="agregarPrendaTipoPrendaSinCotizacion()" class="btn btn-primary" 
                     style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
                 ➕ Agregar Otra Prenda
-            </button>
-            <button type="button" onclick="enviarPrendaSinCotizacion()" class="btn btn-success" 
-                    style="background: #28a745; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-                ✅ Guardar Pedido PRENDA
             </button>
         </div>
     `;
@@ -271,62 +268,112 @@ function renderizarPrendaTipoPrenda(prenda, index) {
  */
 function renderizarTallasPrendaTipo(prenda, index) {
     const tallas = prenda.tallas || [];
-    if (!tallas || tallas.length === 0) {
-        return `
-            <div style="margin-top: 1.5rem; padding: 1rem; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #0066cc;">
-                <div style="font-weight: 600; margin-bottom: 1rem; color: #333;">📏 Tallas y Cantidades</div>
-                <p style="color: #999; margin: 0;">No hay tallas agregadas. Haz clic en el botón para agregar.</p>
-                <button type="button" onclick="agregarTallaPrendaTipo(${index})"
-                        style="margin-top: 1rem; background: #0066cc; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                    ➕ Agregar Talla
-                </button>
-            </div>
-        `;
-    }
-
-    let tallasHtml = `
-        <div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">
-            <div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0052a3 0%, #0ea5e9 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 700; display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div style="display: flex; gap: 1rem; flex: 1;">
-                    <div style="flex: 1.5;">📏 Talla</div>
-                    <div style="flex: 1;">Cantidad</div>
-                    <div style="width: 100px; text-align: center;">Acción</div>
-                </div>
-                <button type="button" onclick="agregarTallaPrendaTipo(${index})"
-                        style="background: white; color: #0b4f91; border: none; padding: 0.45rem 0.65rem; border-radius: 999px; cursor: pointer; font-size: 1rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; white-space: nowrap; flex-shrink: 0; box-shadow: 0 3px 10px rgba(0,0,0,0.18); width: 36px; height: 36px;">
-                    <span style="display:inline-flex; align-items:center; justify-content:center; width: 18px; height: 18px; border-radius: 50%; background: rgba(14,165,233,0.18); color: #0b4f91; font-size: 1rem; line-height: 1;">+</span>
-                </button>
-            </div>
-    `;
-
-    tallas.forEach(talla => {
-        const cantidad = prenda.cantidadesPorTalla?.[talla] || 0;
-        tallasHtml += `
-            <div class="talla-item" style="display: flex; gap: 1rem; align-items: center; padding: 0.75rem; background: white; border: 1px solid #e0e0e0; border-top: none; flex-wrap: wrap; data-talla="${talla}" data-prenda="${index}">
-                <div style="flex: 1.5; min-width: 80px;">
-                    <input type="text" value="${talla}" readonly
-                           style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; background: #f5f5f5;">
-                </div>
-                <div style="flex: 1; min-width: 80px;">
-                    <input type="number" min="0" value="${cantidad}"
-                           class="talla-cantidad"
-                           data-talla="${talla}"
-                           data-prenda="${index}"
-                           style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; text-align: center;">
-                </div>
-                <div style="width: 100px; text-align: center;">
-                    <button type="button" onclick="eliminarTallaPrendaTipo(${index}, '${talla}')"
-                            class="btn-quitar-talla"
-                            style="background: #dc3545; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">
-                        ✕
+    const tipo_prenda_row = `tipo-prenda-row-${index}`;
+    
+    let html = `
+        <div class="tipo-prenda-row" data-prenda-index="${index}" style="margin-top: 1.5rem;">
+            <!-- REPLICACIÓN EXACTA DE ESTRUCTURA DE COTIZACIONES -->
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+                <!-- Selector de Tipo -->
+                <select class="talla-tipo-select" onchange="actualizarSelectTallasSinCot(this)" style="padding: 0.4rem 0.6rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.75rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 280px;">
+                    <option value="">Selecciona tipo de talla</option>
+                    <option value="letra">LETRAS (XS, S, M, L, XL...)</option>
+                    <option value="numero">NÚMEROS (DAMA/CABALLERO)</option>
+                </select>
+                
+                <!-- Selector de Modo -->
+                <select class="talla-modo-select" style="padding: 0.4rem 0.6rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.75rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 180px; display: none;">
+                    <option value="">Selecciona modo</option>
+                    <option value="manual">Manual</option>
+                    <option value="rango">Rango (Desde-Hasta)</option>
+                </select>
+                
+                <!-- Selectores de Rango -->
+                <div class="talla-rango-selectors" style="display: none; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+                    <select class="talla-desde" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 150px;">
+                        <option value="">Desde</option>
+                    </select>
+                    <span style="color: #0066cc; font-weight: 600;">hasta</span>
+                    <select class="talla-hasta" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 150px;">
+                        <option value="">Hasta</option>
+                    </select>
+                    <button type="button" class="btn-agregar-rango" onclick="agregarTallasRangoSinCot(this)" style="padding: 0.6rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; white-space: nowrap;">
+                        <i class="fas fa-plus"></i>
                     </button>
                 </div>
             </div>
-        `;
-    });
-
-    tallasHtml += `</div>`;
-    return tallasHtml;
+            
+            <!-- Botones de Tallas (Modo Manual) -->
+            <div class="talla-botones" style="display: none; margin-bottom: 1.5rem;">
+                <p style="margin: 0 0 0.75rem 0; font-size: 0.85rem; font-weight: 600; color: #0066cc;">Selecciona tallas:</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                    <div class="talla-botones-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1;">
+                    </div>
+                    <button type="button" class="btn-agregar-tallas-seleccionadas" onclick="agregarTallasSeleccionadasSinCot(this)" style="padding: 0.6rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; white-space: nowrap; flex-shrink: 0;">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Contenedor de Tallas Agregadas (para tags) -->
+            <div class="tallas-agregadas" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 35px; margin-bottom: 1rem;">
+            </div>
+            
+            <!-- Tallas Agregadas -->
+            <div class="tallas-section" style="${tallas.length > 0 ? 'display: block' : 'display: none'}; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+                <!-- Input hidden para sincronización -->
+                <input type="hidden" name="productos_prenda[][tallas]" class="tallas-hidden" value="${JSON.stringify(tallas)}">
+                
+                <!-- Tabla de Cantidades por Talla -->
+                ${tallas.length > 0 ? `
+                    <div style="margin-top: 1rem; overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #d0d0d0; border-radius: 6px; overflow: hidden;">
+                            <thead style="background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white;">
+                                <tr>
+                                    <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 700; font-size: 0.85rem; color: white;">Talla</th>
+                                    <th style="padding: 0.75rem 1rem; text-align: center; font-weight: 700; font-size: 0.85rem; color: white;">Cantidad</th>
+                                    <th style="padding: 0.75rem 1rem; text-align: center; font-weight: 700; font-size: 0.85rem; color: white;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tallas.map(talla => {
+                                    const cantidad = prenda.cantidadesPorTalla?.[talla] || 0;
+                                    return `
+                                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                                            <td style="padding: 0.75rem 1rem; font-weight: 600; color: #0066cc;">${talla}</td>
+                                            <td style="padding: 0.75rem 1rem; text-align: center;">
+                                                <input type="number" 
+                                                       min="0" 
+                                                       value="${cantidad}" 
+                                                       class="talla-cantidad-input" 
+                                                       data-talla="${talla}" 
+                                                       data-prenda="${index}"
+                                                       placeholder="0"
+                                                       style="width: 80px; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; text-align: center; font-weight: 600;">
+                                            </td>
+                                            <td style="padding: 0.75rem 1rem; text-align: center;">
+                                                <button type="button" 
+                                                        class="btn-eliminar-talla" 
+                                                        onclick="eliminarTallaDeLaTablaSinCot('${talla}', this.closest('.tipo-prenda-row'))"
+                                                        style="padding: 0.4rem 0.8rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1rem; white-space: nowrap; display: flex; align-items: center; justify-content: center; height: 32px;" title="Eliminar talla">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : ''}
+                
+                <input type="hidden" name="productos_prenda[][tallas]" class="tallas-hidden" value="${JSON.stringify(tallas)}">
+            </div>
+            </div>
+        </div>
+    `;
+    
+    return html;
 }
 
 /**
@@ -347,7 +394,7 @@ function renderizarVariacionesPrendaTipo(prenda, index) {
             obs: variantes.obs_manga || '',
             campo: 'tipo_manga',
             esCheckbox: false,
-            opciones: ['No aplica', 'Manga Corta', 'Manga Larga', 'Manga Raglan', 'Manga Campana']
+            opciones: ['No aplica', 'Corta', 'Larga']
         });
     }
 
@@ -599,17 +646,73 @@ function attachPrendaTipoPrendaListeners(prendas) {
             const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(index);
             if (prenda) {
                 prenda.genero = e.target.value;
+                console.log('✅ Género actualizado para prenda', index, ':', prenda.genero);
+                
+                // 🆕 Auto-actualizar las tallas si ya hay un tipo seleccionado
+                const prendaCard = e.target.closest('.prenda-card-editable');
+                if (prendaCard) {
+                    const tipoSelect = prendaCard.querySelector('.talla-tipo-select');
+                    if (tipoSelect && tipoSelect.value === 'numero') {
+                        console.log('🔢 Tipo NÚMEROS está seleccionado, actualizando tallas automáticamente...');
+                        // Disparar el evento de cambio en el selector de tipo
+                        actualizarSelectTallasSinCot(tipoSelect);
+                    }
+                }
             }
         });
     });
 
-    // Listeners para cambios en cantidad de talla
-    document.querySelectorAll('.talla-cantidad').forEach(input => {
+    // Listeners para cambios en cantidad de talla (compatibilidad con ambas clases)
+    document.querySelectorAll('.talla-cantidad, .talla-cantidad-input').forEach(input => {
         input.addEventListener('change', (e) => {
             const index = parseInt(e.target.dataset.prenda);
             const talla = e.target.dataset.talla;
             const cantidad = parseInt(e.target.value) || 0;
             window.gestorPrendaSinCotizacion.actualizarCantidadTalla(index, talla, cantidad);
+            console.log(`✅ Cantidad actualizada - Prenda: ${index}, Talla: ${talla}, Cantidad: ${cantidad}`);
+        });
+    });
+    
+    // Listeners en tiempo real para cantidad (input event)
+    document.querySelectorAll('.talla-cantidad, .talla-cantidad-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const index = parseInt(e.target.dataset.prenda);
+            const talla = e.target.dataset.talla;
+            const cantidad = parseInt(e.target.value) || 0;
+            window.gestorPrendaSinCotizacion.actualizarCantidadTalla(index, talla, cantidad);
+        });
+    });
+
+    // Listeners para cambios en valores de variaciones (selects)
+    document.querySelectorAll('[data-field][data-prenda][data-variacion]:not([data-field$="_obs"])').forEach(select => {
+        if (select.tagName === 'SELECT') {
+            select.addEventListener('change', (e) => {
+                const index = parseInt(e.target.dataset.prenda);
+                const field = e.target.dataset.field;
+                const varIdx = parseInt(e.target.dataset.variacion);
+                const valor = e.target.value;
+                
+                const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(index);
+                if (prenda && prenda.variantes) {
+                    prenda.variantes[field] = valor;
+                    logWithEmoji('📝', `Variación ${field} actualizada a: ${valor}`);
+                }
+            });
+        }
+    });
+
+    // Listeners para cambios en observaciones de variaciones (textareas)
+    document.querySelectorAll('.variacion-obs').forEach(textarea => {
+        textarea.addEventListener('change', (e) => {
+            const index = parseInt(e.target.dataset.prenda);
+            const field = e.target.dataset.field; // Ej: "tiene_bolsillos_obs"
+            const valor = e.target.value;
+            
+            const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(index);
+            if (prenda && prenda.variantes) {
+                prenda.variantes[field] = valor;
+                logWithEmoji('📝', `Observación ${field} actualizada`);
+            }
         });
     });
 
