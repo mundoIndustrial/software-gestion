@@ -87,9 +87,18 @@
 
         {{-- Técnicas y Observaciones Técnicas --}}
         @php
-            $tecnicas = $logo->tecnicas;
-            if (is_string($tecnicas)) { $tecnicas = json_decode($tecnicas, true) ?? []; }
-            $tecnicas = is_array($tecnicas) ? $tecnicas : [];
+            // Obtener técnicas de las prendas técnicas (nuevo sistema)
+            $prendas_tecnicas = $logo->prendas ?? [];
+            $tecnicas = [];
+            foreach ($prendas_tecnicas as $prenda_tecnica) {
+                if ($prenda_tecnica->tipo_logo) {
+                    $tecnicas[] = [
+                        'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
+                        'prenda' => $prenda_tecnica->nombre_prenda,
+                        'observaciones' => $prenda_tecnica->observaciones
+                    ];
+                }
+            }
         @endphp
         @if(!empty($tecnicas) || $logo->observaciones_tecnicas)
             <div class="info-card">
@@ -116,10 +125,22 @@
             $prendasConTecnicas = $logo 
                 ? \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logo->id)
                     ->with(['fotos', 'tipoLogo'])
-                    ->orderBy('tipo_logo_id')
+                    ->orderBy('nombre_prenda')
                     ->orderBy('grupo_combinado')
                     ->get()
                 : collect();
+
+            // Agrupar por grupo_combinado (si existe) o por ID (si es simple)
+            // Esto asegura que CAMISA DRILL COMBINADA y CAMISA DRILL SIMPLE aparezcan en filas diferentes
+            $gruposMap = [];
+            foreach ($prendasConTecnicas as $prenda) {
+                // Si tiene grupo_combinado, usar ese. Si no, usar el ID para identificar como simple individual
+                $grupoId = $prenda->grupo_combinado ?: ('simple_' . $prenda->id);
+                if (!isset($gruposMap[$grupoId])) {
+                    $gruposMap[$grupoId] = [];
+                }
+                $gruposMap[$grupoId][] = $prenda;
+            }
         @endphp
         @if($prendasConTecnicas->count() > 0)
             <div class="info-card">
@@ -135,7 +156,7 @@
                     ">
                         <thead>
                             <tr style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white;">
-                                <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Técnica</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Técnica(s)</th>
                                 <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Prenda</th>
                                 <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Ubicaciones</th>
                                 <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Observaciones</th>
@@ -144,33 +165,49 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($prendasConTecnicas as $prenda)
+                            @foreach($gruposMap as $grupoId => $prendas)
                                 @php
-                                    $tipoLogo = $prenda->tipoLogo;
-                                    $ubicaciones = is_string($prenda->ubicaciones) ? json_decode($prenda->ubicaciones, true) ?? [] : $prenda->ubicaciones;
-                                    $tallas = is_string($prenda->talla_cantidad) ? json_decode($prenda->talla_cantidad, true) ?? [] : $prenda->talla_cantidad;
+                                    $esCombinada = count($prendas) > 1;
+                                    // Usar la primera prenda para datos comunes (nombre, observaciones)
+                                    $prenda1 = $prendas[0];
+                                    $nombrePrenda = $prenda1->nombre_prenda;
                                 @endphp
                                 <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;">
-                                    {{-- Técnica --}}
+                                    {{-- Técnicas (todas las de este grupo) --}}
                                     <td style="padding: 1rem; vertical-align: top;">
-                                        <div style="display: inline-block; padding: 0.5rem 1rem; background: #0ea5e9; color: white; border-radius: 6px; font-weight: 600; font-size: 1rem;">
-                                            {{ $tipoLogo->nombre ?? 'Técnica' }}
-                                            @if($prenda->grupo_combinado)
-                                                <br><small style="opacity: 0.9;">Grupo {{ $prenda->grupo_combinado }}</small>
-                                            @endif
-                                        </div>
+                                        @foreach($prendas as $prenda)
+                                            @php
+                                                $tipoLogo = $prenda->tipoLogo;
+                                            @endphp
+                                            <div style="display: inline-block; padding: 0.5rem 1rem; background: #0ea5e9; color: white; border-radius: 6px; font-weight: 600; font-size: 1rem; margin-bottom: 0.4rem; margin-right: 0.4rem;">
+                                                {{ $tipoLogo->nombre ?? 'Técnica' }}
+                                            </div>
+                                        @endforeach
+                                        @if($esCombinada)
+                                            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #0ea5e9; font-weight: 600;">
+                                                <i class="fas fa-link"></i> COMBINADA
+                                            </div>
+                                        @endif
                                     </td>
                                     
                                     {{-- Prenda --}}
                                     <td style="padding: 1rem; vertical-align: top; font-weight: 500; color: #1e293b; font-size: 1rem;">
-                                        {{ $prenda->nombre_prenda }}
+                                        {{ $nombrePrenda }}
                                     </td>
                                     
-                                    {{-- Ubicaciones --}}
+                                    {{-- Ubicaciones (combinar de todas las prendas del grupo) --}}
                                     <td style="padding: 1rem; vertical-align: top; font-size: 0.95rem;">
-                                        @if(!empty($ubicaciones))
+                                        @php
+                                            $ubicacionesTotales = [];
+                                            foreach ($prendas as $p) {
+                                                $ubicaciones = is_string($p->ubicaciones) ? json_decode($p->ubicaciones, true) ?? [] : $p->ubicaciones;
+                                                $ubicacionesTotales = array_merge($ubicacionesTotales, $ubicaciones ?? []);
+                                            }
+                                            $ubicacionesTotales = array_unique($ubicacionesTotales);
+                                        @endphp
+                                        @if(!empty($ubicacionesTotales))
                                             <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                                                @foreach($ubicaciones as $ubicacion)
+                                                @foreach($ubicacionesTotales as $ubicacion)
                                                     <span class="tag tag-blue" style="font-size: 0.95rem;">{{ $ubicacion }}</span>
                                                 @endforeach
                                             </div>
@@ -179,24 +216,35 @@
                                         @endif
                                     </td>
                                     
-                                    {{-- Observaciones --}}
+                                    {{-- Observaciones (de la primera prenda) --}}
                                     <td style="padding: 1rem; vertical-align: top;">
-                                        @if($prenda->observaciones)
+                                        @if($prenda1->observaciones)
                                             <div style="font-size: 0.95rem; color: #64748b; padding: 0.4rem; background: #f1f5f9; border-left: 2px solid #f59e0b; border-radius: 3px;">
-                                                {{ $prenda->observaciones }}
+                                                {{ $prenda1->observaciones }}
                                             </div>
                                         @else
                                             <span style="color: #94a3b8; font-size: 0.95rem;">—</span>
                                         @endif
                                     </td>
                                     
-                                    {{-- Tallas --}}
+                                    {{-- Tallas (combinar de todas las prendas del grupo) --}}
                                     <td style="padding: 1rem; vertical-align: top; text-align: center;">
-                                        @if(!empty($tallas))
-                                            @foreach($tallas as $talla)
+                                        @php
+                                            $tallasCombinadas = [];
+                                            foreach ($prendas as $p) {
+                                                $tallas = is_string($p->talla_cantidad) ? json_decode($p->talla_cantidad, true) ?? [] : $p->talla_cantidad;
+                                                foreach ($tallas as $talla) {
+                                                    $tallaKey = is_array($talla) ? $talla['talla'] : $talla;
+                                                    if (!isset($tallasCombinadas[$tallaKey])) {
+                                                        $tallasCombinadas[$tallaKey] = is_array($talla) ? ($talla['cantidad'] ?? 0) : 0;
+                                                    }
+                                                }
+                                            }
+                                        @endphp
+                                        @if(!empty($tallasCombinadas))
+                                            @foreach($tallasCombinadas as $tallaNombre => $cantidad)
                                                 <div style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 4px; margin-bottom: 0.3rem; font-size: 0.95rem; font-weight: 600;">
-                                                    {{ is_array($talla) ? ($talla['talla'] ?? 'N/A') : $talla }}: 
-                                                    <strong>{{ is_array($talla) ? ($talla['cantidad'] ?? 0) : 0 }}</strong>
+                                                    {{ $tallaNombre }}: <strong>{{ $cantidad }}</strong>
                                                 </div>
                                             @endforeach
                                         @else
@@ -204,13 +252,21 @@
                                         @endif
                                     </td>
                                     
-                                    {{-- Imágenes --}}
+                                    {{-- Imágenes (combinar de todas las prendas del grupo) --}}
                                     <td style="padding: 1rem; vertical-align: top; text-align: center;">
-                                        @if($prenda->fotos && $prenda->fotos->count() > 0)
+                                        @php
+                                            $todasLasFotos = [];
+                                            foreach ($prendas as $p) {
+                                                if ($p->fotos && $p->fotos->count() > 0) {
+                                                    $todasLasFotos = array_merge($todasLasFotos, $p->fotos->toArray());
+                                                }
+                                            }
+                                        @endphp
+                                        @if(!empty($todasLasFotos))
                                             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
-                                                @foreach($prenda->fotos as $index => $foto)
-                                                    <img src="{{ asset('storage/' . $foto->ruta_webp) }}" 
-                                                         alt="{{ $prenda->nombre_prenda }}"
+                                                @foreach($todasLasFotos as $index => $foto)
+                                                    <img src="{{ asset('storage/' . $foto['ruta_webp']) }}" 
+                                                         alt="Técnica"
                                                          style="
                                                              width: 80px;
                                                              height: 80px;
@@ -220,13 +276,13 @@
                                                              transition: all 0.3s;
                                                              cursor: pointer;
                                                          "
-                                                         onclick="abrirModalFotos('prenda-{{ $prenda->id }}', {{ $index }})"
+                                                         onclick="abrirModalFotos('prenda-{{ $grupoId }}', {{ $index }})"
                                                          onmouseover="this.style.borderColor='#0ea5e9'; this.style.boxShadow='0 4px 12px rgba(14,165,233,0.3)';"
                                                          onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
                                                 @endforeach
                                             </div>
                                             <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
-                                                {{ $prenda->fotos->count() }} imagen(es)
+                                                {{ count($todasLasFotos) }} imagen(es)
                                             </div>
                                         @else
                                             <span style="color: #94a3b8; font-size: 0.85rem;">Sin imágenes</span>
@@ -282,39 +338,40 @@
 
 <!-- MODAL DE FOTOS FULLSCREEN -->
 <div id="modalFotos" style="
-    display: none;
+    display: none !important;
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 9999999;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.98);
+    z-index: 999999;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
 ">
-    <!-- Cerrar -->
+    <!-- Cerrar (X) - SIEMPRE VISIBLE -->
     <button onclick="cerrarModalFotos()" style="
-        position: absolute;
-        top: 2rem;
-        right: 2rem;
-        width: 50px;
-        height: 50px;
-        background: rgba(255, 255, 255, 0.2);
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 59, 48, 0.9) !important;
         color: white;
-        border: 2px solid white;
+        border: 3px solid white;
         border-radius: 50%;
-        font-size: 2rem;
+        font-size: 2.5rem;
         cursor: pointer;
-        z-index: 10;
+        z-index: 9999999 !important;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.3s;
+        box-shadow: 0 6px 20px rgba(255, 59, 48, 0.8);
+        padding: 0;
     "
-    onmouseover="this.style.background='rgba(255, 59, 48, 0.8)'; this.style.transform='scale(1.1)';"
-    onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='scale(1)';">
+    onmouseover="this.style.background='rgba(255, 59, 48, 1)'; this.style.transform='scale(1.15) rotate(90deg)'; this.style.boxShadow='0 8px 30px rgba(255, 59, 48, 1)';"
+    onmouseout="this.style.background='rgba(255, 59, 48, 0.9)'; this.style.transform='scale(1) rotate(0deg)'; this.style.boxShadow='0 6px 20px rgba(255, 59, 48, 0.8)';">
         ✕
     </button>
 
@@ -326,21 +383,24 @@
         width: 100%;
         height: 100%;
         gap: 2rem;
+        padding: 6rem 2rem 2rem 2rem;
     ">
         <!-- Botón Anterior -->
         <button onclick="anteriorFoto()" style="
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: 2px solid white;
             border-radius: 50%;
-            font-size: 2rem;
+            font-size: 2.5rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         "
         onmouseover="this.style.background='rgba(14, 165, 233, 0.8)'; this.style.transform='scale(1.15)';"
         onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='scale(1)';">
@@ -354,19 +414,20 @@
             align-items: center;
             justify-content: center;
             flex: 1;
-            max-height: 80vh;
+            max-width: 90%;
+            max-height: 85vh;
         ">
             <img id="imagenPrincipal" src="" alt="" style="
                 max-width: 100%;
                 max-height: 100%;
                 object-fit: contain;
                 border-radius: 8px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
             ">
             <div style="
-                margin-top: 1.5rem;
+                margin-top: 2rem;
                 color: white;
-                font-size: 1.1rem;
+                font-size: 1.3rem;
                 font-weight: 600;
             ">
                 <span id="contadorFoto">1 / 1</span>
@@ -387,6 +448,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
+            flex-shrink: 0;
         "
         onmouseover="this.style.background='rgba(14, 165, 233, 0.8)'; this.style.transform='scale(1.15)';"
         onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='scale(1)';">
@@ -400,28 +462,62 @@
     let indiceActual = 0;
 
     function abrirModalFotos(prendaId, indiceInicial = 0) {
+        console.log('🔵 abrirModalFotos() - prendaId:', prendaId);
+        
         // Obtener todas las fotos de esta prenda
         const prendasFotos = document.querySelectorAll(`img[onclick*="${prendaId}"]`);
-        fotosActuales = Array.from(prendasFotos).map(img => img.src);
+        console.log('📸 Fotos encontradas:', prendasFotos.length);
         
-        if (fotosActuales.length === 0) return;
+        fotosActuales = Array.from(prendasFotos).map(img => img.src);
+        console.log('🖼️ Fotos actuales:', fotosActuales);
+        
+        if (fotosActuales.length === 0) {
+            console.error('❌ No hay fotos para mostrar');
+            return;
+        }
         
         indiceActual = indiceInicial;
-        document.getElementById('modalFotos').style.display = 'flex';
+        const modalFotos = document.getElementById('modalFotos');
+        console.log('🎬 Modal encontrado:', modalFotos);
+        console.log('📊 Display anterior:', modalFotos.style.display);
+        
+        modalFotos.style.display = 'flex';
+        console.log('📊 Display nuevo:', modalFotos.style.display);
+        console.log('🎨 Visible:', window.getComputedStyle(modalFotos).display);
+        
         mostrarFoto();
         document.body.style.overflow = 'hidden';
+        console.log('✅ Modal abierto');
     }
 
     function cerrarModalFotos() {
-        document.getElementById('modalFotos').style.display = 'none';
+        console.log('🔴 cerrarModalFotos()');
+        const modalFotos = document.getElementById('modalFotos');
+        modalFotos.style.display = 'none';
         document.body.style.overflow = 'auto';
+        console.log('✅ Modal cerrado');
     }
 
     function mostrarFoto() {
-        if (fotosActuales.length === 0) return;
+        console.log('🖼️ mostrarFoto() - indiceActual:', indiceActual, 'total:', fotosActuales.length);
+        if (fotosActuales.length === 0) {
+            console.warn('⚠️ No hay fotos para mostrar');
+            return;
+        }
         
-        document.getElementById('imagenPrincipal').src = fotosActuales[indiceActual];
-        document.getElementById('contadorFoto').textContent = (indiceActual + 1) + ' / ' + fotosActuales.length;
+        const imgElement = document.getElementById('imagenPrincipal');
+        const contadorElement = document.getElementById('contadorFoto');
+        
+        console.log('🎬 Imagen element:', imgElement);
+        console.log('📊 Contador element:', contadorElement);
+        
+        if (imgElement && contadorElement) {
+            imgElement.src = fotosActuales[indiceActual];
+            contadorElement.textContent = (indiceActual + 1) + ' / ' + fotosActuales.length;
+            console.log('✅ Foto mostrada:', fotosActuales[indiceActual]);
+        } else {
+            console.error('❌ Elementos no encontrados');
+        }
     }
 
     function anteriorFoto() {

@@ -12,19 +12,11 @@ class LogoCotizacion extends Model
 
     protected $fillable = [
         'cotizacion_id',
-        'descripcion',
-        'imagenes',
-        'tecnicas',
-        'observaciones_tecnicas',
-        'secciones',
         'observaciones_generales',
         'tipo_venta'
     ];
 
     protected $casts = [
-        'imagenes' => 'array',
-        'tecnicas' => 'array',
-        'secciones' => 'array',
         'observaciones_generales' => 'array'
     ];
 
@@ -53,10 +45,20 @@ class LogoCotizacion extends Model
     }
 
     /**
-     * Relación NUEVA: Un logo puede tener múltiples técnicas (bordado, estampado, etc)
+     * Relación: Acceso directo a prendas técnicas (sin pasar por técnicas)
+     */
+    public function prendas(): HasMany
+    {
+        return $this->hasMany(LogoCotizacionTecnicaPrenda::class, 'logo_cotizacion_id');
+    }
+
+    /**
+     * Relación ANTIGUA: Un logo puede tener múltiples técnicas (bordado, estampado, etc)
+     * NOTA: Esta tabla no existe en la versión nueva. Se mantiene para compatibilidad.
      */
     public function tecnicas(): HasMany
     {
+        // Retorna una colección vacía para compatibilidad
         return $this->hasMany(LogoCotizacionTecnica::class)
             ->orderBy('orden');
     }

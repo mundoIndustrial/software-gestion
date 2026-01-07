@@ -1498,8 +1498,10 @@ class PedidosProduccionController extends Controller
                 'prendas.fotos',
                 'prendas.telas',
                 'prendas.telaFotos',
-                // Logo - solo fotos es relación, el resto son campos JSON
+                // Logo - prendas técnicas con fotos
                 'logoCotizacion.fotos',
+                'logoCotizacion.prendas.tipoLogo',
+                'logoCotizacion.prendas.fotos',
                 // Reflectivo con sus fotos
                 'reflectivo.fotos',
             ])->findOrFail($cotizacionId);
@@ -1641,15 +1643,10 @@ class PedidosProduccionController extends Controller
                     ];
                 })->toArray(),
                 
-                // Logo información COMPLETA
+                // Logo información COMPLETA (sin campos JSON antiguos)
                 'logo' => $cotizacion->logoCotizacion ? [
                     'id' => $cotizacion->logoCotizacion->id,
-                    'descripcion' => $cotizacion->logoCotizacion->descripcion,
                     'tipo_venta' => $cotizacion->logoCotizacion->tipo_venta,
-                    'imagenes' => is_array($cotizacion->logoCotizacion->imagenes) ? $cotizacion->logoCotizacion->imagenes : [],
-                    'tecnicas' => (is_array($cotizacion->logoCotizacion->tecnicas) ? $cotizacion->logoCotizacion->tecnicas : (is_string($cotizacion->logoCotizacion->tecnicas) ? json_decode($cotizacion->logoCotizacion->tecnicas, true) : [])) ?? [],
-                    'observaciones_tecnicas' => $cotizacion->logoCotizacion->observaciones_tecnicas,
-                    'ubicaciones' => (is_array($cotizacion->logoCotizacion->ubicaciones) ? $cotizacion->logoCotizacion->ubicaciones : (is_string($cotizacion->logoCotizacion->ubicaciones) ? json_decode($cotizacion->logoCotizacion->ubicaciones, true) : [])) ?? [],
                     'observaciones_generales' => (is_array($cotizacion->logoCotizacion->observaciones_generales) ? $cotizacion->logoCotizacion->observaciones_generales : (is_string($cotizacion->logoCotizacion->observaciones_generales) ? json_decode($cotizacion->logoCotizacion->observaciones_generales, true) : [])) ?? [],
                     'fotos' => $cotizacion->logoCotizacion->fotos->map(function($foto) {
                         return [
@@ -1660,6 +1657,31 @@ class PedidosProduccionController extends Controller
                         ];
                     })->toArray(),
                 ] : null,
+                
+                // ✅ NUEVO: Prendas técnicas (estructura desde LogoCotizacionTecnicaPrenda)
+                'prendas_tecnicas' => $cotizacion->logoCotizacion ? 
+                    $cotizacion->logoCotizacion->prendas->map(function($prenda) {
+                        return [
+                            'id' => $prenda->id,
+                            'logo_cotizacion_id' => $prenda->logo_cotizacion_id,
+                            'tipo_logo_id' => $prenda->tipo_logo_id,
+                            'tipo_logo_nombre' => $prenda->tipoLogo ? $prenda->tipoLogo->nombre : null,
+                            'nombre_prenda' => $prenda->nombre_prenda,
+                            'observaciones' => $prenda->observaciones,
+                            'ubicaciones' => (is_array($prenda->ubicaciones) ? $prenda->ubicaciones : (is_string($prenda->ubicaciones) ? json_decode($prenda->ubicaciones, true) : [])) ?? [],
+                            'talla_cantidad' => (is_array($prenda->talla_cantidad) ? $prenda->talla_cantidad : (is_string($prenda->talla_cantidad) ? json_decode($prenda->talla_cantidad, true) : [])) ?? [],
+                            'grupo_combinado' => $prenda->grupo_combinado,
+                            'fotos' => $prenda->fotos->map(function($foto) {
+                                return [
+                                    'id' => $foto->id,
+                                    'ruta_webp' => '/storage/' . ltrim($foto->ruta_webp, '/'),
+                                    'ruta_original' => '/storage/' . ltrim($foto->ruta_original, '/'),
+                                    'orden' => $foto->orden,
+                                ];
+                            })->toArray(),
+                        ];
+                    })->toArray()
+                : [],
                 
                 // Reflectivo INFORMACIÓN COMPLETA
                 'reflectivo' => $cotizacion->reflectivo ? [

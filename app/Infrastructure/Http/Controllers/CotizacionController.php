@@ -305,6 +305,7 @@ final class CotizacionController extends Controller
                 'prendas.variantes',
                 'prendas.reflectivo.fotos',  // ✅ Cargar reflectivo de cada prenda con sus fotos
                 'logoCotizacion.fotos',
+                'logoCotizacion.prendas.fotos',  // ✅ Cargar prendas técnicas con sus fotos
                 'reflectivoCotizacion.fotos',  // Mantener para compatibilidad con cotizaciones antiguas
                 'tipoCotizacion'
             ])->findOrFail($id);
@@ -339,8 +340,7 @@ final class CotizacionController extends Controller
                 'prendas_debug' => $prendasDebug,
                 'especificaciones' => $cotizacion->especificaciones,
                 'logo' => $logo ? 'Sí' : 'No',
-                'logo_tecnicas' => $logo ? $logo->tecnicas : null,
-                'logo_ubicaciones' => $logo ? $logo->secciones : null,
+                'logo_prendas_tecnicas' => $logo ? $logo->prendas : null,
                 'logo_observaciones_generales' => $logo ? $logo->observaciones_generales : null,
             ]);
 
@@ -1540,14 +1540,6 @@ final class CotizacionController extends Controller
                 // Si existe, SOLO actualizar (no crear nuevo)
                 // IMPORTANTE: Merge con datos existentes para NO SOBRESCRIBIR si viene vacío
                 $datosActualizar = [
-                    'descripcion' => $logoDescripcion !== null ? $logoDescripcion : $logoExistente->descripcion,
-                    'tecnicas' => is_array($logoTecnicas) && !empty($logoTecnicas) 
-                        ? json_encode($logoTecnicas) 
-                        : $logoExistente->tecnicas,
-                    'observaciones_tecnicas' => !empty($logoObservacionesTecnicas) ? $logoObservacionesTecnicas : $logoExistente->observaciones_tecnicas,
-                    'secciones' => is_array($logoSecciones) && !empty($logoSecciones)
-                        ? json_encode($logoSecciones)
-                        : $logoExistente->secciones,
                     'observaciones_generales' => is_array($logoObservacionesGenerales) && !empty($logoObservacionesGenerales)
                         ? json_encode($logoObservacionesGenerales)
                         : $logoExistente->observaciones_generales,
@@ -1566,17 +1558,12 @@ final class CotizacionController extends Controller
                 // Si NO existe, crear nuevo
                 $logoCotizacion = \App\Models\LogoCotizacion::create([
                     'cotizacion_id' => $cotizacionId,
-                    'descripcion' => $logoDescripcion,
-                    'tecnicas' => is_array($logoTecnicas) ? json_encode($logoTecnicas) : $logoTecnicas,
-                    'observaciones_tecnicas' => !empty($logoObservacionesTecnicas) ? $logoObservacionesTecnicas : null,
-                    'secciones' => is_array($logoSecciones) ? json_encode($logoSecciones) : $logoSecciones,
                     'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
                     'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
                 ]);
                 Log::info('✅ LogoCotizacion CREADO (nuevo)', [
                     'cotizacion_id' => $cotizacionId,
                     'logo_id' => $logoCotizacion->id,
-                    'descripcion_guardada' => $logoDescripcion,
                 ]);
             }
             

@@ -330,6 +330,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('Logos encontrados:', data.logo.fotos.length);
                     }
                     
+                    // ✅ CARGAR PRENDAS TÉCNICAS DEL LOGO SI EXISTEN
+                    if (data.prendas_tecnicas && data.prendas_tecnicas.length > 0) {
+                        console.log('✅ Prendas técnicas detectadas en la respuesta:', data.prendas_tecnicas.length);
+                        if (typeof cargarLogoPrendasDesdeCotizacion === 'function') {
+                            console.log('   Llamando a cargarLogoPrendasDesdeCotizacion()...');
+                            cargarLogoPrendasDesdeCotizacion(data.prendas_tecnicas);
+                            console.log('   ✅ Prendas técnicas cargadas');
+                        } else {
+                            console.warn('   ⚠️ cargarLogoPrendasDesdeCotizacion no está disponible');
+                        }
+                    } else {
+                        console.log('⚠️ No hay prendas técnicas en la respuesta:', data.prendas_tecnicas);
+                    }
+                    
                     // Mostrar especificaciones generales
                     if (data.especificaciones) {
                         console.log('📋 Especificaciones de cotización:', data.especificaciones);
@@ -426,10 +440,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const fotoToUrl = window.FotoHelper.toUrl.bind(window.FotoHelper);
 
         if (!prendas || prendas.length === 0) {
-            // Si no hay prendas pero hay LOGO, mostrar campos LOGO
+            // Si no hay prendas pero hay LOGO, mostrar nuevo diseño de TARJETAS de prendas técnicas
             if (esLogo && logoCotizacion) {
-                console.log('🎨 RENDERIZANDO COTIZACIÓN TIPO LOGO (sin prendas)');
-                renderizarLogoPedido(logoCotizacion);
+                console.log('🎨 RENDERIZANDO COTIZACIÓN TIPO LOGO (con nuevo diseño de tarjetas)');
+                
+                // Guardar datos globales
+                window.currentTipoCotizacion = tipoCotizacion;
+                window.currentEsLogo = esLogo;
+                
+                // Mostrar el nuevo diseño (desde integracion-logo-pedido-tecnicas.js)
+                if (typeof mostrarSeccionPrendasTecnicasLogoNuevo === 'function') {
+                    mostrarSeccionPrendasTecnicasLogoNuevo();
+                } else {
+                    console.warn('⚠️ mostrarSeccionPrendasTecnicasLogoNuevo no está disponible');
+                }
                 return;
             }
             prendasContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Esta cotización no tiene prendas</p>';

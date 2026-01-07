@@ -97,18 +97,6 @@
                     @if($cotizacion->logoCotizacion)
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="text-muted small">Técnicas</label>
-                                <p class="mb-0">
-                                    @if(is_array($cotizacion->logoCotizacion->tecnicas))
-                                        @foreach($cotizacion->logoCotizacion->tecnicas as $tecnica)
-                                            <span class="badge bg-secondary me-1">{{ $tecnica }}</span>
-                                        @endforeach
-                                    @else
-                                        {{ $cotizacion->logoCotizacion->tecnicas ?? '-' }}
-                                    @endif
-                                </p>
-                            </div>
-                            <div class="col-md-6 mb-3">
                                 <label class="text-muted small">Tipo de Venta</label>
                                 <p class="mb-0">
                                     @switch($cotizacion->logoCotizacion->tipo_venta)
@@ -126,24 +114,6 @@
                                     @endswitch
                                 </p>
                             </div>
-                            <div class="col-12 mb-3">
-                                <label class="text-muted small">Ubicaciones</label>
-                                <p class="mb-0">
-                                    @if(is_array($cotizacion->logoCotizacion->secciones))
-                                        @foreach($cotizacion->logoCotizacion->secciones as $ubicacion)
-                                            <span class="badge bg-light text-dark me-1">{{ $ubicacion }}</span>
-                                        @endforeach
-                                    @else
-                                        {{ $cotizacion->logoCotizacion->secciones ?? '-' }}
-                                    @endif
-                                </p>
-                            </div>
-                            @if($cotizacion->logoCotizacion->observaciones_tecnicas)
-                            <div class="col-12 mb-3">
-                                <label class="text-muted small">Observaciones Técnicas</label>
-                                <p class="mb-0">{{ $cotizacion->logoCotizacion->observaciones_tecnicas }}</p>
-                            </div>
-                            @endif
                             @if($cotizacion->logoCotizacion->observaciones_generales)
                             <div class="col-12 mb-3">
                                 <label class="text-muted small">Observaciones Generales</label>

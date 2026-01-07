@@ -1,10 +1,17 @@
 {{-- Logo Tecnicas --}}
 @php
-    $tecnicas = $logo->tecnicas;
-    if (is_string($tecnicas)) {
-        $tecnicas = json_decode($tecnicas, true) ?? [];
+    // Obtener técnicas de las prendas técnicas (nuevo sistema)
+    $prendas_tecnicas = $logo->prendas ?? [];
+    $tecnicas = [];
+    foreach ($prendas_tecnicas as $prenda_tecnica) {
+        if ($prenda_tecnica->tipo_logo) {
+            $tecnicas[] = [
+                'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
+                'prenda' => $prenda_tecnica->nombre_prenda,
+                'observaciones' => $prenda_tecnica->observaciones
+            ];
+        }
     }
-    $tecnicas = is_array($tecnicas) ? $tecnicas : [];
 @endphp
 @if(!empty($tecnicas) && count($tecnicas) > 0)
     <div style="

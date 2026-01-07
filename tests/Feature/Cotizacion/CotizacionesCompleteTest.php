@@ -541,12 +541,8 @@ class CotizacionesCompleteTest extends TestCase
         // Crear logo
         $logo = LogoCotizacion::create([
             'cotizacion_id' => $cotizacion->id,
-            'descripcion' => "Logo bordado test $numero",
-            'imagenes' => $this->crearFotosSimuladas(4),
-            'tecnicas' => ['bordado', 'punto cruzado'],
-            'observaciones_tecnicas' => 'Bordado de alta calidad',
-            'ubicaciones' => ['pecho', 'espalda', 'manga izquierda'],
-            'observaciones_generales' => ['Validar colores', 'Bordar a máquina'],
+            'observaciones_generales' => json_encode(['Validar colores', 'Bordar a máquina']),
+            'tipo_venta' => 'bordado',
         ]);
 
         // Crear fotos del logo

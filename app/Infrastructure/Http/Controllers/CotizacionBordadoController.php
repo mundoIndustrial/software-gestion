@@ -48,9 +48,7 @@ class CotizacionBordadoController extends Controller
                 'cliente_id' => $cotizacion->cliente_id,
                 'cliente_nombre' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'NULL',
                 'tiene_cliente' => $cotizacion->cliente ? 'SI' : 'NO',
-                'tiene_logo_cotizacion' => $cotizacion->logoCotizacion ? 'SI' : 'NO',
-                'tecnicas' => $cotizacion->logoCotizacion ? $cotizacion->logoCotizacion->tecnicas : 'N/A',
-                'descripcion' => $cotizacion->logoCotizacion ? $cotizacion->logoCotizacion->descripcion : 'N/A'
+                'tiene_logo_cotizacion' => $cotizacion->logoCotizacion ? 'SI' : 'NO'
             ]);
         } else {
             // Crear nueva cotización en blanco (borrador temporal)
@@ -64,12 +62,7 @@ class CotizacionBordadoController extends Controller
             // IMPORTANTE: Crear también el LogoCotizacion asociado
             $logoCotizacion = \App\Models\LogoCotizacion::create([
                 'cotizacion_id' => $cotizacion->id,
-                'descripcion' => '',
-                'tecnicas' => json_encode([]),
-                'observaciones_tecnicas' => '',
-                'secciones' => json_encode([]),
-                'observaciones_generales' => '',
-                'imagenes' => json_encode([]),
+                'observaciones_generales' => json_encode([]),
                 'tipo_venta' => null
             ]);
             
@@ -256,55 +249,11 @@ class CotizacionBordadoController extends Controller
                     'observaciones_generales' => $observacionesGenerales
                 ]);
                 
-                // Cargar datos existentes si el logo_cotizacion ya existe
-                $logoExistente = \App\Models\LogoCotizacion::where('cotizacion_id', $id)->first();
-                
-                // Preparar datos a actualizar
-                // Estrategia: Si un campo viene vacío, preservar el valor existente
+                // Preparar datos a actualizar (solo campos que existen en DB)
                 $datosActualizar = [];
                 
-                // Técnicas: Actualizar si tiene valor, de lo contrario preservar existente
-                if (!empty($tecnicas)) {
-                    $datosActualizar['tecnicas'] = $tecnicas;
-                } elseif ($logoExistente && !empty($logoExistente->tecnicas)) {
-                    Log::info('⚠️ Preservando técnicas existentes (cliente no envió datos)', [
-                        'tecnicas_existentes' => $logoExistente->tecnicas
-                    ]);
-                    $datosActualizar['tecnicas'] = $logoExistente->tecnicas;
-                }
-                
-                // Observaciones generales: Actualizar si tiene valor, de lo contrario preservar
-                if (!empty($observacionesGenerales)) {
-                    $datosActualizar['observaciones_generales'] = $observacionesGenerales;
-                } elseif ($logoExistente && !empty($logoExistente->observaciones_generales)) {
-                    Log::info('⚠️ Preservando observaciones generales (cliente no envió datos)', [
-                        'observaciones_existentes' => $logoExistente->observaciones_generales
-                    ]);
-                    $datosActualizar['observaciones_generales'] = $logoExistente->observaciones_generales;
-                }
-                
-                // Descripción: Actualizar si tiene valor, de lo contrario preservar
-                if (!empty($descripcion)) {
-                    $datosActualizar['descripcion'] = $descripcion;
-                } elseif ($logoExistente && !empty($logoExistente->descripcion)) {
-                    Log::info('⚠️ Preservando descripción (cliente no envió datos)', [
-                        'descripcion_existente' => $logoExistente->descripcion
-                    ]);
-                    $datosActualizar['descripcion'] = $logoExistente->descripcion;
-                }
-                
-                // Observaciones técnicas: Actualizar si tiene valor, de lo contrario preservar
-                if (!empty($observacionesTecnicas)) {
-                    $datosActualizar['observaciones_tecnicas'] = $observacionesTecnicas;
-                } elseif ($logoExistente && !empty($logoExistente->observaciones_tecnicas)) {
-                    Log::info('⚠️ Preservando observaciones técnicas (cliente no envió datos)', [
-                        'observaciones_tecnicas_existentes' => $logoExistente->observaciones_tecnicas
-                    ]);
-                    $datosActualizar['observaciones_tecnicas'] = $logoExistente->observaciones_tecnicas;
-                }
-                
-                // Secciones: Siempre actualizar para permitir guardar un arreglo vacío (No Aplica)
-                $datosActualizar['secciones'] = $secciones;
+                // Observaciones generales: Actualizar con los datos proporcionados
+                $datosActualizar['observaciones_generales'] = $observacionesGenerales ?? '';
                 
                 // Agregar tipo_venta_bordado si está disponible
                 $tipoVentaBordado = $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta');
@@ -314,24 +263,21 @@ class CotizacionBordadoController extends Controller
                 
                 $logoCotizacion = \App\Models\LogoCotizacion::updateOrCreate(
                     ['cotizacion_id' => $id],  // Condición de búsqueda
-                    $datosActualizar  // Actualizar con preservación de existentes
+                    $datosActualizar  // Actualizar solo campos válidos
                 );
                 
                 Log::info('✅ logo_cotizaciones actualizado/creado', [
                     'cotizacion_id' => $id,
                     'logo_id' => $logoCotizacion->id,
-                    'descripcion' => $datosActualizar['descripcion'] ?? 'NO ACTUALIZADO',
-                    'tecnicas_enviadas' => $tecnicas,
-                    'tecnicas_count' => count($tecnicas),
-                    'tecnicas_guardadas_en_bd' => $logoCotizacion->tecnicas,
-                    'accion' => 'updateOrCreate'
+                    'observaciones_generales' => $datosActualizar['observaciones_generales'] ?? 'NO ACTUALIZADO',
+                    'tipo_venta' => $datosActualizar['tipo_venta'] ?? 'NO ACTUALIZADO',
                 ]);
                 
                 // Recargar desde BD para verificar
                 $logoCotizacionRecargado = \App\Models\LogoCotizacion::find($logoCotizacion->id);
                 Log::info('🔍 Verificación post-guardado:', [
-                    'tecnicas_en_bd' => $logoCotizacionRecargado->tecnicas,
-                    'tecnicas_raw' => DB::table('logo_cotizaciones')->where('id', $logoCotizacion->id)->first()->tecnicas ?? 'NULL'
+                    'logo_id' => $logoCotizacion->id,
+                    'cotizacion_id' => $id
                 ]);
 
                 // Borrar imágenes si se especificaron
@@ -585,14 +531,9 @@ class CotizacionBordadoController extends Controller
                 // IMPORTANTE: Vincular la cotización al LogoCotizacion (actualizar cotizacion_id)
                 $logoCotizacion->update(['cotizacion_id' => $cotizacion->id]);
                 
-                // Actualizar datos del LogoCotizacion (preserve técnicas existentes)
+                // Actualizar datos del LogoCotizacion (solo campos válidos)
                 $datosActualizar = [
-                    'descripcion' => $request->input('descripcion', ''),
-                    'tecnicas' => $tecnicas,  // El modelo aplicará json_encode automáticamente
-                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                    'secciones' => $secciones,  // El modelo aplicará json_encode automáticamente
-                    'observaciones_generales' => $observacionesGenerales,  // El modelo aplicará json_encode automáticamente
-                    'imagenes' => [],  // El modelo aplicará json_encode automáticamente
+                    'observaciones_generales' => $observacionesGenerales ?? '',
                     'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
                 ];
                 

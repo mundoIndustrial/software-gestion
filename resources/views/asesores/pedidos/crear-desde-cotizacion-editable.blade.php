@@ -584,16 +584,9 @@
 
         <!-- PASO 3: Prendas Editables -->
         <div class="form-section" id="seccion-prendas">
-            <div class="step-header">
-                <div class="step-number-container">
-                    <span class="step-number">3</span>
-                </div>
-                <h2 id="paso3_titulo_logo" class="step-title text-center">Prendas y Cantidades (Editables)</h2>
-            </div>
-
-            <div class="alert-info" id="paso3_alerta_logo">
-                ℹ️ Puedes editar los campos de cada prenda, cambiar cantidades por talla, o eliminar prendas que no desees incluir en el pedido.
-            </div>
+            <h2>
+                <span>3</span> Prendas Técnicas del Logo
+            </h2>
 
             <div id="prendas-container-editable">
                 <div class="empty-state">
@@ -746,13 +739,16 @@
     <script src="{{ asset('js/modulos/crear-pedido/reflectivo-pedido.js') }}?v={{ time() }}"></script>
     <!-- Módulo de Logo -->
     <script src="{{ asset('js/modulos/crear-pedido/logo-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Gestión de Fotos de Logo -->
+    <script src="{{ asset('js/modulos/crear-pedido/fotos-logo-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Nuevo Módulo de Prendas Técnicas de Logo -->
+    <script src="{{ asset('js/modulos/crear-pedido/logo-pedido-tecnicas.js') }}?v={{ time() }}"></script>
+    <!-- Integración de Prendas Técnicas con Logo Pedido -->
+    <script src="{{ asset('js/modulos/crear-pedido/integracion-logo-pedido-tecnicas.js') }}?v={{ time() }}"></script>
+    <!-- Inicialización de Prendas Técnicas de Logo -->
+    <script src="{{ asset('js/modulos/crear-pedido/init-logo-pedido-tecnicas.js') }}?v={{ time() }}"></script>
     <!-- Templates HTML (DEBE CARGARSE ANTES DE crear-pedido-editable.js) -->
     <script src="{{ asset('js/templates-pedido.js') }}?v={{ time() }}"></script>
     <!-- Script principal -->
     <script src="{{ asset('js/crear-pedido-editable.js') }}?v={{ time() }}"></script>
-    <!-- Scripts de tests (solo en desarrollo) -->
-    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-1.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-2.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-3.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/tests/test-fase-3b.js') }}?v={{ time() }}"></script>
 @endpush

@@ -1344,10 +1344,22 @@ function guardarTecnicaSimple() {
     }
     
     const tipoId = tiposIds[0];
-    const prendas = extraerPrendasDelModal();
+    
+    let prendas;
+    try {
+        prendas = extraerPrendasDelModal();
+    } catch (error) {
+        // La validación ya mostró el error con SweetAlert
+        console.error('Validación fallida:', error.message);
+        return;
+    }
     
     if (!prendas || prendas.length === 0) {
-        alert('Error: Agrega al menos una prenda');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Agrega al menos una prenda'
+        });
         return;
     }
     
@@ -1374,6 +1386,63 @@ function guardarTecnicaCombinada(datosForm) {
     const tecnicas = window.tecnicasCombinadas;
     
     console.log(`✅ Guardando técnicas combinadas con ${tecnicas.length} técnicas`);
+    
+    // Si no se pasa datosForm, construirlo desde el formulario actual
+    if (!datosForm) {
+        console.log('📝 Construyendo datosForm desde el formulario...');
+        
+        // Validar que haya nombre de prenda
+        const nombrePrenda = document.querySelector('.nombre_prenda')?.value.trim();
+        if (!nombrePrenda) {
+            console.error('❌ No se encontró nombre de prenda');
+            return;
+        }
+        
+        // Obtener ubicaciones
+        const ubicacionesPorTecnica = {};
+        tecnicas.forEach((tecnica, idx) => {
+            const ubicacion = document.querySelector(`.dUbicacion-${idx}`)?.value.trim() || '';
+            ubicacionesPorTecnica[idx] = [ubicacion];
+        });
+        
+        // Obtener tallas
+        let tallas = [];
+        const tallasFilas = document.querySelectorAll('[data-talla-id]');
+        tallasFilas.forEach(fila => {
+            const talla = fila.querySelector('.dTallaInput').value.trim();
+            const cantidad = fila.querySelector('.dCantidadInput').value;
+            if (talla && cantidad) {
+                tallas.push({ talla, cantidad: parseInt(cantidad) });
+            }
+        });
+        
+        const tallasPorTecnica = {};
+        tecnicas.forEach((tecnica, idx) => {
+            tallasPorTecnica[idx] = tallas;
+        });
+        
+        // Obtener imágenes
+        const imagenesPorTecnica = {};
+        const imagesPorTecnicaDiv = document.getElementById('dImagenesPorTecnica');
+        if (imagesPorTecnicaDiv) {
+            const divImagenes = imagesPorTecnicaDiv.querySelectorAll('[data-tecnica-idx]');
+            divImagenes.forEach(div => {
+                const idx = parseInt(div.getAttribute('data-tecnica-idx'));
+                if (div.imagenesAgregadas && div.imagenesAgregadas.length > 0) {
+                    imagenesPorTecnica[idx] = div.imagenesAgregadas;
+                }
+            });
+        }
+        
+        datosForm = {
+            nombre_prenda: nombrePrenda,
+            observaciones: document.getElementById('dObservaciones')?.value.trim() || '',
+            ubicacionesPorTecnica: ubicacionesPorTecnica,
+            tallasPorTecnica: tallasPorTecnica,
+            imagenesPorTecnica: imagenesPorTecnica
+        };
+    }
+    
     console.log('📦 Datos del formulario:', datosForm);
     
     // Generar un ID único para el grupo combinado (basado en timestamp en milisegundos)
@@ -1445,6 +1514,12 @@ function guardarTecnicaCombinada(datosForm) {
         
         // Actualizar renderizado
         renderizarTecnicasAgregadas();
+        
+        // Actualizar también el renderizado en logo-pedido-tecnicas.js si existe
+        if (typeof renderizarLogoPrendasTecnicas === 'function') {
+            console.log('📊 Llamando a renderizarLogoPrendasTecnicas() para actualizar tabla de prendas');
+            renderizarLogoPrendasTecnicas();
+        }
     });
 }
 
@@ -1528,19 +1603,32 @@ function extraerPrendasDelModal() {
         // Recopilar imágenes del array almacenado en la fila
         const imagenesArray = fila.imagenesAgregadas || [];
         
-        if (!nombrePrenda) {
-            alert('Error: Rellena el nombre de todas las prendas');
-            throw new Error('Datos incompletos');
+        // Validar datos
+        if (!nombrePrenda || nombrePrenda.trim() === '') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Campo vacío',
+                text: `Prenda ${index + 1}: Rellena el nombre de la prenda`
+            });
+            throw new Error('VALIDATION_ERROR');
         }
         
         if (ubicacionesChecked.length === 0) {
-            alert('Error: Agrega al menos una ubicación por prenda');
-            throw new Error('Ubicaciones no seleccionadas');
+            Swal.fire({
+                icon: 'error',
+                title: 'Sin ubicaciones',
+                text: `${nombrePrenda}: Debes seleccionar al menos una ubicación`
+            });
+            throw new Error('VALIDATION_ERROR');
         }
         
         if (tallaCantidad.length === 0) {
-            alert('Error: Agrega al menos una talla con cantidad');
-            throw new Error('Tallas no registradas');
+            Swal.fire({
+                icon: 'error',
+                title: 'Sin tallas',
+                text: `${nombrePrenda}: Debes agregar al menos una talla con cantidad`
+            });
+            throw new Error('VALIDATION_ERROR');
         }
         
         prendas.push({
@@ -1720,15 +1808,39 @@ function renderizarTecnicasAgregadas() {
     
     if (sinTecnicas) sinTecnicas.style.display = 'none';
     
-    // Agrupar por grupo_combinado (para técnicas combinadas)
-    const gruposVisuales = {};
+    // PASO 1: Agrupar por GRUPO_COMBINADO o ÍNDICE (no por nombre de prenda)
+    // Esto permite que dos técnicas con el mismo nombre de prenda sean filas separadas
+    const gruposMap = {};
     tecnicasAgregadas.forEach((tecnica, tecnicaIndex) => {
         const grupoId = tecnica.grupo_combinado || `individual-${tecnicaIndex}`;
-        if (!gruposVisuales[grupoId]) {
-            gruposVisuales[grupoId] = [];
+        if (!gruposMap[grupoId]) {
+            gruposMap[grupoId] = {
+                grupoId: grupoId,
+                esCombinada: tecnica.grupo_combinado !== null && tecnica.grupo_combinado !== undefined,
+                tecnicas: [],
+                prendas: [],
+                observaciones: null,
+                talla_cantidad: [],
+                tecnicaIndexes: []
+            };
         }
-        gruposVisuales[grupoId].push({ tecnica, tecnicaIndex });
+        
+        gruposMap[grupoId].tecnicas.push(tecnica);
+        gruposMap[grupoId].tecnicaIndexes.push(tecnicaIndex);
+        
+        // Agregar datos de prendas (pueden ser múltiples en técnicas combinadas)
+        tecnica.prendas.forEach(prenda => {
+            gruposMap[grupoId].prendas.push(prenda);
+            gruposMap[grupoId].observaciones = prenda.observaciones;
+            gruposMap[grupoId].talla_cantidad = prenda.talla_cantidad || [];
+        });
     });
+    
+    console.log('📦 [renderizarTecnicasAgregadas] Agrupado por GRUPO/ÍNDICE:', Object.keys(gruposMap).length, 'grupos');
+    Object.entries(gruposMap).forEach(([grupoId, datos]) => {
+        console.log(`  → Grupo: ${grupoId}, Técnicas: ${datos.tecnicas.length}, Prendas:`, datos.prendas.map(p => p.nombre_prenda));
+    });
+    
     
     // Crear tabla
     const tabla = document.createElement('table');
@@ -1741,11 +1853,8 @@ function renderizarTecnicasAgregadas() {
         <tr>
             <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Técnica(s)</th>
             <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Prenda</th>
-            <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Ubicaciones</th>
             <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Observaciones</th>
-            <th style="padding: 10px 12px; text-align: center; border: 1px solid #eee; font-size: 0.85rem;">Imagen</th>
-            <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Talla</th>
-            <th style="padding: 10px 12px; text-align: center; border: 1px solid #eee; font-size: 0.85rem;">Cantidad</th>
+            <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Talla/Cantidad</th>
             <th style="padding: 10px 12px; text-align: center; border: 1px solid #eee; font-size: 0.85rem;">Acciones</th>
         </tr>
     `;
@@ -1755,237 +1864,154 @@ function renderizarTecnicasAgregadas() {
     const tbody = document.createElement('tbody');
     let rowIndex = 0;
     
-    // Procesar cada grupo visual (puede ser 1 o múltiples técnicas combinadas)
-    Object.keys(gruposVisuales).forEach(grupoId => {
-        const grupoItems = gruposVisuales[grupoId];
-        const esCombinadasIguales = grupoItems.length > 1;
+    // PASO 2: Renderizar una fila por GRUPO (técnica simple o grupo combinado)
+    Object.entries(gruposMap).forEach(([grupoId, datosGrupo]) => {
+        const tallasArray = datosGrupo.talla_cantidad || [];
+        const esCombinada = datosGrupo.esCombinada;
         
-        if (esCombinadasIguales) {
-            // TÉCNICAS COMBINADAS: mostrar encabezado con todas las técnicas, luego filas por cada técnica
-            const primeraItem = grupoItems[0];
-            const prenda = primeraItem.tecnica.prendas[0];
-            const ubicacionesText = Array.isArray(prenda.ubicaciones) ? prenda.ubicaciones.join(', ') : prenda.ubicaciones;
+        console.log(`🎨 Renderizando GRUPO: ${grupoId}, esCombinada: ${esCombinada}, Técnicas: ${datosGrupo.tecnicas.length}, Tallas: ${tallasArray.length}`);
+        
+        // Construir HTML de técnicas con sus ubicaciones e imágenes
+        let tecnicasHTML = '';
+        datosGrupo.tecnicas.forEach((tecnica, techIdx) => {
+            tecnica.prendas.forEach(prenda => {
+                const ubicacionesText = Array.isArray(prenda.ubicaciones) ? prenda.ubicaciones.join(', ') : prenda.ubicaciones;
+                
+                // Manejar tanto imagenes_data_urls (strings) como imagenes que son File objects
+                let imagenesHTML = '';
+                if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
+                    imagenesHTML = `<div style="margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap;">
+                        ${prenda.imagenes_data_urls.map(img => {
+                            const src = typeof img === 'string' ? img : URL.createObjectURL(img);
+                            return `<img src="${src}" style="max-width: 50px; max-height: 50px; object-fit: contain; border-radius: 3px;" />`;
+                        }).join('')}
+                    </div>`;
+                }
+                
+                tecnicasHTML += `
+                    <div style="margin-bottom: 12px; padding: 8px; background: #f8f9fa; border-left: 3px solid ${tecnica.tipo_logo.color}; border-radius: 3px;">
+                        <div style="font-weight: 600; color: ${tecnica.tipo_logo.color}; margin-bottom: 4px;">
+                            ${tecnica.tipo_logo.nombre}
+                        </div>
+                        <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">
+                            📍 ${ubicacionesText || '-'}
+                        </div>
+                        ${imagenesHTML}
+                    </div>
+                `;
+            });
+        });
+        
+        if (esCombinada) {
+            tecnicasHTML = `<div style="border: 1px dashed #ccc; padding: 8px; border-radius: 4px;">
+                <span style="background: #ddd; color: #333; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-bottom: 8px;">🔗 COMBINADA</span>
+                ${tecnicasHTML}
+            </div>`;
+        }
+        
+        // Obtener nombre de prenda (igual para todas en el grupo)
+        const nombrePrenda = datosGrupo.prendas[0]?.nombre_prenda || 'SIN NOMBRE';
+        
+        // Si no hay tallas, renderizar una sola fila
+        if (tallasArray.length === 0) {
+            const row = document.createElement('tr');
+            const isEven = rowIndex % 2 === 0;
+            row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee;`;
+            row.addEventListener('mouseover', function() { this.style.background = '#f3f4f6'; });
+            row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
             
-            // FILA DE ENCABEZADO (una sola por grupo combinado)
-            const rowEncabezado = document.createElement('tr');
-            const isEvenEncab = rowIndex % 2 === 0;
-            rowEncabezado.style.cssText = `background: ${isEvenEncab ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee; transition: background 0.2s;`;
-            rowEncabezado.addEventListener('mouseover', function() { this.style.background = '#f3f4f6'; });
-            rowEncabezado.addEventListener('mouseout', function() { this.style.background = isEvenEncab ? '#f9fafb' : '#ffffff'; });
-            
-            const badge = '<div style="margin-bottom: 8px;"><span style="background: #ddd; color: #333; padding: 3px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;">🔗 COMBINADA</span></div>';
-            const tecnicasTexto = grupoItems.map(t => `<span style="color: ${t.tecnica.tipo_logo.color}; font-weight: 600; font-size: 0.9rem;">${t.tecnica.tipo_logo.nombre}</span>`).join('<br>');
-            
-            rowEncabezado.innerHTML = `
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: 600; font-size: 0.9rem; vertical-align: top;">
-                    ${badge}
-                    ${tecnicasTexto}
+            row.innerHTML = `
+                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
+                    ${tecnicasHTML}
                 </td>
                 <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
-                    <strong>${prenda.nombre_prenda}</strong>
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
-                    ${ubicacionesText}
+                    <strong>${nombrePrenda}</strong>
                 </td>
                 <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: top;">
-                    ${prenda.observaciones || '-'}
+                    ${datosGrupo.observaciones || '-'}
                 </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: top;"></td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;"></td>
                 <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: top;"></td>
                 <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: top;">
-                    <button class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}" 
-                            style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;"
-                            onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
-                            onmouseout="this.style.background='none'; this.style.color='#999'"
-                            title="Eliminar técnicas combinadas">
-                        ✕
-                    </button>
-                </td>
-            `;
-            
-            tbody.appendChild(rowEncabezado);
-            rowIndex++;
-            
-            // FILAS DE DETALLES (una por técnica, con sus propias tallas)
-            grupoItems.forEach(({ tecnica, tecnicaIndex }) => {
-                tecnica.prendas.forEach((prenda) => {
-                    const tallasArray = Array.isArray(prenda.talla_cantidad) ? prenda.talla_cantidad : [];
-                    
-                    if (tallasArray.length === 0) {
-                        // Sin tallas (no debería pasar en técnicas combinadas)
-                        const row = document.createElement('tr');
-                        const isEven = rowIndex % 2 === 0;
-                        row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee; transition: background 0.2s;`;
-                        row.addEventListener('mouseover', function() { this.style.background = '#f5f5f5'; });
-                        row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
-                        
-                        row.innerHTML = `
-                            <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: 600; font-size: 0.9rem; vertical-align: middle;">
-                                <span style="color: ${tecnica.tipo_logo.color}; font-weight: 600; font-size: 0.9rem;">${tecnica.tipo_logo.nombre}</span>
-                            </td>
-                            <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;"></td>
-                            <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;"></td>
-                            <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: middle;"></td>
-                            <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;"></td>
-                            <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: middle;"></td>
-                            <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: middle;"></td>
-                        `;
-                        
-                        tbody.appendChild(row);
-                        rowIndex++;
-                    } else {
-                        // Con tallas: una fila por talla
-                        tallasArray.forEach((tc, tcIdx) => {
-                            const row = document.createElement('tr');
-                            const isEven = rowIndex % 2 === 0;
-                            row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee; transition: background 0.2s;`;
-                            row.addEventListener('mouseover', function() { this.style.background = '#f5f5f5'; });
-                            row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
-                            
-                            // Obtener imágenes para esta técnica
-                            const imagenHTML = prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0 ? 
-                                `<div style="display: flex; gap: 4px; align-items: center;">
-                                    <img src="${prenda.imagenes_data_urls[0]}" style="max-width: 80px; max-height: 60px; object-fit: contain; border-radius: 4px;" title="Primera imagen" />
-                                    ${prenda.imagenes_data_urls.length > 1 ? `<span style="font-size: 0.8rem; color: #666; font-weight: 500;">${prenda.imagenes_data_urls.length}/3</span>` : ''}
-                                </div>` : '-';
-                            
-                            row.innerHTML = `
-                                <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: 600; font-size: 0.9rem; vertical-align: middle;">
-                                    <span style="color: ${tecnica.tipo_logo.color}; font-weight: 600; font-size: 0.9rem;">${tecnica.tipo_logo.nombre}</span>
-                                </td>
-                                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;"></td>
-                                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;"></td>
-                                <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: middle;"></td>
-                                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: middle;">
-                                    ${imagenHTML}
-                                </td>
-                                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: left; font-weight: 500; font-size: 0.9rem; vertical-align: middle;">
-                                    ${tc.talla || '-'}
-                                </td>
-                                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-weight: 500; font-size: 0.9rem; vertical-align: middle;">
-                                    ${tc.cantidad || '-'}
-                                </td>
-                                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: middle;"></td>
-                            `;
-                            
-                            tbody.appendChild(row);
-                            rowIndex++;
-                        });
-                    }
-                });
-            });
-        } else {
-            // TÉCNICA INDIVIDUAL: renderizar normalmente
-            const { tecnica, tecnicaIndex } = grupoItems[0];
-            const prenda = tecnica.prendas[0];
-            const ubicacionesText = Array.isArray(prenda.ubicaciones) ? prenda.ubicaciones.join(', ') : prenda.ubicaciones;
-            const tallasArray = Array.isArray(prenda.talla_cantidad) ? prenda.talla_cantidad : [];
-            
-            if (tallasArray.length === 0) {
-                const row = document.createElement('tr');
-                const isEven = rowIndex % 2 === 0;
-                row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee; transition: background 0.2s;`;
-                row.addEventListener('mouseover', function() { this.style.background = '#f3f4f6'; });
-                row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
-                
-                const tecnicasTexto = `<span style="color: ${tecnica.tipo_logo.color}; font-weight: 600; font-size: 0.9rem;">${tecnica.tipo_logo.nombre}</span>`;
-                
-                // Obtener imágenes para esta técnica individual
-                const imagenHTMLIndividual = prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0 ? 
-                    `<div style="display: flex; gap: 4px; align-items: center;">
-                        <img src="${prenda.imagenes_data_urls[0]}" style="max-width: 80px; max-height: 60px; object-fit: contain; border-radius: 4px;" title="Primera imagen" />
-                        ${prenda.imagenes_data_urls.length > 1 ? `<span style="font-size: 0.8rem; color: #666; font-weight: 500;">${prenda.imagenes_data_urls.length}/3</span>` : ''}
-                    </div>` : '-';
-                
-                row.innerHTML = `
-                    <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: 600; font-size: 0.9rem; vertical-align: middle;">
-                        ${tecnicasTexto}
-                    </td>
-                    <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;">
-                        <strong>${prenda.nombre_prenda}</strong>
-                    </td>
-                    <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;">
-                        ${ubicacionesText}
-                    </td>
-                    <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: middle;">
-                        ${prenda.observaciones || '-'}
-                    </td>
-                    <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: middle;">
-                        ${imagenHTMLIndividual}
-                    </td>
-                    <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: middle;"></td>
-                    <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: middle;">
-                        <button class="btn btn-danger btn-sm" onclick="eliminarTecnica(${tecnicaIndex})" 
-                                style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;"
+                    <div style="display: flex; gap: 4px; justify-content: center;">
+                        <button class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
+                                style="background: none; color: #0066cc; border: 1px solid #0066cc; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
+                                onmouseover="this.style.background='#0066cc'; this.style.color='white'" 
+                                onmouseout="this.style.background='none'; this.style.color='#0066cc'"
+                                title="Editar técnica(s)">
+                            ✎
+                        </button>
+                        <button class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
+                                style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
                                 onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
                                 onmouseout="this.style.background='none'; this.style.color='#999'"
-                                title="Eliminar técnica">
+                                title="Eliminar técnica(s)">
                             ✕
                         </button>
-                    </td>
-                `;
-                
-                tbody.appendChild(row);
-                rowIndex++;
-            } else {
-                // Técnica individual con múltiples tallas
-                tallasArray.forEach((tc, tcIndex) => {
-                    const row = document.createElement('tr');
-                    const isEven = rowIndex % 2 === 0;
-                    row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee; transition: background 0.2s;`;
-                    row.addEventListener('mouseover', function() { this.style.background = '#f3f4f6'; });
-                    row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
-                    
-                    const mostrarDetalles = tcIndex === 0;
-                    const tecnicasTexto = `<span style="color: ${tecnica.tipo_logo.color}; font-weight: 600; font-size: 0.9rem;">${tecnica.tipo_logo.nombre}</span>`;
-                    
-                    row.innerHTML = `
-                        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: 600; font-size: 0.9rem; vertical-align: ${mostrarDetalles ? 'top' : 'middle'};">
-                            ${tecnicasTexto}
-                        </td>
-                        <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: ${mostrarDetalles ? 'top' : 'middle'};">
-                            ${mostrarDetalles ? `<strong>${prenda.nombre_prenda}</strong>` : ''}
-                        </td>
-                        <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: ${mostrarDetalles ? 'top' : 'middle'};">
-                            ${mostrarDetalles ? ubicacionesText : ''}
-                        </td>
-                        <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: ${mostrarDetalles ? 'top' : 'middle'};">
-                            ${mostrarDetalles ? (prenda.observaciones || '-') : ''}
-                        </td>
-                        <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: ${mostrarDetalles ? 'top' : 'middle'};">
-                            ${mostrarDetalles ? (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0 ? 
-                                `<div style="display: flex; gap: 4px; align-items: center;">
-                                    <img src="${prenda.imagenes_data_urls[0]}" style="max-width: 80px; max-height: 60px; object-fit: contain; border-radius: 4px;" title="Primera imagen" />
-                                    ${prenda.imagenes_data_urls.length > 1 ? `<span style="font-size: 0.8rem; color: #666; font-weight: 500;">${prenda.imagenes_data_urls.length}/3</span>` : ''}
-                                </div>` : '-') : ''}
-                        </td>
-                        <td style="padding: 10px 12px; border: 1px solid #eee; text-align: left; font-weight: 500; font-size: 0.9rem; vertical-align: middle;">
-                            ${tc.talla || '-'}
-                        </td>
-                        <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-weight: 500; font-size: 0.9rem; vertical-align: middle;">
-                            ${tc.cantidad || '-'}
-                        </td>
-                        <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: ${mostrarDetalles ? 'top' : 'middle'};">
-                            ${mostrarDetalles ? `<button class="btn btn-danger btn-sm" onclick="eliminarTecnica(${tecnicaIndex})" 
-                                    style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;"
-                                    onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
-                                    onmouseout="this.style.background='none'; this.style.color='#999'"
-                                    title="Eliminar técnica">
-                                ✕
-                            </button>` : ''}
-                        </td>
-                    `;
-                    
-                    tbody.appendChild(row);
-                    rowIndex++;
-                });
-            }
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+            rowIndex++;
+        } else {
+            // Con tallas: UNA SOLA fila con todas las tallas listadas
+            const row = document.createElement('tr');
+            const isEven = rowIndex % 2 === 0;
+            row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee;`;
+            row.addEventListener('mouseover', function() { this.style.background = '#f3f4f6'; });
+            row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
+            
+            // Construir lista de tallas y cantidades
+            const tallasTexto = tallasArray.map(tc => `<div style="margin: 4px 0; padding: 4px; background: #f0f0f0; border-radius: 3px; font-size: 0.85rem;"><strong>${tc.talla}</strong>: ${tc.cantidad}</div>`).join('');
+            
+            row.innerHTML = `
+                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
+                    ${tecnicasHTML}
+                </td>
+                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
+                    <strong>${nombrePrenda}</strong>
+                </td>
+                <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: top;">
+                    ${datosGrupo.observaciones || '-'}
+                </td>
+                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
+                    ${tallasTexto}
+                </td>
+                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: top;">
+                    <div style="display: flex; gap: 4px; justify-content: center;">
+                        <button class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
+                                style="background: none; color: #0066cc; border: 1px solid #0066cc; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
+                                onmouseover="this.style.background='#0066cc'; this.style.color='white'" 
+                                onmouseout="this.style.background='none'; this.style.color='#0066cc'"
+                                title="Editar técnica(s)">
+                            ✎
+                        </button>
+                        <button class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
+                                style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
+                                onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
+                                onmouseout="this.style.background='none'; this.style.color='#999'"
+                                title="Eliminar técnica(s)">
+                            ✕
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+            rowIndex++;
         }
     });
     
     tabla.appendChild(tbody);
     container.appendChild(tabla);
+    
+    console.log('✅ [renderizarTecnicasAgregadas] COMPLETADO - Tabla renderizada por PRENDA');
+    
+    // Agregar event listeners para botones de editar grupo
+    document.querySelectorAll('.btn-editar-grupo').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const grupoId = this.getAttribute('data-grupo-id');
+            editarTecnicaDelGrupo(grupoId);
+        });
+    });
     
     // Agregar event listeners para botones de eliminar grupo
     document.querySelectorAll('.btn-eliminar-grupo').forEach(btn => {
@@ -2015,6 +2041,35 @@ function eliminarTecnicaTemporal(tecnicaIndex) {
     tecnicasAgregadas.splice(tecnicaIndex, 1);
     console.log('✅ Técnica eliminada de lista temporal');
     renderizarTecnicasAgregadas();
+}
+
+function editarTecnicaDelGrupo(grupoId) {
+    // Encontrar las técnicas de este grupo
+    const tecnicasDelGrupo = tecnicasAgregadas.filter(t => {
+        if (grupoId.startsWith('individual-')) {
+            const idx = parseInt(grupoId.split('-')[1]);
+            return tecnicasAgregadas.indexOf(t) === idx;
+        } else {
+            return t.grupo_combinado === grupoId || (grupoId.includes(t.grupo_combinado));
+        }
+    });
+    
+    if (tecnicasDelGrupo.length === 0) {
+        console.error('No se encontraron técnicas para editar');
+        return;
+    }
+    
+    console.log('🔧 Editando grupo:', grupoId, tecnicasDelGrupo);
+    
+    // Mostrar modal de edición
+    Swal.fire({
+        icon: 'info',
+        title: 'Editar técnica(s)',
+        text: 'Funcionalidad de edición en desarrollo',
+        confirmButtonText: 'OK'
+    });
+    
+    // TODO: Implementar formulario de edición completo
 }
 
 function eliminarTecnicaDelGrupo(grupoId) {
