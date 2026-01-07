@@ -8,9 +8,6 @@
         const mobileToggle = document.getElementById('mobileToggle');
         const sidebarEl = document.getElementById('sidebar');
 
-        // Debuggging
-        console.log('🔵 Top-Nav inicializando:', { userBtn: !!userBtn, userMenu: !!userMenu, notificationBtn: !!notificationBtn });
-
         // Nota: El toggle del menú de notificaciones se maneja en notifications.js
         // para asegurar que cargue las notificaciones correctamente
 

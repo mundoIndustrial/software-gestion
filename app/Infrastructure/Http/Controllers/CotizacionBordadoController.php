@@ -61,9 +61,32 @@ class CotizacionBordadoController extends Controller
                 'estado' => 'borrador'
             ]);
             
+            // IMPORTANTE: Crear también el LogoCotizacion asociado
+            $logoCotizacion = \App\Models\LogoCotizacion::create([
+                'cotizacion_id' => $cotizacion->id,
+                'descripcion' => '',
+                'tecnicas' => json_encode([]),
+                'observaciones_tecnicas' => '',
+                'secciones' => json_encode([]),
+                'observaciones_generales' => '',
+                'imagenes' => json_encode([]),
+                'tipo_venta' => null
+            ]);
+            
+            // ✅ IMPORTANTE: Recargar la relación para que $cotizacion->logoCotizacion esté disponible en la vista
+            $cotizacion = $cotizacion->fresh();
+            
             Log::info('✨ Nueva cotización creada para bordado', [
                 'cotizacion_id' => $cotizacion->id,
-                'asesor_id' => Auth::id()
+                'asesor_id' => Auth::id(),
+                'logo_cotizacion_creado' => 'SI',
+                'logo_cotizacion_id' => $logoCotizacion->id
+            ]);
+            
+            Log::info('✨ Nueva cotización creada para bordado', [
+                'cotizacion_id' => $cotizacion->id,
+                'asesor_id' => Auth::id(),
+                'logo_cotizacion_creado' => 'SI'
             ]);
         }
 
@@ -530,25 +553,56 @@ class CotizacionBordadoController extends Controller
                     'numero_cotizacion' => $numeroCotizacion,
                 ]);
 
-                // Guardar detalles en tabla logo_cotizaciones
-                // Usar modelo LogoCotizacion para que aplique los casts correctamente
-                $logoCotizacion = \App\Models\LogoCotizacion::updateOrCreate(
-                    ['cotizacion_id' => $cotizacion->id],
-                    [
-                        'descripcion' => $request->input('descripcion', ''),
-                        'tecnicas' => $tecnicas,  // El modelo aplicará json_encode automáticamente
-                        'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                        'secciones' => $secciones,  // El modelo aplicará json_encode automáticamente
-                        'observaciones_generales' => $observacionesGenerales,  // El modelo aplicará json_encode automáticamente
-                        'imagenes' => [],  // El modelo aplicará json_encode automáticamente
-                        'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
-                    ]
-                );
+                // ✅ CORRECCIÓN: Obtener el LogoCotizacion que vino en el formulario (creado en create.blade.php)
+                // NO crear uno nuevo, sino reutilizar el que ya existe y vincular la cotización a él
+                $logoCotizacionId = $request->input('logoCotizacionId');
+                
+                Log::info('🔍 DEBUG logoCotizacionId', [
+                    'logoCotizacionId_recibido' => $logoCotizacionId,
+                    'tipo' => gettype($logoCotizacionId),
+                    'es_vacio' => empty($logoCotizacionId),
+                    'todos_los_inputs' => array_keys($request->all())
+                ]);
+                
+                $logoCotizacion = null;
+                if ($logoCotizacionId) {
+                    // Si hay logoCotizacionId en el formulario, usarlo (ya tiene técnicas agregadas)
+                    $logoCotizacion = \App\Models\LogoCotizacion::find($logoCotizacionId);
+                    Log::info('📍 Reutilizando LogoCotizacion existente', [
+                        'logoCotizacionId' => $logoCotizacionId,
+                        'encontrado' => $logoCotizacion ? 'SI' : 'NO'
+                    ]);
+                }
+                
+                // Si no existe el LogoCotizacion, crear uno nuevo
+                if (!$logoCotizacion) {
+                    $logoCotizacion = \App\Models\LogoCotizacion::create([
+                        'cotizacion_id' => $cotizacion->id
+                    ]);
+                    Log::info('🆕 LogoCotizacion creado nuevo', ['logo_id' => $logoCotizacion->id]);
+                }
+                
+                // IMPORTANTE: Vincular la cotización al LogoCotizacion (actualizar cotizacion_id)
+                $logoCotizacion->update(['cotizacion_id' => $cotizacion->id]);
+                
+                // Actualizar datos del LogoCotizacion (preserve técnicas existentes)
+                $datosActualizar = [
+                    'descripcion' => $request->input('descripcion', ''),
+                    'tecnicas' => $tecnicas,  // El modelo aplicará json_encode automáticamente
+                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
+                    'secciones' => $secciones,  // El modelo aplicará json_encode automáticamente
+                    'observaciones_generales' => $observacionesGenerales,  // El modelo aplicará json_encode automáticamente
+                    'imagenes' => [],  // El modelo aplicará json_encode automáticamente
+                    'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
+                ];
+                
+                $logoCotizacion->update($datosActualizar);
 
                 Log::info('✅ Detalles de bordado guardados en tabla logo_cotizaciones', [
                     'cotizacion_id' => $cotizacion->id,
                     'logo_id' => $logoCotizacion->id,
-                    'accion' => 'updateOrCreate'
+                    'accion' => 'actualizado',
+                    'técnicas_preservadas' => true
                 ]);
 
                 // Procesar imágenes si existen

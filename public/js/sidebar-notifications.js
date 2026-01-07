@@ -37,8 +37,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Actualizar cada 30 segundos
     setInterval(updateCotizacionesPendientesAprobador, 30000);
-    
-    console.log('✅ Notificaciones del sidebar inicializadas');
 });
 
 /**

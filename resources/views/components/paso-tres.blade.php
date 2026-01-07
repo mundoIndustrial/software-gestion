@@ -231,12 +231,11 @@ function agregarSeccion() {
 
     errorDiv.style.display = 'none';
 
-    abrirModalUbicaciones(ubicacion, [], [], (nuevasUbicaciones, tallas, obs) => {
-        console.log('🎯 CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, tallas, obs});
+    abrirModalUbicaciones(ubicacion, [], (nuevasUbicaciones, obs) => {
+        console.log('🎯 CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
         seccionesSeleccionadas.push({
             ubicacion: ubicacion,
             opciones: nuevasUbicaciones,
-            tallas: tallas,
             observaciones: obs
         });
         console.log('✅ Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
@@ -252,11 +251,10 @@ window.editarSeccion = function(index) {
     const seccion = seccionesSeleccionadas[index];
     if (!seccion) return;
 
-    abrirModalUbicaciones(seccion.ubicacion, seccion.opciones, seccion.tallas || [], (nuevasUbicaciones, tallas, obs) => {
+    abrirModalUbicaciones(seccion.ubicacion, seccion.opciones, (nuevasUbicaciones, obs) => {
         seccionesSeleccionadas[index] = {
             ...seccion,
             opciones: nuevasUbicaciones,
-            tallas: tallas,
             observaciones: obs
         };
         opcionesPorUbicacion[seccion.ubicacion] = nuevasUbicaciones;
@@ -276,16 +274,14 @@ function cerrarModalUbicacion(modalId) {
     if (modal) modal.remove();
 }
 
-function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, onSave, observacionesIniciales = '') {
+function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacionesIniciales = '') {
     console.log('🎬 PASO-TRES - abrirModalUbicaciones iniciado');
     console.log('📌 prenda:', prenda);
     console.log('📌 ubicacionesIniciales:', ubicacionesIniciales);
-    console.log('📌 tallasIniciales:', tallasIniciales);
     console.log('📌 observacionesIniciales:', observacionesIniciales);
     console.log('📌 todasLasUbicaciones:', todasLasUbicaciones);
     
     let ubicacionesSeleccionadasModal = [...ubicacionesIniciales];
-    let tallasModal = [...tallasIniciales];
 
     const modalId = 'modalUbicaciones';
 
@@ -300,22 +296,6 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, on
                 </div>
                 
                 <div style="overflow-y: auto; padding: 1.5rem;">
-                    <!-- Tallas y Cantidades -->
-                    <div id="tallas-section-container" style="margin-bottom: 1.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <label style="font-weight: 600; color: #333;">Tallas y Cantidades:</label>
-                            <button type="button" id="btn-tallas-na" style="background: #7f8c8d; color: white; border: none; border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.7rem; cursor: pointer;">No Aplica</button>
-                        </div>
-                        <div id="tallas-content">
-                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                                <input type="text" id="talla-input" placeholder="Talla" style="width: 50%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase()">
-                                <input type="number" id="cantidad-input" placeholder="Cantidad" style="width: 40%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                                <button type="button" id="btn-add-talla" style="background: #27ae60; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">+</button>
-                            </div>
-                            <div id="tallas-container" style="display: flex; flex-direction: column; gap: 6px; border: 1px solid #eee; padding: 0.5rem; border-radius: 4px; min-height: 40px;"></div>
-                        </div>
-                    </div>
-
                     <!-- Ubicaciones -->
                     <div id="ubicaciones-section-container" style="margin-bottom: 1.5rem;">
                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
@@ -355,83 +335,6 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, on
         option.value = op;
         datalist.appendChild(option);
     });
-
-    // Tallas
-    const tallasContent = document.getElementById('tallas-content');
-    const btnTallasNA = document.getElementById('btn-tallas-na');
-    const tallaInput = document.getElementById('talla-input');
-    const cantidadInput = document.getElementById('cantidad-input');
-    const addTallaButton = document.getElementById('btn-add-talla');
-
-    btnTallasNA.addEventListener('click', () => {
-        const isApplied = tallasContent.style.display !== 'none';
-        if (isApplied) {
-            tallasContent.style.display = 'none';
-            btnTallasNA.textContent = 'Aplica';
-            btnTallasNA.style.background = '#27ae60';
-            tallasModal = []; // Limpiar datos
-            renderTallas();
-        } else {
-            tallasContent.style.display = 'block';
-            btnTallasNA.textContent = 'No Aplica';
-            btnTallasNA.style.background = '#7f8c8d';
-        }
-    });
-
-    const renderTallas = () => {
-        const container = document.getElementById('tallas-container');
-        container.innerHTML = '';
-        tallasModal.forEach((talla, index) => {
-            const item = document.createElement('div');
-            item.style.cssText = 'background: #e8f8f5; padding: 0.4rem 0.6rem; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;';
-
-            const tallaInput = document.createElement('input');
-            tallaInput.type = 'text';
-            tallaInput.value = talla.talla;
-            tallaInput.placeholder = 'Talla';
-            tallaInput.style.cssText = 'width: 50%; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;';
-            tallaInput.addEventListener('input', (e) => {
-                tallasModal[index].talla = e.target.value.trim().toUpperCase();
-            });
-
-            const cantidadInput = document.createElement('input');
-            cantidadInput.type = 'number';
-            cantidadInput.value = talla.cantidad;
-            cantidadInput.placeholder = 'Cant';
-            cantidadInput.style.cssText = 'width: 35%; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;';
-            cantidadInput.addEventListener('input', (e) => {
-                tallasModal[index].cantidad = parseInt(e.target.value, 10) || 0;
-            });
-
-            const deleteButton = document.createElement('button');
-            deleteButton.type = 'button';
-            deleteButton.innerHTML = '×';
-            deleteButton.style.cssText = 'background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0;';
-            deleteButton.addEventListener('click', () => {
-                tallasModal.splice(index, 1);
-                renderTallas();
-            });
-
-            item.appendChild(tallaInput);
-            item.appendChild(cantidadInput);
-            item.appendChild(deleteButton);
-            container.appendChild(item);
-        });
-    };
-
-    const agregarTalla = () => {
-        const talla = tallaInput.value.trim().toUpperCase();
-        const cantidad = parseInt(cantidadInput.value, 10);
-        if (talla && cantidad > 0) {
-            tallasModal.push({ talla, cantidad });
-            tallaInput.value = '';
-            cantidadInput.value = '';
-            renderTallas();
-            tallaInput.focus();
-        }
-    };
-
-    addTallaButton.addEventListener('click', agregarTalla);
 
     // Ubicaciones
     const ubicacionesContent = document.getElementById('ubicaciones-content');
@@ -517,15 +420,13 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, on
     saveButton.addEventListener('click', () => {
         console.log('🔵 BOTÓN GUARDAR PRESIONADO - Modal');
         console.log('📍 ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
-        console.log('📍 tallasModal:', tallasModal);
         console.log('📍 observaciones:', obsTextarea.value);
-        // Se eliminan las validaciones para permitir guardar aunque no apliquen tallas o ubicaciones.
-        onSave(ubicacionesSeleccionadasModal, tallasModal, obsTextarea.value);
+        // Pasar array vacío para tallas (ya no se manejan por ubicación)
+        onSave(ubicacionesSeleccionadasModal, [], obsTextarea.value);
         console.log('✅ onSave callback ejecutado');
     });
 
     renderizarUbicacionesSeleccionadas();
-    renderTallas();
 }
 
 function renderizarSecciones() {
@@ -554,14 +455,11 @@ function renderizarSecciones() {
             </div>
         `;
 
-        const tallasHtml = (seccion.tallas && seccion.tallas.length > 0)
-            ? `<strong>Tallas:</strong> ${seccion.tallas.map(t => `${t.talla} (${t.cantidad})`).join(', ')}<br>`
-            : '';
+        const tallasHtml = '';
 
         const content = document.createElement('div');
         content.style.fontSize = '0.8rem';
         content.innerHTML = `
-            ${tallasHtml}
             <strong>Ubicaciones:</strong> ${seccion.opciones.join(', ')}<br>
             ${seccion.observaciones ? `<strong>Obs:</strong> ${seccion.observaciones}` : ''}
         `;
@@ -659,11 +557,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             errorDiv.style.display = 'none';
 
-            abrirModalUbicaciones(ubicacion, [], [], (nuevasUbicaciones, tallas, obs) => {
+            abrirModalUbicaciones(ubicacion, [], (nuevasUbicaciones, obs) => {
                 seccionesSeleccionadas.push({
                     ubicacion: ubicacion,
                     opciones: nuevasUbicaciones,
-                    tallas: tallas,
                     observaciones: obs
                 });
                 opcionesPorUbicacion[ubicacion] = nuevasUbicaciones;

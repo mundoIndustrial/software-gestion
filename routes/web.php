@@ -563,6 +563,8 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('api/logo-cotizacion-te
     Route::get('cotizacion/{logoCotizacionId}', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'obtenerTecnicas'])->name('obtener');
     Route::delete('{tecnicaId}', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'eliminarTecnica'])->name('eliminar');
     Route::patch('{tecnicaId}/observaciones', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'actualizarObservaciones'])->name('actualizar-observaciones');
+    Route::get('prendas', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'obtenerPrendas'])->name('prendas');
+    Route::post('prendas', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'guardarPrenda'])->name('guardar-prenda');
 });
 
 // ========================================

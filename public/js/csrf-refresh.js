@@ -99,31 +99,12 @@
     
     /**
      * Muestra advertencia cuando la sesión está por expirar
+     * DESACTIVADA: El token se refresca automáticamente cada 30 minutos,
+     * por lo que la sesión nunca debería expirar
      */
     function showExpiryWarning() {
-        if (warningShown) return;
-        
-        warningShown = true;
-        
-        const timeRemaining = Math.ceil(CONFIG.WARNING_BEFORE_EXPIRY / 60000); // minutos
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: '⚠️ Sesión por expirar',
-                html: `Tu sesión expirará en <strong>${timeRemaining} minutos</strong>.<br>
-                       <small style="color: #666;">Guarda tu trabajo o haz clic en cualquier parte para extender la sesión.</small>`,
-                icon: 'warning',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#1e40af',
-                allowOutsideClick: false
-            }).then(() => {
-                // Al cerrar el modal, refrescar inmediatamente
-                refreshCsrfToken();
-                resetTimers();
-            });
-        } else {
-            console.warn('⚠️ ADVERTENCIA: Tu sesión expirará pronto. Guarda tu trabajo.');
-        }
+        // Advertencia desactivada - no es necesaria
+        return;
     }
     
     /**
@@ -189,10 +170,6 @@
             console.error('❌ Sistema de refresh CSRF no iniciado: meta tag no encontrado');
             return;
         }
-        
-        console.log('🔐 Sistema de refresh CSRF iniciado');
-        console.log('   ⏰ Refresh automático cada:', CONFIG.REFRESH_INTERVAL / 60000, 'minutos');
-        console.log('   ⚠️  Advertencia de expiración:', CONFIG.WARNING_BEFORE_EXPIRY / 60000, 'minutos antes');
         
         // Iniciar timers
         resetTimers();

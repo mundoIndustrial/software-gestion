@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LogoCotizacionTecnicaPrenda extends Model
 {
@@ -13,15 +14,15 @@ class LogoCotizacionTecnicaPrenda extends Model
         'logo_cotizacion_id',
         'tipo_logo_id',
         'nombre_prenda',
-        'descripcion',
+        'observaciones',
         'ubicaciones',
-        'tallas',
-        'cantidad_general',
+        'talla_cantidad',
+        'grupo_combinado',
     ];
 
     protected $casts = [
         'ubicaciones' => 'array',
-        'tallas' => 'array',
+        'talla_cantidad' => 'array',
     ];
 
     /**
@@ -39,7 +40,18 @@ class LogoCotizacionTecnicaPrenda extends Model
     {
         return $this->belongsTo(TipoLogoCotizacion::class, 'tipo_logo_id');
     }
-}
+
+    /**
+     * Relación: Tiene muchas fotos
+     */
+    public function fotos(): HasMany
+    {
+        return $this->hasMany(LogoCotizacionTecnicaPrendaFoto::class, 'logo_cotizacion_tecnica_prenda_id');
+    }
+
+    /**
+     * Obtener ubicaciones como string
+     */
     public function getUbicacionesTextAttribute()
     {
         $ubicaciones = $this->ubicaciones ?? [];

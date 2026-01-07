@@ -478,24 +478,22 @@ OR
             <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
             <input type="date" id="fecha" name="fecha" style="display: none;">
             <input type="text" id="tipo_venta_bordado" name="tipo_venta_bordado" style="display: none;">
-            <input type="hidden" id="logoCotizacionId" name="logoCotizacionId" value="{{ $cotizacion->id ?? '' }}">
+            <input type="hidden" id="logoCotizacionId" name="logoCotizacionId" value="{{ $cotizacion->logoCotizacion->id ?? '' }}">
 
             <!-- TÉCNICAS -->
             <div class="form-section">
                 <div class="tecnicas-box">
                     <h3 style="margin-bottom: 20px; color: #1e40af; font-weight: 600;">Técnicas</h3>
                     
-                    <!-- Selector de Técnica -->
+                    <!-- Selector de Técnicas (Checkboxes) -->
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Selecciona la técnica a aplicar:</label>
-                        <div style="display: flex; gap: 10px; align-items: flex-end;">
-                            <select id="selectTecnicanueva" style="flex: 1; padding: 10px 12px; border: 1px solid #ccc; border-radius: 0; font-size: 0.95rem; background: #fafafa; cursor: pointer; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23333%22 d=%22M0 0l6 8 6-8z%22/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 12px; padding-right: 35px;">
-                                <option value="">-- Selecciona una técnica --</option>
-                            </select>
-                            <button type="button" id="btnAgregarPrendas" onclick="abrirModalAgregarTecnica()" style="background: none; border: none; cursor: pointer; font-size: 1.8rem; color: #999; padding: 8px 16px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;" title="Selecciona una técnica primero" onmouseover="const sel = document.getElementById('selectTecnicanueva'); if(sel.value) { this.style.color='#1530a8'; this.style.transform='scale(1.1)'; } " onmouseout="const sel = document.getElementById('selectTecnicanueva'); if(sel.value) { this.style.color='#1e40af'; } else { this.style.color='#999'; } this.style.transform='scale(1)';">
-                                <i class="fas fa-plus-circle"></i>
-                            </button>
+                        <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Selecciona las técnicas a aplicar:</label>
+                        <div id="tecnicas-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 15px;">
+                            <!-- Se llenan dinámicamente con renderizarCheckboxesTecnicas() -->
                         </div>
+                        <button type="button" id="btnAgregarPrendas" onclick="abrirModalAgregarTecnica()" style="background: #1e40af; color: white; border: none; cursor: pointer; padding: 10px 20px; border-radius: 4px; font-weight: 600; transition: background 0.2s ease;" title="Agregar prendas para las técnicas seleccionadas">
+                            <i class="fas fa-plus"></i> Agregar Prendas
+                        </button>
                     </div>
                     
                     <!-- Lista de Prendas Agregadas por Técnica -->
@@ -503,24 +501,8 @@ OR
                     
                     <!-- Sin Técnicas -->
                     <div id="sin_tecnicas" style="padding: 20px; text-align: center; background: #f5f5f5; border-radius: 8px; color: #999; display: block;">
-                        <p>Selecciona una técnica y agrega prendas</p>
+                        <p>Selecciona técnicas y agrega prendas</p>
                     </div>
-                </div>
-            </div>
-
-            <!-- IMÁGENES -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-images"></i> IMÁGENES (MÁXIMO 5)
-                </div>
-                <div class="form-group-large">
-                    <div class="drop-zone" id="drop_zone_imagenes">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>ARRASTRA IMÁGENES AQUÍ O HAZ CLIC</p>
-                        <p class="drop-zone-small">Máximo 5 imágenes</p>
-                        <input type="file" id="imagenes_bordado" name="imagenes_bordado[]" accept="image/*" multiple style="display: none;">
-                    </div>
-                    <div class="galeria-imagenes" id="galeria_imagenes"></div>
                 </div>
             </div>
 
@@ -584,7 +566,8 @@ let todasLasUbicaciones = [
     'FRENTE', 'LATERAL', 'TRASERA'
 ];
 
-// Drag and drop para imágenes
+// Drag and drop para imágenes - ELIMINADO (imágenes manejadas en modal de técnicas)
+/*
 const dropZone = document.getElementById('drop_zone_imagenes');
 const inputImagenes = document.getElementById('imagenes_bordado');
 
@@ -630,26 +613,6 @@ function manejarImagenes(files) {
     });
 }
 
-function renderizarImagenes() {
-    const galeria = document.getElementById('galeria_imagenes');
-    galeria.innerHTML = '';
-    
-    imagenesSeleccionadas.forEach((img, index) => {
-        const div = document.createElement('div');
-        div.className = 'imagen-item';
-        div.innerHTML = `
-            <img src="${img.preview}" alt="Imagen ${index + 1}">
-            <button type="button" class="remove" onclick="eliminarImagen(${index})">×</button>
-        `;
-        galeria.appendChild(div);
-    });
-}
-
-function eliminarImagen(index) {
-    const imagenAEliminar = imagenesSeleccionadas[index];
-    
-    console.log('🗑️ Eliminando imagen:', imagenAEliminar);
-    
     // Si es una imagen existente (tiene ID), borrarla inmediatamente de la BD
     if (imagenAEliminar.existing && imagenAEliminar.id) {
         console.log('🗑️ Borrando imagen de la BD:', imagenAEliminar.id);
@@ -689,6 +652,7 @@ function eliminarImagen(index) {
     
     renderizarImagenes();
 }
+*/
 
 // Técnicas
 function agregarTecnica() {
@@ -735,6 +699,12 @@ function agregarTecnica() {
 
 function renderizarTecnicas() {
     const container = document.getElementById('tecnicas_seleccionadas');
+    
+    // Si el contenedor no existe, no hacer nada (no es crítico)
+    if (!container) {
+        return;
+    }
+    
     container.innerHTML = '';
     
     tecnicasSeleccionadas.forEach((tecnica, index) => {
@@ -805,6 +775,19 @@ document.getElementById('header-fecha').addEventListener('change', function() {
 document.getElementById('cotizacionBordadoForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // PRIMERO: Guardar todas las técnicas temporales en BD
+    console.log('💾 Guardando técnicas temporales...');
+    const tecnicasGuardadas = await guardarTecnicasEnBD();
+    if (!tecnicasGuardadas) {
+        console.error('❌ Error al guardar técnicas');
+        document.querySelectorAll('button[type="submit"]').forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        });
+        return;
+    }
+
     // Detectar cuál botón se presionó PRIMERO
     const submitButton = e.submitter;
     if (!submitButton) {
@@ -819,13 +802,22 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         btn.style.cursor = 'not-allowed';
     });
 
-    // Sincronizar valores del header antes de enviar
-    document.getElementById('cliente').value = document.getElementById('header-cliente').value;
-    document.getElementById('fecha').value = document.getElementById('header-fecha').value;
+    // Sincronizar valores del header antes de enviar (con verificación)
+    const headerCliente = document.getElementById('header-cliente');
+    const headerFecha = document.getElementById('header-fecha');
+    const clienteInput = document.getElementById('cliente');
+    const fechaInput = document.getElementById('fecha');
 
-    const cliente = document.getElementById('cliente').value;
-    const asesora = document.getElementById('asesora').value;
-    const observacionesTecnicas = document.getElementById('observaciones_tecnicas').value;
+    if (headerCliente && clienteInput) {
+        clienteInput.value = headerCliente.value;
+    }
+    if (headerFecha && fechaInput) {
+        fechaInput.value = headerFecha.value;
+    }
+
+    const cliente = clienteInput?.value || '';
+    const asesora = document.getElementById('asesora')?.value || '';
+    const observacionesTecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
 
     console.log('📋 Valores sincronizados:', {
         cliente: cliente,
@@ -888,16 +880,22 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     });
 
     // Preparar datos como JSON
+    const tokenInput = document.querySelector('input[name="_token"]');
+    const headerFechaElement = document.getElementById('header-fecha');
+    const headerTipoVentaElement = document.getElementById('header-tipo-venta');
+    const logoCotizacionIdElement = document.getElementById('logoCotizacionId');
+    
     const data = {
-        _token: document.querySelector('input[name="_token"]').value,
+        _token: tokenInput?.value || '',
         cliente: cliente,
         asesora: asesora,
-        fecha: document.getElementById('header-fecha').value,
+        fecha: headerFechaElement?.value || '',
         action: action,
         observaciones_tecnicas: observacionesTecnicas,
         tecnicas: tecnicasSeleccionadas,
         observaciones_generales: observacionesDelDOM,
-        tipo_venta_bordado: document.getElementById('header-tipo-venta').value
+        tipo_venta_bordado: headerTipoVentaElement?.value || '',
+        logoCotizacionId: logoCotizacionIdElement?.value || ''  // ✅ AGREGAR ESTE CAMPO
     };
 
     console.log('📦 Datos a enviar:', data);
@@ -1042,7 +1040,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
 document.addEventListener('DOMContentLoaded', function() {
     // Cargar datos del borrador si existe (antes de cualquier limpieza)
     @if(isset($cotizacion) && $cotizacion)
-        console.log('🔄 Iniciando carga de datos del borrador...');
         cargarDatosBorrador(@json($cotizacion));
     @endif
 
@@ -1059,7 +1056,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             localStorage.setItem('cotizacion_bordado_datos', JSON.stringify(datos));
-            console.log('💾 Datos bordado guardados en localStorage');
         } catch (error) {
             console.error('❌ Error al guardar bordado:', error);
         }
@@ -1072,19 +1068,12 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('beforeunload', function() {
         guardarBordadoEnStorage();
     });
-
-    console.log('⏱️ Auto-guardado bordado configurado (cada 5 segundos)');
 });
 
 // Función para cargar datos del borrador
 function cargarDatosBorrador(cotizacion) {
-    console.log('📥 Cargando datos del borrador:', cotizacion);
-
     try {
         // Cargar cliente
-        console.log('👤 Cliente en cotizacion:', cotizacion.cliente);
-        console.log('👤 Tipo de cliente:', typeof cotizacion.cliente);
-        
         let nombreCliente = null;
         
         // Manejar si cliente es un objeto con propiedad nombre
@@ -1101,7 +1090,6 @@ function cargarDatosBorrador(cotizacion) {
             document.getElementById('header-cliente').value = nombreCliente;
             document.getElementById('cliente').value = nombreCliente;
         } else {
-            console.log('⚠️ No se encontró cliente en cotizacion');
         }
 
 
@@ -1112,7 +1100,6 @@ function cargarDatosBorrador(cotizacion) {
                 : cotizacion.logo_cotizacion.tecnicas;
 
             if (Array.isArray(tecnicas)) {
-                console.log('🎨 Técnicas encontradas:', tecnicas);
                 tecnicasSeleccionadas = tecnicas;
                 // Renderizar las técnicas seleccionadas
                 renderizarTecnicas();
@@ -1125,10 +1112,7 @@ function cargarDatosBorrador(cotizacion) {
 
         // Cargar observaciones técnicas
         if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.observaciones_tecnicas) {
-            console.log('📝 Observaciones técnicas encontradas:', cotizacion.logo_cotizacion.observaciones_tecnicas);
             document.getElementById('observaciones_tecnicas').value = cotizacion.logo_cotizacion.observaciones_tecnicas;
-        } else {
-            console.log('⚠️ No se encontraron observaciones técnicas');
         }
 
         // Cargar tipo_venta
@@ -1136,8 +1120,6 @@ function cargarDatosBorrador(cotizacion) {
             console.log('💰 Tipo venta encontrado:', cotizacion.logo_cotizacion.tipo_venta);
             document.getElementById('header-tipo-venta').value = cotizacion.logo_cotizacion.tipo_venta;
             document.getElementById('tipo_venta_bordado').value = cotizacion.logo_cotizacion.tipo_venta;
-        } else {
-            console.log('⚠️ No se encontró tipo_venta en logo_cotizacion');
         }
 
         // Cargar observaciones generales
@@ -1154,19 +1136,14 @@ function cargarDatosBorrador(cotizacion) {
         }
 
         // Cargar imágenes si existen
-        console.log('📸 Fotos en logo_cotizacion:', cotizacion.logo_cotizacion?.fotos);
         if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.fotos && Array.isArray(cotizacion.logo_cotizacion.fotos)) {
-            console.log('📸 Cargando imágenes existentes:', cotizacion.logo_cotizacion.fotos.length);
-            
-            // NO limpiar imagenesSeleccionadas, solo agregar las nuevas
-            // Esto preserva cualquier imagen nueva que el usuario haya agregado
+            // Cargar imágenes existentes
             const imagenesNuevas = [];
             
             cotizacion.logo_cotizacion.fotos.forEach(foto => {
                 if (foto.ruta_original) {
                     // Crear preview de imagen existente - usar el accessor 'url' si existe
                     const previewUrl = foto.url || ('/storage/' + (foto.ruta_miniatura || foto.ruta_original));
-                    console.log('📸 Agregando imagen existente:', foto.id, previewUrl);
                     imagenesNuevas.push({
                         preview: previewUrl,
                         existing: true,
@@ -1182,12 +1159,8 @@ function cargarDatosBorrador(cotizacion) {
             // Se mantiene para rastrear imágenes que el usuario quiera borrar
             
             console.log('📸 Total imágenes cargadas:', imagenesSeleccionadas.length);
-            console.log('📸 imagenesSeleccionadas después de cargar:', imagenesSeleccionadas);
-            console.log('📸 imagenesABorrar preservado:', imagenesABorrar);
             renderizarImagenes();
         }
-
-        console.log('✅ Datos del borrador cargados correctamente');
 
     } catch (error) {
         console.error('❌ Error al cargar datos del borrador:', error);
@@ -1236,39 +1209,39 @@ function agregarObservacionDesdeBorrador(obs) {
 
 <!-- MODAL PARA AGREGAR PRENDAS CON TÉCNICA SELECCIONADA -->
 <div id="modalAgregarTecnica" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; padding: 30px; max-width: 700px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+    <div style="background: white; border-radius: 8px; padding: 24px; max-width: 650px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         
         <!-- Header del Modal -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
             <div>
-                <h2 style="margin: 0; font-size: 1.5rem; color: #1e40af;">Agregar Prendas</h2>
-                <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9rem;">Técnica seleccionada: <strong id="tecnicaSeleccionadaNombre">--</strong></p>
+                <h2 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: #333;">Agregar Prendas</h2>
+                <p style="margin: 8px 0 0 0; color: #666; font-size: 0.85rem;">Técnica: <strong id="tecnicaSeleccionadaNombre" style="color: #333;">--</strong></p>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" onclick="agregarFilaPrenda()" style="background: #1e40af; color: white; border: none; font-size: 1.3rem; cursor: pointer; padding: 8px 12px; border-radius: 6px; line-height: 1; transition: background 0.2s;" title="Agregar prenda" onmouseover="this.style.background='#1530a8'" onmouseout="this.style.background='#1e40af'">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <button type="button" onclick="cerrarModalAgregarTecnica()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999; padding: 0; line-height: 1;">&times;</button>
-            </div>
+            <button type="button" onclick="cerrarModalAgregarTecnica()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #ccc; padding: 0; line-height: 1; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">&times;</button>
         </div>
         
         <!-- Lista de Prendas -->
-        <div id="listaPrendas" style="margin-bottom: 20px;">
+        <div id="listaPrendas" style="margin-bottom: 16px;">
             <!-- Prendas dinámicas aquí -->
         </div>
         
         <!-- Sin prendas -->
-        <div id="noPrendasMsg" style="padding: 20px; text-align: center; background: #f5f5f5; border-radius: 6px; color: #999; margin-bottom: 20px; display: block;">
-            <p>Agrega prendas haciendo clic en el botón de arriba</p>
+        <div id="noPrendasMsg" style="padding: 16px; text-align: center; background: #f9f9f9; border-radius: 4px; color: #999; margin-bottom: 16px; display: block; font-size: 0.9rem;">
+            <p style="margin: 0;">Agrega prendas con el botón de abajo</p>
         </div>
         
+        <!-- Botón agregar prenda -->
+        <button type="button" onclick="agregarFilaPrenda()" style="width: 100%; background: #f0f0f0; color: #333; border: 1px solid #ddd; font-size: 0.9rem; cursor: pointer; padding: 10px 12px; border-radius: 4px; font-weight: 500; margin-bottom: 16px; transition: background 0.2s;">
+            + Agregar prenda
+        </button>
+        
         <!-- Botones de acción -->
-        <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #e0e0e0; padding-top: 20px;">
-            <button type="button" onclick="cerrarModalAgregarTecnica()" style="background: #f0f0f0; color: #333; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+        <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 16px;">
+            <button type="button" onclick="cerrarModalAgregarTecnica()" style="background: white; color: #333; border: 1px solid #ddd; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem;">
                 Cancelar
             </button>
-            <button type="button" onclick="guardarTecnica()" style="background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                Guardar Prendas
+            <button type="button" onclick="guardarTecnica()" style="background: #333; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem;">
+                Guardar
             </button>
         </div>
     </div>
