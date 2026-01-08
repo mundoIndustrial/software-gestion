@@ -569,21 +569,6 @@
                 <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
                     <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
                     <p style="font-size: 1rem; margin: 0;">No hay pedidos registrados</p>
-                    
-                    <!-- BOTÓN DE TEST TEMPORAL -->
-                    @if(request('tipo') === 'logo')
-                    <button onclick="testAbrirModal()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                        TEST: Abrir Modal
-                    </button>
-                    <script>
-                    function testAbrirModal() {
-                        console.log('🧪 TEST: Intentando abrir modal');
-                        console.log('🧪 overlay elemento:', document.getElementById('modal-overlay'));
-                        console.log('🧪 wrapper-logo elemento:', document.getElementById('order-detail-modal-wrapper-logo'));
-                        window.openOrderDetailModalLogo();
-                    }
-                    </script>
-                    @endif
                 </div>
             @else
                 @foreach($pedidos as $pedido)
@@ -687,7 +672,7 @@
                         @endif
 
                         <!-- Botón Eliminar -->
-                        <button onclick="confirmarEliminarPedido({{ $pedido->id }}, '{{ $numeroPedido }}')" title="Eliminar Pedido" style="
+                        <button onclick="eliminarPedido({{ $pedido->id }})" title="Eliminar Pedido" style="
 
                             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
                             color: white;
@@ -1607,10 +1592,19 @@
     /**
      * Eliminar pedido (hacer llamada DELETE al servidor)
      */
+    let isDeleting = false; // Flag para prevenir eliminaciones concurrentes
+    
     function eliminarPedido(pedidoId) {
+        // Prevenir eliminaciones concurrentes
+        if (isDeleting) {
+            console.warn('⚠️ Ya hay una eliminación en proceso');
+            return;
+        }
+        
+        isDeleting = true;
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         
-        fetch(`/asesores/pedidos/${pedidoId}`, {
+        fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
@@ -1624,18 +1618,17 @@
                 // Mostrar mensaje de éxito
                 mostrarNotificacion('✅ Pedido eliminado correctamente', 'success');
                 
-                // Cerrar el modal de confirmación
-                cerrarConfirmModal();
-                
                 // Recargar la página después de 1 segundo
                 setTimeout(() => {
                     location.reload();
                 }, 1000);
             } else {
+                isDeleting = false;
                 mostrarNotificacion('❌ ' + (data.message || 'Error al eliminar el pedido'), 'error');
             }
         })
         .catch(error => {
+            isDeleting = false;
             console.error('Error:', error);
             mostrarNotificacion('❌ Error al eliminar el pedido', 'error');
         });

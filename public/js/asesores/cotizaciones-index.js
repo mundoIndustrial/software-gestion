@@ -412,3 +412,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 });
+
+/**
+ * Eliminar cotización
+ * @param {number} id - ID de la cotización a eliminar
+ * @param {string} numeroCotizacion - Número de la cotización
+ */
+function eliminarCotizacion(id, numeroCotizacion) {
+    Swal.fire({
+        title: '¿Eliminar cotización?',
+        text: `Esta acción no se puede deshacer. Se eliminará la cotización #${numeroCotizacion}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'swal-custom-popup',
+            title: 'swal-custom-title',
+            confirmButton: 'swal-custom-confirm',
+            cancelButton: 'swal-custom-cancel'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/asesores/cotizaciones/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Animación de eliminación
+                    const rows = document.querySelectorAll('table tbody tr');
+                    rows.forEach(row => {
+                        const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
+                        if (cell) {
+                            row.style.transition = 'opacity 0.3s ease';
+                            row.style.opacity = '0';
+                            setTimeout(() => row.remove(), 300);
+                        }
+                    });
+                    
+                    // Toast de éxito
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: '¡Cotización eliminada!',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+
+                    // Recargar después de 1 segundo
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    Swal.fire('Error', data.message || 'No se pudo eliminar la cotización', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Error al eliminar la cotización', 'error');
+            });
+        }
+    });
+}

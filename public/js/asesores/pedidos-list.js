@@ -189,7 +189,7 @@ function confirmarEliminar(pedido, cliente) {
 // ========================================
 async function eliminarPedido(pedido) {
     try {
-        const response = await fetch(`/asesores/pedidos/${pedido}`, {
+        const response = await fetch(`/asesores/pedidos-produccion/${pedido}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

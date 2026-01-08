@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function crearDropdown(button) {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
+        const pedidoId = button.getAttribute('data-pedido-id'); // ID de pedidos_produccion
         const estado = button.getAttribute('data-estado');
         const motivo = button.getAttribute('data-motivo');
         const usuario = button.getAttribute('data-usuario');
@@ -261,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             `}
             <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="confirmarEliminarPedido(${pedido}); closeDropdown()" title="Eliminar Pedido" style="
+            <button onclick="eliminarPedidoDirecto(${pedidoId}); closeDropdown()" title="Eliminar Pedido" style="
                 width: 100%;
                 text-align: center;
                 padding: 0.875rem 1rem;

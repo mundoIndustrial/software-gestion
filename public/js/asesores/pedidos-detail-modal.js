@@ -166,9 +166,15 @@ document.addEventListener('click', function(clickEvent) {
 
 /**
  * Confirmar y eliminar un pedido completamente
- * @param {number} numeroPedido - Número del pedido a eliminar
+ * @param {number} pedidoId - ID del pedido a eliminar
+ * @param {string} numeroPedido - Número del pedido (para mostrar)
  */
-window.confirmarEliminarPedido = function(numeroPedido) {
+window.confirmarEliminarPedido = function(pedidoId, numeroPedido) {
+    // Si se pasa solo un parámetro, asumir que es el ID
+    if (typeof numeroPedido === 'undefined') {
+        numeroPedido = pedidoId;
+    }
+    
     // Crear modal de confirmación
     const confirmationModal = document.createElement('div');
     confirmationModal.id = 'confirmDeleteModal';
@@ -280,7 +286,7 @@ window.confirmarEliminarPedido = function(numeroPedido) {
                 " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
                     Cancelar
                 </button>
-                <button onclick="eliminarPedidoConfirmado(${numeroPedido})" style="
+                <button onclick="eliminarPedidoConfirmado(${pedidoId})" style="
                     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
                     border: none;
                     color: white;
@@ -310,9 +316,9 @@ window.confirmarEliminarPedido = function(numeroPedido) {
 
 /**
  * Ejecutar la eliminación del pedido
- * @param {number} numeroPedido - Número del pedido a eliminar
+ * @param {number} pedidoId - ID del pedido a eliminar
  */
-window.eliminarPedidoConfirmado = async function(numeroPedido) {
+window.eliminarPedidoConfirmado = async function(pedidoId) {
     const modal = document.getElementById('confirmDeleteModal');
     const button = modal.querySelector('button:last-child');
     
@@ -321,7 +327,7 @@ window.eliminarPedidoConfirmado = async function(numeroPedido) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
     
     try {
-        const response = await fetch(`/asesores/pedidos/${numeroPedido}`, {
+        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
@@ -393,6 +399,81 @@ function showSuccessMessage(message) {
     `;
     notification.innerHTML = `
         <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(notification);
+    
+    // Auto-remove después de 3 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * Eliminar pedido directamente sin modal (para dropdown)
+ * @param {number} pedidoId - ID del pedido a eliminar
+ */
+window.eliminarPedidoDirecto = async function(pedidoId) {
+    try {
+        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        console.log('🗑️ Pedido eliminado:', { status: response.status, data: data });
+        
+        if (response.ok && data.success) {
+            // Mostrar mensaje de éxito
+            showSuccessMessage('✅ Pedido eliminado correctamente');
+            
+            // Recargar la página después de 1 segundo
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            const errorMsg = data.message || 'Error al eliminar el pedido';
+            console.error('❌ Error:', errorMsg);
+            // Mostrar error
+            showErrorMessage('❌ ' + errorMsg);
+        }
+    } catch (error) {
+        console.error('❌ Error al eliminar pedido:', error);
+        showErrorMessage('❌ Error al eliminar el pedido');
+    }
+}
+
+/**
+ * Mostrar mensaje de error
+ */
+function showErrorMessage(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: #ef4444;
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        z-index: 999999;
+        animation: slideInRight 0.3s ease;
+        max-width: 400px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    `;
+    
+    notification.innerHTML = `
+        <i class="fas fa-exclamation-circle"></i>
         <span>${message}</span>
     `;
     document.body.appendChild(notification);
