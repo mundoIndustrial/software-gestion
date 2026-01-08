@@ -1853,167 +1853,197 @@ function renderizarTecnicasAgregadas() {
         console.log(`  → Grupo: ${grupoId}, Técnicas: ${datos.tecnicas.length}, Prendas:`, datos.prendas.map(p => p.nombre_prenda));
     });
     
+    // NUEVO DISEÑO: Contenedor con tarjetas en grid
+    const contenedor = document.createElement('div');
+    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.2rem; margin-bottom: 20px;';
     
-    // Crear tabla
-    const tabla = document.createElement('table');
-    tabla.style.cssText = 'width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;';
-    
-    // Encabezados
-    const thead = document.createElement('thead');
-    thead.style.cssText = 'background: #f0f0f0; border-bottom: 2px solid #ddd; font-weight: 600; color: #333;';
-    thead.innerHTML = `
-        <tr>
-            <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Técnica(s)</th>
-            <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Prenda</th>
-            <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Observaciones</th>
-            <th style="padding: 10px 12px; text-align: left; border: 1px solid #eee; font-size: 0.85rem;">Talla/Cantidad</th>
-            <th style="padding: 10px 12px; text-align: center; border: 1px solid #eee; font-size: 0.85rem;">Acciones</th>
-        </tr>
-    `;
-    tabla.appendChild(thead);
-    
-    // Cuerpo de la tabla
-    const tbody = document.createElement('tbody');
-    let rowIndex = 0;
-    
-    // PASO 2: Renderizar una fila por GRUPO (técnica simple o grupo combinado)
+    // PASO 2: Renderizar TARJETAS por grupo
     Object.entries(gruposMap).forEach(([grupoId, datosGrupo]) => {
-        const tallasArray = datosGrupo.talla_cantidad || [];
         const esCombinada = datosGrupo.esCombinada;
         
-        console.log(`🎨 Renderizando GRUPO: ${grupoId}, esCombinada: ${esCombinada}, Técnicas: ${datosGrupo.tecnicas.length}, Tallas: ${tallasArray.length}`);
+        // TARJETA DEL GRUPO
+        const tarjeta = document.createElement('div');
+        tarjeta.style.cssText = `
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        `;
+        tarjeta.onmouseover = function() {
+            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.15)';
+            this.style.transform = 'translateY(-2px)';
+        };
+        tarjeta.onmouseout = function() {
+            this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            this.style.transform = 'translateY(0)';
+        };
         
-        // Construir HTML de técnicas con sus ubicaciones e imágenes
-        let tecnicasHTML = '';
-        datosGrupo.tecnicas.forEach((tecnica, techIdx) => {
-            tecnica.prendas.forEach(prenda => {
-                const ubicacionesText = Array.isArray(prenda.ubicaciones) ? prenda.ubicaciones.join(', ') : prenda.ubicaciones;
-                
-                // Manejar tanto imagenes_data_urls (strings) como imagenes que son File objects
-                let imagenesHTML = '';
-                if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
-                    imagenesHTML = `<div style="margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap;">
-                        ${prenda.imagenes_data_urls.map(img => {
-                            const src = typeof img === 'string' ? img : URL.createObjectURL(img);
-                            return `<img src="${src}" style="max-width: 50px; max-height: 50px; object-fit: contain; border-radius: 3px;" />`;
-                        }).join('')}
-                    </div>`;
-                }
-                
-                tecnicasHTML += `
-                    <div style="margin-bottom: 12px; padding: 8px; background: #f8f9fa; border-left: 3px solid ${tecnica.tipo_logo.color}; border-radius: 3px;">
-                        <div style="font-weight: 600; color: ${tecnica.tipo_logo.color}; margin-bottom: 4px;">
-                            ${tecnica.tipo_logo.nombre}
-                        </div>
-                        <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">
-                            📍 ${ubicacionesText || '-'}
-                        </div>
-                        ${imagenesHTML}
-                    </div>
-                `;
-            });
+        // HEADER CON TÉCNICAS
+        let headerHTML = '<div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1rem; border-bottom: 1px solid #ddd;">';
+        headerHTML += '<h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem;">Técnica(s)</h4>';
+        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+        
+        datosGrupo.tecnicas.forEach(tecnica => {
+            headerHTML += `
+                <span style="
+                    background: ${tecnica.tipo_logo.color};
+                    color: white;
+                    padding: 0.4rem 0.8rem;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                ">
+                    ${tecnica.tipo_logo.nombre}
+                </span>
+            `;
         });
         
         if (esCombinada) {
-            tecnicasHTML = `<div style="border: 1px dashed #ccc; padding: 8px; border-radius: 4px;">
-                <span style="background: #ddd; color: #333; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-bottom: 8px;">🔗 COMBINADA</span>
-                ${tecnicasHTML}
-            </div>`;
+            headerHTML += `<span style="
+                background: rgba(255,255,255,0.3);
+                color: white;
+                padding: 0.3rem 0.6rem;
+                border-radius: 3px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                border: 1px dashed white;
+            ">🔗 COMBINADA</span>`;
         }
         
-        // Obtener nombre de prenda (igual para todas en el grupo)
-        const nombrePrenda = datosGrupo.prendas[0]?.nombre_prenda || 'SIN NOMBRE';
+        headerHTML += '</div></div>';
         
-        // Si no hay tallas, renderizar una sola fila
-        if (tallasArray.length === 0) {
-            const row = document.createElement('tr');
-            const isEven = rowIndex % 2 === 0;
-            row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee;`;
-            row.addEventListener('mouseover', function() { this.style.background = '#f3f4f6'; });
-            row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
-            
-            row.innerHTML = `
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
-                    ${tecnicasHTML}
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
-                    <strong>${nombrePrenda}</strong>
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: top;">
-                    ${datosGrupo.observaciones || '-'}
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: top;"></td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: top;">
-                    <div style="display: flex; gap: 4px; justify-content: center;">
-                        <button type="button" class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
-                                style="background: none; color: #0066cc; border: 1px solid #0066cc; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
-                                onmouseover="this.style.background='#0066cc'; this.style.color='white'" 
-                                onmouseout="this.style.background='none'; this.style.color='#0066cc'"
-                                title="Editar técnica(s)">
-                            ✎
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
-                                style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
-                                onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
-                                onmouseout="this.style.background='none'; this.style.color='#999'"
-                                title="Eliminar técnica(s)">
-                            ✕
-                        </button>
+        // CUERPO CON PRENDAS
+        let bodyHTML = '<div style="padding: 1rem;">';
+        
+        datosGrupo.prendas.forEach((prenda, idx) => {
+            bodyHTML += `
+                <div style="
+                    margin-bottom: ${idx < datosGrupo.prendas.length - 1 ? '1rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;' : '0;'}
+                ">
+                    <div style="margin-bottom: 0.8rem;">
+                        <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                            ${prenda.nombre_prenda}
+                        </h5>
                     </div>
-                </td>
+                    
+                    ${prenda.observaciones ? `
+                        <div style="
+                            background: #fef3c7;
+                            border-left: 3px solid #f59e0b;
+                            padding: 0.6rem;
+                            border-radius: 4px;
+                            margin-bottom: 0.8rem;
+                            font-size: 0.85rem;
+                            color: #78350f;
+                        ">
+                            <strong>Observación:</strong> ${prenda.observaciones}
+                        </div>
+                    ` : ''}
+                    
+                    ${prenda.ubicaciones && prenda.ubicaciones.length > 0 ? `
+                        <div style="margin-bottom: 0.8rem;">
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.4rem;">
+                                📍 Ubicaciones:
+                            </span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                ${prenda.ubicaciones.map(ub => `
+                                    <span style="
+                                        background: #dbeafe;
+                                        color: #0369a1;
+                                        padding: 0.3rem 0.6rem;
+                                        border-radius: 3px;
+                                        font-size: 0.8rem;
+                                        font-weight: 600;
+                                    ">
+                                        ${ub}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${prenda.talla_cantidad && prenda.talla_cantidad.length > 0 ? `
+                        <div>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.4rem;">
+                                📏 Tallas:
+                            </span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                ${prenda.talla_cantidad.map(tc => `
+                                    <span style="
+                                        background: #dbeafe;
+                                        color: #0369a1;
+                                        padding: 0.4rem 0.6rem;
+                                        border-radius: 3px;
+                                        font-size: 0.8rem;
+                                        font-weight: 600;
+                                    ">
+                                        ${tc.talla}: <strong>${tc.cantidad}</strong>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
             `;
-            tbody.appendChild(row);
-            rowIndex++;
-        } else {
-            // Con tallas: UNA SOLA fila con todas las tallas listadas
-            const row = document.createElement('tr');
-            const isEven = rowIndex % 2 === 0;
-            row.style.cssText = `background: ${isEven ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #eee;`;
-            row.addEventListener('mouseover', function() { this.style.background = '#f3f4f6'; });
-            row.addEventListener('mouseout', function() { this.style.background = isEven ? '#f9fafb' : '#ffffff'; });
-            
-            // Construir lista de tallas y cantidades
-            const tallasTexto = tallasArray.map(tc => `<div style="margin: 4px 0; padding: 4px; background: #f0f0f0; border-radius: 3px; font-size: 0.85rem;"><strong>${tc.talla}</strong>: ${tc.cantidad}</div>`).join('');
-            
-            row.innerHTML = `
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
-                    ${tecnicasHTML}
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
-                    <strong>${nombrePrenda}</strong>
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; color: #666; font-size: 0.9rem; vertical-align: top;">
-                    ${datosGrupo.observaciones || '-'}
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; font-size: 0.9rem; vertical-align: top;">
-                    ${tallasTexto}
-                </td>
-                <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: top;">
-                    <div style="display: flex; gap: 4px; justify-content: center;">
-                        <button type="button" class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
-                                style="background: none; color: #0066cc; border: 1px solid #0066cc; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
-                                onmouseover="this.style.background='#0066cc'; this.style.color='white'" 
-                                onmouseout="this.style.background='none'; this.style.color='#0066cc'"
-                                title="Editar técnica(s)">
-                            ✎
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
-                                style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
-                                onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
-                                onmouseout="this.style.background='none'; this.style.color='#999'"
-                                title="Eliminar técnica(s)">
-                            ✕
-                        </button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(row);
-            rowIndex++;
-        }
+        });
+        
+        // BOTONES DE ACCIÓN
+        bodyHTML += `
+            <div style="
+                margin-top: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid #e2e8f0;
+                display: flex;
+                gap: 0.5rem;
+            ">
+                <button type="button" class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
+                        style="
+                            flex: 1;
+                            background: #0066cc;
+                            color: white;
+                            border: none;
+                            padding: 0.5rem;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.85rem;
+                            font-weight: 600;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.background='#0052a3'" 
+                        onmouseout="this.style.background='#0066cc'"
+                        title="Editar técnica(s)">
+                    ✎ Editar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
+                        style="
+                            flex: 1;
+                            background: #ef4444;
+                            color: white;
+                            border: none;
+                            padding: 0.5rem;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.85rem;
+                            font-weight: 600;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.background='#dc2626'" 
+                        onmouseout="this.style.background='#ef4444'"
+                        title="Eliminar técnica(s)">
+                    ✕ Eliminar
+                </button>
+            </div>
+        `;
+        
+        bodyHTML += '</div>';
+        
+        tarjeta.innerHTML = headerHTML + bodyHTML;
+        contenedor.appendChild(tarjeta);
     });
     
-    tabla.appendChild(tbody);
-    container.appendChild(tabla);
+    container.appendChild(contenedor);
     
     console.log('✅ [renderizarTecnicasAgregadas] COMPLETADO - Tabla renderizada por PRENDA');
     
@@ -2077,67 +2107,103 @@ function editarTecnicaDelGrupo(grupoId) {
     
     console.log('🔧 Editando grupo:', grupoId, tecnicasDelGrupo);
     
-    // Obtener datos actuales (tomar del primer grupo ya que todos comparten datos)
-    const tecnicaActual = tecnicasDelGrupo[0];
-    const prendasActuales = tecnicaActual.prendas[0] || {};
-    const nombrePrendaActual = prendasActuales.nombre_prenda || '';
-    const observacionesActuales = prendasActuales.observaciones || '';
-    const ubicacionesActuales = prendasActuales.ubicaciones || [];
-    const tallasActuales = prendasActuales.talla_cantidad || [];
+    // Obtener TODAS las prendas del grupo
+    const todasLasPrendas = [];
+    tecnicasDelGrupo.forEach(tecnica => {
+        tecnica.prendas.forEach(prenda => {
+            todasLasPrendas.push({...prenda, tecnicaDelGrupo: tecnica});
+        });
+    });
     
-    // Construir HTML del formulario de edición
-    let tallasHTML = '';
-    tallasActuales.forEach((tc, idx) => {
-        tallasHTML += `
-            <div class="edit-talla-row" style="display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px;" data-edit-idx="${idx}">
-                <input type="text" class="edit-talla" value="${tc.talla || ''}" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                <input type="number" class="edit-cantidad" value="${tc.cantidad || 1}" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                <button type="button" class="edit-btn-eliminar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer;">✕</button>
+    // Construir HTML de las prendas
+    let prendasHTML = '<div style="max-height: 500px; overflow-y: auto;">';
+    
+    todasLasPrendas.forEach((prenda, prendaIdx) => {
+        let tallaHTML = '';
+        (prenda.talla_cantidad || []).forEach((tc, tcIdx) => {
+            tallaHTML += `
+                <div class="edit-talla-row" style="display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px;" data-prenda-idx="${prendaIdx}" data-talla-idx="${tcIdx}">
+                    <input type="text" class="edit-talla" value="${tc.talla || ''}" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    <input type="number" class="edit-cantidad" value="${tc.cantidad || 1}" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    <button type="button" class="edit-btn-eliminar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer;">✕</button>
+                </div>
+            `;
+        });
+        
+        let imagenesHTML = '';
+        if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
+            imagenesHTML = `
+                <div style="margin-bottom: 8px;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">🖼️ Imágenes actuales:</span>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px;">
+                        ${prenda.imagenes_data_urls.map((img, imgIdx) => `
+                            <div style="position: relative;">
+                                <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-img-idx="${imgIdx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        prendasHTML += `
+            <div style="
+                background: #f9fafb;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                padding: 12px;
+                margin-bottom: 15px;
+            ">
+                <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 0.9rem;">Prenda ${prendaIdx + 1}</h4>
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem;">Nombre</label>
+                    <input type="text" class="edit-nombre-prenda" data-prenda-idx="${prendaIdx}" value="${prenda.nombre_prenda || ''}" placeholder="POLO, CAMISA..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem;">Observaciones</label>
+                    <textarea class="edit-observaciones-prenda" data-prenda-idx="${prendaIdx}" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.85rem;">${prenda.observaciones || ''}</textarea>
+                </div>
+                
+                ${imagenesHTML}
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem;">Tallas y Cantidades</label>
+                    <div class="edit-tallas-container-prenda" data-prenda-idx="${prendaIdx}" style="display: grid; gap: 8px; margin-bottom: 8px;">
+                        ${tallaHTML}
+                    </div>
+                    <button type="button" class="edit-btn-agregar-talla" data-prenda-idx="${prendaIdx}" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.85rem;">+ Agregar talla</button>
+                </div>
             </div>
         `;
     });
     
+    prendasHTML += '</div>';
+    
     Swal.fire({
         title: `Editar ${tecnicasDelGrupo.map(t => t.tipo_logo.nombre).join(' + ')}`,
-        width: '600px',
-        html: `
-            <div style="text-align: left; padding: 20px;">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prenda</label>
-                    <input type="text" id="edit-nombre-prenda" value="${nombrePrendaActual}" placeholder="POLO, CAMISA..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones</label>
-                    <textarea id="edit-observaciones" placeholder="Detalles adicionales" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical;">${observacionesActuales}</textarea>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Tallas y Cantidades</label>
-                    <div id="edit-tallas-container" style="display: grid; gap: 8px; margin-bottom: 10px;">
-                        ${tallasHTML}
-                    </div>
-                    <button type="button" id="edit-btn-agregar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%;">+ Agregar talla</button>
-                </div>
-            </div>
-        `,
+        width: '650px',
+        html: prendasHTML,
         showCancelButton: true,
         confirmButtonText: 'Guardar Cambios',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#333',
         didOpen: (modal) => {
-            const btnAgregarTalla = document.getElementById('edit-btn-agregar-talla');
-            const tallasContainer = document.getElementById('edit-tallas-container');
-            let contadorTallasEdit = tallasActuales.length;
-            
-            // Agregar talla
-            if (btnAgregarTalla) {
-                btnAgregarTalla.addEventListener('click', (e) => {
+            // Agregar evento a botones de agregar talla
+            document.querySelectorAll('.edit-btn-agregar-talla').forEach(btn => {
+                btn.addEventListener('click', (e) => {
                     e.preventDefault();
+                    const prendaIdx = btn.getAttribute('data-prenda-idx');
+                    const container = document.querySelector(`.edit-tallas-container-prenda[data-prenda-idx="${prendaIdx}"]`);
+                    
                     const nuevaTalla = document.createElement('div');
                     nuevaTalla.className = 'edit-talla-row';
                     nuevaTalla.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px;';
-                    nuevaTalla.dataset.editIdx = contadorTallasEdit++;
+                    nuevaTalla.dataset.prendaIdx = prendaIdx;
                     nuevaTalla.innerHTML = `
                         <input type="text" class="edit-talla" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
                         <input type="number" class="edit-cantidad" value="1" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
@@ -2149,9 +2215,9 @@ function editarTecnicaDelGrupo(grupoId) {
                         nuevaTalla.remove();
                     });
                     
-                    tallasContainer.appendChild(nuevaTalla);
+                    container.appendChild(nuevaTalla);
                 });
-            }
+            });
             
             // Botones eliminar talla existentes
             document.querySelectorAll('.edit-btn-eliminar-talla').forEach(btn => {
@@ -2160,47 +2226,125 @@ function editarTecnicaDelGrupo(grupoId) {
                     btn.closest('.edit-talla-row').remove();
                 });
             });
+            
+            // Botones eliminar imagen
+            document.querySelectorAll('.edit-btn-eliminar-img').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const prendaIdx = btn.getAttribute('data-prenda-idx');
+                    const imgIdx = btn.getAttribute('data-img-idx');
+                    todasLasPrendas[prendaIdx].imagenes_data_urls.splice(imgIdx, 1);
+                    btn.closest('div').remove();
+                });
+            });
         },
         preConfirm: () => {
-            const nombrePrenda = document.getElementById('edit-nombre-prenda').value.trim().toUpperCase();
-            if (!nombrePrenda) {
-                Swal.showValidationMessage('Completa el nombre de la prenda');
+            // Validar que al menos una prenda tenga nombre
+            let prendasActualizadas = {};
+            let valido = true;
+            let contadorPrendas = 0;
+            
+            // Obtener todos los índices de prendas del DOM (como string del atributo)
+            const prendaIdxs = new Set();
+            document.querySelectorAll('[data-prenda-idx]').forEach((elem) => {
+                prendaIdxs.add(elem.getAttribute('data-prenda-idx'));
+            });
+            
+            console.log('🔍 Índices de prendas encontrados:', Array.from(prendaIdxs));
+            
+            prendaIdxs.forEach((prendaIdxStr) => {
+                const prendaIdx = parseInt(prendaIdxStr);
+                
+                const nombreInput = document.querySelector(`.edit-nombre-prenda[data-prenda-idx="${prendaIdxStr}"]`);
+                const nombrePrenda = nombreInput ? nombreInput.value.trim().toUpperCase() : '';
+                
+                if (!nombrePrenda) {
+                    console.warn('⚠️ Prenda sin nombre en índice', prendaIdx);
+                    valido = false;
+                    return;
+                }
+                
+                const observacionesInput = document.querySelector(`.edit-observaciones-prenda[data-prenda-idx="${prendaIdxStr}"]`);
+                const observaciones = observacionesInput ? observacionesInput.value.trim() : '';
+                
+                const nuevasTallas = [];
+                document.querySelectorAll(`.edit-talla-row[data-prenda-idx="${prendaIdxStr}"]`).forEach(row => {
+                    const tallaInput = row.querySelector('.edit-talla');
+                    const cantidadInput = row.querySelector('.edit-cantidad');
+                    const talla = tallaInput ? tallaInput.value.trim() : '';
+                    const cantidad = cantidadInput ? cantidadInput.value : '';
+                    
+                    if (talla && cantidad) {
+                        nuevasTallas.push({ talla, cantidad: parseInt(cantidad) });
+                    }
+                });
+                
+                if (nuevasTallas.length === 0) {
+                    console.warn('⚠️ Prenda sin tallas en índice', prendaIdx);
+                    valido = false;
+                    return;
+                }
+                
+                prendasActualizadas[prendaIdx] = {
+                    nombre_prenda: nombrePrenda,
+                    observaciones: observaciones,
+                    talla_cantidad: nuevasTallas
+                };
+                
+                console.log(`✅ Prenda ${prendaIdx} actualizada:`, prendasActualizadas[prendaIdx]);
+                contadorPrendas++;
+            });
+            
+            if (!valido || contadorPrendas === 0) {
+                Swal.showValidationMessage('Completa todos los campos de cada prenda y agrega al menos una talla');
                 return false;
             }
             
-            const nuevasTallas = [];
-            document.querySelectorAll('.edit-talla-row').forEach(row => {
-                const talla = row.querySelector('.edit-talla').value.trim();
-                const cantidad = row.querySelector('.edit-cantidad').value;
-                if (talla && cantidad) {
-                    nuevasTallas.push({ talla, cantidad: parseInt(cantidad) });
+            console.log('📦 Todas las prendas actualizadas:', prendasActualizadas);
+            return prendasActualizadas;
+        }
+    }).then((result) => {
+        console.log('📋 Result de Swal:', result);
+        
+        if (result.isConfirmed && result.value) {
+            console.log('💾 Guardando cambios...');
+            console.log('todasLasPrendas antes:', todasLasPrendas);
+            console.log('Datos a aplicar:', result.value);
+            
+            // Actualizar TODAS las prendas del grupo usando índices numéricos
+            todasLasPrendas.forEach((prenda, prendaIdx) => {
+                console.log(`Verificando prenda ${prendaIdx}:`, result.value[prendaIdx]);
+                
+                if (result.value[prendaIdx]) {
+                    console.log(`✏️ Actualizando prenda ${prendaIdx}`);
+                    prenda.nombre_prenda = result.value[prendaIdx].nombre_prenda;
+                    prenda.observaciones = result.value[prendaIdx].observaciones;
+                    prenda.talla_cantidad = result.value[prendaIdx].talla_cantidad;
+                    console.log(`✅ Prenda ${prendaIdx} actualizada:`, prenda);
+                } else {
+                    console.warn(`⚠️ No hay datos para prenda ${prendaIdx}`);
                 }
             });
             
-            if (nuevasTallas.length === 0) {
-                Swal.showValidationMessage('Agrega al menos una talla');
-                return false;
-            }
-            
-            return {
-                nombre_prenda: nombrePrenda,
-                observaciones: document.getElementById('edit-observaciones').value.trim(),
-                talla_cantidad: nuevasTallas
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            // Actualizar TODAS las técnicas del grupo con los nuevos datos
+            // También actualizar en las técnicas del grupo original
+            let idxGlobal = 0;
             tecnicasDelGrupo.forEach(tecnica => {
-                tecnica.prendas.forEach(prenda => {
-                    prenda.nombre_prenda = result.value.nombre_prenda;
-                    prenda.observaciones = result.value.observaciones;
-                    prenda.talla_cantidad = result.value.talla_cantidad;
+                tecnica.prendas.forEach((prenda, prendaIdxLocal) => {
+                    if (result.value[idxGlobal]) {
+                        console.log(`🔄 Actualizando prenda original en técnica:`, result.value[idxGlobal]);
+                        prenda.nombre_prenda = result.value[idxGlobal].nombre_prenda;
+                        prenda.observaciones = result.value[idxGlobal].observaciones;
+                        prenda.talla_cantidad = result.value[idxGlobal].talla_cantidad;
+                    }
+                    idxGlobal++;
                 });
             });
             
             console.log('✅ Técnicas editadas y actualizadas en memory');
+            console.log('tecnicasAgregadas actualizado:', tecnicasAgregadas);
             renderizarTecnicasAgregadas();
+        } else {
+            console.log('❌ Edición cancelada');
         }
     });
 }

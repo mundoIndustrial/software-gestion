@@ -119,7 +119,7 @@
             </div>
         @endif
 
-        {{-- TABLA DE TÉCNICAS - ESTILO FACTURA --}}
+        {{-- TARJETAS DE TÉCNICAS - NUEVO DISEÑO --}}
         @php
             // Obtener las prendas que tienen imágenes (fotos) usando el ID de LogoCotizacion
             $prendasConTecnicas = $logo 
@@ -130,179 +130,227 @@
                     ->get()
                 : collect();
 
-            // Agrupar por grupo_combinado (si existe) o por ID (si es simple)
-            // Esto asegura que CAMISA DRILL COMBINADA y CAMISA DRILL SIMPLE aparezcan en filas diferentes
-            $gruposMap = [];
+            // Agrupar por nombre de prenda ÚNICA (para crear una tarjeta por prenda)
+            $prendasMap = [];
             foreach ($prendasConTecnicas as $prenda) {
-                // Si tiene grupo_combinado, usar ese. Si no, usar el ID para identificar como simple individual
-                $grupoId = $prenda->grupo_combinado ?: ('simple_' . $prenda->id);
-                if (!isset($gruposMap[$grupoId])) {
-                    $gruposMap[$grupoId] = [];
+                $nombrePrenda = $prenda->nombre_prenda;
+                if (!isset($prendasMap[$nombrePrenda])) {
+                    $prendasMap[$nombrePrenda] = [];
                 }
-                $gruposMap[$grupoId][] = $prenda;
+                $prendasMap[$nombrePrenda][] = $prenda;
             }
         @endphp
         @if($prendasConTecnicas->count() > 0)
-            <div class="info-card">
-                <div class="info-section no-border">
-                    <h4 class="section-title"><i class="fas fa-layer-group"></i> Detalles de Técnicas</h4>
-                    
-                    <table style="
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 1rem;
-                        font-size: 0.9rem;
-                        background: white;
-                    ">
-                        <thead>
-                            <tr style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white;">
-                                <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Técnica(s)</th>
-                                <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Prenda</th>
-                                <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Ubicaciones</th>
-                                <th style="padding: 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Observaciones</th>
-                                <th style="padding: 1rem; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Tallas</th>
-                                <th style="padding: 1rem; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a; font-size: 1.1rem;">Imágenes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($gruposMap as $grupoId => $prendas)
-                                @php
-                                    $esCombinada = count($prendas) > 1;
-                                    // Usar la primera prenda para datos comunes (nombre, observaciones)
-                                    $prenda1 = $prendas[0];
-                                    $nombrePrenda = $prenda1->nombre_prenda;
-                                @endphp
-                                <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;">
-                    {{-- Técnicas (todas las de este grupo) --}}
-                                    <td style="padding: 1rem; vertical-align: top;">
+            <div style="margin-top: 2rem;">
+                <h4 class="section-title" style="margin-bottom: 1.5rem;"><i class="fas fa-layer-group"></i> Detalles de Técnicas</h4>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem;">
+                    @foreach($prendasMap as $nombrePrenda => $prendas)
+                        @php
+                            $esCombinada = count($prendas) > 1;
+                            $prenda1 = $prendas[0];
+                        @endphp
+                        {{-- TARJETA DE PRENDA --}}
+                        <div style="
+                            background: white;
+                            border-radius: 12px;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                            overflow: hidden;
+                            border: 1px solid #e2e8f0;
+                            transition: all 0.3s ease;
+                        "
+                        onmouseover="this.style.boxShadow='0 8px 24px rgba(0, 0, 0, 0.15)'; this.style.transform='translateY(-4px)';"
+                        onmouseout="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.08)'; this.style.transform='translateY(0)';">
+                            
+                            {{-- Header de la Tarjeta --}}
+                            <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1rem; border-bottom: 4px solid #0ea5e9;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
+                                    {{ $nombrePrenda }}
+                                </h3>
+                            </div>
+                            
+                            {{-- Cuerpo de la Tarjeta --}}
+                            <div style="padding: 1.5rem;">
+                                
+                                {{-- TÉCNICAS --}}
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
+                                        <i class="fas fa-tools"></i> Técnicas:
+                                    </h5>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
                                         @foreach($prendas as $prenda)
                                             @php
                                                 $tipoLogo = $prenda->tipoLogo;
+                                                // Determinar color según técnica
+                                                $colores = [
+                                                    'BORDADO' => ['bg' => '#0ea5e9', 'text' => 'white'],
+                                                    'ESTAMPADO' => ['bg' => '#10b981', 'text' => 'white'],
+                                                    'SUBLIMACIÓN' => ['bg' => '#f59e0b', 'text' => 'white'],
+                                                    'SERIGRAFÍA' => ['bg' => '#8b5cf6', 'text' => 'white'],
+                                                ];
+                                                $color = $colores[$tipoLogo->nombre] ?? ['bg' => '#6b7280', 'text' => 'white'];
                                             @endphp
-                                            <div style="display: inline-block; padding: 0.5rem 1rem; background: #0ea5e9; color: white; border-radius: 6px; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.4rem; margin-right: 0.4rem;">
+                                            <span style="
+                                                background: {{ $color['bg'] }};
+                                                color: {{ $color['text'] }};
+                                                padding: 0.5rem 1rem;
+                                                border-radius: 6px;
+                                                font-weight: 600;
+                                                font-size: 0.9rem;
+                                            ">
                                                 {{ $tipoLogo->nombre ?? 'Técnica' }}
-                                            </div>
+                                            </span>
                                         @endforeach
-                                        @if($esCombinada)
-                                            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #0ea5e9; font-weight: 600;">
-                                                <i class="fas fa-link"></i> COMBINADA
-                                            </div>
-                                        @endif
-                                    </td>
-                                    
-                                    {{-- Prenda --}}
-                                    <td style="padding: 1rem; vertical-align: top; font-weight: 500; color: #1e293b; font-size: 1rem;">
-                                        {{ $nombrePrenda }}
-                                    </td>
-                                    
-                                    {{-- Ubicaciones POR TÉCNICA (mostrar cada técnica con sus ubicaciones) --}}
-                                    <td style="padding: 1rem; vertical-align: top; font-size: 0.95rem;">
-                                        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-                                            @foreach($prendas as $prenda)
-                                                @php
-                                                    $ubicaciones = is_string($prenda->ubicaciones) ? json_decode($prenda->ubicaciones, true) ?? [] : $prenda->ubicaciones;
-                                                    $tipoLogo = $prenda->tipoLogo;
-                                                @endphp
-                                                <div style="border-left: 3px solid #0ea5e9; padding-left: 0.8rem;">
-                                                    <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 0.4rem;">
-                                                        {{ $tipoLogo->nombre ?? 'Técnica' }}:
-                                                    </div>
-                                                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                                                        @if(!empty($ubicaciones))
-                                                            @foreach($ubicaciones as $ubicacion)
-                                                                <span style="background: #dbeafe; color: #0369a1; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 500;">
-                                                                    {{ $ubicacion }}
-                                                                </span>
-                                                            @endforeach
-                                                        @else
-                                                            <span style="color: #94a3b8; font-size: 0.85rem;">—</span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </td>
-                                    
-                                    {{-- Observaciones (de la primera prenda) --}}
-                                    <td style="padding: 1rem; vertical-align: top;">
-                                        @if($prenda1->observaciones)
-                                            <div style="font-size: 0.95rem; color: #64748b; padding: 0.4rem; background: #f1f5f9; border-left: 2px solid #f59e0b; border-radius: 3px;">
-                                                {{ $prenda1->observaciones }}
-                                            </div>
-                                        @else
-                                            <span style="color: #94a3b8; font-size: 0.95rem;">—</span>
-                                        @endif
-                                    </td>
-                                    
-                                    {{-- Tallas (combinar de todas las prendas del grupo) --}}
-                                    <td style="padding: 1rem; vertical-align: top; text-align: center;">
+                                    </div>
+                                </div>
+
+                                {{-- IMÁGENES --}}
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
+                                        <i class="fas fa-images"></i> Imágenes:
+                                    </h5>
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; max-width: 220px;">
                                         @php
-                                            $tallasCombinadas = [];
+                                            $todasLasFotos = collect();
                                             foreach ($prendas as $p) {
-                                                $tallas = is_string($p->talla_cantidad) ? json_decode($p->talla_cantidad, true) ?? [] : $p->talla_cantidad;
-                                                foreach ($tallas as $talla) {
-                                                    $tallaKey = is_array($talla) ? $talla['talla'] : $talla;
-                                                    if (!isset($tallasCombinadas[$tallaKey])) {
-                                                        $tallasCombinadas[$tallaKey] = is_array($talla) ? ($talla['cantidad'] ?? 0) : 0;
-                                                    }
+                                                if ($p->fotos && $p->fotos->count() > 0) {
+                                                    $todasLasFotos = $todasLasFotos->merge($p->fotos);
                                                 }
                                             }
                                         @endphp
-                                        @if(!empty($tallasCombinadas))
-                                            @foreach($tallasCombinadas as $tallaNombre => $cantidad)
-                                                <div style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 4px; margin-bottom: 0.3rem; font-size: 0.95rem; font-weight: 600;">
-                                                    {{ $tallaNombre }}: <strong>{{ $cantidad }}</strong>
-                                                </div>
+                                        @if($todasLasFotos->count() > 0)
+                                            @foreach($todasLasFotos as $foto)
+                                                <img src="{{ asset('storage/' . $foto->ruta_webp) }}" 
+                                                     alt="Imagen técnica"
+                                                     style="
+                                                         width: 65px;
+                                                         height: 65px;
+                                                         object-fit: cover;
+                                                         border-radius: 6px;
+                                                         border: 1px solid #e2e8f0;
+                                                         cursor: pointer;
+                                                         transition: all 0.3s ease;
+                                                     "
+                                                     onmouseover="this.style.borderColor='#0ea5e9'; this.style.transform='scale(1.1)';"
+                                                     onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='scale(1)';"
+                                                     ondblclick="mostrarImagenFullscreen(this.src);">
                                             @endforeach
                                         @else
-                                            <span style="color: #94a3b8; font-size: 0.95rem;">—</span>
+                                            <div style="
+                                                grid-column: 1 / -1;
+                                                background: #f1f5f9;
+                                                border-radius: 6px;
+                                                padding: 0.8rem;
+                                                text-align: center;
+                                                color: #94a3b8;
+                                                font-size: 0.85rem;
+                                            ">
+                                                <i class="fas fa-image" style="font-size: 1.2rem; margin-bottom: 0.3rem; display: block;"></i>
+                                                Sin imágenes
+                                            </div>
                                         @endif
-                                    </td>
-                                    
-                                    {{-- Imágenes POR TÉCNICA --}}
-                                    <td style="padding: 1rem; vertical-align: top; text-align: center;">
-                                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                            @foreach($prendas as $prenda)
-                                                @php
-                                                    $tipoLogo = $prenda->tipoLogo;
-                                                    $fotos = $prenda->fotos && $prenda->fotos->count() > 0 ? $prenda->fotos : collect();
-                                                @endphp
-                                                <div style="border-top: 2px solid #e2e8f0; padding-top: 0.8rem;">
-                                                    <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-bottom: 0.5rem; text-align: left;">
-                                                        {{ $tipoLogo->nombre ?? 'Técnica' }}
-                                                    </div>
-                                                    @if($fotos->count() > 0)
-                                                        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center;">
-                                                            @foreach($fotos as $foto)
-                                                                <img src="{{ asset('storage/' . $foto->ruta_webp) }}" 
-                                                                     alt="{{ $tipoLogo->nombre ?? 'Técnica' }}"
-                                                                     style="
-                                                                         width: 70px;
-                                                                         height: 70px;
-                                                                         object-fit: cover;
-                                                                         border-radius: 4px;
-                                                                         border: 1px solid #e2e8f0;
-                                                                         cursor: pointer;
-                                                                         transition: all 0.2s;
-                                                                     "
-                                                                     onmouseover="this.style.transform='scale(1.15)'; this.style.borderColor='#0ea5e9';"
-                                                                     onmouseout="this.style.transform='scale(1)'; this.style.borderColor='#e2e8f0';">
-                                                            @endforeach
-                                                        </div>
-                                                        <div style="margin-top: 0.3rem; font-size: 0.75rem; color: #64748b;">
-                                                            {{ $fotos->count() }} imagen(es)
-                                                        </div>
-                                                    @else
-                                                        <span style="color: #94a3b8; font-size: 0.75rem;">—</span>
-                                                    @endif
+                                    </div>
+                                </div>
+
+                                {{-- UBICACIONES --}}
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
+                                        <i class="fas fa-map-pin"></i> Ubicaciones:
+                                    </h5>
+                                    <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                                        @foreach($prendas as $prenda)
+                                            @php
+                                                $tipoLogo = $prenda->tipoLogo;
+                                                $ubicaciones = is_string($prenda->ubicaciones) ? json_decode($prenda->ubicaciones, true) ?? [] : $prenda->ubicaciones;
+                                            @endphp
+                                            <div style="border-left: 3px solid #0ea5e9; padding-left: 0.8rem;">
+                                                <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-bottom: 0.4rem;">
+                                                    {{ $tipoLogo->nombre }}:
                                                 </div>
+                                                @if(!empty($ubicaciones))
+                                                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                                        @foreach($ubicaciones as $ubicacion)
+                                                            <span style="
+                                                                background: #dbeafe;
+                                                                color: #0369a1;
+                                                                padding: 0.3rem 0.7rem;
+                                                                border-radius: 4px;
+                                                                font-size: 0.8rem;
+                                                                font-weight: 600;
+                                                            ">
+                                                                {{ $ubicacion }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <span style="color: #94a3b8; font-size: 0.8rem;">—</span>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- OBSERVACIONES --}}
+                                @if($prenda1->observaciones)
+                                    <div style="margin-bottom: 1.5rem;">
+                                        <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
+                                            <i class="fas fa-comment"></i> Observaciones:
+                                        </h5>
+                                        <div style="
+                                            background: #fef3c7;
+                                            border-left: 4px solid #f59e0b;
+                                            padding: 0.8rem;
+                                            border-radius: 4px;
+                                            color: #78350f;
+                                            font-size: 0.9rem;
+                                            line-height: 1.5;
+                                            display: inline-block;
+                                            max-width: 100%;
+                                        ">
+                                            {{ $prenda1->observaciones }}
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- TALLAS --}}
+                                <div>
+                                    <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
+                                        <i class="fas fa-ruler"></i> Tallas:
+                                    </h5>
+                                    @php
+                                        $tallasCombinadas = [];
+                                        foreach ($prendas as $p) {
+                                            $tallas = is_string($p->talla_cantidad) ? json_decode($p->talla_cantidad, true) ?? [] : $p->talla_cantidad;
+                                            foreach ($tallas as $talla) {
+                                                $tallaKey = is_array($talla) ? $talla['talla'] : $talla;
+                                                if (!isset($tallasCombinadas[$tallaKey])) {
+                                                    $tallasCombinadas[$tallaKey] = is_array($talla) ? ($talla['cantidad'] ?? 0) : 0;
+                                                }
+                                            }
+                                        }
+                                    @endphp
+                                    @if(!empty($tallasCombinadas))
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+                                            @foreach($tallasCombinadas as $tallaNombre => $cantidad)
+                                                <span style="
+                                                    background: #dbeafe;
+                                                    color: #0369a1;
+                                                    padding: 0.5rem 0.8rem;
+                                                    border-radius: 6px;
+                                                    font-size: 0.9rem;
+                                                    font-weight: 600;
+                                                ">
+                                                    {{ $tallaNombre }}: {{ $cantidad }}
+                                                </span>
                                             @endforeach
                                         </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                                    @else
+                                        <span style="color: #94a3b8; font-size: 0.9rem;">—</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         @endif
@@ -555,4 +603,120 @@
     document.getElementById('modalFotos')?.addEventListener('click', (e) => {
         if (e.target.id === 'modalFotos') cerrarModalFotos();
     });
+
+    // FUNCIÓN PARA MOSTRAR IMAGEN EN FULLSCREEN CON DOBLE CLICK
+    function mostrarImagenFullscreen(srcImagen) {
+        const modal = document.createElement('div');
+        modal.id = 'modalImagenFullscreen';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            animation: fadeIn 0.3s ease;
+        `;
+
+        const img = document.createElement('img');
+        img.src = srcImagen;
+        img.style.cssText = `
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: zoomIn 0.3s ease;
+        `;
+
+        const btnCerrar = document.createElement('button');
+        btnCerrar.type = 'button';
+        btnCerrar.style.cssText = `
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 59, 48, 0.9);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        `;
+        btnCerrar.textContent = '✕';
+        btnCerrar.onmouseover = function() {
+            this.style.background = 'rgba(255, 59, 48, 1)';
+            this.style.transform = 'scale(1.15)';
+            this.style.boxShadow = '0 6px 20px rgba(255, 59, 48, 0.8)';
+        };
+        btnCerrar.onmouseout = function() {
+            this.style.background = 'rgba(255, 59, 48, 0.9)';
+            this.style.transform = 'scale(1)';
+            this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+        };
+        btnCerrar.onclick = () => cerrarImagenFullscreen();
+
+        modal.appendChild(img);
+        modal.appendChild(btnCerrar);
+        document.body.appendChild(modal);
+
+        // Cerrar con ESC
+        const cerrarConTecla = (e) => {
+            if (e.key === 'Escape') {
+                cerrarImagenFullscreen();
+                document.removeEventListener('keydown', cerrarConTecla);
+            }
+        };
+        document.addEventListener('keydown', cerrarConTecla);
+
+        // Cerrar con click fuera de la imagen
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                cerrarImagenFullscreen();
+            }
+        });
+    }
+
+    function cerrarImagenFullscreen() {
+        const modal = document.getElementById('modalImagenFullscreen');
+        if (modal) {
+            modal.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => modal.remove(), 300);
+        }
+    }
+
+    // ESTILOS DE ANIMACIÓN
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes zoomIn {
+            from { 
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to { 
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
