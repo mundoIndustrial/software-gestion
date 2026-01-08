@@ -57,7 +57,7 @@
     gap: 0.5625rem;
 }
 
-.form-section h2 span {
+.form-section h2 span:first-child {
     background: var(--primary);
     color: white;
     width: 24px;

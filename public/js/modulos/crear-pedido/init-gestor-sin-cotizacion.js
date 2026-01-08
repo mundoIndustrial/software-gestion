@@ -103,7 +103,6 @@
                             <option value="">Seleccionar género</option>
                             <option value="Dama" ${prenda.genero === 'Dama' ? 'selected' : ''}>Dama</option>
                             <option value="Caballero" ${prenda.genero === 'Caballero' ? 'selected' : ''}>Caballero</option>
-                            <option value="Unisex" ${prenda.genero === 'Unisex' ? 'selected' : ''}>Unisex</option>
                         </select>
                     </div>
 

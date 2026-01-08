@@ -49,6 +49,15 @@ window.crearPedidoTipoPrendaSinCotizacion = function() {
  * Agregar una nueva prenda tipo PRENDA
  */
 window.agregarPrendaTipoPrendaSinCotizacion = function() {
+    // Solo permitir una prenda en el tipo de pedido PRENDA sin cotización
+    if (window.gestorPrendaSinCotizacion) {
+        const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
+        if (prendas.length >= 1) {
+            console.warn('⚠️ Solo se permite una prenda en el tipo de pedido PRENDA sin cotización');
+            return;
+        }
+    }
+    
     if (!window.gestorPrendaSinCotizacion) {
         window.inicializarGestorPrendaSinCotizacion();
     }

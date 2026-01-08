@@ -273,6 +273,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function cargarPrendasDesdeCotizacion(cotizacionId) {
         console.log('📥 Cargando prendas de cotización:', cotizacionId);
+        
+        // Mostrar los pasos 2 y 3
+        const seccionInfoPrenda = document.getElementById('seccion-info-prenda');
+        const seccionPrendas = document.getElementById('seccion-prendas');
+        if (seccionInfoPrenda) seccionInfoPrenda.style.display = 'block';
+        if (seccionPrendas) seccionPrendas.style.display = 'block';
+        
         fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacionId}`)
             .then(response => response.json())
             .then(data => {
@@ -373,9 +380,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Cambiar título y alerta dinámicamente
                     const paso3Titulo = document.getElementById('paso3_titulo_logo');
                     const paso3Alerta = document.getElementById('paso3_alerta_logo');
+                    const tituloPrendasDinamico = document.getElementById('titulo-prendas-dinamico');
                     
                     console.log('📌 paso3Titulo element:', paso3Titulo);
                     console.log('📌 paso3Alerta element:', paso3Alerta);
+                    console.log('📌 tituloPrendasDinamico element:', tituloPrendasDinamico);
                     
                     if (paso3Titulo && paso3Alerta) {
                         if (esLogo) {
@@ -389,6 +398,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('✅ Título y alerta actualizados');
                     } else {
                         console.warn('⚠️ No se encontraron los elementos paso3_titulo_logo o paso3_alerta_logo');
+                    }
+                    
+                    // Actualizar el título dinámico junto al círculo del índice 3
+                    if (tituloPrendasDinamico) {
+                        if (esLogo) {
+                            tituloPrendasDinamico.textContent = 'Información del Logo';
+                        } else {
+                            tituloPrendasDinamico.textContent = 'Prendas Técnicas del Logo';
+                        }
+                        console.log('✅ Título dinámico actualizado:', tituloPrendasDinamico.textContent);
+                    } else {
+                        console.warn('⚠️ No se encontró el elemento titulo-prendas-dinamico');
+                    }
+                    
+                    // Mostrar/ocultar botón "Agregar Prenda Técnica" solo cuando hay cotización seleccionada
+                    const btnAgregarPrendaTecnica = document.getElementById('btn-agregar-prenda-tecnica-logo');
+                    if (btnAgregarPrendaTecnica) {
+                        if (esLogo) {
+                            btnAgregarPrendaTecnica.style.display = 'block';
+                            console.log('✅ Botón "Agregar Prenda Técnica" mostrado');
+                        } else {
+                            btnAgregarPrendaTecnica.style.display = 'none';
+                            console.log('✅ Botón "Agregar Prenda Técnica" ocultado');
+                        }
                     }
                     
                     renderizarPrendasEditables(

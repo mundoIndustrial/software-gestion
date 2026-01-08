@@ -22,7 +22,7 @@ const TALLAS_ESTANDAR = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 // ============================================================
 // GÉNEROS DISPONIBLES
 // ============================================================
-const GENEROS_DISPONIBLES = ['Dama', 'Caballero', 'Unisex'];
+const GENEROS_DISPONIBLES = ['Dama', 'Caballero'];
 
 // ============================================================
 // TÉCNICAS DE LOGO

@@ -91,6 +91,13 @@ function renderizarPrendasTipoPrendaSinCotizacion() {
     const container = document.getElementById('prendas-container-editable');
     if (!container || !window.gestorPrendaSinCotizacion) return;
 
+    // Actualizar título dinámico para prendas sin cotización
+    const tituloPrendasDinamico = document.getElementById('titulo-prendas-dinamico');
+    if (tituloPrendasDinamico) {
+        tituloPrendasDinamico.textContent = 'Prendas Técnicas del Logo';
+        console.log('✅ Título dinámico actualizado para prendas sin cotización');
+    }
+
     // 🔴 CRÍTICO: Sincronizar datos ANTES de renderizar
     sincronizarDatosAntesDERenderizar();
 
@@ -100,10 +107,6 @@ function renderizarPrendasTipoPrendaSinCotizacion() {
         container.innerHTML = `
             <div class="empty-state" style="text-align: center; padding: 2rem;">
                 <p style="color: #6b7280; margin-bottom: 1rem;">No hay prendas agregadas.</p>
-                <button type="button" onclick="agregarPrendaTipoPrendaSinCotizacion()" class="btn btn-primary" 
-                        style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    ➕ Agregar Prenda
-                </button>
             </div>
         `;
         return;
@@ -116,10 +119,6 @@ function renderizarPrendasTipoPrendaSinCotizacion() {
 
     html += `
         <div style="text-align: center; margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <button type="button" onclick="agregarPrendaTipoPrendaSinCotizacion()" class="btn btn-primary" 
-                    style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                ➕ Agregar Otra Prenda
-            </button>
         </div>
     `;
 
@@ -202,12 +201,6 @@ function renderizarPrendaTipoPrenda(prenda, index) {
                 <div class="prenda-title" style="font-weight: 700; font-size: 1.125rem; color: #333;">
                     Prenda ${index + 1}: ${prenda.nombre_producto || 'Sin nombre'}
                 </div>
-                <button type="button" onclick="eliminarPrendaTipoPrenda(${index})"
-                        class="btn-eliminar-prenda"
-                        style="background: linear-gradient(135deg, #dc3545 0%, #b91c1c 100%); color: white; border: none; border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font-weight: 800; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 3px 10px rgba(185,28,28,0.25);">
-                    <span style="display:inline-flex; align-items:center; justify-content:center; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.18); font-size: 0.9rem; line-height: 1;">✕</span>
-                    <span style="font-size: 0.9rem;">Eliminar</span>
-                </button>
             </div>
 
             <!-- Contenido principal (2 columnas: Información + Fotos) -->
@@ -241,7 +234,6 @@ function renderizarPrendaTipoPrenda(prenda, index) {
                             <option value="">-- Seleccionar --</option>
                             <option value="Dama" ${prenda.genero === 'Dama' ? 'selected' : ''}>Dama</option>
                             <option value="Caballero" ${prenda.genero === 'Caballero' ? 'selected' : ''}>Caballero</option>
-                            <option value="Unisex" ${prenda.genero === 'Unisex' ? 'selected' : ''}>Unisex</option>
                         </select>
                     </div>
                 </div>

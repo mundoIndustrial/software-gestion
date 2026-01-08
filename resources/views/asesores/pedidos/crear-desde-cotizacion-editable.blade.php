@@ -549,7 +549,7 @@
             </div>
 
         <!-- PASO 2: Información del Pedido -->
-        <div class="form-section" id="seccion-info-prenda">
+        <div class="form-section" id="seccion-info-prenda" style="display: none;">
             <h2>
                 <span>2</span> Información del Pedido
             </h2>
@@ -584,15 +584,15 @@
         </div>
 
         <!-- PASO 3: Prendas Editables -->
-        <div class="form-section" id="seccion-prendas">
+        <div class="form-section" id="seccion-prendas" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 style="margin: 0;">
-                    <span>3</span> Prendas Técnicas del Logo
+                    <span>3</span> <span id="titulo-prendas-dinamico">Prendas Técnicas del Logo</span>
                 </h2>
                 <button type="button" 
                     id="btn-agregar-prenda-tecnica-logo"
                     onclick="abrirModalAgregarPrendaTecnicaLogo()"
-                    style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);" 
+                    style="display: none; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);" 
                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.3)'"
                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.2)'">
                     ➕ Agregar Prenda Técnica
@@ -623,10 +623,6 @@
     <script>
         // Configuración inicial
         document.addEventListener('DOMContentLoaded', function() {
-            // Mostrar las secciones de prenda
-            document.getElementById('seccion-info-prenda').style.display = 'block';
-            document.getElementById('seccion-prendas').style.display = 'block';
-            
             // Configurar asesora
             document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';
             

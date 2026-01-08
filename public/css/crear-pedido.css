@@ -59,7 +59,7 @@
     line-height: 1.4;
 }
 
-.form-section h2 span {
+.form-section h2 span:first-child {
     background: var(--primary);
     color: white;
     min-width: 24px;

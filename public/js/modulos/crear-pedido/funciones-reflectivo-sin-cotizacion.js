@@ -20,6 +20,12 @@
 function crearPedidoTipoReflectivoSinCotizacion() {
     console.log('🎯 INICIANDO: Crear pedido tipo REFLECTIVO sin cotización');
 
+    // Mostrar los pasos 2 y 3
+    const seccionInfoPrenda = document.getElementById('seccion-info-prenda');
+    const seccionPrendas = document.getElementById('seccion-prendas');
+    if (seccionInfoPrenda) seccionInfoPrenda.style.display = 'block';
+    if (seccionPrendas) seccionPrendas.style.display = 'block';
+
     // Limpiar container
     const container = document.getElementById('prendas-container-editable');
     if (!container) {
