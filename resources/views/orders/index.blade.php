@@ -19,6 +19,15 @@
 
 @section('content')
 
+    <!-- Header con botón de Registrar Pedido -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0 1rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin: 0;">Órdenes de Producción</h2>
+        <button onclick="abrirModalRegistroPedido()" class="btn-registrar-pedido" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;">
+            <span style="font-size: 1.1rem;">+</span>
+            <span>Registrar Pedido</span>
+        </button>
+    </div>
+
     <div class="table-container">
         <div class="modern-table-wrapper">
             <div class="table-head" id="tableHead">
@@ -443,6 +452,9 @@
 
     <!-- Modal de Edición de Orden -->
     @include('components.orders-components.order-edit-modal')
+
+    <!-- Modal de Registro de Pedido -->
+    @include('components.orders-components.registro-pedido-modal')
 
     <!-- Modal de Filtros -->
     <div class="filter-modal-overlay" id="filterModalOverlay">

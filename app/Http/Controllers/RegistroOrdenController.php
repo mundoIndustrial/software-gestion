@@ -961,4 +961,222 @@ class RegistroOrdenController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Crear pedido desde modal de la vista de orders
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeFromModal(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $cliente = $request->input('cliente');
+            $asesora = $request->input('asesora', '');
+            $formaPago = $request->input('forma_de_pago', '');
+            $prendas = $request->input('prendas', []);
+            $estado = $request->input('estado', 'No iniciado');
+
+            if (!$cliente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cliente es requerido'
+                ], 422);
+            }
+
+            if (empty($prendas)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe agregar al menos una prenda'
+                ], 422);
+            }
+
+            // Obtener próximo número de pedido
+            $numeroPedido = $this->numberService->getNextNumber();
+
+            // Crear pedido
+            $pedido = PedidoProduccion::create([
+                'numero_pedido' => $numeroPedido,
+                'cliente' => $cliente,
+                'asesora' => $asesora,
+                'forma_de_pago' => $formaPago,
+                'estado' => $estado,
+                'cotizacion_id' => null, // Sin cotización
+                'created_at' => now(), // Fecha de creación explícita
+                'updated_at' => now(), // Fecha de actualización explícita
+            ]);
+
+            $totalPrendas = 0;
+            $descripcionPrendas = '';
+
+            // Crear prendas
+            foreach ($prendas as $index => $prendaData) {
+                $nombrePrenda = $prendaData['nombre_producto'] ?? '';
+                $descripcionFormulario = $prendaData['descripcion'] ?? '';
+                $genero = $prendaData['genero'] ?? '';
+                $encargadoOrden = $prendaData['encargado_orden'] ?? $asesora; // Si no se proporciona, usar asesora
+                $telas = $prendaData['telas'] ?? [];
+                $tipoManga = $prendaData['tipo_manga'] ?? 'No aplica';
+                $obsManga = $prendaData['obs_manga'] ?? '';
+                $tipoBroche = $prendaData['tipo_broche'] ?? 'No aplica';
+                $obsBroche = $prendaData['obs_broche'] ?? '';
+                $tieneBolsillos = $prendaData['tiene_bolsillos'] ?? false;
+                $obsBolsillos = $prendaData['obs_bolsillos'] ?? '';
+                $tieneReflectivo = $prendaData['tiene_reflectivo'] ?? false;
+                $obsReflectivo = $prendaData['obs_reflectivo'] ?? '';
+                $cantidadesTalla = $prendaData['cantidad_talla'] ?? [];
+
+                // Calcular cantidad total
+                $cantidadTotal = 0;
+                foreach ($cantidadesTalla as $cantidad) {
+                    $cantidadTotal += intval($cantidad);
+                }
+
+                // ===== GENERAR DESCRIPCIÓN USANDO HELPER (EXACTO COMO ASESOR) =====
+                
+                // 1. Obtener primer tela (para descripción principal)
+                $nombreTela = '';
+                $colorTela = '';
+                $refTela = '';
+                if (!empty($telas) && is_array($telas) && isset($telas[0])) {
+                    $nombreTela = $telas[0]['nombre_tela'] ?? '';
+                    $colorTela = $telas[0]['color_tela'] ?? '';
+                    $refTela = $telas[0]['referencia'] ?? '';
+                }
+
+                // 2. Preparar datos para helper (igual a DescripcionPrendaHelper)
+                $datosParaHelper = [
+                    'numero' => $index + 1,
+                    'tipo' => strtoupper($nombrePrenda),
+                    'color' => strtoupper($colorTela),
+                    'tela' => strtoupper($nombreTela),
+                    'ref' => strtoupper($refTela),
+                    'manga' => strtoupper($tipoManga),
+                    'obs_manga' => $obsManga,
+                    'tipo_broche' => $tipoBroche,
+                    'broche' => $obsBroche,
+                    'bolsillos' => $tieneBolsillos ? ['Sí'] : [],
+                    'reflectivos' => $tieneReflectivo ? ['Sí'] : [],
+                    'tallas' => $cantidadesTalla
+                ];
+
+                // 3. Usar el DescripcionPrendaLegacyFormatter (exacto como asesor)
+                // SIN incluir el nombre de la prenda (se guarda en nombre_prenda)
+                $descripcionFormateada = \App\Helpers\DescripcionPrendaLegacyFormatter::generar([
+                    'numero' => $index + 1,
+                    'tipo' => strtoupper($nombrePrenda),
+                    'descripcion' => $descripcionFormulario,
+                    'tela' => strtoupper($nombreTela),
+                    'ref' => $refTela,
+                    'color' => strtoupper($colorTela),
+                    'manga' => $tipoManga !== 'No aplica' ? $tipoManga : '',
+                    'tiene_bolsillos' => $tieneBolsillos,
+                    'bolsillos_obs' => $obsBolsillos,
+                    'tiene_reflectivo' => $tieneReflectivo,
+                    'reflectivo_obs' => $obsReflectivo,
+                    'broche_obs' => $obsBroche,
+                    'tallas' => $cantidadesTalla
+                ], false); // false = NO incluir "PRENDA X: TIPO"
+
+                // 4. PRIORIZAR: descripción del formulario sobre formateada (como asesor)
+                $descripcionFinal = !empty($descripcionFormulario) ? $descripcionFormulario : $descripcionFormateada;
+
+                // 5. Generar descripcion_variaciones en FORMATO EXACTO del asesor
+                // Formato: "Manga: X | Obs Manga: Y | Bolsillos: Z | Broche: W | Reflectivo: V"
+                $partes = [];
+                
+                if ($tipoManga !== 'No aplica') {
+                    $partes[] = "Manga: " . $tipoManga;
+                }
+                if (!empty($obsManga)) {
+                    $partes[] = "Obs Manga: " . $obsManga;
+                }
+                if ($tieneBolsillos && !empty($obsBolsillos)) {
+                    $partes[] = "Bolsillos: " . $obsBolsillos;
+                }
+                if ($tipoBroche !== 'No aplica' && !empty($obsBroche)) {
+                    $partes[] = "Broche: " . $obsBroche;
+                }
+                if ($tieneReflectivo && !empty($obsReflectivo)) {
+                    $partes[] = "Reflectivo: " . $obsReflectivo;
+                }
+                
+                // Agregar información de telas múltiples en JSON
+                if (!empty($telas) && count($telas) > 1) {
+                    $telasJson = json_encode($telas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                    $partes[] = "telas_multiples=" . $telasJson;
+                }
+                
+                $descripcionVariaciones = !empty($partes) ? implode(" | ", $partes) : null;
+
+                // Agregar a descripción global de pedido
+                if ($index > 0) {
+                    $descripcionPrendas .= "\n\n";
+                }
+                $descripcionPrendas .= $descripcionFinal;
+
+                // Crear modelo de prenda
+                $prendaPedido = \App\Models\PrendaPedido::create([
+                    'numero_pedido' => $numeroPedido,
+                    'nombre_prenda' => $nombrePrenda,
+                    'cantidad' => $cantidadTotal,
+                    'descripcion' => $descripcionFinal,           // ✅ Descripción formateada
+                    'descripcion_variaciones' => $descripcionVariaciones, // ✅ Variaciones en formato asesor
+                    'cantidad_talla' => json_encode($cantidadesTalla),
+                    'color_id' => null,
+                    'tela_id' => null,
+                    'tipo_manga_id' => null,
+                    'tipo_broche_id' => null,
+                    'tiene_bolsillos' => $tieneBolsillos ? 1 : 0,
+                    'tiene_reflectivo' => $tieneReflectivo ? 1 : 0,
+                ]);
+
+                // Crear proceso inicial - CREACIÓN ORDEN
+                $ahora = now();
+                \App\Models\ProcesoPrenda::create([
+                    'numero_pedido' => $numeroPedido,
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'proceso' => 'Creación Orden',
+                    'estado' => 'No iniciado',
+                    'encargado' => $encargadoOrden, // ✅ Usar el encargado de orden especificado
+                    'fecha_inicio' => $ahora,
+                    'fecha_fin' => $ahora,
+                    'created_at' => $ahora,
+                    'updated_at' => $ahora,
+                ]);
+
+                $totalPrendas += $cantidadTotal;
+            }
+
+            // Actualizar descripción de prendas
+            $pedido->update([
+                'descripcion_prendas' => $descripcionPrendas
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido registrado exitosamente',
+                'numero_pedido' => $numeroPedido,
+                'cliente' => $cliente,
+                'total_prendas' => count($prendas),
+                'cantidad_total' => $totalPrendas,
+                'estado' => $estado
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al registrar pedido desde modal', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar el pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

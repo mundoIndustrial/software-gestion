@@ -33,14 +33,15 @@ class DescripcionPrendaLegacyFormatter
      *      'tiene_reflectivo' => bool,
      *      'reflectivo_obs' => string,
      *      'tallas' => array ['talla' => cantidad]
+     * @param bool $incluirNombrePrenda Si FALSE, no incluye "PRENDA X: TIPO" (se guarda en nombre_prenda)
      * @return string Descripción formateada en formato legacy exacto
      */
-    public static function generar(array $prenda): string
+    public static function generar(array $prenda, bool $incluirNombrePrenda = false): string
     {
         $partes = [];
         
-        // Línea 1: PRENDA X: [tipo]
-        if (isset($prenda['numero']) && isset($prenda['tipo'])) {
+        // Línea 1: PRENDA X: [tipo] - SOLO SI incluirNombrePrenda es TRUE
+        if ($incluirNombrePrenda && isset($prenda['numero']) && isset($prenda['tipo'])) {
             $partes[] = "PRENDA {$prenda['numero']}: {$prenda['tipo']}";
         }
         
