@@ -895,16 +895,23 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     console.log('🎨 window.tecnicasAgregadas:', window.tecnicasAgregadas);
     console.log('📝 Observaciones generales:', observacionesDelDOM);
 
-    // Verificar si hay imágenes nuevas
+    // Verificar si hay imágenes nuevas EN EL LOGO O EN LAS TÉCNICAS
     const tieneImagenesNuevas = imagenesSeleccionadas.some(img => !img.existing);
+    const tieneImagenesEnTecnicas = (data.tecnicas || []).some(tecnica => {
+        console.log('🔍 Checando técnica:', tecnica.tipo_logo.nombre, 'prendas:', tecnica.prendas.length);
+        return (tecnica.prendas || []).some(prenda => {
+            console.log('  🔹 Checando prenda:', prenda.nombre_prenda, 'imagenes_files:', !!prenda.imagenes_files, 'length:', prenda.imagenes_files ? prenda.imagenes_files.length : 0);
+            return prenda.imagenes_files && prenda.imagenes_files.length > 0;
+        });
+    });
+    const debeUsarFormData = tieneImagenesNuevas || tieneImagenesEnTecnicas;
     
-    console.log('📸 ¿Tiene imágenes nuevas?', tieneImagenesNuevas);
+    console.log('📸 ¿Tiene imágenes nuevas en LOGO?', tieneImagenesNuevas);
+    console.log('📸 ¿Tiene imágenes en TÉCNICAS?', tieneImagenesEnTecnicas);
+    console.log('📦 ¿Debe usar FormData?', debeUsarFormData);
+    console.log('📊 window.tecnicasAgregadas:', window.tecnicasAgregadas);
     
-    let response;
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
-                     document.querySelector('input[name="_token"]')?.value;
-
-    if (tieneImagenesNuevas) {
+    if (debeUsarFormData) {
         // Si hay imágenes nuevas, usar FormData (un solo fetch)
         const formData = new FormData();
         
@@ -912,6 +919,54 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         if (method === 'PUT') {
             formData.append('_method', 'PUT');
         }
+
+        // ✅ EXTRAER Y PROCESAR ARCHIVOS DE TÉCNICAS ANTES DE SERIALIZARLAS
+        console.log('📸 Procesando archivos de técnicas...');
+        console.log('📦 data.tecnicas ANTES de extraer:', data.tecnicas);
+        let totalArchivosEnTecnicas = 0;
+        
+        // Crear versión sin archivos para JSON
+        const tecnicasParaJSON = (data.tecnicas || []).map((tecnica, tecnicaIdx) => {
+            console.log(`🔵 Procesando técnica ${tecnicaIdx}:`, tecnica.tipo_logo.nombre);
+            console.log(`   Prendas en técnica ${tecnicaIdx}:`, tecnica.prendas.length);
+            
+            return {
+                ...tecnica,
+                prendas: (tecnica.prendas || []).map((prenda, prendaIdx) => {
+                    console.log(`   🔹 Prenda ${prendaIdx}:`, prenda.nombre_prenda);
+                    console.log(`      imagenes_files existe:`, !!prenda.imagenes_files);
+                    console.log(`      imagenes_files es array:`, Array.isArray(prenda.imagenes_files));
+                    console.log(`      imagenes_files length:`, prenda.imagenes_files ? prenda.imagenes_files.length : 0);
+                    
+                    // Extraer archivos si existen
+                    if (prenda.imagenes_files && Array.isArray(prenda.imagenes_files)) {
+                        console.log(`      Iterando ${prenda.imagenes_files.length} archivos...`);
+                        prenda.imagenes_files.forEach((archivo, imgIdx) => {
+                            console.log(`        Archivo ${imgIdx}:`, archivo.name ? archivo.name : 'no es File', 'instanceof File:', archivo instanceof File);
+                            if (archivo instanceof File) {
+                                const fieldName = `tecnica_${tecnicaIdx}_prenda_${prendaIdx}_img_${imgIdx}`;
+                                formData.append(fieldName, archivo);
+                                totalArchivosEnTecnicas++;
+                                console.log(`        ✓ Archivo agregado: ${fieldName} (${archivo.name})`);
+                            }
+                        });
+                    }
+                    
+                    // Retornar prenda sin archivos para JSON
+                    return {
+                        nombre_prenda: prenda.nombre_prenda,
+                        observaciones: prenda.observaciones,
+                        ubicaciones: prenda.ubicaciones,
+                        talla_cantidad: prenda.talla_cantidad,
+                        imagenes_files: [] // Vacío - los archivos ya están en FormData
+                    };
+                })
+            };
+        });
+        
+        console.log(`✅ ${totalArchivosEnTecnicas} archivos extraídos de técnicas`);
+        console.log('📦 tecnicasParaJSON:', tecnicasParaJSON);
+        data.tecnicas = tecnicasParaJSON;
 
         // Agregar datos JSON al FormData
         Object.keys(data).forEach(key => {

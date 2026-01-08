@@ -1428,10 +1428,17 @@ function guardarTecnicaCombinada(datosForm) {
         const imagesPorTecnicaDiv = document.getElementById('dImagenesPorTecnica');
         if (imagesPorTecnicaDiv) {
             const divImagenes = imagesPorTecnicaDiv.querySelectorAll('[data-tecnica-idx]');
+            console.log('🖼️ Divs de imágenes encontrados:', divImagenes.length);
             divImagenes.forEach(div => {
                 const idx = parseInt(div.getAttribute('data-tecnica-idx'));
+                console.log(`  Div ${idx}:`, {
+                    tiene_imagenesAgregadas: !!div.imagenesAgregadas,
+                    cantidad: div.imagenesAgregadas ? div.imagenesAgregadas.length : 0,
+                    contenido: div.imagenesAgregadas ? div.imagenesAgregadas.map(f => f.name) : []
+                });
                 if (div.imagenesAgregadas && div.imagenesAgregadas.length > 0) {
                     imagenesPorTecnica[idx] = div.imagenesAgregadas;
+                    console.log(`✅ Imágenes agregadas para técnica ${idx}:`, imagenesPorTecnica[idx].map(f => f.name));
                 }
             });
         }
@@ -1938,14 +1945,14 @@ function renderizarTecnicasAgregadas() {
                 <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; font-size: 0.9rem; vertical-align: top;"></td>
                 <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: top;">
                     <div style="display: flex; gap: 4px; justify-content: center;">
-                        <button class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
+                        <button type="button" class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
                                 style="background: none; color: #0066cc; border: 1px solid #0066cc; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
                                 onmouseover="this.style.background='#0066cc'; this.style.color='white'" 
                                 onmouseout="this.style.background='none'; this.style.color='#0066cc'"
                                 title="Editar técnica(s)">
                             ✎
                         </button>
-                        <button class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
+                        <button type="button" class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
                                 style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
                                 onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
                                 onmouseout="this.style.background='none'; this.style.color='#999'"
@@ -1983,14 +1990,14 @@ function renderizarTecnicasAgregadas() {
                 </td>
                 <td style="padding: 10px 12px; border: 1px solid #eee; text-align: center; vertical-align: top;">
                     <div style="display: flex; gap: 4px; justify-content: center;">
-                        <button class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
+                        <button type="button" class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
                                 style="background: none; color: #0066cc; border: 1px solid #0066cc; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
                                 onmouseover="this.style.background='#0066cc'; this.style.color='white'" 
                                 onmouseout="this.style.background='none'; this.style.color='#0066cc'"
                                 title="Editar técnica(s)">
                             ✎
                         </button>
-                        <button class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
+                        <button type="button" class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
                                 style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9rem;"
                                 onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" 
                                 onmouseout="this.style.background='none'; this.style.color='#999'"
@@ -2012,7 +2019,9 @@ function renderizarTecnicasAgregadas() {
     
     // Agregar event listeners para botones de editar grupo
     document.querySelectorAll('.btn-editar-grupo').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             const grupoId = this.getAttribute('data-grupo-id');
             editarTecnicaDelGrupo(grupoId);
         });
@@ -2020,7 +2029,9 @@ function renderizarTecnicasAgregadas() {
     
     // Agregar event listeners para botones de eliminar grupo
     document.querySelectorAll('.btn-eliminar-grupo').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             const grupoId = this.getAttribute('data-grupo-id');
             eliminarTecnicaDelGrupo(grupoId);
         });
@@ -2060,21 +2071,138 @@ function editarTecnicaDelGrupo(grupoId) {
     });
     
     if (tecnicasDelGrupo.length === 0) {
-        console.error('No se encontraron técnicas para editar');
+        console.error('❌ No se encontraron técnicas para editar');
         return;
     }
     
     console.log('🔧 Editando grupo:', grupoId, tecnicasDelGrupo);
     
-    // Mostrar modal de edición
-    Swal.fire({
-        icon: 'info',
-        title: 'Editar técnica(s)',
-        text: 'Funcionalidad de edición en desarrollo',
-        confirmButtonText: 'OK'
+    // Obtener datos actuales (tomar del primer grupo ya que todos comparten datos)
+    const tecnicaActual = tecnicasDelGrupo[0];
+    const prendasActuales = tecnicaActual.prendas[0] || {};
+    const nombrePrendaActual = prendasActuales.nombre_prenda || '';
+    const observacionesActuales = prendasActuales.observaciones || '';
+    const ubicacionesActuales = prendasActuales.ubicaciones || [];
+    const tallasActuales = prendasActuales.talla_cantidad || [];
+    
+    // Construir HTML del formulario de edición
+    let tallasHTML = '';
+    tallasActuales.forEach((tc, idx) => {
+        tallasHTML += `
+            <div class="edit-talla-row" style="display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px;" data-edit-idx="${idx}">
+                <input type="text" class="edit-talla" value="${tc.talla || ''}" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                <input type="number" class="edit-cantidad" value="${tc.cantidad || 1}" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                <button type="button" class="edit-btn-eliminar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer;">✕</button>
+            </div>
+        `;
     });
     
-    // TODO: Implementar formulario de edición completo
+    Swal.fire({
+        title: `Editar ${tecnicasDelGrupo.map(t => t.tipo_logo.nombre).join(' + ')}`,
+        width: '600px',
+        html: `
+            <div style="text-align: left; padding: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prenda</label>
+                    <input type="text" id="edit-nombre-prenda" value="${nombrePrendaActual}" placeholder="POLO, CAMISA..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones</label>
+                    <textarea id="edit-observaciones" placeholder="Detalles adicionales" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical;">${observacionesActuales}</textarea>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Tallas y Cantidades</label>
+                    <div id="edit-tallas-container" style="display: grid; gap: 8px; margin-bottom: 10px;">
+                        ${tallasHTML}
+                    </div>
+                    <button type="button" id="edit-btn-agregar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%;">+ Agregar talla</button>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar Cambios',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#333',
+        didOpen: (modal) => {
+            const btnAgregarTalla = document.getElementById('edit-btn-agregar-talla');
+            const tallasContainer = document.getElementById('edit-tallas-container');
+            let contadorTallasEdit = tallasActuales.length;
+            
+            // Agregar talla
+            if (btnAgregarTalla) {
+                btnAgregarTalla.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const nuevaTalla = document.createElement('div');
+                    nuevaTalla.className = 'edit-talla-row';
+                    nuevaTalla.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px;';
+                    nuevaTalla.dataset.editIdx = contadorTallasEdit++;
+                    nuevaTalla.innerHTML = `
+                        <input type="text" class="edit-talla" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        <input type="number" class="edit-cantidad" value="1" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        <button type="button" class="edit-btn-eliminar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer;">✕</button>
+                    `;
+                    
+                    nuevaTalla.querySelector('.edit-btn-eliminar-talla').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        nuevaTalla.remove();
+                    });
+                    
+                    tallasContainer.appendChild(nuevaTalla);
+                });
+            }
+            
+            // Botones eliminar talla existentes
+            document.querySelectorAll('.edit-btn-eliminar-talla').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    btn.closest('.edit-talla-row').remove();
+                });
+            });
+        },
+        preConfirm: () => {
+            const nombrePrenda = document.getElementById('edit-nombre-prenda').value.trim().toUpperCase();
+            if (!nombrePrenda) {
+                Swal.showValidationMessage('Completa el nombre de la prenda');
+                return false;
+            }
+            
+            const nuevasTallas = [];
+            document.querySelectorAll('.edit-talla-row').forEach(row => {
+                const talla = row.querySelector('.edit-talla').value.trim();
+                const cantidad = row.querySelector('.edit-cantidad').value;
+                if (talla && cantidad) {
+                    nuevasTallas.push({ talla, cantidad: parseInt(cantidad) });
+                }
+            });
+            
+            if (nuevasTallas.length === 0) {
+                Swal.showValidationMessage('Agrega al menos una talla');
+                return false;
+            }
+            
+            return {
+                nombre_prenda: nombrePrenda,
+                observaciones: document.getElementById('edit-observaciones').value.trim(),
+                talla_cantidad: nuevasTallas
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            // Actualizar TODAS las técnicas del grupo con los nuevos datos
+            tecnicasDelGrupo.forEach(tecnica => {
+                tecnica.prendas.forEach(prenda => {
+                    prenda.nombre_prenda = result.value.nombre_prenda;
+                    prenda.observaciones = result.value.observaciones;
+                    prenda.talla_cantidad = result.value.talla_cantidad;
+                });
+            });
+            
+            console.log('✅ Técnicas editadas y actualizadas en memory');
+            renderizarTecnicasAgregadas();
+        }
+    });
 }
 
 function eliminarTecnicaDelGrupo(grupoId) {

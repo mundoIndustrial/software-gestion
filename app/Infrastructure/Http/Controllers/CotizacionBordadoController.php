@@ -13,6 +13,7 @@ use App\Models\Cotizacion;
 use App\Models\Cliente;
 use App\Models\NumeroSecuencia;
 use Intervention\Image\ImageManager;
+use App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController;
 use Intervention\Image\Drivers\Gd\Driver;
 
 class CotizacionBordadoController extends Controller
@@ -499,6 +500,21 @@ class CotizacionBordadoController extends Controller
                     $this->procesarImagenesCotizacion($request, $cotizacion->id);
                 }
 
+                // ✅ PROCESAR TÉCNICAS CON PRENDAS (nueva lógica)
+                if (!empty($tecnicas) && is_array($tecnicas) && count($tecnicas) > 0) {
+                    Log::info('🎨 Procesando técnicas agregadas desde el modal', [
+                        'count' => count($tecnicas),
+                        'logo_cotizacion_id' => $logoCotizacion->id
+                    ]);
+                    
+                    $this->procesarTecnicasDelFormulario($tecnicas, $logoCotizacion->id, $request);
+                } else {
+                    Log::info('ℹ️ No hay técnicas para procesar', [
+                        'tecnicas_count' => is_array($tecnicas) ? count($tecnicas) : 0,
+                        'tecnicas_type' => gettype($tecnicas)
+                    ]);
+                }
+
                 // Si se envía, aún encolamos el job pero el número YA EXISTE
                 if (!$esBorrador) {
                     \App\Jobs\ProcesarEnvioCotizacionJob::dispatch(
@@ -545,6 +561,8 @@ class CotizacionBordadoController extends Controller
                     'success' => true,
                     'message' => $esBorrador ? 'Cotización guardada como borrador' : 'Cotización enviada - Número: ' . $numeroCotizacion,
                     'data' => $resultado,
+                    'logoCotizacionId' => $logoCotizacion->id,
+                    'cotizacionId' => $cotizacion->id,
                     'redirect' => route('asesores.cotizaciones.index')
                 ], 201);
 
@@ -714,5 +732,144 @@ class CotizacionBordadoController extends Controller
     public function destroy($id)
     {
         return redirect()->route('cotizaciones.index')->with('success', 'Cotización eliminada exitosamente');
+    }
+
+    /**
+     * Procesar técnicas del formulario y guardarlas en logo_cotizacion_tecnica_prendas
+     * 
+     * Las técnicas vienen del array window.tecnicasAgregadas del cliente
+     * Los archivos vienen con nombres: tecnica_X_prenda_Y_img_Z
+     */
+    private function procesarTecnicasDelFormulario(array $tecnicas, int $logoCotizacionId, Request $request)
+    {
+        try {
+            Log::info('🔵 procesarTecnicasDelFormulario() - Iniciando', [
+                'count' => count($tecnicas),
+                'logoCotizacionId' => $logoCotizacionId
+            ]);
+
+            // Recopilar archivos por técnica y prenda
+            $archivosAgrupados = [];
+            foreach ($request->files->all() as $fieldName => $archivo) {
+                if (preg_match('/^tecnica_(\d+)_prenda_(\d+)_img_(\d+)$/', $fieldName, $matches)) {
+                    $tecnicaIdx = (int)$matches[1];
+                    $prendaIdx = (int)$matches[2];
+                    $imgIdx = (int)$matches[3];
+                    
+                    if (!isset($archivosAgrupados[$tecnicaIdx])) {
+                        $archivosAgrupados[$tecnicaIdx] = [];
+                    }
+                    if (!isset($archivosAgrupados[$tecnicaIdx][$prendaIdx])) {
+                        $archivosAgrupados[$tecnicaIdx][$prendaIdx] = [];
+                    }
+                    
+                    $archivosAgrupados[$tecnicaIdx][$prendaIdx][$imgIdx] = $archivo;
+                    
+                    Log::info('📸 Archivo encontrado', [
+                        'fieldName' => $fieldName,
+                        'tecnica_idx' => $tecnicaIdx,
+                        'prenda_idx' => $prendaIdx,
+                        'img_idx' => $imgIdx,
+                        'nombre' => $archivo->getClientOriginalName()
+                    ]);
+                }
+            }
+            
+            Log::info('📊 Archivos agrupados por técnica', [
+                'tecnicas_con_archivos' => count($archivosAgrupados),
+                'estructura' => json_encode(array_map(
+                    fn($t) => array_map(fn($p) => count($p), $t),
+                    $archivosAgrupados
+                ))
+            ]);
+
+            // Procesar cada técnica
+            $tecnicaController = new LogoCotizacionTecnicaController();
+
+            foreach ($tecnicas as $tecnicaIdx => $tecnica) {
+                Log::info("📍 Procesando técnica [{$tecnicaIdx}]", [
+                    'tipo_logo' => $tecnica['tipo_logo']['nombre'] ?? 'desconocido',
+                    'prendas_count' => count($tecnica['prendas'] ?? []),
+                    'es_combinada' => $tecnica['es_combinada'] ?? false
+                ]);
+
+                // Validar que tenga tipo_logo
+                if (!isset($tecnica['tipo_logo']['id'])) {
+                    Log::warning("⚠️ Técnica sin tipo_logo válido, omitiendo");
+                    continue;
+                }
+
+                // Preparar prendas con archivos
+                $prendasSinArchivos = [];
+                foreach ($tecnica['prendas'] as $prendaIdx => $prenda) {
+                    $prendasSinArchivos[] = [
+                        'nombre_prenda' => $prenda['nombre_prenda'] ?? '',
+                        'observaciones' => $prenda['observaciones'] ?? '',
+                        'ubicaciones' => $prenda['ubicaciones'] ?? [],
+                        'talla_cantidad' => $prenda['talla_cantidad'] ?? [],
+                        'imagenes_data_urls' => []
+                    ];
+                }
+
+                // Crear Request simulado
+                // ⚠️ Convertir es_combinada a string 'true'/'false' para validación
+                $esCombinada = $tecnica['es_combinada'] ?? false;
+                $esCombinada = ($esCombinada === true || $esCombinada === 'true' || $esCombinada === 1 || $esCombinada === '1') ? 'true' : 'false';
+                
+                $fakeRequest = new Request([
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'tipo_logo_id' => $tecnica['tipo_logo']['id'],
+                    'prendas' => json_encode($prendasSinArchivos),
+                    'es_combinada' => $esCombinada,  // ← String, no boolean
+                    'grupo_combinado' => $tecnica['grupo_combinado'] ?? null,
+                ]);
+
+                // Agregar archivos al Request simulado
+                $archivosEnEstaTecnica = $archivosAgrupados[$tecnicaIdx] ?? [];
+                $archivosCopiados = 0;
+                
+                foreach ($archivosEnEstaTecnica as $prendaIdx => $archivosPorIndice) {
+                    foreach ($archivosPorIndice as $imgIdx => $archivo) {
+                        $fieldName = "imagenes_prenda_{$prendaIdx}_{$imgIdx}";
+                        $fakeRequest->files->set($fieldName, $archivo);
+                        $archivosCopiados++;
+                        
+                        Log::info("📸 Archivo asignado al Request", [
+                            'fieldName' => $fieldName,
+                            'nombre' => $archivo->getClientOriginalName()
+                        ]);
+                    }
+                }
+
+                // Llamar al controlador
+                try {
+                    $response = $tecnicaController->agregarTecnica($fakeRequest);
+                    $statusCode = $response->getStatusCode();
+                    
+                    if ($statusCode === 201) {
+                        Log::info("✅ Técnica agregada exitosamente", [
+                            'tipo_logo' => $tecnica['tipo_logo']['nombre'],
+                            'archivos_procesados' => $archivosCopiados
+                        ]);
+                    } else {
+                        Log::warning("⚠️ Técnica procesada con status {$statusCode}");
+                    }
+                } catch (\Exception $e) {
+                    Log::error("❌ Error procesando técnica", [
+                        'tipo_logo' => $tecnica['tipo_logo']['nombre'] ?? 'desconocido',
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            Log::info("✅ Todas las técnicas procesadas");
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error en procesarTecnicasDelFormulario()', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+        }
     }
 }
