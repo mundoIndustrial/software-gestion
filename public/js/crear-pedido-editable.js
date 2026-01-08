@@ -288,6 +288,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const esLogo = window.tipoCotizacion === 'L';
 
                     currentLogoCotizacion = data.logo || null;
+                    // ✅ AGREGAR: Asignar logoCotizacionId si existe
+                    if (data.logo && data.logo.id) {
+                        document.getElementById('logoCotizacionId').value = data.logo.id;
+                        console.log('✅ logoCotizacionId asignado:', data.logo.id);
+                    }
                     currentEspecificaciones = data.especificaciones || null;
                     currentEsReflectivo = esReflectivo;
                     currentDatosReflectivo = data.reflectivo || null;

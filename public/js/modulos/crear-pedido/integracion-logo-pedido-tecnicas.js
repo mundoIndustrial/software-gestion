@@ -88,10 +88,10 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
         if (resultado.prendas_tecnicas && resultado.prendas_tecnicas.length > 0) {
             console.log('✅ INTEGRACION: Cargando prendas técnicas...');
             cargarLogoPrendasDesdeCotizacion(resultado.prendas_tecnicas);
-            console.log('✅ INTEGRACION: logoPrendasTecnicas después de cargar:', logoPrendasTecnicas);
+            console.log('✅ INTEGRACION: logoPrendasTecnicas después de cargar:', window.logoPrendasTecnicas);
         } else {
             console.log('⚠️ INTEGRACION: No hay prendas técnicas en la respuesta');
-            logoPrendasTecnicas = [];
+            window.logoPrendasTecnicas = [];
         }
     } else {
         console.log('⚠️ INTEGRACION: No hay datos de logo en la respuesta');
@@ -134,21 +134,6 @@ window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTe
     prendasContainer.innerHTML = `
         <!-- Sección de Prendas Técnicas -->
         <div style="margin-top: 2rem;">
-            <!-- Encabezado -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #1f2937;">
-                    🎨 Prendas Técnicas del Logo
-                </h3>
-                <button type="button" 
-                    id="btn-agregar-prenda-tecnica-logo"
-                    onclick="abrirModalAgregarPrendaTecnicaLogo()"
-                    style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);" 
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.3)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.2)'">
-                    ➕ Agregar Prenda Técnica
-                </button>
-            </div>
-            
             <!-- Contenedor de Tarjetas de Prendas Técnicas -->
             <div id="logo-prendas-tecnicas-container" style="min-height: 200px;">
                 <!-- Se llenará dinámicamente con renderizarLogoPrendasTecnicas() -->
@@ -157,7 +142,7 @@ window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTe
     `;
     
     // Renderizar las prendas técnicas que ya están cargadas
-    console.log('📦 Prendas técnicas para renderizar:', logoPrendasTecnicas.length);
+    console.log('📦 Prendas técnicas para renderizar:', window.logoPrendasTecnicas.length);
     console.log('   - Llamando a renderizarLogoPrendasTecnicas()...');
     
     try {

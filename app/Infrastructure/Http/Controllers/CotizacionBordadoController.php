@@ -51,35 +51,11 @@ class CotizacionBordadoController extends Controller
                 'tiene_logo_cotizacion' => $cotizacion->logoCotizacion ? 'SI' : 'NO'
             ]);
         } else {
-            // Crear nueva cotización en blanco (borrador temporal)
-            $cotizacion = Cotizacion::create([
-                'asesor_id' => Auth::id(),
-                'numero_cotizacion' => $this->generarNumeroCotizacionService->generarProxNumeroCotizacion(Auth::id()),
-                'es_borrador' => true,
-                'estado' => 'borrador'
-            ]);
-            
-            // IMPORTANTE: Crear también el LogoCotizacion asociado
-            $logoCotizacion = \App\Models\LogoCotizacion::create([
-                'cotizacion_id' => $cotizacion->id,
-                'observaciones_generales' => json_encode([]),
-                'tipo_venta' => null
-            ]);
-            
-            // ✅ IMPORTANTE: Recargar la relación para que $cotizacion->logoCotizacion esté disponible en la vista
-            $cotizacion = $cotizacion->fresh();
-            
-            Log::info('✨ Nueva cotización creada para bordado', [
-                'cotizacion_id' => $cotizacion->id,
-                'asesor_id' => Auth::id(),
-                'logo_cotizacion_creado' => 'SI',
-                'logo_cotizacion_id' => $logoCotizacion->id
-            ]);
-            
-            Log::info('✨ Nueva cotización creada para bordado', [
-                'cotizacion_id' => $cotizacion->id,
-                'asesor_id' => Auth::id(),
-                'logo_cotizacion_creado' => 'SI'
+            // ✅ NO CREAR COTIZACIÓN AUTOMÁTICAMENTE
+            // La cotización se crea cuando el usuario hace POST (envía el formulario)
+            // Esto evita crear borradores vacíos innecesarios
+            Log::info('📝 Mostrando formulario vacío para crear nueva cotización', [
+                'asesor_id' => Auth::id()
             ]);
         }
 
@@ -499,51 +475,23 @@ class CotizacionBordadoController extends Controller
                     'numero_cotizacion' => $numeroCotizacion,
                 ]);
 
-                // ✅ CORRECCIÓN: Obtener el LogoCotizacion que vino en el formulario (creado en create.blade.php)
-                // NO crear uno nuevo, sino reutilizar el que ya existe y vincular la cotización a él
-                $logoCotizacionId = $request->input('logoCotizacionId');
-                
-                Log::info('🔍 DEBUG logoCotizacionId', [
-                    'logoCotizacionId_recibido' => $logoCotizacionId,
-                    'tipo' => gettype($logoCotizacionId),
-                    'es_vacio' => empty($logoCotizacionId),
-                    'todos_los_inputs' => array_keys($request->all())
+                // ✅ CREAR LogoCotizacion - NO viene del formulario, se crea aquí
+                // Todos los datos de técnicas, prendas, etc se crean en este request
+                $logoCotizacion = \App\Models\LogoCotizacion::create([
+                    'cotizacion_id' => $cotizacion->id,
+                    'observaciones_generales' => json_encode($observacionesGenerales ?? []),
+                    'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
+                ]);
+
+                Log::info('✅ LogoCotizacion creado nuevo', [
+                    'logo_id' => $logoCotizacion->id,
+                    'cotizacion_id' => $cotizacion->id
                 ]);
                 
-                $logoCotizacion = null;
-                if ($logoCotizacionId) {
-                    // Si hay logoCotizacionId en el formulario, usarlo (ya tiene técnicas agregadas)
-                    $logoCotizacion = \App\Models\LogoCotizacion::find($logoCotizacionId);
-                    Log::info('📍 Reutilizando LogoCotizacion existente', [
-                        'logoCotizacionId' => $logoCotizacionId,
-                        'encontrado' => $logoCotizacion ? 'SI' : 'NO'
-                    ]);
-                }
-                
-                // Si no existe el LogoCotizacion, crear uno nuevo
-                if (!$logoCotizacion) {
-                    $logoCotizacion = \App\Models\LogoCotizacion::create([
-                        'cotizacion_id' => $cotizacion->id
-                    ]);
-                    Log::info('🆕 LogoCotizacion creado nuevo', ['logo_id' => $logoCotizacion->id]);
-                }
-                
-                // IMPORTANTE: Vincular la cotización al LogoCotizacion (actualizar cotizacion_id)
-                $logoCotizacion->update(['cotizacion_id' => $cotizacion->id]);
-                
-                // Actualizar datos del LogoCotizacion (solo campos válidos)
-                $datosActualizar = [
-                    'observaciones_generales' => $observacionesGenerales ?? '',
-                    'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
-                ];
-                
-                $logoCotizacion->update($datosActualizar);
-
                 Log::info('✅ Detalles de bordado guardados en tabla logo_cotizaciones', [
                     'cotizacion_id' => $cotizacion->id,
                     'logo_id' => $logoCotizacion->id,
-                    'accion' => 'actualizado',
-                    'técnicas_preservadas' => true
+                    'estado' => 'nueva_cotizacion'
                 ]);
 
                 // Procesar imágenes si existen

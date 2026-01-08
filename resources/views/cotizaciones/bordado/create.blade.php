@@ -478,7 +478,6 @@ OR
             <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
             <input type="date" id="fecha" name="fecha" style="display: none;">
             <input type="text" id="tipo_venta_bordado" name="tipo_venta_bordado" style="display: none;">
-            <input type="hidden" id="logoCotizacionId" name="logoCotizacionId" value="{{ $cotizacion->logoCotizacion->id ?? '' }}">
 
             <!-- TÉCNICAS -->
             <div class="form-section">
@@ -775,18 +774,10 @@ document.getElementById('header-fecha').addEventListener('change', function() {
 document.getElementById('cotizacionBordadoForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    // PRIMERO: Guardar todas las técnicas temporales en BD
-    console.log('💾 Guardando técnicas temporales...');
-    const tecnicasGuardadas = await guardarTecnicasEnBD();
-    if (!tecnicasGuardadas) {
-        console.error('❌ Error al guardar técnicas');
-        document.querySelectorAll('button[type="submit"]').forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-        });
-        return;
-    }
+    // ✅ NO LLAMAR guardarTecnicasEnBD() AQUÍ
+    // Las técnicas se guardarán DESPUÉS de crear la cotización en el servidor
+    // Esto evita crear una cotización vacía de borrador
+    console.log('📝 Preparando envío de cotización con técnicas...');
 
     // Detectar cuál botón se presionó PRIMERO
     const submitButton = e.submitter;
@@ -883,7 +874,10 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const tokenInput = document.querySelector('input[name="_token"]');
     const headerFechaElement = document.getElementById('header-fecha');
     const headerTipoVentaElement = document.getElementById('header-tipo-venta');
-    const logoCotizacionIdElement = document.getElementById('logoCotizacionId');
+    
+    // ✅ Usar window.tecnicasAgregadas si está disponible (viene de logo-cotizacion-tecnicas.js)
+    // Si no está disponible, usar array vacío
+    const tecnicasAEnviar = typeof window.tecnicasAgregadas !== 'undefined' ? window.tecnicasAgregadas : [];
     
     const data = {
         _token: tokenInput?.value || '',
@@ -892,14 +886,13 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         fecha: headerFechaElement?.value || '',
         action: action,
         observaciones_tecnicas: observacionesTecnicas,
-        tecnicas: tecnicasSeleccionadas,
+        tecnicas: tecnicasAEnviar,
         observaciones_generales: observacionesDelDOM,
-        tipo_venta_bordado: headerTipoVentaElement?.value || '',
-        logoCotizacionId: logoCotizacionIdElement?.value || ''  // ✅ AGREGAR ESTE CAMPO
+        tipo_venta_bordado: headerTipoVentaElement?.value || ''
     };
 
     console.log('📦 Datos a enviar:', data);
-    console.log('🎨 Técnicas seleccionadas:', tecnicasSeleccionadas);
+    console.log('🎨 window.tecnicasAgregadas:', window.tecnicasAgregadas);
     console.log('📝 Observaciones generales:', observacionesDelDOM);
 
     // Verificar si hay imágenes nuevas

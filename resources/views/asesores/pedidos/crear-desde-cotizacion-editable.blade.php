@@ -505,6 +505,7 @@
                         <div style="position: relative;">
                             <input type="text" id="cotizacion_search_editable" placeholder="🔍 Buscar por número, cliente o asesora..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off">
                             <input type="hidden" id="cotizacion_id_editable" name="cotizacion_id">
+                            <input type="hidden" id="logoCotizacionId" name="logoCotizacionId">
                             <div id="cotizacion_dropdown_editable" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                             </div>
                         </div>
@@ -584,9 +585,19 @@
 
         <!-- PASO 3: Prendas Editables -->
         <div class="form-section" id="seccion-prendas">
-            <h2>
-                <span>3</span> Prendas Técnicas del Logo
-            </h2>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0;">
+                    <span>3</span> Prendas Técnicas del Logo
+                </h2>
+                <button type="button" 
+                    id="btn-agregar-prenda-tecnica-logo"
+                    onclick="abrirModalAgregarPrendaTecnicaLogo()"
+                    style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);" 
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.3)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.2)'">
+                    ➕ Agregar Prenda Técnica
+                </button>
+            </div>
 
             <div id="prendas-container-editable">
                 <div class="empty-state">

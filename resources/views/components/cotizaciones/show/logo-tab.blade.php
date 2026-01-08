@@ -173,13 +173,13 @@
                                     $nombrePrenda = $prenda1->nombre_prenda;
                                 @endphp
                                 <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;">
-                                    {{-- Técnicas (todas las de este grupo) --}}
+                    {{-- Técnicas (todas las de este grupo) --}}
                                     <td style="padding: 1rem; vertical-align: top;">
                                         @foreach($prendas as $prenda)
                                             @php
                                                 $tipoLogo = $prenda->tipoLogo;
                                             @endphp
-                                            <div style="display: inline-block; padding: 0.5rem 1rem; background: #0ea5e9; color: white; border-radius: 6px; font-weight: 600; font-size: 1rem; margin-bottom: 0.4rem; margin-right: 0.4rem;">
+                                            <div style="display: inline-block; padding: 0.5rem 1rem; background: #0ea5e9; color: white; border-radius: 6px; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.4rem; margin-right: 0.4rem;">
                                                 {{ $tipoLogo->nombre ?? 'Técnica' }}
                                             </div>
                                         @endforeach
@@ -195,25 +195,32 @@
                                         {{ $nombrePrenda }}
                                     </td>
                                     
-                                    {{-- Ubicaciones (combinar de todas las prendas del grupo) --}}
+                                    {{-- Ubicaciones POR TÉCNICA (mostrar cada técnica con sus ubicaciones) --}}
                                     <td style="padding: 1rem; vertical-align: top; font-size: 0.95rem;">
-                                        @php
-                                            $ubicacionesTotales = [];
-                                            foreach ($prendas as $p) {
-                                                $ubicaciones = is_string($p->ubicaciones) ? json_decode($p->ubicaciones, true) ?? [] : $p->ubicaciones;
-                                                $ubicacionesTotales = array_merge($ubicacionesTotales, $ubicaciones ?? []);
-                                            }
-                                            $ubicacionesTotales = array_unique($ubicacionesTotales);
-                                        @endphp
-                                        @if(!empty($ubicacionesTotales))
-                                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                                                @foreach($ubicacionesTotales as $ubicacion)
-                                                    <span class="tag tag-blue" style="font-size: 0.95rem;">{{ $ubicacion }}</span>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <span style="color: #94a3b8; font-size: 0.85rem;">—</span>
-                                        @endif
+                                        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                                            @foreach($prendas as $prenda)
+                                                @php
+                                                    $ubicaciones = is_string($prenda->ubicaciones) ? json_decode($prenda->ubicaciones, true) ?? [] : $prenda->ubicaciones;
+                                                    $tipoLogo = $prenda->tipoLogo;
+                                                @endphp
+                                                <div style="border-left: 3px solid #0ea5e9; padding-left: 0.8rem;">
+                                                    <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 0.4rem;">
+                                                        {{ $tipoLogo->nombre ?? 'Técnica' }}:
+                                                    </div>
+                                                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                                        @if(!empty($ubicaciones))
+                                                            @foreach($ubicaciones as $ubicacion)
+                                                                <span style="background: #dbeafe; color: #0369a1; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 500;">
+                                                                    {{ $ubicacion }}
+                                                                </span>
+                                                            @endforeach
+                                                        @else
+                                                            <span style="color: #94a3b8; font-size: 0.85rem;">—</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </td>
                                     
                                     {{-- Observaciones (de la primera prenda) --}}
@@ -252,41 +259,45 @@
                                         @endif
                                     </td>
                                     
-                                    {{-- Imágenes (combinar de todas las prendas del grupo) --}}
+                                    {{-- Imágenes POR TÉCNICA --}}
                                     <td style="padding: 1rem; vertical-align: top; text-align: center;">
-                                        @php
-                                            $todasLasFotos = [];
-                                            foreach ($prendas as $p) {
-                                                if ($p->fotos && $p->fotos->count() > 0) {
-                                                    $todasLasFotos = array_merge($todasLasFotos, $p->fotos->toArray());
-                                                }
-                                            }
-                                        @endphp
-                                        @if(!empty($todasLasFotos))
-                                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
-                                                @foreach($todasLasFotos as $index => $foto)
-                                                    <img src="{{ asset('storage/' . $foto['ruta_webp']) }}" 
-                                                         alt="Técnica"
-                                                         style="
-                                                             width: 80px;
-                                                             height: 80px;
-                                                             object-fit: cover;
-                                                             border-radius: 6px;
-                                                             border: 2px solid #e2e8f0;
-                                                             transition: all 0.3s;
-                                                             cursor: pointer;
-                                                         "
-                                                         onclick="abrirModalFotos('prenda-{{ $grupoId }}', {{ $index }})"
-                                                         onmouseover="this.style.borderColor='#0ea5e9'; this.style.boxShadow='0 4px 12px rgba(14,165,233,0.3)';"
-                                                         onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
-                                                @endforeach
-                                            </div>
-                                            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
-                                                {{ count($todasLasFotos) }} imagen(es)
-                                            </div>
-                                        @else
-                                            <span style="color: #94a3b8; font-size: 0.85rem;">Sin imágenes</span>
-                                        @endif
+                                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                            @foreach($prendas as $prenda)
+                                                @php
+                                                    $tipoLogo = $prenda->tipoLogo;
+                                                    $fotos = $prenda->fotos && $prenda->fotos->count() > 0 ? $prenda->fotos : collect();
+                                                @endphp
+                                                <div style="border-top: 2px solid #e2e8f0; padding-top: 0.8rem;">
+                                                    <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-bottom: 0.5rem; text-align: left;">
+                                                        {{ $tipoLogo->nombre ?? 'Técnica' }}
+                                                    </div>
+                                                    @if($fotos->count() > 0)
+                                                        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center;">
+                                                            @foreach($fotos as $foto)
+                                                                <img src="{{ asset('storage/' . $foto->ruta_webp) }}" 
+                                                                     alt="{{ $tipoLogo->nombre ?? 'Técnica' }}"
+                                                                     style="
+                                                                         width: 70px;
+                                                                         height: 70px;
+                                                                         object-fit: cover;
+                                                                         border-radius: 4px;
+                                                                         border: 1px solid #e2e8f0;
+                                                                         cursor: pointer;
+                                                                         transition: all 0.2s;
+                                                                     "
+                                                                     onmouseover="this.style.transform='scale(1.15)'; this.style.borderColor='#0ea5e9';"
+                                                                     onmouseout="this.style.transform='scale(1)'; this.style.borderColor='#e2e8f0';">
+                                                            @endforeach
+                                                        </div>
+                                                        <div style="margin-top: 0.3rem; font-size: 0.75rem; color: #64748b;">
+                                                            {{ $fotos->count() }} imagen(es)
+                                                        </div>
+                                                    @else
+                                                        <span style="color: #94a3b8; font-size: 0.75rem;">—</span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

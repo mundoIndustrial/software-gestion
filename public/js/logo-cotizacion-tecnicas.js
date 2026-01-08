@@ -1319,6 +1319,7 @@ function guardarPrendaTecnicasPorTalla(datos) {
         });
     });
     
+    window.tecnicasAgregadas = tecnicasAgregadas;  // ✅ Sincronizar global
     console.log(`📊 Total técnicas agregadas: ${tecnicasAgregadas.length}`);
     
     // Limpiar contexto
@@ -1375,6 +1376,7 @@ function guardarTecnicaSimple() {
     
     console.log('✅ Técnica simple agregada:', nuevaTecnica);
     tecnicasAgregadas.push(nuevaTecnica);
+    window.tecnicasAgregadas = tecnicasAgregadas;  // ✅ Sincronizar global
     console.log(`📊 Total técnicas: ${tecnicasAgregadas.length}`);
     
     // Cerrar modal y actualizar
@@ -1504,6 +1506,8 @@ function guardarTecnicaCombinada(datosForm) {
         console.log(`📊 Total técnicas agregadas: ${tecnicasAgregadas.length}`);
         console.log(`🔗 Grupo combinado asignado: ${grupoId}`);
         
+        window.tecnicasAgregadas = tecnicasAgregadas;  // ✅ Sincronizar global
+        
         // Limpiar contexto
         window.tecnicasCombinadas = null;
         window.modoTecnicasCombinadas = null;
@@ -1565,6 +1569,7 @@ function guardarTecnicasMultiples() {
         tecnicasAgregadas.push(nuevaTecnica);
     });
     
+    window.tecnicasAgregadas = tecnicasAgregadas;  // ✅ Sincronizar global
     console.log(`\n📊 Total técnicas en array: ${tecnicasAgregadas.length}`);
     console.log('📋 tecnicasAgregadas:', tecnicasAgregadas);
     
@@ -2217,3 +2222,7 @@ function cerrarModalValidacionTecnica() {
         modal.style.display = 'none';
     }
 }
+
+// ✅ EXPORTAR PARA ACCESO GLOBAL EN create.blade.php
+window.tecnicasAgregadas = tecnicasAgregadas;
+
