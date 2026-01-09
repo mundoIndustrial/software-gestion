@@ -1820,49 +1820,118 @@ function renderizarTecnicasAgregadas() {
     
     if (sinTecnicas) sinTecnicas.style.display = 'none';
     
-    // PASO 1: Agrupar por GRUPO_COMBINADO o ÍNDICE (no por nombre de prenda)
-    // Esto permite que dos técnicas con el mismo nombre de prenda sean filas separadas
-    const gruposMap = {};
+    // PASO 1: Agrupar por NOMBRE DE PRENDA (no por técnica)
+    // Esto evita duplicación cuando una prenda tiene múltiples técnicas
+    const prendasMap = {};
+    const imagenesParaCargar = []; // Array para guardar imágenes de File que necesitan ser procesadas
+    
     tecnicasAgregadas.forEach((tecnica, tecnicaIndex) => {
-        const grupoId = tecnica.grupo_combinado || `individual-${tecnicaIndex}`;
-        if (!gruposMap[grupoId]) {
-            gruposMap[grupoId] = {
-                grupoId: grupoId,
-                esCombinada: tecnica.grupo_combinado !== null && tecnica.grupo_combinado !== undefined,
-                tecnicas: [],
-                prendas: [],
-                observaciones: null,
-                talla_cantidad: [],
-                tecnicaIndexes: []
-            };
-        }
-        
-        gruposMap[grupoId].tecnicas.push(tecnica);
-        gruposMap[grupoId].tecnicaIndexes.push(tecnicaIndex);
-        
-        // Agregar datos de prendas (pueden ser múltiples en técnicas combinadas)
         tecnica.prendas.forEach(prenda => {
-            gruposMap[grupoId].prendas.push(prenda);
-            gruposMap[grupoId].observaciones = prenda.observaciones;
-            gruposMap[grupoId].talla_cantidad = prenda.talla_cantidad || [];
+            const nombrePrenda = prenda.nombre_prenda || 'SIN NOMBRE';
+            
+            if (!prendasMap[nombrePrenda]) {
+                prendasMap[nombrePrenda] = {
+                    nombre_prenda: nombrePrenda,
+                    observaciones: prenda.observaciones,
+                    talla_cantidad: prenda.talla_cantidad || [],
+                    tecnicas: [], // Array de técnicas para esta prenda
+                    imagenes: [] // Array de imágenes con técnica
+                };
+            }
+            
+            // Agregar técnica y sus imágenes
+            prendasMap[nombrePrenda].tecnicas.push({
+                tecnica: tecnica,
+                tecnicaIndex: tecnicaIndex
+            });
+            
+            // Agregar imágenes con referencia a la técnica
+            // Para técnicas combinadas: imagenes_data_urls (URLs procesadas)
+            if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
+                prenda.imagenes_data_urls.forEach(img => {
+                    prendasMap[nombrePrenda].imagenes.push({
+                        data: img,
+                        tecnica: tecnica.tipo_logo.nombre,
+                        tecnicaColor: tecnica.tipo_logo.color
+                    });
+                });
+            }
+            // Para técnicas simples: imagenes_files (File objects sin procesar)
+            else if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
+                prenda.imagenes_files.forEach(archivo => {
+                    imagenesParaCargar.push({
+                        archivo: archivo,
+                        nombrePrenda: nombrePrenda,
+                        tecnica: tecnica.tipo_logo.nombre,
+                        tecnicaColor: tecnica.tipo_logo.color
+                    });
+                });
+            }
         });
     });
     
-    console.log('📦 [renderizarTecnicasAgregadas] Agrupado por GRUPO/ÍNDICE:', Object.keys(gruposMap).length, 'grupos');
-    Object.entries(gruposMap).forEach(([grupoId, datos]) => {
-        console.log(`  → Grupo: ${grupoId}, Técnicas: ${datos.tecnicas.length}, Prendas:`, datos.prendas.map(p => p.nombre_prenda));
+    console.log('📦 [renderizarTecnicasAgregadas] Agrupado por PRENDA:', Object.keys(prendasMap).length, 'prendas');
+    
+    // Procesar las imágenes de File objects de forma asíncrona
+    imagenesParaCargar.forEach(imgData => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            prendasMap[imgData.nombrePrenda].imagenes.push({
+                data: e.target.result,
+                tecnica: imgData.tecnica,
+                tecnicaColor: imgData.tecnicaColor
+            });
+            
+            // Actualizar la tarjeta si ya está renderizada
+            const tarjeta = document.querySelector(`[data-prenda-nombre="${imgData.nombrePrenda}"]`);
+            if (tarjeta) {
+                const imgSection = tarjeta.querySelector('.imagenes-section');
+                if (imgSection && prendasMap[imgData.nombrePrenda].imagenes.length > 0) {
+                    imgSection.style.display = 'block';
+                    const divGrid = imgSection.querySelector('div:last-child');
+                    if (divGrid) {
+                        divGrid.innerHTML = prendasMap[imgData.nombrePrenda].imagenes.map((img, imgIdx) => `
+                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor};">
+                                <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover;" alt="Imagen prenda">
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                                    padding: 0.4rem;
+                                ">
+                                    <span style="
+                                        color: white;
+                                        font-size: 0.7rem;
+                                        font-weight: 600;
+                                        background: ${img.tecnicaColor};
+                                        padding: 0.2rem 0.4rem;
+                                        border-radius: 2px;
+                                        display: inline-block;
+                                    ">
+                                        ${img.tecnica}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            }
+        };
+        reader.readAsDataURL(imgData.archivo);
     });
     
     // NUEVO DISEÑO: Contenedor con tarjetas en grid
     const contenedor = document.createElement('div');
     contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.2rem; margin-bottom: 20px;';
     
-    // PASO 2: Renderizar TARJETAS por grupo
-    Object.entries(gruposMap).forEach(([grupoId, datosGrupo]) => {
-        const esCombinada = datosGrupo.esCombinada;
+    // PASO 2: Renderizar TARJETAS por prenda
+    Object.entries(prendasMap).forEach(([nombrePrenda, datosPrenda]) => {
         
-        // TARJETA DEL GRUPO
+        // TARJETA DE LA PRENDA
         const tarjeta = document.createElement('div');
+        tarjeta.setAttribute('data-prenda-nombre', nombrePrenda);
         tarjeta.style.cssText = `
             background: white;
             border-radius: 8px;
@@ -1880,12 +1949,13 @@ function renderizarTecnicasAgregadas() {
             this.style.transform = 'translateY(0)';
         };
         
-        // HEADER CON TÉCNICAS
+        // HEADER CON TÉCNICAS (puedo manipular desde aquí)
         let headerHTML = '<div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1rem; border-bottom: 1px solid #ddd;">';
         headerHTML += '<h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem;">Técnica(s)</h4>';
-        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;" class="tecnicas-header">';
         
-        datosGrupo.tecnicas.forEach(tecnica => {
+        datosPrenda.tecnicas.forEach((tecData, idx) => {
+            const tecnica = tecData.tecnica;
             headerHTML += `
                 <span style="
                     background: ${tecnica.tipo_logo.color};
@@ -1894,100 +1964,175 @@ function renderizarTecnicasAgregadas() {
                     border-radius: 4px;
                     font-weight: 600;
                     font-size: 0.85rem;
-                ">
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                " class="tecnica-badge" data-tecnica-idx="${tecData.tecnicaIndex}">
                     ${tecnica.tipo_logo.nombre}
+                    ${datosPrenda.tecnicas.length > 1 ? `<button type="button" class="btn-eliminar-tecnica" style="background: rgba(255,255,255,0.2); border: none; color: white; cursor: pointer; padding: 0 4px; border-radius: 2px; font-size: 1rem;" data-tecnica-idx="${tecData.tecnicaIndex}">✕</button>` : ''}
                 </span>
             `;
         });
         
-        if (esCombinada) {
-            headerHTML += `<span style="
-                background: rgba(255,255,255,0.3);
-                color: white;
-                padding: 0.3rem 0.6rem;
-                border-radius: 3px;
-                font-size: 0.75rem;
-                font-weight: 600;
-                border: 1px dashed white;
-            ">🔗 COMBINADA</span>`;
-        }
-        
         headerHTML += '</div></div>';
         
-        // CUERPO CON PRENDAS
+        // CUERPO CON CONTENIDO DE LA PRENDA
         let bodyHTML = '<div style="padding: 1rem;">';
         
-        datosGrupo.prendas.forEach((prenda, idx) => {
+        // NOMBRE DE PRENDA
+        bodyHTML += `
+            <div style="margin-bottom: 1rem;">
+                <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                    ${nombrePrenda}
+                </h5>
+            </div>
+        `;
+        
+        // SECCIÓN DE IMÁGENES CON INDICADOR DE TÉCNICA
+        if (datosPrenda.imagenes && datosPrenda.imagenes.length > 0) {
             bodyHTML += `
-                <div style="
-                    margin-bottom: ${idx < datosGrupo.prendas.length - 1 ? '1rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;' : '0;'}
-                ">
-                    <div style="margin-bottom: 0.8rem;">
-                        <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
-                            ${prenda.nombre_prenda}
-                        </h5>
+                <div class="imagenes-section" style="margin-bottom: 1rem;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                        🖼️ Imágenes:
+                    </span>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem;">
+                        ${datosPrenda.imagenes.map((img, imgIdx) => `
+                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor};">
+                                <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover;" alt="Imagen prenda">
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                                    padding: 0.4rem;
+                                ">
+                                    <span style="
+                                        color: white;
+                                        font-size: 0.7rem;
+                                        font-weight: 600;
+                                        background: ${img.tecnicaColor};
+                                        padding: 0.2rem 0.4rem;
+                                        border-radius: 2px;
+                                        display: inline-block;
+                                    ">
+                                        ${img.tecnica}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
-                    
-                    ${prenda.observaciones ? `
-                        <div style="
-                            background: #fef3c7;
-                            border-left: 3px solid #f59e0b;
-                            padding: 0.6rem;
-                            border-radius: 4px;
-                            margin-bottom: 0.8rem;
-                            font-size: 0.85rem;
-                            color: #78350f;
-                        ">
-                            <strong>Observación:</strong> ${prenda.observaciones}
-                        </div>
-                    ` : ''}
-                    
-                    ${prenda.ubicaciones && prenda.ubicaciones.length > 0 ? `
-                        <div style="margin-bottom: 0.8rem;">
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.4rem;">
-                                📍 Ubicaciones:
-                            </span>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                                ${prenda.ubicaciones.map(ub => `
-                                    <span style="
-                                        background: #dbeafe;
-                                        color: #0369a1;
-                                        padding: 0.3rem 0.6rem;
-                                        border-radius: 3px;
-                                        font-size: 0.8rem;
-                                        font-weight: 600;
-                                    ">
-                                        ${ub}
-                                    </span>
-                                `).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${prenda.talla_cantidad && prenda.talla_cantidad.length > 0 ? `
-                        <div>
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.4rem;">
-                                📏 Tallas:
-                            </span>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                                ${prenda.talla_cantidad.map(tc => `
-                                    <span style="
-                                        background: #dbeafe;
-                                        color: #0369a1;
-                                        padding: 0.4rem 0.6rem;
-                                        border-radius: 3px;
-                                        font-size: 0.8rem;
-                                        font-weight: 600;
-                                    ">
-                                        ${tc.talla}: <strong>${tc.cantidad}</strong>
-                                    </span>
-                                `).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
                 </div>
             `;
+        } else {
+            // Crear sección vacía pero oculta para poder actualizar después
+            bodyHTML += `
+                <div class="imagenes-section" style="margin-bottom: 1rem; display: none;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                        🖼️ Imágenes:
+                    </span>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem;">
+                    </div>
+                </div>
+            `;
+        }
+        
+        // SECCIÓN DE UBICACIONES (por técnica - SOLO de la prenda actual)
+        const ubicacionesPorTecnica = {};
+        datosPrenda.tecnicas.forEach(tecData => {
+            const tecnica = tecData.tecnica;
+            if (tecnica.prendas && tecnica.prendas.length > 0) {
+                // Filtrar solo la prenda que coincide con nombrePrenda
+                tecnica.prendas.forEach(p => {
+                    if (p.nombre_prenda === nombrePrenda && p.ubicaciones && p.ubicaciones.length > 0) {
+                        if (!ubicacionesPorTecnica[tecnica.tipo_logo.nombre]) {
+                            ubicacionesPorTecnica[tecnica.tipo_logo.nombre] = [];
+                        }
+                        ubicacionesPorTecnica[tecnica.tipo_logo.nombre].push(...p.ubicaciones);
+                    }
+                });
+            }
         });
+        
+        if (Object.keys(ubicacionesPorTecnica).length > 0) {
+            bodyHTML += `
+                <div style="margin-bottom: 1rem;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                        📍 Ubicaciones:
+                    </span>
+            `;
+            
+            Object.entries(ubicacionesPorTecnica).forEach(([nombreTec, ubicaciones]) => {
+                bodyHTML += `
+                    <div style="margin-bottom: 0.6rem;">
+                        <span style="
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            color: #475569;
+                            display: block;
+                            margin-bottom: 0.3rem;
+                        ">
+                            ${nombreTec}:
+                        </span>
+                        <div style="padding-left: 0.8rem; border-left: 3px solid #94a3b8;">
+                            ${ubicaciones.map(ub => `
+                                <div style="
+                                    font-size: 0.8rem;
+                                    color: #1e293b;
+                                    margin-bottom: 0.2rem;
+                                ">
+                                    ${ub}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            bodyHTML += '</div>';
+        }
+        
+        // OBSERVACIONES
+        if (datosPrenda.observaciones) {
+            bodyHTML += `
+                <div style="
+                    background: #fef3c7;
+                    border-left: 3px solid #f59e0b;
+                    padding: 0.6rem;
+                    border-radius: 4px;
+                    margin-bottom: 1rem;
+                    font-size: 0.85rem;
+                    color: #78350f;
+                ">
+                    <strong>✏️ Observaciones:</strong> ${datosPrenda.observaciones}
+                </div>
+            `;
+        }
+        
+        // TALLAS
+        if (datosPrenda.talla_cantidad && datosPrenda.talla_cantidad.length > 0) {
+            bodyHTML += `
+                <div style="margin-bottom: 1rem;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.4rem;">
+                        📏 Tallas:
+                    </span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                        ${datosPrenda.talla_cantidad.map(tc => `
+                            <span style="
+                                background: #dbeafe;
+                                color: #0369a1;
+                                padding: 0.4rem 0.6rem;
+                                border-radius: 3px;
+                                font-size: 0.8rem;
+                                font-weight: 600;
+                            ">
+                                ${tc.talla}: <strong>${tc.cantidad}</strong>
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
         
         // BOTONES DE ACCIÓN
         bodyHTML += `
@@ -1998,40 +2143,32 @@ function renderizarTecnicasAgregadas() {
                 display: flex;
                 gap: 0.5rem;
             ">
-                <button type="button" class="btn btn-primary btn-sm btn-editar-grupo" data-grupo-id="${grupoId}"
-                        style="
-                            flex: 1;
-                            background: #0066cc;
-                            color: white;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 0.85rem;
-                            font-weight: 600;
-                            transition: all 0.2s;
-                        "
-                        onmouseover="this.style.background='#0052a3'" 
-                        onmouseout="this.style.background='#0066cc'"
-                        title="Editar técnica(s)">
-                    ✎ Editar
+                <button type="button" class="btn-editar-tecnica" style="
+                    flex: 1;
+                    background: #0369a1;
+                    color: white;
+                    border: none;
+                    padding: 0.6rem;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" data-prenda-nombre="${nombrePrenda}">
+                    ✏️ Editar
                 </button>
-                <button type="button" class="btn btn-danger btn-sm btn-eliminar-grupo" data-grupo-id="${grupoId}"
-                        style="
-                            flex: 1;
-                            background: #ef4444;
-                            color: white;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 0.85rem;
-                            font-weight: 600;
-                            transition: all 0.2s;
-                        "
-                        onmouseover="this.style.background='#dc2626'" 
-                        onmouseout="this.style.background='#ef4444'"
-                        title="Eliminar técnica(s)">
+                <button type="button" class="btn-eliminar-tecnica-grupo" style="
+                    flex: 1;
+                    background: #dc2626;
+                    color: white;
+                    border: none;
+                    padding: 0.6rem;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}">
                     ✕ Eliminar
                 </button>
             </div>
@@ -2045,78 +2182,77 @@ function renderizarTecnicasAgregadas() {
     
     container.appendChild(contenedor);
     
-    console.log('✅ [renderizarTecnicasAgregadas] COMPLETADO - Tabla renderizada por PRENDA');
-    
-    // Agregar event listeners para botones de editar grupo
-    document.querySelectorAll('.btn-editar-grupo').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const grupoId = this.getAttribute('data-grupo-id');
-            editarTecnicaDelGrupo(grupoId);
+    // EVENT LISTENERS para botones
+    document.querySelectorAll('.btn-editar-tecnica').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const indicesStr = e.target.getAttribute('data-tecnica-indices');
+            const nombrePrenda = e.target.getAttribute('data-prenda-nombre');
+            const indices = indicesStr.split(',').map(Number);
+            editarTecnicaDelGrupo(indices, nombrePrenda);
         });
     });
     
-    // Agregar event listeners para botones de eliminar grupo
-    document.querySelectorAll('.btn-eliminar-grupo').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const grupoId = this.getAttribute('data-grupo-id');
-            eliminarTecnicaDelGrupo(grupoId);
+    document.querySelectorAll('.btn-eliminar-tecnica-grupo').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const indicesStr = e.target.getAttribute('data-tecnica-indices');
+            const indices = indicesStr.split(',').map(Number);
+            eliminarTecnicaDelGrupo(indices);
         });
     });
 }
 
-function getTipoIcono(nombreTipo) {
-    const iconos = {
-        'BORDADO': 'needle',
-        'ESTAMPADO': 'stamp',
-        'SUBLIMADO': 'fire',
-        'DTF': 'film'
-    };
-    return iconos[nombreTipo] || 'tools';
-}
-
-// =========================================================
-// 8. ELIMINAR TÉCNICA (temporal o de BD)
-// =========================================================
-
-function eliminarTecnicaTemporal(tecnicaIndex) {
-    // Eliminar de lista temporal
-    tecnicasAgregadas.splice(tecnicaIndex, 1);
-    console.log('✅ Técnica eliminada de lista temporal');
-    renderizarTecnicasAgregadas();
-}
-
-function editarTecnicaDelGrupo(grupoId) {
-    // Encontrar las técnicas de este grupo
-    const tecnicasDelGrupo = tecnicasAgregadas.filter(t => {
-        if (grupoId.startsWith('individual-')) {
-            const idx = parseInt(grupoId.split('-')[1]);
-            return tecnicasAgregadas.indexOf(t) === idx;
-        } else {
-            return t.grupo_combinado === grupoId || (grupoId.includes(t.grupo_combinado));
-        }
-    });
+function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
+    // tecnicaIndices es un array de índices de técnicas
+    const tecnicasDelGrupo = tecnicaIndices.map(idx => tecnicasAgregadas[idx]);
     
     if (tecnicasDelGrupo.length === 0) {
         console.error('❌ No se encontraron técnicas para editar');
         return;
     }
     
-    console.log('🔧 Editando grupo:', grupoId, tecnicasDelGrupo);
+    console.log('🔧 Editando grupo:', tecnicaIndices, tecnicasDelGrupo, 'Prenda filtro:', nombrePrendaFiltro);
     
-    // Obtener TODAS las prendas del grupo
-    const todasLasPrendas = [];
-    tecnicasDelGrupo.forEach(tecnica => {
+    // Agrupar por NOMBRE DE PRENDA y mantener datos de CADA TÉCNICA
+    const prendasMap = {};
+    const datosPorTecnica = {}; // Guardar datos específicos de cada técnica
+    
+    tecnicasDelGrupo.forEach((tecnica, tecnicaIdx) => {
         tecnica.prendas.forEach(prenda => {
-            todasLasPrendas.push({...prenda, tecnicaDelGrupo: tecnica});
+            const nombrePrenda = prenda.nombre_prenda || 'SIN NOMBRE';
+            
+            // FILTRO: Si se proporcionó nombrePrendaFiltro, solo procesar esa prenda
+            if (nombrePrendaFiltro && nombrePrenda !== nombrePrendaFiltro) {
+                return; // Saltar esta prenda
+            }
+            
+            if (!prendasMap[nombrePrenda]) {
+                prendasMap[nombrePrenda] = {
+                    nombre_prenda: prenda.nombre_prenda,
+                    observaciones: prenda.observaciones,
+                    talla_cantidad: prenda.talla_cantidad,
+                    tecnicas: [],
+                    tecnicasData: {} // Guardar datos por técnica
+                };
+            }
+            
+            prendasMap[nombrePrenda].tecnicas.push(tecnica);
+            
+            // Guardar los datos específicos de esta técnica para esta prenda
+            prendasMap[nombrePrenda].tecnicasData[tecnicaIdx] = {
+                ubicaciones: prenda.ubicaciones,
+                imagenes_data_urls: prenda.imagenes_data_urls,
+                imagenes_files: prenda.imagenes_files
+            };
         });
     });
     
+    // Convertir map a array
+    const todasLasPrendas = Object.values(prendasMap);
+    
+    console.log('📊 Prendas agrupadas:', todasLasPrendas);
+    
     // Construir HTML de las prendas
-    let prendasHTML = '<div style="max-height: 500px; overflow-y: auto;">';
+    let prendasHTML = '<div style="max-height: 600px; overflow-y: auto;">';
     
     todasLasPrendas.forEach((prenda, prendaIdx) => {
         let tallaHTML = '';
@@ -2130,23 +2266,78 @@ function editarTecnicaDelGrupo(grupoId) {
             `;
         });
         
+        // Construir HTML de imágenes POR TÉCNICA
         let imagenesHTML = '';
-        if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
+        if (prenda.tecnicas && prenda.tecnicas.length > 0) {
             imagenesHTML = `
-                <div style="margin-bottom: 8px;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">🖼️ Imágenes actuales:</span>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px;">
-                        ${prenda.imagenes_data_urls.map((img, imgIdx) => `
-                            <div style="position: relative;">
-                                <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-img-idx="${imgIdx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                            </div>
-                        `).join('')}
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;">🖼️ Imágenes por Técnica</label>
+                    <div style="display: grid; gap: 12px;">
+            `;
+            
+            prenda.tecnicas.forEach((tecnica, tecnicaIdx) => {
+                const datosActuales = prenda.tecnicasData ? prenda.tecnicasData[tecnicaIdx] : {};
+                const imagenesActuales = datosActuales.imagenes_data_urls || [];
+                
+                imagenesHTML += `
+                    <div style="border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #f9f9f9;">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: ${tecnica.tipo_logo.color || '#333'}; font-size: 0.9rem;">${tecnica.tipo_logo.nombre}</div>
+                `;
+                
+                // Mostrar imágenes existentes
+                if (imagenesActuales && imagenesActuales.length > 0) {
+                    imagenesHTML += `
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;" class="edit-imagenes-container" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}">
+                            ${imagenesActuales.map((img, imgIdx) => `
+                                <div style="position: relative;" class="imagen-item" data-img-idx="${imgIdx}">
+                                    <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                    <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" data-img-idx="${imgIdx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                imagenesHTML += `
+                        <input type="file" class="edit-input-imagenes" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" multiple accept="image/*" style="width: 100%; padding: 6px; border: 1px dashed #0369a1; border-radius: 4px; cursor: pointer; box-sizing: border-box; font-size: 0.85rem;">
+                    </div>
+                `;
+            });
+            
+            imagenesHTML += `
                     </div>
                 </div>
             `;
         }
         
+        // Construir HTML de ubicaciones por técnica
+        let ubicacionesHTML = '';
+        if (prenda.tecnicas && prenda.tecnicas.length > 0) {
+            ubicacionesHTML = `
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;">📍 Ubicaciones por Técnica</label>
+                    <div style="display: grid; gap: 8px;">
+            `;
+            
+            prenda.tecnicas.forEach((tecnica, tecnicaIdx) => {
+                const datosActuales = prenda.tecnicasData ? prenda.tecnicasData[tecnicaIdx] : {};
+                const ubicacionesTecnica = datosActuales.ubicaciones || [];
+                const ubicacionActual = ubicacionesTecnica[0] || ''; // La primera ubicación para esta técnica
+                
+                ubicacionesHTML += `
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f0f4f8; border-radius: 4px; border-left: 3px solid ${tecnica.tipo_logo.color || '#333'};">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 0.85rem; color: #333; flex-shrink: 0;">${tecnica.tipo_logo.nombre}:</label>
+                        <input type="text" class="edit-ubicacion-tecnica" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" value="${ubicacionActual}" placeholder="Ej: Pecho, Espalda, Manga..." style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                    </div>
+                `;
+            });
+            
+            ubicacionesHTML += `
+                    </div>
+                </div>
+            `;
+        }
+
         prendasHTML += `
             <div style="
                 background: #f9fafb;
@@ -2169,6 +2360,8 @@ function editarTecnicaDelGrupo(grupoId) {
                     <textarea class="edit-observaciones-prenda" data-prenda-idx="${prendaIdx}" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.85rem;">${prenda.observaciones || ''}</textarea>
                 </div>
                 
+                ${ubicacionesHTML}
+                
                 ${imagenesHTML}
                 
                 <div style="margin-bottom: 12px;">
@@ -2186,7 +2379,7 @@ function editarTecnicaDelGrupo(grupoId) {
     
     Swal.fire({
         title: `Editar ${tecnicasDelGrupo.map(t => t.tipo_logo.nombre).join(' + ')}`,
-        width: '650px',
+        width: '700px',
         html: prendasHTML,
         showCancelButton: true,
         confirmButtonText: 'Guardar Cambios',
@@ -2219,22 +2412,96 @@ function editarTecnicaDelGrupo(grupoId) {
                 });
             });
             
+            // Eliminar imágenes existentes
+            document.querySelectorAll('.edit-btn-eliminar-img').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const prendaIdx = parseInt(btn.getAttribute('data-prenda-idx'));
+                    const tecnicaIdx = parseInt(btn.getAttribute('data-tecnica-idx'));
+                    const imgIdx = parseInt(btn.getAttribute('data-img-idx'));
+                    const imagenItem = btn.closest('.imagen-item');
+                    
+                    // Eliminar del array
+                    if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
+                        todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.splice(imgIdx, 1);
+                    }
+                    
+                    // Eliminar del DOM
+                    imagenItem.remove();
+                });
+            });
+            
+            // Agregar nuevas imágenes
+            document.querySelectorAll('.edit-input-imagenes').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const prendaIdx = parseInt(input.getAttribute('data-prenda-idx'));
+                    const tecnicaIdx = parseInt(input.getAttribute('data-tecnica-idx'));
+                    
+                    if (tecnicaIdx === undefined || tecnicaIdx === null) {
+                        console.error('❌ No se encontró tecnicaIdx en el input de imágenes');
+                        return;
+                    }
+                    
+                    const container = document.querySelector(`.edit-imagenes-container[data-prenda-idx="${prendaIdx}"][data-tecnica-idx="${tecnicaIdx}"]`);
+                    
+                    const files = Array.from(e.target.files);
+                    files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const dataUrl = event.target.result;
+                            
+                            // Agregar al array de prendas - específicamente a los datos de la técnica
+                            if (!todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls) {
+                                todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls = [];
+                            }
+                            todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.push(dataUrl);
+                            
+                            // Agregar al DOM
+                            const newImgIdx = todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.length - 1;
+                            const imagenItem = document.createElement('div');
+                            imagenItem.style.cssText = 'position: relative;';
+                            imagenItem.className = 'imagen-item';
+                            imagenItem.dataset.imgIdx = newImgIdx;
+                            imagenItem.innerHTML = `
+                                <img src="${dataUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" data-img-idx="${newImgIdx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                            `;
+                            
+                            imagenItem.querySelector('.edit-btn-eliminar-img').addEventListener('click', (deleteE) => {
+                                deleteE.preventDefault();
+                                const delIdx = parseInt(imagenItem.dataset.imgIdx);
+                                todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.splice(delIdx, 1);
+                                imagenItem.remove();
+                            });
+                            
+                            if (!container) {
+                                // Crear el contenedor si no existe
+                                const newContainer = document.createElement('div');
+                                newContainer.className = 'edit-imagenes-container';
+                                newContainer.dataset.prendaIdx = prendaIdx;
+                                newContainer.dataset.tecnicaIdx = tecnicaIdx;
+                                newContainer.style.cssText = 'display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;';
+                                newContainer.appendChild(imagenItem);
+                                
+                                const inputParent = input.closest('div');
+                                inputParent.parentElement.insertBefore(newContainer, inputParent);
+                            } else {
+                                container.appendChild(imagenItem);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                    
+                    // Limpiar input
+                    e.target.value = '';
+                });
+            });
+            
             // Botones eliminar talla existentes
             document.querySelectorAll('.edit-btn-eliminar-talla').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     btn.closest('.edit-talla-row').remove();
-                });
-            });
-            
-            // Botones eliminar imagen
-            document.querySelectorAll('.edit-btn-eliminar-img').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const prendaIdx = btn.getAttribute('data-prenda-idx');
-                    const imgIdx = btn.getAttribute('data-img-idx');
-                    todasLasPrendas[prendaIdx].imagenes_data_urls.splice(imgIdx, 1);
-                    btn.closest('div').remove();
                 });
             });
         },
@@ -2244,7 +2511,7 @@ function editarTecnicaDelGrupo(grupoId) {
             let valido = true;
             let contadorPrendas = 0;
             
-            // Obtener todos los índices de prendas del DOM (como string del atributo)
+            // Obtener todos los índices de prendas del DOM
             const prendaIdxs = new Set();
             document.querySelectorAll('[data-prenda-idx]').forEach((elem) => {
                 prendaIdxs.add(elem.getAttribute('data-prenda-idx'));
@@ -2267,6 +2534,18 @@ function editarTecnicaDelGrupo(grupoId) {
                 const observacionesInput = document.querySelector(`.edit-observaciones-prenda[data-prenda-idx="${prendaIdxStr}"]`);
                 const observaciones = observacionesInput ? observacionesInput.value.trim() : '';
                 
+                // Capturar ubicaciones por técnica y actualizar tecnicasData
+                document.querySelectorAll(`.edit-ubicacion-tecnica[data-prenda-idx="${prendaIdxStr}"]`).forEach(input => {
+                    const tecnicaIdx = parseInt(input.getAttribute('data-tecnica-idx'));
+                    const ubicacion = input.value.trim();
+                    
+                    // Actualizar la ubicación en tecnicasData
+                    if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
+                        todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].ubicaciones = [ubicacion];
+                        console.log(`📍 Ubicación actualizada para técnica ${tecnicaIdx}:`, ubicacion);
+                    }
+                });
+                
                 const nuevasTallas = [];
                 document.querySelectorAll(`.edit-talla-row[data-prenda-idx="${prendaIdxStr}"]`).forEach(row => {
                     const tallaInput = row.querySelector('.edit-talla');
@@ -2288,7 +2567,8 @@ function editarTecnicaDelGrupo(grupoId) {
                 prendasActualizadas[prendaIdx] = {
                     nombre_prenda: nombrePrenda,
                     observaciones: observaciones,
-                    talla_cantidad: nuevasTallas
+                    talla_cantidad: nuevasTallas,
+                    tecnicasData: todasLasPrendas[prendaIdx].tecnicasData || {}
                 };
                 
                 console.log(`✅ Prenda ${prendaIdx} actualizada:`, prendasActualizadas[prendaIdx]);
@@ -2320,6 +2600,7 @@ function editarTecnicaDelGrupo(grupoId) {
                     prenda.nombre_prenda = result.value[prendaIdx].nombre_prenda;
                     prenda.observaciones = result.value[prendaIdx].observaciones;
                     prenda.talla_cantidad = result.value[prendaIdx].talla_cantidad;
+                    prenda.tecnicasData = result.value[prendaIdx].tecnicasData;
                     console.log(`✅ Prenda ${prendaIdx} actualizada:`, prenda);
                 } else {
                     console.warn(`⚠️ No hay datos para prenda ${prendaIdx}`);
@@ -2327,16 +2608,22 @@ function editarTecnicaDelGrupo(grupoId) {
             });
             
             // También actualizar en las técnicas del grupo original
-            let idxGlobal = 0;
-            tecnicasDelGrupo.forEach(tecnica => {
+            tecnicasDelGrupo.forEach((tecnica, tecnicaIdx) => {
                 tecnica.prendas.forEach((prenda, prendaIdxLocal) => {
-                    if (result.value[idxGlobal]) {
-                        console.log(`🔄 Actualizando prenda original en técnica:`, result.value[idxGlobal]);
-                        prenda.nombre_prenda = result.value[idxGlobal].nombre_prenda;
-                        prenda.observaciones = result.value[idxGlobal].observaciones;
-                        prenda.talla_cantidad = result.value[idxGlobal].talla_cantidad;
+                    const prendaActualizado = todasLasPrendas[prendaIdxLocal];
+                    if (prendaActualizado && result.value[prendaIdxLocal]) {
+                        console.log(`🔄 Actualizando prenda original en técnica:`, result.value[prendaIdxLocal]);
+                        prenda.nombre_prenda = prendaActualizado.nombre_prenda;
+                        prenda.observaciones = prendaActualizado.observaciones;
+                        prenda.talla_cantidad = prendaActualizado.talla_cantidad;
+                        
+                        // Obtener datos específicos de esta técnica
+                        if (prendaActualizado.tecnicasData && prendaActualizado.tecnicasData[tecnicaIdx]) {
+                            const datosEstaTecnica = prendaActualizado.tecnicasData[tecnicaIdx];
+                            prenda.ubicaciones = datosEstaTecnica.ubicaciones || [];
+                            prenda.imagenes_data_urls = datosEstaTecnica.imagenes_data_urls || [];
+                        }
                     }
-                    idxGlobal++;
                 });
             });
             
@@ -2349,21 +2636,27 @@ function editarTecnicaDelGrupo(grupoId) {
     });
 }
 
-function eliminarTecnicaDelGrupo(grupoId) {
-    // Eliminar todas las técnicas del grupo combinado
+function eliminarTecnicaDelGrupo(tecnicaIndices) {
+    // tecnicaIndices es un array de índices de técnicas a eliminar
     Swal.fire({
         icon: 'warning',
-        title: '¿Eliminar técnicas combinadas?',
-        text: 'Se eliminarán todas las técnicas de este grupo',
+        title: '¿Eliminar técnica(s)?',
+        text: 'Se eliminarán las técnicas seleccionadas',
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (!result.isConfirmed) return;
         
-        // Filtrar técnicas que NO pertenecen a este grupo
-        tecnicasAgregadas = tecnicasAgregadas.filter(t => t.grupo_combinado !== grupoId);
-        console.log('✅ Grupo combinado eliminado');
+        // Eliminar en orden inverso para no afectar los índices
+        const indicesSorted = Array.isArray(tecnicaIndices) ? tecnicaIndices.sort((a, b) => b - a) : [tecnicaIndices];
+        indicesSorted.forEach(idx => {
+            if (tecnicasAgregadas[idx]) {
+                tecnicasAgregadas.splice(idx, 1);
+            }
+        });
+        
+        console.log('✅ Técnicas eliminadas');
         renderizarTecnicasAgregadas();
     });
 }
