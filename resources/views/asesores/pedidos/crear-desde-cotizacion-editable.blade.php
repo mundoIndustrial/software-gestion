@@ -524,26 +524,11 @@
                         <select id="tipo_pedido_nuevo" name="tipo_pedido_nuevo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="manejarCambiaTipoPedido()">
                             <option value="">-- Selecciona un tipo de pedido --</option>
                             <option value="P">PRENDA</option>
-                            <option value="B">BORDADO</option>
                             <option value="R">REFLECTIVO</option>
+                            <option value="B">BORDADO</option>
                             <option value="E">ESTAMPADO</option>
-                            <option value="C">COMBINADA</option>
+                            <option value="EPP">EPP</option>
                         </select>
-                    </div>
-
-                    <!-- Selector de Combinada (se muestra solo si está seleccionado "COMBINADA") -->
-                    <div id="seccion-tipo-combinada" style="display: none; margin-top: 1rem;">
-                        <div class="form-group">
-                            <label for="tipo_combinada_nuevo" class="block text-sm font-medium text-gray-700 mb-2">
-                                Tipo de Combinada
-                            </label>
-                            <select id="tipo_combinada_nuevo" name="tipo_combinada_nuevo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">-- Selecciona una opción --</option>
-                                <option value="PH">Por Hacer</option>
-                                <option value="SB">Sacado de Bodega</option>
-                                <option value="PHB">Por Hacer y Sacado de Bodega</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -637,7 +622,6 @@
             const seccionBuscarCotizacion = document.getElementById('seccion-buscar-cotizacion');
             const seccionTipoPedidoNuevo = document.getElementById('seccion-tipo-pedido-nuevo');
             const selectTipoPedidoNuevo = document.getElementById('tipo_pedido_nuevo');
-            const seccionTipoCombinada = document.getElementById('seccion-tipo-combinada');
             const campNumeroCotizacion = document.getElementById('campo-numero-cotizacion');
 
             function actualizarVistaPedido() {
@@ -661,13 +645,6 @@
             // ========== MANEJAR CAMBIO DE TIPO DE PEDIDO (NUEVO) ==========
             window.manejarCambiaTipoPedido = function() {
                 const tipoPedido = selectTipoPedidoNuevo.value;
-                if (tipoPedido === 'C') {
-                    // Mostrar selector de tipo combinada
-                    seccionTipoCombinada.style.display = 'block';
-                } else {
-                    // Ocultar selector de tipo combinada
-                    seccionTipoCombinada.style.display = 'none';
-                }
 
                 // Manejar tipo PRENDA sin cotización
                 if (tipoPedido === 'P') {
