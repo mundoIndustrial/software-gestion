@@ -22,16 +22,23 @@ class PrendaPedido extends Model
         'descripcion',
         'descripcion_variaciones',
         'cantidad_talla',
+        'genero',
         'color_id',
         'tela_id',
         'tipo_manga_id',
         'tipo_broche_id',
         'tiene_bolsillos',
         'tiene_reflectivo',
+        'manga_obs',
+        'bolsillos_obs',
+        'broche_obs',
+        'reflectivo_obs',
+        'de_bodega',
     ];
 
     protected $casts = [
         'cantidad_talla' => 'array',
+        'genero' => 'array', // ✅ Almacena múltiples géneros como JSON
     ];
 
     protected $appends = [
@@ -41,6 +48,7 @@ class PrendaPedido extends Model
     /**
      * ACCESSOR: cantidad siempre devuelve la suma de cantidad_talla
      * Esto hace que sea DINÁMICO y siempre refleje la suma correcta
+     * Maneja ambas estructuras: plana {talla: cantidad} y anidada {genero: {talla: cantidad}}
      */
     public function getCantidadAttribute()
     {
@@ -73,8 +81,17 @@ class PrendaPedido extends Model
             $cantidadesTalla = [];
         }
         
-        // Devolver suma de todas las tallas
-        $suma = array_sum($cantidadesTalla);
+        // Calcular suma - manejar ambas estructuras
+        $suma = 0;
+        foreach ($cantidadesTalla as $clave => $valor) {
+            if (is_array($valor)) {
+                // Estructura anidada: {genero: {talla: cantidad}}
+                $suma += array_sum($valor);
+            } else {
+                // Estructura plana: {talla: cantidad}
+                $suma += (int)$valor;
+            }
+        }
         
         \Log::debug('📊 [PrendaPedido.getCantidadAttribute] Suma calculada', [
             'suma' => $suma,
@@ -249,7 +266,7 @@ class PrendaPedido extends Model
      * - M: 50
      * - L: 50
      */
-    public function generarDescripcionDetallada($index = 1)
+    public function generarDescripcionDetallada($index = 1, $totalPrendas = null)
     {
         // ✅ MANEJAR AMBOS CASOS:
         // 1. Si tiene color_id/tela_id poblados → construir dinámicamente desde relaciones
@@ -259,8 +276,14 @@ class PrendaPedido extends Model
         
         if ($tieneRelacionesPobladas) {
             // Caso 1: Construir dinámicamente desde relaciones
-            $datos = DescripcionPrendaHelper::extraerDatosPrenda($this, $index);
-            return DescripcionPrendaHelper::generarDescripcion($datos);
+            $datos = DescripcionPrendaHelper::extraerDatosPrenda($this, $index, $totalPrendas);
+            $descripcionGenerada = DescripcionPrendaHelper::generarDescripcion($datos, $totalPrendas);
+            \Log::info('📝 [DESCRIPCION] Generada dinámicamente desde Helper:', [
+                'prenda_id' => $this->id,
+                'nombre' => $this->nombre_prenda,
+                'descripcion' => substr($descripcionGenerada, 0, 100) . '...',
+            ]);
+            return $descripcionGenerada;
         } else {
             // Caso 2: Usar descripcion existente (datos migrados de la BD antigua)
             if ($this->descripcion) {
@@ -283,11 +306,27 @@ class PrendaPedido extends Model
                     }
                 }
                 
-                return "PRENDA {$index}: {$nombre}\n{$desc}{$tallasStr}";
+                // ✅ Si solo hay una prenda, no mostrar "PRENDA 1:"
+                if ($totalPrendas === 1) {
+                    $resultado = "{$nombre}\n{$desc}{$tallasStr}";
+                } else {
+                    $resultado = "PRENDA {$index}: {$nombre}\n{$desc}{$tallasStr}";
+                }
+                \Log::info('📝 [DESCRIPCION] Usando descripcion existente:', [
+                    'prenda_id' => $this->id,
+                    'nombre' => $nombre,
+                    'descripcion' => substr($resultado, 0, 100) . '...',
+                ]);
+                return $resultado;
             }
             
             // Fallback si no hay descripcion tampoco
-            return "PRENDA {$index}: " . strtoupper($this->nombre_prenda ?? '');
+            // ✅ Si solo hay una prenda, no mostrar "PRENDA 1:"
+            if ($totalPrendas === 1) {
+                return strtoupper($this->nombre_prenda ?? '');
+            } else {
+                return "PRENDA {$index}: " . strtoupper($this->nombre_prenda ?? '');
+            }
         }
     }
 

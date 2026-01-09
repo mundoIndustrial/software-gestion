@@ -194,7 +194,15 @@ class PedidoProduccion extends Model
             return $prenda->generarDescripcionDetallada($index + 1);
         })->toArray();
 
-        return implode("\n\n", $descripciones);
+        $resultado = implode("\n\n", $descripciones);
+        
+        \Log::info('📦 [getDescripcionPrendasAttribute] Resultado final:', [
+            'numero_pedido' => $this->numero_pedido,
+            'total_prendas' => count($descripciones),
+            'primeros_100_caracteres' => substr($resultado, 0, 100),
+        ]);
+        
+        return $resultado;
     }
 
     /**

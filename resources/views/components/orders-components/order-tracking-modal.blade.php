@@ -49,6 +49,19 @@
                             <span class="tracking-info-value" id="trackingOrderClient">-</span>
                         </div>
                     </div>
+
+                    <!-- Estado del Pedido -->
+                    <div class="tracking-info-card">
+                        <div class="tracking-info-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="tracking-info-content">
+                            <span class="tracking-info-label">Estado</span>
+                            <span class="tracking-info-value" id="trackingOrderStatus">-</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Sección Derecha: Fechas -->

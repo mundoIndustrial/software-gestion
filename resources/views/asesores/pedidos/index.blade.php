@@ -802,120 +802,9 @@
                             // Para LogoPedido, mostrar el campo descripción directamente
                             $descripcionConTallas = $pedido->descripcion ?? 'Logo personalizado';
                         } else {
-                            // Para PedidoProduccion, usar la lógica anterior
-                            $descripcionBase = $pedido->descripcion_prendas ?? '';
-                            
-                            // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
-                            $esReflectivo = false;
-                            if ($pedido->cotizacion && $pedido->cotizacion->tipoCotizacion) {
-                                $esReflectivo = ($pedido->cotizacion->tipoCotizacion->codigo === 'RF');
-                            }
-                            
-                            if (!empty($descripcionBase) || ($esReflectivo && $pedido->prendas && $pedido->prendas->count() > 0)) {
-                                if ($esReflectivo) {
-                                    // CASO REFLECTIVO: Usar descripción tal cual (ya contiene tallas y cantidad total)
-                                    $descripcionConTallas = '';
-                                    
-                                    if ($pedido->prendas && $pedido->prendas->count() > 0) {
-                                        foreach ($pedido->prendas as $index => $prenda) {
-                                            if ($index > 0) {
-                                                $descripcionConTallas .= "\n\n";
-                                            }
-                                            
-                                            // Agregar descripción de la prenda (ya tiene tallas incluidas)
-                                            if (!empty($prenda->descripcion)) {
-                                                $descripcionConTallas .= $prenda->descripcion;
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    // CASO NORMAL: Parsear por "PRENDA X:"
-                                    if (strpos($descripcionBase, 'PRENDA ') !== false) {
-                                        $prendas = explode('PRENDA ', $descripcionBase);
-                                        $prendasCount = 0;
-                                        
-                                        foreach ($prendas as $index => $prendaBlock) {
-                                            if ($index === 0 && empty(trim($prendaBlock))) {
-                                                continue;
-                                            }
-                                            
-                                            $prendaBlock = trim($prendaBlock);
-                                            if (empty($prendaBlock)) {
-                                                continue;
-                                            }
-                                            
-                                            preg_match('/^(\d+):/', $prendaBlock, $matches);
-                                            $numPrenda = isset($matches[1]) ? intval($matches[1]) : ($prendasCount + 1);
-                                            
-                                            $descripcionConTallas .= "PRENDA " . $prendaBlock;
-                                            
-                                            if ($pedido->prendas && $pedido->prendas->count() > 0) {
-                                                $prendaActual = $pedido->prendas->where('numero_prenda', $numPrenda)->first();
-                                                
-                                                if (!$prendaActual && $prendasCount < $pedido->prendas->count()) {
-                                                    $prendaActual = $pedido->prendas[$prendasCount];
-                                                }
-                                                
-                                                if ($prendaActual && $prendaActual->cantidad_talla) {
-                                                    try {
-                                                        $tallas = is_string($prendaActual->cantidad_talla) 
-                                                            ? json_decode($prendaActual->cantidad_talla, true) 
-                                                            : $prendaActual->cantidad_talla;
-                                                        
-                                                        if (is_array($tallas) && !empty($tallas)) {
-                                                            $tallasTexto = [];
-                                                            foreach ($tallas as $talla => $cantidad) {
-                                                                if ($cantidad > 0) {
-                                                                    $tallasTexto[] = "$talla: $cantidad";
-                                                                }
-                                                            }
-                                                            if (!empty($tallasTexto)) {
-                                                                $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
-                                                            }
-                                                        }
-                                                    } catch (\Exception $e) {
-                                                        // Continuar sin tallas
-                                                    }
-                                                }
-                                            }
-                                            
-                                            $prendasCount++;
-                                            if ($prendasCount < count($prendas)) {
-                                                $descripcionConTallas .= "\n\n";
-                                            }
-                                        }
-                                    } else {
-                                        // Descripción sin formato PRENDA
-                                        $descripcionConTallas = $descripcionBase;
-                                        
-                                        if ($pedido->prendas && $pedido->prendas->count() > 0) {
-                                            $prendaActual = $pedido->prendas->first();
-                                            
-                                            if ($prendaActual && $prendaActual->cantidad_talla) {
-                                                try {
-                                                    $tallas = is_string($prendaActual->cantidad_talla) 
-                                                        ? json_decode($prendaActual->cantidad_talla, true) 
-                                                        : $prendaActual->cantidad_talla;
-                                                    
-                                                    if (is_array($tallas) && !empty($tallas)) {
-                                                        $tallasTexto = [];
-                                                        foreach ($tallas as $talla => $cantidad) {
-                                                            if ($cantidad > 0) {
-                                                                $tallasTexto[] = "$talla: $cantidad";
-                                                            }
-                                                        }
-                                                        if (!empty($tallasTexto)) {
-                                                            $descripcionConTallas .= "\n\nTallas: " . implode(', ', $tallasTexto);
-                                                        }
-                                                    }
-                                                } catch (\Exception $e) {
-                                                    // Continuar sin tallas
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            // Para PedidoProduccion, usar descripcion_prendas tal como viene del backend
+                            // Ya incluye formatos correctos (con o sin "PRENDA X:" según el total de prendas)
+                            $descripcionConTallas = $pedido->descripcion_prendas ?? '';
                         }
                         
                         if (empty($descripcionConTallas)) {
@@ -1411,19 +1300,6 @@
                         justify-content: flex-end;
                         gap: 0.75rem;
                     ">
-                        <button onclick="cerrarModalCelda()" style="
-                            background: white;
-                            border: 2px solid #d1d5db;
-                            color: #374151;
-                            padding: 0.625rem 1.25rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-weight: 600;
-                            font-size: 0.875rem;
-                            transition: all 0.2s ease;
-                        " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
-                            Cerrar
-                        </button>
                     </div>
                 </div>
             </div>

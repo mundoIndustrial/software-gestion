@@ -424,27 +424,51 @@ window.templates = {
     /**
      * Contenido de prenda (formulario)
      */
-    prendaCardContent: (index, prenda, fotosHtml) => `<div class="prenda-content" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start;">
-        <div class="prenda-info-section" style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <div class="form-group-editable" style="width: 100%;">
-                <label style="font-weight: 600;">Nombre del Producto:</label>
-                <input type="text" 
-                       name="nombre_producto[${index}]" 
-                       value="${prenda.nombre_producto || ''}"
-                       class="prenda-nombre"
-                       data-prenda="${index}" style="width: 100%;">
+    prendaCardContent: (index, prenda, fotosHtml) => `<div class="prenda-content" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="prenda-info-section" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start;">
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="form-group-editable" style="width: 100%;">
+                    <label style="font-weight: 600;">Nombre del Producto:</label>
+                    <input type="text" 
+                           name="nombre_producto[${index}]" 
+                           value="${prenda.nombre_producto || ''}"
+                           class="prenda-nombre"
+                           data-prenda="${index}" style="width: 100%;">
+                </div>
+
+                <div class="form-group-editable" style="width: 100%;">
+                    <label style="font-weight: 600;">Descripción:</label>
+                    <textarea name="descripcion[${index}]" 
+                              class="prenda-descripcion"
+                              data-prenda="${index}" style="min-height: 110px; width: 100%;">${prenda.descripcion || ''}</textarea>
+                </div>
             </div>
 
-            <div class="form-group-editable" style="width: 100%;">
-                <label style="font-weight: 600;">Descripción:</label>
-                <textarea name="descripcion[${index}]" 
-                          class="prenda-descripcion"
-                          data-prenda="${index}" style="min-height: 110px; width: 100%;">${prenda.descripcion || ''}</textarea>
+            <div class="prenda-fotos-section" style="width: 100%;">
+                ${fotosHtml}
             </div>
         </div>
-
-        <div class="prenda-fotos-section" style="width: 100%;">
-            ${fotosHtml}
+        
+        <!-- NUEVO: SELECTOR DE MÚLTIPLES GÉNEROS -->
+        <div class="genero-selector" style="margin: 1rem 0; padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1f2937;">
+                <i class="fas fa-venus"></i> Selecciona género(s) y asigna tallas para cada uno:
+            </label>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="genero[${index}][]" value="dama" class="genero-checkbox" data-prenda="${index}" style="cursor: pointer; width: 18px; height: 18px;">
+                    <span style="font-size: 0.9rem; color: #374151; font-weight: 500;"><i class="fas fa-user"></i> Dama</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="genero[${index}][]" value="caballero" class="genero-checkbox" data-prenda="${index}" style="cursor: pointer; width: 18px; height: 18px;">
+                    <span style="font-size: 0.9rem; color: #374151; font-weight: 500;"><i class="fas fa-user"></i> Caballero</span>
+                </label>
+            </div>
+            
+            <!-- CONTENEDOR DINÁMICO DE TALLAS POR GÉNERO -->
+            <div class="tallas-por-genero-container" style="margin-top: 1rem;">
+                <!-- Se llena dinámicamente cuando se selecciona un género -->
+            </div>
         </div>
     </div>`,
 

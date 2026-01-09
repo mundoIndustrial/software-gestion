@@ -43,6 +43,7 @@ class GestorReflectivoSinCotizacion {
             genero: '', // Dama o Caballero (vacío por defecto)
             tallas: [],
             cantidadesPorTalla: {},
+            generosConTallas: {}, // ✅ NUEVO: Estructura género => talla => cantidad
             fotos: [],
             ubicaciones: [] // Ubicaciones del reflectivo
         };
@@ -274,17 +275,34 @@ class GestorReflectivoSinCotizacion {
                 nombre_producto: card.querySelector('[name*="tipo_prenda"]')?.value || '',
                 descripcion: card.querySelector('[name*="descripcion"]')?.value || '',
                 genero: card.querySelector('.genero-radio-reflectivo:checked')?.value || '',
-                cantidadesPorTalla: {}
+                cantidadesPorTalla: {},
+                generosConTallas: {} // ✅ NUEVO: Estructura con géneros
             };
 
-            // Recopilar cantidades por talla
-            card.querySelectorAll('.talla-cantidad-reflectivo').forEach(input => {
+            // ✅ NUEVO: Recopilar tallas con géneros desde los inputs ocultos
+            card.querySelectorAll('.talla-cantidad-genero-editable').forEach(input => {
                 const talla = input.getAttribute('data-talla');
+                const genero = input.getAttribute('data-genero');
                 const cantidad = parseInt(input.value) || 0;
-                if (talla && cantidad > 0) {
-                    prenda.cantidadesPorTalla[talla] = cantidad;
+                
+                if (talla && genero && cantidad > 0) {
+                    if (!prenda.generosConTallas[genero]) {
+                        prenda.generosConTallas[genero] = {};
+                    }
+                    prenda.generosConTallas[genero][talla] = cantidad;
                 }
             });
+
+            // Fallback: Recopilar del sistema antiguo si no hay generosConTallas
+            if (Object.keys(prenda.generosConTallas).length === 0) {
+                card.querySelectorAll('.talla-cantidad-reflectivo').forEach(input => {
+                    const talla = input.getAttribute('data-talla');
+                    const cantidad = parseInt(input.value) || 0;
+                    if (talla && cantidad > 0) {
+                        prenda.cantidadesPorTalla[talla] = cantidad;
+                    }
+                });
+            }
 
             prendasDelDOM.push(prenda);
         });

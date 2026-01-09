@@ -756,6 +756,8 @@
     <script src="{{ asset('js/modulos/crear-pedido/init-logo-pedido-tecnicas.js') }}?v={{ time() }}"></script>
     <!-- Templates HTML (DEBE CARGARSE ANTES DE crear-pedido-editable.js) -->
     <script src="{{ asset('js/templates-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Validación de cambio de tipo de pedido (DEBE CARGARSE ANTES DE crear-pedido-editable.js) -->
+    <script src="{{ asset('js/modulos/crear-pedido/validar-cambio-tipo-pedido.js') }}?v={{ time() }}"></script>
     <!-- Script principal -->
     <script src="{{ asset('js/crear-pedido-editable.js') }}?v={{ time() }}"></script>
 @endpush

@@ -1228,8 +1228,9 @@ class SupervisorPedidosController extends Controller
 
         // Generar descripción detallada para TODAS las prendas usando el método del modelo
         // Esto incluye automáticamente: Color, Tela, Manga, Reflectivo, Bolsillos, Broche y Tallas
-        $descripciones = $order->prendas->map(function($prenda, $index) {
-            return $prenda->generarDescripcionDetallada($index + 1);
+        $totalPrendas = $order->prendas->count();
+        $descripciones = $order->prendas->map(function($prenda, $index) use ($totalPrendas) {
+            return $prenda->generarDescripcionDetallada($index + 1, $totalPrendas);
         })->toArray();
 
         return implode("\n\n", $descripciones);

@@ -38,7 +38,7 @@ class CotizacionesMinimoTest extends TestCase
         $tableNames = array_map(fn($t) => $t->TABLE_NAME, $tables);
 
         $this->assertContains('cotizaciones', $tableNames);
-        $this->assertContains('tipo_cotizaciones', $tableNames);
+        $this->assertContains('tipos_cotizacion', $tableNames);
         $this->assertContains('clientes', $tableNames);
         $this->assertContains('users', $tableNames);
     }

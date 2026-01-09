@@ -404,7 +404,10 @@ class RegistroOrdenQueryController extends Controller
         
         \Log::info('✅ [show] Descripción construida', [
             'longitud' => strlen($descripcionPrendas),
-            'primeras_lineas' => substr($descripcionPrendas, 0, 150),
+            'primeras_200_caracteres' => substr($descripcionPrendas, 0, 200),
+            'contiene_font_size_15' => strpos($descripcionPrendas, 'font-size: 15px') !== false,
+            'contiene_important' => strpos($descripcionPrendas, '!important') !== false,
+            'HTML_completo' => $descripcionPrendas,
         ]);
 
         // Filtrar datos sensibles
@@ -945,6 +948,21 @@ class RegistroOrdenQueryController extends Controller
     {
         $descripcionConTallas = '';
         $descripcionBase = $order->descripcion_prendas ?? '';
+        
+        \Log::info('🔍 [buildDescripcionConTallas] Descripción recibida:', [
+            'pedido' => $order->numero_pedido,
+            'longitud' => strlen($descripcionBase),
+            'comienza_con' => substr($descripcionBase, 0, 100),
+            'es_html' => strpos($descripcionBase, '<span') !== false,
+            'contiene_important' => strpos($descripcionBase, '!important') !== false,
+            'HTML_completo' => $descripcionBase,
+        ]);
+        
+        // ✅ SI YA TIENE SPANS HTML (descripción generada por Helper), DEVOLVERLA TAL CUAL
+        if (strpos($descripcionBase, '<span') !== false) {
+            \Log::info('✅ [buildDescripcionConTallas] Descripción HTML detectada, devolviendo tal cual');
+            return $descripcionBase;
+        }
         
         // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
         $esReflectivo = false;

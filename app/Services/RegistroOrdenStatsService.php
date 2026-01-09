@@ -64,9 +64,11 @@ class RegistroOrdenStatsService
     public function getTotalDelivered(int $pedido): int
     {
         try {
+            // Contar procesos completados en lugar de sumar una columna inexistente
             return (int) DB::table('procesos_prenda')
                 ->where('numero_pedido', $pedido)
-                ->sum('cantidad_completada');
+                ->where('estado_proceso', 'Completado')
+                ->count();
         } catch (\Exception $e) {
             \Log::warning('Error al calcular totalEntregado', ['error' => $e->getMessage()]);
             return 0;

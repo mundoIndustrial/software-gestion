@@ -111,41 +111,24 @@ class PedidoPrendaService
             'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
         ]);
 
-        // Construir array de datos para el formatter legacy
-        $datosParaFormatter = [
-            'numero' => $index + 1,
-            'tipo' => $prendaData['nombre_producto'] ?? 'SIN NOMBRE',
-            'descripcion' => $prendaData['descripcion'] ?? '',
-            'tela' => $prendaData['tela'] ?? '',
-            'ref' => $prendaData['tela_referencia'] ?? '',
-            'color' => $prendaData['color'] ?? '',
-            'manga' => $prendaData['manga'] ?? '',
-            'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
-            'bolsillos_obs' => $prendaData['bolsillos_obs'] ?? '',
-            'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
-            'reflectivo_obs' => $prendaData['reflectivo_obs'] ?? '',
-            'tallas' => $prendaData['cantidades'] ?? [],
-        ];
-        
-        // Generar descripción en formato legacy
-        $descripcionFormateada = DescripcionPrendaLegacyFormatter::generar($datosParaFormatter);
-        
-        // ✅ PRIORIZAR DESCRIPCIÓN DEL FORMULARIO (incluye ubicaciones del reflectivo)
-        $descripcionFinal = !empty($prendaData['descripcion']) 
-            ? $prendaData['descripcion'] 
-            : $descripcionFormateada;
+        // ✅ SOLO GUARDAR LA DESCRIPCIÓN QUE ESCRIBIÓ EL USUARIO
+        // NO formatear ni armar descripciones automáticas
+        $descripcionFinal = $prendaData['descripcion'] ?? '';
         
         // Obtener la PRIMERA tela de múltiples telas para los campos principales
         // (tela_id, color_id se guardan en la prenda para referencia rápida)
         $primeraTela = $this->obtenerPrimeraTela($prendaData);
         
         // 🔍 LOG: Antes de guardar
-        \Log::info('✅ [PedidoPrendaService] Guardando prenda con IDs', [
+        \Log::info('✅ [PedidoPrendaService] Guardando prenda con observaciones', [
             'numero_pedido' => $pedido->numero_pedido,
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-            'descripcion_formulario' => $prendaData['descripcion'] ?? null,
-            'descripcion_legacy' => $descripcionFormateada,
-            'descripcion_final' => $descripcionFinal,
+            'genero' => $prendaData['genero'] ?? '',
+            'descripcion_usuario' => $prendaData['descripcion'] ?? null,
+            'manga_obs' => $prendaData['obs_manga'] ?? $prendaData['manga_obs'] ?? '',
+            'bolsillos_obs' => $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '',
+            'broche_obs' => $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '',
+            'reflectivo_obs' => $prendaData['obs_reflectivo'] ?? $prendaData['reflectivo_obs'] ?? '',
             'tela_id_principal' => $primeraTela['tela_id'] ?? null,
             'color_id_principal' => $primeraTela['color_id'] ?? null,
             'total_telas' => !empty($prendaData['telas']) ? count($prendaData['telas']) : 0,
@@ -153,17 +136,58 @@ class PedidoPrendaService
             'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
         ]);
         
+        // ✅ PROCESAR GÉNEROS (puede ser single string o array de múltiples géneros)
+        $generoProcesado = [];
+        $generoInput = $prendaData['genero'] ?? '';
+        
+        if (is_array($generoInput)) {
+            // Si ya es array, filtrar vacíos
+            $generoProcesado = array_filter($generoInput, fn($g) => !empty($g));
+        } elseif (is_string($generoInput)) {
+            // Si es string, intentar decodificar JSON o usar directamente
+            if (str_starts_with($generoInput, '[')) {
+                $decoded = json_decode($generoInput, true);
+                $generoProcesado = is_array($decoded) ? array_filter($decoded) : (!empty($generoInput) ? [$generoInput] : []);
+            } else {
+                $generoProcesado = !empty($generoInput) ? [$generoInput] : [];
+            }
+        }
+        
+        // ✅ PROCESAR CANTIDADES: Soportar múltiples géneros
+        $cantidadTallaFinal = [];
+        $cantidadesInput = $prendaData['cantidades'] ?? $prendaData['cantidades_por_genero'] ?? null;
+        
+        if ($cantidadesInput) {
+            if (is_string($cantidadesInput)) {
+                $cantidadesInput = json_decode($cantidadesInput, true) ?? [];
+            }
+            
+            if (is_array($cantidadesInput)) {
+                // Verificar si es estructura por género: {genero: {talla: cantidad}}
+                $esEstructuraGenero = false;
+                foreach ($cantidadesInput as $key => $valor) {
+                    if (is_array($valor)) {
+                        // Es probablemente {genero: {talla: cantidad}}
+                        $esEstructuraGenero = true;
+                        break;
+                    }
+                }
+                
+                $cantidadTallaFinal = $esEstructuraGenero ? $cantidadesInput : $cantidadesInput;
+            }
+        }
+        
         // Crear prenda principal usando PrendaPedido (tabla correcta)
         // NOTA: 'cantidad' se calcula dinámicamente desde cantidad_talla via accessor
         $prenda = PrendaPedido::create([
             'numero_pedido' => $pedido->numero_pedido,
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-            'descripcion' => $descripcionFinal, // ✅ PRIORIZA DESCRIPCIÓN DEL FORMULARIO
+            'descripcion' => $descripcionFinal, // ✅ SOLO LA DESCRIPCIÓN DEL USUARIO
             'cantidad' => 0, // Será ignorado por el mutador, se calcula desde cantidad_talla
-            'cantidad_talla' => is_array($prendaData['cantidades'] ?? null) 
-                ? json_encode($prendaData['cantidades']) 
-                : $prendaData['cantidades'],
+            'cantidad_talla' => !empty($cantidadTallaFinal) ? json_encode($cantidadTallaFinal) : '{}',
             'descripcion_variaciones' => $this->armarDescripcionVariaciones($prendaData),
+            // ✅ GENERO (array de múltiples géneros)
+            'genero' => json_encode($generoProcesado),
             // Campos de variaciones (se asigna la PRIMERA tela como referencia)
             'color_id' => $primeraTela['color_id'] ?? $prendaData['color_id'] ?? null,
             'tela_id' => $primeraTela['tela_id'] ?? $prendaData['tela_id'] ?? null,
@@ -171,18 +195,28 @@ class PedidoPrendaService
             'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
             'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
             'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
+            // ✅ NUEVOS CAMPOS: Observaciones de variaciones
+            'manga_obs' => $prendaData['obs_manga'] ?? $prendaData['manga_obs'] ?? '',
+            'bolsillos_obs' => $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '',
+            'broche_obs' => $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '',
+            'reflectivo_obs' => $prendaData['obs_reflectivo'] ?? $prendaData['reflectivo_obs'] ?? '',
         ]);
 
         // 🔍 LOG: Después de guardar
         \Log::info('✅ [PedidoPrendaService] Prenda guardada exitosamente', [
             'prenda_id' => $prenda->id,
             'numero_pedido' => $prenda->numero_pedido,
+            'genero' => $prenda->genero,
             'cantidad_dinamica' => $prenda->cantidad, // Ahora usa el accessor
             'cantidad_talla_guardada' => $prenda->cantidad_talla,
             'tela_id_guardado' => $prenda->tela_id,
             'color_id_guardado' => $prenda->color_id,
             'tipo_manga_id_guardado' => $prenda->tipo_manga_id,
             'tipo_broche_id_guardado' => $prenda->tipo_broche_id,
+            'manga_obs_guardado' => $prenda->manga_obs,
+            'bolsillos_obs_guardado' => $prenda->bolsillos_obs,
+            'broche_obs_guardado' => $prenda->broche_obs,
+            'reflectivo_obs_guardado' => $prenda->reflectivo_obs,
         ]);
 
         // 2. ✅ GUARDAR TALLAS CON CANTIDADES en prenda_tallas_ped

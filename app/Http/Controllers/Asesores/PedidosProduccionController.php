@@ -159,7 +159,7 @@ class PedidosProduccionController extends Controller
         $cotizacion = $pedido->cotizacion;
         $prendasCotizacion = $cotizacion ? $cotizacion->prendasCotizaciones : [];
 
-        return view('asesores.pedidos.plantilla-erp', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
+        return view('asesores.pedidos.show', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
     }
 
     /**
@@ -2122,19 +2122,87 @@ class PedidosProduccionController extends Controller
             // Crear prendas del pedido
             $cantidadTotalPedido = 0;
             foreach ($prendas as $index => $prenda) {
-                // CORREGIDO: Usar 'cantidades' que viene del FormData
-                $cantidadesPorTalla = $prenda['cantidades'] ?? $prenda['cantidadesPorTalla'] ?? [];
+                // ✅ PROCESAR CANTIDADES CON SOPORTE A MÚLTIPLES GÉNEROS
+                // Intentar primero la estructura nueva con géneros
+                $cantidadesPorGeneroTalla = null;
+                $cantidadesPorTalla = [];
                 
-                // Si cantidadesPorTalla es un array de arrays, aplanarlo
-                if (is_array($cantidadesPorTalla) && !empty($cantidadesPorTalla)) {
-                    $cantidadesTemp = [];
-                    foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                        $cantidadesTemp[$talla] = (int)$cantidad;
+                \Log::debug('🔍 [PRENDA] Buscando cantidades para prenda ' . ($prenda['nombre_producto'] ?? 'sin nombre'), [
+                    'cantidad_talla' => $prenda['cantidad_talla'] ?? 'no existe',
+                    'cantidades_por_genero' => $prenda['cantidades_por_genero'] ?? 'no existe',
+                    'cantidades' => $prenda['cantidades'] ?? 'no existe',
+                    'cantidadesPorTalla' => $prenda['cantidadesPorTalla'] ?? 'no existe',
+                ]);
+                
+                // 1. NUEVA ESTRUCTURA: cantidad_talla = {genero: {talla: cantidad}} (desde FormData)
+                if (!empty($prenda['cantidad_talla'])) {
+                    \Log::debug('✅ Usando cantidad_talla de FormData');
+                    $cantidadesPorGeneroTalla = $prenda['cantidad_talla'];
+                    if (is_string($cantidadesPorGeneroTalla)) {
+                        $cantidadesPorGeneroTalla = json_decode($cantidadesPorGeneroTalla, true);
                     }
-                    $cantidadesPorTalla = $cantidadesTemp;
+                    // ✅ IMPORTANTE: Mantener estructura con géneros
+                    $cantidadesPorTalla = is_array($cantidadesPorGeneroTalla) ? $cantidadesPorGeneroTalla : [];
+                    
+                    \Log::debug('📊 Decodificado cantidad_talla', [
+                        'cantidadesPorGeneroTalla' => $cantidadesPorGeneroTalla,
+                        'cantidadesPorTalla' => $cantidadesPorTalla,
+                    ]);
+                }
+                // 2. ESTRUCTURA ALTERNATIVA: cantidades_por_genero
+                else if (!empty($prenda['cantidades_por_genero'])) {
+                    \Log::debug('✅ Usando cantidades_por_genero');
+                    $cantidadesPorGeneroTalla = $prenda['cantidades_por_genero'];
+                    if (is_string($cantidadesPorGeneroTalla)) {
+                        $cantidadesPorGeneroTalla = json_decode($cantidadesPorGeneroTalla, true);
+                    }
+                    $cantidadesPorTalla = is_array($cantidadesPorGeneroTalla) ? $cantidadesPorGeneroTalla : [];
+                } 
+                // 3. ESTRUCTURA ANTIGUA: cantidades = {talla: cantidad}
+                else {
+                    \Log::debug('✅ Usando cantidades antigua');
+                    $cantidadesPorTalla = $prenda['cantidades'] ?? $prenda['cantidadesPorTalla'] ?? [];
+                    
+                    if (is_string($cantidadesPorTalla)) {
+                        $cantidadesPorTalla = json_decode($cantidadesPorTalla, true) ?? [];
+                    }
+                    
+                    // Si cantidadesPorTalla es un array de arrays, aplanarlo
+                    if (is_array($cantidadesPorTalla) && !empty($cantidadesPorTalla)) {
+                        $cantidadesTemp = [];
+                        foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                            $cantidadesTemp[$talla] = (int)$cantidad;
+                        }
+                        $cantidadesPorTalla = $cantidadesTemp;
+                    }
                 }
                 
-                $cantidadTotal = array_sum($cantidadesPorTalla);
+                // ✅ VALIDACIÓN: Asegurarse de que $cantidadesPorTalla es un array válido
+                if (!is_array($cantidadesPorTalla)) {
+                    \Log::warning('⚠️ cantidadesPorTalla no es array, inicializando vacío');
+                    $cantidadesPorTalla = [];
+                }
+                
+                \Log::debug('📊 Cantidades procesadas', [
+                    'cantidadesPorGeneroTalla' => $cantidadesPorGeneroTalla,
+                    'cantidadesPorTalla' => $cantidadesPorTalla,
+                    'es_array' => is_array($cantidadesPorTalla),
+                ]);
+                
+                // Calcular cantidad total
+                $cantidadTotal = 0;
+                if (isset($cantidadesPorGeneroTalla) && is_array($cantidadesPorGeneroTalla)) {
+                    // Sumar todas las cantidades de todos los géneros
+                    foreach ($cantidadesPorGeneroTalla as $genero => $tallas) {
+                        if (is_array($tallas)) {
+                            $cantidadTotal += array_sum($tallas);
+                        }
+                    }
+                } else {
+                    // Sumar cantidades simples
+                    $cantidadTotal = array_sum($cantidadesPorTalla);
+                }
+                
                 $cantidadTotalPedido += $cantidadTotal;
 
                 \Log::info('📊 [PRENDA SIN COTIZACIÓN] Procesando prenda', [
@@ -2162,6 +2230,11 @@ class PedidosProduccionController extends Controller
                     $variantes = json_decode($variantes, true) ?? [];
                 }
 
+                \Log::debug('📝 [PRENDA SIN COTIZACIÓN] Variantes recibidas', [
+                    'variantes' => $variantes,
+                    'telas_multiples' => $variantes['telas_multiples'] ?? 'no existe',
+                ]);
+
                 if (is_array($variantes) && !empty($variantes)) {
                     // Intentar obtener IDs directamente primero
                     $colorId = $variantes['color_id'] ?? null;
@@ -2170,22 +2243,38 @@ class PedidosProduccionController extends Controller
                     $tipoBrocheId = $variantes['tipo_broche_id'] ?? null;
                     
                     // Si no hay IDs pero hay nombres, crear los registros
-                    // COLOR: Buscar o crear por nombre
-                    if (!$colorId && !empty($variantes['color'])) {
-                        $color = \DB::table('colores_prenda')
-                            ->where('nombre', 'LIKE', '%' . $variantes['color'] . '%')
-                            ->first();
+                    // COLOR: Buscar o crear por nombre - puede venir en variantes.color o en telas_multiples
+                    if (!$colorId) {
+                        $colorNombre = $variantes['color'] ?? null;
                         
-                        if (!$color) {
-                            $colorId = \DB::table('colores_prenda')->insertGetId([
-                                'nombre' => $variantes['color'],
-                                'activo' => 1,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                            \Log::info('✅ Color creado', ['nombre' => $variantes['color'], 'id' => $colorId]);
-                        } else {
-                            $colorId = $color->id;
+                        // Si el color no está en variantes.color, buscarlo en telas_multiples
+                        if (!$colorNombre && !empty($variantes['telas_multiples'])) {
+                            $telasMultiples = is_string($variantes['telas_multiples']) 
+                                ? json_decode($variantes['telas_multiples'], true) 
+                                : $variantes['telas_multiples'];
+                            
+                            if (is_array($telasMultiples) && !empty($telasMultiples) && !empty($telasMultiples[0]['color'])) {
+                                $colorNombre = $telasMultiples[0]['color'];
+                            }
+                        }
+                        
+                        if (!empty($colorNombre)) {
+                            $color = \DB::table('colores_prenda')
+                                ->where('nombre', 'LIKE', '%' . $colorNombre . '%')
+                                ->first();
+                            
+                            if (!$color) {
+                                $colorId = \DB::table('colores_prenda')->insertGetId([
+                                    'nombre' => $colorNombre,
+                                    'activo' => 1,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                                \Log::info('✅ Color creado', ['nombre' => $colorNombre, 'id' => $colorId]);
+                            } else {
+                                $colorId = $color->id;
+                                \Log::info('✅ Color encontrado', ['nombre' => $colorNombre, 'id' => $colorId]);
+                            }
                         }
                     }
                     
@@ -2217,6 +2306,44 @@ class PedidosProduccionController extends Controller
                             }
                         }
                     }
+
+                    // TIPO MANGA: Buscar o crear por nombre
+                    if (!$tipoMangaId && !empty($variantes['tipo_manga'])) {
+                        $tipoManga = \DB::table('tipos_manga')
+                            ->where('nombre', 'LIKE', '%' . $variantes['tipo_manga'] . '%')
+                            ->first();
+                        
+                        if (!$tipoManga) {
+                            $tipoMangaId = \DB::table('tipos_manga')->insertGetId([
+                                'nombre' => $variantes['tipo_manga'],
+                                'activo' => 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            \Log::info('✅ Tipo Manga creado', ['nombre' => $variantes['tipo_manga'], 'id' => $tipoMangaId]);
+                        } else {
+                            $tipoMangaId = $tipoManga->id;
+                        }
+                    }
+
+                    // TIPO BROCHE: Buscar o crear por nombre
+                    if (!$tipoBrocheId && !empty($variantes['tipo_broche'])) {
+                        $tipoBroche = \DB::table('tipos_broche')
+                            ->where('nombre', 'LIKE', '%' . $variantes['tipo_broche'] . '%')
+                            ->first();
+                        
+                        if (!$tipoBroche) {
+                            $tipoBrocheId = \DB::table('tipos_broche')->insertGetId([
+                                'nombre' => $variantes['tipo_broche'],
+                                'activo' => 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            \Log::info('✅ Tipo Broche creado', ['nombre' => $variantes['tipo_broche'], 'id' => $tipoBrocheId]);
+                        } else {
+                            $tipoBrocheId = $tipoBroche->id;
+                        }
+                    }
                     
                     // BOOLEANOS: Convertir correctamente
                     $tieneBolsillos = isset($variantes['tiene_bolsillos']) ? ($variantes['tiene_bolsillos'] ? 1 : 0) : 0;
@@ -2237,26 +2364,42 @@ class PedidosProduccionController extends Controller
                     'numero_pedido' => $pedido->numero_pedido,
                     'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
                     'cantidad' => $cantidadTotal,
-                    'descripcion' => $descripcionPrenda,
+                    'descripcion' => $prenda['descripcion'] ?? '', // ✅ SOLO LA DESCRIPCIÓN DEL USUARIO
                     'descripcion_variaciones' => $this->armarDescripcionVariacionesPrendaSinCotizacion($variantes),
+                    // ✅ CANTIDAD POR TALLA Y GÉNERO: {genero: {talla: cantidad}} o {talla: cantidad}
                     'cantidad_talla' => json_encode($cantidadesPorTalla),
+                    // ✅ GENERO (puede ser múltiple)
+                    'genero' => json_encode($this->procesarMultiplesGeneros($prenda['genero'] ?? '')),
                     'color_id' => $colorId,
                     'tela_id' => $telaId,
                     'tipo_manga_id' => $tipoMangaId,
                     'tipo_broche_id' => $tipoBrocheId,
                     'tiene_bolsillos' => $tieneBolsillos,
                     'tiene_reflectivo' => $tieneReflectivo,
+                    // ✅ NUEVOS CAMPOS: Observaciones de variaciones
+                    'manga_obs' => $prenda['obs_manga'] ?? $prenda['manga_obs'] ?? '',
+                    'bolsillos_obs' => $prenda['obs_bolsillos'] ?? $prenda['bolsillos_obs'] ?? '',
+                    'broche_obs' => $prenda['obs_broche'] ?? $prenda['broche_obs'] ?? '',
+                    'reflectivo_obs' => $prenda['obs_reflectivo'] ?? $prenda['reflectivo_obs'] ?? '',
+                    // ✅ CAMPO DE BODEGA
+                    'de_bodega' => (int)($prenda['de_bodega'] ?? 0),
                 ]);
 
                 \Log::info('✅ Prenda PRENDA creada correctamente', [
                     'prenda_pedido_id' => $prendaPedido->id,
                     'nombre_prenda' => $prenda['nombre_producto'],
+                    'genero' => $prendaPedido->genero,
                     'cantidad' => $cantidadTotal,
                     'cantidad_talla' => json_encode($cantidadesPorTalla),
                     'color_id' => $colorId,
                     'tela_id' => $telaId,
                     'tipo_manga_id' => $tipoMangaId,
                     'tipo_broche_id' => $tipoBrocheId,
+                    'manga_obs' => $prendaPedido->manga_obs,
+                    'bolsillos_obs' => $prendaPedido->bolsillos_obs,
+                    'broche_obs' => $prendaPedido->broche_obs,
+                    'reflectivo_obs' => $prendaPedido->reflectivo_obs,
+                    'de_bodega' => $prendaPedido->de_bodega,
                 ]);
 
                 // Crear proceso inicial
@@ -2342,6 +2485,7 @@ class PedidosProduccionController extends Controller
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cantidad_total' => $cantidadTotalPedido,
+                'redirect_url' => route('asesores.pedidos.index'),
             ]);
 
         } catch (\Exception $e) {
@@ -2364,22 +2508,25 @@ class PedidosProduccionController extends Controller
      */
     private function construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla)
     {
+        \Log::info('🔍 [DESCRIPCION] Construyendo descripción para prenda:', [
+            'nombre_producto' => $prenda['nombre_producto'] ?? 'sin nombre',
+            'descripcion_campo' => $prenda['descripcion'] ?? 'SIN DESCRIPCIÓN',
+            'genero' => $prenda['genero'] ?? 'sin género',
+            'variantes' => $prenda['variantes'] ?? 'sin variantes',
+        ]);
+
         $lineas = [];
 
         // Nombre de la prenda
         if (!empty($prenda['nombre_producto'])) {
-            $lineas[] = strtoupper($prenda['nombre_producto']);
+            $lineas[] = "<span style='font-size: 16px;'><b>PRENDA: " . strtoupper($prenda['nombre_producto']) . "</b></span>";
         }
 
-        // Descripción
-        if (!empty($prenda['descripcion'])) {
-            $lineas[] = strtoupper($prenda['descripcion']);
-        }
-
-        // Género
+        // Atributos en una línea
+        $atributos = [];
         if (!empty($prenda['genero'])) {
             $genero = is_array($prenda['genero']) ? implode(', ', $prenda['genero']) : $prenda['genero'];
-            $lineas[] = "GENERO: " . strtoupper($genero);
+            $atributos[] = "Género: " . strtoupper($genero);
         }
 
         // Telas/Colores
@@ -2390,13 +2537,13 @@ class PedidosProduccionController extends Controller
                     $telaDesc .= strtoupper($tela['nombre_tela']);
                 }
                 if (!empty($tela['referencia'])) {
-                    $telaDesc .= ' REF:' . strtoupper($tela['referencia']);
+                    $telaDesc .= " <b>" . strtoupper($tela['referencia']) . "</b>";
                 }
                 if (!empty($tela['color'])) {
-                    $telaDesc .= ' - ' . strtoupper($tela['color']);
+                    $telaDesc .= " - " . strtoupper($tela['color']);
                 }
                 if (!empty($telaDesc)) {
-                    $lineas[] = "TELA: " . $telaDesc;
+                    $atributos[] = "Tela: " . $telaDesc;
                 }
             }
         }
@@ -2406,58 +2553,115 @@ class PedidosProduccionController extends Controller
             $variantes = $prenda['variantes'];
             
             if (!empty($variantes['tipo_manga']) && $variantes['tipo_manga'] !== 'No aplica') {
-                $manga = "MANGA: " . strtoupper($variantes['tipo_manga']);
+                $manga = "Manga: " . strtoupper($variantes['tipo_manga']);
                 if (!empty($variantes['obs_manga'])) {
-                    $manga .= " - " . strtoupper($variantes['obs_manga']);
+                    $manga .= " (" . strtoupper($variantes['obs_manga']) . ")";
                 }
-                $lineas[] = $manga;
+                $atributos[] = $manga;
             }
 
             if (!empty($variantes['tipo_broche']) && $variantes['tipo_broche'] !== 'No aplica') {
-                $broche = "BROCHE: " . strtoupper($variantes['tipo_broche']);
+                $broche = "Broche: " . strtoupper($variantes['tipo_broche']);
                 if (!empty($variantes['obs_broche'])) {
                     $broche .= " - " . strtoupper($variantes['obs_broche']);
                 }
-                $lineas[] = $broche;
+                $atributos[] = $broche;
             }
 
             if (!empty($variantes['tiene_bolsillos'])) {
-                $bolsillos = "BOLSILLOS: SÍ";
+                $bolsillos = "Bolsillos: SÍ";
                 if (!empty($variantes['obs_bolsillos'])) {
                     $bolsillos .= " - " . strtoupper($variantes['obs_bolsillos']);
                 }
-                $lineas[] = $bolsillos;
+                $atributos[] = $bolsillos;
             }
 
             if (!empty($variantes['tiene_reflectivo'])) {
-                $reflectivo = "REFLECTIVO: SÍ";
+                $reflectivo = "Reflectivo: SÍ";
                 if (!empty($variantes['obs_reflectivo'])) {
                     $reflectivo .= " - " . strtoupper($variantes['obs_reflectivo']);
                 }
-                $lineas[] = $reflectivo;
+                $atributos[] = $reflectivo;
             }
+        }
+
+        if (!empty($atributos)) {
+            $lineas[] = "<span style='font-size: 15px;'>" . implode(" | ", $atributos) . "</span>";
+        }
+
+        // Descripción del usuario (línea de DESCRIPCION)
+        if (!empty($prenda['descripcion'])) {
+            $lineas[] = "DESCRIPCION:";
+            $lineas[] = $prenda['descripcion'];
         }
 
         // Tallas con cantidades
+        // ✅ MANEJAR AMBAS ESTRUCTURAS:
+        // 1. Nueva: {genero: {talla: cantidad}} 
+        // 2. Antigua: {talla: cantidad}
         if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
-            $tallasTexto = [];
-            foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                if ($cantidad > 0) {
-                    $tallasTexto[] = "$talla: $cantidad";
+            $cantidadTotalCalc = 0;
+            
+            // Detectar estructura
+            $esPorGenero = false;
+            foreach ($cantidadesPorTalla as $clave => $valor) {
+                if (is_array($valor) && !is_numeric($clave)) {
+                    // Es estructura con géneros {genero: {talla: cantidad}}
+                    $esPorGenero = true;
+                }
+                break;
+            }
+            
+            if ($esPorGenero) {
+                // Estructura con géneros - construir en una sola línea
+                $tallasHTML = "<span style='font-size: 15px;'><b>Tallas:</b> ";
+                $generosPartes = [];
+                
+                foreach ($cantidadesPorTalla as $genero => $tallas) {
+                    if (is_array($tallas)) {
+                        $generoFormato = ucfirst(strtolower($genero));
+                        $tallasParte = [];
+                        
+                        foreach ($tallas as $talla => $cantidad) {
+                            $cantidad = (int)$cantidad;
+                            if ($cantidad > 0) {
+                                $tallasParte[] = "<b><span style=\"color: #d32f2f;\">{$talla}: {$cantidad}</span></b>";
+                                $cantidadTotalCalc += $cantidad;
+                            }
+                        }
+                        
+                        if (!empty($tallasParte)) {
+                            $generosPartes[] = "<b>{$generoFormato}:</b> " . implode(", ", $tallasParte);
+                        }
+                    }
+                }
+                
+                $tallasHTML .= implode(" | ", $generosPartes) . "</span>";
+                $lineas[] = $tallasHTML;
+            } else {
+                // Estructura simple {talla: cantidad}
+                $tallasLista = [];
+                foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                    $cantidad = (int)$cantidad;
+                    if ($cantidad > 0) {
+                        $tallasLista[] = "<b><span style=\"color: #d32f2f;\">{$talla}: {$cantidad}</span></b>";
+                        $cantidadTotalCalc += $cantidad;
+                    }
+                }
+                if (!empty($tallasLista)) {
+                    $lineas[] = "<span style='font-size: 15px;'><b>Tallas:</b> " . implode(", ", $tallasLista) . "</span>";
                 }
             }
-            if (!empty($tallasTexto)) {
-                $lineas[] = "TALLAS: " . implode(', ', $tallasTexto);
-            }
         }
 
-        // Cantidad total
-        $cantidadTotal = array_sum($cantidadesPorTalla);
-        if ($cantidadTotal > 0) {
-            $lineas[] = "CANTIDAD TOTAL: $cantidadTotal";
-        }
-
-        return !empty($lineas) ? implode("\n\n", $lineas) : '-';
+        $descripcionFinal = !empty($lineas) ? implode("\n", $lineas) : '-';
+        
+        \Log::info('✅ [DESCRIPCION] Descripción final construida:', [
+            'total_lineas' => count($lineas),
+            'descripcion_final' => $descripcionFinal,
+        ]);
+        
+        return $descripcionFinal;
     }
 
     /**
@@ -2794,7 +2998,37 @@ class PedidosProduccionController extends Controller
         return !empty($lineas) ? implode("\n\n", $lineas) : '-';
     }
 
+    /**
+     * Procesar múltiples géneros desde el input
+     * Convierte string, array o JSON a un array limpio de géneros
+     * 
+     * @param mixed $generoInput - Puede ser string, array o JSON
+     * @return array - Array de géneros sin duplicados ni vacíos
+     */
+    private function procesarMultiplesGeneros($generoInput): array
+    {
+        $generos = [];
+
+        if (is_array($generoInput)) {
+            // Si ya es array, filtrar vacíos
+            $generos = array_filter($generoInput, fn($g) => !empty($g));
+        } elseif (is_string($generoInput)) {
+            // Si es string, intentar decodificar JSON
+            if (str_starts_with($generoInput, '[')) {
+                $decoded = json_decode($generoInput, true);
+                $generos = is_array($decoded) ? array_filter($decoded) : (!empty($generoInput) ? [$generoInput] : []);
+            } else {
+                // Si es string simple, crear array
+                $generos = !empty($generoInput) ? [$generoInput] : [];
+            }
+        }
+
+        // Eliminar duplicados y valores vacíos, mantener índices reset
+        return array_values(array_unique(array_filter($generos)));
+    }
+
 }
+
 
 
 

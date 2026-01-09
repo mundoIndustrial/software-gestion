@@ -24,13 +24,27 @@ const TrackingUI = (() => {
             'trackingOrderNumber': `#${orderData.numero_pedido || '-'}`,
             'trackingOrderClient': orderData.cliente || '-',
             'trackingOrderDate': DateUtils.formatDate(orderData.fecha_inicio),
-            'trackingEstimatedDate': DateUtils.formatDate(orderData.fecha_estimada_de_entrega)
+            'trackingEstimatedDate': DateUtils.formatDate(orderData.fecha_estimada_de_entrega),
+            'trackingOrderStatus': formatOrderStatus(orderData.estado || '-')
         };
         
         for (const [elementId, value] of Object.entries(elements)) {
             const el = document.getElementById(elementId);
             if (el) el.textContent = value;
         }
+    }
+    
+    /**
+     * Formatea el estado del pedido
+     */
+    function formatOrderStatus(estado) {
+        const statusMap = {
+            'PENDIENTE_SUPERVISOR': 'Pendiente por Aprobación',
+            'APROBADO_SUPERVISOR': 'Aprobado',
+            'EN_PRODUCCION': 'En Producción',
+            'FINALIZADO': 'Finalizado'
+        };
+        return statusMap[estado] || estado;
     }
     
     /**

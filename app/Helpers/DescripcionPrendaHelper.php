@@ -12,7 +12,7 @@ class DescripcionPrendaHelper
      * REPLICANDO EXACTAMENTE LA LÓGICA DEL MODAL (order-detail-modal-manager.js líneas 183-303)
      * 
      * Formato:
-     * 1. PRENDA X: NOMBRE
+     * 1. PRENDA X: NOMBRE (solo si hay múltiples prendas)
      * 2. Color: X | Tela: X REF:X | Manga: X
      * 3. DESCRIPCION:
      *    • Reflectivo: X
@@ -34,20 +34,26 @@ class DescripcionPrendaHelper
      *      'reflectivos' => array de strings,
      *      'tallas' => array ['talla' => cantidad]
      * ]
+     * @param int|null $totalPrendas Total de prendas en el pedido (para decidir si mostrar "PRENDA X:")
      * @return string
      */
-    public static function generarDescripcion(array $prenda): string
+    public static function generarDescripcion(array $prenda, $totalPrendas = null): string
     {
         // Validar que tengamos los datos mínimos
         $numero = $prenda['numero'] ?? 1;
-        $tipo = strtoupper($prenda['tipo'] ?? '');
-        $color = $prenda['color'] ?? '';
-        $tela = $prenda['tela'] ?? '';
-        $ref = $prenda['ref'] ?? '';
-        $manga = $prenda['manga'] ?? '';
-        $obsManga = $prenda['obs_manga'] ?? '';
-        $tipoBroche = $prenda['tipo_broche'] ?? '';
-        $broche = $prenda['broche'] ?? '';
+        $tipo = mb_strtoupper($prenda['tipo'] ?? '', 'UTF-8');
+        $color = mb_strtoupper($prenda['color'] ?? '', 'UTF-8');
+        $tela = mb_strtoupper($prenda['tela'] ?? '', 'UTF-8');
+        $ref = mb_strtoupper($prenda['ref'] ?? '', 'UTF-8');
+        // Limpiar REF: si ya está en el valor
+        if (stripos($ref, 'REF:') === 0) {
+            $ref = substr($ref, 4);
+        }
+        $manga = mb_strtoupper($prenda['manga'] ?? '', 'UTF-8');
+        $obsManga = mb_strtoupper($prenda['obs_manga'] ?? '', 'UTF-8');
+        $tipoBroche = mb_strtoupper($prenda['tipo_broche'] ?? '', 'UTF-8');
+        $broche = mb_strtoupper($prenda['broche'] ?? '', 'UTF-8');
+        $descripcionUserInput = mb_strtoupper($prenda['descripcion_usuario'] ?? '', 'UTF-8'); // ✅ Campo para descripción del usuario
         
         // Procesar listas
         $bolsillos = $prenda['bolsillos'] ?? [];
@@ -60,77 +66,145 @@ class DescripcionPrendaHelper
         // Limpiar reflectivos de "SI" si existe como primer item
         $reflectivos = self::limpiarListaItem($reflectivos);
 
-        // 1. Nombre de la prenda
-        $descripcion = "PRENDA {$numero}: {$tipo}";
+        // 1. Nombre de la prenda - ✅ Si solo hay una prenda, no mostrar "PRENDA 1:"
+        if ($totalPrendas === 1) {
+            $descripcion = "<span style='font-size: 15px !important; font-weight: bold;'>{$tipo}</span>";
+        } else {
+            $descripcion = "<span style='font-size: 15px !important; font-weight: bold;'>PRENDA {$numero}: {$tipo}</span>";
+        }
         
         // 2. Línea de atributos: Color | Tela | Manga (con observación de manga si existe)
         $atributos = [];
         
         if ($color) {
-            $atributos[] = "Color: " . strtoupper($color);
+            $atributos[] = "<b>COLOR:</b> " . $color;
         }
         
         if ($tela) {
-            $telaTexto = strtoupper($tela);
+            $telaTexto = $tela;
             if ($ref) {
-                $telaTexto .= " " . strtoupper($ref);
+                $telaTexto .= " <b>REF:</b>" . $ref;
             }
-            $atributos[] = "Tela: {$telaTexto}";
+            $atributos[] = "<b>TELA:</b> {$telaTexto}";
         }
         
         if ($manga) {
-            $mangaTexto = strtoupper($manga);
+            $mangaTexto = $manga;
             // Agregar observación de manga si existe y es diferente al tipo
-            if ($obsManga && strtoupper($obsManga) !== strtoupper($manga)) {
-                $mangaTexto .= " ({$obsManga})";
+            if ($obsManga && $obsManga !== $manga) {
+                $mangaTexto .= " (" . $obsManga . ")";
             }
-            $atributos[] = "Manga: {$mangaTexto}";
+            $atributos[] = "<b>MANGA:</b> {$mangaTexto}";
         }
         
         if (!empty($atributos)) {
-            $descripcion .= "\n" . implode(' | ', $atributos);
+            $descripcion .= "\n<span style='font-size: 15px !important;'>" . implode(' | ', $atributos) . "</span>";
         }
         
-        // 3. DESCRIPCION con viñetas (sin manga, solo reflectivo, bolsillos y broche si existe)
+        // 3. DESCRIPCION DEL USUARIO (si existe en el campo descripcion)
+        if (!empty($descripcionUserInput)) {
+            $descripcion .= "\n<span style='font-size: 15px !important;'>DESCRIPCION:\n" . $descripcionUserInput . "</span>";
+        }
+        
+        // 3B. VIÑETAS: REFLECTIVO, BOLSILLOS, BROCHE (solo si existen)
         $partes = [];
         
         // Reflectivo
         if (!empty($reflectivos)) {
-            $reflectivoTexto = implode(', ', array_map('strtoupper', $reflectivos));
-            $partes[] = self::BULLET . " Reflectivo: {$reflectivoTexto}";
+            $reflectivoTexto = implode(', ', array_map(function($item) { return mb_strtoupper($item, 'UTF-8'); }, $reflectivos));
+            $partes[] = self::BULLET . " <b>REFLECTIVO:</b> {$reflectivoTexto}";
         }
         
         // Bolsillos
         if (!empty($bolsillos)) {
-            $bolsillosTexto = implode(', ', array_map('strtoupper', $bolsillos));
-            $partes[] = self::BULLET . " Bolsillos: {$bolsillosTexto}";
+            $bolsillosTexto = implode(', ', array_map(function($item) { return mb_strtoupper($item, 'UTF-8'); }, $bolsillos));
+            $partes[] = self::BULLET . " <b>BOLSILLOS:</b> {$bolsillosTexto}";
         }
         
         // Broche/Botón - SOLO si existe tipo_broche (label dinámico según el tipo)
         if ($tipoBroche && $broche) {
-            $tipoLabel = strtoupper($tipoBroche);
-            $observacion = strtoupper($broche);
-            $partes[] = self::BULLET . " {$tipoLabel}: {$observacion}";
+            $tipoLabel = $tipoBroche;
+            $observacion = $broche;
+            $partes[] = self::BULLET . " <b>{$tipoLabel}:</b> {$observacion}";
         }
         
         if (!empty($partes)) {
-            $descripcion .= "\nDESCRIPCION:\n" . implode("\n", $partes);
+            // Agregar un salto de línea si ya hay descripción del usuario
+            if (!empty($descripcionUserInput)) {
+                $descripcion .= "\n<span style='font-size: 15px !important;'>" . implode("\n", $partes) . "</span>";
+            } else {
+                $descripcion .= "\n<span style='font-size: 15px !important;'>" . implode("\n", $partes) . "</span>";
+            }
         }
         
         // 4. Tallas
+        // ✅ MANEJAR AMBAS ESTRUCTURAS:
+        // 1. Nueva: {genero: {talla: cantidad}} 
+        // 2. Antigua: {talla: cantidad}
         if (!empty($tallas) && is_array($tallas)) {
-            $tallasList = [];
-            foreach ($tallas as $talla => $cant) {
-                if ($cant > 0) {
-                    $tallasList[] = "{$talla}: {$cant}";
+            // Detectar estructura: ¿tiene géneros o es plana?
+            $esPorGenero = false;
+            foreach ($tallas as $clave => $valor) {
+                if (is_array($valor) && !is_numeric($clave)) {
+                    // Es estructura con géneros {genero: {talla: cantidad}}
+                    $esPorGenero = true;
                 }
+                break;
             }
-            if (!empty($tallasList)) {
-                $descripcion .= "\nTallas: " . implode(', ', $tallasList);
+            
+            if ($esPorGenero) {
+                // Estructura con géneros: formato en una sola línea
+                $tallasHTML = "<span style='font-size: 15px !important;'><b>TALLAS:</b> ";
+                $generosPartes = [];
+                
+                foreach ($tallas as $genero => $tallasCant) {
+                    if (is_array($tallasCant) && !empty($tallasCant)) {
+                        // Convertir género a mayúsculas
+                        $generoFormato = mb_strtoupper($genero, 'UTF-8');
+                        $tallasParte = [];
+                        
+                        foreach ($tallasCant as $talla => $cant) {
+                            $cant = (int)$cant;
+                            if ($cant > 0) {
+                                $tallasParte[] = "<b><span style=\"color: #d32f2f;\">{$talla}: {$cant}</span></b>";
+                            }
+                        }
+                        
+                        if (!empty($tallasParte)) {
+                            $generosPartes[] = "<b>{$generoFormato}:</b> " . implode(", ", $tallasParte);
+                        }
+                    }
+                }
+                
+                $tallasHTML .= implode(" | ", $generosPartes) . "</span>";
+                $descripcion .= "\n" . $tallasHTML;
+            } else {
+                // Estructura plana: {talla: cantidad}
+                $tallasList = [];
+                foreach ($tallas as $talla => $cant) {
+                    $cant = (int)$cant;
+                    if ($cant > 0) {
+                        $tallasList[] = "<b><span style=\"color: #d32f2f;\">{$talla}: {$cant}</span></b>";
+                    }
+                }
+                if (!empty($tallasList)) {
+                    $descripcion .= "\n<span style='font-size: 15px !important;'><b>TALLAS:</b> " . implode(', ', $tallasList) . "</span>";
+                }
             }
         }
 
-        return trim($descripcion);
+        $descripcionFinal = trim($descripcion);
+        
+        \Log::info('📋 [HELPER] Descripción generada:', [
+            'numero' => $numero,
+            'tipo' => $tipo,
+            'tiene_descripcion_usuario' => !empty($descripcionUserInput),
+            'tiene_viñetas' => !empty($partes),
+            'tiene_tallas' => !empty($tallas),
+            'descripcion_HTML' => $descripcionFinal,
+        ]);
+        
+        return $descripcionFinal;
     }
 
     /**
@@ -141,7 +215,7 @@ class DescripcionPrendaHelper
      * @param int $index Número de prenda para la descripción
      * @return array
      */
-    public static function extraerDatosPrenda($prenda, int $index = 1): array
+    public static function extraerDatosPrenda($prenda, int $index = 1, $totalPrendas = null): array
     {
         $datos = [
             'numero' => $index,
@@ -190,6 +264,12 @@ class DescripcionPrendaHelper
                 $datos['obs_manga'] = trim($matches[1]);
             }
         }
+        
+        // ✅ Leer manga_obs directamente del campo si existe (tiene prioridad)
+        if ($prenda->manga_obs) {
+            $datos['obs_manga'] = $prenda->manga_obs;
+        }
+        
         if (!$datos['manga'] && $prenda->relationLoaded('tipoManga') && $prenda->tipoManga) {
             $datos['manga'] = $prenda->tipoManga->nombre;
         } elseif (!$datos['manga'] && $prenda->tipo_manga_id) {
@@ -225,7 +305,7 @@ class DescripcionPrendaHelper
                 if (preg_match('/\b(DRILL|POLIESTER|ALGODÓN|OXFORD|LINO|SARGA|TWILL|POPELINA|GABARDINA)(?:\s+([A-Z]+))?\b/i', $desc, $matches)) {
                     $datos['tela'] = $matches[1];
                     // Agregar el modificador si existe (como BORNEO)
-                    if (!empty($matches[2]) && strtoupper($matches[2]) !== 'NARANJA' && strtoupper($matches[2]) !== 'GRIS' && strtoupper($matches[2]) !== 'MANGA') {
+                    if (!empty($matches[2]) && mb_strtoupper($matches[2], 'UTF-8') !== 'NARANJA' && mb_strtoupper($matches[2], 'UTF-8') !== 'GRIS' && mb_strtoupper($matches[2], 'UTF-8') !== 'MANGA') {
                         $datos['tela'] .= ' ' . $matches[2];
                     }
                 }
@@ -304,6 +384,20 @@ class DescripcionPrendaHelper
                         $datos['otros'] = $otrosParsed;
                     }
                 }
+            }
+        }
+
+        // ✅ Extraer descripción personalizada del usuario
+        // Si el campo descripcion contiene texto simple (sin estructura), usarlo como descripcion_usuario
+        if (!empty($prenda->descripcion)) {
+            $desc = $prenda->descripcion;
+            
+            // Detectar si tiene estructura (palabras clave como Logo, Reflectivo, Bolsillos, etc.)
+            $tieneEstructura = preg_match('/\b(Logo|Reflectivo|Bolsillos|Broche|BOTÓN|DESCRIPCION|Manga|Talla|Cantidad):/i', $desc);
+            
+            if (!$tieneEstructura) {
+                // Es texto simple del usuario - usarlo como descripcion_usuario
+                $datos['descripcion_usuario'] = trim($desc);
             }
         }
 
@@ -398,7 +492,7 @@ class DescripcionPrendaHelper
         }
 
         // Si el primer item es exactamente "SI" o "NO" (sin más), removerlo
-        if (count($items) > 0 && in_array(strtoupper(trim($items[0])), ['SI', 'NO'])) {
+        if (count($items) > 0 && in_array(mb_strtoupper(trim($items[0]), 'UTF-8'), ['SI', 'NO'])) {
             array_shift($items);
         }
 

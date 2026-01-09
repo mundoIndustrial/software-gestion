@@ -360,8 +360,8 @@ window.openAsesorasTrackingModal = async function(pedido) {
         document.getElementById('asesorasTrackingOrderNumber').textContent = pedido || '-';
         document.getElementById('asesorasTrackingClient').textContent = order.cliente_nombre || order.cliente || '-';
         
-        // Estado
-        const estado = order.estado || 'No iniciado';
+        // Estado - Convertir a texto legible
+        const estado = formatAsesorasOrderStatus(order.estado) || 'No iniciado';
         document.getElementById('asesorasTrackingStatus').textContent = estado;
         
         // Fecha estimada de entrega
@@ -545,6 +545,19 @@ async function fillAsesorasTimeline(pedido) {
             container.innerHTML = '<p style="text-align: center; color: #d32f2f; font-size: 0.9rem;">Error al cargar procesos</p>';
         }
     }
+}
+
+/**
+ * Convierte el estado del pedido a formato legible
+ */
+function formatAsesorasOrderStatus(estado) {
+    const statusMap = {
+        'PENDIENTE_SUPERVISOR': 'Pendiente por Aprobación',
+        'APROBADO_SUPERVISOR': 'Aprobado',
+        'EN_PRODUCCION': 'En Producción',
+        'FINALIZADO': 'Finalizado'
+    };
+    return statusMap[estado] || estado;
 }
 
 /**

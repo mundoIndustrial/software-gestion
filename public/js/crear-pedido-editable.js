@@ -65,7 +65,7 @@ window.eliminarPrendaDelPedido = function(index) {
                 <div style="text-align: center; padding: 2rem;">
                     <p style="color: #6b7280; margin-bottom: 1rem;">No hay prendas agregadas. Haz clic en el botón de abajo para agregar.</p>
                     <button type="button" onclick="agregarPrendaSinCotizacion()" class="btn btn-primary" style="background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                        ➕ Agregar Prenda
+                        <i class="fas fa-plus"></i> Agregar Prenda
                     </button>
                 </div>
             `;
@@ -404,6 +404,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (tituloPrendasDinamico) {
                         if (esLogo) {
                             tituloPrendasDinamico.textContent = 'Información del Logo';
+                        } else if (tipoPedido === 'REFLECTIVO') {
+                            tituloPrendasDinamico.textContent = 'Prendas Reflectivo';
+                        } else if (tipoPedido === 'PRENDA') {
+                            tituloPrendasDinamico.textContent = 'Prendas';
                         } else {
                             tituloPrendasDinamico.textContent = 'Prendas Técnicas del Logo';
                         }
@@ -903,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <button type="button"
                                         onclick="abrirModalAgregarFotosTela(${index}, ${telaIdx})"
                                         style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: 900; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(14,165,233,0.2);"
-                                        title="Agregar foto de tela">＋</button>
+                                        title="Agregar foto de tela"><i class="fas fa-plus" style="font-size: 0.75rem;"></i></button>
                             </div>
                         `;
                     } else {
@@ -913,7 +917,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <button type="button"
                                         onclick="abrirModalAgregarFotosTela(${index}, ${telaIdx})"
                                         style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: 900; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(14,165,233,0.2);"
-                                        title="Agregar foto de tela">＋</button>
+                                        title="Agregar foto de tela"><i class="fas fa-plus" style="font-size: 0.75rem;"></i></button>
                             </div>
                         `;
                     }
@@ -979,8 +983,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             `).join('')}
                             ${restantes > 0 ? `<div style="width: 100%; aspect-ratio: 1/1; max-height: 180px; display:flex; align-items:center; justify-content:center; border: 1px dashed #1e40af; border-radius: 8px; background: #e0f2fe; color: #1e40af; font-weight: 700; font-size: 0.95rem;">+${restantes} más</div>` : ''}
                         ` : `
-                            <div style="width: 100%; aspect-ratio: 1/1; max-height: 180px; display:flex; align-items:center; justify-content:center; border: 2px dashed #9ca3af; border-radius: 8px; background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 0.9rem; text-align: center; padding: 1rem;">
-                                📁 Sin fotos<br><span style="font-size: 0.8rem; font-weight: 400;">Agrega fotos para mostrar aquí</span>
+                            <div style="width: 100%; aspect-ratio: 1/1; max-height: 180px; display:flex; align-items:center; justify-content:center; border: 2px dashed #9ca3af; border-radius: 8px; background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 0.9rem; text-align: center; padding: 1rem; flex-direction: column;">
+                                <i class="fas fa-folder-open" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                                <span>Sin fotos</span><br><span style="font-size: 0.8rem; font-weight: 400;">Agrega fotos para mostrar aquí</span>
                             </div>
                         `}
                     </div>
@@ -1270,6 +1275,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         prendasTitle.textContent = `🧥 Prenda ${parseInt(prendasIndex) + 1}: ${nuevoNombre}`;
                     }
                 }
+            });
+        });
+
+        // ✅ AGREGAR LISTENERS PARA CHECKBOXES DE GÉNERO (MÚLTIPLE SELECCIÓN)
+        const generoCheckboxes = document.querySelectorAll('.genero-checkbox');
+        generoCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const prendaIndex = parseInt(e.target.dataset.prenda);
+                const prendasCard = e.target.closest('.prenda-card-editable');
+                
+                if (!prendasCard) return;
+                
+                // Obtener todos los géneros seleccionados
+                const generosSeleccionados = [];
+                prendasCard.querySelectorAll('.genero-checkbox:checked').forEach(cb => {
+                    generosSeleccionados.push(cb.value);
+                });
+                
+                logWithEmoji('✅', `Géneros actualizados para prenda ${prendaIndex}:`, generosSeleccionados);
+                
+                // Actualizar el contenedor de tallas dinámico
+                actualizarContenedorTallasPorGeneroEditable(prendaIndex, prendasCard, generosSeleccionados);
             });
         });
         } catch (error) {
@@ -1600,9 +1627,77 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Re-renderizar la sección de prendas
                     if (esModosPrendaSinCotizacion) {
-                        // Sincronizar primero antes de renderizar
-                        window.sincronizarDatosTelas(prendaIndex);
-                        window.renderizarPrendasTipoPrendaSinCotizacion();
+                        // ✅ Sincronizar TODOS los datos del DOM primero (incluyendo observaciones)
+                        const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                        if (prenda) {
+                            const container = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
+                            if (container) {
+                                // Guardar nombre y descripción
+                                const inputNombre = container.querySelector('.prenda-nombre');
+                                const inputDesc = container.querySelector('.prenda-descripcion');
+                                if (inputNombre?.value) prenda.nombre_producto = inputNombre.value;
+                                if (inputDesc?.value) prenda.descripcion = inputDesc.value;
+                                
+                                // Guardar TODAS las variaciones (incluyendo observaciones)
+                                container.querySelectorAll('[data-field]').forEach(field => {
+                                    const nombreCampo = field.dataset.field;
+                                    if (nombreCampo) {
+                                        const valor = field.value || field.textContent;
+                                        if (prenda.variantes) {
+                                            if (nombreCampo.includes('tiene_')) {
+                                                prenda.variantes[nombreCampo] = valor === 'Sí';
+                                            } else {
+                                                prenda.variantes[nombreCampo] = valor;
+                                            }
+                                        }
+                                    }
+                                });
+
+                                // ✅ GUARDAR OBSERVACIONES EXPLÍCITAMENTE
+                                container.querySelectorAll('.variacion-obs').forEach(textarea => {
+                                    const campoObs = textarea.dataset.field;
+                                    if (campoObs && prenda.variantes) {
+                                        prenda.variantes[campoObs] = textarea.value;
+                                    }
+                                });
+                                
+                                // Guardar telas
+                                const telaRows = container.querySelectorAll('[data-tela-index]');
+                                telaRows.forEach(row => {
+                                    const telaIdx = parseInt(row.dataset.telaIndex);
+                                    const nombreInput = row.querySelector('.tela-nombre');
+                                    const colorInput = row.querySelector('.tela-color');
+                                    const refInput = row.querySelector('.tela-referencia');
+                                    
+                                    if (prenda.variantes?.telas_multiples?.[telaIdx]) {
+                                        prenda.variantes.telas_multiples[telaIdx].nombre_tela = nombreInput?.value || '';
+                                        prenda.variantes.telas_multiples[telaIdx].color = colorInput?.value || '';
+                                        prenda.variantes.telas_multiples[telaIdx].referencia = refInput?.value || '';
+                                    }
+                                    if (prenda.telas?.[telaIdx]) {
+                                        prenda.telas[telaIdx].nombre_tela = nombreInput?.value || '';
+                                        prenda.telas[telaIdx].color = colorInput?.value || '';
+                                        prenda.telas[telaIdx].referencia = refInput?.value || '';
+                                    }
+                                });
+                                
+                                logWithEmoji('💾', `Datos sincronizados antes de re-renderizar (incluyendo observaciones)`);
+                            }
+                        }
+                        
+                        // ✅ Solo re-renderizar la sección de TELAS (no toda la prenda)
+                        const prenda2 = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                        if (prenda2) {
+                            const container = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
+                            if (container) {
+                                const telasSection = container.querySelector('[data-section="telas"]');
+                                if (telasSection) {
+                                    const telasHtml = window.renderizarTelasPrendaTipo(prenda2, prendaIndex);
+                                    telasSection.innerHTML = telasHtml;
+                                    logWithEmoji('📸', `Sección de telas actualizada con la nueva foto`);
+                                }
+                            }
+                        }
                     } else {
                         renderizarPrendas();
                     }
@@ -3628,11 +3723,26 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`Prenda ${index}: Fotos restantes: ${fotosEnDOM.length}, Fotos tela: ${fotosTelaEnDOM.length}`);
             console.log(`Prenda ${index}: Fotos tela originales: ${prenda.telaFotos?.length || 0}, Fotos tela restantes: ${fotosTelaEnDOM.length}`);
 
+            // ✅ RECOPILAR TALLAS POR GÉNERO DESDE EL CONTENEDOR DINÁMICO
+            const generosConTallas = {};
+            generosSeleccionados.forEach(genero => {
+                generosConTallas[genero] = {};
+                const tallaInputs = prendasCard.querySelectorAll(`.talla-cantidad-genero-editable[data-genero="${genero}"]`);
+                tallaInputs.forEach(input => {
+                    const talla = input.dataset.talla;
+                    const cantidad = parseInt(input.value) || 0;
+                    if (cantidad > 0) {
+                        generosConTallas[genero][talla] = cantidad;
+                    }
+                });
+            });
+
             prendas.push({
                 index: index,
                 nombre_producto: nombreProducto,
                 descripcion: descripcion,
                 genero: generosSeleccionados.length > 0 ? generosSeleccionados : prenda.variantes?.genero,
+                generosConTallas: Object.keys(generosConTallas).length > 0 ? generosConTallas : {},
                 manga: variacionesEditadas['tipo_manga'] || prenda.variantes?.tipo_manga || prenda.variantes?.manga,
                 broche: variacionesEditadas['tipo_broche'] || prenda.variantes?.tipo_broche || prenda.variantes?.broche,
                 tiene_bolsillos: variacionesEditadas['tiene_bolsillos'] === 'Sí' ? true : (prenda.variantes?.tiene_bolsillos || false),
@@ -3881,6 +3991,530 @@ window.agregarTallaAlFormulario = function(prendaIndex, talla) {
             timer: 1500,
             showConfirmButton: false
         });
+};
+
+/**
+ * ✅ ACTUALIZAR CONTENEDOR DINÁMICO DE TALLAS POR GÉNERO (VERSIÓN EDITABLE)
+ * Usa MODAL para seleccionar tallas específicas por género, no muestra todas
+ * @param {number} prendaIndex - Índice de la prenda
+ * @param {HTMLElement} prendasCard - Elemento tarjeta de la prenda
+ * @param {Array} generosSeleccionados - Array de géneros seleccionados
+ */
+window.actualizarContenedorTallasPorGeneroEditable = function(prendaIndex, prendasCard, generosSeleccionados) {
+    const container = prendasCard.querySelector('.tallas-por-genero-container');
+    if (!container) return;
+    
+    if (generosSeleccionados.length === 0) {
+        container.innerHTML = '<p style="color: #9ca3af; font-size: 0.9rem; margin-top: 0.5rem;">Selecciona al menos un género para agregar tallas</p>';
+        return;
+    }
+    
+    let html = '';
+    
+    // Para cada género seleccionado, crear sección con botón para agregar tallas
+    generosSeleccionados.forEach((genero) => {
+        const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
+        
+        // Encabezado de género con botón para agregar talla
+        html += `
+            <div style="margin-top: 1.5rem; padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0066cc 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-user"></i> ${generoLabel}
+                </div>
+                <button type="button" 
+                        onclick="agregarTallaParaGenero(${prendaIndex}, '${genero}')"
+                        style="background: white; color: #0066cc; border: none; padding: 0.4rem 0.6rem; border-radius: 999px; cursor: pointer; font-size: 0.9rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.15);" title="Agregar talla">
+                    <i class="fas fa-plus" style="font-size: 0.75rem;"></i> Talla
+                </button>
+            </div>
+            <div class="tallas-genero-container" data-prenda="${prendaIndex}" data-genero="${genero}" style="min-height: 50px;"></div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Renderizar las tallas ya agregadas para cada género
+    generosSeleccionados.forEach((genero) => {
+        renderizarTallasDelGenero(prendaIndex, genero);
+    });
+};
+
+/**
+ * Renderizar las tallas ya agregadas para un género específico
+ */
+function renderizarTallasDelGenero(prendaIndex, genero) {
+    const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+    if (!prendasCard) return;
+    
+    const containerGenero = prendasCard.querySelector(`.tallas-genero-container[data-prenda="${prendaIndex}"][data-genero="${genero}"]`);
+    if (!containerGenero) return;
+    
+    // Buscar todos los inputs de tallas para este género
+    const tallasInputs = prendasCard.querySelectorAll(`.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${genero}"]`);
+    
+    if (tallasInputs.length === 0) {
+        containerGenero.innerHTML = '<p style="padding: 0.75rem 1rem; background: white; color: #9ca3af; font-size: 0.85rem; margin: 0; border: 1px solid #e0e0e0; border-top: none; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;">Sin tallas agregadas</p>';
+        return;
+    }
+    
+    let html = '';
+    let isFirst = true;
+    
+    tallasInputs.forEach((input) => {
+        const talla = input.dataset.talla;
+        const cantidad = input.value || '0';
+        
+        html += `
+            <div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; ${isFirst ? '' : 'border-top: none;'} display: grid; grid-template-columns: 1.5fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; width: 100%;">
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Talla</label>
+                    <div style="font-weight: 500; color: #1f2937;">${talla}</div>
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Cantidad</label>
+                    <input type="number" 
+                           min="0" 
+                           value="${cantidad}" 
+                           placeholder="0"
+                           class="talla-cantidad-display-editable"
+                           data-talla="${talla}"
+                           data-genero="${genero}"
+                           data-prenda="${prendaIndex}"
+                           style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;">
+                </div>
+                <div style="text-align: center;">
+                    <button type="button" class="btn-eliminar-talla-genero" onclick="eliminarTallaDelGenero(${prendaIndex}, '${genero}', '${talla}')" style="background: #dc3545; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;" title="Eliminar talla">
+                        <i class="fas fa-trash-alt" style="font-size: 0.7rem;"></i> Quitar
+                    </button>
+                </div>
+            </div>
+        `;
+        isFirst = false;
+    });
+    
+    containerGenero.innerHTML = html;
+    
+    // Agregar listeners a los inputs de display y sincronizar con hidden
+    containerGenero.querySelectorAll('.talla-cantidad-display-editable').forEach(input => {
+        input.addEventListener('change', function() {
+            const prendaIdx = parseInt(this.dataset.prenda);
+            const gen = this.dataset.genero;
+            const talla = this.dataset.talla;
+            const cantidad = parseInt(this.value) || 0;
+            
+            // Actualizar el input hidden correspondiente
+            const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIdx}"]`);
+            if (prendasCard) {
+                const hiddenInput = prendasCard.querySelector(`.talla-cantidad-genero-editable[data-prenda="${prendaIdx}"][data-genero="${gen}"][data-talla="${talla}"]`);
+                if (hiddenInput) {
+                    hiddenInput.value = cantidad;
+                }
+            }
+            
+            // ✅ CRÍTICO: Actualizar directamente en el gestor cuando el usuario cambia cantidad
+            if (window.gestorPrendaSinCotizacion) {
+                const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIdx);
+                if (prenda) {
+                    if (!prenda.generosConTallas[gen]) {
+                        prenda.generosConTallas[gen] = {};
+                    }
+                    prenda.generosConTallas[gen][talla] = cantidad;
+                    console.log(`✅ ACTUALIZADO EN GESTOR - Prenda ${prendaIdx}, ${gen} ${talla}: ${cantidad}`);
+                }
+            }
+            
+            console.log(`✅ Cantidad actualizada - Prenda: ${prendaIdx}, Género: ${gen}, Talla: ${talla}, Cantidad: ${cantidad}`);
+        });
+        
+        input.addEventListener('input', function() {
+            if (this.value < 0) this.value = 0;
+        });
+    });
+}
+
+/**
+ * Obtener el tipo de talla del otro género (si existe)
+ */
+window.obtenerTipoTallaDelOtroGenero = function(prendaIndex, generoActual) {
+    const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+    if (!prendasCard) return null;
+    
+    const otroGenero = generoActual === 'dama' ? 'caballero' : 'dama';
+    
+    // Buscar si hay tallas del otro género con tipo LETRA
+    const tallasLetra = prendasCard.querySelectorAll(
+        `.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${otroGenero}"][data-tipo-talla="letra"]`
+    );
+    if (tallasLetra.length > 0) return 'letra';
+    
+    // Buscar si hay tallas del otro género con tipo NÚMERO
+    const tallasNumero = prendasCard.querySelectorAll(
+        `.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${otroGenero}"][data-tipo-talla="numero"]`
+    );
+    if (tallasNumero.length > 0) return 'numero';
+    
+    return null;
+};
+
+/**
+ * Agregar talla(s) a un género - Flujo interactivo
+ * Paso 1: Elegir tipo de talla (LETRA o NÚMERO)
+ * Paso 2: Elegir método (MANUAL o RANGO)
+ * Paso 3: Seleccionar tallas
+ * 
+ * RESTRICCIÓN: Si el otro género ya tiene tallas, debe ser del mismo tipo
+ */
+window.agregarTallaParaGenero = function(prendaIndex, genero) {
+    const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+    if (!prendasCard) return;
+    
+    // Verificar qué tipo de talla usa el otro género (si es que tiene)
+    const tipoDelOtroGenero = obtenerTipoTallaDelOtroGenero(prendaIndex, genero);
+    const otroGenero = genero === 'dama' ? 'caballero' : 'dama';
+    
+    if (tipoDelOtroGenero) {
+        // Si el otro género ya tiene tallas, forzar el mismo tipo
+        const tipoLabel = tipoDelOtroGenero === 'letra' ? 'LETRA' : 'NÚMERO';
+        Swal.fire({
+            icon: 'info',
+            title: 'Tipo de Talla Definido',
+            html: `
+                <p style="margin: 0 0 1rem 0;">El género <strong>${otroGenero.charAt(0).toUpperCase() + otroGenero.slice(1)}</strong> ya usa tallas por <strong>${tipoLabel}</strong>.</p>
+                <p style="margin: 0; color: #666;">Este género también debe usar el mismo tipo.</p>
+            `
+        }).then(() => {
+            agregarTallasPorMetodo(prendaIndex, genero, tipoDelOtroGenero);
+        });
+        return;
+    }
+    
+    // Paso 1: Seleccionar tipo de talla (si no hay restricción)
+    Swal.fire({
+        title: 'Tipo de Talla',
+        html: `
+            <div style="display: flex; gap: 1rem; justify-content: center; padding: 1rem;">
+                <button type="button" id="btn-letra" style="flex: 1; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;"><i class="fas fa-font" style="color: #0066cc;"></i></div>
+                    <div>LETRA</div>
+                    <div style="font-size: 0.75rem; color: #666; margin-top: 0.5rem;">XS, S, M, L, XL...</div>
+                </button>
+                <button type="button" id="btn-numero" style="flex: 1; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;"><i class="fas fa-hashtag" style="color: #0066cc;"></i></div>
+                    <div>NÚMERO</div>
+                    <div style="font-size: 0.75rem; color: #666; margin-top: 0.5rem;">6, 8, 10, 12...</div>
+                </button>
+            </div>
+        `,
+        showConfirmButton: false,
+        didOpen: () => {
+            document.getElementById('btn-letra').addEventListener('click', () => {
+                Swal.close();
+                agregarTallasPorMetodo(prendaIndex, genero, 'letra');
+            });
+            document.getElementById('btn-numero').addEventListener('click', () => {
+                Swal.close();
+                agregarTallasPorMetodo(prendaIndex, genero, 'numero');
+            });
+        }
+    });
+};
+
+/**
+ * Paso 2 y 3: Seleccionar método (MANUAL o RANGO) y luego las tallas
+ */
+window.agregarTallasPorMetodo = function(prendaIndex, genero, tipoTalla) {
+    // Definir tallas disponibles según TIPO y GÉNERO
+    // LETRA: ambos géneros usan lo mismo
+    // NÚMERO: diferentes números para cada género
+    const tallasLetra = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
+    const tallasDama = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26'];
+    const tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46'];
+    
+    let tallasPorTipo;
+    if (tipoTalla === 'letra') {
+        tallasPorTipo = tallasLetra;
+    } else {
+        // Para números, usar diferentes según género
+        tallasPorTipo = (genero === 'dama') ? tallasDama : tallasCaballero;
+    }
+    
+    // Obtener tallas ya agregadas
+    const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+    if (!prendasCard) return;
+    
+    const tallasActuales = Array.from(prendasCard.querySelectorAll(`.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${genero}"]`))
+        .map(input => input.dataset.talla);
+    
+    const tallasDisponibles = tallasPorTipo.filter(talla => !tallasActuales.includes(talla));
+    
+    if (tallasDisponibles.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin tallas disponibles',
+            text: `Ya tienes todas las tallas de ${tipoTalla === 'letra' ? 'LETRA' : 'NÚMERO'} agregadas`
+        });
+        return;
+    }
+    
+    // Paso 2: Seleccionar método (MANUAL o RANGO) - Ambos tipos tienen esta opción
+    Swal.fire({
+        title: 'Método de Selección',
+        html: `
+            <div style="display: flex; gap: 1rem; justify-content: center; padding: 1rem;">
+                <button type="button" id="btn-manual" style="flex: 1; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;"><i class="fas fa-hand-pointer" style="color: #0066cc;"></i></div>
+                    <div>MANUAL</div>
+                    <div style="font-size: 0.75rem; color: #666; margin-top: 0.5rem;">Una por una</div>
+                </button>
+                <button type="button" id="btn-rango" style="flex: 1; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;"><i class="fas fa-sliders-h" style="color: #0066cc;"></i></div>
+                    <div>RANGO</div>
+                    <div style="font-size: 0.75rem; color: #666; margin-top: 0.5rem;">Desde... hasta</div>
+                </button>
+            </div>
+        `,
+        showConfirmButton: false,
+        didOpen: () => {
+            document.getElementById('btn-manual').addEventListener('click', () => {
+                Swal.close();
+                seleccionarTallasManual(prendaIndex, genero, tallasDisponibles, tipoTalla);
+            });
+            document.getElementById('btn-rango').addEventListener('click', () => {
+                Swal.close();
+                seleccionarTallasRango(prendaIndex, genero, tallasPorTipo, tallasActuales, tipoTalla);
+            });
+        }
+    });
+};
+
+/**
+ * Paso 3A: Selección MANUAL (una por una)
+ */
+window.seleccionarTallasManual = function(prendaIndex, genero, tallasDisponibles, tipoTalla) {
+    const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
+    
+    Swal.fire({
+        title: `Agregar Tallas - ${generoLabel} (MANUAL)`,
+        html: `
+            <div style="max-height: 400px; overflow-y: auto; padding: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.5rem;">
+                    ${tallasDisponibles.map(talla => `
+                        <button type="button" class="btn-talla-manual" data-talla="${talla}" 
+                                style="padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s;">
+                            ${talla}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <div style="font-size: 0.85rem; color: #666; font-weight: 500;">Tallas seleccionadas: <span id="contador-tallas">0</span></div>
+                <div id="lista-tallas-seleccionadas" style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Agregar',
+        cancelButtonText: 'Cancelar',
+        didOpen: () => {
+            const tallasSeleccionadas = new Set();
+            
+            document.querySelectorAll('.btn-talla-manual').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const talla = this.dataset.talla;
+                    
+                    if (tallasSeleccionadas.has(talla)) {
+                        tallasSeleccionadas.delete(talla);
+                        this.style.background = 'white';
+                        this.style.borderColor = '#e5e7eb';
+                        this.classList.remove('btn-talla-seleccionada');
+                    } else {
+                        tallasSeleccionadas.add(talla);
+                        this.style.background = '#0066cc';
+                        this.style.color = 'white';
+                        this.style.borderColor = '#0066cc';
+                        this.classList.add('btn-talla-seleccionada');
+                    }
+                    
+                    // Actualizar contador y lista
+                    document.getElementById('contador-tallas').textContent = tallasSeleccionadas.size;
+                    document.getElementById('lista-tallas-seleccionadas').innerHTML = 
+                        Array.from(tallasSeleccionadas).map(t => `<span style="background: #e3f2fd; color: #0066cc; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${t}</span>`).join('');
+                });
+            });
+        },
+        preConfirm: () => {
+            const contador = parseInt(document.getElementById('contador-tallas').textContent);
+            if (contador === 0) {
+                Swal.showValidationMessage('Selecciona al menos una talla');
+                return false;
+            }
+            return Array.from(document.querySelectorAll('.btn-talla-manual.btn-talla-seleccionada')).map(btn => btn.dataset.talla);
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            agregarTallasAlGenero(prendaIndex, genero, result.value, tipoTalla);
+        }
+    });
+};
+
+/**
+ * Paso 3B: Selección por RANGO (desde... hasta)
+ */
+window.seleccionarTallasRango = function(prendaIndex, genero, todasLasTallas, tallasActuales, tipoTalla) {
+    const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
+    const tallasDisponibles = todasLasTallas.filter(t => !tallasActuales.includes(t));
+    
+    Swal.fire({
+        title: `Agregar Tallas por Rango - ${generoLabel}`,
+        html: `
+            <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; text-align: left;">Desde:</label>
+                    <select id="talla-inicio" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem;">
+                        <option value="">-- Selecciona --</option>
+                        ${todasLasTallas.map(talla => `<option value="${talla}">${talla}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; text-align: left;">Hasta:</label>
+                    <select id="talla-fin" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem;">
+                        <option value="">-- Selecciona --</option>
+                        ${todasLasTallas.map(talla => `<option value="${talla}">${talla}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="background: #f0f7ff; padding: 0.75rem; border-radius: 4px; font-size: 0.85rem; color: #1e3a8a; font-weight: 500;">
+                    Tallas a agregar: <span id="preview-rango">0</span>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Agregar',
+        cancelButtonText: 'Cancelar',
+        didOpen: () => {
+            const selectInicio = document.getElementById('talla-inicio');
+            const selectFin = document.getElementById('talla-fin');
+            const preview = document.getElementById('preview-rango');
+            
+            const actualizarPreview = () => {
+                const inicio = selectInicio.value;
+                const fin = selectFin.value;
+                
+                if (inicio && fin) {
+                    const idxInicio = todasLasTallas.indexOf(inicio);
+                    const idxFin = todasLasTallas.indexOf(fin);
+                    
+                    if (idxInicio >= 0 && idxFin >= 0) {
+                        const [min, max] = idxInicio <= idxFin ? [idxInicio, idxFin] : [idxFin, idxInicio];
+                        const rango = todasLasTallas.slice(min, max + 1);
+                        preview.textContent = rango.filter(t => !tallasActuales.includes(t)).length;
+                    }
+                } else {
+                    preview.textContent = '0';
+                }
+            };
+            
+            selectInicio.addEventListener('change', actualizarPreview);
+            selectFin.addEventListener('change', actualizarPreview);
+        },
+        preConfirm: () => {
+            const inicio = document.getElementById('talla-inicio').value;
+            const fin = document.getElementById('talla-fin').value;
+            
+            if (!inicio || !fin) {
+                Swal.showValidationMessage('Selecciona talla inicial y final');
+                return false;
+            }
+            
+            const idxInicio = todasLasTallas.indexOf(inicio);
+            const idxFin = todasLasTallas.indexOf(fin);
+            const [min, max] = idxInicio <= idxFin ? [idxInicio, idxFin] : [idxFin, idxInicio];
+            const rango = todasLasTallas.slice(min, max + 1);
+            
+            return rango.filter(t => !tallasActuales.includes(t));
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value && result.value.length > 0) {
+            agregarTallasAlGenero(prendaIndex, genero, result.value, tipoTalla);
+        }
+    });
+};
+
+/**
+ * Agregar tallas al género (después de seleccionarlas)
+ */
+window.agregarTallasAlGenero = function(prendaIndex, genero, tallas, tipoTalla) {
+    const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+    if (!prendasCard) return;
+    
+    // Crear inputs hidden para cada talla (solo si no existen)
+    tallas.forEach(talla => {
+        // Verificar si ya existe una talla con este valor
+        const existente = prendasCard.querySelector(`.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${genero}"][data-talla="${talla}"]`);
+        if (existente) {
+            console.warn(`⚠️ Talla ${talla} ya existe para ${genero}`);
+            return; // Saltar si ya existe
+        }
+        
+        const inputTalla = document.createElement('input');
+        inputTalla.type = 'hidden';
+        inputTalla.name = `cantidades_genero[${prendaIndex}][${genero}][${talla}]`;
+        inputTalla.className = 'talla-cantidad-genero-editable';
+        inputTalla.value = '0';
+        inputTalla.dataset.talla = talla;
+        inputTalla.dataset.genero = genero;
+        inputTalla.dataset.prenda = prendaIndex;
+        inputTalla.dataset.tipoTalla = tipoTalla;  // Guardar el tipo de talla
+        
+        prendasCard.appendChild(inputTalla);
+        
+        // ✅ CRÍTICO: Agregar talla al gestor para que aparezca en validación
+        if (window.gestorPrendaSinCotizacion) {
+            window.gestorPrendaSinCotizacion.agregarTalla(prendaIndex, talla);
+        }
+    });
+    
+    // Re-renderizar la sección del género
+    renderizarTallasDelGenero(prendaIndex, genero);
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Tallas agregadas',
+        text: `Se agregaron ${tallas.length} talla(s) a ${genero}`,
+        timer: 1500,
+        showConfirmButton: false
+    });
+};
+
+/**
+ * Eliminar una talla de un género
+ */
+window.eliminarTallaDelGenero = function(prendaIndex, genero, talla) {
+    Swal.fire({
+        title: '¿Eliminar talla?',
+        text: `¿Eliminar talla ${talla} de ${genero}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+            if (!prendasCard) return;
+            
+            // Buscar y eliminar el input
+            const input = prendasCard.querySelector(`.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${genero}"][data-talla="${talla}"]`);
+            if (input) {
+                input.remove();
+            }
+            
+            // ✅ CRÍTICO: Eliminar talla del gestor
+            if (window.gestorPrendaSinCotizacion) {
+                window.gestorPrendaSinCotizacion.eliminarTalla(prendaIndex, talla);
+            }
+            
+            // Re-renderizar la sección del género
+            renderizarTallasDelGenero(prendaIndex, genero);
+        }
+    });
 };
 
 // ============================================================

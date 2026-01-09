@@ -23,15 +23,9 @@ function renderizarPrendaReflectivoSinCotizacion(prenda, index) {
     <div class="prenda-card-reflectivo" data-prenda-index="${index}" style="margin-bottom: 2rem;">
         <div class="prenda-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
             <div class="prenda-title" style="font-weight: 700; font-size: 1.125rem; color: #333;">
-                <i class="fas fa-fire-alt" style="margin-right: 0.5rem; color: #1e40af;"></i>Prenda Reflectivo ${index + 1}
+                <i class="fas fa-fire-alt" style="margin-right: 0.5rem; color: #1e40af;"></i>Prenda Reflectivo
             </div>
-            <button type="button" 
-                    onclick="eliminarPrendaReflectivoSinCotizacion(${index})" 
-                    class="btn-eliminar-prenda"
-                    style="background: linear-gradient(135deg, #dc3545 0%, #b91c1c 100%); color: white; border: none; border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font-weight: 800; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 3px 10px rgba(185,28,28,0.25);">
-                <span style="display:inline-flex; align-items:center; justify-content:center; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.18); font-size: 0.9rem; line-height: 1;">✕</span>
-                <span style="font-size: 0.9rem;">Eliminar</span>
-            </button>
+            <!-- ✅ Botón eliminar OCULTO en tipo Reflectivo (máximo 1 prenda) -->
         </div>
 
         <!-- CONTENIDO -->
@@ -147,79 +141,57 @@ function renderizarPrendaReflectivoSinCotizacion(prenda, index) {
                 </label>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="radio" 
-                               name="genero_reflectivo[${index}]" 
-                               value="Dama" 
-                               class="genero-radio-reflectivo"
-                               ${genero === 'Dama' ? 'checked' : ''}
-                               onchange="actualizarGeneroReflectivo(${index}, 'Dama')"
+                        <input type="checkbox" 
+                               name="genero_reflectivo_dama[${index}]" 
+                               value="dama" 
+                               class="genero-checkbox-reflectivo"
+                               ${genero === 'Dama' || genero === 'dama' ? 'checked' : ''}
+                               onchange="actualizarGeneroReflectivo(${index}, 'dama')"
                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #1e40af;">
                         <span style="font-size: 0.95rem;">Dama</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="radio" 
-                               name="genero_reflectivo[${index}]" 
-                               value="Caballero" 
-                               class="genero-radio-reflectivo"
-                               ${genero === 'Caballero' ? 'checked' : ''}
-                               onchange="actualizarGeneroReflectivo(${index}, 'Caballero')"
+                        <input type="checkbox" 
+                               name="genero_reflectivo_caballero[${index}]" 
+                               value="caballero" 
+                               class="genero-checkbox-reflectivo"
+                               ${genero === 'Caballero' || genero === 'caballero' ? 'checked' : ''}
+                               onchange="actualizarGeneroReflectivo(${index}, 'caballero')"
                                style="width: 18px; height: 18px; cursor: pointer; accent-color: #1e40af;">
                         <span style="font-size: 0.95rem;">Caballero</span>
                     </label>
                 </div>
             </div>
 
-            <!-- TALLAS Y CANTIDADES -->
+            <!-- TALLAS Y CANTIDADES - SISTEMA DE GÉNEROS COMO EN PRENDA -->
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">
                     <i class="fas fa-ruler"></i> Tallas y Cantidades
                 </label>
-                <div class="tipo-prenda-row" data-prenda-index="${index}" style="margin-top: 1.5rem;">
-                    <!-- REPLICACIÓN EXACTA DE ESTRUCTURA DE COTIZACIONES -->
-                    <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
-                        <!-- Selector de Tipo -->
-                        <select class="talla-tipo-select-reflectivo" onchange="actualizarSelectTallasReflectivo(this)" style="padding: 0.4rem 0.6rem; border: 2px solid #1e40af; border-radius: 6px; font-size: 0.75rem; cursor: pointer; background-color: white; color: #1e40af; font-weight: 600; max-width: 280px;">
-                            <option value="">Selecciona tipo de talla</option>
-                            <option value="letra">LETRAS (XS, S, M, L, XL...)</option>
-                            <option value="numero">NÚMEROS (DAMA/CABALLERO)</option>
-                        </select>
-                        
-                        <!-- Selector de Modo -->
-                        <select class="talla-modo-select-reflectivo" onchange="actualizarModoTallasReflectivo(this)" style="padding: 0.4rem 0.6rem; border: 2px solid #1e40af; border-radius: 6px; font-size: 0.75rem; cursor: pointer; background-color: white; color: #1e40af; font-weight: 600; max-width: 180px; display: none;">
-                            <option value="">Selecciona modo</option>
-                            <option value="manual">Manual</option>
-                            <option value="rango">Rango (Desde-Hasta)</option>
-                        </select>
-                        
-                        <!-- Selectores de Rango -->
-                        <div class="talla-rango-selectors-reflectivo" style="display: none; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-                            <select class="talla-desde-reflectivo" style="padding: 0.6rem 0.8rem; border: 2px solid #1e40af; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #1e40af; font-weight: 600; max-width: 150px;">
-                                <option value="">Desde</option>
-                            </select>
-                            <span style="color: #1e40af; font-weight: 600;">hasta</span>
-                            <select class="talla-hasta-reflectivo" style="padding: 0.6rem 0.8rem; border: 2px solid #1e40af; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #1e40af; font-weight: 600; max-width: 150px;">
-                                <option value="">Hasta</option>
-                            </select>
-                            <button type="button" class="btn-agregar-rango-reflectivo" onclick="agregarTallasRangoReflectivo(this)" style="padding: 0.6rem 1rem; background: linear-gradient(135deg, #1e40af, #0ea5e9); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; white-space: nowrap;">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
+                
+                <!-- SECCIÓN DAMA -->
+                <div class="genero-section-reflectivo genero-dama-section" data-genero="dama" style="margin-bottom: 2rem; display: none;">
+                    <div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 2px solid #1e40af; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600; color: #1e40af; font-size: 0.95rem;"><i class="fas fa-woman" style="margin-right: 0.5rem;"></i>DAMA</span>
+                        <button type="button" class="btn-agregar-tallas-genero-reflectivo" onclick="agregarTallasAlGeneroReflectivo(${index}, 'dama')" style="padding: 0.4rem 0.8rem; background: #1e40af; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                            <i class="fas fa-plus"></i> Agregar Tallas
+                        </button>
                     </div>
-                    
-                    <!-- Botones de Tallas (Modo Manual) -->
-                    <div class="talla-botones-reflectivo" style="display: none; margin-bottom: 1.5rem;">
-                        <p style="margin: 0 0 0.75rem 0; font-size: 0.85rem; font-weight: 600; color: #1e40af;">Selecciona tallas:</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-                            <div class="talla-botones-container-reflectivo" style="display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1;">
-                            </div>
-                            <button type="button" class="btn-agregar-tallas-seleccionadas-reflectivo" onclick="agregarTallasSeleccionadasReflectivo(this)" style="padding: 0.6rem 1rem; background: linear-gradient(135deg, #1e40af, #0ea5e9); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; white-space: nowrap; flex-shrink: 0;">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
+                    <div class="tallas-genero-container-reflectivo" data-prenda="${index}" data-genero="dama" style="border: 1px solid #1e40af; border-top: none; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;">
+                        <p style="padding: 0.75rem 1rem; background: white; color: #9ca3af; font-size: 0.85rem; margin: 0; border-radius: 0 0 6px 6px;">Sin tallas agregadas</p>
                     </div>
-                    
-                    <!-- Contenedor de Tallas Agregadas (para tags) -->
-                    <div class="tallas-agregadas-reflectivo" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 35px; margin-bottom: 1rem;">
+                </div>
+                
+                <!-- SECCIÓN CABALLERO -->
+                <div class="genero-section-reflectivo genero-caballero-section" data-genero="caballero" style="margin-bottom: 1rem; display: none;">
+                    <div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 2px solid #1e40af; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600; color: #1e40af; font-size: 0.95rem;"><i class="fas fa-man" style="margin-right: 0.5rem;"></i>CABALLERO</span>
+                        <button type="button" class="btn-agregar-tallas-genero-reflectivo" onclick="agregarTallasAlGeneroReflectivo(${index}, 'caballero')" style="padding: 0.4rem 0.8rem; background: #1e40af; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                            <i class="fas fa-plus"></i> Agregar Tallas
+                        </button>
+                    </div>
+                    <div class="tallas-genero-container-reflectivo" data-prenda="${index}" data-genero="caballero" style="border: 1px solid #1e40af; border-top: none; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;">
+                        <p style="padding: 0.75rem 1rem; background: white; color: #9ca3af; font-size: 0.85rem; margin: 0; border-radius: 0 0 6px 6px;">Sin tallas agregadas</p>
                     </div>
                 </div>
             </div>
@@ -354,73 +326,14 @@ function renderizarImagenesReflectivo(prendaIndex, imagenes = []) {
  * @param {number} prendaIndex - Índice de la prenda
  * @param {Array} tallas - Array de tallas
  */
+/**
+ * ⚠️ FUNCIÓN DEPRECADA - Se mantiene por compatibilidad
+ * Ya no se usa el sistema de tags, ahora usa generosConTallas
+ */
 function renderizarTallasReflectivo(prendaIndex, tallas = []) {
-    const container = document.querySelector(`.tipo-prenda-row[data-prenda-index="${prendaIndex}"] .tallas-agregadas-reflectivo`);
-    if (!container) return;
-
-    if (tallas.length === 0) {
-        container.innerHTML = '';
-        return;
-    }
-
-    // Renderizar tallas como tags
-    container.innerHTML = tallas.map((talla) => {
-        const prenda = window.gestorReflectivoSinCotizacion?.obtenerPorIndice(prendaIndex);
-        const cantidad = prenda?.cantidadesPorTalla?.[talla] || 0;
-        
-        return `
-        <div class="talla-tag-reflectivo" data-talla="${talla}" style="
-            background: #f0f9ff;
-            border: 2px solid #1e40af;
-            border-radius: 20px;
-            padding: 0.5rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-            color: #1e40af;
-            font-size: 0.85rem;
-        ">
-            <span>${talla}</span>
-            <input type="number" 
-                   class="talla-cantidad-reflectivo"
-                   data-talla="${talla}"
-                   data-prenda="${prendaIndex}"
-                   name="cantidades_reflectivo[${prendaIndex}][${talla}]"
-                   min="0"
-                   value="${cantidad}"
-                   placeholder="0"
-                   style="
-                       width: 50px;
-                       padding: 0.3rem;
-                       border: 1px solid #1e40af;
-                       border-radius: 4px;
-                       background: white;
-                       color: #1e40af;
-                       text-align: center;
-                       font-weight: 600;
-                   "
-                   onchange="actualizarCantidadTallaReflectivo(${prendaIndex}, '${talla}', this.value)">
-            <button type="button" 
-                    onclick="eliminarTallaReflectivo(${prendaIndex}, '${talla}')"
-                    style="
-                        background: none;
-                        border: none;
-                        color: #1e40af;
-                        cursor: pointer;
-                        font-size: 1.2rem;
-                        padding: 0;
-                        margin-left: 0.25rem;
-                        transition: all 0.2s ease;
-                    "
-                    title="Eliminar talla"
-                    onmouseover="this.style.color = '#0ea5e9';"
-                    onmouseout="this.style.color = '#1e40af';">
-                ×
-            </button>
-        </div>
-        `;
-    }).join('');
+    // ✅ NUEVO: Renderizar con sistema de géneros como en PRENDA
+    // Las tallas se renderizarán cuando se agreguen a través de agregarTallasAlGeneroReflectivo()
+    return; // No hacer nada, el nuevo sistema maneja todo
 }
 
 /**

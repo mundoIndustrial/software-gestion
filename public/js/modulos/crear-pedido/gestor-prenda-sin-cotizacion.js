@@ -45,7 +45,8 @@ class GestorPrendaSinCotizacion {
         return {
             nombre_producto: '',
             descripcion: '',
-            genero: '',
+            genero: [], // ✅ MULTIPLE: Array de géneros seleccionados
+            generosConTallas: {}, // ✅ NUEVA ESTRUCTURA: {genero: {talla: cantidad}}
             tipo_manga: 'No aplica',
             obs_manga: '',
             tipo_broche: 'No aplica',
@@ -55,7 +56,7 @@ class GestorPrendaSinCotizacion {
             tiene_reflectivo: false,
             obs_reflectivo: '',
             tallas: [],
-            cantidadesPorTalla: {},
+            cantidadesPorTalla: {}, // ✅ DEPRECATED pero mantenido para compatibilidad
             variantes: {
                 tipo_manga: 'No aplica',
                 obs_manga: '',
@@ -335,12 +336,29 @@ class GestorPrendaSinCotizacion {
      * @returns {Object} Datos formateados
      */
     obtenerDatosFormato() {
-        return {
-            prendas: this.obtenerActivas(),
+        console.log(`\n📊 ========== GESTOR: OBTENIENDO DATOS FORMATEADOS ==========`);
+        const prendas = this.obtenerActivas();
+        
+        console.log(`📊 Prendas activas: ${prendas.length}`);
+        prendas.forEach((prenda, idx) => {
+            console.log(`   Prenda ${idx}: ${prenda.nombre_producto}`);
+            console.log(`      - Géneros: ${JSON.stringify(Object.keys(prenda.genero || []))}`);
+            console.log(`      - generosConTallas:`, prenda.generosConTallas);
+            console.log(`      - cantidadesPorTalla:`, prenda.cantidadesPorTalla);
+            console.log(`      - tallas: ${JSON.stringify(prenda.tallas)}`);
+        });
+        
+        const datosFormato = {
+            prendas: prendas,
             fotosNuevas: this.fotosNuevas,
             telasFotosNuevas: this.telasFotosNuevas,
             prendasEliminadas: Array.from(this.prendasEliminadas)
         };
+        
+        console.log(`✅ Datos formateados:`, datosFormato);
+        console.log(`✅ ========== GESTOR: DATOS COMPLETADOS ==========\n`);
+        
+        return datosFormato;
     }
 
     /**

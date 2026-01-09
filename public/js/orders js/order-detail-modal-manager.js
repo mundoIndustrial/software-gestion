@@ -302,21 +302,48 @@ function renderPrendasPage() {
     if (descripcionPrendasCompleta && descripcionPrendasCompleta.trim() !== '') {
         console.log('✅ [MODAL] Usando descripcion_prendas del controlador con paginación');
         console.log('📝 [DESCRIPCION COMPLETA]:\n' + descripcionPrendasCompleta);
+        console.log('📝 [RAW DESCRIPCION]:', JSON.stringify(descripcionPrendasCompleta));
         console.log('----------------------------');
         
-        // Dividir por "PRENDA " para obtener bloques individuales
         let bloquesPrendas = [];
         
-        if (descripcionPrendasCompleta.includes('PRENDA ')) {
+        // ✅ SI EL HTML YA TIENE SPANS CON ESTILOS (contiene <span style), NO DIVIDIR
+        // Simplemente usarlo como está
+        if (descripcionPrendasCompleta.includes("<span style='font-size:") || 
+            descripcionPrendasCompleta.includes('<span style="font-size:')) {
+            console.log('✅ [MODAL] HTML con spans detectado, usando tal cual sin dividir');
+            bloquesPrendas = [descripcionPrendasCompleta.trim()];
+        } else if (descripcionPrendasCompleta.includes('PRENDA ')) {
             // Hay formato PRENDA X: - dividir por eso
             const partes = descripcionPrendasCompleta.split('PRENDA ');
             
+            console.log('🔍 [DEBUG SPLIT] Raw split:', partes);
+            console.log('🔍 [DEBUG SPLIT] Total partes:', partes.length);
+            
             bloquesPrendas = partes
                 .map((parte, idx) => {
-                    if (idx === 0 && !parte.trim()) return null; // Descartar si es empty al inicio
-                    return (idx > 0 ? 'PRENDA ' : '') + parte.trim();
+                    if (idx === 0 && !parte.trim()) {
+                        console.log(`  [PARTE ${idx}] DESCARTADA (empty al inicio)`);
+                        return null;
+                    }
+                    const resultado = (idx > 0 ? 'PRENDA ' : '') + parte.trim();
+                    console.log(`  [PARTE ${idx}] Guardada: "${resultado.substring(0, 50)}..."`);
+                    return resultado;
                 })
-                .filter(b => b && b.trim() !== '');
+                .filter(b => {
+                    // Filtrar bloques que sean solo HTML sin texto real
+                    if (!b) return false;
+                    
+                    // Remover tags HTML para ver si hay contenido real
+                    const sinHTML = b.replace(/<[^>]*>/g, '').trim();
+                    if (!sinHTML || sinHTML.length < 5) {
+                        console.log(`  ⊘ BLOQUE VACIO DESCARTADO: "${b.substring(0, 40)}..."`);
+                        return false;
+                    }
+                    return true;
+                });
+            
+            console.log('🔍 [DEBUG SPLIT] Bloques finales:', bloquesPrendas.length);
         } else {
             // No hay formato PRENDA - dividir por \n\n pero agrupar tallas con su contenido
             const bloques = descripcionPrendasCompleta
@@ -350,11 +377,14 @@ function renderPrendasPage() {
         }
         
         console.log('📊 [MODAL] Total bloques de prendas:', bloquesPrendas.length);
+        console.log('📊 [MODAL] Bloques:', bloquesPrendas.map((b, i) => `[${i}]: "${b.substring(0, 40)}..."`));
         
         // Aplicar paginación
         const startIndex = currentPage * prendasPorPagina;
         const endIndex = startIndex + prendasPorPagina;
         const bloquesActuales = bloquesPrendas.slice(startIndex, endIndex);
+        
+        console.log('📊 [MODAL] Bloques actuales (página ' + (currentPage + 1) + '):', bloquesActuales.length);
         
         // Formatear bloques actuales con estilos
         const descripcionFormateada = bloquesActuales

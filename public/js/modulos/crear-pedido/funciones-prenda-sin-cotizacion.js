@@ -200,7 +200,21 @@ window.agregarTelaPrendaTipo = function(prendaIndex) {
                     color: color,
                     referencia: referencia
                 });
-                window.renderizarPrendasTipoPrendaSinCotizacion();
+                
+                // ✅ Solo re-renderizar la sección de TELAS (no toda la prenda)
+                const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                if (prenda) {
+                    const container = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
+                    if (container) {
+                        const telasSection = container.querySelector('[data-section="telas"]');
+                        if (telasSection) {
+                            const telasHtml = window.renderizarTelasPrendaTipo(prenda, prendaIndex);
+                            telasSection.outerHTML = `<div data-section="telas">${telasHtml}</div>`;
+                            logWithEmoji('🎨', `Sección de telas actualizada (sin re-renderizar prenda completa)`);
+                        }
+                    }
+                }
+                
                 Swal.fire('Éxito', 'Tela agregada correctamente', 'success');
             } else {
                 Swal.fire('Error', 'Ingrese el nombre de la tela', 'error');
@@ -321,7 +335,39 @@ window.eliminarImagenTelaTipo = function(element, prendaIndex, telaIndex) {
         confirmButtonText: 'Sí, Eliminar'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.renderizarPrendasTipoPrendaSinCotizacion();
+            console.log(`🗑️ Eliminando foto de tela - Prenda: ${prendaIndex}, Tela: ${telaIndex}`);
+            
+            const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+            if (prenda) {
+                const tela = prenda.telas && prenda.telas[telaIndex];
+                
+                // ✅ OPCIÓN 1: Limpiar telaFotos (fotos guardadas del servidor)
+                if (tela && prenda.telaFotos && Array.isArray(prenda.telaFotos)) {
+                    console.log(`   Antes: telaFotos.length = ${prenda.telaFotos.length}`);
+                    prenda.telaFotos = [];  // Vaciar completamente
+                    console.log(`   Después: telaFotos.length = ${prenda.telaFotos.length}`);
+                }
+                
+                // ✅ OPCIÓN 2: Limpiar fotos nuevas de tela
+                const keyFotosNuevas = `${prendaIndex}_${telaIndex}`;
+                if (window.gestorPrendaSinCotizacion.telasFotosNuevas && 
+                    window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex]) {
+                    window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex] = [];
+                    console.log(`   Fotos nuevas de tela limpiadas`);
+                }
+            }
+            
+            // ✅ Solo re-renderizar la sección de TELAS (no toda la prenda)
+            const container = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
+            if (container) {
+                const telasSection = container.querySelector('[data-section="telas"]');
+                if (telasSection) {
+                    const telasHtml = window.renderizarTelasPrendaTipo(prenda, prendaIndex);
+                    telasSection.innerHTML = telasHtml;
+                    logWithEmoji('🗑️', `Foto de tela eliminada, sección actualizada`);
+                }
+            }
+            
             Swal.fire('Eliminada', 'La imagen de tela ha sido eliminada', 'success');
         }
     });
@@ -404,10 +450,10 @@ window.sincronizarDatosTelas = function(prendaIndex) {
         }
     });
 
-    // Sincronizar variaciones
+    // Sincronizar variaciones (incluyendo observaciones)
     container.querySelectorAll('[data-field]').forEach(field => {
         const nombreCampo = field.dataset.field;
-        if (nombreCampo && !nombreCampo.includes('_obs')) {
+        if (nombreCampo) {
             const valor = field.value || field.textContent;
             if (prenda.variantes && nombreCampo in prenda.variantes) {
                 if (nombreCampo.includes('tiene_')) {
@@ -418,6 +464,15 @@ window.sincronizarDatosTelas = function(prendaIndex) {
                     prenda[nombreCampo] = valor;
                 }
             }
+        }
+    });
+
+    // ✅ SINCRONIZAR OBSERVACIONES EXPLÍCITAMENTE
+    container.querySelectorAll('.variacion-obs').forEach(textarea => {
+        const campoObs = textarea.dataset.field;
+        if (campoObs && prenda.variantes) {
+            prenda.variantes[campoObs] = textarea.value;
+            logWithEmoji('📝', `Observación ${campoObs} guardada: "${textarea.value}"`);
         }
     });
 
@@ -660,6 +715,24 @@ window.abrirGaleriaTexturaTipo = function(index, telaIdx) {
     };
 
     renderModal();
+};
+
+/**
+ * Marcar prenda como de bodega o no
+ */
+window.marcarPrendaDeBodega = function(prendaIndex, valor) {
+    const gestor = window.gestorPrendaSinCotizacion;
+    const prenda = gestor.obtenerPorIndice(prendaIndex);
+    
+    if (!prenda) {
+        console.error(`❌ Prenda ${prendaIndex} no encontrada`);
+        return;
+    }
+    
+    prenda.de_bodega = valor;
+    
+    const estado = valor ? '✅ Marcada como de bodega' : '❌ Desmarcada de bodega';
+    logWithEmoji('🏭', `Prenda ${prendaIndex + 1}: ${estado}`);
 };
 
 logWithEmoji('✅', 'Funciones globales de Prenda Sin Cotización cargadas');

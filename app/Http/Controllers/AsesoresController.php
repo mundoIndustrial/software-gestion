@@ -345,9 +345,9 @@ class AsesoresController extends Controller
                 // Verificar si es una cotización de tipo LOGO ('L')
                 if ($cotizacion) {
                     $tipoCodigoQuery = \DB::table('cotizaciones')
-                        ->join('tipo_cotizaciones', 'cotizaciones.tipo_cotizacion_id', '=', 'tipo_cotizaciones.id')
+                        ->join('tipos_cotizacion', 'cotizaciones.tipo_cotizacion_id', '=', 'tipos_cotizacion.id')
                         ->where('cotizaciones.id', $cotizacionId)
-                        ->select('tipo_cotizaciones.codigo')
+                        ->select('tipos_cotizacion.codigo')
                         ->first();
                     
                     $esPedidoLogo = $tipoCodigoQuery && $tipoCodigoQuery->codigo === 'L';
