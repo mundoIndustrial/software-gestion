@@ -382,7 +382,7 @@ class RegistroOrdenQueryController extends Controller
         // ✅ CARGAR prendas CON relaciones ANTES de toArray()
         // Hacemos un query directo para asegurar que las relaciones se cargan
         $prendasConRelaciones = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
-            ->with(['color', 'tela', 'tipoManga', 'tipoBroche', 'fotos', 'fotosLogo', 'fotosTela'])
+            ->with(['color', 'tela', 'tipoManga', 'tipoBroche', 'fotos', 'fotosLogo', 'fotosTela', 'reflectivo'])
             ->orderBy('id', 'asc')
             ->get();
         
@@ -533,6 +533,24 @@ class RegistroOrdenQueryController extends Controller
                         // ✅ NUEVO: Agregar fotos normalizadas
                         'fotos' => $fotosNormalizadas,
                         'tela_fotos' => $telaFotosNormalizadas,
+                        // ✅ NUEVO: Agregar información de reflectivo si existe
+                        'reflectivo' => $prenda->reflectivo ? [
+                            'id' => $prenda->reflectivo->id,
+                            'nombre_producto' => $prenda->reflectivo->nombre_producto,
+                            'descripcion' => $prenda->reflectivo->descripcion,
+                            // ✅ CORREGIDO: Forzar decodificación de JSON si están como strings
+                            'generos' => is_string($prenda->reflectivo->generos) 
+                                ? json_decode($prenda->reflectivo->generos, true) 
+                                : $prenda->reflectivo->generos,
+                            'cantidad_talla' => is_string($prenda->reflectivo->cantidad_talla) 
+                                ? json_decode($prenda->reflectivo->cantidad_talla, true) 
+                                : $prenda->reflectivo->cantidad_talla,
+                            'ubicaciones' => is_string($prenda->reflectivo->ubicaciones) 
+                                ? json_decode($prenda->reflectivo->ubicaciones, true) 
+                                : $prenda->reflectivo->ubicaciones,
+                            'observaciones_generales' => $prenda->reflectivo->observaciones_generales,
+                            'cantidad_total' => $prenda->reflectivo->cantidad_total,
+                        ] : null,
                     ];
                 }
                 
@@ -1017,47 +1035,101 @@ class RegistroOrdenQueryController extends Controller
                             'nombre' => $prenda->nombre_prenda,
                             'descripcion_length' => strlen($prenda->descripcion ?? ''),
                             'cantidad_talla' => $prenda->cantidad_talla,
+                            'tiene_reflectivo' => $prenda->reflectivo ? 'SI' : 'NO',
                         ]);
                         
                         if ($index > 0) {
                             $descripcionConTallas .= "\n\n";
                         }
                         
-                        // Agregar descripción de la prenda (ya tiene tallas incluidas)
-                        if (!empty($prenda->descripcion)) {
-                            $descripcionConTallas .= $prenda->descripcion;
-                        }
-                        
-                        // ✅ AGREGAR TALLAS SI NO ESTÁN EN LA DESCRIPCIÓN
-                        if ($prenda->cantidad_talla) {
-                            try {
-                                $tallas = is_string($prenda->cantidad_talla) 
-                                    ? json_decode($prenda->cantidad_talla, true) 
-                                    : $prenda->cantidad_talla;
-                                
-                                \Log::info('    📊 Tallas decodificadas', [
-                                    'is_array' => is_array($tallas),
-                                    'count' => is_array($tallas) ? count($tallas) : 0,
-                                    'tallas' => $tallas,
-                                ]);
-                                
-                                if (is_array($tallas) && !empty($tallas)) {
-                                    $tallasTexto = [];
-                                    foreach ($tallas as $talla => $cantidad) {
-                                        if ($cantidad > 0) {
-                                            $tallasTexto[] = "$talla: $cantidad";
+                        // ✅ NUEVO: Si tiene registro en prendas_reflectivo, usar esa información
+                        if ($prenda->reflectivo) {
+                            $reflectivo = $prenda->reflectivo;
+                            
+                            // Nombre del producto
+                            if (!empty($reflectivo->nombre_producto)) {
+                                $descripcionConTallas .= "PRENDA REFLECTIVO: " . strtoupper($reflectivo->nombre_producto);
+                            } else {
+                                $descripcionConTallas .= "PRENDA REFLECTIVO: " . $prenda->nombre_prenda;
+                            }
+                            
+                            // Descripción
+                            if (!empty($reflectivo->descripcion)) {
+                                $descripcionConTallas .= "\n" . $reflectivo->descripcion;
+                            }
+                            
+                            // Géneros
+                            if ($reflectivo->generos && is_array($reflectivo->generos)) {
+                                $generosStr = implode(', ', array_map('ucfirst', $reflectivo->generos));
+                                $descripcionConTallas .= "\nGENEROS: " . $generosStr;
+                            }
+                            
+                            // Tallas por género (estructura: {genero: {talla: cantidad}})
+                            if ($reflectivo->cantidad_talla && is_array($reflectivo->cantidad_talla)) {
+                                foreach ($reflectivo->cantidad_talla as $genero => $tallas) {
+                                    if (is_array($tallas)) {
+                                        $tallasTexto = [];
+                                        foreach ($tallas as $talla => $cantidad) {
+                                            if ($cantidad > 0) {
+                                                $tallasTexto[] = "$talla: $cantidad";
+                                            }
+                                        }
+                                        if (!empty($tallasTexto)) {
+                                            $descripcionConTallas .= "\nTALLAS " . strtoupper($genero) . ": " . implode(', ', $tallasTexto);
                                         }
                                     }
-                                    if (!empty($tallasTexto)) {
-                                        $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
-                                        \Log::info('    ✅ Tallas agregadas: ' . implode(', ', $tallasTexto));
-                                    }
                                 }
-                            } catch (\Exception $e) {
-                                \Log::error('    ❌ Error decodificando tallas: ' . $e->getMessage());
                             }
+                            
+                            // Ubicaciones
+                            if ($reflectivo->ubicaciones && is_array($reflectivo->ubicaciones)) {
+                                foreach ($reflectivo->ubicaciones as $ubicacion) {
+                                    $ubicDesc = "UBICACION: " . ($ubicacion['nombre'] ?? '');
+                                    if (!empty($ubicacion['observaciones'])) {
+                                        $ubicDesc .= " - " . $ubicacion['observaciones'];
+                                    }
+                                    $descripcionConTallas .= "\n" . $ubicDesc;
+                                }
+                            }
+                            
+                            // Observaciones generales
+                            if (!empty($reflectivo->observaciones_generales)) {
+                                $descripcionConTallas .= "\nOBSERVACIONES: " . $reflectivo->observaciones_generales;
+                            }
+                            
+                            \Log::info('✅ Información de REFLECTIVO agregada a descripción', [
+                                'nombre_producto' => $reflectivo->nombre_producto,
+                                'generos' => $reflectivo->generos,
+                                'ubicaciones_count' => count($reflectivo->ubicaciones ?? []),
+                            ]);
                         } else {
-                            \Log::info('    ⚠️ cantidad_talla está vacío');
+                            // CASO ANTIGUO: Sin reflectivo, usar descripción normal
+                            if (!empty($prenda->descripcion)) {
+                                $descripcionConTallas .= $prenda->descripcion;
+                            }
+                            
+                            // ✅ AGREGAR TALLAS SI NO ESTÁN EN LA DESCRIPCIÓN
+                            if ($prenda->cantidad_talla) {
+                                try {
+                                    $tallas = is_string($prenda->cantidad_talla) 
+                                        ? json_decode($prenda->cantidad_talla, true) 
+                                        : $prenda->cantidad_talla;
+                                    
+                                    if (is_array($tallas) && !empty($tallas)) {
+                                        $tallasTexto = [];
+                                        foreach ($tallas as $talla => $cantidad) {
+                                            if ($cantidad > 0) {
+                                                $tallasTexto[] = "$talla: $cantidad";
+                                            }
+                                        }
+                                        if (!empty($tallasTexto)) {
+                                            $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
+                                        }
+                                    }
+                                } catch (\Exception $e) {
+                                    \Log::error('    ❌ Error decodificando tallas: ' . $e->getMessage());
+                                }
+                            }
                         }
                     }
                 }

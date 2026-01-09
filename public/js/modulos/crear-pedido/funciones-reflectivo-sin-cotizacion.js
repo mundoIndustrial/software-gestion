@@ -26,6 +26,13 @@ function crearPedidoTipoReflectivoSinCotizacion() {
     if (seccionInfoPrenda) seccionInfoPrenda.style.display = 'block';
     if (seccionPrendas) seccionPrendas.style.display = 'block';
 
+    // ✅ ACTUALIZAR TÍTULO DINÁMICO
+    const tituloPrendasDinamico = document.getElementById('titulo-prendas-dinamico');
+    if (tituloPrendasDinamico) {
+        tituloPrendasDinamico.innerHTML = 'Nuevo Pedido Reflectivo';
+        console.log('✅ Título dinámico actualizado a REFLECTIVO');
+    }
+
     // Limpiar container
     const container = document.getElementById('prendas-container-editable');
     if (!container) {
@@ -781,8 +788,9 @@ window.enviarReflectivoSinCotizacion = function() {
         try {
             const gestor = window.gestorReflectivoSinCotizacion;
 
-            // Recopilar datos del DOM
-            const prendasDelDOM = gestor.recopilarDatosDelDOM();
+            // ✅ CORREGIDO: Usar datos del gestor directamente en lugar del DOM
+            // El gestor ya tiene los datos actualizados
+            const prendas = gestor.obtenerActivas();
             
             // Validar
             const validacion = gestor.validar();
@@ -812,7 +820,7 @@ window.enviarReflectivoSinCotizacion = function() {
                 cliente,
                 formaPago,
                 asesora,
-                prendas: prendasDelDOM
+                prendas: prendas
             });
 
             // Usar FormData para enviar archivos
@@ -822,11 +830,15 @@ window.enviarReflectivoSinCotizacion = function() {
             formData.append('asesora', asesora);
             formData.append('_token', document.querySelector('input[name="_token"]')?.value || '');
 
-            // Agregar prendas como JSON
-            prendasDelDOM.forEach((prenda, index) => {
+            // Agregar prendas desde el gestor
+            prendas.forEach((prenda, index) => {
                 formData.append(`prendas[${index}][nombre_producto]`, prenda.nombre_producto || '');
                 formData.append(`prendas[${index}][descripcion]`, prenda.descripcion || '');
-                formData.append(`prendas[${index}][genero]`, prenda.genero || '');
+                // ✅ CORREGIDO: Enviar generosSeleccionados en lugar de genero
+                const generosStr = (prenda.generosSeleccionados && prenda.generosSeleccionados.length > 0) 
+                    ? JSON.stringify(prenda.generosSeleccionados) 
+                    : '';
+                formData.append(`prendas[${index}][genero]`, generosStr);
 
                 // ✅ NUEVO: Usar generosConTallas en lugar de cantidadesPorTalla
                 if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
@@ -858,9 +870,12 @@ window.enviarReflectivoSinCotizacion = function() {
 
             // Agregar imágenes
             logWithEmoji('📸', 'Procesando imágenes de reflectivos...');
-            Object.entries(window.fotosReflectivoSinCotizacion || {}).forEach(([prendaIndex, fotos]) => {
-                if (Array.isArray(fotos)) {
-                    fotos.forEach((foto, fotoIndex) => {
+            
+            // Obtener fotos del gestor
+            prendas.forEach((prenda, prendaIndex) => {
+                const fotosNuevas = gestor.obtenerFotosNuevas(prendaIndex);
+                if (Array.isArray(fotosNuevas) && fotosNuevas.length > 0) {
+                    fotosNuevas.forEach((foto, fotoIndex) => {
                         const archivo = foto instanceof File ? foto : (foto && foto.file instanceof File ? foto.file : null);
                         
                         if (archivo) {
@@ -872,6 +887,24 @@ window.enviarReflectivoSinCotizacion = function() {
                     });
                 }
             });
+            
+            // Fallback: también revisar window.fotosReflectivoSinCotizacion por compatibilidad
+            if (window.fotosReflectivoSinCotizacion) {
+                Object.entries(window.fotosReflectivoSinCotizacion).forEach(([prendaIndex, fotos]) => {
+                    if (Array.isArray(fotos)) {
+                        fotos.forEach((foto, fotoIndex) => {
+                            const archivo = foto instanceof File ? foto : (foto && foto.file instanceof File ? foto.file : null);
+                            
+                            if (archivo) {
+                                formData.append(`prendas[${prendaIndex}][fotos][]`, archivo);
+                                logWithEmoji('✅', `Imagen de reflectivo ${prendaIndex + 1} agregada: ${archivo.name}`);
+                            } else if (typeof foto === 'string') {
+                                formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
+                            }
+                        });
+                    }
+                });
+            }
 
             // Enviar al servidor
             const response = await fetch('/asesores/pedidos-produccion/crear-reflectivo-sin-cotizacion', {

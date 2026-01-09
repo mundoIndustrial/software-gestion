@@ -192,6 +192,15 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda REFLECTIVO tiene un registro en tabla prendas_reflectivo
+     * (Si es tipo reflectivo sin cotización)
+     */
+    public function reflectivo()
+    {
+        return $this->hasOne(PrendaReflectivo::class, 'prenda_pedido_id');
+    }
+
+    /**
      * Recalcular cantidad_total del pedido cuando se crea o actualiza una prenda
      * NOTA: cantidad es DINÁMICO y se calcula desde cantidad_talla via accessor
      */

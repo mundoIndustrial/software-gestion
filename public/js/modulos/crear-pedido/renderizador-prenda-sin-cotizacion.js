@@ -479,7 +479,7 @@ function renderizarPrendasTipoPrendaSinCotizacion() {
         const tipoPedidoActual = window.gestorPrendaSinCotizacion.tipoPedidoActual || 'PRENDA';
         
         if (tipoPedidoActual.toUpperCase().includes('REFLECTIVO') || tipoPedidoActual.toUpperCase() === 'RF') {
-            tituloPrendasDinamico.textContent = 'Prendas Reflectivo';
+            tituloPrendasDinamico.innerHTML = 'Nuevo Pedido Reflectivo';
         } else if (tipoPedidoActual.toUpperCase() === 'PRENDA') {
             tituloPrendasDinamico.textContent = 'Prendas';
         } else {

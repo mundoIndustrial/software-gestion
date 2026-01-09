@@ -41,6 +41,7 @@ class GestorReflectivoSinCotizacion {
             nombre_producto: '', // Tipo de prenda (Camiseta, Pantalón, etc.)
             descripcion: '', // Descripción del reflectivo
             genero: '', // Dama o Caballero (vacío por defecto)
+            generosSeleccionados: [], // ✅ NUEVO: Array de géneros seleccionados
             tallas: [],
             cantidadesPorTalla: {},
             generosConTallas: {}, // ✅ NUEVO: Estructura género => talla => cantidad
@@ -270,11 +271,24 @@ class GestorReflectivoSinCotizacion {
         prendaCards.forEach((card, index) => {
             if (this.prendasEliminadas.has(index)) return;
 
+            // ✅ CORREGIDO: Obtener los géneros seleccionados
+            const generosSeleccionados = [];
+            const checkDama = card.querySelector('input[name*="genero_reflectivo_dama"]');
+            const checkCaballero = card.querySelector('input[name*="genero_reflectivo_caballero"]');
+            
+            if (checkDama && checkDama.checked) {
+                generosSeleccionados.push('dama');
+            }
+            if (checkCaballero && checkCaballero.checked) {
+                generosSeleccionados.push('caballero');
+            }
+
             const prenda = {
                 index: index,
                 nombre_producto: card.querySelector('[name*="tipo_prenda"]')?.value || '',
                 descripcion: card.querySelector('[name*="descripcion"]')?.value || '',
                 genero: card.querySelector('.genero-radio-reflectivo:checked')?.value || '',
+                generosSeleccionados: generosSeleccionados, // ✅ NUEVO: Incluir géneros seleccionados
                 cantidadesPorTalla: {},
                 generosConTallas: {} // ✅ NUEVO: Estructura con géneros
             };
@@ -332,13 +346,26 @@ class GestorReflectivoSinCotizacion {
                 errores.push(`Prenda ${index + 1}: Tipo de prenda es requerido`);
             }
 
-            if (Object.keys(prenda.cantidadesPorTalla).length === 0) {
+            // ✅ CORREGIDO: Validar generosConTallas en lugar de cantidadesPorTalla
+            let tieneCantidadesEnPrenda = false;
+            if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
+                Object.values(prenda.generosConTallas).forEach(tallas => {
+                    Object.values(tallas).forEach(cantidad => {
+                        if (cantidad > 0) {
+                            tieneCantidadesEnPrenda = true;
+                        }
+                    });
+                });
+            }
+
+            if (!tieneCantidadesEnPrenda) {
                 errores.push(`Prenda ${index + 1}: Debe tener al menos una cantidad de talla`);
             } else {
                 tieneCantidades = true;
             }
 
-            if (!prenda.genero || prenda.genero.trim() === '') {
+            // ✅ CORREGIDO: Validar generosSeleccionados en lugar de genero
+            if (!prenda.generosSeleccionados || prenda.generosSeleccionados.length === 0) {
                 errores.push(`Prenda ${index + 1}: Género es requerido`);
             }
         });

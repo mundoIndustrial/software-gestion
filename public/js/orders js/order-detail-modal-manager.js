@@ -206,6 +206,21 @@ function renderOrderDetail(orden) {
     
     if (orden.prendas && Array.isArray(orden.prendas)) {
         orden.prendas.forEach((prenda, index) => {
+            // ✅ NUEVO: Si la prenda tiene información de reflectivo, guardarla para mostrar
+            if (prenda.reflectivo) {
+                // Decodificar campos JSON si llegan como strings
+                if (typeof prenda.reflectivo.generos === 'string') {
+                    prenda.reflectivo.generos = JSON.parse(prenda.reflectivo.generos);
+                }
+                if (typeof prenda.reflectivo.cantidad_talla === 'string') {
+                    prenda.reflectivo.cantidad_talla = JSON.parse(prenda.reflectivo.cantidad_talla);
+                }
+                if (typeof prenda.reflectivo.ubicaciones === 'string') {
+                    prenda.reflectivo.ubicaciones = JSON.parse(prenda.reflectivo.ubicaciones);
+                }
+                console.log(`✅ [REFLECTIVO] Prenda ${index + 1} tiene información de reflectivo:`, JSON.stringify(prenda.reflectivo, null, 2));
+            }
+            
             // Llenar galería de fotos de prenda
             if (prenda.fotos && Array.isArray(prenda.fotos)) {
                 window.prendasGaleria[index] = prenda.fotos.filter(f => f); // Filtrar null/undefined
@@ -442,8 +457,70 @@ function renderPrendasPage() {
             })
             .join('<br><br>'); // Separar bloques de prendas
         
-        descripcionHTML = `<div style="line-height: 1.8; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0;">
-            ${descripcionFormateada}
+        // ✅ AGREGAR INFORMACIÓN DE REFLECTIVO SI EXISTE
+        let reflectivoHTML = '';
+        const startIndexReflectivo = currentPage * prendasPorPagina;
+        const endIndexReflectivo = startIndexReflectivo + prendasPorPagina;
+        const prendasActualesReflectivo = todasLasPrendas.slice(startIndexReflectivo, endIndexReflectivo);
+        
+        console.log('🔍 [DEBUG REFLECTIVO] todasLasPrendas length:', todasLasPrendas.length);
+        console.log('🔍 [DEBUG REFLECTIVO] prendasActualesReflectivo length:', prendasActualesReflectivo.length);
+        console.log('🔍 [DEBUG REFLECTIVO] prendasActualesReflectivo:', JSON.stringify(prendasActualesReflectivo, null, 2));
+        
+        prendasActualesReflectivo.forEach((prenda, index) => {
+            console.log(`🔍 [DEBUG REFLECTIVO] Prenda ${index} - nombre: ${prenda.nombre}, tiene reflectivo: ${!!prenda.reflectivo}`);
+            if (prenda.reflectivo) {
+                console.log('✅ [REFLECTIVO] Renderizando información de reflectivo para prenda', prenda.numero);
+                
+                const reflectivo = prenda.reflectivo;
+                let reflectivoContent = '<br>';
+                
+                // 1. Descripción del reflectivo
+                if (reflectivo.descripcion) {
+                    reflectivoContent += `<strong>DESCRIPCIÓN REFLECTIVO:</strong><br>${reflectivo.descripcion.toUpperCase()}<br>`;
+                }
+                
+                // 2. Ubicaciones del reflectivo
+                if (reflectivo.ubicaciones && Array.isArray(reflectivo.ubicaciones) && reflectivo.ubicaciones.length > 0) {
+                    reflectivoContent += `<br><strong>UBICACIONES REFLECTIVO:</strong><br>`;
+                    reflectivo.ubicaciones.forEach((ubicacion) => {
+                        let ubicacionStr = `• ${ubicacion.nombre || 'Sin nombre'}`;
+                        if (ubicacion.observaciones) {
+                            ubicacionStr += ` - ${ubicacion.observaciones}`;
+                        }
+                        reflectivoContent += `${ubicacionStr}<br>`;
+                    });
+                }
+                
+                // 3. Tallas por género (el género ya está incluido en la etiqueta)
+                if (reflectivo.cantidad_talla && typeof reflectivo.cantidad_talla === 'object') {
+                    reflectivoContent += '<br>';
+                    Object.entries(reflectivo.cantidad_talla).forEach(([genero, tallas]) => {
+                        if (typeof tallas === 'object') {
+                            const tallasStr = Object.entries(tallas)
+                                .filter(([_, cantidad]) => cantidad > 0)
+                                .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
+                                .join(', ');
+                            
+                            if (tallasStr) {
+                                const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
+                                reflectivoContent += `<strong>TALLAS ${generoLabel}:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasStr}</span><br>`;
+                            }
+                        }
+                    });
+                }
+                
+                // 4. Observaciones generales
+                if (reflectivo.observaciones_generales) {
+                    reflectivoContent += `<br><strong>OBSERVACIONES:</strong><br>${reflectivo.observaciones_generales}<br>`;
+                }
+                
+                reflectivoHTML += reflectivoContent;
+            }
+        });
+        
+        descripcionHTML = `<div style="line-height: 1.8; font-size: 16px; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0;">
+            ${descripcionFormateada}${reflectivoHTML}
         </div>`;
         
         // Actualizar navegación de prendas
@@ -481,7 +558,7 @@ function renderPrendasPage() {
             let html = '';
             
             // 1. Nombre de la prenda
-            html += `<strong>PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}</strong><br>`;
+            html += `<strong style="font-weight: 800; font-size: 1.05em;">PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}</strong><br>`;
             
             // 2. Línea de atributos: Color | Tela | Manga (con observación de manga si existe)
             const atributos = [];
@@ -516,8 +593,53 @@ function renderPrendasPage() {
             }
             
             // 3. DESCRIPCION - Priorizar descripción completa guardada en BD
-            if (prenda.descripcion && prenda.descripcion !== '-') {
-                // Usar la descripción completa de la BD (incluye ubicaciones del reflectivo)
+            // ✅ NUEVO: Si tiene información de reflectivo, mostrar de forma especial
+            if (prenda.reflectivo) {
+                console.log('✅ [REFLECTIVO] Renderizando información de reflectivo para prenda', prenda.numero);
+                
+                const reflectivo = prenda.reflectivo;
+                
+                // 1. Descripción del reflectivo
+                if (reflectivo.descripcion) {
+                    html += `<strong>DESCRIPCIÓN REFLECTIVO:</strong><br>${reflectivo.descripcion.toUpperCase()}<br>`;
+                }
+                
+                // 2. Ubicaciones del reflectivo
+                if (reflectivo.ubicaciones && Array.isArray(reflectivo.ubicaciones) && reflectivo.ubicaciones.length > 0) {
+                    html += `<strong>UBICACIONES REFLECTIVO:</strong><br>`;
+                    reflectivo.ubicaciones.forEach((ubicacion) => {
+                        let ubicacionStr = `• ${ubicacion.nombre || 'Sin nombre'}`;
+                        if (ubicacion.observaciones) {
+                            ubicacionStr += ` - ${ubicacion.observaciones}`;
+                        }
+                        html += `${ubicacionStr}<br>`;
+                    });
+                }
+                
+                // 3. Tallas por género (el género ya está incluido en la etiqueta)
+                if (reflectivo.cantidad_talla && typeof reflectivo.cantidad_talla === 'object') {
+                    Object.entries(reflectivo.cantidad_talla).forEach(([genero, tallas]) => {
+                        if (typeof tallas === 'object') {
+                            const tallasStr = Object.entries(tallas)
+                                .filter(([_, cantidad]) => cantidad > 0)
+                                .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
+                                .join(', ');
+                            
+                            if (tallasStr) {
+                                const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
+                                html += `<strong>TALLAS ${generoLabel}:</strong> ${tallasStr}<br>`;
+                            }
+                        }
+                    });
+                }
+                
+                // 4. Observaciones generales
+                if (reflectivo.observaciones_generales) {
+                    html += `<strong>OBSERVACIONES:</strong><br>${reflectivo.observaciones_generales}<br>`;
+                }
+                
+            } else if (prenda.descripcion && prenda.descripcion !== '-') {
+                // Usar la descripción completa de la BD (para prendas normales)
                 const descripcionCompleta = prenda.descripcion.toUpperCase();
                 
                 // Formatear la descripción: si tiene saltos de línea, convertirlos a <br>

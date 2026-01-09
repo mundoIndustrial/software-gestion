@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Asesores;
 use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
+use App\Models\PrendaReflectivo;
 use App\Models\ProcesoPrenda;
 use App\Models\Cotizacion;
 use App\Models\VariantePrenda;
@@ -2820,45 +2821,69 @@ class PedidosProduccionController extends Controller
             // Crear prendas del pedido
             $cantidadTotalPedido = 0;
             foreach ($prendas as $index => $prenda) {
-                $cantidadesPorTalla = $prenda['cantidades'] ?? $prenda['cantidadesPorTalla'] ?? [];
+                // Procesar cantidad_talla con estructura género => talla => cantidad
+                $cantidadTallaGenero = $prenda['cantidad_talla'] ?? [];
                 
-                // Aplanar cantidadesPorTalla si es necesario
-                if (is_array($cantidadesPorTalla) && !empty($cantidadesPorTalla)) {
-                    $cantidadesTemp = [];
-                    foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                        $cantidadesTemp[$talla] = (int)$cantidad;
+                // Aplanar para calcular total (si viene en formato anidado)
+                $cantidadesTotal = [];
+                $cantidadTotalPrenda = 0;
+                
+                if (is_array($cantidadTallaGenero)) {
+                    // Si tiene estructura de género => talla => cantidad
+                    foreach ($cantidadTallaGenero as $genero => $tallas) {
+                        if (is_array($tallas)) {
+                            foreach ($tallas as $talla => $cantidad) {
+                                $cantidadTotalPrenda += (int)$cantidad;
+                                if (!isset($cantidadesTotal[$talla])) {
+                                    $cantidadesTotal[$talla] = 0;
+                                }
+                                $cantidadesTotal[$talla] += (int)$cantidad;
+                            }
+                        }
                     }
-                    $cantidadesPorTalla = $cantidadesTemp;
                 }
                 
-                $cantidadTotal = array_sum($cantidadesPorTalla);
-                $cantidadTotalPedido += $cantidadTotal;
+                $cantidadTotalPedido += $cantidadTotalPrenda;
 
                 \Log::info('📊 [REFLECTIVO SIN COTIZACIÓN] Procesando prenda', [
                     'index' => $index,
                     'nombre' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'genero' => $prenda['genero'] ?? '',
-                    'cantidades_por_talla' => $cantidadesPorTalla,
-                    'cantidad_total' => $cantidadTotal,
+                    'generos' => $prenda['genero'] ?? '',
+                    'cantidad_talla_genero' => $cantidadTallaGenero,
+                    'cantidad_total' => $cantidadTotalPrenda,
                 ]);
 
-                // Construir descripción para reflectivo
-                $descripcionPrenda = $this->construirDescripcionReflectivoSinCotizacion($prenda, $cantidadesPorTalla);
-
-                // Crear prenda del pedido
+                // Crear prenda del pedido (MÍNIMO para reflectivo sin cotización)
+                // No guardar descripción ni cantidad_talla aquí, irán en prendas_reflectivo
                 $prendaPedido = PrendaPedido::create([
                     'numero_pedido' => $pedido->numero_pedido,
                     'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'cantidad' => $cantidadTotal,
-                    'descripcion' => $descripcionPrenda,
-                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                    'cantidad' => $cantidadTotalPrenda,
+                    // ✅ NO guardar descripción ni cantidad_talla aquí (van en prendas_reflectivo)
                 ]);
 
                 \Log::info('✅ Prenda REFLECTIVO creada correctamente', [
                     'prenda_pedido_id' => $prendaPedido->id,
                     'nombre_prenda' => $prenda['nombre_producto'],
-                    'cantidad' => $cantidadTotal,
-                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                    'cantidad' => $cantidadTotalPrenda,
+                ]);
+
+                // ✅ NUEVO: Crear registro en tabla prendas_reflectivo con toda la información
+                $prendaReflectivo = \App\Models\PrendaReflectivo::create([
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'nombre_producto' => $prenda['nombre_producto'] ?? 'Sin nombre',
+                    'descripcion' => $prenda['descripcion'] ?? '',
+                    'generos' => json_encode($this->procesarGeneros($prenda['genero'] ?? '')),
+                    'cantidad_talla' => json_encode($cantidadTallaGenero), // Estructura género => talla => cantidad
+                    'ubicaciones' => json_encode($prenda['ubicaciones'] ?? []),
+                    'cantidad_total' => $cantidadTotalPrenda,
+                ]);
+
+                \Log::info('✅ Información REFLECTIVO guardada en tabla especializada', [
+                    'prenda_reflectivo_id' => $prendaReflectivo->id,
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'generos' => $prendaReflectivo->generos,
+                    'cantidad_talla' => $prendaReflectivo->cantidad_talla,
                 ]);
 
                 // Crear proceso inicial
@@ -3000,6 +3025,18 @@ class PedidosProduccionController extends Controller
 
     /**
      * Procesar múltiples géneros desde el input
+     * Convierte string, array o JSON a un array limpio de géneros
+     * 
+     * @param mixed $generoInput - Puede ser string, array o JSON
+     * @return array - Array de géneros sin duplicados ni vacíos
+     */
+    private function procesarGeneros($generoInput): array
+    {
+        return $this->procesarMultiplesGeneros($generoInput);
+    }
+
+    /**
+     * Procesar múltiples géneros desde el input (alias antiguo)
      * Convierte string, array o JSON a un array limpio de géneros
      * 
      * @param mixed $generoInput - Puede ser string, array o JSON

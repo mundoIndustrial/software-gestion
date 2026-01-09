@@ -402,16 +402,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Actualizar el título dinámico junto al círculo del índice 3
                     if (tituloPrendasDinamico) {
+                        const seccionPrendas = document.getElementById('seccion-prendas');
                         if (esLogo) {
+                            if (seccionPrendas) seccionPrendas.style.display = 'block';
                             tituloPrendasDinamico.textContent = 'Información del Logo';
                         } else if (tipoPedido === 'REFLECTIVO') {
-                            tituloPrendasDinamico.textContent = 'Prendas Reflectivo';
+                            if (seccionPrendas) seccionPrendas.style.display = 'block';
+                            tituloPrendasDinamico.innerHTML = 'Nuevo Pedido Reflectivo';
+                            console.log('✅ Título dinámico actualizado para REFLECTIVO:', tituloPrendasDinamico.textContent);
                         } else if (tipoPedido === 'PRENDA') {
+                            if (seccionPrendas) seccionPrendas.style.display = 'block';
                             tituloPrendasDinamico.textContent = 'Prendas';
+                            console.log('✅ Título dinámico actualizado:', tituloPrendasDinamico.textContent);
                         } else {
+                            if (seccionPrendas) seccionPrendas.style.display = 'block';
                             tituloPrendasDinamico.textContent = 'Prendas Técnicas del Logo';
+                            console.log('✅ Título dinámico actualizado:', tituloPrendasDinamico.textContent);
                         }
-                        console.log('✅ Título dinámico actualizado:', tituloPrendasDinamico.textContent);
                     } else {
                         console.warn('⚠️ No se encontró el elemento titulo-prendas-dinamico');
                     }
