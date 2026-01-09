@@ -674,10 +674,17 @@ function agregarFotoTela(input) {
     console.log('📁 Índice de prenda:', prendaIndex);
     console.log('📁 Total de archivos cargados:', input.files.length);
     
+    // Contar fotos existentes ANTES de agregar
+    const fotosExistentesAntes = window.telasSeleccionadas[productoId][telaIndex].length;
+    
+    // Array para guardar las fotos nuevas agregadas
+    const fotosNuevasAgregadas = [];
+    
     Array.from(input.files).forEach((file, fileIndex) => {
         // Máximo 3 fotos por tela
         if (window.telasSeleccionadas[productoId][telaIndex].length < 3) {
             window.telasSeleccionadas[productoId][telaIndex].push(file);
+            fotosNuevasAgregadas.push(file); // Guardar para la iteración de preview
             console.log(`✅ Foto ${fileIndex + 1} de tela ${telaIndex} guardada: ${file.name}`);
         }
     });
@@ -687,28 +694,31 @@ function agregarFotoTela(input) {
         productoId,
         telaIndex,
         fotosAlmacenadas: window.telasSeleccionadas[productoId][telaIndex].length,
+        fotosNuevasAgregadas: fotosNuevasAgregadas.length,
         estructuraCompleta: window.telasSeleccionadas
     }));
     
     const container = productoCard.querySelector(`.fila-tela[data-tela-index="${telaIndex}"] .foto-tela-preview`);
     if (container) {
         console.log('✅ Contenedor encontrado, mostrando preview');
-        mostrarPreviewFoto(input, container);
+        // Pasar SOLO las fotos nuevas, no input.files
+        mostrarPreviewFoto(fotosNuevasAgregadas, container, fotosExistentesAntes);
     } else {
         console.error('❌ No se encontró contenedor para mostrar preview');
     }
 }
 
-function mostrarPreviewFoto(input, container) {
+function mostrarPreviewFoto(archivosNuevos, container, fotosExistentesAntes = 0) {
     const fotosExistentes = container.querySelectorAll('div[data-foto]').length;
-    const fotosNuevas = input.files.length;
+    const fotosNuevas = archivosNuevos.length;
     if (fotosExistentes + fotosNuevas > 3) {
         alert('Máximo 3 fotos permitidas');
         return;
     }
     if (!container.style.display) container.style.cssText = 'display: grid; grid-template-columns: repeat(3, 60px); gap: 0.4rem; margin-top: 0.5rem;';
     
-    Array.from(input.files).forEach((file, index) => {
+    // Iterar SOLO sobre las fotos nuevas agregadas (no sobre input.files)
+    archivosNuevos.forEach((file, index) => {
         // Generar ID único para esta foto de tela
         const fotoTelaId = Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-' + index;
         
@@ -749,7 +759,6 @@ function mostrarPreviewFoto(input, container) {
         };
         reader.readAsDataURL(file);
     });
-    input.value = '';
 }
 
 // Función para abrir modal de imagen de tela

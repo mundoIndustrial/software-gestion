@@ -1,0 +1,1630 @@
+/**
+ * PASO 3: COTIZACIÓN COMBINADA - GESTIÓN DE TÉCNICAS Y PRENDAS
+ * Integración completa de técnicas, prendas y observaciones para paso 3
+ */
+
+// =========================================================
+// 1. VARIABLES GLOBALES
+// =========================================================
+
+let tecnicasAgregadasPaso3 = [];
+let tiposDisponiblesPaso3 = [];
+let tecnicasSeleccionadasPaso3 = [];
+let contadorFilasPrendaPaso3 = 0;
+
+// =========================================================
+// 2. FUNCIÓN AUXILIAR - OBTENER PRENDAS DEL PASO 2
+// =========================================================
+
+function obtenerPrendasDelPaso2() {
+    const prendas = [];
+    
+    try {
+        // Buscar todos los elementos .producto-card del PASO 2
+        const productosCards = document.querySelectorAll('.producto-card');
+        
+        productosCards.forEach(card => {
+            // Obtener nombre de la prenda
+            const inputNombre = card.querySelector('input[name*="nombre_producto"]');
+            const nombre = inputNombre ? inputNombre.value.trim() : '';
+            
+            if (!nombre) return; // Saltar si no hay nombre
+            
+            // Obtener tallas
+            let tallas = [];
+            
+            // Intentar obtener tallas del input directo
+            const inputTallas = card.querySelector('input[name*="tallas"]');
+            if (inputTallas) {
+                const tallaValue = inputTallas.value.trim();
+                if (tallaValue) {
+                    // Intentar parsear como JSON si es un array
+                    try {
+                        const parsed = JSON.parse(tallaValue);
+                        if (Array.isArray(parsed)) {
+                            tallas = parsed;
+                        } else if (typeof parsed === 'string') {
+                            tallas = [parsed];
+                        }
+                    } catch (e) {
+                        // Si no es JSON, tratarlo como string separado por comas
+                        tallas = tallaValue.split(',').map(t => t.trim()).filter(t => t);
+                    }
+                }
+            }
+            
+            // Si no encontró tallas en el input, buscar en botones o elementos talla
+            if (tallas.length === 0) {
+                const tallaButtons = card.querySelectorAll('.talla-btn, [data-talla], .talla-tag');
+                tallaButtons.forEach(btn => {
+                    const talla = btn.textContent.trim() || btn.getAttribute('data-talla');
+                    if (talla && !tallas.includes(talla)) {
+                        tallas.push(talla);
+                    }
+                });
+            }
+            
+            // Obtener género
+            let genero = '';
+            const selectGenero = card.querySelector('.talla-genero-select');
+            if (selectGenero) {
+                genero = selectGenero.value.trim();
+            }
+            
+            // Obtener colores (pueden ser múltiples)
+            let colores = [];
+            const telaFilas = card.querySelectorAll('[data-tela-index]');
+            telaFilas.forEach(fila => {
+                const colorInput = fila.querySelector('.color-input');
+                if (colorInput) {
+                    const color = colorInput.value.trim();
+                    if (color && !colores.includes(color)) {
+                        colores.push(color);
+                    }
+                }
+            });
+            
+            // Obtener imágenes de la prenda
+            let imagenes = [];
+            const fotosPreview = card.querySelector('.fotos-preview');
+            if (fotosPreview) {
+                const fotosElements = fotosPreview.querySelectorAll('[data-foto] img');
+                fotosElements.forEach(img => {
+                    if (img.src) {
+                        imagenes.push(img.src);
+                    }
+                });
+            }
+            
+            prendas.push({
+                nombre: nombre,
+                tallas: tallas,
+                genero: genero,
+                colores: colores,
+                imagenes: imagenes
+            });
+        });
+    } catch (error) {
+        console.error('Error al obtener prendas del PASO 2:', error);
+    }
+    
+    return prendas;
+}
+
+// =========================================================
+// 3. CARGAR TIPOS DE TÉCNICAS AL INICIALIZAR
+// =========================================================
+
+async function cargarTiposDisponiblesPaso3() {
+    try {
+        const response = await fetch('/api/logo-cotizacion-tecnicas/tipos-disponibles');
+        const data = await response.json();
+        
+        if (data.success) {
+            tiposDisponiblesPaso3 = data.data;
+            renderizarSelectTecnicasPaso3();
+        }
+    } catch (error) {
+        console.error('❌ Error cargando tipos paso3:', error);
+    }
+}
+
+// =========================================================
+// 3. RENDERIZAR CHECKBOXES DE TÉCNICAS
+// =========================================================
+
+function renderizarSelectTecnicasPaso3() {
+    const container = document.getElementById('tecnicas-checkboxes-paso3');
+    
+    if (!container) {
+        console.error('❌ Elemento tecnicas-checkboxes-paso3 no encontrado');
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    tiposDisponiblesPaso3.forEach(tipo => {
+        const label = document.createElement('label');
+        label.style.cssText = 'display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 4px; border: 1px solid #e5e7eb; transition: all 0.2s;';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = tipo.id;
+        checkbox.className = 'tecnica-checkbox-paso3';
+        checkbox.style.cssText = 'cursor: pointer; width: 18px; height: 18px;';
+        
+        const span = document.createElement('span');
+        span.textContent = tipo.nombre;
+        span.style.cssText = 'font-weight: 500; color: #333;';
+        
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        
+        // Hover effect
+        label.addEventListener('mouseover', () => {
+            label.style.backgroundColor = '#f3f4f6';
+            if (tipo.color) {
+                label.style.borderColor = tipo.color;
+            }
+        });
+        label.addEventListener('mouseout', () => {
+            label.style.backgroundColor = 'transparent';
+            label.style.borderColor = '#e5e7eb';
+        });
+        
+        container.appendChild(label);
+    });
+}
+
+// =========================================================
+// 4. ABRIR MODAL PARA AGREGAR TÉCNICA
+// =========================================================
+
+function abrirModalAgregarTecnicaPaso3() {
+    const checkboxes = document.querySelectorAll('.tecnica-checkbox-paso3:checked');
+    tecnicasSeleccionadasPaso3 = Array.from(checkboxes).map(cb => {
+        const id = parseInt(cb.value);
+        return tiposDisponiblesPaso3.find(t => t.id === id);
+    });
+    
+    if (tecnicasSeleccionadasPaso3.length === 0) {
+        abrirModalValidacionTecnicaPaso3();
+        return;
+    }
+    
+    // Flujo simple para 1 técnica
+    if (tecnicasSeleccionadasPaso3.length === 1) {
+        abrirModalSimpleTecnicaPaso3(tecnicasSeleccionadasPaso3[0]);
+    } else {
+        // Flujo combinado para múltiples técnicas - va directamente a "datos iguales"
+        abrirModalDatosIgualesPaso3(tecnicasSeleccionadasPaso3);
+    }
+}
+
+function abrirModalSimpleTecnicaPaso3(tipo) {
+    window.tecnicaSeleccionadaPaso3 = tipo;
+    window.modoTecnicasCombinadas = 'simple';
+    
+    const nombreElement = document.getElementById('tecnicaSeleccionadaNombrePaso3');
+    if (nombreElement) {
+        nombreElement.textContent = tipo.nombre;
+    }
+    
+    const listaPrendas = document.getElementById('listaPrendasPaso3');
+    if (listaPrendas) {
+        listaPrendas.innerHTML = '';
+    }
+    
+    agregarFilaPrendaPaso3();
+    
+    const noPrendasMsg = document.getElementById('noPrendasMsgPaso3');
+    if (noPrendasMsg) {
+        noPrendasMsg.style.display = 'none';
+    }
+    
+    const modal = document.getElementById('modalAgregarTecnicaPaso3');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// =========================================================
+// 5. MODAL TÉCNICAS COMBINADAS (Similar a logo-cotizacion)
+// =========================================================
+
+function abrirModalTecnicaCombinada(tecnicas) {
+    const nombresT = tecnicas.map(t => t.nombre).join(' + ');
+    
+    Swal.fire({
+        title: 'Técnicas Combinadas',
+        html: `
+            <div style="text-align: left; margin: 15px 0;">
+                <p style="margin-bottom: 12px; font-weight: 600; color: #1e40af;">${nombresT}</p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
+                        <input type="radio" name="opcion-tecnicas-p3" value="iguales" checked style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
+                        <div>
+                            <strong style="color: #333; display: block; font-size: 0.9rem;">✨ Datos iguales</strong>
+                            <small style="color: #666; font-size: 0.8rem;">Una misma prenda para todas</small>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
+                        <input type="radio" name="opcion-tecnicas-p3" value="diferentes" style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
+                        <div>
+                            <strong style="color: #333; display: block; font-size: 0.9rem;">🎯 Datos diferentes</strong>
+                            <small style="color: #666; font-size: 0.8rem;">Cada técnica con su prenda</small>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Siguiente',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#1e40af',
+        cancelButtonColor: '#6b7280'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const opcion = document.querySelector('input[name="opcion-tecnicas-p3"]:checked').value;
+            
+            if (opcion === 'iguales') {
+                abrirModalDatosIgualesPaso3(tecnicas);
+            } else if (opcion === 'diferentes') {
+                iniciarFlujoDatosDiferentesPaso3(tecnicas);
+            }
+        }
+    });
+}
+
+function abrirModalDatosIgualesPaso3(tecnicas) {
+    window.tecnicasCombinadas = tecnicas;
+    window.modoTecnicasCombinadas = 'iguales';
+    
+    // Obtener prendas del PASO 2
+    const prendasPaso2 = obtenerPrendasDelPaso2();
+    
+    // Crear opciones de dropdown
+    let opcionesDropdown = '<option value="">-- Selecciona una prenda --</option>';
+    prendasPaso2.forEach(prenda => {
+        // Construir texto para mostrar: Nombre - Género - Colores
+        let textoOpcion = prenda.nombre;
+        
+        if (prenda.genero) {
+            textoOpcion += ' - ' + prenda.genero;
+        }
+        
+        if (prenda.colores && prenda.colores.length > 0) {
+            textoOpcion += ' - Color: ' + prenda.colores.join(' - ');
+        }
+        
+        // Almacenar en data attributes: tallas, género, colores e imágenes
+        const dataTallas = JSON.stringify(prenda.tallas).replace(/"/g, '&quot;');
+        const dataGenero = prenda.genero || '';
+        const dataColores = JSON.stringify(prenda.colores).replace(/"/g, '&quot;');
+        const dataImagenes = JSON.stringify(prenda.imagenes || []).replace(/"/g, '&quot;');
+        
+        opcionesDropdown += `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}">${textoOpcion}</option>`;
+    });
+    
+    Swal.fire({
+        title: 'Datos Iguales para Todas las Técnicas',
+        width: '650px',
+        html: `
+            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 80vh; overflow-y: auto;">
+                
+                <!-- PRENDA ÚNICA - DROPDOWN -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Prenda</h3>
+                    <select id="dNombrePrendaP3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; cursor: pointer;">
+                        ${opcionesDropdown}
+                    </select>
+                    <small style="color: #999; display: block; margin-top: 4px; font-size: 0.8rem;">Las prendas se cargan del PASO 2</small>
+                </div>
+                
+                <!-- UBICACIONES POR TÉCNICA -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Ubicaciones</h3>
+                    <div id="dUbicacionesPorTecnicaP3" style="display: grid; gap: 12px;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- IMÁGENES POR TÉCNICA -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Imágenes por Técnica</h3>
+                    <div id="dImagenesPorTecnicaP3" style="display: grid; gap: 16px;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- OBSERVACIONES -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Observaciones</h3>
+                    <textarea id="dObservacionesP3" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;"></textarea>
+                </div>
+                
+                <!-- TALLAS GENÉRICAS -->
+                <div id="dSeccionTallasGeneralP3" style="display: block;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Tallas y Cantidades</h3>
+                    <div id="dTallaCantidadContainerP3" style="display: grid; gap: 8px; margin-bottom: 10px; max-height: 200px; overflow-y: auto;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                    <button type="button" id="dBtnAgregarTallaP3" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla</button>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#333',
+        didOpen: (modal) => {
+            const selectPrenda = document.getElementById('dNombrePrendaP3');
+            const btnAgregarTalla = document.getElementById('dBtnAgregarTallaP3');
+            const tallaCantidadContainer = document.getElementById('dTallaCantidadContainerP3');
+            const ubicacionesPorTecnicaDiv = document.getElementById('dUbicacionesPorTecnicaP3');
+            const imagenesPorTecnicaDiv = document.getElementById('dImagenesPorTecnicaP3');
+            
+            let contadorTallas = 0;
+            const imagenesAgregadasPorTecnica = {}; // Almacena imágenes por técnica
+            
+            // Listener para cambio de prenda - carga las tallas automáticamente
+            selectPrenda.addEventListener('change', (e) => {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                const tallasJson = selectedOption.getAttribute('data-tallas');
+                const imagenesJson = selectedOption.getAttribute('data-imagenes');
+                
+                // Limpiar tallas actuales
+                tallaCantidadContainer.innerHTML = '';
+                
+                if (tallasJson) {
+                    try {
+                        const tallas = JSON.parse(tallasJson);
+                        if (Array.isArray(tallas) && tallas.length > 0) {
+                            // Agregar una fila por cada talla de la prenda seleccionada
+                            tallas.forEach(talla => {
+                                const idTalla = 'talla-p3-' + (contadorTallas++);
+                                const fila = document.createElement('div');
+                                fila.setAttribute('data-talla-id', idTalla);
+                                fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
+                                fila.innerHTML = `
+                                    <input type="text" class="dTallaInput" placeholder="Talla" value="${talla}" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;" readonly>
+                                    <input type="number" class="dCantidadInput" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
+                                    <button type="button" class="dBtnEliminarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
+                                `;
+                                
+                                const btnEliminar = fila.querySelector('.dBtnEliminarTalla');
+                                btnEliminar.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    if (tallaCantidadContainer.children.length > 0) {
+                                        fila.remove();
+                                    }
+                                });
+                                
+                                tallaCantidadContainer.appendChild(fila);
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Error al parsear tallas:', err);
+                    }
+                }
+                
+                // Cargar imágenes de la prenda seleccionada en todos los dropzones
+                if (imagenesJson) {
+                    try {
+                        const imagenes = JSON.parse(imagenesJson);
+                        if (Array.isArray(imagenes) && imagenes.length > 0) {
+                            tecnicas.forEach((tecnica, idx) => {
+                                const previewContainer = document.querySelector(`.dImagenesPreview-p3-${idx}`);
+                                if (previewContainer) {
+                                    // Limpiar previews anteriores
+                                    previewContainer.innerHTML = '';
+                                    imagenesAgregadasPorTecnica[idx] = [];
+                                    
+                                    // Cargar las imágenes
+                                    imagenes.slice(0, 3).forEach((imagenSrc, imgIdx) => {
+                                        const divPreview = document.createElement('div');
+                                        divPreview.style.cssText = 'position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer; border: 1px solid #ddd;';
+                                        divPreview.innerHTML = `
+                                            <img src="${imagenSrc}" style="width: 100%; height: 100%; object-fit: cover;">
+                                            <span style="position: absolute; top: 2px; right: 2px; background: #0066cc; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">${imgIdx + 1}</span>
+                                            <button type="button" onclick="event.stopPropagation(); this.closest('[style*=\"position: relative\"]').remove();" style="position: absolute; top: 2px; left: 2px; background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;">✕</button>
+                                        `;
+                                        divPreview.addEventListener('mouseenter', function() {
+                                            this.querySelector('button').style.opacity = '1';
+                                        });
+                                        divPreview.addEventListener('mouseleave', function() {
+                                            this.querySelector('button').style.opacity = '0';
+                                        });
+                                        
+                                        previewContainer.appendChild(divPreview);
+                                        // Almacenar como una "imagen" ficticia para contar
+                                        imagenesAgregadasPorTecnica[idx].push({type: 'image'});
+                                    });
+                                }
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Error al parsear imágenes:', err);
+                    }
+                }
+            });
+            
+            // Crear inputs de ubicación por técnica y dropzones de imagen
+            tecnicas.forEach((tecnica, idx) => {
+                // UBICACIÓN
+                const divUbicacion = document.createElement('div');
+                divUbicacion.style.cssText = 'display: flex; gap: 8px; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 4px;';
+                
+                const labelUbicacion = document.createElement('label');
+                labelUbicacion.style.cssText = 'font-weight: 600; min-width: 100px; font-size: 0.9rem; color: #333; flex-shrink: 0;';
+                labelUbicacion.textContent = tecnica.nombre + ':';
+                
+                const inputUbicacion = document.createElement('input');
+                inputUbicacion.type = 'text';
+                inputUbicacion.className = 'dUbicacion-p3-' + idx;
+                inputUbicacion.placeholder = 'Ej: Pecho, Espalda, Manga';
+                inputUbicacion.style.cssText = 'flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;';
+                
+                divUbicacion.appendChild(labelUbicacion);
+                divUbicacion.appendChild(inputUbicacion);
+                ubicacionesPorTecnicaDiv.appendChild(divUbicacion);
+                
+                // IMÁGENES
+                imagenesAgregadasPorTecnica[idx] = [];
+                
+                const divImagen = document.createElement('div');
+                divImagen.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
+                divImagen.innerHTML = `
+                    <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
+                        Imágenes - ${tecnica.nombre} (Máximo 3)
+                    </label>
+                    <div class="dImagenesDropzone-p3-${idx}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
+                        <div style="margin-bottom: 6px; font-size: 1.3rem;">📁</div>
+                        <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
+                        <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
+                        <input type="file" class="dImagenInput-p3-${idx}" accept="image/*" multiple style="display: none;" />
+                    </div>
+                    <div class="dImagenesPreview-p3-${idx}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                        <!-- Previsualizaciones aquí -->
+                    </div>
+                `;
+                
+                imagenesPorTecnicaDiv.appendChild(divImagen);
+                
+                // Setup Drag and Drop
+                const dropzone = divImagen.querySelector(`.dImagenesDropzone-p3-${idx}`);
+                const input = divImagen.querySelector(`.dImagenInput-p3-${idx}`);
+                const previewContainer = divImagen.querySelector(`.dImagenesPreview-p3-${idx}`);
+                
+                function actualizarPrevisualizaciones() {
+                    previewContainer.innerHTML = '';
+                    
+                    imagenesAgregadasPorTecnica[idx].forEach((archivo, imgIdx) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const preview = document.createElement('div');
+                            preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+                            
+                            const btnEliminar = document.createElement('button');
+                            btnEliminar.type = 'button';
+                            btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
+                            btnEliminar.textContent = '×';
+                            btnEliminar.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                imagenesAgregadasPorTecnica[idx].splice(imgIdx, 1);
+                                actualizarPrevisualizaciones();
+                            });
+                            
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                            
+                            preview.appendChild(img);
+                            preview.appendChild(btnEliminar);
+                            previewContainer.appendChild(preview);
+                        };
+                        reader.readAsDataURL(archivo);
+                    });
+                }
+                
+                dropzone.addEventListener('click', () => input.click());
+                
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.style.background = '#e8f1ff';
+                    dropzone.style.borderColor = '#1e40af';
+                });
+                
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.style.background = '#fafafa';
+                    dropzone.style.borderColor = '#ddd';
+                });
+                
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.style.background = '#fafafa';
+                    dropzone.style.borderColor = '#ddd';
+                    agregarImagenesDrop(Array.from(e.dataTransfer.files));
+                });
+                
+                input.addEventListener('change', (e) => {
+                    agregarImagenesDrop(Array.from(e.target.files));
+                });
+                
+                function agregarImagenesDrop(archivos) {
+                    const imagenes = archivos.filter(f => f.type.startsWith('image/'));
+                    
+                    if (imagenes.length === 0) return;
+                    
+                    for (const archivo of imagenes) {
+                        if (imagenesAgregadasPorTecnica[idx].length >= 3) break;
+                        imagenesAgregadasPorTecnica[idx].push(archivo);
+                    }
+                    
+                    actualizarPrevisualizaciones();
+                }
+            });
+            
+            // Agregar talla inicial (vacía)
+            function agregarFilaTallaPaso3() {
+                const idTalla = 'talla-p3-' + (contadorTallas++);
+                const fila = document.createElement('div');
+                fila.setAttribute('data-talla-id', idTalla);
+                fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
+                fila.innerHTML = `
+                    <input type="text" class="dTallaInput" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
+                    <input type="number" class="dCantidadInput" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
+                    <button type="button" class="dBtnEliminarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
+                `;
+                
+                const btnEliminar = fila.querySelector('.dBtnEliminarTalla');
+                btnEliminar.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (tallaCantidadContainer.children.length > 1) {
+                        fila.remove();
+                    }
+                });
+                
+                tallaCantidadContainer.appendChild(fila);
+            }
+            
+            if (btnAgregarTalla) {
+                btnAgregarTalla.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    agregarFilaTallaPaso3();
+                });
+            }
+            
+            // Guardar referencia global para usar en preConfirm
+            window.imagenesAgregadasPorTecnicaP3 = imagenesAgregadasPorTecnica;
+        },
+        preConfirm: () => {
+            const selectPrenda = document.getElementById('dNombrePrendaP3');
+            const selectedOption = selectPrenda.options[selectPrenda.selectedIndex];
+            const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
+            
+            if (!nombrePrendaBase) {
+                Swal.showValidationMessage('Selecciona una prenda');
+                return false;
+            }
+            
+            // Obtener género y colores del data attribute
+            const genero = selectedOption.getAttribute('data-genero') || '';
+            const coloresJson = selectedOption.getAttribute('data-colores') || '[]';
+            
+            let colores = [];
+            try {
+                colores = JSON.parse(coloresJson);
+            } catch (e) {
+                colores = [];
+            }
+            
+            // Construir nombre completo: Nombre - Género - Colores
+            let nombrePrendaCompleto = nombrePrendaBase;
+            
+            if (genero) {
+                nombrePrendaCompleto += ' - ' + genero;
+            }
+            
+            if (colores && colores.length > 0) {
+                nombrePrendaCompleto += ' - Color: ' + colores.join(' - ');
+            }
+            
+            // Validar ubicaciones
+            const ubicacionesPorTecnica = {};
+            let valido = true;
+            
+            window.tecnicasCombinadas.forEach((tecnica, idx) => {
+                const ubicacion = document.querySelector('.dUbicacion-p3-' + idx)?.value.trim() || '';
+                if (!ubicacion) {
+                    Swal.showValidationMessage(`Agrega ubicación para ${tecnica.nombre}`);
+                    valido = false;
+                    return;
+                }
+                ubicacionesPorTecnica[idx] = [ubicacion];
+            });
+            
+            if (!valido) return false;
+            
+            // Validar tallas
+            const tallasFilas = document.querySelectorAll('[data-talla-id]');
+            let tallas = [];
+            tallasFilas.forEach(fila => {
+                const talla = fila.querySelector('.dTallaInput').value.trim();
+                const cantidad = fila.querySelector('.dCantidadInput').value;
+                if (talla && cantidad) {
+                    tallas.push({ talla, cantidad: parseInt(cantidad) });
+                }
+            });
+            
+            if (tallas.length === 0) {
+                Swal.showValidationMessage('Agrega al menos una talla y cantidad');
+                return false;
+            }
+            
+            return {
+                nombre_prenda: nombrePrendaCompleto,
+                observaciones: document.getElementById('dObservacionesP3').value.trim(),
+                ubicacionesPorTecnica: ubicacionesPorTecnica,
+                tallas: tallas,
+                imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            guardarTecnicaCombinada(result.value, window.tecnicasCombinadas);
+        }
+    });
+}
+
+function iniciarFlujoDatosDiferentesPaso3(tecnicas) {
+    window.tecnicasCombinadas = tecnicas;
+    window.modoTecnicasCombinadas = 'diferentes';
+    window.indiceActualTecnica = 0;
+    
+    mostrarFormularioTecnicaDiferentePaso3(0);
+}
+
+function mostrarFormularioTecnicaDiferentePaso3(indice) {
+    if (indice >= window.tecnicasCombinadas.length) {
+        renderizarTecnicasAgregadasPaso3();
+        return;
+    }
+    
+    const tecnica = window.tecnicasCombinadas[indice];
+    
+    Swal.fire({
+        title: `Datos para ${tecnica.nombre}`,
+        width: '500px',
+        html: `
+            <div style="text-align: left; padding: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prenda:</label>
+                    <input type="text" id="dNombrePrendaDifP3" placeholder="POLO, CAMISA, PANTALÓN..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Ubicación:</label>
+                    <input type="text" id="dUbicacionDifP3" placeholder="Ej: Pecho, Espalda..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones:</label>
+                    <textarea id="dObservacionesDifP3" placeholder="..." rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Siguiente',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#1e40af',
+        preConfirm: () => {
+            const nombre = document.getElementById('dNombrePrendaDifP3').value.trim();
+            const ubicacion = document.getElementById('dUbicacionDifP3').value.trim();
+            
+            if (!nombre || !ubicacion) {
+                Swal.showValidationMessage('Completa los campos requeridos');
+                return false;
+            }
+            
+            return {
+                nombre_prenda: nombre.toUpperCase(),
+                ubicacion: ubicacion,
+                observaciones: document.getElementById('dObservacionesDifP3').value.trim(),
+                tecnica_idx: indice
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            // Guardar y pasar al siguiente
+            window.indiceActualTecnica++;
+            mostrarFormularioTecnicaDiferentePaso3(window.indiceActualTecnica);
+        }
+    });
+}
+
+function guardarTecnicaCombinada(datosForm, tecnicas) {
+    // Guardar una prenda por técnica con sus imágenes
+    tecnicas.forEach((tecnica, idx) => {
+        const nuevaTecnica = {
+            tipo: tecnica.nombre,
+            prendas: [{
+                nombre: datosForm.nombre_prenda,
+                ubicaciones: datosForm.ubicacionesPorTecnica[idx] || [],
+                tallasCantidad: datosForm.tallas.map(t => ({ talla: t.talla, cantidad: t.cantidad })),
+                observaciones: datosForm.observaciones,
+                imagenes_files: datosForm.imagenesAgregadas[idx] || []
+            }],
+            observacionesGenerales: ''
+        };
+        
+        if (!window.tecnicasAgregadasPaso3) {
+            window.tecnicasAgregadasPaso3 = [];
+        }
+        
+        const tecnicaExistente = window.tecnicasAgregadasPaso3.find(t => t.tipo === tecnica.nombre);
+        if (tecnicaExistente) {
+            tecnicaExistente.prendas = nuevaTecnica.prendas;
+        } else {
+            window.tecnicasAgregadasPaso3.push(nuevaTecnica);
+        }
+    });
+    
+    console.log('✅ Técnicas combinadas guardadas en PASO 3:', window.tecnicasAgregadasPaso3);
+    
+    renderizarTecnicasAgregadasPaso3();
+    cerrarModalAgregarTecnicaPaso3();
+}
+
+// =========================================================
+// 6. RENDERIZAR TÉCNICAS AGREGADAS COMO CARDS
+// =========================================================
+
+function renderizarTecnicasAgregadasPaso3() {
+    const container = document.getElementById('tecnicas_agregadas_paso3');
+    const sinTecnicas = document.getElementById('sin_tecnicas_paso3');
+    
+    if (!container) {
+        console.error('❌ Elemento tecnicas_agregadas_paso3 no encontrado');
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    if (!window.tecnicasAgregadasPaso3 || window.tecnicasAgregadasPaso3.length === 0) {
+        if (sinTecnicas) sinTecnicas.style.display = 'block';
+        return;
+    }
+    
+    if (sinTecnicas) sinTecnicas.style.display = 'none';
+    
+    // Array para procesar imágenes de forma asíncrona
+    const imagenesParaCargar = [];
+    
+    // Agrupar por nombre de prenda
+    const prendasMap = {};
+    
+    window.tecnicasAgregadasPaso3.forEach((tecnicaData, tecnicaIndex) => {
+        if (!tecnicaData.prendas) return;
+        
+        tecnicaData.prendas.forEach(prenda => {
+            const nombrePrenda = prenda.nombre || 'SIN NOMBRE';
+            
+            if (!prendasMap[nombrePrenda]) {
+                prendasMap[nombrePrenda] = {
+                    nombre_prenda: nombrePrenda,
+                    observaciones: prenda.observaciones,
+                    tallasCantidad: prenda.tallasCantidad || [],
+                    tecnicas: [],
+                    imagenes: []
+                };
+            }
+            
+            prendasMap[nombrePrenda].tecnicas.push({
+                tipo: tecnicaData.tipo,
+                tecnicaIndex: tecnicaIndex
+            });
+            
+            // Agregar ubicaciones
+            if (prenda.ubicaciones) {
+                if (!prendasMap[nombrePrenda].ubicaciones) {
+                    prendasMap[nombrePrenda].ubicaciones = {};
+                }
+                prendasMap[nombrePrenda].ubicaciones[tecnicaData.tipo] = prenda.ubicaciones;
+            }
+            
+            // Procesar imágenes
+            if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
+                prenda.imagenes_files.forEach(archivo => {
+                    imagenesParaCargar.push({
+                        archivo: archivo,
+                        nombrePrenda: nombrePrenda,
+                        tecnica: tecnicaData.tipo
+                    });
+                });
+            }
+        });
+    });
+    
+    const contenedor = document.createElement('div');
+    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.2rem; margin-bottom: 20px;';
+    
+    // Renderizar tarjetas
+    Object.entries(prendasMap).forEach(([nombrePrenda, datosPrenda]) => {
+        const tarjeta = document.createElement('div');
+        tarjeta.setAttribute('data-prenda-nombre', nombrePrenda);
+        tarjeta.style.cssText = `
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        `;
+        tarjeta.onmouseover = function() {
+            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.15)';
+            this.style.transform = 'translateY(-2px)';
+        };
+        tarjeta.onmouseout = function() {
+            this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            this.style.transform = 'translateY(0)';
+        };
+        
+        // HEADER CON TÉCNICAS
+        let headerHTML = '<div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1rem; border-bottom: 1px solid #ddd;">';
+        headerHTML += '<h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem;">Técnica(s)</h4>';
+        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+        
+        datosPrenda.tecnicas.forEach(t => {
+            const colorsTec = {
+                'BORDADO': '#ec4899',
+                'DTF': '#8b5cf6',
+                'ESTAMPADO': '#f97316',
+                'SUBLIMADO': '#06b6d4'
+            };
+            const color = colorsTec[t.tipo] || '#3b82f6';
+            
+            headerHTML += `
+                <span style="
+                    background: ${color};
+                    color: white;
+                    padding: 0.4rem 0.8rem;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                ">
+                    ${t.tipo}
+                </span>
+            `;
+        });
+        
+        headerHTML += '</div></div>';
+        
+        // CUERPO
+        let bodyHTML = '<div style="padding: 1rem;">';
+        
+        // Nombre de prenda
+        bodyHTML += `
+            <div style="margin-bottom: 1rem;">
+                <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                    ${nombrePrenda}
+                </h5>
+            </div>
+        `;
+        
+        // SECCIÓN DE IMÁGENES
+        const tieneImagenes = datosPrenda.imagenes.length > 0;
+        bodyHTML += `
+            <div class="imagenes-section" style="margin-bottom: 1rem; ${!tieneImagenes ? 'display: none;' : ''}">
+                <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                    🖼️ Imágenes:
+                </span>
+                <div class="imagenes-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem;">
+                    ${datosPrenda.imagenes.map((img, imgIdx) => `
+                        <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af; cursor: pointer;" ondblclick="abrirModalImagenPrendaConIndice('${img.data}', ${imgIdx})">
+                            <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
+                            <div style="
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                right: 0;
+                                background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                                padding: 0.4rem;
+                            ">
+                                <span style="
+                                    color: white;
+                                    font-size: 0.7rem;
+                                    font-weight: 600;
+                                    background: #1e40af;
+                                    padding: 0.2rem 0.4rem;
+                                    border-radius: 2px;
+                                    display: inline-block;
+                                ">
+                                    ${img.tecnica}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        // SECCIÓN DE UBICACIONES
+        if (datosPrenda.ubicaciones && Object.keys(datosPrenda.ubicaciones).length > 0) {
+            bodyHTML += `
+                <div style="margin-bottom: 1rem;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                        📍 Ubicaciones:
+                    </span>
+            `;
+            
+            Object.entries(datosPrenda.ubicaciones).forEach(([nombreTec, ubicaciones]) => {
+                bodyHTML += `
+                    <div style="margin-bottom: 0.6rem;">
+                        <span style="
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            color: #475569;
+                            display: block;
+                            margin-bottom: 0.3rem;
+                        ">
+                            ${nombreTec}:
+                        </span>
+                        <div style="padding-left: 0.8rem; border-left: 3px solid #94a3b8;">
+                            ${ubicaciones.map(ub => `
+                                <div style="
+                                    font-size: 0.8rem;
+                                    color: #1e293b;
+                                    margin-bottom: 0.2rem;
+                                ">
+                                    ${ub}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            bodyHTML += '</div>';
+        }
+        
+        // TALLAS Y CANTIDADES
+        if (datosPrenda.tallasCantidad && datosPrenda.tallasCantidad.length > 0) {
+            bodyHTML += `
+                <div style="margin-bottom: 1rem;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                        👕 Tallas:
+                    </span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+            `;
+            
+            datosPrenda.tallasCantidad.forEach(t => {
+                bodyHTML += `
+                    <span style="background: #e8f0ff; color: #1e40af; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
+                        ${t.talla} (${t.cantidad})
+                    </span>
+                `;
+            });
+            
+            bodyHTML += '</div></div>';
+        }
+        
+        // OBSERVACIONES
+        if (datosPrenda.observaciones) {
+            bodyHTML += `
+                <div style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 0.8rem; border-radius: 4px; margin-bottom: 1rem;">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #92400e;">📝 Observaciones:</span>
+                    <p style="margin: 0.4rem 0 0 0; font-size: 0.8rem; color: #78350f;">
+                        ${datosPrenda.observaciones}
+                    </p>
+                </div>
+            `;
+        }
+        
+        // BOTÓN ELIMINAR
+        bodyHTML += `
+            <button type="button" onclick="eliminarTecnicaPaso3('${nombrePrenda}')" style="width: 100%; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#fecaca'; this.style.color='#7f1d1d';" onmouseout="this.style.background='#fee2e2'; this.style.color='#991b1b';">
+                🗑️ Eliminar
+            </button>
+        `;
+        
+        bodyHTML += '</div>';
+        
+        tarjeta.innerHTML = headerHTML + bodyHTML;
+        contenedor.appendChild(tarjeta);
+    });
+    
+    container.appendChild(contenedor);
+    
+    // Procesar imágenes de forma asíncrona
+    imagenesParaCargar.forEach(imgData => {
+        const tarjeta = document.querySelector(`[data-prenda-nombre="${imgData.nombrePrenda}"]`);
+        if (tarjeta) {
+            const imagenesMaps = prendasMap[imgData.nombrePrenda].imagenes;
+            
+            // Verificar si es una URL (string) o un File object
+            if (typeof imgData.archivo === 'string') {
+                // Es una URL del PASO 2
+                imagenesMaps.push({
+                    data: imgData.archivo,
+                    tecnica: imgData.tecnica
+                });
+                
+                // Actualizar el grid inmediatamente
+                const imgSection = tarjeta.querySelector('.imagenes-section');
+                if (imgSection) {
+                    imgSection.style.display = 'block';
+                    const grid = imgSection.querySelector('.imagenes-grid');
+                    if (grid) {
+                        grid.innerHTML = imagenesMaps.map((img, idx) => `
+                            <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af;">
+                                <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                                    padding: 0.4rem;
+                                ">
+                                    <span style="
+                                        color: white;
+                                        font-size: 0.7rem;
+                                        font-weight: 600;
+                                        background: #1e40af;
+                                        padding: 0.2rem 0.4rem;
+                                        border-radius: 2px;
+                                        display: inline-block;
+                                    ">
+                                        ${img.tecnica}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } else {
+                // Es un File object (imagen nueva agregada)
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagenesMaps.push({
+                        data: e.target.result,
+                        tecnica: imgData.tecnica
+                    });
+                    
+                    const imgSection = tarjeta.querySelector('.imagenes-section');
+                    if (imgSection) {
+                        imgSection.style.display = 'block';
+                        const grid = imgSection.querySelector('.imagenes-grid');
+                        if (grid) {
+                            grid.innerHTML = imagenesMaps.map((img, idx) => `
+                                <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af; cursor: pointer;" ondblclick="abrirModalImagenPrendaConIndice('${img.data}', ${idx})">
+                                    <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
+                                    <div style="
+                                        position: absolute;
+                                        bottom: 0;
+                                        left: 0;
+                                        right: 0;
+                                        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                                        padding: 0.4rem;
+                                    ">
+                                        <span style="
+                                            color: white;
+                                            font-size: 0.7rem;
+                                            font-weight: 600;
+                                            background: #1e40af;
+                                            padding: 0.2rem 0.4rem;
+                                            border-radius: 2px;
+                                            display: inline-block;
+                                        ">
+                                            ${img.tecnica}
+                                        </span>
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                };
+                reader.readAsDataURL(imgData.archivo);
+            }
+        }
+    });
+}
+
+function eliminarTecnicaPaso3(nombrePrenda) {
+    if (!window.tecnicasAgregadasPaso3) return;
+    
+    // Eliminar todas las prendas con este nombre
+    window.tecnicasAgregadasPaso3 = window.tecnicasAgregadasPaso3.filter(tecnica => {
+        if (tecnica.prendas) {
+            tecnica.prendas = tecnica.prendas.filter(p => p.nombre !== nombrePrenda);
+            return tecnica.prendas.length > 0;
+        }
+        return true;
+    });
+    
+    renderizarTecnicasAgregadasPaso3();
+}
+
+// =========================================================
+// 7. MODAL Y FUNCIONES AUXILIARES
+// =========================================================
+
+function cerrarModalAgregarTecnicaPaso3() {
+    const modal = document.getElementById('modalAgregarTecnicaPaso3');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function cerrarModalValidacionTecnicaPaso3() {
+    const modal = document.getElementById('modalValidacionTecnicaPaso3');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function agregarFilaPrendaPaso3() {
+    const container = document.getElementById('listaPrendasPaso3');
+    
+    if (!container) {
+        console.error('❌ Elemento listaPrendasPaso3 no encontrado');
+        return;
+    }
+    
+    const numeroPrenda = container.children.length + 1;
+    const prendasIndex = numeroPrenda - 1;
+    const idUnico = Date.now() + Math.floor(Math.random() * 100000);
+    
+    // Obtener prendas del PASO 2
+    const prendasPaso2 = obtenerPrendasDelPaso2();
+    
+    const fila = document.createElement('div');
+    fila.className = 'prenda-item-paso3';
+    fila.setAttribute('data-prenda-id', idUnico);
+    fila.style.cssText = 'margin-bottom: 12px; padding: 12px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;';
+    fila.innerHTML = `
+        <div style="display: grid; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; font-weight: 600; color: #333; font-size: 0.9rem;">
+                <span>Prenda <span class="numero-prenda">${numeroPrenda}</span></span>
+                <button type="button" onclick="this.closest('.prenda-item-paso3').remove(); actualizarNumeracionPrendasPaso3();" style="background: none; color: #999; border: 1px solid #ddd; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" onmouseout="this.style.background='none'; this.style.color='#999'" title="Eliminar prenda">
+                    ✕
+                </button>
+            </div>
+            
+            <!-- DROPDOWN DE PRENDAS DEL PASO 2 -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Nombre de prenda</label>
+                <select class="select-prenda-paso2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; cursor: pointer;">
+                    <option value="">-- Selecciona una prenda --</option>
+                    ${prendasPaso2.map(prenda => {
+                        let textoOpcion = prenda.nombre;
+                        if (prenda.genero) {
+                            textoOpcion += ' - ' + prenda.genero;
+                        }
+                        if (prenda.colores && prenda.colores.length > 0) {
+                            textoOpcion += ' - Color: ' + prenda.colores.join(' - ');
+                        }
+                        const dataTallas = JSON.stringify(prenda.tallas).replace(/"/g, '&quot;');
+                        const dataGenero = prenda.genero || '';
+                        const dataColores = JSON.stringify(prenda.colores).replace(/"/g, '&quot;');
+                        const dataImagenes = JSON.stringify(prenda.imagenes || []).replace(/"/g, '&quot;');
+                        return `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}">${textoOpcion}</option>`;
+                    }).join('')}
+                </select>
+                <small style="color: #999; display: block; margin-top: 4px; font-size: 0.8rem;">Las prendas se cargan automáticamente del PASO 2</small>
+            </div>
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Ubicaciones</label>
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                    <input type="text" class="ubicacion-input-paso3" placeholder="PECHO, ESPALDA, MANGA..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; text-transform: uppercase;">
+                    <button type="button" class="btn-agregar-ubicacion-paso3" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">
+                        + Agregar
+                    </button>
+                </div>
+                <div class="ubicaciones-lista-paso3" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; align-content: flex-start;">
+                    <!-- Ubicaciones agregadas aquí como tags -->
+                </div>
+            </div>
+            
+            <!-- SECCIÓN DE IMÁGENES CON DRAG AND DROP -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Imágenes (Máximo 3)</label>
+                <div class="dropzone-paso3-${idUnico}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
+                    <div style="margin-bottom: 6px; font-size: 1.3rem;">📁</div>
+                    <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
+                    <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
+                    <input type="file" class="imagenes-input-paso3-${idUnico}" accept="image/*" multiple style="display: none;" />
+                </div>
+                <div class="imagenes-preview-paso3-${idUnico}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                    <!-- Previsualizaciones aquí -->
+                </div>
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Observaciones</label>
+                <textarea class="observaciones-paso3" rows="2" placeholder="Detalles adicionales (opcional)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.9rem;"></textarea>
+            </div>
+            
+            <!-- Tallas y Cantidades Dinámicas -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Tallas y Cantidades</label>
+                <div class="tallas-container-paso3" style="display: grid; gap: 8px;">
+                    <!-- Filas de talla-cantidad aquí -->
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                    <button type="button" onclick="agregarTallaCantidadPaso3(this)" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">+ Talla</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(fila);
+    
+    // Listeners para ubicaciones
+    const inputUbicacion = fila.querySelector('.ubicacion-input-paso3');
+    const btnAgregarUbicacion = fila.querySelector('.btn-agregar-ubicacion-paso3');
+    const ubicacionesLista = fila.querySelector('.ubicaciones-lista-paso3');
+    const selectPrenda = fila.querySelector('.select-prenda-paso2');
+    const tallasContainer = fila.querySelector('.tallas-container-paso3');
+    let ubicacionesAgregadas = [];
+    let imagenesPaso2 = []; // Inicializar array de imágenes del PASO 2
+    
+    function renderizarUbicaciones() {
+        ubicacionesLista.innerHTML = ubicacionesAgregadas.map((ub, idx) => `
+            <span style="display: inline-flex; align-items: center; gap: 6px; background: #e8f0ff; color: #1e40af; padding: 4px 8px; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
+                ${ub}
+                <button type="button" onclick="this.closest('span').remove(); " style="background: none; border: none; color: #1e40af; cursor: pointer; font-weight: bold; padding: 0; line-height: 1;">×</button>
+            </span>
+        `).join('');
+    }
+    
+    // Listener para cambio de prenda - carga las tallas automáticamente
+    selectPrenda.addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const tallasJson = selectedOption.getAttribute('data-tallas');
+        const imagenesJson = selectedOption.getAttribute('data-imagenes');
+        
+        // Limpiar tallas actuales
+        tallasContainer.innerHTML = '';
+        
+        if (tallasJson) {
+            try {
+                const tallas = JSON.parse(tallasJson);
+                if (Array.isArray(tallas) && tallas.length > 0) {
+                    // Agregar una fila por cada talla del PASO 2
+                    tallas.forEach(talla => {
+                        const fila = document.createElement('div');
+                        fila.className = 'talla-cantidad-paso3';
+                        fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; align-items: center;';
+                        fila.innerHTML = `
+                            <input type="text" class="talla-input-paso3" placeholder="Talla" value="${talla}" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; text-transform: uppercase;" readonly>
+                            <input type="number" class="cantidad-input-paso3" placeholder="Cantidad" min="1" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
+                            <button type="button" onclick="this.closest('.talla-cantidad-paso3').remove()" style="background: none; color: #999; border: 1px solid #ddd; padding: 4px; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">✕</button>
+                        `;
+                        tallasContainer.appendChild(fila);
+                    });
+                }
+            } catch (err) {
+                console.error('Error al parsear tallas:', err);
+            }
+        }
+        
+        // Cargar imágenes de la prenda seleccionada
+        if (imagenesJson) {
+            try {
+                const imagenes = JSON.parse(imagenesJson);
+                if (Array.isArray(imagenes) && imagenes.length > 0) {
+                    const previewContainer = fila.querySelector(`.imagenes-preview-paso3-${idUnico}`);
+                    if (previewContainer) {
+                        // Guardar imágenes del PASO 2 sin limpiar el contenedor
+                        imagenesPaso2 = imagenes.slice(0, 3);
+                        
+                        // IMPORTANTE: Guardar imagenesPaso2 en la fila para que se extraiga al guardar
+                        fila.imagenesPaso2 = imagenesPaso2;
+                        
+                        // Actualizar previsualizaciones (mostrará PASO 2 + las nuevas agregadas)
+                        actualizarPrevisualizaciones();
+                    }
+                }
+            } catch (err) {
+                console.error('Error al parsear imágenes:', err);
+            }
+        }
+    });
+    
+    btnAgregarUbicacion.addEventListener('click', (e) => {
+        e.preventDefault();
+        const ubicacion = inputUbicacion.value.trim().toUpperCase();
+        if (ubicacion && !ubicacionesAgregadas.includes(ubicacion)) {
+            ubicacionesAgregadas.push(ubicacion);
+            renderizarUbicaciones();
+            inputUbicacion.value = '';
+            inputUbicacion.focus();
+        }
+    });
+    
+    inputUbicacion.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            btnAgregarUbicacion.click();
+        }
+    });
+    
+    // Setup Drag and Drop para imágenes
+    const dropzone = fila.querySelector(`.dropzone-paso3-${idUnico}`);
+    const inputArchivos = fila.querySelector(`.imagenes-input-paso3-${idUnico}`);
+    const previewContainer = fila.querySelector(`.imagenes-preview-paso3-${idUnico}`);
+    let imagenesAgregadas = [];
+    
+    function actualizarPrevisualizaciones() {
+        previewContainer.innerHTML = '';
+        
+        // Primero mostrar imágenes del PASO 2
+        imagenesPaso2.forEach((imagenSrc, imgIdx) => {
+            const divPreview = document.createElement('div');
+            divPreview.style.cssText = 'position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer; border: 2px solid #10b981;';
+            divPreview.setAttribute('data-tipo', 'paso2');
+            divPreview.innerHTML = `
+                <img src="${imagenSrc}" style="width: 100%; height: 100%; object-fit: cover;">
+                <span style="position: absolute; top: 2px; right: 2px; background: #10b981; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">${imgIdx + 1}</span>
+                <span style="position: absolute; bottom: 2px; left: 2px; background: rgba(0,0,0,0.7); color: white; border-radius: 3px; padding: 2px 4px; font-size: 9px; font-weight: bold;">PASO 2</span>
+                <button type="button" onclick="event.stopPropagation(); this.closest('[style*=\"position: relative\"]').remove();" style="position: absolute; top: 2px; left: 2px; background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;">✕</button>
+            `;
+            divPreview.addEventListener('mouseenter', function() {
+                this.querySelector('button').style.opacity = '1';
+            });
+            divPreview.addEventListener('mouseleave', function() {
+                this.querySelector('button').style.opacity = '0';
+            });
+            previewContainer.appendChild(divPreview);
+        });
+        
+        // Luego mostrar imágenes nuevas
+        imagenesAgregadas.forEach((archivo, imgIdx) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.createElement('div');
+                preview.style.cssText = 'position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; border: 2px solid #3b82f6;';
+                preview.setAttribute('data-tipo', 'nueva');
+                
+                const btnEliminar = document.createElement('button');
+                btnEliminar.type = 'button';
+                btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: #f44336; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;';
+                btnEliminar.textContent = '×';
+                btnEliminar.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    imagenesAgregadas.splice(imgIdx, 1);
+                    actualizarPrevisualizaciones();
+                });
+                
+                const numImg = document.createElement('span');
+                numImg.style.cssText = 'position: absolute; top: 2px; right: 2px; background: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;';
+                numImg.textContent = imagenesPaso2.length + imgIdx + 1;
+                
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                
+                preview.appendChild(img);
+                preview.appendChild(numImg);
+                preview.appendChild(btnEliminar);
+                previewContainer.appendChild(preview);
+                
+                preview.addEventListener('mouseenter', function() {
+                    this.querySelector('button').style.opacity = '1';
+                    this.querySelector('span').style.opacity = '0';
+                });
+                preview.addEventListener('mouseleave', function() {
+                    this.querySelector('button').style.opacity = '0';
+                    this.querySelector('span').style.opacity = '1';
+                });
+            };
+            reader.readAsDataURL(archivo);
+        });
+    }
+    
+    dropzone.addEventListener('click', () => inputArchivos.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#e8f1ff';
+        dropzone.style.borderColor = '#1e40af';
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+        agregarImagenesDelDropzonePaso3(Array.from(e.dataTransfer.files));
+    });
+    
+    inputArchivos.addEventListener('change', (e) => {
+        agregarImagenesDelDropzonePaso3(Array.from(e.target.files));
+    });
+    
+    function agregarImagenesDelDropzonePaso3(archivos) {
+        const imagenes = archivos.filter(f => f.type.startsWith('image/'));
+        
+        if (imagenes.length === 0) {
+            return;
+        }
+        
+        // Calcular espacio disponible: máximo 3 imágenes totales (PASO 2 + nuevas)
+        const espacioDisponible = 3 - imagenesPaso2.length;
+        
+        if (espacioDisponible <= 0) {
+            Swal.fire('⚠️ Límite alcanzado', `Ya hay ${imagenesPaso2.length} imagen(es) del PASO 2. Máximo 3 imágenes total.`, 'warning');
+            return;
+        }
+        
+        for (const archivo of imagenes) {
+            if (imagenesAgregadas.length >= espacioDisponible) {
+                break;
+            }
+            imagenesAgregadas.push(archivo);
+        }
+        
+        actualizarPrevisualizaciones();
+    }
+    
+    // Guardar referencias para extracción posterior
+    fila.ubicacionesAgregadas = ubicacionesAgregadas;
+    fila.imagenesAgregadas = imagenesAgregadas;
+    // fila.imagenesPaso2 se asigna dinámicamente cuando se selecciona una prenda en el change event
+    fila.nombrePrendaSelect = selectPrenda;
+}
+
+function agregarTallaCantidadPaso3(button) {
+    const container = button.closest('.prenda-item-paso3');
+    const tallasContainer = container.querySelector('.tallas-container-paso3');
+    const numeroFila = tallasContainer.children.length + 1;
+    
+    const fila = document.createElement('div');
+    fila.className = 'talla-cantidad-paso3';
+    fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; align-items: center;';
+    fila.innerHTML = `
+        <input type="text" class="talla-input-paso3" placeholder="Talla (XS, S, M, L, XL...)" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; text-transform: uppercase;">
+        <input type="number" class="cantidad-input-paso3" placeholder="Cantidad" min="1" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
+        <button type="button" onclick="this.closest('.talla-cantidad-paso3').remove()" style="background: none; color: #999; border: 1px solid #ddd; padding: 4px; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">✕</button>
+    `;
+    
+    tallasContainer.appendChild(fila);
+}
+
+function actualizarNumeracionPrendasPaso3() {
+    const prendas = document.querySelectorAll('.prenda-item-paso3');
+    prendas.forEach((prenda, idx) => {
+        const numeroPrendaSpan = prenda.querySelector('.numero-prenda');
+        if (numeroPrendaSpan) {
+            numeroPrendaSpan.textContent = idx + 1;
+        }
+    });
+}
+
+function guardarTecnicaPaso3() {
+    const tecnicaSeleccionada = window.tecnicaSeleccionadaPaso3;
+    const listaPrendas = document.getElementById('listaPrendasPaso3');
+    
+    if (!listaPrendas || listaPrendas.children.length === 0) {
+        Swal.fire('⚠️ Error', 'Debes agregar al menos una prenda', 'warning');
+        return;
+    }
+    
+    // Extraer todas las prendas del modal
+    const prendas = [];
+    const prendasItems = listaPrendas.querySelectorAll('.prenda-item-paso3');
+    
+    prendasItems.forEach((item, idx) => {
+        // Obtener nombre del select en lugar del input
+        const selectPrenda = item.querySelector('.select-prenda-paso2');
+        const nombreBase = selectPrenda?.value.trim().toUpperCase() || '';
+        const selectedOption = selectPrenda?.options[selectPrenda.selectedIndex];
+        
+        // Obtener género y colores del data attribute
+        const genero = selectedOption?.getAttribute('data-genero') || '';
+        const coloresJson = selectedOption?.getAttribute('data-colores') || '[]';
+        
+        let colores = [];
+        try {
+            colores = JSON.parse(coloresJson);
+        } catch (e) {
+            colores = [];
+        }
+        
+        // Construir nombre completo: Nombre - Género - Colores
+        let nombre = nombreBase;
+        if (genero) {
+            nombre += ' - ' + genero;
+        }
+        if (colores && colores.length > 0) {
+            nombre += ' - Color: ' + colores.join(' - ');
+        }
+        
+        const observaciones = item.querySelector('.observaciones-paso3')?.value.trim() || '';
+        
+        // Obtener ubicaciones
+        const ubicacionesTags = item.querySelectorAll('.ubicaciones-lista-paso3 span');
+        const ubicaciones = Array.from(ubicacionesTags).map(tag => tag.textContent.trim().replace('×', '').trim());
+        
+        // Obtener imágenes (combinar PASO 2 + nuevas agregadas)
+        const imagenesPaso2 = item.imagenesPaso2 || [];
+        const imagenesAgregadas = item.imagenesAgregadas || [];
+        const imagenesFiles = [...imagenesPaso2, ...imagenesAgregadas];
+        
+        // Obtener tallas y cantidades
+        const tallasCantidad = [];
+        const tallasFilas = item.querySelectorAll('.talla-cantidad-paso3');
+        tallasFilas.forEach(fila => {
+            const talla = fila.querySelector('.talla-input-paso3')?.value.trim() || '';
+            const cantidad = parseInt(fila.querySelector('.cantidad-input-paso3')?.value) || 0;
+            if (talla && cantidad > 0) {
+                tallasCantidad.push({ talla, cantidad });
+            }
+        });
+        
+        if (!nombreBase) {
+            Swal.fire('⚠️ Error', `Debes seleccionar una prenda en la prenda ${idx + 1}`, 'warning');
+            return;
+        }
+        
+        if (ubicaciones.length === 0) {
+            Swal.fire('⚠️ Error', `La prenda "${nombre}" debe tener al menos una ubicación`, 'warning');
+            return;
+        }
+        
+        prendas.push({
+            nombre,
+            ubicaciones,
+            observaciones,
+            tallasCantidad,
+            imagenes_files: imagenesFiles,
+            tecnica: tecnicaSeleccionada
+        });
+    });
+    
+    if (prendas.length > 0) {
+        // Agregar a tecnicas agregadas
+        if (!window.tecnicasAgregadasPaso3) {
+            window.tecnicasAgregadasPaso3 = [];
+        }
+        
+        const tecnicaExistente = window.tecnicasAgregadasPaso3.find(t => t.tipo === tecnicaSeleccionada.nombre);
+        if (tecnicaExistente) {
+            tecnicaExistente.prendas = prendas;
+        } else {
+            window.tecnicasAgregadasPaso3.push({
+                tipo: tecnicaSeleccionada.nombre,
+                prendas: prendas,
+                observacionesGenerales: ''
+            });
+        }
+        
+        renderizarTecnicasAgregadasPaso3();
+        cerrarModalAgregarTecnicaPaso3();
+    }
+}
+
+function agregarObservacionPaso3() {
+    const contenedor = document.getElementById('observaciones_lista_paso3');
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
+    fila.innerHTML = `
+        <input type="text" name="observaciones_paso3[]" class="input-large" placeholder="Escribe una observación..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+        <button type="button" onclick="this.closest('div').remove()" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
+    `;
+    contenedor.appendChild(fila);
+}
+
+// =========================================================
+// 8. INICIALIZACIÓN
+// =========================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarTiposDisponiblesPaso3();
+    console.log('✅ PASO 3 COTIZACIÓN COMBINADA - Inicializado');
+});
