@@ -266,6 +266,7 @@ final class CotizacionesViewController extends Controller
                                 'tipo_broche_id' => $variante->tipo_broche_id ?? null,
                                 'tiene_reflectivo' => $variante->tiene_reflectivo ?? null,
                                 'descripcion_adicional' => $variante->descripcion_adicional ?? null,
+                                'telas_multiples' => $variante->telas_multiples ? json_decode($variante->telas_multiples, true) : null,
                             ];
                         })->toArray() : [],
                     ];

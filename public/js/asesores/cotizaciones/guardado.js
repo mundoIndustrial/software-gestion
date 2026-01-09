@@ -276,10 +276,10 @@ async function guardarCotizacion() {
                 
                 let telasYaProcesadas = false;
                 
-                // OPCIÓN 1: Procesar telas desde datos.productos[index].telas (PRIMERO)
+                // OPCIÓN 1: Procesar telas desde datos.productos[index].telas (PRIMERO - PREFERIDA)
+                // Esta opción tiene prioridad porque contiene la estructura consistente
                 if (datos.productos && datos.productos[index] && datos.productos[index].telas && datos.productos[index].telas.length > 0) {
                     console.log(`🧵 Opción 1: Procesando telas desde datos.productos[${index}].telas:`, datos.productos[index].telas.length);
-                    console.log(`   Telas data:`, datos.productos[index].telas);
                     const telasDelProducto = datos.productos[index].telas;
                     const telasPorIndice = {};
                     
@@ -290,6 +290,7 @@ async function guardarCotizacion() {
                         }
                         if (tela.file instanceof File) {
                             telasPorIndice[telaIdx].push(tela.file);
+                            console.log(`✅ Foto de tela agregada: tela[${telaIdx}] = ${tela.file.name}`);
                         }
                     });
                     
@@ -300,14 +301,17 @@ async function guardarCotizacion() {
                         });
                     });
                     telasYaProcesadas = true;
+                    console.log('✅ Opción 1 completada para prenda ' + index);
+                } else {
+                    console.log('⚠️ Opción 1: No hay telas en datos.productos[' + index + '].telas');
                 }
                 
-                // OPCIÓN 2: Buscar telas en window.telasSeleccionadas (FALLBACK)
+                // OPCIÓN 2: Buscar telas en window.telasSeleccionadas (FALLBACK SOLO SI OPCIÓN 1 NO FUNCIONÓ)
                 if (!telasYaProcesadas) {
                     const prendaCard = document.querySelectorAll('.producto-card')[index];
                     if (prendaCard) {
                         const productoId = prendaCard.dataset.productoId;
-                        console.log(`🧵 Opción 2: Producto ID: ${productoId}`);
+                        console.log(`🧵 Opción 2: Producto ID: ${productoId} - FALLBACK porque Opción 1 no encontró datos`);
                         
                         if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
                             const telasObj = window.telasSeleccionadas[productoId];
@@ -323,16 +327,17 @@ async function guardarCotizacion() {
                                     fotosDelaTela.forEach((foto, fotoIdx) => {
                                         if (foto instanceof File) {
                                             formData.append(`prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`, foto);
-                                            console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada a FormData: ${foto.name}`);
+                                            console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada a FormData (fallback): ${foto.name}`);
                                         } else {
-                                            console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object:`, foto);
+                                            console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object (fallback):`, foto);
                                         }
                                     });
                                 }
                             }
                             telasYaProcesadas = true;
+                            console.log('✅ Opción 2 (fallback) completada para prenda ' + index);
                         } else {
-                            console.log(`⚠️ No hay telas en window.telasSeleccionadas para ${productoId}`);
+                            console.log(`⚠️ Opción 2: No hay telas en window.telasSeleccionadas para ${productoId}`);
                         }
                     }
                 }
@@ -341,7 +346,7 @@ async function guardarCotizacion() {
                 if (!telasYaProcesadas && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                     const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
                     if (telasDeEstaPrenda.length > 0) {
-                        console.log(`🧵 Opción 3: Usando fallback: imagenesEnMemoria.telaConIndice`);
+                        console.log(`🧵 Opción 3: Usando fallback telaConIndice (última opción)`);
                         const telasPorIndice = {};
                         telasDeEstaPrenda.forEach(item => {
                             const telaIdx = item.telaIndex || 0;
@@ -359,14 +364,20 @@ async function guardarCotizacion() {
                             const telaFotos = telasPorIndice[telaIdx];
                             telaFotos.nuevas.forEach((foto) => {
                                 formData.append(`prendas[${index}][telas][${telaIdx}][fotos][0]`, foto);
-                                console.log(`✅ Tela (nueva) [${index}][${telaIdx}]: ${foto.name}`);
+                                console.log(`✅ Tela (nueva) [${index}][${telaIdx}] (fallback): ${foto.name}`);
                             });
                             if (telaFotos.existentes.length > 0) {
                                 formData.append(`prendas[${index}][telas][${telaIdx}][fotos_existentes]`, JSON.stringify(telaFotos.existentes));
-                                console.log(`✅ IDs de tela existentes [${telaIdx}]: [${telaFotos.existentes.join(',')}]`);
+                                console.log(`✅ IDs de tela existentes [${telaIdx}] (fallback): [${telaFotos.existentes.join(',')}]`);
                             }
                         });
+                        telasYaProcesadas = true;
+                        console.log('✅ Opción 3 (fallback último) completada para prenda ' + index);
                     }
+                }
+                
+                if (!telasYaProcesadas) {
+                    console.log('⚠️ ADVERTENCIA: No se encontraron telas para prenda ' + index + ' en ninguna opción');
                 }
             });
         }
@@ -1047,6 +1058,8 @@ async function procederEnviarCotizacion() {
                 // ✅ TELAS (File objects desde window.telasSeleccionadas)
                 console.log(`🧵 Procesando telas para prenda ${index}...`);
                 
+                let telasEnvioYaProcesadas = false;  // ✅ FLAG para evitar duplicación en ENVÍO
+                
                 // Obtener el producto ID de esta prenda
                 const prendaCard = document.querySelectorAll('.producto-card')[index];
                 if (prendaCard) {
@@ -1086,13 +1099,15 @@ async function procederEnviarCotizacion() {
                                 });
                             }
                         }
+                        telasEnvioYaProcesadas = true;  // ✅ Marcar que ya se procesaron las telas
+                        console.log('✅ Telas procesadas desde telasSeleccionadas - no procesar fallback');
                     } else {
                         console.log(`⚠️ No hay telas en window.telasSeleccionadas para ${productoId}`);
                     }
                 }
                 
-                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice - EN ENVÍO: SIEMPRE ENVIAR TODAS
-                if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
+                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice - SOLO SI NO SE PROCESARON ARRIBA
+                if (!telasEnvioYaProcesadas && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                     const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
                     if (telasDeEstaPrenda.length > 0) {
                         console.log(`🧵 Usando fallback: imagenesEnMemoria.telaConIndice con ${telasDeEstaPrenda.length} telas`);
@@ -1117,11 +1132,15 @@ async function procederEnviarCotizacion() {
                         Object.keys(telasPorIndice).forEach(telaIdx => {
                             const telaFotos = telasPorIndice[telaIdx];
                             
-                            // Fotos nuevas
-                            telaFotos.nuevas.forEach((foto) => {
-                                formData.append(`prendas[${index}][telas][${telaIdx}][fotos][0]`, foto);
-                                console.log(`✅ Tela (nueva) agregada en ENVÍO [${index}][${telaIdx}]: ${foto.name}`);
-                            });
+                            // Fotos nuevas - SOLO SI NO SE HAN GUARDADO (es CREATE, no UPDATE)
+                            if (!window.cotizacionIdActual) {
+                                telaFotos.nuevas.forEach((foto) => {
+                                    formData.append(`prendas[${index}][telas][${telaIdx}][fotos][0]`, foto);
+                                    console.log(`✅ Tela (nueva) agregada en ENVÍO [${index}][${telaIdx}]: ${foto.name}`);
+                                });
+                            } else {
+                                console.log(`⏭️ UPDATE detectado - NO enviando nuevas fotos de tela [${index}][${telaIdx}] para evitar duplicados`);
+                            }
                             
                             // IDs de fotos existentes - SOLO EN CREAR, NO EN UPDATE
                             // Si es UPDATE (cotizacion_id existe), no enviar IDs de fotos existentes
@@ -1133,7 +1152,13 @@ async function procederEnviarCotizacion() {
                                 console.log(`⏭️ UPDATE detectado - NO enviando IDs de fotos de tela existentes [${index}][${telaIdx}] para evitar duplicados`);
                             }
                         });
+                        telasEnvioYaProcesadas = true;  // ✅ Marcar que ya se procesaron las telas
+                        console.log('✅ Telas procesadas desde imagenesEnMemoria (fallback) - no procesar más');
                     }
+                }
+                
+                if (!telasEnvioYaProcesadas) {
+                    console.log(`⚠️ ADVERTENCIA: No se encontraron telas para prenda ${index} en ENVÍO`);
                 }
             });
         }

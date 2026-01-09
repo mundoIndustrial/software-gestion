@@ -592,8 +592,8 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr style="border-bottom: 1px solid #ddd;">
+                            <tbody class="telas-tbody">
+                                <tr style="border-bottom: 1px solid #ddd;" class="fila-tela" data-tela-index="0">
                                     <td style="padding: 6px 8px; border-right: 1px solid #ddd;">
                                         <div style="position: relative;">
                                             <input type="text" name="productos_prenda[][variantes][color]" class="color-input" placeholder="Buscar o crear color..." required style="width: 100%; padding: 0.4rem; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.75rem;">

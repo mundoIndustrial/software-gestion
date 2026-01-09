@@ -165,6 +165,16 @@ class CotizacionPrendaService
                     $variantes = json_decode($variantes, true) ?? [];
                 }
                 
+                // ✅ DEBUG: Verificar datos de variantes recibidas
+                Log::info("📋 DEBUG - Variantes recibidas para producto", [
+                    'producto_nombre' => $nombre,
+                    'variantes_keys' => array_keys($variantes),
+                    'telas_multiples_presente' => isset($variantes['telas_multiples']),
+                    'telas_multiples_value' => $variantes['telas_multiples'] ?? 'NO PRESENTE',
+                    'color_presente' => isset($variantes['color']),
+                    'color_value' => $variantes['color'] ?? 'NO PRESENTE',
+                ]);
+                
                 // Nota sobre genero_id:
                 // - null = Aplica a AMBOS géneros (Dama y Caballero)
                 // - 1 = Solo Dama
@@ -177,7 +187,9 @@ class CotizacionPrendaService
                     isset($variantes['tipo_broche_id']) || 
                     isset($variantes['tipo_manga_id']) ||
                     isset($variantes['tiene_bolsillos']) ||
-                    isset($variantes['tiene_reflectivo'])
+                    isset($variantes['tiene_reflectivo']) ||
+                    isset($variantes['color']) ||
+                    isset($variantes['telas_multiples']) // ✅ AGREGADO: incluir telas_multiples
                 );
                 
                 if ($tieneVariantes) {
@@ -188,13 +200,20 @@ class CotizacionPrendaService
                     }
                     
                     // Extraer color y referencia de la primera tela (si existe)
-                    $color = $variantes['color'] ?? null;
+                    // ✅ PRIORIDAD: telas_multiples > color directo
+                    $color = null;
                     $referencia = null;
-                    if (!$color && !empty($telasMultiples) && is_array($telasMultiples)) {
-                        // Si no hay color directo, extraer de telas_multiples
+                    
+                    if (!empty($telasMultiples) && is_array($telasMultiples)) {
+                        // Preferir datos de telas_multiples
                         $primeraTela = $telasMultiples[0] ?? [];
                         $color = $primeraTela['color'] ?? null;
                         $referencia = $primeraTela['referencia'] ?? null;
+                    }
+                    
+                    // Fallback: si no hay color en telas_multiples, usar color directo
+                    if (!$color) {
+                        $color = $variantes['color'] ?? null;
                     }
                     
                     // Convertir tipo_manga_id a número si es string
@@ -246,7 +265,6 @@ class CotizacionPrendaService
                             'telas_multiples' => !empty($telasMultiples) ? json_encode($telasMultiples) : null,
                             'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
                             'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? null,
-                            'prenda_bodega' => ($variantes['prenda_bodega'] === true || $variantes['prenda_bodega'] === 'true' || $variantes['prenda_bodega'] === '1' || $variantes['prenda_bodega'] === 1) ? true : false,
                         ]);
                         Log::info("✅ Variante guardada", [
                             'variante_id' => $variante->id,

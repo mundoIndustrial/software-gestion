@@ -106,8 +106,19 @@ final class CotizacionController extends Controller
 
             // Agregar prendas con sus tallas formateadas
             $data['prendas'] = $cotizacion->prendas->map(function ($prenda) {
-                // Obtener la variante (debería haber una por prenda)
-                $variante = $prenda->variantes->first();
+                // Obtener todas las variantes
+                $variantes = $prenda->variantes->map(function ($variante) {
+                    return [
+                        'id' => $variante->id,
+                        'color' => $variante->color ?? null,
+                        'tela' => $variante->tela ?? null,
+                        'referencia' => $variante->referencia ?? null,
+                        'manga' => $variante->manga?->nombre ?? null,
+                        'broche' => $variante->broche?->nombre ?? null,
+                        'tiene_bolsillos' => $variante->tiene_bolsillos ?? false,
+                        'telas_multiples' => $variante->telas_multiples ? json_decode($variante->telas_multiples, true) : null,
+                    ];
+                })->toArray();
                 
                 return [
                     'id' => $prenda->id,
@@ -115,13 +126,7 @@ final class CotizacionController extends Controller
                     'descripcion' => $prenda->generarDescripcionDetallada(),
                     'tallas' => $prenda->tallas->pluck('talla')->toArray(),
                     'fotos' => $prenda->fotos->pluck('url')->toArray(),
-                    'variantes' => $variante ? [
-                        'color' => $variante->color ?? null,
-                        'tela' => $prenda->telas->first()?->nombre_tela ?? null,
-                        'manga' => $variante->manga?->nombre ?? null,
-                        'broche' => $variante->broche?->nombre ?? null,
-                        'tiene_bolsillos' => $variante->tiene_bolsillos ?? false,
-                    ] : []
+                    'variantes' => $variantes
                 ];
             })->toArray();
 
