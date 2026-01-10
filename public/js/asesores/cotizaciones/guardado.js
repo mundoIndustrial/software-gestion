@@ -1055,111 +1055,12 @@ async function procederEnviarCotizacion() {
                     }
                 }
                 
-                // ✅ TELAS (File objects desde window.telasSeleccionadas)
-                console.log(`🧵 Procesando telas para prenda ${index}...`);
-                
-                let telasEnvioYaProcesadas = false;  // ✅ FLAG para evitar duplicación en ENVÍO
-                
-                // Obtener el producto ID de esta prenda
-                const prendaCard = document.querySelectorAll('.producto-card')[index];
-                if (prendaCard) {
-                    const productoId = prendaCard.dataset.productoId;
-                    console.log(`🧵 Producto ID: ${productoId}`);
-                    
-                    // Buscar telas en window.telasSeleccionadas
-                    if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
-                        const telasObj = window.telasSeleccionadas[productoId];
-                        console.log(`🧵 telasSeleccionadas encontrado para ${productoId}:`, telasObj);
-                        
-                        // Iterar sobre cada tela (los índices son las claves del objeto)
-                        for (let telaIdx in telasObj) {
-                            if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
-                                const fotosDelaTela = telasObj[telaIdx];
-                                console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
-                                
-                                // Agregar cada foto de esta tela al FormData
-                                fotosDelaTela.forEach((foto, fotoIdx) => {
-                                    console.log(`🔍 DEBUG Tela ${telaIdx} Foto ${fotoIdx + 1}:`, {
-                                        esFile: foto instanceof File,
-                                        tipo: typeof foto,
-                                        constructor: foto?.constructor?.name,
-                                        keys: Object.keys(foto || {}),
-                                        foto: foto
-                                    });
-                                    
-                                    if (foto instanceof File) {
-                                        // ✅ CORRECCIÓN: Usar prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]
-                                        // El backend espera este formato exacto para guardar en prenda_tela_fotos_cot
-                                        formData.append(`prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`, foto);
-                                        console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada a FormData: ${foto.name}`);
-                                        console.log(`   → Key usado: prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`);
-                                    } else {
-                                        console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object:`, foto);
-                                    }
-                                });
-                            }
-                        }
-                        telasEnvioYaProcesadas = true;  // ✅ Marcar que ya se procesaron las telas
-                        console.log('✅ Telas procesadas desde telasSeleccionadas - no procesar fallback');
-                    } else {
-                        console.log(`⚠️ No hay telas en window.telasSeleccionadas para ${productoId}`);
-                    }
-                }
-                
-                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice - SOLO SI NO SE PROCESARON ARRIBA
-                if (!telasEnvioYaProcesadas && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
-                    const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
-                    if (telasDeEstaPrenda.length > 0) {
-                        console.log(`🧵 Usando fallback: imagenesEnMemoria.telaConIndice con ${telasDeEstaPrenda.length} telas`);
-                        
-                        // Agrupar por telaIndex - SEPARAR NUEVAS DE EXISTENTES
-                        const telasPorIndice = {};
-                        telasDeEstaPrenda.forEach(item => {
-                            const telaIdx = item.telaIndex || 0;
-                            if (!telasPorIndice[telaIdx]) {
-                                telasPorIndice[telaIdx] = { nuevas: [], existentes: [] };
-                            }
-                            
-                            if (item.file instanceof File) {
-                                telasPorIndice[telaIdx].nuevas.push(item.file);
-                                console.log(`✅ Tela ${telaIdx}: foto NUEVA agregada (File)`);
-                            } else if (item.fotoId && typeof item.file === 'string') {
-                                telasPorIndice[telaIdx].existentes.push(item.fotoId);
-                            }
-                        });
-                        
-                        // Enviar fotos por telaIndex
-                        Object.keys(telasPorIndice).forEach(telaIdx => {
-                            const telaFotos = telasPorIndice[telaIdx];
-                            
-                            // Fotos nuevas - SOLO SI NO SE HAN GUARDADO (es CREATE, no UPDATE)
-                            if (!window.cotizacionIdActual) {
-                                telaFotos.nuevas.forEach((foto) => {
-                                    formData.append(`prendas[${index}][telas][${telaIdx}][fotos][0]`, foto);
-                                    console.log(`✅ Tela (nueva) agregada en ENVÍO [${index}][${telaIdx}]: ${foto.name}`);
-                                });
-                            } else {
-                                console.log(`⏭️ UPDATE detectado - NO enviando nuevas fotos de tela [${index}][${telaIdx}] para evitar duplicados`);
-                            }
-                            
-                            // IDs de fotos existentes - SOLO EN CREAR, NO EN UPDATE
-                            // Si es UPDATE (cotizacion_id existe), no enviar IDs de fotos existentes
-                            // porque ya existen en la prenda y crearían duplicados
-                            if (telaFotos.existentes.length > 0 && !window.cotizacionIdActual) {
-                                formData.append(`prendas[${index}][telas][${telaIdx}][fotos_existentes]`, JSON.stringify(telaFotos.existentes));
-                                console.log(`✅ IDs de fotos de tela existentes [${index}][${telaIdx}]: [${telaFotos.existentes.join(',')}]`);
-                            } else if (telaFotos.existentes.length > 0 && window.cotizacionIdActual) {
-                                console.log(`⏭️ UPDATE detectado - NO enviando IDs de fotos de tela existentes [${index}][${telaIdx}] para evitar duplicados`);
-                            }
-                        });
-                        telasEnvioYaProcesadas = true;  // ✅ Marcar que ya se procesaron las telas
-                        console.log('✅ Telas procesadas desde imagenesEnMemoria (fallback) - no procesar más');
-                    }
-                }
-                
-                if (!telasEnvioYaProcesadas) {
-                    console.log(`⚠️ ADVERTENCIA: No se encontraron telas para prenda ${index} en ENVÍO`);
-                }
+                // ✅ 🔒 TELAS YA FUERON GUARDADAS EN guardarCotizacion()
+                // Las telas se procesaron y guardaron en la BD durante guardarCotizacion()
+                // NO RE-PROCESAR aquí para evitar DUPLICACIÓN
+                console.log(`🧵 SKIP: Telas para prenda ${index} ya fueron guardadas en guardarCotizacion()`);
+                console.log(`   → Las telas ya están en prenda_tela_fotos_cot, no re-procesar`);
+                console.log(`   → Esto previene la duplicación de registros en BD`);
             });
         }
         
