@@ -781,6 +781,26 @@ Route::get('/storage-serve/{path}', function($path) {
     ->where('path', '.*')
     ->name('storage.serve');
 // ========================================
+// RUTAS DEL MÓDULO ASISTENCIA PERSONAL
+// ========================================
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/asistencia-personal', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'index'])
+        ->name('asistencia-personal.index');
+    Route::get('/asistencia-personal/crear', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'create'])
+        ->name('asistencia-personal.create');
+    Route::post('/asistencia-personal', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'store'])
+        ->name('asistencia-personal.store');
+    Route::get('/asistencia-personal/{id}', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'show'])
+        ->name('asistencia-personal.show');
+    Route::get('/asistencia-personal/{id}/editar', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'edit'])
+        ->name('asistencia-personal.edit');
+    Route::patch('/asistencia-personal/{id}', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'update'])
+        ->name('asistencia-personal.update');
+    Route::delete('/asistencia-personal/{id}', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'destroy'])
+        ->name('asistencia-personal.destroy');
+});
+
+// ========================================
 // API PÚBLICA - DATOS DE PEDIDOS (SIN AUTH)
 // ========================================
 Route::prefix('api')->group(function () {

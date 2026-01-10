@@ -100,6 +100,11 @@ class AuthenticatedSessionController extends Controller
             if ($roleName === 'costurero') {
                 return redirect(route('operario.dashboard', absolute: false));
             }
+
+            // Supervisor Personal - Gestión de asistencia
+            if ($roleName === 'supervisor-personal') {
+                return redirect(route('asistencia-personal.index', absolute: false));
+            }
         }
 
         // Admin y otros - Dashboard principal
