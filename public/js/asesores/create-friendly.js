@@ -1,12 +1,13 @@
 let productosCount = 0;
 
-// Agregar prenda por defecto al cargar el formulario
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('productosContainer');
-    if (container && container.children.length === 0) {
-        agregarProductoFriendly();
-    }
-});
+// ✅ CORREGIDO: NO agregar prenda por defecto - El usuario debe agregarla explícitamente
+// Esto evitaba la duplicación de prendas cuando se guardaba sin llenar la prenda automática
+// document.addEventListener('DOMContentLoaded', function() {
+//     const container = document.getElementById('productosContainer');
+//     if (container && container.children.length === 0) {
+//         agregarProductoFriendly();
+//     }
+// });
 
 // Ir al paso especificado (sin validación - libre navegación)
 function irAlPaso(paso) {

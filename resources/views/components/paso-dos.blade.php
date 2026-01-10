@@ -51,12 +51,29 @@
                                             const tallaBtn = ultimoProducto.querySelector(`.talla-btn[data-talla="${talla}"]`);
                                             if (tallaBtn) tallaBtn.click();
                                         });
+                                        
+                                        // IMPORTANTE: Llamar a agregarTallasSeleccionadas para mover tallas a .tallas-agregadas
+                                        // y llenar el campo hidden correctamente
+                                        const btnAgregarTallas = ultimoProducto.querySelector('button[onclick*="agregarTallasSeleccionadas"]');
+                                        if (btnAgregarTallas) {
+                                            setTimeout(() => {
+                                                btnAgregarTallas.click();
+                                            }, 100);
+                                        }
                                     }
                                     
                                     console.log('✅ Producto cargado:', producto.nombre_producto);
                                 }
                             }, 500);
                         });
+                    });
+                </script>
+            @else
+                <!-- Agregar prenda 1 por defecto cuando no es edición -->
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        console.log('📦 Agregando prenda 1 por defecto');
+                        agregarProductoFriendly();
                     });
                 </script>
             @endif

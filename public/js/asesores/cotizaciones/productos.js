@@ -113,13 +113,14 @@ function renumerarPrendas() {
     productosCount = prendas.length;
 }
 
-// Agregar prenda por defecto al cargar
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('productosContainer');
-    if (container && container.children.length === 0) {
-        agregarProductoFriendly();
-    }
-});
+// ✅ CORREGIDO: NO agregar prenda por defecto - El usuario debe agregarla explícitamente
+// Esto evitaba la duplicación de prendas cuando se guardaba sin llenar la prenda automática
+// document.addEventListener('DOMContentLoaded', function() {
+//     const container = document.getElementById('productosContainer');
+//     if (container && container.children.length === 0) {
+//         agregarProductoFriendly();
+//     }
+// });
 
 function toggleProductoBody(btn) {
     const body = btn.closest('.producto-card').querySelector('.producto-body');

@@ -46,6 +46,8 @@ function actualizarSelectTallas(select) {
     const generoSelect = container.querySelector('.talla-genero-select');
     const modoSelect = container.querySelector('.talla-modo-select');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
+    const tallasAgregadas = container.querySelector('.tallas-agregadas');
+    const tallasSection = container.querySelector('.tallas-section');
     const tipo = select.value;
     
     console.log('📋 Tipo seleccionado:', tipo);
@@ -62,24 +64,39 @@ function actualizarSelectTallas(select) {
     botonesDiv.innerHTML = '';
     console.log('✅ botonesDiv limpiado');
     
-    // 2. Ocultar todos los elementos
+    // 2. Limpiar tallas agregadas (NUEVA LÍNEA)
+    tallasAgregadas.querySelectorAll('div').forEach(div => {
+        div.remove();
+    });
+    tallasSection.style.display = 'none';
+    
+    // Actualizar el campo hidden para que esté vacío
+    const tallasHidden = container.querySelector('.tallas-hidden');
+    if (tallasHidden) {
+        tallasHidden.value = '';
+        console.log('✅ Campo hidden limpiado');
+    }
+    
+    console.log('✅ tallasAgregadas limpiadas');
+    
+    // 3. Ocultar todos los elementos
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
     modoSelect.style.display = 'none';
     console.log('✅ tallaBotones, tallaRangoSelectors y modoSelect ocultados');
     
-    // 3. Resetear género
+    // 4. Resetear género
     if (generoSelect) {
         generoSelect.style.display = 'none';
         generoSelect.value = '';  // RESETEAR GÉNERO
         console.log('✅ generoSelect ocultado y reseteado');
     }
     
-    // 4. Resetear modo
+    // 5. Resetear modo
     modoSelect.value = '';
     console.log('✅ modoSelect reseteado');
     
-    // 5. Remover TODOS los event listeners anteriores
+    // 6. Remover TODOS los event listeners anteriores
     if (modoSelect._handlerLetras) {
         modoSelect.removeEventListener('change', modoSelect._handlerLetras);
         modoSelect._handlerLetras = null;
@@ -395,26 +412,34 @@ function agregarTallasRango(btn) {
     
     const tallasRango = tallas.slice(desdeIdx, hastaIdx + 1);
     
+    console.log('📊 agregarTallasRango() - Tallas a agregar:', tallasRango);
+    
+    // LIMPIAR todos los divs previamente agregados
+    tallasAgregadas.querySelectorAll('div').forEach(div => {
+        console.log('🗑️ Removiendo div anterior');
+        div.remove();
+    });
+    
     tallasRango.forEach(talla => {
         const valor = talla;
         
-        const existe = Array.from(tallasAgregadas.querySelectorAll('div')).some(tag =>
-            tag.querySelector('span').textContent === valor
-        );
+        const tag = document.createElement('div');
+        tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+        tag.innerHTML = `
+            <span>${valor}</span>
+            <button type="button" onclick="this.closest('div').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+        `;
         
-        if (!existe) {
-            const tag = document.createElement('div');
-            tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
-            tag.innerHTML = `
-                <span>${valor}</span>
-                <button type="button" onclick="this.closest('div').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
-            `;
-            tallasAgregadas.appendChild(tag);
-        }
+        console.log('✅ Agregando talla al div:', valor);
+        tallasAgregadas.appendChild(tag);
     });
     
     tallasSection.style.display = 'block';
+    
+    const tallasHidden = container.querySelector('.tallas-hidden');
     actualizarTallasHidden(container);
+    
+    console.log('✅ Tallas agregadas desde rango, valor hidden:', tallasHidden.value);
 }
 
 /**
@@ -723,34 +748,42 @@ function agregarTallasSeleccionadas(btn) {
     const botonesActivos = container.querySelectorAll('.talla-btn.activo');
     const tallasAgregadas = container.querySelector('.tallas-agregadas');
     const tallasSection = container.querySelector('.tallas-section');
+    const tallasHidden = container.querySelector('.tallas-hidden');
+    
+    console.log('🔵 agregarTallasSeleccionadas() llamado');
+    console.log('📊 Botones activos encontrados:', botonesActivos.length);
+    console.log('📝 Tallas:', Array.from(botonesActivos).map(b => b.dataset.talla).join(', '));
     
     if (botonesActivos.length === 0) {
         alert('Por favor selecciona al menos una talla');
         return;
     }
     
+    // LIMPIAR todos los divs previamente agregados (pero NO el input hidden)
+    tallasAgregadas.querySelectorAll('div').forEach(div => {
+        console.log('🗑️ Removiendo div anterior');
+        div.remove();
+    });
+    
     botonesActivos.forEach(boton => {
         const talla = boton.dataset.talla;
         
-        const existe = Array.from(tallasAgregadas.querySelectorAll('div')).some(tag =>
-            tag.querySelector('span').textContent === talla
-        );
+        const tag = document.createElement('div');
+        tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+        tag.innerHTML = `
+            <span>${talla}</span>
+            <button type="button" onclick="this.closest('div').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+        `;
         
-        if (!existe) {
-            const tag = document.createElement('div');
-            tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
-            tag.innerHTML = `
-                <span>${talla}</span>
-                <button type="button" onclick="this.closest('div').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
-            `;
-            
-            tallasAgregadas.appendChild(tag);
-        }
+        console.log('✅ Agregando talla al div:', talla);
+        tallasAgregadas.appendChild(tag);
     });
     
     tallasSection.style.display = 'block';
     
     actualizarTallasHidden(container);
+    
+    console.log('✅ Tallas agregadas, valor hidden:', tallasHidden.value);
     
     botonesActivos.forEach(boton => {
         boton.classList.remove('activo');
@@ -782,8 +815,10 @@ function actualizarTallasHidden(container) {
         const span = tag.querySelector('span');
         if (span) {
             tallas.push(span.textContent);
+            console.log('📝 Talla encontrada en div:', span.textContent);
         }
     });
     
     tallasHidden.value = tallas.join(', ');
+    console.log('✅ Campo hidden actualizado con:', tallasHidden.value);
 }
