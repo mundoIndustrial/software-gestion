@@ -1012,8 +1012,60 @@ function agregarFilaPrenda() {
                 </div>
             </div>
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Observaciones</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Observaciones Generales</label>
                 <textarea class="observaciones" rows="2" placeholder="Detalles adicionales (opcional)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.9rem;"></textarea>
+            </div>
+            
+            <!-- TABLA DE VARIACIONES -->
+            <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fafafa; margin-top: 12px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.85rem;">📋 Variaciones de Prenda</label>
+                <table class="variaciones-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="background: #e8f1ff;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333;">Variación</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333;">Opción</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- MANGA -->
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: 600; color: #333;">Manga</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <input type="text" class="variacion-manga" placeholder="Ej: Corta, Larga..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+                            </td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <input type="text" class="observacion-manga" placeholder="Observación..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+                            </td>
+                        </tr>
+                        
+                        <!-- BOLSILLOS -->
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: 600; color: #333;">Bolsillos</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <input type="text" class="variacion-bolsillos" placeholder="Ej: Con bolsillos, Sin..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+                            </td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <input type="text" class="observacion-bolsillos" placeholder="Observación..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+                            </td>
+                        </tr>
+                        
+                        <!-- BROCHE/BOTÓN -->
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: 600; color: #333;">Broche/Botón</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <select class="variacion-broche" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+                                    <option value="">SELECCIONAR</option>
+                                    <option value="BROCHE">BROCHE</option>
+                                    <option value="BOTÓN">BOTÓN</option>
+                                </select>
+                            </td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <input type="text" class="observacion-broche" placeholder="Ej: Metálico, Plástico..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             
             <!-- Imágenes de Prenda (máximo 3) con Drag and Drop -->
@@ -1643,13 +1695,69 @@ function extraerPrendasDelModal() {
             throw new Error('VALIDATION_ERROR');
         }
         
+        // Extraer datos de variaciones
+        const variacionesPrenda = {};
+        
+        console.log('🔍 Extrayendo variaciones de la fila:', fila);
+        
+        // Verificar que la tabla existe
+        const tablaVariaciones = fila.querySelector('.variaciones-table');
+        console.log('🔍 Tabla de variaciones encontrada:', !!tablaVariaciones);
+        
+        // MANGA
+        const mangaInput = fila.querySelector('.variacion-manga');
+        console.log('🔍 Input manga encontrado:', !!mangaInput, 'Valor:', mangaInput?.value);
+        const manga = mangaInput?.value?.trim();
+        const obsMangaInput = fila.querySelector('.observacion-manga');
+        const obsManga = obsMangaInput?.value?.trim();
+        console.log('📝 Manga:', { manga, obsManga });
+        if (manga) {
+            variacionesPrenda.manga = {
+                opcion: manga,
+                observacion: obsManga || null
+            };
+        }
+        
+        // BOLSILLOS
+        const bolsillosInput = fila.querySelector('.variacion-bolsillos');
+        console.log('🔍 Input bolsillos encontrado:', !!bolsillosInput, 'Valor:', bolsillosInput?.value);
+        const bolsillos = bolsillosInput?.value?.trim();
+        const obsBolsillosInput = fila.querySelector('.observacion-bolsillos');
+        const obsBolsillos = obsBolsillosInput?.value?.trim();
+        console.log('📝 Bolsillos:', { bolsillos, obsBolsillos });
+        if (bolsillos) {
+            variacionesPrenda.bolsillos = {
+                opcion: bolsillos,
+                observacion: obsBolsillos || null
+            };
+        }
+        
+        // BROCHE/BOTÓN (es un SELECT)
+        const brocheSelect = fila.querySelector('.variacion-broche');
+        console.log('🔍 Select broche encontrado:', !!brocheSelect, 'Valor:', brocheSelect?.value);
+        const broche = brocheSelect?.value?.trim();
+        const obsBrocheInput = fila.querySelector('.observacion-broche');
+        const obsBroche = obsBrocheInput?.value?.trim();
+        console.log('📝 Broche:', { broche, obsBroche });
+        if (broche && broche !== '') {
+            variacionesPrenda.broche_boton = {
+                opcion: broche,
+                observacion: obsBroche || null
+            };
+        }
+        
+        console.log('✅ Variaciones Prenda Completas:', variacionesPrenda);
+        
         prendas.push({
             nombre_prenda: nombrePrenda,
             observaciones: observaciones,
             ubicaciones: ubicacionesChecked,
             talla_cantidad: tallaCantidad,
-            imagenes_files: imagenesArray  // Array de File objects
+            imagenes_files: imagenesArray,  // Array de File objects
+            variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null  // JSON con variaciones
         });
+        
+        console.log('📦 Prenda agregada con variaciones:', prendas[prendas.length - 1]);
     });
     
     return prendas.length > 0 ? prendas : null;
@@ -1702,12 +1810,14 @@ async function guardarTecnicasEnBD() {
                 observaciones: prenda.observaciones,
                 ubicaciones: prenda.ubicaciones,
                 talla_cantidad: prenda.talla_cantidad,
+                variaciones_prenda: prenda.variaciones_prenda || null,
                 imagenes_data_urls: prenda.imagenes_data_urls || [] // URLs para BD si las hay
             }));
             
             console.log('✓ Prendas a guardar:', prendasSinArchivos.length);
             prendasSinArchivos.forEach((p, idx) => {
                 console.log(`  Prenda ${idx}:`, p.nombre_prenda, '- Ubicaciones:', p.ubicaciones, '- Tallas:', p.talla_cantidad);
+                console.log(`    ✓ variaciones_prenda:`, p.variaciones_prenda);
             });
             
             formData.append('prendas', JSON.stringify(prendasSinArchivos));
@@ -1891,19 +2001,21 @@ function renderizarTecnicasAgregadas() {
                     const divGrid = imgSection.querySelector('div:last-child');
                     if (divGrid) {
                         divGrid.innerHTML = prendasMap[imgData.nombrePrenda].imagenes.map((img, imgIdx) => `
-                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor};">
-                                <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover;" alt="Imagen prenda">
+                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor}; aspect-ratio: 1; width: 100%; max-width: 120px;">
+                                <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;" alt="Imagen prenda">
                                 <div style="
                                     position: absolute;
                                     bottom: 0;
                                     left: 0;
                                     right: 0;
-                                    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                                    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
                                     padding: 0.4rem;
+                                    display: flex;
+                                    align-items: flex-end;
                                 ">
                                     <span style="
                                         color: white;
-                                        font-size: 0.7rem;
+                                        font-size: 0.65rem;
                                         font-weight: 600;
                                         background: ${img.tecnicaColor};
                                         padding: 0.2rem 0.4rem;
@@ -1922,12 +2034,14 @@ function renderizarTecnicasAgregadas() {
         reader.readAsDataURL(imgData.archivo);
     });
     
-    // NUEVO DISEÑO: Contenedor con tarjetas en grid
+    // NUEVO DISEÑO: Contenedor con tarjetas - ANCHO FIJO como en la imagen
     const contenedor = document.createElement('div');
-    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.2rem; margin-bottom: 20px;';
+    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(580px, 1fr)); gap: 1.2rem; margin-bottom: 20px; max-width: 1200px;';
     
     // PASO 2: Renderizar TARJETAS por prenda
+    let prendasContador = 0;
     Object.entries(prendasMap).forEach(([nombrePrenda, datosPrenda]) => {
+        prendasContador++;
         
         // TARJETA DE LA PRENDA
         const tarjeta = document.createElement('div');
@@ -1949,10 +2063,10 @@ function renderizarTecnicasAgregadas() {
             this.style.transform = 'translateY(0)';
         };
         
-        // HEADER CON TÉCNICAS (puedo manipular desde aquí)
-        let headerHTML = '<div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1rem; border-bottom: 1px solid #ddd;">';
-        headerHTML += '<h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem;">Técnica(s)</h4>';
-        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;" class="tecnicas-header">';
+        // HEADER CON TÉCNICAS Y NOMBRE - DISEÑO ACTUALIZADO COMO LA IMAGEN
+        let headerHTML = '<div style="background: linear-gradient(135deg, #0a5ba3 0%, #084b8a 100%); color: white; padding: 1.2rem; border-bottom: 1px solid #ddd;">';
+        headerHTML += '<h4 style="margin: 0 0 0.8rem 0; font-size: 1.1rem; font-weight: 700;">Prenda ' + prendasContador + ': ' + nombrePrenda + '</h4>';
+        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;" class="tecnicas-header">';
         
         datosPrenda.tecnicas.forEach((tecData, idx) => {
             const tecnica = tecData.tecnica;
@@ -1960,10 +2074,10 @@ function renderizarTecnicasAgregadas() {
                 <span style="
                     background: ${tecnica.tipo_logo.color};
                     color: white;
-                    padding: 0.4rem 0.8rem;
-                    border-radius: 4px;
+                    padding: 0.5rem 1rem;
+                    border-radius: 20px;
                     font-weight: 600;
-                    font-size: 0.85rem;
+                    font-size: 0.9rem;
                     display: inline-flex;
                     align-items: center;
                     gap: 0.4rem;
@@ -1976,66 +2090,8 @@ function renderizarTecnicasAgregadas() {
         
         headerHTML += '</div></div>';
         
-        // CUERPO CON CONTENIDO DE LA PRENDA
-        let bodyHTML = '<div style="padding: 1rem;">';
-        
-        // NOMBRE DE PRENDA
-        bodyHTML += `
-            <div style="margin-bottom: 1rem;">
-                <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
-                    ${nombrePrenda}
-                </h5>
-            </div>
-        `;
-        
-        // SECCIÓN DE IMÁGENES CON INDICADOR DE TÉCNICA
-        if (datosPrenda.imagenes && datosPrenda.imagenes.length > 0) {
-            bodyHTML += `
-                <div class="imagenes-section" style="margin-bottom: 1rem;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                        🖼️ Imágenes:
-                    </span>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem;">
-                        ${datosPrenda.imagenes.map((img, imgIdx) => `
-                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor};">
-                                <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover;" alt="Imagen prenda">
-                                <div style="
-                                    position: absolute;
-                                    bottom: 0;
-                                    left: 0;
-                                    right: 0;
-                                    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-                                    padding: 0.4rem;
-                                ">
-                                    <span style="
-                                        color: white;
-                                        font-size: 0.7rem;
-                                        font-weight: 600;
-                                        background: ${img.tecnicaColor};
-                                        padding: 0.2rem 0.4rem;
-                                        border-radius: 2px;
-                                        display: inline-block;
-                                    ">
-                                        ${img.tecnica}
-                                    </span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        } else {
-            // Crear sección vacía pero oculta para poder actualizar después
-            bodyHTML += `
-                <div class="imagenes-section" style="margin-bottom: 1rem; display: none;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                        🖼️ Imágenes:
-                    </span>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem;">
-                    </div>
-                </div>
-            `;
-        }
+        // CUERPO CON CONTENIDO DE LA PRENDA - DISEÑO ACTUALIZADO
+        let bodyHTML = '<div style="padding: 1.5rem;">';
         
         // SECCIÓN DE UBICACIONES (por técnica - SOLO de la prenda actual)
         const ubicacionesPorTecnica = {};
@@ -2056,35 +2112,25 @@ function renderizarTecnicasAgregadas() {
         
         if (Object.keys(ubicacionesPorTecnica).length > 0) {
             bodyHTML += `
-                <div style="margin-bottom: 1rem;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                <div style="margin-bottom: 1.2rem;">
+                    <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
                         📍 Ubicaciones:
-                    </span>
+                    </h6>
             `;
             
             Object.entries(ubicacionesPorTecnica).forEach(([nombreTec, ubicaciones]) => {
                 bodyHTML += `
-                    <div style="margin-bottom: 0.6rem;">
-                        <span style="
-                            font-size: 0.75rem;
-                            font-weight: 600;
-                            color: #475569;
-                            display: block;
-                            margin-bottom: 0.3rem;
-                        ">
-                            ${nombreTec}:
-                        </span>
-                        <div style="padding-left: 0.8rem; border-left: 3px solid #94a3b8;">
-                            ${ubicaciones.map(ub => `
-                                <div style="
-                                    font-size: 0.8rem;
-                                    color: #1e293b;
-                                    margin-bottom: 0.2rem;
-                                ">
-                                    ${ub}
-                                </div>
-                            `).join('')}
-                        </div>
+                    <div style="margin-bottom: 0.8rem; padding-left: 1rem; border-left: 4px solid #3b82f6;">
+                        ${ubicaciones.map(ub => `
+                            <div style="
+                                font-size: 0.9rem;
+                                color: #1e293b;
+                                margin-bottom: 0.3rem;
+                                text-transform: capitalize;
+                            ">
+                                • ${ub}
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             });
@@ -2092,44 +2138,155 @@ function renderizarTecnicasAgregadas() {
             bodyHTML += '</div>';
         }
         
-        // OBSERVACIONES
-        if (datosPrenda.observaciones) {
+        // TALLAS
+        if (datosPrenda.talla_cantidad && datosPrenda.talla_cantidad.length > 0) {
             bodyHTML += `
-                <div style="
-                    background: #fef3c7;
-                    border-left: 3px solid #f59e0b;
-                    padding: 0.6rem;
-                    border-radius: 4px;
-                    margin-bottom: 1rem;
-                    font-size: 0.85rem;
-                    color: #78350f;
-                ">
-                    <strong>✏️ Observaciones:</strong> ${datosPrenda.observaciones}
+                <div style="margin-bottom: 1.2rem;">
+                    <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                        📏 Tallas:
+                    </h6>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+                        ${datosPrenda.talla_cantidad.map(tc => `
+                            <span style="
+                                background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+                                color: white;
+                                padding: 0.5rem 1rem;
+                                border-radius: 3px;
+                                font-size: 0.9rem;
+                                font-weight: 600;
+                            ">
+                                ${tc.talla.toUpperCase()}: <strong>${tc.cantidad}</strong>
+                            </span>
+                        `).join('')}
+                    </div>
                 </div>
             `;
         }
         
-        // TALLAS
-        if (datosPrenda.talla_cantidad && datosPrenda.talla_cantidad.length > 0) {
+        // SECCIÓN DE IMÁGENES CON INDICADOR DE TÉCNICA
+        if (datosPrenda.imagenes && datosPrenda.imagenes.length > 0) {
             bodyHTML += `
-                <div style="margin-bottom: 1rem;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.4rem;">
-                        📏 Tallas:
-                    </span>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                        ${datosPrenda.talla_cantidad.map(tc => `
-                            <span style="
-                                background: #dbeafe;
-                                color: #0369a1;
-                                padding: 0.4rem 0.6rem;
-                                border-radius: 3px;
-                                font-size: 0.8rem;
-                                font-weight: 600;
-                            ">
-                                ${tc.talla}: <strong>${tc.cantidad}</strong>
-                            </span>
+                <div class="imagenes-section" style="margin: 1.2rem 0;">
+                    <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                        🖼️ Imágenes:
+                    </h6>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.2rem;">
+                        ${datosPrenda.imagenes.map((img, imgIdx) => `
+                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor}; aspect-ratio: 1; width: 100%; max-width: 120px;">
+                                <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;" alt="Imagen prenda">
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+                                    padding: 0.4rem;
+                                    display: flex;
+                                    align-items: flex-end;
+                                ">
+                                    <span style="
+                                        color: white;
+                                        font-size: 0.65rem;
+                                        font-weight: 600;
+                                        background: ${img.tecnicaColor};
+                                        padding: 0.2rem 0.4rem;
+                                        border-radius: 2px;
+                                        display: inline-block;
+                                    ">
+                                        ${img.tecnica}
+                                    </span>
+                                </div>
+                            </div>
                         `).join('')}
                     </div>
+                </div>
+            `;
+        } else {
+            // Crear sección vacía pero oculta para poder actualizar después
+            bodyHTML += `
+                <div class="imagenes-section" style="margin: 1.2rem 0; display: none;">
+                    <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                        🖼️ Imágenes:
+                    </h6>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.2rem;">
+                    </div>
+                </div>
+            `;
+        }
+        
+        // VARIACIONES DE PRENDA
+        // Obtener variaciones de la primera prenda que coincida (todas deben tener las mismas)
+        let variacionesPrenda = null;
+        datosPrenda.tecnicas.forEach(tecData => {
+            const tecnica = tecData.tecnica;
+            if (tecnica.prendas && tecnica.prendas.length > 0) {
+                tecnica.prendas.forEach(p => {
+                    if (p.nombre_prenda === nombrePrenda && p.variaciones_prenda) {
+                        variacionesPrenda = p.variaciones_prenda;
+                    }
+                });
+            }
+        });
+        
+        if (variacionesPrenda && Object.keys(variacionesPrenda).length > 0) {
+            bodyHTML += `
+                <div style="margin-bottom: 1rem; border: 1px solid #e0e7ff; border-radius: 6px; padding: 0.8rem; background: #f8f9ff;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #3730a3; display: block; margin-bottom: 0.6rem;">
+                        📋 Variaciones:
+                    </span>
+                    <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
+                        <tbody>
+            `;
+            
+            // MANGA
+            if (variacionesPrenda.manga && variacionesPrenda.manga.opcion) {
+                bodyHTML += `
+                    <tr style="border-bottom: 1px solid #e0e7ff;">
+                        <td style="padding: 0.4rem; font-weight: 600; color: #334155; width: 35%;">Manga:</td>
+                        <td style="padding: 0.4rem; color: #475569;">${variacionesPrenda.manga.opcion}</td>
+                        ${variacionesPrenda.manga.observacion ? `<td style="padding: 0.4rem; color: #64748b; font-size: 0.7rem; font-style: italic;">${variacionesPrenda.manga.observacion}</td>` : ''}
+                    </tr>
+                `;
+            }
+            
+            // BOLSILLOS
+            if (variacionesPrenda.bolsillos && variacionesPrenda.bolsillos.opcion) {
+                bodyHTML += `
+                    <tr style="border-bottom: 1px solid #e0e7ff;">
+                        <td style="padding: 0.4rem; font-weight: 600; color: #334155; width: 35%;">Bolsillos:</td>
+                        <td style="padding: 0.4rem; color: #475569;">${variacionesPrenda.bolsillos.opcion}</td>
+                        ${variacionesPrenda.bolsillos.observacion ? `<td style="padding: 0.4rem; color: #64748b; font-size: 0.7rem; font-style: italic;">${variacionesPrenda.bolsillos.observacion}</td>` : ''}
+                    </tr>
+                `;
+            }
+            
+            // BROCHE/BOTÓN
+            if (variacionesPrenda.broche_boton && variacionesPrenda.broche_boton.opcion) {
+                const brocheColor = variacionesPrenda.broche_boton.opcion === 'BOTÓN' ? '#059669' : '#dc2626';
+                bodyHTML += `
+                    <tr>
+                        <td style="padding: 0.4rem; font-weight: 600; color: #334155; width: 35%;">Broche/Botón:</td>
+                        <td style="padding: 0.4rem;">
+                            <span style="
+                                background: ${brocheColor};
+                                color: white;
+                                padding: 0.3rem 0.6rem;
+                                border-radius: 3px;
+                                font-weight: 600;
+                                display: inline-block;
+                                font-size: 0.75rem;
+                            ">
+                                ${variacionesPrenda.broche_boton.opcion}
+                            </span>
+                        </td>
+                        ${variacionesPrenda.broche_boton.observacion ? `<td style="padding: 0.4rem; color: #64748b; font-size: 0.7rem; font-style: italic;">${variacionesPrenda.broche_boton.observacion}</td>` : ''}
+                    </tr>
+                `;
+            }
+            
+            bodyHTML += `
+                        </tbody>
+                    </table>
                 </div>
             `;
         }

@@ -154,6 +154,7 @@ class LogoCotizacionTecnicaController extends Controller
                     'nombre_prenda' => $prendaData['nombre_prenda'],
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
+                    'variaciones_prenda' => $prendaData['variaciones_prenda'] ?? 'NULL',
                     'prenda_index' => $prendasIndex
                 ]);
 
@@ -165,10 +166,14 @@ class LogoCotizacionTecnicaController extends Controller
                     'observaciones' => $prendaData['observaciones'] ?? '',
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
+                    'variaciones_prenda' => $prendaData['variaciones_prenda'] ?? null,
                     'grupo_combinado' => $grupoCombinado,
                 ]);
 
-                Log::info('✅ Prenda creada', ['prenda_id' => $prenda->id]);
+                Log::info('✅ Prenda creada', [
+                    'prenda_id' => $prenda->id,
+                    'variaciones_guardadas' => $prenda->variaciones_prenda ?? 'NULL'
+                ]);
 
                 // Procesar imágenes para esta prenda
                 // Las imágenes vienen con clave: imagenes_prenda_{prendasIndex}_{imagenIndex}

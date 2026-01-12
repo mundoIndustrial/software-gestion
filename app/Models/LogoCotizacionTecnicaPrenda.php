@@ -17,12 +17,14 @@ class LogoCotizacionTecnicaPrenda extends Model
         'observaciones',
         'ubicaciones',
         'talla_cantidad',
+        'variaciones_prenda',
         'grupo_combinado',
     ];
 
     protected $casts = [
         'ubicaciones' => 'array',
         'talla_cantidad' => 'array',
+        'variaciones_prenda' => 'array',
     ];
 
     /**

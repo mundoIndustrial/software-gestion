@@ -807,6 +807,7 @@ class CotizacionBordadoController extends Controller
                         'observaciones' => $prenda['observaciones'] ?? '',
                         'ubicaciones' => $prenda['ubicaciones'] ?? [],
                         'talla_cantidad' => $prenda['talla_cantidad'] ?? [],
+                        'variaciones_prenda' => $prenda['variaciones_prenda'] ?? null,
                         'imagenes_data_urls' => []
                     ];
                 }
