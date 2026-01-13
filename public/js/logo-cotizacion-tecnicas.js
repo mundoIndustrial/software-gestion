@@ -201,7 +201,7 @@ function abrirModalDatosIguales(tecnicas) {
         title: 'Técnicas Combinadas',
         width: '600px',
         html: `
-            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 70vh; overflow-y: auto;">
                 
                 <!-- PRENDA ÚNICA -->
                 <div style="margin-bottom: 25px;">
@@ -227,12 +227,59 @@ function abrirModalDatosIguales(tecnicas) {
                 </div>
                 
                 <!-- TALLAS GENÉRICAS (Por defecto) -->
-                <div id="dSeccionTallasGeneral" style="display: block;">
+                <div id="dSeccionTallasGeneral" style="display: block; margin-bottom: 25px;">
                     <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Tallas y Cantidades (General)</h3>
                     <div id="dTallaCantidadContainer" style="display: grid; gap: 8px; margin-bottom: 10px; max-height: 200px; overflow-y: auto;">
                         <!-- Se agrega dinámicamente -->
                     </div>
                     <button type="button" id="dBtnAgregarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla general</button>
+                </div>
+                
+                <!-- VARIACIONES DE PRENDA (Manga, Bolsillos, Broche) -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Variaciones</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Opción</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Valor</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 8px; font-weight: 600; color: #555;">Manga</td>
+                                <td style="padding: 8px;">
+                                    <input type="text" id="dVariacionManga" placeholder="Corta, Larga, Tres Cuartos" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                                </td>
+                                <td style="padding: 8px;">
+                                    <input type="text" id="dVariacionMangaObs" placeholder="Observación" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 8px; font-weight: 600; color: #555;">Bolsillos</td>
+                                <td style="padding: 8px;">
+                                    <input type="text" id="dVariacionBolsillos" placeholder="Con Tapa, Sin Tapa, Con Botón" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                                </td>
+                                <td style="padding: 8px;">
+                                    <input type="text" id="dVariacionBolsillosObs" placeholder="Observación" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; font-weight: 600; color: #555;">Broche/Botón</td>
+                                <td style="padding: 8px;">
+                                    <select id="dVariacionBroche" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                                        <option value="">-- Seleccionar --</option>
+                                        <option value="BROCHE">BROCHE</option>
+                                        <option value="BOTÓN">BOTÓN</option>
+                                    </select>
+                                </td>
+                                <td style="padding: 8px;">
+                                    <input type="text" id="dVariacionBrocheObs" placeholder="Observación" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
                 
                 <!-- IMÁGENES POR TÉCNICA -->
@@ -537,12 +584,43 @@ function abrirModalDatosIguales(tecnicas) {
                 });
             }
             
+            // Recopilar variaciones (Manga, Bolsillos, Broche)
+            const variacionesPrenda = {};
+            
+            const manga = document.getElementById('dVariacionManga')?.value.trim() || '';
+            const mangaObs = document.getElementById('dVariacionMangaObs')?.value.trim() || '';
+            if (manga) {
+                variacionesPrenda.manga = {
+                    opcion: manga,
+                    observacion: mangaObs || null
+                };
+            }
+            
+            const bolsillos = document.getElementById('dVariacionBolsillos')?.value.trim() || '';
+            const bolsillosObs = document.getElementById('dVariacionBolsillosObs')?.value.trim() || '';
+            if (bolsillos) {
+                variacionesPrenda.bolsillos = {
+                    opcion: bolsillos,
+                    observacion: bolsillosObs || null
+                };
+            }
+            
+            const broche = document.getElementById('dVariacionBroche')?.value || '';
+            const brocheObs = document.getElementById('dVariacionBrocheObs')?.value.trim() || '';
+            if (broche) {
+                variacionesPrenda.broche_boton = {
+                    opcion: broche,
+                    observacion: brocheObs || null
+                };
+            }
+            
             return {
                 nombre_prenda: nombrePrenda,
                 observaciones: document.getElementById('dObservaciones').value.trim(),
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
                 tallasPorTecnica: tallasPorTecnica,
-                imagenesPorTecnica: imagenesPorTecnica
+                imagenesPorTecnica: imagenesPorTecnica,
+                variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null
             };
         }
     }).then((result) => {
@@ -1552,6 +1630,7 @@ function guardarTecnicaCombinada(datosForm) {
                     observaciones: datosForm.observaciones,
                     ubicaciones: ubicacionesTecnica,
                     talla_cantidad: tallasTecnica,
+                    variaciones_prenda: datosForm.variaciones_prenda || null,
                     imagenes_files: datosForm.imagenesPorTecnica[idx] || [],  // Array de File objects
                     imagenes_data_urls: imagenesTecnica.map(img => img.data_url)  // Array de Data URLs
                 }],
@@ -2036,7 +2115,7 @@ function renderizarTecnicasAgregadas() {
     
     // NUEVO DISEÑO: Contenedor con tarjetas - ANCHO FIJO como en la imagen
     const contenedor = document.createElement('div');
-    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(580px, 1fr)); gap: 1.2rem; margin-bottom: 20px; max-width: 1200px;';
+    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; margin-bottom: 20px; max-width: 1400px;';
     
     // PASO 2: Renderizar TARJETAS por prenda
     let prendasContador = 0;
@@ -2065,8 +2144,10 @@ function renderizarTecnicasAgregadas() {
         
         // HEADER CON TÉCNICAS Y NOMBRE - DISEÑO ACTUALIZADO COMO LA IMAGEN
         let headerHTML = '<div style="background: linear-gradient(135deg, #0a5ba3 0%, #084b8a 100%); color: white; padding: 1.2rem; border-bottom: 1px solid #ddd;">';
+        headerHTML += '<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">';
+        headerHTML += '<div>';
         headerHTML += '<h4 style="margin: 0 0 0.8rem 0; font-size: 1.1rem; font-weight: 700;">Prenda ' + prendasContador + ': ' + nombrePrenda + '</h4>';
-        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;" class="tecnicas-header">';
+        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: center;" class="tecnicas-header">';
         
         datosPrenda.tecnicas.forEach((tecData, idx) => {
             const tecnica = tecData.tecnica;
@@ -2088,6 +2169,44 @@ function renderizarTecnicasAgregadas() {
             `;
         });
         
+        headerHTML += '</div>';
+        headerHTML += '</div>';
+        
+        // Botones de editar y eliminar en el header
+        headerHTML += '<div style="display: flex; gap: 0.6rem; flex-shrink: 0;">';
+        headerHTML += `<button type="button" class="btn-editar-prenda" style="
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" data-prenda-nombre="${nombrePrenda}" title="Editar">
+            ✏️
+        </button>`;
+        headerHTML += `<button type="button" class="btn-eliminar-prenda" style="
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" title="Eliminar">
+            🗑️
+        </button>`;
+        headerHTML += '</div>';
         headerHTML += '</div></div>';
         
         // CUERPO CON CONTENIDO DE LA PRENDA - DISEÑO ACTUALIZADO
@@ -2128,7 +2247,7 @@ function renderizarTecnicasAgregadas() {
                                 margin-bottom: 0.3rem;
                                 text-transform: capitalize;
                             ">
-                                • ${ub}
+                                • ${nombreTec} - ${ub}
                             </div>
                         `).join('')}
                     </div>
@@ -2170,9 +2289,9 @@ function renderizarTecnicasAgregadas() {
                     <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
                         🖼️ Imágenes:
                     </h6>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.2rem;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
                         ${datosPrenda.imagenes.map((img, imgIdx) => `
-                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor}; aspect-ratio: 1; width: 100%; max-width: 120px;">
+                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor}; aspect-ratio: 1; width: auto; max-width: 120px; flex: 0 1 auto;">
                                 <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;" alt="Imagen prenda">
                                 <div style="
                                     position: absolute;
@@ -2221,8 +2340,10 @@ function renderizarTecnicasAgregadas() {
             const tecnica = tecData.tecnica;
             if (tecnica.prendas && tecnica.prendas.length > 0) {
                 tecnica.prendas.forEach(p => {
-                    if (p.nombre_prenda === nombrePrenda && p.variaciones_prenda) {
-                        variacionesPrenda = p.variaciones_prenda;
+                    if (p.nombre_prenda === nombrePrenda) {
+                        if (p.variaciones_prenda && Object.keys(p.variaciones_prenda).length > 0) {
+                            variacionesPrenda = p.variaciones_prenda;
+                        }
                     }
                 });
             }
@@ -2291,46 +2412,6 @@ function renderizarTecnicasAgregadas() {
             `;
         }
         
-        // BOTONES DE ACCIÓN
-        bodyHTML += `
-            <div style="
-                margin-top: 1rem;
-                padding-top: 1rem;
-                border-top: 1px solid #e2e8f0;
-                display: flex;
-                gap: 0.5rem;
-            ">
-                <button type="button" class="btn-editar-tecnica" style="
-                    flex: 1;
-                    background: #0369a1;
-                    color: white;
-                    border: none;
-                    padding: 0.6rem;
-                    border-radius: 4px;
-                    font-weight: 600;
-                    font-size: 0.85rem;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" data-prenda-nombre="${nombrePrenda}">
-                    ✏️ Editar
-                </button>
-                <button type="button" class="btn-eliminar-tecnica-grupo" style="
-                    flex: 1;
-                    background: #dc2626;
-                    color: white;
-                    border: none;
-                    padding: 0.6rem;
-                    border-radius: 4px;
-                    font-weight: 600;
-                    font-size: 0.85rem;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}">
-                    ✕ Eliminar
-                </button>
-            </div>
-        `;
-        
         bodyHTML += '</div>';
         
         tarjeta.innerHTML = headerHTML + bodyHTML;
@@ -2339,19 +2420,19 @@ function renderizarTecnicasAgregadas() {
     
     container.appendChild(contenedor);
     
-    // EVENT LISTENERS para botones
-    document.querySelectorAll('.btn-editar-tecnica').forEach(btn => {
+    // EVENT LISTENERS para botones en el header
+    document.querySelectorAll('.btn-editar-prenda').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const indicesStr = e.target.getAttribute('data-tecnica-indices');
-            const nombrePrenda = e.target.getAttribute('data-prenda-nombre');
+            const indicesStr = e.currentTarget.getAttribute('data-tecnica-indices');
+            const nombrePrenda = e.currentTarget.getAttribute('data-prenda-nombre');
             const indices = indicesStr.split(',').map(Number);
             editarTecnicaDelGrupo(indices, nombrePrenda);
         });
     });
     
-    document.querySelectorAll('.btn-eliminar-tecnica-grupo').forEach(btn => {
+    document.querySelectorAll('.btn-eliminar-prenda').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const indicesStr = e.target.getAttribute('data-tecnica-indices');
+            const indicesStr = e.currentTarget.getAttribute('data-tecnica-indices');
             const indices = indicesStr.split(',').map(Number);
             eliminarTecnicaDelGrupo(indices);
         });
@@ -2387,6 +2468,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     nombre_prenda: prenda.nombre_prenda,
                     observaciones: prenda.observaciones,
                     talla_cantidad: prenda.talla_cantidad,
+                    variaciones_prenda: prenda.variaciones_prenda || {}, // Incluir variaciones
                     tecnicas: [],
                     tecnicasData: {} // Guardar datos por técnica
                 };
@@ -2423,7 +2505,57 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
             `;
         });
         
-        // Construir HTML de imágenes POR TÉCNICA
+        // Construir tabla de variaciones
+        let variacionesHTML = '';
+        const variacionesPrenda = prenda.variaciones_prenda || {};
+        if (Object.keys(variacionesPrenda).length > 0) {
+            variacionesHTML = `
+                <div style="margin-bottom: 12px; border: 1px solid #e0e7ff; border-radius: 6px; padding: 0.8rem; background: #f8f9ff;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.6rem; font-size: 0.85rem; color: #3730a3;">📋 Variaciones</label>
+                    <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
+                        <tbody>
+            `;
+            
+            // MANGA
+            const manga = variacionesPrenda.manga || {};
+            variacionesHTML += `
+                <tr style="border-bottom: 1px solid #e0e7ff;">
+                    <td style="padding: 0.4rem; font-weight: 600; color: #334155;">Manga:</td>
+                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-manga" data-prenda-idx="${prendaIdx}" value="${manga.opcion || ''}" placeholder="Corta, Larga..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
+                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-manga-obs" data-prenda-idx="${prendaIdx}" value="${manga.observacion || ''}" placeholder="Obs" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
+                </tr>
+            `;
+            
+            // BOLSILLOS
+            const bolsillos = variacionesPrenda.bolsillos || {};
+            variacionesHTML += `
+                <tr style="border-bottom: 1px solid #e0e7ff;">
+                    <td style="padding: 0.4rem; font-weight: 600; color: #334155;">Bolsillos:</td>
+                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-bolsillos" data-prenda-idx="${prendaIdx}" value="${bolsillos.opcion || ''}" placeholder="Con/Sin tapa..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
+                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-bolsillos-obs" data-prenda-idx="${prendaIdx}" value="${bolsillos.observacion || ''}" placeholder="Obs" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
+                </tr>
+            `;
+            
+            // BROCHE/BOTÓN
+            const broche = variacionesPrenda.broche_boton || {};
+            variacionesHTML += `
+                <tr>
+                    <td style="padding: 0.4rem; font-weight: 600; color: #334155;">Broche/Botón:</td>
+                    <td style="padding: 0.4rem;">
+                        <select class="edit-var-broche" data-prenda-idx="${prendaIdx}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="BROCHE" ${broche.opcion === 'BROCHE' ? 'selected' : ''}>BROCHE</option>
+                            <option value="BOTÓN" ${broche.opcion === 'BOTÓN' ? 'selected' : ''}>BOTÓN</option>
+                        </select>
+                    </td>
+                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-broche-obs" data-prenda-idx="${prendaIdx}" value="${broche.observacion || ''}" placeholder="Obs" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
+                </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
         let imagenesHTML = '';
         if (prenda.tecnicas && prenda.tecnicas.length > 0) {
             imagenesHTML = `
@@ -2453,6 +2585,28 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                             `).join('')}
                         </div>
                     `;
+                } else {
+                    // Si no hay imagenes_data_urls pero sí hay imagenes_files, procesarlas
+                    const archivos = datosActuales.imagenes_files || [];
+                    if (archivos.length > 0) {
+                        imagenesHTML += `
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;" class="edit-imagenes-container" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}">
+                        `;
+                        
+                        archivos.forEach((archivo, imgIdx) => {
+                            const urlTemp = URL.createObjectURL(archivo);
+                            imagenesHTML += `
+                                <div style="position: relative;" class="imagen-item" data-img-idx="${imgIdx}">
+                                    <img src="${urlTemp}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                    <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" data-img-idx="${imgIdx}" data-is-file="true" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                                </div>
+                            `;
+                        });
+                        
+                        imagenesHTML += `
+                            </div>
+                        `;
+                    }
                 }
                 
                 imagenesHTML += `
@@ -2519,6 +2673,8 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 
                 ${ubicacionesHTML}
                 
+                ${variacionesHTML}
+                
                 ${imagenesHTML}
                 
                 <div style="margin-bottom: 12px;">
@@ -2576,11 +2732,16 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     const prendaIdx = parseInt(btn.getAttribute('data-prenda-idx'));
                     const tecnicaIdx = parseInt(btn.getAttribute('data-tecnica-idx'));
                     const imgIdx = parseInt(btn.getAttribute('data-img-idx'));
+                    const isFile = btn.getAttribute('data-is-file') === 'true';
                     const imagenItem = btn.closest('.imagen-item');
                     
                     // Eliminar del array
                     if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
-                        todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.splice(imgIdx, 1);
+                        if (isFile) {
+                            todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_files.splice(imgIdx, 1);
+                        } else {
+                            todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.splice(imgIdx, 1);
+                        }
                     }
                     
                     // Eliminar del DOM
@@ -2601,8 +2762,25 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     
                     const container = document.querySelector(`.edit-imagenes-container[data-prenda-idx="${prendaIdx}"][data-tecnica-idx="${tecnicaIdx}"]`);
                     
+                    // Obtener cantidad actual de imágenes
+                    const imagenesActuales = todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls || [];
+                    const limitImgs = 3;
+                    
                     const files = Array.from(e.target.files);
+                    let archivosAgregados = 0;
+                    
                     files.forEach(file => {
+                        // Validar límite
+                        if (imagenesActuales.length + archivosAgregados >= limitImgs) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Límite de imágenes',
+                                text: `Solo se pueden adjuntar máximo ${limitImgs} imágenes por técnica. Elimina una imagen para agregar otra.`,
+                                confirmButtonText: 'OK'
+                            });
+                            return;
+                        }
+                        
                         const reader = new FileReader();
                         reader.onload = (event) => {
                             const dataUrl = event.target.result;
@@ -2647,6 +2825,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                             }
                         };
                         reader.readAsDataURL(file);
+                        archivosAgregados++;
                     });
                     
                     // Limpiar input
@@ -2703,6 +2882,32 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     }
                 });
                 
+                // Capturar variaciones
+                const variacionesPrenda = {};
+                const mangaInput = document.querySelector(`.edit-var-manga[data-prenda-idx="${prendaIdxStr}"]`);
+                if (mangaInput && mangaInput.value.trim()) {
+                    variacionesPrenda.manga = {
+                        opcion: mangaInput.value.trim(),
+                        observacion: document.querySelector(`.edit-var-manga-obs[data-prenda-idx="${prendaIdxStr}"]`)?.value.trim() || null
+                    };
+                }
+                
+                const bolsillosInput = document.querySelector(`.edit-var-bolsillos[data-prenda-idx="${prendaIdxStr}"]`);
+                if (bolsillosInput && bolsillosInput.value.trim()) {
+                    variacionesPrenda.bolsillos = {
+                        opcion: bolsillosInput.value.trim(),
+                        observacion: document.querySelector(`.edit-var-bolsillos-obs[data-prenda-idx="${prendaIdxStr}"]`)?.value.trim() || null
+                    };
+                }
+                
+                const brocheInput = document.querySelector(`.edit-var-broche[data-prenda-idx="${prendaIdxStr}"]`);
+                if (brocheInput && brocheInput.value) {
+                    variacionesPrenda.broche_boton = {
+                        opcion: brocheInput.value,
+                        observacion: document.querySelector(`.edit-var-broche-obs[data-prenda-idx="${prendaIdxStr}"]`)?.value.trim() || null
+                    };
+                }
+                
                 const nuevasTallas = [];
                 document.querySelectorAll(`.edit-talla-row[data-prenda-idx="${prendaIdxStr}"]`).forEach(row => {
                     const tallaInput = row.querySelector('.edit-talla');
@@ -2725,6 +2930,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     nombre_prenda: nombrePrenda,
                     observaciones: observaciones,
                     talla_cantidad: nuevasTallas,
+                    variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null,
                     tecnicasData: todasLasPrendas[prendaIdx].tecnicasData || {}
                 };
                 
@@ -2757,6 +2963,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     prenda.nombre_prenda = result.value[prendaIdx].nombre_prenda;
                     prenda.observaciones = result.value[prendaIdx].observaciones;
                     prenda.talla_cantidad = result.value[prendaIdx].talla_cantidad;
+                    prenda.variaciones_prenda = result.value[prendaIdx].variaciones_prenda;
                     prenda.tecnicasData = result.value[prendaIdx].tecnicasData;
                     console.log(`✅ Prenda ${prendaIdx} actualizada:`, prenda);
                 } else {
@@ -2773,6 +2980,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                         prenda.nombre_prenda = prendaActualizado.nombre_prenda;
                         prenda.observaciones = prendaActualizado.observaciones;
                         prenda.talla_cantidad = prendaActualizado.talla_cantidad;
+                        prenda.variaciones_prenda = prendaActualizado.variaciones_prenda;
                         
                         // Obtener datos específicos de esta técnica
                         if (prendaActualizado.tecnicasData && prendaActualizado.tecnicasData[tecnicaIdx]) {
