@@ -65,6 +65,15 @@ Route::middleware('api')->prefix('api')->name('api.')->group(function () {
 });
 
 /**
+ * API Routes for Pedidos Editables (DDD - Gestión de Ítems)
+ * 
+ * Prefix: /api/pedidos-editable
+ * Auth: auth, role:asesor
+ * Controller: App\Http\Controllers\Asesores\CrearPedidoEditableController
+ */
+require base_path('routes/api-pedidos-editable.php');
+
+/**
  * API Routes for Operario (PUBLIC - Sin autenticación)
  */
 Route::prefix('operario')->name('operario.')->middleware([])->group(function () {

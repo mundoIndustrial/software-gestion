@@ -29,84 +29,146 @@ window.actualizarVistaItems = function() {
 };
 
 /**
- * Renderizar lista de ítems
+ * Renderizar lista de ítems - Nuevo diseño con prendas y procesos unificados
  */
 function renderizarItems() {
     const listaItems = document.getElementById('lista-items-pedido');
 
     console.log('🎨 Renderizando ítems. Total:', window.itemsPedido.length);
-    console.log('🎨 Elemento listaItems:', listaItems);
-
     listaItems.innerHTML = '';
 
-    window.itemsPedido.forEach((item, index) => {
-        console.log(`  🔸 Renderizando ítem ${index + 1}:`, item.prenda?.nombre);
+    // Agrupar ítems por prenda (sin procesos) y procesos
+    const prendas = window.itemsPedido.filter(item => !item.es_proceso);
+    const procesos = window.itemsPedido.filter(item => item.es_proceso);
 
-        const itemDiv = document.createElement('div');
-        itemDiv.style.cssText = 'padding: 1.25rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; transition: all 0.2s;';
+    let numeroItem = 1;
 
-        // Determinar categoría del ítem
-        const categoria = determinarCategoria(item);
-        const colorCategoria = obtenerColorCategoria(categoria);
+    // Renderizar prendas con sus procesos en un solo contenedor
+    prendas.forEach((prenda, prendaIndex) => {
+        const procesosDeEstaPrenda = procesos.filter(p => 
+            p.prenda?.nombre === prenda.prenda?.nombre && 
+            p.origen === prenda.origen
+        );
 
-        const infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'flex: 1;';
-
-        // Calcular total de prendas
-        const totalPrendas = item.prenda?.cantidad || 0;
-
-        // Construir texto de procesos
-        const procesosTexto = item.procesos && item.procesos.length > 0 ?
-            item.procesos.join(', ') : 'Sin procesos';
-
-        // Determinar si es ítem de proceso
-        const esProceso = item.es_proceso === true;
-        const tipoItem = esProceso ? '🔧 PROCESO' : (item.origen === 'bodega' ? '🏪 BASE' : '✂️ BASE');
-
-        infoDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                <div style="flex: 1;">
-                    <div style="font-weight: 700; color: ${esProceso ? '#9f1239' : '#1e40af'}; font-size: 1.1rem; margin-bottom: 0.5rem;">
-                        ${index + 1}. ${item.prenda?.nombre || item.nombre || 'Ítem ' + (index + 1)}
-                        ${esProceso ? '<span style="font-size: 0.875rem; color: #9f1239; font-weight: 600;"> (PROCESO)</span>' : ''}
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        ${item.tipo === 'cotizacion' ? `
-                            <span style="padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
-                                📋 ${item.numero}
-                            </span>
-                        ` : ''}
-                        <span style="padding: 0.25rem 0.75rem; background: ${esProceso ? '#fce7f3' : (item.origen === 'bodega' ? '#fef3c7' : '#dcfce7')}; color: ${esProceso ? '#9f1239' : (item.origen === 'bodega' ? '#92400e' : '#166534')}; border-radius: 12px; font-size: 0.875rem; font-weight: 600;">
-                            ${tipoItem}
-                        </span>
-                        <span style="padding: 0.25rem 0.75rem; background: #f3f4f6; color: #374151; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
-                            📦 ${totalPrendas} unidades
-                        </span>
-                        <span style="padding: 0.25rem 0.75rem; background: ${colorCategoria.bg}; color: ${colorCategoria.text}; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
-                            🏷️ ${categoria}
-                        </span>
-                    </div>
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                        <strong>${esProceso ? 'Procesos aplicados:' : 'Procesos:'}</strong> ${procesosTexto}
-                    </div>
-                    ${item.tipo === 'cotizacion' ? `
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
-                            <strong>Cliente:</strong> ${item.cliente}
-                        </div>
-                    ` : ''}
-                </div>
-                <button type="button" onclick="window.eliminarItem(${index})" style="padding: 0.5rem 0.75rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s; margin-left: 1rem;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
-                    ✕
-                </button>
-            </div>
-        `;
-
-        itemDiv.appendChild(infoDiv);
-        listaItems.appendChild(itemDiv);
-        console.log(`  ✅ Ítem ${index + 1} agregado al DOM`);
+        const contenedorDiv = crearContenedorPrendaConProcesos(prenda, procesosDeEstaPrenda, numeroItem, prendaIndex);
+        listaItems.appendChild(contenedorDiv);
+        numeroItem += 1 + procesosDeEstaPrenda.length;
     });
 
     console.log('🎨 Renderizado completado. Elementos en listaItems:', listaItems.children.length);
+}
+
+/**
+ * Crear contenedor unificado de prenda con sus procesos
+ */
+function crearContenedorPrendaConProcesos(prenda, procesosDeEstaPrenda, numero, prendaIndex) {
+    const contenedor = document.createElement('div');
+    contenedor.style.cssText = 'background: white; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 1.5rem; overflow: hidden;';
+
+    const origen = prenda.origen === 'bodega' ? 'BODEGA' : 'CONFECCIÓN';
+    const origenColor = prenda.origen === 'bodega' ? '#fef3c7' : '#dcfce7';
+    const origenTextColor = prenda.origen === 'bodega' ? '#92400e' : '#166534';
+
+    // Construir variaciones
+    let variacionesHTML = '';
+    if (prenda.variaciones) {
+        const vars = prenda.variaciones;
+        variacionesHTML = `
+            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.75rem;">
+                <strong>Variaciones:</strong><br>
+                ${vars.tela ? `• Tela: ${vars.tela}` : ''}
+                ${vars.color ? `${vars.tela ? ' | ' : ''}Color: ${vars.color}` : ''}
+                ${vars.referencia ? `${vars.tela || vars.color ? ' | ' : ''}Ref: ${vars.referencia}` : ''}
+                ${vars.manga ? `<br>• Manga: ${vars.manga}` : ''}
+                ${vars.broche ? `${vars.manga ? ' | ' : ''}Broche: ${vars.broche}` : ''}
+                ${vars.bolsillos ? `${vars.manga || vars.broche ? ' | ' : ''}Bolsillos: ${vars.bolsillos}` : ''}
+            </div>
+        `;
+    }
+
+    // Construir tallas y cantidades
+    let tallasHTML = '';
+    if (prenda.tallas && Array.isArray(prenda.tallas)) {
+        tallasHTML = prenda.tallas.map(t => `${t.talla}: ${t.cantidad}`).join(' | ');
+    }
+
+    // Header de la prenda
+    const headerHTML = `
+        <div style="padding: 1.25rem; background: #f9fafb; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+                <div style="font-weight: 700; color: #1e40af; font-size: 1.1rem; margin-bottom: 0.5rem;">
+                    ${numero}. ${prenda.prenda?.nombre || 'Prenda'}
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    ${prenda.tipo === 'cotizacion' ? `
+                        <span style="padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
+                            📋 ${prenda.numero}
+                        </span>
+                    ` : ''}
+                    <span style="padding: 0.25rem 0.75rem; background: ${origenColor}; color: ${origenTextColor}; border-radius: 12px; font-size: 0.875rem; font-weight: 600;">
+                        ${origen}
+                    </span>
+                    <span style="padding: 0.25rem 0.75rem; background: #f3f4f6; color: #374151; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
+                        📦 ${prenda.prenda?.cantidad || 0} unidades
+                    </span>
+                </div>
+                ${prenda.tipo === 'cotizacion' ? `
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">
+                        <strong>Cliente:</strong> ${prenda.cliente}
+                    </div>
+                ` : ''}
+                ${variacionesHTML}
+                <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.75rem;">
+                    <strong>Tallas y Cantidades:</strong> ${tallasHTML || 'No especificadas'}
+                </div>
+            </div>
+            <button type="button" onclick="window.eliminarItem(${prendaIndex})" style="padding: 0.5rem 0.75rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 1rem; height: fit-content;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                ✕
+            </button>
+        </div>
+    `;
+
+    contenedor.innerHTML = headerHTML;
+
+    // Agregar procesos dentro del contenedor
+    if (procesosDeEstaPrenda.length > 0) {
+        const procesosContainer = document.createElement('div');
+        procesosContainer.style.cssText = 'background: #fafbfc;';
+
+        procesosDeEstaPrenda.forEach((proceso, procesoIndex) => {
+            const procesoDiv = document.createElement('div');
+            procesoDiv.style.cssText = 'padding: 1rem; border-top: 1px solid #e5e7eb; cursor: pointer; transition: background 0.2s;';
+            procesoDiv.onmouseover = () => procesoDiv.style.background = '#f3f4f6';
+            procesoDiv.onmouseout = () => procesoDiv.style.background = 'transparent';
+
+            const idCollapse = `proceso-${numero}-${procesoIndex}`;
+            const procesosNombre = proceso.procesos?.join(', ') || 'Proceso';
+            let tallasProcesoHTML = '';
+            if (proceso.tallas && Array.isArray(proceso.tallas)) {
+                tallasProcesoHTML = proceso.tallas.map(t => `${t.talla}: ${t.cantidad}`).join(' | ');
+            }
+
+            procesoDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;" onclick="const el = document.getElementById('${idCollapse}'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; this.querySelector('span').textContent = el.style.display === 'none' ? '▼' : '▲';">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #9f1239; font-size: 0.95rem;">
+                            ${procesosNombre}
+                        </div>
+                    </div>
+                    <span style="font-size: 1rem; color: #6b7280; margin-left: 1rem;">▼</span>
+                </div>
+                <div id="${idCollapse}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; font-size: 0.875rem; color: #6b7280;">
+                    <strong>Tallas y Cantidades:</strong> ${tallasProcesoHTML || 'No especificadas'}
+                </div>
+            `;
+
+            procesosContainer.appendChild(procesoDiv);
+        });
+
+        contenedor.appendChild(procesosContainer);
+    }
+
+    return contenedor;
 }
 
 /**

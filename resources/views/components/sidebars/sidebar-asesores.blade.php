@@ -103,34 +103,41 @@
         </div>
 
         <div class="menu-section">
-            <span class="menu-section-title">Seguimiento</span>
+            <span class="menu-section-title">Producción</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos.index') }}"
-                       class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">assignment</span>
+                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos-produccion.*', 'asesores.pedidos.*') ? 'active' : '' }}"
+                            aria-label="Gestionar pedidos de producción">
+                        <span class="material-symbols-rounded">factory</span>
                         <span class="menu-label">Pedidos</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-
-        <div class="menu-section">
-            <span class="menu-section-title">Pedidos Producción</span>
-            <ul class="menu-list" role="navigation">
-                <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos-produccion.crear-desde-cotizacion') }}"
-                       class="menu-link {{ request()->routeIs('asesores.pedidos-produccion.crear-desde-cotizacion') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">description</span>
-                        <span class="menu-label">Desde Cotización</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos-produccion.crear-nuevo') }}"
-                       class="menu-link {{ request()->routeIs('asesores.pedidos-produccion.crear-nuevo') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">add_box</span>
-                        <span class="menu-label">Pedido Nuevo</span>
-                    </a>
+                        <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+                    </button>
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.index') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}"
+                               aria-label="Ver todos los pedidos">
+                                <span class="material-symbols-rounded">assignment</span>
+                                <span class="menu-label">Seguimiento</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos-produccion.crear-desde-cotizacion') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos-produccion.crear-desde-cotizacion') ? 'active' : '' }}"
+                               aria-label="Crear pedido desde cotización">
+                                <span class="material-symbols-rounded">description</span>
+                                <span class="menu-label">Desde Cotización</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos-produccion.crear-nuevo') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos-produccion.crear-nuevo') ? 'active' : '' }}"
+                               aria-label="Crear pedido nuevo">
+                                <span class="material-symbols-rounded">add_box</span>
+                                <span class="menu-label">Pedido Nuevo</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </div>

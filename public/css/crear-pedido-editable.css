@@ -1,0 +1,1050 @@
+/* ============================================================
+   LOADING SCREEN DE PÁGINA COMPLETA
+   ============================================================ */
+#page-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.98);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    transition: opacity 0.3s ease-out;
+}
+
+#page-loading-overlay.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+    margin-top: 1.5rem;
+    font-size: 1.125rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.loading-subtext {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   FIN LOADING SCREEN
+   ============================================================ */
+
+/* ============================================================
+   ESTILOS GLOBALES Y CONSISTENTES
+   ============================================================ */
+
+/* Colores del diseño */
+:root {
+    --color-primary: #0066cc;
+    --color-primary-dark: #0052a3;
+    --color-danger: #dc3545;
+    --color-danger-dark: #c82333;
+    --color-text: #333333;
+    --color-text-secondary: #666666;
+    --color-border: #d0d0d0;
+    --color-bg-light: #f5f5f5;
+    --color-bg-input: #ffffff;
+}
+
+/* Estilos para la vista editable - PROFESIONAL */
+.prenda-card-editable {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--color-bg-input);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.prenda-card-editable:hover {
+    border-color: #999999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.prenda-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.prenda-title {
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--color-text);
+}
+
+.prenda-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   BOTONES - ESTILO CONSISTENTE
+   ============================================================ */
+
+.btn-eliminar-prenda,
+.btn-eliminar-variacion,
+.btn-quitar-talla {
+    background-color: var(--color-danger);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-eliminar-prenda:hover,
+.btn-eliminar-variacion:hover,
+.btn-quitar-talla:hover {
+    background-color: var(--color-danger-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+}
+
+.btn-agregar-talla-nuevo {
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-agregar-talla-nuevo:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0, 102, 204, 0.3);
+}
+
+.checkbox-item input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================================
+   LAYOUT Y GRID RESPONSIVE
+   ============================================================ */
+
+.prenda-content {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .prenda-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+.prenda-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.prenda-fotos-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+@media (max-width: 1024px) {
+    .prenda-fotos-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .prenda-fotos-section {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+}
+
+/* ============================================================
+   FOTOS - RESPONSIVE
+   ============================================================ */
+
+.prenda-foto-principal {
+    width: 100%;
+    max-width: 200px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: block;
+}
+
+.prenda-foto-principal:hover {
+    border-color: #999999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: scale(1.02);
+}
+
+.fotos-adicionales {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.foto-mini {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.foto-mini:hover {
+    border-color: #999999;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    transform: scale(1.05);
+}
+
+/* ============================================================
+   FORMULARIOS
+   ============================================================ */
+
+.form-group-inline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group-editable {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group-editable label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.form-group-editable input,
+.form-group-editable select,
+.form-group-editable textarea {
+    padding: 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    background: var(--color-bg-input);
+    color: var(--color-text);
+    transition: all 0.2s ease;
+}
+
+.form-group-editable input:focus,
+.form-group-editable select:focus,
+.form-group-editable textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.form-group-editable textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ============================================================
+   SECCIONES ESPECIALES - TALLAS, VARIACIONES, TELAS
+   ============================================================ */
+
+.tallas-editable,
+.variaciones-section,
+.telas-seccion {
+    background: var(--color-bg-light);
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+    border-left: 4px solid var(--color-primary);
+    overflow-x: auto;
+}
+
+.tallas-editable > label,
+.variaciones-section > strong,
+.telas-seccion > strong {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+    font-size: 0.95rem;
+}
+
+/* Talla Item */
+.talla-item {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background: var(--color-bg-input);
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .talla-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.talla-item:last-child {
+    margin-bottom: 0;
+}
+
+.talla-item input {
+    flex: 0 0 auto;
+    min-width: 80px;
+    text-align: center;
+}
+
+.talla-item input[type="number"] {
+    flex: 1;
+    max-width: 120px;
+}
+
+/* Tabla de Variaciones */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-bg-input);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+    font-size: 0.9rem;
+}
+
+table thead {
+    background: #f0f0f0;
+    border-bottom: 2px solid var(--color-border);
+}
+
+table thead th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    border-right: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+
+table tbody tr {
+    border-bottom: 1px solid #eee;
+}
+
+table tbody tr:hover {
+    background: #fafafa;
+}
+
+table tbody tr:last-child {
+    border-bottom: none;
+}
+
+table td {
+    padding: 0.75rem;
+    border-right: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+table td:last-child {
+    border-right: none;
+}
+
+table input,
+table textarea {
+    width: 100%;
+    padding: 0.4rem;
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+
+table textarea {
+    min-height: 40px;
+    resize: vertical;
+}
+
+/* ============================================================
+   RESUMEN Y ALERTAS
+   ============================================================ */
+
+.prenda-resumen {
+    background: var(--color-bg-light);
+    padding: 1rem;
+    border-left: 3px solid var(--color-primary);
+    border-radius: 4px;
+    margin-top: 1rem;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+.alert-info {
+    background: #f0f8ff;
+    border-left: 4px solid var(--color-primary);
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    color: var(--color-primary);
+    font-size: 0.95rem;
+}
+
+/* ============================================================
+   MODALES - ESTILOS REUTILIZABLES
+   ============================================================ */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 2rem 0;
+}
+
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    max-height: 95vh;
+    overflow-y: auto;
+}
+
+.modal-lg {
+    max-width: 800px;
+    width: 90%;
+}
+
+.modal-md {
+    max-width: 600px;
+    width: 95%;
+}
+
+.modal-xl {
+    max-width: 900px;
+    width: 95%;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header-primary {
+    background: #0066cc;
+}
+
+.modal-header-gradient {
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+}
+
+.modal-title {
+    margin: 0;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 2px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: #f9fafb;
+    position: sticky;
+    bottom: 0;
+}
+
+.modal-section {
+    margin-bottom: 1.5rem;
+}
+
+.modal-label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.button-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-toggle {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.btn-toggle:hover {
+    border-color: #0066cc;
+    background: #f0f9ff;
+}
+
+.tallas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.75rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Info Box */
+.info-box {
+    padding: 1rem;
+    background: #f0f9ff;
+    border-left: 4px solid #0066cc;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.info-box-title {
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 0.25rem;
+}
+
+.info-box-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.prendas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Form Styles */
+.form-prenda-grid {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-prenda-grid-lg {
+    grid-template-columns: 1fr 250px;
+    gap: 2rem;
+}
+
+.form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-row-4col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 0.8fr;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label-primary {
+    display: block;
+    font-weight: 700;
+    color: #0066cc;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-label-sm {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    font-family: inherit;
+    background: white;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.form-input-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.form-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: #0066cc;
+    cursor: pointer;
+}
+
+/* Foto Panel */
+.foto-panel {
+    border: 2px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 0.75rem;
+    background: #f0f9ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: fit-content;
+}
+
+.foto-panel-lg {
+    padding: 1rem;
+}
+
+.foto-panel-label {
+    display: block;
+    font-weight: 700;
+    color: #0066cc;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.foto-preview {
+    width: 100%;
+    height: 150px;
+    border: 2px dashed #bfdbfe;
+    border-radius: 6px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.foto-preview:hover {
+    border-color: #0066cc;
+    background: #f0f9ff;
+}
+
+.foto-preview-lg {
+    aspect-ratio: 1/1;
+    margin-bottom: 0.75rem;
+}
+
+.foto-preview-content {
+    text-align: center;
+}
+
+.foto-preview-text {
+    font-size: 0.65rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+}
+
+.foto-counter {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+    text-align: center;
+    min-height: 1rem;
+}
+
+.tela-preview-container {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Género Buttons */
+.genero-buttons {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.btn-genero {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border: 2px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    transition: all 0.2s;
+    justify-content: space-between;
+}
+
+.btn-genero:hover {
+    border-color: #0066cc;
+    background: #f0f9ff;
+}
+
+.btn-genero-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-genero-check {
+    font-size: 1.2rem;
+    display: none;
+}
+
+.generos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Total Box */
+.total-box {
+    padding: 0.75rem;
+    background: #dbeafe;
+    border-radius: 4px;
+    text-align: center;
+    border-left: 4px solid #0066cc;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Variaciones */
+.variaciones-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.variacion-item {
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+    border-radius: 6px;
+    border: 2px solid #bfdbfe;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* Procesos */
+.procesos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f0f9ff;
+    border-radius: 6px;
+    border: 2px solid #bfdbfe;
+}
+
+.proceso-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.proceso-checkbox:hover {
+    border-color: #0066cc;
+}
+
+.proceso-checkbox input:checked + span {
+    color: #0066cc;
+}
+
+/* Botones */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.btn-sm {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+}
+
+.btn-flex {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ============================================================
+   RESPONSIVE FINAL
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .prenda-card-editable {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .prenda-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .prenda-actions {
+        width: 100%;
+    }
+
+    .btn-eliminar-prenda {
+        flex: 1;
+    }
+
+    .prenda-content {
+        gap: 1rem;
+    }
+
+    .fotos-adicionales {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 0.4rem;
+    }
+
+    .form-group-inline {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    table {
+        font-size: 0.8rem;
+    }
+
+    table th,
+    table td {
+        padding: 0.5rem;
+    }
+
+    table input,
+    table textarea {
+        padding: 0.3rem;
+        font-size: 0.8rem;
+    }
+
+    table textarea {
+        min-height: 35px;
+    }
+
+    .form-prenda-grid,
+    .form-prenda-grid-lg {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row-4col {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .variaciones-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-container {
+        width: 95%;
+    }
+}
