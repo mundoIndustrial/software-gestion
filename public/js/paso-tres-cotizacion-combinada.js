@@ -96,12 +96,81 @@ function obtenerPrendasDelPaso2() {
                 });
             }
             
+            // ============================================
+            // OBTENER VARIACIONES DE LA PRENDA (NUEVO)
+            // ============================================
+            let variaciones = {};
+            
+            // MANGA
+            const aplicaMangaCheckbox = card.querySelector('input[name*="aplica_manga"]');
+            const mangaInput = card.querySelector('input.manga-input');
+            const mangaObsInput = card.querySelector('input[name*="obs_manga"]');
+            
+            if (aplicaMangaCheckbox && aplicaMangaCheckbox.checked) {
+                const mangaTipo = mangaInput ? mangaInput.value.trim() : '';
+                const mangaObs = mangaObsInput ? mangaObsInput.value.trim() : '';
+                variaciones.manga = {
+                    valor: mangaTipo,
+                    observacion: mangaObs
+                };
+            }
+            
+            // BOLSILLOS
+            const aplicaBolsillosCheckbox = card.querySelector('input[name*="aplica_bolsillos"]');
+            const bolsillosObsInput = card.querySelector('input[name*="obs_bolsillos"]');
+            
+            if (aplicaBolsillosCheckbox && aplicaBolsillosCheckbox.checked) {
+                const bolsillosObs = bolsillosObsInput ? bolsillosObsInput.value.trim() : '';
+                variaciones.bolsillos = {
+                    valor: 'Sí',  // Si aplica, significa "Sí"
+                    observacion: bolsillosObs
+                };
+            }
+            
+            // BROCHE
+            const aplicaBrocheCheckbox = card.querySelector('input[name*="aplica_broche"]');
+            const brocheTipoSelect = card.querySelector('select[name*="tipo_broche_id"]');
+            const brocheObsInput = card.querySelector('input[name*="obs_broche"]');
+            
+            if (aplicaBrocheCheckbox && aplicaBrocheCheckbox.checked) {
+                const brocheTipo = brocheTipoSelect ? brocheTipoSelect.value.trim() : '';
+                let brocheValor = '';
+                
+                // Traducir ID a valor
+                if (brocheTipo === '1') {
+                    brocheValor = 'Broche';
+                } else if (brocheTipo === '2') {
+                    brocheValor = 'Botón';
+                } else {
+                    brocheValor = brocheTipo;
+                }
+                
+                const brocheObs = brocheObsInput ? brocheObsInput.value.trim() : '';
+                variaciones.broche_boton = {
+                    valor: brocheValor,
+                    observacion: brocheObs
+                };
+            }
+            
+            // REFLECTIVO (opcional, similar a otros)
+            const aplicaReflectivoCheckbox = card.querySelector('input[name*="aplica_reflectivo"]');
+            const reflectivoObsInput = card.querySelector('input[name*="obs_reflectivo"]');
+            
+            if (aplicaReflectivoCheckbox && aplicaReflectivoCheckbox.checked) {
+                const reflectivoObs = reflectivoObsInput ? reflectivoObsInput.value.trim() : '';
+                variaciones.reflectivo = {
+                    valor: 'Sí',
+                    observacion: reflectivoObs
+                };
+            }
+            
             prendas.push({
                 nombre: nombre,
                 tallas: tallas,
                 genero: genero,
                 colores: colores,
-                imagenes: imagenes
+                imagenes: imagenes,
+                variaciones: variaciones  // AGREGAR VARIACIONES
             });
         });
     } catch (error) {
@@ -298,13 +367,14 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             textoOpcion += ' - Color: ' + prenda.colores.join(' - ');
         }
         
-        // Almacenar en data attributes: tallas, género, colores e imágenes
+        // Almacenar en data attributes: tallas, género, colores, imágenes y variaciones
         const dataTallas = JSON.stringify(prenda.tallas).replace(/"/g, '&quot;');
         const dataGenero = prenda.genero || '';
         const dataColores = JSON.stringify(prenda.colores).replace(/"/g, '&quot;');
         const dataImagenes = JSON.stringify(prenda.imagenes || []).replace(/"/g, '&quot;');
+        const dataVariaciones = JSON.stringify(prenda.variaciones || {}).replace(/"/g, '&quot;');
         
-        opcionesDropdown += `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}">${textoOpcion}</option>`;
+        opcionesDropdown += `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}" data-variaciones="${dataVariaciones}">${textoOpcion}</option>`;
     });
     
     Swal.fire({
@@ -334,6 +404,14 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 <div style="margin-bottom: 25px;">
                     <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Imágenes por Técnica</h3>
                     <div id="dImagenesPorTecnicaP3" style="display: grid; gap: 16px;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- VARIACIONES -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Variaciones por Técnica</h3>
+                    <div id="dVariacionesPorTecnicaP3" style="display: grid; gap: 12px;">
                         <!-- Se agrega dinámicamente -->
                     </div>
                 </div>
@@ -368,11 +446,31 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             let contadorTallas = 0;
             const imagenesAgregadasPorTecnica = {}; // Almacena imágenes por técnica
             
-            // Listener para cambio de prenda - carga las tallas automáticamente
+            // Listener para cambio de prenda - carga las tallas, imágenes y variaciones automáticamente
             selectPrenda.addEventListener('change', (e) => {
                 const selectedOption = e.target.options[e.target.selectedIndex];
                 const tallasJson = selectedOption.getAttribute('data-tallas');
                 const imagenesJson = selectedOption.getAttribute('data-imagenes');
+                const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
+                
+                // Construir nombre completo IGUAL que en preConfirm
+                const genero = selectedOption.getAttribute('data-genero') || '';
+                const coloresJson = selectedOption.getAttribute('data-colores') || '[]';
+                
+                let colores = [];
+                try {
+                    colores = JSON.parse(coloresJson);
+                } catch (e) {
+                    colores = [];
+                }
+                
+                let nombrePrendaCompleto = nombrePrendaBase;
+                if (genero) {
+                    nombrePrendaCompleto += ' - ' + genero;
+                }
+                if (colores && colores.length > 0) {
+                    nombrePrendaCompleto += ' - Color: ' + colores.join(' - ');
+                }
                 
                 // Limpiar tallas actuales
                 tallaCantidadContainer.innerHTML = '';
@@ -448,9 +546,67 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                         console.error('Error al parsear imágenes:', err);
                     }
                 }
+                
+                // CARGAR VARIACIONES DE PRENDA DESDE PASO 2
+                const variacionesJson = selectedOption.getAttribute('data-variaciones');
+                let variacionesPaso2 = {};
+                
+                try {
+                    if (variacionesJson) {
+                        variacionesPaso2 = JSON.parse(variacionesJson);
+                    }
+                } catch (err) {
+                    console.error('Error al parsear variaciones:', err);
+                    variacionesPaso2 = {};
+                }
+                
+                // Cargar variaciones en la tabla única (no por técnica)
+                const swalPopup = Swal.getPopup();
+                const mangaValor = swalPopup.querySelector('.dVariacionManga-valor-p3-unique');
+                const mangaObs = swalPopup.querySelector('.dVariacionManga-obs-p3-unique');
+                const bolsillosValor = swalPopup.querySelector('.dVariacionBolsillos-valor-p3-unique');
+                const bolsillosObs = swalPopup.querySelector('.dVariacionBolsillos-obs-p3-unique');
+                const brocheValor = swalPopup.querySelector('.dVariacionBroche-valor-p3-unique');
+                const brocheObs = swalPopup.querySelector('.dVariacionBroche-obs-p3-unique');
+                
+                if (variacionesPaso2 && Object.keys(variacionesPaso2).length > 0) {
+                    if (variacionesPaso2.manga) {
+                        if (mangaValor) mangaValor.value = variacionesPaso2.manga.valor || '';
+                        if (mangaObs) mangaObs.value = variacionesPaso2.manga.observacion || '';
+                    } else {
+                        if (mangaValor) mangaValor.value = '';
+                        if (mangaObs) mangaObs.value = '';
+                    }
+                    
+                    if (variacionesPaso2.bolsillos) {
+                        if (bolsillosValor) bolsillosValor.value = variacionesPaso2.bolsillos.valor || '';
+                        if (bolsillosObs) bolsillosObs.value = variacionesPaso2.bolsillos.observacion || '';
+                    } else {
+                        if (bolsillosValor) bolsillosValor.value = '';
+                        if (bolsillosObs) bolsillosObs.value = '';
+                    }
+                    
+                    if (variacionesPaso2.broche_boton) {
+                        if (brocheValor) brocheValor.value = variacionesPaso2.broche_boton.valor || '';
+                        if (brocheObs) brocheObs.value = variacionesPaso2.broche_boton.observacion || '';
+                    } else {
+                        if (brocheValor) brocheValor.value = '';
+                        if (brocheObs) brocheObs.value = '';
+                    }
+                } else {
+                    // Si no hay variaciones, limpiar campos
+                    if (mangaValor) mangaValor.value = '';
+                    if (mangaObs) mangaObs.value = '';
+                    if (bolsillosValor) bolsillosValor.value = '';
+                    if (bolsillosObs) bolsillosObs.value = '';
+                    if (brocheValor) brocheValor.value = '';
+                    if (brocheObs) brocheObs.value = '';
+                }
             });
             
-            // Crear inputs de ubicación por técnica y dropzones de imagen
+            // Crear inputs de ubicación por técnica, dropzones de imagen y variaciones
+            const variacionesPorTecnica = {};
+            
             tecnicas.forEach((tecnica, idx) => {
                 // UBICACIÓN
                 const divUbicacion = document.createElement('div');
@@ -566,6 +722,46 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 }
             });
             
+            // CREAR TABLA DE VARIACIONES UNA SOLA VEZ (NO POR TÉCNICA)
+            const divVariaciones = document.createElement('div');
+            divVariaciones.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
+            divVariaciones.innerHTML = `
+                <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
+                    Variaciones de la Prenda
+                </label>
+                <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Tipo</th>
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Valor</th>
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Manga</td>
+                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionManga-valor-p3-unique" placeholder="Corta, Larga..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            <td style="padding: 8px;"><input type="text" class="dVariacionManga-obs-p3-unique" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Bolsillos</td>
+                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionBolsillos-valor-p3-unique" placeholder="Sí, No..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            <td style="padding: 8px;"><input type="text" class="dVariacionBolsillos-obs-p3-unique" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Broche/Botón</td>
+                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionBroche-valor-p3-unique" placeholder="Automático, Metal..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            <td style="padding: 8px;"><input type="text" class="dVariacionBroche-obs-p3-unique" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            
+            const variacionesPorTecnicaDiv = document.getElementById('dVariacionesPorTecnicaP3');
+            if (variacionesPorTecnicaDiv) {
+                variacionesPorTecnicaDiv.appendChild(divVariaciones);
+            }
+            
             // Agregar talla inicial (vacía)
             function agregarFilaTallaPaso3() {
                 const idTalla = 'talla-p3-' + (contadorTallas++);
@@ -663,11 +859,34 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 return false;
             }
             
+            // Capturar variaciones (UNA SOLA VEZ para todas las técnicas)
+            const variacionesUnicas = {
+                manga: {
+                    valor: document.querySelector('.dVariacionManga-valor-p3-unique')?.value.trim() || '',
+                    observacion: document.querySelector('.dVariacionManga-obs-p3-unique')?.value.trim() || ''
+                },
+                bolsillos: {
+                    valor: document.querySelector('.dVariacionBolsillos-valor-p3-unique')?.value.trim() || '',
+                    observacion: document.querySelector('.dVariacionBolsillos-obs-p3-unique')?.value.trim() || ''
+                },
+                broche_boton: {
+                    valor: document.querySelector('.dVariacionBroche-valor-p3-unique')?.value.trim() || '',
+                    observacion: document.querySelector('.dVariacionBroche-obs-p3-unique')?.value.trim() || ''
+                }
+            };
+            
+            // Replicar las mismas variaciones para todas las técnicas
+            const variaciones_prenda = {};
+            window.tecnicasCombinadas.forEach((tecnica) => {
+                variaciones_prenda[tecnica.nombre] = variacionesUnicas;
+            });
+            
             return {
                 nombre_prenda: nombrePrendaCompleto,
                 observaciones: document.getElementById('dObservacionesP3').value.trim(),
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
                 tallas: tallas,
+                variaciones_prenda: variaciones_prenda,
                 imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3
             };
         }
@@ -696,9 +915,9 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
     
     Swal.fire({
         title: `Datos para ${tecnica.nombre}`,
-        width: '500px',
+        width: '550px',
         html: `
-            <div style="text-align: left; padding: 20px;">
+            <div style="text-align: left; padding: 20px; max-height: 70vh; overflow-y: auto;">
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prenda:</label>
                     <input type="text" id="dNombrePrendaDifP3" placeholder="POLO, CAMISA, PANTALÓN..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
@@ -710,6 +929,35 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones:</label>
                     <textarea id="dObservacionesDifP3" placeholder="..." rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
+                </div>
+                <div style="margin-bottom: 0;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Variaciones:</label>
+                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Tipo</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Valor</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Manga</td>
+                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" id="dVariacionMangaDifP3Valor" placeholder="Corta, Larga..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                                <td style="padding: 8px;"><input type="text" id="dVariacionMangaDifP3Obs" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Bolsillos</td>
+                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" id="dVariacionBolsillosDifP3Valor" placeholder="Sí, No..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                                <td style="padding: 8px;"><input type="text" id="dVariacionBolsillosDifP3Obs" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Broche/Botón</td>
+                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" id="dVariacionBrocheDifP3Valor" placeholder="Automático, Metal..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                                <td style="padding: 8px;"><input type="text" id="dVariacionBrocheDifP3Obs" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `,
@@ -730,11 +978,31 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
                 nombre_prenda: nombre.toUpperCase(),
                 ubicacion: ubicacion,
                 observaciones: document.getElementById('dObservacionesDifP3').value.trim(),
+                variaciones_prenda: {
+                    manga: {
+                        valor: document.getElementById('dVariacionMangaDifP3Valor').value.trim() || '',
+                        observacion: document.getElementById('dVariacionMangaDifP3Obs').value.trim() || ''
+                    },
+                    bolsillos: {
+                        valor: document.getElementById('dVariacionBolsillosDifP3Valor').value.trim() || '',
+                        observacion: document.getElementById('dVariacionBolsillosDifP3Obs').value.trim() || ''
+                    },
+                    broche_boton: {
+                        valor: document.getElementById('dVariacionBrocheDifP3Valor').value.trim() || '',
+                        observacion: document.getElementById('dVariacionBrocheDifP3Obs').value.trim() || ''
+                    }
+                },
                 tecnica_idx: indice
             };
         }
     }).then((result) => {
         if (result.isConfirmed && result.value) {
+            // Guardar datos de la técnica diferente
+            if (!window.datosDiferentesPaso3) {
+                window.datosDiferentesPaso3 = [];
+            }
+            window.datosDiferentesPaso3.push(result.value);
+            
             // Guardar y pasar al siguiente
             window.indiceActualTecnica++;
             mostrarFormularioTecnicaDiferentePaso3(window.indiceActualTecnica);
@@ -743,7 +1011,7 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
 }
 
 function guardarTecnicaCombinada(datosForm, tecnicas) {
-    // Guardar una prenda por técnica con sus imágenes
+    // Guardar una prenda por técnica con sus imágenes y variaciones
     tecnicas.forEach((tecnica, idx) => {
         const nuevaTecnica = {
             tipo: tecnica.nombre,
@@ -752,6 +1020,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
                 ubicaciones: datosForm.ubicacionesPorTecnica[idx] || [],
                 tallasCantidad: datosForm.tallas.map(t => ({ talla: t.talla, cantidad: t.cantidad })),
                 observaciones: datosForm.observaciones,
+                variaciones_prenda: datosForm.variaciones_prenda || {},
                 imagenes_files: datosForm.imagenesAgregadas[idx] || []
             }],
             observacionesGenerales: ''
@@ -815,7 +1084,8 @@ function renderizarTecnicasAgregadasPaso3() {
                     observaciones: prenda.observaciones,
                     tallasCantidad: prenda.tallasCantidad || [],
                     tecnicas: [],
-                    imagenes: []
+                    imagenes: [],
+                    variaciones_prenda: prenda.variaciones_prenda || {}
                 };
             }
             
@@ -846,7 +1116,7 @@ function renderizarTecnicasAgregadasPaso3() {
     });
     
     const contenedor = document.createElement('div');
-    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.2rem; margin-bottom: 20px;';
+    contenedor.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; margin-bottom: 20px; max-width: 1400px;';
     
     // Renderizar tarjetas
     Object.entries(prendasMap).forEach(([nombrePrenda, datosPrenda]) => {
@@ -869,10 +1139,14 @@ function renderizarTecnicasAgregadasPaso3() {
             this.style.transform = 'translateY(0)';
         };
         
-        // HEADER CON TÉCNICAS
+        // HEADER CON TÉCNICAS Y BOTONES
         let headerHTML = '<div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1rem; border-bottom: 1px solid #ddd;">';
+        headerHTML += '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
+        
+        // Sección de técnicas
+        headerHTML += '<div style="flex: 1;">';
         headerHTML += '<h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem;">Técnica(s)</h4>';
-        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+        headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.2rem;">';
         
         datosPrenda.tecnicas.forEach(t => {
             const colorsTec = {
@@ -896,6 +1170,46 @@ function renderizarTecnicasAgregadasPaso3() {
                 </span>
             `;
         });
+        
+        headerHTML += '</div></div>';
+        
+        // Botones de acción
+        headerHTML += '<div style="display: flex; gap: 0.6rem;">';
+        headerHTML += `
+            <button class="btn-editar-prenda" onclick="abrirModalEditarTecnicaPaso3('${nombrePrenda}')" style="
+                background: rgba(255,255,255,0.2);
+                color: white;
+                border: 1px solid rgba(255,255,255,0.3);
+                padding: 0.5rem 0.8rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.85rem;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+            " onmouseover="this.style.background='rgba(255,255,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                ✏️
+            </button>
+            <button class="btn-eliminar-prenda" onclick="eliminarTecnicaPaso3('${nombrePrenda}')" style="
+                background: rgba(255,255,255,0.2);
+                color: white;
+                border: 1px solid rgba(255,255,255,0.3);
+                padding: 0.5rem 0.8rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.85rem;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+            " onmouseover="this.style.background='rgba(255,255,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                🗑️
+            </button>
+        `;
+        headerHTML += '</div>';
         
         headerHTML += '</div></div>';
         
@@ -959,32 +1273,60 @@ function renderizarTecnicasAgregadasPaso3() {
             
             Object.entries(datosPrenda.ubicaciones).forEach(([nombreTec, ubicaciones]) => {
                 bodyHTML += `
-                    <div style="margin-bottom: 0.6rem;">
-                        <span style="
-                            font-size: 0.75rem;
-                            font-weight: 600;
-                            color: #475569;
-                            display: block;
-                            margin-bottom: 0.3rem;
-                        ">
-                            ${nombreTec}:
-                        </span>
-                        <div style="padding-left: 0.8rem; border-left: 3px solid #94a3b8;">
-                            ${ubicaciones.map(ub => `
-                                <div style="
-                                    font-size: 0.8rem;
-                                    color: #1e293b;
-                                    margin-bottom: 0.2rem;
-                                ">
-                                    ${ub}
-                                </div>
-                            `).join('')}
-                        </div>
+                    <div style="padding-left: 1rem; border-left: 4px solid #3b82f6;">
+                        ${ubicaciones.map(ub => `
+                            <div style="
+                                font-size: 0.9rem;
+                                color: #1e293b;
+                                margin-bottom: 0.3rem;
+                            ">
+                                • ${nombreTec} - ${ub}
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             });
             
             bodyHTML += '</div>';
+        }
+        
+        // TABLA DE VARIACIONES
+        if (datosPrenda.variaciones_prenda && Object.keys(datosPrenda.variaciones_prenda).length > 0) {
+            // Obtener las variaciones de la PRIMERA técnica (son iguales para todas)
+            const variacionesUnicas = Object.values(datosPrenda.variaciones_prenda)[0] || {};
+            
+            bodyHTML += `
+                <div style="margin-bottom: 1rem;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
+                        📋 Variaciones:
+                    </span>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 0.6rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; color: #1e293b;">Tipo</th>
+                            <th style="padding: 0.6rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; color: #1e293b;">Valor</th>
+                            <th style="padding: 0.6rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; color: #1e293b;">Observación</th>
+                        </tr>
+            `;
+            
+            // Mostrar manga, bolsillos y broche_boton UNA SOLA VEZ
+            ['manga', 'bolsillos', 'broche_boton'].forEach((tipo) => {
+                const variacion = variacionesUnicas[tipo] || { valor: '-', observacion: '-' };
+                const valor = typeof variacion === 'object' ? (variacion.valor || '-') : (variacion || '-');
+                const obs = typeof variacion === 'object' ? (variacion.observacion || '-') : '-';
+                
+                bodyHTML += `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 0.6rem; color: #1e293b; font-weight: 500; font-size: 0.8rem;">${tipo === 'manga' ? '🧥 Manga' : tipo === 'bolsillos' ? '🔖 Bolsillos' : '🔘 Broche/Botón'}</td>
+                        <td style="padding: 0.6rem; color: #475569;">${valor}</td>
+                        <td style="padding: 0.6rem; color: #64748b; font-size: 0.8rem;">${obs}</td>
+                    </tr>
+                `;
+            });
+            
+            bodyHTML += `
+                    </table>
+                </div>
+            `;
         }
         
         // TALLAS Y CANTIDADES
@@ -1019,13 +1361,6 @@ function renderizarTecnicasAgregadasPaso3() {
                 </div>
             `;
         }
-        
-        // BOTÓN ELIMINAR
-        bodyHTML += `
-            <button type="button" onclick="eliminarTecnicaPaso3('${nombrePrenda}')" style="width: 100%; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#fecaca'; this.style.color='#7f1d1d';" onmouseout="this.style.background='#fee2e2'; this.style.color='#991b1b';">
-                🗑️ Eliminar
-            </button>
-        `;
         
         bodyHTML += '</div>';
         
@@ -1130,6 +1465,435 @@ function renderizarTecnicasAgregadasPaso3() {
     });
 }
 
+function abrirModalEditarTecnicaPaso3(nombrePrenda) {
+    // Encontrar los datos de la prenda a editar
+    if (!window.tecnicasAgregadasPaso3) return;
+    
+    let datosPrendaActual = null;
+    let tecnicasConPrenda = [];
+    
+    window.tecnicasAgregadasPaso3.forEach(tecnicaData => {
+        if (tecnicaData.prendas) {
+            const prenda = tecnicaData.prendas.find(p => p.nombre === nombrePrenda);
+            if (prenda) {
+                if (!datosPrendaActual) {
+                    datosPrendaActual = prenda;
+                }
+                tecnicasConPrenda.push({
+                    tipo: tecnicaData.tipo,
+                    prenda: prenda
+                });
+            }
+        }
+    });
+    
+    if (!datosPrendaActual || tecnicasConPrenda.length === 0) {
+        console.error('No se encontraron datos de la prenda');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Editar Prenda',
+        width: '750px',
+        html: `
+            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 80vh; overflow-y: auto;">
+                
+                <!-- NOMBRE DE PRENDA (SOLO LECTURA) -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Prenda</h3>
+                    <div style="padding: 10px; background: #f5f5f5; border-radius: 4px; color: #333; font-weight: 500;">
+                        ${nombrePrenda}
+                    </div>
+                </div>
+                
+                <!-- UBICACIONES POR TÉCNICA -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Ubicaciones</h3>
+                    <div id="dUbicacionesEditarP3" style="display: grid; gap: 10px;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- IMÁGENES -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Imágenes por Técnica</h3>
+                    <div id="dImagenesEditarP3" style="display: grid; gap: 12px;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- VARIACIONES -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Variaciones por Técnica</h3>
+                    <div id="dVariacionesEditarP3" style="display: grid; gap: 12px;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- OBSERVACIONES -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Observaciones</h3>
+                    <textarea id="dObservacionesEditarP3" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${datosPrendaActual.observaciones || ''}</textarea>
+                </div>
+                
+                <!-- TALLAS Y CANTIDADES -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Tallas y Cantidades</h3>
+                    <div id="dTallaCantidadEditarP3" style="display: grid; gap: 8px; margin-bottom: 10px; max-height: 200px; overflow-y: auto;">
+                        <!-- Se agrega dinámicamente -->
+                    </div>
+                    <button type="button" id="dBtnAgregarTallaEditarP3" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla</button>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#333',
+        didOpen: (modal) => {
+            const ubicacionesDiv = document.getElementById('dUbicacionesEditarP3');
+            const imagenesDiv = document.getElementById('dImagenesEditarP3');
+            const variacionesDiv = document.getElementById('dVariacionesEditarP3');
+            const tallaCantidadContainer = document.getElementById('dTallaCantidadEditarP3');
+            const btnAgregarTalla = document.getElementById('dBtnAgregarTallaEditarP3');
+            
+            let contadorTallas = 0;
+            const imagenesAgregadasPorTecnicaEditar = {};
+            const variacionesEditarPorTecnica = {};
+            
+            // UBICACIONES
+            tecnicasConPrenda.forEach((tecnicaInfo, idx) => {
+                const divUbicacion = document.createElement('div');
+                divUbicacion.style.cssText = 'display: flex; gap: 8px; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 4px;';
+                
+                const labelUbicacion = document.createElement('label');
+                labelUbicacion.style.cssText = 'font-weight: 600; min-width: 100px; font-size: 0.9rem; color: #333; flex-shrink: 0;';
+                labelUbicacion.textContent = tecnicaInfo.tipo + ':';
+                
+                const inputUbicacion = document.createElement('input');
+                inputUbicacion.type = 'text';
+                inputUbicacion.className = 'dUbicacionEditar-p3-' + idx;
+                inputUbicacion.value = (tecnicaInfo.prenda.ubicaciones && tecnicaInfo.prenda.ubicaciones[0]) || '';
+                inputUbicacion.placeholder = 'Ej: Pecho, Espalda, Manga';
+                inputUbicacion.style.cssText = 'flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;';
+                
+                divUbicacion.appendChild(labelUbicacion);
+                divUbicacion.appendChild(inputUbicacion);
+                ubicacionesDiv.appendChild(divUbicacion);
+                
+                // IMÁGENES
+                imagenesAgregadasPorTecnicaEditar[idx] = tecnicaInfo.prenda.imagenes_files ? [...tecnicaInfo.prenda.imagenes_files] : [];
+                
+                const divImagen = document.createElement('div');
+                divImagen.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
+                divImagen.innerHTML = `
+                    <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
+                        Imágenes - ${tecnicaInfo.tipo} (Máximo 3)
+                    </label>
+                    <div class="dImagenesDropzoneEditar-p3-${idx}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
+                        <div style="margin-bottom: 6px; font-size: 1.3rem;">📁</div>
+                        <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
+                        <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
+                        <input type="file" class="dImagenInputEditar-p3-${idx}" accept="image/*" multiple style="display: none;" />
+                    </div>
+                    <div class="dImagenesPreviewEditar-p3-${idx}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                        <!-- Previsualizaciones aquí -->
+                    </div>
+                `;
+                
+                imagenesDiv.appendChild(divImagen);
+                
+                // Setup Drag and Drop
+                const dropzone = divImagen.querySelector(`.dImagenesDropzoneEditar-p3-${idx}`);
+                const input = divImagen.querySelector(`.dImagenInputEditar-p3-${idx}`);
+                const previewContainer = divImagen.querySelector(`.dImagenesPreviewEditar-p3-${idx}`);
+                
+                function actualizarPrevisualizacionesEditar() {
+                    previewContainer.innerHTML = '';
+                    
+                    imagenesAgregadasPorTecnicaEditar[idx].forEach((archivo, imgIdx) => {
+                        let imagenSrc;
+                        
+                        if (typeof archivo === 'string') {
+                            // Es una URL
+                            imagenSrc = archivo;
+                            mostrarPreview(imagenSrc, imgIdx);
+                        } else {
+                            // Es un File object
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                imagenSrc = e.target.result;
+                                mostrarPreview(imagenSrc, imgIdx);
+                            };
+                            reader.readAsDataURL(archivo);
+                        }
+                    });
+                    
+                    function mostrarPreview(src, imgIdx) {
+                        const preview = document.createElement('div');
+                        preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+                        
+                        const btnEliminar = document.createElement('button');
+                        btnEliminar.type = 'button';
+                        btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
+                        btnEliminar.textContent = '×';
+                        btnEliminar.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            imagenesAgregadasPorTecnicaEditar[idx].splice(imgIdx, 1);
+                            actualizarPrevisualizacionesEditar();
+                        });
+                        
+                        const img = document.createElement('img');
+                        img.src = src;
+                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                        
+                        preview.appendChild(img);
+                        preview.appendChild(btnEliminar);
+                        previewContainer.appendChild(preview);
+                    }
+                }
+                
+                dropzone.addEventListener('click', () => input.click());
+                
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.style.background = '#e8f1ff';
+                    dropzone.style.borderColor = '#1e40af';
+                });
+                
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.style.background = '#fafafa';
+                    dropzone.style.borderColor = '#ddd';
+                });
+                
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.style.background = '#fafafa';
+                    dropzone.style.borderColor = '#ddd';
+                    agregarImagenesDropEditar(Array.from(e.dataTransfer.files));
+                });
+                
+                input.addEventListener('change', (e) => {
+                    agregarImagenesDropEditar(Array.from(e.target.files));
+                });
+                
+                function agregarImagenesDropEditar(archivos) {
+                    const imagenes = archivos.filter(f => f.type.startsWith('image/'));
+                    
+                    if (imagenes.length === 0) return;
+                    
+                    for (const archivo of imagenes) {
+                        if (imagenesAgregadasPorTecnicaEditar[idx].length >= 3) break;
+                        imagenesAgregadasPorTecnicaEditar[idx].push(archivo);
+                    }
+                    
+                    actualizarPrevisualizacionesEditar();
+                }
+                
+                // Mostrar previsualizaciones iniciales
+                actualizarPrevisualizacionesEditar();
+                
+                // VARIACIONES
+                variacionesEditarPorTecnica[idx] = {
+                    manga: {
+                        valor: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.manga?.valor) || '',
+                        observacion: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.manga?.observacion) || ''
+                    },
+                    bolsillos: {
+                        valor: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.bolsillos?.valor) || '',
+                        observacion: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.bolsillos?.observacion) || ''
+                    },
+                    broche_boton: {
+                        valor: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.broche_boton?.valor) || '',
+                        observacion: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.broche_boton?.observacion) || ''
+                    }
+                };
+                
+                const divVariaciones = document.createElement('div');
+                divVariaciones.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
+                divVariaciones.innerHTML = `
+                    <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
+                        Variaciones - ${tecnicaInfo.tipo}
+                    </label>
+                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Tipo</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Valor</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Manga</td>
+                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionEditarMangaValor-p3-${idx}" placeholder="Corta, Larga..." value="${variacionesEditarPorTecnica[idx].manga.valor}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                                <td style="padding: 8px;"><input type="text" class="dVariacionEditarMangaObs-p3-${idx}" placeholder="Observación..." value="${variacionesEditarPorTecnica[idx].manga.observacion}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Bolsillos</td>
+                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionEditarBolsillosValor-p3-${idx}" placeholder="Sí, No..." value="${variacionesEditarPorTecnica[idx].bolsillos.valor}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                                <td style="padding: 8px;"><input type="text" class="dVariacionEditarBolsillosObs-p3-${idx}" placeholder="Observación..." value="${variacionesEditarPorTecnica[idx].bolsillos.observacion}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Broche/Botón</td>
+                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionEditarBrocheValor-p3-${idx}" placeholder="Automático, Metal..." value="${variacionesEditarPorTecnica[idx].broche_boton.valor}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                                <td style="padding: 8px;"><input type="text" class="dVariacionEditarBrocheObs-p3-${idx}" placeholder="Observación..." value="${variacionesEditarPorTecnica[idx].broche_boton.observacion}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                
+                variacionesDiv.appendChild(divVariaciones);
+            });
+            
+            // TALLAS - Cargar tallas existentes
+            if (datosPrendaActual.tallasCantidad && datosPrendaActual.tallasCantidad.length > 0) {
+                datosPrendaActual.tallasCantidad.forEach(t => {
+                    const idTalla = 'talla-editar-p3-' + (contadorTallas++);
+                    const fila = document.createElement('div');
+                    fila.setAttribute('data-talla-id', idTalla);
+                    fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
+                    fila.innerHTML = `
+                        <input type="text" class="dTallaInputEditar" value="${t.talla}" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
+                        <input type="number" class="dCantidadInputEditar" value="${t.cantidad}" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
+                        <button type="button" class="dBtnEliminarTallaEditar" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
+                    `;
+                    
+                    const btnEliminar = fila.querySelector('.dBtnEliminarTallaEditar');
+                    btnEliminar.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (tallaCantidadContainer.children.length > 1) {
+                            fila.remove();
+                        }
+                    });
+                    
+                    tallaCantidadContainer.appendChild(fila);
+                });
+            }
+            
+            // Función para agregar talla
+            function agregarFilaTallaEditar() {
+                const idTalla = 'talla-editar-p3-' + (contadorTallas++);
+                const fila = document.createElement('div');
+                fila.setAttribute('data-talla-id', idTalla);
+                fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
+                fila.innerHTML = `
+                    <input type="text" class="dTallaInputEditar" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
+                    <input type="number" class="dCantidadInputEditar" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
+                    <button type="button" class="dBtnEliminarTallaEditar" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
+                `;
+                
+                const btnEliminar = fila.querySelector('.dBtnEliminarTallaEditar');
+                btnEliminar.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (tallaCantidadContainer.children.length > 1) {
+                        fila.remove();
+                    }
+                });
+                
+                tallaCantidadContainer.appendChild(fila);
+            }
+            
+            btnAgregarTalla.addEventListener('click', (e) => {
+                e.preventDefault();
+                agregarFilaTallaEditar();
+            });
+            
+            // Guardar referencia global
+            window.imagenesAgregadasPorTecnicaEditarP3 = imagenesAgregadasPorTecnicaEditar;
+            window.variacionesEditarPorTecnicaP3 = variacionesEditarPorTecnica;
+            window.tecnicasConPrendaActual = tecnicasConPrenda;
+        },
+        preConfirm: () => {
+            // Validar tallas
+            const tallasFilas = document.querySelectorAll('[data-talla-id]');
+            let tallas = [];
+            tallasFilas.forEach(fila => {
+                const talla = fila.querySelector('.dTallaInputEditar').value.trim();
+                const cantidad = fila.querySelector('.dCantidadInputEditar').value;
+                if (talla && cantidad) {
+                    tallas.push({ talla, cantidad: parseInt(cantidad) });
+                }
+            });
+            
+            if (tallas.length === 0) {
+                Swal.showValidationMessage('Agrega al menos una talla y cantidad');
+                return false;
+            }
+            
+            // Capturar ubicaciones
+            const ubicacionesActualizadas = {};
+            window.tecnicasConPrendaActual.forEach((tecnicaInfo, idx) => {
+                const ubicacion = document.querySelector(`.dUbicacionEditar-p3-${idx}`)?.value.trim() || '';
+                if (ubicacion) {
+                    ubicacionesActualizadas[tecnicaInfo.tipo] = [ubicacion];
+                }
+            });
+            
+            // Capturar variaciones
+            const variacionesActualizadas = {};
+            window.tecnicasConPrendaActual.forEach((tecnicaInfo, idx) => {
+                variacionesActualizadas[tecnicaInfo.tipo] = {
+                    manga: {
+                        valor: document.querySelector(`.dVariacionEditarMangaValor-p3-${idx}`)?.value.trim() || '',
+                        observacion: document.querySelector(`.dVariacionEditarMangaObs-p3-${idx}`)?.value.trim() || ''
+                    },
+                    bolsillos: {
+                        valor: document.querySelector(`.dVariacionEditarBolsillosValor-p3-${idx}`)?.value.trim() || '',
+                        observacion: document.querySelector(`.dVariacionEditarBolsillosObs-p3-${idx}`)?.value.trim() || ''
+                    },
+                    broche_boton: {
+                        valor: document.querySelector(`.dVariacionEditarBrocheValor-p3-${idx}`)?.value.trim() || '',
+                        observacion: document.querySelector(`.dVariacionEditarBrocheObs-p3-${idx}`)?.value.trim() || ''
+                    }
+                };
+            });
+            
+            return {
+                nombrePrenda: nombrePrenda,
+                observaciones: document.getElementById('dObservacionesEditarP3').value.trim(),
+                ubicacionesActualizadas: ubicacionesActualizadas,
+                variacionesActualizadas: variacionesActualizadas,
+                tallas: tallas,
+                imagenesAgregadas: window.imagenesAgregadasPorTecnicaEditarP3
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            guardarEdiciónPaso3(result.value);
+        }
+    });
+}
+
+function guardarEdiciónPaso3(datosEditados) {
+    const { nombrePrenda, observaciones, ubicacionesActualizadas, variacionesActualizadas, tallas, imagenesAgregadas } = datosEditados;
+    
+    // Actualizar cada técnica que tenga esta prenda
+    window.tecnicasAgregadasPaso3.forEach((tecnicaData, tecnicaIndex) => {
+        if (tecnicaData.prendas) {
+            tecnicaData.prendas = tecnicaData.prendas.map(prenda => {
+                if (prenda.nombre === nombrePrenda) {
+                    // Buscar índice de esta técnica en los datos editados
+                    const tecnicaIdx = window.tecnicasConPrendaActual.findIndex(t => t.tipo === tecnicaData.tipo);
+                    
+                    return {
+                        ...prenda,
+                        observaciones: observaciones,
+                        ubicaciones: ubicacionesActualizadas[tecnicaData.tipo] || prenda.ubicaciones,
+                        variaciones_prenda: variacionesActualizadas,
+                        tallasCantidad: tallas,
+                        imagenes_files: (tecnicaIdx >= 0 && imagenesAgregadas[tecnicaIdx]) ? imagenesAgregadas[tecnicaIdx] : prenda.imagenes_files
+                    };
+                }
+                return prenda;
+            });
+        }
+    });
+    
+    console.log('✅ Prenda editada en PASO 3:', nombrePrenda);
+    renderizarTecnicasAgregadasPaso3();
+}
+
 function eliminarTecnicaPaso3(nombrePrenda) {
     if (!window.tecnicasAgregadasPaso3) return;
     
@@ -1208,7 +1972,8 @@ function agregarFilaPrendaPaso3() {
                         const dataGenero = prenda.genero || '';
                         const dataColores = JSON.stringify(prenda.colores).replace(/"/g, '&quot;');
                         const dataImagenes = JSON.stringify(prenda.imagenes || []).replace(/"/g, '&quot;');
-                        return `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}">${textoOpcion}</option>`;
+                        const dataVariaciones = JSON.stringify(prenda.variaciones || {}).replace(/"/g, '&quot;');
+                        return `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}" data-variaciones="${dataVariaciones}">${textoOpcion}</option>`;
                     }).join('')}
                 </select>
                 <small style="color: #999; display: block; margin-top: 4px; font-size: 0.8rem;">Las prendas se cargan automáticamente del PASO 2</small>
@@ -1238,6 +2003,37 @@ function agregarFilaPrendaPaso3() {
                 <div class="imagenes-preview-paso3-${idUnico}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
                     <!-- Previsualizaciones aquí -->
                 </div>
+            </div>
+            
+            <!-- TABLA DE VARIACIONES -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Variaciones</label>
+                <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Tipo</th>
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Valor</th>
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Manga</td>
+                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="variacion-manga-valor-paso3" placeholder="Corta, Larga..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            <td style="padding: 8px;"><input type="text" class="variacion-manga-obs-paso3" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Bolsillos</td>
+                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="variacion-bolsillos-valor-paso3" placeholder="Sí, No..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            <td style="padding: 8px;"><input type="text" class="variacion-bolsillos-obs-paso3" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Broche/Botón</td>
+                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="variacion-broche-valor-paso3" placeholder="Automático, Metal..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                            <td style="padding: 8px;"><input type="text" class="variacion-broche-obs-paso3" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             
             <div>
@@ -1278,11 +2074,31 @@ function agregarFilaPrendaPaso3() {
         `).join('');
     }
     
-    // Listener para cambio de prenda - carga las tallas automáticamente
+    // Listener para cambio de prenda - carga las tallas, imágenes y variaciones automáticamente
     selectPrenda.addEventListener('change', (e) => {
         const selectedOption = e.target.options[e.target.selectedIndex];
         const tallasJson = selectedOption.getAttribute('data-tallas');
         const imagenesJson = selectedOption.getAttribute('data-imagenes');
+        const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
+        
+        // Construir nombre completo IGUAL que en preConfirm (el que se guarda)
+        const genero = selectedOption.getAttribute('data-genero') || '';
+        const coloresJson = selectedOption.getAttribute('data-colores') || '[]';
+        
+        let colores = [];
+        try {
+            colores = JSON.parse(coloresJson);
+        } catch (e) {
+            colores = [];
+        }
+        
+        let nombrePrendaCompleto = nombrePrendaBase;
+        if (genero) {
+            nombrePrendaCompleto += ' - ' + genero;
+        }
+        if (colores && colores.length > 0) {
+            nombrePrendaCompleto += ' - Color: ' + colores.join(' - ');
+        }
         
         // Limpiar tallas actuales
         tallasContainer.innerHTML = '';
@@ -1293,15 +2109,15 @@ function agregarFilaPrendaPaso3() {
                 if (Array.isArray(tallas) && tallas.length > 0) {
                     // Agregar una fila por cada talla del PASO 2
                     tallas.forEach(talla => {
-                        const fila = document.createElement('div');
-                        fila.className = 'talla-cantidad-paso3';
-                        fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; align-items: center;';
-                        fila.innerHTML = `
+                        const filaT = document.createElement('div');
+                        filaT.className = 'talla-cantidad-paso3';
+                        filaT.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; align-items: center;';
+                        filaT.innerHTML = `
                             <input type="text" class="talla-input-paso3" placeholder="Talla" value="${talla}" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; text-transform: uppercase;" readonly>
                             <input type="number" class="cantidad-input-paso3" placeholder="Cantidad" min="1" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
                             <button type="button" onclick="this.closest('.talla-cantidad-paso3').remove()" style="background: none; color: #999; border: 1px solid #ddd; padding: 4px; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">✕</button>
                         `;
-                        tallasContainer.appendChild(fila);
+                        tallasContainer.appendChild(filaT);
                     });
                 }
             } catch (err) {
@@ -1329,6 +2145,70 @@ function agregarFilaPrendaPaso3() {
             } catch (err) {
                 console.error('Error al parsear imágenes:', err);
             }
+        }
+        
+        // CARGAR VARIACIONES DE PRENDA DESDE PASO 2
+        const variacionesJson = selectedOption.getAttribute('data-variaciones');
+        let variacionesPaso2 = {};
+        
+        try {
+            if (variacionesJson) {
+                variacionesPaso2 = JSON.parse(variacionesJson);
+            }
+        } catch (err) {
+            console.error('Error al parsear variaciones:', err);
+            variacionesPaso2 = {};
+        }
+        
+        // Cargar variaciones desde data-variaciones
+        if (variacionesPaso2 && Object.keys(variacionesPaso2).length > 0) {
+            // Buscar los campos de entrada en la fila
+            const mangaValor = fila.querySelector('.variacion-manga-valor-paso3');
+            const mangaObs = fila.querySelector('.variacion-manga-obs-paso3');
+            const bolsillosValor = fila.querySelector('.variacion-bolsillos-valor-paso3');
+            const bolsillosObs = fila.querySelector('.variacion-bolsillos-obs-paso3');
+            const brocheValor = fila.querySelector('.variacion-broche-valor-paso3');
+            const brocheObs = fila.querySelector('.variacion-broche-obs-paso3');
+            
+            // Cargar valores en los campos
+            if (variacionesPaso2.manga) {
+                if (mangaValor) mangaValor.value = variacionesPaso2.manga.valor || '';
+                if (mangaObs) mangaObs.value = variacionesPaso2.manga.observacion || '';
+            } else {
+                if (mangaValor) mangaValor.value = '';
+                if (mangaObs) mangaObs.value = '';
+            }
+            
+            if (variacionesPaso2.bolsillos) {
+                if (bolsillosValor) bolsillosValor.value = variacionesPaso2.bolsillos.valor || '';
+                if (bolsillosObs) bolsillosObs.value = variacionesPaso2.bolsillos.observacion || '';
+            } else {
+                if (bolsillosValor) bolsillosValor.value = '';
+                if (bolsillosObs) bolsillosObs.value = '';
+            }
+            
+            if (variacionesPaso2.broche_boton) {
+                if (brocheValor) brocheValor.value = variacionesPaso2.broche_boton.valor || '';
+                if (brocheObs) brocheObs.value = variacionesPaso2.broche_boton.observacion || '';
+            } else {
+                if (brocheValor) brocheValor.value = '';
+                if (brocheObs) brocheObs.value = '';
+            }
+        } else {
+            // Si no hay variaciones, limpiar campos
+            const mangaValor = fila.querySelector('.variacion-manga-valor-paso3');
+            const mangaObs = fila.querySelector('.variacion-manga-obs-paso3');
+            const bolsillosValor = fila.querySelector('.variacion-bolsillos-valor-paso3');
+            const bolsillosObs = fila.querySelector('.variacion-bolsillos-obs-paso3');
+            const brocheValor = fila.querySelector('.variacion-broche-valor-paso3');
+            const brocheObs = fila.querySelector('.variacion-broche-obs-paso3');
+            
+            if (mangaValor) mangaValor.value = '';
+            if (mangaObs) mangaObs.value = '';
+            if (bolsillosValor) bolsillosValor.value = '';
+            if (bolsillosObs) bolsillosObs.value = '';
+            if (brocheValor) brocheValor.value = '';
+            if (brocheObs) brocheObs.value = '';
         }
     });
     
@@ -1567,6 +2447,21 @@ function guardarTecnicaPaso3() {
             }
         });
         
+        // Obtener variaciones
+        const variaciones_prenda = {};
+        const manga_valor = item.querySelector('.variacion-manga-valor-paso3')?.value.trim() || '';
+        const manga_obs = item.querySelector('.variacion-manga-obs-paso3')?.value.trim() || '';
+        const bolsillos_valor = item.querySelector('.variacion-bolsillos-valor-paso3')?.value.trim() || '';
+        const bolsillos_obs = item.querySelector('.variacion-bolsillos-obs-paso3')?.value.trim() || '';
+        const broche_valor = item.querySelector('.variacion-broche-valor-paso3')?.value.trim() || '';
+        const broche_obs = item.querySelector('.variacion-broche-obs-paso3')?.value.trim() || '';
+        
+        variaciones_prenda[tecnicaSeleccionada.nombre] = {
+            manga: { valor: manga_valor, observacion: manga_obs },
+            bolsillos: { valor: bolsillos_valor, observacion: bolsillos_obs },
+            broche_boton: { valor: broche_valor, observacion: broche_obs }
+        };
+        
         if (!nombreBase) {
             Swal.fire('⚠️ Error', `Debes seleccionar una prenda en la prenda ${idx + 1}`, 'warning');
             return;
@@ -1582,6 +2477,7 @@ function guardarTecnicaPaso3() {
             ubicaciones,
             observaciones,
             tallasCantidad,
+            variaciones_prenda,
             imagenes_files: imagenesFiles,
             tecnica: tecnicaSeleccionada
         });
