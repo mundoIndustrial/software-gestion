@@ -5,9 +5,12 @@
     $tecnicas = [];
     foreach ($prendas_tecnicas as $prenda_tecnica) {
         if ($prenda_tecnica->tipo_logo) {
+            $nombreProducto = $prenda_tecnica->logoPrendaCot 
+                ? $prenda_tecnica->logoPrendaCot->nombre_producto 
+                : 'Producto desconocido';
             $tecnicas[] = [
                 'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
-                'prenda' => $prenda_tecnica->nombre_prenda,
+                'prenda' => $nombreProducto,
                 'observaciones' => $prenda_tecnica->observaciones
             ];
         }

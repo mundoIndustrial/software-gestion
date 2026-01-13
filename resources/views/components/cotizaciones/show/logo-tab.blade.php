@@ -92,9 +92,12 @@
             $tecnicas = [];
             foreach ($prendas_tecnicas as $prenda_tecnica) {
                 if ($prenda_tecnica->tipo_logo) {
+                    $nombreProducto = $prenda_tecnica->logoPrendaCot 
+                        ? $prenda_tecnica->logoPrendaCot->nombre_producto 
+                        : 'Producto desconocido';
                     $tecnicas[] = [
                         'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
-                        'prenda' => $prenda_tecnica->nombre_prenda,
+                        'prenda' => $nombreProducto,
                         'observaciones' => $prenda_tecnica->observaciones
                     ];
                 }
@@ -124,31 +127,34 @@
             // Obtener las prendas que tienen imágenes (fotos) usando el ID de LogoCotizacion
             $prendasConTecnicas = $logo 
                 ? \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logo->id)
-                    ->with(['fotos', 'tipoLogo'])
-                    ->orderBy('nombre_prenda')
+                    ->with(['fotos', 'tipoLogo', 'logoPrendaCot'])
+                    ->orderBy('logo_prenda_cot_id')
                     ->orderBy('grupo_combinado')
                     ->get()
                 : collect();
 
-            // Agrupar por nombre de prenda ÚNICA (para crear una tarjeta por prenda)
+            // Agrupar por logo_prenda_cot_id (para crear una tarjeta por prenda)
             $prendasMap = [];
             foreach ($prendasConTecnicas as $prenda) {
-                $nombrePrenda = $prenda->nombre_prenda;
-                if (!isset($prendasMap[$nombrePrenda])) {
-                    $prendasMap[$nombrePrenda] = [];
+                $logoPrendaCotId = $prenda->logo_prenda_cot_id;
+                if (!isset($prendasMap[$logoPrendaCotId])) {
+                    $prendasMap[$logoPrendaCotId] = [];
                 }
-                $prendasMap[$nombrePrenda][] = $prenda;
+                $prendasMap[$logoPrendaCotId][] = $prenda;
             }
         @endphp
         @if($prendasConTecnicas->count() > 0)
             <div style="margin-top: 2rem;">
                 <h4 class="section-title" style="margin-bottom: 1.5rem;"><i class="fas fa-layer-group"></i> Detalles de Técnicas</h4>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem;">
-                    @foreach($prendasMap as $nombrePrenda => $prendas)
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                    @foreach($prendasMap as $logoPrendaCotId => $prendas)
                         @php
                             $esCombinada = count($prendas) > 1;
                             $prenda1 = $prendas[0];
+                            $nombrePrenda = $prenda1->logoPrendaCot 
+                                ? $prenda1->logoPrendaCot->nombre_producto 
+                                : 'Producto desconocido';
                         @endphp
                         {{-- TARJETA DE PRENDA --}}
                         <div style="
@@ -309,6 +315,68 @@
                                         ">
                                             {{ $prenda1->observaciones }}
                                         </div>
+                                    </div>
+                                @endif
+
+                                {{-- VARIACIONES --}}
+                                @php
+                                    $variacionesCombinadas = [];
+                                    foreach ($prendas as $p) {
+                                        $variaciones = is_string($p->variaciones_prenda) ? json_decode($p->variaciones_prenda, true) ?? [] : $p->variaciones_prenda;
+                                        if (!empty($variaciones) && is_array($variaciones)) {
+                                            foreach ($variaciones as $clave => $valor) {
+                                                if (!isset($variacionesCombinadas[$clave])) {
+                                                    $variacionesCombinadas[$clave] = [];
+                                                }
+                                                // Extraer el valor de 'opcion' si es un array
+                                                $valorFinal = is_array($valor) ? ($valor['opcion'] ?? $valor) : $valor;
+                                                if (!in_array($valorFinal, $variacionesCombinadas[$clave])) {
+                                                    $variacionesCombinadas[$clave][] = $valorFinal;
+                                                }
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                @if(!empty($variacionesCombinadas))
+                                    <div style="margin-bottom: 1.5rem;">
+                                        <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
+                                            <i class="fas fa-palette"></i> Variaciones:
+                                        </h5>
+                                        <table style="
+                                            width: 100%;
+                                            border-collapse: collapse;
+                                            background: white;
+                                            border: 1px solid #e5e7eb;
+                                            border-radius: 6px;
+                                            overflow: hidden;
+                                        ">
+                                            <thead style="background: #f3e8ff; border-bottom: 2px solid #d8b4fe;">
+                                                <tr>
+                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 700; color: #6b21a8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.4px;">Opción</th>
+                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 700; color: #6b21a8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.4px;">Observación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($variacionesCombinadas as $opcion => $valores)
+                                                    @foreach($valores as $valor)
+                                                        <tr style="border-bottom: 1px solid #e5e7eb;" onmouseover="this.style.background='#faf5ff'" onmouseout="this.style.background=''">
+                                                            <td style="padding: 0.75rem; font-size: 0.9rem; color: #374151; font-weight: 600;">
+                                                                {{ ucfirst($opcion) }}:
+                                                            </td>
+                                                            <td style="padding: 0.75rem; font-size: 0.9rem; color: #6b7280;">
+                                                                @if(!empty($valor) && $valor !== 'null')
+                                                                    <span style="background: #fef3c7; color: #92400e; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">
+                                                                        {{ $valor }}
+                                                                    </span>
+                                                                @else
+                                                                    <span style="color: #d1d5db;">—</span>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     </div>
                                 @endif
 

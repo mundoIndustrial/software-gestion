@@ -7,6 +7,7 @@ use App\Models\LogoCotizacion;
 use App\Models\TipoLogoCotizacion;
 use App\Models\LogoCotizacionTecnicaPrenda;
 use App\Models\LogoCotizacionTecnicaPrendaFoto;
+use App\Models\LogoPrendaCot;
 use App\Services\TecnicaImagenService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -150,19 +151,32 @@ class LogoCotizacionTecnicaController extends Controller
             // Crear prendas con imágenes
             $prendas = [];
             foreach ($prendasData as $prendasIndex => $prendaData) {
-                Log::info('📍 Creando prenda', [
-                    'nombre_prenda' => $prendaData['nombre_prenda'],
+                Log::info('📍 Creando prenda de catálogo', [
+                    'nombre_producto' => $prendaData['nombre_prenda'],
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
                     'variaciones_prenda' => $prendaData['variaciones_prenda'] ?? 'NULL',
                     'prenda_index' => $prendasIndex
                 ]);
 
-                // Crear prenda
+                // 1. Crear registro en logo_prenda_cot
+                $logoPrendaCot = LogoPrendaCot::create([
+                    'logo_cot_id' => $logoCotizacionId,
+                    'nombre_producto' => $prendaData['nombre_prenda'],
+                    'descripcion' => $prendaData['observaciones'] ?? '',
+                    'cantidad' => $prendaData['cantidad'] ?? 1,
+                ]);
+
+                Log::info('✅ Prenda de catálogo creada', [
+                    'logo_prenda_cot_id' => $logoPrendaCot->id,
+                    'nombre_producto' => $logoPrendaCot->nombre_producto
+                ]);
+
+                // 2. Crear prenda técnica, referenciando logo_prenda_cot
                 $prenda = LogoCotizacionTecnicaPrenda::create([
                     'logo_cotizacion_id' => $logoCotizacionId,
                     'tipo_logo_id' => $tipoLogoId,
-                    'nombre_prenda' => $prendaData['nombre_prenda'],
+                    'logo_prenda_cot_id' => $logoPrendaCot->id,
                     'observaciones' => $prendaData['observaciones'] ?? '',
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
@@ -170,8 +184,9 @@ class LogoCotizacionTecnicaController extends Controller
                     'grupo_combinado' => $grupoCombinado,
                 ]);
 
-                Log::info('✅ Prenda creada', [
+                Log::info('✅ Prenda técnica creada', [
                     'prenda_id' => $prenda->id,
+                    'logo_prenda_cot_id' => $prenda->logo_prenda_cot_id,
                     'variaciones_guardadas' => $prenda->variaciones_prenda ?? 'NULL'
                 ]);
 
