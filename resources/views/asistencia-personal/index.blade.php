@@ -66,6 +66,118 @@
             </table>
         </div>
     </div>
+
+    <!-- Modal de Detalles del Reporte -->
+    <div id="reportDetailModal" class="modal-overlay modal-detail-overlay" style="display: none;">
+        <div class="modal-content modal-detail-content">
+            <div class="modal-detail-header">
+                <h2 id="reportModalTitle"></h2>
+                <button class="btn-modal-close-detail">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-detail-body">
+                <div class="modal-controls">
+                    <button class="btn btn-warning" id="btnAusenciasDelDia">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path>
+                        </svg>
+                        <span>Personal Inasistente</span>
+                    </button>
+                </div>
+                
+                <!-- Tabs por fecha -->
+                <div class="tabs-container">
+                    <div class="tabs-header" id="tabsHeader">
+                        <!-- Los tabs se generarán dinámicamente con JavaScript -->
+                    </div>
+                    
+                    <!-- Barra de búsqueda -->
+                    <div class="search-bar-container">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-bar-input" 
+                            placeholder="Buscar por número de persona..."
+                            autocomplete="off"
+                        >
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </div>
+                    
+                    <div class="tabs-content">
+                        <div class="tab-pane active" id="tabContent">
+                            <div class="records-table-wrapper">
+                                <table class="records-table" id="recordsTable">
+                                    <thead>
+                                        <tr id="recordsTableHeader">
+                                            <th>Persona</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recordsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ausencias del Día -->
+    <div id="absenciasModal" class="modal-overlay modal-detail-overlay" style="display: none;">
+        <div class="modal-content modal-detail-content">
+            <div class="modal-detail-header">
+                <h2>Personal Inasistente</h2>
+                <button class="btn-modal-close-detail" id="btnCloseAbsencias">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-detail-body">
+                <div class="ausencias-table-wrapper">
+                    <table class="ausencias-table" id="ausenciasTable">
+                        <thead>
+                            <tr>
+                                <th>Persona</th>
+                                <th>Total Inasistencias</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ausenciasTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Emergente - Ver Inasistencias -->
+    <div id="verInasistenciasModal" class="modal-overlay modal-detail-overlay" style="display: none;">
+        <div class="modal-content modal-detail-content modal-inasistencias">
+            <div class="modal-detail-header">
+                <h2 id="inasistenciasTitle"></h2>
+                <button class="btn-modal-close-detail" id="btnCloseVerInasistencias">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-detail-body">
+                <div class="inasistencias-list" id="inasistenciasList">
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 

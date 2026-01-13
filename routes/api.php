@@ -87,6 +87,12 @@ Route::prefix('operario')->name('operario.')->middleware([])->group(function () 
 Route::prefix('asistencia-personal')->name('asistencia-personal.')->middleware(['web'])->group(function () {
     Route::post('/procesar-pdf', [AsistenciaPersonalController::class, 'procesarPDF'])
         ->name('procesar-pdf');
+    Route::post('/validar-registros', [AsistenciaPersonalController::class, 'validarRegistros'])
+        ->name('validar-registros');
     Route::post('/guardar-registros', [AsistenciaPersonalController::class, 'guardarRegistros'])
         ->name('guardar-registros');
+    Route::get('/reportes/{id}/detalles', [AsistenciaPersonalController::class, 'getReportDetails'])
+        ->name('reportes.detalles');
+    Route::get('/reportes/{id}/ausencias', [AsistenciaPersonalController::class, 'getAbsenciasDelDia'])
+        ->name('reportes.ausencias');
 });
