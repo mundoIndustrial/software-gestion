@@ -507,5 +507,3 @@ window.modalError = function(titulo, mensaje) {
         confirmButtonText: 'OK'
     });
 };
-
-console.log('✅ Módulo de modales cargado');

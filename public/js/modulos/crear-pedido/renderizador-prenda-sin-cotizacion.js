@@ -561,14 +561,14 @@ function renderizarPrendaTipoPrenda(prenda, index) {
                     <div style="width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #d0d0d0; background: white; flex-shrink: 0; position: relative;">
                         <img src="${fotoUrl}" alt="Foto de prenda"
                              style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" 
-                             ondblclick="abrirGaleriaPrendaTipo(${index})" />
+                             onclick="abrirGaleriaPrendaTipo(${index})" />
                         ${restantes > 0 ? `<span style="position: absolute; bottom: 6px; right: 6px; background: #1e40af; color: white; padding: 2px 6px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">+${restantes}</span>` : ''}
                         <button type="button" onclick="eliminarImagenPrendaTipo(this, ${index})"
                                 style="position: absolute; top: 6px; right: 6px; background: #dc3545; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">×</button>
                     </div>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
                         <p style="margin: 0; font-size: 0.9rem; color: #1e3a8a; font-weight: 600;">Fotos agregadas: ${fotos.length}</p>
-                        <p style="margin: 0; font-size: 0.85rem; color: #6b7280;">Doble click en la imagen para ver galería</p>
+                        <p style="margin: 0; font-size: 0.85rem; color: #6b7280;">Haz clic en la imagen para ver galería</p>
                     </div>
                 </div>
             </div>
@@ -860,7 +860,7 @@ function renderizarTelasPrendaTipo(prenda, index) {
             fotosTelaHtml = `
                 <div style="width: 100%; max-width: 110px; margin: 0 auto; border: 2px solid #1e40af; border-radius: 10px; background: #f0f7ff; padding: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; gap: 0.4rem;">
                     <div style="position: relative; width: 90px; height: 90px; overflow: hidden; border-radius: 8px; border: 1px solid #d0d0d0; background: white;">
-                        ${fotoUrl ? `<img src="${fotoUrl}" alt="Foto de tela" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" ondblclick="abrirGaleriaTexturaTipo(${index}, ${telaIdx})">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Sin foto</div>'}
+                        ${fotoUrl ? `<img src="${fotoUrl}" alt="Foto de tela" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="abrirGaleriaTexturaTipo(${index}, ${telaIdx})">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Sin foto</div>'}
                         ${restantes > 0 ? `<span style="position:absolute; bottom:6px; right:6px; background:#1e40af; color:white; padding:2px 6px; border-radius:12px; font-size:0.75rem; font-weight:700;">+${restantes}</span>` : ''}
                         <button type="button" onclick="eliminarImagenTelaTipo(this, ${index}, ${telaIdx})"
                                 style="position: absolute; top: 6px; right: 6px; background: #dc3545; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">×</button>
@@ -1313,12 +1313,16 @@ function renderizarBodegaPrendaTipo(prenda, index) {
     `;
 }
 
+// Exportar funciones a window para uso global
+window.renderizarTelasPrendaTipo = renderizarTelasPrendaTipo;
+
 // Exportar para uso en otros módulos
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         renderizarPrendasTipoPrendaSinCotizacion,
         renderizarPrendaTipoPrenda,
         attachPrendaTipoPrendaListeners,
-        actualizarContenedorTallasPorGenero
+        actualizarContenedorTallasPorGenero,
+        renderizarTelasPrendaTipo
     };
 }

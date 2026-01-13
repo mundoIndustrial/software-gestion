@@ -36,7 +36,6 @@ async function cargarTiposLogosDisponibles() {
         
         if (data.success) {
             tiposLogosDisponibles = data.data;
-            console.log('✅ Tipos de logo disponibles cargados:', tiposLogosDisponibles.length);
         }
     } catch (error) {
         console.error('❌ Error cargando tipos de logo:', error);
@@ -48,9 +47,6 @@ async function cargarTiposLogosDisponibles() {
 // =========================================================
 
 function cargarLogoPrendasDesdeCotizacion(prendasTecnicas) {
-    console.log('🎨 cargarLogoPrendasDesdeCotizacion() INICIADO');
-    console.log('   Prendas recibidas:', prendasTecnicas);
-    console.log('   Cantidad de prendas:', prendasTecnicas?.length || 0);
     
     if (!prendasTecnicas || prendasTecnicas.length === 0) {
         console.log('ℹ️ No hay prendas técnicas en esta cotización');
@@ -58,8 +54,6 @@ function cargarLogoPrendasDesdeCotizacion(prendasTecnicas) {
         logoPrendasTecnicas = [];
         return;
     }
-    
-    console.log(`✅ Procesando ${prendasTecnicas.length} prendas técnicas...`);
     
     // Mapear datos del servidor al formato local
     const prendas = prendasTecnicas.map((prenda, index) => {
@@ -102,9 +96,6 @@ function cargarLogoPrendasDesdeCotizacion(prendasTecnicas) {
     window.logoPrendasTecnicas = prendas;
     logoPrendasTecnicas = prendas;
     sincronizarPrendasTecnicas();
-    
-    console.log('✅ Prendas técnicas cargadas COMPLETAMENTE:', logoPrendasTecnicas.length);
-    console.log('   Array logoPrendasTecnicas (final):', JSON.stringify(logoPrendasTecnicas, null, 2));
 }
 
 // =========================================================
@@ -113,11 +104,6 @@ function cargarLogoPrendasDesdeCotizacion(prendasTecnicas) {
 
 function renderizarLogoPrendasTecnicas() {
     const container = document.getElementById('logo-prendas-tecnicas-container');
-    
-    console.log('📊 renderizarLogoPrendasTecnicas() INICIADA');
-    console.log('   Container encontrado:', !!container);
-    console.log('   Total de prendas:', logoPrendasTecnicas.length);
-    console.log('   Array completo:', JSON.stringify(logoPrendasTecnicas, null, 2));
     
     if (!container) {
         console.warn('⚠️ Contenedor #logo-prendas-tecnicas-container no encontrado');
@@ -184,11 +170,9 @@ function renderizarLogoPrendasTecnicas() {
         // 1. No comienza con "individual_" (es decir, tiene un grupo_combinado asignado)
         // 2. Tiene más de una prenda
         const esGrupoCombinado = !grupoId.startsWith('individual_') && items.length > 1;
-        console.log(`🎨 Renderizando grupoId="${grupoId}", esGrupoCombinado=${esGrupoCombinado}, items=${items.length}`);
         
         if (esGrupoCombinado) {
             // RENDERIZAR GRUPO COMBINADO: UNA SOLA FILA POR PRENDA, MOSTRANDO TÉCNICAS/UBICACIONES/FOTOS POR TÉCNICA DENTRO
-            console.log(`   ✨ Grupo COMBINADO encontrado con ${items.length} técnicas`);
             
             // Usar datos de la primera prenda (nombre, observaciones)
             const { prenda: prendaPrincipal, index: indexPrincipal } = items[0];
@@ -447,7 +431,6 @@ function renderizarLogoPrendasTecnicas() {
         </div>
     `;
     
-    console.log('✅ Tabla HTML generada completamente');
     container.innerHTML = html;
     sincronizarPrendasTecnicas();
 }
@@ -500,11 +483,9 @@ window.abrirModalEditarPrendaTecnica = function(index) {
         tecnicasDelGrupo = logoPrendasTecnicas.filter(p => 
             p.grupo_combinado === prenda.grupo_combinado
         );
-        console.log('🔗 Grupo combinado detectado. Técnicas en el grupo:', tecnicasDelGrupo.length);
     } else {
         // Si no es combinado, solo editar esta técnica
         tecnicasDelGrupo = [prenda];
-        console.log('📌 Prenda individual, no es grupo combinado');
     }
     
     // GENERAR HTML DEL MODAL CON TODAS LAS TÉCNICAS
@@ -1001,7 +982,6 @@ window.eliminarPrendaTecnicaLogo = function(index) {
         logoPrendasTecnicas.splice(index, 1);
         window.logoPrendasTecnicas = logoPrendasTecnicas;
         sincronizarPrendasTecnicas();
-        console.log('✅ Prenda técnica eliminada');
         renderizarLogoPrendasTecnicas();
     }
 };
@@ -1010,8 +990,6 @@ window.eliminarFotoDePrenda = function(index, fotoIdx) {
     const prenda = logoPrendasTecnicas[index];
     if (prenda && prenda.fotos) {
         prenda.fotos.splice(fotoIdx, 1);
-        console.log(`✅ Foto ${fotoIdx} eliminada de prenda ${index}`);
-        // No es necesario renderizar de nuevo, el modal se actualiza dinámicamente
     }
 };
 
@@ -1019,7 +997,128 @@ window.eliminarFotoDePrenda = function(index, fotoIdx) {
 // 6. INICIALIZACIÓN
 // =========================================================
 
-console.log('✅ logo-pedido-tecnicas.js completamente cargado');
+/**
+ * Abrir modal para agregar nueva prenda técnica al logo
+ */
+window.abrirModalAgregarPrendaTecnicaLogo = async function() {
+    
+    // Verificar que haya tipos de logo disponibles
+    if (!tiposLogosDisponibles || tiposLogosDisponibles.length === 0) {
+        await cargarTiposLogosDisponibles();
+    }
+    
+    // Crear opciones de técnicas
+    const opcionesTecnicas = tiposLogosDisponibles.map(tipo => 
+        `<option value="${tipo.id}">${tipo.nombre}</option>`
+    ).join('');
+    
+    const { value: formValues } = await Swal.fire({
+        title: 'Agregar Prenda Técnica',
+        html: `
+            <div style="text-align: left;">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                        Tipo de Técnica:
+                    </label>
+                    <select id="swal-tecnica" class="swal2-input" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px;">
+                        <option value="">Selecciona una técnica</option>
+                        ${opcionesTecnicas}
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                        Nombre de la Prenda:
+                    </label>
+                    <input id="swal-nombre-prenda" class="swal2-input" placeholder="Ej: Camisa, Gorro, Bolsa" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px;">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                        Ubicaciones (separadas por coma):
+                    </label>
+                    <input id="swal-ubicaciones" class="swal2-input" placeholder="Ej: pecho, espalda" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px;">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                        Observaciones (opcional):
+                    </label>
+                    <textarea id="swal-observaciones" class="swal2-textarea" placeholder="Detalles adicionales..." style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; min-height: 80px;"></textarea>
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Agregar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#0066cc',
+        preConfirm: () => {
+            const tecnicaId = document.getElementById('swal-tecnica').value;
+            const nombrePrenda = document.getElementById('swal-nombre-prenda').value.trim();
+            const ubicaciones = document.getElementById('swal-ubicaciones').value.trim();
+            const observaciones = document.getElementById('swal-observaciones').value.trim();
+            
+            if (!tecnicaId) {
+                Swal.showValidationMessage('Selecciona un tipo de técnica');
+                return false;
+            }
+            
+            if (!nombrePrenda) {
+                Swal.showValidationMessage('Ingresa el nombre de la prenda');
+                return false;
+            }
+            
+            if (!ubicaciones) {
+                Swal.showValidationMessage('Ingresa al menos una ubicación');
+                return false;
+            }
+            
+            return {
+                tecnicaId: parseInt(tecnicaId),
+                nombrePrenda,
+                ubicaciones: ubicaciones.split(',').map(u => u.trim()).filter(u => u),
+                observaciones
+            };
+        }
+    });
+    
+    if (formValues) {
+        // Encontrar el tipo de técnica seleccionado
+        const tipoTecnica = tiposLogosDisponibles.find(t => t.id === formValues.tecnicaId);
+        
+        // Crear nueva prenda técnica
+        const nuevaPrenda = {
+            id: null, // Nueva prenda, sin ID de BD
+            logo_cotizacion_id: window.logoCotizacionId || null,
+            tipo_logo_id: formValues.tecnicaId,
+            tipo_logo_nombre: tipoTecnica ? tipoTecnica.nombre : 'DESCONOCIDO',
+            nombre_prenda: formValues.nombrePrenda,
+            observaciones: formValues.observaciones,
+            ubicaciones: formValues.ubicaciones,
+            talla_cantidad: {},
+            grupo_combinado: null,
+            fotos: [],
+            existeEnBD: false // Marcar como nueva
+        };
+        
+        // Agregar al array global
+        logoPrendasTecnicas.push(nuevaPrenda);
+        sincronizarPrendasTecnicas();
+        
+        // Re-renderizar la tabla
+        renderizarLogoPrendasTecnicas();
+        
+        Swal.fire({
+            icon: 'success',
+            title: '¡Prenda agregada!',
+            text: `${formValues.nombrePrenda} ha sido agregada correctamente`,
+            timer: 1500,
+            showConfirmButton: false
+        });
+    }
+};
+
 cargarTiposLogosDisponibles();
 
 document.addEventListener('DOMContentLoaded', function() {

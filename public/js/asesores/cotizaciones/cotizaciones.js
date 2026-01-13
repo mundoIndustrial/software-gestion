@@ -954,19 +954,14 @@ function recopilarDatos() {
             const telaInput = item.querySelector('.tela-input');
             const referenciaInput = item.querySelector('.referencia-input');
             
-            const color = colorInput?.value || '';
-            const tela = telaInput?.value || '';
-            const referencia = referenciaInput?.value || '';
-            
-            // Guardar en formato telas_multiples para consistencia
-            if (color || tela || referencia) {
-                variantes.telas_multiples = [{
-                    indice: 0,
-                    color: color,
-                    tela: tela,
-                    referencia: referencia
-                }];
-                console.log(`📝 Tela capturada (fallback): `, { color, tela, referencia });
+            if (colorInput && colorInput.value) {
+                variantes.color = colorInput.value;
+            }
+            if (telaInput && telaInput.value) {
+                variantes.tela = telaInput.value;
+            }
+            if (referenciaInput && referenciaInput.value) {
+                variantes.referencia = referenciaInput.value;
             }
         }
         
