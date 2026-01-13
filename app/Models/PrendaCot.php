@@ -81,6 +81,14 @@ class PrendaCot extends Model
     }
 
     /**
+     * Relación: Una prenda puede tener múltiples técnicas de logo
+     */
+    public function logoCotizacionesTecnicas(): HasMany
+    {
+        return $this->hasMany(LogoCotizacionTecnicaPrenda::class, 'prenda_cot_id');
+    }
+
+    /**
      * ACCESSOR: Determinar el género basado en las tallas seleccionadas
      * - Tallas 6,8,10,12,14,16,18,20,22,24,26 = DAMA
      * - Tallas 28,30,32,34,36,38,40,42,44,46,48,50 = CABALLERO

@@ -7,6 +7,7 @@ use App\Models\LogoCotizacion;
 use App\Models\TipoLogoCotizacion;
 use App\Models\LogoCotizacionTecnicaPrenda;
 use App\Models\LogoCotizacionTecnicaPrendaFoto;
+use App\Models\PrendaCot;
 use App\Services\TecnicaImagenService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -158,11 +159,25 @@ class LogoCotizacionTecnicaController extends Controller
                     'prenda_index' => $prendasIndex
                 ]);
 
-                // Crear prenda
+                // Primero, crear registro en prendas_cot
+                $prendaCot = PrendaCot::create([
+                    'cotizacion_id' => $logoCotizacion->cotizacion_id,
+                    'nombre_producto' => $prendaData['nombre_prenda'],
+                    'descripcion' => $prendaData['observaciones'] ?? '',
+                    'cantidad' => $prendaData['cantidad'] ?? 1,
+                    'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
+                ]);
+
+                Log::info('✅ Prenda guardada en prendas_cot', [
+                    'prenda_cot_id' => $prendaCot->id,
+                    'cotizacion_id' => $logoCotizacion->cotizacion_id
+                ]);
+
+                // Crear prenda en logo_cotizacion_tecnica_prendas con referencia a prendas_cot
                 $prenda = LogoCotizacionTecnicaPrenda::create([
                     'logo_cotizacion_id' => $logoCotizacionId,
                     'tipo_logo_id' => $tipoLogoId,
-                    'nombre_prenda' => $prendaData['nombre_prenda'],
+                    'prenda_cot_id' => $prendaCot->id,
                     'observaciones' => $prendaData['observaciones'] ?? '',
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
@@ -170,8 +185,9 @@ class LogoCotizacionTecnicaController extends Controller
                     'grupo_combinado' => $grupoCombinado,
                 ]);
 
-                Log::info('✅ Prenda creada', [
+                Log::info('✅ Prenda creada en logo_cotizacion_tecnica_prendas', [
                     'prenda_id' => $prenda->id,
+                    'prenda_cot_id' => $prenda->prenda_cot_id,
                     'variaciones_guardadas' => $prenda->variaciones_prenda ?? 'NULL'
                 ]);
 
@@ -246,7 +262,7 @@ class LogoCotizacionTecnicaController extends Controller
                     'es_simple' => $grupoCombinado === null,
                     'prendas' => array_map(fn($p) => [
                         'id' => $p->id,
-                        'nombre_prenda' => $p->nombre_prenda,
+                        'nombre_prenda' => $p->prendaCot?->nombre_producto,
                         'fotos_count' => $p->fotos->count(),
                     ], $prendas)
                 ]
@@ -297,7 +313,7 @@ class LogoCotizacionTecnicaController extends Controller
 
             // Obtener todas las prendas agrupadas por tipo de logo
             $prendas = LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacionId)
-                ->with('tipoLogo')
+                ->with('tipoLogo', 'prendaCot')
                 ->get()
                 ->groupBy('tipo_logo_id')
                 ->map(function($prendasPorTipo) {
@@ -312,11 +328,11 @@ class LogoCotizacionTecnicaController extends Controller
                         ],
                         'prendas' => $prendasPorTipo->map(fn($prenda) => [
                             'id' => $prenda->id,
-                            'nombre_prenda' => $prenda->nombre_prenda,
-                            'descripcion' => $prenda->descripcion,
+                            'nombre_prenda' => $prenda->prendaCot?->nombre_producto,
+                            'descripcion' => $prenda->prendaCot?->descripcion,
                             'ubicaciones' => $prenda->ubicaciones,
                             'talla_cantidad' => $prenda->talla_cantidad,
-                            'cantidad_general' => $prenda->cantidad_general,
+                            'cantidad_general' => $prenda->prendaCot?->cantidad,
                         ])->values()->toArray(),
                     ];
                 })->values();
@@ -351,9 +367,16 @@ class LogoCotizacionTecnicaController extends Controller
             
             $tipoLogoId = $prenda->tipo_logo_id;
             $logoCotizacionId = $prenda->logo_cotizacion_id;
+            $prendaCotId = $prenda->prenda_cot_id;
 
-            // Eliminar la prenda
+            // Eliminar la prenda técnica de logo
             $prenda->delete();
+
+            // Eliminar también de prendas_cot si existe
+            if ($prendaCotId) {
+                PrendaCot::destroy($prendaCotId);
+                Log::info('✅ Prenda eliminada de prendas_cot', ['prenda_cot_id' => $prendaCotId]);
+            }
 
             // Si no hay más prendas de este tipo para esta cotización
             $prendasRestantes = LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacionId)
@@ -402,6 +425,14 @@ class LogoCotizacionTecnicaController extends Controller
             $prenda = LogoCotizacionTecnicaPrenda::findOrFail($prendeId);
             $prenda->update($validated);
 
+            // Actualizar también en prendas_cot si existe
+            if ($prenda->prenda_cot_id) {
+                $prendaCot = PrendaCot::find($prenda->prenda_cot_id);
+                if ($prendaCot && $validated['cantidad_general']) {
+                    $prendaCot->update(['cantidad' => $validated['cantidad_general']]);
+                }
+            }
+
             Log::info('✅ Prenda actualizada', ['prenda_id' => $prendeId]);
 
             return response()->json([
@@ -409,11 +440,11 @@ class LogoCotizacionTecnicaController extends Controller
                 'message' => 'Prenda actualizada exitosamente',
                 'data' => [
                     'id' => $prenda->id,
-                    'nombre_prenda' => $prenda->nombre_prenda,
-                    'descripcion' => $prenda->descripcion,
+                    'nombre_prenda' => $prenda->prendaCot?->nombre_producto,
+                    'descripcion' => $prenda->prendaCot?->descripcion,
                     'ubicaciones' => $prenda->ubicaciones,
                     'talla_cantidad' => $prenda->talla_cantidad,
-                    'cantidad_general' => $prenda->cantidad_general,
+                    'cantidad_general' => $prenda->prendaCot?->cantidad,
                 ]
             ]);
 

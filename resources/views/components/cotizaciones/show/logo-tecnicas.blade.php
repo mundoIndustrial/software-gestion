@@ -7,7 +7,7 @@
         if ($prenda_tecnica->tipo_logo) {
             $tecnicas[] = [
                 'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
-                'prenda' => $prenda_tecnica->nombre_prenda,
+                'prenda' => $prenda_tecnica->prendaCot?->nombre_producto ?? 'Prenda sin nombre',
                 'observaciones' => $prenda_tecnica->observaciones
             ];
         }
