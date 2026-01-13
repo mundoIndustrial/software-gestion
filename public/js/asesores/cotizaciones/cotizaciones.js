@@ -185,6 +185,23 @@ function irAlPaso(paso) {
     const stepElement = document.querySelector(`.step[data-step="${paso}"]`);
     if (stepElement) stepElement.classList.add('active');
     
+    // Si es el paso 4 (REFLECTIVO), agregar la primera prenda vacía si no existe ninguna
+    if (paso === 4) {
+        console.log('🎯 Navegando al PASO 4: REFLECTIVO');
+        setTimeout(() => {
+            const container = document.getElementById('prendas_reflectivo_container');
+            if (container && container.children.length === 0) {
+                console.log('📦 Contenedor vacío - Agregando primera prenda reflectivo');
+                if (typeof agregarPrendaReflectivoPaso4 === 'function') {
+                    agregarPrendaReflectivoPaso4();
+                    console.log('✅ Primera prenda reflectivo agregada');
+                }
+            } else {
+                console.log('✅ Ya hay prendas en el contenedor, no se agrega nueva');
+            }
+        }, 100);
+    }
+    
     // Si es el paso 5 (REVISAR COTIZACIÓN), actualizar resumen completo
     if (paso === 5) {
         console.log('🎯 Navegando al PASO 5: REVISAR COTIZACIÓN');

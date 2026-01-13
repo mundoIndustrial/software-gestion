@@ -97,11 +97,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📦 Paso 4 Reflectivo - Listo para agregar prendas');
-            // Agregar automáticamente un formulario vacío al cargar Paso 4
-            if (typeof agregarPrendaReflectivoPaso4 === 'function') {
-                agregarPrendaReflectivoPaso4();
-                console.log('✅ Formulario vacío agregado automáticamente en Paso 4');
-            }
+            // NO agregar automáticamente - esperará a que el usuario navegue al paso 4
+            console.log('⏳ Esperando a que el usuario navegue al paso 4...');
         });
     </script>
 
