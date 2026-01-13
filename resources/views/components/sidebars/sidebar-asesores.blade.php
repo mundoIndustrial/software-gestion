@@ -116,6 +116,26 @@
         </div>
 
         <div class="menu-section">
+            <span class="menu-section-title">Pedidos Producción</span>
+            <ul class="menu-list" role="navigation">
+                <li class="menu-item">
+                    <a href="{{ route('asesores.pedidos-produccion.crear-desde-cotizacion') }}"
+                       class="menu-link {{ request()->routeIs('asesores.pedidos-produccion.crear-desde-cotizacion') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">description</span>
+                        <span class="menu-label">Desde Cotización</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('asesores.pedidos-produccion.crear-nuevo') }}"
+                       class="menu-link {{ request()->routeIs('asesores.pedidos-produccion.crear-nuevo') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">add_box</span>
+                        <span class="menu-label">Pedido Nuevo</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="menu-section">
             <span class="menu-section-title">Inventario</span>
             <ul class="menu-list">
                 <li class="menu-item">

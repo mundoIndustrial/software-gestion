@@ -131,5 +131,7 @@
         })->toArray()) !!};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Componente compartido para selección de cotizaciones -->
+    <script src="{{ asset('js/components/cotizacion-selector-component.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/crear-pedido.js') }}"></script>
 @endpush

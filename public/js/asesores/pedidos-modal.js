@@ -177,7 +177,6 @@ function actualizarResumenModal() {
 // RECOPILAR DATOS DEL LOGO (PASO 3)
 // ========================================
 function recopilarDatosLogo() {
-    console.log('📸 Recopilando datos del logo...');
     
     const descripcionLogo = document.getElementById('descripcion_logo')?.value || '';
     
@@ -234,13 +233,6 @@ function recopilarDatosLogo() {
         return img.dataset.file || img.src;
     });
     
-    console.log('✅ Datos del logo recopilados:', {
-        descripcion: descripcionLogo.substring(0, 50),
-        tecnicas: tecnicas.length,
-        ubicaciones: ubicaciones.length,
-        imagenes: imagenes.length
-    });
-    
     return {
         descripcion: descripcionLogo,
         tecnicas: tecnicas,
@@ -281,14 +273,11 @@ function guardarPedidoModal() {
     formData.append('logo[ubicaciones]', JSON.stringify(datosLogo.ubicaciones));
     formData.append('logo[observaciones_generales]', JSON.stringify(datosLogo.observaciones_generales));
     
-    console.log('📸 Datos del logo agregados a FormData');
-    
     // Agregar imágenes del logo si existen en memoria
     if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
         window.imagenesEnMemoria.logo.forEach((imagen, idx) => {
             if (imagen instanceof File) {
                 formData.append(`logo[imagenes][]`, imagen);
-                console.log(`✅ Imagen de logo agregada [${idx}]:`, imagen.name);
             }
         });
     }

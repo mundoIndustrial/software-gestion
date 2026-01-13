@@ -9,8 +9,6 @@
  * <script src="/js/utilidades-crear-pedido.js"></script>
  */
 
-console.log('🔧 UTILIDADES: Iniciando carga de utilidades-crear-pedido.js');
-
 // ============================================================
 // INICIALIZACIÓN DE ESTADO GLOBAL
 // ============================================================
@@ -26,7 +24,6 @@ const initializeGlobalState = () => {
     if (!window.logoFotosNuevas) window.logoFotosNuevas = [];
 };
 initializeGlobalState();
-console.log('✅ UTILIDADES: Estado global inicializado', { fotosEliminadas: window.fotosEliminadas, prendasFotosNuevas: window.prendasFotosNuevas });
 
 // ============================================================
 // HELPER PARA GESTIÓN DE URLS DE FOTOS
@@ -290,14 +287,78 @@ const eliminarImagenGenerico = (button, tipo = 'prenda') => {
                     const url = typeof f === 'string' ? f : (f.url || f.ruta_webp || f.ruta_original);
                     return url === fotoUrl;
                 });
-                if (idx >= 0) prendasFotos.splice(idx, 1);
+                if (idx >= 0) {
+                    prendasFotos.splice(idx, 1);
+                    console.log(`🗑️ Foto eliminada del array prendasCargadas[${prendaIndex}]`);
+                }
+            }
+            
+            // ✅ SINCRONIZAR CON PedidoState
+            if (window.PedidoState) {
+                const fotos = window.PedidoState.getFotosPrenda(prendaIndex) || [];
+                const idxState = fotos.findIndex(f => {
+                    const url = f.url || f.preview || f.ruta_webp || f.ruta_original;
+                    return url === fotoUrl;
+                });
+                if (idxState >= 0) {
+                    fotos.splice(idxState, 1);
+                    window.PedidoState.setFotosPrenda(prendaIndex, fotos);
+                    console.log(`✅ Foto eliminada de PedidoState prenda ${prendaIndex}`);
+                }
+            }
+            
+            // ✅ SINCRONIZAR CON gestorPrendaSinCotizacion
+            if (window.gestorPrendaSinCotizacion) {
+                const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                if (prenda && prenda.fotos) {
+                    const idxGestor = prenda.fotos.findIndex(f => {
+                        const url = typeof f === 'string' ? f : (f.url || f.ruta_webp || f.ruta_original);
+                        return url === fotoUrl;
+                    });
+                    if (idxGestor >= 0) {
+                        prenda.fotos.splice(idxGestor, 1);
+                        console.log(`✅ Foto eliminada de gestorPrendaSinCotizacion prenda ${prendaIndex}`);
+                    }
+                }
             }
         } else if (tipo === 'prenda' && window.prendasFotosNuevas?.[prendaIndex]) {
             const idx = window.prendasFotosNuevas[prendaIndex].findIndex(f => {
                 const url = f.url || f.preview || f.ruta_webp || f.ruta_original;
                 return url === fotoUrl;
             });
-            if (idx >= 0) window.prendasFotosNuevas[prendaIndex].splice(idx, 1);
+            if (idx >= 0) {
+                window.prendasFotosNuevas[prendaIndex].splice(idx, 1);
+                console.log(`🗑️ Foto eliminada del array prendasFotosNuevas[${prendaIndex}]`);
+            }
+            
+            // ✅ SINCRONIZAR CON PedidoState
+            if (window.PedidoState) {
+                const fotos = window.PedidoState.getFotosPrenda(prendaIndex) || [];
+                const idxState = fotos.findIndex(f => {
+                    const url = f.url || f.preview || f.ruta_webp || f.ruta_original;
+                    return url === fotoUrl;
+                });
+                if (idxState >= 0) {
+                    fotos.splice(idxState, 1);
+                    window.PedidoState.setFotosPrenda(prendaIndex, fotos);
+                    console.log(`✅ Foto eliminada de PedidoState prenda ${prendaIndex}`);
+                }
+            }
+            
+            // ✅ SINCRONIZAR CON gestorPrendaSinCotizacion
+            if (window.gestorPrendaSinCotizacion) {
+                const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
+                if (prenda && prenda.fotos) {
+                    const idxGestor = prenda.fotos.findIndex(f => {
+                        const url = typeof f === 'string' ? f : (f.url || f.ruta_webp || f.ruta_original);
+                        return url === fotoUrl;
+                    });
+                    if (idxGestor >= 0) {
+                        prenda.fotos.splice(idxGestor, 1);
+                        console.log(`✅ Foto eliminada de gestorPrendaSinCotizacion prenda ${prendaIndex}`);
+                    }
+                }
+            }
         } else if (tipo === 'tela' && window.telasFotosNuevas?.[prendaIndex]?.[telaIndex]) {
             const idx = window.telasFotosNuevas[prendaIndex][telaIndex].findIndex(f => {
                 const url = f.url || f.preview || f.ruta_webp || f.ruta_original;
@@ -336,8 +397,3 @@ window.eliminarFotoReflectivoPedido = (fotoId) => {
  */
 window.guardarCantidadesActuales = (prendaIndex) => CantidadesManager.guardar(prendaIndex);
 window.restaurarCantidadesGuardadas = (prendaIndex) => CantidadesManager.restaurar(prendaIndex);
-console.log('✅ UTILIDADES: utilidades-crear-pedido.js COMPLETAMENTE CARGADO');
-console.log('   - FotoHelper disponible:', typeof window.FotoHelper !== 'undefined');
-console.log('   - CantidadesManager disponible:', typeof window.CantidadesManager !== 'undefined');
-console.log('   - ESTILOS_FOTOS disponible:', typeof ESTILOS_FOTOS !== 'undefined');
-console.log('   - fotosEliminadas inicializado:', window.fotosEliminadas instanceof Set);

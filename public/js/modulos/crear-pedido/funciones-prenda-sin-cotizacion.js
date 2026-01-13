@@ -164,6 +164,8 @@ window.eliminarTallaPrendaTipo = function(prendaIndex, talla) {
  * @param {number} prendaIndex - Índice de la prenda
  */
 window.agregarTelaPrendaTipo = function(prendaIndex) {
+    let selectedFiles = [];
+    
     Swal.fire({
         title: 'Agregar Tela',
         html: `
@@ -176,9 +178,22 @@ window.agregarTelaPrendaTipo = function(prendaIndex) {
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Color:</label>
                     <input id="color-tela" type="text" placeholder="Ej: Rojo, Azul" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
                 </div>
-                <div style="text-align: left;">
+                <div style="margin-bottom: 1rem; text-align: left;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Referencia:</label>
                     <input id="referencia-tela" type="text" placeholder="Ej: REF-001" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+                <div style="margin-bottom: 1rem; text-align: left;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Imágenes (opcional):
+                        <span style="font-weight: normal; color: #6b7280; font-size: 0.85rem;">Agrega una o varias imágenes</span>
+                    </label>
+                    <button type="button" id="btn-agregar-imagenes" style="width: 100%; padding: 0.75rem; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <span>📷</span>
+                        <span>Agregar Imágenes</span>
+                    </button>
+                    <input id="imagenes-tela" type="file" accept="image/*" multiple style="display: none;">
+                    <div id="contador-imagenes" style="margin-top: 0.5rem; font-size: 0.85rem; color: #0066cc; font-weight: 600;"></div>
+                    <div id="preview-imagenes" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
                 </div>
             </form>
         `,
@@ -187,35 +202,153 @@ window.agregarTelaPrendaTipo = function(prendaIndex) {
         cancelButtonText: 'Cancelar',
         didOpen: (modal) => {
             document.getElementById('nombre-tela').focus();
+            
+            // Manejar selección de imágenes
+            const inputImagenes = document.getElementById('imagenes-tela');
+            const btnAgregarImagenes = document.getElementById('btn-agregar-imagenes');
+            const previewContainer = document.getElementById('preview-imagenes');
+            const contadorImagenes = document.getElementById('contador-imagenes');
+            
+            // Botón para abrir selector de archivos
+            btnAgregarImagenes.addEventListener('click', () => {
+                inputImagenes.click();
+            });
+            
+            // Acumular imágenes seleccionadas
+            inputImagenes.addEventListener('change', (e) => {
+                const newFiles = Array.from(e.target.files);
+                
+                // Agregar nuevos archivos a los existentes (acumular)
+                newFiles.forEach(file => {
+                    // Verificar que no esté duplicado
+                    const existe = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+                    if (!existe) {
+                        selectedFiles.push(file);
+                    }
+                });
+                
+                // Actualizar contador
+                if (selectedFiles.length > 0) {
+                    contadorImagenes.textContent = `✓ ${selectedFiles.length} imagen${selectedFiles.length !== 1 ? 'es' : ''} seleccionada${selectedFiles.length !== 1 ? 's' : ''}`;
+                } else {
+                    contadorImagenes.textContent = '';
+                }
+                
+                // Re-renderizar todas las previews
+                previewContainer.innerHTML = '';
+                selectedFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const preview = document.createElement('div');
+                        preview.style.cssText = 'position: relative; width: 60px; height: 60px;';
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 2px solid #0066cc;">
+                            <div style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;" data-index="${index}">×</div>
+                        `;
+                        
+                        // Agregar evento para eliminar imagen individual
+                        const btnEliminar = preview.querySelector('[data-index]');
+                        btnEliminar.addEventListener('click', () => {
+                            selectedFiles.splice(index, 1);
+                            preview.remove();
+                            // Actualizar contador
+                            if (selectedFiles.length > 0) {
+                                contadorImagenes.textContent = `✓ ${selectedFiles.length} imagen${selectedFiles.length !== 1 ? 'es' : ''} seleccionada${selectedFiles.length !== 1 ? 's' : ''}`;
+                            } else {
+                                contadorImagenes.textContent = '';
+                            }
+                        });
+                        
+                        previewContainer.appendChild(preview);
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                // Resetear input para permitir seleccionar el mismo archivo de nuevo
+                inputImagenes.value = '';
+            });
         }
-    }).then((result) => {
+    }).then(async (result) => {
         if (result.isConfirmed) {
             const nombreTela = document.getElementById('nombre-tela').value;
             const color = document.getElementById('color-tela').value;
             const referencia = document.getElementById('referencia-tela').value;
 
             if (nombreTela) {
+                // Agregar la tela al gestor
                 window.gestorPrendaSinCotizacion.agregarTela(prendaIndex, {
                     nombre_tela: nombreTela,
                     color: color,
                     referencia: referencia
                 });
                 
-                // ✅ Solo re-renderizar la sección de TELAS (no toda la prenda)
+                // Obtener el índice de la tela recién agregada
                 const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
-                if (prenda) {
+                const telaIndex = (prenda?.variantes?.telas_multiples?.length || 1) - 1;
+                
+                // Si hay imágenes seleccionadas, subirlas
+                if (selectedFiles.length > 0) {
+                    console.log(`📸 Subiendo ${selectedFiles.length} imagen(es) para la tela...`);
+                    
+                    try {
+                        Swal.fire({
+                            title: 'Subiendo imágenes...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                        
+                        // Subir cada imagen
+                        for (const file of selectedFiles) {
+                            if (file.type.startsWith('image/')) {
+                                const imageData = await window.ImageService.uploadTelaImage(file, prendaIndex, telaIndex, null);
+                                
+                                // Guardar en el gestor
+                                if (!window.gestorPrendaSinCotizacion.telasFotosNuevas) {
+                                    window.gestorPrendaSinCotizacion.telasFotosNuevas = {};
+                                }
+                                if (!window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex]) {
+                                    window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex] = {};
+                                }
+                                if (!window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex]) {
+                                    window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex] = [];
+                                }
+                                
+                                window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex].push({
+                                    url: imageData.url,
+                                    ruta_webp: imageData.ruta_webp,
+                                    ruta_original: imageData.ruta_original,
+                                    thumbnail: imageData.thumbnail,
+                                    tela_id: imageData.tela_id,
+                                    isNew: true
+                                });
+                                
+                                console.log(`✅ Imagen subida: ${imageData.filename}`);
+                            }
+                        }
+                        
+                        Swal.close();
+                    } catch (error) {
+                        console.error('❌ Error al subir imágenes:', error);
+                        Swal.fire('Advertencia', 'Tela agregada pero hubo un error al subir algunas imágenes', 'warning');
+                    }
+                }
+                
+                // Re-renderizar la sección de telas
+                if (prenda && typeof window.renderizarTelasPrendaTipo === 'function') {
                     const container = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
                     if (container) {
                         const telasSection = container.querySelector('[data-section="telas"]');
                         if (telasSection) {
-                            const telasHtml = window.renderizarTelasPrendaTipo(prenda, prendaIndex);
-                            telasSection.outerHTML = `<div data-section="telas">${telasHtml}</div>`;
-                            logWithEmoji('🎨', `Sección de telas actualizada (sin re-renderizar prenda completa)`);
+                            telasSection.innerHTML = window.renderizarTelasPrendaTipo(prenda, prendaIndex);
+                            console.log('✅ Sección de telas actualizada con nueva tela y fotos');
                         }
                     }
                 }
                 
-                Swal.fire('Éxito', 'Tela agregada correctamente', 'success');
+                const mensaje = selectedFiles.length > 0 
+                    ? `Tela agregada con ${selectedFiles.length} imagen(es)` 
+                    : 'Tela agregada correctamente';
+                Swal.fire('Éxito', mensaje, 'success');
             } else {
                 Swal.fire('Error', 'Ingrese el nombre de la tela', 'error');
             }
@@ -309,12 +442,95 @@ window.eliminarImagenPrendaTipo = function(element, prendaIndex) {
         confirmButtonText: 'Sí, Eliminar'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Encontrar índice de la foto
-            const card = element.closest('.prenda-card-editable');
-            if (card) {
-                window.renderizarPrendasTipoPrendaSinCotizacion();
-                Swal.fire('Eliminada', 'La imagen ha sido eliminada', 'success');
+            console.log(`🗑️ Eliminando imagen de prenda ${prendaIndex}`);
+            
+            // Obtener la URL de la imagen
+            const imgContainer = element.closest('div[style*="position: relative"]');
+            const img = imgContainer?.querySelector('img');
+            const fotoUrl = img?.getAttribute('src');
+            
+            if (!fotoUrl) {
+                console.error('No se pudo obtener la URL de la foto');
+                return;
             }
+            
+            console.log(`🔍 URL de foto a eliminar: ${fotoUrl}`);
+            
+            // ✅ ELIMINAR DEL GESTOR (fotosNuevas)
+            if (window.gestorPrendaSinCotizacion?.fotosNuevas?.[prendaIndex]) {
+                const fotosNuevas = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
+                console.log(`📊 Fotos nuevas en gestor antes de eliminar:`, fotosNuevas);
+                
+                const idx = fotosNuevas.findIndex(f => {
+                    const url = f.url || f.ruta_webp || f.ruta_original;
+                    console.log(`   Comparando: "${url}" === "${fotoUrl}" ? ${url === fotoUrl}`);
+                    return url === fotoUrl;
+                });
+                
+                console.log(`📍 Índice encontrado: ${idx}`);
+                if (idx >= 0) {
+                    fotosNuevas.splice(idx, 1);
+                    console.log(`✅ Foto eliminada de gestorPrendaSinCotizacion.fotosNuevas[${prendaIndex}]`);
+                } else {
+                    console.warn(`⚠️ No se encontró la foto en gestorPrendaSinCotizacion.fotosNuevas`);
+                }
+            } else {
+                console.warn(`⚠️ No hay fotosNuevas en gestorPrendaSinCotizacion para prenda ${prendaIndex}`);
+            }
+            
+            // ✅ TAMBIÉN ELIMINAR DE prenda.fotos si existe
+            const prenda = window.gestorPrendaSinCotizacion?.obtenerPorIndice(prendaIndex);
+            if (prenda && prenda.fotos && prenda.fotos.length > 0) {
+                const idx = prenda.fotos.findIndex(f => {
+                    const url = typeof f === 'string' ? f : (f.url || f.ruta_webp || f.ruta_original);
+                    return url === fotoUrl;
+                });
+                if (idx >= 0) {
+                    prenda.fotos.splice(idx, 1);
+                    console.log(`✅ Foto eliminada de prenda.fotos`);
+                }
+            }
+            
+            // ✅ ELIMINAR DE PedidoState
+            if (window.PedidoState) {
+                const fotos = window.PedidoState.getFotosPrenda(prendaIndex) || [];
+                const idxState = fotos.findIndex(f => {
+                    const url = f.url || f.preview || f.ruta_webp || f.ruta_original;
+                    return url === fotoUrl;
+                });
+                if (idxState >= 0) {
+                    fotos.splice(idxState, 1);
+                    window.PedidoState.setFotosPrenda(prendaIndex, fotos);
+                    console.log(`✅ Foto eliminada de PedidoState prenda ${prendaIndex}`);
+                }
+            }
+            
+            // ✅ ELIMINAR DE prendasFotosNuevas
+            if (window.prendasFotosNuevas?.[prendaIndex]) {
+                const idx = window.prendasFotosNuevas[prendaIndex].findIndex(f => {
+                    const url = f.url || f.preview || f.ruta_webp || f.ruta_original;
+                    return url === fotoUrl;
+                });
+                if (idx >= 0) {
+                    window.prendasFotosNuevas[prendaIndex].splice(idx, 1);
+                    console.log(`✅ Foto eliminada de prendasFotosNuevas[${prendaIndex}]`);
+                }
+            }
+            
+            // Marcar como eliminada
+            if (!window.fotosEliminadas) window.fotosEliminadas = new Set();
+            window.fotosEliminadas.add(fotoUrl);
+            
+            // Re-renderizar
+            window.renderizarPrendasTipoPrendaSinCotizacion();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Eliminada',
+                text: 'La imagen ha sido eliminada',
+                timer: 1500,
+                showConfirmButton: false
+            });
         }
     });
 };

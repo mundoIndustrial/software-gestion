@@ -17,8 +17,6 @@ window.renderizarLogoPedido = function(logoCotizacion) {
  * REEMPLAZADO: Ahora usa el nuevo sistema de tarjetas (logo-pedido-tecnicas.js)
  */
 function renderizarCamposLogo(logoCotizacion) {
-    console.log('🎨 renderizarCamposLogo(): Delegando al nuevo sistema de tarjetas');
-    console.log('📦 Datos logo recibidos:', logoCotizacion);
     
     // Usar el nuevo sistema de renderizado de tarjetas
     window.currentTipoCotizacion = 'L';
@@ -26,11 +24,8 @@ function renderizarCamposLogo(logoCotizacion) {
     window.currentLogoCotizacion = logoCotizacion;
     
     if (typeof mostrarSeccionPrendasTecnicasLogoNuevo === 'function') {
-        console.log('✅ Llamando a mostrarSeccionPrendasTecnicasLogoNuevo()...');
         mostrarSeccionPrendasTecnicasLogoNuevo();
     } else {
         console.error('❌ Error: mostrarSeccionPrendasTecnicasLogoNuevo no está disponible');
     }
 }
-
-console.log('✅ logo-pedido.js cargado (versión refactorizada - usa logo-pedido-tecnicas.js');

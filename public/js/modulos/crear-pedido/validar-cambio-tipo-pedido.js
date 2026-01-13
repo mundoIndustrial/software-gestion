@@ -183,7 +183,6 @@
                 if (usuarioConfirmo) {
                     // Usuario confirmó: limpiar formulario
                     limpiarFormulario();
-                    console.log('✅ Usuario confirmó cambio de tipo - datos limpiados');
                 } else {
                     // Usuario canceló: revertir el cambio
                     e.preventDefault();
@@ -203,8 +202,6 @@
         // Agregar listeners
         tipoDesdeRadio.addEventListener('change', manejarCambioTipo);
         tipoNuevoRadio.addEventListener('change', manejarCambioTipo);
-
-        console.log('✅ [validar-cambio-tipo-pedido] Validación inicializada');
     }
 
     // Esperar a que el DOM esté listo

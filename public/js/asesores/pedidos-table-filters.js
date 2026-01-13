@@ -12,7 +12,6 @@ let selectedFilters = {};
  */
 function saveFiltersToLocalStorage() {
     localStorage.setItem('pedidosTableFilters', JSON.stringify(selectedFilters));
-    console.log('💾 Filtros guardados en localStorage:', selectedFilters);
 }
 
 /**
@@ -23,7 +22,6 @@ function loadFiltersFromLocalStorage() {
     if (saved) {
         try {
             selectedFilters = JSON.parse(saved);
-            console.log('📂 Filtros cargados desde localStorage:', selectedFilters);
             return true;
         } catch (e) {
             console.error('❌ Error al cargar filtros:', e);
@@ -53,7 +51,6 @@ function getColumnIndexByName(columnName) {
         if (child.classList.contains('th-wrapper')) {
             const labelSpan = child.querySelector('span');
             if (labelSpan && labelSpan.textContent.trim() === columnName) {
-                console.log(`✅ Columna "${columnName}" encontrada en índice ${i}`);
                 return i;
             }
         }
@@ -89,8 +86,6 @@ function getColumnValuesFromTableByName(columnName) {
     // IMPORTANTE: Solo considerar filas VISIBLES (no ocultas por otros filtros)
     const visibleRows = rows.filter(row => row.style.display !== 'none');
     
-    console.log(`📊 Extrayendo valores de "${columnName}" (índice ${columnIndex}) de ${visibleRows.length} filas visibles (de ${rows.length} totales)`);
-    
     visibleRows.forEach((row, rowIndex) => {
         // Obtener solo los divs directos (children) de la fila
         const cells = Array.from(row.children);
@@ -98,8 +93,6 @@ function getColumnValuesFromTableByName(columnName) {
         if (cells && cells[columnIndex]) {
             let cellDiv = cells[columnIndex];
             let value = cellDiv.textContent.trim();
-            
-            console.log(`  [Fila ${rowIndex}] Valor bruto: "${value}"`);
             
             // Limpiar valores especiales según la columna
             if (columnName === 'Estado') {
@@ -119,13 +112,11 @@ function getColumnValuesFromTableByName(columnName) {
             // No agregar valores vacíos
             if (value && value.length > 0 && value !== '-') {
                 values.add(value);
-                console.log(`  ✅ Agregado: "${value}"`);
             }
         }
     });
     
     const result = Array.from(values).sort();
-    console.log(`📋 Valores únicos para "${columnName}":`, result);
     return result;
 }
 
@@ -143,8 +134,6 @@ function openFilterModal(columnName) {
     
     // Obtener valores únicos de la tabla
     const values = getColumnValuesFromTableByName(columnName);
-    
-    console.log(`Columna "${columnName}":`, values);
     
     // Construir opciones
     optionsContainer.innerHTML = '';
@@ -240,7 +229,6 @@ function applyFilters() {
         delete selectedFilters[currentFilterColumnName];
     }
     
-    console.log('Filtros aplicados:', selectedFilters);
     saveFiltersToLocalStorage();  // 💾 Guardar en localStorage
     closeFilterModal();
     
@@ -253,7 +241,6 @@ function applyFilters() {
     });
     
     const newUrl = `${window.location.pathname}?${filterParams.toString()}`;
-    console.log('🔗 Redirigiendo a:', newUrl);
     window.location.href = newUrl;
 }
 
@@ -269,7 +256,6 @@ function resetFilters() {
     closeFilterModal();
     
     // Redirigir sin filtros
-    console.log('🔄 Limpiando filtros...');
     window.location.href = window.location.pathname;
 }
 
@@ -302,8 +288,6 @@ function applyTableFilters() {
                 let cellDiv = cells[columnIndex];
                 let cellValue = cellDiv.textContent.trim();
                 
-                console.log(`🔍 Comparando "${columnName}" - Valor: "${cellValue}" - Filtros: ${JSON.stringify(filterValues)}`);
-                
                 // Limpiar valor para comparación
                 if (columnName === 'Estado') {
                     const span = cellDiv.querySelector('span');
@@ -333,11 +317,8 @@ function applyTableFilters() {
                 }
                 
                 if (!matches) {
-                    console.log(`  ❌ No coincide - Ocultando fila`);
                     shouldShow = false;
                     break;
-                } else {
-                    console.log(`  ✅ Coincide - Mostrando fila`);
                 }
             }
         }
@@ -345,8 +326,6 @@ function applyTableFilters() {
         row.style.display = shouldShow ? 'grid' : 'none';
         if (shouldShow) visibleCount++;
     });
-    
-    console.log(`✅ Mostrando ${visibleCount} de ${rows.length} filas`);
 }
 
 /**
@@ -370,7 +349,6 @@ function loadFiltersFromURL() {
     
     if (Object.keys(urlFilters).length > 0) {
         selectedFilters = urlFilters;
-        console.log('📋 Filtros cargados desde URL:', selectedFilters);
         return true;
     }
     return false;
@@ -420,7 +398,6 @@ function initializeFilterButtons() {
     
     // ✅ Aplicar filtros a la tabla
     if (Object.keys(selectedFilters).length > 0) {
-        console.log('✅ Aplicando filtros:', selectedFilters);
         applyTableFilters();
         updateFilterBadges();
         updateClearButtonVisibility();
@@ -486,8 +463,6 @@ function updatePaginationLinks() {
             link.href = url.toString();
         }
     });
-    
-    console.log('🔗 Links de paginación actualizados con filtros');
 }
 
 /**
@@ -526,8 +501,6 @@ function updateFilterBadges() {
                 badge.className = 'filter-badge';
                 badge.textContent = selectedFilters[columnName].length;
                 button.appendChild(badge);
-                
-                console.log(`🔴 Badge agregado a "${columnName}": ${selectedFilters[columnName].length}`);
             } else {
                 button.classList.remove('has-filter');
             }
@@ -549,10 +522,8 @@ function updateClearButtonVisibility() {
     
     if (hasFilters) {
         clearBtn.classList.add('visible');
-        console.log('✅ Botón flotante mostrado');
     } else {
         clearBtn.classList.remove('visible');
-        console.log('❌ Botón flotante ocultado');
     }
 }
 
@@ -582,8 +553,6 @@ function clearAllFilters() {
     
     url.search = params.toString();
     window.history.pushState({}, '', url.toString());
-    
-    console.log('✅ Todos los filtros limpiados sin recargar la página');
 }
 
 /**
@@ -649,8 +618,6 @@ function applyFilters() {
     
     url.search = params.toString();
     window.history.pushState({}, '', url.toString());
-    
-    console.log('✅ Filtros aplicados sin recargar la página');
 }
 
 /**
@@ -689,6 +656,4 @@ function resetFilters() {
     
     url.search = params.toString();
     window.history.pushState({}, '', url.toString());
-    
-    console.log('✅ Filtros reseteados sin recargar la página');
 }

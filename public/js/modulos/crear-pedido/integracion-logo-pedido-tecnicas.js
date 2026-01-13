@@ -7,8 +7,6 @@
  * Reemplaza el renderizado anterior por el nuevo basado en prendas técnicas
  */
 
-console.log('🔗 INTEGRACION-LOGO-PEDIDO-TECNICAS: Iniciando...');
-
 // =========================================================
 // 1. INTEGRACIÓN CON RENDERIZAR PRENDAS EDITABLES
 // =========================================================
@@ -17,14 +15,9 @@ console.log('🔗 INTEGRACION-LOGO-PEDIDO-TECNICAS: Iniciando...');
 const originalRenderizarPrendasEditables = window.renderizarPrendasEditables || function() {};
 
 window.renderizarPrendasEditables = function(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null, esLogo = false, tipoCotizacion = 'P') {
-    console.log('🔗 INTEGRACION: renderizarPrendasEditables interceptado');
-    console.log('   Tipo de cotización:', tipoCotizacion);
-    console.log('   Es Logo:', esLogo);
-    console.log('   logoCotizacion:', logoCotizacion);
     
     // Si es LOGO, usar el nuevo sistema de prendas técnicas
     if (tipoCotizacion === 'L' && esLogo) {
-        console.log('✅ INTEGRACION: Detectado tipo LOGO, mostrando prendas técnicas en tarjetas');
         
         // Guardar datos globales para uso posterior
         window.currentTipoCotizacion = tipoCotizacion;
@@ -47,23 +40,12 @@ window.renderizarPrendasEditables = function(prendas, logoCotizacion = null, esp
 const originalObtenerDatosCotizacion = window.obtenerDatosCotizacion || function() {};
 
 window.obtenerDatosCotizacion = async function(cotizacionId) {
-    console.log('🔗 INTEGRACION: obtenerDatosCotizacion interceptado para cotización:', cotizacionId);
     
     // Llamar a la versión original del servidor
     const resultado = await originalObtenerDatosCotizacion(cotizacionId);
     
-    console.log('🔗 INTEGRACION: Respuesta recibida del servidor:', resultado);
-    console.log('   - Tipo:', typeof resultado);
-    console.log('   - Keys disponibles:', Object.keys(resultado || {}));
-    console.log('   - resultado.logo existe:', !!resultado?.logo);
-    console.log('   - resultado.prendas_tecnicas existe:', !!resultado?.prendas_tecnicas);
-    
     // Si tiene datos de logo, procesarlos con el nuevo sistema
     if (resultado && resultado.logo) {
-        console.log('✅ INTEGRACION: Datos de logo recibidos');
-        console.log('   - Logo tipo:', resultado.logo?.tipo);
-        console.log('   - Logo ID:', resultado.logo?.id);
-        console.log('   - prendas_tecnicas disponibles:', resultado.prendas_tecnicas ? resultado.prendas_tecnicas.length : 0);
         
         // Mostrar estructura completa de prendas técnicas
         if (resultado.prendas_tecnicas && resultado.prendas_tecnicas.length > 0) {
@@ -86,7 +68,6 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
         
         // Cargar las prendas técnicas desde la respuesta
         if (resultado.prendas_tecnicas && resultado.prendas_tecnicas.length > 0) {
-            console.log('✅ INTEGRACION: Cargando prendas técnicas...');
             cargarLogoPrendasDesdeCotizacion(resultado.prendas_tecnicas);
             console.log('✅ INTEGRACION: logoPrendasTecnicas después de cargar:', window.logoPrendasTecnicas);
         } else {
@@ -188,8 +169,7 @@ window.validarLogoPedido = function() {
 // =========================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Módulo de integración logo-pedido-tecnicas cargado');
-    console.log('   - mostrarSeccionPrendasTecnicasLogoNuevo está disponible:', typeof window.mostrarSeccionPrendasTecnicasLogoNuevo === 'function');
+    // Módulo de integración logo-pedido-tecnicas cargado
     
     // Cargar tipos de logo disponibles
     if (typeof cargarTiposLogosDisponibles === 'function') {

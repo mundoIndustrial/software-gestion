@@ -16,8 +16,34 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+// Domain Services
+use App\Domain\PedidoProduccion\Services\NumeracionService;
+use App\Domain\PedidoProduccion\Services\DescripcionService;
+use App\Domain\PedidoProduccion\Services\ImagenService;
+use App\Domain\PedidoProduccion\Services\PedidoProduccionService;
+use App\Domain\PedidoProduccion\Services\CreacionPedidoService;
+use App\Domain\PedidoProduccion\Services\LogoPedidoService;
+use App\Domain\PedidoProduccion\Services\ProcesosPedidoService;
+use App\Domain\PedidoProduccion\Repositories\CotizacionRepository;
+
+/**
+ * Controlador de Pedidos de Producción
+ * 
+ * Responsabilidad: Manejar requests HTTP y delegar lógica de negocio a servicios de dominio
+ * Siguiendo principios DDD y SOLID
+ */
 class PedidosProduccionController extends Controller
 {
+    public function __construct(
+        private PedidoProduccionService $pedidoService,
+        private CreacionPedidoService $creacionPedidoService,
+        private LogoPedidoService $logoPedidoService,
+        private ProcesosPedidoService $procesosService,
+        private NumeracionService $numeracionService,
+        private DescripcionService $descripcionService,
+        private ImagenService $imagenService,
+        private CotizacionRepository $cotizacionRepository
+    ) {}
     /**
      * Mostrar formulario para crear pedido desde cotización
      */
@@ -42,27 +68,35 @@ class PedidosProduccionController extends Controller
     }
 
     /**
-     * Mostrar formulario EDITABLE para crear pedido desde cotización
+     * Mostrar formulario EDITABLE para crear pedido DESDE COTIZACIÓN
      * 
      * @return \Illuminate\View\View
      */
     public function crearFormEditable()
     {
-        // Solo permitir crear pedidos de cotizaciones APROBADAS
-        $cotizaciones = Cotizacion::where('asesor_id', Auth::id())
-            ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
-            ->with([
-                'asesor',
-                'cliente',
-                'prendasCotizaciones.variantes.color',
-                'prendasCotizaciones.variantes.tela',
-                'prendasCotizaciones.variantes.tipoManga',
-                'prendasCotizaciones.variantes.tipoBroche'
-            ])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Delegar obtención de cotizaciones al repositorio
+        $cotizaciones = $this->cotizacionRepository->obtenerCotizacionesAprobadas();
 
-        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones'));
+        // Tipo inicial: cotizacion (para mostrar buscador de cotizaciones)
+        $tipoInicial = 'cotizacion';
+
+        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones', 'tipoInicial'));
+    }
+
+    /**
+     * Mostrar formulario EDITABLE para crear PEDIDO NUEVO (sin cotización)
+     * 
+     * @return \Illuminate\View\View
+     */
+    public function crearFormEditableNuevo()
+    {
+        // Cargar cotizaciones vacías (no se necesitan para pedido nuevo)
+        $cotizaciones = collect([]);
+
+        // Tipo inicial: nuevo (para mostrar selector de tipo de pedido)
+        $tipoInicial = 'nuevo';
+
+        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones', 'tipoInicial'));
     }
 
     /**
@@ -75,6 +109,24 @@ class PedidosProduccionController extends Controller
             return $this->indexLogoPedidos($request);
         }
 
+        // Delegar obtención de pedidos al servicio de dominio
+        $filtros = [
+            'estado' => $request->estado,
+            'fecha_desde' => $request->fecha_desde,
+            'fecha_hasta' => $request->fecha_hasta,
+        ];
+
+        $pedidos = $this->pedidoService->obtenerPedidosAsesor($filtros);
+
+        return view('asesores.pedidos.index', compact('pedidos'));
+    }
+
+    /**
+     * MÉTODO LEGACY - Mantener temporalmente para compatibilidad
+     * TODO: Migrar completamente al servicio
+     */
+    private function indexLegacy(Request $request)
+    {
         $query = PedidoProduccion::query()
             ->with([
                 'cotizacion' => function($q) {
@@ -183,572 +235,39 @@ class PedidosProduccionController extends Controller
     }
 
     /**
-     * Crear pedido de producción desde cotización (llamado desde CotizacionesController)
-     * ✅ MEJORADO: Detecta si es LOGO y crea en logo_pedidos, no en pedidos_produccion
+     * Crear pedido de producción desde cotización
+     * Responsabilidad: Validar request HTTP y delegar a servicio de dominio
      */
     public function crearDesdeCotizacion($cotizacionId)
     {
-        // ✅ Asegurar que cargamos tipoCotizacion con eager loading
-        $cotizacion = Cotizacion::with(['tipoCotizacion', 'cliente'])
-            ->findOrFail($cotizacionId);
-        
-        \Log::info('📋 [crearDesdeCotizacion] Iniciando creación de pedido', [
-            'cotizacion_id' => $cotizacion->id,
-            'numero_cotizacion' => $cotizacion->numero,
-            'tipo_cotizacion_id' => $cotizacion->tipo_cotizacion_id,
-            'tipo_cotizacion_codigo' => $cotizacion->tipoCotizacion?->codigo,
-            'tipo_cotizacion_nombre' => $cotizacion->tipoCotizacion?->nombre,
-        ]);
-        
-        if ($cotizacion->asesor_id !== Auth::id()) {
-            abort(403);
-        }
-
-        // Validar que la cotización esté aprobada
-        $estadosValidos = ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'];
-        if (!in_array($cotizacion->estado, $estadosValidos)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'La cotización debe estar aprobada para crear un pedido. Estado actual: ' . $cotizacion->estado
-            ], 403);
-        }
-
-        // ✅ VALIDACIÓN: Detectar si es cotización tipo LOGO o COMBINADA (PL)
-        $tipoCotizacionCodigo = strtoupper(trim($cotizacion->tipoCotizacion?->codigo ?? ''));
-        \Log::warning('🎨 [crearDesdeCotizacion] Verificando tipo cotización', [
-            'codigo_original' => $cotizacion->tipoCotizacion?->codigo,
-            'codigo_normalizado' => $tipoCotizacionCodigo,
-            'es_logo_solo' => ($tipoCotizacionCodigo === 'L' ? 'SÍ' : 'NO'),
-            'es_combinada' => ($tipoCotizacionCodigo === 'PL' ? 'SÍ' : 'NO'),
-            'tipoCotizacion_objeto' => $cotizacion->tipoCotizacion ? 'existe' : 'NULL'
-        ]);
-        
-        if ($tipoCotizacionCodigo === 'L') {
-            \Log::info('🎨🎨🎨 [crearDesdeCotizacion] ¡¡¡ES LOGO SOLO!!! Redirigiendo a crearLogoPedidoDesdeAnullCotizacion', [
-                'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $cotizacion->numero
-            ]);
-            // ✅ Si es LOGO SOLO, crear en logo_pedidos en lugar de pedidos_produccion
-            return $this->crearLogoPedidoDesdeAnullCotizacion($cotizacion);
-        }
-
-        \Log::info('📦 [crearDesdeCotizacion] Continuando con pedidos_produccion normal', [
-            'cotizacion_id' => $cotizacion->id,
-            'codigo' => $tipoCotizacionCodigo,
-            'es_combinada_pl' => ($tipoCotizacionCodigo === 'PL' ? 'SÍ (creará AMBOS pedidos)' : 'NO')
-        ]);
-
         try {
-            DB::beginTransaction();
-
-            // Crear pedido de producción
-            $especificaciones = $cotizacion->especificaciones;
+            // Delegar creación completa al servicio de dominio
+            $resultado = $this->creacionPedidoService->crearDesdeCotizacion($cotizacionId);
             
-            // Si es string JSON, decodificar
-            if (is_string($especificaciones)) {
-                $especificaciones = json_decode($especificaciones, true) ?? [];
-            }
+            return response()->json($resultado);
             
-            // Sanitizar numero_cotizacion (convertir a string si es array)
-            $numeroCotizacion = $cotizacion->numero_cotizacion;
-            if (is_array($numeroCotizacion)) {
-                $numeroCotizacion = implode(',', $numeroCotizacion);
-            }
-            
-            // Obtener forma_de_pago del request (enviado por frontend)
-            $formaPago = request()->input('forma_de_pago');
-            
-            // Si no viene en el request, intentar obtener de las especificaciones
-            if (empty($formaPago)) {
-                $formaPago = $especificaciones['forma_pago'] ?? null;
-                if (is_array($formaPago)) {
-                    $formaPago = implode(',', $formaPago);
-                }
-            }
-            
-            \Log::info('💰 Forma de pago recibida:', [
-                'forma_de_pago' => $formaPago,
-                'from_request' => request()->input('forma_de_pago'),
-                'from_spec' => $especificaciones['forma_pago'] ?? 'none'
-            ]);
-            
-            // Determinar el área basado en el tipo de cotización
-            $tipoCotizacion = strtolower(trim($cotizacion->tipoCotizacion?->nombre ?? ''));
-            $area = ($tipoCotizacion === 'reflectivo') ? 'Costura' : null;
-            
-            \Log::info('🎯 Determinando área del pedido', [
-                'tipo_cotizacion' => $tipoCotizacion,
-                'area_asignada' => $area,
-            ]);
-            
-            \Log::error('🚨🚨🚨 [ALERTA] A PUNTO DE CREAR EN PEDIDOS_PRODUCCION 🚨🚨🚨', [
-                'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $numeroCotizacion,
-                'tipo_cotizacion_codigo' => $tipoCotizacionCodigo,
-                'tipo_cotizacion_nombre' => $cotizacion->tipoCotizacion?->nombre,
-                'THIS_SHOULD_NOT_HAPPEN_FOR_LOGO' => 'SI VES ESTO PARA COTIZACION 187, LOGO NO FUE DETECTADO'
-            ]);
-            
-            $pedido = PedidoProduccion::create([
-                'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $numeroCotizacion,
-                'numero_pedido' => $this->generarNumeroPedido(),
-                'cliente' => $cotizacion->cliente->nombre ?? 'Sin nombre',
-                'asesor_id' => auth()->id(),
-                'forma_de_pago' => $formaPago,
-                'area' => $area,
-                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-                'fecha_de_creacion_de_orden' => now(),
-            ]);
-
-            \Log::error('💥💥💥 [CREADO EN PEDIDOS_PRODUCCION] 💥💥💥', [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cotizacion_id' => $cotizacion->id
-            ]);
-
-            // Obtener datos del request (JSON o Form Data)
-            $prendas = request()->input('prendas', []);
-            
-            // Si no hay prendas en el request, usar las de la cotización
-            if (empty($prendas)) {
-                $productos = $cotizacion->productos;
-                
-                // Si productos es un string JSON, decodificarlo
-                if (is_string($productos)) {
-                    $productos = json_decode($productos, true) ?? [];
-                }
-                
-                // Obtener cantidades del request
-                $cantidades = request()->input('cantidades', []);
-                \Log::info('📊 Cantidades recibidas del frontend:', $cantidades);
-                
-                // Convertir productos al formato esperado
-                if ($productos && is_array($productos)) {
-                    foreach ($productos as $index => $producto) {
-                        // Obtener cantidades para este producto
-                        $productosCantidades = $cantidades[$index] ?? [];
-                        
-                        // Filtrar solo las cantidades > 0
-                        $cantidadesFiltradasPorTalla = [];
-                        foreach ($productosCantidades as $talla => $cantidad) {
-                            $cantidadInt = (int)$cantidad;
-                            if ($cantidadInt > 0) {
-                                $cantidadesFiltradasPorTalla[$talla] = $cantidadInt;
-                            }
-                        }
-                        
-                        $prendas[] = array_merge($producto, [
-                            'index' => $index,
-                            'cantidades' => $cantidadesFiltradasPorTalla
-                        ]);
-                    }
-                }
-            }
-
-            // Crear prendas del pedido
-            if (!empty($prendas)) {
-                foreach ($prendas as $prenda) {
-                    $index = $prenda['index'] ?? 0;
-                    $cantidadesPorTalla = $prenda['cantidades'] ?? [];
-                    
-                    // Calcular cantidad total
-                    $cantidadTotal = array_sum($cantidadesPorTalla);
-
-                    // CONSTRUIR DESCRIPCIÓN EN EL FORMATO REQUERIDO
-                    $descripcionPrenda = $this->construirDescripcionPrenda(
-                        $index + 1,
-                        $prenda,
-                        $cantidadesPorTalla
-                    );
-
-                    \Log::info('✅ Prenda creada', [
-                        'index' => $index,
-                        'nombre' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                        'cantidades_por_talla' => $cantidadesPorTalla,
-                        'cantidad_total' => $cantidadTotal,
-                        'descripcion_construida' => $descripcionPrenda
-                    ]);
-
-                    $prendaPedido = PrendaPedido::create([
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                        'cantidad' => $cantidadTotal,
-                        'descripcion' => $descripcionPrenda,
-                        'cantidad_talla' => json_encode($cantidadesPorTalla),
-                        'color_id' => $prenda['color_id'] ?? null,
-                        'tela_id' => $prenda['tela_id'] ?? null,
-                        'tipo_manga_id' => $prenda['tipo_manga_id'] ?? null,
-                        'tipo_broche_id' => $prenda['tipo_broche_id'] ?? null,
-                        'tiene_bolsillos' => ($prenda['tiene_bolsillos'] ?? false) ? 1 : 0,
-                        'tiene_reflectivo' => ($prenda['tiene_reflectivo'] ?? false) ? 1 : 0,
-                    ]);
-
-                    // Crear proceso inicial para cada prenda (SOLO si NO es reflectivo)
-                    // Para reflectivo, se crea en crearProcesosParaReflectivo()
-                    $tipoCotizacion = strtolower(trim($cotizacion->tipoCotizacion?->nombre ?? ''));
-                    if ($tipoCotizacion !== 'reflectivo') {
-                        ProcesoPrenda::create([
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'prenda_pedido_id' => $prendaPedido->id,
-                            'proceso' => 'Creación Orden',
-                            'estado_proceso' => 'Completado',
-                            'fecha_inicio' => now(),
-                            'fecha_fin' => now(),
-                        ]);
-                    }
-                    
-                    // HEREDAR VARIANTES DE LA COTIZACIÓN
-                    $this->heredarVariantesDePrenda($cotizacion, $prendaPedido, $index);
-                }
-            }
-
-            // Calcular cantidad_total: suma de todas las cantidades de todas las prendas
-            $cantidadTotalPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
-                ->sum('cantidad');
-            
-            $pedido->update([
-                'cantidad_total' => $cantidadTotalPedido
-            ]);
-
-            // ✅ CREAR PROCESOS AUTOMÁTICAMENTE PARA COTIZACIONES REFLECTIVO
-            \Log::info('📞 Llamando a crearProcesosParaReflectivo', [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cotizacion_id' => $cotizacion->id,
-                'tipo_cotizacion' => $cotizacion->tipoCotizacion?->nombre,
-            ]);
-            $this->crearProcesosParaReflectivo($pedido, $cotizacion);
-
-            // ✅ PROCESAR FOTOS DEL REFLECTIVO SI EXISTEN
-            $reflectivoFotosIds = request()->input('reflectivo_fotos_ids', []);
-            if (!empty($reflectivoFotosIds)) {
-                \Log::info('📸 [PedidosProduccionController] Procesando fotos de reflectivo', [
-                    'fotos_ids' => $reflectivoFotosIds
-                ]);
-                
-                // Obtener el reflectivo de la cotización
-                $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacion->id)->first();
-                
-                if ($reflectivo) {
-                    $fotosReflectivo = \App\Models\ReflectivoCotizacionFoto::whereIn('id', $reflectivoFotosIds)
-                        ->where('reflectivo_cotizacion_id', $reflectivo->id)
-                        ->get();
-                    
-                    \Log::info('📸 Fotos de reflectivo encontradas', [
-                        'cantidad' => $fotosReflectivo->count()
-                    ]);
-                    
-                    // Agregar las fotos del reflectivo a la primera prenda
-                    if ($fotosReflectivo->count() > 0 && !empty($prendas)) {
-                        if (!isset($prendas[0]['fotos'])) {
-                            $prendas[0]['fotos'] = [];
-                        }
-                        
-                        foreach ($fotosReflectivo as $foto) {
-                            $prendas[0]['fotos'][] = [
-                                'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->ruta_original, '/'),
-                                'ruta_original' => $foto->ruta_original,
-                                'ruta_webp' => $foto->ruta_webp,
-                                'orden' => $foto->orden ?? 0,
-                            ];
-                        }
-                        
-                        \Log::info('✅ Fotos de reflectivo agregadas a prendas[0]', [
-                            'total_fotos_prenda_0' => count($prendas[0]['fotos'])
-                        ]);
-                    }
-                }
-            }
-
-            // ✅ VERIFICAR SI HAY FOTOS EN EL FORMULARIO
-            \Log::info('📸 [DEBUG] Verificando fotos en formulario', [
-                'total_prendas' => count($prendas),
-            ]);
-            
-            $hayFotosEnFormulario = false;
-            foreach ($prendas as $index => $prenda) {
-                \Log::info("📸 [DEBUG] Prenda {$index}", [
-                    'tiene_fotos' => !empty($prenda['fotos']),
-                    'cantidad_fotos' => count($prenda['fotos'] ?? []),
-                    'tiene_telas' => !empty($prenda['telas']),
-                    'cantidad_telas' => count($prenda['telas'] ?? []),
-                    'tiene_logos' => !empty($prenda['logos']),
-                    'cantidad_logos' => count($prenda['logos'] ?? []),
-                ]);
-                
-                if (!empty($prenda['fotos']) || !empty($prenda['telas']) || !empty($prenda['logos'])) {
-                    $hayFotosEnFormulario = true;
-                }
-            }
-            
-            \Log::info('📸 [DEBUG] Resultado verificación', [
-                'hay_fotos_en_formulario' => $hayFotosEnFormulario,
-            ]);
-            
-            if ($hayFotosEnFormulario) {
-                // GUARDAR SOLO LAS FOTOS QUE EL USUARIO ENVIÓ (respeta lo que eliminó)
-                \Log::info('📸 [PedidosProduccionController] Guardando fotos seleccionadas por el usuario', [
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'total_prendas' => count($prendas),
-                ]);
-
-                try {
-                    // Obtener prendas del pedido recién creadas
-                    $prendasPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
-                        ->get();
-
-                    // Variable para guardar fotos de logo solo una vez
-                    $fotosLogoGuardadas = false;
-
-                    $indexPrenda = 0;
-                    foreach ($prendasPedido as $prendaPedido) {
-                        if (isset($prendas[$indexPrenda])) {
-                            $prendaFormulario = $prendas[$indexPrenda];
-                            
-                            \Log::info("📸 [DEBUG] Procesando prenda {$indexPrenda}", [
-                                'prenda_pedido_id' => $prendaPedido->id,
-                                'tiene_fotos' => !empty($prendaFormulario['fotos']),
-                                'estructura_fotos' => $prendaFormulario['fotos'] ?? [],
-                            ]);
-
-                            // Guardar fotos de prenda
-                            if (!empty($prendaFormulario['fotos'])) {
-                                foreach ($prendaFormulario['fotos'] as $orden => $foto) {
-                                    // La foto puede venir como string (ruta directa) o como objeto
-                                    if (is_string($foto)) {
-                                        $rutaFoto = $foto;
-                                    } else {
-                                        $rutaFoto = $foto['ruta_webp'] ?? $foto['ruta_original'] ?? $foto['url'] ?? null;
-                                    }
-                                    
-                                    if ($rutaFoto) {
-                                        DB::table('prenda_fotos_pedido')->insert([
-                                            'prenda_pedido_id' => $prendaPedido->id,
-                                            'ruta_original' => is_array($foto) ? ($foto['ruta_original'] ?? $rutaFoto) : $rutaFoto,
-                                            'ruta_webp' => is_array($foto) ? ($foto['ruta_webp'] ?? $rutaFoto) : $rutaFoto,
-                                            'ruta_miniatura' => is_array($foto) ? ($foto['ruta_miniatura'] ?? null) : null,
-                                            'orden' => $orden + 1,
-                                            'ancho' => is_array($foto) ? ($foto['ancho'] ?? null) : null,
-                                            'alto' => is_array($foto) ? ($foto['alto'] ?? null) : null,
-                                            'tamaño' => is_array($foto) ? ($foto['tamaño'] ?? null) : null,
-                                            'created_at' => now(),
-                                            'updated_at' => now(),
-                                        ]);
-                                    }
-                                }
-                                \Log::info('✅ Fotos de prenda guardadas', [
-                                    'prenda_id' => $prendaPedido->id,
-                                    'cantidad_fotos' => count($prendaFormulario['fotos']),
-                                ]);
-                            }
-
-                            // Guardar fotos de telas
-                            if (!empty($prendaFormulario['telas'])) {
-                                foreach ($prendaFormulario['telas'] as $tela) {
-                                    // Las telas pueden venir como array de fotos directamente
-                                    $fotosTela = [];
-                                    if (isset($tela['fotos'])) {
-                                        $fotosTela = $tela['fotos'];
-                                    } elseif (isset($tela['url']) || isset($tela['ruta_webp'])) {
-                                        // La tela es una foto directamente
-                                        $fotosTela = [$tela];
-                                    }
-                                    
-                                    if (!empty($fotosTela)) {
-                                        foreach ($fotosTela as $orden => $foto) {
-                                            // La foto puede venir como string o como objeto
-                                            if (is_string($foto)) {
-                                                $rutaFoto = $foto;
-                                            } else {
-                                                $rutaFoto = $foto['ruta_webp'] ?? $foto['ruta_original'] ?? $foto['url'] ?? null;
-                                            }
-                                            
-                                            if ($rutaFoto) {
-                                                DB::table('prenda_fotos_tela_pedido')->insert([
-                                                    'prenda_pedido_id' => $prendaPedido->id,
-                                                    'tela_id' => is_array($tela) ? ($tela['tela_id'] ?? null) : null,
-                                                    'color_id' => is_array($tela) ? ($tela['color_id'] ?? null) : null,
-                                                    'ruta_original' => is_array($foto) ? ($foto['ruta_original'] ?? $rutaFoto) : $rutaFoto,
-                                                    'ruta_webp' => is_array($foto) ? ($foto['ruta_webp'] ?? $rutaFoto) : $rutaFoto,
-                                                    'ruta_miniatura' => is_array($foto) ? ($foto['ruta_miniatura'] ?? null) : null,
-                                                    'orden' => $orden + 1,
-                                                    'ancho' => is_array($foto) ? ($foto['ancho'] ?? null) : null,
-                                                    'alto' => is_array($foto) ? ($foto['alto'] ?? null) : null,
-                                                    'tamaño' => is_array($foto) ? ($foto['tamaño'] ?? null) : null,
-                                                    'created_at' => now(),
-                                                    'updated_at' => now(),
-                                                ]);
-                                            }
-                                        }
-                                        \Log::info('✅ Fotos de tela guardadas', [
-                                            'prenda_id' => $prendaPedido->id,
-                                            'cantidad_fotos' => count($fotosTela),
-                                        ]);
-                                    }
-                                }
-                            }
-
-                            // Guardar fotos de logos/bordados SOLO UNA VEZ (no por cada prenda)
-                            if (!empty($prendaFormulario['logos']) && !$fotosLogoGuardadas) {
-                                foreach ($prendaFormulario['logos'] as $orden => $logo) {
-                                    $rutaLogo = is_string($logo) ? $logo : ($logo['ruta_webp'] ?? $logo['ruta_original'] ?? $logo['url'] ?? null);
-                                    
-                                    if ($rutaLogo) {
-                                        DB::table('prenda_fotos_logo_pedido')->insert([
-                                            'prenda_pedido_id' => $prendaPedido->id,
-                                            'ruta_original' => is_array($logo) ? ($logo['ruta_original'] ?? $rutaLogo) : $rutaLogo,
-                                            'ruta_webp' => is_array($logo) ? ($logo['ruta_webp'] ?? $rutaLogo) : $rutaLogo,
-                                            'ruta_miniatura' => is_array($logo) ? ($logo['ruta_miniatura'] ?? null) : null,
-                                            'orden' => $orden + 1,
-                                            'ubicacion' => is_array($logo) ? ($logo['ubicacion'] ?? null) : null,
-                                            'ancho' => is_array($logo) ? ($logo['ancho'] ?? null) : null,
-                                            'alto' => is_array($logo) ? ($logo['alto'] ?? null) : null,
-                                            'tamaño' => is_array($logo) ? ($logo['tamaño'] ?? null) : null,
-                                            'created_at' => now(),
-                                            'updated_at' => now(),
-                                        ]);
-                                    }
-                                }
-                                $fotosLogoGuardadas = true; // Marcar como guardadas para no repetir
-                                \Log::info('✅ Fotos de logo guardadas (solo una vez)', [
-                                    'prenda_id' => $prendaPedido->id,
-                                    'cantidad_fotos' => count($prendaFormulario['logos']),
-                                ]);
-                            }
-                        }
-                        $indexPrenda++;
-                    }
-
-                    \Log::info('✅ [PedidosProduccionController] Todas las fotos del usuario guardadas');
-                } catch (\Exception $e) {
-                    \Log::error('❌ [PedidosProduccionController] Error al guardar fotos del usuario', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                    ]);
-                }
-            } else {
-                // Si NO hay fotos del formulario, COPIAR de la cotización (fallback)
-                \Log::info('🖼️ [PedidosProduccionController] No hay fotos del formulario, copiando de cotización');
-                try {
-                    $copiarImagenesService = app(\App\Application\Services\CopiarImagenesCotizacionAPedidoService::class);
-                    $copiarImagenesService->copiarImagenesCotizacionAPedido($cotizacion->id, $pedido->id);
-                    \Log::info('✅ [PedidosProduccionController] Imágenes copiadas exitosamente');
-                } catch (\Exception $e) {
-                    \Log::error('❌ [PedidosProduccionController] Error al copiar imágenes', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                    ]);
-                }
-            }
-
-            // NO cambiar el estado de la cotización para permitir crear múltiples pedidos
-            // La cotización mantiene su estado actual (enviada, aceptada, etc.)
-
-            DB::commit();
-
-            // ✅ Si es combinada (PL), crear AUTOMÁTICAMENTE el logo_pedido
-            // 🔍 LÓGICA: No crear logo_pedido si es tipo 'P' (PRENDA únicamente)
-            if ($tipoCotizacionCodigo === 'PL') {
-                // Obtener logo_cotizacion_id para enviarlo al frontend
-                $logoCotizacionId = DB::table('logo_cotizaciones')
-                    ->where('cotizacion_id', $cotizacionId)
-                    ->value('id');
-                
-                \Log::info('📦 [crearDesdeCotizacion] Cotización COMBINADA detectada, creando AMBOS pedidos', [
-                    'cotizacion_id' => $cotizacionId,
-                    'logo_cotizacion_id' => $logoCotizacionId,
-                    'pedido_costura_id' => $pedido->id
-                ]);
-                
-                // ✅ CREAR AUTOMÁTICAMENTE EL LOGO_PEDIDO
-                $numeroLogoPedido = $this->generarNumeroLogoPedido();
-                
-                // Obtener datos del logo_cotizacion usando el MODELO (con casts automáticos)
-                $logoCotizacion = \App\Models\LogoCotizacion::find($logoCotizacionId);
-                
-                // ✅ Preparar datos para inserción (DB::table NO hace cast automático)
-                $seccionesJson = $logoCotizacion->ubicaciones 
-                    ? (is_string($logoCotizacion->ubicaciones) 
-                        ? $logoCotizacion->ubicaciones 
-                        : json_encode($logoCotizacion->ubicaciones))
-                    : json_encode([]);
-                    
-                $tecnicasJson = $logoCotizacion->tecnicas 
-                    ? (is_string($logoCotizacion->tecnicas) 
-                        ? $logoCotizacion->tecnicas 
-                        : json_encode($logoCotizacion->tecnicas))
-                    : json_encode([]);
-                
-                $logoPedidoId = DB::table('logo_pedidos')->insertGetId([
-                    'pedido_id' => $pedido->id, // ✅ ID del pedido de producción
-                    'numero_pedido_cost' => $pedido->numero_pedido, // ✅ Número del pedido de costura
-                    'logo_cotizacion_id' => $logoCotizacionId,
-                    'numero_pedido' => $numeroLogoPedido,
-                    'cotizacion_id' => $cotizacionId,
-                    'numero_cotizacion' => $cotizacion->numero_cotizacion,
-                    'cliente' => $cotizacion->cliente->nombre ?? 'Sin nombre',
-                    'asesora' => Auth::user()?->name,
-                    'forma_de_pago' => $formaPago ?? '',
-                    'encargado_orden' => Auth::user()?->name,
-                    'fecha_de_creacion_de_orden' => now(),
-                    'estado' => 'pendiente',
-                    'area' => 'Logo/Bordado',
-                    'descripcion' => $logoCotizacion->descripcion ?? '',
-                    'tecnicas' => $tecnicasJson,
-                    'observaciones_tecnicas' => $logoCotizacion->observaciones_tecnicas ?? '',
-                    'secciones' => $seccionesJson,  // ✅ JSON string
-                    'observaciones' => '',
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-                
-                // ✅ Crear el proceso inicial para el logo
-                \App\Models\ProcesosPedidosLogo::crearProcesoInicial($logoPedidoId, Auth::id());
-                
-                \Log::info('✅ [crearDesdeCotizacion] AMBOS pedidos creados (COMBINADA)', [
-                    'pedido_costura_id' => $pedido->id,
-                    'pedido_costura_numero' => $pedido->numero_pedido,
-                    'logo_pedido_id' => $logoPedidoId,
-                    'logo_pedido_numero' => $numeroLogoPedido
-                ]);
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pedidos de COSTURA y LOGO creados exitosamente',
-                    'pedido_id' => $pedido->id,
-                    'pedido_numero' => $pedido->numero_pedido,
-                    'logo_pedido_id' => $logoPedidoId,
-                    'logo_pedido_numero' => $numeroLogoPedido,
-                    'tipo_cotizacion' => 'PL',
-                    'es_combinada' => true,
-                    'logo_cotizacion_id' => $logoCotizacionId
-                ]);
-            } else {
-                \Log::info('📦 [crearDesdeCotizacion] Cotización tipo PRENDA (P) o REFLECTIVO, NO se creará logo_pedido', [
-                    'cotizacion_id' => $cotizacionId,
-                    'tipo_cotizacion_codigo' => $tipoCotizacionCodigo
-                ]);
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Cotización aceptada y pedido creado',
-                    'pedido_id' => $pedido->id
-                ]);
-            }
         } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error al crear pedido desde cotización', [
+            \Log::error('Error creando pedido desde cotización', [
                 'cotizacion_id' => $cotizacionId,
                 'error' => $e->getMessage()
             ]);
-
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error al crear el pedido: ' . $e->getMessage()
             ], 500);
         }
     }
+
+    // MÉTODOS LEGACY ELIMINADOS - La lógica ahora está en servicios de dominio
+    // - crearDesdeCotizacion_LEGACY() -> CreacionPedidoService::crearDesdeCotizacion() (~520 líneas eliminadas)
+    // - Código corrupto duplicado eliminado (~620 líneas)
+
+    /**
+     * Crear un pedido LOGO desde cotización
+     * ✅ NUEVO: Crea SOLO en logo_pedidos, NO en pedidos_produccion
+     * ✅ CORREGIDO: Guarda logo_cotizacion_id desde la cotización
+     */
 
     /**
      * Crear un pedido LOGO desde cotización
@@ -776,7 +295,7 @@ class PedidosProduccionController extends Controller
             ]);
 
             // ✅ Generar número LOGO con formato #LOGO-00001
-            $numeroLogoPedido = $this->generarNumeroLogoPedido();
+            $numeroLogoPedido = $this->numeracionService->generarNumeroLogoPedido();
 
             // Crear registro inicial en logo_pedidos
             $logoPedidoId = DB::table('logo_pedidos')->insertGetId([
@@ -929,7 +448,7 @@ class PedidosProduccionController extends Controller
                 ]);
                 
                 // Generar número LOGO
-                $numeroLogoPedido = $this->generarNumeroLogoPedido();
+                $numeroLogoPedido = $this->numeracionService->generarNumeroLogoPedido();
                 
                 \Log::info('🎨 [guardarLogoPedido] Datos a insertar en INSERT', [
                     'pedido_id' => $pedidoId,
@@ -1223,266 +742,19 @@ class PedidosProduccionController extends Controller
         }
     }
 
-    /**
-     * Generar número de pedido único usando secuencia centralizada
-     * Retorna solo el número entero (sin prefijo PEP-)
-     * Usa DB lock para prevenir race conditions
-     */
-    private function generarNumeroPedido()
-    {
-        try {
-            $secuencia = \DB::table('numero_secuencias')
-                ->lockForUpdate()
-                ->where('tipo', 'pedidos_produccion_universal')
-                ->first();
-
-            if (!$secuencia) {
-                \Log::warning('Secuencia pedidos_produccion_universal NO ENCONTRADA. Usando fallback.');
-                $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
-                return (int) ($ultimoPedido + 1); // ✅ Retornar solo el número
-            }
-
-            $siguiente = $secuencia->siguiente;
-            
-            // Incrementar la secuencia
-            \DB::table('numero_secuencias')
-                ->where('tipo', 'pedidos_produccion_universal')
-                ->update([
-                    'siguiente' => $siguiente + 1,
-                    'updated_at' => now(),
-                ]);
-
-            // ✅ Retornar solo el número entero (sin prefijo PEP-)
-            $numeroPedido = (int) $siguiente;
-            
-            \Log::info('Número de pedido generado', [
-                'numero' => $numeroPedido,
-                'tipo' => gettype($numeroPedido),
-                'secuencia_anterior' => $siguiente,
-                'secuencia_nueva' => $siguiente + 1,
-            ]);
-
-            return $numeroPedido;
-        } catch (\Exception $e) {
-            \Log::error('Error generando número de pedido', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Generar número único para LOGO PEDIDO con formato 00001
-     * ✅ NUEVO: Genera números LOGO secuenciales
-     */
-    private function generarNumeroLogoPedido()
-    {
-        try {
-            // Obtener o crear la secuencia para LOGO pedidos
-            $secuencia = \DB::table('numero_secuencias')
-                ->lockForUpdate()
-                ->where('tipo', 'logo_pedidos')
-                ->first();
-
-            if (!$secuencia) {
-                // Crear la secuencia si no existe
-                \DB::table('numero_secuencias')->insert([
-                    'tipo' => 'logo_pedidos',
-                    'siguiente' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $siguiente = 1;
-            } else {
-                $siguiente = $secuencia->siguiente;
-            }
-            
-            // Incrementar la secuencia para el próximo
-            \DB::table('numero_secuencias')
-                ->where('tipo', 'logo_pedidos')
-                ->update([
-                    'siguiente' => $siguiente + 1,
-                    'updated_at' => now(),
-                ]);
-
-            // Generar número con formato 00001 (solo el número, sin prefijo)
-            $numeroLogo = sprintf('%05d', $siguiente);
-            
-            \Log::info('✅ Número LOGO generado', [
-                'numero' => $numeroLogo,
-                'secuencia' => $siguiente,
-            ]);
-
-            return $numeroLogo;
-        } catch (\Exception $e) {
-            \Log::error('❌ Error generando número LOGO', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Construir descripción de prenda en el formato requerido
-     * 
-     * Formato: Un párrafo único con descripción + todas las variaciones + observaciones
-     * Ejemplo: "MANGA CORTA CUELLO Y PUÑOS TELA PIQUE REF:123 AZUL MARINO DAMA MANGA CORTA CON BOLSILLO BOTON OBSERVACION"
-     */
-    private function construirDescripcionPrenda($numeroPrenda, $producto, $cantidadesPorTalla)
-    {
-        $lineas = [];
-        
-        // 1. Descripción del producto (incluye ubicaciones del reflectivo si aplica)
-        if (!empty($producto['descripcion'])) {
-            $lineas[] = strtoupper($producto['descripcion']);
-        }
-        
-        // 2. Tallas y cantidades
-        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
-            $tallasTexto = [];
-            foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                if ($cantidad > 0) {
-                    $tallasTexto[] = "$talla: $cantidad";
-                }
-            }
-            if (!empty($tallasTexto)) {
-                $lineas[] = "TALLAS: " . implode(', ', $tallasTexto);
-            }
-        }
-        
-        // 3. Cantidad total
-        $cantidadTotal = array_sum($cantidadesPorTalla);
-        if ($cantidadTotal > 0) {
-            $lineas[] = "CANTIDAD TOTAL: $cantidadTotal";
-        }
-        
-        return !empty($lineas) ? implode("\n\n", $lineas) : '-';
-    }
-
-    /**
-     * FUNCIÓN OBSOLETA - Mantener por compatibilidad pero no se usa
-     * La descripción ahora se genera dinámicamente en el frontend
-     */
-    private function construirDescripcionPrendaCompleta($numeroPrenda, $producto, $cantidadesPorTalla)
-    {
-        $lineas = [];
-        
-        // 1. Prenda número y nombre
-        $nombrePrenda = strtoupper($producto['nombre_producto'] ?? 'PRENDA');
-        $lineas[] = "Prenda $numeroPrenda: $nombrePrenda";
-        
-        // 2. Descripción
-        if (!empty($producto['descripcion'])) {
-            $lineas[] = "Descripción: " . strtoupper($producto['descripcion']);
-        }
-        
-        // 3. Telas/Colores múltiples (nuevas del formulario editable)
-        if (!empty($producto['telas_multiples']) && is_array($producto['telas_multiples'])) {
-            foreach ($producto['telas_multiples'] as $telaMultiple) {
-                $telaDescripcion = '';
-                
-                if (!empty($telaMultiple['tela'])) {
-                    $telaDescripcion .= strtoupper($telaMultiple['tela']);
-                }
-                
-                if (!empty($telaMultiple['referencia'])) {
-                    $telaDescripcion .= ' REF:' . strtoupper($telaMultiple['referencia']);
-                }
-                
-                if (!empty($telaMultiple['color'])) {
-                    $telaDescripcion .= ' - ' . strtoupper($telaMultiple['color']);
-                }
-                
-                if (!empty($telaDescripcion)) {
-                    $lineas[] = "Tela/Color: " . $telaDescripcion;
-                }
-            }
-        } else {
-            // Fallback a tela individual antigua
-            if (!empty($producto['tela'])) {
-                $tela = strtoupper($producto['tela']);
-                if (!empty($producto['tela_referencia'])) {
-                    $tela .= ' REF:' . strtoupper($producto['tela_referencia']);
-                }
-                $lineas[] = "Tela: " . $tela;
-            }
-            
-            // 4. Color
-            if (!empty($producto['color'])) {
-                $lineas[] = "Color: " . strtoupper($producto['color']);
-            }
-        }
-        
-        // 5. Género
-        if (!empty($producto['genero'])) {
-            if (is_array($producto['genero'])) {
-                $genero = implode(', ', array_map('strtoupper', $producto['genero']));
-            } else {
-                $genero = strtoupper($producto['genero']);
-            }
-            $lineas[] = "Genero: " . $genero;
-        }
-        
-        // 6. Manga + observación
-        if (!empty($producto['manga'])) {
-            $manga = "Manga: " . strtoupper($producto['manga']);
-            if (!empty($producto['manga_obs'])) {
-                $manga .= ' - ' . strtoupper($producto['manga_obs']);
-            }
-            $lineas[] = $manga;
-        }
-        
-        // 7. Bolsillos + observación
-        if (!empty($producto['tiene_bolsillos']) && $producto['tiene_bolsillos']) {
-            $bolsillos = "Bolsillos: SI";
-            if (!empty($producto['bolsillos_obs'])) {
-                $bolsillos .= ' - ' . strtoupper($producto['bolsillos_obs']);
-            }
-            $lineas[] = $bolsillos;
-        }
-        
-        // 8. Broche + observación
-        if (!empty($producto['broche'])) {
-            $broche = "Broche: " . strtoupper($producto['broche']);
-            if (!empty($producto['broche_obs'])) {
-                $broche .= ' - ' . strtoupper($producto['broche_obs']);
-            }
-            $lineas[] = $broche;
-        }
-        
-        // 9. Reflectivo + observación
-        if (!empty($producto['tiene_reflectivo']) && $producto['tiene_reflectivo']) {
-            $reflectivo = "Reflectivo: SI";
-            if (!empty($producto['reflectivo_obs'])) {
-                $reflectivo .= ' - ' . strtoupper($producto['reflectivo_obs']);
-            }
-            $lineas[] = $reflectivo;
-        }
-        
-        // 10. Talla con cantidades (AL FINAL)
-        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
-            $tallas = [];
-            foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                if ($cantidad > 0) {
-                    $tallas[] = "{$talla}:{$cantidad}";
-                }
-            }
-            if (!empty($tallas)) {
-                $lineas[] = "Tallas: " . implode(', ', $tallas);
-            }
-        }
-        
-        // Retornar con saltos de línea entre cada elemento
-        return implode("\n", $lineas);
-    }
+    // MÉTODOS ELIMINADOS - Migrados a servicios de dominio
+    // - generarNumeroPedido() -> NumeracionService::generarNumeroPedido()
+    // - generarNumeroLogoPedido() -> NumeracionService::generarNumeroLogoPedido()
+    // - construirDescripcionPrenda() -> DescripcionService::construirDescripcionPrenda()
+    // - construirDescripcionPrendaCompleta() -> OBSOLETO
 
     /**
      * Obtener datos COMPLETOS de una cotización con todas sus prendas e información (para AJAX)
-     * 
-     * @param int $cotizacionId
-     * @return JsonResponse
+     * Responsabilidad: Validar permisos y delegar al repositorio
+     */
+    /**
+     * Obtener datos COMPLETOS de una cotización con todas sus prendas e información (para AJAX)
+     * TEMPORALMENTE usando método LEGACY hasta que el repositorio esté completo
      */
     public function obtenerDatosCotizacion(int $cotizacionId): JsonResponse
     {
@@ -1491,7 +763,6 @@ class PedidosProduccionController extends Controller
                 'cliente',
                 'asesor',
                 'tipoCotizacion',
-                // Prendas y sus relaciones completas
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
                 'prendas.variantes.genero',
@@ -1499,27 +770,22 @@ class PedidosProduccionController extends Controller
                 'prendas.fotos',
                 'prendas.telas',
                 'prendas.telaFotos',
-                // Logo - prendas técnicas con fotos
                 'logoCotizacion.fotos',
                 'logoCotizacion.prendas.tipoLogo',
                 'logoCotizacion.prendas.fotos',
-                // Reflectivo con sus fotos
                 'reflectivo.fotos',
             ])->findOrFail($cotizacionId);
 
-            // Verificar que pertenezca al asesor actual
             if ($cotizacion->asesor_id !== Auth::id()) {
                 return response()->json([
                     'error' => 'No tienes permiso para acceder a esta cotización'
                 ], 403);
             }
 
-            // Convertir especificaciones del formato antiguo al nuevo (si es necesario)
             $especificacionesConvertidas = $this->convertirEspecificacionesAlFormatoNuevo(
                 $cotizacion->especificaciones ?? []
             );
 
-            // Extraer forma de pago de las especificaciones
             $formaPago = '';
             if (!empty($especificacionesConvertidas['forma_pago']) && is_array($especificacionesConvertidas['forma_pago'])) {
                 if (count($especificacionesConvertidas['forma_pago']) > 0) {
@@ -1808,13 +1074,18 @@ class PedidosProduccionController extends Controller
     }
 
     /**
-     * Crear procesos automáticamente para cotizaciones REFLECTIVO
-     * 
-     * Crea:
-     * 1. Proceso "Creación Orden" (Completado)
-     * 2. Proceso "Costura" asignado a Ramiro (En Ejecución)
+     * Crear procesos específicos para cotización REFLECTIVO
+     * Responsabilidad: Delegar al servicio de procesos
      */
     private function crearProcesosParaReflectivo(PedidoProduccion $pedido, Cotizacion $cotizacion): void
+    {
+        // Delegar creación de procesos al servicio de dominio
+        $this->procesosService->crearProcesosReflectivo($pedido, $cotizacion);
+    }
+
+    // MÉTODO LEGACY - Mantener temporalmente para referencia
+    // TODO: Eliminar después de verificar que el servicio funciona correctamente
+    private function crearProcesosParaReflectivo_LEGACY(PedidoProduccion $pedido, Cotizacion $cotizacion): void
     {
         try {
             // Verificar si es cotización tipo REFLECTIVO
@@ -1932,14 +1203,15 @@ class PedidosProduccionController extends Controller
         } catch (\Exception $e) {
             \Log::error('❌ Error al crear procesos para cotización reflectivo', [
                 'error' => $e->getMessage(),
-                'numero_pedido' => $pedido->numero_pedido,
+                'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
                 'trace' => $e->getTraceAsString(),
             ]);
+            // No hacer nada más, el error ya fue logueado
         }
     }
 
     /**
-     * Crear pedido de producción SIN cotización (prendas libres)
+     * Crear pedido sin cotización previa
      * 
      * @param Request $request
      * @return JsonResponse
@@ -1976,9 +1248,9 @@ class PedidosProduccionController extends Controller
 
             // Crear pedido de producción
             $pedido = PedidoProduccion::create([
-                'cotizacion_id' => null,  // Sin cotización
+                'cotizacion_id' => null,
                 'numero_cotizacion' => null,
-                'numero_pedido' => $this->generarNumeroPedido(),
+                'numero_pedido' => $this->numeracionService->generarNumeroPedido(),
                 'cliente' => $cliente,
                 'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
@@ -1997,8 +1269,7 @@ class PedidosProduccionController extends Controller
                 $cantidadesPorTalla = $prenda['cantidades'] ?? [];
                 $cantidadTotal = array_sum($cantidadesPorTalla);
 
-                // Construir descripción
-                $descripcion = $this->construirDescripcionPrenda(
+                $descripcionPrenda = $this->descripcionService->construirDescripcionPrenda(
                     $index + 1,
                     $prenda,
                     $cantidadesPorTalla
@@ -2008,7 +1279,7 @@ class PedidosProduccionController extends Controller
                     'numero_pedido' => $pedido->numero_pedido,
                     'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
                     'cantidad' => $cantidadTotal,
-                    'descripcion' => $descripcion,
+                    'descripcion' => $descripcionPrenda,
                     'cantidad_talla' => json_encode($cantidadesPorTalla),
                     'color_id' => null,
                     'tela_id' => null,
@@ -2106,7 +1377,7 @@ class PedidosProduccionController extends Controller
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => null,  // Sin cotización
                 'numero_cotizacion' => null,
-                'numero_pedido' => $this->generarNumeroPedido(),
+                'numero_pedido' => $this->numeracionService->generarNumeroPedido(),
                 'cliente' => $cliente,
                 'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
@@ -2215,7 +1486,7 @@ class PedidosProduccionController extends Controller
 
                 // Construir descripción usando la misma función que para cotizaciones
                 // CRÍTICO: Pasar los datos correctamente
-                $descripcionPrenda = $this->construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla);
+                $descripcionPrenda = $this->descripcionService->construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla);
 
                 // Extraer variantes - IGUAL QUE EN crearDesdeCotizacion
                 $colorId = null;
@@ -2419,7 +1690,7 @@ class PedidosProduccionController extends Controller
                     foreach ($fotos as $orden => $foto) {
                         if ($foto && $foto->isValid()) {
                             // Usar el mismo método que supervisor-pedidos para guardar como WebP
-                            $pathWebp = $this->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'prendas');
+                            $pathWebp = $this->imagenService->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'prendas');
                             
                             DB::table('prenda_fotos_pedido')->insert([
                                 'prenda_pedido_id' => $prendaPedido->id,
@@ -2445,7 +1716,7 @@ class PedidosProduccionController extends Controller
                             foreach ($fotosTela as $orden => $fotoTela) {
                                 if ($fotoTela && $fotoTela->isValid()) {
                                     // Usar el mismo método que supervisor-pedidos para guardar como WebP
-                                    $pathWebp = $this->guardarImagenComoWebp($fotoTela, $pedido->numero_pedido, 'telas');
+                                    $pathWebp = $this->imagenService->guardarImagenComoWebp($fotoTela, $pedido->numero_pedido, 'telas');
 
                                     DB::table('prenda_fotos_tela_pedido')->insert([
                                         'prenda_pedido_id' => $prendaPedido->id,
@@ -2504,266 +1775,11 @@ class PedidosProduccionController extends Controller
         }
     }
 
-    /**
-     * Construir descripción para prenda sin cotización tipo PRENDA
-     */
-    private function construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla)
-    {
-        \Log::info('🔍 [DESCRIPCION] Construyendo descripción para prenda:', [
-            'nombre_producto' => $prenda['nombre_producto'] ?? 'sin nombre',
-            'descripcion_campo' => $prenda['descripcion'] ?? 'SIN DESCRIPCIÓN',
-            'genero' => $prenda['genero'] ?? 'sin género',
-            'variantes' => $prenda['variantes'] ?? 'sin variantes',
-        ]);
+    // MÉTODOS ELIMINADOS - Migrados a DescripcionService
+    // - construirDescripcionPrendaSinCotizacion() -> DescripcionService::construirDescripcionPrendaSinCotizacion()
+    // - armarDescripcionVariacionesPrendaSinCotizacion() -> DescripcionService (método privado)
 
-        $lineas = [];
-
-        // Nombre de la prenda
-        if (!empty($prenda['nombre_producto'])) {
-            $lineas[] = "<span style='font-size: 16px;'><b>PRENDA: " . strtoupper($prenda['nombre_producto']) . "</b></span>";
-        }
-
-        // Atributos en una línea
-        $atributos = [];
-        if (!empty($prenda['genero'])) {
-            $genero = is_array($prenda['genero']) ? implode(', ', $prenda['genero']) : $prenda['genero'];
-            $atributos[] = "Género: " . strtoupper($genero);
-        }
-
-        // Telas/Colores
-        if (!empty($prenda['telas']) && is_array($prenda['telas'])) {
-            foreach ($prenda['telas'] as $tela) {
-                $telaDesc = '';
-                if (!empty($tela['nombre_tela'])) {
-                    $telaDesc .= strtoupper($tela['nombre_tela']);
-                }
-                if (!empty($tela['referencia'])) {
-                    $telaDesc .= " <b>" . strtoupper($tela['referencia']) . "</b>";
-                }
-                if (!empty($tela['color'])) {
-                    $telaDesc .= " - " . strtoupper($tela['color']);
-                }
-                if (!empty($telaDesc)) {
-                    $atributos[] = "Tela: " . $telaDesc;
-                }
-            }
-        }
-
-        // Variaciones
-        if (!empty($prenda['variantes'])) {
-            $variantes = $prenda['variantes'];
-            
-            if (!empty($variantes['tipo_manga']) && $variantes['tipo_manga'] !== 'No aplica') {
-                $manga = "Manga: " . strtoupper($variantes['tipo_manga']);
-                if (!empty($variantes['obs_manga'])) {
-                    $manga .= " (" . strtoupper($variantes['obs_manga']) . ")";
-                }
-                $atributos[] = $manga;
-            }
-
-            if (!empty($variantes['tipo_broche']) && $variantes['tipo_broche'] !== 'No aplica') {
-                $broche = "Broche: " . strtoupper($variantes['tipo_broche']);
-                if (!empty($variantes['obs_broche'])) {
-                    $broche .= " - " . strtoupper($variantes['obs_broche']);
-                }
-                $atributos[] = $broche;
-            }
-
-            if (!empty($variantes['tiene_bolsillos'])) {
-                $bolsillos = "Bolsillos: SÍ";
-                if (!empty($variantes['obs_bolsillos'])) {
-                    $bolsillos .= " - " . strtoupper($variantes['obs_bolsillos']);
-                }
-                $atributos[] = $bolsillos;
-            }
-
-            if (!empty($variantes['tiene_reflectivo'])) {
-                $reflectivo = "Reflectivo: SÍ";
-                if (!empty($variantes['obs_reflectivo'])) {
-                    $reflectivo .= " - " . strtoupper($variantes['obs_reflectivo']);
-                }
-                $atributos[] = $reflectivo;
-            }
-        }
-
-        if (!empty($atributos)) {
-            $lineas[] = "<span style='font-size: 15px;'>" . implode(" | ", $atributos) . "</span>";
-        }
-
-        // Descripción del usuario (línea de DESCRIPCION)
-        if (!empty($prenda['descripcion'])) {
-            $lineas[] = "DESCRIPCION:";
-            $lineas[] = $prenda['descripcion'];
-        }
-
-        // Tallas con cantidades
-        // ✅ MANEJAR AMBAS ESTRUCTURAS:
-        // 1. Nueva: {genero: {talla: cantidad}} 
-        // 2. Antigua: {talla: cantidad}
-        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
-            $cantidadTotalCalc = 0;
-            
-            // Detectar estructura
-            $esPorGenero = false;
-            foreach ($cantidadesPorTalla as $clave => $valor) {
-                if (is_array($valor) && !is_numeric($clave)) {
-                    // Es estructura con géneros {genero: {talla: cantidad}}
-                    $esPorGenero = true;
-                }
-                break;
-            }
-            
-            if ($esPorGenero) {
-                // Estructura con géneros - construir en una sola línea
-                $tallasHTML = "<span style='font-size: 15px;'><b>Tallas:</b> ";
-                $generosPartes = [];
-                
-                foreach ($cantidadesPorTalla as $genero => $tallas) {
-                    if (is_array($tallas)) {
-                        $generoFormato = ucfirst(strtolower($genero));
-                        $tallasParte = [];
-                        
-                        foreach ($tallas as $talla => $cantidad) {
-                            $cantidad = (int)$cantidad;
-                            if ($cantidad > 0) {
-                                $tallasParte[] = "<b><span style=\"color: #d32f2f;\">{$talla}: {$cantidad}</span></b>";
-                                $cantidadTotalCalc += $cantidad;
-                            }
-                        }
-                        
-                        if (!empty($tallasParte)) {
-                            $generosPartes[] = "<b>{$generoFormato}:</b> " . implode(", ", $tallasParte);
-                        }
-                    }
-                }
-                
-                $tallasHTML .= implode(" | ", $generosPartes) . "</span>";
-                $lineas[] = $tallasHTML;
-            } else {
-                // Estructura simple {talla: cantidad}
-                $tallasLista = [];
-                foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                    $cantidad = (int)$cantidad;
-                    if ($cantidad > 0) {
-                        $tallasLista[] = "<b><span style=\"color: #d32f2f;\">{$talla}: {$cantidad}</span></b>";
-                        $cantidadTotalCalc += $cantidad;
-                    }
-                }
-                if (!empty($tallasLista)) {
-                    $lineas[] = "<span style='font-size: 15px;'><b>Tallas:</b> " . implode(", ", $tallasLista) . "</span>";
-                }
-            }
-        }
-
-        $descripcionFinal = !empty($lineas) ? implode("\n", $lineas) : '-';
-        
-        \Log::info('✅ [DESCRIPCION] Descripción final construida:', [
-            'total_lineas' => count($lineas),
-            'descripcion_final' => $descripcionFinal,
-        ]);
-        
-        return $descripcionFinal;
-    }
-
-    /**
-     * Armar descripción de variaciones para prendas sin cotización
-     * Similar a PedidoPrendaService::armarDescripcionVariaciones
-     */
-    private function armarDescripcionVariacionesPrendaSinCotizacion($variantes): ?string
-    {
-        if (empty($variantes) || !is_array($variantes)) {
-            return null;
-        }
-
-        $partes = [];
-
-        // ORDEN EXACTO COMO EN COTIZACIONES:
-        // 1. Bolsillos
-        // 2. Broche
-        // 3. Manga
-        // 4. Reflectivo
-
-        // Bolsillos - guardar la observación si existe (campo: tiene_bolsillos_obs)
-        if (!empty($variantes['tiene_bolsillos_obs'])) {
-            $partes[] = "Bolsillos: " . $variantes['tiene_bolsillos_obs'];
-        } else if (!empty($variantes['tiene_bolsillos'])) {
-            // Si no hay observación pero tiene bolsillos = true, agregar "Bolsillos: Sí"
-            $partes[] = "Bolsillos: Sí";
-        }
-
-        // Broche - guardar la observación si existe (campo: tipo_broche_obs), sino el tipo_broche
-        if (!empty($variantes['tipo_broche_obs'])) {
-            $partes[] = "Broche: " . $variantes['tipo_broche_obs'];
-        } else if (!empty($variantes['tipo_broche']) && $variantes['tipo_broche'] !== 'No aplica') {
-            $partes[] = "Broche: " . $variantes['tipo_broche'];
-        }
-
-        // Manga - guardar el tipo_manga (campo: tipo_manga)
-        if (!empty($variantes['tipo_manga']) && $variantes['tipo_manga'] !== 'No aplica') {
-            $partes[] = "Manga: " . $variantes['tipo_manga'];
-        }
-
-        // Reflectivo - guardar la observación si existe (campo: tiene_reflectivo_obs)
-        if (!empty($variantes['tiene_reflectivo_obs'])) {
-            $partes[] = "Reflectivo: " . $variantes['tiene_reflectivo_obs'];
-        } else if (!empty($variantes['tiene_reflectivo'])) {
-            // Si no hay observación pero tiene reflectivo = true, agregar "Reflectivo: Sí"
-            $partes[] = "Reflectivo: Sí";
-        }
-
-        return !empty($partes) ? implode(" | ", $partes) : null;
-    }
-
-    /**
-     * Guardar imagen como WebP en carpeta del pedido
-     * Idéntico al método en SupervisorPedidosController
-     * 
-     * @param \Illuminate\Http\UploadedFile $file
-     * @param string|int $numeroPedido Número del pedido
-     * @param string $tipo Tipo de imagen: 'prendas', 'logos', 'telas'
-     * @return string Ruta relativa del archivo guardado
-     */
-    private function guardarImagenComoWebp($file, $numeroPedido, $tipo)
-    {
-        try {
-            // Generar nombre único
-            $nombreUnico = time() . '_' . uniqid() . '.webp';
-            
-            // Construir ruta: storage/app/public/pedidos/{numeroPedido}/{tipo}
-            $carpetaRelativa = "pedidos/{$numeroPedido}/{$tipo}";
-            $rutaCompleta = storage_path("app/public/{$carpetaRelativa}");
-            
-            // Crear directorio si no existe
-            if (!\File::exists($rutaCompleta)) {
-                \File::makeDirectory($rutaCompleta, 0755, true);
-                \Log::info('📁 Carpeta creada', ['ruta' => $rutaCompleta]);
-            }
-            
-            // Usar Intervention Image para convertir a webp
-            $manager = \Intervention\Image\ImageManager::gd();
-            $imagen = $manager->read($file->getRealPath());
-            
-            // Guardar como webp con calidad 85
-            $rutaArchivo = $rutaCompleta . '/' . $nombreUnico;
-            $imagen->toWebp(85)->save($rutaArchivo);
-            
-            \Log::info('✅ Imagen guardada como webp', [
-                'nombre' => $nombreUnico,
-                'numero_pedido' => $numeroPedido,
-                'tipo' => $tipo,
-                'ruta_completa' => $rutaArchivo,
-                'ruta_relativa' => $carpetaRelativa . '/' . $nombreUnico
-            ]);
-            
-            // Retornar ruta relativa para la base de datos
-            return $carpetaRelativa . '/' . $nombreUnico;
-            
-        } catch (\Exception $e) {
-            \Log::error('❌ Error al convertir imagen a webp: ' . $e->getMessage());
-            // Fallback: guardar sin conversión en carpeta del pedido
-            return $file->store("pedidos/{$numeroPedido}/{$tipo}", 'public');
-        }
-    }
+    // MÉTODO ELIMINADO - Migrado a ImagenService::guardarImagenComoWebp()
 
     /**
      * Crear pedido REFLECTIVO sin cotización previa
@@ -2804,7 +1820,7 @@ class PedidosProduccionController extends Controller
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => null,  // Sin cotización
                 'numero_cotizacion' => null,
-                'numero_pedido' => $this->generarNumeroPedido(),
+                'numero_pedido' => $this->numeracionService->generarNumeroPedido(),
                 'cliente' => $cliente,
                 'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
@@ -2902,7 +1918,7 @@ class PedidosProduccionController extends Controller
                     foreach ($fotos as $orden => $foto) {
                         if ($foto && $foto->isValid()) {
                             // Usar el mismo método que supervisor-pedidos para guardar como WebP
-                            $pathWebp = $this->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'reflectivo');
+                            $pathWebp = $this->imagenService->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'reflectivo');
 
                             DB::table('prenda_fotos_pedido')->insert([
                                 'prenda_pedido_id' => $prendaPedido->id,
@@ -2958,70 +1974,7 @@ class PedidosProduccionController extends Controller
         }
     }
 
-    /**
-     * Construir descripción para reflectivo sin cotización
-     */
-    private function construirDescripcionReflectivoSinCotizacion($prenda, $cantidadesPorTalla): string
-    {
-        $lineas = [];
-
-        // NO duplicar el tipo de prenda, ya está en nombre_prenda
-
-        // Descripción
-        if (!empty($prenda['descripcion'])) {
-            $lineas[] = strtoupper($prenda['descripcion']);
-        }
-
-        // Género
-        if (!empty($prenda['genero'])) {
-            $genero = is_array($prenda['genero']) ? implode(', ', $prenda['genero']) : $prenda['genero'];
-            $lineas[] = "GENERO: " . strtoupper($genero);
-        }
-
-        // Ubicaciones (si existen)
-        if (!empty($prenda['ubicaciones']) && is_array($prenda['ubicaciones'])) {
-            $ubicacionesTexto = ["UBICACION: "];
-            
-            foreach ($prenda['ubicaciones'] as $ubicacion) {
-                $ubicDesc = '';
-                if (!empty($ubicacion['nombre'])) {
-                    $ubicDesc .= strtoupper($ubicacion['nombre']);
-                }
-                if (!empty($ubicacion['observaciones'])) {
-                    $ubicDesc .= ': ' . strtoupper($ubicacion['observaciones']);
-                }
-                if (!empty($ubicDesc)) {
-                    $ubicacionesTexto[] = $ubicDesc;
-                }
-            }
-            
-            // Agregar todas las ubicaciones como un bloque
-            if (count($ubicacionesTexto) > 1) {
-                $lineas[] = implode("\n\n", $ubicacionesTexto);
-            }
-        }
-
-        // Tallas con cantidades
-        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
-            $tallasTexto = [];
-            foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                if ($cantidad > 0) {
-                    $tallasTexto[] = "$talla: $cantidad";
-                }
-            }
-            if (!empty($tallasTexto)) {
-                $lineas[] = "TALLAS: " . implode(', ', $tallasTexto);
-            }
-        }
-
-        // Cantidad total
-        $cantidadTotal = array_sum($cantidadesPorTalla);
-        if ($cantidadTotal > 0) {
-            $lineas[] = "CANTIDAD TOTAL: $cantidadTotal";
-        }
-
-        return !empty($lineas) ? implode("\n\n", $lineas) : '-';
-    }
+    // MÉTODO ELIMINADO - Migrado a DescripcionService::construirDescripcionReflectivoSinCotizacion()
 
     /**
      * Procesar múltiples géneros desde el input
