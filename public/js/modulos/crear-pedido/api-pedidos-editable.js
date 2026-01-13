@@ -92,7 +92,7 @@ class PedidosEditableWebClient {
     /**
      * Validar el pedido antes de crear
      */
-    async validarPedido() {
+    async validarPedido(pedidoData) {
         try {
             const response = await fetch(`${this.baseUrl}/validar`, {
                 method: 'POST',
@@ -100,6 +100,9 @@ class PedidosEditableWebClient {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': this.csrfToken,
                 },
+                body: JSON.stringify({
+                    items: pedidoData?.items || [],
+                }),
             });
 
             const data = await response.json();
@@ -126,6 +129,8 @@ class PedidosEditableWebClient {
      */
     async crearPedido(pedidoData) {
         try {
+            console.log('📤 Enviando pedido:', pedidoData);
+            
             const response = await fetch(`${this.baseUrl}/crear`, {
                 method: 'POST',
                 headers: {
@@ -138,12 +143,67 @@ class PedidosEditableWebClient {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Error al crear pedido');
+                // Mostrar errores detallados
+                console.error('❌ Errores del servidor:', data.errores || data.message);
+                console.error('📋 Respuesta completa:', data);
+                
+                if (data.errores && typeof data.errores === 'object') {
+                    // Errores por campo
+                    Object.entries(data.errores).forEach(([field, messages]) => {
+                        console.error(`  ⚠️ ${field}:`, messages);
+                    });
+                }
+                
+                throw new Error(data.message || data.errores?.join(', ') || 'Error al crear pedido');
             }
 
             return data;
         } catch (error) {
             console.error('❌ Error en crearPedido:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Subir imágenes de prenda via FormData
+     * POST /pedidos-editable/subir-imagenes
+     * @param {File[]} archivos - Array de archivos de imagen
+     * @param {string} numeroPedido - Número del pedido (temporal o para identificar)
+     * @returns {Promise<Object>} - { rutas: [...] }
+     */
+    async subirImagenesPrenda(archivos, numeroPedido) {
+        try {
+            if (!archivos || archivos.length === 0) {
+                return { rutas: [] };
+            }
+
+            const formData = new FormData();
+            formData.append('numero_pedido', numeroPedido);
+            
+            archivos.forEach((archivo, index) => {
+                if (archivo instanceof File) {
+                    formData.append(`imagenes[${index}]`, archivo);
+                }
+            });
+
+            const response = await fetch(`${this.baseUrl}/subir-imagenes`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': this.csrfToken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al subir imágenes');
+            }
+
+            console.log('✅ Imágenes subidas correctamente:', data.rutas);
+            return data;
+        } catch (error) {
+            console.error('❌ Error en subirImagenesPrenda:', error);
             throw error;
         }
     }

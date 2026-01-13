@@ -114,7 +114,5 @@ class ImageStorageService {
     }
 }
 
-// Crear instancias globales para diferentes tipos de imágenes
-window.imagenesTelaStorage = new ImageStorageService(3);
-window.imagenesPrendaStorage = new ImageStorageService(3);
-window.imagenesReflectivoStorage = new ImageStorageService(3);
+// NOTA: Las instancias globales se crean en crear-desde-cotizacion-editable.blade.php
+// en el evento DOMContentLoaded para asegurar que el DOM esté listo

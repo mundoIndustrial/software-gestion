@@ -56,7 +56,7 @@
                         </label>
                         
                         <!-- Imagen principal preview -->
-                        <div id="nueva-prenda-foto-preview" class="foto-preview" onclick="document.getElementById('nueva-prenda-foto-input').click()">
+                        <div id="nueva-prenda-foto-preview" class="foto-preview">
                             <div class="foto-preview-content">
                                 <div class="material-symbols-rounded">add_photo_alternate</div>
                                 <div class="foto-preview-text">Agregar</div>
@@ -67,10 +67,10 @@
                         <div id="nueva-prenda-foto-contador" class="foto-counter"></div>
                         
                         <!-- Input de archivos -->
-                        <input type="file" id="nueva-prenda-foto-input" accept="image/*" style="display: none;" onchange="manejarImagenesPrenda(this)">
+                        <input type="file" id="nueva-prenda-foto-input" accept="image/*" style="display: none;" onchange="if(this.files.length > 0) { manejarImagenesPrenda(this); }">
                         
                         <!-- Botón agregar más fotos -->
-                        <button type="button" id="nueva-prenda-foto-btn" onclick="document.getElementById('nueva-prenda-foto-input').click()" class="btn btn-sm btn-primary" style="display: none;">
+                        <button type="button" id="nueva-prenda-foto-btn" class="btn btn-sm btn-primary">
                             + Agregar
                         </button>
                     </div>
@@ -79,39 +79,54 @@
                 <!-- Color, Tela, Referencia e Imágenes de Tela -->
                 <div class="form-section">
                     <label class="form-label-primary">
-                        <span class="material-symbols-rounded">palette</span>TELA, COLOR Y REFERENCIA
+                        <span class="material-symbols-rounded">palette</span>COLOR, TELA Y REFERENCIA
                     </label>
-                    <div class="form-row-4col">
-                        <!-- Tela -->
-                        <div class="form-group">
-                            <label class="form-label-sm">Tela</label>
-                            <input type="text" id="nueva-prenda-tela" placeholder="Ej: DRILL" class="form-input">
-                        </div>
-                        <!-- Color -->
-                        <div class="form-group">
-                            <label class="form-label-sm">Color</label>
-                            <input type="text" id="nueva-prenda-color" placeholder="Ej: AZUL MARINO" class="form-input">
-                        </div>
-                        <!-- Referencia -->
-                        <div class="form-group">
-                            <label class="form-label-sm">Referencia</label>
-                            <input type="text" id="nueva-prenda-referencia" placeholder="Ej: REF-001" class="form-input">
-                        </div>
-                        <!-- Imágenes de Tela -->
-                        <div class="form-group">
-                            <div style="position: relative;">
-                                <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenesTela(this)">
-                                <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex">
-                                    <span class="material-symbols-rounded">image</span>Fotos
-                                </button>
-                            </div>
-                            <!-- Preview de imágenes de tela -->
-                            <div id="nueva-prenda-tela-preview" class="tela-preview-container"></div>
-                        </div>
+                    
+                    <!-- Tabla de telas -->
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
+                            <thead>
+                                <tr style="background: #0066cc; border-bottom: 2px solid #0066cc;">
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Color</th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Tela</th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Referencia</th>
+                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white;">Imagen Tela</th>
+                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white; width: 30px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-telas">
+                                <!-- Fila para agregar nueva tela -->
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 0.5rem;">
+                                        <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" style="width: 100%; padding: 0.5rem;">
+                                    </td>
+                                    <td style="padding: 0.5rem;">
+                                        <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" style="width: 100%; padding: 0.5rem;">
+                                    </td>
+                                    <td style="padding: 0.5rem;">
+                                        <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem;">
+                                    </td>
+                                    <td style="padding: 0.5rem; text-align: center;">
+                                        <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar imagen (opcional)">
+                                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">image</span>
+                                        </button>
+                                        <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenTela(this)">
+                                    </td>
+                                    <td style="padding: 0.5rem; text-align: center;">
+                                        <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
+                                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">add</span>Agregar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
+                    <!-- Preview de imágenes de tela -->
+                    <div id="nueva-prenda-tela-preview" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+
                     <!-- Tallas y Cantidades -->
-                    <label class="form-label-primary">
+                    <label class="form-label-primary" style="margin-top: 1.5rem;">
                         <span class="material-symbols-rounded">straighten</span>TALLAS Y CANTIDADES *
                     </label>
                     
@@ -151,35 +166,78 @@
                     <label class="form-label-primary">
                         <span class="material-symbols-rounded">tune</span>VARIACIONES ESPECÍFICAS
                     </label>
-                    <div class="variaciones-grid">
-                        <div class="variacion-item">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="aplica-manga" class="form-checkbox">
-                                <span><span class="material-symbols-rounded">checkroom</span>Manga</span>
-                            </label>
-                            <input type="text" id="manga-input" placeholder="Ej: manga larga..." disabled class="form-input form-input-disabled">
-                        </div>
-                        <div class="variacion-item">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="aplica-bolsillos" class="form-checkbox">
-                                <span><span class="material-symbols-rounded">backpack</span>Bolsillos</span>
-                            </label>
-                            <input type="text" id="bolsillos-input" placeholder="Ej: 2 bolsillos..." disabled class="form-input form-input-disabled">
-                        </div>
-                        <div class="variacion-item">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="aplica-broche" class="form-checkbox">
-                                <span><span class="material-symbols-rounded">circle</span>Broche/Botón</span>
-                            </label>
-                            <input type="text" id="broche-input" placeholder="Ej: botones metálicos..." disabled class="form-input form-input-disabled">
-                        </div>
-                        <div class="variacion-item">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="aplica-puno" class="form-checkbox">
-                                <span><span class="material-symbols-rounded">pan_tool</span>Puño</span>
-                            </label>
-                            <input type="text" id="puno-input" placeholder="Ej: puño elástico..." disabled class="form-input form-input-disabled">
-                        </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #0066cc;">
+                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; width: 50px; color: white;">
+                                        APLICA
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">
+                                        VARIACIÓN
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">
+                                        ESPECIFICACIÓN
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Manga -->
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 0.75rem; text-align: center;">
+                                        <input type="checkbox" id="aplica-manga" class="form-checkbox" onchange="manejarCheckVariacion(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                                    </td>
+                                    <td style="padding: 0.75rem;">
+                                        <span style="font-weight: 600; color: #0066cc;">Manga</span>
+                                    </td>
+                                    <td style="padding: 0.75rem;">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                            <input type="text" id="manga-input" placeholder="Ej: manga larga..." disabled list="opciones-manga" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%;">
+                                            <datalist id="opciones-manga">
+                                                <option value="Manga Larga">
+                                                <option value="Manga Corta">
+                                                <option value="Manga Media">
+                                                <option value="Sin Manga">
+                                            </datalist>
+                                            <input type="text" id="manga-obs" placeholder="Observaciones..." disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%;">
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Bolsillos -->
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 0.75rem; text-align: center;">
+                                        <input type="checkbox" id="aplica-bolsillos" class="form-checkbox" onchange="manejarCheckVariacion(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                                    </td>
+                                    <td style="padding: 0.75rem;">
+                                        <span style="font-weight: 600; color: #0066cc;">Bolsillos</span>
+                                    </td>
+                                    <td style="padding: 0.75rem;">
+                                        <input type="text" id="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." disabled class="form-input" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem;">
+                                    </td>
+                                </tr>
+                                
+                                <!-- Broche/Botón -->
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 0.75rem; text-align: center;">
+                                        <input type="checkbox" id="aplica-broche" class="form-checkbox" onchange="manejarCheckVariacion(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                                    </td>
+                                    <td style="padding: 0.75rem;">
+                                        <span style="font-weight: 600; color: #0066cc;">Broche/Botón</span>
+                                    </td>
+                                    <td style="padding: 0.75rem;">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                            <select id="broche-input" disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%;">
+                                                <option value="">Seleccionar tipo...</option>
+                                                <option value="boton">Botón</option>
+                                                <option value="broche">Broche</option>
+                                            </select>
+                                            <input type="text" id="broche-obs" placeholder="Observaciones..." disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%;">
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 
@@ -198,9 +256,22 @@
                             <span><span class="material-symbols-rounded">format_paint</span>Estampado</span>
                         </label>
                         <label class="proceso-checkbox">
-                            <input type="checkbox" name="nueva-prenda-procesos" value="Reflectivo" class="form-checkbox">
+                            <input type="checkbox" id="checkbox-reflectivo" name="nueva-prenda-procesos" value="Reflectivo" class="form-checkbox" onchange="if(this.checked) { abrirModalReflectivo(); } else { cerrarModalReflectivo(); }">
                             <span><span class="material-symbols-rounded">light_mode</span>Reflectivo</span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Reflectivo (Resumen) -->
+                <div class="form-section" id="seccion-reflectivo-resumen" style="display: none;">
+                    <label class="form-label-primary">
+                        <span class="material-symbols-rounded">light_mode</span>REFLECTIVO
+                    </label>
+                    <div style="background: #f3f4f6; border-radius: 8px; padding: 1rem; border-left: 4px solid #0066cc;">
+                        <div id="reflectivo-resumen-contenido" style="font-size: 0.875rem; color: #6b7280;"></div>
+                        <button type="button" onclick="abrirModalReflectivo()" class="btn btn-primary" style="margin-top: 1rem; padding: 0.75rem 1rem; font-size: 0.875rem;">
+                            <span class="material-symbols-rounded" style="margin-right: 0.5rem;">edit</span>Editar
+                        </button>
                     </div>
                 </div>
             </form>

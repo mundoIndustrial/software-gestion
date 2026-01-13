@@ -469,6 +469,11 @@ table textarea {
     padding: 2rem 0;
 }
 
+/* Modal de tallas debe estar encima de otros modales */
+#modal-seleccionar-tallas {
+    z-index: 10000 !important;
+}
+
 .modal-container {
     background: white;
     border-radius: 12px;

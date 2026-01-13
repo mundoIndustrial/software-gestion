@@ -74,9 +74,10 @@ class PedidosProduccionController extends Controller
      */
     public function crearFormEditable()
     {
-        // Obtener cotizaciones aprobadas
-        $cotizaciones = Cotizacion::with(['cliente', 'asesor', 'prendasCotizaciones'])
+        // Obtener cotizaciones aprobadas DEL ASESOR ACTUAL
+        $cotizaciones = Cotizacion::where('asesor_id', Auth::id())
             ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
+            ->with(['cliente', 'asesor', 'prendasCotizaciones'])
             ->get();
 
         // Transformar datos para el frontend

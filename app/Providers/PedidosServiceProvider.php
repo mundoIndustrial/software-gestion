@@ -8,6 +8,7 @@ use App\Services\Pedidos\PrendaProcessorService;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
+use App\Application\Services\ColorGeneroMangaBrocheService;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -44,7 +45,9 @@ class PedidosServiceProvider extends ServiceProvider
 
         // Registrar PedidoPrendaService como singleton (DDD)
         $this->app->singleton(PedidoPrendaService::class, function ($app) {
-            return new PedidoPrendaService();
+            return new PedidoPrendaService(
+                $app->make(ColorGeneroMangaBrocheService::class)
+            );
         });
 
         // Registrar PedidoLogoService como singleton (DDD)

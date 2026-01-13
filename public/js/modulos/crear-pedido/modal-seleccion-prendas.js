@@ -246,7 +246,26 @@ window.agregarPrendasSeleccionadas = function() {
         
         // Construir variaciones desde el objeto prenda
         const variaciones = {};
-        if (prenda.variantes && prenda.variantes.length > 0) {
+        
+        // Para prendas técnicas de logo: variaciones_prenda viene en JSON
+        if (prenda.variaciones_prenda) {
+            try {
+                const vars = typeof prenda.variaciones_prenda === 'string' 
+                    ? JSON.parse(prenda.variaciones_prenda) 
+                    : prenda.variaciones_prenda;
+                
+                variaciones.tela = vars.tela || '';
+                variaciones.color = vars.color || '';
+                variaciones.referencia = vars.referencia || '';
+                variaciones.manga = vars.manga || '';
+                variaciones.broche = vars.broche || '';
+                variaciones.bolsillos = vars.bolsillos || 'No';
+            } catch (e) {
+                console.warn('Error al parsear variaciones_prenda:', e);
+            }
+        }
+        // Para prendas normales: variantes es un array
+        else if (prenda.variantes && prenda.variantes.length > 0) {
             const v = prenda.variantes[0];
             if (v.telas_multiples && Array.isArray(v.telas_multiples) && v.telas_multiples.length > 0) {
                 const tela = v.telas_multiples[0];
@@ -268,19 +287,39 @@ window.agregarPrendasSeleccionadas = function() {
             talla_cantidad: prenda.talla_cantidad
         });
         
-        if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+        // Intentar desde talla_cantidad (puede ser JSON string o array)
+        if (prenda.talla_cantidad) {
+            try {
+                let tallasData = prenda.talla_cantidad;
+                
+                // Si es string JSON, parsear
+                if (typeof tallasData === 'string') {
+                    tallasData = JSON.parse(tallasData);
+                }
+                
+                // Si es array, convertir al formato esperado
+                if (Array.isArray(tallasData) && tallasData.length > 0) {
+                    tallas = tallasData.map(t => ({
+                        talla: t.talla || t,
+                        cantidad: t.cantidad || 0
+                    }));
+                    console.log('✅ Tallas desde prenda.talla_cantidad (JSON):', tallas);
+                }
+            } catch (e) {
+                console.warn('⚠️ Error al parsear talla_cantidad:', e);
+            }
+        }
+        
+        // Si no encontró en talla_cantidad, intentar desde tallas
+        if (tallas.length === 0 && prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
             tallas = prenda.tallas.map(t => ({
                 talla: t.talla || t,
                 cantidad: t.cantidad || 0
             }));
             console.log('✅ Tallas desde prenda.tallas:', tallas);
-        } else if (prenda.talla_cantidad && Array.isArray(prenda.talla_cantidad) && prenda.talla_cantidad.length > 0) {
-            tallas = prenda.talla_cantidad.map(t => ({
-                talla: t.talla || t,
-                cantidad: t.cantidad || 0
-            }));
-            console.log('✅ Tallas desde prenda.talla_cantidad:', tallas);
-        } else {
+        }
+        
+        if (tallas.length === 0) {
             console.warn('⚠️ No se encontraron tallas en la prenda');
         }
         
@@ -304,6 +343,7 @@ window.agregarPrendasSeleccionadas = function() {
                 origen: origen,
                 procesos: [],
                 es_proceso: false,
+                tallas: tallas,
                 data: cotizacionActual
             });
             
@@ -333,6 +373,7 @@ window.agregarPrendasSeleccionadas = function() {
                 origen: origen,
                 procesos: [],
                 es_proceso: false,
+                tallas: tallas,
                 data: cotizacionActual
             });
             

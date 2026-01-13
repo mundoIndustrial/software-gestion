@@ -13,5 +13,8 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
         // Validación y creación
         Route::post('/validar', [CrearPedidoEditableController::class, 'validarPedido'])->name('validar');
         Route::post('/crear', [CrearPedidoEditableController::class, 'crearPedido'])->name('crear');
+        
+        // Subir imágenes (FormData)
+        Route::post('/subir-imagenes', [CrearPedidoEditableController::class, 'subirImagenesPrenda'])->name('subir-imagenes');
     });
 });

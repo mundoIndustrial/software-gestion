@@ -114,6 +114,14 @@ class PedidoProduccion extends Model
     }
 
     /**
+     * Alias para asesora (compatibilidad)
+     */
+    public function asesor(): BelongsTo
+    {
+        return $this->asesora();
+    }
+
+    /**
      * Relación: Un pedido pertenece a un cliente
      */
     public function cliente(): BelongsTo

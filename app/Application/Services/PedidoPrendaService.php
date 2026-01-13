@@ -11,6 +11,7 @@ use App\Helpers\DescripcionPrendaHelper;
 use App\Helpers\DescripcionPrendaLegacyFormatter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * PedidoPrendaService
@@ -25,6 +26,13 @@ use Illuminate\Support\Facades\Log;
  */
 class PedidoPrendaService
 {
+    private ColorGeneroMangaBrocheService $colorGeneroService;
+
+    public function __construct(ColorGeneroMangaBrocheService $colorGeneroService)
+    {
+        $this->colorGeneroService = $colorGeneroService;
+    }
+
     /**
      * Guardar prendas en pedido
      */
@@ -109,7 +117,36 @@ class PedidoPrendaService
             'color_id' => $prendaData['color_id'] ?? null,
             'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
             'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
+            'manga' => $prendaData['manga'] ?? null,
+            'broche' => $prendaData['broche'] ?? null,
         ]);
+
+        // ✅ PROCESAR VARIACIONES: Crear si no existen
+        // Si recibimos nombres (strings) en lugar de IDs, crear o buscar
+        
+        // MANGA: Si viene nombre, crear/obtener; si viene ID, usar directamente
+        if (!empty($prendaData['manga']) && empty($prendaData['tipo_manga_id'])) {
+            $manga = $this->colorGeneroService->obtenerOCrearManga($prendaData['manga']);
+            if ($manga) {
+                $prendaData['tipo_manga_id'] = $manga->id;
+                Log::info('✅ [PedidoPrendaService] Manga creada/obtenida', [
+                    'nombre' => $prendaData['manga'],
+                    'id' => $manga->id,
+                ]);
+            }
+        }
+        
+        // BROCHE: Si viene nombre, crear/obtener; si viene ID, usar directamente
+        if (!empty($prendaData['broche']) && empty($prendaData['tipo_broche_id'])) {
+            $broche = $this->colorGeneroService->obtenerOCrearBroche($prendaData['broche']);
+            if ($broche) {
+                $prendaData['tipo_broche_id'] = $broche->id;
+                Log::info('✅ [PedidoPrendaService] Broche creado/obtenido', [
+                    'nombre' => $prendaData['broche'],
+                    'id' => $broche->id,
+                ]);
+            }
+        }
 
         // ✅ SOLO GUARDAR LA DESCRIPCIÓN QUE ESCRIBIÓ EL USUARIO
         // NO formatear ni armar descripciones automáticas
@@ -359,19 +396,30 @@ class PedidoPrendaService
 
     /**
      * Guardar fotos de la prenda 
+     * Espera rutas de archivos ya procesados desde el endpoint de upload
      */
     private function guardarFotosPrenda(PrendaPedido $prenda, array $fotos): void
     {
         foreach ($fotos as $index => $foto) {
+            // Las fotos pueden venir como strings (rutas JSON) o arrays
+            if (is_string($foto)) {
+                $fotoData = json_decode($foto, true);
+                if (!is_array($fotoData)) {
+                    $fotoData = ['ruta_original' => $foto];
+                }
+            } else {
+                $fotoData = $foto;
+            }
+            
             DB::table('prenda_fotos_pedido')->insert([
                 'prenda_pedido_id' => $prenda->id,
-                'ruta_original' => $foto['ruta_original'] ?? $foto['url'] ?? null,
-                'ruta_webp' => $foto['ruta_webp'] ?? null,
-                'ruta_miniatura' => $foto['ruta_miniatura'] ?? null,
+                'ruta_original' => $fotoData['ruta_original'] ?? null,
+                'ruta_webp' => $fotoData['ruta_webp'] ?? null,
+                'ruta_miniatura' => $fotoData['ruta_miniatura'] ?? null,
                 'orden' => $index + 1,
-                'ancho' => $foto['ancho'] ?? null,
-                'alto' => $foto['alto'] ?? null,
-                'tamaño' => $foto['tamaño'] ?? null,
+                'ancho' => $fotoData['ancho'] ?? null,
+                'alto' => $fotoData['alto'] ?? null,
+                'tamaño' => $fotoData['tamaño'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
