@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\OrdenController;
+use App\Http\Controllers\Api\AsistenciaPersonalController;
 use App\Http\Controllers\PrendaController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 
@@ -69,4 +70,14 @@ Route::middleware('api')->prefix('api')->name('api.')->group(function () {
 Route::prefix('operario')->name('operario.')->middleware([])->group(function () {
     Route::get('pedido/{numeroPedido}', [\App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'getPedidoData'])
         ->name('pedido-data');
+});
+
+/**
+ * API Routes for Asistencia Personal
+ */
+Route::prefix('asistencia-personal')->name('asistencia-personal.')->middleware(['web'])->group(function () {
+    Route::post('/procesar-pdf', [AsistenciaPersonalController::class, 'procesarPDF'])
+        ->name('procesar-pdf');
+    Route::post('/guardar-registros', [AsistenciaPersonalController::class, 'guardarRegistros'])
+        ->name('guardar-registros');
 });

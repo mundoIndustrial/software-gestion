@@ -3,6 +3,7 @@
 namespace App\Modules\AsistenciaPersonal\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\ReportePersonal;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -13,7 +14,8 @@ class AsistenciaPersonalController extends Controller
      */
     public function index(): View
     {
-        return view('asistencia-personal.index');
+        $reportes = ReportePersonal::latest()->get();
+        return view('asistencia-personal.index', compact('reportes'));
     }
 
     /**
