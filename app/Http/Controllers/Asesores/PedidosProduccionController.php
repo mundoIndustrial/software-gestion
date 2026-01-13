@@ -74,13 +74,19 @@ class PedidosProduccionController extends Controller
      */
     public function crearFormEditable()
     {
-        // Delegar obtención de cotizaciones al repositorio
-        $cotizaciones = $this->cotizacionRepository->obtenerCotizacionesAprobadas();
+        // Obtener cotizaciones aprobadas
+        $cotizaciones = Cotizacion::with(['cliente', 'asesor', 'prendasCotizaciones'])
+            ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
+            ->get();
+
+        // Transformar datos para el frontend
+        $transformador = new \App\Domain\PedidoProduccion\Services\TransformadorCotizacionService();
+        $cotizacionesData = $transformador->transformarCotizacionesParaFrontend($cotizaciones);
 
         // Tipo inicial: cotizacion (para mostrar buscador de cotizaciones)
         $tipoInicial = 'cotizacion';
 
-        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones', 'tipoInicial'));
+        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones', 'cotizacionesData', 'tipoInicial'));
     }
 
     /**
@@ -775,6 +781,14 @@ class PedidosProduccionController extends Controller
                 'logoCotizacion.prendas.fotos',
                 'reflectivo.fotos',
             ])->findOrFail($cotizacionId);
+
+            \Log::info('🔍 [OBTENER-DATOS-COT] Cotización cargada:', [
+                'id' => $cotizacion->id,
+                'numero' => $cotizacion->numero_cotizacion,
+                'prendas_count' => $cotizacion->prendas->count(),
+                'logo_prendas_count' => $cotizacion->logoCotizacion ? $cotizacion->logoCotizacion->prendas->count() : 0,
+                'prendas_ids' => $cotizacion->prendas->pluck('id')->toArray(),
+            ]);
 
             if ($cotizacion->asesor_id !== Auth::id()) {
                 return response()->json([

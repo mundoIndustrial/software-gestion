@@ -1,532 +1,10 @@
-@php
-    // DEBUG: Ver qué variables están disponibles en la vista
-    \Log::info('🔍 [VISTA] Variables disponibles:', [
-        'tiene_cotizaciones' => isset($cotizaciones),
-        'tipo_cotizaciones' => isset($cotizaciones) ? get_class($cotizaciones) : 'no definido',
-        'count_cotizaciones' => isset($cotizaciones) ? $cotizaciones->count() : 0,
-        'tiene_tipoInicial' => isset($tipoInicial),
-        'valor_tipoInicial' => $tipoInicial ?? 'no definido',
-        'todas_las_variables' => array_keys(get_defined_vars())
-    ]);
-@endphp
-
 @extends('layouts.asesores')
 
 @include('components.modal-imagen')
 
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
-    <style>
-        /* ============================================================
-           LOADING SCREEN DE PÁGINA COMPLETA
-           ============================================================ */
-        #page-loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.98);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 99999;
-            transition: opacity 0.3s ease-out;
-        }
-        
-        #page-loading-overlay.fade-out {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #e5e7eb;
-            border-top-color: #0066cc;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        
-        .loading-text {
-            margin-top: 1.5rem;
-            font-size: 1.125rem;
-            color: #374151;
-            font-weight: 500;
-        }
-        
-        .loading-subtext {
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* ============================================================
-           FIN LOADING SCREEN
-           ============================================================ */
-    </style>
-    <style>
-        /* ============================================================
-           ESTILOS GLOBALES Y CONSISTENTES
-           ============================================================ */
-        
-        /* Colores del diseño */
-        :root {
-            --color-primary: #0066cc;
-            --color-primary-dark: #0052a3;
-            --color-danger: #dc3545;
-            --color-danger-dark: #c82333;
-            --color-text: #333333;
-            --color-text-secondary: #666666;
-            --color-border: #d0d0d0;
-            --color-bg-light: #f5f5f5;
-            --color-bg-input: #ffffff;
-        }
-
-        /* Estilos para la vista editable - PROFESIONAL */
-        .prenda-card-editable {
-            border: 1px solid var(--color-border);
-            border-radius: 6px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            background: var(--color-bg-input);
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .prenda-card-editable:hover {
-            border-color: #999999;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .prenda-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #f0f0f0;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .prenda-title {
-            font-weight: 700;
-            font-size: 1.125rem;
-            color: var(--color-text);
-        }
-
-        .prenda-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        /* ============================================================
-           BOTONES - ESTILO CONSISTENTE
-           ============================================================ */
-        
-        .btn-eliminar-prenda,
-        .btn-eliminar-variacion,
-        .btn-quitar-talla {
-            background-color: var(--color-danger);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-eliminar-prenda:hover,
-        .btn-eliminar-variacion:hover,
-        .btn-quitar-talla:hover {
-            background-color: var(--color-danger-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
-        }
-
-        .btn-agregar-talla-nuevo {
-            background-color: var(--color-primary);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-agregar-talla-nuevo:hover {
-            background-color: var(--color-primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 2px 6px rgba(0, 102, 204, 0.3);
-        }
-
-        .checkbox-item input[type="checkbox"] {
-            cursor: pointer;
-            width: 18px;
-            height: 18px;
-        }
-
-        /* ============================================================
-           LAYOUT Y GRID RESPONSIVE
-           ============================================================ */
-        
-        .prenda-content {
-            display: grid;
-            grid-template-columns: 1fr 200px;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-            align-items: start;
-        }
-
-        @media (max-width: 1024px) {
-            .prenda-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .prenda-info-section {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .prenda-fotos-section {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            width: 100%;
-        }
-
-        @media (max-width: 1024px) {
-            .prenda-fotos-section {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                width: 100%;
-                max-width: 100%;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .prenda-fotos-section {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            }
-        }
-
-        /* ============================================================
-           FOTOS - RESPONSIVE
-           ============================================================ */
-        
-        .prenda-foto-principal {
-            width: 100%;
-            max-width: 200px;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid var(--color-border);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: block;
-        }
-
-        .prenda-foto-principal:hover {
-            border-color: #999999;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transform: scale(1.02);
-        }
-
-        .fotos-adicionales {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 0.5rem;
-            width: 100%;
-        }
-
-        .foto-mini {
-            width: 100%;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 4px;
-            border: 1px solid var(--color-border);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .foto-mini:hover {
-            border-color: #999999;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-            transform: scale(1.05);
-        }
-
-        /* ============================================================
-           FORMULARIOS
-           ============================================================ */
-        
-        .form-group-inline {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .form-group-editable {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group-editable label {
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: var(--color-text-secondary);
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group-editable input,
-        .form-group-editable select,
-        .form-group-editable textarea {
-            padding: 0.6rem;
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            font-size: 0.875rem;
-            font-family: inherit;
-            background: var(--color-bg-input);
-            color: var(--color-text);
-            transition: all 0.2s ease;
-        }
-
-        .form-group-editable input:focus,
-        .form-group-editable select:focus,
-        .form-group-editable textarea:focus {
-            outline: none;
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-        }
-
-        .form-group-editable textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        /* ============================================================
-           SECCIONES ESPECIALES - TALLAS, VARIACIONES, TELAS
-           ============================================================ */
-        
-        .tallas-editable,
-        .variaciones-section,
-        .telas-seccion {
-            background: var(--color-bg-light);
-            padding: 1rem;
-            border-radius: 4px;
-            margin-top: 1rem;
-            border-left: 4px solid var(--color-primary);
-            overflow-x: auto;
-        }
-
-        .tallas-editable > label,
-        .variaciones-section > strong,
-        .telas-seccion > strong {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 1rem;
-            color: var(--color-text);
-            font-size: 0.95rem;
-        }
-
-        /* Talla Item */
-        .talla-item {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            margin-bottom: 0.75rem;
-            padding: 0.75rem;
-            background: var(--color-bg-input);
-            border-radius: 4px;
-            border: 1px solid var(--color-border);
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 768px) {
-            .talla-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        .talla-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .talla-item input {
-            flex: 0 0 auto;
-            min-width: 80px;
-            text-align: center;
-        }
-
-        .talla-item input[type="number"] {
-            flex: 1;
-            max-width: 120px;
-        }
-
-        /* Tabla de Variaciones */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--color-bg-input);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            overflow: hidden;
-            font-size: 0.9rem;
-        }
-
-        table thead {
-            background: #f0f0f0;
-            border-bottom: 2px solid var(--color-border);
-        }
-
-        table thead th {
-            padding: 0.75rem;
-            text-align: left;
-            font-weight: 600;
-            border-right: 1px solid var(--color-border);
-            color: var(--color-text);
-        }
-
-        table tbody tr {
-            border-bottom: 1px solid #eee;
-        }
-
-        table tbody tr:hover {
-            background: #fafafa;
-        }
-
-        table tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        table td {
-            padding: 0.75rem;
-            border-right: 1px solid var(--color-border);
-            vertical-align: middle;
-        }
-
-        table td:last-child {
-            border-right: none;
-        }
-
-        table input,
-        table textarea {
-            width: 100%;
-            padding: 0.4rem;
-            border: 1px solid var(--color-border);
-            border-radius: 3px;
-            font-size: 0.85rem;
-            font-family: inherit;
-        }
-
-        table textarea {
-            min-height: 40px;
-            resize: vertical;
-        }
-
-        /* ============================================================
-           RESUMEN Y ALERTAS
-           ============================================================ */
-        
-        .prenda-resumen {
-            background: var(--color-bg-light);
-            padding: 1rem;
-            border-left: 3px solid var(--color-primary);
-            border-radius: 4px;
-            margin-top: 1rem;
-            color: var(--color-text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .alert-info {
-            background: #f0f8ff;
-            border-left: 4px solid var(--color-primary);
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1.5rem;
-            color: var(--color-primary);
-            font-size: 0.95rem;
-        }
-
-        /* ============================================================
-           RESPONSIVE FINAL
-           ============================================================ */
-        
-        @media (max-width: 768px) {
-            .prenda-card-editable {
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
-
-            .prenda-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .prenda-actions {
-                width: 100%;
-            }
-
-            .btn-eliminar-prenda {
-                flex: 1;
-            }
-
-            .prenda-content {
-                gap: 1rem;
-            }
-
-            .fotos-adicionales {
-                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-                gap: 0.4rem;
-            }
-
-            .form-group-inline {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-
-            table {
-                font-size: 0.8rem;
-            }
-
-            table th,
-            table td {
-                padding: 0.5rem;
-            }
-
-            table input,
-            table textarea {
-                padding: 0.3rem;
-                font-size: 0.8rem;
-            }
-
-            table textarea {
-                min-height: 35px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
 @endsection
 
 @section('content')
@@ -643,13 +121,13 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="font-size: 1.125rem; font-weight: 600; color: #1e40af;">Ítems del Pedido</h3>
                         <div style="display: flex; gap: 0.75rem;">
-                            <button type="button" id="btn-agregar-item-cotizacion" style="display: none; padding: 0.5rem 1rem; background: #0066cc; color: white; border: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;" onmouseover="this.style.background='#0052a3'" onmouseout="this.style.background='#0066cc'">
+                            <button type="button" id="btn-agregar-item-cotizacion" style="display: none; padding: 0.5rem 1rem; background: #0066cc; color: white; border: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; align-items: center; gap: 0.5rem; transition: background 0.2s;" onmouseover="this.style.background='#0052a3'" onmouseout="this.style.background='#0066cc'">
                                 <span style="font-size: 1.25rem;">+</span>
-                                Agregar Cotización
+                                Agregar Prendas
                             </button>
-                            <button type="button" id="btn-agregar-item-tipo" style="display: none; padding: 0.5rem 1rem; background: #059669; color: white; border: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+                            <button type="button" id="btn-agregar-item-tipo" style="display: none; padding: 0.5rem 1rem; background: #059669; color: white; border: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; align-items: center; gap: 0.5rem; transition: background 0.2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
                                 <span style="font-size: 1.25rem;">+</span>
-                                Agregar Tipo
+                                Agregar Prenda
                             </button>
                         </div>
                     </div>
@@ -736,335 +214,13 @@
     </form>
 </div>
 
-<!-- MODAL: Seleccionar Prendas de Cotización -->
-<div id="modal-seleccion-prendas" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-        <!-- Header -->
-        <div style="padding: 1.5rem; border-bottom: 2px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);">
-            <h3 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 600;">
-                📋 Seleccionar Prendas de la Cotización
-            </h3>
-            <button onclick="cerrarModalPrendas()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='none'">
-                ✕
-            </button>
-        </div>
-        
-        <!-- Body -->
-        <div style="padding: 1.5rem;">
-            <div id="modal-cotizacion-info" style="padding: 1rem; background: #f0f9ff; border-left: 4px solid #0066cc; border-radius: 6px; margin-bottom: 1.5rem;">
-                <div style="font-weight: 600; color: #1e40af; margin-bottom: 0.25rem;">Cotización: <span id="modal-cot-numero"></span></div>
-                <div style="font-size: 0.875rem; color: #6b7280;">Cliente: <span id="modal-cot-cliente"></span></div>
-            </div>
-            
-            <div id="lista-prendas-modal" style="display: flex; flex-direction: column; gap: 1rem;">
-                <!-- Las prendas se cargarán aquí dinámicamente -->
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="padding: 1.5rem; border-top: 2px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 1rem; background: #f9fafb;">
-            <button onclick="cerrarModalPrendas()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
-                Cancelar
-            </button>
-            <button onclick="agregarPrendasSeleccionadas()" style="padding: 0.75rem 1.5rem; background: #0066cc; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0052a3'" onmouseout="this.style.background='#0066cc'">
-                ✓ Agregar Prendas Seleccionadas
-            </button>
-        </div>
-    </div>
-</div>
+@include('asesores.pedidos.modals.modal-seleccionar-prendas')
 
-<!-- MODAL: Agregar Prenda Nueva (Sin Cotización) -->
-<div id="modal-agregar-prenda-nueva" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; overflow-y: auto; padding: 2rem 0;">
-    <div style="background: white; border-radius: 12px; max-width: 900px; width: 95%; max-height: 95vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: auto;">
-        <!-- Header -->
-        <div style="padding: 1.5rem; border-bottom: 2px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #059669 0%, #047857 100%); position: sticky; top: 0; z-index: 10;">
-            <h3 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 600;">
-                ✨ Agregar Prenda Nueva
-            </h3>
-            <button onclick="cerrarModalPrendaNueva()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='none'">
-                ✕
-            </button>
-        </div>
-        
-        <!-- Body -->
-        <div style="padding: 1.5rem;">
-            <form id="form-prenda-nueva">
-                <!-- Nombre de la prenda -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #059669; margin-bottom: 0.5rem; font-size: 0.95rem;">
-                        👔 NOMBRE DE LA PRENDA *
-                    </label>
-                    <input type="text" id="nueva-prenda-nombre" required placeholder="Ej: CAMISA DRILL, POLO, PANTALÓN..." style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; text-transform: uppercase;">
-                </div>
-                
-                <!-- Origen y Descripción en fila -->
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <!-- Origen -->
-                    <div>
-                        <label style="display: block; font-weight: 700; color: #059669; margin-bottom: 0.5rem; font-size: 0.95rem;">
-                            📍 ORIGEN *
-                        </label>
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; border: 2px solid #d1d5db; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#d1d5db'">
-                                <input type="radio" name="nueva-prenda-origen" value="bodega" checked style="width: 18px; height: 18px; accent-color: #059669;">
-                                <span style="font-weight: 500;">🏪 Bodega</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; border: 2px solid #d1d5db; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#d1d5db'">
-                                <input type="radio" name="nueva-prenda-origen" value="confeccion" style="width: 18px; height: 18px; accent-color: #059669;">
-                                <span style="font-weight: 500;">✂️ Confección</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Descripción -->
-                    <div>
-                        <label style="display: block; font-weight: 700; color: #059669; margin-bottom: 0.5rem; font-size: 0.95rem;">
-                            📝 DESCRIPCIÓN
-                        </label>
-                        <textarea id="nueva-prenda-descripcion" placeholder="Descripción de la prenda, detalles especiales..." style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; resize: vertical; min-height: 80px;"></textarea>
-                    </div>
-                </div>
+@include('asesores.pedidos.modals.modal-seleccionar-tallas')
 
-                <!-- Color, Tela y Referencia -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #059669; margin-bottom: 0.75rem; font-size: 0.95rem;">
-                        🎨 COLOR, TELA Y REFERENCIA
-                    </label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <label style="display: block; font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem; font-weight: 600;">Color</label>
-                            <input type="text" id="nueva-prenda-color" placeholder="Ej: AZUL MARINO" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; text-transform: uppercase;">
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem; font-weight: 600;">Tela</label>
-                            <input type="text" id="nueva-prenda-tela" placeholder="Ej: DRILL" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; text-transform: uppercase;">
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem; font-weight: 600;">Referencia</label>
-                            <input type="text" id="nueva-prenda-referencia" placeholder="Ej: REF-001" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; text-transform: uppercase;">
-                        </div>
-                    </div>
-                </div>
+@include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 
-                <!-- Tallas y Cantidades -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #059669; margin-bottom: 0.75rem; font-size: 0.95rem;">
-                        📏 TALLAS Y CANTIDADES *
-                    </label>
-                    <div style="background: #f9fafb; padding: 1rem; border-radius: 6px; border: 2px solid #e5e7eb;">
-                        <!-- Selectores de tipo y género -->
-                        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                            <select id="prenda-tipo-talla" onchange="actualizarTallasPrenda()" style="padding: 0.6rem 0.8rem; border: 2px solid #059669; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background: white; color: #059669; font-weight: 600;">
-                                <option value="letra">LETRAS (XS-XXXL)</option>
-                                <option value="numero">NÚMEROS (DAMA/CABALLERO)</option>
-                            </select>
-                            <select id="prenda-genero-talla" onchange="actualizarTallasPrenda()" style="padding: 0.6rem 0.8rem; border: 2px solid #059669; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background: white; color: #059669; font-weight: 600; display: none;">
-                                <option value="">Selecciona género</option>
-                                <option value="dama">Dama</option>
-                                <option value="caballero">Caballero</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Contenedor de tallas dinámico -->
-                        <div id="tallas-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.75rem;">
-                            <!-- Las tallas se generan dinámicamente -->
-                        </div>
-                        
-                        <div style="margin-top: 0.75rem; padding: 0.5rem; background: #dbeafe; border-radius: 4px; text-align: center;">
-                            <span style="font-size: 0.875rem; font-weight: 600; color: #1e40af;">Total: <span id="total-prendas">0</span> unidades</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Variaciones -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #059669; margin-bottom: 0.75rem; font-size: 0.95rem;">
-                        🔧 VARIACIONES ESPECÍFICAS
-                    </label>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
-                        <div style="padding: 0.75rem; background: #f9fafb; border-radius: 6px; border: 2px solid #e5e7eb;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
-                                <input type="checkbox" id="aplica-manga" style="width: 18px; height: 18px; accent-color: #059669;">
-                                <span style="font-weight: 600; font-size: 0.875rem;">👕 Manga</span>
-                            </label>
-                            <input type="text" id="manga-input" placeholder="Ej: manga larga..." disabled style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; opacity: 0.5;">
-                        </div>
-                        <div style="padding: 0.75rem; background: #f9fafb; border-radius: 6px; border: 2px solid #e5e7eb;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
-                                <input type="checkbox" id="aplica-bolsillos" style="width: 18px; height: 18px; accent-color: #059669;">
-                                <span style="font-weight: 600; font-size: 0.875rem;">👜 Bolsillos</span>
-                            </label>
-                            <input type="text" id="bolsillos-input" placeholder="Ej: 2 bolsillos..." disabled style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; opacity: 0.5;">
-                        </div>
-                        <div style="padding: 0.75rem; background: #f9fafb; border-radius: 6px; border: 2px solid #e5e7eb;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
-                                <input type="checkbox" id="aplica-broche" style="width: 18px; height: 18px; accent-color: #059669;">
-                                <span style="font-weight: 600; font-size: 0.875rem;">🔘 Broche/Botón</span>
-                            </label>
-                            <input type="text" id="broche-input" placeholder="Ej: botones metálicos..." disabled style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; opacity: 0.5;">
-                        </div>
-                        <div style="padding: 0.75rem; background: #f9fafb; border-radius: 6px; border: 2px solid #e5e7eb;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
-                                <input type="checkbox" id="aplica-puno" style="width: 18px; height: 18px; accent-color: #059669;">
-                                <span style="font-weight: 600; font-size: 0.875rem;">⭕ Puño</span>
-                            </label>
-                            <input type="text" id="puno-input" placeholder="Ej: puño elástico..." disabled style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; opacity: 0.5;">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Procesos -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #059669; margin-bottom: 0.75rem; font-size: 0.95rem;">
-                        ⚙️ PROCESOS (Opcional)
-                    </label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 1rem; background: #f9fafb; border-radius: 6px; border: 2px solid #e5e7eb;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: white; border: 2px solid #d1d5db; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#d1d5db'">
-                            <input type="checkbox" name="nueva-prenda-procesos" value="Bordado" style="width: 18px; height: 18px; accent-color: #059669;">
-                            <span style="font-weight: 500;">🧵 Bordado</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: white; border: 2px solid #d1d5db; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#d1d5db'">
-                            <input type="checkbox" name="nueva-prenda-procesos" value="Estampado" style="width: 18px; height: 18px; accent-color: #059669;">
-                            <span style="font-weight: 500;">🎨 Estampado</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: white; border: 2px solid #d1d5db; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#d1d5db'">
-                            <input type="checkbox" name="nueva-prenda-procesos" value="Reflectivo" style="width: 18px; height: 18px; accent-color: #059669;">
-                            <span style="font-weight: 500;">💡 Reflectivo</span>
-                        </label>
-                    </div>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Footer -->
-        <div style="padding: 1.5rem; border-top: 2px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 1rem; background: #f9fafb; position: sticky; bottom: 0;">
-            <button onclick="cerrarModalPrendaNueva()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
-                Cancelar
-            </button>
-            <button onclick="agregarPrendaNueva()" style="padding: 0.75rem 1.5rem; background: #059669; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
-                ✓ Agregar Prenda
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL: Agregar Reflectivo -->
-<div id="modal-agregar-reflectivo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; overflow-y: auto; padding: 2rem 0;">
-    <div style="background: white; border-radius: 12px; max-width: 800px; width: 95%; max-height: 95vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: auto;">
-        <!-- Header -->
-        <div style="padding: 1.5rem; border-bottom: 2px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); position: sticky; top: 0; z-index: 10;">
-            <h3 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 600;">
-                💡 Agregar Reflectivo
-            </h3>
-            <button onclick="cerrarModalReflectivo()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='none'">
-                ✕
-            </button>
-        </div>
-        
-        <!-- Body -->
-        <div style="padding: 1.5rem;">
-            <form id="form-reflectivo-nuevo">
-                <!-- Nombre de la prenda -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #f59e0b; margin-bottom: 0.5rem; font-size: 0.95rem;">
-                        👔 NOMBRE DE LA PRENDA *
-                    </label>
-                    <input type="text" id="reflectivo-prenda-nombre" required placeholder="Ej: CAMISA, CHALECO, PANTALÓN..." style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; text-transform: uppercase;">
-                </div>
-
-                <!-- Origen -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #f59e0b; margin-bottom: 0.5rem; font-size: 0.95rem;">
-                        📍 ORIGEN *
-                    </label>
-                    <div style="display: flex; gap: 1rem;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1.5rem; border: 2px solid #d1d5db; border-radius: 6px; flex: 1; transition: all 0.2s;" onmouseover="this.style.borderColor='#f59e0b'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#d1d5db'">
-                            <input type="radio" name="reflectivo-origen" value="bodega" checked style="width: 18px; height: 18px; accent-color: #f59e0b;">
-                            <span style="font-weight: 500;">🏪 Bodega</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1.5rem; border: 2px solid #d1d5db; border-radius: 6px; flex: 1; transition: all 0.2s;" onmouseover="this.style.borderColor='#f59e0b'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#d1d5db'">
-                            <input type="radio" name="reflectivo-origen" value="confeccion" style="width: 18px; height: 18px; accent-color: #f59e0b;">
-                            <span style="font-weight: 500;">✂️ Confección</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Tallas y Cantidades -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #f59e0b; margin-bottom: 0.75rem; font-size: 0.95rem;">
-                        📏 TALLAS Y CANTIDADES *
-                    </label>
-                    <div style="background: #fef3c7; padding: 1rem; border-radius: 6px; border: 2px solid #fde68a;">
-                        <!-- Selectores de tipo y género -->
-                        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                            <select id="reflectivo-tipo-talla" onchange="actualizarTallasReflectivo()" style="padding: 0.6rem 0.8rem; border: 2px solid #f59e0b; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background: white; color: #f59e0b; font-weight: 600;">
-                                <option value="letra">LETRAS (XS-XXXL)</option>
-                                <option value="numero">NÚMEROS (DAMA/CABALLERO)</option>
-                            </select>
-                            <select id="reflectivo-genero-talla" onchange="actualizarTallasReflectivo()" style="padding: 0.6rem 0.8rem; border: 2px solid #f59e0b; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background: white; color: #f59e0b; font-weight: 600; display: none;">
-                                <option value="">Selecciona género</option>
-                                <option value="dama">Dama</option>
-                                <option value="caballero">Caballero</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Contenedor de tallas dinámico -->
-                        <div id="reflectivo-tallas-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.75rem;">
-                            <!-- Las tallas se generan dinámicamente -->
-                        </div>
-                        
-                        <div style="margin-top: 0.75rem; padding: 0.5rem; background: #fbbf24; border-radius: 4px; text-align: center;">
-                            <span style="font-size: 0.875rem; font-weight: 600; color: #78350f;">Total: <span id="total-reflectivo">0</span> unidades</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ubicaciones del reflectivo -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #f59e0b; margin-bottom: 0.75rem; font-size: 0.95rem;">
-                        📍 UBICACIONES DEL REFLECTIVO
-                    </label>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; padding: 1rem; background: #fef3c7; border-radius: 6px; border: 2px solid #fde68a;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border: 2px solid #d1d5db; border-radius: 6px;">
-                            <input type="checkbox" name="reflectivo-ubicacion" value="Pecho" style="width: 18px; height: 18px; accent-color: #f59e0b;">
-                            <span style="font-weight: 500;">Pecho</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border: 2px solid #d1d5db; border-radius: 6px;">
-                            <input type="checkbox" name="reflectivo-ubicacion" value="Espalda" style="width: 18px; height: 18px; accent-color: #f59e0b;">
-                            <span style="font-weight: 500;">Espalda</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border: 2px solid #d1d5db; border-radius: 6px;">
-                            <input type="checkbox" name="reflectivo-ubicacion" value="Mangas" style="width: 18px; height: 18px; accent-color: #f59e0b;">
-                            <span style="font-weight: 500;">Mangas</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border: 2px solid #d1d5db; border-radius: 6px;">
-                            <input type="checkbox" name="reflectivo-ubicacion" value="Piernas" style="width: 18px; height: 18px; accent-color: #f59e0b;">
-                            <span style="font-weight: 500;">Piernas</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Observaciones -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 700; color: #f59e0b; margin-bottom: 0.5rem; font-size: 0.95rem;">
-                        📝 OBSERVACIONES
-                    </label>
-                    <textarea id="reflectivo-observaciones" placeholder="Observaciones adicionales sobre el reflectivo..." style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; resize: vertical; min-height: 80px;"></textarea>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Footer -->
-        <div style="padding: 1.5rem; border-top: 2px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 1rem; background: #fef3c7; position: sticky; bottom: 0;">
-            <button onclick="cerrarModalReflectivo()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
-                Cancelar
-            </button>
-            <button onclick="agregarReflectivo()" style="padding: 0.75rem 1.5rem; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
-                ✓ Agregar Reflectivo
-            </button>
-        </div>
-    </div>
-</div>
+@include('asesores.pedidos.modals.modal-agregar-reflectivo')
 
 @endsection
 
@@ -1073,66 +229,497 @@
     <script src="{{ asset('js/modulos/crear-pedido/gestion-items-pedido.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modal-seleccion-prendas.js') }}"></script>
     
-    <!-- IMPORTANTE: Definir cotizaciones ANTES de cargar cualquier script -->
+    <!-- Datos del servidor (transformados en el Controller) -->
     <script>
-        // ========== DEBUG DETALLADO ==========
-        console.log('🔍 [BLADE] isset($cotizaciones):', {{ isset($cotizaciones) ? 'true' : 'false' }});
-        console.log('🔍 [BLADE] Tipo de $cotizaciones:', '{{ isset($cotizaciones) ? get_class($cotizaciones) : "no definido" }}');
-        console.log('🔍 [BLADE] Count de cotizaciones:', {{ isset($cotizaciones) ? $cotizaciones->count() : 0 }});
+        window.cotizacionesData = @json($cotizacionesData ?? []);
+        window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
         
-        @if(isset($cotizaciones) && $cotizaciones->count() > 0)
-            console.log('✅ [BLADE] Hay cotizaciones, procesando...');
-            @foreach($cotizaciones as $index => $cot)
-                console.log('📋 [BLADE] Cotización {{ $index + 1 }}:', {
-                    id: {{ $cot->id }},
-                    numero: '{{ $cot->numero_cotizacion }}',
-                    estado: '{{ $cot->estado }}',
-                    cliente: '{{ $cot->cliente ? $cot->cliente->nombre : "Sin cliente" }}'
-                });
-            @endforeach
-        @else
-            console.error('❌ [BLADE] NO hay cotizaciones o $cotizaciones no está definido');
-        @endif
+        // Mostrar la sección de ítems al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const seccionItems = document.getElementById('seccion-items-pedido');
+            if (seccionItems) {
+                seccionItems.style.display = 'block';
+            }
+            console.log('✅ Sección de ítems mostrada');
+            console.log('📋 Cotizaciones disponibles:', window.cotizacionesData.length);
+        });
+    </script>
+    <!-- Cargar módulos de gestión de pedidos (DDD - Lógica en backend) -->
+    <script src="{{ asset('js/modulos/crear-pedido/api-pedidos-editable.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/image-storage-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestion-items-pedido-refactorizado.js') }}"></script>
+
+    <script>
+        // Legacy: Mantener compatibilidad con funciones de galerías de imágenes
+        // TODO: Refactorizar estas funciones a módulos separados
         
-        @php
-            $cotizacionesArray = [];
-            if (isset($cotizaciones) && $cotizaciones->count() > 0) {
-                foreach ($cotizaciones as $cot) {
-                    $formaPago = '';
-                    if (is_array($cot->especificaciones) && isset($cot->especificaciones['forma_pago'])) {
-                        $formaPagoArray = $cot->especificaciones['forma_pago'];
-                        if (is_array($formaPagoArray) && count($formaPagoArray) > 0) {
-                            $formaPago = $formaPagoArray[0]['valor'] ?? '';
-                        }
+        // Funciones de manejo de imágenes delegadas a image-storage-service.js
+        // Mantener compatibilidad con handlers de input
+        function manejarImagenesTela(input) {
+            window.imagenesTelaStorage.agregarImagen(input.files[0])
+                .then(() => actualizarPreviewTela())
+                .catch(err => alert(err.message));
+            input.value = '';
+        }
+        
+        function actualizarPreviewTela() {
+            const preview = document.getElementById('nueva-prenda-tela-preview');
+            const imagenes = window.imagenesTelaStorage.obtenerImagenes();
+            preview.innerHTML = '';
+            
+            if (imagenes.length === 0) return;
+            
+            const img = document.createElement('img');
+            img.src = imagenes[0].data;
+            img.style.cssText = 'width: 60px; height: 60px; border-radius: 6px; object-fit: cover; border: 2px solid #0066cc; cursor: pointer;';
+            img.onclick = () => mostrarGaleriaImagenes(imagenes, 0);
+            preview.appendChild(img);
+            
+            if (imagenes.length > 1) {
+                const badge = document.createElement('div');
+                badge.style.cssText = 'padding: 0.25rem 0.5rem; background: #0066cc; color: white; border-radius: 50%; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; min-width: 30px; height: 30px; cursor: pointer;';
+                badge.textContent = '+' + (imagenes.length - 1);
+                badge.onclick = () => mostrarGaleriaImagenes(imagenes, 0);
+                preview.appendChild(badge);
+            }
+        }
+        
+        function manejarImagenesPrenda(input) {
+            window.imagenesPrendaStorage.agregarImagen(input.files[0])
+                .then(() => actualizarPreviewPrenda())
+                .catch(err => alert(err.message));
+            input.value = '';
+        }
+        
+        function actualizarPreviewPrenda() {
+            const preview = document.getElementById('nueva-prenda-foto-preview');
+            const contador = document.getElementById('nueva-prenda-foto-contador');
+            const btn = document.getElementById('nueva-prenda-foto-btn');
+            const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
+            
+            if (imagenes.length === 0) {
+                preview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click para agregar</div></div>';
+                contador.textContent = '';
+                btn.style.display = 'none';
+                return;
+            }
+            
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = imagenes[0].data;
+            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+            img.onclick = () => mostrarGaleriaPrenda(imagenes, 0);
+            preview.appendChild(img);
+            
+            contador.textContent = imagenes.length === 1 ? '1 foto' : imagenes.length + ' fotos';
+            btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+        }
+        
+        function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
+            let indiceActual = indiceInicial;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+            
+            const contenedor = document.createElement('div');
+            contenedor.style.cssText = 'position: relative; max-width: 800px; width: 90%; max-height: 90vh;';
+            
+            // Imagen grande
+            const imgContainer = document.createElement('div');
+            imgContainer.style.cssText = 'position: relative; width: 100%; background: black; border-radius: 8px; overflow: hidden;';
+            
+            const img = document.createElement('img');
+            img.src = imagenes[indiceActual].data;
+            img.style.cssText = 'width: 100%; height: auto; max-height: 80vh; object-fit: contain;';
+            imgContainer.appendChild(img);
+            
+            // Contador
+            const contador = document.createElement('div');
+            contador.style.cssText = 'position: absolute; top: 1rem; right: 1rem; background: #0066cc; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.875rem;';
+            contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+            imgContainer.appendChild(contador);
+            
+            // Botón cerrar
+            const btnCerrar = document.createElement('button');
+            btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>';
+            btnCerrar.style.cssText = 'position: absolute; top: 1rem; left: 1rem; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: background 0.2s;';
+            btnCerrar.onmouseover = function() { btnCerrar.style.background = '#0052a3'; };
+            btnCerrar.onmouseout = function() { btnCerrar.style.background = '#0066cc'; };
+            btnCerrar.onclick = function() {
+                modal.remove();
+            };
+            imgContainer.appendChild(btnCerrar);
+            
+            contenedor.appendChild(imgContainer);
+            
+            // Controles (flechas y eliminar)
+            const controles = document.createElement('div');
+            controles.style.cssText = 'display: flex; gap: 1rem; justify-content: center; align-items: center; margin-top: 1.5rem;';
+            
+            // Flecha izquierda
+            const btnAnterior = document.createElement('button');
+            btnAnterior.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">arrow_back</span>';
+            btnAnterior.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnAnterior.onmouseover = function() { btnAnterior.style.background = '#0052a3'; };
+            btnAnterior.onmouseout = function() { btnAnterior.style.background = '#0066cc'; };
+            btnAnterior.onclick = function() {
+                indiceActual = (indiceActual - 1 + imagenes.length) % imagenes.length;
+                img.src = imagenes[indiceActual].data;
+                contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+            };
+            controles.appendChild(btnAnterior);
+            
+            // Botón eliminar
+            const btnEliminar = document.createElement('button');
+            btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">delete</span>';
+            btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnEliminar.onmouseover = function() { btnEliminar.style.background = '#dc2626'; };
+            btnEliminar.onmouseout = function() { btnEliminar.style.background = '#ef4444'; };
+            btnEliminar.onclick = function() {
+                if (confirm('¿Eliminar esta imagen?')) {
+                    window.imagenesPrendaStorage.splice(indiceActual, 1);
+                    
+                    if (window.imagenesPrendaStorage.length === 0) {
+                        modal.remove();
+                        actualizarPreviewPrenda();
+                        return;
                     }
                     
-                    $cotizacionesArray[] = [
-                        'id' => $cot->id,
-                        'numero_cotizacion' => $cot->numero_cotizacion,
-                        'numero' => $cot->numero_cotizacion ?: 'COT-' . $cot->id,
-                        'cliente' => $cot->cliente ? $cot->cliente->nombre : '',
-                        'asesora' => $cot->asesor ? $cot->asesor->name : Auth::user()->name,
-                        'formaPago' => $formaPago,
-                        'prendasCount' => $cot->prendasCotizaciones->count()
-                    ];
+                    if (indiceActual >= window.imagenesPrendaStorage.length) {
+                        indiceActual = window.imagenesPrendaStorage.length - 1;
+                    }
+                    
+                    img.src = window.imagenesPrendaStorage[indiceActual].data;
+                    contador.textContent = (indiceActual + 1) + ' de ' + window.imagenesPrendaStorage.length;
+                    
+                    actualizarPreviewPrenda();
                 }
+            };
+            controles.appendChild(btnEliminar);
+            
+            // Flecha derecha
+            const btnSiguiente = document.createElement('button');
+            btnSiguiente.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">arrow_forward</span>';
+            btnSiguiente.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnSiguiente.onmouseover = function() { btnSiguiente.style.background = '#0052a3'; };
+            btnSiguiente.onmouseout = function() { btnSiguiente.style.background = '#0066cc'; };
+            btnSiguiente.onclick = function() {
+                indiceActual = (indiceActual + 1) % imagenes.length;
+                img.src = imagenes[indiceActual].data;
+                contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+            };
+            controles.appendChild(btnSiguiente);
+            
+            contenedor.appendChild(controles);
+            modal.appendChild(contenedor);
+            document.body.appendChild(modal);
+            
+            // Soporte para navegación con teclas
+            const manejarTeclas = function(e) {
+                if (e.key === 'ArrowLeft') {
+                    btnAnterior.click();
+                } else if (e.key === 'ArrowRight') {
+                    btnSiguiente.click();
+                } else if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', manejarTeclas);
+                }
+            };
+            document.addEventListener('keydown', manejarTeclas);
+            
+            modal.addEventListener('remove', function() {
+                document.removeEventListener('keydown', manejarTeclas);
+            });
+        }
+        
+        function manejarImagenesReflectivo(input) {
+            window.imagenesReflectivoStorage.agregarImagen(input.files[0])
+                .then(() => actualizarPreviewReflectivo())
+                .catch(err => alert(err.message));
+            input.value = '';
+        }
+        
+        function actualizarPreviewReflectivo() {
+            const preview = document.getElementById('reflectivo-foto-preview');
+            const contador = document.getElementById('reflectivo-foto-contador');
+            const btn = document.getElementById('reflectivo-foto-btn');
+            const imagenes = window.imagenesReflectivoStorage.obtenerImagenes();
+            
+            if (imagenes.length === 0) {
+                preview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click para agregar</div></div>';
+                contador.textContent = '';
+                btn.style.display = 'none';
+                return;
             }
-        @endphp
+            
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = imagenes[0].data;
+            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+            img.onclick = () => mostrarGaleriaReflectivo(imagenes, 0);
+            preview.appendChild(img);
+            
+            contador.textContent = imagenes.length === 1 ? '1 foto' : imagenes.length + ' fotos';
+            btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+        }
         
-        // 🔍 DEBUG: Verificar JSON generado
-        console.log('🔍 [DEBUG] JSON RAW:', '{!! json_encode($cotizacionesArray) !!}');
-        console.log('🔍 [DEBUG] Tipo de JSON:', typeof {!! json_encode($cotizacionesArray) !!});
+        function mostrarGaleriaReflectivo(imagenes, indiceInicial = 0) {
+            let indiceActual = indiceInicial;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+            
+            const contenedor = document.createElement('div');
+            contenedor.style.cssText = 'position: relative; max-width: 800px; width: 90%; max-height: 90vh;';
+            
+            // Imagen grande
+            const imgContainer = document.createElement('div');
+            imgContainer.style.cssText = 'position: relative; width: 100%; background: black; border-radius: 8px; overflow: hidden;';
+            
+            const img = document.createElement('img');
+            img.src = imagenes[indiceActual].data;
+            img.style.cssText = 'width: 100%; height: auto; max-height: 80vh; object-fit: contain;';
+            imgContainer.appendChild(img);
+            
+            // Contador
+            const contador = document.createElement('div');
+            contador.style.cssText = 'position: absolute; top: 1rem; right: 1rem; background: #0066cc; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.875rem;';
+            contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+            imgContainer.appendChild(contador);
+            
+            // Botón cerrar
+            const btnCerrar = document.createElement('button');
+            btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>';
+            btnCerrar.style.cssText = 'position: absolute; top: 1rem; left: 1rem; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: background 0.2s;';
+            btnCerrar.onmouseover = function() { btnCerrar.style.background = '#0052a3'; };
+            btnCerrar.onmouseout = function() { btnCerrar.style.background = '#0066cc'; };
+            btnCerrar.onclick = function() {
+                modal.remove();
+            };
+            imgContainer.appendChild(btnCerrar);
+            
+            contenedor.appendChild(imgContainer);
+            
+            // Controles (flechas y eliminar)
+            const controles = document.createElement('div');
+            controles.style.cssText = 'display: flex; gap: 1rem; justify-content: center; align-items: center; margin-top: 1.5rem;';
+            
+            // Flecha izquierda
+            const btnAnterior = document.createElement('button');
+            btnAnterior.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">arrow_back</span>';
+            btnAnterior.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnAnterior.onmouseover = function() { btnAnterior.style.background = '#0052a3'; };
+            btnAnterior.onmouseout = function() { btnAnterior.style.background = '#0066cc'; };
+            btnAnterior.onclick = function() {
+                indiceActual = (indiceActual - 1 + imagenes.length) % imagenes.length;
+                img.src = imagenes[indiceActual].data;
+                contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+            };
+            controles.appendChild(btnAnterior);
+            
+            // Botón eliminar
+            const btnEliminar = document.createElement('button');
+            btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">delete</span>';
+            btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnEliminar.onmouseover = function() { btnEliminar.style.background = '#dc2626'; };
+            btnEliminar.onmouseout = function() { btnEliminar.style.background = '#ef4444'; };
+            btnEliminar.onclick = function() {
+                if (confirm('¿Eliminar esta imagen?')) {
+                    window.imagenesReflectivoStorage.splice(indiceActual, 1);
+                    
+                    if (window.imagenesReflectivoStorage.length === 0) {
+                        modal.remove();
+                        actualizarPreviewReflectivo();
+                        return;
+                    }
+                    
+                    if (indiceActual >= window.imagenesReflectivoStorage.length) {
+                        indiceActual = window.imagenesReflectivoStorage.length - 1;
+                    }
+                    
+                    img.src = window.imagenesReflectivoStorage[indiceActual].data;
+                    contador.textContent = (indiceActual + 1) + ' de ' + window.imagenesReflectivoStorage.length;
+                    
+                    actualizarPreviewReflectivo();
+                }
+            };
+            controles.appendChild(btnEliminar);
+            
+            // Flecha derecha
+            const btnSiguiente = document.createElement('button');
+            btnSiguiente.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">arrow_forward</span>';
+            btnSiguiente.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnSiguiente.onmouseover = function() { btnSiguiente.style.background = '#0052a3'; };
+            btnSiguiente.onmouseout = function() { btnSiguiente.style.background = '#0066cc'; };
+            btnSiguiente.onclick = function() {
+                indiceActual = (indiceActual + 1) % imagenes.length;
+                img.src = imagenes[indiceActual].data;
+                contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+            };
+            controles.appendChild(btnSiguiente);
+            
+            contenedor.appendChild(controles);
+            modal.appendChild(contenedor);
+            document.body.appendChild(modal);
+            
+            // Soporte para navegación con teclas
+            const manejarTeclas = function(e) {
+                if (e.key === 'ArrowLeft') {
+                    btnAnterior.click();
+                } else if (e.key === 'ArrowRight') {
+                    btnSiguiente.click();
+                } else if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', manejarTeclas);
+                }
+            };
+            document.addEventListener('keydown', manejarTeclas);
+            
+            modal.addEventListener('remove', function() {
+                document.removeEventListener('keydown', manejarTeclas);
+            });
+        }
         
-        window.cotizacionesData = {!! json_encode($cotizacionesArray) !!};
+        function mostrarGaleriaImagenes(imagenes, indiceInicial = 0) {
+            let indiceActual = indiceInicial;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+            
+            const contenedor = document.createElement('div');
+            contenedor.style.cssText = 'position: relative; max-width: 800px; width: 90%; max-height: 90vh;';
+            
+            // Imagen grande
+            const imgContainer = document.createElement('div');
+            imgContainer.style.cssText = 'position: relative; width: 100%; background: black; border-radius: 8px; overflow: hidden;';
+            
+            const img = document.createElement('img');
+            img.src = imagenes[indiceActual].data;
+            img.style.cssText = 'width: 100%; height: auto; max-height: 80vh; object-fit: contain;';
+            imgContainer.appendChild(img);
+            
+            // Contador
+            const contador = document.createElement('div');
+            contador.style.cssText = 'position: absolute; top: 1rem; right: 1rem; background: #0066cc; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.875rem;';
+            contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+            imgContainer.appendChild(contador);
+            
+            // Botón cerrar
+            const btnCerrar = document.createElement('button');
+            btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>';
+            btnCerrar.style.cssText = 'position: absolute; top: 1rem; left: 1rem; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: background 0.2s;';
+            btnCerrar.onmouseover = function() { btnCerrar.style.background = '#0052a3'; };
+            btnCerrar.onmouseout = function() { btnCerrar.style.background = '#0066cc'; };
+            btnCerrar.onclick = function() {
+                modal.remove();
+            };
+            imgContainer.appendChild(btnCerrar);
+            
+            contenedor.appendChild(imgContainer);
+            
+            // Controles (flechas y eliminar)
+            const controles = document.createElement('div');
+            controles.style.cssText = 'display: flex; gap: 1rem; justify-content: center; align-items: center; margin-top: 1.5rem;';
+            
+            // Flecha izquierda
+            const btnAnterior = document.createElement('button');
+            btnAnterior.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">arrow_back</span>';
+            btnAnterior.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnAnterior.onmouseover = function() { btnAnterior.style.background = '#0052a3'; };
+            btnAnterior.onmouseout = function() { btnAnterior.style.background = '#0066cc'; };
+            btnAnterior.onclick = function() {
+                indiceActual = (indiceActual - 1 + imagenes.length) % imagenes.length;
+                img.src = imagenes[indiceActual].data;
+                contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
+                btnEliminar.style.display = imagenes.length > 1 ? 'flex' : 'none';
+            };
+            controles.appendChild(btnAnterior);
+            
+            // Botón eliminar
+            const btnEliminar = document.createElement('button');
+            btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">delete</span>';
+            btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnEliminar.onmouseover = function() { btnEliminar.style.background = '#dc2626'; };
+            btnEliminar.onmouseout = function() { btnEliminar.style.background = '#ef4444'; };
+            btnEliminar.onclick = function() {
+                if (confirm('¿Eliminar esta imagen?')) {
+                    window.imagenesTelaStorage.splice(indiceActual, 1);
+                    
+                    if (window.imagenesTelaStorage.length === 0) {
+                        modal.remove();
+                        actualizarPreviewTela();
+                        return;
+                    }
+                    
+                    if (indiceActual >= window.imagenesTelaStorage.length) {
+                        indiceActual = window.imagenesTelaStorage.length - 1;
+                    }
+                    
+                    img.src = window.imagenesTelaStorage[indiceActual].data;
+                    contador.textContent = (indiceActual + 1) + ' de ' + window.imagenesTelaStorage.length;
+                    
+                    // Ocultar botón eliminar si solo queda 1 imagen
+                    btnEliminar.style.display = window.imagenesTelaStorage.length > 1 ? 'flex' : 'none';
+                    
+                    actualizarPreviewTela();
+                }
+            };
+            controles.appendChild(btnEliminar);
+            
+            // Flecha derecha
+            const btnSiguiente = document.createElement('button');
+            btnSiguiente.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">arrow_forward</span>';
+            btnSiguiente.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
+            btnSiguiente.onmouseover = function() { btnSiguiente.style.background = '#0052a3'; };
+            btnSiguiente.onmouseout = function() { btnSiguiente.style.background = '#0066cc'; };
+            btnSiguiente.onclick = function() {
+                indiceActual = (indiceActual + 1) % window.imagenesTelaStorage.length;
+                img.src = window.imagenesTelaStorage[indiceActual].data;
+                contador.textContent = (indiceActual + 1) + ' de ' + window.imagenesTelaStorage.length;
+                btnEliminar.style.display = window.imagenesTelaStorage.length > 1 ? 'flex' : 'none';
+            };
+            controles.appendChild(btnSiguiente);
+            
+            // Ocultar botón eliminar si solo hay 1 imagen
+            btnEliminar.style.display = window.imagenesTelaStorage.length > 1 ? 'flex' : 'none';
+            
+            contenedor.appendChild(controles);
+            modal.appendChild(contenedor);
+            document.body.appendChild(modal);
+            
+            // Soporte para navegación con teclas
+            const manejarTeclas = function(e) {
+                if (e.key === 'ArrowLeft') {
+                    btnAnterior.click();
+                } else if (e.key === 'ArrowRight') {
+                    btnSiguiente.click();
+                } else if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', manejarTeclas);
+                }
+            };
+            document.addEventListener('keydown', manejarTeclas);
+            
+            modal.addEventListener('remove', function() {
+                document.removeEventListener('keydown', manejarTeclas);
+            });
+        }
         
-        // Debug: Ver qué se asignó a window.cotizacionesData
-        console.log('📋 window.cotizacionesData:', window.cotizacionesData);
-        console.log('📏 Cantidad de cotizaciones:', window.cotizacionesData.length);
-        console.log('🔍 [DEBUG] Array.isArray:', Array.isArray(window.cotizacionesData));
-        
-        window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
-    </script>
-    <script>
         // Configuración inicial
         document.addEventListener('DOMContentLoaded', function() {
             // ========== BUSCADOR DE COTIZACIONES ==========
@@ -1316,6 +903,27 @@
             const btnAgregarItemCotizacion = document.getElementById('btn-agregar-item-cotizacion');
             const btnAgregarItemTipo = document.getElementById('btn-agregar-item-tipo');
             
+            // Guardar cotización seleccionada globalmente
+            window.cotizacionSeleccionadaActual = null;
+            
+            // Actualizar referencia cuando se selecciona una cotización
+            const originalSeleccionarCotizacion = seleccionarCotizacion;
+            seleccionarCotizacion = function(cotizacion) {
+                window.cotizacionSeleccionadaActual = cotizacion;
+                originalSeleccionarCotizacion(cotizacion);
+            };
+            
+            // Agregar evento al botón "Agregar Prendas"
+            if (btnAgregarItemCotizacion) {
+                btnAgregarItemCotizacion.addEventListener('click', function() {
+                    if (window.cotizacionSeleccionadaActual) {
+                        window.abrirModalSeleccionPrendas(window.cotizacionSeleccionadaActual);
+                    } else {
+                        alert('Por favor selecciona una cotización primero');
+                    }
+                });
+            }
+            
             // ⚠️ itemsPedido ahora es window.itemsPedido (definido en gestion-items-pedido.js)
 
             // Mostrar sección de ítems según el tipo
@@ -1445,13 +1053,31 @@
                 document.getElementById('nueva-prenda-tela').value = '';
                 document.getElementById('nueva-prenda-referencia').value = '';
                 
-                // Reset selectores de talla
-                document.getElementById('prenda-tipo-talla').value = 'letra';
-                document.getElementById('prenda-genero-talla').value = '';
-                document.getElementById('prenda-genero-talla').style.display = 'none';
+                // Reset tallas seleccionadas
+                window.tallasSeleccionadas = {
+                    dama: { tallas: [], tipo: null },
+                    caballero: { tallas: [], tipo: null }
+                };
                 
-                // Inicializar tallas por defecto (letras)
-                actualizarTallasPrenda();
+                // Reset botones
+                const btnDama = document.getElementById('btn-genero-dama');
+                const btnCaballero = document.getElementById('btn-genero-caballero');
+                
+                btnDama.dataset.selected = 'false';
+                btnDama.style.borderColor = '#d1d5db';
+                btnDama.style.background = 'white';
+                document.getElementById('check-dama').style.display = 'none';
+                
+                btnCaballero.dataset.selected = 'false';
+                btnCaballero.style.borderColor = '#d1d5db';
+                btnCaballero.style.background = 'white';
+                document.getElementById('check-caballero').style.display = 'none';
+                
+                // Limpiar tarjetas
+                document.getElementById('tarjetas-generos-container').innerHTML = '';
+                
+                // Reset total
+                document.getElementById('total-prendas').textContent = '0';
                 
                 // Limpiar variaciones
                 document.querySelectorAll('#modal-agregar-prenda-nueva input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -1462,7 +1088,7 @@
                 });
                 
                 // Reset origen
-                document.querySelector('input[name="nueva-prenda-origen"][value="bodega"]').checked = true;
+                document.getElementById('nueva-prenda-origen-select').value = 'bodega';
             }
             
             function configurarEventosFormulario() {
@@ -1503,18 +1129,46 @@
                 mangaCb._configured = true;
             }
             
-            function actualizarTotalPrendas() {
-                let total = 0;
-                document.querySelectorAll('#tallas-container input[type="number"]').forEach(input => {
-                    total += parseInt(input.value) || 0;
-                });
-                document.getElementById('total-prendas').textContent = total;
-            }
-            
             window.cerrarModalPrendaNueva = function() {
                 const modal = document.getElementById('modal-agregar-prenda-nueva');
                 if (modal) {
                     modal.style.display = 'none';
+                }
+                
+                // Limpiar checkboxes de género
+                document.getElementById('genero-dama').checked = false;
+                document.getElementById('genero-caballero').checked = false;
+                
+                // Limpiar selectores de tipo de talla
+                const tipoTallaDama = document.getElementById('tipo-talla-dama');
+                const tipoTallaCaballero = document.getElementById('tipo-talla-caballero');
+                if (tipoTallaDama) tipoTallaDama.value = '';
+                if (tipoTallaCaballero) tipoTallaCaballero.value = '';
+                
+                // Limpiar contenedor de géneros
+                document.getElementById('generos-container').innerHTML = '';
+                
+                // Limpiar imágenes de tela almacenadas
+                window.imagenesTelaStorage = [];
+                // Limpiar preview de tela
+                const previewTela = document.getElementById('nueva-prenda-tela-preview');
+                if (previewTela) {
+                    previewTela.innerHTML = '';
+                }
+                // Limpiar imágenes de prenda almacenadas
+                window.imagenesPrendaStorage = [];
+                // Limpiar preview de prenda
+                const previewPrenda = document.getElementById('nueva-prenda-foto-preview');
+                if (previewPrenda) {
+                    previewPrenda.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click para agregar</div></div>';
+                }
+                const contadorPrenda = document.getElementById('nueva-prenda-foto-contador');
+                if (contadorPrenda) {
+                    contadorPrenda.textContent = '';
+                }
+                const btnPrenda = document.getElementById('nueva-prenda-foto-btn');
+                if (btnPrenda) {
+                    btnPrenda.style.display = 'none';
                 }
             };
             
@@ -1524,21 +1178,29 @@
                 const color = document.getElementById('nueva-prenda-color').value.trim().toUpperCase();
                 const tela = document.getElementById('nueva-prenda-tela').value.trim().toUpperCase();
                 const referencia = document.getElementById('nueva-prenda-referencia').value.trim().toUpperCase();
-                const origen = document.querySelector('input[name="nueva-prenda-origen"]:checked').value;
+                const origen = document.getElementById('nueva-prenda-origen-select').value;
                 
                 if (!nombre) {
                     alert('Por favor ingresa el nombre de la prenda');
                     return;
                 }
                 
-                // Obtener tallas y cantidades
-                const tallas = [];
+                // Obtener tallas y cantidades del nuevo sistema - Formato: { genero: { talla: cantidad } }
+                const tallas = {};
                 let cantidadTotal = 0;
-                document.querySelectorAll('#tallas-container input[type="number"]').forEach(input => {
+                
+                document.querySelectorAll('#tarjetas-generos-container input[type="number"]').forEach(input => {
                     const cantidad = parseInt(input.value) || 0;
                     if (cantidad > 0) {
-                        const talla = input.name.replace('talla-', '').toUpperCase();
-                        tallas.push({ talla, cantidad });
+                        const genero = input.dataset.genero;
+                        const talla = input.dataset.talla;
+                        
+                        // Inicializar género si no existe
+                        if (!tallas[genero]) {
+                            tallas[genero] = {};
+                        }
+                        
+                        tallas[genero][talla] = cantidad;
                         cantidadTotal += cantidad;
                     }
                 });
@@ -1650,7 +1312,7 @@
                 document.querySelectorAll('input[name="reflectivo-ubicacion"]').forEach(cb => cb.checked = false);
                 
                 // Reset origen
-                document.querySelector('input[name="reflectivo-origen"][value="bodega"]').checked = true;
+                document.getElementById('reflectivo-origen-select').value = 'bodega';
             }
             
             function configurarEventosReflectivo() {
@@ -1676,7 +1338,7 @@
             window.agregarReflectivo = function() {
                 const nombre = document.getElementById('reflectivo-prenda-nombre').value.trim().toUpperCase();
                 const observaciones = document.getElementById('reflectivo-observaciones').value.trim();
-                const origen = document.querySelector('input[name="reflectivo-origen"]:checked').value;
+                const origen = document.getElementById('reflectivo-origen-select').value;
                 
                 if (!nombre) {
                     alert('Por favor ingresa el nombre de la prenda');
@@ -1745,51 +1407,245 @@
                 window.cerrarModalReflectivo();
             };
 
-            // ========== TALLAS DINÁMICAS POR GÉNERO ==========
+            // ========== ALMACENAMIENTO DE TALLAS SELECCIONADAS ==========
+            window.tallasSeleccionadas = {
+                dama: { tallas: [], tipo: null },
+                caballero: { tallas: [], tipo: null }
+            };
+            
+            // ========== CONSTANTES DE TALLAS ==========
             const TALLAS_LETRAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
             const TALLAS_NUMEROS_DAMA = ['2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28'];
             const TALLAS_NUMEROS_CABALLERO = ['30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50', '52', '54', '56'];
             
-            // Función para actualizar tallas de PRENDA
-            window.actualizarTallasPrenda = function() {
-                const tipoTalla = document.getElementById('prenda-tipo-talla').value;
-                const generoSelect = document.getElementById('prenda-genero-talla');
-                const container = document.getElementById('tallas-container');
+            // ========== ABRIR MODAL PARA SELECCIONAR TALLAS ==========
+            window.abrirModalSeleccionarTallas = function(genero) {
+                window.generoActual = genero;
+                document.getElementById('genero-modal-display').textContent = genero.toUpperCase();
+                document.getElementById('modal-seleccionar-tallas').style.display = 'flex';
                 
-                // Mostrar/ocultar selector de género
-                if (tipoTalla === 'numero') {
-                    generoSelect.style.display = 'block';
-                } else {
-                    generoSelect.style.display = 'none';
-                    generoSelect.value = '';
+                // Reset botones de tipo
+                document.getElementById('btn-tipo-letra').dataset.selected = 'false';
+                document.getElementById('btn-tipo-numero').dataset.selected = 'false';
+                document.getElementById('btn-tipo-letra').style.background = 'white';
+                document.getElementById('btn-tipo-numero').style.background = 'white';
+                document.getElementById('btn-tipo-letra').style.borderColor = '#d1d5db';
+                document.getElementById('btn-tipo-numero').style.borderColor = '#d1d5db';
+                document.getElementById('container-tallas-seleccion').innerHTML = '';
+                
+                // ========== SI YA EXISTE UN TIPO ASIGNADO, MOSTRAR AUTOMÁTICAMENTE ==========
+                if (window.tallasSeleccionadas[genero].tipo) {
+                    const tipoExistente = window.tallasSeleccionadas[genero].tipo;
+                    seleccionarTipoTalla(tipoExistente);
+                }
+            };
+            
+            // ========== CERRAR MODAL ==========
+            window.cerrarModalSeleccionarTallas = function() {
+                document.getElementById('modal-seleccionar-tallas').style.display = 'none';
+                window.generoActual = null;
+            };
+            
+            // ========== SELECCIONAR TIPO DE TALLA ==========
+            window.seleccionarTipoTalla = function(tipo) {
+                const btnLetra = document.getElementById('btn-tipo-letra');
+                const btnNumero = document.getElementById('btn-tipo-numero');
+                
+                // Reset todos
+                btnLetra.dataset.selected = 'false';
+                btnNumero.dataset.selected = 'false';
+                btnLetra.style.background = 'white';
+                btnNumero.style.background = 'white';
+                btnLetra.style.borderColor = '#d1d5db';
+                btnNumero.style.borderColor = '#d1d5db';
+                btnLetra.style.color = '#6b7280';
+                btnNumero.style.color = '#6b7280';
+                
+                // Seleccionar el actual
+                if (tipo === 'letra') {
+                    btnLetra.dataset.selected = 'true';
+                    btnLetra.style.background = '#0066cc';
+                    btnLetra.style.borderColor = '#0066cc';
+                    btnLetra.style.color = 'white';
+                } else if (tipo === 'numero') {
+                    btnNumero.dataset.selected = 'true';
+                    btnNumero.style.background = '#0066cc';
+                    btnNumero.style.borderColor = '#0066cc';
+                    btnNumero.style.color = 'white';
                 }
                 
-                // Generar tallas
-                let tallas = [];
-                if (tipoTalla === 'letra') {
-                    tallas = TALLAS_LETRAS;
-                } else if (tipoTalla === 'numero') {
-                    const genero = generoSelect.value;
-                    if (genero === 'dama') {
-                        tallas = TALLAS_NUMEROS_DAMA;
-                    } else if (genero === 'caballero') {
-                        tallas = TALLAS_NUMEROS_CABALLERO;
-                    }
+                // Generar tallas disponibles
+                mostrarTallasDisponibles(tipo);
+                
+                // ========== SINCRONIZAR CON EL OTRO GÉNERO ==========
+                const otroGenero = window.generoActual === 'dama' ? 'caballero' : 'dama';
+                
+                // Asignar mismo tipo al otro género
+                window.tallasSeleccionadas[otroGenero].tipo = tipo;
+                
+                // Automáticamente mostrar tallas del otro género (sin abrir modal)
+                // Solo si el usuario confirma, el otro género también se activa
+            };
+            
+            // ========== MOSTRAR TALLAS DISPONIBLES ==========
+            window.mostrarTallasDisponibles = function(tipo) {
+                const container = document.getElementById('container-tallas-seleccion');
+                let tallasDisponibles = [];
+                
+                if (tipo === 'letra') {
+                    tallasDisponibles = TALLAS_LETRAS;
+                } else if (tipo === 'numero' && window.generoActual === 'dama') {
+                    tallasDisponibles = TALLAS_NUMEROS_DAMA;
+                } else if (tipo === 'numero' && window.generoActual === 'caballero') {
+                    tallasDisponibles = TALLAS_NUMEROS_CABALLERO;
                 }
                 
-                // Renderizar inputs de tallas
                 container.innerHTML = '';
-                tallas.forEach(talla => {
-                    const div = document.createElement('div');
-                    div.style.cssText = 'display: flex; flex-direction: column; gap: 0.25rem;';
-                    div.innerHTML = `
-                        <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280;">${talla}</label>
-                        <input type="number" name="talla-${talla.toLowerCase()}" min="0" value="0" onchange="actualizarTotalPrendas()" style="padding: 0.5rem; border: 2px solid #d1d5db; border-radius: 4px; text-align: center; font-weight: 600;">
-                    `;
-                    container.appendChild(div);
+                tallasDisponibles.forEach(talla => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.dataset.talla = talla;
+                    btn.dataset.selected = 'false';
+                    btn.textContent = talla;
+                    btn.onclick = function() {
+                        this.dataset.selected = this.dataset.selected === 'true' ? 'false' : 'true';
+                        this.style.background = this.dataset.selected === 'true' ? '#0066cc' : 'white';
+                        this.style.borderColor = this.dataset.selected === 'true' ? '#0066cc' : '#d1d5db';
+                        this.style.color = this.dataset.selected === 'true' ? 'white' : '#6b7280';
+                    };
+                    btn.style.cssText = 'padding: 0.75rem; border: 2px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;';
+                    container.appendChild(btn);
+                });
+            };
+            
+            // ========== CONFIRMAR SELECCIÓN DE TALLAS ==========
+            window.confirmarSeleccionTallas = function() {
+                const tallasSeleccionadas = [];
+                document.querySelectorAll('#container-tallas-seleccion button[data-selected="true"]').forEach(btn => {
+                    tallasSeleccionadas.push(btn.dataset.talla);
+                });
+                
+                if (tallasSeleccionadas.length === 0) {
+                    alert('Selecciona al menos una talla');
+                    return;
+                }
+                
+                // Guardar selección
+                const tipoSeleccionado = document.getElementById('btn-tipo-letra').dataset.selected === 'true' ? 'letra' : 'numero';
+                window.tallasSeleccionadas[window.generoActual] = {
+                    tallas: tallasSeleccionadas,
+                    tipo: tipoSeleccionado
+                };
+                
+                // Actualizar botones y tarjetas
+                actualizarTarjetasGeneros();
+                
+                // ========== ABRIR AUTOMÁTICAMENTE EL OTRO GÉNERO ==========
+                const otroGenero = window.generoActual === 'dama' ? 'caballero' : 'dama';
+                
+                // Cerrar modal actual
+                cerrarModalSeleccionarTallas();
+                
+                // Abrir automáticamente el otro género después de un pequeño delay
+                setTimeout(() => {
+                    abrirModalSeleccionarTallas(otroGenero);
+                }, 300);
+            };
+            
+            // ========== ACTUALIZAR TARJETAS DE GÉNEROS ==========
+            window.actualizarTarjetasGeneros = function() {
+                const container = document.getElementById('tarjetas-generos-container');
+                container.innerHTML = '';
+                
+                // Actualizar botones
+                const btnDama = document.getElementById('btn-genero-dama');
+                const btnCaballero = document.getElementById('btn-genero-caballero');
+                
+                if (window.tallasSeleccionadas.dama.tallas.length > 0) {
+                    btnDama.dataset.selected = 'true';
+                    btnDama.style.borderColor = '#0066cc';
+                    btnDama.style.background = '#dbeafe';
+                    document.getElementById('check-dama').style.display = 'inline';
+                } else {
+                    btnDama.dataset.selected = 'false';
+                    btnDama.style.borderColor = '#d1d5db';
+                    btnDama.style.background = 'white';
+                    document.getElementById('check-dama').style.display = 'none';
+                }
+                
+                if (window.tallasSeleccionadas.caballero.tallas.length > 0) {
+                    btnCaballero.dataset.selected = 'true';
+                    btnCaballero.style.borderColor = '#0066cc';
+                    btnCaballero.style.background = '#dbeafe';
+                    document.getElementById('check-caballero').style.display = 'inline';
+                } else {
+                    btnCaballero.dataset.selected = 'false';
+                    btnCaballero.style.borderColor = '#d1d5db';
+                    btnCaballero.style.background = 'white';
+                    document.getElementById('check-caballero').style.display = 'none';
+                }
+                
+                // Generar tarjetas
+                ['dama', 'caballero'].forEach(genero => {
+                    if (window.tallasSeleccionadas[genero].tallas.length > 0) {
+                        const tarjeta = crearTarjetaGenero(genero);
+                        container.appendChild(tarjeta);
+                    }
                 });
                 
                 actualizarTotalPrendas();
+            };
+            
+            // ========== CREAR TARJETA DE GÉNERO ==========
+            window.crearTarjetaGenero = function(genero) {
+                const data = window.tallasSeleccionadas[genero];
+                const div = document.createElement('div');
+                div.style.cssText = 'border: 2px solid #bfdbfe; border-radius: 6px; padding: 1rem; background: #f0f9ff;';
+                
+                let html = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="material-symbols-rounded" style="color: #0066cc; font-size: 1.5rem;">${genero === 'dama' ? 'woman' : 'man'}</span>
+                            <div>
+                                <div style="font-weight: 700; color: #0066cc; font-size: 0.95rem;">${genero.toUpperCase()}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">${data.tipo === 'letra' ? 'Tallas Letras' : 'Tallas Números'}</div>
+                            </div>
+                        </div>
+                        <button onclick="eliminarGenero('${genero}')" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.75rem;">
+                            ✕ Eliminar
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.75rem;">
+                `;
+                
+                data.tallas.forEach(talla => {
+                    html += `
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-align: center;">${talla}</label>
+                            <input type="number" data-genero="${genero}" data-talla="${talla}" min="0" value="0" onchange="actualizarTotalPrendas()" style="padding: 0.5rem; border: 2px solid #d1d5db; border-radius: 4px; text-align: center; font-weight: 600; font-size: 0.8rem;">
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                div.innerHTML = html;
+                return div;
+            };
+            
+            // ========== ELIMINAR GÉNERO ==========
+            window.eliminarGenero = function(genero) {
+                window.tallasSeleccionadas[genero] = { tallas: [], tipo: null };
+                actualizarTarjetasGeneros();
+            };
+            
+            // ========== ACTUALIZAR TOTAL PRENDAS ==========
+            window.actualizarTotalPrendas = function() {
+                let total = 0;
+                document.querySelectorAll('#tarjetas-generos-container input[type="number"]').forEach(input => {
+                    total += parseInt(input.value) || 0;
+                });
+                document.getElementById('total-prendas').textContent = total;
             };
             
             // Función para actualizar tallas de REFLECTIVO
@@ -1834,26 +1690,18 @@
                 actualizarTotalReflectivo();
             };
 
-            // Eliminar ítem
-            function eliminarItem(index) {
-                itemsPedido.splice(index, 1);
-                actualizarVistaItems();
-            }
-
-            // Mostrar sección de ítems al cargar
-            setTimeout(() => {
-                mostrarSeccionItems();
-            }, 1000);
-
-            // Función global para obtener ítems del pedido
-            window.obtenerItemsPedido = function() {
-                return itemsPedido;
-            };
-
-            // Función global para verificar si hay ítems
-            window.tieneItems = function() {
-                return itemsPedido.length > 0;
-            };
+            // ========== LÓGICA DE ÍTEMS REFACTORIZADA ==========
+            // ⚠️ REFACTORIZADO: Toda la gestión de ítems ahora está en:
+            // - Backend: CrearPedidoEditableController.php
+            // - Frontend: gestion-items-pedido-refactorizado.js
+            // - API: api-pedidos-editable.js
+            
+            // Funciones globales disponibles:
+            // - window.pedidosAPI.agregarItem(itemData)
+            // - window.pedidosAPI.eliminarItem(index)
+            // - window.pedidosAPI.obtenerItems()
+            // - window.gestionItemsUI.agregarItem(itemData)
+            // - window.gestionItemsUI.eliminarItem(index)
 
             // ========== MODAL DE SELECCIÓN DE PRENDAS ==========
             // ⚠️ REFACTORIZADO: Todo el código del modal ahora está en modal-seleccion-prendas.js

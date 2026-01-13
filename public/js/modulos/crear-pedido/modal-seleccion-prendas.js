@@ -44,9 +44,20 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
             let prendasNormales = data.prendas || [];
             let prendasTecnicas = data.prendas_tecnicas || [];
             
+            console.log('🔍 Prendas normales:', prendasNormales);
+            console.log('🔍 Prendas técnicas:', prendasTecnicas);
+            
             prendasCotizacion = [...prendasNormales, ...prendasTecnicas];
             console.log('📋 Total prendas extraídas:', prendasCotizacion.length);
             console.log('📋 Prendas:', prendasCotizacion);
+            
+            // Si no hay prendas, mostrar mensaje
+            if (prendasCotizacion.length === 0) {
+                console.warn('⚠️ ADVERTENCIA: Esta cotización no tiene prendas asociadas');
+                console.warn('   - Prendas normales:', prendasNormales.length);
+                console.warn('   - Prendas técnicas:', prendasTecnicas.length);
+                console.warn('   - Tipo de cotización:', data.tipo_cotizacion_codigo);
+            }
             
             renderizarPrendasModal();
         })
@@ -233,11 +244,52 @@ window.agregarPrendasSeleccionadas = function() {
         const cantidad = calcularCantidadTotal(prenda);
         const nombrePrenda = prenda.nombre_producto || prenda.nombre_prenda || 'Prenda sin nombre';
         
+        // Construir variaciones desde el objeto prenda
+        const variaciones = {};
+        if (prenda.variantes && prenda.variantes.length > 0) {
+            const v = prenda.variantes[0];
+            if (v.telas_multiples && Array.isArray(v.telas_multiples) && v.telas_multiples.length > 0) {
+                const tela = v.telas_multiples[0];
+                variaciones.tela = tela.nombre_tela || tela.color || '';
+                variaciones.color = v.color || '';
+                variaciones.referencia = tela.referencia || '';
+            }
+            variaciones.manga = v.tipo_manga || '';
+            variaciones.broche = v.tipo_broche || '';
+            variaciones.bolsillos = v.tiene_bolsillos ? 'Sí' : 'No';
+        }
+        
+        // Convertir tallas al formato esperado
+        let tallas = [];
+        console.log('🔍 Buscando tallas en prenda:', {
+            tiene_tallas: !!prenda.tallas,
+            tiene_talla_cantidad: !!prenda.talla_cantidad,
+            tallas: prenda.tallas,
+            talla_cantidad: prenda.talla_cantidad
+        });
+        
+        if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+            tallas = prenda.tallas.map(t => ({
+                talla: t.talla || t,
+                cantidad: t.cantidad || 0
+            }));
+            console.log('✅ Tallas desde prenda.tallas:', tallas);
+        } else if (prenda.talla_cantidad && Array.isArray(prenda.talla_cantidad) && prenda.talla_cantidad.length > 0) {
+            tallas = prenda.talla_cantidad.map(t => ({
+                talla: t.talla || t,
+                cantidad: t.cantidad || 0
+            }));
+            console.log('✅ Tallas desde prenda.talla_cantidad:', tallas);
+        } else {
+            console.warn('⚠️ No se encontraron tallas en la prenda');
+        }
+        
         // Estructura de la prenda para el ítem
         const prendaData = {
             nombre: nombrePrenda,
             cantidad: cantidad,
-            tallas: prenda.tallas || prenda.talla_cantidad || []
+            tallas: tallas,
+            variaciones: variaciones
         };
         
         // REGLA DE SPLIT: Si tiene procesos, crear 2 ítems
@@ -265,6 +317,7 @@ window.agregarPrendasSeleccionadas = function() {
                 origen: origen,
                 procesos: procesos,
                 es_proceso: true,
+                tallas: tallas,
                 data: cotizacionActual
             });
             
