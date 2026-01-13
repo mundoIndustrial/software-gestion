@@ -396,9 +396,9 @@ window.irAlPaso = function(paso) {
         }
         
         // Además, actualizar reflectivo si está disponible
-        if (typeof actualizarResumenReflectivo === 'function') {
-            console.log('✅ Llamando a actualizarResumenReflectivo()');
-            actualizarResumenReflectivo();
+        if (typeof actualizarResumenReflectivoPaso4 === 'function') {
+            console.log('✅ Llamando a actualizarResumenReflectivoPaso4()');
+            actualizarResumenReflectivoPaso4();
         }
     }
 };

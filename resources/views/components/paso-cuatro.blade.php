@@ -1,7 +1,7 @@
-<!-- PASO 4: REVISAR -->
-<div class="form-step" data-step="4">
+<!-- PASO 5: REVISAR -->
+<div class="form-step" data-step="5">
     <div class="step-header">
-        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 4: REVISAR COTIZACIÓN</h2>
+        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 5: REVISAR COTIZACIÓN</h2>
         <p style="font-size: 0.8rem !important; margin: 0 !important; color: #666 !important;">VERIFICA QUE TODO ESTÉ CORRECTO</p>
     </div>
 
@@ -70,6 +70,13 @@
             </div>
         </div>
 
+        <!-- RESUMEN REFLECTIVO -->
+        <div style="background: #fff3e0; border: 2px solid #ff9800; border-radius: 8px; padding: 15px; margin-bottom: 20px;" id="resumen_reflectivo_container">
+            <h3 style="margin: 0 0 15px 0; color: #e65100; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;">🔸 REFLECTIVO</h3>
+            
+            <!-- Prendas Reflectivo -->
+            <div id="resumen_reflectivo_prendas" style="display: grid; gap: 15px;"></div>
+        </div>
 
     </div>
 

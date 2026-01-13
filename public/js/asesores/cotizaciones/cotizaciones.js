@@ -185,12 +185,12 @@ function irAlPaso(paso) {
     const stepElement = document.querySelector(`.step[data-step="${paso}"]`);
     if (stepElement) stepElement.classList.add('active');
     
-    // Si es el paso 4 (REVISAR COTIZACIÓN), actualizar resumen completo
-    if (paso === 4) {
-        console.log('🎯 Navegando al PASO 4: REVISAR COTIZACIÓN');
+    // Si es el paso 5 (REVISAR COTIZACIÓN), actualizar resumen completo
+    if (paso === 5) {
+        console.log('🎯 Navegando al PASO 5: REVISAR COTIZACIÓN');
         setTimeout(() => {
-            // Actualizar el resumen dinámico del paso 4
-            console.log('✅ Llamando a actualizarResumenFriendly() para Paso 4');
+            // Actualizar el resumen dinámico del paso 5
+            console.log('✅ Llamando a actualizarResumenFriendly() para Paso 5');
             actualizarResumenFriendly();
         }, 200);
     }

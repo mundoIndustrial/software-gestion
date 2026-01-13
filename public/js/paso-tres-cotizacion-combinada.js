@@ -20,49 +20,87 @@ function obtenerPrendasDelPaso2() {
     const prendas = [];
     
     try {
-        // Buscar todos los elementos .producto-card del PASO 2
-        const productosCards = document.querySelectorAll('.producto-card');
+        // Buscar prendas en el contenedor de PASO 2
+        let productosCards = document.querySelectorAll('[data-step="2"] .producto-card');
         
-        productosCards.forEach(card => {
+        // Si no encuentra en data-step="2", buscar en #productosContainer
+        if (productosCards.length === 0) {
+            productosCards = document.querySelectorAll('#productosContainer .producto-card');
+        }
+        
+        // Si sigue sin encontrar, buscar en TODO el documento
+        if (productosCards.length === 0) {
+            productosCards = document.querySelectorAll('.producto-card');
+        }
+        
+        console.log('🔍 Buscando prendas en PASO 2 - Encontradas:', productosCards.length);
+        
+        productosCards.forEach((card, idx) => {
+            console.log(`🔸 Analizando prenda ${idx + 1}...`);
+            
             // Obtener nombre de la prenda
             const inputNombre = card.querySelector('input[name*="nombre_producto"]');
             const nombre = inputNombre ? inputNombre.value.trim() : '';
             
-            if (!nombre) return; // Saltar si no hay nombre
+            console.log(`  - Nombre: ${nombre || '(vacío)'}`);
+            
+            if (!nombre) {
+                console.log('  - Saltando porque no tiene nombre');
+                return; // Saltar si no hay nombre
+            }
             
             // Obtener tallas
             let tallas = [];
             
-            // Intentar obtener tallas del input directo
-            const inputTallas = card.querySelector('input[name*="tallas"]');
-            if (inputTallas) {
-                const tallaValue = inputTallas.value.trim();
+            // MÉTODO 1: Input hidden con tallas (el que se llena cuando se agregan tallas)
+            const inputTallasHidden = card.querySelector('input.tallas-hidden');
+            if (inputTallasHidden) {
+                const tallaValue = inputTallasHidden.value.trim();
+                console.log(`  - Buscando en input.tallas-hidden: "${tallaValue}"`);
                 if (tallaValue) {
-                    // Intentar parsear como JSON si es un array
                     try {
                         const parsed = JSON.parse(tallaValue);
                         if (Array.isArray(parsed)) {
                             tallas = parsed;
-                        } else if (typeof parsed === 'string') {
-                            tallas = [parsed];
                         }
                     } catch (e) {
-                        // Si no es JSON, tratarlo como string separado por comas
                         tallas = tallaValue.split(',').map(t => t.trim()).filter(t => t);
                     }
                 }
             }
             
-            // Si no encontró tallas en el input, buscar en botones o elementos talla
+            // MÉTODO 2: Si el input estaba vacío, buscar en las tallas-agregadas (los chips visibles)
             if (tallas.length === 0) {
-                const tallaButtons = card.querySelectorAll('.talla-btn, [data-talla], .talla-tag');
+                const tallasAgregadas = card.querySelector('.tallas-agregadas');
+                if (tallasAgregadas) {
+                    // Buscar todos los elements que parecen ser tallas (excluir el input hidden)
+                    const tallaElements = tallasAgregadas.querySelectorAll('[class*="talla"], [data-talla], .badge, .tag, .chip');
+                    tallaElements.forEach(el => {
+                        // Excluir inputs
+                        if (el.tagName !== 'INPUT') {
+                            const talla = el.textContent.trim();
+                            if (talla && !tallas.includes(talla)) {
+                                tallas.push(talla);
+                            }
+                        }
+                    });
+                    console.log(`  - Buscando en .tallas-agregadas: encontrados ${tallaElements.length} elementos, tallas: ${JSON.stringify(tallas)}`);
+                }
+            }
+            
+            // MÉTODO 3: Último recurso - buscar en cualquier elemento con clase talla
+            if (tallas.length === 0) {
+                const tallaButtons = card.querySelectorAll('.talla-btn, [data-talla], .talla-tag, .talla-chip, .badge');
                 tallaButtons.forEach(btn => {
                     const talla = btn.textContent.trim() || btn.getAttribute('data-talla');
-                    if (talla && !tallas.includes(talla)) {
+                    if (talla && !talla.includes('input') && !tallas.includes(talla)) {
                         tallas.push(talla);
                     }
                 });
+                console.log(`  - Buscando en botones/elementos: encontrados ${tallaButtons.length} elementos`);
             }
+            
+            console.log(`  - Tallas finales: ${JSON.stringify(tallas)}`);
             
             // Obtener género
             let genero = '';
@@ -70,31 +108,69 @@ function obtenerPrendasDelPaso2() {
             if (selectGenero) {
                 genero = selectGenero.value.trim();
             }
+            console.log(`  - Selector .talla-genero-select encontrado: ${selectGenero ? 'Sí' : 'No'}, valor: "${genero}"`);
             
-            // Obtener colores (pueden ser múltiples)
+            // Obtener colores (pueden ser múltiples) - Buscar en las filas de telas
             let colores = [];
-            const telaFilas = card.querySelectorAll('[data-tela-index]');
-            telaFilas.forEach(fila => {
-                const colorInput = fila.querySelector('.color-input');
-                if (colorInput) {
-                    const color = colorInput.value.trim();
-                    if (color && !colores.includes(color)) {
-                        colores.push(color);
-                    }
+            
+            // MÉTODO 1: Buscar en filas de tabla de telas con class color-input
+            let colorInputs = card.querySelectorAll('input.color-input');
+            console.log(`  - Inputs con class color-input encontrados: ${colorInputs.length}`);
+            
+            colorInputs.forEach((input) => {
+                const color = input.value.trim();
+                if (color && !colores.includes(color)) {
+                    colores.push(color);
+                    console.log(`    - Color encontrado: "${color}"`);
                 }
             });
+            
+            // MÉTODO 2: Si no encontró en color-input, buscar en data-tela-index rows
+            if (colores.length === 0) {
+                const telaFilas = card.querySelectorAll('tr[data-tela-index], .fila-tela');
+                console.log(`  - Filas de tela con data-tela-index encontradas: ${telaFilas.length}`);
+                
+                telaFilas.forEach((fila, telaIdx) => {
+                    const colorInput = fila.querySelector('.color-input, input[placeholder*="Color"], input[placeholder*="color"]');
+                    if (colorInput) {
+                        const color = colorInput.value.trim();
+                        if (color && !colores.includes(color)) {
+                            colores.push(color);
+                            console.log(`    - Color encontrado en fila: "${color}"`);
+                        }
+                    }
+                });
+            }
+            
+            // MÉTODO 3: Buscar en cualquier input que tenga name variantes[color]
+            if (colores.length === 0) {
+                const colorInputsVariantes = card.querySelectorAll('input[name*="[color]"]');
+                console.log(`  - Inputs con name [color] encontrados: ${colorInputsVariantes.length}`);
+                
+                colorInputsVariantes.forEach((input) => {
+                    const color = input.value.trim();
+                    if (color && !colores.includes(color)) {
+                        colores.push(color);
+                        console.log(`    - Color encontrado en variante: "${color}"`);
+                    }
+                });
+            }
+            
+            console.log(`  - Colores finales: ${JSON.stringify(colores)}`);
             
             // Obtener imágenes de la prenda
             let imagenes = [];
             const fotosPreview = card.querySelector('.fotos-preview');
             if (fotosPreview) {
-                const fotosElements = fotosPreview.querySelectorAll('[data-foto] img');
+                const fotosElements = fotosPreview.querySelectorAll('img, [data-foto] img');
+                console.log(`  - Imágenes encontradas: ${fotosElements.length}`);
                 fotosElements.forEach(img => {
                     if (img.src) {
                         imagenes.push(img.src);
                     }
                 });
             }
+            console.log(`  - Imágenes finales: ${imagenes.length}`);
             
             // ============================================
             // OBTENER VARIACIONES DE LA PRENDA (NUEVO)
@@ -2514,6 +2590,471 @@ function agregarObservacionPaso3() {
         <button type="button" onclick="this.closest('div').remove()" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
     `;
     contenedor.appendChild(fila);
+}
+
+// =========================================================
+// 9. PASO 4: REFLECTIVO - GESTIÓN DE PRENDAS
+// =========================================================
+
+let prendas_reflectivo_paso4 = [];
+
+function agregarPrendaReflectivoPaso4() {
+    console.log('🔸 agregarPrendaReflectivoPaso4() - Iniciando...');
+    
+    const container = document.getElementById('prendas_reflectivo_container');
+    if (!container) {
+        console.error('❌ Container prendas_reflectivo_container no encontrado');
+        return;
+    }
+    
+    const numeroPrenda = prendas_reflectivo_paso4.length + 1;
+    const prendasIndex = numeroPrenda - 1;
+    
+    // Obtener prendas del PASO 2 - EXACTAMENTE COMO EN PASO 3
+    console.log('📥 Llamando obtenerPrendasDelPaso2()...');
+    const prendasPaso2 = obtenerPrendasDelPaso2();
+    console.log(`✅ Prendas obtenidas: ${prendasPaso2.length}`);
+    if (prendasPaso2.length > 0) {
+        console.log('📋 Prendas del Paso 2:', prendasPaso2);
+    }
+    
+    const fila = document.createElement('div');
+    fila.className = 'prenda-reflectivo-item';
+    fila.setAttribute('data-prenda-index', prendasIndex);
+    fila.style.cssText = 'margin-bottom: 12px; padding: 12px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;';
+    fila.innerHTML = `
+        <div style="display: grid; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; font-weight: 600; color: #333; font-size: 0.9rem;">
+                <span>🔸 Prenda Reflectivo <span class="numero-prenda">${numeroPrenda}</span></span>
+                <button type="button" onclick="eliminarPrendaReflectivoPaso4(${prendasIndex});" style="background: none; color: #999; border: 1px solid #ddd; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" onmouseout="this.style.background='none'; this.style.color='#999'" title="Eliminar prenda">
+                    ✕
+                </button>
+            </div>
+            
+            <!-- TIPO DE PRENDA - DROPDOWN CON PRENDAS DEL PASO 2 -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">👕 TIPO DE PRENDA</label>
+                <select class="tipo-prenda-reflectivo select-prenda-paso2-reflectivo" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; cursor: pointer;">
+                    <option value="">-- Selecciona una prenda --</option>
+                    ${prendasPaso2.map(prenda => {
+                        let textoOpcion = prenda.nombre;
+                        if (prenda.genero) {
+                            textoOpcion += ' - ' + prenda.genero;
+                        }
+                        if (prenda.colores && prenda.colores.length > 0) {
+                            textoOpcion += ' - Color: ' + prenda.colores.join(' - ');
+                        }
+                        const dataTallas = JSON.stringify(prenda.tallas).replace(/"/g, '&quot;');
+                        const dataGenero = prenda.genero || '';
+                        const dataColores = JSON.stringify(prenda.colores).replace(/"/g, '&quot;');
+                        const dataImagenes = JSON.stringify(prenda.imagenes || []).replace(/"/g, '&quot;');
+                        const dataVariaciones = JSON.stringify(prenda.variaciones || {}).replace(/"/g, '&quot;');
+                        return `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}" data-variaciones="${dataVariaciones}">${textoOpcion}</option>`;
+                    }).join('')}
+                </select>
+                <small style="color: #999; display: block; margin-top: 4px; font-size: 0.8rem;">Las prendas se cargan del PASO 2</small>
+            </div>
+            
+            <!-- DESCRIPCIÓN -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📝 DESCRIPCIÓN</label>
+                <textarea class="descripcion-reflectivo" rows="2" placeholder="Describe el reflectivo para esta prenda (tipo, tamaño, color, ubicación, etc.)..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.9rem;"></textarea>
+            </div>
+            
+            <!-- IMÁGENES (MÁXIMO 3) -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📸 IMÁGENES (MÁXIMO 3)</label>
+                <div class="imagenes-dropzone-reflectivo-${prendasIndex}" style="border: 2px dashed #ff9800; border-radius: 6px; padding: 20px; text-align: center; background: #fffbf0; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#ffeed9'; this.style.borderColor='#ff9800';" onmouseout="this.style.background='#fffbf0'; this.style.borderColor='#ff9800';">
+                    <div style="margin-bottom: 8px; font-size: 1.5rem;">🖼️</div>
+                    <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
+                    <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
+                    <input type="file" class="imagen-reflectivo-input-${prendasIndex}" accept="image/*" multiple style="display: none;" />
+                </div>
+                <div class="imagenes-preview-reflectivo-${prendasIndex}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+                    <!-- Previsualizaciones aquí -->
+                </div>
+            </div>
+            
+            <!-- TALLAS A COTIZAR - TABLA DINÁMICA -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📏 TALLAS A COTIZAR</label>
+                <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem; margin-bottom: 8px;">
+                    <thead>
+                        <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Talla</th>
+                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Cantidad</th>
+                            <th style="padding: 8px; text-align: center; font-weight: 600; color: #333; width: 40px;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tallas-reflectivo-tabla-body">
+                        <!-- Filas de talla-cantidad aquí -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- UBICACIÓN -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📍 UBICACIÓN</label>
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                    <input type="text" class="ubicacion-reflectivo-input" placeholder="PECHO, ESPALDA, MANGA..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; text-transform: uppercase;">
+                    <button type="button" class="btn-agregar-ubicacion-reflectivo" style="background: #ff9800; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">
+                        + Agregar
+                    </button>
+                </div>
+                <div class="ubicaciones-reflectivo-lista" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; min-height: 24px;"></div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(fila);
+    
+    // LOG DE VALIDACIÓN
+    const selectCreado = fila.querySelector('.select-prenda-paso2-reflectivo');
+    const opcionesCreadas = selectCreado ? selectCreado.querySelectorAll('option').length : 0;
+    console.log(`✅ Prenda Reflectivo ${numeroPrenda} agregada. Select con ${opcionesCreadas} opciones (${opcionesCreadas - 1} prendas + 1 opción vacía)`);
+    
+    prendas_reflectivo_paso4.push({
+        index: prendasIndex,
+        tipo_prenda: '',
+        descripcion: '',
+        imagenes: [],
+        tallas: [],
+        ubicaciones: []
+    });
+    
+    // LISTENER: Cuando se selecciona una prenda, cargar sus tallas
+    const selectPrenda = fila.querySelector('.select-prenda-paso2-reflectivo');
+    selectPrenda.addEventListener('change', (e) => {
+        console.log(`🎯 SELECT PRENDA CAMBIÓ - Prenda ${prendasIndex}:`, e.target.value);
+        
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const tallasJson = selectedOption.getAttribute('data-tallas');
+        const nombrePrenda = selectPrenda.value.trim();
+        
+        console.log(`  - Nombre: ${nombrePrenda}`);
+        console.log(`  - Tallas JSON: ${tallasJson}`);
+        
+        // Actualizar nombre en el objeto prenda
+        const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+        if (prenda) {
+            prenda.tipo_prenda = nombrePrenda;
+        }
+        
+        // Limpiar tabla de tallas
+        const tablaTallasBody = fila.querySelector('.tallas-reflectivo-tabla-body');
+        tablaTallasBody.innerHTML = '';
+        
+        // Cargar tallas de la prenda seleccionada
+        if (tallasJson) {
+            try {
+                const tallas = JSON.parse(tallasJson);
+                console.log(`  - Tallas parseadas: ${JSON.stringify(tallas)}`);
+                if (Array.isArray(tallas) && tallas.length > 0) {
+                    tallas.forEach(talla => {
+                        console.log(`    - Agregando fila para talla: ${talla}`);
+                        agregarFilaTallaCantidadReflectivo(tablaTallasBody, prendasIndex, talla);
+                    });
+                }
+            } catch (err) {
+                console.error('❌ Error al parsear tallas:', err);
+            }
+        } else {
+            console.warn('⚠️ No hay tallasJson en el atributo data-tallas');
+        }
+    });
+    
+    // Setup para agregar ubicación
+    const btnAgregarUbicacion = fila.querySelector('.btn-agregar-ubicacion-reflectivo');
+    btnAgregarUbicacion.addEventListener('click', (e) => {
+        e.preventDefault();
+        const input = fila.querySelector('.ubicacion-reflectivo-input');
+        const ubicacion = input.value.trim().toUpperCase();
+        
+        if (!ubicacion) {
+            Swal.fire('⚠️', 'Ingresa una ubicación', 'warning');
+            return;
+        }
+        
+        const listaUbicaciones = fila.querySelector('.ubicaciones-reflectivo-lista');
+        const existe = Array.from(listaUbicaciones.querySelectorAll('[data-ubicacion]')).some(el => 
+            el.getAttribute('data-ubicacion') === ubicacion
+        );
+        
+        if (existe) {
+            Swal.fire('⚠️', `La ubicación "${ubicacion}" ya fue agregada`, 'warning');
+            return;
+        }
+        
+        const chip = document.createElement('div');
+        chip.setAttribute('data-ubicacion', ubicacion);
+        chip.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #ffe0b2; border: 1px solid #ff9800; border-radius: 16px; font-weight: 600; color: #e65100;';
+        chip.innerHTML = `
+            <span>${ubicacion}</span>
+            <button type="button" onclick="this.closest('[data-ubicacion]').remove()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 1.1rem; padding: 0; margin-left: 8px; font-weight: bold;">✕</button>
+        `;
+        
+        listaUbicaciones.appendChild(chip);
+        input.value = '';
+    });
+    
+    // Setup drag and drop para imágenes
+    const dropzone = fila.querySelector(`.imagenes-dropzone-reflectivo-${prendasIndex}`);
+    const input = fila.querySelector(`.imagen-reflectivo-input-${prendasIndex}`);
+    const previewContainer = fila.querySelector(`.imagenes-preview-reflectivo-${prendasIndex}`);
+    
+    dropzone.addEventListener('click', () => input.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#ffeed9';
+        dropzone.style.borderColor = '#ff6f00';
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.background = '#fffbf0';
+        dropzone.style.borderColor = '#ff9800';
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#fffbf0';
+        dropzone.style.borderColor = '#ff9800';
+        
+        const archivos = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContainer);
+    });
+    
+    input.addEventListener('change', (e) => {
+        const archivos = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+        procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContainer);
+    });
+    
+    actualizarEstadoSinPrendas();
+}
+
+function agregarFilaTallaCantidadReflectivo(tablaTallasBody, prendasIndex, talla = '') {
+    const fila = document.createElement('tr');
+    fila.style.cssText = 'border-bottom: 1px solid #ddd;';
+    
+    const inputTalla = document.createElement('input');
+    inputTalla.type = 'text';
+    inputTalla.className = 'talla-input-reflectivo';
+    inputTalla.value = talla;
+    inputTalla.placeholder = 'Talla';
+    inputTalla.style.cssText = 'width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; text-transform: uppercase;';
+    inputTalla.readOnly = talla !== '';
+    
+    const inputCantidad = document.createElement('input');
+    inputCantidad.type = 'number';
+    inputCantidad.className = 'cantidad-input-reflectivo';
+    inputCantidad.placeholder = 'Cantidad';
+    inputCantidad.min = '1';
+    inputCantidad.style.cssText = 'width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;';
+    
+    const btnEliminar = document.createElement('button');
+    btnEliminar.type = 'button';
+    btnEliminar.textContent = '✕';
+    btnEliminar.style.cssText = 'background: none; color: #999; border: 1px solid #ddd; padding: 4px; border-radius: 3px; cursor: pointer; font-size: 0.85rem; width: 100%; transition: all 0.2s;';
+    btnEliminar.onmouseover = function() { this.style.background = '#f0f0f0'; this.style.color = '#333'; };
+    btnEliminar.onmouseout = function() { this.style.background = 'none'; this.style.color = '#999'; };
+    btnEliminar.onclick = function() {
+        fila.remove();
+    };
+    
+    const td1 = document.createElement('td');
+    td1.style.cssText = 'padding: 8px; border-right: 1px solid #ddd;';
+    td1.appendChild(inputTalla);
+    
+    const td2 = document.createElement('td');
+    td2.style.cssText = 'padding: 8px; border-right: 1px solid #ddd;';
+    td2.appendChild(inputCantidad);
+    
+    const td3 = document.createElement('td');
+    td3.style.cssText = 'padding: 8px; text-align: center;';
+    td3.appendChild(btnEliminar);
+    
+    fila.appendChild(td1);
+    fila.appendChild(td2);
+    fila.appendChild(td3);
+    
+    tablaTallasBody.appendChild(fila);
+}
+
+function procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContainer) {
+    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    if (!prenda) return;
+    
+    const maxImagenes = 3;
+    if (prenda.imagenes.length + archivos.length > maxImagenes) {
+        Swal.fire('⚠️', `Máximo ${maxImagenes} imágenes permitidas`, 'warning');
+        return;
+    }
+    
+    archivos.forEach(archivo => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            prenda.imagenes.push({
+                file: archivo,
+                preview: e.target.result
+            });
+            
+            renderizarImagenesReflectivo(prendasIndex, fila);
+        };
+        reader.readAsDataURL(archivo);
+    });
+}
+
+function renderizarImagenesReflectivo(prendasIndex, fila) {
+    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    if (!prenda) return;
+    
+    const previewContainer = fila.querySelector(`.imagenes-preview-reflectivo-${prendasIndex}`);
+    previewContainer.innerHTML = '';
+    
+    prenda.imagenes.forEach((img, idx) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+        div.innerHTML = `
+            <img src="${img.preview}" style="width: 100%; height: 100%; object-fit: cover;">
+            <button type="button" onclick="eliminarImagenReflectivo(${prendasIndex}, ${idx})" style="position: absolute; top: 2px; right: 2px; background: rgba(244, 67, 54, 0.9); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.85rem; padding: 0; display: flex; align-items: center; justify-content: center;">✕</button>
+        `;
+        previewContainer.appendChild(div);
+    });
+}
+
+function eliminarImagenReflectivo(prendasIndex, imgIndex) {
+    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    if (prenda) {
+        prenda.imagenes.splice(imgIndex, 1);
+        
+        const fila = document.querySelector(`[data-prenda-index="${prendasIndex}"]`);
+        if (fila) {
+            renderizarImagenesReflectivo(prendasIndex, fila);
+        }
+    }
+}
+
+function eliminarPrendaReflectivoPaso4(prendasIndex) {
+    prendas_reflectivo_paso4 = prendas_reflectivo_paso4.filter(p => p.index !== prendasIndex);
+    
+    const fila = document.querySelector(`[data-prenda-index="${prendasIndex}"]`);
+    if (fila) fila.remove();
+    
+    // Renumerar
+    document.querySelectorAll('.prenda-reflectivo-item .numero-prenda').forEach((el, idx) => {
+        el.textContent = idx + 1;
+    });
+    
+    actualizarEstadoSinPrendas();
+}
+
+function actualizarEstadoSinPrendas() {
+    const container = document.getElementById('prendas_reflectivo_container');
+    const msgSinPrendas = document.getElementById('sin_prendas_reflectivo');
+    
+    if (container && container.children.length > 0) {
+        msgSinPrendas.style.display = 'none';
+    } else {
+        msgSinPrendas.style.display = 'block';
+    }
+}
+
+function capturePrendasReflectivoPaso4() {
+    const prendas = [];
+    
+    document.querySelectorAll('.prenda-reflectivo-item').forEach((fila, idx) => {
+        const tipoPrenda = fila.querySelector('.tipo-prenda-reflectivo')?.value.trim() || '';
+        const descripcion = fila.querySelector('.descripcion-reflectivo')?.value.trim() || '';
+        
+        const ubicaciones = [];
+        fila.querySelectorAll('.ubicaciones-reflectivo-lista [data-ubicacion]').forEach(el => {
+            ubicaciones.push(el.getAttribute('data-ubicacion'));
+        });
+        
+        // Capturar tallas con cantidades
+        const tallas = [];
+        fila.querySelectorAll('.tallas-reflectivo-tabla-body tr').forEach(tr => {
+            const tallaInput = tr.querySelector('.talla-input-reflectivo');
+            const cantidadInput = tr.querySelector('.cantidad-input-reflectivo');
+            
+            if (tallaInput && cantidadInput) {
+                const talla = tallaInput.value.trim();
+                const cantidad = cantidadInput.value.trim();
+                
+                if (talla) {
+                    tallas.push({
+                        talla: talla,
+                        cantidad: cantidad ? parseInt(cantidad) : 0
+                    });
+                }
+            }
+        });
+        
+        const prenda = prendas_reflectivo_paso4.find(p => p.index === idx);
+        
+        prendas.push({
+            tipo_prenda: tipoPrenda,
+            descripcion: descripcion,
+            ubicaciones: ubicaciones,
+            tallas: tallas,
+            imagenes: prenda ? prenda.imagenes : []
+        });
+    });
+    
+    return prendas;
+}
+
+// Actualizar resumen de reflectivo en paso 5 (REVISAR)
+function actualizarResumenReflectivoPaso4() {
+    const prendasReflectivo = capturePrendasReflectivoPaso4();
+    const container = document.getElementById('resumen_reflectivo_prendas');
+    
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (prendasReflectivo.length === 0) {
+        container.innerHTML = '<p style="color: #999; text-align: center; padding: 15px;">-</p>';
+        return;
+    }
+    
+    prendasReflectivo.forEach((prenda, idx) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'padding: 12px; background: #fff; border: 1px solid #ffe0b2; border-radius: 6px;';
+        
+        let html = `<p style="margin: 0 0 10px 0; font-weight: 600; color: #e65100; border-bottom: 2px solid #ff9800; padding-bottom: 8px;">Prenda ${idx + 1}: ${prenda.tipo_prenda || '-'}</p>`;
+        
+        html += `<p style="margin: 5px 0; font-size: 0.9rem;"><strong>Descripción:</strong> ${prenda.descripcion || '-'}</p>`;
+        
+        if (prenda.ubicaciones.length > 0) {
+            html += `<p style="margin: 5px 0; font-size: 0.9rem;"><strong>Ubicaciones:</strong> ${prenda.ubicaciones.join(', ')}</p>`;
+        }
+        
+        // Mostrar tallas con cantidades
+        if (prenda.tallas.length > 0) {
+            html += `<p style="margin: 5px 0; font-size: 0.9rem;"><strong>Tallas:</strong> ${prenda.tallas.map(t => `${t.talla} (${t.cantidad})`).join(', ')}</p>`;
+        }
+        
+        if (prenda.imagenes.length > 0) {
+            html += `<p style="margin: 5px 0 8px 0; font-size: 0.9rem;"><strong>Imágenes:</strong> ${prenda.imagenes.length}</p>`;
+        }
+        
+        div.innerHTML = html;
+        
+        if (prenda.imagenes.length > 0) {
+            const galeriaDiv = document.createElement('div');
+            galeriaDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;';
+            prenda.imagenes.forEach(img => {
+                const imgDiv = document.createElement('div');
+                imgDiv.style.cssText = 'width: 60px; height: 60px; border-radius: 4px; overflow: hidden; border: 1px solid #ddd;';
+                imgDiv.innerHTML = `<img src="${img.preview}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                galeriaDiv.appendChild(imgDiv);
+            });
+            div.appendChild(galeriaDiv);
+        }
+        
+        container.appendChild(div);
+    });
 }
 
 // =========================================================

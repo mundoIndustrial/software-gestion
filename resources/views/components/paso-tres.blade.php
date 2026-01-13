@@ -65,6 +65,51 @@
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
         <button type="button" class="btn-next" onclick="if(typeof irAlPaso === 'function') irAlPaso(4)">
+            SIGUIENTE <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- PASO 4: REFLECTIVO (COMBINADA) -->
+<div class="form-step" data-step="4">
+    <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 4: REFLECTIVO</h2>
+            <p style="font-size: 0.8rem !important; margin: 0 !important; color: #666 !important;">ESPECIFICA LOS DETALLES DEL REFLECTIVO POR PRENDA</p>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <!-- CONTENEDOR DE PRENDAS REFLECTIVO -->
+        <div id="prendas_reflectivo_container" style="margin-bottom: 20px;"></div>
+        
+        <!-- BOTÓN AGREGAR PRENDA REFLECTIVO -->
+        <button type="button" id="btnAgregarPrendaReflectivo" onclick="agregarPrendaReflectivoPaso4(); console.log('✅ Botón Agregar Prenda Reflectivo clickeado');" style="width: 100%; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; cursor: pointer; padding: 12px 20px; border-radius: 4px; font-weight: 600; transition: background 0.2s ease; margin-bottom: 20px;">
+            <i class="fas fa-plus"></i> Agregar Prenda Reflectivo
+        </button>
+        
+        <!-- SIN PRENDAS -->
+        <div id="sin_prendas_reflectivo" style="padding: 20px; text-align: center; background: #f5f5f5; border-radius: 8px; color: #999; display: block;">
+            <p>Agrega prendas con reflectivo</p>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📦 Paso 4 Reflectivo - Listo para agregar prendas');
+            // Agregar automáticamente un formulario vacío al cargar Paso 4
+            if (typeof agregarPrendaReflectivoPaso4 === 'function') {
+                agregarPrendaReflectivoPaso4();
+                console.log('✅ Formulario vacío agregado automáticamente en Paso 4');
+            }
+        });
+    </script>
+
+    <div class="form-actions">
+        <button type="button" class="btn-prev" onclick="if(typeof irAlPaso === 'function') irAlPaso(3)">
+            <i class="fas fa-arrow-left"></i> ANTERIOR
+        </button>
+        <button type="button" class="btn-next" onclick="if(typeof irAlPaso === 'function') irAlPaso(5)">
             REVISAR <i class="fas fa-arrow-right"></i>
         </button>
     </div>
