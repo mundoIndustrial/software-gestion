@@ -16,5 +16,13 @@
 @endsection
 
 @section('scripts')
-    <script src="{{ asset('js/asistencia-personal.js') }}"></script>
+    <!-- Módulos del sistema de Asistencia Personal -->
+    <script src="{{ asset('js/asistencia-personal/utilidades.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/pdf-handler.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/filtros-horas.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/busqueda.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/horas-trabajadas.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/report-details.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/absencias.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/init.js') }}"></script>
 @endsection
