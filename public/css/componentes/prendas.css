@@ -1,0 +1,173 @@
+/* ================================================
+   COMPONENTE: PRENDAS EDITABLES
+   Estilos para tarjetas y gestión de prendas
+   ================================================ */
+
+/* Tarjeta de prenda */
+.prenda-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.prenda-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary, #0066cc);
+}
+
+/* Descripción de prenda */
+.prenda-descripcion {
+    color: #64748b;
+    font-size: 0.6375rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Grid de tallas */
+.tallas-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    align-items: center;
+}
+
+/* Grupo de talla */
+.talla-group {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    display: inline-flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.talla-group:hover {
+    border-color: var(--primary, #0066cc);
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.1);
+}
+
+.talla-group.talla-eliminada {
+    opacity: 0.4;
+    background: #f1f5f9;
+}
+
+/* Header de talla */
+.talla-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Etiqueta de talla */
+.talla-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Botón eliminar talla */
+.btn-eliminar-talla {
+    background: #ef4444 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 2px !important;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    font-size: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s !important;
+    flex-shrink: 0;
+}
+
+.btn-eliminar-talla:hover {
+    background: #dc2626 !important;
+}
+
+/* Input de talla */
+.talla-input {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    background-color: white;
+    text-align: center;
+    font-weight: 600;
+    transition: all 0.2s;
+    width: 50px;
+}
+
+.talla-input:focus {
+    outline: none;
+    border-color: var(--primary, #0066cc);
+    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.1);
+}
+
+.talla-input:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Botón agregar talla */
+.btn-agregar-talla {
+    background: #10b981 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 0.5rem 1rem !important;
+    cursor: pointer !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s !important;
+    margin-top: 0.75rem !important;
+}
+
+.btn-agregar-talla:hover {
+    background: #059669 !important;
+}
+
+/* Acciones de tallas */
+.tallas-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* Input de nueva talla */
+.input-nueva-talla {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 2rem;
+    text-align: center;
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    color: #6b7280;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.875rem;
+}

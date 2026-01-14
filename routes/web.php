@@ -498,19 +498,19 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // PEDIDOS DE PRODUCCIÓN - Gestión de pedidos desde cotizaciones
     // ========================================
     // Rutas para el sidebar (dos opciones separadas)
-    Route::get('/pedidos-produccion/crear-desde-cotizacion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearFormEditable'])->name('pedidos-produccion.crear-desde-cotizacion');
-    Route::get('/pedidos-produccion/crear-nuevo', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearFormEditableNuevo'])->name('pedidos-produccion.crear-nuevo');
+    Route::get('/pedidos-produccion/crear-desde-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearFormEditable'])->name('pedidos-produccion.crear-desde-cotizacion');
+    Route::get('/pedidos-produccion/crear-nuevo', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearFormEditableNuevo'])->name('pedidos-produccion.crear-nuevo');
     
     // Ruta antigua (mantener por compatibilidad)
-    Route::get('/pedidos-produccion/crear', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearFormEditable'])->name('pedidos-produccion.crear');
-    Route::get('/pedidos-produccion/obtener-datos-cotizacion/{cotizacion_id}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosCotizacion'])->name('pedidos-produccion.obtener-datos-cotizacion');
-    Route::get('/pedidos-produccion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
-    Route::get('/pedidos-produccion/{id}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
-    Route::get('/pedidos-produccion/{id}/plantilla', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'plantilla'])->name('pedidos-produccion.plantilla');
-    Route::post('/pedidos-produccion/crear-desde-cotizacion/{cotizacionId}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearDesdeCotizacion'])->name('pedidos-produccion.crear-desde-cotizacion');
-    Route::post('/pedidos-produccion/crear-sin-cotizacion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearSinCotizacion'])->name('pedidos-produccion.crear-sin-cotizacion');
-    Route::post('/pedidos-produccion/crear-prenda-sin-cotizacion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearPrendaSinCotizacion'])->name('pedidos-produccion.crear-prenda-sin-cotizacion');
-    Route::post('/pedidos-produccion/crear-reflectivo-sin-cotizacion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearReflectivoSinCotizacion'])->name('pedidos-produccion.crear-reflectivo-sin-cotizacion');
+    Route::get('/pedidos-produccion/crear', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearFormEditable'])->name('pedidos-produccion.crear');
+    Route::get('/pedidos-produccion/obtener-datos-cotizacion/{cotizacion_id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosCotizacion'])->name('pedidos-produccion.obtener-datos-cotizacion');
+    Route::get('/pedidos-produccion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
+    Route::get('/pedidos-produccion/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
+    Route::get('/pedidos-produccion/{id}/plantilla', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'plantilla'])->name('pedidos-produccion.plantilla');
+    Route::post('/pedidos-produccion/crear-desde-cotizacion/{cotizacionId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearDesdeCotizacion'])->name('pedidos-produccion.crear-desde-cotizacion');
+    Route::post('/pedidos-produccion/crear-sin-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearSinCotizacion'])->name('pedidos-produccion.crear-sin-cotizacion');
+    Route::post('/pedidos-produccion/crear-prenda-sin-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearPrendaSinCotizacion'])->name('pedidos-produccion.crear-prenda-sin-cotizacion');
+    Route::post('/pedidos-produccion/crear-reflectivo-sin-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearReflectivoSinCotizacion'])->name('pedidos-produccion.crear-reflectivo-sin-cotizacion');
     
     // Incluir rutas del módulo de pedidos refactorizado
     require __DIR__ . '/asesores/pedidos.php';

@@ -1,15 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Asesores;
+namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
-use App\Models\PrendaReflectivo;
 use App\Models\ProcesoPrenda;
 use App\Models\Cotizacion;
-use App\Models\VariantePrenda;
-use App\Models\PrendaCotizacionFriendly;
 use App\Enums\EstadoPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +22,10 @@ use App\Domain\PedidoProduccion\Services\CreacionPedidoService;
 use App\Domain\PedidoProduccion\Services\LogoPedidoService;
 use App\Domain\PedidoProduccion\Services\ProcesosPedidoService;
 use App\Domain\PedidoProduccion\Repositories\CotizacionRepository;
+use App\Domain\PedidoProduccion\Services\ListaPedidosService;
+use App\Domain\PedidoProduccion\Services\VariantesService;
+use App\Domain\PedidoProduccion\Services\FormularioPedidoService;
+use App\Domain\PedidoProduccion\Services\UtilitariosService;
 
 /**
  * Controlador de Pedidos de Producción
@@ -42,28 +43,18 @@ class PedidosProduccionController extends Controller
         private NumeracionService $numeracionService,
         private DescripcionService $descripcionService,
         private ImagenService $imagenService,
-        private CotizacionRepository $cotizacionRepository
+        private CotizacionRepository $cotizacionRepository,
+        private ListaPedidosService $listaPedidosService,
+        private VariantesService $variantesService,
+        private FormularioPedidoService $formularioPedidoService,
+        private UtilitariosService $utilitariosService,
     ) {}
     /**
      * Mostrar formulario para crear pedido desde cotización
      */
     public function crearForm()
     {
-        // Solo permitir crear pedidos de cotizaciones APROBADAS
-        $cotizaciones = Cotizacion::where('asesor_id', Auth::id())
-            ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
-            ->with([
-                'asesor',
-                'cliente',
-                'prendasCotizaciones.variantes.color',
-                'prendasCotizaciones.variantes.tela',
-                'prendasCotizaciones.variantes.tipoManga',
-                'prendasCotizaciones.variantes.tipoBroche',
-                'logoCotizacion.fotos'
-            ])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
+        $cotizaciones = $this->formularioPedidoService->obtenerDatosFormularioCrearDesdeCotizacion();
         return view('asesores.pedidos.crear-desde-cotizacion', compact('cotizaciones'));
     }
 
@@ -72,38 +63,29 @@ class PedidosProduccionController extends Controller
      * 
      * @return \Illuminate\View\View
      */
-    public function crearFormEditable()
+    /**
+     * Router principal para crear pedidos - soporta dos flujos:
+     * - cotizacion (desde cotización existente)
+     * - nuevo (nuevo pedido)
+     */
+    public function crearFormEditable($tipo = 'cotizacion')
     {
-        // Obtener cotizaciones aprobadas DEL ASESOR ACTUAL
-        $cotizaciones = Cotizacion::where('asesor_id', Auth::id())
-            ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
-            ->with(['cliente', 'asesor', 'prendasCotizaciones'])
-            ->get();
+        // Validar tipo
+        if (!in_array($tipo, ['cotizacion', 'nuevo'])) {
+            $tipo = 'cotizacion';
+        }
 
-        // Transformar datos para el frontend
-        $transformador = new \App\Domain\PedidoProduccion\Services\TransformadorCotizacionService();
-        $cotizacionesData = $transformador->transformarCotizacionesParaFrontend($cotizaciones);
-
-        // Tipo inicial: cotizacion (para mostrar buscador de cotizaciones)
-        $tipoInicial = 'cotizacion';
-
-        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones', 'cotizacionesData', 'tipoInicial'));
+        $data = $this->formularioPedidoService->obtenerDatosRouter($tipo);
+        return view('asesores.pedidos.crear-pedido', $data);
     }
 
     /**
-     * Mostrar formulario EDITABLE para crear PEDIDO NUEVO (sin cotización)
-     * 
-     * @return \Illuminate\View\View
+     * Alias para crear nuevo pedido - redirige a crearFormEditable con tipo='nuevo'
+     * Mantenido por compatibilidad con rutas antiguas
      */
     public function crearFormEditableNuevo()
     {
-        // Cargar cotizaciones vacías (no se necesitan para pedido nuevo)
-        $cotizaciones = collect([]);
-
-        // Tipo inicial: nuevo (para mostrar selector de tipo de pedido)
-        $tipoInicial = 'nuevo';
-
-        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones', 'tipoInicial'));
+        return $this->crearFormEditable('nuevo');
     }
 
     /**
@@ -113,93 +95,22 @@ class PedidosProduccionController extends Controller
     {
         // ✅ FIX: Si filtran por tipo=logo, consultar logo_pedidos en lugar de pedidos_produccion
         if ($request->has('tipo') && $request->tipo === 'logo') {
-            return $this->indexLogoPedidos($request);
+            $filtros = [
+                'estado' => $request->estado,
+                'fecha_desde' => $request->fecha_desde,
+                'fecha_hasta' => $request->fecha_hasta,
+            ];
+            $pedidos = $this->listaPedidosService->obtenerLogoPedidos($filtros);
+        } else {
+            // Delegar obtención de pedidos al servicio de dominio
+            $filtros = [
+                'estado' => $request->estado,
+                'fecha_desde' => $request->fecha_desde,
+                'fecha_hasta' => $request->fecha_hasta,
+            ];
+            $pedidos = $this->listaPedidosService->obtenerPedidosProduccion($filtros);
         }
 
-        // Delegar obtención de pedidos al servicio de dominio
-        $filtros = [
-            'estado' => $request->estado,
-            'fecha_desde' => $request->fecha_desde,
-            'fecha_hasta' => $request->fecha_hasta,
-        ];
-
-        $pedidos = $this->pedidoService->obtenerPedidosAsesor($filtros);
-
-        return view('asesores.pedidos.index', compact('pedidos'));
-    }
-
-    /**
-     * MÉTODO LEGACY - Mantener temporalmente para compatibilidad
-     * TODO: Migrar completamente al servicio
-     */
-    private function indexLegacy(Request $request)
-    {
-        $query = PedidoProduccion::query()
-            ->with([
-                'cotizacion' => function($q) {
-                    $q->select('id', 'tipo', 'codigo', 'cliente_id', 'estado');
-                },
-                'prendas' => function ($q) {
-                    $q->with(['color', 'tela', 'tipoManga', 'procesos']);
-                },
-                'logoPedidos'
-            ]);
-
-        // Filtrar por asesor
-        $query->where('asesor_id', Auth::id());
-
-        // Filtrar por estado si se proporciona
-        if ($request->has('estado')) {
-            $estado = $request->input('estado');
-            
-            // Debug: Log el estado recibido
-            \Log::info('Filtro estado recibido: "' . $estado . '"');
-            
-            // Para "En Producción", filtrar por múltiples estados
-            if ($estado === 'En Producción') {
-                $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
-                \Log::info('Filtrando por En Producción (No iniciado + En Ejecución)');
-            } else {
-                $query->where('estado', $estado);
-                \Log::info('Filtrando por estado: ' . $estado);
-            }
-        }
-
-        $pedidos = $query->orderBy('created_at', 'desc')->paginate(15);
-        
-        \Log::info('Total de pedidos encontrados: ' . $pedidos->total());
-
-        return view('asesores.pedidos.index', compact('pedidos'));
-    }
-
-    /**
-     * ✅ NUEVO: Listar pedidos de LOGO específicamente (consulta logo_pedidos)
-     */
-    private function indexLogoPedidos(Request $request)
-    {
-        $query = \App\Models\LogoPedido::query()
-            ->with(['cotizacion', 'procesos']);
-
-        // Filtrar por asesora (campo 'asesora' es el nombre del usuario)
-        // ⚠️ Nota: Algunos pedidos tienen asesora NULL, mostramos todos los del usuario actual
-        $nombreUsuario = Auth::user()->name;
-        $query->where(function($q) use ($nombreUsuario) {
-            $q->where('asesora', $nombreUsuario)
-              ->orWhereNull('asesora');  // Incluir también los que no tienen asesora asignada
-        });
-
-        // Filtrar por estado si se proporciona
-        if ($request->has('estado')) {
-            $estado = $request->input('estado');
-            \Log::info('[LOGO] Filtro estado recibido: "' . $estado . '"');
-            $query->where('estado', $estado);
-        }
-
-        $pedidos = $query->orderBy('created_at', 'desc')->paginate(15);
-        
-        \Log::info('[LOGO] Total de pedidos de logo encontrados: ' . $pedidos->total() . ' para usuario: ' . $nombreUsuario);
-
-        // Retornar la misma vista index (ya maneja LogoPedido)
         return view('asesores.pedidos.index', compact('pedidos'));
     }
 
@@ -208,14 +119,9 @@ class PedidosProduccionController extends Controller
      */
     public function show($id)
     {
-        $pedido = PedidoProduccion::findOrFail($id);
-        
-        // Verificar que el pedido pertenece al asesor autenticado
-        if ($pedido->asesor_id !== Auth::id()) {
-            abort(403);
-        }
+        $pedido = $this->listaPedidosService->obtenerDetallePedido($id);
 
-        $prendas = $pedido->prendas()->with('procesos')->get();
+        $prendas = $pedido->prendas;
         $cotizacion = $pedido->cotizacion;
         $prendasCotizacion = $cotizacion ? $cotizacion->prendasCotizaciones : [];
 
@@ -227,14 +133,9 @@ class PedidosProduccionController extends Controller
      */
     public function plantilla($id)
     {
-        $pedido = PedidoProduccion::findOrFail($id);
-        
-        // Verificar que el pedido pertenece al asesor autenticado
-        if ($pedido->asesor_id !== Auth::id()) {
-            abort(403);
-        }
+        $pedido = $this->listaPedidosService->obtenerPlantillaPedido($id);
 
-        $prendas = $pedido->prendas()->with('procesos')->get();
+        $prendas = $pedido->prendas;
         $cotizacion = $pedido->cotizacion;
         $prendasCotizacion = $cotizacion ? $cotizacion->prendasCotizaciones : [];
 
@@ -601,152 +502,11 @@ class PedidosProduccionController extends Controller
 
     /**
      * Heredar variantes de una prenda de cotización a pedido
+     * Delegado al servicio de dominio
      */
     private function heredarVariantesDePrenda($cotizacion, $prendaPedido, $index)
     {
-        try {
-            \Log::info('🔍 [heredarVariantes] Iniciando herencia de variantes', [
-                'cotizacion_id' => $cotizacion->id,
-                'prenda_pedido_id' => $prendaPedido->id,
-                'index' => $index,
-            ]);
-
-            // Obtener prendas de cotización desde la tabla correcta
-            $prendasCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)
-                ->orderBy('id')
-                ->get();
-            
-            if (!isset($prendasCot[$index])) {
-                \Log::warning('⚠️ No se encontró prenda de cotización en índice', [
-                    'index' => $index,
-                    'total_prendas_cot' => $prendasCot->count()
-                ]);
-                return;
-            }
-            
-            $prendaCot = $prendasCot[$index];
-            
-            \Log::info('🔍 [heredarVariantes] Prenda de cotización encontrada', [
-                'prenda_cot_id' => $prendaCot->id,
-                'nombre' => $prendaCot->nombre_producto,
-            ]);
-            
-            // Obtener variantes de la tabla prenda_variantes_cot
-            $variantes = \DB::table('prenda_variantes_cot')
-                ->where('prenda_cot_id', $prendaCot->id)
-                ->get();
-            
-            \Log::info('🔍 [heredarVariantes] Variantes encontradas', [
-                'total_variantes' => $variantes->count(),
-            ]);
-            
-            if ($variantes->isEmpty()) {
-                \Log::info('ℹ️ Sin variantes en prenda_variantes_cot, intentando con prenda directa');
-                
-                // Si no hay variantes, usar los datos de la prenda directamente
-                $prendaPedido->update([
-                    'color_id' => $prendaCot->color_id,
-                    'tela_id' => $prendaCot->tela_id,
-                    'tipo_manga_id' => $prendaCot->tipo_manga_id,
-                    'tipo_broche_id' => $prendaCot->tipo_broche_id,
-                    'tiene_bolsillos' => $prendaCot->tiene_bolsillos ?? 0,
-                    'tiene_reflectivo' => $prendaCot->tiene_reflectivo ?? 0,
-                ]);
-                
-                \Log::info('✅ Datos heredados desde prenda_cot directamente', [
-                    'color_id' => $prendaCot->color_id,
-                    'tela_id' => $prendaCot->tela_id,
-                    'tipo_manga_id' => $prendaCot->tipo_manga_id,
-                    'tipo_broche_id' => $prendaCot->tipo_broche_id,
-                ]);
-                
-                return;
-            }
-            
-            // Copiar la primera variante
-            $variante = $variantes->first();
-            
-            $telaId = null;
-            $colorId = null;
-            
-            // 1. Buscar o crear COLOR usando el campo directo 'color' de la variante
-            if (!empty($variante->color)) {
-                $color = \DB::table('colores_prenda')
-                    ->where('nombre', 'LIKE', '%' . $variante->color . '%')
-                    ->first();
-                
-                if (!$color) {
-                    $colorId = \DB::table('colores_prenda')->insertGetId([
-                        'nombre' => $variante->color,
-                        'activo' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    \Log::info('✅ Color creado', ['nombre' => $variante->color, 'id' => $colorId]);
-                } else {
-                    $colorId = $color->id;
-                }
-            }
-            
-            // 2. Buscar o crear TELA usando telas_multiples JSON
-            if (!empty($variante->telas_multiples)) {
-                $telasMultiples = json_decode($variante->telas_multiples, true);
-                if (is_array($telasMultiples) && !empty($telasMultiples)) {
-                    $primeraTela = $telasMultiples[0];
-                    
-                    if (!empty($primeraTela['tela'])) {
-                        $tela = \DB::table('telas_prenda')
-                            ->where('nombre', 'LIKE', '%' . $primeraTela['tela'] . '%')
-                            ->first();
-                        
-                        if (!$tela) {
-                            $telaId = \DB::table('telas_prenda')->insertGetId([
-                                'nombre' => $primeraTela['tela'],
-                                'activo' => 1,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                            \Log::info('✅ Tela creada', ['nombre' => $primeraTela['tela'], 'id' => $telaId]);
-                        } else {
-                            $telaId = $tela->id;
-                        }
-                    }
-                }
-            }
-            
-            \Log::info('🔍 [heredarVariantes] IDs obtenidos/creados', [
-                'color_campo_directo' => $variante->color,
-                'color_id' => $colorId,
-                'tela_desde_json' => isset($telasMultiples) ? ($telasMultiples[0]['tela'] ?? null) : null,
-                'tela_id' => $telaId,
-            ]);
-            
-            $prendaPedido->update([
-                'color_id' => $colorId,
-                'tela_id' => $telaId,
-                'tipo_manga_id' => $variante->tipo_manga_id,
-                'tipo_broche_id' => $variante->tipo_broche_id,
-                'tiene_bolsillos' => $variante->tiene_bolsillos ?? 0,
-                'tiene_reflectivo' => $variante->tiene_reflectivo ?? 0,
-                'descripcion_variaciones' => $variante->descripcion_adicional ?? null,
-            ]);
-            
-            \Log::info('✅ Variantes heredadas exitosamente desde prenda_variantes_cot', [
-                'prenda_pedido_id' => $prendaPedido->id,
-                'color_id' => $colorId,
-                'tela_id' => $telaId,
-                'tipo_manga_id' => $variante->tipo_manga_id,
-                'tipo_broche_id' => $variante->tipo_broche_id,
-                'telas_multiples' => $variante->telas_multiples,
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('❌ Error heredando variantes', [
-                'prenda_pedido_id' => $prendaPedido->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
+        $this->variantesService->heredarVariantesDePrenda($cotizacion, $prendaPedido, $index);
     }
 
     // MÉTODOS ELIMINADOS - Migrados a servicios de dominio
@@ -797,7 +557,7 @@ class PedidosProduccionController extends Controller
                 ], 403);
             }
 
-            $especificacionesConvertidas = $this->convertirEspecificacionesAlFormatoNuevo(
+            $especificacionesConvertidas = $this->utilitariosService->convertirEspecificacionesAlFormatoNuevo(
                 $cotizacion->especificaciones ?? []
             );
 
@@ -988,104 +748,6 @@ class PedidosProduccionController extends Controller
                 'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
-    }
-
-    /**
-     * Convierte especificaciones del formato antiguo (tabla_orden[field]) al nuevo (forma_pago, disponibilidad, etc)
-     */
-    private function convertirEspecificacionesAlFormatoNuevo($especificaciones)
-    {
-        if (!$especificaciones) {
-            return [];
-        }
-
-        // Si ya es un array con estructura forma_pago, no convertir
-        if (is_array($especificaciones) && isset($especificaciones['forma_pago'])) {
-            return $especificaciones;
-        }
-
-        // Si es string, parsear
-        if (is_string($especificaciones)) {
-            $datos = json_decode($especificaciones, true) ?? [];
-        } else {
-            $datos = $especificaciones;
-        }
-
-        // Si ya está en formato nuevo, devolver
-        if (isset($datos['forma_pago'])) {
-            return $datos;
-        }
-
-        // Convertir del formato antiguo tabla_orden[field]
-        $convertidas = [
-            'forma_pago' => [],
-            'disponibilidad' => [],
-            'regimen' => [],
-            'se_ha_vendido' => [],
-            'ultima_venta' => [],
-            'flete' => []
-        ];
-
-        // Mapeos de nombres para conversión
-        $mapeoFormaPago = [
-            'tabla_orden[contado]' => 'Contado',
-            'tabla_orden[credito]' => 'Crédito',
-        ];
-
-        $mapeoDisponibilidad = [
-            'tabla_orden[bodega]' => 'Bodega',
-            'tabla_orden[cucuta]' => 'Cúcuta',
-            'tabla_orden[lafayette]' => 'Lafayette',
-            'tabla_orden[fabrica]' => 'Fábrica',
-        ];
-
-        $mapeoRegimen = [
-            'tabla_orden[comun]' => 'Común',
-            'tabla_orden[simplificado]' => 'Simplificado',
-        ];
-
-        // Procesar FORMA_PAGO
-        foreach ($mapeoFormaPago as $clave => $etiqueta) {
-            if (isset($datos[$clave]) && ($datos[$clave] === '1' || $datos[$clave] === true)) {
-                $obsKey = str_replace(']', '_obs]', str_replace('[', '[pago_', $clave));
-                $convertidas['forma_pago'][] = [
-                    'valor' => $etiqueta,
-                    'observacion' => $datos[$obsKey] ?? ''
-                ];
-            }
-        }
-
-        // Procesar DISPONIBILIDAD
-        foreach ($mapeoDisponibilidad as $clave => $etiqueta) {
-            if (isset($datos[$clave]) && ($datos[$clave] === '1' || $datos[$clave] === true)) {
-                $obsKey = str_replace(']', '_obs]', $clave);
-                $convertidas['disponibilidad'][] = [
-                    'valor' => $etiqueta,
-                    'observacion' => $datos[$obsKey] ?? ''
-                ];
-            }
-        }
-
-        // Procesar RÉGIMEN
-        foreach ($mapeoRegimen as $clave => $etiqueta) {
-            if (isset($datos[$clave]) && ($datos[$clave] === '1' || $datos[$clave] === true)) {
-                $obsKey = str_replace(']', '_obs]', str_replace('[', '[regimen_', $clave));
-                $convertidas['regimen'][] = [
-                    'valor' => $etiqueta,
-                    'observacion' => $datos[$obsKey] ?? ''
-                ];
-            }
-        }
-
-        // Remover campos vacíos
-        foreach ($convertidas as $key => $value) {
-            if (empty($value)) {
-                unset($convertidas[$key]);
-            }
-        }
-
-        return $convertidas;
-
     }
 
     /**
@@ -1904,7 +1566,7 @@ class PedidosProduccionController extends Controller
                     'prenda_pedido_id' => $prendaPedido->id,
                     'nombre_producto' => $prenda['nombre_producto'] ?? 'Sin nombre',
                     'descripcion' => $prenda['descripcion'] ?? '',
-                    'generos' => json_encode($this->procesarGeneros($prenda['genero'] ?? '')),
+                    'generos' => json_encode($this->utilitariosService->procesarGeneros($prenda['genero'] ?? '')),
                     'cantidad_talla' => json_encode($cantidadTallaGenero), // Estructura género => talla => cantidad
                     'ubicaciones' => json_encode($prenda['ubicaciones'] ?? []),
                     'cantidad_total' => $cantidadTotalPrenda,
@@ -1991,48 +1653,8 @@ class PedidosProduccionController extends Controller
 
     // MÉTODO ELIMINADO - Migrado a DescripcionService::construirDescripcionReflectivoSinCotizacion()
 
-    /**
-     * Procesar múltiples géneros desde el input
-     * Convierte string, array o JSON a un array limpio de géneros
-     * 
-     * @param mixed $generoInput - Puede ser string, array o JSON
-     * @return array - Array de géneros sin duplicados ni vacíos
-     */
-    private function procesarGeneros($generoInput): array
-    {
-        return $this->procesarMultiplesGeneros($generoInput);
-    }
-
-    /**
-     * Procesar múltiples géneros desde el input (alias antiguo)
-     * Convierte string, array o JSON a un array limpio de géneros
-     * 
-     * @param mixed $generoInput - Puede ser string, array o JSON
-     * @return array - Array de géneros sin duplicados ni vacíos
-     */
-    private function procesarMultiplesGeneros($generoInput): array
-    {
-        $generos = [];
-
-        if (is_array($generoInput)) {
-            // Si ya es array, filtrar vacíos
-            $generos = array_filter($generoInput, fn($g) => !empty($g));
-        } elseif (is_string($generoInput)) {
-            // Si es string, intentar decodificar JSON
-            if (str_starts_with($generoInput, '[')) {
-                $decoded = json_decode($generoInput, true);
-                $generos = is_array($decoded) ? array_filter($decoded) : (!empty($generoInput) ? [$generoInput] : []);
-            } else {
-                // Si es string simple, crear array
-                $generos = !empty($generoInput) ? [$generoInput] : [];
-            }
-        }
-
-        // Eliminar duplicados y valores vacíos, mantener índices reset
-        return array_values(array_unique(array_filter($generos)));
-    }
-
 }
+
 
 
 

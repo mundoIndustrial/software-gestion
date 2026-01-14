@@ -87,8 +87,8 @@
                         <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
                             <thead>
                                 <tr style="background: #0066cc; border-bottom: 2px solid #0066cc;">
-                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Color</th>
                                     <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Tela</th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Color</th>
                                     <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Referencia</th>
                                     <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white;">Imagen Tela</th>
                                     <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white; width: 30px;"></th>
@@ -98,10 +98,10 @@
                                 <!-- Fila para agregar nueva tela -->
                                 <tr style="border-bottom: 1px solid #e5e7eb;">
                                     <td style="padding: 0.5rem;">
-                                        <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" style="width: 100%; padding: 0.5rem;">
+                                        <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" style="width: 100%; padding: 0.5rem;">
                                     </td>
                                     <td style="padding: 0.5rem;">
-                                        <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" style="width: 100%; padding: 0.5rem;">
+                                        <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" style="width: 100%; padding: 0.5rem;">
                                     </td>
                                     <td style="padding: 0.5rem;">
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem;">
@@ -133,7 +133,7 @@
                     <!-- Seleccionar Género(s) -->
                     <div class="genero-buttons">
                         <!-- Botón DAMA -->
-                        <button type="button" id="btn-genero-dama" class="btn-genero" onclick="abrirModalSeleccionarTallas('dama')" data-selected="false">
+                        <button type="button" id="btn-genero-dama" class="btn-genero" data-selected="false">
                             <div class="btn-genero-content">
                                 <span class="material-symbols-rounded">woman</span>
                                 <span>DAMA</span>
@@ -142,7 +142,7 @@
                         </button>
                         
                         <!-- Botón CABALLERO -->
-                        <button type="button" id="btn-genero-caballero" class="btn-genero" onclick="abrirModalSeleccionarTallas('caballero')" data-selected="false">
+                        <button type="button" id="btn-genero-caballero" class="btn-genero" data-selected="false">
                             <div class="btn-genero-content">
                                 <span class="material-symbols-rounded">man</span>
                                 <span>CABALLERO</span>
