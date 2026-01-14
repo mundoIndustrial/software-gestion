@@ -10,7 +10,7 @@
                 : 'Producto desconocido';
             $tecnicas[] = [
                 'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
-                'prenda' => $nombreProducto,
+                'prenda' => $prenda_tecnica->prendaCot?->nombre_producto ?? 'Prenda sin nombre',
                 'observaciones' => $prenda_tecnica->observaciones
             ];
         }

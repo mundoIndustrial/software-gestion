@@ -28,9 +28,9 @@ class PersonalSeeder extends Seeder
                 Personal::truncate();
                 
                 // Insertar datos
-                foreach ($personas_data as $id_persona => $nombre_persona) {
+                foreach ($personas_data as $codigo_persona => $nombre_persona) {
                     Personal::create([
-                        'id_persona' => $id_persona,
+                        'codigo_persona' => $codigo_persona,
                         'nombre_persona' => $nombre_persona,
                     ]);
                 }

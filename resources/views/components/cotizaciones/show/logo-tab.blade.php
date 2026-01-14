@@ -97,7 +97,7 @@
                         : 'Producto desconocido';
                     $tecnicas[] = [
                         'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
-                        'prenda' => $nombreProducto,
+                        'prenda' => $prenda_tecnica->prendaCot?->nombre_producto ?? 'Prenda sin nombre',
                         'observaciones' => $prenda_tecnica->observaciones
                     ];
                 }
@@ -127,8 +127,8 @@
             // Obtener las prendas que tienen imágenes (fotos) usando el ID de LogoCotizacion
             $prendasConTecnicas = $logo 
                 ? \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logo->id)
-                    ->with(['fotos', 'tipoLogo', 'logoPrendaCot'])
-                    ->orderBy('logo_prenda_cot_id')
+                    ->with(['fotos', 'tipoLogo', 'prendaCot'])
+                    ->orderBy('id')
                     ->orderBy('grupo_combinado')
                     ->get()
                 : collect();
@@ -136,9 +136,9 @@
             // Agrupar por logo_prenda_cot_id (para crear una tarjeta por prenda)
             $prendasMap = [];
             foreach ($prendasConTecnicas as $prenda) {
-                $logoPrendaCotId = $prenda->logo_prenda_cot_id;
-                if (!isset($prendasMap[$logoPrendaCotId])) {
-                    $prendasMap[$logoPrendaCotId] = [];
+                $nombrePrenda = $prenda->prendaCot?->nombre_producto ?? 'Prenda sin nombre';
+                if (!isset($prendasMap[$nombrePrenda])) {
+                    $prendasMap[$nombrePrenda] = [];
                 }
                 $prendasMap[$logoPrendaCotId][] = $prenda;
             }

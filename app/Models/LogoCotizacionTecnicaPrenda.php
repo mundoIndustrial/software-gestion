@@ -13,7 +13,7 @@ class LogoCotizacionTecnicaPrenda extends Model
     protected $fillable = [
         'logo_cotizacion_id',
         'tipo_logo_id',
-        'logo_prenda_cot_id',
+        'prenda_cot_id',
         'observaciones',
         'ubicaciones',
         'talla_cantidad',
@@ -44,11 +44,11 @@ class LogoCotizacionTecnicaPrenda extends Model
     }
 
     /**
-     * Relación: Pertenece a una LogoPrendaCot
+     * Relación: Pertenece a una PrendaCot
      */
-    public function logoPrendaCot(): BelongsTo
+    public function prendaCot(): BelongsTo
     {
-        return $this->belongsTo(LogoPrendaCot::class, 'logo_prenda_cot_id');
+        return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
     }
 
     /**
