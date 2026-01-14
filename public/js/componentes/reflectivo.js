@@ -750,7 +750,7 @@ window.mostrarResumenReflectivo = function() {
     // Imágenes con preview
     if (window.datosReflectivo.imagenes.length > 0) {
         html += `<div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">`;
-        html += `<img src="${window.datosReflectivo.imagenes[0].data}" style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 2px solid #0066cc;">`;
+        html += `<img src="${window.datosReflectivo.imagenes[0].previewUrl}" style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 2px solid #0066cc;">`;
         if (window.datosReflectivo.imagenes.length > 1) {
             html += `<span style="background: #0066cc; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${window.datosReflectivo.imagenes.length - 1}</span>`;
         }

@@ -156,7 +156,7 @@
 @endpush
 
 @push('scripts')
-    <script src="{{ asset('js/notifications-realtime.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
     <script src="{{ asset('js/nav-search.js') }}"></script>
     @if(Route::currentRouteName() === 'cotizaciones.pendientes')
         <script src="{{ asset('js/contador/busqueda-header.js') }}"></script>

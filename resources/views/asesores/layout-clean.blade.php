@@ -214,7 +214,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="{{ asset('js/toast-notifications.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

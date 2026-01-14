@@ -84,7 +84,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Toast Notifications Global (diferido) -->
-    <script defer src="{{ asset('js/toast-notifications.js') }}"></script>
+    <script defer src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
 
     <!-- Page-specific styles -->
     @stack('styles')
@@ -153,14 +153,14 @@
     @yield('body')
 
     <!-- Core JS - Crítico para funcionalidad (sin defer) -->
-    <script src="{{ asset('js/sidebar.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/sidebar.js') }}"></script>
     
     <!-- Sistema de refresh automático de token CSRF (Previene error 419) -->
-    <script src="{{ asset('js/csrf-refresh.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/csrf-refresh.js') }}"></script>
     
     <!-- Non-critical JS (diferido) -->
-    <script defer src="{{ asset('js/sidebar-notifications.js') }}"></script>
-    <script defer src="{{ asset('js/top-nav.js') }}"></script>
+    <script defer src="{{ asset('js/configuraciones/sidebar-notifications.js') }}"></script>
+    <script defer src="{{ asset('js/configuraciones/top-nav.js') }}"></script>
 
     <!-- Page-specific scripts -->
     @stack('scripts')

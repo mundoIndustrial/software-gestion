@@ -3,6 +3,7 @@
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
 @endsection
@@ -134,14 +135,14 @@
 
 @push('scripts')
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
-    <script src="{{ asset('js/constantes-tallas.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
     
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
-    <script src="{{ asset('js/modulos/crear-pedido/modales-dinamicos.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/gestion-tallas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/gestion-telas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/gestion-items-pedido.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/modal-seleccion-prendas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
     
     <!-- Componente: Prendas -->
     <script src="{{ asset('js/componentes/prendas.js') }}"></script>
@@ -150,12 +151,11 @@
     <script src="{{ asset('js/componentes/reflectivo.js') }}"></script>
     
     <!-- Cargar módulos de gestión de pedidos -->
-    <script src="{{ asset('js/modulos/crear-pedido/api-pedidos-editable.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/image-storage-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/gestion-items-pedido-refactorizado.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/manejadores-variaciones.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/manejadores-procesos-prenda.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
 
     <script>
         // Datos del servidor

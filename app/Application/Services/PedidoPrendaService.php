@@ -237,6 +237,8 @@ class PedidoPrendaService
             'bolsillos_obs' => $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '',
             'broche_obs' => $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '',
             'reflectivo_obs' => $prendaData['obs_reflectivo'] ?? $prendaData['reflectivo_obs'] ?? '',
+            // ✅ NUEVO CAMPO: de_bodega (mapeo desde origen)
+            'de_bodega' => (int)($prendaData['de_bodega'] ?? 1), // 1=bodega, 0=confeccion
         ]);
 
         // 🔍 LOG: Después de guardar
@@ -254,6 +256,7 @@ class PedidoPrendaService
             'bolsillos_obs_guardado' => $prenda->bolsillos_obs,
             'broche_obs_guardado' => $prenda->broche_obs,
             'reflectivo_obs_guardado' => $prenda->reflectivo_obs,
+            'de_bodega_guardado' => $prenda->de_bodega, // ✅ NUEVO: Registrar de_bodega
         ]);
 
         // 2. ✅ GUARDAR TALLAS CON CANTIDADES en prenda_tallas_ped

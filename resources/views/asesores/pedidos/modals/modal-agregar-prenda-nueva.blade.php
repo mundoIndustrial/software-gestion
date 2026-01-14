@@ -1,5 +1,5 @@
 <!-- MODAL: Agregar Prenda Nueva (Sin Cotización) -->
-<div id="modal-agregar-prenda-nueva" class="modal-overlay">
+<div id="modal-agregar-prenda-nueva" class="modal-overlay" style="display: none;">
     <div class="modal-container modal-xl">
         <!-- Header -->
         <div class="modal-header modal-header-primary">
@@ -56,7 +56,7 @@
                         </label>
                         
                         <!-- Imagen principal preview -->
-                        <div id="nueva-prenda-foto-preview" class="foto-preview">
+                        <div id="nueva-prenda-foto-preview" class="foto-preview foto-preview-lg">
                             <div class="foto-preview-content">
                                 <div class="material-symbols-rounded">add_photo_alternate</div>
                                 <div class="foto-preview-text">Agregar</div>
@@ -67,10 +67,10 @@
                         <div id="nueva-prenda-foto-contador" class="foto-counter"></div>
                         
                         <!-- Input de archivos -->
-                        <input type="file" id="nueva-prenda-foto-input" accept="image/*" style="display: none;" onchange="if(this.files.length > 0) { manejarImagenesPrenda(this); }">
+                        <input type="file" id="nueva-prenda-foto-input" accept="image/*" style="display: none;" onchange="manejarImagenesPrenda(this)">
                         
                         <!-- Botón agregar más fotos -->
-                        <button type="button" id="nueva-prenda-foto-btn" class="btn btn-sm btn-primary">
+                        <button type="button" id="nueva-prenda-foto-btn" class="btn btn-sm btn-primary" onclick="document.getElementById('nueva-prenda-foto-input').click()">
                             + Agregar
                         </button>
                     </div>
@@ -106,11 +106,13 @@
                                     <td style="padding: 0.5rem;">
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem;">
                                     </td>
-                                    <td style="padding: 0.5rem; text-align: center;">
+                                    <td style="padding: 0.5rem; text-align: center; vertical-align: top;">
                                         <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar imagen (opcional)">
                                             <span class="material-symbols-rounded" style="font-size: 1.2rem;">image</span>
                                         </button>
                                         <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenTela(this)">
+                                        <!-- Preview temporal dentro de la celda - EN EL FLUJO VISUAL Y VISIBLE -->
+                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;"></div>
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center;">
                                         <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
@@ -122,9 +124,6 @@
                         </table>
                     </div>
 
-                    <!-- Preview de imágenes de tela -->
-                    <div id="nueva-prenda-tela-preview" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
-
                     <!-- Tallas y Cantidades -->
                     <label class="form-label-primary" style="margin-top: 1.5rem;">
                         <span class="material-symbols-rounded">straighten</span>TALLAS Y CANTIDADES *
@@ -133,7 +132,7 @@
                     <!-- Seleccionar Género(s) -->
                     <div class="genero-buttons">
                         <!-- Botón DAMA -->
-                        <button type="button" id="btn-genero-dama" class="btn-genero" data-selected="false">
+                        <button type="button" id="btn-genero-dama" class="btn-genero" data-selected="false" onclick="abrirModalSeleccionarTallas('dama')">
                             <div class="btn-genero-content">
                                 <span class="material-symbols-rounded">woman</span>
                                 <span>DAMA</span>
@@ -142,7 +141,7 @@
                         </button>
                         
                         <!-- Botón CABALLERO -->
-                        <button type="button" id="btn-genero-caballero" class="btn-genero" data-selected="false">
+                        <button type="button" id="btn-genero-caballero" class="btn-genero" data-selected="false" onclick="abrirModalSeleccionarTallas('caballero')">
                             <div class="btn-genero-content">
                                 <span class="material-symbols-rounded">man</span>
                                 <span>CABALLERO</span>
@@ -249,31 +248,31 @@
                     <div class="procesos-container">
                         <!-- Reflectivo -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" id="checkbox-reflectivo" name="nueva-prenda-procesos" value="reflectivo" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('reflectivo', true); } else { manejarCheckboxProceso('reflectivo', false); }">
+                            <input type="checkbox" id="checkbox-reflectivo" name="nueva-prenda-procesos" value="reflectivo" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('reflectivo', true); } else { manejarCheckboxProceso('reflectivo', false); } }">
                             <span><span class="material-symbols-rounded">light_mode</span>Reflectivo</span>
                         </label>
                         
                         <!-- Bordado -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" id="checkbox-bordado" name="nueva-prenda-procesos" value="bordado" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('bordado', true); } else { manejarCheckboxProceso('bordado', false); }">
+                            <input type="checkbox" id="checkbox-bordado" name="nueva-prenda-procesos" value="bordado" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('bordado', true); } else { manejarCheckboxProceso('bordado', false); } }">
                             <span><span class="material-symbols-rounded">auto_awesome</span>Bordado</span>
                         </label>
                         
                         <!-- Estampado -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" id="checkbox-estampado" name="nueva-prenda-procesos" value="estampado" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('estampado', true); } else { manejarCheckboxProceso('estampado', false); }">
+                            <input type="checkbox" id="checkbox-estampado" name="nueva-prenda-procesos" value="estampado" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('estampado', true); } else { manejarCheckboxProceso('estampado', false); } }">
                             <span><span class="material-symbols-rounded">format_paint</span>Estampado</span>
                         </label>
                         
                         <!-- DTF -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" id="checkbox-dtf" name="nueva-prenda-procesos" value="dtf" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('dtf', true); } else { manejarCheckboxProceso('dtf', false); }">
+                            <input type="checkbox" id="checkbox-dtf" name="nueva-prenda-procesos" value="dtf" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('dtf', true); } else { manejarCheckboxProceso('dtf', false); } }">
                             <span><span class="material-symbols-rounded">straighten</span>DTF</span>
                         </label>
                         
                         <!-- Sublimado -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" id="checkbox-sublimado" name="nueva-prenda-procesos" value="sublimado" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('sublimado', true); } else { manejarCheckboxProceso('sublimado', false); }">
+                            <input type="checkbox" id="checkbox-sublimado" name="nueva-prenda-procesos" value="sublimado" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('sublimado', true); } else { manejarCheckboxProceso('sublimado', false); } }">
                             <span><span class="material-symbols-rounded">water_drop</span>Sublimado</span>
                         </label>
                     </div>

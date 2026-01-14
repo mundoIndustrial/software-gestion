@@ -1,0 +1,741 @@
+/**
+ * Estilos para Item Card - Pedidos de Producción
+ * 
+ * Componente de presentación para items agregados en pedidos
+ * Incluye: card header, secciones expandibles, tallas, procesos y acciones
+ */
+
+/* ===========================
+   CARD GENERAL
+   =========================== */
+
+.item-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.item-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #d1d5db;
+}
+
+/* ===========================
+   CARD HEADER - INFORMACIÓN PRINCIPAL
+   =========================== */
+
+.card-header {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.card-imagen-contenedor {
+  flex-shrink: 0;
+}
+
+.card-imagen-prenda {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.card-imagen-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.card-datos-principales {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-titulo {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e40af;
+  word-break: break-word;
+}
+
+.card-subtitulo {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
+  word-break: break-word;
+}
+
+.card-descripcion {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.card-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-label {
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+.meta-valor {
+  color: #1e40af;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.mini-imagen-tela {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid #d1d5db;
+  margin-top: 0.5rem;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mini-imagen-tela:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Badge de imágenes adicionales */
+.card-imagen-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: rgba(30, 64, 175, 0.9);
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.meta-imagen-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(30, 64, 175, 0.9);
+  color: white;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.7rem;
+  border: 1px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Botón de Menú */
+.btn-menu-wrapper {
+  position: relative;
+}
+
+.btn-menu-expandible {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0.5rem;
+  margin: -0.5rem -0.5rem -0.5rem 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-menu-expandible:hover {
+  color: #374151;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+/* Menú Dropdown */
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #374151;
+  transition: all 0.2s ease;
+  justify-content: flex-start;
+}
+
+.menu-item:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.menu-item .material-symbols-rounded {
+  font-size: 1.25rem;
+}
+
+.menu-item.btn-eliminar-item:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ===========================
+   SECCIONES EXPANDIBLES
+   =========================== */
+
+.card-section {
+  border-top: 1px solid #f3f4f6;
+  padding: 0.75rem 0;
+  margin-top: 0.75rem;
+}
+
+.card-section:first-of-type {
+  margin-top: 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  margin: -0.75rem -0.75rem 0 -0.75rem;
+  padding: 0.75rem;
+}
+
+.section-header:hover {
+  background: #f9fafb;
+}
+
+.section-header.active {
+  background: #f0f9ff;
+}
+
+.section-titulo {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.section-titulo .icon {
+  font-size: 1rem;
+}
+
+.section-toggle {
+  color: #9ca3af;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.section-header.active .section-toggle {
+  transform: rotate(180deg);
+}
+
+.section-content {
+  padding: 0.75rem 0.5rem;
+  animation: slideDown 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+}
+
+/* ===========================
+   SECCIÓN: VARIACIONES
+   =========================== */
+
+.variaciones-contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.variacion-item {
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-left: 3px solid #1e40af;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.variacion-titulo {
+  font-weight: 600;
+  color: #1e40af;
+  font-size: 0.95rem;
+}
+
+.variacion-obs {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+  margin-left: 0.25rem;
+}
+
+.variaciones-tabla {
+  width: 100%;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.variaciones-tabla tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.variaciones-tabla tr:last-child {
+  border-bottom: none;
+}
+
+.var-label {
+  font-weight: 600;
+  color: #4b5563;
+  padding: 0.5rem 0;
+  width: 20%;
+  vertical-align: top;
+}
+
+.var-valor {
+  color: #1e40af;
+  padding: 0.5rem 0 0.5rem 1rem;
+  word-break: break-word;
+}
+
+/* ===========================
+   SECCIÓN: TALLAS
+   =========================== */
+
+.tallas-por-genero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.genero-grupo {
+  background: #f9fafb;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #f0f0f0;
+}
+
+.genero-titulo {
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tallas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.talla-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.talla-item:hover {
+  border-color: #1e40af;
+  background: #f0f9ff;
+}
+
+.talla-valor {
+  font-weight: 600;
+  color: #1e40af;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.talla-cantidad {
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* ===========================
+   SECCIÓN: PROCESOS
+   =========================== */
+
+.procesos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.proceso-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: #dbeafe;
+  color: #0c4a6e;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid #bfdbfe;
+  transition: all 0.2s ease;
+}
+
+.proceso-badge:hover {
+  background: #bfdbfe;
+  border-color: #0c4a6e;
+  transform: translateY(-1px);
+}
+
+/* ===========================
+   CARD FOOTER - ACCIONES
+   =========================== */
+
+.card-footer {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn .material-symbols-rounded {
+  font-size: 1.1rem;
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+/* Tablet (768px - 1024px) */
+@media (max-width: 1024px) {
+  .card-header {
+    gap: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-meta-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .tallas-por-genero {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .tallas-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 768px) {
+  .item-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .card-imagen-contenedor {
+    width: 100%;
+  }
+
+  .card-imagen-prenda {
+    width: 100%;
+    height: 200px;
+  }
+
+  .card-datos-principales {
+    width: 100%;
+  }
+
+  .card-titulo {
+    font-size: 1rem;
+  }
+
+  .card-subtitulo {
+    font-size: 0.9rem;
+  }
+
+  .card-descripcion {
+    font-size: 0.8rem;
+  }
+
+  .card-meta-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .mini-imagen-tela {
+    width: 40px;
+    height: 40px;
+  }
+
+  .btn-menu-expandible {
+    font-size: 1.25rem;
+  }
+
+  .card-section {
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+  }
+
+  .section-header {
+    padding: 0.5rem;
+    margin: -0.5rem -0.5rem 0 -0.5rem;
+  }
+
+  .section-titulo {
+    font-size: 0.9rem;
+  }
+
+  .section-content {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .variacion-item {
+    padding: 0.6rem;
+  }
+
+  .variacion-titulo {
+    font-size: 0.9rem;
+  }
+
+  .variacion-obs {
+    font-size: 0.8rem;
+  }
+
+  .variaciones-tabla {
+    font-size: 0.8rem;
+  }
+
+  .var-label {
+    width: 25%;
+    padding: 0.35rem 0;
+  }
+
+  .var-valor {
+    padding: 0.35rem 0 0.35rem 0.75rem;
+  }
+
+  .tallas-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+
+  .talla-item {
+    padding: 0.4rem;
+  }
+
+  .talla-valor {
+    font-size: 0.75rem;
+  }
+
+  .talla-cantidad {
+    font-size: 0.7rem;
+  }
+
+  .procesos-lista {
+    gap: 0.4rem;
+  }
+
+  .proceso-badge {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .card-footer {
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
+
+  .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .btn .material-symbols-rounded {
+    font-size: 1rem;
+  }
+}
+
+/* Mobile Pequeño (< 480px) */
+@media (max-width: 480px) {
+  .card-imagen-prenda {
+    height: 150px;
+  }
+
+  .card-titulo {
+    font-size: 0.95rem;
+  }
+
+  .card-subtitulo {
+    font-size: 0.85rem;
+  }
+
+  .variacion-item {
+    padding: 0.5rem;
+  }
+
+  .variacion-titulo {
+    font-size: 0.85rem;
+  }
+
+  .variacion-obs {
+    font-size: 0.75rem;
+  }
+
+  .card-meta-grid {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .tallas-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .card-footer {
+    justify-content: stretch;
+  }
+
+  .card-footer .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

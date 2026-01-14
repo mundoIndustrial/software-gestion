@@ -171,8 +171,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="{{ asset('js/toast-notifications.js') }}"></script>
-    <script src="{{ asset('js/sidebar.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/sidebar.js') }}"></script>
     <script src="{{ asset('js/asesores/notifications.js') }}"></script>
     <script src="{{ asset('js/asesores/sidebar-responsive.js') }}"></script>
     @stack('scripts')

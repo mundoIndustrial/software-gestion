@@ -261,6 +261,19 @@ class CrearPedidoEditableController extends Controller
                 // Determinar el tipo de item
                 $tipo = $item['tipo'] ?? 'cotizacion';
                 
+                // Determinar de_bodega: 
+                // 1. Si viene explícitamente, usarlo
+                // 2. Si no, mapear desde origen
+                $deBodega = 1; // default: bodega
+                if (isset($item['de_bodega'])) {
+                    // Si viene de_bodega explícitamente, usar ese valor (puede ser 0 o 1)
+                    $deBodega = (int)$item['de_bodega'];
+                } else {
+                    // Si no viene de_bodega, mapear desde origen
+                    $origen = $item['origen'] ?? 'bodega';
+                    $deBodega = $origen === 'bodega' ? 1 : 0;
+                }
+                
                 // Convertir item a formato esperado por PedidoPrendaService
                 $prendaData = [
                     'nombre_producto' => $item['prenda'],
@@ -268,6 +281,8 @@ class CrearPedidoEditableController extends Controller
                     'variaciones' => $item['variaciones'] ?? [],
                     'fotos' => $item['imagenes'] ?? [],
                     'procesos' => $item['procesos'] ?? [],
+                    'origen' => $item['origen'] ?? 'bodega', // ✅ Origen de la prenda
+                    'de_bodega' => $deBodega, // ✅ CAMPO FINAL CALCULADO
                 ];
                 
                 // ✅ Procesar tallas según el tipo de item

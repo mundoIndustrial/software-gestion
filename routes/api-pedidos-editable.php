@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Asesores\CrearPedidoEditableController;
+use App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:asesor'])->group(function () {
@@ -16,5 +17,8 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
         
         // Subir imágenes (FormData)
         Route::post('/subir-imagenes', [CrearPedidoEditableController::class, 'subirImagenesPrenda'])->name('subir-imagenes');
+        
+        // Renderizar componente item-card
+        Route::post('/render-item-card', [PedidosProduccionController::class, 'renderItemCard'])->name('render-item-card');
     });
 });

@@ -575,4 +575,52 @@ class PedidosProduccionController
             ], 500);
         }
     }
+
+    /**
+     * POST /api/pedidos/render-item-card
+     * Renderizar componente item-card para agregar dinámicamente
+     * 
+     * Body:
+     * {
+     *   item: { objeto con datos del item },
+     *   index: número de índice
+     * }
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function renderItemCard(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'item' => 'required|array',
+                'index' => 'required|integer|min:0',
+            ]);
+
+            $item = $validated['item'];
+            $index = $validated['index'];
+
+            // Renderizar el componente Blade
+            $html = view('asesores.pedidos.components.item-card', [
+                'item' => $item,
+                'index' => $index,
+            ])->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error renderizando item-card', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error renderizando componente',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

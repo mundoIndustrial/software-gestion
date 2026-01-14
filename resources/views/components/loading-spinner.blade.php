@@ -311,4 +311,4 @@
 </script>
 
 <!-- Auto Loading Spinner Script -->
-<script src="{{ asset('js/auto-loading-spinner.js') }}"></script>
+<script src="{{ asset('js/configuraciones/auto-loading-spinner.js') }}"></script>
