@@ -50,6 +50,7 @@ const AsistenciaAbsencias = (() => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${ausencia.nombre}</td>
+                    <td style="text-align: center;">${ausencia.id}</td>
                     <td style="text-align: center;">${ausencia.total_inasistencias}</td>
                     <td style="text-align: center;">
                         <button class="btn-ver-inasistencias" data-nombre="${ausencia.nombre}" data-fechas='${JSON.stringify(ausencia.fechas_inasistidas)}'>
@@ -69,7 +70,7 @@ const AsistenciaAbsencias = (() => {
             });
         } else {
             const row = document.createElement('tr');
-            row.innerHTML = '<td colspan="3" class="empty-cell">No hay ausencias registradas</td>';
+            row.innerHTML = '<td colspan="4" class="empty-cell">No hay ausencias registradas</td>';
             ausenciasTableBody.appendChild(row);
         }
         
