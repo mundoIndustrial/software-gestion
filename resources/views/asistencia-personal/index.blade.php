@@ -160,6 +160,7 @@
                         <thead>
                             <tr>
                                 <th>Persona</th>
+                                <th>ID</th>
                                 <th>Total Inasistencias</th>
                                 <th>Acciones</th>
                             </tr>
