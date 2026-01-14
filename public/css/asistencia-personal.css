@@ -680,6 +680,47 @@ body {
     letter-spacing: 1px;
     border-right: 1px solid rgba(255, 255, 255, 0.15);
     font-size: 0.85rem;
+    position: relative;
+    word-break: break-word;
+    overflow: visible;
+}
+
+.records-table th[style*="position: relative"] {
+    text-transform: none;
+    letter-spacing: normal;
+    padding: 14px 8px;
+}
+
+.records-table th div {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.records-table th span {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+    display: inline-block;
+    text-align: center;
+}
+
+.records-table th button {
+    margin-left: 0 !important;
+    flex-shrink: 0;
+    padding: 2px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+}
+
+.records-table th button svg {
+    width: 14px !important;
+    height: 14px !important;
 }
 
 .records-table th:last-child {
@@ -971,6 +1012,7 @@ body {
     width: 90%;
     max-height: 80vh;
     height: auto;
+    margin: auto !important;
 }
 
 .inasistencias-container {
@@ -1290,4 +1332,48 @@ mark {
     .modal-controls .btn {
         width: 100%;
     }
+}
+
+/* Estilos para indicadores de filtros */
+.filter-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-left: 4px;
+    padding: 0 4px;
+}
+
+/* Botón flotante de limpieza de filtros */
+#btnLimpiarFiltrosFlotante {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    transition: all 0.3s ease;
+}
+
+#btnLimpiarFiltrosFlotante:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
+}
+
+#btnLimpiarFiltrosFlotante:active {
+    transform: scale(0.95);
 }
