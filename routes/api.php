@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\OrdenController;
 use App\Http\Controllers\PrendaController;
+use App\Http\Controllers\Api\ProcesosController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 
 /**
@@ -61,6 +62,53 @@ Route::middleware('api')->prefix('api')->name('api.')->group(function () {
     
     // Rutas de cotizaciones
     Route::apiResource('cotizaciones', CotizacionPrendaController::class);
+
+    // Rutas de procesos (DDD)
+    Route::prefix('procesos')->name('procesos.')->group(function () {
+        // Obtener tipos de procesos disponibles
+        Route::get('tipos', [ProcesosController::class, 'tipos'])
+            ->name('tipos');
+
+        // Procesos de una prenda
+        Route::prefix('prendas/{prendaId}')->name('prenda.')->group(function () {
+            Route::get('/', [ProcesosController::class, 'obtenerPorPrenda'])
+                ->name('listar');
+            
+            Route::post('/', [ProcesosController::class, 'crear'])
+                ->name('crear');
+        });
+
+        // Operaciones en procesos específicos
+        Route::prefix('{procesoId}')->name('proceso.')->group(function () {
+            Route::put('/', [ProcesosController::class, 'actualizar'])
+                ->name('actualizar');
+            
+            Route::delete('/', [ProcesosController::class, 'eliminar'])
+                ->name('eliminar');
+            
+            // Cambios de estado
+            Route::post('aprobar', [ProcesosController::class, 'aprobar'])
+                ->name('aprobar');
+            
+            Route::post('rechazar', [ProcesosController::class, 'rechazar'])
+                ->name('rechazar');
+
+            // Gestión de imágenes
+            Route::prefix('imagenes')->name('imagenes.')->group(function () {
+                Route::get('/', [ProcesosController::class, 'obtenerImagenes'])
+                    ->name('listar');
+                
+                Route::post('/', [ProcesosController::class, 'subirImagen'])
+                    ->name('subir');
+                
+                Route::post('{imagenId}/principal', [ProcesosController::class, 'marcarComoPrincipal'])
+                    ->name('principal');
+                
+                Route::delete('{imagenId}', [ProcesosController::class, 'eliminarImagen'])
+                    ->name('eliminar');
+            });
+        });
+    });
 });
 
 /**

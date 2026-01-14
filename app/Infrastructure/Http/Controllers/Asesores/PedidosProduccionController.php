@@ -2,1660 +2,577 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
-use App\Http\Controllers\Controller;
-use App\Models\PedidoProduccion;
-use App\Models\PrendaPedido;
-use App\Models\ProcesoPrenda;
-use App\Models\Cotizacion;
-use App\Enums\EstadoPedido;
+use App\Domain\Shared\CQRS\QueryBus;
+use App\Domain\Shared\CQRS\CommandBus;
+use App\Domain\PedidoProduccion\Queries\ObtenerPedidoQuery;
+use App\Domain\PedidoProduccion\Queries\ListarPedidosQuery;
+use App\Domain\PedidoProduccion\Queries\FiltrarPedidosPorEstadoQuery;
+use App\Domain\PedidoProduccion\Queries\BuscarPedidoPorNumeroQuery;
+use App\Domain\PedidoProduccion\Queries\ObtenerPrendasPorPedidoQuery;
+use App\Domain\PedidoProduccion\Commands\CrearPedidoCommand;
+use App\Domain\PedidoProduccion\Commands\ActualizarPedidoCommand;
+use App\Domain\PedidoProduccion\Commands\CambiarEstadoPedidoCommand;
+use App\Domain\PedidoProduccion\Commands\AgregarPrendaAlPedidoCommand;
+use App\Domain\PedidoProduccion\Commands\EliminarPedidoCommand;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-
-// Domain Services
-use App\Domain\PedidoProduccion\Services\NumeracionService;
-use App\Domain\PedidoProduccion\Services\DescripcionService;
-use App\Domain\PedidoProduccion\Services\ImagenService;
-use App\Domain\PedidoProduccion\Services\PedidoProduccionService;
-use App\Domain\PedidoProduccion\Services\CreacionPedidoService;
-use App\Domain\PedidoProduccion\Services\LogoPedidoService;
-use App\Domain\PedidoProduccion\Services\ProcesosPedidoService;
-use App\Domain\PedidoProduccion\Repositories\CotizacionRepository;
-use App\Domain\PedidoProduccion\Services\ListaPedidosService;
-use App\Domain\PedidoProduccion\Services\VariantesService;
-use App\Domain\PedidoProduccion\Services\FormularioPedidoService;
-use App\Domain\PedidoProduccion\Services\UtilitariosService;
+use Illuminate\Support\Facades\Log;
 
 /**
- * Controlador de Pedidos de Producción
+ * PedidosProduccionController - REFACTORIZADO CON CQRS
  * 
- * Responsabilidad: Manejar requests HTTP y delegar lógica de negocio a servicios de dominio
- * Siguiendo principios DDD y SOLID
+ * Responsabilidad:
+ * - Recibir requests HTTP
+ * - Validar entrada HTTP (no de negocio)
+ * - Ejecutar Queries/Commands via buses
+ * - Formatear respuestas HTTP
+ * - Manejo de errores HTTP
+ * 
+ * Patrón: CQRS + Dependency Injection
+ * SRP: Solo HTTP, nada de lógica de negocio
+ * 
+ * Nota: Toda la lógica de negocio está en:
+ * - QueryHandlers (lecturas con cache)
+ * - CommandHandlers (escrituras con transacciones)
+ * - Validators (validaciones de dominio)
+ * - Services (lógica reutilizable)
  */
-class PedidosProduccionController extends Controller
+class PedidosProduccionController
 {
     public function __construct(
-        private PedidoProduccionService $pedidoService,
-        private CreacionPedidoService $creacionPedidoService,
-        private LogoPedidoService $logoPedidoService,
-        private ProcesosPedidoService $procesosService,
-        private NumeracionService $numeracionService,
-        private DescripcionService $descripcionService,
-        private ImagenService $imagenService,
-        private CotizacionRepository $cotizacionRepository,
-        private ListaPedidosService $listaPedidosService,
-        private VariantesService $variantesService,
-        private FormularioPedidoService $formularioPedidoService,
-        private UtilitariosService $utilitariosService,
+        private QueryBus $queryBus,
+        private CommandBus $commandBus,
     ) {}
-    /**
-     * Mostrar formulario para crear pedido desde cotización
-     */
-    public function crearForm()
-    {
-        $cotizaciones = $this->formularioPedidoService->obtenerDatosFormularioCrearDesdeCotizacion();
-        return view('asesores.pedidos.crear-desde-cotizacion', compact('cotizaciones'));
-    }
 
     /**
-     * Mostrar formulario EDITABLE para crear pedido DESDE COTIZACIÓN
+     * GET /api/pedidos
+     * Listar todos los pedidos con paginación
      * 
-     * @return \Illuminate\View\View
-     */
-    /**
-     * Router principal para crear pedidos - soporta dos flujos:
-     * - cotizacion (desde cotización existente)
-     * - nuevo (nuevo pedido)
-     */
-    public function crearFormEditable($tipo = 'cotizacion')
-    {
-        // Validar tipo
-        if (!in_array($tipo, ['cotizacion', 'nuevo'])) {
-            $tipo = 'cotizacion';
-        }
-
-        $data = $this->formularioPedidoService->obtenerDatosRouter($tipo);
-        return view('asesores.pedidos.crear-pedido', $data);
-    }
-
-    /**
-     * Alias para crear nuevo pedido - redirige a crearFormEditable con tipo='nuevo'
-     * Mantenido por compatibilidad con rutas antiguas
-     */
-    public function crearFormEditableNuevo()
-    {
-        return $this->crearFormEditable('nuevo');
-    }
-
-    /**
-     * Listar pedidos de producción del asesor
-     */
-    public function index(Request $request)
-    {
-        // ✅ FIX: Si filtran por tipo=logo, consultar logo_pedidos en lugar de pedidos_produccion
-        if ($request->has('tipo') && $request->tipo === 'logo') {
-            $filtros = [
-                'estado' => $request->estado,
-                'fecha_desde' => $request->fecha_desde,
-                'fecha_hasta' => $request->fecha_hasta,
-            ];
-            $pedidos = $this->listaPedidosService->obtenerLogoPedidos($filtros);
-        } else {
-            // Delegar obtención de pedidos al servicio de dominio
-            $filtros = [
-                'estado' => $request->estado,
-                'fecha_desde' => $request->fecha_desde,
-                'fecha_hasta' => $request->fecha_hasta,
-            ];
-            $pedidos = $this->listaPedidosService->obtenerPedidosProduccion($filtros);
-        }
-
-        return view('asesores.pedidos.index', compact('pedidos'));
-    }
-
-    /**
-     * Ver detalle de pedido de producción
-     */
-    public function show($id)
-    {
-        $pedido = $this->listaPedidosService->obtenerDetallePedido($id);
-
-        $prendas = $pedido->prendas;
-        $cotizacion = $pedido->cotizacion;
-        $prendasCotizacion = $cotizacion ? $cotizacion->prendasCotizaciones : [];
-
-        return view('asesores.pedidos.show', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
-    }
-
-    /**
-     * Ver plantilla ERP/Factura del pedido
-     */
-    public function plantilla($id)
-    {
-        $pedido = $this->listaPedidosService->obtenerPlantillaPedido($id);
-
-        $prendas = $pedido->prendas;
-        $cotizacion = $pedido->cotizacion;
-        $prendasCotizacion = $cotizacion ? $cotizacion->prendasCotizaciones : [];
-
-        return view('asesores.pedidos.plantilla-erp', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
-    }
-
-    /**
-     * Crear pedido de producción desde cotización
-     * Responsabilidad: Validar request HTTP y delegar a servicio de dominio
-     */
-    public function crearDesdeCotizacion($cotizacionId)
-    {
-        try {
-            // Delegar creación completa al servicio de dominio
-            $resultado = $this->creacionPedidoService->crearDesdeCotizacion($cotizacionId);
-            
-            return response()->json($resultado);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error creando pedido desde cotización', [
-                'cotizacion_id' => $cotizacionId,
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al crear el pedido: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    // MÉTODOS LEGACY ELIMINADOS - La lógica ahora está en servicios de dominio
-    // - crearDesdeCotizacion_LEGACY() -> CreacionPedidoService::crearDesdeCotizacion() (~520 líneas eliminadas)
-    // - Código corrupto duplicado eliminado (~620 líneas)
-
-    /**
-     * Crear un pedido LOGO desde cotización
-     * ✅ NUEVO: Crea SOLO en logo_pedidos, NO en pedidos_produccion
-     * ✅ CORREGIDO: Guarda logo_cotizacion_id desde la cotización
-     */
-
-    /**
-     * Crear un pedido LOGO desde cotización
-     * ✅ NUEVO: Crea SOLO en logo_pedidos, NO en pedidos_produccion
-     * ✅ CORREGIDO: Guarda logo_cotizacion_id desde la cotización
-     */
-    private function crearLogoPedidoDesdeAnullCotizacion(Cotizacion $cotizacion)
-    {
-        try {
-            DB::beginTransaction();
-
-            \Log::info('🎨 [LOGO desde Cotización] Creando logo_pedido desde cotización', [
-                'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $cotizacion->numero
-            ]);
-
-            // ✅ Obtener el logo_cotizacion_id asociado a esta cotización
-            $logoCotizacionId = DB::table('logo_cotizaciones')
-                ->where('cotizacion_id', $cotizacion->id)
-                ->value('id');
-            
-            \Log::info('🎨 [LOGO desde Cotización] logo_cotizacion encontrado', [
-                'cotizacion_id' => $cotizacion->id,
-                'logo_cotizacion_id' => $logoCotizacionId
-            ]);
-
-            // ✅ Generar número LOGO con formato #LOGO-00001
-            $numeroLogoPedido = $this->numeracionService->generarNumeroLogoPedido();
-
-            // Crear registro inicial en logo_pedidos
-            $logoPedidoId = DB::table('logo_pedidos')->insertGetId([
-                'pedido_id' => null, // NO crear en pedidos_produccion
-                'logo_cotizacion_id' => $logoCotizacionId, // ✅ CORREGIDO: Guardar la relación
-                'numero_pedido' => $numeroLogoPedido, // ✅ Usar número generado
-                'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $cotizacion->numero,
-                'cliente' => $cotizacion->cliente->nombre ?? 'Sin nombre',
-                'asesora' => Auth::user()?->name,
-                'forma_de_pago' => request()->input('forma_de_pago'),
-                'encargado_orden' => Auth::user()?->name,
-                'fecha_de_creacion_de_orden' => now(),
-                'estado' => 'pendiente',
-                'descripcion' => '',
-                'tecnicas' => null,
-                'observaciones_tecnicas' => '',
-                'ubicaciones' => null,
-                'observaciones' => '',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            // ✅ Crear el proceso inicial
-            \App\Models\ProcesosPedidosLogo::crearProcesoInicial($logoPedidoId, Auth::id());
-
-            \Log::info('✅ [LOGO desde Cotización] logo_pedido creado', [
-                'logo_pedido_id' => $logoPedidoId,
-                'numero_logo_pedido' => $numeroLogoPedido,
-                'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $cotizacion->numero,
-                'logo_cotizacion_id' => $logoCotizacionId
-            ]);
-
-            DB::commit();
-
-            // Retornar logo_pedido_id en lugar de pedido_id
-            return response()->json([
-                'success' => true,
-                'message' => 'Pedido LOGO creado inicialmente',
-                'logo_pedido_id' => $logoPedidoId,
-                'logo_cotizacion_id' => $logoCotizacionId, // ✅ Devolver para que el frontend lo tenga
-                'pedido_id' => null, // Explícitamente null
-                'tipo' => 'logo'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('❌ [LOGO desde Cotización] Error al crear logo_pedido', [
-                'cotizacion_id' => $cotizacion->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al crear pedido LOGO: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Guardar los datos específicos del LOGO en un pedido LOGO existente
-     * ✅ NUEVO: Actualiza logo_pedidos con los datos del formulario
-     * ✅ Guarda TODOS los campos necesarios según tabla logo_pedidos
-     * ✅ Calcula y guarda la cantidad total (suma de tallas)
-     */
-    public function guardarLogoPedido(Request $request): JsonResponse
-    {
-        try {
-            DB::beginTransaction();
-
-            $pedidoId = $request->input('pedido_id');
-            $logoCotizacionId = $request->input('logo_cotizacion_id');
-            $cantidad = $request->input('cantidad', 0); // Suma de tallas enviada desde frontend
-            $cotizacionId = $request->input('cotizacion_id');
-
-            \Log::info('🎨 [guardarLogoPedido] Guardando datos de LOGO', [
-                'pedido_id' => $pedidoId,
-                'logo_cotizacion_id' => $logoCotizacionId,
-                'cantidad' => $cantidad,
-                'cotizacion_id' => $cotizacionId
-            ]);
-
-            // Obtener datos de la cotización si fue enviada
-            $numeroCotizacion = null;
-            $cliente = null;
-            $asesora = null;
-            $formaPago = null;
-            
-            // 🔍 LÓGICA: Usar cliente del request si viene, sino obtener de cotización
-            $clienteDelRequest = $request->input('cliente');
-            
-            if ($clienteDelRequest) {
-                // Usar cliente enviado desde frontend
-                $cliente = $clienteDelRequest;
-                \Log::info('🎨 [guardarLogoPedido] Usando cliente del REQUEST (frontend)', [
-                    'cliente' => $cliente
-                ]);
-            } elseif ($cotizacionId) {
-                // Fallback: Obtener de la cotización
-                $cotizacion = DB::table('cotizaciones')
-                    ->where('id', $cotizacionId)
-                    ->select('id', 'numero', 'cliente_id')
-                    ->first();
-                
-                if ($cotizacion) {
-                    $numeroCotizacion = $cotizacion->numero;
-                    // Obtener cliente
-                    $clienteObj = DB::table('clientes')->where('id', $cotizacion->cliente_id)->first();
-                    $cliente = $clienteObj?->nombre ?? 'Sin nombre';
-                    \Log::info('🎨 [guardarLogoPedido] Usando cliente de la COTIZACIÓN (fallback)', [
-                        'cliente' => $cliente,
-                        'cliente_id' => $cotizacion->cliente_id
-                    ]);
-                }
-            }
-            
-            $asesora = Auth::user()?->name;
-            $formaPago = $request->input('forma_de_pago') ?? 'Por definir';
-
-            // ✅ VERIFICAR: ¿Existe ya un logo_pedido con este ID?
-            // Si $pedidoId es un número, podría ser ID de logo_pedidos o ID de pedidos_produccion
-            // Buscar en logo_pedidos por ID primaria primero
-            $logoPedidoExistente = null;
-            
-            if (is_numeric($pedidoId)) {
-                // Intentar buscar por ID primaria en logo_pedidos
-                $logoPedidoExistente = DB::table('logo_pedidos')->find($pedidoId);
-                
-                // Si no encuentra, buscar por pedido_id (para cotizaciones combinadas)
-                if (!$logoPedidoExistente) {
-                    $logoPedidoExistente = DB::table('logo_pedidos')
-                        ->where('pedido_id', $pedidoId)
-                        ->first();
-                }
-            }
-            
-            \Log::info('🎨 [guardarLogoPedido] Buscando logo_pedido existente', [
-                'pedido_id_buscado' => $pedidoId,
-                'encontrado' => $logoPedidoExistente ? 'SÍ' : 'NO',
-                'es_primaria' => $logoPedidoExistente && $logoPedidoExistente->id == $pedidoId ? 'SÍ' : 'POR RELACION'
-            ]);
-            
-            if (!$logoPedidoExistente) {
-                // ✅ NUEVO: Si no existe, CREAR uno nuevo en logo_pedidos
-                // Esto ocurre cuando es COMBINADA (PL) y es la primera vez que se guarda el logo
-                \Log::info('🎨 [guardarLogoPedido] CREANDO nuevo registro en logo_pedidos (COMBINADA PL)', [
-                    'pedido_id' => $pedidoId,
-                    'cotizacion_id' => $cotizacionId
-                ]);
-                
-                // Generar número LOGO
-                $numeroLogoPedido = $this->numeracionService->generarNumeroLogoPedido();
-                
-                \Log::info('🎨 [guardarLogoPedido] Datos a insertar en INSERT', [
-                    'pedido_id' => $pedidoId,
-                    'logo_cotizacion_id' => $logoCotizacionId,
-                    'numero_pedido' => $numeroLogoPedido,
-                    'cliente' => $cliente,
-                    'asesora' => $asesora,
-                    'forma_de_pago' => $formaPago
-                ]);
-                
-                $nuevoPedidoLogoId = DB::table('logo_pedidos')->insertGetId([
-                    'pedido_id' => $pedidoId,  // FK a pedidos_produccion
-                    'logo_cotizacion_id' => $logoCotizacionId,
-                    'numero_pedido' => $numeroLogoPedido,
-                    'cotizacion_id' => $cotizacionId,
-                    'numero_cotizacion' => $numeroCotizacion,
-                    'cliente' => $cliente,
-                    'asesora' => $asesora,
-                    'forma_de_pago' => $formaPago,
-                    'encargado_orden' => $asesora,
-                    'fecha_de_creacion_de_orden' => now(),
-                    'estado' => 'pendiente',
-                    'descripcion' => $request->input('descripcion', ''),
-                    'cantidad' => $cantidad,
-                    'tecnicas' => json_encode($request->input('tecnicas', [])),
-                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                    'ubicaciones' => json_encode($request->input('ubicaciones', [])),
-                    'observaciones' => $request->input('observaciones', ''),
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-                
-                \Log::info('✅ [guardarLogoPedido] INSERT completado', [
-                    'nuevo_logo_pedido_id' => $nuevoPedidoLogoId
-                ]);
-                
-                // ✅ IMPORTANTE: Usar el nuevo ID devuelto por INSERT
-                // Este será el ID primaria de logo_pedidos
-                $pedidoId = $nuevoPedidoLogoId;
-                
-                // ❌ TEMPORALMENTE DESHABILITADO: Crear proceso inicial
-                // TODO: Revisar validación en ProcesosPedidosLogo::crearProcesoInicial
-                \Log::info('⏭️  [guardarLogoPedido] Saltando creación de proceso inicial (TEMPORALMENTE)');
-                
-                \Log::info('✅ [guardarLogoPedido] Nuevo logo_pedido creado', [
-                    'logo_pedido_id' => $pedidoId,
-                    'numero_pedido' => $numeroLogoPedido
-                ]);
-            } else {
-                // ✅ Si ya existe, ACTUALIZAR (para LOGO SOLO)
-                // Actualizar el registro en logo_pedidos con los datos del formulario
-                $updateData = [
-                    'logo_cotizacion_id' => $logoCotizacionId,
-                    'descripcion' => $request->input('descripcion', ''),
-                    'cantidad' => $cantidad,
-                    'tecnicas' => json_encode($request->input('tecnicas', [])),
-                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                    'ubicaciones' => json_encode($request->input('ubicaciones', [])),
-                    'observaciones' => $request->input('observaciones', ''),
-                    'updated_at' => now(),
-                ];
-
-                // Agregar campos opcionales si están disponibles
-                if ($cotizacionId) {
-                    $updateData['cotizacion_id'] = $cotizacionId;
-                }
-                if ($numeroCotizacion) {
-                    $updateData['numero_cotizacion'] = $numeroCotizacion;
-                }
-
-                $updated = DB::table('logo_pedidos')
-                    ->where('id', $pedidoId)
-                    ->update($updateData);
-
-                if (!$updated) {
-                    throw new \Exception('No se encontró el registro de logo_pedido con ID: ' . $pedidoId);
-                }
-            }
-
-            \Log::info('✅ [guardarLogoPedido] LOGO actualizado correctamente', [
-                'logo_pedido_id' => $pedidoId,
-                'cantidad' => $cantidad,
-                'logo_cotizacion_id' => $logoCotizacionId,
-                'cotizacion_id' => $cotizacionId
-            ]);
-
-            // Procesar fotos si existen
-            $fotos = $request->input('fotos', []);
-            if (!empty($fotos)) {
-                foreach ($fotos as $index => $fotoId) {
-                    DB::table('logo_pedido_fotos')->insertOrIgnore([
-                        'logo_pedido_id' => $pedidoId,
-                        'logo_foto_cotizacion_id' => $fotoId,
-                        'orden' => $index,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-                \Log::info('✅ [guardarLogoPedido] Fotos agregadas', [
-                    'total_fotos' => count($fotos)
-                ]);
-            }
-
-            DB::commit();
-
-            // Obtener el registro actualizado
-            $logoPedido = DB::table('logo_pedidos')->find($pedidoId);
-            
-            // ✅ Si es COMBINADA (tiene pedido_id), obtener también datos del pedido de prendas
-            $pedidoPrendas = null;
-            if ($logoPedido->pedido_id) {
-                $pedidoPrendas = DB::table('pedidos_produccion')
-                    ->where('id', $logoPedido->pedido_id)
-                    ->select('id', 'numero_pedido')
-                    ->first();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'LOGO Pedido guardado correctamente',
-                'logo_pedido' => $logoPedido,
-                'pedido_produccion' => $pedidoPrendas,  // ✅ NUEVO: Devolver datos del pedido de prendas si existe
-                'numero_pedido_produccion' => $pedidoPrendas?->numero_pedido,  // Para facilitar en frontend
-                'numero_pedido_logo' => $logoPedido->numero_pedido
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('❌ [guardarLogoPedido] Error al guardar logo_pedido', [
-                'error' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al guardar LOGO pedido: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Heredar variantes de una prenda de cotización a pedido
-     * Delegado al servicio de dominio
-     */
-    private function heredarVariantesDePrenda($cotizacion, $prendaPedido, $index)
-    {
-        $this->variantesService->heredarVariantesDePrenda($cotizacion, $prendaPedido, $index);
-    }
-
-    // MÉTODOS ELIMINADOS - Migrados a servicios de dominio
-    // - generarNumeroPedido() -> NumeracionService::generarNumeroPedido()
-    // - generarNumeroLogoPedido() -> NumeracionService::generarNumeroLogoPedido()
-    // - construirDescripcionPrenda() -> DescripcionService::construirDescripcionPrenda()
-    // - construirDescripcionPrendaCompleta() -> OBSOLETO
-
-    /**
-     * Obtener datos COMPLETOS de una cotización con todas sus prendas e información (para AJAX)
-     * Responsabilidad: Validar permisos y delegar al repositorio
-     */
-    /**
-     * Obtener datos COMPLETOS de una cotización con todas sus prendas e información (para AJAX)
-     * TEMPORALMENTE usando método LEGACY hasta que el repositorio esté completo
-     */
-    public function obtenerDatosCotizacion(int $cotizacionId): JsonResponse
-    {
-        try {
-            $cotizacion = Cotizacion::with([
-                'cliente',
-                'asesor',
-                'tipoCotizacion',
-                'prendas.variantes.manga',
-                'prendas.variantes.broche',
-                'prendas.variantes.genero',
-                'prendas.tallas',
-                'prendas.fotos',
-                'prendas.telas',
-                'prendas.telaFotos',
-                'logoCotizacion.fotos',
-                'logoCotizacion.prendas.tipoLogo',
-                'logoCotizacion.prendas.fotos',
-                'reflectivo.fotos',
-            ])->findOrFail($cotizacionId);
-
-            \Log::info('🔍 [OBTENER-DATOS-COT] Cotización cargada:', [
-                'id' => $cotizacion->id,
-                'numero' => $cotizacion->numero_cotizacion,
-                'prendas_count' => $cotizacion->prendas->count(),
-                'logo_prendas_count' => $cotizacion->logoCotizacion ? $cotizacion->logoCotizacion->prendas->count() : 0,
-                'prendas_ids' => $cotizacion->prendas->pluck('id')->toArray(),
-            ]);
-
-            if ($cotizacion->asesor_id !== Auth::id()) {
-                return response()->json([
-                    'error' => 'No tienes permiso para acceder a esta cotización'
-                ], 403);
-            }
-
-            $especificacionesConvertidas = $this->utilitariosService->convertirEspecificacionesAlFormatoNuevo(
-                $cotizacion->especificaciones ?? []
-            );
-
-            $formaPago = '';
-            if (!empty($especificacionesConvertidas['forma_pago']) && is_array($especificacionesConvertidas['forma_pago'])) {
-                if (count($especificacionesConvertidas['forma_pago']) > 0) {
-                    $formaPago = $especificacionesConvertidas['forma_pago'][0]['valor'] ?? '';
-                }
-            }
-
-            return response()->json([
-                'id' => $cotizacion->id,
-                'numero' => $cotizacion->numero_cotizacion,
-                'tipo_cotizacion_id' => $cotizacion->tipo_cotizacion_id,
-                'tipo_cotizacion_codigo' => $cotizacion->tipoCotizacion ? $cotizacion->tipoCotizacion->codigo : null,
-                'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : '',
-                'asesora' => $cotizacion->asesor ? $cotizacion->asesor->name : Auth::user()->name,
-                'forma_pago' => $formaPago,
-                'tipo_venta' => $cotizacion->tipo_venta ?? '',
-                'especificaciones' => $especificacionesConvertidas,
-                'observaciones_generales' => $cotizacion->observaciones_generales ?? [],
-                'ubicaciones' => $cotizacion->ubicaciones ?? [],
-                
-                // Prendas con TODA la información
-                'prendas' => $cotizacion->prendas->map(function($prenda) {
-                    // Obtener primera variante
-                    $primerVariante = $prenda->variantes->first();
-                    
-                    // Construir variantes con información completa
-                    $variantes = [];
-                    if ($primerVariante) {
-                        $variantes = [
-                            'id' => $primerVariante->id,
-                            'prenda_cot_id' => $primerVariante->prenda_cot_id,
-                            'tipo_prenda' => $primerVariante->tipo_prenda,
-                            'es_jean_pantalon' => $primerVariante->es_jean_pantalon,
-                            'tipo_jean_pantalon' => $primerVariante->tipo_jean_pantalon,
-                            'genero_id' => $primerVariante->genero_id,
-                            'genero_nombre' => $primerVariante->genero ? $primerVariante->genero->nombre : null,
-                            'color' => $primerVariante->color,
-                            'tipo_manga_id' => $primerVariante->tipo_manga_id,
-                            'tipo_manga' => $primerVariante->manga ? $primerVariante->manga->nombre : null,
-                            'obs_manga' => $primerVariante->obs_manga,
-                            'tipo_broche_id' => $primerVariante->tipo_broche_id,
-                            'tipo_broche' => $primerVariante->broche ? $primerVariante->broche->nombre : null,
-                            'obs_broche' => $primerVariante->obs_broche,
-                            'tiene_bolsillos' => $primerVariante->tiene_bolsillos,
-                            'obs_bolsillos' => $primerVariante->obs_bolsillos,
-                            'aplica_manga' => $primerVariante->aplica_manga,
-                            'aplica_broche' => $primerVariante->aplica_broche,
-                            'tiene_reflectivo' => $primerVariante->tiene_reflectivo,
-                            'obs_reflectivo' => $primerVariante->obs_reflectivo,
-                            'descripcion_adicional' => $primerVariante->descripcion_adicional,
-                            'telas_multiples' => is_array($primerVariante->telas_multiples) ? $primerVariante->telas_multiples : (is_string($primerVariante->telas_multiples) ? json_decode($primerVariante->telas_multiples, true) : []),
-                            'created_at' => $primerVariante->created_at,
-                            'updated_at' => $primerVariante->updated_at,
-                        ];
-                    }
-                    
-                    // Obtener tallas
-                    $tallas = $prenda->tallas->pluck('talla')->toArray();
-                    
-                    // Obtener fotos de prenda con URLs completas
-                    $fotos = $prenda->fotos->map(function($foto) {
-                        // El campo 'url' puede contener la ruta relativa o completa
-                        $rutaFoto = $foto->ruta_webp ?? $foto->url;
-                        // Agregar /storage/ si no lo tiene
-                        if (strpos($rutaFoto, '/storage/') === false) {
-                            $rutaFoto = '/storage/' . ltrim($rutaFoto, '/');
-                        }
-                        return asset($rutaFoto);
-                    })->toArray();
-                    
-                    // Obtener telas
-                    $telas = $prenda->telas->map(function($tela) {
-                        return [
-                            'id' => $tela->id,
-                            'color' => $tela->color,
-                            'nombre_tela' => $tela->nombre_tela,
-                            'referencia' => $tela->referencia,
-                            'url_imagen' => $tela->url_imagen,
-                        ];
-                    })->toArray();
-                    
-                    // Obtener fotos de telas con URLs correctas
-                    // Intentar relacionar fotos con telas por color si tela_id es null
-                    $telaFotos = $prenda->telaFotos->map(function($telaFoto) use ($telas) {
-                        $telaId = $telaFoto->tela_id;
-                        
-                        // Si tela_id es null, intentar encontrar la tela por atributos
-                        if (!$telaId && $telas && count($telas) > 0) {
-                            // Intentar hacer matching por nombre de archivo o descripción
-                            // Si la foto tiene info de tela, usarla
-                            if (isset($telaFoto->nombre_tela) && $telaFoto->nombre_tela) {
-                                $telaBuscada = collect($telas)->firstWhere('nombre_tela', $telaFoto->nombre_tela);
-                                if ($telaBuscada) {
-                                    $telaId = $telaBuscada['id'];
-                                }
-                            }
-                        }
-                        
-                        // Construir URLs con asset() para que tengan permisos correctos
-                        $rutaWebp = $telaFoto->ruta_webp ?? $telaFoto->url;
-                        $rutaOriginal = $telaFoto->ruta_original;
-                        
-                        return [
-                            'id' => $telaFoto->id,
-                            'tela_id' => $telaId,
-                            'url' => asset($rutaWebp),
-                            'ruta_original' => asset($rutaOriginal),
-                            'ruta_webp' => asset('storage/' . ltrim($rutaWebp, '/')),
-                        ];
-                    })->toArray();
-                    
-                    return [
-                        'id' => $prenda->id,
-                        'nombre_producto' => $prenda->nombre_producto,
-                        'descripcion' => $prenda->descripcion,
-                        'cantidad' => $prenda->cantidad,
-                        'tallas' => $tallas,
-                        'fotos' => $fotos,
-                        'variantes' => $variantes,
-                        'telas' => $telas,
-                        'telaFotos' => $telaFotos,
-                    ];
-                })->toArray(),
-                
-                // Logo información COMPLETA (sin campos JSON antiguos)
-                'logo' => $cotizacion->logoCotizacion ? [
-                    'id' => $cotizacion->logoCotizacion->id,
-                    'tipo_venta' => $cotizacion->logoCotizacion->tipo_venta,
-                    'observaciones_generales' => (is_array($cotizacion->logoCotizacion->observaciones_generales) ? $cotizacion->logoCotizacion->observaciones_generales : (is_string($cotizacion->logoCotizacion->observaciones_generales) ? json_decode($cotizacion->logoCotizacion->observaciones_generales, true) : [])) ?? [],
-                    'fotos' => $cotizacion->logoCotizacion->fotos->map(function($foto) {
-                        return [
-                            'id' => $foto->id,
-                            'url' => '/storage/' . ltrim($foto->ruta_webp, '/'),
-                            'ruta_original' => '/storage/' . ltrim($foto->ruta_original, '/'),
-                            'ruta_webp' => '/storage/' . ltrim($foto->ruta_webp, '/'),
-                        ];
-                    })->toArray(),
-                ] : null,
-                
-                // ✅ NUEVO: Prendas técnicas (estructura desde LogoCotizacionTecnicaPrenda)
-                'prendas_tecnicas' => $cotizacion->logoCotizacion ? 
-                    $cotizacion->logoCotizacion->prendas->map(function($prenda) {
-                        return [
-                            'id' => $prenda->id,
-                            'logo_cotizacion_id' => $prenda->logo_cotizacion_id,
-                            'tipo_logo_id' => $prenda->tipo_logo_id,
-                            'tipo_logo_nombre' => $prenda->tipoLogo ? $prenda->tipoLogo->nombre : null,
-                            'nombre_prenda' => $prenda->nombre_prenda,
-                            'observaciones' => $prenda->observaciones,
-                            'ubicaciones' => (is_array($prenda->ubicaciones) ? $prenda->ubicaciones : (is_string($prenda->ubicaciones) ? json_decode($prenda->ubicaciones, true) : [])) ?? [],
-                            'talla_cantidad' => (is_array($prenda->talla_cantidad) ? $prenda->talla_cantidad : (is_string($prenda->talla_cantidad) ? json_decode($prenda->talla_cantidad, true) : [])) ?? [],
-                            'grupo_combinado' => $prenda->grupo_combinado,
-                            'fotos' => $prenda->fotos->map(function($foto) {
-                                return [
-                                    'id' => $foto->id,
-                                    'ruta_webp' => '/storage/' . ltrim($foto->ruta_webp, '/'),
-                                    'ruta_original' => '/storage/' . ltrim($foto->ruta_original, '/'),
-                                    'orden' => $foto->orden,
-                                ];
-                            })->toArray(),
-                        ];
-                    })->toArray()
-                : [],
-                
-                // Reflectivo INFORMACIÓN COMPLETA
-                'reflectivo' => $cotizacion->reflectivo ? [
-                    'id' => $cotizacion->reflectivo->id,
-                    'ubicacion' => $cotizacion->reflectivo->ubicacion,
-                    'descripcion' => $cotizacion->reflectivo->descripcion,
-                    'observaciones' => $cotizacion->reflectivo->observaciones,
-                    'fotos' => $cotizacion->reflectivo->fotos ? $cotizacion->reflectivo->fotos->map(function($foto) {
-                        return [
-                            'id' => $foto->id,
-                            'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->url, '/'),
-                            'ruta_original' => '/storage/' . ltrim($foto->ruta_original, '/'),
-                            'ruta_webp' => '/storage/' . ltrim($foto->ruta_webp, '/'),
-                        ];
-                    })->toArray() : [],
-                ] : null,
-            ]);
-
-        } catch (\Throwable $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
-        }
-    }
-
-    /**
-     * Crear procesos específicos para cotización REFLECTIVO
-     * Responsabilidad: Delegar al servicio de procesos
-     */
-    private function crearProcesosParaReflectivo(PedidoProduccion $pedido, Cotizacion $cotizacion): void
-    {
-        // Delegar creación de procesos al servicio de dominio
-        $this->procesosService->crearProcesosReflectivo($pedido, $cotizacion);
-    }
-
-    // MÉTODO LEGACY - Mantener temporalmente para referencia
-    // TODO: Eliminar después de verificar que el servicio funciona correctamente
-    private function crearProcesosParaReflectivo_LEGACY(PedidoProduccion $pedido, Cotizacion $cotizacion): void
-    {
-        try {
-            // Verificar si es cotización tipo REFLECTIVO
-            if (!$cotizacion->tipoCotizacion) {
-                \Log::info('⏭️ No hay tipo de cotización asociado');
-                return;
-            }
-
-            $tipoCotizacion = strtolower(trim($cotizacion->tipoCotizacion->nombre ?? ''));
-            
-            \Log::info('🔍 Verificando tipo de cotización', [
-                'tipo_encontrado' => $tipoCotizacion,
-                'es_reflectivo' => ($tipoCotizacion === 'reflectivo' ? 'SI' : 'NO'),
-            ]);
-
-            if ($tipoCotizacion !== 'reflectivo') {
-                \Log::info('⏭️ Cotización no es de tipo REFLECTIVO', [
-                    'tipo_actual' => $tipoCotizacion,
-                ]);
-                return;
-            }
-
-            \Log::info('🎯 CREAR PROCESOS PARA COTIZACIÓN REFLECTIVO', [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cotizacion_id' => $cotizacion->id,
-            ]);
-
-            // Obtener prendas del pedido
-            $prendas = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)->get();
-
-            \Log::info('📋 Prendas encontradas', [
-                'numero_pedido' => $pedido->numero_pedido,
-                'cantidad' => $prendas->count(),
-            ]);
-
-            if ($prendas->isEmpty()) {
-                \Log::warn('⚠️ No hay prendas en el pedido', [
-                    'numero_pedido' => $pedido->numero_pedido,
-                ]);
-                return;
-            }
-
-            // Obtener nombre de la asesora logueada
-            $asesoraLogueada = Auth::user()->name ?? 'Sin Asesora';
-
-            foreach ($prendas as $prenda) {
-                \Log::info('🔍 Procesando prenda', [
-                    'prenda_pedido_id' => $prenda->id,
-                    'nombre_prenda' => $prenda->nombre_prenda,
-                ]);
-
-                // Verificar si ya existen procesos para esta prenda
-                $procesosExistentes = ProcesoPrenda::where('prenda_pedido_id', $prenda->id)
-                    ->pluck('proceso')
-                    ->toArray();
-
-                \Log::info('🔍 Procesos existentes para prenda', [
-                    'prenda_pedido_id' => $prenda->id,
-                    'nombre_prenda' => $prenda->nombre_prenda,
-                    'procesos' => $procesosExistentes,
-                ]);
-
-                // Crear proceso de Creación de Orden asignado a la asesora logueada
-                if (!in_array('Creación de Orden', $procesosExistentes)) {
-                    $procsCreacion = ProcesoPrenda::create([
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'prenda_pedido_id' => $prenda->id,
-                        'proceso' => 'Creación de Orden',
-                        'encargado' => $asesoraLogueada,
-                        'estado_proceso' => 'En Progreso',
-                        'fecha_inicio' => now(),
-                        'observaciones' => 'Proceso de creación asignado automáticamente a la asesora para cotización reflectivo',
-                    ]);
-
-                    \Log::info('✅ Proceso Creación de Orden creado para prenda', [
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'prenda_pedido_id' => $prenda->id,
-                        'nombre_prenda' => $prenda->nombre_prenda,
-                        'encargado' => $asesoraLogueada,
-                        'proceso_id' => $procsCreacion->id,
-                    ]);
-                }
-
-                // NO crear duplicados si ya existe Costura
-                if (in_array('Costura', $procesosExistentes)) {
-                    \Log::info('✅ Proceso Costura ya existe, omitiendo');
-                    continue;
-                }
-
-                // Crear proceso Costura con Ramiro
-                $procsCostura = ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $prenda->id,
-                    'proceso' => 'Costura',
-                    'encargado' => 'Ramiro',
-                    'estado_proceso' => 'En Progreso',
-                    'fecha_inicio' => now(),
-                    'observaciones' => 'Asignado automáticamente a Ramiro para cotización reflectivo',
-                ]);
-
-                \Log::info('✅ Proceso Costura creado para prenda', [
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $prenda->id,
-                    'nombre_prenda' => $prenda->nombre_prenda,
-                    'encargado' => 'Ramiro',
-                    'proceso_id' => $procsCostura->id,
-                ]);
-            }
-
-            \Log::info('✅ Procesos de cotización reflectivo completados', [
-                'numero_pedido' => $pedido->numero_pedido,
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('❌ Error al crear procesos para cotización reflectivo', [
-                'error' => $e->getMessage(),
-                'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
-                'trace' => $e->getTraceAsString(),
-            ]);
-            // No hacer nada más, el error ya fue logueado
-        }
-    }
-
-    /**
-     * Crear pedido sin cotización previa
+     * Query Parameters:
+     * - page: int (default 1)
+     * - per_page: int (default 15)
+     * - ordenar: string (default 'created_at')
+     * - direccion: string (default 'desc')
      * 
      * @param Request $request
      * @return JsonResponse
      */
-    public function crearSinCotizacion(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            DB::beginTransaction();
+            Log::info('📋 [PedidosController] GET /api/pedidos');
 
-            // Validar datos requeridos
-            $cliente = $request->input('cliente');
-            $formaPago = $request->input('forma_de_pago', '');
-            $prendas = $request->input('prendas', []);
-
-            if (!$cliente) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El cliente es requerido'
-                ], 422);
-            }
-
-            if (empty($prendas)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Debe agregar al menos una prenda'
-                ], 422);
-            }
-
-            \Log::info('📦 [SIN COTIZACIÓN] Creando pedido', [
-                'cliente' => $cliente,
-                'forma_de_pago' => $formaPago,
-                'prendas_count' => count($prendas),
+            $validated = $request->validate([
+                'page' => 'sometimes|integer|min:1',
+                'per_page' => 'sometimes|integer|min:1|max:100',
+                'ordenar' => 'sometimes|string|in:numero_pedido,cliente,created_at,estado',
+                'direccion' => 'sometimes|string|in:asc,desc',
             ]);
 
-            // Crear pedido de producción
-            $pedido = PedidoProduccion::create([
-                'cotizacion_id' => null,
-                'numero_cotizacion' => null,
-                'numero_pedido' => $this->numeracionService->generarNumeroPedido(),
-                'cliente' => $cliente,
-                'asesor_id' => auth()->id(),
-                'forma_de_pago' => $formaPago,
-                'area' => null,
-                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-                'fecha_de_creacion_de_orden' => now(),
+            $pedidos = $this->queryBus->execute(new ListarPedidosQuery(
+                page: $validated['page'] ?? 1,
+                perPage: $validated['per_page'] ?? 15,
+                ordenar: $validated['ordenar'] ?? 'created_at',
+                direccion: $validated['direccion'] ?? 'desc',
+            ));
+
+            Log::info('✅ [PedidosController] Listado obtenido', [
+                'total' => $pedidos->total(),
+                'per_page' => $pedidos->perPage(),
             ]);
 
-            \Log::info('✅ Pedido creado', [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-            ]);
-
-            // Crear prendas del pedido
-            foreach ($prendas as $index => $prenda) {
-                $cantidadesPorTalla = $prenda['cantidades'] ?? [];
-                $cantidadTotal = array_sum($cantidadesPorTalla);
-
-                $descripcionPrenda = $this->descripcionService->construirDescripcionPrenda(
-                    $index + 1,
-                    $prenda,
-                    $cantidadesPorTalla
-                );
-
-                $prendaPedido = PrendaPedido::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'cantidad' => $cantidadTotal,
-                    'descripcion' => $descripcionPrenda,
-                    'cantidad_talla' => json_encode($cantidadesPorTalla),
-                    'color_id' => null,
-                    'tela_id' => null,
-                    'tipo_manga_id' => null,
-                    'tipo_broche_id' => null,
-                    'tiene_bolsillos' => 0,
-                    'tiene_reflectivo' => 0,
-                ]);
-
-                // Crear proceso inicial
-                ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'proceso' => 'Creación Orden',
-                    'estado_proceso' => 'Completado',
-                    'fecha_inicio' => now(),
-                    'fecha_fin' => now(),
-                ]);
-
-                \Log::info('✅ Prenda agregada al pedido', [
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'nombre' => $prenda['nombre_producto'],
-                    'cantidad_total' => $cantidadTotal,
-                ]);
-            }
-
-            DB::commit();
-
-            \Log::info('✅ Pedido creado exitosamente', [
-                'numero_pedido' => $pedido->numero_pedido,
-                'total_prendas' => count($prendas),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Pedido creado exitosamente',
-                'numero_pedido' => $pedido->numero_pedido,
-                'pedido_id' => $pedido->id,
-            ]);
+            return response()->json($pedidos, 200);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            \Log::error('❌ Error al crear pedido sin cotización', [
+            Log::error('❌ [PedidosController] Error listando pedidos', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => 'Error al crear el pedido: ' . $e->getMessage(),
+                'error' => 'Error listando pedidos',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * Crear pedido PRENDA sin cotización
-     * Similar a crearSinCotizacion pero específicamente para prendas tipo PRENDA
+     * GET /api/pedidos/:id
+     * Obtener un pedido específico
+     * 
+     * @param int|string $id
+     * @return JsonResponse
+     */
+    public function show(int|string $id): JsonResponse
+    {
+        try {
+            Log::info('🔍 [PedidosController] GET /api/pedidos/{id}', ['id' => $id]);
+
+            $pedido = $this->queryBus->execute(new ObtenerPedidoQuery($id));
+
+            if (!$pedido) {
+                Log::warning('⚠️ [PedidosController] Pedido no encontrado', ['id' => $id]);
+                return response()->json([
+                    'error' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            Log::info('✅ [PedidosController] Pedido obtenido', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
+
+            return response()->json($pedido, 200);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error obteniendo pedido', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error obteniendo pedido',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/pedidos
+     * Crear nuevo pedido
+     * 
+     * Body:
+     * {
+     *   "numero_pedido": "PED-001",
+     *   "cliente": "Cliente XYZ",
+     *   "forma_pago": "contado",
+     *   "asesor_id": 1,
+     *   "cantidad_inicial": 0
+     * }
      * 
      * @param Request $request
      * @return JsonResponse
      */
-    public function crearPrendaSinCotizacion(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         try {
-            DB::beginTransaction();
+            Log::info('✍️ [PedidosController] POST /api/pedidos');
 
-            // Validar datos requeridos
-            $cliente = $request->input('cliente');
-            $formaPago = $request->input('forma_de_pago', '');
-            $prendas = $request->input('prendas', []);
-
-            if (!$cliente) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El cliente es requerido'
-                ], 422);
-            }
-
-            if (empty($prendas)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Debe agregar al menos una prenda'
-                ], 422);
-            }
-
-            \Log::info('📦 [PRENDA SIN COTIZACIÓN] Creando pedido de prenda', [
-                'cliente' => $cliente,
-                'forma_de_pago' => $formaPago,
-                'prendas_count' => count($prendas),
-                'prendas_data' => $prendas,
+            // Validación HTTP (sintaxis/tipos)
+            $validated = $request->validate([
+                'numero_pedido' => 'required|string|max:50',
+                'cliente' => 'required|string|max:255',
+                'forma_pago' => 'required|string|in:contado,credito,transferencia,cheque',
+                'asesor_id' => 'required|integer|min:1',
+                'cantidad_inicial' => 'sometimes|integer|min:0|default:0',
             ]);
 
-            // Crear pedido de producción
-            $pedido = PedidoProduccion::create([
-                'cotizacion_id' => null,  // Sin cotización
-                'numero_cotizacion' => null,
-                'numero_pedido' => $this->numeracionService->generarNumeroPedido(),
-                'cliente' => $cliente,
-                'asesor_id' => auth()->id(),
-                'forma_de_pago' => $formaPago,
-                'area' => null,
-                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-                'fecha_de_creacion_de_orden' => now(),
-            ]);
+            // Validación de negocio (uniqueness, etc) → PedidoValidator en handler
+            $pedido = $this->commandBus->execute(new CrearPedidoCommand(
+                numeroPedido: $validated['numero_pedido'],
+                cliente: $validated['cliente'],
+                formaPago: $validated['forma_pago'],
+                asesorId: $validated['asesor_id'],
+                cantidadInicial: $validated['cantidad_inicial'] ?? 0,
+            ));
 
-            \Log::info('✅ Pedido PRENDA creado', [
+            Log::info('✅ [PedidosController] Pedido creado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
-            // Crear prendas del pedido
-            $cantidadTotalPedido = 0;
-            foreach ($prendas as $index => $prenda) {
-                // ✅ PROCESAR CANTIDADES CON SOPORTE A MÚLTIPLES GÉNEROS
-                // Intentar primero la estructura nueva con géneros
-                $cantidadesPorGeneroTalla = null;
-                $cantidadesPorTalla = [];
-                
-                \Log::debug('🔍 [PRENDA] Buscando cantidades para prenda ' . ($prenda['nombre_producto'] ?? 'sin nombre'), [
-                    'cantidad_talla' => $prenda['cantidad_talla'] ?? 'no existe',
-                    'cantidades_por_genero' => $prenda['cantidades_por_genero'] ?? 'no existe',
-                    'cantidades' => $prenda['cantidades'] ?? 'no existe',
-                    'cantidadesPorTalla' => $prenda['cantidadesPorTalla'] ?? 'no existe',
-                ]);
-                
-                // 1. NUEVA ESTRUCTURA: cantidad_talla = {genero: {talla: cantidad}} (desde FormData)
-                if (!empty($prenda['cantidad_talla'])) {
-                    \Log::debug('✅ Usando cantidad_talla de FormData');
-                    $cantidadesPorGeneroTalla = $prenda['cantidad_talla'];
-                    if (is_string($cantidadesPorGeneroTalla)) {
-                        $cantidadesPorGeneroTalla = json_decode($cantidadesPorGeneroTalla, true);
-                    }
-                    // ✅ IMPORTANTE: Mantener estructura con géneros
-                    $cantidadesPorTalla = is_array($cantidadesPorGeneroTalla) ? $cantidadesPorGeneroTalla : [];
-                    
-                    \Log::debug('📊 Decodificado cantidad_talla', [
-                        'cantidadesPorGeneroTalla' => $cantidadesPorGeneroTalla,
-                        'cantidadesPorTalla' => $cantidadesPorTalla,
-                    ]);
-                }
-                // 2. ESTRUCTURA ALTERNATIVA: cantidades_por_genero
-                else if (!empty($prenda['cantidades_por_genero'])) {
-                    \Log::debug('✅ Usando cantidades_por_genero');
-                    $cantidadesPorGeneroTalla = $prenda['cantidades_por_genero'];
-                    if (is_string($cantidadesPorGeneroTalla)) {
-                        $cantidadesPorGeneroTalla = json_decode($cantidadesPorGeneroTalla, true);
-                    }
-                    $cantidadesPorTalla = is_array($cantidadesPorGeneroTalla) ? $cantidadesPorGeneroTalla : [];
-                } 
-                // 3. ESTRUCTURA ANTIGUA: cantidades = {talla: cantidad}
-                else {
-                    \Log::debug('✅ Usando cantidades antigua');
-                    $cantidadesPorTalla = $prenda['cantidades'] ?? $prenda['cantidadesPorTalla'] ?? [];
-                    
-                    if (is_string($cantidadesPorTalla)) {
-                        $cantidadesPorTalla = json_decode($cantidadesPorTalla, true) ?? [];
-                    }
-                    
-                    // Si cantidadesPorTalla es un array de arrays, aplanarlo
-                    if (is_array($cantidadesPorTalla) && !empty($cantidadesPorTalla)) {
-                        $cantidadesTemp = [];
-                        foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                            $cantidadesTemp[$talla] = (int)$cantidad;
-                        }
-                        $cantidadesPorTalla = $cantidadesTemp;
-                    }
-                }
-                
-                // ✅ VALIDACIÓN: Asegurarse de que $cantidadesPorTalla es un array válido
-                if (!is_array($cantidadesPorTalla)) {
-                    \Log::warning('⚠️ cantidadesPorTalla no es array, inicializando vacío');
-                    $cantidadesPorTalla = [];
-                }
-                
-                \Log::debug('📊 Cantidades procesadas', [
-                    'cantidadesPorGeneroTalla' => $cantidadesPorGeneroTalla,
-                    'cantidadesPorTalla' => $cantidadesPorTalla,
-                    'es_array' => is_array($cantidadesPorTalla),
-                ]);
-                
-                // Calcular cantidad total
-                $cantidadTotal = 0;
-                if (isset($cantidadesPorGeneroTalla) && is_array($cantidadesPorGeneroTalla)) {
-                    // Sumar todas las cantidades de todos los géneros
-                    foreach ($cantidadesPorGeneroTalla as $genero => $tallas) {
-                        if (is_array($tallas)) {
-                            $cantidadTotal += array_sum($tallas);
-                        }
-                    }
-                } else {
-                    // Sumar cantidades simples
-                    $cantidadTotal = array_sum($cantidadesPorTalla);
-                }
-                
-                $cantidadTotalPedido += $cantidadTotal;
+            return response()->json($pedido, 201);
 
-                \Log::info('📊 [PRENDA SIN COTIZACIÓN] Procesando prenda', [
-                    'index' => $index,
-                    'nombre' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'cantidades_por_talla' => $cantidadesPorTalla,
-                    'cantidad_total' => $cantidadTotal,
-                ]);
-
-                // Construir descripción usando la misma función que para cotizaciones
-                // CRÍTICO: Pasar los datos correctamente
-                $descripcionPrenda = $this->descripcionService->construirDescripcionPrendaSinCotizacion($prenda, $cantidadesPorTalla);
-
-                // Extraer variantes - IGUAL QUE EN crearDesdeCotizacion
-                $colorId = null;
-                $telaId = null;
-                $tipoMangaId = null;
-                $tipoBrocheId = null;
-                $tieneBolsillos = 0;
-                $tieneReflectivo = 0;
-
-                // Si hay variantes, extraer los IDs
-                $variantes = $prenda['variantes'] ?? [];
-                if (is_string($variantes)) {
-                    $variantes = json_decode($variantes, true) ?? [];
-                }
-
-                \Log::debug('📝 [PRENDA SIN COTIZACIÓN] Variantes recibidas', [
-                    'variantes' => $variantes,
-                    'telas_multiples' => $variantes['telas_multiples'] ?? 'no existe',
-                ]);
-
-                if (is_array($variantes) && !empty($variantes)) {
-                    // Intentar obtener IDs directamente primero
-                    $colorId = $variantes['color_id'] ?? null;
-                    $telaId = $variantes['tela_id'] ?? null;
-                    $tipoMangaId = $variantes['tipo_manga_id'] ?? null;
-                    $tipoBrocheId = $variantes['tipo_broche_id'] ?? null;
-                    
-                    // Si no hay IDs pero hay nombres, crear los registros
-                    // COLOR: Buscar o crear por nombre - puede venir en variantes.color o en telas_multiples
-                    if (!$colorId) {
-                        $colorNombre = $variantes['color'] ?? null;
-                        
-                        // Si el color no está en variantes.color, buscarlo en telas_multiples
-                        if (!$colorNombre && !empty($variantes['telas_multiples'])) {
-                            $telasMultiples = is_string($variantes['telas_multiples']) 
-                                ? json_decode($variantes['telas_multiples'], true) 
-                                : $variantes['telas_multiples'];
-                            
-                            if (is_array($telasMultiples) && !empty($telasMultiples) && !empty($telasMultiples[0]['color'])) {
-                                $colorNombre = $telasMultiples[0]['color'];
-                            }
-                        }
-                        
-                        if (!empty($colorNombre)) {
-                            $color = \DB::table('colores_prenda')
-                                ->where('nombre', 'LIKE', '%' . $colorNombre . '%')
-                                ->first();
-                            
-                            if (!$color) {
-                                $colorId = \DB::table('colores_prenda')->insertGetId([
-                                    'nombre' => $colorNombre,
-                                    'activo' => 1,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]);
-                                \Log::info('✅ Color creado', ['nombre' => $colorNombre, 'id' => $colorId]);
-                            } else {
-                                $colorId = $color->id;
-                                \Log::info('✅ Color encontrado', ['nombre' => $colorNombre, 'id' => $colorId]);
-                            }
-                        }
-                    }
-                    
-                    // TELA: Buscar o crear por nombre desde telas_multiples JSON
-                    if (!$telaId && !empty($variantes['telas_multiples'])) {
-                        $telasMultiples = is_string($variantes['telas_multiples']) 
-                            ? json_decode($variantes['telas_multiples'], true) 
-                            : $variantes['telas_multiples'];
-                            
-                        if (is_array($telasMultiples) && !empty($telasMultiples)) {
-                            $primeraTela = $telasMultiples[0];
-                            
-                            if (!empty($primeraTela['nombre_tela'])) {
-                                $tela = \DB::table('telas_prenda')
-                                    ->where('nombre', 'LIKE', '%' . $primeraTela['nombre_tela'] . '%')
-                                    ->first();
-                                
-                                if (!$tela) {
-                                    $telaId = \DB::table('telas_prenda')->insertGetId([
-                                        'nombre' => $primeraTela['nombre_tela'],
-                                        'activo' => 1,
-                                        'created_at' => now(),
-                                        'updated_at' => now(),
-                                    ]);
-                                    \Log::info('✅ Tela creada', ['nombre' => $primeraTela['nombre_tela'], 'id' => $telaId]);
-                                } else {
-                                    $telaId = $tela->id;
-                                }
-                            }
-                        }
-                    }
-
-                    // TIPO MANGA: Buscar o crear por nombre
-                    if (!$tipoMangaId && !empty($variantes['tipo_manga'])) {
-                        $tipoManga = \DB::table('tipos_manga')
-                            ->where('nombre', 'LIKE', '%' . $variantes['tipo_manga'] . '%')
-                            ->first();
-                        
-                        if (!$tipoManga) {
-                            $tipoMangaId = \DB::table('tipos_manga')->insertGetId([
-                                'nombre' => $variantes['tipo_manga'],
-                                'activo' => 1,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                            \Log::info('✅ Tipo Manga creado', ['nombre' => $variantes['tipo_manga'], 'id' => $tipoMangaId]);
-                        } else {
-                            $tipoMangaId = $tipoManga->id;
-                        }
-                    }
-
-                    // TIPO BROCHE: Buscar o crear por nombre
-                    if (!$tipoBrocheId && !empty($variantes['tipo_broche'])) {
-                        $tipoBroche = \DB::table('tipos_broche')
-                            ->where('nombre', 'LIKE', '%' . $variantes['tipo_broche'] . '%')
-                            ->first();
-                        
-                        if (!$tipoBroche) {
-                            $tipoBrocheId = \DB::table('tipos_broche')->insertGetId([
-                                'nombre' => $variantes['tipo_broche'],
-                                'activo' => 1,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                            \Log::info('✅ Tipo Broche creado', ['nombre' => $variantes['tipo_broche'], 'id' => $tipoBrocheId]);
-                        } else {
-                            $tipoBrocheId = $tipoBroche->id;
-                        }
-                    }
-                    
-                    // BOOLEANOS: Convertir correctamente
-                    $tieneBolsillos = isset($variantes['tiene_bolsillos']) ? ($variantes['tiene_bolsillos'] ? 1 : 0) : 0;
-                    $tieneReflectivo = isset($variantes['tiene_reflectivo']) ? ($variantes['tiene_reflectivo'] ? 1 : 0) : 0;
-                }
-
-                \Log::info('📍 [PRENDA SIN COTIZACIÓN] Variantes extraídas/creadas', [
-                    'color_id' => $colorId,
-                    'tela_id' => $telaId,
-                    'tipo_manga_id' => $tipoMangaId,
-                    'tipo_broche_id' => $tipoBrocheId,
-                    'tiene_bolsillos' => $tieneBolsillos,
-                    'tiene_reflectivo' => $tieneReflectivo,
-                ]);
-
-                // Crear prenda del pedido con TODOS los campos - IGUAL QUE EN crearDesdeCotizacion
-                $prendaPedido = PrendaPedido::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'cantidad' => $cantidadTotal,
-                    'descripcion' => $prenda['descripcion'] ?? '', // ✅ SOLO LA DESCRIPCIÓN DEL USUARIO
-                    'descripcion_variaciones' => $this->armarDescripcionVariacionesPrendaSinCotizacion($variantes),
-                    // ✅ CANTIDAD POR TALLA Y GÉNERO: {genero: {talla: cantidad}} o {talla: cantidad}
-                    'cantidad_talla' => json_encode($cantidadesPorTalla),
-                    // ✅ GENERO (puede ser múltiple)
-                    'genero' => json_encode($this->procesarMultiplesGeneros($prenda['genero'] ?? '')),
-                    'color_id' => $colorId,
-                    'tela_id' => $telaId,
-                    'tipo_manga_id' => $tipoMangaId,
-                    'tipo_broche_id' => $tipoBrocheId,
-                    'tiene_bolsillos' => $tieneBolsillos,
-                    'tiene_reflectivo' => $tieneReflectivo,
-                    // ✅ NUEVOS CAMPOS: Observaciones de variaciones
-                    'manga_obs' => $prenda['obs_manga'] ?? $prenda['manga_obs'] ?? '',
-                    'bolsillos_obs' => $prenda['obs_bolsillos'] ?? $prenda['bolsillos_obs'] ?? '',
-                    'broche_obs' => $prenda['obs_broche'] ?? $prenda['broche_obs'] ?? '',
-                    'reflectivo_obs' => $prenda['obs_reflectivo'] ?? $prenda['reflectivo_obs'] ?? '',
-                    // ✅ CAMPO DE BODEGA
-                    'de_bodega' => (int)($prenda['de_bodega'] ?? 0),
-                ]);
-
-                \Log::info('✅ Prenda PRENDA creada correctamente', [
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'nombre_prenda' => $prenda['nombre_producto'],
-                    'genero' => $prendaPedido->genero,
-                    'cantidad' => $cantidadTotal,
-                    'cantidad_talla' => json_encode($cantidadesPorTalla),
-                    'color_id' => $colorId,
-                    'tela_id' => $telaId,
-                    'tipo_manga_id' => $tipoMangaId,
-                    'tipo_broche_id' => $tipoBrocheId,
-                    'manga_obs' => $prendaPedido->manga_obs,
-                    'bolsillos_obs' => $prendaPedido->bolsillos_obs,
-                    'broche_obs' => $prendaPedido->broche_obs,
-                    'reflectivo_obs' => $prendaPedido->reflectivo_obs,
-                    'de_bodega' => $prendaPedido->de_bodega,
-                ]);
-
-                // Crear proceso inicial
-                ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'proceso' => 'Creación Orden',
-                    'estado_proceso' => 'Completado',
-                    'fecha_inicio' => now(),
-                    'fecha_fin' => now(),
-                ]);
-
-                // Guardar fotos de prenda si existen - CONVERTIR A WEBP IGUAL QUE SUPERVISOR-PEDIDOS
-                if ($request->hasFile("prendas.$index.fotos")) {
-                    $fotos = $request->file("prendas.$index.fotos", []);
-                    foreach ($fotos as $orden => $foto) {
-                        if ($foto && $foto->isValid()) {
-                            // Usar el mismo método que supervisor-pedidos para guardar como WebP
-                            $pathWebp = $this->imagenService->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'prendas');
-                            
-                            DB::table('prenda_fotos_pedido')->insert([
-                                'prenda_pedido_id' => $prendaPedido->id,
-                                'ruta_original' => $pathWebp,
-                                'ruta_webp' => $pathWebp,
-                                'orden' => $orden + 1,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    }
-                    \Log::info('✅ Fotos de prenda guardadas', [
-                        'prenda_id' => $prendaPedido->id,
-                        'cantidad_fotos' => count($fotos),
-                    ]);
-                }
-
-                // Guardar fotos de telas si existen - CONVERTIR A WEBP IGUAL QUE SUPERVISOR-PEDIDOS
-                if (!empty($prenda['telas']) && is_array($prenda['telas'])) {
-                    foreach ($prenda['telas'] as $telaIdx => $tela) {
-                        if ($request->hasFile("prendas.$index.telas.$telaIdx.fotos")) {
-                            $fotosTela = $request->file("prendas.$index.telas.$telaIdx.fotos", []);
-                            foreach ($fotosTela as $orden => $fotoTela) {
-                                if ($fotoTela && $fotoTela->isValid()) {
-                                    // Usar el mismo método que supervisor-pedidos para guardar como WebP
-                                    $pathWebp = $this->imagenService->guardarImagenComoWebp($fotoTela, $pedido->numero_pedido, 'telas');
-
-                                    DB::table('prenda_fotos_tela_pedido')->insert([
-                                        'prenda_pedido_id' => $prendaPedido->id,
-                                        'ruta_original' => $pathWebp,
-                                        'ruta_webp' => $pathWebp,
-                                        'orden' => $orden + 1,
-                                        'created_at' => now(),
-                                        'updated_at' => now(),
-                                    ]);
-                                }
-                            }
-                            \Log::info('✅ Fotos de tela guardadas', [
-                                'prenda_id' => $prendaPedido->id,
-                                'tela_index' => $telaIdx,
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Actualizar cantidad total del pedido
-            $pedido->update([
-                'cantidad_total' => $cantidadTotalPedido
-            ]);
-
-            DB::commit();
-
-            \Log::info('✅ [PRENDA SIN COTIZACIÓN] Pedido completamente creado', [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cantidad_total' => $cantidadTotalPedido,
-                'prendas_count' => count($prendas),
+        } catch (\InvalidArgumentException $e) {
+            // Validación de negocio fallida
+            Log::warning('⚠️ [PedidosController] Validación de negocio fallida', [
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Pedido PRENDA creado exitosamente',
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cantidad_total' => $cantidadTotalPedido,
-                'redirect_url' => route('asesores.pedidos.index'),
-            ]);
+                'error' => 'Validación de negocio fallida',
+                'message' => $e->getMessage(),
+            ], 422);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            \Log::error('❌ Error al crear pedido PRENDA sin cotización', [
+            Log::error('❌ [PedidosController] Error creando pedido', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => 'Error al crear el pedido: ' . $e->getMessage(),
+                'error' => 'Error creando pedido',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
-
-    // MÉTODOS ELIMINADOS - Migrados a DescripcionService
-    // - construirDescripcionPrendaSinCotizacion() -> DescripcionService::construirDescripcionPrendaSinCotizacion()
-    // - armarDescripcionVariacionesPrendaSinCotizacion() -> DescripcionService (método privado)
-
-    // MÉTODO ELIMINADO - Migrado a ImagenService::guardarImagenComoWebp()
 
     /**
-     * Crear pedido REFLECTIVO sin cotización previa
+     * PUT /api/pedidos/:id
+     * Actualizar pedido
+     * 
+     * Body (todos opcionales):
+     * {
+     *   "cliente": "Nuevo cliente",
+     *   "forma_pago": "credito"
+     * }
+     * 
+     * @param Request $request
+     * @param int|string $id
+     * @return JsonResponse
      */
-    public function crearReflectivoSinCotizacion(Request $request): JsonResponse
+    public function update(Request $request, int|string $id): JsonResponse
     {
         try {
-            DB::beginTransaction();
+            Log::info('✏️ [PedidosController] PUT /api/pedidos/{id}', ['id' => $id]);
 
-            // Validar datos requeridos
-            $cliente = $request->input('cliente');
-            $formaPago = $request->input('forma_de_pago', '');
-            $asesora = $request->input('asesora', '');
-            $prendas = $request->input('prendas', []);
-
-            if (!$cliente) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El cliente es requerido'
-                ], 422);
-            }
-
-            if (empty($prendas)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Debe agregar al menos una prenda'
-                ], 422);
-            }
-
-            \Log::info('📦 [REFLECTIVO SIN COTIZACIÓN] Creando pedido de reflectivo', [
-                'cliente' => $cliente,
-                'forma_de_pago' => $formaPago,
-                'asesora' => $asesora,
-                'prendas_count' => count($prendas),
+            $validated = $request->validate([
+                'cliente' => 'sometimes|string|max:255',
+                'forma_pago' => 'sometimes|string|in:contado,credito,transferencia,cheque',
             ]);
 
-            // Crear pedido de producción
-            $pedido = PedidoProduccion::create([
-                'cotizacion_id' => null,  // Sin cotización
-                'numero_cotizacion' => null,
-                'numero_pedido' => $this->numeracionService->generarNumeroPedido(),
-                'cliente' => $cliente,
-                'asesor_id' => auth()->id(),
-                'forma_de_pago' => $formaPago,
-                'area' => null,
-                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-                'fecha_de_creacion_de_orden' => now(),
-            ]);
+            $pedido = $this->commandBus->execute(new ActualizarPedidoCommand(
+                pedidoId: $id,
+                cliente: $validated['cliente'] ?? null,
+                formaPago: $validated['forma_pago'] ?? null,
+            ));
 
-            \Log::info('✅ Pedido REFLECTIVO creado', [
+            Log::info('✅ [PedidosController] Pedido actualizado', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
             ]);
 
-            // Crear prendas del pedido
-            $cantidadTotalPedido = 0;
-            foreach ($prendas as $index => $prenda) {
-                // Procesar cantidad_talla con estructura género => talla => cantidad
-                $cantidadTallaGenero = $prenda['cantidad_talla'] ?? [];
-                
-                // Aplanar para calcular total (si viene en formato anidado)
-                $cantidadesTotal = [];
-                $cantidadTotalPrenda = 0;
-                
-                if (is_array($cantidadTallaGenero)) {
-                    // Si tiene estructura de género => talla => cantidad
-                    foreach ($cantidadTallaGenero as $genero => $tallas) {
-                        if (is_array($tallas)) {
-                            foreach ($tallas as $talla => $cantidad) {
-                                $cantidadTotalPrenda += (int)$cantidad;
-                                if (!isset($cantidadesTotal[$talla])) {
-                                    $cantidadesTotal[$talla] = 0;
-                                }
-                                $cantidadesTotal[$talla] += (int)$cantidad;
-                            }
-                        }
-                    }
-                }
-                
-                $cantidadTotalPedido += $cantidadTotalPrenda;
+            return response()->json($pedido, 200);
 
-                \Log::info('📊 [REFLECTIVO SIN COTIZACIÓN] Procesando prenda', [
-                    'index' => $index,
-                    'nombre' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'generos' => $prenda['genero'] ?? '',
-                    'cantidad_talla_genero' => $cantidadTallaGenero,
-                    'cantidad_total' => $cantidadTotalPrenda,
-                ]);
-
-                // Crear prenda del pedido (MÍNIMO para reflectivo sin cotización)
-                // No guardar descripción ni cantidad_talla aquí, irán en prendas_reflectivo
-                $prendaPedido = PrendaPedido::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'cantidad' => $cantidadTotalPrenda,
-                    // ✅ NO guardar descripción ni cantidad_talla aquí (van en prendas_reflectivo)
-                ]);
-
-                \Log::info('✅ Prenda REFLECTIVO creada correctamente', [
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'nombre_prenda' => $prenda['nombre_producto'],
-                    'cantidad' => $cantidadTotalPrenda,
-                ]);
-
-                // ✅ NUEVO: Crear registro en tabla prendas_reflectivo con toda la información
-                $prendaReflectivo = \App\Models\PrendaReflectivo::create([
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'nombre_producto' => $prenda['nombre_producto'] ?? 'Sin nombre',
-                    'descripcion' => $prenda['descripcion'] ?? '',
-                    'generos' => json_encode($this->utilitariosService->procesarGeneros($prenda['genero'] ?? '')),
-                    'cantidad_talla' => json_encode($cantidadTallaGenero), // Estructura género => talla => cantidad
-                    'ubicaciones' => json_encode($prenda['ubicaciones'] ?? []),
-                    'cantidad_total' => $cantidadTotalPrenda,
-                ]);
-
-                \Log::info('✅ Información REFLECTIVO guardada en tabla especializada', [
-                    'prenda_reflectivo_id' => $prendaReflectivo->id,
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'generos' => $prendaReflectivo->generos,
-                    'cantidad_talla' => $prendaReflectivo->cantidad_talla,
-                ]);
-
-                // Crear proceso inicial
-                ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'proceso' => 'Creación Orden',
-                    'estado_proceso' => 'Completado',
-                    'fecha_inicio' => now(),
-                    'fecha_fin' => now(),
-                ]);
-
-                // Guardar fotos de reflectivo si existen
-                if ($request->hasFile("prendas.$index.fotos")) {
-                    $fotos = $request->file("prendas.$index.fotos", []);
-                    foreach ($fotos as $orden => $foto) {
-                        if ($foto && $foto->isValid()) {
-                            // Usar el mismo método que supervisor-pedidos para guardar como WebP
-                            $pathWebp = $this->imagenService->guardarImagenComoWebp($foto, $pedido->numero_pedido, 'reflectivo');
-
-                            DB::table('prenda_fotos_pedido')->insert([
-                                'prenda_pedido_id' => $prendaPedido->id,
-                                'ruta_original' => $pathWebp,
-                                'ruta_webp' => $pathWebp,
-                                'orden' => $orden + 1,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    }
-                    \Log::info('✅ Fotos de reflectivo guardadas', [
-                        'prenda_id' => $prendaPedido->id,
-                        'cantidad_fotos' => count($fotos),
-                    ]);
-                }
-            }
-
-            // Actualizar cantidad total del pedido
-            $pedido->update([
-                'cantidad_total' => $cantidadTotalPedido
-            ]);
-
-            DB::commit();
-
-            \Log::info('✅ [REFLECTIVO SIN COTIZACIÓN] Pedido completamente creado', [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cantidad_total' => $cantidadTotalPedido,
-                'prendas_count' => count($prendas),
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('⚠️ [PedidosController] Validación fallida', [
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Pedido REFLECTIVO creado exitosamente',
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-                'cantidad_total' => $cantidadTotalPedido,
-            ]);
+                'error' => 'Validación fallida',
+                'message' => $e->getMessage(),
+            ], 422);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            \Log::error('❌ Error al crear pedido REFLECTIVO sin cotización', [
+            Log::error('❌ [PedidosController] Error actualizando pedido', [
+                'id' => $id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => 'Error al crear el pedido REFLECTIVO: ' . $e->getMessage()
+                'error' => 'Error actualizando pedido',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
 
-    // MÉTODO ELIMINADO - Migrado a DescripcionService::construirDescripcionReflectivoSinCotizacion()
+    /**
+     * PUT /api/pedidos/:id/estado
+     * Cambiar estado de pedido
+     * 
+     * Body:
+     * {
+     *   "nuevo_estado": "completado",
+     *   "razon": "Opcional: razón del cambio"
+     * }
+     * 
+     * @param Request $request
+     * @param int|string $id
+     * @return JsonResponse
+     */
+    public function cambiarEstado(Request $request, int|string $id): JsonResponse
+    {
+        try {
+            Log::info('🔄 [PedidosController] PUT /api/pedidos/{id}/estado', ['id' => $id]);
 
+            $validated = $request->validate([
+                'nuevo_estado' => 'required|string|in:activo,pendiente,completado,cancelado',
+                'razon' => 'sometimes|string|max:500',
+            ]);
+
+            $pedido = $this->commandBus->execute(new CambiarEstadoPedidoCommand(
+                pedidoId: $id,
+                nuevoEstado: $validated['nuevo_estado'],
+                razon: $validated['razon'] ?? null,
+            ));
+
+            Log::info('✅ [PedidosController] Estado cambiadoId', [
+                'pedido_id' => $pedido->id,
+                'nuevo_estado' => $pedido->estado,
+            ]);
+
+            return response()->json($pedido, 200);
+
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('⚠️ [PedidosController] Transición no permitida', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Transición de estado no permitida',
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error cambiando estado', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error cambiando estado',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/pedidos/:id/prendas
+     * Agregar prenda a pedido
+     * 
+     * Body:
+     * {
+     *   "nombre_prenda": "Pantalón",
+     *   "cantidad": 10,
+     *   "tipo": "sin_cotizacion|reflectivo",
+     *   "tipo_manga": "corta",
+     *   "tipo_broche": "botones",
+     *   "color_id": 1,
+     *   "tela_id": 1
+     * }
+     * 
+     * @param Request $request
+     * @param int|string $id
+     * @return JsonResponse
+     */
+    public function agregarPrenda(Request $request, int|string $id): JsonResponse
+    {
+        try {
+            Log::info('👕 [PedidosController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
+
+            $validated = $request->validate([
+                'nombre_prenda' => 'required|string|max:255',
+                'cantidad' => 'required|integer|min:1',
+                'tipo' => 'required|string|in:sin_cotizacion,reflectivo',
+                'tipo_manga' => 'required|string|max:100',
+                'tipo_broche' => 'required|string|max:100',
+                'color_id' => 'required|integer|min:1',
+                'tela_id' => 'required|integer|min:1',
+            ]);
+
+            $pedido = $this->commandBus->execute(new AgregarPrendaAlPedidoCommand(
+                pedidoId: $id,
+                prendaData: [
+                    'nombre_prenda' => $validated['nombre_prenda'],
+                    'cantidad' => $validated['cantidad'],
+                    'tipo_manga' => $validated['tipo_manga'],
+                    'tipo_broche' => $validated['tipo_broche'],
+                    'color_id' => $validated['color_id'],
+                    'tela_id' => $validated['tela_id'],
+                ],
+                tipo: $validated['tipo'],
+            ));
+
+            Log::info('✅ [PedidosController] Prenda agregada', [
+                'pedido_id' => $pedido->id,
+                'cantidad_total' => $pedido->cantidad_total,
+            ]);
+
+            return response()->json($pedido, 201);
+
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('⚠️ [PedidosController] Validación de prenda fallida', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Validación de prenda fallida',
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error agregando prenda', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error agregando prenda',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/pedidos/:id
+     * Eliminar pedido (soft delete)
+     * 
+     * Query Parameters:
+     * - razon: string (razón de eliminación)
+     * 
+     * @param Request $request
+     * @param int|string $id
+     * @return JsonResponse
+     */
+    public function destroy(Request $request, int|string $id): JsonResponse
+    {
+        try {
+            Log::info('🗑️ [PedidosController] DELETE /api/pedidos/{id}', ['id' => $id]);
+
+            $validated = $request->validate([
+                'razon' => 'sometimes|string|max:500',
+            ]);
+
+            $this->commandBus->execute(new EliminarPedidoCommand(
+                pedidoId: $id,
+                razon: $validated['razon'] ?? 'Sin especificar',
+            ));
+
+            Log::info('✅ [PedidosController] Pedido eliminado', ['pedido_id' => $id]);
+
+            return response()->json([], 204);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error eliminando pedido', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error eliminando pedido',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/pedidos/filtro/estado
+     * Filtrar pedidos por estado
+     * 
+     * Query Parameters:
+     * - estado: string (requerido: activo|pendiente|completado|cancelado)
+     * - page: int (default 1)
+     * - per_page: int (default 15)
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function filtrarPorEstado(Request $request): JsonResponse
+    {
+        try {
+            Log::info('🔍 [PedidosController] GET /api/pedidos/filtro/estado');
+
+            $validated = $request->validate([
+                'estado' => 'required|string|in:activo,pendiente,completado,cancelado',
+                'page' => 'sometimes|integer|min:1',
+                'per_page' => 'sometimes|integer|min:1|max:100',
+            ]);
+
+            $pedidos = $this->queryBus->execute(new FiltrarPedidosPorEstadoQuery(
+                estado: $validated['estado'],
+                page: $validated['page'] ?? 1,
+                perPage: $validated['per_page'] ?? 15,
+            ));
+
+            Log::info('✅ [PedidosController] Filtrado por estado', [
+                'estado' => $validated['estado'],
+                'total' => $pedidos->total(),
+            ]);
+
+            return response()->json($pedidos, 200);
+
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('⚠️ [PedidosController] Estado inválido', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Estado inválido',
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error filtrando por estado', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error filtrando pedidos',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/pedidos/buscar/:numero
+     * Buscar pedido por número
+     * 
+     * @param string $numero
+     * @return JsonResponse
+     */
+    public function buscarPorNumero(string $numero): JsonResponse
+    {
+        try {
+            Log::info('🔎 [PedidosController] GET /api/pedidos/buscar/{numero}', ['numero' => $numero]);
+
+            $pedido = $this->queryBus->execute(new BuscarPedidoPorNumeroQuery($numero));
+
+            if (!$pedido) {
+                Log::warning('⚠️ [PedidosController] Pedido no encontrado', ['numero' => $numero]);
+                return response()->json([
+                    'error' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            Log::info('✅ [PedidosController] Pedido encontrado', [
+                'numero' => $numero,
+                'pedido_id' => $pedido->id,
+            ]);
+
+            return response()->json($pedido, 200);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error buscando pedido', [
+                'numero' => $numero,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error buscando pedido',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/pedidos/:id/prendas
+     * Obtener todas las prendas de un pedido
+     * 
+     * @param int|string $id
+     * @return JsonResponse
+     */
+    public function obtenerPrendas(int|string $id): JsonResponse
+    {
+        try {
+            Log::info('🧷 [PedidosController] GET /api/pedidos/{id}/prendas', ['id' => $id]);
+
+            $prendas = $this->queryBus->execute(new ObtenerPrendasPorPedidoQuery($id));
+
+            Log::info('✅ [PedidosController] Prendas obtenidas', [
+                'pedido_id' => $id,
+                'total_prendas' => $prendas->count(),
+            ]);
+
+            return response()->json($prendas, 200);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidosController] Error obteniendo prendas', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error obteniendo prendas',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
-
-
-
-
-

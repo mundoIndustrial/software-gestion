@@ -27,6 +27,22 @@ class AppServiceProvider extends ServiceProvider
             OperarioRepositoryImpl::class
         );
 
+        // Registrar implementaciones de Procesos (DDD)
+        $this->app->bind(
+            \App\Domain\Procesos\Repositories\TipoProcesoRepository::class,
+            \App\Repositories\EloquentTipoProcesoRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Procesos\Repositories\ProcesoPrendaDetalleRepository::class,
+            \App\Repositories\EloquentProcesoPrendaDetalleRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Procesos\Repositories\ProcesoPrendaImagenRepository::class,
+            \App\Repositories\EloquentProcesoPrendaImagenRepository::class
+        );
+
         // Registrar el servicio de generación de números de cotización
         $this->app->singleton(
             \App\Application\Cotizacion\Services\GenerarNumeroCotizacionService::class,

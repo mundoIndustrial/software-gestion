@@ -1,0 +1,499 @@
+/**
+ * gestor-modal-proceso-generico.js
+ * 
+ * Maneja la funcionalidad del modal genérico de procesos
+ * (Reflectivo, Estampado, Bordado, DTF, Sublimado)
+ */
+
+let procesoActual = null;
+let tallasSeleccionadasProceso = { dama: [], caballero: [] };
+let ubicacionesProcesoSeleccionadas = [];
+
+// Configuración por tipo de proceso
+const procesosConfig = {
+    reflectivo: {
+        titulo: 'Agregar Reflectivo',
+        icon: 'light_mode',
+        btnTexto: 'Agregar Reflectivo'
+    },
+    estampado: {
+        titulo: 'Agregar Estampado',
+        icon: 'format_paint',
+        btnTexto: 'Agregar Estampado'
+    },
+    bordado: {
+        titulo: 'Agregar Bordado',
+        icon: 'auto_awesome',
+        btnTexto: 'Agregar Bordado'
+    },
+    dtf: {
+        titulo: 'Agregar DTF',
+        icon: 'print',
+        btnTexto: 'Agregar DTF'
+    },
+    sublimado: {
+        titulo: 'Agregar Sublimado',
+        icon: 'palette',
+        btnTexto: 'Agregar Sublimado'
+    }
+};
+
+// Tallas estándar por género
+const tallasEstandar = {
+    dama: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+    caballero: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+};
+
+// Abrir modal para un tipo específico de proceso
+window.abrirModalProcesoGenerico = function(tipoProceso) {
+    console.log(`🔓 Intentando abrir modal para: ${tipoProceso}`);
+    
+    // Verificar que el modal existe
+    const modal = document.getElementById('modal-proceso-generico');
+    if (!modal) {
+        console.error('❌ ERROR: Modal #modal-proceso-generico no encontrado en el DOM');
+        return;
+    }
+    
+    procesoActual = tipoProceso;
+    const config = procesosConfig[tipoProceso];
+    
+    if (!config) {
+        console.error(`❌ ERROR: Configuración no encontrada para proceso: ${tipoProceso}`);
+        return;
+    }
+    
+    try {
+        // Actualizar título e icono
+        const titleEl = document.getElementById('modal-proceso-titulo');
+        const iconEl = document.getElementById('modal-proceso-icon');
+        const btnTextoEl = document.getElementById('modal-btn-texto');
+        
+        if (titleEl) titleEl.textContent = config.titulo;
+        if (iconEl) iconEl.textContent = config.icon;
+        if (btnTextoEl) btnTextoEl.textContent = config.btnTexto;
+        
+        // Limpiar formulario
+        const form = document.getElementById('form-proceso-generico');
+        if (form) form.reset();
+        
+        tallasSeleccionadasProceso = { dama: [], caballero: [] };
+        
+        // Limpiar resumen
+        const resumenTallas = document.getElementById('proceso-tallas-resumen');
+        if (resumenTallas) resumenTallas.innerHTML = '';
+        
+        // Limpiar ubicaciones
+        ubicacionesProcesoSeleccionadas = [];
+        const listaUbicaciones = document.getElementById('lista-ubicaciones-proceso');
+        if (listaUbicaciones) listaUbicaciones.innerHTML = '';
+        const inputUbicacion = document.getElementById('input-ubicacion-nueva');
+        if (inputUbicacion) inputUbicacion.value = '';
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+        
+        console.log(`✅ Modal abierto para proceso: ${tipoProceso}`);
+    } catch (error) {
+        console.error(`❌ ERROR al abrir modal para ${tipoProceso}:`, error);
+    }
+};
+
+// Cerrar modal
+window.cerrarModalProcesoGenerico = function() {
+    const modal = document.getElementById('modal-proceso-generico');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Deseleccionar el checkbox del proceso en el modal de prenda
+    if (procesoActual) {
+        const checkbox = document.getElementById(`checkbox-${procesoActual}`);
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+        
+        // Remover del registro de procesos seleccionados
+        if (window.procesosSeleccionados && window.procesosSeleccionados[procesoActual]) {
+            delete window.procesosSeleccionados[procesoActual];
+        }
+        
+        // Actualizar resumen en prenda modal
+        if (window.actualizarResumenProcesos) {
+            window.actualizarResumenProcesos();
+        }
+        
+        console.log(`❌ Modal cerrado y proceso ${procesoActual} deseleccionado`);
+    }
+    
+    procesoActual = null;
+};
+
+// Manejar upload de imágenes
+window.manejarImagenesProceso = function(input) {
+    if (input.files && input.files.length > 0) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            // Mostrar preview
+            const preview = document.getElementById('proceso-foto-preview');
+            if (preview) {
+                preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">`;
+            }
+            
+            // Mostrar contador
+            const contador = document.getElementById('proceso-foto-contador');
+            if (contador) {
+                contador.innerHTML = `<div style="color: #059669; font-size: 0.875rem;">📷 ${input.files.length} imagen(es) seleccionada(s)</div>`;
+            }
+            
+            // Mostrar botón de más fotos
+            const btn = document.getElementById('proceso-foto-btn');
+            if (btn) btn.style.display = 'block';
+        };
+        
+        reader.readAsDataURL(file);
+    }
+};
+
+// Agregar ubicación a la lista
+window.agregarUbicacionProceso = function() {
+    const input = document.getElementById('input-ubicacion-nueva');
+    const ubicacion = input?.value?.trim();
+    
+    if (!ubicacion) {
+        console.warn('⚠️ Campo de ubicación vacío');
+        return;
+    }
+    
+    // Evitar duplicados
+    if (ubicacionesProcesoSeleccionadas.includes(ubicacion)) {
+        console.warn(`⚠️ Ubicación "${ubicacion}" ya existe`);
+        return;
+    }
+    
+    // Agregar a la lista
+    ubicacionesProcesoSeleccionadas.push(ubicacion);
+    console.log(`✅ Ubicación agregada: ${ubicacion}`);
+    
+    // Limpiar input
+    input.value = '';
+    
+    // Renderizar lista
+    renderizarListaUbicaciones();
+};
+
+// Remover ubicación de la lista
+window.removerUbicacionProceso = function(ubicacion) {
+    ubicacionesProcesoSeleccionadas = ubicacionesProcesoSeleccionadas.filter(u => u !== ubicacion);
+    console.log(`❌ Ubicación removida: ${ubicacion}`);
+    renderizarListaUbicaciones();
+};
+
+// Renderizar la lista de ubicaciones
+function renderizarListaUbicaciones() {
+    const container = document.getElementById('lista-ubicaciones-proceso');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (ubicacionesProcesoSeleccionadas.length === 0) {
+        container.innerHTML = '<small style="color: #9ca3af;">Escribe una ubicación y haz click en "+" para agregarla</small>';
+        return;
+    }
+    
+    ubicacionesProcesoSeleccionadas.forEach(ubicacion => {
+        const tag = document.createElement('div');
+        tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
+        tag.innerHTML = `
+            <span>${ubicacion}</span>
+            <button type="button" onclick="removerUbicacionProceso('${ubicacion}')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
+            </button>
+        `;
+        container.appendChild(tag);
+    });
+}
+
+// Aplicar proceso para TODAS las tallas (de la prenda)
+window.aplicarProcesoParaTodasTallas = function() {
+    console.log('✅ Intentando aplicar proceso para todas las tallas de la prenda');
+    
+    // Obtener las tallas registradas de la prenda actual
+    const tallasPrenda = obtenerTallasDeLaPrenda();
+    
+    if (!tallasPrenda.dama && !tallasPrenda.caballero) {
+        // No hay tallas seleccionadas - mostrar modal de advertencia
+        mostrarModalAdvertenciaTallas();
+        return;
+    }
+    
+    tallasSeleccionadasProceso = {
+        dama: tallasPrenda.dama || [],
+        caballero: tallasPrenda.caballero || []
+    };
+    
+    console.log('✅ Tallas aplicadas:', tallasSeleccionadasProceso);
+    actualizarResumenTallasProceso();
+};
+
+// Obtener tallas registradas en la prenda del modal
+function obtenerTallasDeLaPrenda() {
+    const tarjetasContainer = document.getElementById('tarjetas-generos-container');
+    const tallas = { dama: [], caballero: [] };
+    
+    if (!tarjetasContainer) {
+        console.warn('⚠️ Container de géneros no encontrado');
+        return tallas;
+    }
+    
+    // Buscar tarjetas de géneros
+    const tarjetas = tarjetasContainer.querySelectorAll('[data-genero]');
+    
+    tarjetas.forEach(tarjeta => {
+        const genero = tarjeta.dataset.genero;
+        
+        // Encontrar inputs de talla en esta tarjeta
+        const inputsTalla = tarjeta.querySelectorAll('input[data-talla]');
+        inputsTalla.forEach(input => {
+            const talla = input.dataset.talla;
+            const cantidad = input.value?.trim();
+            
+            // Si tiene cantidad, agregar la talla
+            if (cantidad && cantidad !== '0') {
+                if (genero === 'dama' && !tallas.dama.includes(talla)) {
+                    tallas.dama.push(talla);
+                } else if (genero === 'caballero' && !tallas.caballero.includes(talla)) {
+                    tallas.caballero.push(talla);
+                }
+            }
+        });
+    });
+    
+    return tallas;
+}
+
+// Mostrar modal de advertencia cuando no hay tallas seleccionadas
+function mostrarModalAdvertenciaTallas() {
+    const html = `
+        <div style="text-align: center; padding: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <h3 style="color: #dc2626; margin-bottom: 1rem;">Sin Tallas Seleccionadas</h3>
+            <p style="color: #6b7280; margin-bottom: 1.5rem; line-height: 1.6;">
+                Debes seleccionar al menos una talla y su cantidad en la prenda 
+                antes de aplicar el proceso.
+            </p>
+            <p style="color: #6b7280; margin-bottom: 2rem; font-size: 0.875rem;">
+                Agrega tallas en la sección "TALLAS Y CANTIDADES" del formulario.
+            </p>
+            <button type="button" class="btn btn-primary" onclick="cerrarModalAdvertencia()" style="padding: 0.75rem 2rem;">
+                <span class="material-symbols-rounded">check</span>Entendido
+            </button>
+        </div>
+    `;
+    
+    // Crear modal temporal
+    const modal = document.createElement('div');
+    modal.id = 'modal-advertencia-tallas';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '10002';
+    modal.innerHTML = `
+        <div class="modal-container modal-sm">
+            <div class="modal-header" style="background: #fef2f2; border-bottom: 2px solid #fecaca;">
+                <h3 class="modal-title" style="color: #dc2626;">
+                    <span class="material-symbols-rounded">warning</span>Advertencia
+                </h3>
+                <button class="modal-close-btn" onclick="cerrarModalAdvertencia()">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                ${html}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+// Cerrar modal de advertencia
+window.cerrarModalAdvertencia = function() {
+    const modal = document.getElementById('modal-advertencia-tallas');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+// Abrir editor de tallas específicas
+window.abrirEditorTallasEspecificas = function() {
+    console.log('📋 Abriendo editor de tallas específicas de la prenda');
+    
+    const modalEditor = document.getElementById('modal-editor-tallas');
+    if (!modalEditor) {
+        console.error('❌ ERROR: Modal editor de tallas no encontrado');
+        return;
+    }
+    
+    // Obtener tallas registradas en la prenda
+    const tallasPrenda = obtenerTallasDeLaPrenda();
+    
+    // Validar que haya tallas seleccionadas
+    if (!tallasPrenda.dama.length && !tallasPrenda.caballero.length) {
+        mostrarModalAdvertenciaTallas();
+        return;
+    }
+    
+    // Renderizar tallas DAMA (solo las seleccionadas en la prenda)
+    const containerDama = document.getElementById('tallas-dama-container');
+    if (containerDama) {
+        containerDama.innerHTML = '';
+        
+        if (tallasPrenda.dama.length === 0) {
+            containerDama.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas DAMA seleccionadas en la prenda</p>';
+        } else {
+            tallasPrenda.dama.forEach(talla => {
+                const isSelected = tallasSeleccionadasProceso.dama.includes(talla);
+                const label = document.createElement('label');
+                label.className = 'talla-checkbox-editor';
+                label.innerHTML = `
+                    <input type="checkbox" value="${talla}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="dama">
+                    <span>${talla}</span>
+                `;
+                label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;';
+                containerDama.appendChild(label);
+            });
+        }
+    }
+    
+    // Renderizar tallas CABALLERO (solo las seleccionadas en la prenda)
+    const containerCaballero = document.getElementById('tallas-caballero-container');
+    if (containerCaballero) {
+        containerCaballero.innerHTML = '';
+        
+        if (tallasPrenda.caballero.length === 0) {
+            containerCaballero.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas CABALLERO seleccionadas en la prenda</p>';
+        } else {
+            tallasPrenda.caballero.forEach(talla => {
+                const isSelected = tallasSeleccionadasProceso.caballero.includes(talla);
+                const label = document.createElement('label');
+                label.className = 'talla-checkbox-editor';
+                label.innerHTML = `
+                    <input type="checkbox" value="${talla}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="caballero">
+                    <span>${talla}</span>
+                `;
+                label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;';
+                containerCaballero.appendChild(label);
+            });
+        }
+    }
+    
+    // Mostrar modal editor
+    modalEditor.style.display = 'flex';
+};
+
+// Cerrar editor de tallas
+window.cerrarEditorTallas = function() {
+    const modal = document.getElementById('modal-editor-tallas');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    console.log('❌ Editor de tallas cerrado');
+};
+
+// Guardar tallas seleccionadas desde el editor
+window.guardarTallasSeleccionadas = function() {
+    console.log('💾 Guardando tallas seleccionadas');
+    
+    // Recopilar tallas DAMA
+    const checksDama = document.querySelectorAll('input[data-genero="dama"]:checked');
+    tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
+    
+    // Recopilar tallas CABALLERO
+    const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
+    tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
+    
+    console.log('✅ Tallas seleccionadas:', tallasSeleccionadasProceso);
+    
+    // Cerrar editor y actualizar resumen
+    cerrarEditorTallas();
+    actualizarResumenTallasProceso();
+};
+
+// Actualizar resumen de tallas
+window.actualizarResumenTallasProceso = function() {
+    const resumen = document.getElementById('proceso-tallas-resumen');
+    if (!resumen) return;
+    
+    const totalTallas = tallasSeleccionadasProceso.dama.length + tallasSeleccionadasProceso.caballero.length;
+    
+    if (totalTallas === 0) {
+        resumen.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
+        return;
+    }
+    
+    let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">';
+    
+    if (tallasSeleccionadasProceso.dama.length > 0) {
+        html += `
+            <div>
+                <strong style="color: #059669;">👩 DAMA (${tallasSeleccionadasProceso.dama.length})</strong><br>
+                <small>${tallasSeleccionadasProceso.dama.join(', ')}</small>
+            </div>
+        `;
+    }
+    
+    if (tallasSeleccionadasProceso.caballero.length > 0) {
+        html += `
+            <div>
+                <strong style="color: #0284c7;">👨 CABALLERO (${tallasSeleccionadasProceso.caballero.length})</strong><br>
+                <small>${tallasSeleccionadasProceso.caballero.join(', ')}</small>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    resumen.innerHTML = html;
+};
+
+// Agregar proceso al pedido
+window.agregarProcesoAlPedido = function() {
+    if (!procesoActual) {
+        alert('Error: no hay proceso seleccionado');
+        return;
+    }
+    
+    try {
+        // Recolectar datos
+        const datos = {
+            tipo: procesoActual,
+            ubicaciones: ubicacionesProcesoSeleccionadas,
+            observaciones: document.getElementById('proceso-observaciones')?.value || '',
+            tallas: tallasSeleccionadasProceso,
+            imagen: document.getElementById('proceso-foto-preview')?.querySelector('img')?.src || null
+        };
+        
+        console.log(`💾 Guardando proceso:`, datos);
+        
+        // Guardar en procesosSeleccionados (variable global de manejadores-procesos-prenda.js)
+        if (window.procesosSeleccionados && window.procesosSeleccionados[procesoActual]) {
+            window.procesosSeleccionados[procesoActual].datos = datos;
+        }
+        
+        // Cerrar modal
+        cerrarModalProcesoGenerico();
+        
+        // Actualizar resumen en prenda modal
+        if (window.actualizarResumenProcesos) {
+            window.actualizarResumenProcesos();
+        }
+        
+        console.log(`✅ Proceso ${procesoActual} agregado`);
+    } catch (error) {
+        console.error(`❌ ERROR al agregar proceso:`, error);
+    }
+};
+
+// Confirmar que el módulo se cargó correctamente
+console.log('✅ Módulo gestor-modal-proceso-generico.js cargado correctamente');

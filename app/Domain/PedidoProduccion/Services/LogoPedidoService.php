@@ -3,17 +3,31 @@
 namespace App\Domain\PedidoProduccion\Services;
 
 use App\Models\Cotizacion;
+use App\Domain\Shared\DomainEventDispatcher;
+use App\Domain\PedidoProduccion\Events\LogoPedidoCreado;
+use App\Domain\PedidoProduccion\Aggregates\LogoPedidoAggregate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Servicio de dominio para lógica de negocio de Logo Pedidos
- * Responsabilidad: Crear y gestionar pedidos de tipo LOGO
+ * 
+ * Responsabilidades:
+ * - Crear logo pedidos desde cotizaciones
+ * - Guardar datos completos de logo pedidos
+ * - Procesar fotos y información técnica
+ * - Emitir eventos de dominio
+ * - Encapsular toda la lógica del método guardarLogoPedido() del controller
+ * 
+ * Encapsula la lógica que estaba dispersa en PedidosProduccionController::guardarLogoPedido()
+ * (~200 líneas de lógica de BD y cálculos)
  */
 class LogoPedidoService
 {
     public function __construct(
-        private NumeracionService $numeracionService
+        private NumeracionService $numeracionService,
+        private DomainEventDispatcher $eventDispatcher,
     ) {}
 
     /**
@@ -188,6 +202,221 @@ class LogoPedidoService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
+    }
+
+    /**
+     * ===== NUEVO MÉTODO =====
+     * Guardar datos completos de logo pedido (EXTRAE LÓGICA DEL CONTROLLER)
+     * 
+     * Encapsula la lógica que estaba en controller::guardarLogoPedido() (línea 240-430)
+     * - Búsqueda de logo_pedido existente por múltiples criterios
+     * - Creación si no existe
+     * - Actualización de datos complejos
+     * - Procesamiento de fotos
+     * - Obtención de datos completos
+     * 
+     * @param int $pedidoId ID del pedido (puede ser logo_pedido ID o pedido_produccion ID)
+     * @param string $logoCotizacionId ID de la cotización de logo
+     * @param int $cantidad Cantidad total (suma de tallas)
+     * @param int|null $cotizacionId ID de cotización (opcional)
+     * @param array $datos Datos adicionales (cliente, asesora, forma_pago, descripción, etc)
+     * @return array Resultado con datos guardados
+     * @throws \Exception
+     */
+    public function guardarDatos(
+        int $pedidoId,
+        string $logoCotizacionId,
+        int $cantidad,
+        ?int $cotizacionId,
+        array $datos = []
+    ): array {
+        try {
+            DB::beginTransaction();
+
+            Log::info('🎨 [LogoPedidoService::guardarDatos] Iniciando', [
+                'pedido_id' => $pedidoId,
+                'logo_cotizacion_id' => $logoCotizacionId,
+                'cantidad' => $cantidad,
+                'cotizacion_id' => $cotizacionId,
+            ]);
+
+            // Extraer datos de entrada
+            $numeroCotizacion = $datos['numero_cotizacion'] ?? null;
+            $cliente = $datos['cliente'] ?? null;
+            $asesora = $datos['asesora'] ?? Auth::user()?->name;
+            $formaPago = $datos['forma_de_pago'] ?? 'Por definir';
+
+            // Si cliente no viene, intentar obtenerlo de cotización
+            if (!$cliente && $cotizacionId) {
+                $cotizacion = DB::table('cotizaciones')
+                    ->where('id', $cotizacionId)
+                    ->select('id', 'numero', 'cliente_id')
+                    ->first();
+
+                if ($cotizacion) {
+                    $numeroCotizacion = $cotizacion->numero;
+                    $clienteObj = DB::table('clientes')->where('id', $cotizacion->cliente_id)->first();
+                    $cliente = $clienteObj?->nombre ?? 'Sin nombre';
+
+                    Log::info('🎨 [LogoPedidoService] Cliente obtenido de cotización', [
+                        'cliente' => $cliente,
+                    ]);
+                }
+            }
+
+            // ===== LÓGICA DE BÚSQUEDA/CREACIÓN (ANTES LÍNEA 317-340 DEL CONTROLLER) =====
+            // Buscar logo_pedido existente por ID primaria o FK
+            $logoPedidoExistente = null;
+            if (is_numeric($pedidoId)) {
+                $logoPedidoExistente = DB::table('logo_pedidos')->find($pedidoId);
+                if (!$logoPedidoExistente) {
+                    $logoPedidoExistente = DB::table('logo_pedidos')
+                        ->where('pedido_id', $pedidoId)
+                        ->first();
+                }
+            }
+
+            Log::info('🎨 [LogoPedidoService] Búsqueda completada', [
+                'encontrado' => $logoPedidoExistente ? 'SÍ' : 'NO',
+            ]);
+
+            if (!$logoPedidoExistente) {
+                // ===== CREAR NUEVO (ANTES LÍNEA 343-390 DEL CONTROLLER) =====
+                $numeroLogoPedido = $this->numeracionService->generarNumeroLogoPedido();
+
+                $logoPedidoId = DB::table('logo_pedidos')->insertGetId([
+                    'pedido_id' => $pedidoId,
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'numero_pedido' => $numeroLogoPedido,
+                    'cotizacion_id' => $cotizacionId,
+                    'numero_cotizacion' => $numeroCotizacion,
+                    'cliente' => $cliente,
+                    'asesora' => $asesora,
+                    'forma_de_pago' => $formaPago,
+                    'encargado_orden' => $asesora,
+                    'fecha_de_creacion_de_orden' => now(),
+                    'estado' => 'pendiente',
+                    'descripcion' => $datos['descripcion'] ?? '',
+                    'cantidad' => $cantidad,
+                    'tecnicas' => json_encode($datos['tecnicas'] ?? []),
+                    'observaciones_tecnicas' => $datos['observaciones_tecnicas'] ?? '',
+                    'ubicaciones' => json_encode($datos['ubicaciones'] ?? []),
+                    'observaciones' => $datos['observaciones'] ?? '',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                Log::info('✅ [LogoPedidoService] Logo pedido CREADO', [
+                    'logo_pedido_id' => $logoPedidoId,
+                    'numero_pedido' => $numeroLogoPedido,
+                ]);
+
+                $pedidoId = $logoPedidoId;
+            } else {
+                // ===== ACTUALIZAR EXISTENTE (ANTES LÍNEA 391-415 DEL CONTROLLER) =====
+                $logoPedidoId = $logoPedidoExistente->id;
+
+                $updateData = [
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'descripcion' => $datos['descripcion'] ?? '',
+                    'cantidad' => $cantidad,
+                    'tecnicas' => json_encode($datos['tecnicas'] ?? []),
+                    'observaciones_tecnicas' => $datos['observaciones_tecnicas'] ?? '',
+                    'ubicaciones' => json_encode($datos['ubicaciones'] ?? []),
+                    'observaciones' => $datos['observaciones'] ?? '',
+                    'updated_at' => now(),
+                ];
+
+                if ($cotizacionId) {
+                    $updateData['cotizacion_id'] = $cotizacionId;
+                }
+                if ($numeroCotizacion) {
+                    $updateData['numero_cotizacion'] = $numeroCotizacion;
+                }
+
+                $updated = DB::table('logo_pedidos')
+                    ->where('id', $logoPedidoId)
+                    ->update($updateData);
+
+                if (!$updated) {
+                    throw new \Exception("No se encontró logo_pedido con ID: $logoPedidoId");
+                }
+
+                Log::info('✅ [LogoPedidoService] Logo pedido ACTUALIZADO', [
+                    'logo_pedido_id' => $logoPedidoId,
+                ]);
+            }
+
+            // ===== PROCESAR FOTOS (ANTES LÍNEA 420-432 DEL CONTROLLER) =====
+            $fotos = $datos['fotos'] ?? [];
+            if (!empty($fotos)) {
+                foreach ($fotos as $index => $fotoId) {
+                    DB::table('logo_pedido_fotos')->insertOrIgnore([
+                        'logo_pedido_id' => $logoPedidoId,
+                        'logo_foto_cotizacion_id' => $fotoId,
+                        'orden' => $index,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                Log::info('✅ [LogoPedidoService] Fotos agregadas', [
+                    'total_fotos' => count($fotos),
+                ]);
+            }
+
+            DB::commit();
+
+            // ===== OBTENER DATOS ACTUALIZADOS (ANTES LÍNEA 435-450 DEL CONTROLLER) =====
+            $logoPedido = DB::table('logo_pedidos')->find($logoPedidoId);
+
+            // Si es COMBINADA (tiene pedido_id), obtener también datos del pedido de prendas
+            $pedidoPrendas = null;
+            if ($logoPedido->pedido_id) {
+                $pedidoPrendas = DB::table('pedidos_produccion')
+                    ->where('id', $logoPedido->pedido_id)
+                    ->select('id', 'numero_pedido')
+                    ->first();
+            }
+
+            Log::info('✅ [LogoPedidoService::guardarDatos] Completado', [
+                'logo_pedido_id' => $logoPedidoId,
+                'cantidad' => $cantidad,
+            ]);
+
+            // ===== EMITIR EVENTO DE DOMINIO =====
+            $event = new LogoPedidoCreado(
+                pedidoId: $logoPedido->pedido_id ?? $logoPedidoId,
+                logoPedidoId: $logoPedidoId,
+                logoCotizacionId: $logoPedido->logo_cotizacion_id,
+                cantidad: $cantidad,
+                cotizacionId: $logoPedido->cotizacion_id,
+            );
+            $this->eventDispatcher->dispatch($event);
+            Log::info('✅ Evento LogoPedidoCreado emitido', [
+                'evento' => $event->getEventName(),
+                'logo_pedido_id' => $logoPedidoId,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'LOGO Pedido guardado correctamente',
+                'logo_pedido' => $logoPedido,
+                'pedido_produccion' => $pedidoPrendas,
+                'numero_pedido_produccion' => $pedidoPrendas?->numero_pedido,
+                'numero_pedido_logo' => $logoPedido->numero_pedido
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('❌ [LogoPedidoService::guardarDatos] Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw $e;
         }
     }
 }

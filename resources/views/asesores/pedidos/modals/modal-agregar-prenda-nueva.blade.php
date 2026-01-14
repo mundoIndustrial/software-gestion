@@ -247,32 +247,44 @@
                         <span class="material-symbols-rounded">settings</span>PROCESOS (Opcional)
                     </label>
                     <div class="procesos-container">
+                        <!-- Reflectivo -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" name="nueva-prenda-procesos" value="Bordado" class="form-checkbox">
+                            <input type="checkbox" id="checkbox-reflectivo" name="nueva-prenda-procesos" value="reflectivo" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('reflectivo', true); } else { manejarCheckboxProceso('reflectivo', false); }">
+                            <span><span class="material-symbols-rounded">light_mode</span>Reflectivo</span>
+                        </label>
+                        
+                        <!-- Bordado -->
+                        <label class="proceso-checkbox">
+                            <input type="checkbox" id="checkbox-bordado" name="nueva-prenda-procesos" value="bordado" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('bordado', true); } else { manejarCheckboxProceso('bordado', false); }">
                             <span><span class="material-symbols-rounded">auto_awesome</span>Bordado</span>
                         </label>
+                        
+                        <!-- Estampado -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" name="nueva-prenda-procesos" value="Estampado" class="form-checkbox">
+                            <input type="checkbox" id="checkbox-estampado" name="nueva-prenda-procesos" value="estampado" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('estampado', true); } else { manejarCheckboxProceso('estampado', false); }">
                             <span><span class="material-symbols-rounded">format_paint</span>Estampado</span>
                         </label>
+                        
+                        <!-- DTF -->
                         <label class="proceso-checkbox">
-                            <input type="checkbox" id="checkbox-reflectivo" name="nueva-prenda-procesos" value="Reflectivo" class="form-checkbox" onchange="if(this.checked) { abrirModalReflectivo(); } else { cerrarModalReflectivo(); }">
-                            <span><span class="material-symbols-rounded">light_mode</span>Reflectivo</span>
+                            <input type="checkbox" id="checkbox-dtf" name="nueva-prenda-procesos" value="dtf" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('dtf', true); } else { manejarCheckboxProceso('dtf', false); }">
+                            <span><span class="material-symbols-rounded">straighten</span>DTF</span>
+                        </label>
+                        
+                        <!-- Sublimado -->
+                        <label class="proceso-checkbox">
+                            <input type="checkbox" id="checkbox-sublimado" name="nueva-prenda-procesos" value="sublimado" class="form-checkbox" onclick="if(this.checked) { manejarCheckboxProceso('sublimado', true); } else { manejarCheckboxProceso('sublimado', false); }">
+                            <span><span class="material-symbols-rounded">water_drop</span>Sublimado</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Reflectivo (Resumen) -->
-                <div class="form-section" id="seccion-reflectivo-resumen" style="display: none;">
+                <!-- Resumen de Procesos Seleccionados -->
+                <div class="form-section" id="seccion-procesos-resumen" style="display: none;">
                     <label class="form-label-primary">
-                        <span class="material-symbols-rounded">light_mode</span>REFLECTIVO
+                        <span class="material-symbols-rounded">list_check</span>PROCESOS CONFIGURADOS
                     </label>
-                    <div style="background: #f3f4f6; border-radius: 8px; padding: 1rem; border-left: 4px solid #0066cc;">
-                        <div id="reflectivo-resumen-contenido" style="font-size: 0.875rem; color: #6b7280;"></div>
-                        <button type="button" onclick="abrirModalReflectivo()" class="btn btn-primary" style="margin-top: 1rem; padding: 0.75rem 1rem; font-size: 0.875rem;">
-                            <span class="material-symbols-rounded" style="margin-right: 0.5rem;">edit</span>Editar
-                        </button>
-                    </div>
+                    <div id="procesos-resumen-contenido" style="background: #f3f4f6; border-radius: 8px; padding: 1rem; border-left: 4px solid #0066cc; font-size: 0.875rem; color: #6b7280;"></div>
                 </div>
             </form>
         </div>

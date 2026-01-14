@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Domain\PedidoProduccion\Listeners;
+
+use App\Domain\PedidoProduccion\Events\PedidoProduccionCreado;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * ActualizarCachePedidos
+ * 
+ * Listener que se dispara cuando se crea un nuevo pedido
+ * Responsabilidades:
+ * - Invalidar cachés relacionados
+ * - Actualizar estadísticas en caché
+ * - Mantener datos frescos en Redis
+ * 
+ * Este es otro ejemplo de un side effect que no pertenece al agregado.
+ */
+class ActualizarCachePedidos
+{
+    /**
+     * Ejecutar el listener
+     */
+    public function __invoke(PedidoProduccionCreado $event): void
+    {
+        try {
+            Log::info('🔄 Actualizando caché de pedidos', [
+                'pedido_id' => $event->getPedidoId(),
+                'numero_pedido' => $event->getNumeroPedido(),
+            ]);
+
+            // Invalidar cachés relacionados
+            $cacheKeys = [
+                'pedidos_list',
+                'pedidos_pending_count',
+                'pedidos_asesor_' . $event->getAseoreId(),
+                'estadisticas_pedidos',
+            ];
+
+            foreach ($cacheKeys as $key) {
+                Cache::forget($key);
+                Log::debug("Caché invalidado: $key");
+            }
+
+            // Actualizar estadísticas
+            $statsKey = 'pedidos_stats';
+            $stats = Cache::get($statsKey, [
+                'total' => 0,
+                'pendientes' => 0,
+                'en_proceso' => 0,
+                'completados' => 0,
+            ]);
+
+            $stats['total'] = ($stats['total'] ?? 0) + 1;
+            $stats['pendientes'] = ($stats['pendientes'] ?? 0) + 1;
+
+            Cache::put($statsKey, $stats, now()->addHours(24));
+
+            Log::info('✅ Caché de pedidos actualizado', [
+                'pedido_id' => $event->getPedidoId(),
+                'estadisticas' => $stats,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error actualizando caché', [
+                'error' => $e->getMessage(),
+                'pedido_id' => $event->getPedidoId(),
+            ]);
+        }
+    }
+}

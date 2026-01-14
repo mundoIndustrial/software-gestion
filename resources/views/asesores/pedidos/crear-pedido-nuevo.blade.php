@@ -1,7 +1,13 @@
-{{-- Flujo específico para NUEVO PEDIDO --}}
-<link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
-<link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
-<link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
+@extends('layouts.asesores')
+
+@section('extra_styles')
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
+@endsection
+
+@section('content')
 
 <!-- Header Full Width -->
 <div class="page-header">
@@ -66,9 +72,6 @@
                         <select id="tipo_pedido_nuevo" name="tipo_pedido_nuevo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="manejarCambiaTipoPedido()" style="display: none;" disabled>
                             <option value="">-- Selecciona un tipo de pedido --</option>
                             <option value="P">PRENDA</option>
-                            <option value="R">REFLECTIVO</option>
-                            <option value="B">BORDADO</option>
-                            <option value="E">ESTAMPADO</option>
                             <option value="EPP">EPP</option>
                         </select>
                     </div>
@@ -132,6 +135,32 @@
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-agregar-reflectivo')
+@include('asesores.pedidos.modals.modal-proceso-generico')
+
+@push('scripts')
+    <!-- IMPORTANTE: Cargar constantes PRIMERO -->
+    <script src="{{ asset('js/constantes-tallas.js') }}"></script>
+    
+    <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
+    <script src="{{ asset('js/modulos/crear-pedido/modales-dinamicos.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestion-tallas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestion-telas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestion-items-pedido.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modal-seleccion-prendas.js') }}"></script>
+    
+    <!-- Componente: Prendas -->
+    <script src="{{ asset('js/componentes/prendas.js') }}"></script>
+    
+    <!-- Componente: Reflectivo -->
+    <script src="{{ asset('js/componentes/reflectivo.js') }}"></script>
+    
+    <!-- Cargar módulos de gestión de pedidos -->
+    <script src="{{ asset('js/modulos/crear-pedido/api-pedidos-editable.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/image-storage-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestion-items-pedido-refactorizado.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/manejadores-variaciones.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/manejadores-procesos-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-modal-proceso-generico.js') }}"></script>
 
 <script>
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
@@ -189,11 +218,13 @@
                 
                 // Manejar diferentes tipos de pedido
                 if (tipoPedido === 'P') {
+                    // Prenda - incluye prendas, reflectivo, bordado, estampado, DTF, sublimado
                     window.abrirModalPrendaNueva();
-                } else if (tipoPedido === 'R') {
-                    window.abrirModalReflectivo();
+                } else if (tipoPedido === 'EPP') {
+                    // EPP - Equipo de Protección Personal
+                    alert('Tipo de pedido "EPP" en desarrollo');
                 } else {
-                    alert('Tipo de pedido "' + tipoPedido + '" en desarrollo');
+                    alert('Tipo de pedido "' + tipoPedido + '" desconocido');
                 }
             });
         }
@@ -213,6 +244,10 @@
             }
         };
         
+
         console.log('✅ Vista de nuevo pedido inicializada');
     });
 </script>
+@endpush
+
+@endsection
