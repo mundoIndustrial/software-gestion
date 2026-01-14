@@ -18,6 +18,7 @@ use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\DebugRegistrosController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\StorageController;
+use App\Http\Controllers\Api\AsistenciaPersonalController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -27,6 +28,11 @@ Route::get('/', function () {
 Route::get('/test-echo', function () {
     return view('test-echo');
 })->name('test.echo');
+
+// Ruta de prueba para PDF upload
+Route::get('/test-pdf-upload', function () {
+    return view('test-pdf-upload');
+})->name('test.pdf-upload');
 
 // ========================================
 // RUTAS DE STORAGE - Servir imágenes con fallback de extensiones
@@ -803,6 +809,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('asistencia-personal.update');
     Route::delete('/asistencia-personal/{id}', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'destroy'])
         ->name('asistencia-personal.destroy');
+});
+
+// ========================================
+// API ROUTES - ASISTENCIA PERSONAL
+// ========================================
+Route::middleware(['auth', 'verified'])->prefix('asistencia-personal')->name('asistencia-personal.')->group(function () {
+    Route::post('/procesar-pdf', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'procesarPDF'])
+        ->name('procesar-pdf');
+    Route::post('/validar-registros', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'validarRegistros'])
+        ->name('validar-registros');
+    Route::post('/guardar-registros', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'guardarRegistros'])
+        ->name('guardar-registros');
+    Route::get('/reportes/{id}/detalles', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'getReportDetails'])
+        ->name('reportes.detalles');
+    Route::get('/reportes/{id}/ausencias', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'getAbsenciasDelDia'])
+        ->name('reportes.ausencias');
 });
 
 // ========================================

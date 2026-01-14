@@ -13,7 +13,7 @@ class RegistroHorasHuella extends Model
 
     protected $fillable = [
         'id_reporte',
-        'id_persona',
+        'codigo_persona',
         'dia',
         'horas'
     ];
@@ -25,7 +25,7 @@ class RegistroHorasHuella extends Model
 
     public function personal()
     {
-        return $this->belongsTo(Personal::class, 'id_persona', 'id');
+        return $this->belongsTo(Personal::class, 'codigo_persona', 'codigo_persona');
     }
 
     public function reporte()

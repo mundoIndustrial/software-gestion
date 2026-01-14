@@ -18,70 +18,124 @@ class AsistenciaPersonalController extends Controller
         $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
         try {
             $file = $request->file('pdf');
+            
+            // Validar que el archivo existe
+            if (!$file || !file_exists($file->getPathname())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El archivo PDF no se pudo procesar. El archivo no existe.'
+                ], 400);
+            }
+            
+            // Log de información del archivo
+            \Log::info('Procesando PDF', [
+                'nombre' => $file->getClientOriginalName(),
+                'tamaño' => $file->getSize(),
+                'ruta' => $file->getPathname(),
+                'tipo' => $file->getClientMimeType(),
+                'extensión' => $file->getClientOriginalExtension()
+            ]);
+            
+            // Crear un parser
             $parser = new Parser();
+            
+            // Log antes de parsear
+            \Log::info('Parser creado, intentando parsear archivo');
+            
+            // Parsear el PDF
             $pdf = $parser->parseFile($file->getPathname());
+            
+            \Log::info('PDF parseado exitosamente');
+            
             $pages = $pdf->getPages();
+            
+            \Log::info('Páginas extraídas', ['total_páginas' => count($pages)]);
+            
             $registros = [];
-            foreach ($pages as $page) {
-                $text = $page->getText();
-                $lines = explode("\n", $text);
-                foreach ($lines as $line) {
-                    $line = trim($line);
-                    if (empty($line)) continue;
+            foreach ($pages as $pageIndex => $page) {
+                try {
+                    $text = $page->getText();
+                    $lines = explode("\n", $text);
                     
-                    // Patrón 1: id_persona nombre fecha hora (ej: 2 Juan 2025-12-16 06:56:04)
-                    if (preg_match('/^(\d+)\s+(.+?)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})$/', $line, $matches)) {
-                        $id_persona = intval($matches[1]);
-                        $timestamp = $matches[3];
-                        $personal = Personal::find($id_persona);
-                        if ($personal) {
-                            $registros[] = [
-                                'id_persona' => $id_persona,
-                                'nombre_persona' => $personal->nombre_persona,
-                                'timestamp' => $timestamp
-                            ];
+                    \Log::debug("Procesando página " . ($pageIndex + 1), ['total_líneas' => count($lines)]);
+                    
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (empty($line)) continue;
+                        
+                        // Patrón 1: id_persona nombre fecha hora (ej: 2 Juan 2025-12-16 06:56:04)
+                        if (preg_match('/^(\d+)\s+(.+?)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})$/', $line, $matches)) {
+                            $codigo_persona = intval($matches[1]);
+                            $timestamp = $matches[3];
+                            $personal = Personal::where('codigo_persona', $codigo_persona)->first();
+                            if ($personal) {
+                                $registros[] = [
+                                    'id_persona' => $codigo_persona,
+                                    'nombre_persona' => $personal->nombre_persona,
+                                    'timestamp' => $timestamp
+                                ];
+                            }
+                        }
+                        // Patrón 2: id_persona fecha hora nombre (ej: 2 2025-12-16 06:56:04 Juan)
+                        elseif (preg_match('/^(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+(.+)$/', $line, $matches)) {
+                            $codigo_persona = intval($matches[1]);
+                            $timestamp = $matches[2];
+                            $personal = Personal::where('codigo_persona', $codigo_persona)->first();
+                            if ($personal) {
+                                $registros[] = [
+                                    'id_persona' => $codigo_persona,
+                                    'nombre_persona' => $personal->nombre_persona,
+                                    'timestamp' => $timestamp
+                                ];
+                            }
+                        }
+                        // Patrón 3: Detectar cualquier línea con id_persona y timestamp
+                        elseif (preg_match('/\b(\d+)\b.*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/', $line, $matches)) {
+                            $codigo_persona = intval($matches[1]);
+                            $timestamp = $matches[2];
+                            $personal = Personal::where('codigo_persona', $codigo_persona)->first();
+                            if ($personal) {
+                                $registros[] = [
+                                    'id_persona' => $codigo_persona,
+                                    'nombre_persona' => $personal->nombre_persona,
+                                    'timestamp' => $timestamp
+                                ];
+                            }
                         }
                     }
-                    // Patrón 2: id_persona fecha hora nombre (ej: 2 2025-12-16 06:56:04 Juan)
-                    elseif (preg_match('/^(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+(.+)$/', $line, $matches)) {
-                        $id_persona = intval($matches[1]);
-                        $timestamp = $matches[2];
-                        $personal = Personal::find($id_persona);
-                        if ($personal) {
-                            $registros[] = [
-                                'id_persona' => $id_persona,
-                                'nombre_persona' => $personal->nombre_persona,
-                                'timestamp' => $timestamp
-                            ];
-                        }
-                    }
-                    // Patrón 3: Detectar cualquier línea con id_persona y timestamp
-                    elseif (preg_match('/\b(\d+)\b.*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/', $line, $matches)) {
-                        $id_persona = intval($matches[1]);
-                        $timestamp = $matches[2];
-                        $personal = Personal::find($id_persona);
-                        if ($personal) {
-                            $registros[] = [
-                                'id_persona' => $id_persona,
-                                'nombre_persona' => $personal->nombre_persona,
-                                'timestamp' => $timestamp
-                            ];
-                        }
-                    }
+                } catch (\Exception $pageError) {
+                    \Log::warning("Error procesando página " . ($pageIndex + 1), [
+                        'error' => $pageError->getMessage()
+                    ]);
+                    // Continuar con la siguiente página
+                    continue;
                 }
             }
+            
             if (empty($registros)) {
+                \Log::info('No se encontraron registros válidos en el PDF');
                 return response()->json([
                     'success' => false,
                     'message' => 'No se encontraron registros válidos en el PDF'
                 ]);
             }
+            
+            \Log::info('PDF procesado exitosamente', ['registros_encontrados' => count($registros)]);
+            
             return response()->json([
                 'success' => true,
                 'registros' => $registros,
                 'cantidad' => count($registros)
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error al procesar PDF', [
+                'mensaje' => $e->getMessage(),
+                'clase' => get_class($e),
+                'archivo' => $e->getFile(),
+                'línea' => $e->getLine(),
+                'stack' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar el PDF: ' . $e->getMessage()
@@ -206,7 +260,7 @@ class AsistenciaPersonalController extends Controller
     {
         $request->validate([
             'registros' => 'required|array',
-            'registros.*.id_persona' => 'required|integer|exists:personal,id',
+            'registros.*.id_persona' => 'required|integer|exists:personal,codigo_persona',
             'registros.*.timestamp' => 'required|date_format:Y-m-d H:i:s'
         ]);
 
@@ -226,7 +280,7 @@ class AsistenciaPersonalController extends Controller
                 $timestamp = $registro['timestamp'];
                 
                 // Validar que la persona existe
-                $personal = Personal::find($idPersona);
+                $personal = Personal::where('codigo_persona', $idPersona)->first();
                 if (!$personal) {
                     $registrosRechazados[] = [
                         'indice' => $index,
@@ -309,7 +363,7 @@ class AsistenciaPersonalController extends Controller
                 try {
                     RegistroHorasHuella::create([
                         'id_reporte' => $reporte->id,
-                        'id_persona' => $registro['id_persona'],
+                        'codigo_persona' => $registro['id_persona'],
                         'dia' => $registro['dia'],
                         'horas' => $horasFormato
                     ]);
@@ -355,7 +409,7 @@ class AsistenciaPersonalController extends Controller
                     $fecha = $fecha->format('Y-m-d');
                 }
                 return [
-                    'id_persona' => $registro->id_persona,
+                    'codigo_persona' => $registro->codigo_persona,
                     'nombre' => $registro->personal->nombre_persona ?? 'Sin nombre',
                     'fecha' => $fecha,
                     'horas' => $registro->horas ?? []
@@ -398,7 +452,7 @@ class AsistenciaPersonalController extends Controller
             $todasLasPersonas = Personal::all();
             $registrosPorPersona = RegistroHorasHuella::where('id_reporte', $id)
                 ->get()
-                ->groupBy('id_persona');
+                ->groupBy('codigo_persona');
             
             // Calcular inasistencias por persona
             $personasInasistentes = [];
@@ -408,8 +462,8 @@ class AsistenciaPersonalController extends Controller
                 // Verificar cada fecha disponible
                 foreach ($fechasDisponibles as $fecha) {
                     // Buscar si la persona tiene registro en esa fecha
-                    $tieneRegistro = $registrosPorPersona->has($persona->id) && 
-                                   $registrosPorPersona[$persona->id]->some(function($registro) use ($fecha) {
+                    $tieneRegistro = $registrosPorPersona->has($persona->codigo_persona) && 
+                                   $registrosPorPersona[$persona->codigo_persona]->some(function($registro) use ($fecha) {
                                        $diaRegistro = $registro->dia;
                                        if (is_object($diaRegistro)) {
                                            $diaRegistro = $diaRegistro->format('Y-m-d');
@@ -425,7 +479,7 @@ class AsistenciaPersonalController extends Controller
                 // Si la persona tiene inasistencias, agregarla a la lista
                 if (count($fechasInasistidas) > 0) {
                     $personasInasistentes[] = [
-                        'id' => $persona->id,
+                        'id' => $persona->codigo_persona,
                         'nombre' => $persona->nombre_persona,
                         'total_inasistencias' => count($fechasInasistidas),
                         'fechas_inasistidas' => $fechasInasistidas
