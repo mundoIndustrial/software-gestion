@@ -5,6 +5,7 @@
 
 const AsistenciaPersonal = (() => {
     let registrosOriginalesPorFecha = {};
+    let reporteActual = null;
 
     /**
      * Inicializar módulo principal
@@ -47,6 +48,7 @@ const AsistenciaPersonal = (() => {
         fetchReportDetails(reportId, function(data) {
             if (data.success && data.reporte) {
                 const reporte = data.reporte;
+                reporteActual = reporte;
                 
                 modalTitle.textContent = `${reporte.numero_reporte} - ${reporte.nombre_reporte}`;
                 
@@ -136,6 +138,21 @@ const AsistenciaPersonal = (() => {
                 modal.style.display = 'none';
             });
             btnCerrar.dataset.listenerAttached = true;
+        }
+        
+        const btnTotalHorasExtras = document.getElementById('btnTotalHorasExtras');
+        if (btnTotalHorasExtras && !btnTotalHorasExtras.dataset.listenerAttached) {
+            btnTotalHorasExtras.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (reporteActual) {
+                    AsistenciaTotalHorasExtras.mostrarVista(reporteActual);
+                    // Inicializar búsqueda para tabla de horas extras
+                    setTimeout(() => {
+                        inicializarBusquedaTotalHorasExtras();
+                    }, 100);
+                }
+            });
+            btnTotalHorasExtras.dataset.listenerAttached = true;
         }
     }
 

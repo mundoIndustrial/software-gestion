@@ -657,6 +657,10 @@ body {
     background: white;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: scale(0.75);
+    transform-origin: top left;
+    width: 133.33%;
+    margin-left: 0;
 }
 
 .records-table {
@@ -673,7 +677,7 @@ body {
 }
 
 .records-table th {
-    padding: 18px 20px;
+    padding: 14px 12px;
     text-align: left;
     font-weight: 600;
     text-transform: uppercase;
@@ -744,7 +748,7 @@ body {
 }
 
 .records-table td {
-    padding: 18px 20px;
+    padding: 14px 12px;
     color: #2c3e50;
     border-right: 1px solid #e8e8e8;
 }
@@ -775,6 +779,17 @@ body {
 .records-table tbody tr:hover .hora-registro {
     background: linear-gradient(135deg, #d9e5f3 0%, #c9dce9 100%);
     box-shadow: 0 2px 6px rgba(26, 84, 144, 0.15);
+}
+
+/* Estilos para columna de Acciones en tabla de horas extras */
+.records-table td:has(> .btn-sm) {
+    text-align: center;
+    padding: 12px 8px;
+}
+
+.records-table .btn-sm {
+    min-width: 140px;
+    display: inline-block;
 }
 
 @keyframes slideUp {

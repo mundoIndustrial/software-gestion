@@ -7,6 +7,28 @@ const AsistenciaBusqueda = (() => {
     let registrosOriginalesPorFecha = {};
     let horasTrabajadasPorFecha = {};
     let vistaHorasTrabajadas = false;
+    const STORAGE_KEY_BUSQUEDA = 'asistencia_busqueda_termino';
+
+    /**
+     * Guardar término de búsqueda
+     */
+    function guardarTerminoBusqueda(termino) {
+        localStorage.setItem(STORAGE_KEY_BUSQUEDA, termino);
+    }
+
+    /**
+     * Obtener término de búsqueda guardado
+     */
+    function obtenerTerminoBusqueda() {
+        return localStorage.getItem(STORAGE_KEY_BUSQUEDA) || '';
+    }
+
+    /**
+     * Limpiar término de búsqueda
+     */
+    function limpiarTerminoBusqueda() {
+        localStorage.removeItem(STORAGE_KEY_BUSQUEDA);
+    }
 
     /**
      * Inicializar búsqueda en tiempo real
@@ -21,8 +43,19 @@ const AsistenciaBusqueda = (() => {
         
         const updatedSearchInput = document.getElementById('searchInput');
         if (updatedSearchInput) {
+            // Restaurar término de búsqueda guardado
+            const terminoGuardado = obtenerTerminoBusqueda();
+            if (terminoGuardado) {
+                updatedSearchInput.value = terminoGuardado;
+                // Disparar evento de búsqueda para aplicar el filtro inmediatamente
+                setTimeout(() => {
+                    updatedSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }, 10);
+            }
+            
             updatedSearchInput.addEventListener('input', function(e) {
                 const searchTerm = e.target.value.toLowerCase().trim();
+                guardarTerminoBusqueda(searchTerm);
                 
                 if (vistaHorasTrabajadas) {
                     const horasData = horasTrabajadasPorFecha[fechaActual] || [];
@@ -86,8 +119,19 @@ const AsistenciaBusqueda = (() => {
         
         const updatedSearchInput = document.getElementById('searchInput');
         if (updatedSearchInput) {
+            // Restaurar término de búsqueda guardado
+            const terminoGuardado = obtenerTerminoBusqueda();
+            if (terminoGuardado) {
+                updatedSearchInput.value = terminoGuardado;
+                // Disparar evento de búsqueda para aplicar el filtro inmediatamente
+                setTimeout(() => {
+                    updatedSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }, 10);
+            }
+            
             updatedSearchInput.addEventListener('input', function(e) {
                 const searchTerm = e.target.value.toLowerCase().trim();
+                guardarTerminoBusqueda(searchTerm);
                 const horasData = horasTrabajadasPorFecha[fechaActual] || [];
                 
                 let filtrados;
@@ -283,6 +327,9 @@ const AsistenciaBusqueda = (() => {
         setRegistrosOriginales,
         setHorasTrabajadasPorFecha,
         setVistaHorasTrabajadas,
-        getVistaHorasTrabajadas: () => vistaHorasTrabajadas
+        getVistaHorasTrabajadas: () => vistaHorasTrabajadas,
+        guardarTerminoBusqueda,
+        obtenerTerminoBusqueda,
+        limpiarTerminoBusqueda
     };
 })();

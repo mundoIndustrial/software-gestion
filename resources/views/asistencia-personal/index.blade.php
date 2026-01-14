@@ -94,11 +94,31 @@
                     </svg>
                     <span>Personal Inasistente</span>
                 </button>
+                <button class="btn btn-danger" id="btnTotalHorasExtras">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Total Horas Extras</span>
+                </button>
                 <button class="btn btn-secondary" id="btnCerrarReporte">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
                         <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                     <span>Cerrar</span>
+                </button>
+                </div>
+                
+                <!-- Botón para exportar JSON (solo visible cuando hay tabla de horas extras) -->
+                <div id="exportButtonContainer" style="display: none; margin-top: 10px;">
+                    <button class="btn btn-primary" onclick="exportarDatosTotalHorasExtras()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Descargar JSON</span>
+                    </button>
                 </div>
                 
                 <!-- Tabs por fecha -->
@@ -207,5 +227,6 @@
     <script src="{{ asset('js/asistencia-personal/horas-trabajadas.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/report-details.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/absencias.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/total-horas-extras.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/init.js') }}"></script>
 @endsection
