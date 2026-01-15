@@ -21,4 +21,12 @@ class Personal extends Model
     {
         return $this->belongsTo(Role::class, 'id_rol');
     }
+
+    /**
+     * Relación con ValorHoraExtra
+     */
+    public function valorHoraExtra()
+    {
+        return $this->hasOne(ValorHoraExtra::class, 'codigo_persona', 'codigo_persona');
+    }
 }
