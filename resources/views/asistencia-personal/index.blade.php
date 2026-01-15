@@ -307,99 +307,13 @@
         </div>
     </div>
 
-    <!-- Modal de Novedades del Día -->
-    <div id="novedadesModal" class="modal-overlay" style="display: none !important;">
-        <div class="modal-content modal-detail-content" style="max-width: 600px;">
-            <div class="modal-detail-header">
-                <h2 id="novedadesTitle">Novedades del Día</h2>
-                <button class="btn-modal-close-detail" id="btnCloseNovedades">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-detail-body">
-                <!-- Información de Horario Esperado -->
-                <div class="horario-esperado-section" id="horarioEsperadoSection">
-                    <div class="section-header">
-                        <h3>📅 Horario Esperado</h3>
-                        <p id="horarioExpectado" class="horario-text"></p>
-                    </div>
-                </div>
-
-                <!-- Marcas Editables -->
-                <div class="marcas-editables-section">
-                    <div class="section-header">
-                        <h3>🎯 Marcas del Día</h3>
-                    </div>
-                    <div class="marcas-grid" id="marcasGrid">
-                        <!-- Se llenarán dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Total de Horas en Tiempo Real -->
-                <div class="total-horas-section">
-                    <div class="horas-display">
-                        <div class="horas-box">
-                            <span class="horas-label">Trabajadas</span>
-                            <span class="horas-value" id="horasTrabajadasValue">0:00</span>
-                        </div>
-                        <div class="horas-divider">/</div>
-                        <div class="horas-box">
-                            <span class="horas-label">Esperadas</span>
-                            <span class="horas-value" id="horasEsperadasValue">8:00</span>
-                        </div>
-                        <div class="horas-status" id="horasStatus">
-                            <span id="statusMessage">Incompleta</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Barra de Progreso -->
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
-                        </div>
-                        <p id="progressText" class="progress-text">0% completado</p>
-                    </div>
-
-                    <!-- Información de Déficit/Exceso -->
-                    <div class="deficit-exceso-info" id="deficitExcesoInfo">
-                        <!-- Se llenará dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Botones de Acción -->
-                <div class="modal-actions" style="margin-top: 25px;">
-                    <button class="btn btn-success btn-block" id="btnRellenarInteligente" style="margin-bottom: 10px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 8px;">
-                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                            <polyline points="13 2 13 9 20 9"></polyline>
-                            <path d="M12 11v6M9 14h6"></path>
-                        </svg>
-                        ⚡ Rellenar Inteligente
-                    </button>
-                    <button class="btn btn-primary btn-block" id="btnGuardarCambios" style="margin-bottom: 10px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 8px;">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                        </svg>
-                        💾 Guardar Cambios
-                    </button>
-                    <button class="btn btn-secondary btn-block" id="btnCerrarNovedades">
-                        Cerrar
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
+
 </div>
 @endsection
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('css/asistencia-personal.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/novedades.css') }}">
 @endsection
 
 @section('scripts')
@@ -414,6 +328,5 @@
     <script src="{{ asset('js/asistencia-personal/total-horas-extras.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/personal-roles.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/gestion-horarios.js') }}"></script>
-    <script src="{{ asset('js/asistencia-personal/novedades.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/init.js') }}"></script>
 @endsection

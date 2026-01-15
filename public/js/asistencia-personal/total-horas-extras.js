@@ -268,16 +268,8 @@ const AsistenciaTotalHorasExtras = (() => {
             tdNombre.textContent = persona.nombre;
             tr.appendChild(tdNombre);
             
-            // Celda Acciones
+            // Celda Acciones (vacía - botón Ver Novedades eliminado)
             const tdAcciones = document.createElement('td');
-            const btnVerNovedades = document.createElement('button');
-            btnVerNovedades.className = 'btn btn-sm btn-info';
-            btnVerNovedades.textContent = 'Ver Novedades';
-            btnVerNovedades.onclick = function(e) {
-                e.preventDefault();
-                mostrarDetallesPersona(persona);
-            };
-            tdAcciones.appendChild(btnVerNovedades);
             tr.appendChild(tdAcciones);
             
             // Celdas por fecha
@@ -319,146 +311,7 @@ const AsistenciaTotalHorasExtras = (() => {
     /**
      * Mostrar detalles de la persona con tabla de registros por día
      */
-    function mostrarDetallesPersona(persona) {
-        console.log('Mostrando detalles de persona:', persona);
-        
-        // Crear modal de detalles
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay modal-detail-overlay';
-        modal.id = 'modalDetallesPersona';
-        modal.style.display = 'flex';
-        
-        const content = document.createElement('div');
-        content.className = 'modal-content modal-detail-content';
-        
-        // Header del modal
-        const header = document.createElement('div');
-        header.className = 'modal-detail-header';
-        header.style.display = 'flex';
-        
-        const title = document.createElement('h2');
-        title.textContent = `Novedades - ${persona.nombre} (ID: ${persona.id})`;
-        header.appendChild(title);
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'btn-modal-close-detail';
-        closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-        closeBtn.onclick = function() {
-            modal.remove();
-        };
-        header.appendChild(closeBtn);
-        content.appendChild(header);
-        
-        // Body del modal
-        const body = document.createElement('div');
-        body.className = 'modal-detail-body';
-        
-        // Crear tabla de detalles
-        const tablaDetalles = document.createElement('table');
-        tablaDetalles.className = 'records-table';
-        tablaDetalles.style.marginTop = '20px';
-        
-        const theadDetalles = document.createElement('thead');
-        const trHeaderDetalles = document.createElement('tr');
-        
-        const headers = ['Fecha', 'Entrada 1', 'Salida 1', 'Entrada 2', 'Salida 2', 'Total Horas', 'Faltante'];
-        headers.forEach(header => {
-            const th = document.createElement('th');
-            th.textContent = header;
-            trHeaderDetalles.appendChild(th);
-        });
-        
-        theadDetalles.appendChild(trHeaderDetalles);
-        tablaDetalles.appendChild(theadDetalles);
-        
-        // Crear body de detalles
-        const tbodyDetalles = document.createElement('tbody');
-        
-        todasLasFechas.forEach(fecha => {
-            const registrosDelDia = persona.registros[fecha] || [];
-            const tr = document.createElement('tr');
-            
-            // Fecha
-            const tdFecha = document.createElement('td');
-            const dia = fecha.split('-')[2];
-            const mes = fecha.split('-')[1];
-            tdFecha.textContent = `${dia}/${mes}`;
-            tr.appendChild(tdFecha);
-            
-            // Extraer horas
-            let horasDelDia = [];
-            registrosDelDia.forEach(registro => {
-                if (registro.horas && typeof registro.horas === 'object') {
-                    Object.values(registro.horas).forEach(hora => {
-                        if (hora) horasDelDia.push(hora);
-                    });
-                }
-            });
-            
-            horasDelDia = horasDelDia.sort();
-            
-            // Entrada 1, Salida 1, Entrada 2, Salida 2
-            const entrada1 = horasDelDia[0] || '-';
-            const salida1 = horasDelDia[1] || '-';
-            const entrada2 = horasDelDia[2] || '-';
-            const salida2 = horasDelDia[3] || '-';
-            
-            const tdEntrada1 = document.createElement('td');
-            tdEntrada1.textContent = entrada1;
-            tr.appendChild(tdEntrada1);
-            
-            const tdSalida1 = document.createElement('td');
-            tdSalida1.textContent = salida1;
-            tr.appendChild(tdSalida1);
-            
-            const tdEntrada2 = document.createElement('td');
-            tdEntrada2.textContent = entrada2;
-            tr.appendChild(tdEntrada2);
-            
-            const tdSalida2 = document.createElement('td');
-            tdSalida2.textContent = salida2;
-            tr.appendChild(tdSalida2);
-            
-            // Total horas trabajadas
-            const tdTotal = document.createElement('td');
-            const minutosExtras = persona.horasExtrasPorFecha[fecha] || 0;
-            if (minutosExtras > 0) {
-                tdTotal.textContent = minutosAHora(minutosExtras);
-            } else {
-                tdTotal.textContent = '-';
-            }
-            tr.appendChild(tdTotal);
-            
-            // Faltante (qué no se marcó)
-            const tdFaltante = document.createElement('td');
-            let faltantes = [];
-            if (entrada1 === '-') faltantes.push('Entrada 1');
-            if (salida1 === '-') faltantes.push('Salida 1');
-            if (entrada2 === '-' && (salida1 !== '-')) faltantes.push('Entrada 2');
-            if (salida2 === '-' && (entrada2 !== '-')) faltantes.push('Salida 2');
-            
-            tdFaltante.textContent = faltantes.length > 0 ? faltantes.join(', ') : '-';
-            tdFaltante.style.color = faltantes.length > 0 ? '#d9534f' : '#5cb85c';
-            tdFaltante.style.fontWeight = 'bold';
-            tr.appendChild(tdFaltante);
-            
-            tbodyDetalles.appendChild(tr);
-        });
-        
-        tablaDetalles.appendChild(tbodyDetalles);
-        body.appendChild(tablaDetalles);
-        content.appendChild(body);
-        modal.appendChild(content);
-        
-        document.body.appendChild(modal);
-        
-        // Cerrar modal al hacer click en el overlay
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
+
 
     return {
         mostrarVista
