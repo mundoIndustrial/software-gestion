@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             RolesSeeder::class,
+            CrearRolesMixtoSeeder::class,
+            HorarioPorRolesSeeder::class,
             OperariosCortadoresSeeder::class, // Operarios de corte con IDs fijos (3, 4, 5)
             HorasSeeder::class,
             MaquinasTelasSeeder::class, // Seeder consolidado para máquinas, telas y tiempos de ciclo

@@ -127,3 +127,56 @@ Route::prefix('operario')->name('operario.')->middleware([])->group(function () 
     Route::get('pedido/{numeroPedido}', [\App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'getPedidoData'])
         ->name('pedido-data');
 });
+
+/**
+ * API Routes for Personal (Gestión de Roles)
+ */
+Route::prefix('personal')->name('personal.')->middleware(['api'])->group(function () {
+    Route::get('list', [\App\Http\Controllers\API\PersonalController::class, 'list'])
+        ->name('list');
+    
+    Route::put('{id}/rol', [\App\Http\Controllers\API\PersonalController::class, 'updateRol'])
+        ->name('update-rol');
+});
+
+/**
+ * API Routes for Horarios (Gestión de Horarios por Roles)
+ */
+Route::prefix('horarios')->name('horarios.')->middleware(['api'])->group(function () {
+    Route::get('list', [\App\Http\Controllers\API\HorarioController::class, 'list'])
+        ->name('list');
+    
+    Route::get('roles-disponibles', [\App\Http\Controllers\API\HorarioController::class, 'rolesDisponibles'])
+        ->name('roles-disponibles');
+    
+    Route::put('{id}', [\App\Http\Controllers\API\HorarioController::class, 'update'])
+        ->name('update');
+    
+    Route::post('/', [\App\Http\Controllers\API\HorarioController::class, 'store'])
+        ->name('store');
+});
+
+/**
+ * API Routes for Asistencias Detalladas (Control de Horas y Marcas)
+ */
+Route::prefix('asistencias')->name('asistencias.')->middleware(['api'])->group(function () {
+    // Obtener asistencias de un personal en un período
+    Route::post('obtener', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerAsistencias'])
+        ->name('obtener');
+    
+    // Obtener asistencia de un día específico
+    Route::post('dia', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerAsistenciaDelDia'])
+        ->name('dia');
+    
+    // Rellenar inteligentemente marcas faltantes
+    Route::post('rellenar-inteligente', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'rellenarInteligente'])
+        ->name('rellenar-inteligente');
+    
+    // Guardar cambios de asistencia
+    Route::post('guardar', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'guardarCambios'])
+        ->name('guardar');
+    
+    // Obtener resumen del mes
+    Route::post('mes', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerMes'])
+        ->name('mes');
+});
