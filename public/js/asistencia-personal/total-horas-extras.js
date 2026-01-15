@@ -116,6 +116,57 @@ const AsistenciaTotalHorasExtras = (() => {
     }
 
     /**
+     * Detectar si una persona tiene marcas faltantes
+     */
+    function tieneMarcarsFaltantes(registrosPorFecha) {
+        let tieneFaltantes = false;
+        
+        Object.keys(registrosPorFecha).forEach(fecha => {
+            const registros = registrosPorFecha[fecha];
+            
+            // Extraer todas las horas del día
+            let horas = [];
+            registros.forEach(registro => {
+                if (registro.horas && typeof registro.horas === 'object') {
+                    Object.values(registro.horas).forEach(hora => {
+                        if (hora) {
+                            horas.push(hora);
+                        }
+                    });
+                }
+            });
+            
+            // Limpiar duplicados (diferencias menores a 2 minutos)
+            const minutosArray = horas.map(h => horaAMinutos(h)).sort((a, b) => a - b);
+            const horasValidas = [];
+            for (let i = 0; i < minutosArray.length; i++) {
+                if (horasValidas.length === 0 || Math.abs(minutosArray[i] - horasValidas[horasValidas.length - 1]) >= 2) {
+                    horasValidas.push(minutosArray[i]);
+                }
+            }
+            
+            // Verificar si faltan marcas
+            const fechaObj = new Date(fecha + 'T00:00:00');
+            const esSabado = fechaObj.getDay() === 6;
+            
+            if (esSabado) {
+                // En sábado: necesita mínimo 2 marcas (entrada y salida)
+                if (horasValidas.length < 2) {
+                    tieneFaltantes = true;
+                }
+            } else {
+                // En día normal: necesita 4 marcas idealmente (E.Mañana, S.Mañana, E.Tarde, S.Tarde)
+                // Si tiene menos de 4, tiene faltantes
+                if (horasValidas.length < 4) {
+                    tieneFaltantes = true;
+                }
+            }
+        });
+        
+        return tieneFaltantes;
+    }
+
+    /**
      * Mostrar la tabla de total de horas extras
      */
     function mostrarVista(reporte) {
@@ -224,10 +275,10 @@ const AsistenciaTotalHorasExtras = (() => {
         thNombre.textContent = 'Nombre';
         trHeader.appendChild(thNombre);
         
-        // Encabezado: Acciones
-        const thAcciones = document.createElement('th');
-        thAcciones.textContent = 'Acciones';
-        trHeader.appendChild(thAcciones);
+        // Encabezado: Novedades
+        const thNovedades = document.createElement('th');
+        thNovedades.textContent = 'Novedades';
+        trHeader.appendChild(thNovedades);
         
         // Encabezados: Fechas dinámicas
         todasLasFechas.forEach(fecha => {
@@ -268,9 +319,28 @@ const AsistenciaTotalHorasExtras = (() => {
             tdNombre.textContent = persona.nombre;
             tr.appendChild(tdNombre);
             
-            // Celda Acciones (vacía - botón Ver Novedades eliminado)
-            const tdAcciones = document.createElement('td');
-            tr.appendChild(tdAcciones);
+            // Celda Novedades - Mostrar botón si hay marcas faltantes, sino mostrar "Sin novedades"
+            const tdNovedades = document.createElement('td');
+            const tieneFaltantes = tieneMarcarsFaltantes(persona.registros);
+            
+            if (tieneFaltantes) {
+                const btnVerNovedades = document.createElement('button');
+                btnVerNovedades.className = 'btn btn-sm btn-info';
+                btnVerNovedades.textContent = 'Ver Novedades';
+                btnVerNovedades.onclick = function(e) {
+                    e.preventDefault();
+                    abrirModalNovedades(persona);
+                };
+                tdNovedades.appendChild(btnVerNovedades);
+            } else {
+                const textoSinNovedades = document.createElement('span');
+                textoSinNovedades.textContent = 'Sin novedades';
+                textoSinNovedades.style.color = '#27ae60';
+                textoSinNovedades.style.fontWeight = 'bold';
+                tdNovedades.appendChild(textoSinNovedades);
+            }
+            
+            tr.appendChild(tdNovedades);
             
             // Celdas por fecha
             todasLasFechas.forEach(fecha => {
@@ -307,11 +377,456 @@ const AsistenciaTotalHorasExtras = (() => {
         wrapper.appendChild(tabla);
         tabContent.appendChild(wrapper);
     }
+    /**
+     * Abrir modal de novedades para editar marcas
+     */
+    function abrirModalNovedades(persona) {
+        console.log('Abriendo modal de novedades para:', persona);
+        
+        // Crear modal
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay modal-detail-overlay';
+        modal.id = 'modalNovedadesEdit';
+        modal.style.display = 'flex';
+        
+        const content = document.createElement('div');
+        content.className = 'modal-content modal-detail-content';
+        content.style.maxWidth = '900px';
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = 'modal-detail-header';
+        
+        const title = document.createElement('h2');
+        title.textContent = `Novedades - ${persona.nombre} (ID: ${persona.id})`;
+        header.appendChild(title);
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn-modal-close-detail';
+        closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        closeBtn.onclick = function() {
+            modal.remove();
+        };
+        header.appendChild(closeBtn);
+        content.appendChild(header);
+        
+        // Body
+        const body = document.createElement('div');
+        body.className = 'modal-detail-body';
+        
+        // Crear tabla con las marcas
+        const tabla = document.createElement('table');
+        tabla.className = 'records-table';
+        tabla.style.marginTop = '20px';
+        
+        // Encabezado de tabla
+        const thead = document.createElement('thead');
+        const trHeader = document.createElement('tr');
+        
+        const headers = ['Fecha', 'Entrada Mañana', 'Salida Mañana', 'Entrada Tarde', 'Salida Tarde', 'Total Horas', 'Faltante'];
+        headers.forEach(headerText => {
+            const th = document.createElement('th');
+            th.textContent = headerText;
+            trHeader.appendChild(th);
+        });
+        
+        thead.appendChild(trHeader);
+        tabla.appendChild(thead);
+        
+        // Body de tabla
+        const tbody = document.createElement('tbody');
+        
+        // Procesar cada fecha
+        Object.keys(persona.registros).sort().forEach(fecha => {
+            const registros = persona.registros[fecha];
+            
+            // Extraer horas válidas (eliminando duplicados)
+            let horas = [];
+            registros.forEach(registro => {
+                if (registro.horas && typeof registro.horas === 'object') {
+                    Object.values(registro.horas).forEach(hora => {
+                        if (hora) {
+                            horas.push(hora);
+                        }
+                    });
+                }
+            });
+            
+            // Limpiar duplicados
+            const minutosArray = horas.map(h => horaAMinutos(h)).sort((a, b) => a - b);
+            const horasValidas = [];
+            for (let i = 0; i < minutosArray.length; i++) {
+                if (horasValidas.length === 0 || Math.abs(minutosArray[i] - horasValidas[horasValidas.length - 1]) >= 2) {
+                    horasValidas.push(minutosArray[i]);
+                }
+            }
+            
+            // Convertir de vuelta a formato HH:MM
+            const horasFormato = horasValidas.map(m => {
+                const horas = Math.floor(m / 60);
+                const minutos = Math.floor(m % 60);
+                return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+            });
+            
+            // Crear fila
+            const tr = document.createElement('tr');
+            
+            // Fecha
+            const tdFecha = document.createElement('td');
+            const dia = fecha.split('-')[2];
+            const mes = fecha.split('-')[1];
+            tdFecha.textContent = `${dia}/${mes}`;
+            tr.appendChild(tdFecha);
+            
+            // Las 4 marcas (editable)
+            const marcas = ['entrada_manana', 'salida_manana', 'entrada_tarde', 'salida_tarde'];
+            const inputs = [];
+            
+            marcas.forEach((tipo, index) => {
+                const td = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'HH:MM';
+                input.value = horasFormato[index] || '';
+                input.style.width = '70px';
+                input.style.padding = '5px';
+                input.style.border = '1px solid #ddd';
+                input.style.borderRadius = '4px';
+                input.dataset.tipo = tipo;
+                input.dataset.fecha = fecha;
+                input.dataset.personaId = persona.id;
+                
+                // Permitir actualización en tiempo real
+                input.addEventListener('change', function() {
+                    actualizarMarcaYCalcularHoras(this, persona, fecha);
+                });
+                
+                input.addEventListener('input', function() {
+                    calcularHorasEnTiempoReal(persona, fecha);
+                });
+                
+                inputs.push(input);
+                td.appendChild(input);
+                tr.appendChild(td);
+            });
+            
+            // Total horas trabajadas
+            const tdTotal = document.createElement('td');
+            tdTotal.id = `total-${fecha}-${persona.id}`;
+            tdTotal.style.fontWeight = 'bold';
+            tdTotal.style.textAlign = 'center';
+            tr.appendChild(tdTotal);
+            
+            // Faltante
+            const tdFaltante = document.createElement('td');
+            tdFaltante.id = `faltante-${fecha}-${persona.id}`;
+            tdFaltante.style.color = '#d9534f';
+            tdFaltante.style.fontWeight = 'bold';
+            tr.appendChild(tdFaltante);
+            
+            tbody.appendChild(tr);
+            
+            // Calcular totales iniciales
+            setTimeout(() => {
+                calcularHorasEnTiempoReal(persona, fecha);
+            }, 100);
+        });
+        
+        tabla.appendChild(tbody);
+        body.appendChild(tabla);
+        
+        // Botones de acción
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.marginTop = '20px';
+        buttonContainer.style.textAlign = 'right';
+        
+        const btnGuardar = document.createElement('button');
+        btnGuardar.className = 'btn btn-primary';
+        btnGuardar.textContent = 'Guardar Cambios';
+        btnGuardar.onclick = function() {
+            guardarMarcasActualizadas(persona, modal);
+        };
+        buttonContainer.appendChild(btnGuardar);
+        
+        const btnCerrar = document.createElement('button');
+        btnCerrar.className = 'btn btn-secondary';
+        btnCerrar.textContent = 'Cerrar';
+        btnCerrar.style.marginLeft = '10px';
+        btnCerrar.onclick = function() {
+            modal.remove();
+        };
+        buttonContainer.appendChild(btnCerrar);
+        
+        body.appendChild(buttonContainer);
+        content.appendChild(body);
+        modal.appendChild(content);
+        
+        document.body.appendChild(modal);
+        
+        // Cerrar al hacer click en overlay
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    /**
+     * Calcular horas en tiempo real
+     */
+    function calcularHorasEnTiempoReal(persona, fecha) {
+        const inputs = document.querySelectorAll(`input[data-fecha="${fecha}"]`);
+        const horasValidas = [];
+        
+        inputs.forEach(input => {
+            if (input.value.trim()) {
+                const [h, m] = input.value.split(':').map(Number);
+                if (!isNaN(h) && !isNaN(m)) {
+                    horasValidas.push((h * 60) + m);
+                }
+            }
+        });
+        
+        horasValidas.sort((a, b) => a - b);
+        
+        // Calcular total de horas trabajadas
+        const fechaObj = new Date(fecha + 'T00:00:00');
+        const esSabado = fechaObj.getDay() === 6;
+        
+        let totalMinutos = 0;
+        if (esSabado) {
+            // Sábado: entrada a salida
+            if (horasValidas.length >= 2) {
+                totalMinutos = horasValidas[horasValidas.length - 1] - horasValidas[0];
+            }
+        } else {
+            // Día normal: bloques de mañana y tarde
+            if (horasValidas.length >= 2) {
+                const bloqueManana = horasValidas[1] - horasValidas[0];
+                let bloqueTarde = 0;
+                if (horasValidas.length >= 4) {
+                    bloqueTarde = horasValidas[3] - horasValidas[2];
+                }
+                totalMinutos = bloqueManana + bloqueTarde;
+            }
+        }
+        
+        // Mostrar total
+        const tdTotal = document.getElementById(`total-${fecha}-${persona.id}`);
+        if (tdTotal) {
+            tdTotal.textContent = minutosAHora(totalMinutos);
+        }
+        
+        // Determinar faltantes
+        const tdFaltante = document.getElementById(`faltante-${fecha}-${persona.id}`);
+        if (tdFaltante) {
+            let faltantes = [];
+            if (horasValidas.length === 0) {
+                faltantes = ['Entrada Mañana', 'Salida Mañana', 'Entrada Tarde', 'Salida Tarde'];
+            } else if (horasValidas.length < 4 && !esSabado) {
+                if (horasValidas.length < 2) {
+                    faltantes = ['Entrada Mañana', 'Salida Mañana'];
+                } else if (horasValidas.length === 2) {
+                    faltantes = ['Entrada Tarde', 'Salida Tarde'];
+                } else if (horasValidas.length === 3) {
+                    faltantes = ['Salida Tarde'];
+                }
+            }
+            tdFaltante.textContent = faltantes.length > 0 ? faltantes.join(', ') : 'Completo ✓';
+            tdFaltante.style.color = faltantes.length > 0 ? '#d9534f' : '#27ae60';
+        }
+    }
+
+    /**
+     * Actualizar marca y recalcular horas
+     */
+    function actualizarMarcaYCalcularHoras(input, persona, fecha) {
+        calcularHorasEnTiempoReal(persona, fecha);
+    }
+
+    /**
+     * Guardar marcas actualizadas
+     */
+    function guardarMarcasActualizadas(persona, modal) {
+        console.log('Guardando cambios para persona:', persona.id);
+        
+        // Obtener todos los inputs del modal
+        const inputs = modal.querySelectorAll('input[type="text"]');
+        const cambios = {};
+        
+        inputs.forEach(input => {
+            const fecha = input.dataset.fecha;
+            const tipo = input.dataset.tipo;
+            const valor = input.value.trim();
+            
+            if (!cambios[fecha]) {
+                cambios[fecha] = {};
+            }
+            
+            cambios[fecha][tipo] = valor;
+        });
+        
+        console.log('Cambios a guardar:', cambios);
+        
+        // Enviar cambios al servidor
+        fetch('/asistencia-personal/guardar-asistencia-detallada', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                persona_id: persona.id,
+                cambios: cambios
+            })
+        })
+        .then(response => {
+            console.log('Respuesta HTTP:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Respuesta del servidor:', data);
+            if (data.success || data.status === 'success') {
+                // Mostrar mensaje de éxito sin cerrar el modal
+                mostrarMensajeExito(modal);
+                
+                // Actualizar los datos de la persona en memoria
+                Object.keys(cambios).forEach(fecha => {
+                    if (persona.registros[fecha]) {
+                        // Actualizar horas en los registros
+                        persona.registros[fecha].forEach(registro => {
+                            if (!registro.horas) {
+                                registro.horas = {};
+                            }
+                            if (typeof registro.horas === 'string') {
+                                registro.horas = JSON.parse(registro.horas);
+                            }
+                            
+                            // Mapear las marcas a Hora 1, 2, 3, 4
+                            const mapeo = {
+                                'entrada_manana': 'Hora 1',
+                                'salida_manana': 'Hora 2',
+                                'entrada_tarde': 'Hora 3',
+                                'salida_tarde': 'Hora 4'
+                            };
+                            
+                            Object.keys(mapeo).forEach(nombreCambio => {
+                                if (cambios[fecha][nombreCambio]) {
+                                    registro.horas[mapeo[nombreCambio]] = cambios[fecha][nombreCambio];
+                                }
+                            });
+                        });
+                    }
+                });
+                
+                console.log('Datos actualizados en memoria:', persona);
+                
+                // Recalcular horas extras después de actualizar los datos
+                actualizarHorasExtrasEnTabla(persona);
+                
+            } else {
+                alert('⚠ Error al guardar: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error al guardar:', error);
+            alert('✗ Error al guardar los cambios: ' + error.message);
+        });
+    }
+
+    /**
+     * Mostrar mensaje de éxito sin cerrar el modal
+     */
+    function mostrarMensajeExito(modal) {
+        const mensajeExistente = modal.querySelector('.mensaje-exito');
+        if (mensajeExistente) {
+            mensajeExistente.remove();
+        }
+        
+        const mensaje = document.createElement('div');
+        mensaje.className = 'mensaje-exito';
+        mensaje.textContent = '✓ Cambios guardados correctamente';
+        mensaje.style.position = 'fixed';
+        mensaje.style.top = '20px';
+        mensaje.style.right = '20px';
+        mensaje.style.backgroundColor = '#27ae60';
+        mensaje.style.color = 'white';
+        mensaje.style.padding = '15px 20px';
+        mensaje.style.borderRadius = '4px';
+        mensaje.style.zIndex = '10000';
+        mensaje.style.fontWeight = 'bold';
+        mensaje.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        
+        document.body.appendChild(mensaje);
+        
+        // Remover el mensaje después de 3 segundos
+        setTimeout(() => {
+            mensaje.remove();
+        }, 3000);
+    }
 
     /**
      * Mostrar detalles de la persona con tabla de registros por día
      */
 
+    /**
+     * Recalcular y actualizar las horas extras en la tabla para una persona
+     */
+    function actualizarHorasExtrasEnTabla(persona) {
+        console.log('Actualizando horas extras en tabla para:', persona.nombre);
+        
+        // Recalcular horas extras por fecha
+        let totalExtrasMinutos = 0;
+        let totalExtrasHorasCompletas = 0;
+        
+        todasLasFechas.forEach(fecha => {
+            const registrosDelDia = persona.registros[fecha] || [];
+            const minutosExtras = calcularHorasExtras(registrosDelDia, fecha);
+            persona.horasExtrasPorFecha[fecha] = minutosExtras;
+            totalExtrasMinutos += minutosExtras;
+            
+            // Sumar solo las horas completas
+            const horasCompletas = Math.floor(minutosExtras / 60);
+            totalExtrasHorasCompletas += horasCompletas;
+        });
+        
+        // Actualizar el total
+        persona.totalHorasExtras = totalExtrasHorasCompletas * 60;
+        
+        console.log('Nuevas horas extras calculadas:', persona.totalHorasExtras);
+        
+        // Actualizar la fila en la tabla
+        const tabla = document.getElementById('totalHorasExtrasTable');
+        if (tabla) {
+            const filaPersona = tabla.querySelector(`tbody tr[data-persona-id="${persona.id}"]`);
+            if (filaPersona) {
+                // Actualizar celdas de horas extras por fecha
+                todasLasFechas.forEach((fecha, index) => {
+                    const minutosExtras = persona.horasExtrasPorFecha[fecha] || 0;
+                    const celdas = filaPersona.querySelectorAll('td');
+                    // Las primeras 3 celdas son ID, Nombre, Novedades
+                    // Las siguientes son las fechas (3 + index)
+                    if (celdas[3 + index]) {
+                        if (minutosExtras > 0) {
+                            celdas[3 + index].textContent = minutosAHora(minutosExtras);
+                        } else {
+                            celdas[3 + index].textContent = '-';
+                        }
+                    }
+                });
+                
+                // Actualizar celda de total (última celda)
+                const celdas = filaPersona.querySelectorAll('td');
+                const horasCompletas = Math.floor(persona.totalHorasExtras / 60);
+                celdas[celdas.length - 1].textContent = horasCompletas;
+                
+                console.log('Fila de tabla actualizada para persona:', persona.id);
+            }
+        }
+    }
 
     return {
         mostrarVista

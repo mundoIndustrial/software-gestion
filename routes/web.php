@@ -830,6 +830,8 @@ Route::middleware(['auth', 'verified'])->prefix('asistencia-personal')->name('as
         ->name('reportes.detalles');
     Route::get('/reportes/{id}/ausencias', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'getAbsenciasDelDia'])
         ->name('reportes.ausencias');
+    Route::post('/guardar-asistencia-detallada', [App\Http\Controllers\API\AsistenciaDetalladaController::class, 'guardarCambios'])
+        ->name('guardar-asistencia-detallada');
 });
 
 // ========================================

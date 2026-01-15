@@ -73,7 +73,7 @@ const AsistenciaHorasTrabajadas = (() => {
         
         // Crear encabezado con botones de filtro
         let headerHTML = `
-            <th style="width: 30%; text-align: left;">Persona</th>
+            <th style="width: 30%; text-align: center;">Persona</th>
             <th style="width: 8%; text-align: center;">ID</th>
             <th style="width: 20%; text-align: center; position: relative;">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
