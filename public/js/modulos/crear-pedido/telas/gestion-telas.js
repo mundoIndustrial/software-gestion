@@ -438,17 +438,17 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     let indiceActual = indiceInicial;
     
     const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; padding: 0;';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 10000; padding: 0; margin: 0; overflow: hidden;';
     
     const container = document.createElement('div');
     container.style.cssText = 'position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; max-width: 100%; max-height: 100%;';
     
     const imgContainer = document.createElement('div');
-    imgContainer.style.cssText = 'flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; height: calc(100% - 120px); padding: 1rem;';
+    imgContainer.style.cssText = 'flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; padding: 2rem 1rem; overflow: hidden;';
     
     const imgModal = document.createElement('img');
     imgModal.src = imagenesConBlobUrl[indiceActual].previewUrl;
-    imgModal.style.cssText = 'width: 90vw; height: 85vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
+    imgModal.style.cssText = 'max-width: 95vw; max-height: 70vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
     
     imgContainer.appendChild(imgModal);
     
@@ -506,19 +506,31 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
             eliminarEnProceso = false;
             
             if (result.isConfirmed) {
+                console.log('✅ [GALERÍA TELA] Confirmado eliminar imagen en índice:', indiceActual);
+                console.log('📊 [GALERÍA TELA] telaActual:', telaActual);
+                console.log('📊 [GALERÍA TELA] telaActual.imagenes.length antes:', telaActual.imagenes?.length);
+                
                 // ✅ SOLO eliminar de la tela específica (fuente de verdad)
                 if (telaActual.imagenes && indiceActual < telaActual.imagenes.length) {
+                    const imagenEliminada = telaActual.imagenes[indiceActual];
+                    console.log('🗑️ [GALERÍA TELA] Eliminando imagen:', imagenEliminada.nombre);
+                    
                     telaActual.imagenes.splice(indiceActual, 1);
                     console.log('✅ [GALERÍA TELA] Imagen eliminada de tela', telaIndex);
+                    console.log('📊 [GALERÍA TELA] telaActual.imagenes.length después:', telaActual.imagenes.length);
                     
                     // ✅ También actualizar el array local de blob URLs para la galería
                     imagenesConBlobUrl.splice(indiceActual, 1);
+                    console.log('✅ [GALERÍA TELA] Array local actualizado. Quedan:', imagenesConBlobUrl.length);
                 } else {
                     console.error('❌ [GALERÍA TELA] No se pudo eliminar la imagen');
+                    console.error('   telaActual.imagenes:', telaActual.imagenes);
+                    console.error('   indiceActual:', indiceActual);
                 }
                 
                 // ✅ Actualizar la tabla de telas
                 actualizarTablaTelas();
+                console.log('✅ [GALERÍA TELA] Tabla actualizada');
                 
                 // ✅ Verificar el array de la tela específica (fuente de verdad)
                 if (!telaActual.imagenes || telaActual.imagenes.length === 0) {
@@ -567,7 +579,8 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
             }
         });
     };
-    toolbar.appendChild(btnEliminar);
+    // ✅ REMOVIDO: No agregar botón eliminar en el visualizador (solo en la tabla)
+    // toolbar.appendChild(btnEliminar);
     
     const contador = document.createElement('div');
     contador.style.cssText = 'color: white; font-size: 0.95rem; font-weight: 500; min-width: 80px; text-align: center;';

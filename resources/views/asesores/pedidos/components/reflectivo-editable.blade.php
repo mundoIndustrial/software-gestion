@@ -1,8 +1,8 @@
-<!-- PASO 5: Reflectivo (Proceso) - Componente Reutilizable -->
+<!-- PASO 3: Reflectivo (Proceso) - Componente Reutilizable -->
 <div class="form-section" id="seccion-reflectivo" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 style="margin: 0;">
-            <span>5</span> Reflectivo
+            <span>3</span> Reflectivo
         </h2>
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500;">
             <input type="checkbox" id="checkbox-reflectivo" style="width: 18px; height: 18px; cursor: pointer;">

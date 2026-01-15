@@ -45,8 +45,8 @@ class GestorPrendaSinCotizacion {
         return {
             nombre_producto: '',
             descripcion: '',
-            genero: [], //  MULTIPLE: Array de géneros seleccionados
-            generosConTallas: {}, //  NUEVA ESTRUCTURA: {genero: {talla: cantidad}}
+            genero: [],
+            generosConTallas: {}, 
             tipo_manga: 'No aplica',
             obs_manga: '',
             tipo_broche: 'No aplica',
@@ -69,10 +69,14 @@ class GestorPrendaSinCotizacion {
                 telas_multiples: []
             },
             telas: [],
+            telasAgregadas: [],
             fotos: [],
             telaFotos: [],
-            origen: 'bodega', //  ORIGEN: bodega o confeccion
-            de_bodega: 1 //  MAPEO: 1 si origen=bodega, 0 si origen=confeccion
+            imagenes: [],
+            origen: 'bodega', 
+            de_bodega: 1,
+            procesos: {},
+            variaciones: {}
         };
     }
 
@@ -82,15 +86,31 @@ class GestorPrendaSinCotizacion {
      * @returns {number} Índice de la prenda agregada
      */
     agregarPrenda(datosOpcionales = {}) {
-        console.log('➕ [GestorPrendaSinCotizacion.agregarPrenda] Datos recibidos:', datosOpcionales);
+        console.log(`💾 [GESTOR] agregarPrenda() llamado`);
+        console.log(`   datosOpcionales.imagenes:`, datosOpcionales.imagenes);
+        console.log(`   datosOpcionales.imagenes?.length:`, datosOpcionales.imagenes?.length);
+        
         const nuevaPrenda = { ...this.crearPrendaBase(), ...datosOpcionales };
+        
+        console.log(`   Prenda base creada con imagenes:`, nuevaPrenda.imagenes);
+        console.log(`   Después del merge - imagenes:`, nuevaPrenda.imagenes);
+        
+        // Merge profundo de variantes si viene en datosOpcionales
+        if (datosOpcionales.variantes && typeof datosOpcionales.variantes === 'object') {
+            nuevaPrenda.variantes = {
+                ...nuevaPrenda.variantes,
+                ...datosOpcionales.variantes
+            };
+        }
+        
         this.prendas.push(nuevaPrenda);
         const index = this.prendas.length - 1;
-        console.log(`➕ Prenda PRENDA agregada (índice: ${index})`);
+     
         console.log(`   Total prendas en gestor: ${this.prendas.length}`);
         console.log(`   Prendas eliminadas: ${this.prendasEliminadas.size}`);
         console.log(`   Prendas activas: ${this.obtenerActivas().length}`);
         console.log(`   Prenda agregada:`, nuevaPrenda);
+        console.log(`   ✅ Prenda guardada con imagenes:`, nuevaPrenda.imagenes);
         return index;
     }
 
@@ -108,7 +128,21 @@ class GestorPrendaSinCotizacion {
      * @returns {Object|null} Prenda encontrada
      */
     obtenerPorIndice(index) {
-        return this.prendas[index] || null;
+        const prenda = this.prendas[index] || null;
+        console.log(`🔍 [GESTOR] obtenerPorIndice(${index})`);
+        console.log(`   Prenda retornada:`, prenda);
+        console.log(`   prenda.imagenes:`, prenda?.imagenes);
+        console.log(`   prenda.imagenes?.length:`, prenda?.imagenes?.length);
+        if (prenda?.imagenes) {
+            console.log(`   Detalles de imagenes:`, prenda.imagenes.map((img, i) => ({
+                index: i,
+                tieneFile: !!img.file,
+                tieneBlobUrl: !!img.blobUrl,
+                blobUrl: img.blobUrl,
+                nombre: img.nombre
+            })));
+        }
+        return prenda;
     }
 
     /**
@@ -117,7 +151,44 @@ class GestorPrendaSinCotizacion {
      */
     eliminar(index) {
         this.prendasEliminadas.add(index);
-        console.log(`🗑️ Prenda ${index + 1} marcada para eliminación`);
+        console.log(` Prenda ${index + 1} marcada para eliminación`);
+    }
+
+    /**
+     * ✅ NUEVO: Actualizar una prenda existente
+     * Reemplaza los datos de una prenda en el gestor
+     * @param {number} index - Índice de la prenda a actualizar
+     * @param {Object} prendaActualizada - Objeto con los nuevos datos de la prenda
+     */
+    actualizarPrenda(index, prendaActualizada) {
+        if (index < 0 || index >= this.prendas.length) {
+            console.error(`❌ [GESTOR] Índice inválido para actualizar: ${index}`);
+            return false;
+        }
+
+        // Obtener la prenda actual
+        const prendaActual = this.prendas[index];
+        if (!prendaActual) {
+            console.error(`❌ [GESTOR] Prenda no encontrada en índice: ${index}`);
+            return false;
+        }
+
+        // Fusionar los datos: mantener propiedades existentes, actualizar con los nuevos
+        this.prendas[index] = {
+            ...prendaActual,
+            ...prendaActualizada,
+            id: prendaActual.id // Asegurar que se mantiene el ID original
+        };
+
+        // Si la prenda estaba marcada para eliminación, desmarcarla
+        if (this.prendasEliminadas.has(index)) {
+            this.prendasEliminadas.delete(index);
+        }
+
+        console.log(`✏️  [GESTOR] Prenda actualizada en índice ${index}`);
+        console.log(`   Prenda actualizada:`, this.prendas[index]);
+
+        return true;
     }
 
     /**
@@ -140,7 +211,6 @@ class GestorPrendaSinCotizacion {
                 prenda.cantidadesPorTalla = {};
             }
             prenda.cantidadesPorTalla[talla] = 0;
-            console.log(`➕ Talla ${talla} agregada a prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -160,7 +230,7 @@ class GestorPrendaSinCotizacion {
                 if (prenda.cantidadesPorTalla) {
                     delete prenda.cantidadesPorTalla[talla];
                 }
-                console.log(`🗑️ Talla ${talla} eliminada de prenda ${prendaIndex + 1}`);
+                console.log(` Talla ${talla} eliminada de prenda ${prendaIndex + 1}`);
             }
         }
     }
@@ -207,7 +277,6 @@ class GestorPrendaSinCotizacion {
         prenda.variantes.telas_multiples.push(nuevaTela);
         prenda.telas.push(nuevaTela);
 
-        console.log(`➕ Tela agregada a prenda ${prendaIndex + 1}`);
     }
 
     /**
@@ -229,7 +298,7 @@ class GestorPrendaSinCotizacion {
             delete this.telasFotosNuevas[prendaIndex][telaIndex];
         }
 
-        console.log(`🗑️ Tela ${telaIndex + 1} eliminada de prenda ${prendaIndex + 1}`);
+        console.log(` Tela ${telaIndex + 1} eliminada de prenda ${prendaIndex + 1}`);
     }
 
     /**
@@ -245,7 +314,6 @@ class GestorPrendaSinCotizacion {
         // Mapear origen a de_bodega: bodega=1, confeccion=0
         prenda.de_bodega = origen === 'bodega' ? 1 : 0;
 
-        console.log(`📍 Origen prenda ${prendaIndex + 1} actualizado a: ${origen} (de_bodega=${prenda.de_bodega})`);
     }
 
     /**
@@ -262,7 +330,6 @@ class GestorPrendaSinCotizacion {
         prenda.variantes[campoVariacion] = valor;
         prenda[campoVariacion] = valor;
 
-        console.log(`✏️ Variación ${campoVariacion} actualizada`);
     }
 
     /**
@@ -275,7 +342,6 @@ class GestorPrendaSinCotizacion {
             this.fotosNuevas[prendaIndex] = [];
         }
         this.fotosNuevas[prendaIndex] = [...this.fotosNuevas[prendaIndex], ...fotos];
-        console.log(`📸 ${fotos.length} foto(s) agregada(s) a prenda ${prendaIndex + 1}`);
     }
 
     /**
@@ -286,7 +352,6 @@ class GestorPrendaSinCotizacion {
     eliminarFoto(prendaIndex, fotoIndex) {
         if (this.fotosNuevas[prendaIndex]) {
             this.fotosNuevas[prendaIndex].splice(fotoIndex, 1);
-            console.log(`🗑️ Foto eliminada de prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -307,7 +372,6 @@ class GestorPrendaSinCotizacion {
             ...this.telasFotosNuevas[prendaIndex][telaIndex],
             ...fotos
         ];
-        console.log(`📸 ${fotos.length} foto(s) de tela agregada(s)`);
     }
 
     /**
@@ -393,7 +457,7 @@ class GestorPrendaSinCotizacion {
         this.prendasEliminadas.clear();
         this.fotosNuevas = {};
         this.telasFotosNuevas = {};
-        console.log('🗑️ GestorPrendaSinCotizacion limpiado');
+        console.log(' GestorPrendaSinCotizacion limpiado');
     }
 }
 

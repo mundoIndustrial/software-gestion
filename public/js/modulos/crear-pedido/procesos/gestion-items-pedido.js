@@ -13,6 +13,7 @@ class GestionItemsUI {
     constructor() {
         this.api = window.pedidosAPI;
         this.items = [];
+        this.prendaEditIndex = null;  // ✅ NUEVO: Rastrear índice de prenda siendo editada
         this.inicializar();
     }
 
@@ -85,13 +86,11 @@ class GestionItemsUI {
 
     actualizarVistaItems() {
         const container = document.getElementById('lista-items-pedido');
-        const mensajeSinItems = document.getElementById('mensaje-sin-items');
 
         if (!container) return;
 
         if (this.items.length === 0) {
             container.innerHTML = '';
-            if (mensajeSinItems) mensajeSinItems.style.display = 'block';
             return;
         }
 
@@ -116,11 +115,8 @@ class GestionItemsUI {
                 container.appendChild(tempDiv.firstElementChild);
             } catch (error) {
                 console.error(`Error al renderizar item ${index}:`, error);
-                // Mostrar card simple como fallback
-                const fallbackHTML = this.renderizarItemFallback(item, index);
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = fallbackHTML;
-                container.appendChild(tempDiv.firstElementChild);
+                console.warn('⚠️  No hay fallback disponible. Omitiendo item con error.');
+                // No renderizar fallback - solo omitir el item
             }
         }
 
@@ -160,29 +156,6 @@ class GestionItemsUI {
         }
     }
 
-    renderizarItemFallback(item, index) {
-        const prenda = item.prenda?.nombre || item.prenda || 'Sin nombre';
-        const origen = item.origen || 'bodega';
-        const procesos = Array.isArray(item.procesos) ? item.procesos.join(', ') : (item.procesos || 'Ninguno');
-
-        return `
-            <div class="item-card" data-item-index="${index}" style="padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.75rem;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <h4 style="margin: 0 0 0.5rem 0; font-weight: 600; color: #1e40af;">${prenda}</h4>
-                        <p style="margin: 0.25rem 0; font-size: 0.875rem; color: #6b7280;">
-                            <strong>Origen:</strong> ${origen}
-                        </p>
-                        <p style="margin: 0.25rem 0; font-size: 0.875rem; color: #6b7280;">
-                            <strong>Procesos:</strong> ${procesos}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-
     abrirModalSeleccionPrendas() {
         // Delegar a modal-seleccion-prendas.js
         if (window.abrirModalSeleccionPrendas) {
@@ -192,6 +165,15 @@ class GestionItemsUI {
 
     abrirModalAgregarPrendaNueva() {
         console.log('🎯 [GestionItemsUI] abrirModalAgregarPrendaNueva() - abriendo modal');
+        
+        // ✅ NUEVO: Limpiar índice de edición cuando se abre para crear NUEVA
+        // Solo limpiar si NO se está editando (si no viene de cargarItemEnModal)
+        if (this.prendaEditIndex === undefined) {
+            // No hacer nada, es apertura normal de nuevo modal
+        } else if (this.prendaEditIndex === null) {
+            // Ya está limpio
+        }
+        // Si tiene valor, se mantiene porque viene de cargarItemEnModal
         
         // Delegar a modal correspondiente
         const modal = document.getElementById('modal-agregar-prenda-nueva');
@@ -211,13 +193,347 @@ class GestionItemsUI {
                 window.imagenesPrendaStorage.limpiar();
                 console.log('🧹 [GestionItemsUI] Storage de imágenes de prenda limpiado');
             }
+            
+            // IMPORTANTE: Limpiar storage de telas
+            if (window.telasAgregadas) {
+                window.telasAgregadas.length = 0;
+                console.log('🧹 [GestionItemsUI] Telas agregadas limpiadas');
+            }
+            
+            // IMPORTANTE: Limpiar variables globales de tallas y cantidades
+            if (window.cantidadesTallas) {
+                window.cantidadesTallas = {};
+                console.log('🧹 [GestionItemsUI] Cantidades de tallas limpiadas');
+            }
+            
+            if (window.tallasSeleccionadas) {
+                window.tallasSeleccionadas = {
+                    dama: { tallas: [], tipo: null },
+                    caballero: { tallas: [], tipo: null }
+                };
+                console.log('🧹 [GestionItemsUI] Tallas seleccionadas limpias');
+            }
+            
+            // Limpiar índice de edición si existe
+            this.prendaEditIndex = null;
+            console.log('🧹 [GestionItemsUI] Índice de edición limpiado');
+            
+            // IMPORTANTE: Limpiar checkboxes de variaciones
+            const checkboxes = [
+                'aplica-manga', 'aplica-bolsillos', 'aplica-broche',
+                'checkbox-reflectivo', 'checkbox-bordado', 'checkbox-estampado',
+                'checkbox-dtf', 'checkbox-sublimado'
+            ];
+            
+            checkboxes.forEach(checkboxId => {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            });
+            console.log('🧹 [GestionItemsUI] Checkboxes de variaciones limpiados');
+            
+            // Limpiar campos de texto asociados a variaciones
+            const campos = [
+                'manga-input', 'manga-obs',
+                'bolsillos-obs',
+                'broche-input', 'broche-obs',
+                'reflectivo-obs'
+            ];
+            
+            campos.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.value = '';
+                    field.disabled = true;
+                    field.style.opacity = '0.5';
+                }
+            });
+            console.log('🧹 [GestionItemsUI] Campos de variaciones limpios');
+            
         } else {
             console.error('❌ [GestionItemsUI] Modal no encontrado');
         }
     }
 
+    /**
+     * Cargar datos de prenda en el modal para editar
+     * @param {Object} prenda - Objeto de prenda a cargar
+     * @param {number} prendaIndex - Índice de la prenda
+     */
+    cargarItemEnModal(prenda, prendaIndex) {
+        console.log('📝 [GestionItemsUI] cargarItemEnModal() - cargando prenda para editar');
+        console.log('   Prenda recibida:', prenda);
+        console.log('   Índice:', prendaIndex);
+        
+        // Abrir el modal primero
+        this.abrirModalAgregarPrendaNueva();
+        
+        if (!prenda) {
+            console.warn('⚠️  Prenda no válida');
+            return;
+        }
+        
+        // Poblar formulario con datos de prenda
+        const form = document.getElementById('form-prenda-nueva');
+        if (!form) {
+            console.error('❌ Formulario no encontrado');
+            return;
+        }
+        
+        // Llenar campos básicos
+        const nombreField = document.getElementById('nueva-prenda-nombre');
+        const descripcionField = document.getElementById('nueva-prenda-descripcion');
+        const origenField = document.getElementById('nueva-prenda-origen-select');
+        
+        if (nombreField) nombreField.value = prenda.nombre_producto || '';
+        if (descripcionField) descripcionField.value = prenda.descripcion || '';
+        if (origenField) origenField.value = prenda.origen || 'bodega';
+        
+        console.log('✅ Campos básicos cargados');
+        
+        // ========== CARGAR IMÁGENES ==========
+        console.log('📸 Cargando imágenes...');
+        if (prenda.imagenes && prenda.imagenes.length > 0 && window.imagenesPrendaStorage) {
+            // Limpiar storage primero
+            window.imagenesPrendaStorage.limpiar();
+            
+            // Agregar imágenes al storage
+            prenda.imagenes.forEach(img => {
+                if (img.file) {
+                    window.imagenesPrendaStorage.agregarImagen(img.file);
+                    console.log(`   ✅ Imagen cargada: ${img.nombre}`);
+                }
+            });
+            
+            console.log(`✅ ${prenda.imagenes.length} imagen(es) cargada(s)`);
+            
+            // Actualizar preview
+            if (window.actualizarPreviewPrenda) {
+                window.actualizarPreviewPrenda();
+            }
+        } else {
+            console.log('📸 Sin imágenes para cargar');
+        }
+        
+        // ========== CARGAR TELAS ==========
+        console.log('🧵 Cargando telas...');
+        if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0 && window.telasAgregadas) {
+            // Limpiar telas existentes
+            window.telasAgregadas.length = 0;
+            
+            // Agregar telas
+            prenda.telasAgregadas.forEach(tela => {
+                window.telasAgregadas.push({
+                    color: tela.color || '',
+                    tela: tela.tela || '',
+                    referencia: tela.referencia || '',
+                    imagenes: tela.imagenes || []
+                });
+            });
+            
+            console.log(`✅ ${prenda.telasAgregadas.length} tela(s) cargada(s)`);
+            
+            // Actualizar tabla de telas
+            if (window.actualizarTablaTelas) {
+                window.actualizarTablaTelas();
+            }
+        }
+        
+        // ========== CARGAR TALLAS Y CANTIDADES ==========
+        console.log('📏 Cargando tallas y cantidades...');
+        console.log('   prenda.tallas:', prenda.tallas);
+        console.log('   prenda.cantidadesPorTalla:', prenda.cantidadesPorTalla);
+        
+        if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+            // Inicializar variables globales si no existen
+            if (!window.cantidadesTallas) {
+                window.cantidadesTallas = {};
+            }
+            if (!window.tallasSeleccionadas) {
+                window.tallasSeleccionadas = {
+                    dama: { tallas: [], tipo: null },
+                    caballero: { tallas: [], tipo: null }
+                };
+            }
+            
+            // Procesar cada género de tallas
+            prenda.tallas.forEach(tallaGenero => {
+                const generoActual = tallaGenero.genero || 'dama';
+                const listaTallas = tallaGenero.tallas || [];
+                const tipoTalla = tallaGenero.tipo || 'letra';
+                
+                console.log(`   Procesando género: ${generoActual}`);
+                console.log(`   Tallas: ${listaTallas.join(', ')}`);
+                console.log(`   Tipo: ${tipoTalla}`);
+                
+                // PRIMERO: Cargar cantidades en window.cantidadesTallas ANTES de limpiar
+                if (prenda.cantidadesPorTalla && typeof prenda.cantidadesPorTalla === 'object') {
+                    listaTallas.forEach(talla => {
+                        const tallaKey = `${generoActual}-${talla}`;
+                        const cantidad = prenda.cantidadesPorTalla[tallaKey];
+                        
+                        // Solo asignar si existe el valor en prenda
+                        if (cantidad !== undefined && cantidad !== null) {
+                            window.cantidadesTallas[tallaKey] = cantidad;
+                            console.log(`   ✅ Cantidad sincronizada ${tallaKey}: ${cantidad}`);
+                        } else {
+                            console.warn(`   ⚠️  No hay cantidad para: ${tallaKey}`);
+                        }
+                    });
+                } else {
+                    console.warn('   ⚠️  cantidadesPorTalla no encontrado o no es objeto');
+                }
+                
+                // LUEGO: Sincronizar tallas seleccionadas
+                window.tallasSeleccionadas[generoActual] = {
+                    tallas: listaTallas,
+                    tipo: tipoTalla
+                };
+                
+                console.log(`   Género ${generoActual} sincronizado`);
+            });
+            
+            console.log('   Estado final de cantidades:', window.cantidadesTallas);
+            
+            // FINALMENTE: Actualizar inputs si ya existen en el DOM
+            Object.entries(window.cantidadesTallas).forEach(([tallaKey, cantidad]) => {
+                let input = document.querySelector(`input[data-key="${tallaKey}"]`);
+                
+                if (input) {
+                    input.value = cantidad;
+                    console.log(`   ✅ Input actualizado para ${tallaKey}: ${cantidad}`);
+                } else {
+                    console.log(`   ℹ️  Input para ${tallaKey} aún no existe en el DOM`);
+                }
+            });
+        } else {
+            console.warn('   ⚠️  No hay tallas para cargar');
+        }
+        
+        // ========== CARGAR VARIACIONES ==========
+        console.log('🔧 Cargando variaciones...');
+        console.log('   Verificando ubicación de variaciones:');
+        console.log('   prenda.variantes:', prenda.variantes);
+        console.log('   prenda.tipo_manga:', prenda.tipo_manga);
+        
+        // Determinar de dónde extraer las variaciones
+        const variaciones = prenda.variantes || {};
+        const tipoManga = variaciones.tipo_manga || prenda.tipo_manga || 'No aplica';
+        const obsManga = variaciones.obs_manga || prenda.obs_manga || '';
+        const tieneBolsillos = variaciones.tiene_bolsillos || prenda.tiene_bolsillos || false;
+        const obsBolsillos = variaciones.obs_bolsillos || prenda.obs_bolsillos || '';
+        const tipoBroche = variaciones.tipo_broche || prenda.tipo_broche || 'No aplica';
+        const obsBroche = variaciones.obs_broche || prenda.obs_broche || '';
+        const tieneReflectivo = variaciones.tiene_reflectivo || prenda.tiene_reflectivo || false;
+        
+        console.log('   Variaciones extraídas:');
+        console.log('   - tipo_manga:', tipoManga);
+        console.log('   - obs_manga:', obsManga);
+        console.log('   - tiene_bolsillos:', tieneBolsillos);
+        console.log('   - obs_bolsillos:', obsBolsillos);
+        console.log('   - tipo_broche:', tipoBroche);
+        console.log('   - obs_broche:', obsBroche);
+        console.log('   - tiene_reflectivo:', tieneReflectivo);
+        
+        // Manga
+        const aplicaMangaCheckbox = document.getElementById('aplica-manga');
+        const mangaInput = document.getElementById('manga-input');
+        const mangaObs = document.getElementById('manga-obs');
+        
+        if (aplicaMangaCheckbox) {
+            aplicaMangaCheckbox.checked = tipoManga !== 'No aplica' && tipoManga !== '';
+            if (mangaInput) mangaInput.value = tipoManga && tipoManga !== 'No aplica' ? tipoManga : '';
+            if (mangaInput) mangaInput.disabled = !aplicaMangaCheckbox.checked;
+            if (mangaInput) mangaInput.style.opacity = aplicaMangaCheckbox.checked ? '1' : '0.5';
+            if (mangaObs) mangaObs.value = obsManga;
+            if (mangaObs) mangaObs.disabled = !aplicaMangaCheckbox.checked;
+            if (mangaObs) mangaObs.style.opacity = aplicaMangaCheckbox.checked ? '1' : '0.5';
+            console.log('✅ Manga cargada');
+        }
+        
+        // Bolsillos
+        const aplicaBolsillosCheckbox = document.getElementById('aplica-bolsillos');
+        const bolsillosObs = document.getElementById('bolsillos-obs');
+        
+        if (aplicaBolsillosCheckbox) {
+            aplicaBolsillosCheckbox.checked = tieneBolsillos === true || tieneBolsillos === 'true';
+            if (bolsillosObs) bolsillosObs.value = obsBolsillos;
+            if (bolsillosObs) bolsillosObs.disabled = !aplicaBolsillosCheckbox.checked;
+            if (bolsillosObs) bolsillosObs.style.opacity = aplicaBolsillosCheckbox.checked ? '1' : '0.5';
+            console.log('✅ Bolsillos cargados');
+        }
+        
+        // Broche
+        const aplicaBrocheCheckbox = document.getElementById('aplica-broche');
+        const brocheInput = document.getElementById('broche-input');
+        const brocheObs = document.getElementById('broche-obs');
+        
+        if (aplicaBrocheCheckbox) {
+            aplicaBrocheCheckbox.checked = tipoBroche !== 'No aplica' && tipoBroche !== '';
+            if (brocheInput) brocheInput.value = tipoBroche && tipoBroche !== 'No aplica' ? tipoBroche : 'boton';
+            if (brocheInput) brocheInput.disabled = !aplicaBrocheCheckbox.checked;
+            if (brocheInput) brocheInput.style.opacity = aplicaBrocheCheckbox.checked ? '1' : '0.5';
+            if (brocheObs) brocheObs.value = obsBroche;
+            if (brocheObs) brocheObs.disabled = !aplicaBrocheCheckbox.checked;
+            if (brocheObs) brocheObs.style.opacity = aplicaBrocheCheckbox.checked ? '1' : '0.5';
+            console.log('✅ Broche cargado');
+        }
+        
+        // Reflectivo
+        const checkboxReflectivo = document.getElementById('checkbox-reflectivo');
+        if (checkboxReflectivo) {
+            checkboxReflectivo.checked = tieneReflectivo === true || tieneReflectivo === 'true';
+            console.log('✅ Reflectivo cargado');
+        }
+        
+        // Procesos adicionales
+        const checkboxBordado = document.getElementById('checkbox-bordado');
+        const checkboxEstampado = document.getElementById('checkbox-estampado');
+        const checkboxDtf = document.getElementById('checkbox-dtf');
+        const checkboxSublimado = document.getElementById('checkbox-sublimado');
+        
+        if (checkboxBordado) checkboxBordado.checked = variaciones.proceso_bordado === true || variaciones.proceso_bordado === 'true' || prenda.proceso_bordado === true || prenda.proceso_bordado === 'true';
+        if (checkboxEstampado) checkboxEstampado.checked = variaciones.proceso_estampado === true || variaciones.proceso_estampado === 'true' || prenda.proceso_estampado === true || prenda.proceso_estampado === 'true';
+        if (checkboxDtf) checkboxDtf.checked = variaciones.proceso_dtf === true || variaciones.proceso_dtf === 'true' || prenda.proceso_dtf === true || prenda.proceso_dtf === 'true';
+        if (checkboxSublimado) checkboxSublimado.checked = variaciones.proceso_sublimado === true || variaciones.proceso_sublimado === 'true' || prenda.proceso_sublimado === true || prenda.proceso_sublimado === 'true';
+        
+        console.log('✅ Procesos cargados');
+        
+        // Guardar índice para actualización posterior
+        this.prendaEditIndex = prendaIndex;
+        
+        // ✅ NUEVO: Cambiar texto del botón a "Guardar cambios" cuando está editando
+        const btnGuardar = document.getElementById('btn-guardar-prenda');
+        if (btnGuardar) {
+            btnGuardar.innerHTML = '<span class="material-symbols-rounded">save</span>Guardar cambios';
+        }
+        
+        console.log('✅ [GestionItemsUI] Prenda cargada completamente en modal para editar');
+        console.log('   Índice guardado para actualización:', prendaIndex);
+    }
+
     agregarPrendaNueva() {
+        // ✅ NUEVO: Verificar si está editando una prenda existente
+        if (this.prendaEditIndex !== undefined && this.prendaEditIndex !== null) {
+            console.log('✏️  [GestionItemsUI] EDITANDO prenda en lugar de crear nueva. Índice:', this.prendaEditIndex);
+            this.actualizarPrendaExistente();
+            return;
+        }
+        
         console.log('➕ [GestionItemsUI] agregarPrendaNueva() - procesando prenda nueva');
+        
+        // Debug: listar todos los inputs en el modal
+        const modal = document.getElementById('modal-agregar-prenda-nueva');
+        if (modal && modal.style.display !== 'none') {
+            const allInputs = modal.querySelectorAll('input[type="text"], input[type="checkbox"], select, textarea');
+            console.log('🔍 [MODAL DEBUG] Inputs encontrados en modal:', allInputs.length);
+            allInputs.forEach((input, idx) => {
+                if (input.id) {
+                    console.log(`  [${idx}] ID: ${input.id}, Type: ${input.type}, Value: "${input.value}", Disabled: ${input.disabled}`);
+                }
+            });
+        }
         
         // Recopilar datos del formulario
         const nombrePrenda = document.getElementById('nueva-prenda-nombre')?.value?.trim();
@@ -259,9 +575,37 @@ class GestionItemsUI {
         const imagenesPrenda = window.imagenesPrendaStorage?.obtenerImagenes() || [];
         console.log(`📸 [GestionItemsUI] Imágenes de prenda: ${imagenesPrenda.length}`);
         
+        // ✅ CRÍTICO: Crear blob URLs AHORA, antes de que se limpie el storage
+        const imagenesConUrls = imagenesPrenda.map(img => {
+            let blobUrl = null;
+            if (img.file instanceof File) {
+                blobUrl = URL.createObjectURL(img.file);
+                console.log(`   📸 Blob URL creado para imagen: ${blobUrl}`);
+            }
+            return {
+                file: img.file,
+                nombre: img.nombre,
+                tamaño: img.tamaño,
+                blobUrl: blobUrl // Guardar la URL blob creada
+            };
+        });
+        
         // Obtener procesos configurados (reflectivo, bordado, estampado, etc.)
-        const procesosConfigurables = window.obtenerProcesosConfigurables?.() || {};
-        console.log(`🎨 [GestionItemsUI] Procesos configurables:`, procesosConfigurables);
+        let procesosConfigurables = window.obtenerProcesosConfigurables?.() || {};
+        console.log(`🎨 [GestionItemsUI] Procesos configurables (antes):`, procesosConfigurables);
+        
+        // ✅ FILTRAR: Solo incluir procesos que realmente tienen datos
+        // Prevenir incluir procesos vacíos (datos: null)
+        procesosConfigurables = Object.keys(procesosConfigurables).reduce((acc, tipoProceso) => {
+            const proceso = procesosConfigurables[tipoProceso];
+            // Incluir el proceso si tiene datos o si es un objeto válido
+            if (proceso && (proceso.datos !== null || proceso.tipo)) {
+                acc[tipoProceso] = proceso;
+            }
+            return acc;
+        }, {});
+        
+        console.log(`🎨 [GestionItemsUI] Procesos configurables (después):`, procesosConfigurables);
         
         // ✅ Obtener tallas del estado de gestion-tallas.js
         const tallasPorGenero = [];
@@ -281,22 +625,121 @@ class GestionItemsUI {
         }
         console.log(`📏 [GestionItemsUI] Tallas por género:`, tallasPorGenero);
         
+        // Obtener telas agregadas
+        const telasAgregadas = window.telasAgregadas || [];
+        console.log(`🧵 [GestionItemsUI] Telas agregadas: ${telasAgregadas.length}`);
+        
+        // ✅ CRÍTICO: Crear blob URLs para telas AHORA, antes de que se limpie el storage
+        const telasConUrls = telasAgregadas.map(tela => ({
+            ...tela,
+            imagenes: (tela.imagenes || []).map(img => {
+                let blobUrl = null;
+                if (img.file instanceof File) {
+                    blobUrl = URL.createObjectURL(img.file);
+                    console.log(`   📸 Blob URL creado para imagen de tela: ${blobUrl}`);
+                }
+                return {
+                    ...img,
+                    blobUrl: blobUrl
+                };
+            })
+        }));
+        
+        // Obtener variaciones configuradas del modal
+        const variacionesConfiguradas = {
+            tipo_manga: 'No aplica',
+            obs_manga: '',
+            tipo_broche: 'No aplica',
+            obs_broche: '',
+            tiene_bolsillos: false,
+            obs_bolsillos: '',
+            tiene_reflectivo: false,
+            obs_reflectivo: ''
+        };
+        
+        // Si manga está aplicada
+        const plicaManga = document.getElementById('aplica-manga');
+        if (plicaManga?.checked) {
+            const mangaInput = document.getElementById('manga-input');
+            const mangaObs = document.getElementById('manga-obs');
+            variacionesConfiguradas.tipo_manga = mangaInput?.value?.trim() || 'No aplica';
+            variacionesConfiguradas.obs_manga = mangaObs?.value?.trim() || '';
+        }
+        
+        // Si bolsillos está aplicado
+        const aplicaBolsillos = document.getElementById('aplica-bolsillos');
+        console.log('🔍 [BOLSILLOS DEBUG] aplica-bolsillos encontrado:', !!aplicaBolsillos);
+        console.log('🔍 [BOLSILLOS DEBUG] aplica-bolsillos.checked:', aplicaBolsillos?.checked);
+        
+        if (aplicaBolsillos?.checked) {
+            console.log('✅ [BOLSILLOS DEBUG] Checkbox marcado, buscando campo obs...');
+            variacionesConfiguradas.tiene_bolsillos = true;
+            const bolsillosObs = document.getElementById('bolsillos-obs');
+            console.log('🔍 [BOLSILLOS DEBUG] Elemento bolsillos-obs encontrado:', !!bolsillosObs);
+            console.log('🔍 [BOLSILLOS DEBUG] Element details:', {
+                id: bolsillosObs?.id,
+                tagName: bolsillosObs?.tagName,
+                type: bolsillosObs?.type,
+                value: bolsillosObs?.value,
+                disabled: bolsillosObs?.disabled,
+                placeholder: bolsillosObs?.placeholder,
+                visible: bolsillosObs?.offsetParent !== null
+            });
+            console.log('🔍 [BOLSILLOS DEBUG] Valor RAW:', bolsillosObs?.value);
+            console.log('🔍 [BOLSILLOS DEBUG] Valor TRIM:', bolsillosObs?.value?.trim());
+            variacionesConfiguradas.obs_bolsillos = bolsillosObs?.value?.trim() || '';
+            console.log('✅ [BOLSILLOS DEBUG] obs_bolsillos asignado:', variacionesConfiguradas.obs_bolsillos);
+            console.log('🔍 [BOLSILLOS DEBUG] Largo del valor:', (bolsillosObs?.value || '').length);
+        } else {
+            console.log('⚠️  [BOLSILLOS DEBUG] Checkbox NO está marcado');
+        }
+        
+        // Si broche está aplicado
+        const aplicaBroche = document.getElementById('aplica-broche');
+        if (aplicaBroche?.checked) {
+            const brocheInput = document.getElementById('broche-input');
+            variacionesConfiguradas.tipo_broche = brocheInput?.value?.trim() || 'No aplica';
+            const brocheObs = document.getElementById('broche-obs');
+            variacionesConfiguradas.obs_broche = brocheObs?.value?.trim() || '';
+        }
+        
+        // Si reflectivo está aplicado
+        const aplicaReflectivo = document.getElementById('aplica-reflectivo');
+        if (aplicaReflectivo?.checked) {
+            variacionesConfiguradas.tiene_reflectivo = true;
+            const reflectivoObs = document.getElementById('reflectivo-obs');
+            variacionesConfiguradas.obs_reflectivo = reflectivoObs?.value?.trim() || '';
+        }
+        
+        console.log(`🎨 [GestionItemsUI] Variaciones configuradas:`, variacionesConfiguradas);
+        console.log(`🎨 [DETALLE VARIACIONES]:
+            - tipo_manga: ${variacionesConfiguradas.tipo_manga}
+            - obs_manga: ${variacionesConfiguradas.obs_manga}
+            - tipo_broche: ${variacionesConfiguradas.tipo_broche}
+            - obs_broche: ${variacionesConfiguradas.obs_broche}
+            - tiene_bolsillos: ${variacionesConfiguradas.tiene_bolsillos}
+            - obs_bolsillos: ${variacionesConfiguradas.obs_bolsillos}
+            - tiene_reflectivo: ${variacionesConfiguradas.tiene_reflectivo}
+            - obs_reflectivo: ${variacionesConfiguradas.obs_reflectivo}
+        `);
+        
+        // Obtener cantidades por talla
+        const cantidadesPorTalla = window.cantidadesTallas || {};
+        console.log(`📊 [GestionItemsUI] Cantidades por talla:`, cantidadesPorTalla);
+        
         // Crear objeto de prenda
         const prendaNueva = {
             nombre_producto: nombrePrenda,
             descripcion: descripcion || '',
             genero: genero,
             origen: origen || 'bodega',
-            imagenes: imagenesPrenda.map(img => ({
-                file: img.file,
-                nombre: img.nombre,
-                tamaño: img.tamaño
-            })),
+            imagenes: imagenesConUrls, // ✅ Usar las imágenes con blob URLs ya creadas
             telas: [],
+            telasAgregadas: telasConUrls, // ✅ Usar las telas con blob URLs ya creadas
             tallas: tallasPorGenero,
-            variaciones: {},
+            variantes: variacionesConfiguradas,
             procesos: procesosConfigurables,
-            cantidadesPorTalla: {}
+            cantidadesPorTalla: cantidadesPorTalla
         };
         
         console.log('✅ [GestionItemsUI] Prenda nueva creada:', prendaNueva);
@@ -306,23 +749,97 @@ class GestionItemsUI {
             window.inicializarGestorPrendaSinCotizacion?.();
         }
         
-        // Agregar a gestor CON los datos creados
-        if (window.gestorPrendaSinCotizacion?.agregarPrenda) {
-            window.gestorPrendaSinCotizacion.agregarPrenda(prendaNueva);
-            console.log('✅ [GestionItemsUI] Prenda agregada al gestor con datos');
+        try {
+            console.log('📌 [GestionItemsUI] ===== INICIANDO AGREGACIÓN DE PRENDA =====');
+            console.log('📸 [ANTES DE AGREGAR] prendaNueva.imagenes:', prendaNueva.imagenes);
+            console.log('📸 [ANTES DE AGREGAR] prendaNueva.imagenes?.length:', prendaNueva.imagenes?.length);
+            if (prendaNueva.imagenes?.length > 0) {
+                console.log('📸 [ANTES DE AGREGAR] Detalles de imagenes:', prendaNueva.imagenes.map((img, i) => ({
+                    index: i,
+                    tieneFile: !!img.file,
+                    tieneBlobUrl: !!img.blobUrl,
+                    blobUrl: img.blobUrl?.substring(0, 50),
+                    nombre: img.nombre
+                })));
+            }
+            
+            // Agregar a gestor CON los datos creados
+            if (window.gestorPrendaSinCotizacion?.agregarPrenda) {
+                const indiceAgregado = window.gestorPrendaSinCotizacion.agregarPrenda(prendaNueva);
+                console.log('✅ [GestionItemsUI] Prenda agregada al gestor (índice: ' + indiceAgregado + ')');
+                console.log('   Total prendas:', window.gestorPrendaSinCotizacion.prendas.length);
+                console.log('   Prendas activas:', window.gestorPrendaSinCotizacion.obtenerActivas().length);
+                
+                // Verificación: obtener la prenda que se acaba de guardar
+                const prendaGuardada = window.gestorPrendaSinCotizacion.obtenerPorIndice(indiceAgregado);
+                console.log('📸 [VERIFICACIÓN GESTOR] Prenda guardada tiene imagenes:', prendaGuardada?.imagenes);
+                console.log('📸 [VERIFICACIÓN GESTOR] imagenes?.length:', prendaGuardada?.imagenes?.length);
+            } else {
+                console.error('❌ [GestionItemsUI] GestorPrendaSinCotizacion no disponible');
+                return;
+            }
+            
+            // ✅ CRÍTICO: Renderizar UI ANTES de cerrar modal y limpiar procesos
+            console.log('🔍 [GestionItemsUI] Verificando función de renderizado...');
+            console.log('   Tipo:', typeof window.renderizarPrendasTipoPrendaSinCotizacion);
+            console.log('   Es función:', window.renderizarPrendasTipoPrendaSinCotizacion instanceof Function);
+            
+            // ✅ USAR NUEVO COMPONENTE DE TARJETA READONLY
+            console.log('🎨 [GestionItemsUI] Inicializando renderizado de tarjetas readonly...');
+            
+            const container = document.getElementById('prendas-container-editable');
+            if (!container) {
+                console.error('❌ [GestionItemsUI] Container prendas-container-editable no encontrado');
+                return;
+            }
+            
+            const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
+            
+            if (prendas.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="text-align: center; padding: 2rem; color: #9ca3af;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        <p>No hay ítems agregados. Selecciona un tipo de pedido para agregar nuevos ítems.</p>
+                    </div>
+                `;
+            } else {
+                if (typeof window.generarTarjetaPrendaReadOnly !== 'function') {
+                    console.error('❌ [GestionItemsUI] generarTarjetaPrendaReadOnly NO ESTÁ CARGADO');
+                    console.error('   Verifica que prenda-card-readonly.js esté incluido en el HTML');
+                    return;
+                }
+                
+                let html = '';
+                prendas.forEach((prenda, indice) => {
+                    html += window.generarTarjetaPrendaReadOnly(prenda, indice);
+                });
+                container.innerHTML = html;
+            }
+            
+            console.log('✅ [GestionItemsUI] UI renderizada correctamente con tarjetas readonly');
+            console.log('📺 [GestionItemsUI] Sección de ítems actualizada con prendas');
+            
+            // Verificar renderizado
+            setTimeout(() => {
+                const tarjetas = container?.querySelectorAll('.prenda-card-readonly');
+                console.log('📊 [GestionItemsUI] Verificación post-renderizado:');
+                console.log('   Container existe:', !!container);
+                console.log('   Tarjetas readonly en DOM:', tarjetas?.length || 0);
+            }, 100);
+            
+            // ✅ AHORA SÍ: Cerrar modal Y limpiar procesos (DESPUÉS de renderizar)
+            cerrarModalPrendaNueva();
+            console.log('✅ [GestionItemsUI] Modal cerrado y procesos limpiados');
+            console.log('📌 [GestionItemsUI] ===== AGREGACIÓN COMPLETADA =====\n');
+            
+            // Mostrar notificación
+            this.mostrarNotificacion('Prenda agregada correctamente', 'success');
+        } catch (error) {
+            console.error('❌ [GestionItemsUI] Error al agregar prenda:', error);
+            console.error('   Mensaje:', error.message);
+            console.error('   Stack:', error.stack);
+            this.mostrarNotificacion('Error al agregar prenda: ' + error.message, 'error');
         }
-        
-        // Renderizar UI
-        if (window.renderizarPrendasTipoPrendaSinCotizacion) {
-            window.renderizarPrendasTipoPrendaSinCotizacion();
-            console.log('✅ [GestionItemsUI] UI renderizada');
-        }
-        
-        // Cerrar modal
-        cerrarModalPrendaNueva();
-        
-        // Mostrar notificación
-        this.mostrarNotificacion('Prenda agregada correctamente', 'success');
     }
 
     async manejarSubmitFormulario(e) {
@@ -515,6 +1032,195 @@ class GestionItemsUI {
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
             items: itemsFormato,
         };
+    }
+
+    /**
+     * Actualizar una prenda existente
+     * Similar a agregarPrendaNueva() pero reemplaza los datos en lugar de agregar nuevos
+     */
+    actualizarPrendaExistente() {
+        const prendaIndex = this.prendaEditIndex;
+        console.log('📝 [GestionItemsUI] actualizarPrendaExistente() - actualizando prenda índice:', prendaIndex);
+        
+        // Recopilar datos del formulario (mismo código que agregarPrendaNueva)
+        const nombrePrenda = document.getElementById('nueva-prenda-nombre')?.value?.trim();
+        const origen = document.getElementById('nueva-prenda-origen-select')?.value;
+        const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
+        
+        let genero = null;
+        const tallasSeleccionadas = window.tallasSeleccionadas || {};
+        
+        const tienetallasDama = tallasSeleccionadas.dama?.tallas?.length > 0;
+        const tieneTallasCaballero = tallasSeleccionadas.caballero?.tallas?.length > 0;
+        
+        if (tienetallasDama && !tieneTallasCaballero) {
+            genero = 'dama';
+        } else if (tieneTallasCaballero && !tienetallasDama) {
+            genero = 'caballero';
+        } else if (tienetallasDama && tieneTallasCaballero) {
+            genero = 'unisex';
+        }
+        
+        if (!nombrePrenda || !genero) {
+            alert('Por favor completa los campos requeridos');
+            return;
+        }
+        
+        // Obtener imágenes, telas, variaciones, etc. (mismo proceso que agregarPrendaNueva)
+        const imagenesPrenda = window.imagenesPrendaStorage?.obtenerImagenes() || [];
+        const imagenesConUrls = imagenesPrenda.map(img => {
+            let blobUrl = null;
+            if (img.file instanceof File) {
+                blobUrl = URL.createObjectURL(img.file);
+            }
+            return {
+                file: img.file,
+                nombre: img.nombre,
+                tamaño: img.tamaño,
+                blobUrl: blobUrl
+            };
+        });
+        
+        let procesosConfigurables = window.obtenerProcesosConfigurables?.() || {};
+        procesosConfigurables = Object.keys(procesosConfigurables).reduce((acc, tipoProceso) => {
+            const proceso = procesosConfigurables[tipoProceso];
+            if (proceso && (proceso.datos !== null || proceso.tipo)) {
+                acc[tipoProceso] = proceso;
+            }
+            return acc;
+        }, {});
+        
+        const tallasPorGenero = [];
+        if (tienetallasDama) {
+            tallasPorGenero.push({
+                genero: 'dama',
+                tallas: tallasSeleccionadas.dama.tallas,
+                tipo: tallasSeleccionadas.dama.tipo
+            });
+        }
+        if (tieneTallasCaballero) {
+            tallasPorGenero.push({
+                genero: 'caballero',
+                tallas: tallasSeleccionadas.caballero.tallas,
+                tipo: tallasSeleccionadas.caballero.tipo
+            });
+        }
+        
+        const telasAgregadas = window.telasAgregadas || [];
+        const telasConUrls = telasAgregadas.map(tela => ({
+            ...tela,
+            imagenes: (tela.imagenes || []).map(img => {
+                let blobUrl = null;
+                if (img.file instanceof File) {
+                    blobUrl = URL.createObjectURL(img.file);
+                }
+                return {
+                    ...img,
+                    blobUrl: blobUrl
+                };
+            })
+        }));
+        
+        // Variaciones
+        const variacionesConfiguradas = {
+            tipo_manga: 'No aplica',
+            obs_manga: '',
+            tipo_broche: 'No aplica',
+            obs_broche: '',
+            tiene_bolsillos: false,
+            obs_bolsillos: '',
+            tiene_reflectivo: false,
+            obs_reflectivo: ''
+        };
+        
+        const plicaManga = document.getElementById('aplica-manga');
+        if (plicaManga?.checked) {
+            const mangaInput = document.getElementById('manga-input');
+            const mangaObs = document.getElementById('manga-obs');
+            variacionesConfiguradas.tipo_manga = mangaInput?.value?.trim() || 'No aplica';
+            variacionesConfiguradas.obs_manga = mangaObs?.value?.trim() || '';
+        }
+        
+        const aplicaBolsillos = document.getElementById('aplica-bolsillos');
+        if (aplicaBolsillos?.checked) {
+            variacionesConfiguradas.tiene_bolsillos = true;
+            const bolsillosObs = document.getElementById('bolsillos-obs');
+            variacionesConfiguradas.obs_bolsillos = bolsillosObs?.value?.trim() || '';
+        }
+        
+        const aplicaBroche = document.getElementById('aplica-broche');
+        if (aplicaBroche?.checked) {
+            const brocheInput = document.getElementById('broche-input');
+            variacionesConfiguradas.tipo_broche = brocheInput?.value?.trim() || 'No aplica';
+            const brocheObs = document.getElementById('broche-obs');
+            variacionesConfiguradas.obs_broche = brocheObs?.value?.trim() || '';
+        }
+        
+        const aplicaReflectivo = document.getElementById('aplica-reflectivo');
+        if (aplicaReflectivo?.checked) {
+            variacionesConfiguradas.tiene_reflectivo = true;
+            const reflectivoObs = document.getElementById('reflectivo-obs');
+            variacionesConfiguradas.obs_reflectivo = reflectivoObs?.value?.trim() || '';
+        }
+        
+        const cantidadesPorTalla = window.cantidadesTallas || {};
+        
+        // Crear objeto actualizado
+        const prendaActualizada = {
+            nombre_producto: nombrePrenda,
+            descripcion: descripcion || '',
+            genero: genero,
+            origen: origen || 'bodega',
+            imagenes: imagenesConUrls,
+            telas: [],
+            telasAgregadas: telasConUrls,
+            tallas: tallasPorGenero,
+            variantes: variacionesConfiguradas,
+            procesos: procesosConfigurables,
+            cantidadesPorTalla: cantidadesPorTalla
+        };
+        
+        console.log('📝 [GestionItemsUI] Prenda actualizada:', prendaActualizada);
+        
+        try {
+            // Actualizar en el gestor
+            if (window.gestorPrendaSinCotizacion?.actualizarPrenda) {
+                window.gestorPrendaSinCotizacion.actualizarPrenda(prendaIndex, prendaActualizada);
+                console.log('✅ [GestionItemsUI] Prenda actualizada en el gestor (índice: ' + prendaIndex + ')');
+            } else {
+                console.error('❌ [GestionItemsUI] Método actualizarPrenda no disponible en gestor');
+                return;
+            }
+            
+            // Re-renderizar
+            const container = document.getElementById('prendas-container-editable');
+            if (!container) {
+                console.error('❌ [GestionItemsUI] Container no encontrado');
+                return;
+            }
+            
+            const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
+            let html = '';
+            prendas.forEach((prenda, indice) => {
+                html += window.generarTarjetaPrendaReadOnly(prenda, indice);
+            });
+            container.innerHTML = html;
+            
+            console.log('✅ [GestionItemsUI] UI re-renderizada después de actualización');
+            
+            // Limpiar índice de edición
+            this.prendaEditIndex = null;
+            
+            // Cerrar modal y limpiar
+            cerrarModalPrendaNueva();
+            
+            this.mostrarNotificacion('Prenda actualizada correctamente', 'success');
+            console.log('📌 [GestionItemsUI] ===== ACTUALIZACIÓN COMPLETADA =====\n');
+            
+        } catch (error) {
+            console.error('❌ [GestionItemsUI] Error al actualizar prenda:', error);
+            this.mostrarNotificacion('Error al actualizar prenda: ' + error.message, 'error');
+        }
     }
 
     mostrarNotificacion(mensaje, tipo = 'info') {

@@ -1,0 +1,441 @@
+/**
+ * ESTILOS TARJETA DE PRENDA - SOLO LECTURA
+ * Layout horizontal compacto con specs en línea + foto pequeña
+ */
+
+/* ============================================
+   TARJETA PRINCIPAL
+   ============================================ */
+.prenda-card-readonly {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease;
+}
+
+.prenda-card-readonly:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================
+   HEADER - Título y Menú
+   ============================================ */
+.prenda-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.prenda-card-title-section {
+    flex: 1;
+}
+
+.prenda-label {
+    display: inline-block;
+    background: #dbeafe;
+    color: #0c4a6e;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.prenda-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* ============================================
+   DESCRIPCIÓN
+   ============================================ */
+.prenda-descripcion {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* ============================================
+   MENÚ CONTEXTUAL (3 PUNTOS)
+   ============================================ */
+.prenda-menu-contextual {
+    position: relative;
+}
+
+.btn-menu-tres-puntos {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-menu-tres-puntos:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.submenu-prenda {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+}
+
+.submenu-option {
+    background: none;
+    border: none;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    cursor: pointer;
+    color: #374151;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.submenu-option:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.submenu-option:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.submenu-option:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.submenu-option.btn-eliminar-prenda:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+
+/* ============================================
+   CONTENEDOR PRINCIPAL: Foto + Info
+   ============================================ */
+.prenda-card-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+/* Foto de prenda GRANDE a la izquierda */
+.foto-prenda-izquierda {
+    position: relative;
+    flex-shrink: 0;
+    margin-top: 0.5rem;
+}
+
+.foto-prenda-izquierda img {
+    display: block;
+    border-radius: 8px;
+}
+
+.foto-badge-principal {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    background: #3b82f6;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    border: 2px solid white;
+    white-space: nowrap;
+}
+
+.foto-placeholder-izquierdo {
+    width: 120px;
+    height: 150px;
+    background: #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 2rem;
+    gap: 0.25rem;
+}
+
+.foto-placeholder-izquierdo small {
+    font-size: 0.7rem;
+}
+
+/* Información a la derecha */
+.prenda-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* ============================================
+   SPECS HORIZONTALES
+   ============================================ */
+.prenda-specs-horizontal {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+/* Specs en línea */
+.specs-content {
+    display: flex;
+    gap: 1.5rem;
+    flex: 1;
+}
+
+.spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.spec-item strong {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.spec-item span {
+    font-size: 0.95rem;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+/* Foto pequeña de tela a la derecha */
+.foto-tela-pequena {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.foto-principal-readonly {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.foto-principal-readonly:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.foto-badge-pequeño {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    background: #3b82f6;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    border: 2px solid white;
+}
+
+.foto-placeholder-pequeño {
+    width: 80px;
+    height: 80px;
+    background: #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 1.5rem;
+}
+
+/* ============================================
+   SECCIONES EXPANDIBLES
+   ============================================ */
+.seccion-expandible {
+    margin-top: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.seccion-expandible-header {
+    background: #f9fafb;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s ease;
+    user-select: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.seccion-expandible-header:hover {
+    background: #f3f4f6;
+}
+
+.seccion-expandible-header h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.seccion-expandible-header .toggle-icon {
+    font-size: 0.9rem;
+    color: #6b7280;
+    transition: transform 0.2s ease;
+}
+
+.seccion-expandible-header.active .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.seccion-expandible-content {
+    display: none;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+}
+
+.seccion-expandible-content.active {
+    display: block;
+}
+
+/* ============================================
+   CONTENIDO DE SECCIONES
+   ============================================ */
+.variantes-list,
+.tallas-list,
+.procesos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.variante-item,
+.talla-item,
+.proceso-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.talla-by-gender {
+    margin-bottom: 1rem;
+}
+
+.talla-gender-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.talla-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.talla-chip {
+    background: #e0e7ff;
+    color: #4f46e5;
+    padding: 0.4rem 0.8rem;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .prenda-card-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .foto-prenda-izquierda {
+        width: 100%;
+    }
+
+    .foto-prenda-izquierda img {
+        width: 100%;
+        max-width: 150px;
+        height: auto;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .foto-placeholder-izquierdo {
+        width: 100%;
+        max-width: 150px;
+        margin: 0 auto;
+    }
+
+    .prenda-card-info {
+        width: 100%;
+    }
+
+    .prenda-specs-horizontal {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .specs-content {
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .foto-tela-pequena {
+        width: 100%;
+        max-width: 100px;
+    }
+
+    .prenda-card-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}

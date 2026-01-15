@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarjeta de Prenda - Demo</title>
+    
+    <!-- Bootstrap (opcional, para mejor layout) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- Nuestros estilos -->
+    <link rel="stylesheet" href="/css/componentes/prenda-card-readonly.css">
+    
+    <style>
+        body {
+            background: #f5f5f5;
+            padding: 2rem 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .prendas-list {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #9ca3af;
+        }
+        .btn-agregar {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-agregar:hover {
+            background: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Encabezado -->
+        <div class="page-header">
+            <h1>📦 Crear Pedido - Prendas</h1>
+            <p style="margin: 0; color: #6b7280;">Prueba visual de tarjetas de prenda (solo lectura)</p>
+            <br>
+            <button class="btn-agregar" onclick="agregarPrendaDemo()">
+                <i class="fas fa-plus"></i> Agregar Prenda Demo
+            </button>
+        </div>
+
+        <!-- Container de prendas -->
+        <div id="prendas-container-editable" class="prendas-list">
+            <div class="empty-state">
+                <i class="fas fa-inbox" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
+                <p>No hay prendas agregadas aún.</p>
+                <small>Haz click en "Agregar Prenda Demo" para ver un ejemplo.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/js/componentes/prenda-card-readonly.js"></script>
+
+    <script>
+        /**
+         * EJEMPLO DE PRENDA PARA DEMO
+         */
+        const prendaDemo = {
+            id: 1,
+            nombre_producto: "Camisa Casual Premium",
+            descripcion: "Camisa casual de algodón premium, perfecta para uso diario y reuniones informales. Confeccionada con materiales de alta calidad.",
+            origen: "bodega",
+            
+            // Fotos (array con URLs de ejemplo)
+            fotos: [
+                "https://via.placeholder.com/300x300?text=Foto+1",
+                "https://via.placeholder.com/300x300?text=Foto+2",
+                "https://via.placeholder.com/300x300?text=Foto+3"
+            ],
+            
+            // Tallas por género
+            generosConTallas: {
+                "dama": {
+                    "XS": 20,
+                    "S": 30,
+                    "M": 25
+                },
+                "caballero": {
+                    "S": 15,
+                    "M": 35,
+                    "L": 20,
+                    "XL": 10
+                }
+            },
+            
+            // Variaciones (datos que aparecen en la sección expandible)
+            variantes: {
+                tela: "Algodón 100%",
+                color: "Azul Marino",
+                referencia: "CAM-001-BLUE",
+                
+                // Variaciones dinámicas
+                manga: "Larga",
+                manga_obs: "Manga con puño elástico y botones de concha nácar",
+                
+                broche: "Botones",
+                broche_obs: "Sistema de botones internos reforzado",
+                
+                bolsillos: "Sí",
+                bolsillos_obs: "Dos bolsillos frontales con cierre seguro",
+                
+                botones: "Sí",
+                botones_obs: "Botones de concha nacar - Resistentes",
+                
+                reflectivo: "No"
+            },
+            
+            // Procesos aplicados
+            procesos: {
+                bordado: {
+                    tipo: "Logo frontal",
+                    datos: {
+                        ubicacion: "Pecho izquierdo",
+                        tamaño: "5cm x 5cm",
+                        colores: 3
+                    }
+                },
+                estampado: {
+                    tipo: "Full Print",
+                    datos: {
+                        area: "Espalda completa",
+                        colores: 4,
+                        tecnica: "DTG"
+                    }
+                }
+            }
+        };
+
+        /**
+         * Función para agregar prenda de demo
+         */
+        function agregarPrendaDemo() {
+            const container = document.getElementById('prendas-container-editable');
+            
+            // Generar HTML de la tarjeta
+            const html = generarTarjetaPrendaReadOnly(prendaDemo, 0);
+            
+            // Limpiar placeholder
+            container.innerHTML = html;
+            
+            console.log('✅ Prenda de demo agregada');
+            console.log('📋 Estructura de la prenda:', prendaDemo);
+            
+            // Mostrar instrucciones en consola
+            console.log(`
+🎯 PRUEBA INTERACTIVA:
+1. ✅ Click en la FOTO → Abre galería modal con navegación
+2. ✅ Click en EXPANDIBLES (Variaciones, Tallas, Procesos) → Expande/contrae
+3. ✅ Click en 3 PUNTOS (arriba derecha) → Abre menú
+4. ✅ En el menú → "Editar" o "Eliminar"
+
+💡 ESTRUCTURA DE DATOS:
+- Fotos: array de URLs
+- generosConTallas: objeto con géneros y sus tallas
+- variantes: propiedades de la prenda (tela, color, variaciones dinámicas)
+- procesos: procesos aplicados (bordado, estampado, etc.)
+            `);
+        }
+
+        /**
+         * Mock para gestor (opcional, para que funcione el botón Editar)
+         */
+        window.gestorPrendaSinCotizacion = {
+            obtenerPorIndice: (index) => prendaDemo,
+            obtenerActivas: () => [prendaDemo],
+            eliminarPrenda: (index) => {
+                console.log('Prenda eliminada:', index);
+                document.getElementById('prendas-container-editable').innerHTML = `
+                    <div class="empty-state">
+                        <p>Prenda eliminada correctamente.</p>
+                        <button class="btn-agregar" onclick="agregarPrendaDemo()">
+                            <i class="fas fa-plus"></i> Agregar otra prenda
+                        </button>
+                    </div>
+                `;
+            }
+        };
+
+        /**
+         * Mock para GestionItemsUI (opcional, para que funcione el botón Editar)
+         */
+        window.gestionItemsUI = {
+            cargarItemEnModal: (prenda, index) => {
+                Swal.fire({
+                    title: 'Editar Prenda',
+                    html: `
+                        <p style="text-align: left; margin-top: 1rem;">
+                            <strong>Nombre:</strong> ${prenda.nombre_producto}<br>
+                            <strong>Descripción:</strong> ${prenda.descripcion}<br>
+                            <strong>Origen:</strong> ${prenda.origen}
+                        </p>
+                        <p style="color: #9ca3af; font-size: 0.85rem; margin-top: 1rem;">
+                            Este es un componente demo. En el sistema real, aquí se abriría el modal completo de edición con inputs para modificar todos los campos.
+                        </p>
+                    `,
+                    icon: 'info'
+                });
+            }
+        };
+
+        // Mensaje de bienvenida
+        console.log(`
+╔════════════════════════════════════════════════════════════╗
+║  TARJETA DE PRENDA - DEMO INTERACTIVA                     ║
+╚════════════════════════════════════════════════════════════╝
+
+📝 COMPONENTES CARGADOS:
+✅ prenda-card-readonly.js
+✅ prenda-card-readonly.css
+
+🎨 DISPONIBLE PARA PROBAR:
+- agregarPrendaDemo()  → Agrega una prenda de ejemplo
+- generarTarjetaPrendaReadOnly(objeto, indice) → Genera HTML
+- abrirGaleriaFotosModal(prenda, index) → Abre galería
+
+💾 ESTRUCTURA ESPERADA:
+{
+    nombre_producto: string,
+    descripcion: string,
+    fotos: array,
+    generosConTallas: { genero: { talla: cantidad } },
+    variantes: { propiedad: valor, propiedad_obs: observación },
+    procesos: { tipo: { tipo: string, datos: object } }
+}
+
+🚀 Escribe en consola: agregarPrendaDemo()
+        `);
+    </script>
+</body>
+</html>

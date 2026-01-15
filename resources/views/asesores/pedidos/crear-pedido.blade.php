@@ -53,7 +53,6 @@
     <script src="{{ asset('js/modulos/crear-pedido/reflectivo/gestor-reflectivo-sin-cotizacion.js') }}"></script>
     
     <!-- Componentes compartidos -->
-    <script src="{{ asset('js/componentes/prendas.js') }}"></script>
     <script src="{{ asset('js/componentes/reflectivo.js') }}"></script>
     
     <!-- API y Servicios -->

@@ -212,7 +212,7 @@
                                         <span style="font-weight: 600; color: #0066cc;">Bolsillos</span>
                                     </td>
                                     <td style="padding: 0.75rem;">
-                                        <input type="text" id="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." disabled class="form-input" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem;">
+                                        <input type="text" id="bolsillos-obs" placeholder="Observaciones (Ej: 4 bolsillos con cierre, ocultos, etc...)" disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%;">
                                     </td>
                                 </tr>
                                 
@@ -291,7 +291,7 @@
         <!-- Footer -->
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="cerrarModalPrendaNueva()">Cancelar</button>
-            <button class="btn btn-primary" onclick="agregarPrendaNueva()">
+            <button id="btn-guardar-prenda" class="btn btn-primary" onclick="agregarPrendaNueva()">
                 <span class="material-symbols-rounded">check</span>Agregar Prenda
             </button>
         </div>

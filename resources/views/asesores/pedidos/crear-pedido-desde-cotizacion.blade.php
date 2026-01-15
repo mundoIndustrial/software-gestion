@@ -144,16 +144,24 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
     
-    <!-- Componente: Prendas -->
-    <script src="{{ asset('js/componentes/prendas.js') }}"></script>
-    
     <!-- Componente: Reflectivo -->
     <script src="{{ asset('js/componentes/reflectivo.js') }}"></script>
     
     <!-- Cargar módulos de gestión de pedidos -->
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}"></script>
+    
+    <!-- Gestor base (necesario para la clase GestorPrendaSinCotizacion) -->
+    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}"></script>
+    
+    <!-- Inicializador del gestor -->
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/inicializar-gestor.js') }}"></script>
+    
+    <!-- Manejadores de variaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+    
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
 

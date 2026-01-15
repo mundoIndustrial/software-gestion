@@ -99,24 +99,24 @@
                 <span>3</span> Ítems del Pedido
             </h2>
 
-            <!-- Lista de ítems -->
+            <!-- Lista de ítems genéricos -->
             <div id="lista-items-pedido" style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <!-- Los ítems se agregarán aquí dinámicamente -->
             </div>
 
-            <!-- Mensaje cuando no hay ítems -->
-            <div id="mensaje-sin-items" style="padding: 2rem; text-align: center; background: #f9fafb; border: 2px dashed #d1d5db; border-radius: 8px; color: #6b7280;">
-                <p style="margin: 0; font-size: 0.875rem;">No hay ítems agregados. Selecciona un tipo de pedido para agregar nuevos ítems.</p>
+            <!-- Prendas del Pedido (dentro de Ítems del Pedido) -->
+            <div id="prendas-container-editable" style="margin-top: 1.5rem;">
+                <div class="empty-state">
+                    <p>Agrega ítems al pedido</p>
+                </div>
             </div>
-        </div>
 
-        <!-- COMPONENTE: Prendas Editables -->
-        @include('asesores.pedidos.components.prendas-editable')
+        </div>
 
         <!-- COMPONENTE: Reflectivo Editable -->
         @include('asesores.pedidos.components.reflectivo-editable')
 
-        <!-- PASO 4: Botones de Acción -->
+        <!-- PASO 5: Botones de Acción -->
         <div class="btn-actions">
             <button type="button" id="btn-vista-previa" class="btn btn-secondary" style="display: none; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2); display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(107, 114, 128, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(107, 114, 128, 0.2)'" title="Ver factura en tamaño grande">
                 <span class="material-symbols-rounded" style="font-size: 1.1rem;">visibility</span>
@@ -147,11 +147,12 @@
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+    
+    <!-- ✅ ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
+    <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+    
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
-    
-    <!-- Componente: Prendas (galerías) -->
-    <script src="{{ asset('js/componentes/prendas.js') }}"></script>
     
     <!-- Wrappers delegadores para prendas -->
     <script src="{{ asset('js/componentes/prendas-wrappers.js') }}"></script>
@@ -162,15 +163,20 @@
     <!-- Cargar módulos de gestión de pedidos -->
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}"></script>
     
-    <!-- Componentes de Prenda Sin Cotización (orden importante) -->
+    <!-- Gestor base (necesario para la clase GestorPrendaSinCotizacion) -->
     <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-sin-cotizacion-core.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-sin-cotizacion-tallas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-sin-cotizacion-telas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-sin-cotizacion-imagenes.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-sin-cotizacion-variaciones.js') }}"></script>
+    
+    <!-- Inicializador del gestor -->
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/inicializar-gestor.js') }}"></script>
+    
+    <!-- Manejadores de variaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+    
+    <!-- ✅ NUEVO: Componente tarjeta readonly (después del renderizador) -->
+    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
     
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
