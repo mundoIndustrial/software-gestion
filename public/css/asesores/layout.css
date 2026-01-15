@@ -201,7 +201,7 @@ body.dark-theme .sidebar-header .header-logo {
 .sidebar .sidebar-content {
     flex: 1;
     padding: 16px 12px;
-    overflow: hidden auto;
+    overflow: visible !important;
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) transparent;
 }
@@ -213,6 +213,7 @@ body.dark-theme .sidebar-header .header-logo {
 /* Menu sections */
 .menu-section {
     margin-bottom: 24px;
+    overflow: visible !important;
 }
 
 .menu-section:first-child {

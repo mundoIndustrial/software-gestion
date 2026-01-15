@@ -189,7 +189,7 @@ body.dark-theme .sidebar-header .header-logo {
 .sidebar .sidebar-content {
   flex: 1;
   padding: 16px 12px;
-  overflow: hidden auto;
+  overflow: visible !important;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-hr) transparent;
 }
@@ -235,8 +235,9 @@ body.dark-theme .sidebar-header .header-logo {
   flex-direction: column;
 }
 
-.menu-item {
+.sidebar .sidebar-content .menu-section .menu-list .menu-item {
   position: relative;
+  overflow: visible !important;
 }
 
 .menu-list .menu-link {
@@ -320,8 +321,11 @@ body.dark-theme .sidebar-header .header-logo {
   transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
               opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               margin 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+              padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              overflow 0s cubic-bezier(0.4, 0, 0.2, 1) 0.4s;
   opacity: 0;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, 
               rgba(255, 255, 255, 0.05) 0%, 
               rgba(255, 255, 255, 0.02) 100%);
@@ -332,10 +336,13 @@ body.dark-theme .sidebar-header .header-logo {
 }
 
 .submenu.open {
-  max-height: 300px;
-  opacity: 1;
-  padding: 6px 0;
-  margin: 8px 0 12px 0;
+  max-height: 500px !important;
+  opacity: 1 !important;
+  padding: 6px 0 !important;
+  margin: 8px 0 12px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
 }
 
 .submenu-item {

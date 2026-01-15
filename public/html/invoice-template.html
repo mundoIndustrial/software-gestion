@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura - MundoIndustrial</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .invoice-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        /* Header */
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+
+        .company-info h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .company-info p {
+            color: #666;
+            font-size: 14px;
+            margin: 3px 0;
+        }
+
+        .invoice-details {
+            text-align: right;
+        }
+
+        .invoice-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .invoice-number .prefix {
+            font-size: 14px;
+            display: block;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .invoice-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .meta-section {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .meta-section h3 {
+            color: #2c3e50;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .meta-section p {
+            margin: 4px 0;
+            color: #555;
+        }
+
+        .meta-section .label {
+            color: #999;
+            font-size: 12px;
+        }
+
+        /* Items Table */
+        .items-section {
+            margin: 40px 0;
+        }
+
+        .items-section h2 {
+            color: #2c3e50;
+            font-size: 16px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table thead {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        table tbody tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        /* Summary */
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .summary-box {
+            width: 350px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .summary-row.total {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* Footer */
+        .invoice-footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .notes-section {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #2c3e50;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .notes-section h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .notes-section p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .invoice-container {
+                box-shadow: none;
+                max-width: 100%;
+            }
+
+            .print-button {
+                display: none;
+            }
+        }
+
+        .print-button {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .print-button:hover {
+            background-color: #1a252f;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">
+        🖨️ Imprimir Factura
+    </button>
+
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="company-info">
+                <h1>🏭 MUNDO INDUSTRIAL</h1>
+                <p><strong>NIT:</strong> 123.456.789-0</p>
+                <p><strong>Dirección:</strong> Calle Principal 123, Ciudad</p>
+                <p><strong>Teléfono:</strong> +57 (1) 1234-5678</p>
+                <p><strong>Email:</strong> ventas@mundoindustrial.com</p>
+            </div>
+            <div class="invoice-details">
+                <div class="invoice-number">
+                    <span class="prefix">FACTURA</span>
+                    MI-PEDIDO-2026-0001
+                </div>
+            </div>
+        </div>
+
+        <!-- Metadata Section -->
+        <div class="invoice-meta">
+            <!-- Cliente -->
+            <div class="meta-section">
+                <h3>Información del Cliente</h3>
+                <p><span class="label">CLIENTE:</span></p>
+                <p style="font-weight: 600; font-size: 15px;">TRYTR</p>
+                <p><span class="label">ASESOR:</span></p>
+                <p>Juan Pérez</p>
+            </div>
+
+            <!-- Pedido -->
+            <div class="meta-section">
+                <h3>Información del Pedido</h3>
+                <p><span class="label">NÚMERO DE PEDIDO:</span></p>
+                <p style="font-weight: 600; font-size: 15px;">45703</p>
+                <p><span class="label">FECHA DE CREACIÓN:</span></p>
+                <p>15 de Enero de 2026</p>
+                <p><span class="label">FECHA DE ENTREGA:</span></p>
+                <p>20 de Enero de 2026</p>
+            </div>
+        </div>
+
+        <!-- Items Section -->
+        <div class="items-section">
+            <h2>Detalles de Prendas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prenda</th>
+                        <th class="text-center">Descripción</th>
+                        <th class="text-center">Talla</th>
+                        <th class="text-right">Cantidad</th>
+                        <th class="text-right">Valor Unit.</th>
+                        <th class="text-right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>YTYR</strong></td>
+                        <td class="text-center">
+                            Manga: DFGFD<br>
+                            <small style="color: #999;">Obs: FDG</small>
+                        </td>
+                        <td class="text-center">S, M, L, XL</td>
+                        <td class="text-right">12</td>
+                        <td class="text-right">$25,000</td>
+                        <td class="text-right"><strong>$300,000</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="text-align: right; font-weight: 600;">Subtotal:</td>
+                        <td class="text-right">$300,000</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="text-align: right; font-weight: 600;">IVA (19%):</td>
+                        <td class="text-right">$57,000</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-section">
+            <div class="summary-box">
+                <div class="summary-row total">
+                    <span>TOTAL A PAGAR:</span>
+                    <span>$357,000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes-section">
+            <h4>📋 Observaciones</h4>
+            <p>
+                Forma de Pago: <strong>Crédito a 30 días</strong><br>
+                Estado: <span class="status-badge status-confirmed">Confirmado</span>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="invoice-footer">
+            <p>Esta factura fue generada automáticamente por el sistema MundoIndustrial.</p>
+            <p>Gracias por su compra. Para consultas, contacte a nuestro equipo de servicio al cliente.</p>
+            <hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
+            <p>© 2026 Mundo Industrial S.A.S. Todos los derechos reservados.</p>
+        </div>
+    </div>
+
+    <script>
+        // Datos que pueden ser modificados dinámicamente
+        const facturaDatos = {
+            numeroFactura: 'MI-PEDIDO-2026-0001',
+            numeroPedido: '45703',
+            cliente: 'TRYTR',
+            asesor: 'Juan Pérez',
+            fechaCreacion: '15 de Enero de 2026',
+            fechaEntrega: '20 de Enero de 2026',
+            prendas: [
+                {
+                    nombre: 'YTYR',
+                    descripcion: 'Manga: DFGFD',
+                    observacion: 'Obs: FDG',
+                    tallas: 'S, M, L, XL',
+                    cantidad: 12,
+                    valorUnitario: 25000,
+                    subtotal: 300000
+                }
+            ],
+            subtotal: 300000,
+            iva: 57000,
+            total: 357000
+        };
+
+        // Función para actualizar la factura con datos dinámicos
+        function actualizarFactura(datos) {
+            // Actualizar número de factura y pedido
+            document.querySelector('.invoice-number').innerHTML = 
+                `<span class="prefix">FACTURA</span>${datos.numeroFactura}`;
+            
+            // Aquí puedes agregar más actualizaciones dinámicas
+            console.log('Factura actualizada con:', datos);
+        }
+
+        // Función para generar número de pedido formateado
+        function generarNumeroPedido(numeroPedido, año = 2026) {
+            const formateado = String(numeroPedido).padStart(4, '0');
+            return `MI-PEDIDO-${año}-${formateado}`;
+        }
+
+        // Ejemplo: Generar número formateado para el pedido 45703
+        console.log('Número de factura formateado:', generarNumeroPedido(45703));
+    </script>
+</body>
+</html>

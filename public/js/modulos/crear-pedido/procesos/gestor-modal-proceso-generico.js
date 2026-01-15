@@ -285,21 +285,32 @@ function renderizarListaUbicaciones() {
 window.aplicarProcesoParaTodasTallas = function() {
     console.log('✅ Intentando aplicar proceso para todas las tallas de la prenda');
     
-    // Obtener las tallas registradas de la prenda actual
-    const tallasPrenda = obtenerTallasDeLaPrenda();
+    // Obtener las tallas registradas de la prenda actual (con cantidades)
+    const tallasPrendaConCantidades = obtenerTallasDeLaPrenda();
     
-    if (!tallasPrenda.dama && !tallasPrenda.caballero) {
+    // Extraer solo los nombres para UI (como arrays)
+    const tallasPrendaArrays = {
+        dama: Object.keys(tallasPrendaConCantidades.dama || {}),
+        caballero: Object.keys(tallasPrendaConCantidades.caballero || {})
+    };
+    
+    if (tallasPrendaArrays.dama.length === 0 && tallasPrendaArrays.caballero.length === 0) {
         // No hay tallas seleccionadas - mostrar modal de advertencia
         mostrarModalAdvertenciaTallas();
         return;
     }
     
+    // Para UI, usamos arrays (nombres de tallas)
     tallasSeleccionadasProceso = {
-        dama: tallasPrenda.dama || [],
-        caballero: tallasPrenda.caballero || []
+        dama: tallasPrendaArrays.dama,
+        caballero: tallasPrendaArrays.caballero
     };
     
+    // Guardar cantidades en variable global para acceso posterior
+    window._tallasCantidadesProceso = tallasPrendaConCantidades;
+    
     console.log('✅ Tallas aplicadas:', tallasSeleccionadasProceso);
+    console.log('📊 Cantidades guardadas:', window._tallasCantidadesProceso);
     actualizarResumenTallasProceso();
 };
 
@@ -307,20 +318,38 @@ window.aplicarProcesoParaTodasTallas = function() {
 function obtenerTallasDeLaPrenda() {
     // ✅ Leer directamente de window.tallasSeleccionadas (fuente de verdad)
     const tallasGlobales = window.tallasSeleccionadas || {};
-    const tallas = { dama: [], caballero: [] };
+    const tallas = { dama: {}, caballero: {} };
+    
+    // Obtener cantidades desde backup permanente o global
+    const cantidadesDisponibles = window._TALLAS_BACKUP_PERMANENTE || window.cantidadesTallas || {};
     
     console.log('📊 [obtenerTallasDeLaPrenda] window.tallasSeleccionadas:', tallasGlobales);
+    console.log('📊 [obtenerTallasDeLaPrenda] Cantidades disponibles:', cantidadesDisponibles);
     
-    // Obtener tallas de dama
+    // Obtener tallas de dama CON CANTIDADES
     if (tallasGlobales.dama && tallasGlobales.dama.tallas && Array.isArray(tallasGlobales.dama.tallas)) {
-        tallas.dama = [...tallasGlobales.dama.tallas];
-        console.log(`✅ Tallas dama encontradas: ${tallas.dama.length}`, tallas.dama);
+        tallas.dama = {};
+        tallasGlobales.dama.tallas.forEach(talla => {
+            const key = `dama-${talla}`;
+            const cantidad = cantidadesDisponibles[key] || 0;
+            if (cantidad > 0) {
+                tallas.dama[talla] = cantidad;
+            }
+        });
+        console.log(`✅ Tallas dama encontradas con cantidades:`, tallas.dama);
     }
     
-    // Obtener tallas de caballero
+    // Obtener tallas de caballero CON CANTIDADES
     if (tallasGlobales.caballero && tallasGlobales.caballero.tallas && Array.isArray(tallasGlobales.caballero.tallas)) {
-        tallas.caballero = [...tallasGlobales.caballero.tallas];
-        console.log(`✅ Tallas caballero encontradas: ${tallas.caballero.length}`, tallas.caballero);
+        tallas.caballero = {};
+        tallasGlobales.caballero.tallas.forEach(talla => {
+            const key = `caballero-${talla}`;
+            const cantidad = cantidadesDisponibles[key] || 0;
+            if (cantidad > 0) {
+                tallas.caballero[talla] = cantidad;
+            }
+        });
+        console.log(`✅ Tallas caballero encontradas con cantidades:`, tallas.caballero);
     }
     
     console.log('📊 [obtenerTallasDeLaPrenda] Tallas finales:', tallas);
@@ -389,27 +418,32 @@ window.abrirEditorTallasEspecificas = function() {
         return;
     }
     
-    // Obtener tallas registradas en la prenda
+    // Obtener tallas registradas en la prenda (retorna objetos {talla: cantidad})
     const tallasPrenda = obtenerTallasDeLaPrenda();
     
-    // Validar que haya tallas seleccionadas
-    if (!tallasPrenda.dama.length && !tallasPrenda.caballero.length) {
+    // Validar que haya tallas seleccionadas - son OBJETOS, no arrays
+    const tallasDamaArray = Object.keys(tallasPrenda.dama || {});
+    const tallasCaballeroArray = Object.keys(tallasPrenda.caballero || {});
+    
+    if (tallasDamaArray.length === 0 && tallasCaballeroArray.length === 0) {
         mostrarModalAdvertenciaTallas();
         return;
     }
+    
+    console.log('📊 Tallas dama encontradas:', tallasDamaArray);
+    console.log('📊 Tallas caballero encontradas:', tallasCaballeroArray);
     
     // Renderizar tallas DAMA (solo las seleccionadas en la prenda)
     const containerDama = document.getElementById('tallas-dama-container');
     if (containerDama) {
         containerDama.innerHTML = '';
         
-        if (tallasPrenda.dama.length === 0) {
+        if (tallasDamaArray.length === 0) {
             containerDama.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas DAMA seleccionadas en la prenda</p>';
         } else {
-            const cantidades = window.cantidadesTallas || {};
-            tallasPrenda.dama.forEach(talla => {
+            tallasDamaArray.forEach(talla => {
                 const isSelected = tallasSeleccionadasProceso.dama.includes(talla);
-                const cantidad = cantidades[`dama-${talla}`] || 0;
+                const cantidad = tallasPrenda.dama[talla] || 0;
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
                 label.innerHTML = `
@@ -434,13 +468,12 @@ window.abrirEditorTallasEspecificas = function() {
     if (containerCaballero) {
         containerCaballero.innerHTML = '';
         
-        if (tallasPrenda.caballero.length === 0) {
+        if (tallasCaballeroArray.length === 0) {
             containerCaballero.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas CABALLERO seleccionadas en la prenda</p>';
         } else {
-            const cantidades = window.cantidadesTallas || {};
-            tallasPrenda.caballero.forEach(talla => {
+            tallasCaballeroArray.forEach(talla => {
                 const isSelected = tallasSeleccionadasProceso.caballero.includes(talla);
-                const cantidad = cantidades[`caballero-${talla}`] || 0;
+                const cantidad = tallasPrenda.caballero[talla] || 0;
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
                 label.innerHTML = `
@@ -462,6 +495,7 @@ window.abrirEditorTallasEspecificas = function() {
     
     // Mostrar modal editor
     modalEditor.style.display = 'flex';
+    console.log('✅ Editor de tallas abierto');
 };
 
 // Actualizar cantidad de talla en el modal de proceso
@@ -585,16 +619,30 @@ window.agregarProcesoAlPedido = function() {
             tipo: procesoActual,
             ubicaciones: ubicacionesProcesoSeleccionadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
-            tallas: tallasSeleccionadasProceso,
+            tallas: window._tallasCantidadesProceso || tallasSeleccionadasProceso, // Usar cantidades si están disponibles
             imagenes: imagenesValidas // Array de imágenes
         };
         
         console.log(`💾 Guardando proceso con ${imagenesValidas.length} imágenes:`, datos);
         
-        // Guardar en procesosSeleccionados (variable global de manejadores-procesos-prenda.js)
-        if (window.procesosSeleccionados && window.procesosSeleccionados[procesoActual]) {
-            window.procesosSeleccionados[procesoActual].datos = datos;
+        // ✅ CRÍTICO: Guardar en procesosSeleccionados CON SINCRONIZACIÓN
+        if (!window.procesosSeleccionados) {
+            window.procesosSeleccionados = {};
+            console.warn('⚠️ window.procesosSeleccionados no existía, creado ahora');
         }
+        
+        // Si el proceso NO existe todavía, crearlo
+        if (!window.procesosSeleccionados[procesoActual]) {
+            window.procesosSeleccionados[procesoActual] = {
+                tipo: procesoActual,
+                datos: null
+            };
+            console.log(`📝 Proceso ${procesoActual} creado en window.procesosSeleccionados`);
+        }
+        
+        // Asignar los datos capturados
+        window.procesosSeleccionados[procesoActual].datos = datos;
+        console.log(`✅ Datos asignados a ${procesoActual}:`, datos);
         
         // ✅ NUEVO: Renderizar tarjetas de procesos en el modal de prenda
         if (window.renderizarTarjetasProcesos) {

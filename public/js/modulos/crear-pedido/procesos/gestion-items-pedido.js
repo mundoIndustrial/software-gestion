@@ -214,6 +214,20 @@ class GestionItemsUI {
                 console.log('🧹 [GestionItemsUI] Tallas seleccionadas limpias');
             }
             
+            // ✅ NUEVO: Limpiar procesos seleccionados
+            if (window.procesosSeleccionados) {
+                window.procesosSeleccionados = {};
+                console.log('🧹 [GestionItemsUI] Procesos seleccionados limpiados');
+            }
+            
+            // ✅ NUEVO: Limpiar contenedor de tarjetas de procesos (pero NO ponerlo en display:none)
+            const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
+            if (contenedorTarjetas) {
+                contenedorTarjetas.innerHTML = '';
+                // NO poner display:none aquí - dejar que renderizarTarjetasProcesos() controle el display
+                console.log('🧹 [GestionItemsUI] Contenedor de tarjetas de procesos limpiado');
+            }
+            
             // Limpiar índice de edición si existe
             this.prendaEditIndex = null;
             console.log('🧹 [GestionItemsUI] Índice de edición limpiado');
@@ -498,7 +512,54 @@ class GestionItemsUI {
         if (checkboxDtf) checkboxDtf.checked = variaciones.proceso_dtf === true || variaciones.proceso_dtf === 'true' || prenda.proceso_dtf === true || prenda.proceso_dtf === 'true';
         if (checkboxSublimado) checkboxSublimado.checked = variaciones.proceso_sublimado === true || variaciones.proceso_sublimado === 'true' || prenda.proceso_sublimado === true || prenda.proceso_sublimado === 'true';
         
-        console.log('✅ Procesos cargados');
+        console.log('✅ Procesos booleanos cargados');
+        
+        // ========== CARGAR DATOS COMPLETOS DE PROCESOS ==========
+        console.log('🔧 Cargando datos completos de procesos...');
+        
+        // ✅ NUEVO: Limpiar contenedor de tarjetas antes de cargar procesos
+        const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
+        if (contenedorTarjetas) {
+            contenedorTarjetas.innerHTML = '';
+            // NO poner display:none aquí - dejar que renderizarTarjetasProcesos() controle el display
+            console.log('🧹 Contenedor de tarjetas limpiado antes de cargar procesos');
+        }
+        
+        if (prenda.procesos && typeof prenda.procesos === 'object' && Object.keys(prenda.procesos).length > 0) {
+            // Reinicializar window.procesosSeleccionados
+            window.procesosSeleccionados = {};
+            
+            // Cargar cada proceso con sus datos
+            Object.entries(prenda.procesos).forEach(([tipoProceso, procesoData]) => {
+                if (procesoData && procesoData.datos) {
+                    console.log(`   📋 Cargando proceso: ${tipoProceso}`, procesoData);
+                    
+                    window.procesosSeleccionados[tipoProceso] = {
+                        tipo: tipoProceso,
+                        datos: procesoData.datos
+                    };
+                    
+                    // Marcar el checkbox
+                    const checkbox = document.getElementById(`checkbox-${tipoProceso}`);
+                    if (checkbox) {
+                        checkbox._ignorarOnclick = true; // Evitar trigger del handler
+                        checkbox.checked = true;
+                        checkbox._ignorarOnclick = false;
+                        console.log(`   ✅ Checkbox ${tipoProceso} marcado`);
+                    }
+                }
+            });
+            
+            console.log('✅ Procesos completos cargados:', window.procesosSeleccionados);
+            
+            // Renderizar tarjetas de procesos
+            if (window.renderizarTarjetasProcesos) {
+                window.renderizarTarjetasProcesos();
+                console.log('🎨 Tarjetas de procesos renderizadas');
+            }
+        } else {
+            console.log('ℹ️  Sin procesos completos para cargar');
+        }
         
         // Guardar índice para actualización posterior
         this.prendaEditIndex = prendaIndex;
@@ -727,6 +788,38 @@ class GestionItemsUI {
         const cantidadesPorTalla = window.cantidadesTallas || {};
         console.log(`📊 [GestionItemsUI] Cantidades por talla:`, cantidadesPorTalla);
         
+        // ✅ CONSTRUIR generosConTallas CORRECTAMENTE como objeto anidado
+        // Estructura: { genero: { talla: cantidad, talla: cantidad } }
+        const generosConTallas = {};
+        
+        tallasPorGenero.forEach(tallaData => {
+            const generoKey = tallaData.genero; // 'dama' o 'caballero'
+            generosConTallas[generoKey] = {};
+            
+            // Buscar cantidades para este género en cantidadesPorTalla
+            // IMPORTANTE: cantidadesPorTalla tiene formato "genero-talla" (ej: "dama-S")
+            if (tallaData.tallas && Array.isArray(tallaData.tallas)) {
+                tallaData.tallas.forEach(talla => {
+                    // Buscar con formato "genero-talla"
+                    const key = `${generoKey}-${talla}`;
+                    const cantidad = cantidadesPorTalla[key] || 0;
+                    console.log(`      Buscando: ${key} = ${cantidad}`);
+                    if (cantidad > 0) {
+                        generosConTallas[generoKey][talla] = cantidad;
+                        console.log(`      ✅ Agregando: ${generoKey}.${talla} = ${cantidad}`);
+                    }
+                });
+            }
+        });
+        
+        console.log(`✅ [GestionItemsUI] generosConTallas construido:`, generosConTallas);
+        console.log(`   Estructura: { genero: { talla: cantidad } }`);
+        console.log(`   Tipo de generosConTallas:`, typeof generosConTallas);
+        console.log(`   Claves:`, Object.keys(generosConTallas));
+        Object.keys(generosConTallas).forEach(genero => {
+            console.log(`   ${genero}:`, generosConTallas[genero], `tipo:`, typeof generosConTallas[genero]);
+        });
+        
         // Crear objeto de prenda
         const prendaNueva = {
             nombre_producto: nombrePrenda,
@@ -739,7 +832,8 @@ class GestionItemsUI {
             tallas: tallasPorGenero,
             variantes: variacionesConfiguradas,
             procesos: procesosConfigurables,
-            cantidadesPorTalla: cantidadesPorTalla
+            cantidadesPorTalla: cantidadesPorTalla,
+            generosConTallas: generosConTallas // ✅ INCLUIR ESTRUCTURADO CORRECTAMENTE
         };
         
         console.log('✅ [GestionItemsUI] Prenda nueva creada:', prendaNueva);
@@ -765,6 +859,8 @@ class GestionItemsUI {
             
             // Agregar a gestor CON los datos creados
             if (window.gestorPrendaSinCotizacion?.agregarPrenda) {
+                console.log('✅ [ANTES DE GUARDAR] generosConTallas en prendaNueva:', prendaNueva.generosConTallas);
+                
                 const indiceAgregado = window.gestorPrendaSinCotizacion.agregarPrenda(prendaNueva);
                 console.log('✅ [GestionItemsUI] Prenda agregada al gestor (índice: ' + indiceAgregado + ')');
                 console.log('   Total prendas:', window.gestorPrendaSinCotizacion.prendas.length);
@@ -774,6 +870,7 @@ class GestionItemsUI {
                 const prendaGuardada = window.gestorPrendaSinCotizacion.obtenerPorIndice(indiceAgregado);
                 console.log('📸 [VERIFICACIÓN GESTOR] Prenda guardada tiene imagenes:', prendaGuardada?.imagenes);
                 console.log('📸 [VERIFICACIÓN GESTOR] imagenes?.length:', prendaGuardada?.imagenes?.length);
+                console.log('📸 [VERIFICACIÓN GESTOR] generosConTallas guardado:', prendaGuardada?.generosConTallas);
             } else {
                 console.error('❌ [GestionItemsUI] GestorPrendaSinCotizacion no disponible');
                 return;
@@ -923,26 +1020,46 @@ class GestionItemsUI {
             const prendasSinCot = window.gestorPrendaSinCotizacion.obtenerActivas();
             
             prendasSinCot.forEach((prenda, prendaIndex) => {
+                console.log(`🔍 Procesando prenda sin cotización ${prendaIndex}:`, prenda);
                 // Construir cantidad_talla desde generosConTallas
                 const cantidadTalla = {};
                 
                 if (prenda.generosConTallas && typeof prenda.generosConTallas === 'object') {
+                    console.log(`📊 Usando generosConTallas:`, prenda.generosConTallas);
+                    console.log(`📊 Claves de generosConTallas:`, Object.keys(prenda.generosConTallas));
+                    
                     // Iterate over each gender's tallas
                     Object.keys(prenda.generosConTallas).forEach(genero => {
+                        console.log(`   Procesando género: "${genero}"`);
                         const tallaDelGenero = prenda.generosConTallas[genero];
+                        console.log(`   tallaDelGenero:`, tallaDelGenero);
+                        console.log(`   Claves de tallaDelGenero:`, Object.keys(tallaDelGenero));
+                        
                         Object.keys(tallaDelGenero).forEach(talla => {
                             const cantidad = parseInt(tallaDelGenero[talla]) || 0;
+                            console.log(`      Talla "${talla}": cantidad = ${cantidad}`);
                             if (cantidad > 0) {
-                                cantidadTalla[talla] = cantidad;
+                                // ✅ INCLUIR GÉNERO EN LA CLAVE (dama-S, dama-M, etc)
+                                const key = `${genero}-${talla}`;
+                                cantidadTalla[key] = cantidad;
+                                console.log(`      ✅ Agregando: ${key} = ${cantidad}`);
                             }
                         });
                     });
+                    console.log(`📊 cantidadTalla final:`, cantidadTalla);
                 } else if (prenda.cantidadesPorTalla && typeof prenda.cantidadesPorTalla === 'object') {
+                    console.log(`📊 Usando cantidadesPorTalla:`, prenda.cantidadesPorTalla);
                     // Fallback: usar cantidadesPorTalla si existe
+                    // Obtener el primer género disponible para construir las claves
+                    const generoFallback = prenda.genero && Array.isArray(prenda.genero) && prenda.genero.length > 0 
+                        ? prenda.genero[0] 
+                        : 'mixto';
+                    
                     Object.keys(prenda.cantidadesPorTalla).forEach(talla => {
                         const cantidad = parseInt(prenda.cantidadesPorTalla[talla]) || 0;
                         if (cantidad > 0) {
-                            cantidadTalla[talla] = cantidad;
+                            // ✅ INCLUIR GÉNERO EN LA CLAVE
+                            cantidadTalla[`${generoFallback}-${talla}`] = cantidad;
                         }
                     });
                 }
@@ -974,12 +1091,34 @@ class GestionItemsUI {
                 const obs_broche = prenda.obs_broche || variaciones.broche?.observacion || '';
                 const obs_reflectivo = prenda.obs_reflectivo || variaciones.reflectivo?.observacion || '';
                 
+                // ✅ Convertir cantidad_talla a tallas array para validación backend
+                const tallas = Object.keys(cantidadTalla);
+                console.log(`✅ Prenda ${prendaIndex}: cantidadTalla =`, cantidadTalla, ', tallas =', tallas);
+
+                // ✅ EXTRAER PROCESOS DEL NIVEL INTERNO
+                // Los procesos se guardan como {tipo: {tipo, datos: {...}}}
+                // Pero el backend espera {tipo: {tipo, ubicaciones, observaciones, tallas_dama, tallas_caballero}}
+                // Entonces extraemos .datos si existe
+                let procesosParaEnviar = {};
+                if (prenda.procesos && typeof prenda.procesos === 'object') {
+                    Object.entries(prenda.procesos).forEach(([tipoProceso, procesoData]) => {
+                        // Si existe .datos, usar eso; si no, usar todo
+                        if (procesoData?.datos) {
+                            procesosParaEnviar[tipoProceso] = procesoData.datos;
+                        } else {
+                            procesosParaEnviar[tipoProceso] = procesoData;
+                        }
+                    });
+                }
+                console.log(`✅ Procesos preparados para envío:`, procesosParaEnviar);
+                
                 const itemSinCot = {
                     tipo: 'prenda_nueva',
                     prenda: prenda.nombre_producto || '',
                     descripcion: prenda.descripcion || '',
                     genero: prenda.genero || [],
                     cantidad_talla: cantidadTalla,
+                    tallas: tallas, // ✅ REQUERIDO por validación backend
                     variaciones: variaciones,
                     // ✅ OBSERVACIONES AL NIVEL SUPERIOR
                     obs_manga: obs_manga,
@@ -987,7 +1126,9 @@ class GestionItemsUI {
                     obs_broche: obs_broche,
                     obs_reflectivo: obs_reflectivo,
                     origen: prenda.origen || 'bodega', // ✅ USAR ORIGEN DEL GESTOR
-                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1 // ✅ PASAR de_bodega
+                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1, // ✅ PASAR de_bodega
+                    // ✅ CRÍTICO: INCLUIR PROCESOS CON TALLAS Y DETALLES
+                    procesos: procesosParaEnviar
                 };
                 
                 // Agregar fotos si existen

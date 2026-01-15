@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Factura - MundoIndustrial</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #1a252f;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.4);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #2c3e50;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Generador de Facturas</h1>
+        <p class="subtitle">MundoIndustrial - Sistema de Gestión</p>
+
+        <form id="invoiceForm">
+            <div class="form-group">
+                <label for="numeroPedido">Número de Pedido *</label>
+                <input 
+                    type="number" 
+                    id="numeroPedido" 
+                    placeholder="Ej: 45703" 
+                    value="45703"
+                    required
+                    min="1"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="modalType">Forma de Abrir *</label>
+                <select id="modalType" required>
+                    <option value="ventana">📍 En Nueva Ventana</option>
+                    <option value="iframe">🔲 En Modal (iframe)</option>
+                    <option value="preview">👀 En Vista Previa</option>
+                </select>
+            </div>
+
+            <div class="buttons">
+                <button type="button" class="btn-primary" onclick="abrirFactura()">
+                    👁️ Ver Factura
+                </button>
+                <button type="button" class="btn-secondary" onclick="descargarFactura()">
+                    📥 Descargar PDF
+                </button>
+            </div>
+
+            <button type="button" class="btn-success" onclick="abrirMultiples()">
+                📊 Cargar 5 Facturas de Prueba
+            </button>
+        </form>
+
+        <div class="info-box">
+            <strong>ℹ️ Información:</strong><br>
+            • Ingresa el número de pedido que deseas ver<br>
+            • El número se formatea automáticamente a: MI-PEDIDO-2026-0001<br>
+            • La factura incluye prendas, procesos y EPP<br>
+            • Puedes imprimir directamente desde la factura<br>
+        </div>
+
+        <div class="footer">
+            <p>Sistema de Gestión MundoIndustrial © 2026</p>
+        </div>
+    </div>
+
+    <script>
+        // Función para abrir factura
+        function abrirFactura() {
+            const numeroPedido = document.getElementById('numeroPedido').value;
+            const tipoModal = document.getElementById('modalType').value;
+
+            if (!numeroPedido) {
+                alert('Por favor ingresa un número de pedido');
+                return;
+            }
+
+            console.log(`Abriendo factura ${numeroPedido} en modo: ${tipoModal}`);
+
+            switch(tipoModal) {
+                case 'ventana':
+                    abrirFacturaEnVentana(numeroPedido);
+                    break;
+                case 'iframe':
+                    abrirFacturaEnIframe(numeroPedido);
+                    break;
+                case 'preview':
+                    window.location.href = `/facturas/${numeroPedido}/preview`;
+                    break;
+            }
+        }
+
+        // Abrir en ventana
+        function abrirFacturaEnVentana(numeroPedido) {
+            const url = `/facturas/${numeroPedido}/preview`;
+            window.open(url, `factura-${numeroPedido}`, 'width=1000,height=800,scrollbars=yes');
+            console.log('✅ Factura abierta en nueva ventana');
+        }
+
+        // Abrir en iframe modal
+        function abrirFacturaEnIframe(numeroPedido) {
+            let modal = document.getElementById('invoice-modal-wrapper');
+            
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'invoice-modal-wrapper';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.5);
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                `;
+                
+                modal.innerHTML = `
+                    <div style="background: white; border-radius: 8px; width: 100%; max-width: 1000px; height: 90vh; display: flex; flex-direction: column; box-shadow: 0 5px 40px rgba(0,0,0,0.3);">
+                        <div style="padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="margin: 0; color: #2c3e50;">📋 Factura - Pedido #${numeroPedido}</h3>
+                            <button onclick="document.getElementById('invoice-modal-wrapper').remove();" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999; padding: 0;">×</button>
+                        </div>
+                        <div style="flex: 1; overflow: auto;">
+                            <iframe src="/facturas/${numeroPedido}/preview" style="width: 100%; height: 100%; border: none;"></iframe>
+                        </div>
+                        <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button onclick="document.getElementById('invoice-modal-wrapper').remove();" style="padding: 8px 16px; background: #ddd; border: none; border-radius: 4px; cursor: pointer;">Cerrar</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            }
+            
+            console.log('✅ Factura abierta en modal iframe');
+        }
+
+        // Descargar PDF
+        function descargarFactura() {
+            const numeroPedido = document.getElementById('numeroPedido').value;
+            
+            if (!numeroPedido) {
+                alert('Por favor ingresa un número de pedido');
+                return;
+            }
+
+            console.log(`Descargando factura ${numeroPedido}`);
+            window.location.href = `/facturas/${numeroPedido}/download`;
+        }
+
+        // Abrir múltiples de prueba
+        function abrirMultiples() {
+            const pedidos = [45703, 45704, 45705, 45706, 45707];
+            
+            pedidos.forEach((pedido, index) => {
+                setTimeout(() => {
+                    const url = `/facturas/${pedido}/preview`;
+                    window.open(url, `factura-${pedido}`, 'width=900,height=700,scrollbars=yes');
+                    console.log(`✅ Factura ${pedido} abierta (${index + 1}/${pedidos.length})`);
+                }, index * 300); // Espaciar las aperturas
+            });
+        }
+
+        // Validar que el servidor esté disponible
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Generador de Facturas cargado');
+            console.log('📍 URL base: ' + window.location.origin);
+        });
+    </script>
+</body>
+</html>

@@ -290,6 +290,22 @@ class PedidoPrendaService
                 'prenda_data_keys' => array_keys($prendaData),
             ]);
         }
+
+        // 6. ✅ NUEVO: Guardar procesos de la prenda (si existen)
+        Log::info('🔍 [PedidoPrendaService::guardarPrenda] Verificando si hay procesos para guardar', [
+            'prenda_id' => $prenda->id,
+            'tiene_procesos' => !empty($prendaData['procesos']),
+            'cantidad_procesos' => !empty($prendaData['procesos']) ? count($prendaData['procesos']) : 0,
+            'procesos_data' => $prendaData['procesos'] ?? null,
+        ]);
+        
+        if (!empty($prendaData['procesos'])) {
+            $this->guardarProcesosPrenda($prenda, $prendaData['procesos']);
+        } else {
+            Log::info('ℹ️ [PedidoPrendaService] No hay procesos para guardar en esta prenda', [
+                'prenda_id' => $prenda->id,
+            ]);
+        }
     }
 
     /**
@@ -753,5 +769,205 @@ class PedidoPrendaService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Guardar procesos de la prenda con sus tallas y ubicaciones
+     * Estructura esperada: 
+     * {
+     *   'reflectivo': {
+     *     'tipo': 'reflectivo',
+     *     'ubicaciones': ['frente', 'espalda'],
+     *     'observaciones': 'Aplicar en tiras de 5cm',
+     *     'tallas': {
+     *       'dama': {'S': 40, 'M': 30, 'L': 30},
+     *       'caballero': {'M': 20}
+     *     }
+     *   }
+     * }
+     */
+    private function guardarProcesosPrenda(PrendaPedido $prenda, array $procesos): void
+    {
+        Log::info('📋 [PedidoPrendaService::guardarProcesosPrenda] INICIO - Guardando procesos', [
+            'prenda_id' => $prenda->id,
+            'numero_pedido' => $prenda->numero_pedido,
+            'cantidad_procesos' => count($procesos),
+            'procesos_tipos' => array_keys($procesos),
+        ]);
+
+        try {
+            foreach ($procesos as $tipoProceso => $procesoData) {
+                Log::info("📋 [PedidoPrendaService] Procesando tipo: {$tipoProceso}", [
+                    'prenda_id' => $prenda->id,
+                    'tipo_proceso' => $tipoProceso,
+                    'proceso_data_keys' => array_keys($procesoData),
+                    'tiene_tipo' => isset($procesoData['tipo']),
+                    'tiene_datos' => isset($procesoData['datos']),
+                ]);
+
+                // Extraer datos - pueden venir en .datos o directamente
+                $datosProc = $procesoData;
+                if (isset($procesoData['datos']) && is_array($procesoData['datos'])) {
+                    $datosProc = $procesoData['datos'];
+                    Log::info("📋 [PedidoPrendaService] Datos encontrados en .datos", ['tipo_proceso' => $tipoProceso]);
+                }
+
+                // Validar que tenga los campos requeridos
+                if (empty($datosProc['tipo'])) {
+                    Log::warning("⚠️ [PedidoPrendaService] Proceso sin tipo, saltando", [
+                        'prenda_id' => $prenda->id,
+                        'tipo_proceso' => $tipoProceso,
+                    ]);
+                    continue;
+                }
+
+                // Buscar el tipo_proceso_id en la base de datos
+                $tipoProcesoId = DB::table('tipos_procesos')
+                    ->where('nombre', 'like', "%{$datosProc['tipo']}%")
+                    ->value('id');
+
+                if (!$tipoProcesoId) {
+                    Log::warning("⚠️ [PedidoPrendaService] No encontró tipo_proceso_id para: {$datosProc['tipo']}", [
+                        'prenda_id' => $prenda->id,
+                        'tipo_buscado' => $datosProc['tipo'],
+                    ]);
+                    // Crear el tipo de proceso si no existe
+                    $tipoProcesoId = DB::table('tipos_procesos')->insertGetId([
+                        'nombre' => $datosProc['tipo'],
+                        'descripcion' => "Proceso: {$datosProc['tipo']}",
+                        'activo' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    Log::info("✅ [PedidoPrendaService] Tipo de proceso creado automáticamente", [
+                        'tipo_proceso_id' => $tipoProcesoId,
+                        'nombre' => $datosProc['tipo'],
+                    ]);
+                }
+
+                // Preparar datos para insertar
+                $tallasDama = $datosProc['tallas']['dama'] ?? [];
+                $tallasCapallero = $datosProc['tallas']['caballero'] ?? [];
+                $ubicaciones = $datosProc['ubicaciones'] ?? [];
+                $observaciones = $datosProc['observaciones'] ?? '';
+                $imagenes = $datosProc['imagenes'] ?? [];
+
+                Log::info("📍 [PedidoPrendaService] Datos del proceso antes de guardar", [
+                    'prenda_id' => $prenda->id,
+                    'tipo_proceso_id' => $tipoProcesoId,
+                    'tallas_dama' => $tallasDama,
+                    'tallas_caballero' => $tallasCapallero,
+                    'ubicaciones' => $ubicaciones,
+                    'observaciones' => $observaciones,
+                    'cantidad_imagenes' => count($imagenes),
+                ]);
+
+                // Insertar en la tabla pedidos_procesos_prenda_detalles
+                $procesoDetalleId = DB::table('pedidos_procesos_prenda_detalles')->insertGetId([
+                    'prenda_pedido_id' => $prenda->id,
+                    'tipo_proceso_id' => $tipoProcesoId,
+                    'ubicaciones' => json_encode($ubicaciones),
+                    'observaciones' => $observaciones,
+                    'tallas_dama' => json_encode($tallasDama),
+                    'tallas_caballero' => json_encode($tallasCapallero),
+                    'estado' => 'PENDIENTE',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                Log::info("✅ [PedidoPrendaService] Proceso guardado en BD", [
+                    'prenda_id' => $prenda->id,
+                    'tipo_proceso_id' => $tipoProcesoId,
+                    'tipo_proceso' => $datosProc['tipo'],
+                    'proceso_detalle_id' => $procesoDetalleId,
+                ]);
+
+                // Guardar imágenes si existen
+                if (!empty($imagenes) && is_array($imagenes)) {
+                    $this->guardarProcesosImagenes($procesoDetalleId, $imagenes);
+                }
+            }
+
+            Log::info('✅ [PedidoPrendaService::guardarProcesosPrenda] Todos los procesos guardados', [
+                'prenda_id' => $prenda->id,
+                'cantidad_procesos' => count($procesos),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidoPrendaService::guardarProcesosPrenda] Error guardando procesos', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Guardar imágenes de procesos
+     */
+    private function guardarProcesosImagenes(int $procesoDetalleId, array $imagenes): void
+    {
+        Log::info('📸 [PedidoPrendaService::guardarProcesosImagenes] Guardando imágenes', [
+            'proceso_detalle_id' => $procesoDetalleId,
+            'cantidad' => count($imagenes),
+        ]);
+
+        foreach ($imagenes as $index => $imagenData) {
+            try {
+                // Si es un data URI, guardar como archivo base64
+                if (is_string($imagenData) && strpos($imagenData, 'data:image') === 0) {
+                    $nombreArchivo = $this->guardarImagenBase64($imagenData, $procesoDetalleId, $index);
+                    
+                    DB::table('pedidos_procesos_imagenes')->insert([
+                        'proceso_prenda_detalle_id' => $procesoDetalleId,
+                        'ruta' => $nombreArchivo,
+                        'nombre_original' => "imagen_proceso_{$index}.png",
+                        'tipo_mime' => 'image/png',
+                        'orden' => $index,
+                        'es_principal' => $index === 0 ? 1 : 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    Log::info("✅ [PedidoPrendaService] Imagen guardada", [
+                        'proceso_detalle_id' => $procesoDetalleId,
+                        'index' => $index,
+                        'nombre' => $nombreArchivo,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::warning("⚠️ [PedidoPrendaService] Error guardando imagen", [
+                    'proceso_detalle_id' => $procesoDetalleId,
+                    'index' => $index,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Guardar imagen base64 en disco
+     */
+    private function guardarImagenBase64(string $imagenData, int $procesoDetalleId, int $index): string
+    {
+        // Extraer el contenido base64
+        if (preg_match('/^data:image\/(\w+);base64,(.+)$/', $imagenData, $matches)) {
+            $extension = $matches[1];
+            $contenido = base64_decode($matches[2]);
+            
+            $directorio = storage_path('app/procesos-imagenes/' . $procesoDetalleId);
+            if (!is_dir($directorio)) {
+                mkdir($directorio, 0755, true);
+            }
+
+            $nombreArchivo = "imagen_{$index}_{$procesoDetalleId}.{$extension}";
+            $rutaCompleta = $directorio . '/' . $nombreArchivo;
+            
+            file_put_contents($rutaCompleta, $contenido);
+            
+            return "procesos-imagenes/{$procesoDetalleId}/{$nombreArchivo}";
+        }
+
+        throw new \Exception('No se pudo procesar imagen base64');
     }
 }

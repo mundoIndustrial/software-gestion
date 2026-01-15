@@ -462,22 +462,23 @@ function construirSeccionProcesos(prenda, indice) {
         // Construir tallas por género con cantidades
         let tallasHTML = '';
         if (datos.tallas) {
-            const { dama = [], caballero = [] } = datos.tallas;
-            const cantidadesPorTalla = prenda.cantidadesPorTalla || {};
+            const damaObj = datos.tallas.dama || {};
+            const caballeroObj = datos.tallas.caballero || {};
+            const damaHasTallas = Object.keys(damaObj).length > 0;
+            const caballeroHasTallas = Object.keys(caballeroObj).length > 0;
             
-            if (dama.length > 0 || caballero.length > 0) {
+            if (damaHasTallas || caballeroHasTallas) {
                 tallasHTML = '<div style="margin-top: 0.75rem;">';
                 
-                if (dama.length > 0) {
+                if (damaHasTallas) {
                     tallasHTML += `
                         <div style="margin-bottom: 0.5rem;">
                             <span style="font-weight: 600; color: #be185d; margin-right: 0.5rem;">
                                 <i class="fas fa-female" style="margin-right: 0.25rem;"></i>Dama:
                             </span>
-                            ${dama.map(t => {
-                                const cantidad = cantidadesPorTalla[`dama-${t}`] || 0;
+                            ${Object.entries(damaObj).map(([talla, cantidad]) => {
                                 return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                    ${t}
+                                    ${talla}
                                     <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
                                 </span>`;
                             }).join('')}
@@ -485,16 +486,15 @@ function construirSeccionProcesos(prenda, indice) {
                     `;
                 }
                 
-                if (caballero.length > 0) {
+                if (caballeroHasTallas) {
                     tallasHTML += `
                         <div>
                             <span style="font-weight: 600; color: #1d4ed8; margin-right: 0.5rem;">
                                 <i class="fas fa-male" style="margin-right: 0.25rem;"></i>Caballero:
                             </span>
-                            ${caballero.map(t => {
-                                const cantidad = cantidadesPorTalla[`caballero-${t}`] || 0;
+                            ${Object.entries(caballeroObj).map(([talla, cantidad]) => {
                                 return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                    ${t}
+                                    ${talla}
                                     <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
                                 </span>`;
                             }).join('')}

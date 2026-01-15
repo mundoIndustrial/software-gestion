@@ -233,6 +233,16 @@
     justify-content: center;
     align-items: center;
     gap: 10px;
+    z-index: 100;
+}
+
+/* Ocultar flechas cuando el sidebar está colapsado */
+.sidebar.collapsed ~ .main-content #order-detail-modal-wrapper .arrow-container,
+.sidebar.collapsed ~ .main-content #order-detail-modal-wrapper-logo .arrow-container,
+.sidebar.collapsed #order-detail-modal-wrapper .arrow-container,
+.sidebar.collapsed ~ #order-detail-modal-wrapper .arrow-container,
+.sidebar.collapsed ~ #order-detail-modal-wrapper-logo .arrow-container {
+    display: none !important;
 }
 
 .signature-section {

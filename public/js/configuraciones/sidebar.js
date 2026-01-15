@@ -80,6 +80,16 @@ if (sidebarToggleBtns.length > 0 && sidebar) {
       if (contadorWrapper) {
         contadorWrapper.classList.toggle("sidebar-collapsed");
       }
+      // Ocultar/Mostrar flechas del modal
+      const arrowContainers = document.querySelectorAll(".arrow-container");
+      const isSidebarCollapsed = sidebar.classList.contains("collapsed");
+      arrowContainers.forEach((container) => {
+        if (isSidebarCollapsed) {
+          container.style.display = "none !important";
+        } else {
+          container.style.display = "flex";
+        }
+      });
       // Persistir estado en localStorage
       localStorage.setItem("sidebarCollapsed", sidebar.classList.contains("collapsed"));
     });

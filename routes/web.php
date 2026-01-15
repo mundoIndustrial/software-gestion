@@ -192,6 +192,13 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/registros/{pedido}/edit-full', [RegistroOrdenController::class, 'editFullOrder'])->name('registros.editFull');
     Route::get('/orders/{numero_pedido}', [RegistroOrdenController::class, 'show'])->name('orders.show');
 
+    // ========================================
+    // RUTAS DE FACTURAS - Invoice Management
+    // ========================================
+    Route::get('/facturas/{numeroPedido}', [App\Http\Controllers\InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/facturas/{numeroPedido}/preview', [App\Http\Controllers\InvoiceController::class, 'preview'])->name('invoices.preview');
+    Route::get('/facturas/{numeroPedido}/download', [App\Http\Controllers\InvoiceController::class, 'download'])->name('invoices.download');
+
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
     Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');

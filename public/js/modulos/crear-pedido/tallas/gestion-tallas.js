@@ -34,9 +34,18 @@ window.guardarCantidadTalla = function(input) {
     
     if (cantidad > 0) {
         window.cantidadesTallas[key] = cantidad;
+        // BACKUP PERMANENTE: Guardar en variable que persista para preview
+        if (!window._TALLAS_BACKUP_PERMANENTE) {
+            window._TALLAS_BACKUP_PERMANENTE = {};
+        }
+        window._TALLAS_BACKUP_PERMANENTE[key] = cantidad;
         console.log('💾 [TALLA] Guardada cantidad:', key, '=', cantidad);
+        console.log('📌 [BACKUP] Tallas persistentes:', window._TALLAS_BACKUP_PERMANENTE);
     } else {
         delete window.cantidadesTallas[key];
+        if (window._TALLAS_BACKUP_PERMANENTE) {
+            delete window._TALLAS_BACKUP_PERMANENTE[key];
+        }
         console.log('🗑️ [TALLA] Eliminada cantidad:', key);
     }
 };

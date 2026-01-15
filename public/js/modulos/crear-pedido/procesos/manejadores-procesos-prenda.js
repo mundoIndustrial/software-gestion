@@ -40,6 +40,9 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
                 tipo: tipoProceso,
                 datos: null
             };
+            // ✅ CRÍTICO: Sincronizar con window inmediatamente
+            window.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
+            console.log(`✅ Proceso ${tipoProceso} registrado y sincronizado con window`);
         }
         
         // Actualizar resumen visual
@@ -52,6 +55,7 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
         // Usuario desmarcó el checkbox
         console.log(`❌ Removiendo proceso ${tipoProceso}`);
         delete procesosSeleccionados[tipoProceso];
+        delete window.procesosSeleccionados[tipoProceso];
         actualizarResumenProcesos();
     }
 };

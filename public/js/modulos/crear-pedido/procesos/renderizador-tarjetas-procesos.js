@@ -68,7 +68,11 @@ function generarTarjetaProceso(tipo, datos) {
     const icono = iconosProcesos[tipo] || 'settings';
     const nombre = nombresProcesos[tipo] || tipo.toUpperCase();
     
-    const totalTallas = (datos.tallas?.dama?.length || 0) + (datos.tallas?.caballero?.length || 0);
+    // ✅ CORREGIDO: Calcular totalTallas como suma de cantidades en objetos, no length
+    const damaObj = datos.tallas?.dama || {};
+    const caballeroObj = datos.tallas?.caballero || {};
+    const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
+    
     const ubicacionesTexto = datos.ubicaciones?.length > 0 
         ? datos.ubicaciones.join(', ') 
         : 'Sin ubicaciones';
@@ -129,25 +133,23 @@ function generarTarjetaProceso(tipo, datos) {
                     <div>
                         <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">TALLAS (${totalTallas})</div>
                         <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
-                            ${datos.tallas.dama?.length > 0 ? `
+                            ${datos.tallas.dama && Object.keys(datos.tallas.dama).length > 0 ? `
                                 <div>
                                     <strong style="color: #be185d; margin-right: 0.5rem;"><i class="fas fa-female"></i> Dama:</strong>
-                                    ${datos.tallas.dama.map(t => {
-                                        const cantidad = (window.cantidadesTallas || {})[`dama-${t}`] || 0;
+                                    ${Object.entries(datos.tallas.dama).map(([talla, cantidad]) => {
                                         return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                            ${t}
+                                            ${talla}
                                             <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
                                         </span>`;
                                     }).join('')}
                                 </div>
                             ` : ''}
-                            ${datos.tallas.caballero?.length > 0 ? `
+                            ${datos.tallas.caballero && Object.keys(datos.tallas.caballero).length > 0 ? `
                                 <div>
                                     <strong style="color: #1d4ed8; margin-right: 0.5rem;"><i class="fas fa-male"></i> Caballero:</strong>
-                                    ${datos.tallas.caballero.map(t => {
-                                        const cantidad = (window.cantidadesTallas || {})[`caballero-${t}`] || 0;
+                                    ${Object.entries(datos.tallas.caballero).map(([talla, cantidad]) => {
                                         return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                            ${t}
+                                            ${talla}
                                             <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
                                         </span>`;
                                     }).join('')}
