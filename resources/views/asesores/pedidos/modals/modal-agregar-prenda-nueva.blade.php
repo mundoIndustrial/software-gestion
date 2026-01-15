@@ -249,31 +249,31 @@
                         <!-- Reflectivo -->
                         <label class="proceso-checkbox">
                             <input type="checkbox" id="checkbox-reflectivo" name="nueva-prenda-procesos" value="reflectivo" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('reflectivo', true); } else { manejarCheckboxProceso('reflectivo', false); } }">
-                            <span><span class="material-symbols-rounded">light_mode</span>Reflectivo</span>
+                            <span><i class="fas fa-lightbulb" style="color: #FFD700; margin-right: 6px;"></i>Reflectivo</span>
                         </label>
                         
                         <!-- Bordado -->
                         <label class="proceso-checkbox">
                             <input type="checkbox" id="checkbox-bordado" name="nueva-prenda-procesos" value="bordado" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('bordado', true); } else { manejarCheckboxProceso('bordado', false); } }">
-                            <span><span class="material-symbols-rounded">auto_awesome</span>Bordado</span>
+                            <span><i class="fas fa-gem" style="color: #9333EA; margin-right: 6px;"></i>Bordado</span>
                         </label>
                         
                         <!-- Estampado -->
                         <label class="proceso-checkbox">
                             <input type="checkbox" id="checkbox-estampado" name="nueva-prenda-procesos" value="estampado" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('estampado', true); } else { manejarCheckboxProceso('estampado', false); } }">
-                            <span><span class="material-symbols-rounded">format_paint</span>Estampado</span>
+                            <span><i class="fas fa-paint-brush" style="color: #DC2626; margin-right: 6px;"></i>Estampado</span>
                         </label>
                         
                         <!-- DTF -->
                         <label class="proceso-checkbox">
                             <input type="checkbox" id="checkbox-dtf" name="nueva-prenda-procesos" value="dtf" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('dtf', true); } else { manejarCheckboxProceso('dtf', false); } }">
-                            <span><span class="material-symbols-rounded">straighten</span>DTF</span>
+                            <span><i class="fas fa-print" style="color: #EA580C; margin-right: 6px;"></i>DTF</span>
                         </label>
                         
                         <!-- Sublimado -->
                         <label class="proceso-checkbox">
                             <input type="checkbox" id="checkbox-sublimado" name="nueva-prenda-procesos" value="sublimado" class="form-checkbox" onclick="if (!this._ignorarOnclick) { if(this.checked) { manejarCheckboxProceso('sublimado', true); } else { manejarCheckboxProceso('sublimado', false); } }">
-                            <span><span class="material-symbols-rounded">water_drop</span>Sublimado</span>
+                            <span><i class="fas fa-tint" style="color: #0891B2; margin-right: 6px;"></i>Sublimado</span>
                         </label>
                     </div>
                     

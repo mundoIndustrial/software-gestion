@@ -13,7 +13,7 @@
 
 <!-- Header Full Width -->
 <div class="page-header">
-    <h1>📋 Crear Nuevo Pedido de Producción</h1>
+    <h1><span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 8px;">description</span>Crear Nuevo Pedido de Producción</h1>
     <p>Crea un pedido completamente nuevo sin una cotización previa</p>
 </div>
 
@@ -126,8 +126,9 @@
                 <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
                 Crear Pedido
             </button>
-            <a href="{{ route('asesores.pedidos-produccion.index') }}" class="btn btn-secondary">
-                ✕ Cancelar
+            <a href="{{ route('asesores.pedidos-produccion.index') }}" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="material-symbols-rounded" style="font-size: 1.1rem;">close</span>
+                Cancelar
             </a>
         </div>
     </form>

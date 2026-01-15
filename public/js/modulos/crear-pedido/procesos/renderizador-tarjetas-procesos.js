@@ -4,11 +4,11 @@
  */
 
 const iconosProcesos = {
-    reflectivo: '<i class="fas fa-lightbulb" style="color: #f59e0b;"></i>',
-    bordado: '<i class="fas fa-gem" style="color: #8b5cf6;"></i>',
-    estampado: '<i class="fas fa-paint-brush" style="color: #ec4899;"></i>',
-    dtf: '<i class="fas fa-print" style="color: #06b6d4;"></i>',
-    sublimado: '<i class="fas fa-tint" style="color: #3b82f6;"></i>'
+    reflectivo: '<span class="material-symbols-rounded" style="color: #f59e0b;">wb_twilight</span>',
+    bordado: '<span class="material-symbols-rounded" style="color: #8b5cf6;">auto_awesome</span>',
+    estampado: '<span class="material-symbols-rounded" style="color: #ec4899;">format_paint</span>',
+    dtf: '<span class="material-symbols-rounded" style="color: #06b6d4;">print</span>',
+    sublimado: '<span class="material-symbols-rounded" style="color: #3b82f6;">water_drop</span>'
 };
 
 const nombresProcesos = {
