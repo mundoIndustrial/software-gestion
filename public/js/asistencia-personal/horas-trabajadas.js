@@ -131,6 +131,7 @@ const AsistenciaHorasTrabajadas = (() => {
                     </button>
                 </div>
             </th>
+            <th style="width: 10%; text-align: center;">Novedades</th>
         `;
         recordsTableHeader.innerHTML = headerHTML;
         
@@ -185,6 +186,11 @@ const AsistenciaHorasTrabajadas = (() => {
                 <td style="text-align: center; font-weight: 600; color: ${colorHoraExtra};">${horaExtraResult.horaExtra}</td>
                 <td style="text-align: center; font-weight: 600; color: ${colorEstado};" title="${calcResult.observacion}">
                     ${iconoEstado} ${calcResult.estado === 'incompleta_excepcion' ? 'Información Faltante' : calcResult.estado === 'completa' ? 'Completa' : calcResult.estado === 'sin_datos' ? 'Sin Datos' : 'Incompleta'}
+                </td>
+                <td style="text-align: center;">
+                    <button class="btn-novedades" onclick="abrirModalNovedades(${registro.codigo}, document.querySelector('.tab-button.active').getAttribute('data-fecha'), '${registro.nombre}', 'Rol')" style="padding: 6px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease;">
+                        📋 Ver
+                    </button>
                 </td>
             `;
             

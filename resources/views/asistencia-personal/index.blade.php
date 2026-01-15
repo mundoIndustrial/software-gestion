@@ -23,6 +23,22 @@
                 </svg>
                 <span>Guardar Reporte</span>
             </button>
+            <button class="btn btn-info" id="verPersonalBtn">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Ver Personal</span>
+            </button>
+            <button class="btn btn-warning" id="gestionHorariosBtn">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>Gestión de Horarios</span>
+            </button>
         </div>
     </div>
 
@@ -211,11 +227,179 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal - Ver y Gestionar Personal -->
+    <div id="verPersonalModal" class="modal-overlay modal-detail-overlay" style="display: none;">
+        <div class="modal-content modal-detail-content" style="max-width: 900px;">
+            <div class="modal-detail-header">
+                <h2>Gestión de Roles del Personal (<span id="totalPersonal">0</span> personas)</h2>
+                <button class="btn-modal-close-detail" id="btnCloseVerPersonal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-detail-body">
+                <!-- Barra de búsqueda -->
+                <div class="search-bar-container" style="margin-bottom: 20px;">
+                    <input 
+                        type="text" 
+                        id="personalSearchInput" 
+                        class="search-bar-input" 
+                        placeholder="Buscar por código o nombre..."
+                        autocomplete="off"
+                    >
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </div>
+
+                <div class="personal-table-wrapper">
+                    <table class="personal-table" id="personalTable">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Rol</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="personalTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal - Gestión de Horarios por Roles -->
+    <div id="gestionHorariosModal" class="modal-overlay modal-detail-overlay" style="display: none;">
+        <div class="modal-content modal-detail-content" style="max-width: 700px;">
+            <div class="modal-detail-header">
+                <h2>Gestión de Horarios por Roles</h2>
+                <button class="btn-modal-close-detail" id="btnCloseGestionHorarios">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-detail-body">
+                <div class="horarios-table-wrapper">
+                    <table class="horarios-table" id="horariosTable">
+                        <thead>
+                            <tr>
+                                <th>Rol</th>
+                                <th>Entrada Mañana</th>
+                                <th>Salida Mañana</th>
+                                <th>Entrada Tarde</th>
+                                <th>Salida Tarde</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="horariosTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Novedades del Día -->
+    <div id="novedadesModal" class="modal-overlay" style="display: none !important;">
+        <div class="modal-content modal-detail-content" style="max-width: 600px;">
+            <div class="modal-detail-header">
+                <h2 id="novedadesTitle">Novedades del Día</h2>
+                <button class="btn-modal-close-detail" id="btnCloseNovedades">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-detail-body">
+                <!-- Información de Horario Esperado -->
+                <div class="horario-esperado-section" id="horarioEsperadoSection">
+                    <div class="section-header">
+                        <h3>📅 Horario Esperado</h3>
+                        <p id="horarioExpectado" class="horario-text"></p>
+                    </div>
+                </div>
+
+                <!-- Marcas Editables -->
+                <div class="marcas-editables-section">
+                    <div class="section-header">
+                        <h3>🎯 Marcas del Día</h3>
+                    </div>
+                    <div class="marcas-grid" id="marcasGrid">
+                        <!-- Se llenarán dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Total de Horas en Tiempo Real -->
+                <div class="total-horas-section">
+                    <div class="horas-display">
+                        <div class="horas-box">
+                            <span class="horas-label">Trabajadas</span>
+                            <span class="horas-value" id="horasTrabajadasValue">0:00</span>
+                        </div>
+                        <div class="horas-divider">/</div>
+                        <div class="horas-box">
+                            <span class="horas-label">Esperadas</span>
+                            <span class="horas-value" id="horasEsperadasValue">8:00</span>
+                        </div>
+                        <div class="horas-status" id="horasStatus">
+                            <span id="statusMessage">Incompleta</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Barra de Progreso -->
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
+                        </div>
+                        <p id="progressText" class="progress-text">0% completado</p>
+                    </div>
+
+                    <!-- Información de Déficit/Exceso -->
+                    <div class="deficit-exceso-info" id="deficitExcesoInfo">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="modal-actions" style="margin-top: 25px;">
+                    <button class="btn btn-success btn-block" id="btnRellenarInteligente" style="margin-bottom: 10px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 8px;">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                            <path d="M12 11v6M9 14h6"></path>
+                        </svg>
+                        ⚡ Rellenar Inteligente
+                    </button>
+                    <button class="btn btn-primary btn-block" id="btnGuardarCambios" style="margin-bottom: 10px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 8px;">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        💾 Guardar Cambios
+                    </button>
+                    <button class="btn btn-secondary btn-block" id="btnCerrarNovedades">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('css/asistencia-personal.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/novedades.css') }}">
 @endsection
 
 @section('scripts')
@@ -228,5 +412,8 @@
     <script src="{{ asset('js/asistencia-personal/report-details.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/absencias.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/total-horas-extras.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/personal-roles.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/gestion-horarios.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/novedades.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/init.js') }}"></script>
 @endsection
