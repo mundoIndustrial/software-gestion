@@ -817,6 +817,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // ========================================
+// ========================================
 // API ROUTES - ASISTENCIA PERSONAL
 // ========================================
 Route::middleware(['auth', 'verified'])->prefix('asistencia-personal')->name('asistencia-personal.')->group(function () {
@@ -840,6 +841,16 @@ Route::middleware(['auth', 'verified'])->prefix('asistencia-personal')->name('as
 Route::prefix('api')->group(function () {
     Route::get('operario/pedido/{numeroPedido}', [\App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'getPedidoData'])
         ->name('api.operario.pedido-data');
+});
+
+// ========================================
+// API ROUTES - VALOR HORA EXTRA
+// ========================================
+Route::middleware(['auth', 'verified'])->prefix('api')->name('api.')->group(function () {
+    Route::get('valor-hora-extra/{codigoPersona}', [App\Http\Controllers\Api\ValorHoraExtraController::class, 'obtener'])
+        ->name('valor-hora-extra.obtener');
+    Route::post('valor-hora-extra/guardar', [App\Http\Controllers\Api\ValorHoraExtraController::class, 'guardar'])
+        ->name('valor-hora-extra.guardar');
 });
 
 // ========================================

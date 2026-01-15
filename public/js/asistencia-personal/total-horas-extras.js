@@ -199,6 +199,7 @@ const AsistenciaTotalHorasExtras = (() => {
             if (!registrosPorPersona[personaId]) {
                 registrosPorPersona[personaId] = {
                     id: personaId,
+                    codigo_persona: personaId,
                     nombre: personaNombre,
                     registros: {},
                     horasExtrasPorFecha: {},
@@ -253,6 +254,16 @@ const AsistenciaTotalHorasExtras = (() => {
      * Generar la tabla de horas extras
      */
     function generarTabla(personasConExtras) {
+        // Mostrar botón de descargar PDF
+        const btnDescargarPDF = document.getElementById('btnDescargarPDF');
+        if (btnDescargarPDF) {
+            btnDescargarPDF.style.display = 'inline-block';
+            btnDescargarPDF.onclick = function(e) {
+                e.preventDefault();
+                descargarTablaPDF(personasConExtras);
+            };
+        }
+        
         // Limpiar el contenido actual
         const tabContent = document.getElementById('tabContent');
         
@@ -296,6 +307,14 @@ const AsistenciaTotalHorasExtras = (() => {
         thTotal.style.backgroundColor = '#1e5ba8';
         thTotal.style.color = 'white';
         trHeader.appendChild(thTotal);
+
+        // Encabezado: Valor
+        const thValor = document.createElement('th');
+        thValor.textContent = 'VALOR';
+        thValor.style.fontWeight = 'bold';
+        thValor.style.backgroundColor = '#1e5ba8';
+        thValor.style.color = 'white';
+        trHeader.appendChild(thValor);
         
         thead.appendChild(trHeader);
         tabla.appendChild(thead);
@@ -355,15 +374,46 @@ const AsistenciaTotalHorasExtras = (() => {
                 
                 tr.appendChild(td);
             });
-
+            
             // Celda Total
             const tdTotal = document.createElement('td');
-            // Solo mostrar las horas sin minutos y segundos
             const horasCompletas = Math.floor(persona.totalHorasExtras / 60);
-            tdTotal.textContent = horasCompletas;
+            tdTotal.textContent = horasCompletas.toString();
             tdTotal.style.fontWeight = 'bold';
-            tdTotal.style.backgroundColor = '#e8f1f7';
+            tdTotal.style.backgroundColor = '#e8f0f7';
             tr.appendChild(tdTotal);
+            
+            // Celda Valor
+            const tdValor = document.createElement('td');
+            const inputValor = document.createElement('input');
+            inputValor.type = 'number';
+            inputValor.placeholder = '0.00';
+            inputValor.step = '0.01';
+            inputValor.setAttribute('data-codigo-persona', persona.codigo_persona);
+            inputValor.style.width = '100px';
+            inputValor.style.padding = '5px';
+            
+            const btnGuardar = document.createElement('button');
+            btnGuardar.textContent = '💾';
+            btnGuardar.style.marginLeft = '5px';
+            btnGuardar.style.padding = '8px 12px';
+            btnGuardar.style.backgroundColor = '#3498db';
+            btnGuardar.style.color = 'white';
+            btnGuardar.style.border = 'none';
+            btnGuardar.style.borderRadius = '4px';
+            btnGuardar.style.cursor = 'pointer';
+            btnGuardar.style.fontSize = '14px';
+            btnGuardar.onclick = function(e) {
+                e.preventDefault();
+                guardarValorHoraExtra(persona.codigo_persona, inputValor.value, btnGuardar, reportData.id);
+            };
+
+            tdValor.appendChild(inputValor);
+            tdValor.appendChild(btnGuardar);
+            tr.appendChild(tdValor);
+            
+            // Cargar valor actual si existe
+            cargarValorActual(persona.codigo_persona, inputValor);
             
             tbody.appendChild(tr);
         });
@@ -372,6 +422,7 @@ const AsistenciaTotalHorasExtras = (() => {
         
         // Reemplazar contenido sin tabs
         tabContent.innerHTML = '';
+        
         const wrapper = document.createElement('div');
         wrapper.className = 'records-table-wrapper';
         wrapper.appendChild(tabla);
@@ -821,17 +872,94 @@ const AsistenciaTotalHorasExtras = (() => {
                 // Actualizar celda de total (última celda)
                 const celdas = filaPersona.querySelectorAll('td');
                 const horasCompletas = Math.floor(persona.totalHorasExtras / 60);
-                celdas[celdas.length - 1].textContent = horasCompletas;
+                celdas[celdas.length - 2].textContent = horasCompletas;
                 
                 console.log('Fila de tabla actualizada para persona:', persona.id);
             }
         }
     }
 
+    /**
+     * Descargar tabla como PDF
+     */
+    function descargarTablaPDF(personasConExtras) {
+        PDFGenerator.descargar(personasConExtras, todasLasFechas);
+    }
+
     return {
         mostrarVista
     };
 })();
+
+/**
+ * Cargar el valor actual del valor_hora_extra desde la API
+ */
+function cargarValorActual(codigoPersona, inputElement) {
+    fetch(`/api/valor-hora-extra/${codigoPersona}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.valor) {
+                inputElement.value = parseFloat(data.valor).toFixed(2);
+            }
+        })
+        .catch(error => console.log('Error cargando valor:', error));
+}
+
+/**
+ * Guardar el valor de la hora extra
+ */
+function guardarValorHoraExtra(codigoPersona, valor, btnElement, idReporte) {
+    if (!valor || isNaN(valor)) {
+        alert('Por favor ingrese un valor numérico válido');
+        return;
+    }
+
+    console.log('Guardando valor:', { codigoPersona, valor, idReporte });
+
+    const btnText = btnElement.textContent;
+    btnElement.textContent = '⏳';
+    btnElement.disabled = true;
+
+    const payload = {
+        codigo_persona: parseInt(codigoPersona),
+        valor: parseFloat(valor),
+        id_reporte: idReporte || null
+    };
+
+    console.log('Payload enviado:', payload);
+
+    fetch('/api/valor-hora-extra/guardar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            btnElement.textContent = '✓';
+            btnElement.style.backgroundColor = '#27ae60';
+            
+            setTimeout(() => {
+                btnElement.textContent = btnText;
+                btnElement.style.backgroundColor = '#3498db';
+                btnElement.disabled = false;
+            }, 2000);
+        } else {
+            alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+            btnElement.textContent = btnText;
+            btnElement.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar el valor');
+        btnElement.textContent = btnText;
+        btnElement.disabled = false;
+    });
+}
 
 /**
  * Inicializar búsqueda para tabla de total horas extras
