@@ -276,14 +276,9 @@
                             <span><span class="material-symbols-rounded">water_drop</span>Sublimado</span>
                         </label>
                     </div>
-                </div>
-
-                <!-- Resumen de Procesos Seleccionados -->
-                <div class="form-section" id="seccion-procesos-resumen" style="display: none;">
-                    <label class="form-label-primary">
-                        <span class="material-symbols-rounded">list_check</span>PROCESOS CONFIGURADOS
-                    </label>
-                    <div id="procesos-resumen-contenido" style="background: #f3f4f6; border-radius: 8px; padding: 1rem; border-left: 4px solid #0066cc; font-size: 0.875rem; color: #6b7280;"></div>
+                    
+                    <!-- ✅ CONTENEDOR PARA TARJETAS DE PROCESOS CONFIGURADOS -->
+                    <div id="contenedor-tarjetas-procesos" style="margin-top: 1rem; display: none;"></div>
                 </div>
             </form>
         </div>

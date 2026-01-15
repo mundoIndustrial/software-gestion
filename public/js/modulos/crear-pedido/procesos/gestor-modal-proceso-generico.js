@@ -90,6 +90,11 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
         const inputUbicacion = document.getElementById('input-ubicacion-nueva');
         if (inputUbicacion) inputUbicacion.value = '';
         
+        // Limpiar imágenes
+        if (typeof limpiarImagenesProceso === 'function') {
+            limpiarImagenesProceso();
+        }
+        
         // Mostrar modal
         modal.style.display = 'flex';
         
@@ -100,15 +105,16 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
 };
 
 // Cerrar modal
-window.cerrarModalProcesoGenerico = function() {
+// @param {boolean} procesoGuardado - Si es true, mantiene el checkbox seleccionado (proceso guardado exitosamente)
+window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     const modal = document.getElementById('modal-proceso-generico');
     if (modal) {
         modal.style.display = 'none';
     }
     
-    // Deseleccionar el checkbox del proceso en el modal de prenda
-    if (procesoActual) {
-        console.log(`🔴 Cerrando modal para: ${procesoActual}`);
+    // Solo deseleccionar si NO se guardó el proceso (usuario cerró sin guardar)
+    if (procesoActual && !procesoGuardado) {
+        console.log(`🔴 Cerrando modal SIN guardar para: ${procesoActual}`);
         
         // ✅ PASO 1: Deseleccionar el checkbox visualmente en el HTML
         // IMPORTANTE: Hacemos esto ANTES de llamar a manejarCheckboxProceso
@@ -132,38 +138,89 @@ window.cerrarModalProcesoGenerico = function() {
         }
         
         console.log(`❌ Modal cerrado y proceso ${procesoActual} deseleccionado`);
+    } else if (procesoActual && procesoGuardado) {
+        console.log(`✅ Modal cerrado CON proceso guardado: ${procesoActual} - checkbox mantiene selección`);
     }
     
     procesoActual = null;
 };
 
-// Manejar upload de imágenes
-window.manejarImagenesProceso = function(input) {
+// Array para almacenar las imágenes del proceso (hasta 3)
+let imagenesProcesoActual = [null, null, null];
+
+// Manejar upload de imagen individual
+window.manejarImagenProceso = function(input, indice) {
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
         const reader = new FileReader();
         
         reader.onload = function(e) {
+            // Guardar en array
+            imagenesProcesoActual[indice - 1] = e.target.result;
+            
             // Mostrar preview
-            const preview = document.getElementById('proceso-foto-preview');
+            const preview = document.getElementById(`proceso-foto-preview-${indice}`);
             if (preview) {
-                preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">`;
+                preview.innerHTML = `
+                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
+                    <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
+                        style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                        ×
+                    </button>
+                `;
             }
             
-            // Mostrar contador
-            const contador = document.getElementById('proceso-foto-contador');
-            if (contador) {
-                contador.innerHTML = `<div style="color: #059669; font-size: 0.875rem;">📷 ${input.files.length} imagen(es) seleccionada(s)</div>`;
-            }
-            
-            // Mostrar botón de más fotos
-            const btn = document.getElementById('proceso-foto-btn');
-            if (btn) btn.style.display = 'block';
+            console.log(`📸 Imagen ${indice} agregada al proceso`);
         };
         
         reader.readAsDataURL(file);
     }
 };
+
+// Eliminar imagen del proceso
+window.eliminarImagenProceso = function(indice) {
+    imagenesProcesoActual[indice - 1] = null;
+    
+    const preview = document.getElementById(`proceso-foto-preview-${indice}`);
+    const input = document.getElementById(`proceso-foto-input-${indice}`);
+    
+    if (preview) {
+        preview.innerHTML = `
+            <div class="placeholder-content" style="text-align: center;">
+                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${indice}</div>
+            </div>
+        `;
+    }
+    
+    if (input) {
+        input.value = '';
+    }
+    
+    console.log(`🗑️ Imagen ${indice} eliminada del proceso`);
+};
+
+// Limpiar todas las imágenes del proceso
+function limpiarImagenesProceso() {
+    imagenesProcesoActual = [null, null, null];
+    for (let i = 1; i <= 3; i++) {
+        const preview = document.getElementById(`proceso-foto-preview-${i}`);
+        const input = document.getElementById(`proceso-foto-input-${i}`);
+        
+        if (preview) {
+            preview.innerHTML = `
+                <div class="placeholder-content" style="text-align: center;">
+                    <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                    <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${i}</div>
+                </div>
+            `;
+        }
+        
+        if (input) {
+            input.value = '';
+        }
+    }
+}
 
 // Agregar ubicación a la lista
 window.agregarUbicacionProceso = function() {
@@ -248,37 +305,25 @@ window.aplicarProcesoParaTodasTallas = function() {
 
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
-    const tarjetasContainer = document.getElementById('tarjetas-generos-container');
+    // ✅ Leer directamente de window.tallasSeleccionadas (fuente de verdad)
+    const tallasGlobales = window.tallasSeleccionadas || {};
     const tallas = { dama: [], caballero: [] };
     
-    if (!tarjetasContainer) {
-        console.warn('⚠️ Container de géneros no encontrado');
-        return tallas;
+    console.log('📊 [obtenerTallasDeLaPrenda] window.tallasSeleccionadas:', tallasGlobales);
+    
+    // Obtener tallas de dama
+    if (tallasGlobales.dama && tallasGlobales.dama.tallas && Array.isArray(tallasGlobales.dama.tallas)) {
+        tallas.dama = [...tallasGlobales.dama.tallas];
+        console.log(`✅ Tallas dama encontradas: ${tallas.dama.length}`, tallas.dama);
     }
     
-    // Buscar tarjetas de géneros
-    const tarjetas = tarjetasContainer.querySelectorAll('[data-genero]');
+    // Obtener tallas de caballero
+    if (tallasGlobales.caballero && tallasGlobales.caballero.tallas && Array.isArray(tallasGlobales.caballero.tallas)) {
+        tallas.caballero = [...tallasGlobales.caballero.tallas];
+        console.log(`✅ Tallas caballero encontradas: ${tallas.caballero.length}`, tallas.caballero);
+    }
     
-    tarjetas.forEach(tarjeta => {
-        const genero = tarjeta.dataset.genero;
-        
-        // Encontrar inputs de talla en esta tarjeta
-        const inputsTalla = tarjeta.querySelectorAll('input[data-talla]');
-        inputsTalla.forEach(input => {
-            const talla = input.dataset.talla;
-            const cantidad = input.value?.trim();
-            
-            // Si tiene cantidad, agregar la talla
-            if (cantidad && cantidad !== '0') {
-                if (genero === 'dama' && !tallas.dama.includes(talla)) {
-                    tallas.dama.push(talla);
-                } else if (genero === 'caballero' && !tallas.caballero.includes(talla)) {
-                    tallas.caballero.push(talla);
-                }
-            }
-        });
-    });
-    
+    console.log('📊 [obtenerTallasDeLaPrenda] Tallas finales:', tallas);
     return tallas;
 }
 
@@ -361,13 +406,22 @@ window.abrirEditorTallasEspecificas = function() {
         if (tallasPrenda.dama.length === 0) {
             containerDama.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas DAMA seleccionadas en la prenda</p>';
         } else {
+            const cantidades = window.cantidadesTallas || {};
             tallasPrenda.dama.forEach(talla => {
                 const isSelected = tallasSeleccionadasProceso.dama.includes(talla);
+                const cantidad = cantidades[`dama-${talla}`] || 0;
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
                 label.innerHTML = `
                     <input type="checkbox" value="${talla}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="dama">
-                    <span>${talla}</span>
+                    <span style="font-weight: 600; min-width: 30px;">${talla}</span>
+                    <input type="number" 
+                        value="${cantidad}" 
+                        data-talla="${talla}"
+                        data-genero="dama"
+                        onchange="actualizarCantidadTallaProceso(this)"
+                        style="width: 70px; padding: 0.25rem 0.5rem; border: 1px solid #be185d; border-radius: 4px; text-align: center; font-weight: 700; margin-left: auto; background: #fce7f3; color: #be185d;"
+                        min="0">
                 `;
                 label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;';
                 containerDama.appendChild(label);
@@ -383,13 +437,22 @@ window.abrirEditorTallasEspecificas = function() {
         if (tallasPrenda.caballero.length === 0) {
             containerCaballero.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas CABALLERO seleccionadas en la prenda</p>';
         } else {
+            const cantidades = window.cantidadesTallas || {};
             tallasPrenda.caballero.forEach(talla => {
                 const isSelected = tallasSeleccionadasProceso.caballero.includes(talla);
+                const cantidad = cantidades[`caballero-${talla}`] || 0;
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
                 label.innerHTML = `
                     <input type="checkbox" value="${talla}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="caballero">
-                    <span>${talla}</span>
+                    <span style="font-weight: 600; min-width: 30px;">${talla}</span>
+                    <input type="number" 
+                        value="${cantidad}" 
+                        data-talla="${talla}"
+                        data-genero="caballero"
+                        onchange="actualizarCantidadTallaProceso(this)"
+                        style="width: 70px; padding: 0.25rem 0.5rem; border: 1px solid #1d4ed8; border-radius: 4px; text-align: center; font-weight: 700; margin-left: auto; background: #dbeafe; color: #1d4ed8;"
+                        min="0">
                 `;
                 label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;';
                 containerCaballero.appendChild(label);
@@ -399,6 +462,22 @@ window.abrirEditorTallasEspecificas = function() {
     
     // Mostrar modal editor
     modalEditor.style.display = 'flex';
+};
+
+// Actualizar cantidad de talla en el modal de proceso
+window.actualizarCantidadTallaProceso = function(input) {
+    const genero = input.dataset.genero;
+    const talla = input.dataset.talla;
+    const cantidad = parseInt(input.value) || 0;
+    
+    // Actualizar en cantidadesTallas global
+    if (!window.cantidadesTallas) {
+        window.cantidadesTallas = {};
+    }
+    
+    window.cantidadesTallas[`${genero}-${talla}`] = cantidad;
+    
+    console.log(`📊 Cantidad actualizada: ${genero}-${talla} = ${cantidad}`);
 };
 
 // Cerrar editor de tallas
@@ -441,22 +520,48 @@ window.actualizarResumenTallasProceso = function() {
         return;
     }
     
-    let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">';
+    let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+    
+    const cantidades = window.cantidadesTallas || {};
     
     if (tallasSeleccionadasProceso.dama.length > 0) {
+        const tallasDamaHTML = tallasSeleccionadasProceso.dama.map(t => {
+            const cantidad = cantidades[`dama-${t}`] || 0;
+            return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
+                ${t}
+                <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+            </span>`;
+        }).join('');
+        
         html += `
             <div>
-                <strong style="color: #059669;">👩 DAMA (${tallasSeleccionadasProceso.dama.length})</strong><br>
-                <small>${tallasSeleccionadasProceso.dama.join(', ')}</small>
+                <strong style="color: #be185d; margin-bottom: 0.5rem; display: block;">
+                    <i class="fas fa-female"></i> DAMA (${tallasSeleccionadasProceso.dama.length})
+                </strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                    ${tallasDamaHTML}
+                </div>
             </div>
         `;
     }
     
     if (tallasSeleccionadasProceso.caballero.length > 0) {
+        const tallasCaballeroHTML = tallasSeleccionadasProceso.caballero.map(t => {
+            const cantidad = cantidades[`caballero-${t}`] || 0;
+            return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
+                ${t}
+                <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+            </span>`;
+        }).join('');
+        
         html += `
             <div>
-                <strong style="color: #0284c7;">👨 CABALLERO (${tallasSeleccionadasProceso.caballero.length})</strong><br>
-                <small>${tallasSeleccionadasProceso.caballero.join(', ')}</small>
+                <strong style="color: #1d4ed8; margin-bottom: 0.5rem; display: block;">
+                    <i class="fas fa-male"></i> CABALLERO (${tallasSeleccionadasProceso.caballero.length})
+                </strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                    ${tallasCaballeroHTML}
+                </div>
             </div>
         `;
     }
@@ -474,23 +579,31 @@ window.agregarProcesoAlPedido = function() {
     
     try {
         // Recolectar datos
+        const imagenesValidas = imagenesProcesoActual.filter(img => img !== null);
+        
         const datos = {
             tipo: procesoActual,
             ubicaciones: ubicacionesProcesoSeleccionadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: tallasSeleccionadasProceso,
-            imagen: document.getElementById('proceso-foto-preview')?.querySelector('img')?.src || null
+            imagenes: imagenesValidas // Array de imágenes
         };
         
-        console.log(`💾 Guardando proceso:`, datos);
+        console.log(`💾 Guardando proceso con ${imagenesValidas.length} imágenes:`, datos);
         
         // Guardar en procesosSeleccionados (variable global de manejadores-procesos-prenda.js)
         if (window.procesosSeleccionados && window.procesosSeleccionados[procesoActual]) {
             window.procesosSeleccionados[procesoActual].datos = datos;
         }
         
-        // Cerrar modal
-        cerrarModalProcesoGenerico();
+        // ✅ NUEVO: Renderizar tarjetas de procesos en el modal de prenda
+        if (window.renderizarTarjetasProcesos) {
+            window.renderizarTarjetasProcesos();
+            console.log('🎨 Tarjetas de procesos renderizadas');
+        }
+        
+        // Cerrar modal indicando que el proceso fue guardado exitosamente
+        cerrarModalProcesoGenerico(true);
         
         // Actualizar resumen en prenda modal
         if (window.actualizarResumenProcesos) {

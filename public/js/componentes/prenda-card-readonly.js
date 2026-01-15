@@ -434,13 +434,136 @@ function construirSeccionProcesos(prenda, indice) {
         return '';
     }
 
+    // Mapeo de iconos por tipo de proceso
+    const iconosProcesos = {
+        'reflectivo': '<i class="fas fa-lightbulb" style="color: #f59e0b;"></i>',
+        'bordado': '<i class="fas fa-gem" style="color: #8b5cf6;"></i>',
+        'estampado': '<i class="fas fa-paint-brush" style="color: #ec4899;"></i>',
+        'dtf': '<i class="fas fa-print" style="color: #06b6d4;"></i>',
+        'sublimado': '<i class="fas fa-tint" style="color: #3b82f6;"></i>'
+    };
+
     let procesosItemsHTML = '';
     procesosConDatos.forEach(([tipoProceso, proceso]) => {
+        const datos = proceso.datos || {};
+        const icono = iconosProcesos[tipoProceso] || '<i class="fas fa-cog"></i>';
+        const nombreProceso = tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
+        
+        // Construir ubicaciones
+        let ubicacionesHTML = '';
+        if (datos.ubicaciones && datos.ubicaciones.length > 0) {
+            ubicacionesHTML = datos.ubicaciones.map(ubi => 
+                `<span style="background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 0.25rem;"></i>${ubi}
+                </span>`
+            ).join('');
+        }
+        
+        // Construir tallas por género con cantidades
+        let tallasHTML = '';
+        if (datos.tallas) {
+            const { dama = [], caballero = [] } = datos.tallas;
+            const cantidadesPorTalla = prenda.cantidadesPorTalla || {};
+            
+            if (dama.length > 0 || caballero.length > 0) {
+                tallasHTML = '<div style="margin-top: 0.75rem;">';
+                
+                if (dama.length > 0) {
+                    tallasHTML += `
+                        <div style="margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600; color: #be185d; margin-right: 0.5rem;">
+                                <i class="fas fa-female" style="margin-right: 0.25rem;"></i>Dama:
+                            </span>
+                            ${dama.map(t => {
+                                const cantidad = cantidadesPorTalla[`dama-${t}`] || 0;
+                                return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    ${t}
+                                    <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+                                </span>`;
+                            }).join('')}
+                        </div>
+                    `;
+                }
+                
+                if (caballero.length > 0) {
+                    tallasHTML += `
+                        <div>
+                            <span style="font-weight: 600; color: #1d4ed8; margin-right: 0.5rem;">
+                                <i class="fas fa-male" style="margin-right: 0.25rem;"></i>Caballero:
+                            </span>
+                            ${caballero.map(t => {
+                                const cantidad = cantidadesPorTalla[`caballero-${t}`] || 0;
+                                return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    ${t}
+                                    <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+                                </span>`;
+                            }).join('')}
+                        </div>
+                    `;
+                }
+                
+                tallasHTML += '</div>';
+            }
+        }
+        
+        // Construir observaciones
+        let observacionesHTML = '';
+        if (datos.observaciones) {
+            observacionesHTML = `
+                <div style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px;">
+                    <strong style="color: #92400e; display: block; margin-bottom: 0.25rem;">
+                        <i class="fas fa-sticky-note" style="margin-right: 0.5rem;"></i>Observaciones:
+                    </strong>
+                    <span style="color: #78350f; font-size: 0.9rem;">${datos.observaciones}</span>
+                </div>
+            `;
+        }
+        
+        // Construir preview de imágenes (soporte para múltiples)
+        let imagenHTML = '';
+        const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
+        if (imagenes.length > 0) {
+            imagenHTML = `
+                <div style="margin-top: 0.75rem;">
+                    <strong style="color: #374151; display: block; margin-bottom: 0.5rem;">
+                        <i class="fas fa-images" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Imágenes (${imagenes.length}):
+                    </strong>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        ${imagenes.map(img => `
+                            <img src="${img}" 
+                                 alt="Imagen ${nombreProceso}" 
+                                 style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb; cursor: pointer;"
+                                 onclick="window.mostrarImagenProcesoGrande('${img}')">
+                        `).join('')}
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280;">
+                        <i class="fas fa-search-plus"></i> Click en las imágenes para ampliar
+                    </p>
+                </div>
+            `;
+        }
+        
         procesosItemsHTML += `
-            <div class="proceso-item">
-                <strong>${tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1)}:</strong>
-                <span>${proceso.tipo || 'Configurado'}</span>
-                ${proceso.datos ? `<small style="display: block; margin-top: 0.25rem; color: #9ca3af;">${JSON.stringify(proceso.datos).substring(0, 80)}...</small>` : ''}
+            <div style="background: white; border: 2px solid #e5e7eb; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 2px solid #0ea5e9;">
+                    <span style="font-size: 1.5rem;">${icono}</span>
+                    <h4 style="margin: 0; color: #0369a1; font-size: 1.1rem; font-weight: 700;">${nombreProceso}</h4>
+                </div>
+                
+                ${ubicacionesHTML ? `
+                    <div style="margin-bottom: 0.75rem;">
+                        <strong style="color: #374151; display: block; margin-bottom: 0.5rem;">
+                            <i class="fas fa-location-arrow" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Ubicaciones:
+                        </strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            ${ubicacionesHTML}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${tallasHTML}
+                ${observacionesHTML}
+                ${imagenHTML}
             </div>
         `;
     });
@@ -452,7 +575,7 @@ function construirSeccionProcesos(prenda, indice) {
                 <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
             </button>
             <div class="seccion-expandible-content procesos-content">
-                <div class="procesos-list">
+                <div style="padding: 1rem;">
                     ${procesosItemsHTML}
                 </div>
             </div>

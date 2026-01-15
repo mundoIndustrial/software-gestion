@@ -284,7 +284,7 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
     
     const imgModal = document.createElement('img');
     imgModal.src = imagenes[indiceActual].previewUrl;  // Usar blob URL en lugar de base64
-    imgModal.style.cssText = 'max-width: 95vw; max-height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
+    imgModal.style.cssText = 'width: 90vw; height: 85vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
     
     imgContainer.appendChild(imgModal);
     
@@ -304,32 +304,7 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
     };
     toolbar.appendChild(btnAnterior);
     
-    const btnEliminar = document.createElement('button');
-    btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">delete</span>';
-    btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
-    btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
-    btnEliminar.onmouseout = () => btnEliminar.style.background = '#ef4444';
-    btnEliminar.onclick = () => {
-        if (confirm('¿Eliminar esta imagen?')) {
-            console.log('🗑️ [TELAS] Eliminando imagen:', indiceActual);
-            imagenes.splice(indiceActual, 1);
-            window.imagenesTelaStorage.obtenerImagenes().splice(indiceActual, 1);
-            
-            if (imagenes.length === 0) {
-                modal.remove();
-                // ✅ NO llamar a actualizarPreviewTela() - la fila no existe aún
-                return;
-            }
-            
-            if (indiceActual >= imagenes.length) {
-                indiceActual = imagenes.length - 1;
-            }
-            
-            imgModal.src = imagenes[indiceActual].previewUrl;  // Usar blob URL
-            contador.textContent = (indiceActual + 1) + ' de ' + imagenes.length;
-        }
-    };
-    toolbar.appendChild(btnEliminar);
+    // ❌ BOTÓN ELIMINAR REMOVIDO - Solo usar la X para cerrar la galería
     
     const contador = document.createElement('div');
     contador.style.cssText = 'color: white; font-size: 0.95rem; font-weight: 500; min-width: 80px; text-align: center;';
@@ -448,7 +423,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     
     const imgModal = document.createElement('img');
     imgModal.src = imagenesConBlobUrl[indiceActual].previewUrl;
-    imgModal.style.cssText = 'max-width: 95vw; max-height: 70vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
+    imgModal.style.cssText = 'width: 90vw; height: 85vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
     
     imgContainer.appendChild(imgModal);
     
@@ -478,109 +453,8 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     };
     toolbar.appendChild(btnAnterior);
     
-    const btnEliminar = document.createElement('button');
-    btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">delete</span>';
-    btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0.75rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; width: 50px; height: 50px;';
-    btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
-    btnEliminar.onmouseout = () => btnEliminar.style.background = '#ef4444';
-    
-    let eliminarEnProceso = false;
-    btnEliminar.onclick = () => {
-        if (eliminarEnProceso) return;
-        eliminarEnProceso = true;
-        
-        console.log('🗑️ [GALERÍA TELA] Eliminando imagen:', indiceActual);
-        
-        Swal.fire({
-            title: '¿Eliminar imagen?',
-            text: 'Esta acción no se puede deshacer',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            allowOutsideClick: false,
-            allowEscapeKey: false
-        }).then((result) => {
-            eliminarEnProceso = false;
-            
-            if (result.isConfirmed) {
-                console.log('✅ [GALERÍA TELA] Confirmado eliminar imagen en índice:', indiceActual);
-                console.log('📊 [GALERÍA TELA] telaActual:', telaActual);
-                console.log('📊 [GALERÍA TELA] telaActual.imagenes.length antes:', telaActual.imagenes?.length);
-                
-                // ✅ SOLO eliminar de la tela específica (fuente de verdad)
-                if (telaActual.imagenes && indiceActual < telaActual.imagenes.length) {
-                    const imagenEliminada = telaActual.imagenes[indiceActual];
-                    console.log('🗑️ [GALERÍA TELA] Eliminando imagen:', imagenEliminada.nombre);
-                    
-                    telaActual.imagenes.splice(indiceActual, 1);
-                    console.log('✅ [GALERÍA TELA] Imagen eliminada de tela', telaIndex);
-                    console.log('📊 [GALERÍA TELA] telaActual.imagenes.length después:', telaActual.imagenes.length);
-                    
-                    // ✅ También actualizar el array local de blob URLs para la galería
-                    imagenesConBlobUrl.splice(indiceActual, 1);
-                    console.log('✅ [GALERÍA TELA] Array local actualizado. Quedan:', imagenesConBlobUrl.length);
-                } else {
-                    console.error('❌ [GALERÍA TELA] No se pudo eliminar la imagen');
-                    console.error('   telaActual.imagenes:', telaActual.imagenes);
-                    console.error('   indiceActual:', indiceActual);
-                }
-                
-                // ✅ Actualizar la tabla de telas
-                actualizarTablaTelas();
-                console.log('✅ [GALERÍA TELA] Tabla actualizada');
-                
-                // ✅ Verificar el array de la tela específica (fuente de verdad)
-                if (!telaActual.imagenes || telaActual.imagenes.length === 0) {
-                    console.log('📭 [GALERÍA TELA] Sin más imágenes, mostrando estado vacío');
-                    
-                    // Mostrar estado vacío en lugar de cerrar
-                    imgModal.src = '';
-                    imgContainer.innerHTML = `
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; gap: 2rem;">
-                            <div style="font-size: 4rem; color: rgba(255,255,255,0.3);">📸</div>
-                            <div style="text-align: center;">
-                                <div style="color: white; font-size: 1.2rem; font-weight: 500;">Sin imágenes</div>
-                                <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 0.5rem;">Todas las imágenes han sido eliminadas</div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Deshabilitar botones excepto cerrar
-                    btnAnterior.disabled = true;
-                    btnAnterior.style.opacity = '0.5';
-                    btnAnterior.style.cursor = 'not-allowed';
-                    
-                    btnSiguiente.disabled = true;
-                    btnSiguiente.style.opacity = '0.5';
-                    btnSiguiente.style.cursor = 'not-allowed';
-                    
-                    btnEliminar.disabled = true;
-                    btnEliminar.style.opacity = '0.5';
-                    btnEliminar.style.cursor = 'not-allowed';
-                    
-                    contador.textContent = '0 de 0';
-                    
-                    Swal.close();
-                    return;
-                }
-                
-                if (indiceActual >= imagenesConBlobUrl.length) {
-                    indiceActual = imagenesConBlobUrl.length - 1;
-                }
-                
-                console.log(`✅ [GALERÍA TELA] Imagen eliminada, mostrando índice ${indiceActual}`);
-                actualizarImagen(indiceActual);
-                Swal.close();
-            } else {
-                Swal.close();
-            }
-        });
-    };
-    // ✅ REMOVIDO: No agregar botón eliminar en el visualizador (solo en la tabla)
-    // toolbar.appendChild(btnEliminar);
+    // ❌ BOTÓN ELIMINAR REMOVIDO - Solo usar la X del formulario para eliminar
+    // Las imágenes de telas se eliminan desde el formulario, no desde la galería
     
     const contador = document.createElement('div');
     contador.style.cssText = 'color: white; font-size: 0.95rem; font-weight: 500; min-width: 80px; text-align: center;';

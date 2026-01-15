@@ -378,7 +378,7 @@ window.actualizarPreviewTela = function() {
                 const imgElement = document.createElement('img');
                 imgElement.src = img.previewUrl;
                 imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 2px solid #0066cc; cursor: pointer; transition: opacity 0.2s;';
-                imgElement.onclick = () => mostrarGaleriaImagenesTemporales(imagenes, index);
+                imgElement.onclick = () => window.mostrarGaleriaImagenesTemporales(imagenes, index);
                 imgElement.onmouseover = () => imgElement.style.opacity = '0.7';
                 imgElement.onmouseout = () => imgElement.style.opacity = '1';
                 
