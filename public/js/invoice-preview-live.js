@@ -7,6 +7,39 @@
 console.log('📄 [INVOICE PREVIEW] Cargando invoice-preview-live.js');
 
 /**
+ * Almacenamiento global de galerías de imágenes para el preview
+ * Esto evita tener que serializar arrays de blob URLs en el onclick
+ */
+window._galeríasPreview = {};
+window._idGaleriaPreview = 0;
+
+/**
+ * Registra una galería de imágenes y retorna un ID único
+ */
+window._registrarGalería = function(imagenes, titulo) {
+    if (!Array.isArray(imagenes) || imagenes.length === 0) return null;
+    
+    const id = window._idGaleriaPreview++;
+    window._galeríasPreview[id] = { imagenes, titulo };
+    
+    console.log(`🖼️ Galería registrada con ID: ${id}, título: "${titulo}", imágenes: ${imagenes.length}`);
+    return id;
+};
+
+/**
+ * Abre una galería usando su ID registrado
+ */
+window._abrirGaleriaImagenesDesdeID = function(galeriaId) {
+    if (galeriaId === null || galeriaId === undefined || !window._galeríasPreview[galeriaId]) {
+        console.warn(`⚠️ Galería ID ${galeriaId} no encontrada`);
+        return;
+    }
+    
+    const { imagenes, titulo } = window._galeríasPreview[galeriaId];
+    window._abrirGaleriaImagenes(imagenes, titulo);
+};
+
+/**
  * Abre una galería de imágenes en un modal
  */
 window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
@@ -438,13 +471,32 @@ function capturarPrendas() {
                 console.log(`        ✅ Usando prenda.fotos[0]: ${imagenCapturada}`);
             } else if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
                 const firstImagen = prenda.imagenes[0];
-                // Intentar múltiples propiedades para obtener la URL (blobUrl es la propiedad correcta)
-                imagenCapturada = firstImagen?.blobUrl || firstImagen?.src || firstImagen?.url || firstImagen?.data || (typeof firstImagen === 'string' ? firstImagen : '');
-                console.log(`        ✅ Usando prenda.imagenes[0]: ${imagenCapturada}`);
+                console.log(`        📸 DEBUG firstImagen:`, firstImagen);
+                console.log(`        📸 DEBUG firstImagen type:`, typeof firstImagen);
+                console.log(`        📸 DEBUG firstImagen constructor:`, firstImagen?.constructor?.name);
+                console.log(`        📸 DEBUG firstImagen keys:`, Object.keys(firstImagen || {}));
                 
-                // Si aún no hay imagen y el objeto tiene un stringify útil
+                // El componente ImagenesFormDataComponent devuelve: {file, nombre, tamaño}
+                // Sin previewUrl (blob URLs son efímeros)
+                // Generar blob URL on-demand si existe File object
+                if (firstImagen?.file instanceof File) {
+                    imagenCapturada = URL.createObjectURL(firstImagen.file);
+                    console.log(`        ✅ Blob URL generado on-demand desde File object: ${imagenCapturada}`);
+                } else {
+                    // Fallback a otras propiedades
+                    imagenCapturada = firstImagen?.previewUrl || firstImagen?.blobUrl || firstImagen?.src || firstImagen?.url || firstImagen?.data || (typeof firstImagen === 'string' ? firstImagen : '');
+                    console.log(`        ⚠️ Usando fallback: ${imagenCapturada}`);
+                }
+                
+                console.log(`        📸 DEBUG - propiedades encontradas en firstImagen:`);
+                console.log(`           - file instanceof File: ${firstImagen?.file instanceof File}`);
+                console.log(`           - previewUrl: ${firstImagen?.previewUrl}`);
+                console.log(`           - nombre: ${firstImagen?.nombre}`);
+                console.log(`           - tamaño: ${firstImagen?.tamaño}`);
+                
+                // Si aún no hay imagen
                 if (!imagenCapturada) {
-                    console.log(`        ⚠️ prenda.imagenes[0] no tiene propiedades útiles:`, firstImagen);
+                    console.log(`        ⚠️ No se pudo generar imagen:`, firstImagen);
                 }
             } else {
                 console.log(`        ❌ No se encontró imagen en ninguna propiedad`);
@@ -479,8 +531,19 @@ function capturarPrendas() {
             } else if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0 && 
                        prenda.telasAgregadas[0].imagenes && Array.isArray(prenda.telasAgregadas[0].imagenes)) {
                 const firstTelaAg = prenda.telasAgregadas[0].imagenes[0];
-                imagenTelaCapturada = typeof firstTelaAg === 'string' ? firstTelaAg : (firstTelaAg?.blobUrl || firstTelaAg?.src || firstTelaAg?.url || firstTelaAg?.data || '');
-                console.log(`        ✅ Usando prenda.telasAgregadas[0].imagenes[0]: ${imagenTelaCapturada}`);
+                console.log(`        📸 DEBUG firstTelaAg:`, firstTelaAg);
+                console.log(`        📸 DEBUG firstTelaAg type:`, typeof firstTelaAg);
+                console.log(`        📸 DEBUG firstTelaAg constructor:`, firstTelaAg?.constructor?.name);
+                
+                // Generar blob URL on-demand si es File object
+                if (firstTelaAg instanceof File) {
+                    imagenTelaCapturada = URL.createObjectURL(firstTelaAg);
+                    console.log(`        ✅ Blob URL generado on-demand desde File (tela): ${imagenTelaCapturada}`);
+                } else {
+                    // Fallback si es objeto con propiedades
+                    imagenTelaCapturada = typeof firstTelaAg === 'string' ? firstTelaAg : (firstTelaAg?.blobUrl || firstTelaAg?.previewUrl || firstTelaAg?.src || firstTelaAg?.url || firstTelaAg?.data || '');
+                    console.log(`        ⚠️ Fallback (tela): ${imagenTelaCapturada}`);
+                }
             } else {
                 console.log(`        ❌ No se encontró imagen de tela en ninguna propiedad`);
             }
@@ -500,7 +563,15 @@ function capturarPrendas() {
                     // Si hay imagen en la tela, usarla para imagen_tela
                     if (!imagenTelaCapturada && primeTela.imagenes && Array.isArray(primeTela.imagenes) && primeTela.imagenes.length > 0) {
                         const telaImg = primeTela.imagenes[0];
-                        imagenTelaCapturada = typeof telaImg === 'string' ? telaImg : (telaImg?.src || telaImg?.url || '');
+                        
+                        // Generar blob URL on-demand si es File object
+                        if (telaImg instanceof File) {
+                            imagenTelaCapturada = URL.createObjectURL(telaImg);
+                            console.log(`        ✅ Blob URL generado on-demand desde File (tela fallback): ${imagenTelaCapturada}`);
+                        } else {
+                            imagenTelaCapturada = typeof telaImg === 'string' ? telaImg : (telaImg?.blobUrl || telaImg?.previewUrl || telaImg?.src || telaImg?.url || '');
+                            console.log(`        ⚠️ Fallback (tela fallback): ${imagenTelaCapturada}`);
+                        }
                     }
                 }
             }
@@ -589,9 +660,19 @@ function capturarPrendas() {
                 descripcion: prenda.descripcion || '',
                 ref: refCapturada,
                 imagen: imagenCapturada,
-                imagenes: prenda.imagenes && Array.isArray(prenda.imagenes) ? prenda.imagenes.map(img => img.blobUrl || img.src || img) : (imagenCapturada ? [imagenCapturada] : []),
+                imagenes: prenda.imagenes && Array.isArray(prenda.imagenes) ? prenda.imagenes.map(img => {
+                    if (img instanceof File) {
+                        return URL.createObjectURL(img);
+                    }
+                    return img.blobUrl || img.previewUrl || img.src || img;
+                }) : (imagenCapturada ? [imagenCapturada] : []),
                 imagen_tela: imagenTelaCapturada,
-                imagenes_tela: prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas.filter(t => t.imagenes && t.imagenes.length > 0).flatMap(t => t.imagenes.map(img => img.blobUrl || img.src || img)) : (imagenTelaCapturada ? [imagenTelaCapturada] : []),
+                imagenes_tela: prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas.filter(t => t.imagenes && t.imagenes.length > 0).flatMap(t => t.imagenes.map(img => {
+                    if (img instanceof File) {
+                        return URL.createObjectURL(img);
+                    }
+                    return img.blobUrl || img.previewUrl || img.src || img;
+                })) : (imagenTelaCapturada ? [imagenTelaCapturada] : []),
                 manga: tipoManga && tipoManga !== 'No aplica' ? tipoManga : '',
                 obs_manga: obsManga,
                 broche: tipoBroche && tipoBroche !== 'No aplica' ? tipoBroche : '',
@@ -611,6 +692,8 @@ function capturarPrendas() {
             
             console.log(`  📌 Prenda ${index + 1}: ${prenda.nombre_producto}`);
             console.log(`     🖼️  prenda.imagenes:`, prenda.imagenes);
+            console.log(`     🖼️  imagenCapturada type:`, typeof imagenCapturada);
+            console.log(`     🖼️  imagenCapturada value:`, imagenCapturada);
             console.log(`     🖼️  Imagen CAPTURADA: ${imagenCapturada || '❌ no'}`);
             console.log(`     🧵 Tela CAPTURADA: ${telaCapturada || '❌ no'} | Color CAPTURADO: ${colorCapturado || '❌ no'}`);
             console.log(`     📋 Ref CAPTURADA: ${refCapturada || '❌ no'}`);
@@ -997,7 +1080,7 @@ function generarHTMLFactura(datos) {
                     <div style="display: flex; gap: 8px; align-items: flex-start;">
                         <div style="flex-shrink: 0;">
                             ${prenda.imagen ? `
-                                <img src="${prenda.imagen}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(prenda.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de Prenda')" title="Click para ver todas las imágenes">
+                                <img src="${prenda.imagen}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes, 'Imágenes de Prenda')})" title="Click para ver todas las imágenes">
                             ` : `
                                 <div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 3px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 32px;">📦</div>
                             `}
@@ -1015,7 +1098,7 @@ function generarHTMLFactura(datos) {
                         ${prenda.ref ? `<div style="margin-bottom: 6px;"><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
                         ${prenda.imagen_tela ? `
                             <div>
-                                <img src="${prenda.imagen_tela}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(prenda.imagenes_tela).replace(/"/g, '&quot;')}, 'Imágenes de Tela')" title="Click para ver todas las imágenes de tela">
+                                <img src="${prenda.imagen_tela}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
                             </div>
                         ` : ''}
                     </div>
