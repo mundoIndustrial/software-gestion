@@ -90,6 +90,27 @@ if (sidebarToggleBtns.length > 0 && sidebar) {
           container.style.display = "flex";
         }
       });
+      
+      // Cuando se colapsa, cerrar submenús abiertos
+      if (isSidebarCollapsed) {
+        console.log("Sidebar colapsado - Buscando submenús abiertos...");
+        const openSubmenus = document.querySelectorAll(".submenu.open");
+        const activeToggles = document.querySelectorAll(".submenu-toggle.active");
+        
+        console.log(`Submenús con clase 'open' encontrados: ${openSubmenus.length}`);
+        console.log(`Toggles activos encontrados: ${activeToggles.length}`);
+        
+        activeToggles.forEach((toggle, index) => {
+          console.log(`Removiendo clase 'active' del toggle ${index}`, toggle);
+          toggle.classList.remove("active");
+          console.log(`Verificación - ¿Tiene clase 'active'?: ${toggle.classList.contains("active")}`);
+        });
+        
+        openSubmenus.forEach((submenu) => {
+          submenu.classList.remove("open");
+        });
+      }
+      
       // Persistir estado en localStorage
       localStorage.setItem("sidebarCollapsed", sidebar.classList.contains("collapsed"));
     });
