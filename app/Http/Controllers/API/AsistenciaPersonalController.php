@@ -7,6 +7,7 @@ use App\Models\Personal;
 use App\Models\RegistroDeHuella;
 use App\Models\RegistroHorasHuella;
 use App\Models\ReportePersonal;
+use App\Models\HorarioPorRol;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Smalot\PdfParser\Parser;
@@ -353,10 +354,110 @@ class AsistenciaPersonalController extends Controller
                 $registrosPorPersonaYDiaAgrupado[$claveAgrupada]['horas'][] = $registro['hora'];
             }
 
+            // Filtrar marcas duplicadas cercanas (mantener solo la más reciente)
+            $registrosPorPersonaYDiaFiltrado = [];
+            foreach ($registrosPorPersonaYDiaAgrupado as $clave => $registro) {
+                $horas = $registro['horas'];
+                
+                // Convertir horas a segundos para comparación
+                $horasEnSegundos = array_map(function($hora) {
+                    $partes = explode(':', $hora);
+                    return intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+                }, $horas);
+                
+                // Ordenar por tiempo
+                asort($horasEnSegundos);
+                
+                // Filtrar: mantener solo la más reciente si hay duplicados muy cercanos
+                $horasValidas = [];
+                foreach ($horasEnSegundos as $index => $segundos) {
+                    // Si no hay marcas previas, agregar esta
+                    if (empty($horasValidas)) {
+                        $horasValidas[$index] = $segundos;
+                        continue;
+                    }
+                    
+                    // Comparar con la última marca válida
+                    $ultimaMarca = end($horasValidas);
+                    $diferencia = abs($segundos - $ultimaMarca);
+                    
+                    // Si la diferencia es mayor a 5 minutos (300 segundos), es una marca diferente
+                    if ($diferencia > 300) {
+                        $horasValidas[$index] = $segundos;
+                    } else {
+                        // Es una marca duplicada muy cercana, reemplazar la anterior con esta (más reciente)
+                        array_pop($horasValidas);
+                        $horasValidas[$index] = $segundos;
+                    }
+                }
+                
+                // Convertir de vuelta a formato HH:MM:SS
+                $horasFormateadas = array_map(function($segundos) {
+                    $horas = intdiv($segundos, 3600);
+                    $minutos = intdiv($segundos % 3600, 60);
+                    $secs = $segundos % 60;
+                    return sprintf('%02d:%02d:%02d', $horas, $minutos, $secs);
+                }, array_values($horasValidas));
+                
+                $registrosPorPersonaYDiaFiltrado[$clave] = [
+                    'id_persona' => $registro['id_persona'],
+                    'dia' => $registro['dia'],
+                    'horas' => $horasFormateadas
+                ];
+            }
+
             $guardados = 0;
-            foreach ($registrosPorPersonaYDiaAgrupado as $registro) {
+            $marcasFaltantes = [];
+            
+            foreach ($registrosPorPersonaYDiaFiltrado as $registro) {
+                $personal = Personal::where('codigo_persona', $registro['id_persona'])->first();
+                if (!$personal) continue;
+
+                // Ordenar horas cronológicamente
+                $horasOrdenadas = $this->ordenarHorasCronologicamente($registro['horas']);
+                
+                // Obtener información del día para decidir si validar marcas faltantes
+                $fechaObj = \DateTime::createFromFormat('Y-m-d', $registro['dia']);
+                $esSabado = $fechaObj ? $fechaObj->format('w') == 6 : false;
+                
+                // Determinar cantidad esperada de marcas
+                $cantidadEsperada = $esSabado ? 2 : 4;
+                
+                // Detectar y agregar marcas faltantes repetidamente hasta alcanzar la cantidad esperada
+                // Bucle: mientras haya menos marcas de las esperadas, intentar detectar más
+                while (count($horasOrdenadas) < $cantidadEsperada) {
+                    // Para sábado: si ya hay 2+ marcas, no agregar más
+                    if ($esSabado && count($horasOrdenadas) >= 2) {
+                        break;
+                    }
+                    
+                    $marcaFaltante = $this->detectarMarcaFaltante($personal, $horasOrdenadas, $registro['dia']);
+                    
+                    if ($marcaFaltante) {
+                        // Agregar la marca faltante solo si realmente falta
+                        $horasOrdenadas[] = $marcaFaltante['hora_esperada'];
+                        
+                        // Reordenar después de agregar
+                        $horasOrdenadas = $this->ordenarHorasCronologicamente($horasOrdenadas);
+                        
+                        // Registrar la marca faltante detectada
+                        $marcasFaltantes[] = [
+                            'codigo_persona' => $registro['id_persona'],
+                            'nombre_persona' => $personal->nombre_persona,
+                            'dia' => $registro['dia'],
+                            'marca' => $marcaFaltante['nombre_marca'],
+                            'hora_detectada' => $marcaFaltante['hora_esperada'],
+                            'status' => 'agregada_automaticamente'
+                        ];
+                    } else {
+                        // Si no hay más marcas faltantes detectadas, romper el bucle
+                        break;
+                    }
+                }
+
+                // Crear array con formato "Hora 1", "Hora 2", etc.
                 $horasFormato = [];
-                foreach ($registro['horas'] as $index => $hora) {
+                foreach ($horasOrdenadas as $index => $hora) {
                     $horasFormato["Hora " . ($index + 1)] = $hora;
                 }
                 
@@ -384,7 +485,9 @@ class AsistenciaPersonalController extends Controller
                 'procesados' => count($registrosPorPersonaYDia),
                 'rechazados' => count($registrosRechazados),
                 'registros_rechazados' => $registrosRechazados,
-                'message' => "Reporte guardado: {$guardados} registros guardados, " . count($registrosRechazados) . " rechazados"
+                'marcas_faltantes_detectadas' => $marcasFaltantes,
+                'message' => "Reporte guardado: {$guardados} registros guardados, " . count($registrosRechazados) . " rechazados" . 
+                             (count($marcasFaltantes) > 0 ? ", " . count($marcasFaltantes) . " marcas faltantes detectadas y agregadas automáticamente" : "")
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -506,5 +609,260 @@ class AsistenciaPersonalController extends Controller
                 'message' => 'Error al obtener ausencias: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Detectar qué marca falta según el horario de la persona
+     * 
+     * @param Personal $personal
+     * @param array $horasRegistradas
+     * @param string $dia (formato Y-m-d)
+     * @return array ['marca_faltante' => 'campo', 'hora_esperada' => 'HH:MM:SS'] o null
+     */
+    private function detectarMarcaFaltante($personal, $horasRegistradas, $dia)
+    {
+        // Fechas especiales donde NO se valida marcas faltantes
+        $fechasEspeciales = [
+            '2025-12-24', // Navidad - se trabajó solo 6 horas
+        ];
+
+        // Roles donde NO se aplica esta lógica
+        $rolesExcluidos = [21]; // Rol 21 (mixto) no usa detección automática
+
+        // Si es una fecha especial, no validar marcas faltantes
+        if (in_array($dia, $fechasEspeciales)) {
+            return null;
+        }
+
+        // Si el rol está excluido, no validar marcas faltantes
+        if (in_array($personal->id_rol, $rolesExcluidos)) {
+            return null;
+        }
+
+        // Si no tiene rol, no puede validar
+        if (!$personal->id_rol) {
+            return null;
+        }
+
+        // Obtener el horario del rol
+        $horario = HorarioPorRol::where('id_rol', $personal->id_rol)->first();
+        if (!$horario) {
+            return null;
+        }
+
+        // Determinar si es sábado (día 6 en PHP: 0=domingo, 1=lunes...6=sábado)
+        $fechaObj = \DateTime::createFromFormat('Y-m-d', $dia);
+        $esSabado = $fechaObj ? $fechaObj->format('w') == 6 : false;
+
+        // Definir marcas según el día de la semana
+        if ($esSabado) {
+            // Sábado: solo 2 marcas
+            $mapeoMarcas = [
+                'entrada_sabado' => 1,
+                'salida_sabado' => 2
+            ];
+            $horariosEsperados = [
+                'entrada_sabado' => $this->horaASegundos($horario->entrada_sabado),
+                'salida_sabado' => $this->horaASegundos($horario->salida_sabado)
+            ];
+        } else {
+            // Otros días: 4 marcas
+            $mapeoMarcas = [
+                'entrada_manana' => 1,
+                'salida_manana' => 2,
+                'entrada_tarde' => 3,
+                'salida_tarde' => 4
+            ];
+            $horariosEsperados = [
+                'entrada_manana' => $this->horaASegundos($horario->entrada_manana),
+                'salida_manana' => $this->horaASegundos($horario->salida_manana),
+                'entrada_tarde' => $this->horaASegundos($horario->entrada_tarde),
+                'salida_tarde' => $this->horaASegundos($horario->salida_tarde)
+            ];
+        }
+
+        // Convertir horas registradas a segundos para comparación
+        $horasEnSegundos = [];
+        foreach ($horasRegistradas as $hora) {
+            if ($hora) {
+                $partes = explode(':', $hora);
+                $horasEnSegundos[] = intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+            }
+        }
+        sort($horasEnSegundos);
+
+        // ALGORITMO SECUENCIAL: Asignar cada marca a la siguiente marca esperada en orden
+        // Las marcas registradas deben estar en orden cronológico
+        $marcasEsperadasOrdenadas = [];
+        
+        if ($esSabado) {
+            $marcasEsperadasOrdenadas = [
+                'entrada_sabado' => $horariosEsperados['entrada_sabado'],
+                'salida_sabado' => $horariosEsperados['salida_sabado']
+            ];
+        } else {
+            $marcasEsperadasOrdenadas = [
+                'entrada_manana' => $horariosEsperados['entrada_manana'],
+                'salida_manana' => $horariosEsperados['salida_manana'],
+                'entrada_tarde' => $horariosEsperados['entrada_tarde'],
+                'salida_tarde' => $horariosEsperados['salida_tarde']
+            ];
+        }
+        
+        // Filtrar nulls
+        foreach ($marcasEsperadasOrdenadas as $key => $valor) {
+            if ($valor === null) {
+                unset($marcasEsperadasOrdenadas[$key]);
+            }
+        }
+        
+        // ALGORITMO MEJORADO: Detectar marcas faltantes consecutivas al inicio
+        $marcasEsperadasArray = array_keys($marcasEsperadasOrdenadas);
+        
+        // Si no hay marcas registradas, retornar la primera marca esperada
+        if (empty($horasEnSegundos)) {
+            return [
+                'marca_faltante' => $marcasEsperadasArray[0],
+                'hora_esperada' => $this->segundosAHora($marcasEsperadasOrdenadas[$marcasEsperadasArray[0]]),
+                'nombre_marca' => $this->nombreMarca($marcasEsperadasArray[0])
+            ];
+        }
+        
+        // Detectar cuántas marcas faltan al inicio
+        $primeraHoraRegistrada = $horasEnSegundos[0];
+        $indiceProximaEsperada = 0;
+        
+        // Iterar por las marcas esperadas hasta encontrar una que esté dentro de 2 horas
+        while ($indiceProximaEsperada < count($marcasEsperadasArray)) {
+            $marcaEsperada = $marcasEsperadasArray[$indiceProximaEsperada];
+            $horaEsperada = $marcasEsperadasOrdenadas[$marcaEsperada];
+            $distancia = abs($primeraHoraRegistrada - $horaEsperada);
+            
+            // Si la primera marca registrada está dentro de 2 horas, no hay marcas faltantes antes
+            if ($distancia <= 7200) {
+                break;
+            }
+            
+            // Esta marca esperada está muy lejos, es faltante
+            $indiceProximaEsperada++;
+        }
+        
+        // Si hay marcas faltantes al inicio, retornar la primera
+        if ($indiceProximaEsperada > 0) {
+            $marcaFaltante = $marcasEsperadasArray[$indiceProximaEsperada - 1];
+            return [
+                'marca_faltante' => $marcaFaltante,
+                'hora_esperada' => $this->segundosAHora($marcasEsperadasOrdenadas[$marcaFaltante]),
+                'nombre_marca' => $this->nombreMarca($marcaFaltante)
+            ];
+        }
+        
+        // Ahora usar asignación por PROXIMIDAD (no secuencial)
+        // Cada marca registrada se asigna a la marca esperada más cercana que esté disponible
+        $marcasAsignadas = [];
+        
+        foreach ($horasEnSegundos as $horaRegistrada) {
+            $mejorMarca = null;
+            $mejorDistancia = PHP_INT_MAX;
+            
+            // Encontrar la marca esperada más cercana que no haya sido asignada
+            foreach ($marcasEsperadasArray as $marcaEsperada) {
+                // Si ya fue asignada, saltarla
+                if (isset($marcasAsignadas[$marcaEsperada])) {
+                    continue;
+                }
+                
+                $horaEsperada = $marcasEsperadasOrdenadas[$marcaEsperada];
+                $distancia = abs($horaRegistrada - $horaEsperada);
+                
+                // Debe estar dentro de 2 horas
+                if ($distancia <= 7200) {
+                    if ($distancia < $mejorDistancia) {
+                        $mejorMarca = $marcaEsperada;
+                        $mejorDistancia = $distancia;
+                    }
+                }
+            }
+            
+            // Si encontró una marca cercana, asignarla
+            if ($mejorMarca !== null) {
+                $marcasAsignadas[$mejorMarca] = true;
+            }
+        }
+        
+        // Ver cuál marca esperada no fue asignada
+        foreach ($marcasEsperadasArray as $marcaEsperada) {
+            if (!isset($marcasAsignadas[$marcaEsperada])) {
+                return [
+                    'marca_faltante' => $marcaEsperada,
+                    'hora_esperada' => $this->segundosAHora($marcasEsperadasOrdenadas[$marcaEsperada]),
+                    'nombre_marca' => $this->nombreMarca($marcaEsperada)
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Ordenar horas cronológicamente
+     */
+    private function ordenarHorasCronologicamente($horas)
+    {
+        // Convertir a segundos con índice
+        $horasConIndice = [];
+        foreach ($horas as $hora) {
+            if ($hora) {
+                $partes = explode(':', $hora);
+                $segundos = intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+                $horasConIndice[] = [
+                    'hora' => $hora,
+                    'segundos' => $segundos
+                ];
+            }
+        }
+
+        // Ordenar por segundos
+        usort($horasConIndice, function($a, $b) {
+            return $a['segundos'] - $b['segundos'];
+        });
+
+        // Retornar solo las horas ordenadas
+        return array_column($horasConIndice, 'hora');
+    }
+
+    /**
+     * Convertir hora HH:MM:SS a segundos
+     */
+    private function horaASegundos($hora)
+    {
+        if (!$hora) return null;
+        $partes = explode(':', $hora);
+        return intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+    }
+
+    /**
+     * Convertir segundos a hora HH:MM:SS
+     */
+    private function segundosAHora($segundos)
+    {
+        $horas = intdiv($segundos, 3600);
+        $minutos = intdiv($segundos % 3600, 60);
+        $secs = $segundos % 60;
+        return sprintf('%02d:%02d:%02d', $horas, $minutos, $secs);
+    }
+
+    /**
+     * Obtener nombre legible de la marca
+     */
+    private function nombreMarca($campo)
+    {
+        $nombres = [
+            'entrada_manana' => 'Entrada Mañana',
+            'salida_manana' => 'Salida Mañana',
+            'entrada_tarde' => 'Entrada Tarde',
+            'salida_tarde' => 'Salida Tarde'
+        ];
+        return $nombres[$campo] ?? $campo;
     }
 }
