@@ -20,6 +20,8 @@ class HorarioPorRolesSeeder extends Seeder
                 'salida_manana' => '12:00:00',
                 'entrada_tarde' => '13:00:00',
                 'salida_tarde' => '18:00:00',
+                'entrada_sabado' => '08:00:00',
+                'salida_sabado' => '12:00:00',
             ],
             [
                 'id_rol' => 20, // administrativo
@@ -27,6 +29,8 @@ class HorarioPorRolesSeeder extends Seeder
                 'salida_manana' => '12:00:00',
                 'entrada_tarde' => '14:00:00',
                 'salida_tarde' => '17:00:00',
+                'entrada_sabado' => '08:00:00',
+                'salida_sabado' => '12:00:00',
             ],
             [
                 'id_rol' => 21, // mixto
@@ -34,11 +38,13 @@ class HorarioPorRolesSeeder extends Seeder
                 'salida_manana' => '12:00:00',
                 'entrada_tarde' => '13:30:00',
                 'salida_tarde' => '18:00:00',
+                'entrada_sabado' => '08:00:00',
+                'salida_sabado' => '12:00:00',
             ],
         ];
 
         foreach ($horarios as $horario) {
-            HorarioPorRol::firstOrCreate(
+            HorarioPorRol::updateOrCreate(
                 ['id_rol' => $horario['id_rol']],
                 $horario
             );

@@ -29,7 +29,20 @@ const AsistenciaTotalHorasExtras = (() => {
     }
 
     /**
+     * Contar horas basado en la regla: 56 minutos o más = 1 hora
+     * @param {number} minutos - Total de minutos a contar
+     * @returns {number} Horas contables (horas completas + 1 si minutos >= 56)
+     */
+    function contarHorasPor56Minutos(minutos) {
+        const horas = Math.floor(minutos / 60);
+        const mins = minutos % 60;
+        // Si los minutos >= 56, contar como 1 hora adicional
+        return mins >= 56 ? horas + 1 : horas;
+    }
+
+    /**
      * Calcular horas extras para una fecha y persona
+     * Nueva lógica: Contar cada bloque de trabajo por la regla de 56 minutos
      */
     function calcularHorasExtras(registrosDelDia, fecha) {
         if (!registrosDelDia || registrosDelDia.length === 0) {
@@ -68,51 +81,44 @@ const AsistenciaTotalHorasExtras = (() => {
             }
         }
 
-        // Calcular tiempo trabajado
-        let totalMinutos = 0;
+        // Calcular tiempo trabajado por bloque
+        let horasContablesManana = 0;
+        let horasContablesTarde = 0;
+
         if (esSabado) {
-            // Para sábado: solo entrada y salida
+            // Para sábado: solo entrada y salida (1 bloque)
             if (horasValidas.length >= 2) {
-                totalMinutos = horasValidas[horasValidas.length - 1] - horasValidas[0];
+                const bloqueMinutos = horasValidas[horasValidas.length - 1] - horasValidas[0];
+                horasContablesManana = contarHorasPor56Minutos(bloqueMinutos);
             }
         } else {
             // Para días normales: calcular bloques de trabajo
             if (horasValidas.length >= 2) {
                 // Bloque mañana (entrada - salida mediodía)
                 const bloqueManana = horasValidas[1] - horasValidas[0];
+                horasContablesManana = contarHorasPor56Minutos(bloqueManana);
                 
-                let bloqueTarde = 0;
                 if (horasValidas.length >= 4) {
                     // Bloque tarde (entrada tarde - salida final)
-                    bloqueTarde = horasValidas[3] - horasValidas[2];
-                } else if (horasValidas.length === 3) {
-                    // Solo entrada tarde sin salida final
-                    bloqueTarde = 0;
+                    const bloqueTarde = horasValidas[3] - horasValidas[2];
+                    horasContablesTarde = contarHorasPor56Minutos(bloqueTarde);
                 }
-                
-                totalMinutos = bloqueManana + bloqueTarde;
             }
         }
 
-        // Calcular horas extras
-        let umbralMinutos;
-        let minutosBase;
+        // Total de horas contables
+        const totalHorasContables = horasContablesManana + horasContablesTarde;
 
+        // Calcular horas extras basado en horario esperado
+        let horasEsperadas;
         if (esSabado) {
-            umbralMinutos = (4 * 60) + 56; // 4 horas y 56 minutos
-            minutosBase = 4 * 60; // 4 horas
+            horasEsperadas = 4; // 4 horas de trabajo en sábado
         } else {
-            umbralMinutos = (8 * 60) + 56; // 8 horas y 56 minutos
-            minutosBase = 8 * 60; // 8 horas
+            horasEsperadas = 8; // 8 horas de trabajo en día normal
         }
 
-        if (totalMinutos < umbralMinutos) {
-            return 0; // Sin horas extras
-        }
-
-        // Calcular minutos extras
-        const minutosExtra = totalMinutos - minutosBase;
-        return minutosExtra > 0 ? minutosExtra : 0;
+        const horasExtras = totalHorasContables - horasEsperadas;
+        return horasExtras > 0 ? horasExtras : 0;
     }
 
     /**
@@ -219,22 +225,17 @@ const AsistenciaTotalHorasExtras = (() => {
         // Calcular horas extras por persona y fecha
         Object.keys(registrosPorPersona).forEach(personaId => {
             const persona = registrosPorPersona[personaId];
-            let totalExtrasMinutos = 0;
-            let totalExtrasHorasCompletas = 0;
+            let totalExtrasHoras = 0;
 
             todasLasFechas.forEach(fecha => {
                 const registrosDelDia = persona.registros[fecha] || [];
-                const minutosExtras = calcularHorasExtras(registrosDelDia, fecha);
-                persona.horasExtrasPorFecha[fecha] = minutosExtras;
-                totalExtrasMinutos += minutosExtras;
-                
-                // Sumar solo las horas completas (ignorar minutos)
-                const horasCompletas = Math.floor(minutosExtras / 60);
-                totalExtrasHorasCompletas += horasCompletas;
+                const horasExtras = calcularHorasExtras(registrosDelDia, fecha);
+                persona.horasExtrasPorFecha[fecha] = horasExtras;
+                totalExtrasHoras += horasExtras;
             });
 
-            // El total se almacena como solo horas completas
-            persona.totalHorasExtras = totalExtrasHorasCompletas * 60;
+            // El total se almacena como horas enteras
+            persona.totalHorasExtras = totalExtrasHoras;
         });
 
         console.log('Registros con horas extras calculadas:', registrosPorPersona);
@@ -364,10 +365,11 @@ const AsistenciaTotalHorasExtras = (() => {
             // Celdas por fecha
             todasLasFechas.forEach(fecha => {
                 const td = document.createElement('td');
-                const minutosExtras = persona.horasExtrasPorFecha[fecha] || 0;
+                const horasExtras = persona.horasExtrasPorFecha[fecha] || 0;
                 
-                if (minutosExtras > 0) {
-                    td.textContent = minutosAHora(minutosExtras);
+                if (horasExtras > 0) {
+                    // Mostrar las horas como número entero
+                    td.textContent = horasExtras.toString();
                 } else {
                     td.textContent = '-';
                 }
@@ -377,8 +379,7 @@ const AsistenciaTotalHorasExtras = (() => {
             
             // Celda Total
             const tdTotal = document.createElement('td');
-            const horasCompletas = Math.floor(persona.totalHorasExtras / 60);
-            tdTotal.textContent = horasCompletas.toString();
+            tdTotal.textContent = persona.totalHorasExtras.toString();
             tdTotal.style.fontWeight = 'bold';
             tdTotal.style.backgroundColor = '#e8f0f7';
             tr.appendChild(tdTotal);
@@ -830,22 +831,17 @@ const AsistenciaTotalHorasExtras = (() => {
         console.log('Actualizando horas extras en tabla para:', persona.nombre);
         
         // Recalcular horas extras por fecha
-        let totalExtrasMinutos = 0;
-        let totalExtrasHorasCompletas = 0;
+        let totalExtrasHoras = 0;
         
         todasLasFechas.forEach(fecha => {
             const registrosDelDia = persona.registros[fecha] || [];
-            const minutosExtras = calcularHorasExtras(registrosDelDia, fecha);
-            persona.horasExtrasPorFecha[fecha] = minutosExtras;
-            totalExtrasMinutos += minutosExtras;
-            
-            // Sumar solo las horas completas
-            const horasCompletas = Math.floor(minutosExtras / 60);
-            totalExtrasHorasCompletas += horasCompletas;
+            const horasExtras = calcularHorasExtras(registrosDelDia, fecha);
+            persona.horasExtrasPorFecha[fecha] = horasExtras;
+            totalExtrasHoras += horasExtras;
         });
         
         // Actualizar el total
-        persona.totalHorasExtras = totalExtrasHorasCompletas * 60;
+        persona.totalHorasExtras = totalExtrasHoras;
         
         console.log('Nuevas horas extras calculadas:', persona.totalHorasExtras);
         
@@ -856,23 +852,22 @@ const AsistenciaTotalHorasExtras = (() => {
             if (filaPersona) {
                 // Actualizar celdas de horas extras por fecha
                 todasLasFechas.forEach((fecha, index) => {
-                    const minutosExtras = persona.horasExtrasPorFecha[fecha] || 0;
+                    const horasExtras = persona.horasExtrasPorFecha[fecha] || 0;
                     const celdas = filaPersona.querySelectorAll('td');
                     // Las primeras 3 celdas son ID, Nombre, Novedades
                     // Las siguientes son las fechas (3 + index)
                     if (celdas[3 + index]) {
-                        if (minutosExtras > 0) {
-                            celdas[3 + index].textContent = minutosAHora(minutosExtras);
+                        if (horasExtras > 0) {
+                            celdas[3 + index].textContent = horasExtras.toString();
                         } else {
                             celdas[3 + index].textContent = '-';
                         }
                     }
                 });
                 
-                // Actualizar celda de total (última celda)
+                // Actualizar celda de total (penúltima celda)
                 const celdas = filaPersona.querySelectorAll('td');
-                const horasCompletas = Math.floor(persona.totalHorasExtras / 60);
-                celdas[celdas.length - 2].textContent = horasCompletas;
+                celdas[celdas.length - 2].textContent = persona.totalHorasExtras.toString();
                 
                 console.log('Fila de tabla actualizada para persona:', persona.id);
             }

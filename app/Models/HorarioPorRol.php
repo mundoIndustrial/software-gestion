@@ -14,6 +14,8 @@ class HorarioPorRol extends Model
         'salida_manana',
         'entrada_tarde',
         'salida_tarde',
+        'entrada_sabado',
+        'salida_sabado',
     ];
 
     protected $casts = [
@@ -21,6 +23,8 @@ class HorarioPorRol extends Model
         'salida_manana' => 'string',
         'entrada_tarde' => 'string',
         'salida_tarde' => 'string',
+        'entrada_sabado' => 'string',
+        'salida_sabado' => 'string',
     ];
 
     /**
