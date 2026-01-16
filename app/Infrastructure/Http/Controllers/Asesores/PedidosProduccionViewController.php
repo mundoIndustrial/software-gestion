@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use App\Models\Cotizacion;
 use Illuminate\Support\Facades\Auth;
+use App\Application\Services\PedidoPrendaService;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * PedidosProduccionViewController
@@ -165,10 +167,143 @@ class PedidosProduccionViewController
      */
     public function crearPrendaSinCotizacion(Request $request)
     {
-        return response()->json([
-            'success' => true,
-            'message' => 'Use la ruta API POST /api/pedidos/{id}/prendas'
-        ]);
+        try {
+            $pedidoPrendaService = new PedidoPrendaService(
+                new \App\Application\Services\ColorGeneroService(),
+                new \App\Application\Services\TelasColorService()
+            );
+
+            // Procesar archivos del FormData
+            $prendas = $request->input('prendas', []);
+            foreach ($prendas as $prendaIndex => &$prendaData) {
+                // Procesar fotos de prenda
+                if ($request->hasFile("prendas.{$prendaIndex}.fotos")) {
+                    $prendaData['fotos'] = [];
+                    foreach ($request->file("prendas.{$prendaIndex}.fotos", []) as $archivo) {
+                        if ($archivo && $archivo->isValid()) {
+                            $ruta = $this->guardarImagenArchivo($archivo, "prendas/{$prendaIndex}");
+                            if ($ruta) {
+                                $prendaData['fotos'][] = [
+                                    'ruta_original' => asset('storage/' . $ruta),
+                                    'ruta_archivo' => $ruta,
+                                    'tamaño' => $archivo->getSize()
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                // Procesar fotos de telas
+                if (isset($prendaData['telas']) && is_array($prendaData['telas'])) {
+                    foreach ($prendaData['telas'] as $telaIndex => &$telaData) {
+                        if ($request->hasFile("prendas.{$prendaIndex}.telas.{$telaIndex}.fotos")) {
+                            $telaData['fotos'] = [];
+                            foreach ($request->file("prendas.{$prendaIndex}.telas.{$telaIndex}.fotos", []) as $archivo) {
+                                if ($archivo && $archivo->isValid()) {
+                                    $ruta = $this->guardarImagenArchivo($archivo, "telas/{$prendaIndex}/{$telaIndex}");
+                                    if ($ruta) {
+                                        $telaData['fotos'][] = [
+                                            'ruta_original' => asset('storage/' . $ruta),
+                                            'ruta_archivo' => $ruta,
+                                            'tamaño' => $archivo->getSize()
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Crear pedido
+            $cliente = $request->input('cliente');
+            $asesora = Auth::user();
+
+            // Obtener o crear cliente
+            $clienteModel = \App\Models\Cliente::firstOrCreate(
+                ['nombre' => $cliente],
+                ['estado' => 'activo']
+            );
+
+            // Generar número de pedido
+            $ultimoPedido = \App\Models\PedidoProduccion::orderBy('id', 'desc')->first();
+            $numeroPedido = ($ultimoPedido?->numero_pedido ?? 0) + 1;
+
+            // Crear pedido
+            $pedido = \App\Models\PedidoProduccion::create([
+                'numero_pedido' => $numeroPedido,
+                'cliente' => $cliente,
+                'cliente_id' => $clienteModel->id,
+                'asesor_id' => $asesora->id,
+                'forma_de_pago' => $request->input('forma_de_pago'),
+                'estado' => 'pendiente',
+                'fecha_de_creacion_de_orden' => now(),
+                'cantidad_total' => 0,
+            ]);
+
+            // Guardar prendas
+            $pedidoPrendaService->guardarPrendasEnPedido($pedido, $prendas);
+
+            // Calcular cantidad total
+            $cantidadTotal = $pedido->prendas()->sum(\DB::raw('CAST(cantidad_talla AS CHAR)'));
+
+            $pedido->update(['cantidad_total' => $cantidadTotal]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido PRENDA creado exitosamente',
+                'numero_pedido' => $pedido->numero_pedido,
+                'pedido_id' => $pedido->id,
+                'cantidad_total' => $cantidadTotal,
+                'redirect_url' => route('pedidos-produccion.index')
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error en crearPrendaSinCotizacion', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear pedido: ' . $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Guardar imagen desde archivo uploadado
+     */
+    private function guardarImagenArchivo($archivo, string $subdirectorioExtra): ?string
+    {
+        try {
+            // Crear nombre único
+            $timestamp = now()->format('YmdHis');
+            $random = substr(uniqid(), -6);
+            $extension = $archivo->getClientOriginalExtension();
+            $nombreArchivo = "imagen_{$timestamp}_{$random}.{$extension}";
+
+            // Ruta completa
+            $directorio = "prendas-pedidos/{$subdirectorioExtra}";
+            
+            // Guardar archivo
+            $ruta = \Storage::disk('public')->putFileAs(
+                $directorio,
+                $archivo,
+                $nombreArchivo
+            );
+
+            \Log::info('✅ Imagen guardada', [
+                'ruta' => $ruta,
+                'nombre_original' => $archivo->getClientOriginalName()
+            ]);
+
+            return $ruta;
+        } catch (\Exception $e) {
+            \Log::error('❌ Error guardando imagen', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 
     /**

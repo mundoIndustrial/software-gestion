@@ -112,7 +112,7 @@ function generarTarjetaProceso(tipo, datos) {
                     <div>
                         <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">IMÁGENES</div>
                         <div style="position: relative; display: inline-block;" onclick="abrirGaleriaImagenesProceso('${tipo}')">
-                            <img src="${datos.imagenes[0]}" 
+                            <img src="${datos.imagenes[0] instanceof File ? URL.createObjectURL(datos.imagenes[0]) : datos.imagenes[0]}" 
                                 style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 2px solid #e5e7eb;" 
                                 alt="Imagen del proceso">
                             ${datos.imagenes.length > 1 ? `
@@ -235,8 +235,9 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             const preview = document.getElementById(`proceso-foto-preview-${indice}`);
             
             if (preview) {
+                const imgUrl = img instanceof File ? URL.createObjectURL(img) : img;
                 preview.innerHTML = `
-                    <img src="${img}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
+                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
                     <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
                         style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
                         ×
@@ -308,7 +309,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
         
         <!-- Imagen principal -->
         <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 4rem 2rem 2rem 2rem; width: 100%;">
-            <img id="galeria-imagen-actual" src="${imagenes[0]}" style="max-width: 85vw; max-height: 80vh; border-radius: 8px; object-fit: contain;">
+            <img id="galeria-imagen-actual" src="${imagenes[0] instanceof File ? URL.createObjectURL(imagenes[0]) : imagenes[0]}" style="max-width: 85vw; max-height: 80vh; border-radius: 8px; object-fit: contain;">
         </div>
         
         <!-- Navegación -->
@@ -323,7 +324,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
             <!-- Miniaturas -->
             <div style="position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; padding: 0.75rem; background: rgba(0,0,0,0.6); border-radius: 8px; backdrop-filter: blur(10px);">
                 ${imagenes.map((img, idx) => `
-                    <img src="${img}" 
+                    <img src="${img instanceof File ? URL.createObjectURL(img) : img}" 
                          onclick="irAImagenProceso(${idx})" 
                          data-indice="${idx}"
                          class="miniatura-galeria-proceso"
@@ -364,7 +365,8 @@ window.navegarGaleriaImagenesProceso = function(direccion) {
     // Actualizar imagen
     const imgElement = document.getElementById('galeria-imagen-actual');
     if (imgElement) {
-        imgElement.src = imagenes[indiceActual];
+        const img = imagenes[indiceActual];
+        imgElement.src = img instanceof File ? URL.createObjectURL(img) : img;
     }
     
     // Actualizar contador
@@ -399,7 +401,8 @@ window.irAImagenProceso = function(indice) {
     // Actualizar imagen
     const imgElement = document.getElementById('galeria-imagen-actual');
     if (imgElement) {
-        imgElement.src = imagenes[indice];
+        const img = imagenes[indice];
+        imgElement.src = img instanceof File ? URL.createObjectURL(img) : img;
     }
     
     // Actualizar contador
@@ -474,13 +477,13 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
             <button onclick="cerrarGaleriaImagenesProceso()" style="background: #dc2626; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.5rem; cursor: pointer;">×</button>
         </div>
         <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 4rem 2rem 2rem 2rem; width: 100%;">
-            <img id="galeria-imagen-actual" src="${imagenes[0]}" style="max-width: 85vw; max-height: 80vh; border-radius: 8px; object-fit: contain;">
+            <img id="galeria-imagen-actual" src="${imagenes[0] instanceof File ? URL.createObjectURL(imagenes[0]) : imagenes[0]}" style="max-width: 85vw; max-height: 80vh; border-radius: 8px; object-fit: contain;">
         </div>
         ${imagenes.length > 1 ? `
             <button onclick="navegarGaleriaImagenesProceso(-1)" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 2rem; cursor: pointer;">‹</button>
             <button onclick="navegarGaleriaImagenesProceso(1)" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 2rem; cursor: pointer;">›</button>
             <div style="position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; padding: 0.75rem; background: rgba(0,0,0,0.6); border-radius: 8px;">
-                ${imagenes.map((img, idx) => `<img src="${img}" onclick="irAImagenProceso(${idx})" class="miniatura-galeria-proceso" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid ${idx === 0 ? '#0ea5e9' : 'transparent'}; opacity: ${idx === 0 ? '1' : '0.6'};">`).join('')}
+                ${imagenes.map((img, idx) => `<img src="${img instanceof File ? URL.createObjectURL(img) : img}" onclick="irAImagenProceso(${idx})" class="miniatura-galeria-proceso" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid ${idx === 0 ? '#0ea5e9' : 'transparent'}; opacity: ${idx === 0 ? '1' : '0.6'};">`).join('')}
             </div>
         ` : ''}
     `;
@@ -499,7 +502,8 @@ window.navegarGaleriaImagenesProceso = function(direccion) {
     if (indice >= window.imagenesGaleriaProceso.length) indice = 0;
     
     galeria.dataset.indiceActual = indice;
-    document.getElementById('galeria-imagen-actual').src = window.imagenesGaleriaProceso[indice];
+    const img = window.imagenesGaleriaProceso[indice];
+    document.getElementById('galeria-imagen-actual').src = img instanceof File ? URL.createObjectURL(img) : img;
     document.getElementById('galeria-contador').textContent = indice + 1;
     
     document.querySelectorAll('.miniatura-galeria-proceso').forEach((m, i) => {
@@ -513,7 +517,8 @@ window.irAImagenProceso = function(indice) {
     if (!galeria) return;
     
     galeria.dataset.indiceActual = indice;
-    document.getElementById('galeria-imagen-actual').src = window.imagenesGaleriaProceso[indice];
+    const img = window.imagenesGaleriaProceso[indice];
+    document.getElementById('galeria-imagen-actual').src = img instanceof File ? URL.createObjectURL(img) : img;
     document.getElementById('galeria-contador').textContent = indice + 1;
     
     document.querySelectorAll('.miniatura-galeria-proceso').forEach((m, i) => {

@@ -718,70 +718,120 @@ class GestionItemsUI {
             obs_reflectivo: ''
         };
         
-        // Si manga está aplicada
+        // 🔍 VALIDACIÓN EXHAUSTIVA: MANGA
+        console.log('🔍 [VARIACIONES CAPTURA] ===== MANGA =====');
         const plicaManga = document.getElementById('aplica-manga');
+        console.log('   - aplica-manga checkbox encontrado:', !!plicaManga);
+        console.log('   - aplica-manga checkbox.checked:', plicaManga?.checked);
+        
         if (plicaManga?.checked) {
             const mangaInput = document.getElementById('manga-input');
             const mangaObs = document.getElementById('manga-obs');
-            variacionesConfiguradas.tipo_manga = mangaInput?.value?.trim() || 'No aplica';
-            variacionesConfiguradas.obs_manga = mangaObs?.value?.trim() || '';
+            const tipoMangaRaw = mangaInput?.value?.trim();
+            const obsMangaRaw = mangaObs?.value?.trim();
+            
+            console.log('   - manga-input encontrado:', !!mangaInput);
+            console.log('   - manga-input VALUE:', tipoMangaRaw);
+            console.log('   - manga-obs encontrado:', !!mangaObs);
+            console.log('   - manga-obs VALUE:', obsMangaRaw);
+            
+            variacionesConfiguradas.tipo_manga = tipoMangaRaw || 'No aplica';
+            variacionesConfiguradas.obs_manga = obsMangaRaw || '';
+            
+            console.log('   ✅ MANGA CAPTURADA:', {
+                tipo: variacionesConfiguradas.tipo_manga,
+                obs: variacionesConfiguradas.obs_manga
+            });
+        } else {
+            console.log('   ⚠️  Manga NO seleccionada (checkbox desmarcado)');
         }
         
-        // Si bolsillos está aplicado
+        // 🔍 VALIDACIÓN EXHAUSTIVA: BOLSILLOS
+        console.log('🔍 [VARIACIONES CAPTURA] ===== BOLSILLOS =====');
         const aplicaBolsillos = document.getElementById('aplica-bolsillos');
-        console.log('🔍 [BOLSILLOS DEBUG] aplica-bolsillos encontrado:', !!aplicaBolsillos);
-        console.log('🔍 [BOLSILLOS DEBUG] aplica-bolsillos.checked:', aplicaBolsillos?.checked);
+        console.log('   - aplica-bolsillos checkbox encontrado:', !!aplicaBolsillos);
+        console.log('   - aplica-bolsillos checkbox.checked:', aplicaBolsillos?.checked);
         
         if (aplicaBolsillos?.checked) {
-            console.log('✅ [BOLSILLOS DEBUG] Checkbox marcado, buscando campo obs...');
             variacionesConfiguradas.tiene_bolsillos = true;
             const bolsillosObs = document.getElementById('bolsillos-obs');
-            console.log('🔍 [BOLSILLOS DEBUG] Elemento bolsillos-obs encontrado:', !!bolsillosObs);
-            console.log('🔍 [BOLSILLOS DEBUG] Element details:', {
-                id: bolsillosObs?.id,
-                tagName: bolsillosObs?.tagName,
-                type: bolsillosObs?.type,
-                value: bolsillosObs?.value,
-                disabled: bolsillosObs?.disabled,
-                placeholder: bolsillosObs?.placeholder,
-                visible: bolsillosObs?.offsetParent !== null
+            const obsBolsillosRaw = bolsillosObs?.value?.trim();
+            
+            console.log('   - bolsillos-obs encontrado:', !!bolsillosObs);
+            console.log('   - bolsillos-obs VALUE:', obsBolsillosRaw);
+            
+            variacionesConfiguradas.obs_bolsillos = obsBolsillosRaw || '';
+            
+            console.log('   ✅ BOLSILLOS CAPTURADOS:', {
+                tiene: variacionesConfiguradas.tiene_bolsillos,
+                obs: variacionesConfiguradas.obs_bolsillos
             });
-            console.log('🔍 [BOLSILLOS DEBUG] Valor RAW:', bolsillosObs?.value);
-            console.log('🔍 [BOLSILLOS DEBUG] Valor TRIM:', bolsillosObs?.value?.trim());
-            variacionesConfiguradas.obs_bolsillos = bolsillosObs?.value?.trim() || '';
-            console.log('✅ [BOLSILLOS DEBUG] obs_bolsillos asignado:', variacionesConfiguradas.obs_bolsillos);
-            console.log('🔍 [BOLSILLOS DEBUG] Largo del valor:', (bolsillosObs?.value || '').length);
         } else {
-            console.log('⚠️  [BOLSILLOS DEBUG] Checkbox NO está marcado');
+            console.log('   ⚠️  Bolsillos NO seleccionados (checkbox desmarcado)');
         }
         
-        // Si broche está aplicado
+        // 🔍 VALIDACIÓN EXHAUSTIVA: BROCHE/BOTÓN
+        console.log('🔍 [VARIACIONES CAPTURA] ===== BROCHE/BOTÓN =====');
         const aplicaBroche = document.getElementById('aplica-broche');
+        console.log('   - aplica-broche checkbox encontrado:', !!aplicaBroche);
+        console.log('   - aplica-broche checkbox.checked:', aplicaBroche?.checked);
+        
         if (aplicaBroche?.checked) {
             const brocheInput = document.getElementById('broche-input');
-            variacionesConfiguradas.tipo_broche = brocheInput?.value?.trim() || 'No aplica';
             const brocheObs = document.getElementById('broche-obs');
-            variacionesConfiguradas.obs_broche = brocheObs?.value?.trim() || '';
+            const tipoBrocheRaw = brocheInput?.value?.trim();
+            const obsBrocheRaw = brocheObs?.value?.trim();
+            
+            console.log('   - broche-input encontrado:', !!brocheInput);
+            console.log('   - broche-input VALUE:', tipoBrocheRaw);
+            console.log('   - broche-obs encontrado:', !!brocheObs);
+            console.log('   - broche-obs VALUE:', obsBrocheRaw);
+            
+            variacionesConfiguradas.tipo_broche = tipoBrocheRaw || 'No aplica';
+            variacionesConfiguradas.obs_broche = obsBrocheRaw || '';
+            
+            console.log('   ✅ BROCHE CAPTURADO:', {
+                tipo: variacionesConfiguradas.tipo_broche,
+                obs: variacionesConfiguradas.obs_broche
+            });
+        } else {
+            console.log('   ⚠️  Broche NO seleccionado (checkbox desmarcado)');
         }
         
-        // Si reflectivo está aplicado
+        // 🔍 VALIDACIÓN EXHAUSTIVA: REFLECTIVO
+        console.log('🔍 [VARIACIONES CAPTURA] ===== REFLECTIVO =====');
         const aplicaReflectivo = document.getElementById('aplica-reflectivo');
+        console.log('   - aplica-reflectivo checkbox encontrado:', !!aplicaReflectivo);
+        console.log('   - aplica-reflectivo checkbox.checked:', aplicaReflectivo?.checked);
+        
         if (aplicaReflectivo?.checked) {
             variacionesConfiguradas.tiene_reflectivo = true;
             const reflectivoObs = document.getElementById('reflectivo-obs');
-            variacionesConfiguradas.obs_reflectivo = reflectivoObs?.value?.trim() || '';
+            const obsReflectivoRaw = reflectivoObs?.value?.trim();
+            
+            console.log('   - reflectivo-obs encontrado:', !!reflectivoObs);
+            console.log('   - reflectivo-obs VALUE:', obsReflectivoRaw);
+            
+            variacionesConfiguradas.obs_reflectivo = obsReflectivoRaw || '';
+            
+            console.log('   ✅ REFLECTIVO CAPTURADO:', {
+                tiene: variacionesConfiguradas.tiene_reflectivo,
+                obs: variacionesConfiguradas.obs_reflectivo
+            });
+        } else {
+            console.log('   ⚠️  Reflectivo NO seleccionado (checkbox desmarcado)');
         }
         
-        console.log(`🎨 [GestionItemsUI] Variaciones configuradas:`, variacionesConfiguradas);
+        console.log(`🎨 [GestionItemsUI] ===== VARIACIONES CONFIGURADAS FINALES =====`);
         console.log(`🎨 [DETALLE VARIACIONES]:
-            - tipo_manga: ${variacionesConfiguradas.tipo_manga}
-            - obs_manga: ${variacionesConfiguradas.obs_manga}
-            - tipo_broche: ${variacionesConfiguradas.tipo_broche}
-            - obs_broche: ${variacionesConfiguradas.obs_broche}
+            - tipo_manga: "${variacionesConfiguradas.tipo_manga}"
+            - obs_manga: "${variacionesConfiguradas.obs_manga}"
+            - tipo_broche: "${variacionesConfiguradas.tipo_broche}"
+            - obs_broche: "${variacionesConfiguradas.obs_broche}"
             - tiene_bolsillos: ${variacionesConfiguradas.tiene_bolsillos}
-            - obs_bolsillos: ${variacionesConfiguradas.obs_bolsillos}
+            - obs_bolsillos: "${variacionesConfiguradas.obs_bolsillos}"
             - tiene_reflectivo: ${variacionesConfiguradas.tiene_reflectivo}
-            - obs_reflectivo: ${variacionesConfiguradas.obs_reflectivo}
+            - obs_reflectivo: "${variacionesConfiguradas.obs_reflectivo}"
         `);
         
         // Obtener cantidades por talla
@@ -865,6 +915,47 @@ class GestionItemsUI {
                 console.log('✅ [GestionItemsUI] Prenda agregada al gestor (índice: ' + indiceAgregado + ')');
                 console.log('   Total prendas:', window.gestorPrendaSinCotizacion.prendas.length);
                 console.log('   Prendas activas:', window.gestorPrendaSinCotizacion.obtenerActivas().length);
+                
+                // ✅ AGREGAR A GESTOR CENTRALIZADO JSON
+                if (window.gestorDatosPedidoJSON) {
+                    console.log('💾 [GestionItemsUI] Agregando prenda al gestor centralizado JSON...');
+                    
+                    // 🔍 VERIFICAR VARIACIONES ANTES DE GUARDAR
+                    console.log('🔍 [JSON GESTOR] Variantes extraídas de prendaNueva:', prendaNueva.variantes);
+                    console.log('🔍 [JSON GESTOR] Verificación de valores:');
+                    console.log('   - tipo_manga:', prendaNueva.variantes?.tipo_manga);
+                    console.log('   - obs_manga:', prendaNueva.variantes?.obs_manga);
+                    console.log('   - tipo_broche:', prendaNueva.variantes?.tipo_broche);
+                    console.log('   - obs_broche:', prendaNueva.variantes?.obs_broche);
+                    console.log('   - tiene_bolsillos:', prendaNueva.variantes?.tiene_bolsillos);
+                    console.log('   - obs_bolsillos:', prendaNueva.variantes?.obs_bolsillos);
+                    console.log('   - tiene_reflectivo:', prendaNueva.variantes?.tiene_reflectivo);
+                    console.log('   - obs_reflectivo:', prendaNueva.variantes?.obs_reflectivo);
+                    
+                    window.gestorDatosPedidoJSON.agregarPrenda({
+                        nombre: prendaNueva.nombre_producto,
+                        descripcion: prendaNueva.descripcion,
+                        origen: prendaNueva.origen,
+                        genero: prendaNueva.genero,
+                        imagenes: prendaNueva.imagenes || [],
+                        telas: prendaNueva.telasAgregadas || [],
+                        procesos: window.procesosSeleccionados || {}, // Agregar procesos seleccionados
+                        variaciones: {
+                            tipo_manga: prendaNueva.variantes?.tipo_manga ?? 'No aplica',
+                            obs_manga: prendaNueva.variantes?.obs_manga ?? '',
+                            tipo_broche: prendaNueva.variantes?.tipo_broche ?? 'No aplica',
+                            obs_broche: prendaNueva.variantes?.obs_broche ?? '',
+                            tiene_bolsillos: prendaNueva.variantes?.tiene_bolsillos ?? false,
+                            obs_bolsillos: prendaNueva.variantes?.obs_bolsillos ?? '',
+                            tiene_reflectivo: prendaNueva.variantes?.tiene_reflectivo ?? false,
+                            obs_reflectivo: prendaNueva.variantes?.obs_reflectivo ?? ''
+                        },
+                        cantidades: prendaNueva.cantidadesPorTalla || {}
+                    });
+                    
+                    console.log('✅ [GestionItemsUI] Prenda agregada al gestor JSON centralizado');
+                    console.log('📊 Datos JSON actuales:', window.gestorDatosPedidoJSON.obtenerJSON());
+                }
                 
                 // Verificación: obtener la prenda que se acaba de guardar
                 const prendaGuardada = window.gestorPrendaSinCotizacion.obtenerPorIndice(indiceAgregado);
@@ -953,6 +1044,25 @@ class GestionItemsUI {
 
             // Recolectar datos del formulario
             const pedidoData = this.recolectarDatosPedido();
+            
+            // 🔍 LOG CRÍTICO: Verificar estructura antes de enviar
+            console.log('📋 [manejarSubmitFormulario] Datos del pedido recolectados:');
+            console.log('   Cliente:', pedidoData.cliente);
+            console.log('   Asesora:', pedidoData.asesora);
+            console.log('   Forma de pago:', pedidoData.forma_de_pago);
+            console.log('   Items totales:', pedidoData.items.length);
+            
+            // Verificar que cada ítem tenga los campos requeridos
+            pedidoData.items.forEach((item, idx) => {
+                console.log(`   ✓ Ítem ${idx}:`, {
+                    tipo: item.tipo,
+                    prenda: item.prenda,
+                    origen: item.origen,
+                    has_tallas: !!((item.tallas && item.tallas.length > 0) || (item.cantidad_talla && Object.keys(item.cantidad_talla).length > 0)),
+                    // 'numero_pedido': 'NO REQUERIDO (generado en backend)', // ❌ COMENTADO
+                    // 'pedido_produccion_id': 'SERÁ ASIGNADO EN BACKEND', // ✅ FK requerida
+                });
+            });
 
             // Validar que haya items
             if (!pedidoData.items || pedidoData.items.length === 0) {
@@ -969,17 +1079,23 @@ class GestionItemsUI {
                 return;
             }
 
+            console.log('✅ [manejarSubmitFormulario] Validación pasada, enviando pedido...');
+
             // Crear pedido
             const resultado = await this.api.crearPedido(pedidoData);
 
             if (resultado.success) {
-                this.mostrarNotificacion('Pedido creado correctamente ✓', 'success');
-                // Redirigir inmediatamente
+                console.log('✅ [manejarSubmitFormulario] PEDIDO CREADO EXITOSAMENTE', {
+                    pedido_id: resultado.pedido_id,
+                    numero_pedido: resultado.numero_pedido,
+                });
+                // Mostrar modal en lugar de notificación
                 setTimeout(() => {
-                    window.location.href = '/asesores/pedidos-produccion';
-                }, 800);
+                    this.mostrarModalExito();
+                }, 500);
             }
         } catch (error) {
+            console.error('❌ [manejarSubmitFormulario] ERROR:', error);
             this.mostrarNotificacion('Error: ' + error.message, 'error');
         }
     }
@@ -987,8 +1103,11 @@ class GestionItemsUI {
     recolectarDatosPedido() {
         const items = window.itemsPedido || [];
         
+        // 🔍 LOG: Verificar items antes de procesar
+        console.log('🔎 [recolectarDatosPedido] Items totales recibidos:', items.length);
+        
         // Convertir items al formato esperado por el backend
-        const itemsFormato = items.map(item => {
+        const itemsFormato = items.map((item, itemIndex) => {
             const baseItem = {
                 tipo: item.tipo,
                 prenda: item.prenda?.nombre || item.nombre || '',
@@ -998,9 +1117,16 @@ class GestionItemsUI {
                 variaciones: item.variaciones || {},
             };
             
+            // 🔍 LOG: Verificar pedido_produccion_id si existe
+            if (item.pedido_produccion_id) {
+                baseItem.pedido_produccion_id = item.pedido_produccion_id;
+                console.log(`✅ [Item ${itemIndex}] Incluido pedido_produccion_id: ${item.pedido_produccion_id}`);
+            }
+            
             // Si tiene imagenes, incluirlas
             if (item.imagenes && item.imagenes.length > 0) {
                 baseItem.imagenes = item.imagenes;
+                console.log(`📸 [Item ${itemIndex}] Imágenes: ${item.imagenes.length}`);
             }
             
             // Si es cotizacion, incluir datos de cotizacion
@@ -1064,32 +1190,88 @@ class GestionItemsUI {
                     });
                 }
                 
-                // Construir variaciones
+                // ✅ CONSTRUIR VARIACIONES DESDE LA FUENTE CORRECTA (prenda.variantes)
+                // prenda.variantes contiene: {tipo_manga, obs_manga, tipo_broche, obs_broche, tiene_bolsillos, obs_bolsillos, tiene_reflectivo, obs_reflectivo}
+                
+                console.log(`🔍 [VARIACIONES] Procesando prenda ${prendaIndex}:`, {
+                    tieneVariantes: !!prenda.variantes,
+                    varianteKeys: Object.keys(prenda.variantes || {}),
+                    variantes: prenda.variantes
+                });
+                
+                // 🔹 EXTRAER VALORES DIRECTOS DE prenda.variantes
+                // Usar ?? para diferenciar entre undefined/null y false/0/''
+                const tipoMangaRaw = prenda.variantes?.tipo_manga ?? 'No aplica';
+                const obsMangaRaw = prenda.variantes?.obs_manga ?? '';
+                const tieneBolsillosRaw = prenda.variantes?.tiene_bolsillos ?? false;
+                const obsBolsillosRaw = prenda.variantes?.obs_bolsillos ?? '';
+                const tipoBrocheRaw = prenda.variantes?.tipo_broche ?? 'No aplica';
+                const obsBrocheRaw = prenda.variantes?.obs_broche ?? '';
+                const tieneReflectivoRaw = prenda.variantes?.tiene_reflectivo ?? false;
+                const obsReflectivoRaw = prenda.variantes?.obs_reflectivo ?? '';
+                
+                console.log(`✅ [VARIACIONES DEBUG] Valores extraídos de prenda.variantes:`, {
+                    tipo_manga: tipoMangaRaw,
+                    obs_manga: obsMangaRaw,
+                    tipo_broche: tipoBrocheRaw,
+                    obs_broche: obsBrocheRaw,
+                    tiene_bolsillos: tieneBolsillosRaw,
+                    obs_bolsillos: obsBolsillosRaw,
+                    tiene_reflectivo: tieneReflectivoRaw,
+                    obs_reflectivo: obsReflectivoRaw
+                });
+                
+                // 🔹 VALIDAR: No permitir sobrescritura accidental con valores por defecto
+                // Si el usuario NO seleccionó manga, tipo_manga será 'No aplica'
+                // Si el usuario SÍ seleccionó manga, tipo_manga tendrá el valor real (ej: "ret", "corta", etc)
+                const tipoManga = tipoMangaRaw === 'No aplica' ? 'No aplica' : (tipoMangaRaw || 'No aplica');
+                const obsManga = obsMangaRaw?.trim?.() || '';
+                const tieneBolsillos = tieneBolsillosRaw === true; // ✅ Validar que es exactamente true
+                const obsBolsillos = obsBolsillosRaw?.trim?.() || '';
+                const tipoBroche = tipoBrocheRaw === 'No aplica' ? 'No aplica' : (tipoBrocheRaw || 'No aplica');
+                const obsBroche = obsBrocheRaw?.trim?.() || '';
+                const tieneReflectivo = tieneReflectivoRaw === true; // ✅ Validar que es exactamente true
+                const obsReflectivo = obsReflectivoRaw?.trim?.() || '';
+                
+                console.log(`✅ [VARIACIONES VALIDADAS] Prenda ${prendaIndex}:`, {
+                    tipo_manga: tipoManga,
+                    obs_manga: obsManga,
+                    tipo_broche: tipoBroche,
+                    obs_broche: obsBroche,
+                    tiene_bolsillos: tieneBolsillos,
+                    obs_bolsillos: obsBolsillos,
+                    tiene_reflectivo: tieneReflectivo,
+                    obs_reflectivo: obsReflectivo
+                });
+                
+                // Construir objeto de variaciones para el backend
                 const variaciones = {
                     manga: {
-                        tipo: prenda.tipo_manga || 'No aplica',
-                        observacion: prenda.obs_manga || ''
+                        tipo: tipoManga,
+                        observacion: obsManga
                     },
                     bolsillos: {
-                        tiene: prenda.tiene_bolsillos || false,
-                        observacion: prenda.obs_bolsillos || ''
+                        tiene: tieneBolsillos,
+                        observacion: obsBolsillos
                     },
                     broche: {
-                        tipo: prenda.tipo_broche || 'No aplica',
-                        observacion: prenda.obs_broche || ''
+                        tipo: tipoBroche,
+                        observacion: obsBroche
                     },
                     reflectivo: {
-                        tiene: prenda.tiene_reflectivo || false,
-                        observacion: prenda.obs_reflectivo || ''
+                        tiene: tieneReflectivo,
+                        observacion: obsReflectivo
                     }
                 };
                 
+                console.log(`📤 [VARIACIONES JSON] Objeto final para backend:`, variaciones);
+                
                 // ✅ EXTRAER OBSERVACIONES para enviar al backend
                 // El backend espera estos campos al nivel superior del objeto
-                const obs_manga = prenda.obs_manga || variaciones.manga?.observacion || '';
-                const obs_bolsillos = prenda.obs_bolsillos || variaciones.bolsillos?.observacion || '';
-                const obs_broche = prenda.obs_broche || variaciones.broche?.observacion || '';
-                const obs_reflectivo = prenda.obs_reflectivo || variaciones.reflectivo?.observacion || '';
+                const obs_manga = obsManga;
+                const obs_bolsillos = obsBolsillos;
+                const obs_broche = obsBroche;
+                const obs_reflectivo = obsReflectivo;
                 
                 // ✅ Convertir cantidad_talla a tallas array para validación backend
                 const tallas = Object.keys(cantidadTalla);
@@ -1127,6 +1309,16 @@ class GestionItemsUI {
                     obs_reflectivo: obs_reflectivo,
                     origen: prenda.origen || 'bodega', // ✅ USAR ORIGEN DEL GESTOR
                     de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1, // ✅ PASAR de_bodega
+                    // ✅ CRÍTICO: INCLUIR IDs DE BASE DE DATOS y NOMBRES PARA CREAR
+                    color: prenda.color || null,
+                    tela: prenda.tela || null,
+                    color_id: prenda.color_id || null,
+                    tela_id: prenda.tela_id || null,
+                    tipo_manga_id: prenda.tipo_manga_id || null,
+                    tipo_broche_boton_id: prenda.tipo_broche_boton_id || null,
+                    // ✅ INCLUIR NOMBRES PARA CREAR SI NO EXISTEN
+                    manga: tipoManga !== 'No aplica' ? tipoManga : null,
+                    broche: tipoBroche !== 'No aplica' ? tipoBroche : null,
                     // ✅ CRÍTICO: INCLUIR PROCESOS CON TALLAS Y DETALLES
                     procesos: procesosParaEnviar
                 };
@@ -1151,6 +1343,15 @@ class GestionItemsUI {
                 // Agregar telas si existen
                 if (prenda.telas && prenda.telas.length > 0) {
                     itemSinCot.telas = prenda.telas;
+                    // ✅ Usar la primera tela para color_id y tela_id
+                    if (prenda.telas[0]) {
+                        if (prenda.telas[0].color) {
+                            itemSinCot.color = prenda.telas[0].color;
+                        }
+                        if (prenda.telas[0].nombre_tela) {
+                            itemSinCot.tela = prenda.telas[0].nombre_tela;
+                        }
+                    }
                     console.log(`🧵 Telas encontradas:`, prenda.telas.length);
                 }
                 
@@ -1167,12 +1368,84 @@ class GestionItemsUI {
         
         console.log('📦 Items para enviar:', itemsFormato);
         
-        return {
+        // 🔍 LOG CRÍTICO: Verificar que cada ítem tiene pedido_produccion_id si es necesario
+        // ACTUALIZACIÓN [16/01/2026]: El backend ahora requiere pedido_produccion_id
+        console.log('🔎 [recolectarDatosPedido] VERIFICACIÓN FINAL:');
+        itemsFormato.forEach((item, idx) => {
+            const tieneId = !!item.pedido_produccion_id;
+            const tieneTallas = (item.tallas && item.tallas.length > 0) || (item.cantidad_talla && Object.keys(item.cantidad_talla).length > 0);
+            const tienePrenda = !!item.prenda;
+            console.log(`  ✓ Ítem ${idx}: prenda="${item.prenda}", tiene_id=${tieneId}, tiene_tallas=${tieneTallas}`);
+            
+            // 🔍 VERIFICACIÓN EXHAUSTIVA DE VARIACIONES
+            if (item.variaciones) {
+                console.log(`  🎨 [VARIACIONES ÍTEM ${idx}]:`, {
+                    manga: {
+                        tipo: item.variaciones.manga?.tipo,
+                        observacion: item.variaciones.manga?.observacion
+                    },
+                    bolsillos: {
+                        tiene: item.variaciones.bolsillos?.tiene,
+                        observacion: item.variaciones.bolsillos?.observacion
+                    },
+                    broche: {
+                        tipo: item.variaciones.broche?.tipo,
+                        observacion: item.variaciones.broche?.observacion
+                    },
+                    reflectivo: {
+                        tiene: item.variaciones.reflectivo?.tiene,
+                        observacion: item.variaciones.reflectivo?.observacion
+                    }
+                });
+            }
+        });
+        
+        const pedidoFinal = {
             cliente: document.getElementById('cliente_editable')?.value || '',
             asesora: document.getElementById('asesora_editable')?.value || '',
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
             items: itemsFormato,
+            // 'numero_pedido': null, // ❌ COMENTADO [16/01/2026]: Se genera en el backend automáticamente
         };
+        
+        console.log('📤 Objeto pedido final a enviar:', pedidoFinal);
+        
+        // 🔍 LOG CRÍTICO: Confirmar que las variaciones NO son valores por defecto
+        console.log('🔍 [VARIACIONES - ANTES DE ENVIAR] VALIDACIÓN EXHAUSTIVA:');
+        let variacionesValidas = true;
+        itemsFormato.forEach((item, idx) => {
+            if (item.variaciones) {
+                const manga = item.variaciones.manga;
+                const bolsillos = item.variaciones.bolsillos;
+                const broche = item.variaciones.broche;
+                const reflectivo = item.variaciones.reflectivo;
+                
+                // Verificar que NO son todos valores por defecto
+                const esDefaultManga = manga?.tipo === 'No aplica' && manga?.observacion === '';
+                const esDefaultBolsillos = bolsillos?.tiene === false && bolsillos?.observacion === '';
+                const esDefaultBroche = broche?.tipo === 'No aplica' && broche?.observacion === '';
+                const esDefaultReflectivo = reflectivo?.tiene === false && reflectivo?.observacion === '';
+                
+                console.log(`  Ítem ${idx} (${item.prenda}):`);
+                console.log(`    - Manga: tipo="${manga?.tipo}" (esDefault=${esDefaultManga})`);
+                console.log(`    - Bolsillos: tiene=${bolsillos?.tiene} obs="${bolsillos?.observacion}" (esDefault=${esDefaultBolsillos})`);
+                console.log(`    - Broche: tipo="${broche?.tipo}" (esDefault=${esDefaultBroche})`);
+                console.log(`    - Reflectivo: tiene=${reflectivo?.tiene} obs="${reflectivo?.observacion}" (esDefault=${esDefaultReflectivo})`);
+                
+                if (esDefaultManga && esDefaultBolsillos && esDefaultBroche && esDefaultReflectivo) {
+                    console.warn(`  ⚠️  ADVERTENCIA: Ítem ${idx} tiene TODAS las variaciones con valores por defecto`);
+                    variacionesValidas = false;
+                }
+            }
+        });
+        
+        if (variacionesValidas) {
+            console.log('✅ [VARIACIONES] Validación exitosa: contienen valores del usuario, no defaults');
+        } else {
+            console.warn('⚠️  [VARIACIONES] Se detectaron ítems con valores por defecto - verifique si esto es intencional');
+        }
+        
+        return pedidoFinal;
     }
 
     /**
@@ -1541,6 +1814,67 @@ class GestionItemsUI {
         modal.onclick = (e) => {
             if (e.target === modal) modal.remove();
         };
+    }
+
+    mostrarModalExito() {
+        console.log('📋 [mostrarModalExito] Iniciando...');
+        
+        // Obtener el modal del DOM
+        const modal = document.getElementById('modalExitoPedido');
+        
+        if (!modal) {
+            console.warn('⚠️ Modal no encontrado en el DOM, redirigiendo...');
+            setTimeout(() => {
+                window.location.href = '/asesores/pedidos';
+            }, 1000);
+            return;
+        }
+
+        console.log('✅ Modal encontrado en el DOM');
+
+        // Usar Bootstrap's Modal API
+        try {
+            // Bootstrap 5+
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                console.log('📦 Usando Bootstrap 5+');
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            } 
+            // Bootstrap 4 con jQuery
+            else if (typeof $ !== 'undefined' && $.fn.modal) {
+                console.log('📦 Usando Bootstrap 4 + jQuery');
+                $(modal).modal('show');
+            } 
+            // Fallback manual
+            else {
+                console.warn('⚠️ Bootstrap no disponible, mostrando modal manualmente...');
+                modal.style.display = 'block';
+                modal.classList.add('show');
+                modal.setAttribute('aria-hidden', 'false');
+                
+                // Agregar backdrop
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+                
+                // Permitir cerrar con escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                        modal.setAttribute('aria-hidden', 'true');
+                        backdrop.remove();
+                    }
+                });
+            }
+            console.log('✅ Modal mostrado correctamente');
+        } catch (error) {
+            console.error('❌ Error al mostrar modal:', error);
+            // Si hay error, redirigir directamente
+            setTimeout(() => {
+                window.location.href = '/asesores/pedidos';
+            }, 1000);
+        }
     }
 }
 

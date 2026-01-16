@@ -9,8 +9,12 @@ use Illuminate\Support\Facades\Log;
  * EnriquecerDatosService
  * 
  * Enriquece los datos de prendas que vienen del frontend con IDs faltantes
- * Busca tela_id, color_id, tipo_manga_id, tipo_broche_id por nombre
+ * Busca tela_id, color_id, tipo_manga_id, tipo_broche_boton_id por nombre
  * Si no existen, los crea automáticamente
+ * 
+ * ACTUALIZACIÓN [16/01/2026]:
+ * - Cambio de tipo_broche_id a tipo_broche_boton_id
+ * - Tabla tipos_broche → tipos_broche_boton
  */
 class EnriquecerDatosService
 {
@@ -87,24 +91,25 @@ class EnriquecerDatosService
             }
         }
 
-        // Buscar/crear tipo_broche_id por nombre si no existe
-        if (empty($prenda['tipo_broche_id']) && !empty($prenda['broche'])) {
-            $broche = DB::table('tipos_broche')
+        // Buscar/crear tipo_broche_boton_id por nombre si no existe
+        // ACTUALIZACIÓN [16/01/2026]: Cambio de tipo_broche_id a tipo_broche_boton_id
+        if (empty($prenda['tipo_broche_boton_id']) && !empty($prenda['broche'])) {
+            $broche = DB::table('tipos_broche_boton')
                 ->where('nombre', $prenda['broche'])
                 ->first();
             
             if ($broche) {
-                $prenda['tipo_broche_id'] = $broche->id;
+                $prenda['tipo_broche_boton_id'] = $broche->id;
                 Log::info('✅ Broche encontrado', ['nombre' => $prenda['broche'], 'id' => $broche->id]);
             } else {
                 // Crear tipo broche nuevo
-                $broqueId = DB::table('tipos_broche')->insertGetId([
+                $broqueId = DB::table('tipos_broche_boton')->insertGetId([
                     'nombre' => $prenda['broche'],
                     'activo' => 1,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $prenda['tipo_broche_id'] = $broqueId;
+                $prenda['tipo_broche_boton_id'] = $broqueId;
                 Log::info('✅ Broche creado', ['nombre' => $prenda['broche'], 'id' => $broqueId]);
             }
         }

@@ -131,7 +131,18 @@ window.actualizarTablaTelas = function() {
             // Crear un array con blob URLs dinámicas para esta visualización
             const imagenConBlobUrl = telaData.imagenes.map((img, imgIndex) => {
                 // Crear una nueva blob URL a partir del File object
-                const blobUrl = URL.createObjectURL(img.file);
+                let blobUrl;
+                if (img && img.file instanceof File) {
+                    blobUrl = URL.createObjectURL(img.file);
+                } else if (img instanceof File) {
+                    blobUrl = URL.createObjectURL(img);
+                } else if (img && img.blobUrl) {
+                    blobUrl = img.blobUrl;
+                } else if (typeof img === 'string') {
+                    blobUrl = img;
+                } else {
+                    blobUrl = URL.createObjectURL(img);
+                }
                 console.log(`📸 [TELAS] Creada blob URL para imagen ${imgIndex} de tela ${index}: ${blobUrl.substring(0, 50)}...`);
                 return {
                     ...img,

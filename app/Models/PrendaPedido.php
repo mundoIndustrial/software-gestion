@@ -6,169 +6,77 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Helpers\DescripcionPrendaHelper;
-use App\Traits\HasLegibleAtributosPrenda;
 
+/**
+ * PrendaPedido Model
+ * 
+ * Modelo normalizado para gestionar prendas en pedidos de producción.
+ * 
+ * Cambios importantes:
+ * - Usa `pedido_produccion_id` como FK (NO numero_pedido)
+ * - Almacena solo datos básicos de la prenda
+ * - Variantes (color, tela, manga, broche, bolsillos) están en tabla hija prenda_variantes
+ * - NO maneja reflectivo
+ * - Escalable para ERP de producción textil
+ */
 class PrendaPedido extends Model
 {
-    use SoftDeletes, HasLegibleAtributosPrenda;
+    use SoftDeletes;
 
     protected $table = 'prendas_pedido';
 
     protected $fillable = [
-        'numero_pedido',
+        'pedido_produccion_id', // ✅ REQUIRED: Foreign Key a pedidos_produccion
         'nombre_prenda',
-        'cantidad',
         'descripcion',
-        'descripcion_variaciones',
-        'cantidad_talla',
         'genero',
-        'color_id',
-        'tela_id',
-        'tipo_manga_id',
-        'tipo_broche_id',
-        'tiene_bolsillos',
-        'tiene_reflectivo',
-        'manga_obs',
-        'bolsillos_obs',
-        'broche_obs',
-        'reflectivo_obs',
         'de_bodega',
+        // 'numero_pedido', // ❌ COMENTADO [16/01/2026]: Se usa pedido_produccion_id en su lugar
     ];
 
     protected $casts = [
-        'cantidad_talla' => 'array',
-        'genero' => 'array', // ✅ Almacena múltiples géneros como JSON
+        'de_bodega' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    protected $appends = [
-        'formatted_description',
-    ];
+    // ============================================================
+    // RELACIONES
+    // ============================================================
 
     /**
-     * ACCESSOR: cantidad siempre devuelve la suma de cantidad_talla
-     * Esto hace que sea DINÁMICO y siempre refleje la suma correcta
-     * Maneja ambas estructuras: plana {talla: cantidad} y anidada {genero: {talla: cantidad}}
+     * Relación: Una prenda pertenece a un pedido de producción
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function getCantidadAttribute()
+    public function pedidoProduccion(): BelongsTo
     {
-        // Usar el cast 'array' de Laravel en lugar de acceder a attributes directamente
-        $cantidadesTalla = $this->cantidad_talla ?? [];
-        
-        \Log::debug('📊 [PrendaPedido.getCantidadAttribute] Accediendo a cantidad', [
-            'prenda_id' => $this->id,
-            'nombre' => $this->nombre_prenda,
-            'cantidad_talla_raw' => $cantidadesTalla,
-            'es_array' => is_array($cantidadesTalla),
-            'es_string' => is_string($cantidadesTalla),
-        ]);
-        
-        // Si aún es string (doble encoding), decodificar hasta obtener array
-        while (is_string($cantidadesTalla)) {
-            $decoded = json_decode($cantidadesTalla, true);
-            if ($decoded === null) {
-                break;
-            }
-            $cantidadesTalla = $decoded;
-            \Log::debug('📊 [PrendaPedido.getCantidadAttribute] Decodificado de JSON', [
-                'resultado' => $cantidadesTalla,
-                'es_array' => is_array($cantidadesTalla),
-            ]);
-        }
-        
-        // Asegurar que sea array
-        if (!is_array($cantidadesTalla)) {
-            $cantidadesTalla = [];
-        }
-        
-        // Calcular suma - manejar ambas estructuras
-        $suma = 0;
-        foreach ($cantidadesTalla as $clave => $valor) {
-            if (is_array($valor)) {
-                // Estructura anidada: {genero: {talla: cantidad}}
-                $suma += array_sum($valor);
-            } else {
-                // Estructura plana: {talla: cantidad}
-                $suma += (int)$valor;
-            }
-        }
-        
-        \Log::debug('📊 [PrendaPedido.getCantidadAttribute] Suma calculada', [
-            'suma' => $suma,
-            'tallas' => $cantidadesTalla,
-        ]);
-        
-        return $suma;
+        return $this->belongsTo(PedidoProduccion::class, 'pedido_produccion_id');
     }
 
     /**
-     * MUTADOR: Permite asignar cantidad, pero no se usa porque el accessor siempre devuelve la suma
+     * Relación: Una prenda tiene muchas variantes
+     * 
+     * Una variante es una combinación específica de:
+     * - Talla
+     * - Color
+     * - Tela
+     * - Tipo de manga
+     * - Tipo de broche/botón
+     * - Bolsillos
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function setCantidadAttribute($value)
+    public function variantes(): HasMany
     {
-        // Permitir asignar, pero será ignorado cuando se acceda (el accessor devuelve la suma)
-        $this->attributes['cantidad'] = $value;
+        return $this->hasMany(PrendaVariante::class, 'prenda_pedido_id');
     }
 
     /**
-     * Relación: Una prenda pertenece a un pedido (via numero_pedido)
-     */
-    public function pedido(): BelongsTo
-    {
-        return $this->belongsTo(PedidoProduccion::class, 'numero_pedido', 'numero_pedido');
-    }
-
-    /**
-     * Relación: Una prenda pertenece a un color
-     */
-    public function color(): BelongsTo
-    {
-        return $this->belongsTo(ColorPrenda::class, 'color_id');
-    }
-
-    /**
-     * Relación: Una prenda pertenece a una tela
-     */
-    public function tela(): BelongsTo
-    {
-        return $this->belongsTo(TelaPrenda::class, 'tela_id');
-    }
-
-    /**
-     * Relación: Una prenda pertenece a un tipo de manga
-     */
-    public function tipoManga(): BelongsTo
-    {
-        return $this->belongsTo(TipoManga::class, 'tipo_manga_id');
-    }
-
-    /**
-     * Relación: Una prenda pertenece a un tipo de broche
-     */
-    public function tipoBroche(): BelongsTo
-    {
-        return $this->belongsTo(TipoBroche::class, 'tipo_broche_id');
-    }
-
-    /**
-     * Relación: Una prenda tiene muchos procesos
-     */
-    public function procesos(): HasMany
-    {
-        return $this->hasMany(ProcesoPrenda::class);
-    }
-
-    /**
-     * Relación: Una prenda tiene muchas entregas (por talla)
-     */
-    public function entregas(): HasMany
-    {
-        return $this->hasMany(EntregaPrendaPedido::class, 'numero_pedido', 'numero_pedido')
-            ->where('nombre_prenda', $this->nombre_prenda);
-    }
-
-    /**
-     * Relación: Una prenda tiene muchas fotos
+     * Relación: Una prenda tiene muchas fotos (de referencia)
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function fotos(): HasMany
     {
@@ -176,248 +84,286 @@ class PrendaPedido extends Model
     }
 
     /**
-     * Relación: Una prenda tiene muchas fotos de logo
+     * Relación: Una prenda tiene muchas fotos de telas
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function fotosLogo(): HasMany
+    public function fotosTelas(): HasMany
     {
-        return $this->hasMany(PrendaFotoLogoPedido::class, 'prenda_pedido_id');
+        return $this->hasMany(PrendaFotoTelasPedido::class, 'prenda_pedido_id');
     }
 
     /**
-     * Relación: Una prenda tiene muchas fotos de tela
+     * Relación: Una prenda tiene muchos procesos especiales
+     * 
+     * (bordado, estampado, DTF, sublimado, etc.)
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function fotosTela(): HasMany
+    public function procesos(): HasMany
     {
-        return $this->hasMany(PrendaFotoTelaPedido::class, 'prenda_pedido_id');
+        return $this->hasMany(PedidosProcesosPrendaDetalle::class, 'prenda_pedido_id');
+    }
+
+    // ============================================================
+    // SCOPES
+    // ============================================================
+
+    /**
+     * Scope: Filtrar por pedido de producción
+     * 
+     * @param $query
+     * @param $pedidoId
+     * @return mixed
+     */
+    public function scopePorPedido($query, $pedidoId)
+    {
+        return $query->where('pedido_produccion_id', $pedidoId);
     }
 
     /**
-     * Relación: Una prenda REFLECTIVO tiene un registro en tabla prendas_reflectivo
-     * (Si es tipo reflectivo sin cotización)
+     * Scope: Filtrar por origen (bodega o nuevas)
+     * 
+     * @param $query
+     * @param $deBodega
+     * @return mixed
      */
-    public function reflectivo()
+    public function scopePorOrigen($query, $deBodega = false)
     {
-        return $this->hasOne(PrendaReflectivo::class, 'prenda_pedido_id');
+        return $query->where('de_bodega', $deBodega);
     }
 
     /**
-     * Recalcular cantidad_total del pedido cuando se crea o actualiza una prenda
-     * NOTA: cantidad es DINÁMICO y se calcula desde cantidad_talla via accessor
+     * Scope: Filtrar por género
+     * 
+     * @param $query
+     * @param $genero
+     * @return mixed
+     */
+    public function scopePorGenero($query, $genero)
+    {
+        return $query->where('genero', $genero);
+    }
+
+    // ============================================================
+    // ACCESORESY MUTADORES
+    // ============================================================
+
+    /**
+     * Accessor: Obtener la cantidad total de prendas (suma de todas las variantes)
+     * 
+     * @return int
+     */
+    public function getCantidadTotalAttribute(): int
+    {
+        return $this->variantes()->sum('cantidad') ?? 0;
+    }
+
+    /**
+     * Accessor: Obtener la descripción legible de variantes
+     * 
+     * Ej: "Dama: Colores rojo, azul; Telas 100% Algodón"
+     * 
+     * @return string
+     */
+    public function getDescripcionVariantesAttribute(): string
+    {
+        if ($this->variantes->isEmpty()) {
+            return 'Sin variantes';
+        }
+
+        $colores = $this->variantes
+            ->pluck('color.nombre')
+            ->filter()
+            ->unique()
+            ->implode(', ');
+
+        $telas = $this->variantes
+            ->pluck('tela.nombre')
+            ->filter()
+            ->unique()
+            ->implode(', ');
+
+        $mangas = $this->variantes
+            ->pluck('tipoManga.nombre')
+            ->filter()
+            ->unique()
+            ->implode(', ');
+
+        $partes = array_filter([
+            $colores ? "Colores: {$colores}" : null,
+            $telas ? "Telas: {$telas}" : null,
+            $mangas ? "Mangas: {$mangas}" : null,
+        ]);
+
+        return implode('; ', $partes) ?: 'Sin detalles';
+    }
+
+    // ============================================================
+    // MÉTODOS ÚTILES
+    // ============================================================
+
+    /**
+     * Obtener todas las tallas disponibles para esta prenda
+     * 
+     * @return \Illuminate\Support\Collection
+     */
+    public function obtenerTallasDisponibles()
+    {
+        return $this->variantes()
+            ->pluck('talla')
+            ->unique()
+            ->sort()
+            ->values();
+    }
+
+    /**
+     * Obtener todas las cantidades agrupadas por talla
+     * 
+     * @return array
+     */
+    public function obtenerCantidadesPorTalla(): array
+    {
+        return $this->variantes()
+            ->groupBy('talla')
+            ->map(function ($grupo) {
+                return $grupo->sum('cantidad');
+            })
+            ->toArray();
+    }
+
+    /**
+     * Obtener información detallada de esta prenda para reporte/PDF
+     * 
+     * @return array
+     */
+    public function obtenerInfoDetallada(): array
+    {
+        return [
+            'id' => $this->id,
+            'nombre' => $this->nombre_prenda,
+            'descripcion' => $this->descripcion,
+            'genero' => $this->genero,
+            'de_bodega' => $this->de_bodega,
+            'cantidad_total' => $this->cantidad_total,
+            'variantes' => $this->variantes->map(function ($variante) {
+                return [
+                    'id' => $variante->id,
+                    'talla' => $variante->talla,
+                    'cantidad' => $variante->cantidad,
+                    'color' => $variante->color?->nombre,
+                    'tela' => $variante->tela?->nombre,
+                    'manga' => $variante->tipoManga?->nombre,
+                    'broche_boton' => $variante->tipoBrocheBoton?->nombre,
+                    'tiene_bolsillos' => $variante->tiene_bolsillos,
+                    'observaciones' => [
+                        'manga' => $variante->manga_obs,
+                        'broche_boton' => $variante->broche_boton_obs,
+                        'bolsillos' => $variante->bolsillos_obs,
+                    ],
+                ];
+            })->toArray(),
+        ];
+    }
+
+    // ============================================================
+    // EVENTOS DEL MODELO
+    // ============================================================
+
+    /**
+     * Generar descripción detallada con formato template especificado
+     * Utiliza datos de variantes y telas para generar formato estructurado
+     */
+    public function generarDescripcionDetallada($index = 1)
+    {
+        try {
+            $lineas = [];
+            
+            // Extraer observaciones específicas PRIMERO
+            $obsBolsillos = null;
+            $obsBroche = null;
+            $obsReflectivo = null;
+            
+            if ($this->variantes && $this->variantes->count() > 0) {
+                $variante = $this->variantes->first();
+                
+                // Extraer observaciones de descripcion_adicional
+                $obsArray = $variante->descripcion_adicional ? explode(' | ', $variante->descripcion_adicional) : [];
+                
+                foreach ($obsArray as $obs) {
+                    if (strpos($obs, 'Bolsillos:') === 0) {
+                        $obsBolsillos = trim(str_replace('Bolsillos:', '', $obs));
+                    } elseif (strpos($obs, 'Broche:') === 0) {
+                        $obsBroche = trim(str_replace('Broche:', '', $obs));
+                    } elseif (strpos($obs, 'Reflectivo:') === 0) {
+                        $obsReflectivo = trim(str_replace('Reflectivo:', '', $obs));
+                    }
+                }
+            }
+            
+            // Descripción principal
+            if ($this->descripcion) {
+                $lineas[] = trim($this->descripcion);
+            }
+            
+            // Agregar observaciones con saltos de línea
+            if ($this->variantes && $this->variantes->count() > 0) {
+                $variante = $this->variantes->first();
+                
+                // Reflectivos con observación
+                if ($obsReflectivo || ($variante->tiene_reflectivo && $variante->obs_reflectivo)) {
+                    $texto = $obsReflectivo ?? $variante->obs_reflectivo;
+                    $lineas[] = "<br><strong>Reflectivo:</strong> " . trim($texto);
+                }
+                
+                // Bolsillos con observación
+                if ($obsBolsillos || ($variante->tiene_bolsillos && $variante->obs_bolsillos)) {
+                    $texto = $obsBolsillos ?? $variante->obs_bolsillos;
+                    $lineas[] = "<br><strong>Bolsillos:</strong> " . trim($texto);
+                }
+                
+                // Broche/Botón con observación (SOLO si tipo_broche_id existe)
+                if ($variante->tipo_broche_id) {
+                    $nombreBroche = 'Botón';
+                    if ($variante->broche) {
+                        $nombreBroche = $variante->broche->nombre ?? 'Botón';
+                    }
+                    
+                    $texto = $obsBroche ?? ($variante->aplica_broche ? $variante->obs_broche : null);
+                    if ($texto) {
+                        $lineas[] = "<br><strong>{$nombreBroche}:</strong> " . trim($texto);
+                    }
+                }
+            }
+            
+            return implode("", $lineas);
+        } catch (\Exception $e) {
+            \Log::error('Error generando descripción para PrendaPedido', [
+                'prenda_pedido_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            // Fallback a descripción simple
+            return "DESCRIPCION: " . ($this->descripcion ? trim($this->descripcion) : 'Sin descripción');
+        }
+    }
+
+    // ============================================================
+    // EVENTOS DEL MODELO
+    // ============================================================
+
+    /**
+     * Ejecutar acciones cuando se crea o actualiza la prenda
      */
     protected static function boot()
     {
         parent::boot();
 
-        // Cuando se crea una prenda, recalcular cantidad_total del pedido
-        static::created(function ($prenda) {
-            if ($prenda->numero_pedido) {
-                // Obtener todas las prendas del pedido
-                $prendas = static::where('numero_pedido', $prenda->numero_pedido)->get();
-                
-                // Calcular suma total (cada prenda->cantidad usa el accessor dinámico)
-                $cantidadTotal = $prendas->sum(function($p) {
-                    return $p->cantidad; // Esto usa el accessor getCantidadAttribute()
-                });
-                
-                PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
-                    ->update(['cantidad_total' => $cantidadTotal]);
-            }
+        // Al eliminar una prenda, las variantes se eliminan automáticamente (ON DELETE CASCADE)
+        // pero podemos hacer validaciones adicionales si es necesario
+        static::deleting(function ($prenda) {
+            // Log o acciones adicionales
+            \Log::info("🗑️ Prenda eliminada: {$prenda->nombre_prenda} (ID: {$prenda->id})");
         });
-
-        // Cuando se actualiza una prenda, recalcular cantidad_total del pedido
-        static::updated(function ($prenda) {
-            if ($prenda->numero_pedido) {
-                // Obtener todas las prendas del pedido
-                $prendas = static::where('numero_pedido', $prenda->numero_pedido)->get();
-                
-                // Calcular suma total
-                $cantidadTotal = $prendas->sum(function($p) {
-                    return $p->cantidad; // Esto usa el accessor getCantidadAttribute()
-                });
-                
-                PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
-                    ->update(['cantidad_total' => $cantidadTotal]);
-            }
-        });
-
-        // Cuando se elimina una prenda, recalcular cantidad_total del pedido
-        static::deleted(function ($prenda) {
-            if ($prenda->numero_pedido) {
-                $cantidadTotal = static::where('numero_pedido', $prenda->numero_pedido)
-                    ->sum('cantidad');
-                
-                PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
-                    ->update(['cantidad_total' => $cantidadTotal]);
-            }
-        });
-    }
-
-    /**
-     * Generar descripción detallada con formato template especificado
-     * Utiliza DescripcionPrendaHelper para generar formato estructurado
-     * 
-     * Formato:
-     * PRENDA 1: CAMISA DRILL
-     * Color: NARANJA | Tela: DRILL BORNEO REF:REF-DB-001 | Manga: LARGA
-     * 
-     * DESCRIPCIÓN:
-     * - Logo: Logo bordado en espalda
-     * 
-     * Bolsillos:
-     * • Pecho
-     * • Espalda
-     * 
-     * Reflectivo:
-     * • Mangas
-     * 
-     * TALLAS:
-     * - S: 50
-     * - M: 50
-     * - L: 50
-     */
-    public function generarDescripcionDetallada($index = 1, $totalPrendas = null)
-    {
-        // ✅ MANEJAR AMBOS CASOS:
-        // 1. Si tiene color_id/tela_id poblados → construir dinámicamente desde relaciones
-        // 2. Si todo es NULL → usar descripcion existente (datos migrados)
-        
-        $tieneRelacionesPobladas = $this->color_id || $this->tela_id || $this->tipo_manga_id || $this->tipo_broche_id;
-        
-        if ($tieneRelacionesPobladas) {
-            // Caso 1: Construir dinámicamente desde relaciones
-            $datos = DescripcionPrendaHelper::extraerDatosPrenda($this, $index, $totalPrendas);
-            $descripcionGenerada = DescripcionPrendaHelper::generarDescripcion($datos, $totalPrendas);
-            \Log::info('📝 [DESCRIPCION] Generada dinámicamente desde Helper:', [
-                'prenda_id' => $this->id,
-                'nombre' => $this->nombre_prenda,
-                'descripcion' => substr($descripcionGenerada, 0, 100) . '...',
-            ]);
-            return $descripcionGenerada;
-        } else {
-            // Caso 2: Usar descripcion existente (datos migrados de la BD antigua)
-            if ($this->descripcion) {
-                // Formatear como: PRENDA X: NOMBRE\n + descripcion existente + \nTallas: ...
-                $nombre = strtoupper($this->nombre_prenda ?? '');
-                $desc = trim($this->descripcion);
-                
-                // Obtener tallas del campo cantidad_talla
-                $tallas = $this->cantidad_talla ?? [];
-                $tallasStr = '';
-                if (!empty($tallas) && is_array($tallas)) {
-                    $tallasFormato = [];
-                    foreach ($tallas as $talla => $cantidad) {
-                        if ($cantidad > 0) {
-                            $tallasFormato[] = "{$talla}: {$cantidad}";
-                        }
-                    }
-                    if (!empty($tallasFormato)) {
-                        $tallasStr = "\nTallas: " . implode(', ', $tallasFormato);
-                    }
-                }
-                
-                // ✅ Si solo hay una prenda, no mostrar "PRENDA 1:"
-                if ($totalPrendas === 1) {
-                    $resultado = "{$nombre}\n{$desc}{$tallasStr}";
-                } else {
-                    $resultado = "PRENDA {$index}: {$nombre}\n{$desc}{$tallasStr}";
-                }
-                \Log::info('📝 [DESCRIPCION] Usando descripcion existente:', [
-                    'prenda_id' => $this->id,
-                    'nombre' => $nombre,
-                    'descripcion' => substr($resultado, 0, 100) . '...',
-                ]);
-                return $resultado;
-            }
-            
-            // Fallback si no hay descripcion tampoco
-            // ✅ Si solo hay una prenda, no mostrar "PRENDA 1:"
-            if ($totalPrendas === 1) {
-                return strtoupper($this->nombre_prenda ?? '');
-            } else {
-                return "PRENDA {$index}: " . strtoupper($this->nombre_prenda ?? '');
-            }
-        }
-    }
-
-
-    /**
-     * Generar descripción formateada dinámicamente desde los datos
-     */
-    public function getFormattedDescriptionAttribute()
-    {
-        if (!$this->descripcion) {
-            return '';
-        }
-
-        // Dividir la descripción original en líneas
-        $lineas = explode("\n", $this->descripcion);
-        
-        // Buscar la línea de Tallas existente para extraer el mapeo correcto
-        $tallasMapeadas = $this->extraerTallasDelDescripcion($lineas);
-
-        // Si tenemos un mapeo correcto, regenerar la descripción con él
-        if (!empty($tallasMapeadas) && is_array($tallasMapeadas)) {
-            $resultado = [];
-            
-            foreach ($lineas as $linea) {
-                $linea = trim($linea);
-                if (empty($linea)) continue;
-                
-                // Si es la línea de Tallas, regenerarla con el mapeo correcto
-                if (strpos($linea, 'Tallas:') === 0) {
-                    $tallas = [];
-                    foreach ($tallasMapeadas as $talla => $cantidad) {
-                        if ($cantidad > 0) {
-                            $tallas[] = "{$talla}:{$cantidad}";
-                        }
-                    }
-                    if (!empty($tallas)) {
-                        $resultado[] = "Tallas: " . implode(', ', $tallas);
-                    }
-                } else {
-                    // Mantener otras líneas tal cual
-                    $resultado[] = $linea;
-                }
-            }
-            
-            return implode("\n", $resultado);
-        }
-
-        // Fallback: retornar descripción tal cual si no hay formato de tallas
-        return implode("\n", array_filter(array_map('trim', $lineas)));
-    }
-
-    /**
-     * Extraer el mapeo de tallas:cantidad desde la descripción
-     * Busca líneas como "Tallas: M:15, L:8, XL:2"
-     */
-    private function extraerTallasDelDescripcion(array $lineas): array
-    {
-        $tallasMapeadas = [];
-        
-        foreach ($lineas as $linea) {
-            $linea = trim($linea);
-            if (strpos($linea, 'Tallas:') === 0) {
-                // Extraer la parte después de "Tallas: "
-                $tallasPart = substr($linea, strlen('Tallas:'));
-                $pares = explode(',', $tallasPart);
-                
-                foreach ($pares as $par) {
-                    $par = trim($par);
-                    if (strpos($par, ':') !== false) {
-                        [$talla, $cantidad] = explode(':', $par, 2);
-                        $talla = trim($talla);
-                        $cantidad = (int) trim($cantidad);
-                        
-                        // Ignorar índices numéricos (0, 1, 2...) que no son tallas reales
-                        if (!is_numeric($talla) || strlen($talla) > 2) {
-                            $tallasMapeadas[$talla] = $cantidad;
-                        }
-                    }
-                }
-            }
-        }
-        
-        return $tallasMapeadas;
     }
 }

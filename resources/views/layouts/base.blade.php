@@ -164,5 +164,8 @@
 
     <!-- Page-specific scripts -->
     @stack('scripts')
+    
+    <!-- Modals -->
+    @stack('modals')
 </body>
 </html>

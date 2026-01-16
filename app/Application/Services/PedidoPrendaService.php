@@ -9,6 +9,7 @@ use App\Models\TelaPrenda;
 use App\Models\TipoManga;
 use App\Helpers\DescripcionPrendaHelper;
 use App\Helpers\DescripcionPrendaLegacyFormatter;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -116,10 +117,25 @@ class PedidoPrendaService
             'tela_id' => $prendaData['tela_id'] ?? null,
             'color_id' => $prendaData['color_id'] ?? null,
             'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
-            'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
+            'tipo_broche_boton_id' => $prendaData['tipo_broche_boton_id'] ?? null,
             'manga' => $prendaData['manga'] ?? null,
             'broche' => $prendaData['broche'] ?? null,
         ]);
+
+        // ✅ EXTRAER DATOS DE VARIACIONES ANIDADAS SI EXISTEN
+        // Cuando vienen desde frontend, algunas veces vienen anidadas en 'variaciones'
+        if (isset($prendaData['variaciones']) && is_array($prendaData['variaciones'])) {
+            foreach ($prendaData['variaciones'] as $key => $value) {
+                // Solo agregar al nivel superior si no existe ya
+                if (!isset($prendaData[$key])) {
+                    $prendaData[$key] = $value;
+                }
+            }
+            
+            Log::info('✅ [PedidoPrendaService] Datos extraídos de variaciones anidadas', [
+                'claves_extraidas' => array_keys($prendaData['variaciones']),
+            ]);
+        }
 
         // ✅ PROCESAR VARIACIONES: Crear si no existen
         // Si recibimos nombres (strings) en lugar de IDs, crear o buscar
@@ -137,11 +153,11 @@ class PedidoPrendaService
         }
         
         // BROCHE: Si viene nombre, crear/obtener; si viene ID, usar directamente
-        if (!empty($prendaData['broche']) && empty($prendaData['tipo_broche_id'])) {
+        if (!empty($prendaData['broche']) && empty($prendaData['tipo_broche_boton_id'])) {
             $broche = $this->colorGeneroService->obtenerOCrearBroche($prendaData['broche']);
             if ($broche) {
-                $prendaData['tipo_broche_id'] = $broche->id;
-                Log::info('✅ [PedidoPrendaService] Broche creado/obtenido', [
+                $prendaData['tipo_broche_boton_id'] = $broche->id;
+                Log::info('✅ [PedidoPrendaService] Broche/Botón creado/obtenido', [
                     'nombre' => $prendaData['broche'],
                     'id' => $broche->id,
                 ]);
@@ -170,7 +186,7 @@ class PedidoPrendaService
             'color_id_principal' => $primeraTela['color_id'] ?? null,
             'total_telas' => !empty($prendaData['telas']) ? count($prendaData['telas']) : 0,
             'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
-            'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
+            'tipo_broche_boton_id' => $prendaData['tipo_broche_boton_id'] ?? null,
         ]);
         
         // ✅ PROCESAR GÉNEROS (puede ser single string o array de múltiples géneros)
@@ -215,9 +231,11 @@ class PedidoPrendaService
         }
         
         // Crear prenda principal usando PrendaPedido (tabla correcta)
+        // ACTUALIZACIÓN [16/01/2026]: Usar pedido_produccion_id en lugar de numero_pedido
         // NOTA: 'cantidad' se calcula dinámicamente desde cantidad_talla via accessor
         $prenda = PrendaPedido::create([
-            'numero_pedido' => $pedido->numero_pedido,
+            'pedido_produccion_id' => $pedido->id, // ✅ CAMBIO: FK a pedidos_produccion
+            // 'numero_pedido' => $pedido->numero_pedido, // ❌ COMENTADO: Mantener por compatibilidad temporal
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
             'descripcion' => $descripcionFinal, // ✅ SOLO LA DESCRIPCIÓN DEL USUARIO
             'cantidad' => 0, // Será ignorado por el mutador, se calcula desde cantidad_talla
@@ -229,7 +247,7 @@ class PedidoPrendaService
             'color_id' => $primeraTela['color_id'] ?? $prendaData['color_id'] ?? null,
             'tela_id' => $primeraTela['tela_id'] ?? $prendaData['tela_id'] ?? null,
             'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
-            'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
+            'tipo_broche_boton_id' => $prendaData['tipo_broche_boton_id'] ?? null, // ✅ CAMBIO: tipo_broche_id → tipo_broche_boton_id
             'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
             'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
             // ✅ NUEVOS CAMPOS: Observaciones de variaciones
@@ -251,7 +269,7 @@ class PedidoPrendaService
             'tela_id_guardado' => $prenda->tela_id,
             'color_id_guardado' => $prenda->color_id,
             'tipo_manga_id_guardado' => $prenda->tipo_manga_id,
-            'tipo_broche_id_guardado' => $prenda->tipo_broche_id,
+            'tipo_broche_boton_id_guardado' => $prenda->tipo_broche_boton_id,
             'manga_obs_guardado' => $prenda->manga_obs,
             'bolsillos_obs_guardado' => $prenda->bolsillos_obs,
             'broche_obs_guardado' => $prenda->broche_obs,
@@ -259,7 +277,12 @@ class PedidoPrendaService
             'de_bodega_guardado' => $prenda->de_bodega, // ✅ NUEVO: Registrar de_bodega
         ]);
 
-        // 2. ✅ GUARDAR TALLAS CON CANTIDADES en prenda_tallas_ped
+        // 2. ✅ CREAR VARIANTES en prenda_pedido_variantes desde cantidad_talla
+        if (!empty($prendaData['cantidad_talla'])) {
+            $this->crearVariantesDesdeCantidadTalla($prenda, $prendaData['cantidad_talla']);
+        }
+
+        // 2b. ✅ GUARDAR TALLAS CON CANTIDADES en prenda_tallas_ped (LEGACY)
         if (!empty($prendaData['cantidades'])) {
             $this->guardarTallasPrenda($prenda, $prendaData['cantidades']);
         }
@@ -414,34 +437,94 @@ class PedidoPrendaService
     }
 
     /**
-     * Guardar fotos de la prenda 
-     * Espera rutas de archivos ya procesados desde el endpoint de upload
+     * ✅ Guardar fotos de la prenda en web
+     * Estructura: storage/app/public/pedidos/{pedido_id}/prendas/
+     * 
+     * SOLO ACEPTA UploadedFile - NO base64, NO archivos en disco
      */
     private function guardarFotosPrenda(PrendaPedido $prenda, array $fotos): void
     {
+        Log::info('📸 [PedidoPrendaService::guardarFotosPrenda] Guardando fotos de prenda', [
+            'prenda_id' => $prenda->id,
+            'cantidad' => count($fotos),
+        ]);
+
         foreach ($fotos as $index => $foto) {
-            // Las fotos pueden venir como strings (rutas JSON) o arrays
-            if (is_string($foto)) {
-                $fotoData = json_decode($foto, true);
-                if (!is_array($fotoData)) {
-                    $fotoData = ['ruta_original' => $foto];
+            try {
+                // SOLO UploadedFile - NO strings, NO base64
+                if ($foto instanceof UploadedFile) {
+                    // Obtener proceso_detalle_id para usar en guardarArchivoImagenEnWeb
+                    $procesoDetalle = DB::table('pedidos_procesos_prenda_detalles')
+                        ->where('prenda_pedido_id', $prenda->id)
+                        ->first();
+                    
+                    if (!$procesoDetalle) {
+                        Log::warning('⚠️ No hay proceso detalle para prenda', ['prenda_id' => $prenda->id]);
+                        continue;
+                    }
+                    
+                    $resultado = $this->guardarArchivoImagenEnWeb($foto, $procesoDetalle->id, $index, 'prenda');
+                    $rutaWeb = $resultado['ruta_web'];
+                    $tamaño = $resultado['tamaño'];
+                    
+                    // Guardar en BD
+                    DB::table('prenda_fotos_pedido')->insert([
+                        'prenda_pedido_id' => $prenda->id,
+                        'ruta_original' => $foto->getClientOriginalName(),
+                        'ruta_webp' => $rutaWeb,
+                        'orden' => $index + 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    Log::info("✅ Foto de prenda guardada", [
+                        'prenda_id' => $prenda->id,
+                        'index' => $index,
+                        'ruta_web' => $rutaWeb,
+                        'tamaño_bytes' => $tamaño,
+                    ]);
+                } elseif (is_array($foto) && isset($foto['archivo']) && $foto['archivo'] instanceof UploadedFile) {
+                    // Array con UploadedFile
+                    $procesoDetalle = DB::table('pedidos_procesos_prenda_detalles')
+                        ->where('prenda_pedido_id', $prenda->id)
+                        ->first();
+                    
+                    if (!$procesoDetalle) {
+                        Log::warning('⚠️ No hay proceso detalle para prenda', ['prenda_id' => $prenda->id]);
+                        continue;
+                    }
+                    
+                    $resultado = $this->guardarArchivoImagenEnWeb($foto['archivo'], $procesoDetalle->id, $index, 'prenda');
+                    $rutaWeb = $resultado['ruta_web'];
+                    $tamaño = $resultado['tamaño'];
+                    
+                    DB::table('prenda_fotos_pedido')->insert([
+                        'prenda_pedido_id' => $prenda->id,
+                        'ruta_original' => $foto['archivo']->getClientOriginalName(),
+                        'ruta_webp' => $rutaWeb,
+                        'orden' => $index + 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    Log::info("✅ Foto de prenda guardada (desde array)", [
+                        'prenda_id' => $prenda->id,
+                        'index' => $index,
+                        'ruta_web' => $rutaWeb,
+                    ]);
+                } else {
+                    Log::warning('⚠️ Formato de foto NO soportado - SOLO UploadedFile permitido', [
+                        'prenda_id' => $prenda->id,
+                        'tipo' => gettype($foto),
+                    ]);
                 }
-            } else {
-                $fotoData = $foto;
+            } catch (\Exception $e) {
+                Log::warning('⚠️ Error guardando foto de prenda', [
+                    'prenda_id' => $prenda->id,
+                    'index' => $index,
+                    'error' => $e->getMessage(),
+                ]);
             }
-            
-            DB::table('prenda_fotos_pedido')->insert([
-                'prenda_pedido_id' => $prenda->id,
-                'ruta_original' => $fotoData['ruta_original'] ?? null,
-                'ruta_webp' => $fotoData['ruta_webp'] ?? null,
-                'ruta_miniatura' => $fotoData['ruta_miniatura'] ?? null,
-                'orden' => $index + 1,
-                'ancho' => $fotoData['ancho'] ?? null,
-                'alto' => $fotoData['alto'] ?? null,
-                'tamaño' => $fotoData['tamaño'] ?? null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
         }
     }
 
@@ -468,73 +551,113 @@ class PedidoPrendaService
     }
 
     /**
-     * Guardar fotos de telas seleccionadas
+     * ✅ Guardar fotos de telas en web
+     * Estructura: storage/app/public/pedidos/{pedido_id}/telas/
+     * 
+     * SOLO ACEPTA UploadedFile - NO base64, NO archivos en disco
+     * Preserva el campo 'observaciones'
      */
     private function guardarFotosTelas(PrendaPedido $prenda, array $telas): void
     {
-        Log::info('🧵 [PedidoPrendaService] guardarFotosTelas - Iniciando', [
+        Log::info('🧵 [PedidoPrendaService::guardarFotosTelas] Guardando fotos de telas', [
             'prenda_id' => $prenda->id,
-            'numero_pedido' => $prenda->numero_pedido,
             'cantidad_telas' => count($telas),
-            'telas_data' => $telas,
         ]);
 
         foreach ($telas as $telaIndex => $tela) {
-            Log::info('🧵 [PedidoPrendaService] Procesando tela', [
-                'tela_index' => $telaIndex,
-                'tela_data' => $tela,
-                'tiene_fotos' => !empty($tela['fotos']),
-                'cantidad_fotos' => !empty($tela['fotos']) ? count($tela['fotos']) : 0,
-            ]);
-            
-            if (!empty($tela['fotos'])) {
-                foreach ($tela['fotos'] as $index => $foto) {
-                    Log::info('📸 [PedidoPrendaService] Guardando foto de tela en prenda_fotos_tela_pedido', [
-                        'prenda_pedido_id' => $prenda->id,
+            if (empty($tela['fotos'])) {
+                continue;
+            }
+
+            foreach ($tela['fotos'] as $index => $foto) {
+                try {
+                    // SOLO UploadedFile - NO strings, NO base64
+                    if ($foto instanceof UploadedFile) {
+                        // Obtener proceso_detalle_id para usar en guardarArchivoImagenEnWeb
+                        $procesoDetalle = DB::table('pedidos_procesos_prenda_detalles')
+                            ->where('prenda_pedido_id', $prenda->id)
+                            ->first();
+                        
+                        if (!$procesoDetalle) {
+                            Log::warning('⚠️ No hay proceso detalle para prenda', ['prenda_id' => $prenda->id]);
+                            continue;
+                        }
+                        
+                        $resultado = $this->guardarArchivoImagenEnWeb($foto, $procesoDetalle->id, $index, 'tela');
+                        $rutaWeb = $resultado['ruta_web'];
+                        $tamaño = $resultado['tamaño'];
+                        
+                        // Guardar en BD con observaciones
+                        DB::table('prenda_fotos_tela_pedido')->insert([
+                            'prenda_pedido_id' => $prenda->id,
+                            'tela_id' => $tela['tela_id'] ?? null,
+                            'color_id' => $tela['color_id'] ?? null,
+                            'ruta_original' => $foto->getClientOriginalName(),
+                            'ruta_webp' => $rutaWeb,
+                            'orden' => $index + 1,
+                            'observaciones' => $tela['observaciones'] ?? null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        Log::info("✅ Foto de tela guardada", [
+                            'prenda_id' => $prenda->id,
+                            'tela_id' => $tela['tela_id'] ?? null,
+                            'color_id' => $tela['color_id'] ?? null,
+                            'index' => $index,
+                            'ruta_web' => $rutaWeb,
+                            'tamaño_bytes' => $tamaño,
+                        ]);
+                    } elseif (is_array($foto) && isset($foto['archivo']) && $foto['archivo'] instanceof UploadedFile) {
+                        // Array con UploadedFile
+                        $procesoDetalle = DB::table('pedidos_procesos_prenda_detalles')
+                            ->where('prenda_pedido_id', $prenda->id)
+                            ->first();
+                        
+                        if (!$procesoDetalle) {
+                            Log::warning('⚠️ No hay proceso detalle para prenda', ['prenda_id' => $prenda->id]);
+                            continue;
+                        }
+                        
+                        $resultado = $this->guardarArchivoImagenEnWeb($foto['archivo'], $procesoDetalle->id, $index, 'tela');
+                        $rutaWeb = $resultado['ruta_web'];
+                        $tamaño = $resultado['tamaño'];
+                        
+                        DB::table('prenda_fotos_tela_pedido')->insert([
+                            'prenda_pedido_id' => $prenda->id,
+                            'tela_id' => $tela['tela_id'] ?? null,
+                            'color_id' => $tela['color_id'] ?? null,
+                            'ruta_original' => $foto['archivo']->getClientOriginalName(),
+                            'ruta_webp' => $rutaWeb,
+                            'orden' => $index + 1,
+                            'observaciones' => $tela['observaciones'] ?? null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        Log::info("✅ Foto de tela guardada (desde array)", [
+                            'prenda_id' => $prenda->id,
+                            'tela_id' => $tela['tela_id'] ?? null,
+                            'index' => $index,
+                            'ruta_web' => $rutaWeb,
+                        ]);
+                    } else {
+                        Log::warning('⚠️ Formato de foto NO soportado - SOLO UploadedFile permitido', [
+                            'prenda_id' => $prenda->id,
+                            'tela_index' => $telaIndex,
+                            'tipo' => gettype($foto),
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('⚠️ Error guardando foto de tela', [
+                        'prenda_id' => $prenda->id,
                         'tela_index' => $telaIndex,
                         'foto_index' => $index,
-                        'foto_data' => $foto,
-                        'tela_id' => $tela['tela_id'] ?? null,
-                        'color_id' => $tela['color_id'] ?? null,
-                        'ruta' => $foto['ruta_original'] ?? $foto['url'] ?? null,
-                    ]);
-                    
-                    DB::table('prenda_fotos_tela_pedido')->insert([
-                        'prenda_pedido_id' => $prenda->id,
-                        'tela_id' => $tela['tela_id'] ?? null,
-                        'color_id' => $tela['color_id'] ?? null,
-                        'ruta_original' => $foto['ruta_original'] ?? $foto['url'] ?? null,
-                        'ruta_webp' => $foto['ruta_webp'] ?? null,
-                        'ruta_miniatura' => $foto['ruta_miniatura'] ?? null,
-                        'orden' => $index + 1,
-                        'ancho' => $foto['ancho'] ?? null,
-                        'alto' => $foto['alto'] ?? null,
-                        'tamaño' => $foto['tamaño'] ?? null,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    
-                    Log::info('✅ [PedidoPrendaService] Foto de tela guardada en BD (prenda_fotos_tela_pedido)', [
-                        'prenda_pedido_id' => $prenda->id,
-                        'tela_id' => $tela['tela_id'] ?? null,
-                        'color_id' => $tela['color_id'] ?? null,
-                        'orden' => $index + 1,
-                        'ruta' => $foto['ruta_original'] ?? $foto['url'] ?? null,
+                        'error' => $e->getMessage(),
                     ]);
                 }
-            } else {
-                Log::warning('⚠️ [PedidoPrendaService] Tela sin fotos', [
-                    'tela_index' => $telaIndex,
-                    'tela_id' => $tela['tela_id'] ?? null,
-                    'color_id' => $tela['color_id'] ?? null,
-                ]);
             }
         }
-        
-        Log::info('🧵 [PedidoPrendaService] guardarFotosTelas - Completado', [
-            'prenda_id' => $prenda->id,
-            'telas_procesadas' => count($telas),
-        ]);
     }
 
     /**
@@ -772,6 +895,114 @@ class PedidoPrendaService
     }
 
     /**
+     * ✅ NUEVO: Crear variantes en prenda_pedido_variantes desde cantidad_talla
+     * Transforma {"genero": {"talla": cantidad}} o array de {genero, talla, cantidad}
+     * en registros en la tabla prenda_pedido_variantes
+     */
+    private function crearVariantesDesdeCantidadTalla(PrendaPedido $prenda, mixed $cantidadTalla): void
+    {
+        try {
+            $variantes = [];
+
+            \Log::info('🔍 [crearVariantesDesdeCantidadTalla] Procesando cantidad_talla', [
+                'prenda_id' => $prenda->id,
+                'cantidad_talla_type' => gettype($cantidadTalla),
+                'cantidad_talla_raw' => $cantidadTalla,
+            ]);
+
+            // Parsear según el formato recibido
+            if (is_array($cantidadTalla)) {
+                // Formato 1: Array de objetos [{genero, talla, cantidad}, ...]
+                if (!empty($cantidadTalla) && isset($cantidadTalla[0]['genero'])) {
+                    $variantes = $cantidadTalla;
+                }
+                // Formato 2: Estructura anidada {genero: {talla: cantidad}}
+                else if (!empty($cantidadTalla) && !isset($cantidadTalla[0])) {
+                    foreach ($cantidadTalla as $genero => $tallas) {
+                        if (is_array($tallas)) {
+                            foreach ($tallas as $talla => $cantidad) {
+                                if ($cantidad > 0) {
+                                    $variantes[] = [
+                                        'genero' => $genero,
+                                        'talla' => $talla,
+                                        'cantidad' => (int)$cantidad,
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            } elseif (is_string($cantidadTalla)) {
+                // Si viene como JSON string
+                $decoded = json_decode($cantidadTalla, true);
+                if (is_array($decoded)) {
+                    if (isset($decoded[0]['genero'])) {
+                        $variantes = $decoded;
+                    } else {
+                        // Procesar estructura anidada
+                        foreach ($decoded as $genero => $tallas) {
+                            if (is_array($tallas)) {
+                                foreach ($tallas as $talla => $cantidad) {
+                                    if ($cantidad > 0) {
+                                        $variantes[] = [
+                                            'genero' => $genero,
+                                            'talla' => $talla,
+                                            'cantidad' => (int)$cantidad,
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (empty($variantes)) {
+                \Log::warning('⚠️  [crearVariantesDesdeCantidadTalla] No hay variantes para guardar', [
+                    'prenda_id' => $prenda->id,
+                ]);
+                return;
+            }
+
+            // Guardar cada variante
+            $registrosGuardados = 0;
+            foreach ($variantes as $var) {
+                if (!empty($var['talla']) && $var['cantidad'] > 0) {
+                    $prenda->variantes()->create([
+                        'talla' => (string)$var['talla'],
+                        'cantidad' => (int)$var['cantidad'],
+                        // ✅ Usar IDs de la prenda guardada (no de las variantes)
+                        'color_id' => $prenda->color_id ?? null,
+                        'tela_id' => $prenda->tela_id ?? null,
+                        'tipo_manga_id' => $prenda->tipo_manga_id ?? null,
+                        'tipo_broche_boton_id' => $prenda->tipo_broche_boton_id ?? null,
+                        'manga_obs' => $prenda->manga_obs ?? null,
+                        'broche_boton_obs' => $prenda->broche_obs ?? null,
+                        'tiene_bolsillos' => $var['tiene_bolsillos'] ?? false,
+                        'bolsillos_obs' => $var['bolsillos_obs'] ?? null,
+                    ]);
+                    $registrosGuardados++;
+                    \Log::info('✅ Variante guardada con IDs: Talla ' . $var['talla'] . ', color_id=' . ($prenda->color_id ?? 'null') . ', tela_id=' . ($prenda->tela_id ?? 'null'));
+                }
+            }
+
+            \Log::info('✅ [crearVariantesDesdeCantidadTalla] Variantes creadas', [
+                'prenda_id' => $prenda->id,
+                'total_variantes' => $registrosGuardados,
+                'variantes_detalle' => $variantes,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ [crearVariantesDesdeCantidadTalla] Error', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Guardar procesos de la prenda con sus tallas y ubicaciones
      * Estructura esperada: 
      * {
@@ -903,40 +1134,55 @@ class PedidoPrendaService
     }
 
     /**
-     * Guardar imágenes de procesos
+     * Guardar imágenes de procesos como WebP
+     * Ahora recibe File objects o arrays con información de archivo, NO base64
      */
     private function guardarProcesosImagenes(int $procesoDetalleId, array $imagenes): void
     {
-        Log::info('📸 [PedidoPrendaService::guardarProcesosImagenes] Guardando imágenes', [
+        Log::info('📸 [PedidoPrendaService::guardarProcesosImagenes] Guardando imágenes de procesos', [
             'proceso_detalle_id' => $procesoDetalleId,
             'cantidad' => count($imagenes),
         ]);
 
         foreach ($imagenes as $index => $imagenData) {
             try {
-                // Si es un data URI, guardar como archivo base64
-                if (is_string($imagenData) && strpos($imagenData, 'data:image') === 0) {
-                    $nombreArchivo = $this->guardarImagenBase64($imagenData, $procesoDetalleId, $index);
+                // SOLO UploadedFile - NO base64
+                if ($imagenData instanceof UploadedFile) {
+                    $resultado = $this->guardarArchivoImagenEnWeb($imagenData, $procesoDetalleId, $index, 'proceso');
+                    $rutaWeb = $resultado['ruta_web'];
+                    $tamaño = $resultado['tamaño'];
                     
-                    DB::table('pedidos_procesos_imagenes')->insert([
-                        'proceso_prenda_detalle_id' => $procesoDetalleId,
-                        'ruta' => $nombreArchivo,
-                        'nombre_original' => "imagen_proceso_{$index}.png",
-                        'tipo_mime' => 'image/png',
-                        'orden' => $index,
-                        'es_principal' => $index === 0 ? 1 : 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                } elseif (is_array($imagenData) && isset($imagenData['archivo'])) {
+                    // Array con UploadedFile
+                    $resultado = $this->guardarArchivoImagenEnWeb($imagenData['archivo'], $procesoDetalleId, $index, 'proceso');
+                    $rutaWeb = $resultado['ruta_web'];
+                    $tamaño = $resultado['tamaño'];
+                    
+                } else {
+                    Log::warning('⚠️ Formato de imagen NO soportado - SOLO UploadedFile permitido', [
+                        'tipo' => gettype($imagenData),
                     ]);
-
-                    Log::info("✅ [PedidoPrendaService] Imagen guardada", [
-                        'proceso_detalle_id' => $procesoDetalleId,
-                        'index' => $index,
-                        'nombre' => $nombreArchivo,
-                    ]);
+                    continue;
                 }
+                
+                DB::table('pedidos_procesos_imagenes')->insert([
+                    'proceso_prenda_detalle_id' => $procesoDetalleId,
+                    'ruta_original' => null,
+                    'ruta_webp' => $rutaWeb,
+                    'orden' => $index,
+                    'es_principal' => $index === 0 ? 1 : 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                Log::info("✅ Imagen de proceso guardada como WebP", [
+                    'proceso_detalle_id' => $procesoDetalleId,
+                    'index' => $index,
+                    'ruta_web' => $rutaWeb,
+                    'tamaño_bytes' => $tamaño,
+                ]);
             } catch (\Exception $e) {
-                Log::warning("⚠️ [PedidoPrendaService] Error guardando imagen", [
+                Log::warning("⚠️ Error guardando imagen de proceso", [
                     'proceso_detalle_id' => $procesoDetalleId,
                     'index' => $index,
                     'error' => $e->getMessage(),
@@ -946,28 +1192,127 @@ class PedidoPrendaService
     }
 
     /**
-     * Guardar imagen base64 en disco
+     * ✅ MÉTODO UNIFICADO - Guardar archivo imagen como WebP en storage público
+     * Estructura: storage/app/public/pedidos/{pedido_id}/{tipo}/{subtipo}/
+     * 
+     * Tipos:
+     * - prenda: storage/app/public/pedidos/{ID}/prendas/
+     * - tela: storage/app/public/pedidos/{ID}/telas/
+     * - proceso: storage/app/public/pedidos/{ID}/procesos/{reflectivo|bordado|etc}/
+     * 
+     * ⚠️ SOLO ACEPTA UploadedFile - NO base64, NO archivos en disco
+     * 
+     * @param UploadedFile $archivo - Archivo a guardar
+     * @param int $procesoDetalleId - ID del proceso (para procesos, también usado para obtener pedido)
+     * @param int $index - Índice del archivo en la colección
+     * @param string $tipo - Tipo: 'prenda', 'tela', 'proceso'
+     * @return array ['ruta_web' => URL accesible, 'tamaño' => bytes]
      */
-    private function guardarImagenBase64(string $imagenData, int $procesoDetalleId, int $index): string
-    {
-        // Extraer el contenido base64
-        if (preg_match('/^data:image\/(\w+);base64,(.+)$/', $imagenData, $matches)) {
-            $extension = $matches[1];
-            $contenido = base64_decode($matches[2]);
+    private function guardarArchivoImagenEnWeb(
+        UploadedFile $archivo,
+        int $procesoDetalleId,
+        int $index,
+        string $tipo
+    ): array {
+        try {
+            // Obtener datos del proceso/prenda
+            $procesoDetalle = DB::table('pedidos_procesos_prenda_detalles')
+                ->where('id', $procesoDetalleId)
+                ->first();
             
-            $directorio = storage_path('app/procesos-imagenes/' . $procesoDetalleId);
+            if (!$procesoDetalle) {
+                throw new \Exception("Proceso detalle {$procesoDetalleId} no encontrado");
+            }
+            
+            $prendaPedido = DB::table('prendas_pedido')
+                ->where('id', $procesoDetalle->prenda_pedido_id)
+                ->first();
+            
+            if (!$prendaPedido) {
+                throw new \Exception("Prenda pedido no encontrada");
+            }
+            
+            $pedidoId = $prendaPedido->pedido_id;
+            
+            // Definir ruta según tipo
+            if ($tipo === 'proceso') {
+                // storage/app/public/pedidos/{ID}/procesos/{tipo_proceso}/
+                $tipoProcesoId = $procesoDetalle->tipo_proceso_id;
+                $tipoProcesoNombre = DB::table('tipos_procesos')
+                    ->where('id', $tipoProcesoId)
+                    ->value('slug') ?? 'proceso';
+                
+                $directorio = storage_path("app/public/pedidos/{$pedidoId}/procesos/{$tipoProcesoNombre}");
+            } elseif ($tipo === 'tela') {
+                // storage/app/public/pedidos/{ID}/telas/
+                $directorio = storage_path("app/public/pedidos/{$pedidoId}/telas");
+            } else {
+                // storage/app/public/pedidos/{ID}/prendas/ (por defecto)
+                $directorio = storage_path("app/public/pedidos/{$pedidoId}/prendas");
+            }
+            
+            // Crear directorio
             if (!is_dir($directorio)) {
                 mkdir($directorio, 0755, true);
             }
-
-            $nombreArchivo = "imagen_{$index}_{$procesoDetalleId}.{$extension}";
+            
+            // Convertir a WebP usando ImageManager
+            $imagen = app(\Intervention\Image\ImageManager::class)->read($archivo->getStream());
+            
+            // Redimensionar si es necesario
+            if ($imagen->width() > 2000 || $imagen->height() > 2000) {
+                $imagen->scaleDown(width: 2000, height: 2000);
+            }
+            
+            // Convertir a WebP con calidad 80
+            $webp = $imagen->toWebp(quality: 80);
+            $contenidoWebP = $webp->toString();
+            $tamaño = strlen($contenidoWebP);
+            
+            // Generar nombre único
+            $timestamp = now()->format('YmdHis');
+            $random = substr(uniqid(), -6);
+            $nombreArchivo = "img_{$tipo}_{$index}_{$timestamp}_{$random}.webp";
             $rutaCompleta = $directorio . '/' . $nombreArchivo;
             
-            file_put_contents($rutaCompleta, $contenido);
+            // Guardar archivo
+            file_put_contents($rutaCompleta, $contenidoWebP);
             
-            return "procesos-imagenes/{$procesoDetalleId}/{$nombreArchivo}";
+            // Generar URL accesible en web
+            $rutaRelativa = "pedidos/{$pedidoId}";
+            if ($tipo === 'proceso') {
+                $tipoProcesoNombre = DB::table('tipos_procesos')
+                    ->where('id', $procesoDetalle->tipo_proceso_id)
+                    ->value('slug') ?? 'proceso';
+                $rutaRelativa .= "/procesos/{$tipoProcesoNombre}/{$nombreArchivo}";
+            } else {
+                $tipoPlural = $tipo === 'tela' ? 'telas' : 'prendas';
+                $rutaRelativa .= "/{$tipoPlural}/{$nombreArchivo}";
+            }
+            
+            $rutaWeb = asset("storage/{$rutaRelativa}");
+            
+            Log::info("✅ Archivo guardado como WebP", [
+                'tipo' => $tipo,
+                'archivo_original' => $archivo->getClientOriginalName(),
+                'pedido_id' => $pedidoId,
+                'tamaño_original' => $archivo->getSize(),
+                'tamaño_webp' => $tamaño,
+                'ruta_web' => $rutaWeb,
+            ]);
+            
+            return [
+                'ruta_web' => $rutaWeb,
+                'tamaño' => $tamaño,
+            ];
+        } catch (\Exception $e) {
+            Log::error('❌ Error guardando archivo imagen', [
+                'archivo' => $archivo->getClientOriginalName(),
+                'tipo' => $tipo,
+                'proceso_detalle_id' => $procesoDetalleId,
+                'error' => $e->getMessage(),
+            ]);
+            throw new \Exception('No se pudo procesar imagen: ' . $e->getMessage());
         }
-
-        throw new \Exception('No se pudo procesar imagen base64');
     }
 }

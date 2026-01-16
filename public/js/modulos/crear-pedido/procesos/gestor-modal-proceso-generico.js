@@ -145,43 +145,48 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     procesoActual = null;
 };
 
-// Array para almacenar las imágenes del proceso (hasta 3)
+// Array para almacenar los archivos reales del proceso (hasta 3)
+// Cambio: Ahora almacenamos File objects en lugar de base64
 let imagenesProcesoActual = [null, null, null];
 
 // Manejar upload de imagen individual
 window.manejarImagenProceso = function(input, indice) {
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
-        const reader = new FileReader();
         
-        reader.onload = function(e) {
-            // Guardar en array
-            imagenesProcesoActual[indice - 1] = e.target.result;
-            
-            // Mostrar preview
-            const preview = document.getElementById(`proceso-foto-preview-${indice}`);
-            if (preview) {
-                preview.innerHTML = `
-                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
-                    <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
-                        style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
-                        ×
-                    </button>
-                `;
-            }
-            
-            console.log(`📸 Imagen ${indice} agregada al proceso`);
-        };
+        // ✅ CAMBIO: Guardar el File object directamente, NO convertir a base64
+        imagenesProcesoActual[indice - 1] = file;
         
-        reader.readAsDataURL(file);
+        // Mostrar preview usando URL.createObjectURL (más eficiente que base64)
+        const preview = document.getElementById(`proceso-foto-preview-${indice}`);
+        if (preview) {
+            const objectUrl = URL.createObjectURL(file);
+            preview.innerHTML = `
+                <img src="${objectUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
+                <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
+                    style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                    ×
+                </button>
+            `;
+            // Limpiar URL cuando el elemento se elimine (prevenir memory leaks)
+            preview._objectUrl = objectUrl;
+        }
+        
+        console.log(`📸 Imagen ${indice} agregada al proceso (File: ${file.name}, ${(file.size / 1024).toFixed(2)}KB)`);
     }
 };
 
 // Eliminar imagen del proceso
 window.eliminarImagenProceso = function(indice) {
+    // Limpiar URL.createObjectURL si existe
+    const preview = document.getElementById(`proceso-foto-preview-${indice}`);
+    if (preview && preview._objectUrl) {
+        URL.revokeObjectURL(preview._objectUrl);
+        preview._objectUrl = null;
+    }
+    
     imagenesProcesoActual[indice - 1] = null;
     
-    const preview = document.getElementById(`proceso-foto-preview-${indice}`);
     const input = document.getElementById(`proceso-foto-input-${indice}`);
     
     if (preview) {
@@ -202,6 +207,15 @@ window.eliminarImagenProceso = function(indice) {
 
 // Limpiar todas las imágenes del proceso
 function limpiarImagenesProceso() {
+    // Limpiar URLs generadas
+    for (let i = 1; i <= 3; i++) {
+        const preview = document.getElementById(`proceso-foto-preview-${i}`);
+        if (preview && preview._objectUrl) {
+            URL.revokeObjectURL(preview._objectUrl);
+            preview._objectUrl = null;
+        }
+    }
+    
     imagenesProcesoActual = [null, null, null];
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);

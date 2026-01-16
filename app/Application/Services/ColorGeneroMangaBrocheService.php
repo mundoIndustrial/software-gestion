@@ -51,7 +51,7 @@ class ColorGeneroMangaBrocheService
     }
 
     /**
-     * Obtener o crear manga por ID o nombre
+     * Obtener o crear manga por ID o nombre (case-insensitive)
      */
     public function obtenerOCrearManga($idONombre): TipoManga
     {
@@ -67,19 +67,24 @@ class ColorGeneroMangaBrocheService
             }
         }
 
-        // Buscar por nombre
-        $nombreNormalizado = ucfirst(strtolower(trim($idONombre)));
-        return TipoManga::firstOrCreate(
-            ['nombre' => $nombreNormalizado],
-            [
-                'nombre' => $nombreNormalizado,
-                'activo' => true,
-            ]
-        );
+        // Buscar case-insensitive primero
+        $nombreTrim = trim($idONombre);
+        $manga = TipoManga::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
+        
+        if ($manga) {
+            return $manga;
+        }
+
+        // Si no existe, crear con normalización
+        $nombreNormalizado = ucfirst(strtolower($nombreTrim));
+        return TipoManga::create([
+            'nombre' => $nombreNormalizado,
+            'activo' => true,
+        ]);
     }
 
     /**
-     * Obtener o crear broche por ID o nombre
+     * Obtener o crear broche por ID o nombre (case-insensitive)
      */
     public function obtenerOCrearBroche($idONombre): TipoBroche
     {
@@ -95,15 +100,20 @@ class ColorGeneroMangaBrocheService
             }
         }
 
-        // Buscar por nombre
-        $nombreNormalizado = ucfirst(strtolower(trim($idONombre)));
-        return TipoBroche::firstOrCreate(
-            ['nombre' => $nombreNormalizado],
-            [
-                'nombre' => $nombreNormalizado,
-                'activo' => true,
-            ]
-        );
+        // Buscar case-insensitive primero
+        $nombreTrim = trim($idONombre);
+        $broche = TipoBroche::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
+        
+        if ($broche) {
+            return $broche;
+        }
+
+        // Si no existe, crear con normalización
+        $nombreNormalizado = ucfirst(strtolower($nombreTrim));
+        return TipoBroche::create([
+            'nombre' => $nombreNormalizado,
+            'activo' => true,
+        ]);
     }
 
     /**
@@ -170,5 +180,58 @@ class ColorGeneroMangaBrocheService
             fn($nombre) => $this->obtenerOCrearGenero($nombre),
             $nombres
         );
+    }
+
+    // ✅ ALIAS PARA COMPATIBILIDAD CON EL CONTROLADOR
+
+    /**
+     * Buscar o crear color (alias de obtenerOCrearColor)
+     */
+    public function buscarOCrearColor($nombre): ColorPrenda
+    {
+        return $this->obtenerOCrearColor($nombre);
+    }
+
+    /**
+     * Buscar o crear tela (búsqueda case-insensitive en tabla colores)
+     * Nota: Las telas se guardan como colores con una categoría o prefijo
+     */
+    public function buscarOCrearTela($nombre): ColorPrenda
+    {
+        if (empty($nombre)) {
+            return null;
+        }
+
+        // Buscar case-insensitive primero
+        $nombreTrim = trim($nombre);
+        $tela = ColorPrenda::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
+        
+        if ($tela) {
+            return $tela;
+        }
+
+        // Si no existe, crear con normalización
+        $nombreNormalizado = ucfirst(strtolower($nombreTrim));
+        return ColorPrenda::create([
+            'nombre' => $nombreNormalizado,
+            'codigo' => strtoupper(str_replace(' ', '_', $nombreNormalizado)),
+            'activo' => true,
+        ]);
+    }
+
+    /**
+     * Buscar o crear manga (alias de obtenerOCrearManga)
+     */
+    public function buscarOCrearManga($nombre): TipoManga
+    {
+        return $this->obtenerOCrearManga($nombre);
+    }
+
+    /**
+     * Buscar o crear broche (alias de obtenerOCrearBroche)
+     */
+    public function buscarOCrearBroche($nombre): TipoBroche
+    {
+        return $this->obtenerOCrearBroche($nombre);
     }
 }

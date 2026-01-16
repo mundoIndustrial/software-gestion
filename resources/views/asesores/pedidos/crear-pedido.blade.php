@@ -37,17 +37,25 @@
     <!-- IMPORTANTE: Cargar helpers ANTES de los módulos que los usan -->
     <script src="{{ asset('js/modulos/crear-pedido/utilidades/helpers-pedido-editable.js') }}"></script>
     
+    <!-- ✅ GESTOR CENTRALIZADO JSON - Debe cargarse PRIMERO -->
+    <script src="{{ asset('js/modulos/crear-pedido/gestor-datos-pedido-json.js') }}"></script>
+    
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
     <!-- Módulos para COTIZACIONES (crear pedido desde cotización) -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
+    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-pedido.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
     
     <!-- Módulos para NUEVO PEDIDO (sin cotización) -->
     <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-tallas-sin-cotizacion.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/prendas/funciones-prenda-sin-cotizacion.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/integracion-prenda-sin-cotizacion.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/reflectivo/funciones-reflectivo-sin-cotizacion.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/reflectivo/gestor-reflectivo-sin-cotizacion.js') }}"></script>

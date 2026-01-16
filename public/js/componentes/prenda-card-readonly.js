@@ -25,12 +25,12 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
     if (imagenes.length > 0) {
         const img = imagenes[0];
         // ✅ Primero intentar usar blobUrl si ya existe (creado al guardar)
-        if (img.blobUrl && typeof img.blobUrl === 'string') {
+        if (img && img.blobUrl && typeof img.blobUrl === 'string') {
             console.log('🔄 Usando blob URL ya creado');
             fotoPrincipal = img.blobUrl;
         }
         // Si es un objeto con propiedad 'file', es un File object
-        else if (img.file instanceof File) {
+        else if (img && img.file instanceof File) {
             console.log('🔄 Convirtiendo File object a blob URL');
             fotoPrincipal = URL.createObjectURL(img.file);
         } else if (img instanceof File) {
@@ -40,9 +40,17 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         } else if (typeof img === 'string') {
             // Si ya es una URL
             fotoPrincipal = img;
-        } else if (img.imagenes && Array.isArray(img.imagenes) && img.imagenes[0]) {
+        } else if (img && img.imagenes && Array.isArray(img.imagenes) && img.imagenes[0]) {
             // Si es un objeto con array de imagenes (como las telas)
-            fotoPrincipal = img.imagenes[0];
+            const innerImg = img.imagenes[0];
+            if (innerImg instanceof File) {
+                console.log('🔄 Imagen anidada es File, convirtiendo');
+                fotoPrincipal = URL.createObjectURL(innerImg);
+            } else if (innerImg.blobUrl) {
+                fotoPrincipal = innerImg.blobUrl;
+            } else {
+                fotoPrincipal = innerImg;
+            }
         }
     }
     
@@ -64,12 +72,12 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         if (telaPrincipal.imagenes && Array.isArray(telaPrincipal.imagenes) && telaPrincipal.imagenes.length > 0) {
             const imgTela = telaPrincipal.imagenes[0];
             // ✅ Primero intentar usar blobUrl si ya existe
-            if (imgTela.blobUrl && typeof imgTela.blobUrl === 'string') {
+            if (imgTela && imgTela.blobUrl && typeof imgTela.blobUrl === 'string') {
                 console.log('🔄 Usando blob URL de tela ya creado');
                 telaFoto = imgTela.blobUrl;
             }
             // Convertir si es File object (igual que con imágenes de prenda)
-            else if (imgTela.file instanceof File) {
+            else if (imgTela && imgTela.file instanceof File) {
                 console.log('🔄 Convirtiendo File object de tela a blob URL');
                 telaFoto = URL.createObjectURL(imgTela.file);
             } else if (imgTela instanceof File) {
@@ -529,12 +537,15 @@ function construirSeccionProcesos(prenda, indice) {
                         <i class="fas fa-images" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Imágenes (${imagenes.length}):
                     </strong>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        ${imagenes.map(img => `
-                            <img src="${img}" 
+                        ${imagenes.map(img => {
+                            const imgSrc = img instanceof File ? URL.createObjectURL(img) : img;
+                            return `
+                            <img src="${imgSrc}" 
                                  alt="Imagen ${nombreProceso}" 
                                  style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb; cursor: pointer;"
-                                 onclick="window.mostrarImagenProcesoGrande('${img}')">
-                        `).join('')}
+                                 onclick="window.mostrarImagenProcesoGrande('${imgSrc}')">
+                        `;
+                        }).join('')}
                     </div>
                     <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280;">
                         <i class="fas fa-search-plus"></i> Click en las imágenes para ampliar
@@ -787,12 +798,12 @@ function abrirGaleriaFotosModal(prenda, prendaIndex) {
         console.log(`   [${idx}] Procesando imagen:`, img);
         
         // ✅ Primero intentar usar blobUrl si ya existe (creado al guardar)
-        if (img.blobUrl && typeof img.blobUrl === 'string') {
+        if (img && img.blobUrl && typeof img.blobUrl === 'string') {
             console.log(`   [${idx}] Usando blob URL ya creado: ${img.blobUrl.substring(0, 50)}...`);
             return img.blobUrl;
         }
         // Si es un objeto con propiedad 'file', es un File object
-        else if (img.file instanceof File) {
+        else if (img && img.file instanceof File) {
             console.log(`   [${idx}] Convertiendo File object a blob URL`);
             return URL.createObjectURL(img.file);
         } else if (img instanceof File) {

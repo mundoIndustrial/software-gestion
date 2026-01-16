@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Asesores;
 
 use App\Application\DTOs\ItemPedidoDTO;
 use App\Application\Services\PedidoPrendaService;
+use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Domain\PedidoProduccion\Services\GestionItemsPedidoService;
 use App\Domain\PedidoProduccion\Services\TransformadorCotizacionService;
 use App\Http\Controllers\Controller;
@@ -18,6 +19,7 @@ class CrearPedidoEditableController extends Controller
         private GestionItemsPedidoService $gestionItems,
         private TransformadorCotizacionService $transformador,
         private PedidoPrendaService $pedidoPrendaService,
+        private ColorGeneroMangaBrocheService $colorGeneroService,
     ) {}
 
     public function index(?string $tipoInicial = null): View
@@ -255,7 +257,7 @@ class CrearPedidoEditableController extends Controller
             $prendasParaGuardar = [];
             $cantidadTotal = 0;
             
-            foreach ($validated['items'] as $item) {
+            foreach ($validated['items'] as $itemIndex => $item) {
                 \Log::info('📦 [CrearPedidoEditableController] Procesando item:', $item);
                 
                 // Determinar el tipo de item
@@ -274,22 +276,64 @@ class CrearPedidoEditableController extends Controller
                     $deBodega = $origen === 'bodega' ? 1 : 0;
                 }
                 
+                // 🔄 PROCESAR PROCESOS CON IMÁGENES DESDE FormData
+                $procesosReconstruidos = [];
+                $procesosFormData = $request->file("prendas.*.procesos");
+                
+                if ($procesosFormData && isset($procesosFormData[$itemIndex])) {
+                    $procesosByTipo = $procesosFormData[$itemIndex];
+                    
+                    foreach ($procesosByTipo as $tipoProceso => $datosProcesoJson) {
+                        if (is_string($datosProcesoJson)) {
+                            $datosProceso = json_decode($datosProcesoJson, true);
+                        } else {
+                            $datosProceso = $datosProcesoJson;
+                        }
+                        
+                        if (!$datosProceso) {
+                            continue;
+                        }
+                        
+                        // Obtener imágenes del FormData para este proceso
+                        $imagenesFormDataKey = "prendas.{$itemIndex}.procesos.{$tipoProceso}.imagenes";
+                        $imagenesUploadedFiles = $request->file($imagenesFormDataKey) ?? [];
+                        
+                        // Asegurar que es array
+                        if (!is_array($imagenesUploadedFiles)) {
+                            $imagenesUploadedFiles = [$imagenesUploadedFiles];
+                        }
+                        
+                        $datosProceso['imagenes'] = array_filter($imagenesUploadedFiles, function($img) {
+                            return $img instanceof \Illuminate\Http\UploadedFile;
+                        });
+                        
+                        $procesosReconstruidos[$tipoProceso] = $datosProceso;
+                        
+                        \Log::info("✅ Proceso reconstruido: {$tipoProceso} con " . count($datosProceso['imagenes']) . " imágenes");
+                    }
+                }
+                
                 // Convertir item a formato esperado por PedidoPrendaService
                 $prendaData = [
                     'nombre_producto' => $item['prenda'],
                     'descripcion' => $item['descripcion'] ?? '',
                     'variaciones' => $item['variaciones'] ?? [],
                     'fotos' => $item['imagenes'] ?? [],
-                    'procesos' => $item['procesos'] ?? [],
+                    'procesos' => $procesosReconstruidos, // ✅ Procesos con imágenes UploadedFile
                     'origen' => $item['origen'] ?? 'bodega', // ✅ Origen de la prenda
                     'de_bodega' => $deBodega, // ✅ CAMPO FINAL CALCULADO
+                    // ✅ AGREGAR OBSERVACIONES AL NIVEL SUPERIOR
+                    'obs_manga' => $item['obs_manga'] ?? '',
+                    'obs_bolsillos' => $item['obs_bolsillos'] ?? '',
+                    'obs_broche' => $item['obs_broche'] ?? '',
+                    'obs_reflectivo' => $item['obs_reflectivo'] ?? '',
                 ];
                 
                 // ✅ Procesar tallas según el tipo de item
                 if ($tipo === 'nuevo' || $tipo === 'prenda_nueva') {
-                    // Para prendas nuevas, procesar el array de tallas con género
-                    $prendaData['cantidad_talla'] = $this->procesarTallasParaServicio($item['tallas'] ?? []);
-                    $cantidadItem = $this->calcularCantidadDeTallas($item['tallas'] ?? []);
+                    // Para prendas nuevas, procesar cantidad_talla (objeto {genero-talla: cantidad})
+                    $prendaData['cantidad_talla'] = $this->procesarCantidadTallaParaServicio($item['cantidad_talla'] ?? []);
+                    $cantidadItem = $this->calcularCantidadDeCantidadTalla($item['cantidad_talla'] ?? []);
                 } else {
                     // Para cotizaciones, procesar el array de tallas
                     $prendaData['cantidad_talla'] = $this->procesarTallasParaServicio($item['tallas'] ?? []);
@@ -316,6 +360,63 @@ class CrearPedidoEditableController extends Controller
                         }
                     }
                 }
+
+                // ✅ PROCESAR IDs DE RELACIONES: Color, Tela, TipoManga, TipoBroche
+                // Si vienen IDs, usarlos directamente
+                // Si vienen nombres, buscar o crear y obtener IDs
+                
+                // Procesar COLOR
+                if (!empty($item['color_id'])) {
+                    $prendaData['color_id'] = $item['color_id'];
+                } elseif (!empty($item['color'])) {
+                    try {
+                        $color = $this->colorGeneroService->buscarOCrearColor($item['color']);
+                        $prendaData['color_id'] = $color->id;
+                        \Log::info('✅ Color creado/obtenido', ['nombre' => $item['color'], 'id' => $color->id]);
+                    } catch (\Exception $e) {
+                        \Log::warning('⚠️ Error procesando color', ['nombre' => $item['color'], 'error' => $e->getMessage()]);
+                    }
+                }
+                
+                // Procesar TELA
+                if (!empty($item['tela_id'])) {
+                    $prendaData['tela_id'] = $item['tela_id'];
+                } elseif (!empty($item['tela'])) {
+                    try {
+                        $tela = $this->colorGeneroService->buscarOCrearTela($item['tela']);
+                        $prendaData['tela_id'] = $tela->id;
+                        \Log::info('✅ Tela creada/obtenida', ['nombre' => $item['tela'], 'id' => $tela->id]);
+                    } catch (\Exception $e) {
+                        \Log::warning('⚠️ Error procesando tela', ['nombre' => $item['tela'], 'error' => $e->getMessage()]);
+                    }
+                }
+                
+                // Procesar TIPO MANGA
+                if (!empty($item['tipo_manga_id'])) {
+                    $prendaData['tipo_manga_id'] = $item['tipo_manga_id'];
+                } elseif (!empty($item['manga'])) {
+                    try {
+                        $manga = $this->colorGeneroService->buscarOCrearManga($item['manga']);
+                        $prendaData['tipo_manga_id'] = $manga->id;
+                        \Log::info('✅ Tipo Manga creado/obtenido', ['nombre' => $item['manga'], 'id' => $manga->id]);
+                    } catch (\Exception $e) {
+                        \Log::warning('⚠️ Error procesando manga', ['nombre' => $item['manga'], 'error' => $e->getMessage()]);
+                    }
+                }
+                
+                // Procesar TIPO BROCHE/BOTÓN
+                if (!empty($item['tipo_broche_boton_id'])) {
+                    $prendaData['tipo_broche_boton_id'] = $item['tipo_broche_boton_id'];
+                } elseif (!empty($item['broche'])) {
+                    try {
+                        $broche = $this->colorGeneroService->buscarOCrearBroche($item['broche']);
+                        $prendaData['tipo_broche_boton_id'] = $broche->id;
+                        \Log::info('✅ Tipo Broche/Botón creado/obtenido', ['nombre' => $item['broche'], 'id' => $broche->id]);
+                    } catch (\Exception $e) {
+                        \Log::warning('⚠️ Error procesando broche', ['nombre' => $item['broche'], 'error' => $e->getMessage()]);
+                    }
+                }
+
 
                 // Calcular cantidad total
                 $cantidadTotal += $cantidadItem;
@@ -364,6 +465,60 @@ class CrearPedidoEditableController extends Controller
             }
         }
         return $resultado;
+    }
+
+    /**
+     * ✅ Procesar cantidad_talla desde el frontend
+     * Transforma {genero-talla: cantidad} a estructura de variantes
+     * Ejemplo: {"dama-S": 20, "dama-M": 30} → [
+     *   {genero: dama, talla: S, cantidad: 20},
+     *   {genero: dama, talla: M, cantidad: 30}
+     * ]
+     */
+    private function procesarCantidadTallaParaServicio(array $cantidadTalla): array
+    {
+        $resultado = [];
+        
+        \Log::info('🔍 [procesarCantidadTallaParaServicio] Procesando cantidad_talla', [
+            'cantidad_talla_raw' => $cantidadTalla,
+            'tipo' => gettype($cantidadTalla),
+        ]);
+        
+        foreach ($cantidadTalla as $claveTalla => $cantidad) {
+            // La clave viene como "genero-talla" o solo "talla"
+            if (strpos($claveTalla, '-') !== false) {
+                [$genero, $talla] = explode('-', $claveTalla, 2);
+            } else {
+                // Si no tiene género, asumir genero universal
+                $genero = 'U';
+                $talla = $claveTalla;
+            }
+            
+            $resultado[] = [
+                'genero' => trim($genero),
+                'talla' => trim($talla),
+                'cantidad' => (int)$cantidad,
+            ];
+        }
+        
+        \Log::info('✅ [procesarCantidadTallaParaServicio] Resultado transformado', [
+            'resultado' => $resultado,
+            'cantidad_variantes' => count($resultado),
+        ]);
+        
+        return $resultado;
+    }
+
+    /**
+     * ✅ Calcular cantidad total desde cantidad_talla
+     */
+    private function calcularCantidadDeCantidadTalla(array $cantidadTalla): int
+    {
+        $total = 0;
+        foreach ($cantidadTalla as $cantidad) {
+            $total += (int)$cantidad;
+        }
+        return $total;
     }
 
     /**

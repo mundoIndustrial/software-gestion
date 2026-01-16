@@ -146,11 +146,16 @@ class PedidoProduccion extends Model
     }
 
     /**
-     * Relación: Un pedido tiene muchas prendas (via numero_pedido)
+     * Relación: Un pedido tiene muchas prendas
+     * 
+     * ACTUALIZACIÓN [16/01/2026]:
+     * - Foreign Key: pedido_produccion_id (antes numero_pedido)
+     * - Las prendas se crean con $pedido->prendas()->create($data)
+     * - Esto asegura que pedido_produccion_id se asigna automáticamente
      */
     public function prendas(): HasMany
     {
-        return $this->hasMany(PrendaPedido::class, 'numero_pedido', 'numero_pedido');
+        return $this->hasMany(PrendaPedido::class, 'pedido_produccion_id');
     }
 
     /**
@@ -581,10 +586,12 @@ class PedidoProduccion extends Model
 
     /**
      * Relación: Un pedido tiene muchas prendas normalizadas (nuevas tablas DDD)
+     * 
+     * REFACTORIZADO: Ahora usa pedido_produccion_id en lugar de numero_pedido
      */
     public function prendasPed(): HasMany
     {
-        return $this->hasMany(PrendaPedido::class, 'numero_pedido', 'numero_pedido');
+        return $this->hasMany(PrendaPedido::class, 'pedido_produccion_id', 'id');
     }
 
     /**

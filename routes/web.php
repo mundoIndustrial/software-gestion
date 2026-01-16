@@ -879,4 +879,14 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores/pedidos-editable')-
         ->name('crear');
 });
 
+// ========================================
+// API RUTAS - GUARDAR PEDIDO DESDE JSON
+// ========================================
+Route::middleware(['auth', 'role:asesor'])->prefix('api/pedidos')->name('api.pedidos.')->group(function () {
+    Route::post('/guardar-desde-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'guardar'])
+        ->name('guardar-json');
+    Route::post('/validar-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'validar'])
+        ->name('validar-json');
+});
+
 require __DIR__.'/auth.php';

@@ -996,9 +996,10 @@ class SupervisorPedidosController extends Controller
                 'prendas.*.obs_reflectivo' => 'nullable|string',
                 'prendas.*.cantidad_talla' => 'nullable|array',
                 'prendas.*.color_id' => 'nullable|exists:colores_prenda,id',
+                // ACTUALIZACIÓN [16/01/2026]: Cambio de tipo_broche_id a tipo_broche_boton_id
                 'prendas.*.tela_id' => 'nullable|exists:telas_prenda,id',
                 'prendas.*.tipo_manga_id' => 'nullable|exists:tipos_manga,id',
-                'prendas.*.tipo_broche_id' => 'nullable|exists:tipos_broche,id',
+                'prendas.*.tipo_broche_boton_id' => 'nullable|exists:tipos_broche_boton,id',
                 'prendas.*.tiene_bolsillos' => 'nullable|boolean',
                 'prendas.*.tiene_reflectivo' => 'nullable|boolean',
                 'prendas.*.nuevas_fotos' => 'nullable|array',

@@ -269,6 +269,7 @@ window.hookSerializacionPrendaSinCotizacion = function(datosEnvio) {
 
 /**
  * Enviar pedido PRENDA sin cotización al servidor
+ * NUEVA ESTRATEGIA: Usar gestorDatosPedidoJSON que acumula TODO en un JSON
  * @returns {Promise} Promise que resuelve cuando el pedido se guarda
  */
 window.enviarPrendaSinCotizacion = function() {
@@ -285,11 +286,6 @@ window.enviarPrendaSinCotizacion = function() {
             }
             console.log(`✅ [1] Validación OK`);
 
-            // Obtener datos
-            console.log(`🔍 [2] Obteniendo datos de prendas...`);
-            const datosPrenda = window.obtenerDatosPrendasTipoPrendaSinCotizacion();
-            console.log(`✅ [2] Datos obtenidos:`, datosPrenda);
-            
             // Obtener cliente
             const cliente = document.getElementById('cliente_editable')?.value;
             const formaPago = document.getElementById('forma_de_pago_editable')?.value || '';
@@ -298,6 +294,80 @@ window.enviarPrendaSinCotizacion = function() {
 
             if (!cliente) {
                 console.error(`❌ Cliente no especificado`);
+                reject(new Error('Cliente no especificado'));
+                return;
+            }
+
+            // ✅ USAR GESTOR CENTRALIZADO JSON
+            if (!window.gestorDatosPedidoJSON) {
+                console.error(`❌ GestorDatosPedidoJSON no disponible`);
+                reject(new Error('GestorDatosPedidoJSON no inicializado'));
+                return;
+            }
+
+            // Crear FormData con todos los datos del JSON
+            console.log(`🔍 [2] Preparando FormData desde gestorDatosPedidoJSON...`);
+            const formData = window.gestorDatosPedidoJSON.crearFormData();
+            
+            // Agregar cliente y forma de pago
+            formData.append('cliente', cliente);
+            formData.append('forma_de_pago', formaPago);
+            formData.append('tipo_pedido', 'P'); // PRENDA sin cotización
+
+            console.log(`✅ [2] FormData preparado`);
+
+            // Enviar al servidor
+            console.log(`🔍 [3] Enviando FormData al servidor...`);
+            
+            const response = await fetch('/asesores/pedidos-produccion/crear-prenda-sin-cotizacion', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || ''
+                }
+            });
+
+            console.log(`✅ [3] Respuesta recibida del servidor: ${response.status} ${response.statusText}`);
+
+            const result = await response.json();
+            
+            console.log(`✅ [4] Resultado JSON:`, result);
+
+            if (!response.ok) {
+                console.error(`❌ Error en respuesta: ${result.message}`);
+                throw new Error(result.message || 'Error al crear el pedido');
+            }
+
+            logWithEmoji('✅', 'Pedido PRENDA creado exitosamente', result);
+            console.log(`✅ ============ ENVÍO COMPLETADO CON ÉXITO ============\n`);
+
+            // Mostrar éxito
+            Swal.fire({
+                title: '✅ Pedido creado',
+                html: `
+                    <div style="text-align: left;">
+                        <p><strong>Número de Pedido:</strong> ${result.numero_pedido}</p>
+                        <p><strong>Total de prendas:</strong> ${window.gestorDatosPedidoJSON.datosCompletos.prendas.length}</p>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: 'Ir a Pedidos',
+                confirmButtonColor: '#0ea5e9'
+            }).then(() => {
+                // Limpiar datos y redirigir
+                window.gestorDatosPedidoJSON.limpiar();
+                window.location.href = '/asesores/pedidos-produccion';
+            });
+
+            resolve(result);
+            
+        } catch (error) {
+            console.error(`❌ Error al enviar pedido PRENDA:`, error);
+            Swal.fire('Error', error.message || 'Error al crear el pedido', 'error');
+            reject(error);
+        }
+    });
+};
                 Swal.fire('Error', 'El cliente es requerido', 'error');
                 reject(new Error('Cliente requerido'));
                 return;
@@ -459,7 +529,53 @@ window.enviarPrendaSinCotizacion = function() {
                     }
                 });
             });
-
+            // 🔄 AGREGAR PROCESOS CON IMÁGENES
+            logWithEmoji('⚙️', 'Procesando procesos con imágenes...');
+            
+            datosPrenda.prendas.forEach((prenda, prendaIndex) => {
+                if (!prenda.procesos || typeof prenda.procesos !== 'object') {
+                    return; // No hay procesos para esta prenda
+                }
+                
+                Object.entries(prenda.procesos).forEach(([tipoProceso, procesoData]) => {
+                    if (!procesoData || !procesoData.datos) {
+                        return; // No hay datos válidos para este proceso
+                    }
+                    
+                    const datos = procesoData.datos;
+                    const imagenes = datos.imagenes || [];
+                    
+                    // Agregar datos del proceso (sin las imágenes por ahora)
+                    const datosProcesoSinImagenes = { ...datos };
+                    delete datosProcesoSinImagenes.imagenes;
+                    
+                    formData.append(
+                        `prendas[${prendaIndex}][procesos][${tipoProceso}]`,
+                        JSON.stringify(datosProcesoSinImagenes)
+                    );
+                    
+                    logWithEmoji('✅', `Proceso "${tipoProceso}" agregado para prenda ${prendaIndex + 1}`);
+                    
+                    // Agregar imágenes del proceso como archivos reales
+                    imagenes.forEach((imagen, imagenIndex) => {
+                        if (imagen instanceof File) {
+                            // Es un File object - agregar directamente
+                            formData.append(
+                                `prendas[${prendaIndex}][procesos][${tipoProceso}][imagenes][]`,
+                                imagen
+                            );
+                            logWithEmoji('📸', `Imagen ${imagenIndex + 1} del proceso "${tipoProceso}" agregada: ${imagen.name}`);
+                        } else if (typeof imagen === 'string') {
+                            // Es una URL existente o ruta
+                            formData.append(
+                                `prendas[${prendaIndex}][procesos][${tipoProceso}][imagenes_existentes][]`,
+                                imagen
+                            );
+                            logWithEmoji('🔗', `Imagen existente ${imagenIndex + 1} del proceso "${tipoProceso}" referenciada`);
+                        }
+                    });
+                });
+            });
             // Enviar al servidor
             console.log(`🔍 [4] Enviando FormData al servidor...`);
             console.log(`✅ FormData contiene:`, {
