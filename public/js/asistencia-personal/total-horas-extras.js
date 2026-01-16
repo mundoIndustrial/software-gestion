@@ -89,19 +89,23 @@ const AsistenciaTotalHorasExtras = (() => {
             // Para sábado: solo entrada y salida (1 bloque)
             if (horasValidas.length >= 2) {
                 const bloqueMinutos = horasValidas[horasValidas.length - 1] - horasValidas[0];
-                horasContablesManana = contarHorasPor56Minutos(bloqueMinutos);
+                // Redondear al minuto más cercano para evitar que segundos afecten el conteo
+                const bloqueMinutosRedondeado = Math.round(bloqueMinutos);
+                horasContablesManana = contarHorasPor56Minutos(bloqueMinutosRedondeado);
             }
         } else {
             // Para días normales: calcular bloques de trabajo
             if (horasValidas.length >= 2) {
                 // Bloque mañana (entrada - salida mediodía)
                 const bloqueManana = horasValidas[1] - horasValidas[0];
-                horasContablesManana = contarHorasPor56Minutos(bloqueManana);
+                const bloqueMananaRedondeado = Math.round(bloqueManana);
+                horasContablesManana = contarHorasPor56Minutos(bloqueMananaRedondeado);
                 
                 if (horasValidas.length >= 4) {
                     // Bloque tarde (entrada tarde - salida final)
                     const bloqueTarde = horasValidas[3] - horasValidas[2];
-                    horasContablesTarde = contarHorasPor56Minutos(bloqueTarde);
+                    const bloqueTardeRedondeado = Math.round(bloqueTarde);
+                    horasContablesTarde = contarHorasPor56Minutos(bloqueTardeRedondeado);
                 }
             }
         }
@@ -368,8 +372,8 @@ const AsistenciaTotalHorasExtras = (() => {
                 const horasExtras = persona.horasExtrasPorFecha[fecha] || 0;
                 
                 if (horasExtras > 0) {
-                    // Mostrar las horas como número entero
-                    td.textContent = horasExtras.toString();
+                    // Mostrar las horas redondeadas al entero más cercano
+                    td.textContent = Math.round(horasExtras).toString();
                 } else {
                     td.textContent = '-';
                 }
@@ -379,7 +383,7 @@ const AsistenciaTotalHorasExtras = (() => {
             
             // Celda Total
             const tdTotal = document.createElement('td');
-            tdTotal.textContent = persona.totalHorasExtras.toString();
+            tdTotal.textContent = Math.round(persona.totalHorasExtras).toString();
             tdTotal.style.fontWeight = 'bold';
             tdTotal.style.backgroundColor = '#e8f0f7';
             tr.appendChild(tdTotal);
@@ -418,6 +422,53 @@ const AsistenciaTotalHorasExtras = (() => {
             
             tbody.appendChild(tr);
         });
+        
+        // Agregar fila de TOTAL al final
+        const trTotal = document.createElement('tr');
+        trTotal.style.fontWeight = 'bold';
+        trTotal.style.backgroundColor = '#1e5ba8';
+        trTotal.style.color = 'white';
+        
+        // Celda Vacía (ID)
+        const tdTotalId = document.createElement('td');
+        tdTotalId.textContent = '';
+        trTotal.appendChild(tdTotalId);
+        
+        // Celda "TOTAL"
+        const tdTotalLabel = document.createElement('td');
+        tdTotalLabel.textContent = 'TOTAL';
+        tdTotalLabel.style.fontWeight = 'bold';
+        trTotal.appendChild(tdTotalLabel);
+        
+        // Celda Vacía (Novedades)
+        const tdTotalNovedades = document.createElement('td');
+        tdTotalNovedades.textContent = '';
+        trTotal.appendChild(tdTotalNovedades);
+        
+        // Celdas de fechas (vacías en fila de total)
+        todasLasFechas.forEach(fecha => {
+            const tdFechaTotal = document.createElement('td');
+            tdFechaTotal.textContent = '';
+            trTotal.appendChild(tdFechaTotal);
+        });
+        
+        // Celda Total General
+        const tdTotalGeneral = document.createElement('td');
+        let totalGeneral = 0;
+        personasConExtras.forEach(persona => {
+            totalGeneral += persona.totalHorasExtras;
+        });
+        tdTotalGeneral.textContent = Math.round(totalGeneral).toString();
+        tdTotalGeneral.style.fontWeight = 'bold';
+        tdTotalGeneral.style.color = 'white';
+        trTotal.appendChild(tdTotalGeneral);
+        
+        // Celda Vacía (Valor)
+        const tdTotalValor = document.createElement('td');
+        tdTotalValor.textContent = '';
+        trTotal.appendChild(tdTotalValor);
+        
+        tbody.appendChild(trTotal);
         
         tabla.appendChild(tbody);
         
@@ -858,7 +909,7 @@ const AsistenciaTotalHorasExtras = (() => {
                     // Las siguientes son las fechas (3 + index)
                     if (celdas[3 + index]) {
                         if (horasExtras > 0) {
-                            celdas[3 + index].textContent = horasExtras.toString();
+                            celdas[3 + index].textContent = Math.round(horasExtras).toString();
                         } else {
                             celdas[3 + index].textContent = '-';
                         }
@@ -867,7 +918,7 @@ const AsistenciaTotalHorasExtras = (() => {
                 
                 // Actualizar celda de total (penúltima celda)
                 const celdas = filaPersona.querySelectorAll('td');
-                celdas[celdas.length - 2].textContent = persona.totalHorasExtras.toString();
+                celdas[celdas.length - 2].textContent = Math.round(persona.totalHorasExtras).toString();
                 
                 console.log('Fila de tabla actualizada para persona:', persona.id);
             }

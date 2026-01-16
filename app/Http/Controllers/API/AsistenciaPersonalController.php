@@ -392,40 +392,67 @@ class AsistenciaPersonalController extends Controller
                     }
                 }
                 
-                // Paso 2: Eliminar marcas extras después de salida_tarde esperada (18:00)
-                // Si hay múltiples marcas después de 18:00, mantener solo la más reciente
+                // Paso 2: Limpiar marcas extras en rango de entrada_manana y salida_tarde
+                $umbralEntradaManana = 28800; // 08:00 en segundos
                 $umbralSalidaTarde = 64800; // 18:00 en segundos
                 $marcasArray = array_values($horasValidas);
-                $marcasAntesDe18 = [];
-                $marcasDespuesDe18 = [];
+                
+                $marcasAntes08 = [];
+                $marcasEntre08y18 = [];
+                $marcasDespues18 = [];
                 
                 foreach ($marcasArray as $marca) {
-                    if ($marca <= $umbralSalidaTarde) {
-                        $marcasAntesDe18[] = $marca;
+                    if ($marca < $umbralEntradaManana) {
+                        $marcasAntes08[] = $marca;
+                    } elseif ($marca <= $umbralSalidaTarde) {
+                        $marcasEntre08y18[] = $marca;
                     } else {
-                        $marcasDespuesDe18[] = $marca;
+                        $marcasDespues18[] = $marca;
                     }
                 }
                 
-                // Si hay múltiples marcas después de 18:00, mantener solo la más reciente
-                if (count($marcasDespuesDe18) > 1) {
-                    // Verificar que estén dentro de 1 hora entre ellas (pueden ser duplicados)
-                    $primeraDesp18 = $marcasDespuesDe18[0];
-                    $ultimaDesp18 = $marcasDespuesDe18[count($marcasDespuesDe18) - 1];
-                    $diferencia = $ultimaDesp18 - $primeraDesp18;
+                // Si hay múltiples marcas ANTES de 08:00, mantener solo la más TEMPRANA (entrada real)
+                if (count($marcasAntes08) > 1) {
+                    $primeraAntes08 = $marcasAntes08[0];
+                    $ultimaAntes08 = $marcasAntes08[count($marcasAntes08) - 1];
+                    $diferencia = $ultimaAntes08 - $primeraAntes08;
                     
-                    // Si están dentro de 1 hora, es una duplicación
-                    if ($diferencia < 3600) {
-                        $marcasDespuesDe18 = [$ultimaDesp18]; // Mantener solo la más reciente
+                    // Si están dentro de 2 horas, es una duplicación de entrada
+                    if ($diferencia < 7200) {
+                        $marcasAntes08 = [$primeraAntes08]; // Mantener la más temprana
                     }
                 }
                 
-                // Recombinar: marcas antes de 18:00 + la más reciente después de 18:00
+                // Si hay múltiples marcas DESPUÉS de 18:00, mantener solo la más RECIENTE (sin importar diferencia)
+                if (count($marcasDespues18) > 1) {
+                    $ultimaDesp18 = $marcasDespues18[count($marcasDespues18) - 1];
+                    $marcasDespues18 = [$ultimaDesp18]; // Mantener solo la más reciente
+                }
+                
+                // Si hay múltiples marcas en el rango 08:00-18:00, verificar si alguna está fuera de rango
+                // Por ejemplo, si hay marca a las 08:25 cuando entrada_manana se esperaba a las 08:00,
+                // y también hay una marca antes de las 08:00, eliminar la que está en rango esperado
+                if (count($marcasAntes08) > 0 && count($marcasEntre08y18) > 0) {
+                    // Si la primera marca en 08:00-18:00 es muy cercana a entrada_manana (08:00)
+                    // y hay marcas antes, eliminar la marca cercana de 08:00
+                    $primeraEnRango = $marcasEntre08y18[0];
+                    $distanciaA08 = abs($primeraEnRango - $umbralEntradaManana);
+                    
+                    if ($distanciaA08 < 3600) { // Si está dentro de 1 hora de 08:00
+                        // Eliminar esta marca porque la entrada fue antes (está en marcasAntes08)
+                        array_shift($marcasEntre08y18);
+                    }
+                }
+                
+                // Recombinar en orden: antes de 08 + entre 08-18 + después de 18
                 $horasValidasLimpias = [];
-                foreach ($marcasAntesDe18 as $marca) {
+                foreach ($marcasAntes08 as $marca) {
                     $horasValidasLimpias[] = $marca;
                 }
-                foreach ($marcasDespuesDe18 as $marca) {
+                foreach ($marcasEntre08y18 as $marca) {
+                    $horasValidasLimpias[] = $marca;
+                }
+                foreach ($marcasDespues18 as $marca) {
                     $horasValidasLimpias[] = $marca;
                 }
                 
