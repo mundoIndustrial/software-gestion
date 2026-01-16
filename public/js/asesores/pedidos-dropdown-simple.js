@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (tipoCotizacion === 'PL') {
             // Prenda + Logo (Combinada)
             dropdownHTML = `
-                <button onclick="verFactura('${pedido}'); closeDropdown()" style="
+                <button onclick="verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     gap: 0.75rem;
                     font-weight: 500;
                 " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-file-alt" style="color: #2563eb;"></i> Recibo de Costura
+                    <i class="fas fa-file-invoice-dollar" style="color: #10b981;"></i> Ver Factura
                 </button>
                 <div style="height: 1px; background: #e5e7eb;"></div>
                 <button onclick="verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Prenda o Reflectivo (solo costura)
             dropdownHTML = `
-                <button onclick="verFactura('${pedido}'); closeDropdown()" style="
+                <button onclick="verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     gap: 0.75rem;
                     font-weight: 500;
                 " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-file-alt" style="color: #2563eb;"></i> Recibo de Costura
+                    <i class="fas fa-file-invoice-dollar" style="color: #10b981;"></i> Ver Factura
                 </button>
             `;
         }

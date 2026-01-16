@@ -265,6 +265,94 @@ class GestionItemsUI {
             });
             console.log('🧹 [GestionItemsUI] Campos de variaciones limpios');
             
+            // ✅ NUEVO: Limpiar contenedores visuales específicos
+            
+            // 1. Limpiar tabla de telas (tbody-telas)
+            const tbodyTelas = document.getElementById('tbody-telas');
+            if (tbodyTelas) {
+                // Mantener solo la fila de agregar nueva tela (la primera)
+                const filas = tbodyTelas.querySelectorAll('tr');
+                filas.forEach((fila, idx) => {
+                    if (idx > 0) {
+                        fila.remove();
+                    }
+                });
+                
+                // Limpiar inputs de la primera fila
+                const inputs = tbodyTelas.querySelectorAll('input[type="text"]');
+                inputs.forEach(input => input.value = '');
+                
+                // Limpiar preview de imagen de tela
+                const telaPreview = document.getElementById('nueva-prenda-tela-preview');
+                if (telaPreview) {
+                    telaPreview.innerHTML = '';
+                    telaPreview.style.display = 'none';
+                }
+                
+                console.log('🧹 [GestionItemsUI] Tabla de telas limpiada');
+            }
+            
+            // 2. Limpiar inputs específicos de tela, color, referencia
+            const inputs_limpiar = ['nueva-prenda-tela', 'nueva-prenda-color', 'nueva-prenda-referencia'];
+            inputs_limpiar.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) input.value = '';
+            });
+            console.log('🧹 [GestionItemsUI] Inputs de tela, color y referencia limpiados');
+            
+            // 3. Limpiar galería de imágenes de prenda
+            const fotosPreview = document.getElementById('nueva-prenda-foto-preview');
+            if (fotosPreview) {
+                fotosPreview.innerHTML = `
+                    <div class="foto-preview-content">
+                        <div class="material-symbols-rounded">add_photo_alternate</div>
+                        <div class="foto-preview-text">Agregar</div>
+                    </div>
+                `;
+                console.log('🧹 [GestionItemsUI] Preview de fotos de prenda limpiado');
+            }
+            
+            // 4. Limpiar contador de fotos
+            const fotoContador = document.getElementById('nueva-prenda-foto-contador');
+            if (fotoContador) {
+                fotoContador.innerHTML = '';
+                console.log('🧹 [GestionItemsUI] Contador de fotos limpiado');
+            }
+            
+            // 5. Limpiar input de archivos de fotos
+            const fotoInput = document.getElementById('nueva-prenda-foto-input');
+            if (fotoInput) {
+                fotoInput.value = '';
+                console.log('🧹 [GestionItemsUI] Input de fotos limpiado');
+            }
+            
+            // 6. Limpiar contenedor de géneros/tallas
+            const tarjetasGenerosContainer = document.getElementById('tarjetas-generos-container');
+            if (tarjetasGenerosContainer) {
+                tarjetasGenerosContainer.innerHTML = '';
+                console.log('🧹 [GestionItemsUI] Contenedor de géneros limpiado');
+            }
+            
+            // 7. Limpiar botones de género
+            const btnDama = document.getElementById('btn-genero-dama');
+            const btnCaballero = document.getElementById('btn-genero-caballero');
+            if (btnDama) {
+                btnDama.setAttribute('data-selected', 'false');
+                btnDama.style.background = '';
+            }
+            if (btnCaballero) {
+                btnCaballero.setAttribute('data-selected', 'false');
+                btnCaballero.style.background = '';
+            }
+            console.log('🧹 [GestionItemsUI] Botones de género reseteados');
+            
+            // 8. Limpiar contador total
+            const totalPrendas = document.getElementById('total-prendas');
+            if (totalPrendas) {
+                totalPrendas.textContent = '0';
+                console.log('🧹 [GestionItemsUI] Contador total reseteado');
+            }
+            
         } else {
             console.error('❌ [GestionItemsUI] Modal no encontrado');
         }
@@ -870,6 +958,18 @@ class GestionItemsUI {
             console.log(`   ${genero}:`, generosConTallas[genero], `tipo:`, typeof generosConTallas[genero]);
         });
         
+        // ✅ EXTRAER COLOR Y TELA DE TELAS AGREGADAS
+        // Si el usuario agregó telas, usar la primera para color y tela
+        let colorPrenda = null;
+        let telaPrenda = null;
+        if (telasConUrls && telasConUrls.length > 0) {
+            colorPrenda = telasConUrls[0].color || null;
+            telaPrenda = telasConUrls[0].tela || null;
+            console.log(`🧵 [GestionItemsUI] Color y tela extraídos de telasAgregadas:`, { colorPrenda, telaPrenda });
+        } else {
+            console.log(`⚠️ [GestionItemsUI] Sin telas agregadas`);
+        }
+        
         // Crear objeto de prenda
         const prendaNueva = {
             nombre_producto: nombrePrenda,
@@ -883,7 +983,10 @@ class GestionItemsUI {
             variantes: variacionesConfiguradas,
             procesos: procesosConfigurables,
             cantidadesPorTalla: cantidadesPorTalla,
-            generosConTallas: generosConTallas // ✅ INCLUIR ESTRUCTURADO CORRECTAMENTE
+            generosConTallas: generosConTallas, // ✅ INCLUIR ESTRUCTURADO CORRECTAMENTE
+            // ✅ AGREGAR COLOR Y TELA DESDE TELAS AGREGADAS (para que no sean NULL en el backend)
+            color: colorPrenda,  // ← El backend buscará este nombre y obtendrá el ID
+            tela: telaPrenda     // ← El backend buscará este nombre y obtendrá el ID
         };
         
         console.log('✅ [GestionItemsUI] Prenda nueva creada:', prendaNueva);
@@ -1089,7 +1192,11 @@ class GestionItemsUI {
                     pedido_id: resultado.pedido_id,
                     numero_pedido: resultado.numero_pedido,
                 });
-                // Mostrar modal en lugar de notificación
+                // Guardar información del pedido y mostrar modal
+                this.datosPedidoCreado = {
+                    pedido_id: resultado.pedido_id,
+                    numero_pedido: resultado.numero_pedido
+                };
                 setTimeout(() => {
                     this.mostrarModalExito();
                 }, 500);
@@ -1302,24 +1409,18 @@ class GestionItemsUI {
                     cantidad_talla: cantidadTalla,
                     tallas: tallas, // ✅ REQUERIDO por validación backend
                     variaciones: variaciones,
-                    // ✅ OBSERVACIONES AL NIVEL SUPERIOR
-                    obs_manga: obs_manga,
-                    obs_bolsillos: obs_bolsillos,
-                    obs_broche: obs_broche,
-                    obs_reflectivo: obs_reflectivo,
-                    origen: prenda.origen || 'bodega', // ✅ USAR ORIGEN DEL GESTOR
-                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1, // ✅ PASAR de_bodega
-                    // ✅ CRÍTICO: INCLUIR IDs DE BASE DE DATOS y NOMBRES PARA CREAR
+                    // ✅ NOTA: obs_manga, obs_bolsillos, obs_broche, obs_reflectivo, manga, broche
+                    // ya están dentro de 'variaciones', NO duplicar acá
+                    origen: prenda.origen || 'bodega',
+                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
+                    // ✅ NOMBRES PARA BUSCAR/CREAR EN BACKEND
                     color: prenda.color || null,
                     tela: prenda.tela || null,
-                    color_id: prenda.color_id || null,
-                    tela_id: prenda.tela_id || null,
+                    color_id: null,  // ← Backend busca/crea por prenda.color
+                    tela_id: null,   // ← Backend busca/crea por prenda.tela
                     tipo_manga_id: prenda.tipo_manga_id || null,
                     tipo_broche_boton_id: prenda.tipo_broche_boton_id || null,
-                    // ✅ INCLUIR NOMBRES PARA CREAR SI NO EXISTEN
-                    manga: tipoManga !== 'No aplica' ? tipoManga : null,
-                    broche: tipoBroche !== 'No aplica' ? tipoBroche : null,
-                    // ✅ CRÍTICO: INCLUIR PROCESOS CON TALLAS Y DETALLES
+                    // ✅ PROCESOS CON TALLAS Y DETALLES
                     procesos: procesosParaEnviar
                 };
                 
@@ -1330,7 +1431,12 @@ class GestionItemsUI {
                     fotosParaEnviar = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
                     console.log(`📸 Fotos encontradas para prenda ${prendaIndex}:`, fotosParaEnviar.length);
                 }
-                // Si no hay en fotosNuevas, verificar en prenda.fotos
+                // Si no hay en fotosNuevas, verificar en prenda.imagenes (del formulario de prenda nueva)
+                else if (prenda.imagenes && prenda.imagenes.length > 0) {
+                    fotosParaEnviar = prenda.imagenes;
+                    console.log(`📸 Fotos encontradas en prenda.imagenes:`, fotosParaEnviar.length);
+                }
+                // Si no hay en prenda.imagenes, verificar en prenda.fotos (fallback)
                 else if (prenda.fotos && prenda.fotos.length > 0) {
                     fotosParaEnviar = prenda.fotos;
                     console.log(`📸 Fotos encontradas en prenda.fotos:`, fotosParaEnviar.length);
@@ -1341,7 +1447,21 @@ class GestionItemsUI {
                 }
                 
                 // Agregar telas si existen
-                if (prenda.telas && prenda.telas.length > 0) {
+                if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
+                    itemSinCot.telas = prenda.telasAgregadas;
+                    // ✅ Usar la primera tela para color y tela
+                    if (prenda.telasAgregadas[0]) {
+                        if (prenda.telasAgregadas[0].color) {
+                            itemSinCot.color = prenda.telasAgregadas[0].color;
+                        }
+                        if (prenda.telasAgregadas[0].tela) {
+                            itemSinCot.tela = prenda.telasAgregadas[0].tela;
+                        }
+                    }
+                    console.log(`🧵 Telas encontradas:`, prenda.telasAgregadas.length);
+                }
+                // Fallback: si no hay telasAgregadas pero sí prenda.telas
+                else if (prenda.telas && prenda.telas.length > 0) {
                     itemSinCot.telas = prenda.telas;
                     // ✅ Usar la primera tela para color_id y tela_id
                     if (prenda.telas[0]) {
@@ -1360,6 +1480,16 @@ class GestionItemsUI {
                     itemSinCot.telasFotos = window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex];
                     console.log(`📷 Fotos de telas encontradas:`, Object.keys(itemSinCot.telasFotos).length);
                 }
+                
+                // 🔍 BÚSQUEDA DE IDs DE COLOR Y TELA DESDE NOMBRES
+                // Si tenemos nombre de color/tela pero no ID, asignar null para que el backend busque/cree
+                // El backend (CrearPedidoEditableController) manejará la búsqueda/creación automática
+                console.log(`🔎 [COLOR/TELA] Item ${prendaIndex}:`, {
+                    color: itemSinCot.color,
+                    color_id: itemSinCot.color_id,
+                    tela: itemSinCot.tela,
+                    tela_id: itemSinCot.tela_id
+                });
                 
                 itemsFormato.push(itemSinCot);
                 console.log('✅ Prenda sin cotización agregada:', itemSinCot);
@@ -1817,64 +1947,127 @@ class GestionItemsUI {
     }
 
     mostrarModalExito() {
-        console.log('📋 [mostrarModalExito] Iniciando...');
+        console.log('📋 [mostrarModalExito] Iniciando...', this.datosPedidoCreado);
         
-        // Obtener el modal del DOM
-        const modal = document.getElementById('modalExitoPedido');
+        // Buscar modal en el DOM
+        let modalElement = document.getElementById('modalExitoPedido');
         
-        if (!modal) {
-            console.warn('⚠️ Modal no encontrado en el DOM, redirigiendo...');
-            setTimeout(() => {
-                window.location.href = '/asesores/pedidos';
-            }, 1000);
-            return;
+        // Si no existe, crearlo dinámicamente
+        if (!modalElement) {
+            console.log('📝 Creando modal dinámicamente...');
+            
+            const modalHTML = `
+                <div id="modalExitoPedido" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 2000;
+                ">
+                    <!-- Backdrop -->
+                    <div id="modalBackdrop" style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0, 0, 0, 0.5);
+                        z-index: 1;
+                    "></div>
+                    
+                    <!-- Modal Content -->
+                    <div style="
+                        position: relative;
+                        z-index: 2;
+                        background: white;
+                        border-radius: 8px;
+                        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                        width: 90%;
+                        max-width: 500px;
+                        overflow: hidden;
+                    ">
+                        <!-- Header -->
+                        <div style="
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            color: white;
+                            padding: 1.5rem;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.75rem;
+                        ">
+                            <span class="material-symbols-rounded" style="font-size: 1.5rem;">check_circle</span>
+                            <h5 style="margin: 0; font-size: 1.25rem; font-weight: 600;">¡Pedido Creado Exitosamente!</h5>
+                        </div>
+                        
+                        <!-- Body -->
+                        <div style="
+                            padding: 2rem;
+                            text-align: center;
+                            color: #374151;
+                        ">
+                            <p style="font-size: 1.1rem; margin: 0;">
+                                El pedido ha sido creado correctamente y está listo para procesarse.
+                            </p>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="
+                            padding: 1.5rem;
+                            background: #f9fafb;
+                            border-top: 1px solid #e5e7eb;
+                            text-align: center;
+                        ">
+                            <button id="btnVolverAPedidos" type="button" style="
+                                background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.75rem 1.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 1rem;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.5rem;
+                                margin: 0 auto;
+                                transition: transform 0.2s;
+                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                <span class="material-symbols-rounded" style="font-size: 1rem;">arrow_back</span>
+                                Volver a Pedidos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Agregar modal al body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            modalElement = document.getElementById('modalExitoPedido');
+            
+            console.log('✅ Modal creado dinámicamente');
         }
 
-        console.log('✅ Modal encontrado en el DOM');
+        console.log('✅ Modal encontrado/creado en el DOM');
 
-        // Usar Bootstrap's Modal API
-        try {
-            // Bootstrap 5+
-            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                console.log('📦 Usando Bootstrap 5+');
-                const bsModal = new bootstrap.Modal(modal);
-                bsModal.show();
-            } 
-            // Bootstrap 4 con jQuery
-            else if (typeof $ !== 'undefined' && $.fn.modal) {
-                console.log('📦 Usando Bootstrap 4 + jQuery');
-                $(modal).modal('show');
-            } 
-            // Fallback manual
-            else {
-                console.warn('⚠️ Bootstrap no disponible, mostrando modal manualmente...');
-                modal.style.display = 'block';
-                modal.classList.add('show');
-                modal.setAttribute('aria-hidden', 'false');
-                
-                // Agregar backdrop
-                const backdrop = document.createElement('div');
-                backdrop.className = 'modal-backdrop fade show';
-                document.body.appendChild(backdrop);
-                
-                // Permitir cerrar con escape
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') {
-                        modal.style.display = 'none';
-                        modal.classList.remove('show');
-                        modal.setAttribute('aria-hidden', 'true');
-                        backdrop.remove();
-                    }
-                });
-            }
-            console.log('✅ Modal mostrado correctamente');
-        } catch (error) {
-            console.error('❌ Error al mostrar modal:', error);
-            // Si hay error, redirigir directamente
-            setTimeout(() => {
+        // Configurar botones del modal
+        const btnVolverAPedidos = document.getElementById('btnVolverAPedidos');
+        if (btnVolverAPedidos) {
+            btnVolverAPedidos.onclick = () => {
+                console.log('📍 Navegando a lista de pedidos');
                 window.location.href = '/asesores/pedidos';
-            }, 1000);
+            };
         }
+
+        // Mostrar modal
+        console.log('✅ Mostrando modal...');
+        modalElement.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        console.log('✅ Modal mostrado exitosamente');
     }
 }
 

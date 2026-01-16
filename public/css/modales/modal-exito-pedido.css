@@ -1,0 +1,39 @@
+/* Modal de Éxito para Pedido */
+
+#modalExitoPedido {
+    z-index: 1050 !important;
+}
+
+#modalExitoPedido.show {
+    display: block !important;
+    z-index: 1050 !important;
+}
+
+#modalExitoPedido .modal-backdrop {
+    z-index: 1040 !important;
+}
+
+.modal-backdrop.show {
+    z-index: 1040 !important;
+    display: block !important;
+}
+
+/* Asegurar que los botones del modal tengan estilos correctos */
+#btnVisualizarPedido:hover,
+#btnVolverAPedidos:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+#btnVisualizarPedido:active,
+#btnVolverAPedidos:active {
+    transform: translateY(0);
+}
+
+/* Asegurar que el modal sea siempre visible */
+@media (max-width: 768px) {
+    #modalExitoPedido .modal-dialog {
+        margin: 0.5rem !important;
+    }
+}

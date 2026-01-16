@@ -198,6 +198,9 @@
         padding: 12px;
         margin-bottom: 10px;
         border-radius: 4px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        overflow: hidden;
     }
 
     .prenda-nombre {
@@ -218,29 +221,48 @@
     }
 
     .prenda-tallas {
-        font-size: 12px;
+        font-size: 11px;
         background: white;
         padding: 8px;
         border-radius: 3px;
         margin-top: 8px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .prenda-tallas strong {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+
+    .prenda-tallas span {
+        white-space: nowrap;
+        flex-shrink: 1;
     }
 
     /* Procesos */
     .procesos-container {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 4px;
         margin-top: 8px;
     }
 
     .proceso-badge {
         background: white;
         border: 1px solid #ddd;
-        padding: 6px 8px;
+        padding: 4px 6px;
         border-radius: 3px;
-        font-size: 11px;
+        font-size: 10px;
         text-align: center;
         color: #666;
+        word-break: break-word;
+        min-width: 0;
     }
 
     .proceso-badge.activo {
@@ -374,21 +396,81 @@
         body {
             background: white;
             padding: 0;
+            margin: 0;
+        }
+
+        /* Ocultar barra de navegación */
+        .top-nav {
+            display: none !important;
+        }
+
+        /* Ocultar elemento padre de la navegación si existe */
+        header, nav {
+            display: none !important;
         }
 
         .invoice-wrapper {
             background: white;
             padding: 0;
+            margin: 0;
         }
 
         .invoice-container {
             box-shadow: none;
             max-width: 100%;
-            padding: 20px;
+            padding: 15px;
+            margin: 0;
         }
 
         .print-button {
             display: none;
+        }
+
+        /* Optimizaciones de tamaño para impresión */
+        .prenda-block {
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .prenda-tallas {
+            font-size: 10px;
+            padding: 6px;
+            gap: 3px;
+        }
+
+        .prenda-tallas span {
+            padding: 1px 4px !important;
+            margin: 1px !important;
+            font-size: 9px;
+        }
+
+        .procesos-container {
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 2px;
+        }
+
+        .proceso-badge {
+            padding: 3px 5px;
+            font-size: 9px;
+        }
+
+        .prenda-nombre {
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .prenda-detalles {
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .prenda-detalles p {
+            margin: 3px 0;
+        }
+
+        /* Optimizaciones adicionales para impresión */
+        * {
+            box-shadow: none !important;
         }
     }
 
@@ -495,10 +577,10 @@
                         @endphp
                         @if(is_array($tallas) && !empty($tallas))
                             <div class="prenda-tallas">
-                                <strong>Tallas:</strong>
+                                <strong style="color: #dc2626; font-size: 11px;">Tallas:</strong>
                                 @foreach($tallas as $talla => $cantidad)
                                     @if($cantidad > 0)
-                                        <span style="background: #e8f4f8; padding: 2px 6px; margin: 2px; border-radius: 3px; display: inline-block;">{{ $talla }}: {{ $cantidad }}</span>
+                                        <span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; margin: 2px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: 600; border: 2px solid #dc2626;">{{ $talla }}: {{ $cantidad }}</span>
                                     @endif
                                 @endforeach
                             </div>

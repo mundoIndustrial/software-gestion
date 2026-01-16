@@ -194,7 +194,7 @@ class GestorPrendaSinCotizacion {
     /**
      * Agregar talla a una prenda
      * @param {number} prendaIndex - Índice de la prenda
-     * @param {string} talla - Talla a agregar
+     * @param {string} talla - Talla a agregar (puede ser "dama-S", "caballero-L", etc.)
      */
     agregarTalla(prendaIndex, talla) {
         const prenda = this.obtenerPorIndice(prendaIndex);
@@ -211,6 +211,27 @@ class GestorPrendaSinCotizacion {
                 prenda.cantidadesPorTalla = {};
             }
             prenda.cantidadesPorTalla[talla] = 0;
+
+            // ✅ NUEVO: También inicializar en generosConTallas
+            if (!prenda.generosConTallas) {
+                prenda.generosConTallas = {};
+            }
+
+            // Parsearlo como "genero-talla"
+            let genero = 'dama';
+            let tallaPura = talla;
+
+            if (talla.includes('-')) {
+                [genero, tallaPura] = talla.split('-', 2);
+            }
+
+            if (!prenda.generosConTallas[genero]) {
+                prenda.generosConTallas[genero] = {};
+            }
+
+            prenda.generosConTallas[genero][tallaPura] = 0;
+
+            console.log(`✅ Talla ${talla} agregada a prenda ${prendaIndex + 1}, generosConTallas:`, prenda.generosConTallas);
         }
     }
 
@@ -238,7 +259,7 @@ class GestorPrendaSinCotizacion {
     /**
      * Actualizar cantidad para una talla
      * @param {number} prendaIndex - Índice de la prenda
-     * @param {string} talla - Talla
+     * @param {string} talla - Talla (puede ser "dama-S", "caballero-L", etc.)
      * @param {number} cantidad - Nueva cantidad
      */
     actualizarCantidadTalla(prendaIndex, talla, cantidad) {
@@ -249,6 +270,32 @@ class GestorPrendaSinCotizacion {
             prenda.cantidadesPorTalla = {};
         }
         prenda.cantidadesPorTalla[talla] = parseInt(cantidad) || 0;
+
+        // ✅ NUEVO: También actualizar generosConTallas con estructura {genero: {talla: cantidad}}
+        if (!prenda.generosConTallas) {
+            prenda.generosConTallas = {};
+        }
+
+        // Parsearlo como "genero-talla" o si ya vienen separados
+        let genero = '';
+        let tallaPura = talla;
+
+        if (talla.includes('-')) {
+            [genero, tallaPura] = talla.split('-', 2);
+        } else {
+            // Si no tiene guión, asumir que es para el género actual o todos
+            genero = prenda.genero && Array.isArray(prenda.genero) && prenda.genero.length > 0 
+                ? prenda.genero[0] 
+                : 'dama';
+        }
+
+        if (!prenda.generosConTallas[genero]) {
+            prenda.generosConTallas[genero] = {};
+        }
+
+        prenda.generosConTallas[genero][tallaPura] = parseInt(cantidad) || 0;
+
+        console.log(`✅ [GESTOR] generosConTallas actualizado para prenda ${prendaIndex}:`, prenda.generosConTallas);
     }
 
     /**

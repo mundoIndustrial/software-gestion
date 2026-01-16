@@ -443,6 +443,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::post('/pedidos', [App\Http\Controllers\AsesoresController::class, 'store'])->name('pedidos.store');
     Route::post('/pedidos/confirm', [App\Http\Controllers\AsesoresController::class, 'confirm'])->name('pedidos.confirm');
     Route::post('/pedidos/{id}/anular', [App\Http\Controllers\AsesoresController::class, 'anularPedido'])->name('pedidos.anular');
+    Route::get('/pedidos/{id}/factura-datos', [App\Http\Controllers\AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
     Route::get('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'show'])->name('pedidos.show');
     Route::get('/pedidos/{pedido}/edit', [App\Http\Controllers\AsesoresController::class, 'edit'])->name('pedidos.edit');
     Route::put('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'update'])->name('pedidos.update');

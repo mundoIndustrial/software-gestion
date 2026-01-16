@@ -31,11 +31,19 @@ class PrendaPedido extends Model
         'descripcion',
         'genero',
         'de_bodega',
+        'cantidad_talla', // ✅ NUEVO: Guardará {genero: {talla: cantidad}}
+        // ❌ REMOVIDOS: color_id, tela_id, tipo_manga_id, tipo_broche_boton_id
+        // ❌ Estos van en prenda_pedido_variantes, no en prendas_pedido
         // 'numero_pedido', // ❌ COMENTADO [16/01/2026]: Se usa pedido_produccion_id en su lugar
     ];
 
     protected $casts = [
         'de_bodega' => 'boolean',
+        'tiene_bolsillos' => 'boolean',
+        'tiene_reflectivo' => 'boolean',
+        // ❌ NO USAR array cast para cantidad_talla, causará doble-encoding
+        // Se guardará como JSON string y se decodificará manualmente cuando sea necesario
+        'genero' => 'array', // Cast genero para que Laravel lo maneje automáticamente
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -90,7 +98,7 @@ class PrendaPedido extends Model
      */
     public function fotosTelas(): HasMany
     {
-        return $this->hasMany(PrendaFotoTelasPedido::class, 'prenda_pedido_id');
+        return $this->hasMany(PrendaFotoTelaPedido::class, 'prenda_pedido_id');
     }
 
     /**

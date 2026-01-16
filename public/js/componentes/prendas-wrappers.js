@@ -61,7 +61,23 @@ window.cerrarModalPrendaNueva = function() {
         const form = document.getElementById('form-prenda-nueva');
         if (form) {
             form.reset();
+            console.log(' [WRAPPER] Formulario reseteado');
         }
+        
+        // ✅ NUEVO: Limpiar campos principales del formulario
+        const inputsLimpiar = [
+            'nueva-prenda-nombre',
+            'nueva-prenda-descripcion',
+            'nueva-prenda-origen-select'
+        ];
+        
+        inputsLimpiar.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = '';
+                console.log(` [WRAPPER] Campo limpiado: ${fieldId}`);
+            }
+        });
         
         // Limpiar telas agregadas
         if (window.telasAgregadas) {

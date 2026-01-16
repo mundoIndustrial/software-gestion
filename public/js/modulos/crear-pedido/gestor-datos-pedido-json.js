@@ -203,10 +203,12 @@ class GestorDatosPedidoJSON {
                     if (tela.imagenes && tela.imagenes.length > 0) {
                         console.log(`      📸 ${tela.imagenes.length} imagen(es)`);
                         tela.imagenes.forEach((img, imgIdx) => {
-                            if (img instanceof File) {
-                                formData.append(`prendas[${prendaIdx}][telas][${telaIdx}][imagenes][]`, img);
+                            // Manejar dos casos: img es File directo, o img es {file: File, nombre: string}
+                            const archivo = img instanceof File ? img : (img && img.file instanceof File ? img.file : null);
+                            if (archivo) {
+                                formData.append(`prendas[${prendaIdx}][telas][${telaIdx}][imagenes][]`, archivo);
                                 contadores.archivos++;
-                                console.log(`         ✓ ${img.name}`);
+                                console.log(`         ✓ ${archivo.name}`);
                             }
                         });
                     }

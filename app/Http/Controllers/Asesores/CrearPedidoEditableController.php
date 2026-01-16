@@ -165,7 +165,16 @@ class CrearPedidoEditableController extends Controller
     {
         try {
             // Obtener items del request
+            // ✅ Intentar leer desde 'items' (JSON) o 'prendas' (FormData)
             $items = $request->input('items', []);
+            if (empty($items)) {
+                $items = $request->input('prendas', []);
+            }
+            
+            \Log::info('📦 [CrearPedidoEditableController::crearPedido] Items recibidos:', [
+                'items_count' => count($items),
+                'first_item_keys' => count($items) > 0 ? array_keys($items[0]) : [],
+            ]);
             
             // Validar que haya al menos un ítem
             if (empty($items)) {
@@ -191,15 +200,33 @@ class CrearPedidoEditableController extends Controller
                 if ($tipo === 'prenda_nueva') {
                     // Para prendas nuevas, validar cantidad_talla (objeto)
                     $cantidadTalla = $item['cantidad_talla'] ?? [];
+                    
+                    // Si es string JSON (viene de FormData), parsear
+                    if (is_string($cantidadTalla)) {
+                        $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
+                        $item['cantidad_talla'] = $cantidadTalla; // Actualizar en el array
+                    }
+                    
                     if (empty($cantidadTalla) || !is_array($cantidadTalla) || count($cantidadTalla) === 0) {
                         $errores[] = "Ítem {$itemNum}: Debe especificar cantidades por talla";
                     }
                 } else {
                     // Para cotizaciones, validar tallas (array)
-                    if (empty($item['tallas']) || !is_array($item['tallas']) || count($item['tallas']) === 0) {
+                    $tallas = $item['tallas'] ?? [];
+                    
+                    // Si es string JSON, parsear
+                    if (is_string($tallas)) {
+                        $tallas = json_decode($tallas, true) ?? [];
+                        $item['tallas'] = $tallas; // Actualizar en el array
+                    }
+                    
+                    if (empty($tallas) || !is_array($tallas) || count($tallas) === 0) {
                         $errores[] = "Ítem {$itemNum}: Debe seleccionar al menos una talla";
                     }
                 }
+                
+                // Actualizar items con datos parseados
+                $items[$index] = $item;
             }
             
             if (!empty($errores)) {
@@ -210,12 +237,15 @@ class CrearPedidoEditableController extends Controller
                 ], 422);
             }
 
+            // ✅ Validar datos básicos (no pedimos 'items' en la validación porque puede venir como 'prendas')
             $validated = $request->validate([
                 'cliente' => 'required|string',
                 'asesora' => 'required|string',
                 'forma_de_pago' => 'nullable|string',
-                'items' => 'required|array',
             ]);
+            
+            // Agregar los items validados al array validado
+            $validated['items'] = $items;
 
             // Obtener el usuario autenticado (asesora)
             $asesora = auth()->user();
@@ -278,23 +308,63 @@ class CrearPedidoEditableController extends Controller
                 
                 // 🔄 PROCESAR PROCESOS CON IMÁGENES DESDE FormData
                 $procesosReconstruidos = [];
-                $procesosFormData = $request->file("prendas.*.procesos");
                 
-                if ($procesosFormData && isset($procesosFormData[$itemIndex])) {
-                    $procesosByTipo = $procesosFormData[$itemIndex];
+                // 🔍 DEBUG: Log item structure
+                \Log::info('🔍 ESTRUCTURA DEL ITEM RECIBIDO', [
+                    'itemIndex' => $itemIndex,
+                    'cantidad_talla' => $item['cantidad_talla'] ?? 'NO_PRESENTE',
+                    'variaciones' => $item['variaciones'] ?? 'NO_PRESENTE',
+                    'keys_del_item' => array_keys($item)
+                ]);
+                
+                // ✅ OBTENER DATOS DE PROCESOS DESDE input() (no desde file())
+                $prendas = $request->input('prendas');
+                
+                // 🔍 DEBUG: Log procesos structure
+                if ($prendas && isset($prendas[$itemIndex])) {
+                    \Log::info('🔍 ESTRUCTURA DE PROCESOS RECIBIDA', [
+                        'itemIndex' => $itemIndex,
+                        'procesos_keys' => isset($prendas[$itemIndex]['procesos']) ? array_keys($prendas[$itemIndex]['procesos']) : [],
+                        'procesos_data' => $prendas[$itemIndex]['procesos'] ?? 'NO_PRESENTE'
+                    ]);
+                }
+                
+                if ($prendas && isset($prendas[$itemIndex]) && isset($prendas[$itemIndex]['procesos'])) {
+                    $procesosDatos = $prendas[$itemIndex]['procesos'];
                     
-                    foreach ($procesosByTipo as $tipoProceso => $datosProcesoJson) {
-                        if (is_string($datosProcesoJson)) {
-                            $datosProceso = json_decode($datosProcesoJson, true);
-                        } else {
-                            $datosProceso = $datosProcesoJson;
+                    foreach ($procesosDatos as $tipoProceso => $procesoData) {
+                        // Reconstruir datos del proceso
+                        $datosProceso = [];
+                        
+                        // Copiar campos básicos
+                        if (isset($procesoData['tipo'])) {
+                            $datosProceso['tipo'] = $procesoData['tipo'];
+                        }
+                        if (isset($procesoData['ubicaciones'])) {
+                            $datosProceso['ubicaciones'] = is_string($procesoData['ubicaciones']) 
+                                ? json_decode($procesoData['ubicaciones'], true) 
+                                : $procesoData['ubicaciones'];
+                        }
+                        if (isset($procesoData['observaciones'])) {
+                            $datosProceso['observaciones'] = $procesoData['observaciones'];
                         }
                         
-                        if (!$datosProceso) {
-                            continue;
+                        // ✅ PROCESAR TALLAS (pueden venir como JSON string)
+                        $datosProceso['tallas'] = [];
+                        if (isset($procesoData['tallas_dama'])) {
+                            $tallasDama = is_string($procesoData['tallas_dama']) 
+                                ? json_decode($procesoData['tallas_dama'], true) 
+                                : $procesoData['tallas_dama'];
+                            $datosProceso['tallas']['dama'] = $tallasDama ?? [];
+                        }
+                        if (isset($procesoData['tallas_caballero'])) {
+                            $tallasCapallero = is_string($procesoData['tallas_caballero']) 
+                                ? json_decode($procesoData['tallas_caballero'], true) 
+                                : $procesoData['tallas_caballero'];
+                            $datosProceso['tallas']['caballero'] = $tallasCapallero ?? [];
                         }
                         
-                        // Obtener imágenes del FormData para este proceso
+                        // ✅ OBTENER IMÁGENES DEL FormData
                         $imagenesFormDataKey = "prendas.{$itemIndex}.procesos.{$tipoProceso}.imagenes";
                         $imagenesUploadedFiles = $request->file($imagenesFormDataKey) ?? [];
                         
@@ -309,24 +379,263 @@ class CrearPedidoEditableController extends Controller
                         
                         $procesosReconstruidos[$tipoProceso] = $datosProceso;
                         
-                        \Log::info("✅ Proceso reconstruido: {$tipoProceso} con " . count($datosProceso['imagenes']) . " imágenes");
+                        \Log::info("✅ Proceso reconstruido: {$tipoProceso}", [
+                            'cantidad_imagenes' => count($datosProceso['imagenes']),
+                            'ubicaciones' => $datosProceso['ubicaciones'] ?? [],
+                            'tallas_dama' => $datosProceso['tallas']['dama'] ?? [],
+                            'tallas_caballero' => $datosProceso['tallas']['caballero'] ?? [],
+                        ]);
                     }
                 }
+                
+                // ✅ FIX: COPIAR TALLAS DESDE cantidad_talla DEL ITEM A CADA PROCESO
+                if (isset($item['cantidad_talla']) && !empty($item['cantidad_talla'])) {
+                    $cantidad_talla = $item['cantidad_talla'];
+                    
+                    \Log::info('🔍 CANTIDAD_TALLA RECIBIDA', [
+                        'raw_data' => $cantidad_talla,
+                        'tipo_dato' => gettype($cantidad_talla),
+                        'es_array' => is_array($cantidad_talla)
+                    ]);
+                    
+                    $tallas_dama = [];
+                    $tallas_caballero = [];
+                    
+                    // Si es string JSON, decodificar
+                    if (is_string($cantidad_talla)) {
+                        \Log::info('🔍 Decodificando cantidad_talla como JSON');
+                        $cantidad_talla = json_decode($cantidad_talla, true) ?? [];
+                    }
+                    
+                    foreach ($cantidad_talla as $clave => $cantidad) {
+                        if (is_string($clave) && strpos($clave, 'dama-') === 0) {
+                            $talla = str_replace('dama-', '', $clave);
+                            $tallas_dama[$talla] = $cantidad;
+                        } elseif (is_string($clave) && strpos($clave, 'caballero-') === 0) {
+                            $talla = str_replace('caballero-', '', $clave);
+                            $tallas_caballero[$talla] = $cantidad;
+                        }
+                    }
+                    
+                    \Log::info('🔍 TALLAS PARSEADAS', [
+                        'tallas_dama' => $tallas_dama,
+                        'tallas_caballero' => $tallas_caballero,
+                        'procesosReconstruidos_count' => count($procesosReconstruidos),
+                        'procesosReconstruidos_keys' => array_keys($procesosReconstruidos)
+                    ]);
+                    
+                    foreach ($procesosReconstruidos as &$proceso) {
+                        if (!isset($proceso['tallas'])) {
+                            $proceso['tallas'] = [];
+                        }
+                        if (!empty($tallas_dama)) {
+                            $proceso['tallas']['dama'] = $tallas_dama;
+                        }
+                        if (!empty($tallas_caballero)) {
+                            $proceso['tallas']['caballero'] = $tallas_caballero;
+                        }
+                    }
+                    
+                    \Log::info('✅ Tallas copiadas a procesos', [
+                        'tallas_dama' => $tallas_dama,
+                        'tallas_caballero' => $tallas_caballero,
+                        'procesos_actualizado_count' => count($procesosReconstruidos)
+                    ]);
+                } else {
+                    \Log::warning('⚠️ cantidad_talla NO recibida o está VACÍA', [
+                        'tiene_cantidad_talla' => isset($item['cantidad_talla']),
+                        'cantidad_talla_value' => $item['cantidad_talla'] ?? null
+                    ]);
+                }
+                
+                // ✅ FIX: EXTRAER OBSERVACIONES DESDE variaciones JSON SI EXISTEN
+                $obs_manga = $item['obs_manga'] ?? '';
+                $obs_bolsillos = $item['obs_bolsillos'] ?? '';
+                $obs_broche = $item['obs_broche'] ?? '';
+                $obs_reflectivo = $item['obs_reflectivo'] ?? '';
+                
+                \Log::info('🔍 OBSERVACIONES INICIALES DEL ITEM', [
+                    'obs_manga' => $obs_manga ?: 'VACÍO',
+                    'obs_bolsillos' => $obs_bolsillos ?: 'VACÍO',
+                    'obs_broche' => $obs_broche ?: 'VACÍO',
+                    'obs_reflectivo' => $obs_reflectivo ?: 'VACÍO'
+                ]);
+                
+                $variaciones_data = $item['variaciones'] ?? [];
+                
+                \Log::info('🔍 VARIACIONES RECIBIDAS', [
+                    'tipo_dato' => gettype($variaciones_data),
+                    'valor_raw' => is_string($variaciones_data) ? mb_substr($variaciones_data, 0, 200) : $variaciones_data
+                ]);
+                
+                if (is_string($variaciones_data)) {
+                    $variaciones_parsed = json_decode($variaciones_data, true);
+                    \Log::info('🔍 VARIACIONES PARSEADAS COMO JSON', [
+                        'decodificar_exitoso' => json_last_error() === JSON_ERROR_NONE,
+                        'keys_variaciones' => is_array($variaciones_parsed) ? array_keys($variaciones_parsed) : 'NO_ES_ARRAY'
+                    ]);
+                    
+                    if (is_array($variaciones_parsed)) {
+                        if (empty($obs_manga) && isset($variaciones_parsed['manga']['observacion'])) {
+                            $obs_manga = $variaciones_parsed['manga']['observacion'];
+                            \Log::info('✅ manga.observacion encontrada y extraída');
+                        }
+                        if (empty($obs_bolsillos) && isset($variaciones_parsed['bolsillos']['observacion'])) {
+                            $obs_bolsillos = $variaciones_parsed['bolsillos']['observacion'];
+                            \Log::info('✅ bolsillos.observacion encontrada y extraída');
+                        }
+                        if (empty($obs_broche) && isset($variaciones_parsed['broche']['observacion'])) {
+                            $obs_broche = $variaciones_parsed['broche']['observacion'];
+                            \Log::info('✅ broche.observacion encontrada y extraída');
+                        }
+                        if (empty($obs_reflectivo) && isset($variaciones_parsed['reflectivo']['observacion'])) {
+                            $obs_reflectivo = $variaciones_parsed['reflectivo']['observacion'];
+                            \Log::info('✅ reflectivo.observacion encontrada y extraída');
+                        }
+                        \Log::info('✅ Observaciones extraídas de variaciones', [
+                            'obs_manga' => $obs_manga,
+                            'obs_bolsillos' => $obs_bolsillos,
+                            'obs_broche' => $obs_broche,
+                            'obs_reflectivo' => $obs_reflectivo
+                        ]);
+                    }
+                } else {
+                    \Log::info('🔍 VARIACIONES no son string, intentando como array directo', [
+                        'variaciones_keys' => is_array($variaciones_data) ? array_keys($variaciones_data) : 'NO_ES_ARRAY'
+                    ]);
+                }
+                
+                // ✅ FIX: OBTENER/CREAR IDs DE TIPOS DE MANGA Y BROCHE
+                $tipo_manga_id = null;
+                $tipo_broche_boton_id = null;
+                
+                if (is_string($variaciones_data)) {
+                    $variaciones_parsed = json_decode($variaciones_data, true);
+                    
+                    // Obtener tipo_manga_id
+                    if (isset($variaciones_parsed['manga']['tipo']) && !empty($variaciones_parsed['manga']['tipo'])) {
+                        $tipoMangaNombre = $variaciones_parsed['manga']['tipo'];
+                        try {
+                            $tipoManga = $this->colorGeneroService->buscarOCrearManga($tipoMangaNombre);
+                            $tipo_manga_id = $tipoManga->id;
+                            \Log::info('✅ Tipo manga obtenido/creado', [
+                                'nombre' => $tipoMangaNombre,
+                                'id' => $tipo_manga_id
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::warning('⚠️ Error procesando tipo manga', [
+                                'nombre' => $tipoMangaNombre,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                    
+                    // Obtener tipo_broche_boton_id
+                    if (isset($variaciones_parsed['broche']['tipo']) && !empty($variaciones_parsed['broche']['tipo'])) {
+                        $tipoBrocheNombre = $variaciones_parsed['broche']['tipo'];
+                        try {
+                            $tipoBroche = $this->colorGeneroService->buscarOCrearBroche($tipoBrocheNombre);
+                            $tipo_broche_boton_id = $tipoBroche->id;
+                            \Log::info('✅ Tipo broche obtenido/creado', [
+                                'nombre' => $tipoBrocheNombre,
+                                'id' => $tipo_broche_boton_id
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::warning('⚠️ Error procesando tipo broche', [
+                                'nombre' => $tipoBrocheNombre,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+                
+                // ✅ OBTENER IMÁGENES DE PRENDA DESDE FormData
+                $fotosFormDataKey = "prendas.{$itemIndex}.imagenes";
+                $fotosUploadedFiles = $request->file($fotosFormDataKey) ?? [];
+                
+                // Asegurar que es array
+                if (!is_array($fotosUploadedFiles)) {
+                    $fotosUploadedFiles = [$fotosUploadedFiles];
+                }
+                
+                $fotosFiltered = array_filter($fotosUploadedFiles, function($foto) {
+                    return $foto instanceof \Illuminate\Http\UploadedFile;
+                });
+                
+                \Log::info('🎨 [FOTOS PRENDA] Procesadas', [
+                    'itemIndex' => $itemIndex,
+                    'cantidad_fotos' => count($fotosFiltered),
+                    'formDataKey' => $fotosFormDataKey,
+                ]);
+                
+                // ✅ OBTENER IMÁGENES DE TELAS DESDE FormData y FUSIONAR con datos existentes
+                $telasFormDataKey = "prendas.{$itemIndex}.telas";
+                $telasConImagenes = [];
+                
+                // Primero, copiar datos de telas existentes del item si los hay
+                if (!empty($item['telas']) && is_array($item['telas'])) {
+                    foreach ($item['telas'] as $telaIdx => $telaDatos) {
+                        $telasConImagenes[$telaIdx] = is_array($telaDatos) ? $telaDatos : [];
+                        // Asegurar que tenga clave 'fotos'
+                        if (!isset($telasConImagenes[$telaIdx]['fotos'])) {
+                            $telasConImagenes[$telaIdx]['fotos'] = [];
+                        }
+                    }
+                }
+                
+                // Ahora obtener imágenes de FormData y agregarlas
+                $telaFiles = $request->file($telasFormDataKey) ?? [];
+                if (is_array($telaFiles)) {
+                    foreach ($telaFiles as $telaIdx => $telaData) {
+                        // Inicializar si no existe
+                        if (!isset($telasConImagenes[$telaIdx])) {
+                            $telasConImagenes[$telaIdx] = ['fotos' => []];
+                        }
+                        
+                        // Obtener imagenes de esta tela específica
+                        $imagenesTela = $request->file($telasFormDataKey . ".{$telaIdx}.imagenes") ?? [];
+                        if (!is_array($imagenesTela)) {
+                            $imagenesTela = [$imagenesTela];
+                        }
+                        
+                        $imagenesTelaFiltered = array_filter($imagenesTela, function($img) {
+                            return $img instanceof \Illuminate\Http\UploadedFile;
+                        });
+                        
+                        // Agregar fotos (puede haber más de una)
+                        if (!empty($imagenesTelaFiltered)) {
+                            $telasConImagenes[$telaIdx]['fotos'] = array_values($imagenesTelaFiltered);
+                        }
+                    }
+                }
+                
+                
+                \Log::info('🧵 [FOTOS TELA] Procesadas', [
+                    'itemIndex' => $itemIndex,
+                    'cantidad_telas_con_fotos' => count(array_filter($telasConImagenes, function($t) { 
+                        return !empty($t['imagenes']); 
+                    })),
+                ]);
                 
                 // Convertir item a formato esperado por PedidoPrendaService
                 $prendaData = [
                     'nombre_producto' => $item['prenda'],
                     'descripcion' => $item['descripcion'] ?? '',
-                    'variaciones' => $item['variaciones'] ?? [],
-                    'fotos' => $item['imagenes'] ?? [],
+                    'variaciones' => $variaciones_data,
+                    'fotos' => $fotosFiltered, // ✅ Fotos de prenda como UploadedFile
                     'procesos' => $procesosReconstruidos, // ✅ Procesos con imágenes UploadedFile
                     'origen' => $item['origen'] ?? 'bodega', // ✅ Origen de la prenda
                     'de_bodega' => $deBodega, // ✅ CAMPO FINAL CALCULADO
-                    // ✅ AGREGAR OBSERVACIONES AL NIVEL SUPERIOR
-                    'obs_manga' => $item['obs_manga'] ?? '',
-                    'obs_bolsillos' => $item['obs_bolsillos'] ?? '',
-                    'obs_broche' => $item['obs_broche'] ?? '',
-                    'obs_reflectivo' => $item['obs_reflectivo'] ?? '',
+                    // ✅ OBSERVACIONES EXTRAÍDAS
+                    'obs_manga' => $obs_manga,
+                    'obs_bolsillos' => $obs_bolsillos,
+                    'obs_broche' => $obs_broche,
+                    'obs_reflectivo' => $obs_reflectivo,
+                    // ✅ IDs DE TIPOS DE VARIACIÓN
+                    'tipo_manga_id' => $tipo_manga_id,
+                    'tipo_broche_boton_id' => $tipo_broche_boton_id,
+                    // ✅ TELAS CON IMÁGENES
+                    'telas' => $telasConImagenes,
                 ];
                 
                 // ✅ Procesar tallas según el tipo de item
@@ -383,7 +692,7 @@ class CrearPedidoEditableController extends Controller
                     $prendaData['tela_id'] = $item['tela_id'];
                 } elseif (!empty($item['tela'])) {
                     try {
-                        $tela = $this->colorGeneroService->buscarOCrearTela($item['tela']);
+                        $tela = $this->colorGeneroService->obtenerOCrearTela($item['tela']);
                         $prendaData['tela_id'] = $tela->id;
                         \Log::info('✅ Tela creada/obtenida', ['nombre' => $item['tela'], 'id' => $tela->id]);
                     } catch (\Exception $e) {
@@ -423,6 +732,19 @@ class CrearPedidoEditableController extends Controller
                 
                 $prendasParaGuardar[] = $prendaData;
             }
+            
+            // ✅ LOG DE VERIFICACIÓN ANTES DE GUARDAR
+            \Log::info('📦 [CrearPedidoEditableController] Prendas listas para guardar', [
+                'cantidad_prendas' => count($prendasParaGuardar),
+                'prendas_estructura' => array_map(function($p) {
+                    return [
+                        'nombre' => $p['nombre_producto'] ?? 'SIN NOMBRE',
+                        'tiene_fotos' => !empty($p['fotos']) ? count($p['fotos']) : 0,
+                        'tiene_telas' => !empty($p['telas']) ? count($p['telas']) : 0,
+                        'tiene_procesos' => !empty($p['procesos']) ? count($p['procesos']) : 0,
+                    ];
+                }, $prendasParaGuardar),
+            ]);
             
             // Guardar todas las prendas usando el servicio
             $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $prendasParaGuardar);
@@ -477,6 +799,7 @@ class CrearPedidoEditableController extends Controller
      */
     private function procesarCantidadTallaParaServicio(array $cantidadTalla): array
     {
+        // ✅ Devolver estructura: {genero: {talla: cantidad}}
         $resultado = [];
         
         \Log::info('🔍 [procesarCantidadTallaParaServicio] Procesando cantidad_talla', [
@@ -494,16 +817,20 @@ class CrearPedidoEditableController extends Controller
                 $talla = $claveTalla;
             }
             
-            $resultado[] = [
-                'genero' => trim($genero),
-                'talla' => trim($talla),
-                'cantidad' => (int)$cantidad,
-            ];
+            $genero = trim($genero);
+            $talla = trim($talla);
+            $cantidad = (int)$cantidad;
+            
+            // Crear estructura {genero: {talla: cantidad}}
+            if (!isset($resultado[$genero])) {
+                $resultado[$genero] = [];
+            }
+            $resultado[$genero][$talla] = $cantidad;
         }
         
         \Log::info('✅ [procesarCantidadTallaParaServicio] Resultado transformado', [
             'resultado' => $resultado,
-            'cantidad_variantes' => count($resultado),
+            'estructura' => 'genero.talla.cantidad',
         ]);
         
         return $resultado;

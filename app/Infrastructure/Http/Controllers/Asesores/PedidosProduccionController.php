@@ -60,7 +60,7 @@ class PedidosProduccionController
     public function index(Request $request): JsonResponse
     {
         try {
-            Log::info('📋 [PedidosController] GET /api/pedidos');
+            Log::info(' [PedidosController] GET /api/pedidos');
 
             $validated = $request->validate([
                 'page' => 'sometimes|integer|min:1',
@@ -76,7 +76,7 @@ class PedidosProduccionController
                 direccion: $validated['direccion'] ?? 'desc',
             ));
 
-            Log::info('✅ [PedidosController] Listado obtenido', [
+            Log::info(' [PedidosController] Listado obtenido', [
                 'total' => $pedidos->total(),
                 'per_page' => $pedidos->perPage(),
             ]);
@@ -84,7 +84,7 @@ class PedidosProduccionController
             return response()->json($pedidos, 200);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error listando pedidos', [
+            Log::error(' [PedidosController] Error listando pedidos', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -110,13 +110,13 @@ class PedidosProduccionController
             $pedido = $this->queryBus->execute(new ObtenerPedidoQuery($id));
 
             if (!$pedido) {
-                Log::warning('⚠️ [PedidosController] Pedido no encontrado', ['id' => $id]);
+                Log::warning(' [PedidosController] Pedido no encontrado', ['id' => $id]);
                 return response()->json([
                     'error' => 'Pedido no encontrado',
                 ], 404);
             }
 
-            Log::info('✅ [PedidosController] Pedido obtenido', [
+            Log::info(' [PedidosController] Pedido obtenido', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
@@ -124,7 +124,7 @@ class PedidosProduccionController
             return response()->json($pedido, 200);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error obteniendo pedido', [
+            Log::error(' [PedidosController] Error obteniendo pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -155,7 +155,7 @@ class PedidosProduccionController
     public function store(Request $request): JsonResponse
     {
         try {
-            Log::info('✍️ [PedidosController] POST /api/pedidos');
+            Log::info(' [PedidosController] POST /api/pedidos');
 
             // Validación HTTP (sintaxis/tipos)
             $validated = $request->validate([
@@ -175,7 +175,7 @@ class PedidosProduccionController
                 cantidadInicial: $validated['cantidad_inicial'] ?? 0,
             ));
 
-            Log::info('✅ [PedidosController] Pedido creado', [
+            Log::info(' [PedidosController] Pedido creado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
@@ -184,7 +184,7 @@ class PedidosProduccionController
 
         } catch (\InvalidArgumentException $e) {
             // Validación de negocio fallida
-            Log::warning('⚠️ [PedidosController] Validación de negocio fallida', [
+            Log::warning(' [PedidosController] Validación de negocio fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -194,7 +194,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error creando pedido', [
+            Log::error(' [PedidosController] Error creando pedido', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -222,7 +222,7 @@ class PedidosProduccionController
     public function update(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info('✏️ [PedidosController] PUT /api/pedidos/{id}', ['id' => $id]);
+            Log::info(' [PedidosController] PUT /api/pedidos/{id}', ['id' => $id]);
 
             $validated = $request->validate([
                 'cliente' => 'sometimes|string|max:255',
@@ -235,14 +235,14 @@ class PedidosProduccionController
                 formaPago: $validated['forma_pago'] ?? null,
             ));
 
-            Log::info('✅ [PedidosController] Pedido actualizado', [
+            Log::info(' [PedidosController] Pedido actualizado', [
                 'pedido_id' => $pedido->id,
             ]);
 
             return response()->json($pedido, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('⚠️ [PedidosController] Validación fallida', [
+            Log::warning(' [PedidosController] Validación fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -252,7 +252,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error actualizando pedido', [
+            Log::error(' [PedidosController] Error actualizando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -294,7 +294,7 @@ class PedidosProduccionController
                 razon: $validated['razon'] ?? null,
             ));
 
-            Log::info('✅ [PedidosController] Estado cambiadoId', [
+            Log::info(' [PedidosController] Estado cambiadoId', [
                 'pedido_id' => $pedido->id,
                 'nuevo_estado' => $pedido->estado,
             ]);
@@ -302,7 +302,7 @@ class PedidosProduccionController
             return response()->json($pedido, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('⚠️ [PedidosController] Transición no permitida', [
+            Log::warning(' [PedidosController] Transición no permitida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -312,7 +312,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error cambiando estado', [
+            Log::error(' [PedidosController] Error cambiando estado', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -346,7 +346,7 @@ class PedidosProduccionController
     public function agregarPrenda(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info('👕 [PedidosController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
+            Log::info(' [PedidosController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
 
             $validated = $request->validate([
                 'nombre_prenda' => 'required|string|max:255',
@@ -371,7 +371,7 @@ class PedidosProduccionController
                 tipo: $validated['tipo'],
             ));
 
-            Log::info('✅ [PedidosController] Prenda agregada', [
+            Log::info(' [PedidosController] Prenda agregada', [
                 'pedido_id' => $pedido->id,
                 'cantidad_total' => $pedido->cantidad_total,
             ]);
@@ -379,7 +379,7 @@ class PedidosProduccionController
             return response()->json($pedido, 201);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('⚠️ [PedidosController] Validación de prenda fallida', [
+            Log::warning(' [PedidosController] Validación de prenda fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -389,7 +389,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error agregando prenda', [
+            Log::error(' [PedidosController] Error agregando prenda', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -415,7 +415,7 @@ class PedidosProduccionController
     public function destroy(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info('🗑️ [PedidosController] DELETE /api/pedidos/{id}', ['id' => $id]);
+            Log::info(' [PedidosController] DELETE /api/pedidos/{id}', ['id' => $id]);
 
             $validated = $request->validate([
                 'razon' => 'sometimes|string|max:500',
@@ -426,12 +426,12 @@ class PedidosProduccionController
                 razon: $validated['razon'] ?? 'Sin especificar',
             ));
 
-            Log::info('✅ [PedidosController] Pedido eliminado', ['pedido_id' => $id]);
+            Log::info(' [PedidosController] Pedido eliminado', ['pedido_id' => $id]);
 
             return response()->json([], 204);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error eliminando pedido', [
+            Log::error(' [PedidosController] Error eliminando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -472,7 +472,7 @@ class PedidosProduccionController
                 perPage: $validated['per_page'] ?? 15,
             ));
 
-            Log::info('✅ [PedidosController] Filtrado por estado', [
+            Log::info(' [PedidosController] Filtrado por estado', [
                 'estado' => $validated['estado'],
                 'total' => $pedidos->total(),
             ]);
@@ -480,7 +480,7 @@ class PedidosProduccionController
             return response()->json($pedidos, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('⚠️ [PedidosController] Estado inválido', [
+            Log::warning(' [PedidosController] Estado inválido', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -490,7 +490,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error filtrando por estado', [
+            Log::error(' [PedidosController] Error filtrando por estado', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -511,18 +511,18 @@ class PedidosProduccionController
     public function buscarPorNumero(string $numero): JsonResponse
     {
         try {
-            Log::info('🔎 [PedidosController] GET /api/pedidos/buscar/{numero}', ['numero' => $numero]);
+            Log::info(' [PedidosController] GET /api/pedidos/buscar/{numero}', ['numero' => $numero]);
 
             $pedido = $this->queryBus->execute(new BuscarPedidoPorNumeroQuery($numero));
 
             if (!$pedido) {
-                Log::warning('⚠️ [PedidosController] Pedido no encontrado', ['numero' => $numero]);
+                Log::warning(' [PedidosController] Pedido no encontrado', ['numero' => $numero]);
                 return response()->json([
                     'error' => 'Pedido no encontrado',
                 ], 404);
             }
 
-            Log::info('✅ [PedidosController] Pedido encontrado', [
+            Log::info(' [PedidosController] Pedido encontrado', [
                 'numero' => $numero,
                 'pedido_id' => $pedido->id,
             ]);
@@ -530,7 +530,7 @@ class PedidosProduccionController
             return response()->json($pedido, 200);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error buscando pedido', [
+            Log::error(' [PedidosController] Error buscando pedido', [
                 'numero' => $numero,
                 'error' => $e->getMessage(),
             ]);
@@ -552,11 +552,11 @@ class PedidosProduccionController
     public function obtenerPrendas(int|string $id): JsonResponse
     {
         try {
-            Log::info('🧷 [PedidosController] GET /api/pedidos/{id}/prendas', ['id' => $id]);
+            Log::info(' [PedidosController] GET /api/pedidos/{id}/prendas', ['id' => $id]);
 
             $prendas = $this->queryBus->execute(new ObtenerPrendasPorPedidoQuery($id));
 
-            Log::info('✅ [PedidosController] Prendas obtenidas', [
+            Log::info(' [PedidosController] Prendas obtenidas', [
                 'pedido_id' => $id,
                 'total_prendas' => $prendas->count(),
             ]);
@@ -564,7 +564,7 @@ class PedidosProduccionController
             return response()->json($prendas, 200);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error obteniendo prendas', [
+            Log::error(' [PedidosController] Error obteniendo prendas', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -612,7 +612,7 @@ class PedidosProduccionController
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PedidosController] Error renderizando item-card', [
+            Log::error(' [PedidosController] Error renderizando item-card', [
                 'error' => $e->getMessage(),
             ]);
 

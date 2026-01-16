@@ -1017,3 +1017,33 @@ body.dark-theme .menu-link:hover .menu-icon-svg,
 body.dark-theme .menu-link.active .menu-icon-svg {
     fill: var(--text-white);
 }
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+@media print {
+    /* Ocultar la barra de navegación superior */
+    .top-nav {
+        display: none !important;
+    }
+    
+    /* Ocultar la barra lateral */
+    .sidebar {
+        display: none !important;
+    }
+    
+    /* Ajustar contenido para impresión */
+    .main-content {
+        margin-left: 0 !important;
+    }
+    
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+    
+    /* Ocultar elementos que no se deben imprimir */
+    header, nav, footer {
+        display: none !important;
+    }
+}

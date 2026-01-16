@@ -33,7 +33,7 @@ class PrendaVariantesService
             'descripcion_adicional' => $varianteDTO->descripcion_adicional,
         ]);
 
-        \Log::info('✅ Variante creada', [
+        \Log::info(' Variante creada', [
             'variante_id' => $variante->id,
             'prenda_id' => $prendaId,
         ]);
@@ -77,7 +77,7 @@ class PrendaVariantesService
             }
         }
 
-        \Log::info('✅ Tallas registradas', [
+        \Log::info(' Tallas registradas', [
             'prenda_id' => $prendaId,
             'cantidad' => count($tallasDTO),
         ]);

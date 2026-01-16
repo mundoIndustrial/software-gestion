@@ -4,7 +4,6 @@ namespace App\Application\Services;
 
 use App\Models\PrendaCot;
 use App\Models\PrendaPedido;
-use App\Models\PrendaFotoPed;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -22,7 +21,7 @@ class CopiarImagenesCotizacionAPedidoService
      */
     public function copiarImagenesReflectivo(int $cotizacionId, int $pedidoId, array $fotosIdsSeleccionadas): void
     {
-        \Log::info('🖼️ [CopiarImagenes] Copiando imágenes de reflectivo', [
+        \Log::info(' [CopiarImagenes] Copiando imágenes de reflectivo', [
             'cotizacion_id' => $cotizacionId,
             'pedido_id' => $pedidoId,
             'fotos_seleccionadas' => $fotosIdsSeleccionadas
@@ -53,7 +52,7 @@ class CopiarImagenesCotizacionAPedidoService
             ]);
 
             if ($fotosReflectivo->isEmpty()) {
-                \Log::warning('⚠️ No hay fotos de reflectivo para copiar', [
+                \Log::warning(' No hay fotos de reflectivo para copiar', [
                     'reflectivo_id' => $reflectivo->id,
                     'ids_buscados' => $fotosIdsSeleccionadas
                 ]);
@@ -74,7 +73,7 @@ class CopiarImagenesCotizacionAPedidoService
             // Copiar las fotos seleccionadas a la primera prenda
             $fotosCopiadas = 0;
             foreach ($fotosReflectivo as $foto) {
-                \Log::info('📸 Copiando foto de reflectivo', [
+                \Log::info(' Copiando foto de reflectivo', [
                     'foto_id' => $foto->id,
                     'ruta_original' => $foto->ruta_original,
                     'ruta_webp' => $foto->ruta_webp,
@@ -92,20 +91,20 @@ class CopiarImagenesCotizacionAPedidoService
                     'tamaño' => null,
                 ]);
 
-                \Log::info('✅ Foto copiada', [
+                \Log::info(' Foto copiada', [
                     'prenda_foto_pedido_id' => $fotoCreada->id
                 ]);
 
                 $fotosCopiadas++;
             }
 
-            \Log::info('✅ Imágenes de reflectivo copiadas exitosamente', [
+            \Log::info(' Imágenes de reflectivo copiadas exitosamente', [
                 'cantidad_fotos' => $fotosCopiadas,
                 'prenda_pedido_id' => $primeraPrenda->id
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error al copiar imágenes de reflectivo', [
+            \Log::error(' Error al copiar imágenes de reflectivo', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -120,7 +119,7 @@ class CopiarImagenesCotizacionAPedidoService
      */
     public function copiarImagenesCotizacionAPedido(int $cotizacionId, int $pedidoId): void
     {
-        \Log::info('🖼️ [CopiarImagenes] Iniciando copia de imágenes', [
+        \Log::info(' [CopiarImagenes] Iniciando copia de imágenes', [
             'cotizacion_id' => $cotizacionId,
             'pedido_id' => $pedidoId
         ]);
@@ -132,7 +131,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ->orderBy('id')
                 ->get();
 
-            \Log::info('🖼️ [CopiarImagenes] Prendas de cotización encontradas', [
+            \Log::info(' [CopiarImagenes] Prendas de cotización encontradas', [
                 'total_prendas_cot' => $prendasCotizacion->count()
             ]);
 
@@ -203,7 +202,7 @@ class CopiarImagenesCotizacionAPedidoService
                 }
             }
 
-            Log::info('✅ Imágenes copiadas exitosamente de cotización a pedido', [
+            Log::info(' Imágenes copiadas exitosamente de cotización a pedido', [
                 'cotizacion_id' => $cotizacionId,
                 'pedido_id' => $pedidoId,
                 'prendas_procesadas' => $prendasCotizacion->count(),
@@ -211,7 +210,7 @@ class CopiarImagenesCotizacionAPedidoService
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al copiar imágenes de cotización a pedido', [
+            Log::error(' Error al copiar imágenes de cotización a pedido', [
                 'cotizacion_id' => $cotizacionId,
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
@@ -252,7 +251,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ]);
             }
 
-            Log::info('📸 Fotos de prenda copiadas', [
+            Log::info(' Fotos de prenda copiadas', [
                 'prenda_cot_id' => $prendaCot->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'cantidad_fotos' => $fotos->count()
@@ -261,7 +260,7 @@ class CopiarImagenesCotizacionAPedidoService
             return $fotos->count();
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al copiar fotos de prenda', [
+            Log::error(' Error al copiar fotos de prenda', [
                 'prenda_cot_id' => $prendaCot->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'error' => $e->getMessage()
@@ -313,7 +312,7 @@ class CopiarImagenesCotizacionAPedidoService
             return $fotosTela->count();
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al copiar fotos de tela', [
+            Log::error(' Error al copiar fotos de tela', [
                 'prenda_cot_id' => $prendaCot->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'error' => $e->getMessage()
@@ -354,7 +353,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ]);
             }
 
-            Log::info('🎨 Fotos de logo copiadas', [
+            Log::info(' Fotos de logo copiadas', [
                 'logo_cotizacion_id' => $logoCotizacion->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'cantidad_fotos_logo' => $fotosLogos->count()
@@ -363,7 +362,7 @@ class CopiarImagenesCotizacionAPedidoService
             return $fotosLogos->count();
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al copiar fotos de logo', [
+            Log::error(' Error al copiar fotos de logo', [
                 'logo_cotizacion_id' => $logoCotizacion->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'error' => $e->getMessage()

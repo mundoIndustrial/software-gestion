@@ -35,14 +35,14 @@ class CotizacionPrendaService
             return;
         }
 
-        Log::info('📦 Guardando productos en tablas normalizadas', [
+        Log::info(' Guardando productos en tablas normalizadas', [
             'cotizacion_id' => $cotizacion->id,
             'productos_count' => count($productos),
         ]);
 
         foreach ($productos as $index => $productoData) {
             try {
-                Log::info("📦 DEBUG - Datos recibidos del producto", [
+                Log::info(" DEBUG - Datos recibidos del producto", [
                     'index' => $index,
                     'keys' => array_keys($productoData),
                     'data' => json_encode($productoData, JSON_UNESCAPED_SLASHES)
@@ -57,7 +57,7 @@ class CotizacionPrendaService
                     'cantidad' => $productoData['cantidad'] ?? 1,
                 ]);
                 
-                Log::info("✅ Prenda creada en prendas_cot", [
+                Log::info(" Prenda creada en prendas_cot", [
                     'prenda_id' => $prenda->id,
                     'nombre' => $nombre
                 ]);
@@ -79,7 +79,7 @@ class CotizacionPrendaService
                             $orden++;
                         }
                     }
-                    Log::info("✅ Fotos de prenda guardadas", ['cantidad' => count($fotos)]);
+                    Log::info(" Fotos de prenda guardadas", ['cantidad' => count($fotos)]);
                 }
 
                 // 3. COMENTADO - Telas ahora se procesan en la sección de variantes (línea ~258)
@@ -128,10 +128,10 @@ class CotizacionPrendaService
                             'cantidad' => 1
                         ]);
                     }
-                    Log::info("✅ Tallas guardadas", ['cantidad' => count($tallas)]);
+                    Log::info(" Tallas guardadas", ['cantidad' => count($tallas)]);
                 }
 
-                // 4b. ✅ GUARDAR CANTIDADES POR TALLA en prenda_tallas_cot
+                // 4b.  GUARDAR CANTIDADES POR TALLA en prenda_tallas_cot
                 // Recibe en formato: ['S' => 10, 'M' => 20, 'L' => 15]
                 $cantidades = $productoData['cantidades'] ?? [];
                 if (is_string($cantidades)) {
@@ -150,7 +150,7 @@ class CotizacionPrendaService
                             ]);
                         }
                     }
-                    Log::info("✅ Tallas con cantidades guardadas", [
+                    Log::info(" Tallas con cantidades guardadas", [
                         'cantidad_tallas' => count($cantidades),
                         'tallas' => array_keys($cantidades)
                     ]);
@@ -214,7 +214,7 @@ class CotizacionPrendaService
                                 'activo' => true
                             ]);
                             $tipoMangaId = $mangaCreada->id;
-                            Log::info("✅ Manga personalizada creada", [
+                            Log::info(" Manga personalizada creada", [
                                 'manga_id' => $tipoMangaId,
                                 'manga_nombre' => $nombreManga
                             ]);
@@ -248,7 +248,7 @@ class CotizacionPrendaService
                             'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? null,
                             'prenda_bodega' => ($variantes['prenda_bodega'] === true || $variantes['prenda_bodega'] === 'true' || $variantes['prenda_bodega'] === '1' || $variantes['prenda_bodega'] === 1) ? true : false,
                         ]);
-                        Log::info("✅ Variante guardada", [
+                        Log::info(" Variante guardada", [
                             'variante_id' => $variante->id,
                             'genero_id' => $generoIdAGuardar,
                             'genero_id_es_null' => $generoIdAGuardar === null,
@@ -261,7 +261,7 @@ class CotizacionPrendaService
                             'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? null,
                         ]);
 
-                        // ✅ PROCESAR prenda_telas_cot desde telas_multiples
+                        //  PROCESAR prenda_telas_cot desde telas_multiples
                         if (!empty($telasMultiples)) {
                             foreach ($telasMultiples as $telaInfo) {
                                 // Buscar color por nombre
@@ -287,7 +287,7 @@ class CotizacionPrendaService
                                         'tela_id' => $telaId,
                                     ]);
                                     
-                                    Log::info("✅ Registro guardado en prenda_telas_cot (desde telas_multiples)", [
+                                    Log::info(" Registro guardado en prenda_telas_cot (desde telas_multiples)", [
                                         'prenda_telas_cot_id' => $prendaTelaCot->id,
                                         'prenda_id' => $prenda->id,
                                         'variante_id' => $variante->id,
@@ -302,7 +302,7 @@ class CotizacionPrendaService
                             }
                         }
                     } catch (\Exception $e) {
-                        Log::error("❌ ERROR al guardar variante", [
+                        Log::error(" ERROR al guardar variante", [
                             'error' => $e->getMessage(),
                             'tipo_manga_id' => $tipoMangaId,
                             'genero_id' => $generoIdAGuardar,
@@ -310,11 +310,11 @@ class CotizacionPrendaService
                         ]);
                     }
                 } else {
-                    Log::warning("⚠️ No hay variantes para guardar");
+                    Log::warning(" No hay variantes para guardar");
                 }
 
             } catch (\Exception $e) {
-                Log::error("❌ Error guardando producto", [
+                Log::error(" Error guardando producto", [
                     'cotizacion_id' => $cotizacion->id,
                     'producto_index' => $index,
                     'error' => $e->getMessage(),
@@ -324,7 +324,7 @@ class CotizacionPrendaService
             }
         }
 
-        Log::info("✅ Productos guardados en tablas normalizadas", [
+        Log::info(" Productos guardados en tablas normalizadas", [
             'cotizacion_id' => $cotizacion->id,
             'total' => count($productos)
         ]);
@@ -359,7 +359,7 @@ class CotizacionPrendaService
             'cantidad' => $prendaData['cantidad'] ?? 1,
         ]);
         
-        Log::info("✅ Prenda creada con telas", [
+        Log::info(" Prenda creada con telas", [
             'prenda_id' => $prenda->id,
             'nombre' => $nombre
         ]);
@@ -396,7 +396,7 @@ class CotizacionPrendaService
                         'tamaño' => $telaFoto['tamaño'] ?? null,
                     ]);
                     
-                    Log::info("✅ Foto de tela guardada", [
+                    Log::info(" Foto de tela guardada", [
                         'prenda_id' => $prenda->id,
                         'referencia' => $telaData['referencia'] ?? '',
                         'ruta' => $telaFoto['ruta_original'] ?? ''
@@ -405,7 +405,7 @@ class CotizacionPrendaService
             }
         }
 
-        Log::info("✅ Prenda con múltiples telas guardada completamente", [
+        Log::info(" Prenda con múltiples telas guardada completamente", [
             'prenda_id' => $prenda->id,
             'total_telas' => count($telas)
         ]);

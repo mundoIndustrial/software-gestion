@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
 @endsection
 
 @section('content')
@@ -134,6 +135,8 @@
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-agregar-reflectivo')
 @include('asesores.pedidos.modals.modal-proceso-generico')
+
+@endsection
 
 @push('scripts')
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
@@ -268,5 +271,3 @@
 <!-- Script para interactividad de item-cards -->
 <script src="{{ asset('js/modulos/crear-pedido/components/item-card-interactions.js') }}"></script>
 @endpush
-
-@endsection

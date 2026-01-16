@@ -4,7 +4,7 @@ namespace App\Application\Services;
 
 use App\Application\DTOs\CrearPrendaDTO;
 use App\Models\Prenda;
-use Illuminate\Pagination\Paginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PrendaServiceNew
 {
@@ -21,7 +21,7 @@ class PrendaServiceNew
      */
     public function crear(CrearPrendaDTO $dto): Prenda
     {
-        \Log::info('🔄 Iniciando creación de prenda', [
+        \Log::info(' Iniciando creación de prenda', [
             'nombre' => $dto->nombre_producto,
             'tipo' => $dto->tipo_prenda,
         ]);
@@ -43,7 +43,7 @@ class PrendaServiceNew
                 'estado' => 'activo',
             ]);
 
-            \Log::info('✅ Prenda creada', [
+            \Log::info(' Prenda creada', [
                 'prenda_id' => $prenda->id,
                 'nombre' => $prenda->nombre_producto,
             ]);
@@ -76,7 +76,7 @@ class PrendaServiceNew
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error creando prenda', [
+            \Log::error(' Error creando prenda', [
                 'error' => $e->getMessage(),
                 'nombre' => $dto->nombre_producto,
             ]);
@@ -89,7 +89,7 @@ class PrendaServiceNew
      */
     public function actualizar(int $id, CrearPrendaDTO $dto): Prenda
     {
-        \Log::info('🔄 Actualizando prenda', ['prenda_id' => $id]);
+        \Log::info(' Actualizando prenda', ['prenda_id' => $id]);
 
         try {
             $prenda = Prenda::findOrFail($id);
@@ -114,7 +114,7 @@ class PrendaServiceNew
                 $this->variantesService->registrarTallas($prenda->id, $dto->tallas);
             }
 
-            \Log::info('✅ Prenda actualizada', ['prenda_id' => $id]);
+            \Log::info(' Prenda actualizada', ['prenda_id' => $id]);
 
             return $prenda->load([
                 'tipoPrenda',
@@ -127,7 +127,7 @@ class PrendaServiceNew
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error actualizando prenda', [
+            \Log::error(' Error actualizando prenda', [
                 'prenda_id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -155,7 +155,7 @@ class PrendaServiceNew
     /**
      * Listar prendas
      */
-    public function listar(int $pagina = 1, int $porPagina = 15): Paginator
+    public function listar(int $pagina = 1, int $porPagina = 15): LengthAwarePaginator
     {
         return Prenda::with([
             'tipoPrenda',
@@ -170,7 +170,7 @@ class PrendaServiceNew
     /**
      * Buscar prendas
      */
-    public function buscar(string $termino, int $pagina = 1, int $porPagina = 15): Paginator
+    public function buscar(string $termino, int $pagina = 1, int $porPagina = 15): LengthAwarePaginator
     {
         return Prenda::with([
             'tipoPrenda',
@@ -199,11 +199,11 @@ class PrendaServiceNew
             // Eliminar prenda
             $prenda->delete();
 
-            \Log::info('✅ Prenda eliminada', ['prenda_id' => $id]);
+            \Log::info(' Prenda eliminada', ['prenda_id' => $id]);
 
             return true;
         } catch (\Exception $e) {
-            \Log::error('❌ Error eliminando prenda', [
+            \Log::error(' Error eliminando prenda', [
                 'prenda_id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -219,7 +219,7 @@ class PrendaServiceNew
         $prenda = Prenda::findOrFail($id);
         $prenda->update(['estado' => $estado]);
 
-        \Log::info('✅ Estado de prenda actualizado', [
+        \Log::info(' Estado de prenda actualizado', [
             'prenda_id' => $id,
             'estado' => $estado,
         ]);

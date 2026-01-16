@@ -645,7 +645,7 @@
                         " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(37, 99, 235, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.3)'">
                             <i class="fas fa-eye"></i>
                         </button>
-                        
+
                         <!-- Botón Anular (solo si no está anulado) -->
                         @php
                             $estado = get_class($pedido) === 'App\Models\LogoPedido' ? ($pedido->estado ?? 'pendiente') : ($pedido->estado ?? 'Pendiente');
@@ -1630,6 +1630,10 @@
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <!-- Image Gallery para mostrar fotos en el modal -->
 <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
+<!-- Invoice Preview (necesario para generarHTMLFactura) -->
+<script src="{{ asset('js/invoice-preview-live.js') }}"></script>
+<!-- Invoice Preview desde Lista de Pedidos -->
+<script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
 <!-- MODULAR ORDER TRACKING (SOLID Architecture) -->
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>

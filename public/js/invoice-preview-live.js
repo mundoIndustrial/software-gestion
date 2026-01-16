@@ -405,13 +405,37 @@ function capturarPrendas() {
                             ubicaciones = [];
                         }
                         
-                        // Extraer imágenes como array
+                        // Extraer imágenes como array Y MAPEAR a URLs
                         let imagenes = procDatos.imagenes || [];
                         if (typeof imagenes === 'string') {
                             imagenes = [imagenes];
                         } else if (!Array.isArray(imagenes)) {
                             imagenes = [];
                         }
+                        
+                        // ✅ MAPEAR imágenes para convertir File objects a URLs
+                        imagenes = imagenes.map(img => {
+                            if (img instanceof File) {
+                                // Si es un File object, crear blob URL
+                                return URL.createObjectURL(img);
+                            } else if (img?.file instanceof File) {
+                                // Si es un objeto con propiedad file
+                                return URL.createObjectURL(img.file);
+                            } else if (img?.blobUrl) {
+                                // Si ya tiene blobUrl
+                                return img.blobUrl;
+                            } else if (typeof img === 'string') {
+                                // Si es una string URL
+                                return img;
+                            } else if (img?.src) {
+                                // Si tiene propiedad src
+                                return img.src;
+                            } else {
+                                // Fallback: si es un objeto vacío o desconocido, retorna string vacío
+                                console.warn('⚠️ Imagen de proceso no reconocida:', img);
+                                return '';
+                            }
+                        }).filter(url => url); // Filtrar URLs vacías
                         
                         const procObj = {
                             tipo: procTipo,
@@ -872,14 +896,73 @@ function generarHTMLFactura(datos) {
     
     // Generar las tarjetas de prendas con todos los detalles
     const prendasHTML = datos.prendas.map((prenda, idx) => {
-        // Especificaciones principales (Tabla compacta)
+        // Tabla de Variantes (Tallas con especificaciones)
+        let variantesHTML = '';
+        console.log(`     📦 DEBUG VARIANTES PARA PRENDA ${idx + 1}:`, prenda.variantes);
+        
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            // Agrupar variantes por talla para crear tabla
+            const variantesAgrupadas = {};
+            prenda.variantes.forEach(var_item => {
+                if (!variantesAgrupadas[var_item.talla]) {
+                    variantesAgrupadas[var_item.talla] = {
+                        cantidad_total: 0,
+                        especificaciones: []
+                    };
+                }
+                variantesAgrupadas[var_item.talla].cantidad_total += var_item.cantidad || 0;
+                variantesAgrupadas[var_item.talla].especificaciones.push(var_item);
+            });
+            
+            variantesHTML = `
+                <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
+                    <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;">📋 VARIANTES (Tallas con Especificaciones)</div>
+                    <table style="width: 100%; font-size: 10px !important; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f0f9ff; border-bottom: 2px solid #bfdbfe;">
+                                <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Talla</th>
+                                <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #1e40af;">Cantidad</th>
+                                <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Manga</th>
+                                <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Broche</th>
+                                <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Bolsillos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(variantesAgrupadas).map(([talla, data], tallaIdx) => {
+                                const firstSpec = data.especificaciones[0];
+                                return `
+                                    <tr style="background: ${tallaIdx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e0e7ff;">
+                                        <td style="padding: 8px 12px; font-weight: 600; color: #334155;">${talla}</td>
+                                        <td style="padding: 8px 12px; text-align: center; color: #475569;">${data.cantidad_total}</td>
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                            ${firstSpec.manga ? `<strong>${firstSpec.manga}</strong>` : '—'}
+                                            ${firstSpec.manga_obs ? `<br><em style="color: #64748b;">${firstSpec.manga_obs}</em>` : ''}
+                                        </td>
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                            ${firstSpec.broche ? `<strong>${firstSpec.broche}</strong>` : '—'}
+                                            ${firstSpec.broche_obs ? `<br><em style="color: #64748b;">${firstSpec.broche_obs}</em>` : ''}
+                                        </td>
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                            ${firstSpec.bolsillos ? `<strong>Sí</strong>` : '—'}
+                                            ${firstSpec.bolsillos_obs ? `<br><em style="color: #64748b;">${firstSpec.bolsillos_obs}</em>` : ''}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        // Especificaciones principales (Tabla compacta) - MANTENER PARA COMPATIBILIDAD
         const variacionesArray = [
             prenda.manga ? { nombre: 'Manga', valor: prenda.manga, obs: prenda.obs_manga } : null,
             prenda.broche ? { nombre: 'Broche', valor: prenda.broche, obs: prenda.obs_broche } : null,
             prenda.tiene_bolsillos && prenda.obs_bolsillos ? { nombre: 'Bolsillo', valor: '', obs: prenda.obs_bolsillos } : null
         ].filter(v => v !== null);
         
-        const especificacionesHTML = variacionesArray.length > 0 ? `
+        const especificacionesHTML = (variacionesArray.length > 0 && !variantesHTML) ? `
             <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
                 <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;">📋 ESPECIFICACIONES</div>
                 <table style="width: 100%; font-size: 11px !important; border-collapse: collapse;">
@@ -916,10 +999,10 @@ function generarHTMLFactura(datos) {
                         <div style="font-size: 13px; color: #555;">${prenda.color}</div>
                     </div>
                 ` : ''}
-                ${prenda.imagen_tela ? `
+                ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                     <div>
                         <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Muestra Tela</div>
-                        <img src="${prenda.imagen_tela}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                        <img src="${prenda.imagenes_tela[0]}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
                     </div>
                 ` : ''}
             </div>
@@ -930,11 +1013,12 @@ function generarHTMLFactura(datos) {
         let generosTallasHTML = '';
         console.log(`     📏 DEBUG TALLAS PARA PRENDA ${idx + 1}:`, prenda.tallas);
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // prenda.tallas debería ser {Dama: {S: 20, M: 20}, Caballero: {}}
+            // prenda.tallas debería ser {dama: {S: 20, M: 20}, caballero: {}} o {Dama: {S: 20, M: 20}, Caballero: {}}
             console.log(`     ✅ Tallas encontradas, estructura:`, JSON.stringify(prenda.tallas));
             const primeraClave = Object.keys(prenda.tallas)[0];
             console.log(`     🔍 Primera clave: ${primeraClave}`);
-            const esGenero = ['Masculino', 'Femenino', 'Unisex', 'Dama', 'Caballero', 'Niño', 'Niña', 'Unisex'].includes(primeraClave);
+            const generosValidos = ['Masculino', 'Femenino', 'Unisex', 'Dama', 'Caballero', 'Niño', 'Niña', 'masculino', 'femenino', 'unisex', 'dama', 'caballero', 'niño', 'niña'];
+            const esGenero = generosValidos.includes(primeraClave);
             const tieneSubobjetos = typeof prenda.tallas[primeraClave] === 'object' && !Array.isArray(prenda.tallas[primeraClave]);
             const esOrganizadaPorGenero = esGenero && tieneSubobjetos;
             
@@ -950,12 +1034,12 @@ function generarHTMLFactura(datos) {
                 
                 if (generosConTallas.length > 0) {
                     generosTallasHTML = `
-                        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; word-break: break-word;">
                             <tbody>
                                 ${generosConTallas.map(([genero, tallasObj]) => `
                                     <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 3px 0; font-weight: 600; color: #333;">${genero}</td>
-                                        <td style="padding: 3px 0; color: #666;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
+                                        <td style="padding: 4px 0; font-weight: 600; color: #dc2626; width: 35%; word-break: break-word; font-size: 11px;">${genero}</td>
+                                        <td style="padding: 4px 0; color: #dc2626; word-break: break-word; overflow-wrap: break-word; font-size: 11px; font-weight: 600;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -967,12 +1051,12 @@ function generarHTMLFactura(datos) {
             } else {
                 // Tallas planas { S: 20, M: 20 }
                 generosTallasHTML = `
-                    <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; word-break: break-word;">
                         <tbody>
                             ${Object.entries(prenda.tallas).map(([talla, cant]) => `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 3px 0; font-weight: 600; color: #333;">${talla}</td>
-                                    <td style="padding: 3px 0; color: #666;">${cant}</td>
+                                    <td style="padding: 4px 0; font-weight: 600; color: #dc2626; width: 35%; font-size: 11px;">${talla}</td>
+                                    <td style="padding: 4px 0; color: #dc2626; word-break: break-word; font-size: 11px; font-weight: 600;">${cant}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -1073,14 +1157,19 @@ function generarHTMLFactura(datos) {
         
         return `
             <div style="background: white; border: 1px solid #ddd; border-radius: 3px; padding: 8px; margin-bottom: 8px; page-break-inside: avoid; font-size: 10px;">
+                <!-- ENCABEZADO CON NUMERACIÓN DE PRENDA -->
+                <div style="background: #f0f0f0; padding: 6px 8px; margin: -8px -8px 8px -8px; border-radius: 3px 3px 0 0; border-bottom: 2px solid #2c3e50;">
+                    <span style="font-weight: 700; color: #2c3e50; font-size: 11px;"> PRENDA ${idx + 1}</span>
+                </div>
+                
                 <!-- LAYOUT 4 COLUMNAS PRINCIPALES -->
                 <div style="display: grid; grid-template-columns: 160px 180px 180px 160px; gap: 12px;">
                     
                     <!-- COLUMNA 1: Imagen + Nombre/Descripción -->
                     <div style="display: flex; gap: 8px; align-items: flex-start;">
                         <div style="flex-shrink: 0;">
-                            ${prenda.imagen ? `
-                                <img src="${prenda.imagen}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes, 'Imágenes de Prenda')})" title="Click para ver todas las imágenes">
+                            ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
+                                <img src="${prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes, 'Imágenes de Prenda')})" title="Click para ver todas las imágenes">
                             ` : `
                                 <div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 3px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 32px;">📦</div>
                             `}
@@ -1096,27 +1185,52 @@ function generarHTMLFactura(datos) {
                         ${prenda.tela ? `<div style="margin-bottom: 4px;"><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
                         ${prenda.color ? `<div style="margin-bottom: 4px;"><strong>Color:</strong> ${prenda.color}</div>` : ''}
                         ${prenda.ref ? `<div style="margin-bottom: 6px;"><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
-                        ${prenda.imagen_tela ? `
+                        ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                             <div>
-                                <img src="${prenda.imagen_tela}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
+                                <img src="${prenda.imagenes_tela[0]}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
                             </div>
                         ` : ''}
                     </div>
                     
                     <!-- COLUMNA 3: Variantes (Manga, Broche, Bolsillos) -->
                     <div style="font-size: 10px;">
-                        ${variacionesArray.length > 0 ? `
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <tbody>
-                                    ${variacionesArray.map(spec => `
-                                        <tr style="border-bottom: 1px solid #eee;">
-                                            <td style="padding: 3px 0; font-weight: 600; color: #333; font-size: 10px; width: 50%;">${spec.nombre}</td>
-                                            <td style="padding: 3px 0; color: #666; font-size: 10px;">${spec.valor}${spec.obs ? ` (${spec.obs})` : ''}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        ` : '<span style="color: #999; font-size: 9px;">Sin variantes</span>'}
+                        ${(() => {
+                            // Si viene de la BD (tiene array de variantes)
+                            if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                                const firstVar = prenda.variantes[0];
+                                const specs = [];
+                                
+                                if (firstVar.manga) {
+                                    specs.push(`<div><strong>Manga:</strong> ${firstVar.manga}${firstVar.manga_obs ? ` <span style="color: #64748b; font-style: italic;">(${firstVar.manga_obs})</span>` : ''}</div>`);
+                                }
+                                if (firstVar.broche) {
+                                    specs.push(`<div><strong>Broche:</strong> ${firstVar.broche}${firstVar.broche_obs ? ` <span style="color: #64748b; font-style: italic;">(${firstVar.broche_obs})</span>` : ''}</div>`);
+                                }
+                                if (firstVar.bolsillos) {
+                                    specs.push(`<div><strong>Bolsillo:</strong> Sí${firstVar.bolsillos_obs ? ` <span style="color: #64748b; font-style: italic;">(${firstVar.bolsillos_obs})</span>` : ''}</div>`);
+                                }
+                                
+                                return specs.length > 0 ? specs.join('') : '<span style="color: #999; font-size: 9px;">Sin especificaciones</span>';
+                            }
+                            // Si viene del formulario (estructura antigua)
+                            else if (prenda.manga || prenda.broche || prenda.tiene_bolsillos) {
+                                const specs = [];
+                                
+                                if (prenda.manga) {
+                                    specs.push(`<div><strong>Manga:</strong> ${prenda.manga}${prenda.obs_manga ? ` <span style="color: #64748b; font-style: italic;">(${prenda.obs_manga})</span>` : ''}</div>`);
+                                }
+                                if (prenda.broche) {
+                                    specs.push(`<div><strong>Broche:</strong> ${prenda.broche}${prenda.obs_broche ? ` <span style="color: #64748b; font-style: italic;">(${prenda.obs_broche})</span>` : ''}</div>`);
+                                }
+                                if (prenda.tiene_bolsillos) {
+                                    specs.push(`<div><strong>Bolsillo:</strong> Sí${prenda.obs_bolsillos ? ` <span style="color: #64748b; font-style: italic;">(${prenda.obs_bolsillos})</span>` : ''}</div>`);
+                                }
+                                
+                                return specs.join('');
+                            } else {
+                                return '<span style="color: #999; font-size: 9px;">Sin variantes</span>';
+                            }
+                        })()}
                     </div>
                     
                     <!-- COLUMNA 4: Tallas por Género -->
@@ -1137,29 +1251,26 @@ function generarHTMLFactura(datos) {
     }).join('');
     
     return `
-        <div style="background: white; padding: 12px; border-radius: 4px; max-width: 100%; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px;">
+        <div style="background: white; padding: 8px; border-radius: 4px; max-width: 100%; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px;">
             <!-- Header Profesional COMPACTO -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
-                <!-- Logo y Cliente -->
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <img src="/favicon.svg" alt="Mundo Industrial" style="height: 40px; object-fit: contain;">
-                    <div style="font-size: 11px;">
-                        <div style="font-weight: 700; color: #1a3a52; margin-bottom: 3px;">${datos.cliente}</div>
-                        <div style="color: #666; font-size: 10px;">${datos.asesora}</div>
-                    </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #ddd; align-items: start;">
+                <!-- Lado Izquierdo: Cliente y Asesor -->
+                <div style="font-size: 10px;">
+                    <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">${datos.cliente}</div>
+                    <div style="color: #666; font-size: 9px;">Asesor: ${datos.asesora}</div>
                 </div>
                 
-                <!-- Pedido (derecha) -->
+                <!-- Lado Derecho: Recibo de Pedido -->
                 <div style="text-align: right; font-size: 10px;">
-                    <div style="font-weight: 700; color: #1a3a52; margin-bottom: 3px;">
-                        PEDIDO #2026-${String(datos.numero_pedido_temporal).padStart(5, '0')}
+                    <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">
+                        RECIBO DE PEDIDO #2026-${String(datos.numero_pedido_temporal).padStart(5, '0')}
                     </div>
-                    <div style="color: #666;">${datos.fecha_creacion}</div>
+                    <div style="color: #666; font-size: 9px;">${datos.fecha_creacion}</div>
                 </div>
             </div>
             
             <!-- Items (Prendas) -->
-            <div style="margin-top: 8px;">
+            <div style="margin-top: 6px;">
                 ${prendasHTML}
             </div>
         </div>

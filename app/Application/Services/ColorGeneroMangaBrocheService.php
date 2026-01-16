@@ -6,6 +6,7 @@ use App\Models\ColorPrenda;
 use App\Models\GeneroPrenda;
 use App\Models\TipoManga;
 use App\Models\TipoBroche;
+use App\Models\TelaPrenda;
 
 class ColorGeneroMangaBrocheService
 {
@@ -14,13 +15,27 @@ class ColorGeneroMangaBrocheService
      */
     public function obtenerOCrearColor(string $nombre): ColorPrenda
     {
+        \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearColor] INICIO', [
+            'nombre_recibido' => $nombre,
+            'nombre_tipo' => gettype($nombre),
+            'nombre_vacio' => empty($nombre),
+        ]);
+
         if (empty($nombre)) {
+            \Log::warning(' [ColorGeneroMangaBrocheService::obtenerOCrearColor] Nombre vacío/nulo', [
+                'nombre' => $nombre,
+            ]);
             return null;
         }
 
         $nombreNormalizado = ucfirst(strtolower(trim($nombre)));
+        
+        \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearColor] Buscando color', [
+            'nombre_original' => $nombre,
+            'nombre_normalizado' => $nombreNormalizado,
+        ]);
 
-        return ColorPrenda::firstOrCreate(
+        $color = ColorPrenda::firstOrCreate(
             ['nombre' => $nombreNormalizado],
             [
                 'nombre' => $nombreNormalizado,
@@ -28,6 +43,15 @@ class ColorGeneroMangaBrocheService
                 'activo' => true,
             ]
         );
+        
+        \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearColor] Color procesado', [
+            'color_id' => $color->id,
+            'color_nombre' => $color->nombre,
+            'color_codigo' => $color->codigo,
+            'fue_creado' => $color->wasRecentlyCreated,
+        ]);
+
+        return $color;
     }
 
     /**
@@ -182,7 +206,7 @@ class ColorGeneroMangaBrocheService
         );
     }
 
-    // ✅ ALIAS PARA COMPATIBILIDAD CON EL CONTROLADOR
+    //  ALIAS PARA COMPATIBILIDAD CON EL CONTROLADOR
 
     /**
      * Buscar o crear color (alias de obtenerOCrearColor)
@@ -193,30 +217,12 @@ class ColorGeneroMangaBrocheService
     }
 
     /**
-     * Buscar o crear tela (búsqueda case-insensitive en tabla colores)
-     * Nota: Las telas se guardan como colores con una categoría o prefijo
+     * Buscar o crear tela (búsqueda case-insensitive en tabla telas_prenda)
+     * ALIAS para compatibilidad con código legacy
      */
-    public function buscarOCrearTela($nombre): ColorPrenda
+    public function buscarOCrearTela($nombre): TelaPrenda
     {
-        if (empty($nombre)) {
-            return null;
-        }
-
-        // Buscar case-insensitive primero
-        $nombreTrim = trim($nombre);
-        $tela = ColorPrenda::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
-        
-        if ($tela) {
-            return $tela;
-        }
-
-        // Si no existe, crear con normalización
-        $nombreNormalizado = ucfirst(strtolower($nombreTrim));
-        return ColorPrenda::create([
-            'nombre' => $nombreNormalizado,
-            'codigo' => strtoupper(str_replace(' ', '_', $nombreNormalizado)),
-            'activo' => true,
-        ]);
+        return $this->obtenerOCrearTela($nombre);
     }
 
     /**
@@ -233,5 +239,66 @@ class ColorGeneroMangaBrocheService
     public function buscarOCrearBroche($nombre): TipoBroche
     {
         return $this->obtenerOCrearBroche($nombre);
+    }
+
+    /**
+     * Obtener o crear tela en tabla telas_prenda (CORRECTA)
+     */
+    public function obtenerOCrearTela($nombre): TelaPrenda
+    {
+        \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearTela] INICIO', [
+            'nombre_recibido' => $nombre,
+            'nombre_tipo' => gettype($nombre),
+            'nombre_vacio' => empty($nombre),
+        ]);
+
+        if (empty($nombre)) {
+            \Log::warning(' [ColorGeneroMangaBrocheService::obtenerOCrearTela] Nombre vacío/nulo', [
+                'nombre' => $nombre,
+            ]);
+            return null;
+        }
+
+        $nombreTrim = trim($nombre);
+        
+        \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearTela] Buscando tela', [
+            'nombre_original' => $nombre,
+            'nombre_trim' => $nombreTrim,
+        ]);
+        
+        // Buscar case-insensitive primero
+        $tela = TelaPrenda::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
+        
+        if ($tela) {
+            \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearTela] Tela encontrada', [
+                'tela_id' => $tela->id,
+                'tela_nombre' => $tela->nombre,
+                'tela_referencia' => $tela->referencia,
+            ]);
+            return $tela;
+        }
+
+        // Si no existe, crear
+        $nombreNormalizado = ucfirst(strtolower($nombreTrim));
+        
+        \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearTela] Creando nueva tela', [
+            'nombre_normalizado' => $nombreNormalizado,
+            'referencia' => strtoupper(str_replace(' ', '_', $nombreNormalizado)),
+        ]);
+        
+        $telaCreada = TelaPrenda::create([
+            'nombre' => $nombreNormalizado,
+            'referencia' => strtoupper(str_replace(' ', '_', $nombreNormalizado)),
+            'descripcion' => 'Creada automáticamente desde pedido',
+            'activo' => true,
+        ]);
+        
+        \Log::info(' [ColorGeneroMangaBrocheService::obtenerOCrearTela] Tela creada exitosamente', [
+            'tela_id' => $telaCreada->id,
+            'tela_nombre' => $telaCreada->nombre,
+            'tela_referencia' => $telaCreada->referencia,
+        ]);
+        
+        return $telaCreada;
     }
 }

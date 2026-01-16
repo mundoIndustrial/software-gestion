@@ -258,7 +258,7 @@ class PedidosProduccionViewController
                 'redirect_url' => route('pedidos-produccion.index')
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error en crearPrendaSinCotizacion', [
+            \Log::error(' Error en crearPrendaSinCotizacion', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -299,7 +299,7 @@ class PedidosProduccionViewController
 
             return $ruta;
         } catch (\Exception $e) {
-            \Log::error('❌ Error guardando imagen', [
+            \Log::error(' Error guardando imagen', [
                 'error' => $e->getMessage()
             ]);
             return null;

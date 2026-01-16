@@ -16,9 +16,16 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AsesoresInventarioTelasController;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\PedidoPrendaService;
+use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 
 class AsesoresController extends Controller
 {
+    protected PedidoProduccionRepository $pedidoProduccionRepository;
+
+    public function __construct(PedidoProduccionRepository $pedidoProduccionRepository)
+    {
+        $this->pedidoProduccionRepository = $pedidoProduccionRepository;
+    }
     /**
      * Mostrar el perfil del asesor
      *
@@ -1362,5 +1369,81 @@ class AsesoresController extends Controller
     public function inventarioTelas()
     {
         return app(AsesoresInventarioTelasController::class)->index();
+    }
+
+    /**
+     * Obtener datos de la factura de un pedido para vista previa
+     * GET /asesores/pedidos/{id}/factura-datos
+     */
+    public function obtenerDatosFactura($id)
+    {
+        try {
+            $pedidoId = $id;
+            \Log::info('[FACTURA] Obteniendo datos de factura para pedido: ' . $pedidoId);
+
+            // Obtener el pedido (puede ser PedidoProduccion o LogoPedido)
+            $pedido = PedidoProduccion::find($pedidoId);
+            
+            if (!$pedido) {
+                // Intentar obtener como LogoPedido
+                $pedido = \App\Models\LogoPedido::find($pedidoId);
+            }
+
+            if (!$pedido) {
+                return response()->json([
+                    'error' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            // Verificar que pertenece al usuario autenticado
+            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                // LogoPedido no tiene asesor_id, solo verificar que exista
+            } else {
+                // Verificar que es del asesor autenticado
+                if ($pedido->asesor_id && $pedido->asesor_id !== Auth::id()) {
+                    return response()->json([
+                        'error' => 'No tienes permiso para ver este pedido',
+                    ], 403);
+                }
+            }
+
+            // Obtener datos usando el repository
+            if (get_class($pedido) === 'App\Models\PedidoProduccion') {
+                $datos = $this->pedidoProduccionRepository->obtenerDatosFactura($pedidoId);
+            } else {
+                // Para LogoPedido, retornar datos básicos sin prendas
+                $datos = [
+                    'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
+                    'numero_pedido_temporal' => $pedido->numero_pedido ?? 0,
+                    'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
+                    'asesora' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
+                    'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
+                    'fecha' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+                    'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+                    'observaciones' => $pedido->observaciones ?? '',
+                    'prendas' => [],
+                    'total_items' => 0,
+                ];
+            }
+
+            \Log::info('[FACTURA] Datos obtenidos correctamente', [
+                'pedido_id' => $pedidoId,
+                'prendas' => count($datos['prendas']),
+                'total_items' => $datos['total_items'],
+            ]);
+
+            return response()->json($datos);
+
+        } catch (\Exception $e) {
+            \Log::error('[FACTURA] Error obteniendo datos', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error obteniendo datos de la factura: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

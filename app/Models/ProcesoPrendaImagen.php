@@ -36,6 +36,8 @@ class ProcesoPrendaImagen extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected $appends = ['url'];
+
     // Relationships
     public function procesoPrendaDetalle(): BelongsTo
     {
@@ -81,13 +83,39 @@ class ProcesoPrendaImagen extends Model
         return (bool) $this->es_principal;
     }
 
-    public function obtenerRutaCompleta(): string
+    /**
+     * Accessor para obtener la URL completa de la imagen
+     * Soporta tanto rutas relativas (storage/...) como URLs completas (http://...)
+     */
+    public function getUrlAttribute(): string
     {
-        return asset('storage/' . $this->ruta);
+        $ruta = $this->ruta_webp ?? $this->ruta_original ?? $this->ruta;
+        
+        if (!$ruta) {
+            return '';
+        }
+        
+        // Si ya es una URL completa, devolverla tal cual
+        if (str_starts_with($ruta, 'http')) {
+            return $ruta;
+        }
+        
+        // Si ya comienza con /storage/, devolverla tal cual
+        if (str_starts_with($ruta, '/storage/')) {
+            return $ruta;
+        }
+        
+        // Si comienza con 'storage/', agregar el /
+        if (str_starts_with($ruta, 'storage/')) {
+            return '/' . $ruta;
+        }
+        
+        // Si es una ruta relativa, agregar /storage/
+        return '/storage/' . ltrim($ruta, '/');
     }
 
-    public function obtenerNombreDescarga(): string
+    public function obtenerRutaCompleta(): string
     {
-        return $this->nombre_original;
+        return $this->url;
     }
 }

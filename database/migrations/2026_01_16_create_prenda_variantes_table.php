@@ -82,9 +82,10 @@ return new class extends Migration
             $table->index('tipo_manga_id');
             $table->index('tipo_broche_boton_id');
             
-            // Único: Una variante por (prenda, talla, color, tela, manga, broche)
+            // ✅ CORRECCIÓN: Único solo por prenda y talla
+            // Cada prenda puede tener UN registro por talla, independientemente de color/tela/manga/broche
             $table->unique(
-                ['prenda_pedido_id', 'talla', 'color_id', 'tela_id', 'tipo_manga_id', 'tipo_broche_boton_id'],
+                ['prenda_pedido_id', 'talla'],
                 'unique_prenda_variante'
             );
         });

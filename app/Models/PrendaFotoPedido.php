@@ -46,6 +46,10 @@ class PrendaFotoPedido extends Model
         if (str_starts_with($ruta, '/storage/')) {
             return $ruta;
         }
+        // Si comienza con storage/ (sin /), agregar /
+        if (str_starts_with($ruta, 'storage/')) {
+            return '/' . $ruta;
+        }
         // Si es una ruta relativa, agregar /storage/
         return '/storage/' . ltrim($ruta, '/');
     }

@@ -180,3 +180,6 @@ Route::prefix('asistencias')->name('asistencias.')->middleware(['api'])->group(f
     Route::post('mes', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerMes'])
         ->name('mes');
 });
+// Test endpoint para procesamiento de imágenes (sin autenticación por ahora)
+Route::post('test-image', [\App\Http\Controllers\TestImageController::class, 'processImage'])
+    ->middleware('web');

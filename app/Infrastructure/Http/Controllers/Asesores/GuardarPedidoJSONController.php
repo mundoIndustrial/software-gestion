@@ -50,14 +50,14 @@ class GuardarPedidoJSONController extends Controller
     public function guardar(Request $request): JsonResponse
     {
         try {
-            Log::info('📥 [GuardarPedidoJSONController] POST /api/pedidos/guardar-desde-json');
+            Log::info(' [GuardarPedidoJSONController] POST /api/pedidos/guardar-desde-json');
 
             // 1. EXTRER DATOS DEL REQUEST
             $datos = $request->all();
             $pedidoId = $datos['pedido_produccion_id'] ?? null;
             $prendas = $datos['prendas'] ?? [];
 
-            Log::info('📦 Datos recibidos', [
+            Log::info(' Datos recibidos', [
                 'pedido_id' => $pedidoId,
                 'cantidad_prendas' => count($prendas),
             ]);
@@ -66,7 +66,7 @@ class GuardarPedidoJSONController extends Controller
             $validacion = PedidoJSONValidator::validar($datos);
 
             if (!$validacion['valid']) {
-                Log::warning('⚠️ Validación fallida', $validacion['errors']);
+                Log::warning('Validación fallida', $validacion['errors']);
                 return response()->json([
                     'success' => false,
                     'message' => 'Datos inválidos',
@@ -74,12 +74,12 @@ class GuardarPedidoJSONController extends Controller
                 ], 422);
             }
 
-            Log::info('✅ Validación exitosa');
+            Log::info(' Validación exitosa');
 
             // 3. GUARDAR EN BD (dentro de transacción)
             $resultado = $this->guardarService->guardar($pedidoId, $prendas);
 
-            Log::info('✅ [GuardarPedidoJSONController] Pedido guardado exitosamente', [
+            Log::info(' [GuardarPedidoJSONController] Pedido guardado exitosamente', [
                 'pedido_id' => $resultado['pedido_id'],
                 'numero_pedido' => $resultado['numero_pedido'],
                 'cantidad_prendas' => $resultado['cantidad_prendas'],
@@ -89,7 +89,7 @@ class GuardarPedidoJSONController extends Controller
             return response()->json($resultado, 201);
 
         } catch (\Exception $e) {
-            Log::error('❌ [GuardarPedidoJSONController] Error al guardar pedido', [
+            Log::error(' [GuardarPedidoJSONController] Error al guardar pedido', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -113,7 +113,7 @@ class GuardarPedidoJSONController extends Controller
     public function validar(Request $request): JsonResponse
     {
         try {
-            Log::info('✅ [GuardarPedidoJSONController] POST /api/pedidos/validar-json');
+            Log::info(' [GuardarPedidoJSONController] POST /api/pedidos/validar-json');
 
             $datos = $request->all();
             $validacion = PedidoJSONValidator::validar($datos);
@@ -131,7 +131,7 @@ class GuardarPedidoJSONController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error validando pedido', [
+            Log::error(' Error validando pedido', [
                 'error' => $e->getMessage(),
             ]);
 
