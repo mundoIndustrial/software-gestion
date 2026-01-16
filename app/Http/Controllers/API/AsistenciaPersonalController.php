@@ -355,6 +355,7 @@ class AsistenciaPersonalController extends Controller
             }
 
             // Filtrar marcas duplicadas cercanas (mantener solo la más reciente)
+            // Y eliminar marcas extra que estén fuera del rango esperado
             $registrosPorPersonaYDiaFiltrado = [];
             foreach ($registrosPorPersonaYDiaAgrupado as $clave => $registro) {
                 $horas = $registro['horas'];
@@ -368,7 +369,7 @@ class AsistenciaPersonalController extends Controller
                 // Ordenar por tiempo
                 asort($horasEnSegundos);
                 
-                // Filtrar: mantener solo la más reciente si hay duplicados muy cercanos
+                // Paso 1: Filtrar duplicados muy cercanos (< 5 minutos)
                 $horasValidas = [];
                 foreach ($horasEnSegundos as $index => $segundos) {
                     // Si no hay marcas previas, agregar esta
@@ -391,13 +392,50 @@ class AsistenciaPersonalController extends Controller
                     }
                 }
                 
+                // Paso 2: Eliminar marcas extras después de salida_tarde esperada (18:00)
+                // Si hay múltiples marcas después de 18:00, mantener solo la más reciente
+                $umbralSalidaTarde = 64800; // 18:00 en segundos
+                $marcasArray = array_values($horasValidas);
+                $marcasAntesDe18 = [];
+                $marcasDespuesDe18 = [];
+                
+                foreach ($marcasArray as $marca) {
+                    if ($marca <= $umbralSalidaTarde) {
+                        $marcasAntesDe18[] = $marca;
+                    } else {
+                        $marcasDespuesDe18[] = $marca;
+                    }
+                }
+                
+                // Si hay múltiples marcas después de 18:00, mantener solo la más reciente
+                if (count($marcasDespuesDe18) > 1) {
+                    // Verificar que estén dentro de 1 hora entre ellas (pueden ser duplicados)
+                    $primeraDesp18 = $marcasDespuesDe18[0];
+                    $ultimaDesp18 = $marcasDespuesDe18[count($marcasDespuesDe18) - 1];
+                    $diferencia = $ultimaDesp18 - $primeraDesp18;
+                    
+                    // Si están dentro de 1 hora, es una duplicación
+                    if ($diferencia < 3600) {
+                        $marcasDespuesDe18 = [$ultimaDesp18]; // Mantener solo la más reciente
+                    }
+                }
+                
+                // Recombinar: marcas antes de 18:00 + la más reciente después de 18:00
+                $horasValidasLimpias = [];
+                foreach ($marcasAntesDe18 as $marca) {
+                    $horasValidasLimpias[] = $marca;
+                }
+                foreach ($marcasDespuesDe18 as $marca) {
+                    $horasValidasLimpias[] = $marca;
+                }
+                
                 // Convertir de vuelta a formato HH:MM:SS
                 $horasFormateadas = array_map(function($segundos) {
                     $horas = intdiv($segundos, 3600);
                     $minutos = intdiv($segundos % 3600, 60);
                     $secs = $segundos % 60;
                     return sprintf('%02d:%02d:%02d', $horas, $minutos, $secs);
-                }, array_values($horasValidas));
+                }, $horasValidasLimpias);
                 
                 $registrosPorPersonaYDiaFiltrado[$clave] = [
                     'id_persona' => $registro['id_persona'],
