@@ -779,24 +779,46 @@ function capturarProcesos() {
 }
 
 /**
- * Captura el EPP seleccionado
- * Solo devuelve EPP si realmente hay items seleccionados
+ * Captura el EPP seleccionado del DOM
+ * Lee los items EPP agregados en la lista lista-items-pedido
  */
 function capturarEPP() {
     console.log('🦺 [PREVIEW] Capturando EPP...');
     
     const epp = [];
-    const eppCheckboxes = document.querySelectorAll('input[type="checkbox"][name*="epp"], input[type="checkbox"][name*="protection"]');
     
-    eppCheckboxes.forEach(checkbox => {
-        if (checkbox.checked) {
-            const label = document.querySelector(`label[for="${checkbox.id}"]`)?.textContent || checkbox.value;
-            epp.push(label.trim());
+    // Obtener todos los items EPP del DOM
+    const itemsEPP = document.querySelectorAll('.item-epp[data-item-tipo="epp"]');
+    
+    itemsEPP.forEach(item => {
+        const id = item.dataset.itemId;
+        const categoria = item.querySelector('[style*="color: #0066cc"]')?.textContent || '';
+        const nombre = item.querySelector('h4')?.textContent || '';
+        
+        // Extraer información de la etiqueta p que contiene código, talla y cantidad
+        const infoTexto = item.querySelector('p[style*="color: #6b7280"]')?.textContent || '';
+        
+        // Extraer imágenes
+        const imagenesDiv = item.querySelector('[style*="grid-template-columns"]');
+        const imagenes = [];
+        if (imagenesDiv) {
+            const imgs = imagenesDiv.querySelectorAll('img');
+            imgs.forEach(img => {
+                if (img.src) imagenes.push(img.src);
+            });
         }
+        
+        epp.push({
+            id: id,
+            nombre: nombre,
+            categoria: categoria,
+            info: infoTexto,
+            imagenes: imagenes
+        });
     });
     
-    console.log(`✅ [PREVIEW] ${epp.length} EPP capturado(s)`);
-    return epp; // Devolver array vacío si no hay EPP, sin defaults
+    console.log(`✅ [PREVIEW] ${epp.length} EPP capturado(s)`, epp);
+    return epp;
 }
 
 /**
@@ -1034,12 +1056,12 @@ function generarHTMLFactura(datos) {
                 
                 if (generosConTallas.length > 0) {
                     generosTallasHTML = `
-                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; word-break: break-word;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                             <tbody>
                                 ${generosConTallas.map(([genero, tallasObj]) => `
                                     <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 4px 0; font-weight: 600; color: #dc2626; width: 35%; word-break: break-word; font-size: 11px;">${genero}</td>
-                                        <td style="padding: 4px 0; color: #dc2626; word-break: break-word; overflow-wrap: break-word; font-size: 11px; font-weight: 600;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
+                                        <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; word-break: break-word; font-size: 11px; overflow: hidden;">${genero}</td>
+                                        <td style="padding: 4px 4px; color: #374151; word-break: break-word; overflow: hidden; font-size: 11px; font-weight: 600;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -1051,12 +1073,12 @@ function generarHTMLFactura(datos) {
             } else {
                 // Tallas planas { S: 20, M: 20 }
                 generosTallasHTML = `
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; word-break: break-word;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                         <tbody>
                             ${Object.entries(prenda.tallas).map(([talla, cant]) => `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 4px 0; font-weight: 600; color: #dc2626; width: 35%; font-size: 11px;">${talla}</td>
-                                    <td style="padding: 4px 0; color: #dc2626; word-break: break-word; font-size: 11px; font-weight: 600;">${cant}</td>
+                                    <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; font-size: 11px; overflow: hidden;">${talla}</td>
+                                    <td style="padding: 4px 4px; color: #374151; word-break: break-word; font-size: 11px; font-weight: 600; overflow: hidden;">${cant}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -1113,20 +1135,20 @@ function generarHTMLFactura(datos) {
                 }
                 
                 return `
-                    <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #27ae60; border-radius: 2px; font-size: 10px;">
-                        <div style="font-weight: 700; color: #27ae60; margin-bottom: 4px; text-transform: uppercase;">Reflectivo: ${proc.tipo || 'Proceso sin tipo'}</div>
+                    <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 10px;">
+                        <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase;">Reflectivo: ${proc.tipo || 'Proceso sin tipo'}</div>
                         
                         ${(proc.ubicaciones?.length > 0 || proc.observaciones) ? `
                             <table style="width: 100%; font-size: 10px; margin-bottom: 4px; border-collapse: collapse;">
                                 ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                     <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 2px 3px; font-weight: 600; color: #27ae60; width: 25%;">Ubicación:</td>
+                                        <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Ubicación:</td>
                                         <td style="padding: 2px 3px;">${proc.ubicaciones.join(', ')}</td>
                                     </tr>
                                 ` : ''}
                                 ${proc.observaciones ? `
                                     <tr>
-                                        <td style="padding: 2px 3px; font-weight: 600; color: #27ae60; width: 25%;">Observaciones:</td>
+                                        <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Observaciones:</td>
                                         <td style="padding: 2px 3px; font-size: 10px;">${proc.observaciones}</td>
                                     </tr>
                                 ` : ''}
@@ -1141,7 +1163,7 @@ function generarHTMLFactura(datos) {
                                     `<div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipo}')">
                                         <img src="${proc.imagenes[0]}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd;">
                                         ${proc.imagenes.length > 1 ? `
-                                            <div style="position: absolute; top: 0; right: 0; background: #27ae60; color: white; font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 0 2px 0 2px; cursor: pointer;">
+                                            <div style="position: absolute; top: 0; right: 0; background: #3b82f6; color: white; font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 0 2px 0 2px; cursor: pointer;">
                                                 ${proc.imagenes.length}+
                                             </div>
                                         ` : ''}
@@ -1273,6 +1295,58 @@ function generarHTMLFactura(datos) {
             <div style="margin-top: 6px;">
                 ${prendasHTML}
             </div>
+            
+            <!-- EPP Items -->
+            ${datos.epps && datos.epps.length > 0 ? `
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #6b7280;">
+                    <div style="font-weight: 700; color: #374151; font-size: 11px; margin-bottom: 8px;">
+                        EQUIPO DE PROTECCIÓN PERSONAL (${datos.epps.length})
+                    </div>
+                    ${datos.epps.map((epp, idx) => `
+                        <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
+                            <!-- HEADER EPP -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+                                <!-- COLUMNA 1: Nombre + Código -->
+                                <div style="font-size: 11px;">
+                                    <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">${epp.nombre || 'Sin nombre'}</div>
+                                    ${epp.codigo ? `<div style="color: #9ca3af; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Código: ${epp.codigo}</div>` : ''}
+                                </div>
+                                
+                                <!-- COLUMNA 2: Categoría -->
+                                <div style="font-size: 11px;">
+                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Categoría</div>
+                                    <div style="font-weight: 600; color: #374151;">${epp.categoria || '—'}</div>
+                                </div>
+                                
+                                <!-- COLUMNA 3: Talla + Cantidad -->
+                                <div style="font-size: 11px;">
+                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Talla / Cantidad</div>
+                                    <div style="font-weight: 600; color: #374151;">${epp.talla || '—'} / <strong>${epp.cantidad || 0}</strong></div>
+                                </div>
+                                
+                                <!-- COLUMNA 4: Imágenes -->
+                                <div style="font-size: 11px;">
+                                    ${epp.imagenes && epp.imagenes.length > 0 ? `
+                                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                            ${epp.imagenes.map(img => `
+                                                <img src="${img}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 3px; border: 1px solid #e5e7eb; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(epp.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${epp.nombre}')">
+                                            `).join('')}
+                                        </div>
+                                    ` : `<div style="color: #d1d5db; font-size: 9px; font-style: italic;">Sin imágenes</div>`}
+                                </div>
+                            </div>
+                            
+                            <!-- Observaciones (si hay) -->
+                            ${epp.observaciones ? `
+                                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 2px; font-weight: 600;">Observaciones</div>
+                                    <div style="color: #555; font-size: 10px; font-style: italic;">${epp.observaciones}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
         </div>
     `;
 }

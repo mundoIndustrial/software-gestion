@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\OrdenController;
 use App\Http\Controllers\PrendaController;
 use App\Http\Controllers\Api\ProcesosController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
+use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
 
 /**
  * API Routes for DDD-based Orden management (FASE 3 - DDD)
@@ -55,7 +56,7 @@ Route::middleware('api')->prefix('api/v1')->name('api.v1.')->group(function () {
  * Auth: bearer token
  * Controller: App\Http\Controllers\PrendaController
  */
-Route::middleware('api')->prefix('api')->name('api.')->group(function () {
+Route::middleware('api')->group(function () {
     // Rutas de prendas
     Route::apiResource('prendas', PrendaController::class);
     Route::get('prendas/search', [PrendaController::class, 'search'])->name('prendas.search');
@@ -109,6 +110,56 @@ Route::middleware('api')->prefix('api')->name('api.')->group(function () {
             });
         });
     });
+
+    // Gestión de imágenes de EPP
+    Route::prefix('epp/{eppId}/imagenes')->name('epp.imagenes.')->group(function () {
+        Route::post('/', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'subirImagen'])
+            ->name('subir');
+    });
+
+    Route::delete('epp/imagenes/{imagenId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarImagen'])
+        ->name('epp.imagenes.eliminar');
+
+    // Búsqueda y listado de EPP
+    Route::get('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'index'])
+        ->name('epp.index');
+
+    Route::get('epp/categorias/all', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'categorias'])
+        ->name('epp.categorias');
+
+    Route::post('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'store'])
+        ->name('epp.store');
+
+    Route::get('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'show'])
+        ->name('epp.show');
+
+    // Gestión de EPP en pedidos - Rutas RESTful
+    Route::prefix('pedidos/{pedido}/epps')->name('pedidos.epps.')->group(function () {
+        Route::get('/', [PedidoEppController::class, 'index'])
+            ->name('index');
+        
+        Route::post('/', [PedidoEppController::class, 'store'])
+            ->name('store');
+        
+        Route::patch('{pedidoEpp}', [PedidoEppController::class, 'update'])
+            ->name('update');
+        
+        Route::delete('{pedidoEpp}', [PedidoEppController::class, 'destroy'])
+            ->name('destroy');
+        
+        Route::get('/exportar/json', [PedidoEppController::class, 'exportarJson'])
+            ->name('exportar-json');
+    });
+
+    // Gestión de EPP en pedidos (rutas antiguas - mantenerlas para compatibilidad)
+    Route::get('pedidos/{pedidoId}/epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'obtenerDelPedido'])
+        ->name('pedidos.epp.obtener');
+
+    Route::post('pedidos/{pedidoId}/epp/agregar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'agregar'])
+        ->name('pedidos.epp.agregar');
+
+    Route::delete('pedidos/{pedidoId}/epp/{eppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminar'])
+        ->name('pedidos.epp.eliminar');
 });
 
 /**

@@ -30,12 +30,40 @@ use App\Domain\PedidoProduccion\Queries\FiltrarPedidosPorEstadoQuery;
 use App\Domain\PedidoProduccion\Queries\BuscarPedidoPorNumeroQuery;
 use App\Domain\PedidoProduccion\Queries\ObtenerPrendasPorPedidoQuery;
 
+// EPP Query Classes
+use App\Domain\Epp\Queries\BuscarEppQuery;
+use App\Domain\Epp\Queries\ObtenerEppPorIdQuery;
+use App\Domain\Epp\Queries\ObtenerEppPorCategoriaQuery;
+use App\Domain\Epp\Queries\ListarEppActivosQuery;
+use App\Domain\Epp\Queries\ListarCategoriasEppQuery;
+use App\Domain\Epp\Queries\ObtenerEppDelPedidoQuery;
+
 // Command Classes
 use App\Domain\PedidoProduccion\Commands\CrearPedidoCommand;
 use App\Domain\PedidoProduccion\Commands\ActualizarPedidoCommand;
 use App\Domain\PedidoProduccion\Commands\CambiarEstadoPedidoCommand;
 use App\Domain\PedidoProduccion\Commands\AgregarPrendaAlPedidoCommand;
 use App\Domain\PedidoProduccion\Commands\EliminarPedidoCommand;
+
+// EPP Command Classes
+use App\Domain\Epp\Commands\AgregarEppAlPedidoCommand;
+use App\Domain\Epp\Commands\EliminarEppDelPedidoCommand;
+
+// EPP Query Handlers
+use App\Domain\Epp\QueryHandlers\BuscarEppHandler;
+use App\Domain\Epp\QueryHandlers\ObtenerEppPorIdHandler;
+use App\Domain\Epp\QueryHandlers\ObtenerEppPorCategoriaHandler;
+use App\Domain\Epp\QueryHandlers\ListarEppActivosHandler;
+use App\Domain\Epp\QueryHandlers\ListarCategoriasEppHandler;
+use App\Domain\Epp\QueryHandlers\ObtenerEppDelPedidoHandler;
+
+// EPP Command Handlers
+use App\Domain\Epp\CommandHandlers\AgregarEppAlPedidoHandler;
+use App\Domain\Epp\CommandHandlers\EliminarEppDelPedidoHandler;
+
+// Application Commands
+use App\Application\Commands\CrearEppCommand;
+use App\Application\Handlers\CrearEppHandler;
 
 /**
  * CQRSServiceProvider
@@ -68,6 +96,10 @@ class CQRSServiceProvider extends ServiceProvider
         $this->app->singleton(CommandBus::class, function ($app) {
             return new CommandBus($app);
         });
+
+        // Aliases para compatibilidad
+        $this->app->alias(QueryBus::class, 'query.bus');
+        $this->app->alias(CommandBus::class, 'command.bus');
 
         // Registrar Query Handlers
         $this->registerQueryHandlers();
@@ -132,6 +164,31 @@ class CQRSServiceProvider extends ServiceProvider
         $this->app->bind(ObtenerPrendasPorPedidoHandler::class, function ($app) {
             return new ObtenerPrendasPorPedidoHandler($app->make(\App\Models\PedidoProduccion::class));
         });
+
+        // EPP Query Handlers
+        $this->app->bind(BuscarEppHandler::class, function ($app) {
+            return new BuscarEppHandler($app->make(\App\Domain\Epp\Services\EppDomainService::class));
+        });
+
+        $this->app->bind(ObtenerEppPorIdHandler::class, function ($app) {
+            return new ObtenerEppPorIdHandler($app->make(\App\Domain\Epp\Services\EppDomainService::class));
+        });
+
+        $this->app->bind(ObtenerEppPorCategoriaHandler::class, function ($app) {
+            return new ObtenerEppPorCategoriaHandler($app->make(\App\Domain\Epp\Services\EppDomainService::class));
+        });
+
+        $this->app->bind(ListarEppActivosHandler::class, function ($app) {
+            return new ListarEppActivosHandler($app->make(\App\Domain\Epp\Services\EppDomainService::class));
+        });
+
+        $this->app->bind(ListarCategoriasEppHandler::class, function ($app) {
+            return new ListarCategoriasEppHandler($app->make(\App\Domain\Epp\Services\EppDomainService::class));
+        });
+
+        $this->app->bind(ObtenerEppDelPedidoHandler::class, function ($app) {
+            return new ObtenerEppDelPedidoHandler($app->make(\App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class));
+        });
     }
 
     /**
@@ -172,6 +229,15 @@ class CQRSServiceProvider extends ServiceProvider
         $this->app->bind(EliminarPedidoHandler::class, function ($app) {
             return new EliminarPedidoHandler($app->make(\App\Models\PedidoProduccion::class));
         });
+
+        // EPP Command Handlers
+        $this->app->bind(AgregarEppAlPedidoHandler::class, function ($app) {
+            return new AgregarEppAlPedidoHandler($app->make(\App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class));
+        });
+
+        $this->app->bind(EliminarEppDelPedidoHandler::class, function ($app) {
+            return new EliminarEppDelPedidoHandler($app->make(\App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class));
+        });
     }
 
     /**
@@ -203,6 +269,37 @@ class CQRSServiceProvider extends ServiceProvider
             ObtenerPrendasPorPedidoQuery::class,
             ObtenerPrendasPorPedidoHandler::class
         );
+
+        // EPP Queries
+        $queryBus->register(
+            BuscarEppQuery::class,
+            BuscarEppHandler::class
+        );
+
+        $queryBus->register(
+            ObtenerEppPorIdQuery::class,
+            ObtenerEppPorIdHandler::class
+        );
+
+        $queryBus->register(
+            ObtenerEppPorCategoriaQuery::class,
+            ObtenerEppPorCategoriaHandler::class
+        );
+
+        $queryBus->register(
+            ListarEppActivosQuery::class,
+            ListarEppActivosHandler::class
+        );
+
+        $queryBus->register(
+            ListarCategoriasEppQuery::class,
+            ListarCategoriasEppHandler::class
+        );
+
+        $queryBus->register(
+            ObtenerEppDelPedidoQuery::class,
+            ObtenerEppDelPedidoHandler::class
+        );
     }
 
     /**
@@ -233,6 +330,23 @@ class CQRSServiceProvider extends ServiceProvider
         $commandBus->register(
             EliminarPedidoCommand::class,
             EliminarPedidoHandler::class
+        );
+
+        // EPP Commands
+        $commandBus->register(
+            AgregarEppAlPedidoCommand::class,
+            AgregarEppAlPedidoHandler::class
+        );
+
+        $commandBus->register(
+            EliminarEppDelPedidoCommand::class,
+            EliminarEppDelPedidoHandler::class
+        );
+
+        // Application Commands
+        $commandBus->register(
+            CrearEppCommand::class,
+            CrearEppHandler::class
         );
     }
 }

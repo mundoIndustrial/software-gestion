@@ -77,7 +77,7 @@
                             <option value="EPP">EPP</option>
                         </select>
                     </div>
-                    <button type="button" id="btn-agregar-item-tipo-inline" style="display: none; padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s; white-space: nowrap; box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2); height: 42px; margin-top: 26px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0, 102, 204, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0, 102, 204, 0.2)'">
+                    <button type="button" id="btn-agregar-item-tipo-inline" style="display: none; padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s; white-space: nowrap; box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2); height: 42px; margin-top: 26px;" onclick="abrirModalSegunTipo()" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0, 102, 204, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0, 102, 204, 0.2)'">
                         <span class="material-symbols-rounded" style="font-size: 1.25rem;">add_circle</span>
                         Agregar
                     </button>
@@ -139,11 +139,19 @@
 @endsection
 
 @push('scripts')
+    <!-- IMPORTANTE: Cargar PRIMERO el protector de datos principales -->
+    <script src="{{ asset('js/modulos/crear-pedido/seguridad/protector-datos-principales.js') }}"></script>
+    
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
     <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
     
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
+    
+    <!-- ✅ SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
+    <script src="{{ asset('js/services/epp/EppHttpService.js') }}"></script>
+    
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
     
@@ -238,7 +246,7 @@
                     window.abrirModalPrendaNueva();
                 } else if (tipoPedido === 'EPP') {
                     // EPP - Equipo de Protección Personal
-                    alert('Tipo de pedido "EPP" en desarrollo');
+                    window.abrirModalAgregarEPP();
                 } else {
                     alert('Tipo de pedido "' + tipoPedido + '" desconocido');
                 }
@@ -259,7 +267,20 @@
                 btnAgregarTipoInline.style.display = 'flex';
             }
         };
-        
+
+        // Abrir modal según tipo de pedido seleccionado
+        window.abrirModalSegunTipo = function() {
+            const tipoPedido = selectTipoPedidoNuevo.value;
+            
+            console.log('🎯 Abriendo modal para tipo:', tipoPedido);
+            
+            if (tipoPedido === 'EPP') {
+                window.abrirModalAgregarEPP();
+            } else if (tipoPedido === 'P') {
+                // Prenda - abre el modal existente
+                window.abrirModalPrendaNueva();
+            }
+        };
 
         console.log(' Vista de nuevo pedido inicializada');
     });

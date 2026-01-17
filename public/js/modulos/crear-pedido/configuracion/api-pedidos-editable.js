@@ -260,7 +260,39 @@ class PedidosEditableWebClient {
         // Procesar items
         if (pedidoData.items && Array.isArray(pedidoData.items)) {
             pedidoData.items.forEach((item, itemIdx) => {
-                // Datos básicos del item
+                // ✅ SI ES EPP, PROCESARLO DIFERENTE
+                if (item.tipo === 'epp') {
+                    console.log(`🛡️ Procesando EPP en FormData: índice ${itemIdx}`);
+                    
+                    // Usar 'items' en lugar de 'prendas' para EPP
+                    formData.append(`items[${itemIdx}][tipo]`, 'epp');
+                    formData.append(`items[${itemIdx}][epp_id]`, item.epp_id || '');
+                    formData.append(`items[${itemIdx}][nombre]`, item.nombre || '');
+                    formData.append(`items[${itemIdx}][codigo]`, item.codigo || '');
+                    formData.append(`items[${itemIdx}][categoria]`, item.categoria || '');
+                    formData.append(`items[${itemIdx}][talla]`, item.talla || '');
+                    formData.append(`items[${itemIdx}][cantidad]`, item.cantidad || '');
+                    formData.append(`items[${itemIdx}][observaciones]`, item.observaciones || '');
+                    formData.append(`items[${itemIdx}][tallas_medidas]`, item.tallas_medidas || '');
+                    
+                    // Imágenes del EPP
+                    if (item.imagenes && Array.isArray(item.imagenes)) {
+                        item.imagenes.forEach((imgObj, imgIdx) => {
+                            const archivo = imgObj instanceof File ? imgObj : imgObj?.file;
+                            if (archivo instanceof File) {
+                                formData.append(
+                                    `items[${itemIdx}][imagenes][${imgIdx}]`,
+                                    archivo
+                                );
+                                console.log(`📷 Agregado imagen EPP: ${imgIdx} = ${archivo.name}`);
+                            }
+                        });
+                    }
+                    
+                    return; // Saltar al siguiente item
+                }
+                
+                // PARA PRENDAS: Datos básicos del item
                 formData.append(`prendas[${itemIdx}][tipo]`, item.tipo || 'prenda_nueva');
                 formData.append(`prendas[${itemIdx}][prenda]`, item.prenda || '');
                 formData.append(`prendas[${itemIdx}][descripcion]`, item.descripcion || '');

@@ -9,6 +9,7 @@ use App\Domain\PedidoProduccion\Services\GestionItemsPedidoService;
 use App\Domain\PedidoProduccion\Services\TransformadorCotizacionService;
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
+use App\Services\PedidoEppService; // ✅ IMPORTAR SERVICIO EPP
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,6 +21,7 @@ class CrearPedidoEditableController extends Controller
         private TransformadorCotizacionService $transformador,
         private PedidoPrendaService $pedidoPrendaService,
         private ColorGeneroMangaBrocheService $colorGeneroService,
+        private PedidoEppService $eppService, // ✅ INYECTAR SERVICIO EPP
     ) {}
 
     public function index(?string $tipoInicial = null): View
@@ -138,13 +140,29 @@ class CrearPedidoEditableController extends Controller
         // Validar cada ítem
         foreach ($items as $index => $item) {
             $itemNum = $index + 1;
-            
-            if (empty($item['prenda'])) {
-                $errores[] = "Ítem {$itemNum}: Prenda no especificada";
-            }
-            
-            if (empty($item['tallas']) || !is_array($item['tallas']) || count($item['tallas']) === 0) {
-                $errores[] = "Ítem {$itemNum}: Debe seleccionar al menos una talla";
+            $tipo = $item['tipo'] ?? 'prenda';
+
+            // ✅ Validaciones diferentes según el tipo
+            if ($tipo === 'epp') {
+                // Para EPP: validar solo campos específicos del EPP
+                if (empty($item['epp_id'])) {
+                    $errores[] = "Ítem {$itemNum} (EPP): ID del EPP no especificado";
+                }
+                if (empty($item['cantidad']) || $item['cantidad'] <= 0) {
+                    $errores[] = "Ítem {$itemNum} (EPP): Cantidad debe ser mayor a 0";
+                }
+                if (empty($item['talla'])) {
+                    $errores[] = "Ítem {$itemNum} (EPP): Talla/medida no especificada";
+                }
+            } else {
+                // Para PRENDAS: validar campos de prenda
+                if (empty($item['prenda'])) {
+                    $errores[] = "Ítem {$itemNum}: Prenda no especificada";
+                }
+                
+                if (empty($item['tallas']) || !is_array($item['tallas']) || count($item['tallas']) === 0) {
+                    $errores[] = "Ítem {$itemNum}: Debe seleccionar al menos una talla";
+                }
             }
         }
         
@@ -165,14 +183,23 @@ class CrearPedidoEditableController extends Controller
     {
         try {
             // Obtener items del request
-            // ✅ Intentar leer desde 'items' (JSON) o 'prendas' (FormData)
-            $items = $request->input('items', []);
-            if (empty($items)) {
-                $items = $request->input('prendas', []);
+            // ✅ Leer desde ambas fuentes: 'items' (para EPP) y 'prendas' (para prendas en FormData)
+            $itemsDesdeItems = $request->input('items', []);
+            $itemsDesdePrendas = $request->input('prendas', []);
+            
+            // Combinar ambos arrays
+            $items = [];
+            if (!empty($itemsDesdeItems)) {
+                $items = array_merge($items, is_array($itemsDesdeItems) ? array_values($itemsDesdeItems) : []);
+            }
+            if (!empty($itemsDesdePrendas)) {
+                $items = array_merge($items, is_array($itemsDesdePrendas) ? array_values($itemsDesdePrendas) : []);
             }
             
             \Log::info('📦 [CrearPedidoEditableController::crearPedido] Items recibidos:', [
                 'items_count' => count($items),
+                'desde_items' => count($itemsDesdeItems),
+                'desde_prendas' => count($itemsDesdePrendas),
                 'first_item_keys' => count($items) > 0 ? array_keys($items[0]) : [],
             ]);
             
@@ -189,15 +216,31 @@ class CrearPedidoEditableController extends Controller
             $errores = [];
             foreach ($items as $index => $item) {
                 $itemNum = $index + 1;
+                $tipo = $item['tipo'] ?? 'cotizacion';
                 
-                if (empty($item['prenda'])) {
-                    $errores[] = "Ítem {$itemNum}: Prenda no especificada";
+                if ($tipo === 'epp') {
+                    // Para EPP: validar solo campos específicos del EPP
+                    if (empty($item['epp_id'])) {
+                        $errores[] = "Ítem {$itemNum} (EPP): ID del EPP no especificado";
+                    }
+                    if (empty($item['cantidad']) || $item['cantidad'] <= 0) {
+                        $errores[] = "Ítem {$itemNum} (EPP): Cantidad debe ser mayor a 0";
+                    }
+                    if (empty($item['talla'])) {
+                        $errores[] = "Ítem {$itemNum} (EPP): Talla/medida no especificada";
+                    }
+                } else {
+                    // Para PRENDAS: validar prenda
+                    if (empty($item['prenda'])) {
+                        $errores[] = "Ítem {$itemNum}: Prenda no especificada";
+                    }
                 }
                 
                 // ✅ Validar tallas dependiendo del tipo de item
-                $tipo = $item['tipo'] ?? 'cotizacion';
                 
-                if ($tipo === 'prenda_nueva') {
+                if ($tipo === 'epp') {
+                    // EPP no necesita validación adicional aquí
+                } elseif ($tipo === 'prenda_nueva') {
                     // Para prendas nuevas, validar cantidad_talla (objeto)
                     $cantidadTalla = $item['cantidad_talla'] ?? [];
                     
@@ -285,6 +328,7 @@ class CrearPedidoEditableController extends Controller
             // Usar PedidoPrendaService para crear las prendas
             // Preparar prendas para guardar
             $prendasParaGuardar = [];
+            $eppsParaGuardar = []; // ✅ AGREGAR ARRAY PARA EPPs
             $cantidadTotal = 0;
             
             foreach ($validated['items'] as $itemIndex => $item) {
@@ -292,6 +336,57 @@ class CrearPedidoEditableController extends Controller
                 
                 // Determinar el tipo de item
                 $tipo = $item['tipo'] ?? 'cotizacion';
+                
+                // ✅ SI ES EPP, PROCESARLO SEPARADAMENTE
+                if ($tipo === 'epp') {
+                    \Log::info('🛡️ [CrearPedidoEditableController] Procesando EPP:', $item);
+                    
+                    // Construir objeto EPP para guardar
+                    $eppData = [
+                        'epp_id' => $item['epp_id'] ?? null,
+                        'nombre' => $item['nombre'] ?? '',
+                        'codigo' => $item['codigo'] ?? '',
+                        'categoria' => $item['categoria'] ?? '',
+                        'talla' => $item['talla'] ?? '',
+                        'cantidad' => $item['cantidad'] ?? 0,
+                        'observaciones' => $item['observaciones'] ?? null,
+                        'imagenes' => [],  // Se llenarán a continuación
+                        'tallas_medidas' => $item['tallas_medidas'] ?? $item['talla'],
+                    ];
+                    
+                    // ✅ PROCESAR IMÁGENES DEL EPP
+                    // Las imágenes vienen en FormData como archivos
+                    $imagenKey = "items.{$itemIndex}.imagenes";
+                    $imagenesDelEpp = $request->file($imagenKey) ?? [];
+                    
+                    if (is_array($imagenesDelEpp)) {
+                        foreach ($imagenesDelEpp as $imagenIdx => $archivo) {
+                            if ($archivo instanceof \Illuminate\Http\UploadedFile) {
+                                // Guardar la imagen temporalmente
+                                $path = $archivo->store('epp/temp', 'local');
+                                
+                                $eppData['imagenes'][] = [
+                                    'archivo' => $path,
+                                    'principal' => $imagenIdx === 0,
+                                    'orden' => $imagenIdx,
+                                ];
+                                
+                                \Log::info('📷 [CrearPedidoEditableController] Imagen EPP procesada:', [
+                                    'path' => $path,
+                                    'nombre_original' => $archivo->getClientOriginalName(),
+                                ]);
+                            }
+                        }
+                    }
+                    
+                    $eppsParaGuardar[] = $eppData;
+                    
+                    // Contar cantidad para total del pedido
+                    $cantidadTotal += (int)($item['cantidad'] ?? 0);
+                    
+                    // Pasar al siguiente item (NO procesar como prenda)
+                    continue;
+                }
                 
                 // Determinar de_bodega: 
                 // 1. Si viene explícitamente, usarlo
@@ -748,6 +843,31 @@ class CrearPedidoEditableController extends Controller
             
             // Guardar todas las prendas usando el servicio
             $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $prendasParaGuardar);
+            
+            // ✅ GUARDAR EPPS SI LOS HAY
+            if (!empty($eppsParaGuardar)) {
+                \Log::info('🛡️ Guardando EPPs del pedido:', [
+                    'cantidad_epps' => count($eppsParaGuardar),
+                    'epps' => array_map(function($e) {
+                        return [
+                            'nombre' => $e['nombre'],
+                            'cantidad' => $e['cantidad'],
+                            'talla' => $e['talla'],
+                        ];
+                    }, $eppsParaGuardar),
+                ]);
+                
+                try {
+                    $this->eppService->guardarEppsDelPedido($pedido, $eppsParaGuardar);
+                    \Log::info('✅ EPPs guardados exitosamente para pedido:', ['pedido_id' => $pedido->id]);
+                } catch (\Exception $e) {
+                    \Log::error('❌ Error guardando EPPs:', [
+                        'error' => $e->getMessage(),
+                        'pedido_id' => $pedido->id,
+                    ]);
+                    // No lanzar error, solo loguear (los EPPs no bloquean la creación del pedido)
+                }
+            }
 
             // Actualizar cantidad total del pedido
             $pedido->update(['cantidad_total' => $cantidadTotal]);

@@ -166,6 +166,9 @@ class GestionItemsUI {
     abrirModalAgregarPrendaNueva() {
         console.log('🎯 [GestionItemsUI] abrirModalAgregarPrendaNueva() - abriendo modal');
         
+        // ⚠️ SEGURIDAD: NUNCA limpiar datos del formulario principal (cliente, forma_de_pago, etc.)
+        // SOLO limpiar datos del modal de prenda y globales de ítems
+        
         // ✅ NUEVO: Limpiar índice de edición cuando se abre para crear NUEVA
         // Solo limpiar si NO se está editando (si no viene de cargarItemEnModal)
         if (this.prendaEditIndex === undefined) {
@@ -181,11 +184,11 @@ class GestionItemsUI {
             console.log('✅ [GestionItemsUI] Modal encontrado, abriendo...');
             modal.style.display = 'flex';
             
-            // Asegurar que el formulario esté limpio
+            // Asegurar que el formulario del MODAL esté limpio (NO el principal)
             const form = document.getElementById('form-prenda-nueva');
             if (form) {
                 form.reset();
-                console.log('🧹 [GestionItemsUI] Formulario limpiado');
+                console.log('🧹 [GestionItemsUI] Formulario del modal de prenda limpiado');
             }
             
             // Limpiar storage de imágenes
@@ -1215,6 +1218,31 @@ class GestionItemsUI {
         
         // Convertir items al formato esperado por el backend
         const itemsFormato = items.map((item, itemIndex) => {
+            // ✅ Si es EPP, crear un objeto específico sin propiedades de prenda
+            if (item.tipo === 'epp') {
+                const epp = {
+                    tipo: 'epp',
+                    epp_id: item.epp_id,
+                    nombre: item.nombre,
+                    codigo: item.codigo,
+                    categoria: item.categoria,
+                    talla: item.talla,
+                    cantidad: item.cantidad,
+                    observaciones: item.observaciones || null,
+                    tallas_medidas: item.tallas_medidas,
+                };
+                
+                // Si tiene imágenes, incluirlas
+                if (item.imagenes && item.imagenes.length > 0) {
+                    epp.imagenes = item.imagenes;
+                    console.log(`📸 [Item ${itemIndex}] EPP con Imágenes: ${item.imagenes.length}`);
+                }
+                
+                console.log(`🛡️ [Item ${itemIndex}] EPP procesado:`, epp);
+                return epp;
+            }
+            
+            // Para PRENDAS: crear baseItem con propiedades normales
             const baseItem = {
                 tipo: item.tipo,
                 prenda: item.prenda?.nombre || item.nombre || '',

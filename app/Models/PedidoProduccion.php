@@ -167,6 +167,23 @@ class PedidoProduccion extends Model
     }
 
     /**
+     * Relación: Un pedido tiene muchos EPP agregados
+     */
+    public function epps()
+    {
+        return $this->hasMany(PedidoEpp::class, 'pedido_produccion_id')
+            ->with('epp');  // Cargar también los datos del EPP
+    }
+
+    /**
+     * Relación: Acceso directo a registros de pedido_epp
+     */
+    public function pedidoEpps(): HasMany
+    {
+        return $this->hasMany(PedidoEpp::class, 'pedido_id');
+    }
+
+    /**
      * Obtener descripción de prendas (concatenadas con detalles)
      * 
      * Si la orden TIENE cotización: muestra descripción completa con detalles usando template

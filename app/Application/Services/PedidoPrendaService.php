@@ -1200,8 +1200,14 @@ class PedidoPrendaService
                         'tipo_broche_boton_id' => $tipoBrocheBotonId,
                     ]);
                     
+                    // ✅ IMPORTANTE: Concatenar genero-talla para crear talla única por género
+                    // Esto permite que una prenda unisex pueda tener dama-S, dama-M, caballero-S, etc.
+                    $tallaConGenero = !empty($var['genero']) 
+                        ? $var['genero'] . '-' . $var['talla'] 
+                        : (string)$var['talla'];
+                    
                     $prenda->variantes()->create([
-                        'talla' => (string)$var['talla'],
+                        'talla' => $tallaConGenero, // Guardamos "dama-S", "caballero-S", etc.
                         'cantidad' => (int)$var['cantidad'],
                         //  Usar los IDs pasados como parámetros (procesados en guardarPrenda)
                         'color_id' => $colorId,
@@ -1215,7 +1221,7 @@ class PedidoPrendaService
                         'bolsillos_obs' => $bolsillosObs,
                     ]);
                     $registrosGuardados++;
-                    \Log::info(' Variante guardada con IDs: Talla ' . $var['talla'] . ', color_id=' . ($colorId ?? 'null') . ', tela_id=' . ($telaId ?? 'null'));
+                    \Log::info(' Variante guardada con IDs: Talla ' . $tallaConGenero . ', color_id=' . ($colorId ?? 'null') . ', tela_id=' . ($telaId ?? 'null'));
                 }
             }
 

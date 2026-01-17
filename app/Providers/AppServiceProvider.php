@@ -43,6 +43,27 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\EloquentProcesoPrendaImagenRepository::class
         );
 
+        // Registrar implementaciones de EPP (DDD)
+        $this->app->bind(
+            \App\Domain\Epp\Repositories\EppRepositoryInterface::class,
+            \App\Domain\Epp\Repositories\EppRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class,
+            \App\Domain\Epp\Repositories\PedidoEppRepository::class
+        );
+
+        // Registrar servicio de dominio de EPP
+        $this->app->singleton(
+            \App\Domain\Epp\Services\EppDomainService::class,
+            function ($app) {
+                return new \App\Domain\Epp\Services\EppDomainService(
+                    $app->make(\App\Domain\Epp\Repositories\EppRepositoryInterface::class)
+                );
+            }
+        );
+
         // Registrar el servicio de generación de números de cotización
         $this->app->singleton(
             \App\Application\Cotizacion\Services\GenerarNumeroCotizacionService::class,

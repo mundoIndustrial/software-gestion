@@ -25,6 +25,8 @@ class PedidoProduccionRepository
             'prendas.fotosTelas',
             'prendas.procesos',
             'prendas.procesos.imagenes',
+            'epps.epp.categoria',  // ✅ Cargar la categoría del EPP
+            'epps.imagenes',
         ])->find($id);
     }
 
@@ -274,6 +276,55 @@ class PedidoProduccionRepository
 
             $datos['prendas'][] = $prendasFormato;
             $datos['total_items'] += $cantidadTotal;
+        }
+
+        // ✅ AGREGAR EPP A LOS DATOS DE FACTURA
+        $datos['epps'] = [];
+        foreach ($pedido->epps as $pedidoEpp) {
+            // $pedidoEpp es el modelo PedidoEpp que contiene los datos del EPP agregado al pedido
+            $epp = $pedidoEpp->epp;  // Obtener el modelo Epp relacionado
+            
+            // Obtener la talla de tallas_medidas (es un JSON que puede ser un string o array)
+            $talla = '';
+            if ($pedidoEpp->tallas_medidas) {
+                if (is_array($pedidoEpp->tallas_medidas)) {
+                    // Si es array, unir los elementos
+                    $talla = implode(', ', $pedidoEpp->tallas_medidas);
+                } else if (is_string($pedidoEpp->tallas_medidas)) {
+                    // Si es string, usarlo directamente (ej: "S", "M", "L")
+                    $talla = $pedidoEpp->tallas_medidas;
+                }
+            }
+            
+            $eppFormato = [
+                'nombre' => $epp->nombre ?? '',
+                'codigo' => $epp->codigo ?? '',
+                'categoria' => $epp->categoria?->nombre ?? $epp->categoria ?? '',  // Acceder al nombre de la categoría
+                'talla' => $talla,  // Datos específicos del pedido
+                'cantidad' => $pedidoEpp->cantidad ?? 0,
+                'observaciones' => $pedidoEpp->observaciones ?? '',
+                'imagen' => null,
+                'imagenes' => [],
+            ];
+            
+            // Obtener imágenes del PedidoEpp desde la tabla pedido_epp_imagenes
+            try {
+                $imagenes = \DB::table('pedido_epp_imagenes')
+                    ->where('pedido_epp_id', $pedidoEpp->id)
+                    ->orderBy('orden', 'asc')
+                    ->pluck('archivo')
+                    ->toArray();
+                
+                if (!empty($imagenes)) {
+                    $eppFormato['imagenes'] = $imagenes;
+                    $eppFormato['imagen'] = $imagenes[0] ?? null;
+                }
+            } catch (\Exception $e) {
+                \Log::debug('[FACTURA] Error obteniendo imágenes de EPP: ' . $e->getMessage());
+            }
+            
+            $datos['epps'][] = $eppFormato;
+            $datos['total_items'] += ($pedidoEpp->cantidad ?? 0);
         }
 
         return $datos;

@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             CotizacionSeeder::class, // Seeder para cotizaciones del módulo contador
             FormatoCotizacionSeeder::class, // Seeder para formatos de cotización
             InventarioTelasSeeder::class, // Seeder para inventario de telas con stock
+            EppSeeder::class, // Seeder para EPP con categorías e imágenes
         ]);
     }
 }

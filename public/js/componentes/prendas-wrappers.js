@@ -57,25 +57,30 @@ window.cerrarModalPrendaNueva = function() {
             console.log(' [WRAPPER] Texto del botón reseteado a "Agregar Prenda"');
         }
         
-        // Limpiar el formulario
+        // ⚠️ SEGURIDAD: Limpiar SOLO el formulario del modal de prenda (form-prenda-nueva)
+        // NUNCA limpiar el formulario principal (formCrearPedidoEditable)
         const form = document.getElementById('form-prenda-nueva');
         if (form) {
             form.reset();
-            console.log(' [WRAPPER] Formulario reseteado');
+            console.log(' [WRAPPER] Formulario del modal de prenda reseteado');
         }
         
-        // ✅ NUEVO: Limpiar campos principales del formulario
-        const inputsLimpiar = [
+        // ✅ SEGURIDAD: SOLO limpiar campos ESPECÍFICOS del modal de prenda
+        // Esto previene que se limpien accidentalmente campos del formulario principal
+        const inputsLimpiarModal = [
             'nueva-prenda-nombre',
             'nueva-prenda-descripcion',
-            'nueva-prenda-origen-select'
+            'nueva-prenda-origen-select',
+            'nueva-prenda-tela',
+            'nueva-prenda-color',
+            'nueva-prenda-referencia'
         ];
         
-        inputsLimpiar.forEach(fieldId => {
+        inputsLimpiarModal.forEach(fieldId => {
             const field = document.getElementById(fieldId);
-            if (field) {
+            if (field && fieldId.startsWith('nueva-prenda-')) {  // Extra validación: solo IDs que comienzan con 'nueva-prenda-'
                 field.value = '';
-                console.log(` [WRAPPER] Campo limpiado: ${fieldId}`);
+                console.log(` [WRAPPER] Campo del modal limpiado: ${fieldId}`);
             }
         });
         
