@@ -576,9 +576,16 @@ class AsistenciaPersonalController extends Controller
                 if (is_object($fecha)) {
                     $fecha = $fecha->format('Y-m-d');
                 }
+                
+                // Obtener el horario del rol para obtener entrada_sabado y salida_sabado
+                $horarioPorRol = \App\Models\HorarioPorRol::where('id_rol', $registro->personal->id_rol)->first();
+                
                 return [
                     'codigo_persona' => $registro->codigo_persona,
                     'nombre' => $registro->personal->nombre_persona ?? 'Sin nombre',
+                    'id_rol' => $registro->personal->id_rol,
+                    'entrada_sabado' => $horarioPorRol?->entrada_sabado ? substr($horarioPorRol->entrada_sabado, 0, 5) : null,
+                    'salida_sabado' => $horarioPorRol?->salida_sabado ? substr($horarioPorRol->salida_sabado, 0, 5) : null,
                     'fecha' => $fecha,
                     'horas' => $registro->horas ?? []
                 ];
@@ -915,6 +922,172 @@ class AsistenciaPersonalController extends Controller
         $minutos = intdiv($segundos % 3600, 60);
         $secs = $segundos % 60;
         return sprintf('%02d:%02d:%02d', $horas, $minutos, $secs);
+    }
+
+    /**
+     * Guardar hora extra agregada manualmente
+     */
+    public function guardarHoraExtraAgregada(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'codigo_persona' => 'required|exists:personal,codigo_persona',
+                'id_reporte' => 'required|exists:reportes_personal,id',
+                'fecha' => 'required|date_format:Y-m-d',
+                'horas_agregadas' => 'required|numeric|min:0|max:24',
+                'novedad' => 'nullable|string|max:1000',
+            ]);
+
+            $horaExtraAgregada = \App\Models\HoraExtraAgregada::updateOrCreate(
+                [
+                    'codigo_persona' => $request->codigo_persona,
+                    'id_reporte' => $request->id_reporte,
+                    'fecha' => $request->fecha,
+                ],
+                [
+                    'horas_agregadas' => $request->horas_agregadas,
+                    'novedad' => $request->novedad,
+                    'usuario_id' => auth()->id(),
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hora extra agregada correctamente',
+                'data' => $horaExtraAgregada
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la hora extra: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener todas las personas disponibles (para búsqueda en modal)
+     */
+    public function obtenerTodasLasPersonas(): JsonResponse
+    {
+        try {
+            $personas = Personal::select('codigo_persona', 'nombre_persona', 'id_rol')
+                ->orderBy('nombre_persona', 'asc')
+                ->get()
+                ->map(function($persona) {
+                    return [
+                        'codigo_persona' => $persona->codigo_persona,
+                        'nombre' => $persona->nombre_persona,
+                        'id_rol' => $persona->id_rol,
+                        'nombre_persona' => $persona->nombre_persona
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $personas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener personas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener horas extras agregadas para múltiples personas (BATCH)
+     * Optimizado para cargar datos de múltiples personas en una sola consulta
+     */
+    public function obtenerHorasExtrasAgregadasBatch(Request $request): JsonResponse
+    {
+        try {
+            $codigosPersonas = $request->input('codigos_personas', []);
+            
+            if (empty($codigosPersonas)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => []
+                ]);
+            }
+            
+            // Consulta única para todas las personas
+            $horasExtras = \App\Models\HoraExtraAgregada::whereIn('codigo_persona', $codigosPersonas)
+                ->get();
+
+            // Agrupar por persona y fecha
+            $agrupadas = [];
+            foreach ($horasExtras as $hora) {
+                $codigoPersona = $hora->codigo_persona;
+                $fechaKey = $hora->fecha instanceof \Carbon\Carbon 
+                    ? $hora->fecha->format('Y-m-d')
+                    : $hora->fecha;
+                
+                if (!isset($agrupadas[$codigoPersona])) {
+                    $agrupadas[$codigoPersona] = [];
+                }
+                
+                if (!isset($agrupadas[$codigoPersona][$fechaKey])) {
+                    $agrupadas[$codigoPersona][$fechaKey] = [];
+                }
+                
+                $agrupadas[$codigoPersona][$fechaKey][] = [
+                    'id' => $hora->id,
+                    'horas_agregadas' => floatval($hora->horas_agregadas),
+                    'novedad' => $hora->novedad,
+                    'fecha' => $fechaKey
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $agrupadas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener horas extras: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener horas extras agregadas para una persona
+     */
+    public function obtenerHorasExtrasAgregadas(string $codigoPersona): JsonResponse
+    {
+        try {
+            $horasExtras = \App\Models\HoraExtraAgregada::where('codigo_persona', $codigoPersona)
+                ->get();
+
+            // Agrupar por fecha formateada
+            $agrupadas = [];
+            foreach ($horasExtras as $hora) {
+                $fechaKey = $hora->fecha instanceof \Carbon\Carbon 
+                    ? $hora->fecha->format('Y-m-d')
+                    : $hora->fecha;
+                
+                if (!isset($agrupadas[$fechaKey])) {
+                    $agrupadas[$fechaKey] = [];
+                }
+                
+                $agrupadas[$fechaKey][] = [
+                    'id' => $hora->id,
+                    'horas_agregadas' => floatval($hora->horas_agregadas),
+                    'novedad' => $hora->novedad,
+                    'fecha' => $fechaKey
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $agrupadas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener horas extras: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

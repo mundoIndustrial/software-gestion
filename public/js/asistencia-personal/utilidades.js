@@ -23,15 +23,23 @@ const AsistenciaUtilidades = (() => {
 
     /**
      * Calcular hora extra basado en total de minutos trabajados
+     * Para rol mixto (id=21) en sábado: hora extra desde 16:56 (8 horas 56 minutos)
      */
-    function calcularHoraExtra(totalMinutos, esDiaSabado = false) {
+    function calcularHoraExtra(totalMinutos, esDiaSabado = false, idRol = null) {
         let umbralMinutos;
         let minutosBase;
         
-        if (esDiaSabado) {
+        // Lógica especial para rol mixto (id 21) en sábado
+        if (esDiaSabado && idRol === 21) {
+            // Rol mixto en sábado: jornada de 8 horas (08:00 a 16:00)
+            umbralMinutos = (8 * 60) + 56; // 8 horas y 56 minutos = 536 minutos
+            minutosBase = 8 * 60; // 8 horas = 480 minutos
+        } else if (esDiaSabado) {
+            // Otros roles en sábado: jornada de 4 horas
             umbralMinutos = (4 * 60) + 56; // 4 horas y 56 minutos = 296 minutos
             minutosBase = 4 * 60; // 4 horas = 240 minutos
         } else {
+            // Otros días: jornada de 8 horas
             umbralMinutos = (8 * 60) + 56; // 8 horas y 56 minutos = 536 minutos
             minutosBase = 8 * 60; // 8 horas = 480 minutos
         }
@@ -59,7 +67,7 @@ const AsistenciaUtilidades = (() => {
     /**
      * Calcular horas trabajadas con validación inteligente de jornada
      */
-    function calcularHorasTrabajadasAvanzado(horas, fecha = null) {
+    function calcularHorasTrabajadasAvanzado(horas, fecha = null, idRol = null) {
         if (!horas || horas.length === 0) {
             return {
                 horasTotales: '0:00:00',
@@ -80,6 +88,7 @@ const AsistenciaUtilidades = (() => {
         
         console.log('Minutos ordenados:', minutosArray);
         console.log('¿Es sábado?:', diaSabado);
+        console.log('ID Rol:', idRol);
         
         const horasValidas = [];
         for (let i = 0; i < minutosArray.length; i++) {
@@ -104,7 +113,7 @@ const AsistenciaUtilidades = (() => {
         }
         
         let registrosAUsar = horasValidas;
-        if (horasValidas.length > 4) {
+        if (horasValidas.length > 4 && !(idRol === 21 && !diaSabado)) {
             console.log(`Más de 4 registros detectados (${horasValidas.length}). Usando los primeros 4.`);
             registrosAUsar = horasValidas.slice(0, 4);
         }
@@ -112,7 +121,11 @@ const AsistenciaUtilidades = (() => {
         let registrosFaltantes = [];
         let jornada_completa = false;
         
-        if (diaSabado) {
+        // Lógica especial para rol 21 entre semana: contar desde primera a última marca
+        if (!diaSabado && idRol === 21) {
+            jornada_completa = horasValidas.length >= 2;
+            registrosFaltantes = [];
+        } else if (diaSabado) {
             jornada_completa = registrosAUsar.length >= 2;
             if (registrosAUsar.length === 1) {
                 registrosFaltantes = ['salida_mediodía'];
@@ -133,7 +146,7 @@ const AsistenciaUtilidades = (() => {
         console.log('¿Jornada completa?:', jornada_completa);
         
         let excepcion = false;
-        if (!diaSabado && registrosAUsar.length === 3 && registrosFaltantes.includes('salida_final')) {
+        if (!diaSabado && idRol !== 21 && registrosAUsar.length === 3 && registrosFaltantes.includes('salida_final')) {
             console.log('EXCEPCIÓN DETECTADA: Falta solo salida de la tarde. Se asume jornada de 8 horas.');
             excepcion = true;
             return {
@@ -150,7 +163,18 @@ const AsistenciaUtilidades = (() => {
         let bloqueMañanaCalculado = false;
         let bloqueTardeCalculado = false;
         
-        if (diaSabado) {
+        // Rol 21 entre semana: contar desde primera a última marca
+        if (!diaSabado && idRol === 21) {
+            if (horasValidas.length >= 2) {
+                const primera_marca = horasValidas[0];
+                const ultima_marca = horasValidas[horasValidas.length - 1];
+                
+                const duracion = ultima_marca - primera_marca;
+                totalMinutos = duracion;
+                bloqueMañanaCalculado = true;
+                console.log(`[ROL 21] Primera marca a última marca: ${primera_marca} → ${ultima_marca} = ${duracion.toFixed(2)} minutos`);
+            }
+        } else if (diaSabado) {
             if (registrosAUsar.length >= 2) {
                 const entrada_manana = registrosAUsar[0];
                 const salida_medidia = registrosAUsar[1];

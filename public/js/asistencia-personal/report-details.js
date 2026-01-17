@@ -10,6 +10,24 @@ const AsistenciaReportDetails = (() => {
     function mostrarTab(fecha, registros) {
         console.log('Mostrando tab para fecha:', fecha, 'Registros:', registros);
         
+        // Asegurarse que existe la estructura HTML estándar
+        const tabContent = document.getElementById('tabContent');
+        if (tabContent && !document.getElementById('recordsTable')) {
+            tabContent.innerHTML = `
+                <div class="records-table-wrapper">
+                    <table class="records-table" id="recordsTable">
+                        <thead>
+                            <tr id="recordsTableHeader">
+                                <th>Persona</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
         // Guardar registros originales para búsqueda
         AsistenciaBusqueda.setRegistrosOriginales(fecha, registros);
         
@@ -18,6 +36,7 @@ const AsistenciaReportDetails = (() => {
             const registrosProcesados = registros.map(registro => ({
                 nombre: registro.nombre,
                 codigo: registro.codigo_persona,
+                id_rol: registro.id_rol,
                 horas: registro.horas && typeof registro.horas === 'object' ? Object.values(registro.horas) : []
             }));
             AsistenciaHorasTrabajadas.actualizarVista(registrosProcesados);

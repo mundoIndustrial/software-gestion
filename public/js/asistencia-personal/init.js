@@ -1,11 +1,15 @@
 /**
  * Módulo Principal - Asistencia Personal
- * Inicialización y coordinación del sistema
+ * Inicialización y coordinación del sistema con Menú Hamburguesa
  */
 
 const AsistenciaPersonal = (() => {
     let registrosOriginalesPorFecha = {};
     let reporteActual = null;
+    let menuOpen = false;
+    let registrosPorFechaActual = {};
+    let fechasActuales = [];
+    let vistaAnterior = 'registros'; // Guardar la vista anterior
 
     /**
      * Inicializar módulo principal
@@ -44,6 +48,8 @@ const AsistenciaPersonal = (() => {
         }
         
         modal.style.display = 'block';
+        menuOpen = false;
+        toggleMenu(false);
         
         fetchReportDetails(reportId, function(data) {
             if (data.success && data.reporte) {
@@ -64,7 +70,10 @@ const AsistenciaPersonal = (() => {
                     registrosPorFecha[fecha].push(registro);
                 });
                 
+                // Guardar datos para uso en el menú
+                registrosPorFechaActual = registrosPorFecha;
                 const fechas = Object.keys(registrosPorFecha).sort();
+                fechasActuales = fechas;
                 fechas.forEach((fecha, index) => {
                     const tabBtn = document.createElement('button');
                     tabBtn.className = 'tab-button' + (index === 0 ? ' active' : '');
@@ -98,62 +107,242 @@ const AsistenciaPersonal = (() => {
     function setupModalButtons(reportId) {
         const modal = document.getElementById('reportDetailModal');
         
+        // Configurar botón cerrar
         const closeBtn = modal.querySelector('.btn-modal-close-detail');
         if (closeBtn && !closeBtn.dataset.listenerAttached) {
             closeBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 modal.style.display = 'none';
+                menuOpen = false;
+                toggleMenu(false);
             });
             closeBtn.dataset.listenerAttached = true;
         }
         
+        // Cerrar modal al hacer click fuera
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
                 modal.style.display = 'none';
+                menuOpen = false;
+                toggleMenu(false);
             }
         }, { once: false });
         
-        const btnAusencias = document.getElementById('btnAusenciasDelDia');
-        if (btnAusencias && !btnAusencias.dataset.listenerAttached) {
-            btnAusencias.addEventListener('click', function(e) {
+        // Configurar menú hamburguesa
+        setupHamburgerMenu(reportId);
+    }
+
+    /**
+     * Configurar menú hamburguesa
+     */
+    function setupHamburgerMenu(reportId) {
+        const btnHamburger = document.getElementById('btnMenuHamburguesa');
+        const navigationMenu = document.getElementById('navigationMenu');
+        
+        if (btnHamburger && !btnHamburger.dataset.listenerAttached) {
+            btnHamburger.addEventListener('click', function(e) {
                 e.preventDefault();
-                AsistenciaAbsencias.cargar(reportId);
+                e.stopPropagation();
+                menuOpen = !menuOpen;
+                toggleMenu(menuOpen);
             });
-            btnAusencias.dataset.listenerAttached = true;
+            btnHamburger.dataset.listenerAttached = true;
         }
         
-        const btnHoras = document.getElementById('btnHorasTrabajadas');
-        if (btnHoras && !btnHoras.dataset.listenerAttached) {
-            btnHoras.addEventListener('click', function(e) {
-                e.preventDefault();
-                AsistenciaHorasTrabajadas.mostrarVista();
-            });
-            btnHoras.dataset.listenerAttached = true;
+        // Agregar listeners a los items del menú
+        if (navigationMenu) {
+            const menuHorasTrabajadas = navigationMenu.querySelector('#menuHorasTrabajadas');
+            const menuRegistros = navigationMenu.querySelector('#menuRegistros');
+            const menuTotalHorasExtras = navigationMenu.querySelector('#menuTotalHorasExtras');
+            
+            if (menuHorasTrabajadas && !menuHorasTrabajadas.dataset.listenerAttached) {
+                menuHorasTrabajadas.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Navegando a Horas Trabajadas');
+                    
+                    // Si venimos de Total Horas Extras, restaurar vista anterior
+                    const tabsContainer = document.querySelector('.tabs-container');
+                    if (tabsContainer && tabsContainer.style.display === 'none') {
+                        volverAHorasTrabajadas();
+                    } else {
+                        AsistenciaHorasTrabajadas.mostrarVista();
+                    }
+                    
+                    vistaAnterior = 'horas-trabajadas';
+                    menuOpen = false;
+                    toggleMenu(false);
+                });
+                menuHorasTrabajadas.dataset.listenerAttached = true;
+            }
+            
+            if (menuRegistros && !menuRegistros.dataset.listenerAttached) {
+                menuRegistros.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Navegando a Registros');
+                    
+                    // Si venimos de Total Horas Extras, restaurar vista anterior
+                    const tabsContainer = document.querySelector('.tabs-container');
+                    if (tabsContainer && tabsContainer.style.display === 'none') {
+                        volverARegistros();
+                    } else {
+                        volverARegistros();
+                    }
+                    
+                    vistaAnterior = 'registros';
+                    menuOpen = false;
+                    toggleMenu(false);
+                });
+                menuRegistros.dataset.listenerAttached = true;
+            }
+            
+            if (menuTotalHorasExtras && !menuTotalHorasExtras.dataset.listenerAttached) {
+                menuTotalHorasExtras.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Navegando a Total Horas Extras');
+                    console.log('Vista anterior guardada:', vistaAnterior);
+                    
+                    if (reporteActual) {
+                        AsistenciaTotalHorasExtras.mostrarVista(reporteActual);
+                        setTimeout(() => {
+                            inicializarBusquedaTotalHorasExtras();
+                        }, 100);
+                    }
+                    
+                    menuOpen = false;
+                    toggleMenu(false);
+                });
+                menuTotalHorasExtras.dataset.listenerAttached = true;
+            }
         }
         
-        const btnCerrar = document.getElementById('btnCerrarReporte');
-        if (btnCerrar && !btnCerrar.dataset.listenerAttached) {
-            btnCerrar.addEventListener('click', function(e) {
-                e.preventDefault();
-                modal.style.display = 'none';
-            });
-            btnCerrar.dataset.listenerAttached = true;
-        }
+        // Cerrar menú al hacer click fuera
+        document.addEventListener('click', function(e) {
+            if (navigationMenu && btnHamburger && 
+                !navigationMenu.contains(e.target) && 
+                !btnHamburger.contains(e.target) && 
+                menuOpen) {
+                menuOpen = false;
+                toggleMenu(false);
+            }
+        });
+    }
+
+    /**
+     * Toggle menú hamburguesa
+     */
+    function toggleMenu(show) {
+        const btnHamburger = document.getElementById('btnMenuHamburguesa');
+        const navigationMenu = document.getElementById('navigationMenu');
         
-        const btnTotalHorasExtras = document.getElementById('btnTotalHorasExtras');
-        if (btnTotalHorasExtras && !btnTotalHorasExtras.dataset.listenerAttached) {
-            btnTotalHorasExtras.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (reporteActual) {
-                    AsistenciaTotalHorasExtras.mostrarVista(reporteActual);
-                    // Inicializar búsqueda para tabla de horas extras
-                    setTimeout(() => {
-                        inicializarBusquedaTotalHorasExtras();
-                    }, 100);
+        if (navigationMenu) {
+            if (show) {
+                navigationMenu.style.display = 'flex';
+                if (btnHamburger) {
+                    btnHamburger.classList.add('active');
                 }
-            });
-            btnTotalHorasExtras.dataset.listenerAttached = true;
+            } else {
+                navigationMenu.style.display = 'none';
+                if (btnHamburger) {
+                    btnHamburger.classList.remove('active');
+                }
+            }
         }
+    }
+
+    /**
+     * Volver a registros
+     */
+    function volverARegistros() {
+        // Limpiar y reconstruir la estructura HTML estándar
+        const tabContent = document.getElementById('tabContent');
+        if (tabContent) {
+            tabContent.innerHTML = `
+                <div class="records-table-wrapper">
+                    <table class="records-table" id="recordsTable">
+                        <thead>
+                            <tr id="recordsTableHeader">
+                                <th>Persona</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        // Resetear la vista de horas trabajadas
+        AsistenciaBusqueda.setVistaHorasTrabajadas(false);
+        
+        if (fechasActuales.length > 0) {
+            const primerFecha = fechasActuales[0];
+            const registrosTab = registrosPorFechaActual[primerFecha];
+            
+            // Actualizar tabs visuales
+            const allTabs = document.querySelectorAll('.tab-button');
+            allTabs.forEach(t => t.classList.remove('active'));
+            const firstTab = document.querySelector('.tab-button:first-of-type');
+            if (firstTab) {
+                firstTab.classList.add('active');
+            }
+            
+            // Mostrar la tabla de registros
+            setTimeout(() => {
+                AsistenciaReportDetails.mostrarTab(primerFecha, registrosTab);
+            }, 100);
+        }
+    }
+
+    /**
+     * Volver a horas trabajadas
+     */
+    function volverAHorasTrabajadas() {
+        // Limpiar y reconstruir la estructura HTML estándar
+        const tabContent = document.getElementById('tabContent');
+        if (tabContent) {
+            tabContent.innerHTML = `
+                <div class="records-table-wrapper">
+                    <table class="records-table" id="recordsTable">
+                        <thead>
+                            <tr id="recordsTableHeader">
+                                <th>Persona</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        // Actualizar tabs visuales
+        const allTabs = document.querySelectorAll('.tab-button');
+        allTabs.forEach(t => t.classList.remove('active'));
+        const firstTab = document.querySelector('.tab-button:first-of-type');
+        if (firstTab) {
+            firstTab.classList.add('active');
+        }
+        
+        // Establecer la bandera de vista de horas trabajadas
+        AsistenciaBusqueda.setVistaHorasTrabajadas(true);
+        
+        setTimeout(() => {
+            if (fechasActuales.length > 0) {
+                const primerFecha = fechasActuales[0];
+                const registrosTab = registrosPorFechaActual[primerFecha];
+                
+                // Mostrar la vista con los datos correctos
+                const registrosProcesados = registrosTab.map(registro => ({
+                    nombre: registro.nombre,
+                    codigo: registro.codigo_persona,
+                    id_rol: registro.id_rol,
+                    horas: registro.horas && typeof registro.horas === 'object' ? Object.values(registro.horas) : []
+                }));
+                
+                AsistenciaHorasTrabajadas.actualizarVista(registrosProcesados, primerFecha);
+                AsistenciaBusqueda.inicializarBusquedaHoras(primerFecha);
+            }
+        }, 100);
     }
 
     /**
@@ -199,3 +388,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('Asistencia Personal module loaded');
+

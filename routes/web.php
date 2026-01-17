@@ -842,6 +842,14 @@ Route::middleware(['auth', 'verified'])->prefix('asistencia-personal')->name('as
         ->name('reportes.ausencias');
     Route::post('/guardar-asistencia-detallada', [App\Http\Controllers\API\AsistenciaDetalladaController::class, 'guardarCambios'])
         ->name('guardar-asistencia-detallada');
+    Route::post('/guardar-hora-extra-agregada', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'guardarHoraExtraAgregada'])
+        ->name('guardar-hora-extra-agregada');
+    Route::get('/obtener-todas-las-personas', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'obtenerTodasLasPersonas'])
+        ->name('obtener-todas-las-personas');
+    Route::post('/obtener-horas-extras-agregadas-batch', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'obtenerHorasExtrasAgregadasBatch'])
+        ->name('obtener-horas-extras-agregadas-batch');
+    Route::get('/obtener-horas-extras-agregadas/{codigo_persona}', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'obtenerHorasExtrasAgregadas'])
+        ->name('obtener-horas-extras-agregadas');
 });
 
 // ========================================

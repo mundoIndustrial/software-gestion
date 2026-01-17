@@ -10,6 +10,27 @@ const AsistenciaHorasTrabajadas = (() => {
     function mostrarVista() {
         AsistenciaBusqueda.setVistaHorasTrabajadas(true);
         
+        // Asegurarse que existe la estructura HTML estándar
+        const tabContent = document.getElementById('tabContent');
+        if (tabContent) {
+            // Limpiar y reconstruir si es necesario
+            if (!document.getElementById('recordsTable')) {
+                tabContent.innerHTML = `
+                    <div class="records-table-wrapper">
+                        <table class="records-table" id="recordsTable">
+                            <thead>
+                                <tr id="recordsTableHeader">
+                                    <th>Persona</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+        
         const tabActivo = document.querySelector('.tab-button.active');
         const fechaActual = tabActivo ? tabActivo.getAttribute('data-fecha') : 'general';
         
@@ -34,7 +55,7 @@ const AsistenciaHorasTrabajadas = (() => {
     /**
      * Actualizar vista de horas trabajadas
      */
-    function actualizarVista(registros = null) {
+    function actualizarVista(registros = null, fechaExplicita = null) {
         const recordsTableBody = document.getElementById('recordsTableBody');
         const recordsTableHeader = document.getElementById('recordsTableHeader');
         
@@ -45,7 +66,15 @@ const AsistenciaHorasTrabajadas = (() => {
         
         if (!registros) {
             registros = [];
-            document.querySelectorAll('#recordsTableBody tr').forEach(row => {
+            const rowsExistentes = document.querySelectorAll('#recordsTableBody tr');
+            
+            // Si no hay filas en la tabla, no proceder
+            if (rowsExistentes.length === 0) {
+                console.log('No hay registros en la tabla');
+                return;
+            }
+            
+            rowsExistentes.forEach(row => {
                 const cells = row.querySelectorAll('td');
                 if (cells.length >= 2) {
                     const nombre = cells[0].textContent.trim();
@@ -68,8 +97,9 @@ const AsistenciaHorasTrabajadas = (() => {
             });
         }
         
-        const tabActivo = document.querySelector('.tab-button.active');
-        const fechaActual = tabActivo ? tabActivo.getAttribute('data-fecha') : 'general';
+        let tabActivo = document.querySelector('.tab-button.active');
+        let fechaActual = fechaExplicita || (tabActivo ? tabActivo.getAttribute('data-fecha') : 'general');
+        
         
         // Crear encabezado con botones de filtro
         let headerHTML = `
@@ -151,11 +181,11 @@ const AsistenciaHorasTrabajadas = (() => {
             };
             
             if (registro.horas && registro.horas.length > 0) {
-                calcResult = AsistenciaUtilidades.calcularHorasTrabajadasAvanzado(registro.horas, fechaActual);
+                calcResult = AsistenciaUtilidades.calcularHorasTrabajadasAvanzado(registro.horas, fechaActual, registro.id_rol);
             }
             
             const totalMinutos = AsistenciaUtilidades.horaAMinutos(calcResult.horasTotales);
-            const horaExtraResult = AsistenciaUtilidades.calcularHoraExtra(totalMinutos, calcResult.esSabado);
+            const horaExtraResult = AsistenciaUtilidades.calcularHoraExtra(totalMinutos, calcResult.esSabado, registro.id_rol);
             
             let colorEstado = '#6c757d';
             let iconoEstado = '⚠️';
