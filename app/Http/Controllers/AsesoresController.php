@@ -1446,4 +1446,52 @@ class AsesoresController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener datos de recibos dinámicos para un pedido
+     */
+    public function obtenerDatosRecibos($id)
+    {
+        try {
+            $pedidoId = $id;
+            \Log::info('[RECIBOS] Obteniendo datos de recibos para pedido: ' . $pedidoId);
+
+            // Obtener el pedido (solo PedidoProduccion tiene recibos de procesos)
+            $pedido = PedidoProduccion::find($pedidoId);
+
+            if (!$pedido) {
+                return response()->json([
+                    'error' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            // Verificar que pertenece al usuario autenticado
+            if ($pedido->asesor_id && $pedido->asesor_id !== Auth::id()) {
+                return response()->json([
+                    'error' => 'No tienes permiso para ver este pedido',
+                ], 403);
+            }
+
+            // Obtener datos usando el repository
+            $datos = $this->pedidoProduccionRepository->obtenerDatosRecibos($pedidoId);
+
+            \Log::info('[RECIBOS] Datos obtenidos correctamente', [
+                'pedido_id' => $pedidoId,
+                'prendas' => count($datos['prendas']),
+            ]);
+
+            return response()->json($datos);
+
+        } catch (\Exception $e) {
+            \Log::error('[RECIBOS] Error obteniendo datos', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error obteniendo datos de los recibos: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

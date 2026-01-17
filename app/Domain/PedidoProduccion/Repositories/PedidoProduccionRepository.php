@@ -329,4 +329,174 @@ class PedidoProduccionRepository
 
         return $datos;
     }
+
+    /**
+     * Obtener datos para los recibos dinámicos
+     * Formato específico para ReceiptManager en receipt-dynamic.blade.php
+     */
+    public function obtenerDatosRecibos(int $pedidoId): array
+    {
+        $pedido = $this->obtenerPorId($pedidoId);
+        
+        if (!$pedido) {
+            throw new \Exception('Pedido no encontrado');
+        }
+
+        // Construir datos base iguales a factura
+        $datos = [
+            'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
+            'numero_pedido_temporal' => $pedido->numero_pedido ?? 0,
+            'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
+            'asesora' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
+            'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
+            'fecha' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+            'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+            'observaciones' => $pedido->observaciones ?? '',
+            'prendas' => [],
+        ];
+
+        // Procesar prendas para recibos
+        foreach ($pedido->prendas as $prendaIndex => $prenda) {
+            $cantidadTotal = 0;
+            $colores = [];
+            $telas = [];
+            $referencias = [];
+            $especificaciones = [];
+
+            // Procesar variantes
+            foreach ($prenda->variantes as $variante) {
+                $cantidadTotal += $variante->cantidad ?? 0;
+                
+                $spec = [
+                    'talla' => $variante->talla ?? '',
+                    'cantidad' => $variante->cantidad ?? 0,
+                    'manga' => null,
+                    'manga_obs' => $variante->manga_obs ?? '',
+                    'broche' => null,
+                    'broche_obs' => $variante->broche_boton_obs ?? '',
+                    'bolsillos' => $variante->tiene_bolsillos ?? false,
+                    'bolsillos_obs' => $variante->bolsillos_obs ?? '',
+                ];
+                
+                // Obtener tipo de manga
+                if ($variante->tipo_manga_id) {
+                    try {
+                        $manga = \DB::table('tipos_manga')
+                            ->where('id', $variante->tipo_manga_id)
+                            ->value('nombre');
+                        $spec['manga'] = $manga;
+                    } catch (\Exception $e) {
+                        \Log::debug('[RECIBOS] Error obteniendo tipo de manga: ' . $e->getMessage());
+                    }
+                }
+                
+                // Obtener tipo de broche/botón
+                if ($variante->tipo_broche_boton_id) {
+                    try {
+                        $broche = \DB::table('tipos_broche_boton')
+                            ->where('id', $variante->tipo_broche_boton_id)
+                            ->value('nombre');
+                        $spec['broche'] = $broche;
+                    } catch (\Exception $e) {
+                        \Log::debug('[RECIBOS] Error obteniendo tipo de broche: ' . $e->getMessage());
+                    }
+                }
+                
+                $especificaciones[] = $spec;
+                
+                // Obtener tela y referencia
+                if ($variante->tela_id) {
+                    try {
+                        $telaData = \DB::table('telas_prenda')
+                            ->where('id', $variante->tela_id)
+                            ->select('nombre', 'referencia')
+                            ->first();
+                        
+                        if ($telaData) {
+                            if ($telaData->nombre && !in_array($telaData->nombre, $telas)) {
+                                $telas[] = $telaData->nombre;
+                            }
+                            if ($telaData->referencia && !in_array($telaData->referencia, $referencias)) {
+                                $referencias[] = $telaData->referencia;
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::debug('[RECIBOS] Error obteniendo tela: ' . $e->getMessage());
+                    }
+                }
+                
+                // Obtener color
+                if ($variante->color_id) {
+                    try {
+                        $color = \DB::table('colores_prenda')
+                            ->where('id', $variante->color_id)
+                            ->value('nombre');
+                        if ($color && !in_array($color, $colores)) {
+                            $colores[] = $color;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::debug('[RECIBOS] Error obteniendo color: ' . $e->getMessage());
+                    }
+                }
+            }
+
+            // Tallas desde JSON
+            $tallas = [];
+            if ($prenda->cantidad_talla) {
+                if (is_array($prenda->cantidad_talla)) {
+                    $tallas = $prenda->cantidad_talla;
+                } else if (is_string($prenda->cantidad_talla)) {
+                    $tallas = json_decode($prenda->cantidad_talla, true) ?? [];
+                }
+            }
+
+            // Procesar procesos
+            $procesos = [];
+            foreach ($prenda->procesos as $proc) {
+                $procTallas = is_array($proc->cantidad_talla) ? $proc->cantidad_talla : [];
+                
+                // Ubicaciones
+                $ubicaciones = [];
+                if ($proc->ubicaciones) {
+                    if (is_array($proc->ubicaciones)) {
+                        $ubicaciones = $proc->ubicaciones;
+                    } else if (is_string($proc->ubicaciones)) {
+                        $ubicaciones = json_decode($proc->ubicaciones, true) ?? [];
+                    }
+                }
+                
+                // Imágenes del proceso
+                $imagenesProceso = $proc->imagenes ? $proc->imagenes->map(fn($img) => $img->url)->toArray() : [];
+                
+                $proc_item = [
+                    'nombre' => $proc->tipo ?? 'Proceso',
+                    'tipo' => $proc->tipo ?? 'Proceso',
+                    'tallas' => $procTallas,
+                    'observaciones' => $proc->observaciones ?? '',
+                    'ubicaciones' => $ubicaciones,
+                    'imagenes' => $imagenesProceso,
+                ];
+                
+                $procesos[] = $proc_item;
+            }
+
+            // Construir prenda para recibos
+            $prendasFormato = [
+                'numero' => $prendaIndex + 1,
+                'nombre' => $prenda->nombre_prenda,
+                'origen' => $prenda->origen ?? 'confección',  // ✅ IMPORTANTE PARA TITULOS
+                'descripcion' => $prenda->descripcion,
+                'tela' => !empty($telas) ? implode(', ', $telas) : null,
+                'color' => !empty($colores) ? implode(', ', $colores) : null,
+                'ref' => !empty($referencias) ? implode(', ', $referencias) : null,
+                'tallas' => $tallas,
+                'variantes' => $especificaciones,
+                'procesos' => $procesos,
+            ];
+
+            $datos['prendas'][] = $prendasFormato;
+        }
+
+        return $datos;
+    }
 }

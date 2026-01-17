@@ -453,4 +453,227 @@ function mostrarErrorNotificacion(titulo, mensaje) {
     }, 5000);
 }
 
+/**
+ * Abre la vista de recibos dinámicos para un pedido
+ */
+window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex = null) {
+    console.log('📋 [RECIBOS] Abriendo recibos para pedido:', numeroPedido, 'prenda:', prendasIndex);
+    
+    try {
+        // Mostrar spinner de carga
+        mostrarCargando('Cargando recibos...');
+        
+        // Obtener datos de recibos del servidor
+        const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const datos = await response.json();
+        console.log('✅ [RECIBOS] Datos del pedido obtenidos:', datos);
+        
+        // Ocultar spinner
+        ocultarCargando();
+        
+        // Crear modal con los recibos
+        crearModalRecibosDesdeListaPedidos(datos, prendasIndex);
+        
+    } catch (error) {
+        console.error('❌ [RECIBOS] Error cargando recibos:', error);
+        ocultarCargando();
+        
+        mostrarErrorNotificacion(
+            'Error',
+            'No se pudo cargar los recibos: ' + error.message
+        );
+    }
+};
+
+/**
+ * Crea y muestra el modal con los recibos dinámicos
+ * Usa el componente order-detail-modal.blade.php existente
+ */
+function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
+    console.log('🎨 [RECIBOS] Creando modal de recibos usando order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
+    
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-recibos-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999998;
+        padding: 1rem;
+    `;
+    
+    // Contenedor del modal - SIN FONDO
+    const modal = document.createElement('div');
+    modal.id = 'receipt-modal-content';
+    modal.style.cssText = `
+        background: transparent;
+        border-radius: 0;
+        max-width: 100%;
+        width: auto;
+        max-height: 90vh;
+        overflow-y: visible;
+        box-shadow: none;
+        position: relative;
+        padding: 0;
+    `;
+    
+    // Placeholder para cargar el componente
+    const componentContainer = document.createElement('div');
+    componentContainer.id = 'order-detail-modal-container';
+    componentContainer.style.padding = '0';
+    modal.appendChild(componentContainer);
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Cerrar cuando se hace clic fuera
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+    
+    // Cerrar con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.parentElement) {
+            overlay.remove();
+        }
+    });
+    
+    // Cargar el componente order-detail-modal
+    cargarComponenteOrderDetailModal(componentContainer, datos, prendasIndex);
+}
+
+/**
+ * Carga el componente order-detail-modal y lo adapta para recibos
+ */
+/**
+ * Carga el componente order-detail-modal e inyecta los datos
+ */
+function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null) {
+    console.log('📦 [RECIBOS] Inyectando componente order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
+    
+    // Usar directamente el HTML que funciona (sin fetch, para evitar problemas con Blade)
+    contenedor.innerHTML = `
+        <link rel="stylesheet" href="/css/order-detail-modal.css">
+        
+        <div class="order-detail-modal-container" style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+            <div class="order-detail-card">
+                <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+                <div id="order-date" class="order-date">
+                    <div class="fec-label">FECHA</div>
+                    <div class="date-boxes">
+                        <div class="date-box day-box" id="receipt-day"></div>
+                        <div class="date-box month-box" id="receipt-month"></div>
+                        <div class="date-box year-box" id="receipt-year"></div>
+                    </div>
+                </div>
+                <div id="order-asesora" class="order-asesora">ASESORA: <span id="receipt-asesora-value"></span></div>
+                <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="receipt-forma-pago-value"></span></div>
+                <div id="order-cliente" class="order-cliente">CLIENTE: <span id="receipt-cliente-value"></span></div>
+                <div id="order-descripcion" class="order-descripcion">
+                    <div id="descripcion-text"></div>
+                </div>
+                <h2 class="receipt-title" id="receipt-title">RECIBO DE COSTURA</h2>
+                <div class="arrow-container">
+                    <button id="prev-arrow" class="arrow-btn" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <button id="next-arrow" class="arrow-btn" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <div id="order-pedido" class="pedido-number"></div>
+                <div class="separator-line"></div>
+                <div class="signature-section">
+                    <div class="signature-field">
+                        <span>ENCARGADO DE ORDEN:</span>
+                        <span id="encargado-value"></span>
+                    </div>
+                    <div class="vertical-separator"></div>
+                    <div class="signature-field">
+                        <span>PRENDAS ENTREGADAS:</span>
+                        <span id="prendas-entregadas-value"></span>
+                        <a href="#" id="ver-entregas" style="color: red; font-weight: bold;">VER ENTREGAS</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones flotantes para cambiar a galería de fotos -->
+        <div style="position: fixed; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 10000;">
+            <button id="btn-factura" type="button" title="Ver factura" onclick="toggleFactura()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                <i class="fas fa-receipt"></i>
+            </button>
+            <button id="btn-galeria" type="button" title="Ver galería" onclick="toggleGaleria()" style="width: 56px; height: 56px; border-radius: 50%; background: white; border: 2px solid #ddd; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                <i class="fas fa-images"></i>
+            </button>
+        </div>
+    `;
+    
+    // Crear counter de recibos si no existe
+    const arrowContainer = contenedor.querySelector('.arrow-container');
+    if (arrowContainer && !contenedor.querySelector('#receipt-counter')) {
+        const counter = document.createElement('span');
+        counter.id = 'receipt-counter';
+        counter.style.cssText = 'font-weight: bold; font-size: 14px;';
+        counter.innerHTML = 'Recibo <span id="receipt-number">1</span>/<span id="receipt-total">1</span>';
+        arrowContainer.appendChild(counter);
+    }
+    
+    // Ocultar elementos no necesarios
+    setTimeout(() => {
+        const encargadoValue = contenedor.querySelector('#encargado-value');
+        const prendasEntregadasValue = contenedor.querySelector('#prendas-entregadas-value');
+        if (encargadoValue) encargadoValue.parentElement.style.display = 'none';
+        if (prendasEntregadasValue) prendasEntregadasValue.parentElement.style.display = 'none';
+        
+        // Cargar ReceiptManager
+        if (typeof ReceiptManager === 'undefined') {
+            console.log('📦 [RECIBOS] Cargando ReceiptManager...');
+            cargarReceiptManager(() => {
+                window.receiptManager = new ReceiptManager(datos, prendasIndex);
+            });
+        } else {
+            window.receiptManager = new ReceiptManager(datos, prendasIndex);
+        }
+    }, 100);
+}
+
+/**
+ * Carga el script de ReceiptManager
+ */
+function cargarReceiptManager(callback) {
+    const script = document.createElement('script');
+    script.src = '/js/asesores/receipt-manager.js';
+    script.onload = callback;
+    script.onerror = () => {
+        console.error('❌ [RECIBOS] Error cargando ReceiptManager');
+        mostrarErrorNotificacion('Error', 'No se pudo cargar el gestor de recibos');
+    };
+    document.head.appendChild(script);
+}
+
 console.log('✅ [INVOICE LIST] invoice-from-list.js cargado correctamente');

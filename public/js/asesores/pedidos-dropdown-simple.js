@@ -129,8 +129,32 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
-        // Agregar divisor y opción de seguimiento
+        // Agregar divisor y opción de recibos de procesos con submenu
         dropdownHTML += `
+            <div style="height: 1px; background: #e5e7eb;"></div>
+            <div style="position: relative;">
+                <button onclick="abrirSubmenuRecibos(event, ${pedidoId})" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'">
+                    <span><i class="fas fa-receipt" style="color: #f59e0b;"></i> Ver Recibos</span>
+                    <i class="fas fa-chevron-right" style="font-size: 0.75rem;"></i>
+                </button>
+                <div class="submenu-recibos" style="display: none; position: absolute; left: 100%; top: 0; background: white; border: 1px solid #d1d5db; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 200px; z-index: 10000;">
+                    <div style="padding: 0.75rem; text-align: center; color: #6b7280; font-size: 0.8rem; font-style: italic;">Cargando prendas...</div>
+                </div>
+            </div>
             <div style="height: 1px; background: #e5e7eb;"></div>
             <button onclick="verSeguimiento(${pedido}); closeDropdown()" style="
                 width: 100%;
@@ -390,3 +414,102 @@ window.closeDropdown = function() {
         menu.style.display = 'none';
     });
 }
+
+/**
+ * Abre el submenu de recibos con las prendas disponibles
+ */
+window.abrirSubmenuRecibos = async function(event, pedidoId) {
+    event.stopPropagation();
+    
+    console.log('📋 [RECIBOS] Abriendo submenu de prendas para pedido:', pedidoId);
+    
+    const submenu = event.target.closest('button').nextElementSibling;
+    if (!submenu) return;
+    
+    // Mostrar submenu
+    submenu.style.display = 'block';
+    
+    // Si ya tiene contenido, no hacer fetch
+    if (submenu.dataset.cargado === 'true') {
+        return;
+    }
+    
+    try {
+        // Obtener prendas del servidor
+        const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}`);
+        }
+        
+        const datos = await response.json();
+        console.log('✅ [RECIBOS] Prendas obtenidas:', datos.prendas);
+        
+        // Generar opciones para cada prenda
+        let html = '';
+        
+        // Opción "Todas las prendas"
+        html += `
+            <button onclick="verRecibosDelPedido('', ${pedidoId}, null); closeDropdown(); event.stopPropagation();" style="
+                width: 100%;
+                text-align: left;
+                padding: 0.75rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #1e40af;
+                font-size: 0.8rem;
+                font-weight: 600;
+                transition: all 0.2s ease;
+                border-bottom: 1px solid #f0f0f0;
+            " onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='transparent'">
+                📋 Todas las prendas
+            </button>
+        `;
+        
+        // Opción para cada prenda
+        datos.prendas.forEach((prenda, idx) => {
+            html += `
+                <button onclick="verRecibosDelPedido('', ${pedidoId}, ${idx}); closeDropdown(); event.stopPropagation();" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.75rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.8rem;
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='#fef9e7'" onmouseout="this.style.background='transparent'">
+                    ${idx + 1}. ${prenda.nombre.toUpperCase()}
+                </button>
+            `;
+        });
+        
+        submenu.innerHTML = html;
+        submenu.dataset.cargado = 'true';
+        
+    } catch (error) {
+        console.error('❌ [RECIBOS] Error obteniendo prendas:', error);
+        submenu.innerHTML = `
+            <div style="padding: 0.75rem; text-align: center; color: #dc2626; font-size: 0.8rem;">
+                Error cargando prendas
+            </div>
+        `;
+    }
+};
+
+// Cerrar submenu cuando se hace clic fuera
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.submenu-recibos') && !e.target.closest('[onclick*="abrirSubmenuRecibos"]')) {
+        document.querySelectorAll('.submenu-recibos').forEach(submenu => {
+            submenu.style.display = 'none';
+        });
+    }
+});
