@@ -171,7 +171,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
         background: white;
         border-radius: 12px;
         width: 100%;
-        max-width: 900px;
+        max-width: 1400px;
         max-height: 90vh;
         overflow-y: auto;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
@@ -526,7 +526,7 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
     modal.style.cssText = `
         background: transparent;
         border-radius: 0;
-        max-width: 100%;
+        max-width: 95vw;
         width: auto;
         max-height: 90vh;
         overflow-y: visible;
@@ -620,16 +620,16 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Botones flotantes para cambiar a galería de fotos -->
-        <div style="position: fixed; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 10000;">
-            <button id="btn-factura" type="button" title="Ver factura" onclick="toggleFactura()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
-                <i class="fas fa-receipt"></i>
-            </button>
-            <button id="btn-galeria" type="button" title="Ver galería" onclick="toggleGaleria()" style="width: 56px; height: 56px; border-radius: 50%; background: white; border: 2px solid #ddd; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                <i class="fas fa-images"></i>
-            </button>
+            <!-- Botones flotantes para cambiar a galería de fotos -->
+            <div style="position: absolute; right: -80px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 10;">
+                <button id="btn-factura" type="button" title="Ver factura" onclick="toggleFactura()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                    <i class="fas fa-receipt"></i>
+                </button>
+                <button id="btn-galeria" type="button" title="Ver galería" onclick="toggleGaleria()" style="width: 56px; height: 56px; border-radius: 50%; background: white; border: 2px solid #ddd; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                    <i class="fas fa-images"></i>
+                </button>
+            </div>
         </div>
     `;
     
@@ -643,12 +643,9 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
         arrowContainer.appendChild(counter);
     }
     
-    // Ocultar elementos no necesarios
+    // Configurar elementos
     setTimeout(() => {
-        const encargadoValue = contenedor.querySelector('#encargado-value');
-        const prendasEntregadasValue = contenedor.querySelector('#prendas-entregadas-value');
-        if (encargadoValue) encargadoValue.parentElement.style.display = 'none';
-        if (prendasEntregadasValue) prendasEntregadasValue.parentElement.style.display = 'none';
+        // Los campos de firma se mantienen visibles (ENCARGADO y PRENDAS ENTREGADAS)
         
         // Cargar ReceiptManager
         if (typeof ReceiptManager === 'undefined') {
