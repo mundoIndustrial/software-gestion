@@ -5,8 +5,10 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use App\Models\Cotizacion;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Auth;
 use App\Application\Services\PedidoPrendaService;
+use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -51,10 +53,33 @@ class PedidosProduccionViewController
 
     /**
      * Mostrar formulario para crear pedido nuevo (sin cotización)
+     * También soporta edición de pedidos existentes via parámetro ?editar=id
      */
-    public function crearFormEditableNuevo(): View
+    public function crearFormEditableNuevo(Request $request): View
     {
-        return view('asesores.pedidos.crear-pedido-nuevo');
+        $editarId = $request->query('editar');
+        $datos = [];
+
+        // Si es modo edición, cargar datos del pedido
+        if ($editarId) {
+            try {
+                $pedido = PedidoProduccion::findOrFail($editarId);
+                // Obtener datos del pedido para pre-llenar
+                $service = app(ObtenerPedidoDetalleService::class);
+                $datos = $service->obtenerParaEdicion($editarId);
+                $datos['modoEdicion'] = true;
+                $datos['pedidoEditarId'] = $editarId;
+                
+                \Log::info('[EDITAR] Cargando pedido para edición', [
+                    'pedido_id' => $editarId,
+                    'cliente' => $datos['pedido']->cliente ?? 'N/A'
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('[EDITAR] Error cargando pedido', ['error' => $e->getMessage()]);
+            }
+        }
+
+        return view('asesores.pedidos.crear-pedido-nuevo', $datos);
     }
 
     /**
@@ -225,9 +250,18 @@ class PedidosProduccionViewController
                 ['estado' => 'activo']
             );
 
-            // Generar número de pedido
-            $ultimoPedido = \App\Models\PedidoProduccion::orderBy('id', 'desc')->first();
-            $numeroPedido = ($ultimoPedido?->numero_pedido ?? 0) + 1;
+            // Generar número de pedido usando tabla de secuencias
+            $secuenciaRow = \Illuminate\Support\Facades\DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->lockForUpdate()
+                ->first();
+            
+            $numeroPedido = $secuenciaRow?->siguiente ?? 45696;
+            
+            // Incrementar secuencia para el próximo pedido
+            \Illuminate\Support\Facades\DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->increment('siguiente');
 
             // Crear pedido
             $pedido = \App\Models\PedidoProduccion::create([

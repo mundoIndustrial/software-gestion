@@ -95,7 +95,7 @@ function renderDescripcionPrendasEnModal(content) {
             border-radius: 4px;
             padding: 10px;
             margin-top: 10px;
-            font-size: 12px;
+            font-size: 13.4px;
             line-height: 1.4;
             background: #f9f9f9;
         `;

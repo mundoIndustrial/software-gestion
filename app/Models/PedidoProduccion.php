@@ -244,7 +244,11 @@ class PedidoProduccion extends Model
             return 0;
         }
 
-        return $this->prendas->sum('cantidad');
+        $total = 0;
+        foreach ($this->prendas as $prenda) {
+            $total += $prenda->cantidad_total;
+        }
+        return $total;
     }
 
     /**

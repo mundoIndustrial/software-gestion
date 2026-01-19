@@ -140,10 +140,22 @@ window.actualizarTablaTelas = function() {
                     blobUrl = img.blobUrl;
                 } else if (typeof img === 'string') {
                     blobUrl = img;
-                } else {
+                } else if (img && img.url) {
+                    // Backend retorna objetos con propiedades url, ruta_webp, ruta_original
+                    blobUrl = img.url;
+                } else if (img && img.ruta_webp) {
+                    blobUrl = img.ruta_webp;
+                } else if (img && img.ruta_original) {
+                    blobUrl = img.ruta_original;
+                } else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);
+                } else {
+                    console.warn(`⚠️ [TELAS] No se pudo procesar imagen ${imgIndex}:`, img);
+                    blobUrl = '';
                 }
-                console.log(`📸 [TELAS] Creada blob URL para imagen ${imgIndex} de tela ${index}: ${blobUrl.substring(0, 50)}...`);
+                if (blobUrl) {
+                    console.log(`📸 [TELAS] Creada blob URL para imagen ${imgIndex} de tela ${index}: ${typeof blobUrl === 'string' ? blobUrl.substring(0, 50) : 'Blob URL'}...`);
+                }
                 return {
                     ...img,
                     previewUrl: blobUrl  // Blob URL recién creada para esta sesión

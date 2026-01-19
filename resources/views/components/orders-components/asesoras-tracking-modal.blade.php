@@ -28,6 +28,12 @@
                     <span class="asesoras-info-value" id="asesorasTrackingClient">-</span>
                 </div>
 
+                <!-- Área -->
+                <div class="asesoras-info-item">
+                    <span class="asesoras-info-label">Área:</span>
+                    <span class="asesoras-info-value" id="asesorasTrackingArea">-</span>
+                </div>
+
                 <!-- Estado Actual -->
                 <div class="asesoras-info-item">
                     <span class="asesoras-info-label">Estado Actual:</span>
@@ -349,8 +355,8 @@ window.openAsesorasTrackingModal = async function(pedido) {
     console.log('🔵 [ASESORAS TRACKING] Abriendo modal para pedido:', pedido);
     
     try {
-        // Obtener datos del pedido
-        const response = await fetch(`/registros/${pedido}`);
+        // Obtener datos del pedido en JSON - usar endpoint de recibos que devuelve JSON
+        const response = await fetch(`/asesores/pedidos/${pedido}/recibos-datos`);
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
         
@@ -359,6 +365,13 @@ window.openAsesorasTrackingModal = async function(pedido) {
         // Llenar información básica del modal
         document.getElementById('asesorasTrackingOrderNumber').textContent = pedido || '-';
         document.getElementById('asesorasTrackingClient').textContent = order.cliente_nombre || order.cliente || '-';
+        
+        // Área
+        const area = order.area || 'Sin especificar';
+        const areaElement = document.getElementById('asesorasTrackingArea');
+        if (areaElement) {
+            areaElement.textContent = area;
+        }
         
         // Estado - Convertir a texto legible
         const estado = formatAsesorasOrderStatus(order.estado) || 'No iniciado';

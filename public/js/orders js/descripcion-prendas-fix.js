@@ -158,7 +158,7 @@ function renderizarContenidoFormateado(content) {
         border-radius: 4px;
         padding: 12px;
         margin-top: 12px;
-        font-size: 12px;
+        font-size: 13.4px;
         line-height: 1.5;
         background: #f9f9f9;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

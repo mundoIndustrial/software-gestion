@@ -1,0 +1,78 @@
+/**
+ * ReceiptBuilder.js
+ * Construye y gestiona la lista de recibos (base + procesos adicionales)
+ */
+
+export class ReceiptBuilder {
+    /**
+     * Construye la lista completa de recibos para una prenda
+     * Orden: RECIBO BASE SIEMPRE PRIMERO, luego procesos adicionales
+     * 
+     * @param {Object} prenda - Objeto de prenda
+     * @returns {Array} Array con todos los recibos (base + adicionales)
+     */
+    static construirListaRecibos(prenda) {
+        const recibos = [];
+        
+        // PASO 1: AGREGAR RECIBO BASE
+        const tipoBase = prenda.de_bodega == 1 ? "costura-bodega" : "costura";
+        
+        // Aplanar tallas: convertir {dama: {L: 30, S: 20}} a {dama-L: 30, dama-S: 20}
+        let tallasObj = {};
+        if (prenda.tallas && typeof prenda.tallas === 'object') {
+            for (const [categoria, tallasByCategoria] of Object.entries(prenda.tallas)) {
+                if (typeof tallasByCategoria === 'object' && !Array.isArray(tallasByCategoria)) {
+                    // Es un objeto anidado: {L: 30, S: 20}
+                    for (const [talla, cantidad] of Object.entries(tallasByCategoria)) {
+                        const claveTalla = categoria === 'dama' || categoria === 'caballero' ? `${categoria}-${talla}` : talla;
+                        tallasObj[claveTalla] = cantidad;
+                    }
+                } else if (typeof tallasByCategoria === 'number') {
+                    // Es directo: {L: 30, S: 20}
+                    tallasObj[categoria] = tallasByCategoria;
+                }
+            }
+        }
+        
+        recibos.push({
+            tipo: tipoBase,
+            tipo_proceso: tipoBase,
+            nombre_proceso: tipoBase,
+            estado: "Pendiente",
+            es_base: true,
+            ubicaciones: [],
+            observaciones: '',
+            imagenes: [],
+            tallas: tallasObj
+        });
+        
+        console.log(`%c[RECIBOS] Recibo base agregado: "${tipoBase}"`, 'color: #10b981; font-weight: bold;');
+        
+        // PASO 2: AGREGAR PROCESOS ADICIONALES
+        const procesos = prenda.procesos || [];
+        procesos.forEach((proc) => {
+            const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
+            if (tipoProceso) {
+                recibos.push(proc);
+            }
+        });
+        
+        console.log(`%c[RECIBOS] Lista construida: ${recibos.length} recibos (1 base + ${procesos.length} adicionales)`, 'color: #10b981;');
+        
+        return recibos;
+    }
+
+    /**
+     * Encuentra un recibo por su tipo en la lista de recibos
+     * 
+     * @param {Array} recibos - Array de recibos
+     * @param {string} tipoRecibo - Tipo de recibo a buscar
+     * @returns {number} Índice del recibo o -1 si no existe
+     */
+    static encontrarReceibo(recibos, tipoRecibo) {
+        return recibos.findIndex(r => 
+            String(r.tipo) === String(tipoRecibo) || 
+            String(r.tipo_proceso || r.nombre_proceso || '') === String(tipoRecibo)
+        );
+    }
+}

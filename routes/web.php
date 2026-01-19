@@ -121,9 +121,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/contador/notifications', [App\Http\Controllers\ContadorController::class, 'getNotifications'])->name('contador.notifications');
     
     // Asesores (mantener compatibilidad)
-    Route::post('/asesores/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('asesores.notifications.mark-all-read');
-    Route::post('/asesores/notifications/{notificationId}/mark-read', [App\Http\Controllers\AsesoresController::class, 'markNotificationAsRead'])->name('asesores.notifications.mark-read');
-    Route::get('/asesores/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('asesores.notifications');
+    Route::post('/asesores/notifications/mark-all-read', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'markAllAsRead'])->name('asesores.notifications.mark-all-read');
+    Route::post('/asesores/notifications/{notificationId}/mark-read', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'markNotificationAsRead'])->name('asesores.notifications.mark-read');
+    Route::get('/asesores/notifications', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getNotifications'])->name('asesores.notifications');
     
     // Supervisor Pedidos (mantener compatibilidad)
     Route::post('/supervisor-pedidos/notifications/mark-all-read', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('supervisor-pedidos.notifications.mark-all-read');
@@ -429,26 +429,29 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
 // Admin puede acceder a asesores además del rol asesor
 Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('asesores.')->group(function () {
     // Dashboard
-    Route::get('/dashboard', [App\Http\Controllers\AsesoresController::class, 'dashboard'])->name('dashboard');
-    Route::get('/dashboard-data', [App\Http\Controllers\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
+    Route::get('/dashboard', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard-data', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
     
     // Perfil
-    Route::get('/perfil', [App\Http\Controllers\AsesoresController::class, 'profile'])->name('profile')->middleware('auth');
-    Route::post('/perfil/update', [App\Http\Controllers\AsesoresController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/perfil', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'profile'])->name('profile')->middleware('auth');
+    Route::post('/perfil/update', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'updateProfile'])->name('profile.update');
     
-    // Pedidos (usando tabla_original)
-    Route::get('/pedidos', [App\Http\Controllers\AsesoresController::class, 'index'])->name('pedidos.index');
-    Route::get('/pedidos/create', [App\Http\Controllers\AsesoresController::class, 'create'])->name('pedidos.create');
-    Route::get('/pedidos/next-pedido', [App\Http\Controllers\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
-    Route::post('/pedidos', [App\Http\Controllers\AsesoresController::class, 'store'])->name('pedidos.store');
-    Route::post('/pedidos/confirm', [App\Http\Controllers\AsesoresController::class, 'confirm'])->name('pedidos.confirm');
-    Route::post('/pedidos/{id}/anular', [App\Http\Controllers\AsesoresController::class, 'anularPedido'])->name('pedidos.anular');
-    Route::get('/pedidos/{id}/factura-datos', [App\Http\Controllers\AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
-    Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\AsesoresController::class, 'obtenerDatosRecibos'])->where('id', '[0-9]+')->name('pedidos.recibos-datos');
-    Route::get('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'show'])->name('pedidos.show');
-    Route::get('/pedidos/{pedido}/edit', [App\Http\Controllers\AsesoresController::class, 'edit'])->name('pedidos.edit');
-    Route::put('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'update'])->name('pedidos.update');
-    Route::delete('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'destroy'])->name('pedidos.destroy');
+    // Pedidos - VISTAS (AsesoresController)
+    Route::get('/pedidos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'index'])->name('pedidos.index');
+    Route::get('/pedidos/create', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'create'])->name('pedidos.create');
+    Route::get('/pedidos/next-pedido', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
+    Route::get('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'show'])->name('pedidos.show');
+    Route::get('/pedidos/{pedido}/edit', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'edit'])->name('pedidos.edit');
+    Route::put('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'update'])->name('pedidos.update');
+    Route::delete('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'destroy'])->name('pedidos.destroy');
+    
+    // Pedidos - APIs (DDD: AsesoresAPIController)
+    Route::post('/pedidos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'store'])->name('pedidos.api.store');
+    Route::post('/pedidos/confirm', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'confirm'])->name('pedidos.api.confirm');
+    Route::post('/pedidos/{id}/anular', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
+    Route::get('/pedidos/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
+    Route::get('/pedidos/{id}/recibos-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'obtenerDatosRecibos'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
+    Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
     // ========================================
     // SISTEMA DE ÓRDENES CON BORRADORES
@@ -898,5 +901,10 @@ Route::middleware(['auth', 'role:asesor'])->prefix('api/pedidos')->name('api.ped
     Route::post('/validar-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'validar'])
         ->name('validar-json');
 });
+
+// ========================================
+// RUTAS DE ASESORES (ORGANIZADA EN ARCHIVO SEPARADO)
+// ========================================
+require __DIR__.'/asesores.php';
 
 require __DIR__.'/auth.php';

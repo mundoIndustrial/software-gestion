@@ -158,13 +158,34 @@ class PrendaPedido extends Model
     // ============================================================
 
     /**
-     * Accessor: Obtener la cantidad total de prendas (suma de todas las variantes)
+     * Accessor: Obtener la cantidad total de prendas (suma de todas las tallas)
      * 
      * @return int
      */
     public function getCantidadTotalAttribute(): int
     {
-        return $this->variantes()->sum('cantidad') ?? 0;
+        // Usar cantidad_talla JSON que es la fuente de verdad
+        if ($this->cantidad_talla) {
+            $total = 0;
+            $tallas = is_string($this->cantidad_talla) ? json_decode($this->cantidad_talla, true) : $this->cantidad_talla;
+            
+            if (is_array($tallas)) {
+                foreach ($tallas as $genero => $tallasCantidad) {
+                    if (is_array($tallasCantidad)) {
+                        // Formato anidado: {"dama": {"L": 30, "S": 20}}
+                        foreach ($tallasCantidad as $talla => $cantidad) {
+                            $total += (int)$cantidad;
+                        }
+                    } else {
+                        // Formato plano
+                        $total += (int)$tallasCantidad;
+                    }
+                }
+            }
+            return $total;
+        }
+
+        return 0;
     }
 
     /**

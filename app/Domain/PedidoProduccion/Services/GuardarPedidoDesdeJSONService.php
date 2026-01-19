@@ -224,15 +224,10 @@ class GuardarPedidoDesdeJSONService
         $contador = 0;
 
         foreach ($variantes as $varianteData) {
-            // Validar datos requeridos
-            if (empty($varianteData['talla']) || empty($varianteData['cantidad'])) {
-                \Log::warning('⚠️ Variante sin talla o cantidad, omitiendo');
-                continue;
-            }
+            // ✅ [19/01/2026] Talla y cantidad YA se guardan en prendas_pedido.cantidad_talla (JSON)
+            // Las variantes son ahora SOLO combinaciones de características (color, tela, manga, broche, bolsillos)
 
             $prendaPedido->variantes()->create([
-                'talla' => $varianteData['talla'],
-                'cantidad' => (int)$varianteData['cantidad'],
                 'color_id' => $varianteData['color_id'] ?? null,
                 'tela_id' => $varianteData['tela_id'] ?? null,
                 'tipo_manga_id' => $varianteData['tipo_manga_id'] ?? null,

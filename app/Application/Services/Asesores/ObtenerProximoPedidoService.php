@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Application\Services\Asesores;
+
+use App\Models\PedidoProduccion;
+use Illuminate\Support\Facades\Log;
+
+class ObtenerProximoPedidoService
+{
+    /**
+     * Obtener el siguiente número de pedido disponible
+     * 
+     * @return int
+     */
+    public function obtenerProximo(): int
+    {
+        Log::info('🔢 [PRÓXIMO PEDIDO] Buscando siguiente número disponible');
+
+        $ultimoPedido = PedidoProduccion::max('numero_pedido');
+        $siguientePedido = $ultimoPedido ? $ultimoPedido + 1 : 1;
+
+        Log::info('🔢 [PRÓXIMO PEDIDO] Encontrado', [
+            'ultimo_pedido' => $ultimoPedido,
+            'siguiente_pedido' => $siguientePedido
+        ]);
+
+        return $siguientePedido;
+    }
+
+    /**
+     * Validar si un número de pedido ya existe
+     * 
+     * @param int $numeroPedido
+     * @return bool
+     */
+    public function existeNumeroPedido(int $numeroPedido): bool
+    {
+        $existe = PedidoProduccion::where('numero_pedido', $numeroPedido)->exists();
+        
+        Log::info('🔢 [VALIDAR PEDIDO] Número ' . $numeroPedido . ' existe: ' . ($existe ? 'SÍ' : 'NO'));
+
+        return $existe;
+    }
+
+    /**
+     * Obtener rango de números disponibles (últimos 10 números usados + próximo)
+     * Útil para generar opciones de selección en formularios
+     * 
+     * @param int $cantidad Cantidad de números anteriores a mostrar
+     * @return array
+     */
+    public function obtenerRangoDisponible(int $cantidad = 10): array
+    {
+        $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
+        $proximoPedido = $ultimoPedido + 1;
+
+        // Obtener los últimos números usados
+        $ultimosUsados = PedidoProduccion::select('numero_pedido')
+            ->orderBy('numero_pedido', 'desc')
+            ->limit($cantidad)
+            ->pluck('numero_pedido')
+            ->toArray();
+
+        Log::info('🔢 [RANGO DISPONIBLE] Generado', [
+            'ultimo_numero' => $ultimoPedido,
+            'proximo_numero' => $proximoPedido,
+            'ultimos_usados_count' => count($ultimosUsados)
+        ]);
+
+        return [
+            'ultimo_usado' => $ultimoPedido,
+            'proximo' => $proximoPedido,
+            'ultimos_usados' => $ultimosUsados
+        ];
+    }
+}

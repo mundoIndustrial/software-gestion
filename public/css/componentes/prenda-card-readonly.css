@@ -328,14 +328,14 @@
 }
 
 .seccion-expandible-content {
-    display: none;
+    display: none !important;
     padding: 1rem;
     background: white;
     border-top: 1px solid #e5e7eb;
 }
 
 .seccion-expandible-content.active {
-    display: block;
+    display: block !important;
 }
 
 /* ============================================

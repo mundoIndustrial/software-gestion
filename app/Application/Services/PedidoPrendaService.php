@@ -1121,114 +1121,61 @@ class PedidoPrendaService
     ): void
     {
         try {
-            $variantes = [];
-
-            \Log::info(' [crearVariantesDesdeCantidadTalla] Procesando cantidad_talla', [
-                'prenda_id' => $prenda->id,
-                'cantidad_talla_type' => gettype($cantidadTalla),
-                'cantidad_talla_raw' => $cantidadTalla,
-                'color_id_recibido' => $colorId,
-                'tela_id_recibido' => $telaId,
-                'tipo_manga_id_recibido' => $tipoMangaId,
-                'tipo_broche_boton_id_recibido' => $tipoBrocheBotonId,
-            ]);
-
-            // Parsear según el formato recibido
-            if (is_array($cantidadTalla)) {
-                // Formato 1: Array de objetos [{genero, talla, cantidad}, ...]
-                if (!empty($cantidadTalla) && isset($cantidadTalla[0]['genero'])) {
-                    $variantes = $cantidadTalla;
-                }
-                // Formato 2: Estructura anidada {genero: {talla: cantidad}}
-                else if (!empty($cantidadTalla) && !isset($cantidadTalla[0])) {
-                    foreach ($cantidadTalla as $genero => $tallas) {
-                        if (is_array($tallas)) {
-                            foreach ($tallas as $talla => $cantidad) {
-                                if ($cantidad > 0) {
-                                    $variantes[] = [
-                                        'genero' => $genero,
-                                        'talla' => $talla,
-                                        'cantidad' => (int)$cantidad,
-                                    ];
-                                }
-                            }
-                        }
-                    }
-                }
-            } elseif (is_string($cantidadTalla)) {
-                // Si viene como JSON string
-                $decoded = json_decode($cantidadTalla, true);
-                if (is_array($decoded)) {
-                    if (isset($decoded[0]['genero'])) {
-                        $variantes = $decoded;
-                    } else {
-                        // Procesar estructura anidada
-                        foreach ($decoded as $genero => $tallas) {
-                            if (is_array($tallas)) {
-                                foreach ($tallas as $talla => $cantidad) {
-                                    if ($cantidad > 0) {
-                                        $variantes[] = [
-                                            'genero' => $genero,
-                                            'talla' => $talla,
-                                            'cantidad' => (int)$cantidad,
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            // ✅ CAMBIO CRÍTICO [19/01/2026]:
+            // Después de eliminar talla/cantidad de prenda_pedido_variantes:
+            // - Las tallas/cantidades ahora viven en prendas_pedido.cantidad_talla (JSON)
+            // - Las variantes son CARACTERÍSTICAS (color, tela, manga, broche, bolsillos)
+            // - Crear UNA SOLA variante por combinación de características, NO una por talla
+            
+            // Validar que existe al menos uno de los IDs de características
+            if (empty($colorId) && empty($telaId) && empty($tipoMangaId) && empty($tipoBrocheBotonId) && empty($mangaObs) && empty($bolsillosObs) && empty($brocheObs)) {
+                \Log::warning('  [crearVariantesDesdeCantidadTalla] No hay características para guardar variante', [
+                    'prenda_id' => $prenda->id,
+                    'cantidad_talla_presente' => !empty($cantidadTalla),
+                ]);
+                return;
             }
 
-            if (empty($variantes)) {
-                \Log::warning('  [crearVariantesDesdeCantidadTalla] No hay variantes para guardar', [
+            // Verificar que cantidad_talla tiene datos (validar que la prenda tiene tallas asignadas)
+            $tieneTallas = false;
+            if (is_array($cantidadTalla)) {
+                $tieneTallas = !empty($cantidadTalla);
+            } elseif (is_string($cantidadTalla)) {
+                $decoded = json_decode($cantidadTalla, true);
+                $tieneTallas = !empty($decoded);
+            }
+
+            if (!$tieneTallas) {
+                \Log::warning('  [crearVariantesDesdeCantidadTalla] cantidad_talla está vacío', [
                     'prenda_id' => $prenda->id,
                 ]);
                 return;
             }
 
-            // Guardar cada variante
-            $registrosGuardados = 0;
-            foreach ($variantes as $var) {
-                if (!empty($var['talla']) && $var['cantidad'] > 0) {
-                    \Log::info(' [crearVariantesDesdeCantidadTalla] Preparando variante para guardar', [
-                        'talla' => $var['talla'],
-                        'cantidad' => $var['cantidad'],
-                        'color_id' => $colorId,
-                        'tela_id' => $telaId,
-                        'tipo_manga_id' => $tipoMangaId,
-                        'tipo_broche_boton_id' => $tipoBrocheBotonId,
-                    ]);
-                    
-                    // ✅ IMPORTANTE: Concatenar genero-talla para crear talla única por género
-                    // Esto permite que una prenda unisex pueda tener dama-S, dama-M, caballero-S, etc.
-                    $tallaConGenero = !empty($var['genero']) 
-                        ? $var['genero'] . '-' . $var['talla'] 
-                        : (string)$var['talla'];
-                    
-                    $prenda->variantes()->create([
-                        'talla' => $tallaConGenero, // Guardamos "dama-S", "caballero-S", etc.
-                        'cantidad' => (int)$var['cantidad'],
-                        //  Usar los IDs pasados como parámetros (procesados en guardarPrenda)
-                        'color_id' => $colorId,
-                        'tela_id' => $telaId,
-                        'tipo_manga_id' => $tipoMangaId,
-                        'tipo_broche_boton_id' => $tipoBrocheBotonId,
-                        // ✅ USANDO PARÁMETROS PASADOS (no intentar leerlos de $var)
-                        'manga_obs' => $mangaObs,
-                        'broche_boton_obs' => $brocheObs,
-                        'tiene_bolsillos' => $tieneBolsillos,
-                        'bolsillos_obs' => $bolsillosObs,
-                    ]);
-                    $registrosGuardados++;
-                    \Log::info(' Variante guardada con IDs: Talla ' . $tallaConGenero . ', color_id=' . ($colorId ?? 'null') . ', tela_id=' . ($telaId ?? 'null'));
-                }
-            }
-
-            \Log::info(' [crearVariantesDesdeCantidadTalla] Variantes creadas', [
+            \Log::info(' [crearVariantesDesdeCantidadTalla] Creando UNA SOLA variante con características', [
                 'prenda_id' => $prenda->id,
-                'total_variantes' => $registrosGuardados,
-                'variantes_detalle' => $variantes,
+                'color_id' => $colorId,
+                'tela_id' => $telaId,
+                'tipo_manga_id' => $tipoMangaId,
+                'tipo_broche_boton_id' => $tipoBrocheBotonId,
+            ]);
+
+            // ✅ CREAR UNA ÚNICA VARIANTE CON TODAS LAS CARACTERÍSTICAS
+            // Las tallas y cantidades ya están guardadas en prendas_pedido.cantidad_talla JSON
+            $prenda->variantes()->create([
+                'color_id' => $colorId,
+                'tela_id' => $telaId,
+                'tipo_manga_id' => $tipoMangaId,
+                'tipo_broche_boton_id' => $tipoBrocheBotonId,
+                'manga_obs' => $mangaObs,
+                'broche_boton_obs' => $brocheObs,
+                'tiene_bolsillos' => $tieneBolsillos,
+                'bolsillos_obs' => $bolsillosObs,
+            ]);
+
+            \Log::info(' [crearVariantesDesdeCantidadTalla] Variante creada exitosamente', [
+                'prenda_id' => $prenda->id,
+                'variante_guardada' => true,
             ]);
 
         } catch (\Exception $e) {

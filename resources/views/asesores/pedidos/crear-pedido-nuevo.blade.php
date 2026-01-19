@@ -13,9 +13,36 @@
 
 <!-- Header Full Width -->
 <div class="page-header">
-    <h1><span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 8px;">description</span>Crear Nuevo Pedido de Producción</h1>
-    <p>Crea un pedido completamente nuevo sin una cotización previa</p>
+    <h1>
+        <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 8px;">description</span>
+        @if($modoEdicion ?? false)
+            Editar Pedido #{{ $pedidoEditarId }}
+        @else
+            Crear Nuevo Pedido de Producción
+        @endif
+    </h1>
+    <p>@if($modoEdicion ?? false)
+        Edita los detalles del pedido
+    @else
+        Crea un pedido completamente nuevo sin una cotización previa
+    @endif</p>
 </div>
+
+@if($modoEdicion ?? false)
+    <script>
+        window.modoEdicion = true;
+        window.pedidoEditarId = {{ $pedidoEditarId }};
+        // ✅ Pasar datos completos con pedido, prendas, EPPs, etc.
+        window.pedidoEditarData = {!! json_encode([
+            'pedido' => $pedido ?? [],
+            'epps' => $epps ?? [],
+            'estados' => $estados ?? [],
+            'areas' => $areas ?? []
+        ]) !!};
+        console.log('📝 Modo edición: Editando pedido #{{ $pedidoEditarId }}');
+        console.log('📦 Datos cargados:', window.pedidoEditarData);
+    </script>
+@endif
 
 <div style="width: 100%; padding: 1.5rem;">
     <form id="formCrearPedidoEditable" class="space-y-6">
@@ -33,17 +60,17 @@
                         Cliente
                         <span id="cliente-requerido" style="color: #ef4444;">*</span>
                     </label>
-                    <input type="text" id="cliente_editable" name="cliente">
+                    <input type="text" id="cliente_editable" name="cliente" value="{{ $pedido->cliente ?? '' }}">
                 </div>
 
                 <div class="form-group">
                     <label for="asesora_editable">Asesora</label>
-                    <input type="text" id="asesora_editable" name="asesora" readonly>
+                    <input type="text" id="asesora_editable" name="asesora" readonly value="{{ auth()->user()->name }}">
                 </div>
 
                 <div class="form-group">
                     <label for="forma_de_pago_editable">Forma de Pago</label>
-                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago">
+                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ $pedido->forma_de_pago ?? '' }}">
                 </div>
 
                 <div class="form-group">
@@ -182,7 +209,7 @@
     <!-- Manejadores de variaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
     
-    <!-- ✅ NUEVO: Componente tarjeta readonly (después del renderizador) -->
+    <!-- ✅ Componente tarjeta readonly (completo - funcional) -->
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
     
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
@@ -282,9 +309,14 @@
             }
         };
 
-        console.log(' Vista de nuevo pedido inicializada');
+        console.log('✅ Vista de nuevo pedido inicializada');
     });
 </script>
+
+<!-- ✅ Script para cargar datos en modo edición -->
+@if($modoEdicion ?? false)
+<script src="{{ asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
+@endif
 
 <!-- ✅ Script para Vista Previa en Vivo de Factura -->
 <script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>

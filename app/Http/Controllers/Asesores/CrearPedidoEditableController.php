@@ -309,9 +309,18 @@ class CrearPedidoEditableController extends Controller
                 ]);
             }
 
-            // Generar número de pedido único
-            $ultimoPedido = \App\Models\PedidoProduccion::orderBy('id', 'desc')->first();
-            $numeroPedido = ($ultimoPedido?->numero_pedido ?? 0) + 1;
+            // Generar número de pedido usando tabla de secuencias
+            $secuenciaRow = \Illuminate\Support\Facades\DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->lockForUpdate()
+                ->first();
+            
+            $numeroPedido = $secuenciaRow?->siguiente ?? 45709;
+            
+            // Incrementar secuencia para el próximo pedido
+            \Illuminate\Support\Facades\DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->increment('siguiente');
 
             // Crear el pedido
             $pedido = \App\Models\PedidoProduccion::create([

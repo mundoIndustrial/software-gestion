@@ -24,6 +24,7 @@ class PedidoProduccionRepository
             'prendas.fotos',
             'prendas.fotosTelas',
             'prendas.procesos',
+            'prendas.procesos.tipoProceso',  // ✅ NUEVO: Cargar el nombre del tipo de proceso
             'prendas.procesos.imagenes',
             'epps.epp.categoria',  // ✅ Cargar la categoría del EPP
             'epps.imagenes',
@@ -468,13 +469,20 @@ class PedidoProduccionRepository
                 // Imágenes del proceso
                 $imagenesProceso = $proc->imagenes ? $proc->imagenes->map(fn($img) => $img->url)->toArray() : [];
                 
+                // ✅ Obtener nombre del tipo de proceso (desde la relación cargada)
+                $nombreProceso = 'Proceso';
+                if ($proc->tipoProceso && $proc->tipoProceso->nombre) {
+                    $nombreProceso = $proc->tipoProceso->nombre;
+                }
+                
                 $proc_item = [
-                    'nombre' => $proc->tipo ?? 'Proceso',
-                    'tipo' => $proc->tipo ?? 'Proceso',
+                    'nombre_proceso' => $nombreProceso,
+                    'tipo_proceso' => $nombreProceso,
                     'tallas' => $procTallas,
                     'observaciones' => $proc->observaciones ?? '',
                     'ubicaciones' => $ubicaciones,
                     'imagenes' => $imagenesProceso,
+                    'estado' => $proc->estado ?? 'Pendiente',
                 ];
                 
                 $procesos[] = $proc_item;
@@ -482,15 +490,18 @@ class PedidoProduccionRepository
 
             // Construir prenda para recibos
             $prendasFormato = [
+                'id' => $prenda->id,
+                'prenda_pedido_id' => $prenda->id,  // ✅ ID para consultar fotos
                 'numero' => $prendaIndex + 1,
                 'nombre' => $prenda->nombre_prenda,
-                'origen' => $prenda->origen ?? 'confección',  // ✅ IMPORTANTE PARA TITULOS
+                'origen' => $prenda->origen ?? 'confección',
                 'descripcion' => $prenda->descripcion,
                 'tela' => !empty($telas) ? implode(', ', $telas) : null,
                 'color' => !empty($colores) ? implode(', ', $colores) : null,
                 'ref' => !empty($referencias) ? implode(', ', $referencias) : null,
                 'tallas' => $tallas,
                 'variantes' => $especificaciones,
+                'de_bodega' => $prenda->de_bodega ?? 0,
                 'procesos' => $procesos,
             ];
 

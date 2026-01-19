@@ -316,8 +316,218 @@ class ReceiptManager {
 
     /**
      * Generar contenido para recibo de COSTURA
+     * Aplica el nuevo formato enumerado con puntos
      */
     contenidoCostura(prenda) {
+        // Validar tipo de costura
+        const esCostura = prenda.origen && 
+            (prenda.origen.toLowerCase() === 'bodega' || prenda.origen.toLowerCase() === 'confección');
+        
+        if (!esCostura) {
+            // Fallback al formato anterior si no es costura/costura-bodega
+            return this.contenidoCosturaSinFormato(prenda);
+        }
+
+        return this.construirDescripcionCostura(prenda);
+    }
+
+    /**
+     * Construir descripción dinámica para recibo de COSTURA/COSTURA-BODEGA
+     * Formato obligatorio con 5 bloques enumerados con puntos
+     */
+    construirDescripcionCostura(prenda) {
+        const lineas = [];
+
+        // 1️⃣ Nombre de la prenda (título)
+        if (prenda.nombre) {
+            const numeroPrenda = prenda.numero || 1;
+            lineas.push(`<strong style="font-size: 12px;">PRENDA ${numeroPrenda}: ${prenda.nombre.toUpperCase()}</strong>`);
+        }
+
+        // 2️⃣ Línea técnica (una sola línea)
+        const lineaTecnica = this.armarLineaTecnica(prenda);
+        if (lineaTecnica) {
+            lineas.push(lineaTecnica);
+        }
+
+        // 3️⃣ Descripción base de la prenda (si existe) - SIN ETIQUETA
+        if (prenda.descripcion && prenda.descripcion.trim()) {
+            lineas.push(prenda.descripcion.toUpperCase());
+        }
+
+        // 4️⃣ Detalles técnicos enumerados con puntos (sin asteriscos) - SIN ETIQUETA
+        const detallesTecnicos = this.armarDetallesTecnicos(prenda);
+        if (detallesTecnicos.length > 0) {
+            detallesTecnicos.forEach((detalle) => {
+                lineas.push(`• ${detalle}`);
+            });
+        }
+
+        // 5️⃣ Tallas (bloque final)
+        const tallasBloques = this.armarTallasBloques(prenda);
+        if (tallasBloques.length > 0) {
+            lineas.push('');
+            lineas.push('<strong>TALLAS</strong>');
+            tallasBloques.forEach(bloque => {
+                lineas.push(bloque);
+            });
+        }
+
+        return lineas.join('<br>') || '<em>Sin información</em>';
+    }
+
+    /**
+     * Armar línea técnica: TELA: ... | COLOR: ... | REF: ... | MANGA: ...
+     */
+    armarLineaTecnica(prenda) {
+        const partes = [];
+
+        if (prenda.tela) {
+            partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+        }
+
+        if (prenda.color) {
+            partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+        }
+
+        if (prenda.ref || prenda.referencia) {
+            const ref = prenda.ref || prenda.referencia;
+            partes.push(`<strong>REF:</strong> ${ref.toUpperCase()}`);
+        }
+
+        // Manga (de variantes, sin repetir por talla)
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            const primerVariante = prenda.variantes[0];
+            if (primerVariante.manga) {
+                let mangaTexto = primerVariante.manga.toUpperCase();
+                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
+                    mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
+                }
+                partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
+            }
+        }
+
+        return partes.length > 0 ? partes.join(' | ') : null;
+    }
+
+    /**
+     * Armar detalles técnicos enumerados (sin asteriscos)
+     * Reglas:
+     * - Mostrar BOLSILLOS solo si existe
+     * - Mostrar BOTÓN o BROCHE una sola vez
+     * - No repetir por talla
+     * - Si no hay observaciones, no mostrar el ítem
+     */
+    armarDetallesTecnicos(prenda) {
+        const detalles = [];
+
+        if (!prenda.variantes || !Array.isArray(prenda.variantes) || prenda.variantes.length === 0) {
+            return detalles;
+        }
+
+        // Tomar primer variante para obtener datos únicos (no repetir por talla)
+        const primerVariante = prenda.variantes[0];
+
+        // BOLSILLOS - mostrar si tiene observaciones (independiente del booleano tiene_bolsillos)
+        if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
+            detalles.push(`<strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}`);
+        }
+
+        // BROCHE/BOTÓN - usar el nombre del tipo que ya viene del backend
+        if (primerVariante.broche_obs && primerVariante.broche_obs.trim()) {
+            let etiqueta = 'BROCHE/BOTÓN';
+            
+            // El backend ya carga primerVariante.broche con el nombre del tipo
+            if (primerVariante.broche) {
+                etiqueta = primerVariante.broche.toUpperCase();
+            }
+            
+            detalles.push(`<strong>${etiqueta}:</strong> ${primerVariante.broche_obs.toUpperCase()}`);
+        }
+
+        return detalles;
+    }
+
+    /**
+     * Armar bloques de tallas
+     * Formato: 
+     *   DAMA: S: 10, M: 20
+     *   CABALLERO: M: 10
+     * Orden: DAMA → CABALLERO
+     */
+    armarTallasBloques(prenda) {
+        const bloques = [];
+
+        if (!prenda.tallas || Object.keys(prenda.tallas).length === 0) {
+            return bloques;
+        }
+
+        // Separar tallas por género si existe esa información
+        const tallasDama = {};
+        const tallasCalballero = {};
+        
+        // Procesar tallas - pueden venir ANIDADAS: {"dama": {"L": 30, "S": 20}}
+        Object.entries(prenda.tallas).forEach(([key, value]) => {
+            // ✅ Si value es un OBJETO (anidado: {"L": 30, "S": 20})
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // Desanidar: {"dama": {"L": 30}} → tallasDama["L"] = 30
+                const genero = key.toLowerCase();
+                Object.entries(value).forEach(([talla, cantidad]) => {
+                    if (genero === 'dama') {
+                        tallasDama[talla] = cantidad;
+                    } else if (genero === 'caballero') {
+                        tallasCalballero[talla] = cantidad;
+                    }
+                });
+                console.log(`[RECEIPT] 📦 Tallas desanidadas para ${genero}:`, value);
+            } 
+            // ✅ Si value es un NÚMERO (aplanado: "dama-L" → 30)
+            else if (typeof value === 'number' || typeof value === 'string') {
+                // Aplanado: "dama-L" → 30
+                if (key.includes('-')) {
+                    const [genero, talla] = key.split('-');
+                    if (genero.toLowerCase() === 'dama') {
+                        tallasDama[talla] = value;
+                    } else if (genero.toLowerCase() === 'caballero') {
+                        tallasCalballero[talla] = value;
+                    }
+                } else {
+                    // Si no tiene '-', usar género de prenda
+                    const genero = prenda.genero || 'dama';
+                    if (genero.toLowerCase() === 'dama') {
+                        tallasDama[key] = value;
+                    } else if (genero.toLowerCase() === 'caballero') {
+                        tallasCalballero[key] = value;
+                    }
+                }
+                console.log(`[RECEIPT] 📦 Talla aplanada procesada: ${key} = ${value}`);
+            } else {
+                console.warn('[RECEIPT] ⚠️ Formato de talla desconocido:', key, value);
+            }
+        });
+
+        // Construir bloques
+        if (Object.keys(tallasDama).length > 0) {
+            const tallasStr = Object.entries(tallasDama)
+                .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
+                .join(', ');
+            bloques.push(`DAMA: ${tallasStr}`);
+        }
+
+        if (Object.keys(tallasCalballero).length > 0) {
+            const tallasStr = Object.entries(tallasCalballero)
+                .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
+                .join(', ');
+            bloques.push(`CABALLERO: ${tallasStr}`);
+        }
+
+        return bloques;
+    }
+
+    /**
+     * Formato fallback sin enumeración (para otros tipos de costura)
+     */
+    contenidoCosturaSinFormato(prenda) {
         let html = `<strong>${prenda.nombre.toUpperCase()}</strong><br><br>`;
 
         if (prenda.color) {

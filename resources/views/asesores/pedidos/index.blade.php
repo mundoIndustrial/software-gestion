@@ -596,10 +596,34 @@
                             }
                         }
                         $clienteBusqueda = $pedido->cliente ?? '-';
+                        
+                        // Preparar información de prendas para búsqueda inteligente
+                        $prendasInfo = [];
+                        $procesosInfo = [];
+                        if ($pedido->prendas && $pedido->prendas->count() > 0) {
+                            foreach ($pedido->prendas as $prenda) {
+                                $prendasInfo[] = [
+                                    'nombre_prenda' => $prenda->nombre_prenda ?? '',
+                                    'tela' => $prenda->tela ?? '',
+                                    'color' => $prenda->color ?? '',
+                                    'descripcion' => $prenda->descripcion ?? ''
+                                ];
+                                // Recopilar procesos
+                                if ($prenda->procesos && $prenda->procesos->count() > 0) {
+                                    foreach ($prenda->procesos as $proceso) {
+                                        $procesosInfo[] = $proceso->descripcion ?? '';
+                                    }
+                                }
+                            }
+                        }
+                        $prendasJson = json_encode($prendasInfo);
+                        $procesosJson = json_encode($procesosInfo);
                     @endphp
                     <div data-pedido-row 
                          data-numero-pedido="{{ $numeroPedidoBusqueda }}" 
-                         data-cliente="{{ $clienteBusqueda }}" 
+                         data-cliente="{{ $clienteBusqueda }}"
+                         data-prenda-info="{{ $prendasJson }}"
+                         data-procesos-info="{{ $procesosJson }}"
                          style="
                         display: grid;
                         grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
@@ -671,6 +695,26 @@
                         </button>
                         @endif
 
+                        <!-- Botón Editar -->
+                        <button onclick="editarPedido({{ $pedido->id }})" title="Editar Pedido" style="
+                            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            transition: all 0.3s ease;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 36px;
+                            height: 36px;
+                            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
+                            <i class="fas fa-edit"></i>
+                        </button>
+
                         <!-- Botón Eliminar -->
                         <button onclick="eliminarPedido({{ $pedido->id }})" title="Eliminar Pedido" style="
 
@@ -726,14 +770,14 @@
                             // Verificar si es LogoPedido (tiene campo 'numero_pedido' pero no 'prendas')
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 // Es un LogoPedido
-                                $area = $pedido->areaActual ?? 'Creación de Orden';
+                                $area = $pedido->area ?? 'Creación de Orden';
                             } elseif ($pedido->logoPedidos && $pedido->logoPedidos->count() > 0) {
                                 // Es un PedidoProduccion con logo
                                 $logoPedido = $pedido->logoPedidos->first();
-                                $area = $logoPedido->areaActual ?? 'Creación de Orden';
+                                $area = $logoPedido->area ?? 'Creación de Orden';
                             } else {
                                 // Es un PedidoProduccion normal
-                                $area = $pedido->procesoActualOptimizado() ?? '-';
+                                $area = $pedido->area ?? '-';
                             }
                         @endphp
                         <span style="
@@ -811,7 +855,7 @@
                             $descripcionConTallas = get_class($pedido) === 'App\Models\LogoPedido' ? 'Logo personalizado' : '-';
                         }
                     @endphp
-                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.8rem; cursor: pointer; max-width: {{ request('tipo') === 'logo' ? '220px' : '130px' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
+                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.8rem; cursor: pointer; max-width: {{ request('tipo') === 'logo' ? '220px' : '130px' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalDescripcion({{ $pedido->id }}, '{{ get_class($pedido) === 'App\\Models\\LogoPedido' ? 'logo' : 'prenda' }}')" title="Click para ver completo">
                         @php
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 echo 'Logo personalizado <span style="color: #3b82f6; font-weight: 600;">...</span>';
@@ -834,7 +878,22 @@
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 echo '<span style="color: #3b82f6;">LOGO</span>';
                             } elseif ($pedido->prendas->count() > 0) {
-                                echo '<span>' . $pedido->prendas->sum('cantidad') . ' und</span>';
+                                // Calcular cantidad real desde cantidad_talla de prendas
+                                $cantidadReal = 0;
+                                foreach ($pedido->prendas as $prenda) {
+                                    $cantidadReal += $prenda->cantidad_total;
+                                }
+                                
+                                // Si la cantidad real difiere de cantidad_total, mostrar la real
+                                $cantidadMostrada = $cantidadReal;
+                                
+                                // Agregar indicador visual si hay discrepancia
+                                $indicador = '';
+                                if ($cantidadMostrada !== $pedido->cantidad_total && $pedido->cantidad_total > 0) {
+                                    $indicador = ' <span style="color: #ef4444; font-weight: bold; cursor: help;" title="Ajustada de ' . $pedido->cantidad_total . '">*</span>';
+                                }
+                                
+                                echo '<span>' . $cantidadMostrada . ' und' . $indicador . '</span>';
                             } else {
                                 echo '<span style="color: #d1d5db;">-</span>';
                             }
@@ -927,6 +986,18 @@
 
 <!-- Modal de Seguimiento del Pedido (Tracking Simplificado para Asesoras) -->
 <x-orders-components.asesoras-tracking-modal />
+
+<!-- ========================================
+     NUEVOS MODALES DE RECIBOS DE PRODUCCIÓN
+     ======================================== -->
+<!-- Selector de Prendas y Procesos (abre primero) -->
+@include('components.modals.recibos-process-selector')
+
+<!-- Modal Intermedio de Recibos (lista de prendas y procesos) -->
+@include('components.modals.recibos-intermediate-modal')
+
+<!-- Modal Dinámico de Recibo (detalle de proceso específico) -->
+@include('components.modals.recibo-dinamico-modal')
 
 <!-- Contenedor para Dropdowns (Fuera de la tabla) -->
 <div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
@@ -1170,59 +1241,323 @@
     });
 
     // ==================== MODAL DE CELDA ====================
-    function abrirModalCelda(titulo, contenido) {
-        // Limpiar y formatear el contenido
-        let contenidoLimpio = contenido || '-';
-        
-        // Remover asteriscos de formato
-        contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
-        
-        // Remover etiquetas de formato como "*** DESCRIPCIÓN: ***"
-        contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
-        
-        // Dividir por prendas (separadas por \n\n)
-        let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
-        
-        let htmlContenido = '';
-        
-        prendas.forEach((prenda, index) => {
-            let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
+    /**
+     * Abre modal mejorado de descripción con prendas y procesos
+     * Formatea usando la misma lógica que Formatters.js
+     */
+    async function abrirModalDescripcion(pedidoId, tipo) {
+        try {
+            // Mostrar loading
+            const loadingModal = document.createElement('div');
+            loadingModal.id = 'loadingDescripcionModal';
+            loadingModal.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+                z-index: 9999;
+            `;
+            loadingModal.innerHTML = '<div style="background: white; padding: 2rem; border-radius: 12px; text-align: center;"><p>Cargando información...</p></div>';
+            document.body.appendChild(loadingModal);
+
+            // Cargar datos del pedido
+            const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`);
+            const data = await response.json();
             
-            htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
+            document.getElementById('loadingDescripcionModal')?.remove();
+
+            // Construir HTML del modal mejorado
+            let htmlContenido = '';
+
+            // Mostrar prendas con descripciones
+            if (data.prendas && Array.isArray(data.prendas)) {
+                htmlContenido += '<div style="margin-bottom: 2rem;">';
+                
+                data.prendas.forEach((prenda, idx) => {
+                    // Construir descripción usando la misma lógica que Formatters
+                    const descripcionPrenda = construirDescripcionComoPrenda(prenda, idx);
+                    
+                    htmlContenido += `
+                        <div style="margin-bottom: 1.5rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                            ${descripcionPrenda}
+                    `;
+                    
+                    // Mostrar procesos de esta prenda
+                    if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
+                        htmlContenido += `
+                            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">
+                                <div style="font-weight: 600; color: #374151; margin-bottom: 1rem; font-size: 1.1rem;">Procesos de Producción</div>
+                        `;
+                        
+                        prenda.procesos.forEach((proceso) => {
+                            const descripcionProceso = construirDescripcionComoProceso(prenda, proceso);
+                            
+                            htmlContenido += `
+                                <div style="background: white; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                                    ${descripcionProceso}
+                                </div>
+                            `;
+                        });
+                        
+                        htmlContenido += '</div>';
+                    }
+                    
+                    htmlContenido += '</div>';
+                });
+                
+                htmlContenido += '</div>';
+            }
+
+            // Mostrar modal mejorado
+            abrirModalCelda('Prendas y Procesos', htmlContenido, true);
+        } catch (error) {
+            console.error('Error al cargar descripción:', error);
+            document.getElementById('loadingDescripcionModal')?.remove();
+            alert('Error al cargar la información');
+        }
+    }
+
+    /**
+     * Construye descripción de prenda igual que Formatters.construirDescripcionCostura
+     */
+    function construirDescripcionComoPrenda(prenda, numero) {
+        const lineas = [];
+
+        // 1. Nombre de la prenda
+        if (prenda.nombre_prenda || prenda.nombre) {
+            lineas.push(`<div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem; color: #1f2937;">PRENDA ${numero + 1}: ${(prenda.nombre_prenda || prenda.nombre).toUpperCase()}</div>`);
+        }
+
+        // 2. Línea técnica
+        const partes = [];
+        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        
+        // Manga desde variantes
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            const primerVariante = prenda.variantes[0];
+            if (primerVariante.manga) {
+                let mangaTexto = primerVariante.manga.toUpperCase();
+                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
+                    mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
+                }
+                partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
+            }
+        }
+        
+        if (partes.length > 0) {
+            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
+        }
+
+        // 3. Descripción base
+        if (prenda.descripcion && prenda.descripcion.trim()) {
+            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${prenda.descripcion.toUpperCase()}</div>`);
+        }
+
+        // 4. Detalles técnicos
+        const detalles = [];
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            const primerVariante = prenda.variantes[0];
             
-            lineas.forEach((linea, i) => {
-                // Nombre de prenda
-                if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i)) {
-                    htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
+            if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
+                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}</div>`);
+            }
+            
+            if (primerVariante.broche_obs && primerVariante.broche_obs.trim()) {
+                let etiqueta = 'BROCHE/BOTÓN';
+                if (primerVariante.broche) {
+                    etiqueta = primerVariante.broche.toUpperCase();
                 }
-                // Atributos (Color, Tela, Manga)
-                else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
+                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>${etiqueta}:</strong> ${primerVariante.broche_obs.toUpperCase()}</div>`);
+            }
+        }
+        
+        if (detalles.length > 0) {
+            lineas.push(...detalles);
+        }
+
+        // 5. Tallas
+        if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
+            lineas.push(`<div style="margin-top: 0.75rem; margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">TALLAS</div>`);
+            lineas.push(construirTallasFormato(prenda.tallas, prenda.genero));
+        }
+
+        return lineas.join('');
+    }
+
+    /**
+     * Construye descripción de proceso igual que Formatters.construirDescripcionProceso
+     */
+    function construirDescripcionComoProceso(prenda, proceso) {
+        const lineas = [];
+
+        // 1. Tipo de proceso
+        if (proceso.tipo_proceso || proceso.nombre_proceso) {
+            lineas.push(`<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem; color: #1f2937;">${(proceso.tipo_proceso || proceso.nombre_proceso).toUpperCase()}</div>`);
+        }
+
+        // 2. Línea técnica
+        const partes = [];
+        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        
+        // Manga desde variantes
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            const primerVariante = prenda.variantes[0];
+            if (primerVariante.manga) {
+                let mangaTexto = primerVariante.manga.toUpperCase();
+                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
+                    mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
                 }
-                // Descripción
-                else if (linea.match(/^DESCRIPCIÓN:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
-                }
-                // Detalles (Reflectivo, Bolsillos, etc)
-                else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal):/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
-                }
-                // Viñetas
-                else if (linea.startsWith('•') || linea.startsWith('-')) {
-                    htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
-                }
-                // Tallas
-                else if (linea.match(/^Tallas:/i)) {
-                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
-                }
-                // Otras líneas
-                else if (linea) {
-                    htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
-                }
+                partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
+            }
+        }
+        
+        if (partes.length > 0) {
+            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
+        }
+
+        // 3. Ubicaciones
+        if (proceso.ubicaciones && Array.isArray(proceso.ubicaciones) && proceso.ubicaciones.length > 0) {
+            lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">UBICACIONES:</div>`);
+            proceso.ubicaciones.forEach((ubicacion) => {
+                lineas.push(`<div style="margin-bottom: 0.25rem; color: #374151;">• ${ubicacion.toUpperCase()}</div>`);
             });
-            
-            htmlContenido += '</div>';
+            lineas.push(`<div style="margin-bottom: 0.75rem;"></div>`);
+        }
+
+        // 4. Observaciones
+        if (proceso.observaciones && proceso.observaciones.trim()) {
+            lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">OBSERVACIONES:</div>`);
+            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${proceso.observaciones.toUpperCase()}</div>`);
+        }
+
+        // 5. Tallas
+        if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
+            lineas.push(`<div style="margin-top: 0.75rem; margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">TALLAS</div>`);
+            lineas.push(construirTallasFormato(prenda.tallas, prenda.genero));
+        }
+
+        return lineas.join('');
+    }
+
+    /**
+     * Construye formato de tallas igual que Formatters
+     */
+    function construirTallasFormato(tallas, generoDefault = 'dama') {
+        const tallasDama = {};
+        const tallasCalballero = {};
+        
+        // Procesar tallas - pueden venir ANIDADAS: {"dama": {"L": 30, "S": 20}}
+        Object.entries(tallas).forEach(([key, value]) => {
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                const genero = key.toLowerCase();
+                Object.entries(value).forEach(([talla, cantidad]) => {
+                    if (genero === 'dama') {
+                        tallasDama[talla] = cantidad;
+                    } else if (genero === 'caballero' || genero === 'caballero') {
+                        tallasCalballero[talla] = cantidad;
+                    }
+                });
+            } 
+            else if (typeof value === 'number' || typeof value === 'string') {
+                if (key.includes('-')) {
+                    const [genero, talla] = key.split('-');
+                    if (genero.toLowerCase() === 'dama') {
+                        tallasDama[talla] = value;
+                    } else if (genero.toLowerCase() === 'caballero') {
+                        tallasCalballero[talla] = value;
+                    }
+                } else {
+                    const genero = generoDefault || 'dama';
+                    if (genero.toLowerCase() === 'dama') {
+                        tallasDama[key] = value;
+                    } else if (genero.toLowerCase() === 'caballero') {
+                        tallasCalballero[key] = value;
+                    }
+                }
+            }
         });
+        
+        let resultado = '';
+        
+        // Renderizar DAMA
+        if (Object.keys(tallasDama).length > 0) {
+            const tallasStr = Object.entries(tallasDama)
+                .map(([talla, cant]) => `<span style="color: #dc2626;"><strong>${talla}: ${cant}</strong></span>`)
+                .join(', ');
+            resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">DAMA: ${tallasStr}</div>`;
+        }
+        
+        // Renderizar CABALLERO
+        if (Object.keys(tallasCalballero).length > 0) {
+            const tallasStr = Object.entries(tallasCalballero)
+                .map(([talla, cant]) => `<span style="color: #dc2626;"><strong>${talla}: ${cant}</strong></span>`)
+                .join(', ');
+            resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">CABALLERO: ${tallasStr}</div>`;
+        }
+        
+        return resultado;
+    }
+    
+    function abrirModalCelda(titulo, contenido, isHtml = false) {
+        // Si contenido ya es HTML, usarlo directamente
+        let htmlContenido = contenido || '-';
+        
+        if (!isHtml && contenido && !contenido.includes('<div')) {
+            // Si es texto plano, formatearlo
+            let contenidoLimpio = contenido || '-';
+            
+            // Remover asteriscos de formato
+            contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
+            
+            // Remover etiquetas de formato como "*** DESCRIPCIÓN: ***"
+            contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
+            
+            // Dividir por prendas (separadas por \n\n)
+            let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
+            
+            htmlContenido = '';
+            
+            prendas.forEach((prenda, index) => {
+                let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
+                
+                htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
+                
+                lineas.forEach((linea, i) => {
+                    // Nombre de prenda
+                    if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i)) {
+                        htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
+                    }
+                    // Atributos (Color, Tela, Manga)
+                    else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
+                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
+                    }
+                    // Descripción
+                    else if (linea.match(/^DESCRIPCIÓN:/i)) {
+                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    }
+                    // Detalles (Reflectivo, Bolsillos, etc)
+                    else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal):/i)) {
+                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    }
+                    // Viñetas
+                    else if (linea.startsWith('•') || linea.startsWith('-')) {
+                        htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
+                    }
+                    // Tallas
+                    else if (linea.match(/^Tallas:/i)) {
+                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    }
+                    // Otras líneas
+                    else if (linea) {
+                        htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
+                    }
+                });
+                
+                htmlContenido += '</div>';
+            });
+        }
         
         // Crear modal
         const modalHTML = `
@@ -1466,6 +1801,14 @@
     }
 
     /**
+     * Editar pedido - redirige a la página de edición
+     */
+    function editarPedido(pedidoId) {
+        // Redirigir a la página de edición/creación del pedido
+        window.location.href = `/asesores/pedidos-produccion/crear-nuevo?editar=${pedidoId}`;
+    }
+
+    /**
      * Eliminar pedido (hacer llamada DELETE al servidor)
      */
     let isDeleting = false; // Flag para prevenir eliminaciones concurrentes
@@ -1626,6 +1969,8 @@
 <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
 <!-- Modal Manager para renderizar detalles del pedido (igual que órdenes) -->
 <script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}"></script>
+<!-- NUEVO: Módulo de recibos dinámicos (refactorizado en componentes) -->
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <!-- Image Gallery para mostrar fotos en el modal -->
@@ -1645,4 +1990,6 @@
 <script src="{{ asset('js/order-tracking/modules/tableManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}"></script>
+<!-- Debug: Script de diagnóstico para eliminar pedidos -->
+<script src="{{ asset('js/asesores/debug-eliminar-pedido.js') }}"></script>
 @endpush

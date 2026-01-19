@@ -135,7 +135,7 @@ $archivos = [
     'public/js/modulos/crear-pedido/gestores/gestor-prendas.js' => 'Gestor de prendas',
     'public/js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js' => 'Gestor de procesos',
     'public/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js' => 'Renderizador de procesos',
-    'public/js/componentes/prenda-card-readonly.js' => 'Tarjeta de prenda readonly',
+    'public/js/componentes/prenda-tarjeta/loader.js' => 'Módulo prenda-tarjeta (loader)',
 ];
 
 foreach ($archivos as $rel => $desc) {

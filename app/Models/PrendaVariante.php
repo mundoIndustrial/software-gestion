@@ -11,8 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Modelo para gestionar variantes de prendas en pedidos de producción.
  * 
  * Una variante es una combinación específica de:
- * - Talla
- * - Cantidad para esa talla
  * - Color
  * - Tela
  * - Tipo de manga
@@ -20,11 +18,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * - Bolsillos
  * - Observaciones específicas
  * 
+ * NOTA [19/01/2026]:
+ * - Talla y cantidad AHORA se guardan en prendas_pedido.cantidad_talla (JSON)
+ * - Ejemplo JSON: {"dama": {"L": 30, "S": 20}, "caballero": {"M": 10}}
+ * - Las variantes son solo combinaciones de características, sin talla/cantidad
+ * 
  * Ejemplo:
  * Una prenda "CAMISA POLO" puede tener variantes:
- * - M, 50 unidades, Rojo, Algodón 100%, Manga Corta, Botones, Sin Bolsillos
- * - L, 30 unidades, Azul, Algodón 100%, Manga Corta, Botones, Con Bolsillo Pecho
- * - XL, 20 unidades, Verde, Tela Mixta, Manga Larga, Broche, Sin Bolsillos
+ * - Rojo, Algodón 100%, Manga Corta, Botones, Sin Bolsillos
+ * - Azul, Algodón 100%, Manga Corta, Botones, Con Bolsillo Pecho
+ * - Verde, Tela Mixta, Manga Larga, Broche, Sin Bolsillos
  */
 class PrendaVariante extends Model
 {
@@ -32,8 +35,6 @@ class PrendaVariante extends Model
 
     protected $fillable = [
         'prenda_pedido_id',
-        'talla',
-        'cantidad',
         'color_id',
         'tela_id',
         'tipo_manga_id',
@@ -45,7 +46,6 @@ class PrendaVariante extends Model
     ];
 
     protected $casts = [
-        'cantidad' => 'integer',
         'tiene_bolsillos' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -117,18 +117,6 @@ class PrendaVariante extends Model
     // ============================================================
 
     /**
-     * Scope: Filtrar variantes por talla
-     * 
-     * @param $query
-     * @param $talla
-     * @return mixed
-     */
-    public function scopePorTalla($query, $talla)
-    {
-        return $query->where('talla', $talla);
-    }
-
-    /**
      * Scope: Filtrar variantes por color
      * 
      * @param $query
@@ -170,13 +158,13 @@ class PrendaVariante extends Model
     /**
      * Accessor: Obtener descripción completa de la variante
      * 
-     * Ej: "M - Rojo, Algodón, Manga Corta, 50 unidades"
+     * Ej: "Rojo, Algodón, Manga Corta, Botones"
      * 
      * @return string
      */
     public function getDescripcionComletaAttribute(): string
     {
-        $partes = [$this->talla];
+        $partes = [];
 
         if ($this->color) {
             $partes[] = $this->color->nombre;
@@ -190,7 +178,9 @@ class PrendaVariante extends Model
             $partes[] = $this->tipoManga->nombre;
         }
 
-        $partes[] = "{$this->cantidad} unidades";
+        if ($this->tipoBrocheBoton) {
+            $partes[] = $this->tipoBrocheBoton->nombre;
+        }
 
         return implode(', ', $partes);
     }
@@ -205,13 +195,11 @@ class PrendaVariante extends Model
 
         /**
          * Cuando se crea o actualiza una variante,
-         * actualizar la cantidad total de la prenda padre
+         * las cantidades ya se gestionan desde prendas_pedido.cantidad_talla
          */
         static::saved(function ($variante) {
             if ($variante->prendaPedido) {
-                // Recalcular cantidad total de la prenda
-                // (No es necesario si usamos un accessor en PrendaPedido)
-                \Log::info("📦 Variante guardada: Talla {$variante->talla}, Cantidad {$variante->cantidad}");
+                \Log::info("📦 Variante guardada - Prenda ID: {$variante->prenda_pedido_id}");
             }
         });
 
@@ -219,7 +207,7 @@ class PrendaVariante extends Model
          * Cuando se elimina una variante
          */
         static::deleting(function ($variante) {
-            \Log::info("🗑️ Variante eliminada: Talla {$variante->talla} de Prenda ID {$variante->prenda_pedido_id}");
+            \Log::info("🗑️ Variante eliminada - Prenda ID: {$variante->prenda_pedido_id}");
         });
     }
 }

@@ -129,14 +129,209 @@ function openFilterModal(columnName) {
     const modal = document.getElementById('filterModal');
     const title = document.getElementById('filterModalTitle');
     const optionsContainer = document.getElementById('filterOptions');
+    const searchInput = document.getElementById('filterSearch');
     
     title.textContent = `Filtrar por ${columnName}`;
+    optionsContainer.innerHTML = '';
+    
+    // CASO ESPECIAL: Descripción - búsqueda con opciones USANDO ENDPOINT
+    if (columnName === 'Descripción') {
+        // Ocultar el input de búsqueda genérico
+        searchInput.style.display = 'none';
+        
+        // Obtener IDs de los pedidos de la tabla
+        const tableContainer = document.querySelector('.table-scroll-container');
+        const pedidoIds = [];
+        
+        if (tableContainer) {
+            const allRows = tableContainer.querySelectorAll('div[data-pedido-row]');
+            allRows.forEach(row => {
+                // Buscar el botón con data-pedido-id
+                const btnVer = row.querySelector('[data-pedido-id]');
+                if (btnVer) {
+                    const id = btnVer.getAttribute('data-pedido-id');
+                    if (id) {
+                        pedidoIds.push(parseInt(id));
+                    }
+                }
+            });
+        }
+        
+        console.log('Pedido IDs encontrados:', pedidoIds);
+        
+        // Input de búsqueda
+        const searchWrapper = document.createElement('div');
+        searchWrapper.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'descripcion-search-input';
+        input.placeholder = 'Buscar prendas, tela, color, proceso...';
+        input.style.cssText = 'padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; width: 100%;';
+        
+        // Pre-llenar si hay filtro anterior
+        if (selectedFilters[columnName] && selectedFilters[columnName][0]) {
+            const stored = selectedFilters[columnName][0];
+            if (stored.startsWith('field:todos:')) {
+                input.value = stored.replace('field:todos:', '');
+            }
+        }
+        
+        searchWrapper.appendChild(input);
+        optionsContainer.appendChild(searchWrapper);
+        
+        // Contenedor de opciones
+        const optionsDiv = document.createElement('div');
+        optionsDiv.id = 'prendas-options-container';
+        optionsDiv.style.cssText = 'max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem;';
+        optionsContainer.appendChild(optionsDiv);
+        
+        // Función para mostrar prendas
+        function renderPrendas() {
+            optionsDiv.innerHTML = '<div style="padding: 1rem; text-align: center; color: #9ca3af;">Cargando prendas...</div>';
+            const searchTerm = input.value.toLowerCase();
+            
+            console.log('=== RENDERIZAR PRENDAS (ENDPOINT) ===');
+            console.log('Search term:', searchTerm);
+            
+            // Cargar datos de todos los pedidos
+            Promise.all(pedidoIds.map(id => 
+                fetch(`/asesores/pedidos/${id}/recibos-datos`)
+                    .then(r => r.json())
+                    .catch(e => {
+                        console.error('Error fetching pedido', id, e);
+                        return null;
+                    })
+            )).then(results => {
+                let matchedPrendas = [];
+                
+                results.forEach((data, idx) => {
+                    if (!data || !data.prendas) return;
+                    
+                    console.log(`\nPedido ${pedidoIds[idx]}:`, data.prendas);
+                    
+                    data.prendas.forEach(prenda => {
+                        // Buscar en nombre, tela, color
+                        const searchIn = `${prenda.nombre || ''} ${prenda.tela || ''} ${prenda.color || ''} ${prenda.descripcion || ''}`.toLowerCase();
+                        console.log(`  Prenda: "${searchIn}"`);
+                        
+                        // También buscar en procesos
+                        let hasProcess = false;
+                        if (prenda.procesos && searchTerm) {
+                            prenda.procesos.forEach(p => {
+                                const processSearch = `${p.descripcion || ''} ${p.ubicacion || ''} ${p.observaciones || ''}`.toLowerCase();
+                                if (processSearch.includes(searchTerm)) {
+                                    console.log(`    ✓ Proceso encontrado: "${p.descripcion}"`);
+                                    hasProcess = true;
+                                }
+                            });
+                        }
+                        
+                        if (!searchTerm || searchIn.includes(searchTerm) || hasProcess) {
+                            console.log(`  ✓ MATCH!`);
+                            matchedPrendas.push(prenda);
+                        }
+                    });
+                });
+                
+                console.log('Total matched prendas:', matchedPrendas.length);
+                
+                // Mostrar prendas
+                optionsDiv.innerHTML = '';
+                const seen = new Set();
+                let count = 0;
+                
+                matchedPrendas.forEach((prenda) => {
+                    if (count >= 5 && !searchTerm) return;
+                    
+                    const prendaNombre = prenda.nombre || prenda.descripcion || 'Prenda';
+                    const key = `${prendaNombre}|${prenda.tela}|${prenda.color}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        count++;
+                        
+                        const div = document.createElement('div');
+                        div.className = 'filter-option';
+                        div.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 6px; transition: background 0.2s;';
+                        
+                        // Usar nombre o descripción como fallback
+                        const prendaNombre = prenda.nombre || prenda.descripcion || 'Prenda';
+                        const id = `filter-prenda-${prendaNombre}-${prenda.tela}-${prenda.color}`.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+                        const displayText = `${prendaNombre}${prenda.tela ? ' - ' + prenda.tela : ''}${prenda.color ? ' (' + prenda.color + ')' : ''}`;
+                        const filterValue = displayText;
+                        const isChecked = selectedFilters[columnName] && selectedFilters[columnName][0] === `field:todos:${filterValue}`;
+                        
+                        console.log('Rendering:', displayText);
+                        
+                        div.innerHTML = `
+                            <input type="checkbox" id="${id}" value="${filterValue}" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
+                            <label for="${id}" style="flex: 1; cursor: pointer; margin: 0; font-size: 0.9rem;">${displayText}</label>
+                        `;
+                        
+                        div.addEventListener('mouseenter', () => {
+                            div.style.background = '#f3f4f6';
+                        });
+                        div.addEventListener('mouseleave', () => {
+                            div.style.background = 'transparent';
+                        });
+                        
+                        optionsDiv.appendChild(div);
+                    }
+                });
+                
+                if (optionsDiv.children.length === 0) {
+                    optionsDiv.innerHTML = '<div style="padding: 1rem; text-align: center; color: #9ca3af;">No hay prendas disponibles</div>';
+                }
+            });
+        }
+        
+        // Renderizar opciones iniciales
+        renderPrendas();
+        
+        // Evento de búsqueda en tiempo real
+        input.addEventListener('keyup', renderPrendas);
+        
+        // Botón Buscar
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.style.cssText = 'display: flex; gap: 0.5rem; margin-top: 1rem;';
+        
+        const btnBuscar = document.createElement('button');
+        btnBuscar.textContent = 'Buscar';
+        btnBuscar.style.cssText = 'flex: 1; padding: 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;';
+        btnBuscar.addEventListener('mouseover', () => btnBuscar.style.background = '#2563eb');
+        btnBuscar.addEventListener('mouseout', () => btnBuscar.style.background = '#3b82f6');
+        btnBuscar.addEventListener('click', () => {
+            const checkbox = optionsDiv.querySelector('input[type="checkbox"]:checked');
+            if (checkbox) {
+                const prendaName = checkbox.value;
+                selectedFilters['Descripción'] = [`field:todos:${prendaName}`];
+            } else if (input.value.trim()) {
+                selectedFilters['Descripción'] = [`field:todos:${input.value.trim()}`];
+            } else {
+                delete selectedFilters['Descripción'];
+            }
+            
+            saveFiltersToLocalStorage();
+            closeFilterModal();
+            applyTableFilters();
+            updateFilterBadges();
+        });
+        
+        buttonWrapper.appendChild(btnBuscar);
+        optionsContainer.appendChild(buttonWrapper);
+        
+        modal.classList.add('active');
+        input.focus();
+        return;
+    }
+    
+    // RESTO DE COLUMNAS: Checkboxes normales - Mostrar el input de búsqueda genérico
+    searchInput.style.display = 'block';
     
     // Obtener valores únicos de la tabla
     const values = getColumnValuesFromTableByName(columnName);
     
     // Construir opciones
-    optionsContainer.innerHTML = '';
     if (values.length === 0) {
         optionsContainer.innerHTML = '<div style="padding: 1rem; text-align: center; color: #9ca3af;">No hay datos disponibles</div>';
     } else {
@@ -183,7 +378,6 @@ function openFilterModal(columnName) {
     modal.classList.add('active');
     
     // Agregar funcionalidad al buscador
-    const searchInput = document.getElementById('filterSearch');
     searchInput.value = '';
     searchInput.focus();
     searchInput.onkeyup = filterSearchOptions;
@@ -220,13 +414,27 @@ function closeFilterModal(event) {
  * Aplicar filtros seleccionados
  */
 function applyFilters() {
-    const checkboxes = document.querySelectorAll('.filter-options input[type="checkbox"]:checked');
-    const selectedValues = Array.from(checkboxes).map(cb => cb.value);
-    
-    if (selectedValues.length > 0) {
-        selectedFilters[currentFilterColumnName] = selectedValues;
+    // CASO ESPECIAL: Descripción - búsqueda simple
+    if (currentFilterColumnName === 'Descripción') {
+        const input = document.getElementById('descripcion-search-input');
+        
+        if (input && input.value.trim()) {
+            const text = input.value.trim();
+            // Guardar con formato simplificado: field:todos:napoles
+            selectedFilters['Descripción'] = [`field:todos:${text}`];
+        } else {
+            delete selectedFilters['Descripción'];
+        }
     } else {
-        delete selectedFilters[currentFilterColumnName];
+        // Resto de columnas con checkboxes
+        const checkboxes = document.querySelectorAll('.filter-options input[type="checkbox"]:checked');
+        const selectedValues = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (selectedValues.length > 0) {
+            selectedFilters[currentFilterColumnName] = selectedValues;
+        } else {
+            delete selectedFilters[currentFilterColumnName];
+        }
     }
     
     saveFiltersToLocalStorage();  // 💾 Guardar en localStorage
@@ -304,13 +512,53 @@ function applyTableFilters() {
                 }
                 
                 // Verificar si el valor está en los filtros seleccionados
-                // Para Descripción, usar búsqueda parcial (contiene)
                 let matches = false;
+                
                 if (columnName === 'Descripción') {
-                    // Búsqueda parcial: verificar si algún filtro está contenido en el valor
-                    matches = filterValues.some(filter => 
-                        cellValue.toLowerCase().includes(filter.toLowerCase())
-                    );
+                    // Búsqueda inteligente por campo específico
+                    matches = filterValues.some(filter => {
+                        // Formato: field:nombre_prenda:napoles
+                        if (filter.startsWith('field:')) {
+                            const [, field, searchText] = filter.match(/^field:(\w+):(.+)$/) || [];
+                            if (!field || !searchText) return false;
+                            
+                            // Extraer los datos del atributo data-prenda-info de la fila si existe
+                            const prenda = row.getAttribute('data-prenda-info');
+                            if (!prenda) return false;
+                            
+                            try {
+                                const prendaData = JSON.parse(prenda);
+                                let searchIn = '';
+                                
+                                if (field === 'nombre_prenda') {
+                                    searchIn = (prendaData.nombre_prenda || '').toLowerCase();
+                                } else if (field === 'tela') {
+                                    searchIn = (prendaData.tela || '').toLowerCase();
+                                } else if (field === 'color') {
+                                    searchIn = (prendaData.color || '').toLowerCase();
+                                } else if (field === 'descripcion') {
+                                    searchIn = (prendaData.descripcion || '').toLowerCase();
+                                } else if (field === 'todos') {
+                                    // Buscar en todos los campos
+                                    const todos = [
+                                        prendaData.nombre_prenda || '',
+                                        prendaData.tela || '',
+                                        prendaData.color || '',
+                                        prendaData.descripcion || ''
+                                    ].join(' ').toLowerCase();
+                                    searchIn = todos;
+                                }
+                                
+                                return searchIn.includes(searchText.toLowerCase());
+                            } catch (e) {
+                                // Si no hay data-prenda-info, hacer búsqueda en el texto visible
+                                return cellValue.toLowerCase().includes(searchText.toLowerCase());
+                            }
+                        } else {
+                            // Búsqueda parcial antigua (compatibilidad)
+                            return cellValue.toLowerCase().includes(filter.toLowerCase());
+                        }
+                    });
                 } else {
                     // Búsqueda exacta para otras columnas
                     matches = filterValues.includes(cellValue);

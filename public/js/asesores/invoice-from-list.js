@@ -529,7 +529,7 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
         max-width: 95vw;
         width: auto;
         max-height: 90vh;
-        overflow-y: visible;
+        overflow: visible;
         box-shadow: none;
         position: relative;
         padding: 0;
@@ -538,7 +538,7 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
     // Placeholder para cargar el componente
     const componentContainer = document.createElement('div');
     componentContainer.id = 'order-detail-modal-container';
-    componentContainer.style.padding = '0';
+    componentContainer.style.cssText = 'padding: 0; position: relative; width: 100%; height: 100%;';
     modal.appendChild(componentContainer);
     
     overlay.appendChild(modal);
@@ -575,7 +575,13 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
     contenedor.innerHTML = `
         <link rel="stylesheet" href="/css/order-detail-modal.css">
         
-        <div class="order-detail-modal-container" style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+        <!-- Botón cerrar (X) en la esquina superior derecha -->
+        <button id="btn-cerrar-modal" type="button" title="Cerrar" onclick="cerrarModalRecibos()" style="position: absolute; right: 0; top: 0; width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.95); border: none; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); z-index: 20; font-weight: bold;">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="order-detail-modal-container" style="display: flex; flex-direction: column; width: 100%; height: 100%; position: relative;">
+
             <div class="order-detail-card">
                 <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
                 <div id="order-date" class="order-date">
@@ -671,6 +677,16 @@ function cargarReceiptManager(callback) {
         mostrarErrorNotificacion('Error', 'No se pudo cargar el gestor de recibos');
     };
     document.head.appendChild(script);
+}
+
+/**
+ * Cierra el modal de recibos
+ */
+function cerrarModalRecibos() {
+    const overlay = document.getElementById('modal-recibos-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
 }
 
 console.log('✅ [INVOICE LIST] invoice-from-list.js cargado correctamente');

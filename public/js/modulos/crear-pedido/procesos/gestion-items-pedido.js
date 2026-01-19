@@ -217,10 +217,15 @@ class GestionItemsUI {
                 console.log('🧹 [GestionItemsUI] Tallas seleccionadas limpias');
             }
             
-            // ✅ NUEVO: Limpiar procesos seleccionados
-            if (window.procesosSeleccionados) {
-                window.procesosSeleccionados = {};
-                console.log('🧹 [GestionItemsUI] Procesos seleccionados limpiados');
+            // ✅ NUEVO: Limpiar procesos seleccionados SOLO si es nueva prenda
+            // Si estamos editando (prendaEditIndex tiene valor), NO limpiar procesos
+            if (this.prendaEditIndex === null || this.prendaEditIndex === undefined) {
+                if (window.procesosSeleccionados) {
+                    window.procesosSeleccionados = {};
+                    console.log('🧹 [GestionItemsUI] Procesos seleccionados limpiados (nueva prenda)');
+                }
+            } else {
+                console.log('ℹ️  [GestionItemsUI] Preservando procesos seleccionados (editando prenda índice: ' + this.prendaEditIndex + ')');
             }
             
             // ✅ NUEVO: Limpiar contenedor de tarjetas de procesos (pero NO ponerlo en display:none)
@@ -231,16 +236,30 @@ class GestionItemsUI {
                 console.log('🧹 [GestionItemsUI] Contenedor de tarjetas de procesos limpiado');
             }
             
-            // Limpiar índice de edición si existe
-            this.prendaEditIndex = null;
-            console.log('🧹 [GestionItemsUI] Índice de edición limpiado');
+            // ✅ IMPORTANTE: SOLO limpiar índice de edición si es nueva prenda
+            // Si viene de cargarItemEnModal, YA tiene un valor establecido
+            if (this.prendaEditIndex === undefined) {
+                // Primera vez que se abre, establecer a null
+                this.prendaEditIndex = null;
+                console.log('🧹 [GestionItemsUI] Índice de edición inicializado a null (nueva prenda)');
+            } else if (this.prendaEditIndex === null) {
+                // Ya está null, no hacer nada
+                console.log('ℹ️  [GestionItemsUI] Índice de edición ya está null');
+            } else {
+                // Tiene un valor (viene de cargarItemEnModal), preservar
+                console.log('ℹ️  [GestionItemsUI] Preservando prendaEditIndex:', this.prendaEditIndex);
+            }
             
-            // IMPORTANTE: Limpiar checkboxes de variaciones
+            // IMPORTANTE: Limpiar checkboxes SOLO si es nueva prenda
+            // Si estamos editando, NO limpiar checkboxes de procesos (ya que se cargarán luego)
             const checkboxes = [
-                'aplica-manga', 'aplica-bolsillos', 'aplica-broche',
-                'checkbox-reflectivo', 'checkbox-bordado', 'checkbox-estampado',
-                'checkbox-dtf', 'checkbox-sublimado'
+                'aplica-manga', 'aplica-bolsillos', 'aplica-broche'
             ];
+            
+            // SOLO agregar checkboxes de procesos si es nueva prenda (no editando)
+            if (this.prendaEditIndex === null || this.prendaEditIndex === undefined) {
+                checkboxes.push('checkbox-reflectivo', 'checkbox-bordado', 'checkbox-estampado', 'checkbox-dtf', 'checkbox-sublimado');
+            }
             
             checkboxes.forEach(checkboxId => {
                 const checkbox = document.getElementById(checkboxId);
@@ -248,7 +267,10 @@ class GestionItemsUI {
                     checkbox.checked = false;
                 }
             });
-            console.log('🧹 [GestionItemsUI] Checkboxes de variaciones limpiados');
+            console.log('🧹 [GestionItemsUI] Checkboxes limpiados');
+            if (this.prendaEditIndex !== null && this.prendaEditIndex !== undefined) {
+                console.log('   (Checkboxes de procesos preservados para edición)');
+            }
             
             // Limpiar campos de texto asociados a variaciones
             const campos = [
@@ -371,7 +393,11 @@ class GestionItemsUI {
         console.log('   Prenda recibida:', prenda);
         console.log('   Índice:', prendaIndex);
         
-        // Abrir el modal primero
+        // ✅ CRÍTICO: Establecer índice de edición ANTES de abrir modal
+        this.prendaEditIndex = prendaIndex;
+        console.log('   ✅ prendaEditIndex establecido a:', prendaIndex);
+        
+        // Abrir el modal
         this.abrirModalAgregarPrendaNueva();
         
         if (!prenda) {
@@ -1099,7 +1125,7 @@ class GestionItemsUI {
             } else {
                 if (typeof window.generarTarjetaPrendaReadOnly !== 'function') {
                     console.error('❌ [GestionItemsUI] generarTarjetaPrendaReadOnly NO ESTÁ CARGADO');
-                    console.error('   Verifica que prenda-card-readonly.js esté incluido en el HTML');
+                    console.error('   Verifica que prenda-tarjeta/loader.js esté incluido en el HTML');
                     return;
                 }
                 

@@ -1,21 +1,31 @@
 /**
- * GUÍA DE USO - TARJETA DE PRENDA SOLO LECTURA
+ * ⚠️  ARCHIVO DEPRECADO - VER MÓDULO NUEVO
  * 
- * Archivos incluidos:
- * 1. public/js/componentes/prenda-card-readonly.js (Lógica)
- * 2. public/css/componentes/prenda-card-readonly.css (Estilos)
+ * Este archivo es SOLO REFERENCIA. El código ha sido migrado a estructura modular.
  * 
- * CARGA EN HTML:
+ * 📦 NUEVA ESTRUCTURA (prenda-tarjeta/):
+ * - prenda-tarjeta/loader.js (⭐ USA ESTO - carga automática)
+ * - prenda-tarjeta/index.js (función principal)
+ * - prenda-tarjeta/secciones.js (secciones expandibles)
+ * - prenda-tarjeta/galerias.js (modales de galerías)
+ * - prenda-tarjeta/interacciones.js (event listeners)
+ * 
+ * CARGA EN HTML (NUEVA):
  * 
  *   <link rel="stylesheet" href="/css/componentes/prenda-card-readonly.css">
- *   <script src="/js/componentes/prenda-card-readonly.js"></script>
+ *   <script src="/js/componentes/prenda-tarjeta/loader.js"></script>
  * 
  * (Después del script de SweetAlert2)
+ * 
+ * Para más detalles, ver: public/js/componentes/prenda-tarjeta/README.md
  */
 
 // ============================================
-// ESTRUCTURA DE DATOS DE PRENDA
+// ⚠️  NOTA: Este es código de referencia
 // ============================================
+// El código real está en los módulos de prenda-tarjeta/
+
+// ESTRUCTURA DE DATOS DE PRENDA
 const ejemploPrenda = {
     id: 1,
     nombre_producto: "Camisa Casual",
@@ -182,11 +192,12 @@ function renderizarPrendasEnTarjetas() {
  */
 
 // ============================================
-// FUNCIONES HELPER (Ya incluidas en prenda-card-readonly.js)
+// FUNCIONES (Ahora en módulos prenda-tarjeta/)
 // ============================================
 
 /**
  * generarTarjetaPrendaReadOnly(prenda, indice)
+ * → Ubicación: prenda-tarjeta/index.js
  * → Retorna HTML string de la tarjeta
  * 
  * construirSeccionVariaciones(prenda, indice)
