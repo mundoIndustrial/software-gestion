@@ -6,6 +6,14 @@ use App\Http\Controllers\PrendaController;
 use App\Http\Controllers\Api\ProcesosController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
+use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
+
+/**
+ * RUTAS PÚBLICAS - DATOS GENERALES (SIN AUTENTICACIÓN)
+ */
+Route::prefix('asistencia-personal')->group(function () {
+    Route::get('/obtener-todas-las-personas', [AsistenciaPersonalController::class, 'obtenerTodasLasPersonas']);
+});
 
 /**
  * API Routes for DDD-based Orden management (FASE 3 - DDD)

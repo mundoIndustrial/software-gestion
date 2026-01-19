@@ -18,7 +18,8 @@ use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\DebugRegistrosController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\StorageController;
-use App\Http\Controllers\Api\AsistenciaPersonalController;
+use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
+use App\Infrastructure\Http\Controllers\AsistenciaPersonalWebController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -813,19 +814,19 @@ Route::get('/storage-serve/{path}', function($path) {
 // RUTAS DEL MÓDULO ASISTENCIA PERSONAL
 // ========================================
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/asistencia-personal', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'index'])
+    Route::get('/asistencia-personal', [AsistenciaPersonalWebController::class, 'index'])
         ->name('asistencia-personal.index');
-    Route::get('/asistencia-personal/crear', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'create'])
+    Route::get('/asistencia-personal/crear', [AsistenciaPersonalWebController::class, 'create'])
         ->name('asistencia-personal.create');
-    Route::post('/asistencia-personal', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'store'])
+    Route::post('/asistencia-personal', [AsistenciaPersonalWebController::class, 'store'])
         ->name('asistencia-personal.store');
-    Route::get('/asistencia-personal/{id}', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'show'])
+    Route::get('/asistencia-personal/{id}', [AsistenciaPersonalWebController::class, 'show'])
         ->name('asistencia-personal.show');
-    Route::get('/asistencia-personal/{id}/editar', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'edit'])
+    Route::get('/asistencia-personal/{id}/editar', [AsistenciaPersonalWebController::class, 'edit'])
         ->name('asistencia-personal.edit');
-    Route::patch('/asistencia-personal/{id}', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'update'])
+    Route::patch('/asistencia-personal/{id}', [AsistenciaPersonalWebController::class, 'update'])
         ->name('asistencia-personal.update');
-    Route::delete('/asistencia-personal/{id}', [App\Modules\AsistenciaPersonal\Presentation\Controllers\AsistenciaPersonalController::class, 'destroy'])
+    Route::delete('/asistencia-personal/{id}', [AsistenciaPersonalWebController::class, 'destroy'])
         ->name('asistencia-personal.destroy');
 });
 
@@ -833,26 +834,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ========================================
 // API ROUTES - ASISTENCIA PERSONAL
 // ========================================
-Route::middleware(['auth', 'verified'])->prefix('asistencia-personal')->name('asistencia-personal.')->group(function () {
-    Route::post('/procesar-pdf', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'procesarPDF'])
+Route::middleware(['auth'])->prefix('asistencia-personal')->name('asistencia-personal.')->group(function () {
+    Route::post('/procesar-pdf', [AsistenciaPersonalController::class, 'procesarPDF'])
         ->name('procesar-pdf');
-    Route::post('/validar-registros', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'validarRegistros'])
+    Route::post('/validar-registros', [AsistenciaPersonalController::class, 'validarRegistros'])
         ->name('validar-registros');
-    Route::post('/guardar-registros', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'guardarRegistros'])
+    Route::post('/guardar-registros', [AsistenciaPersonalController::class, 'guardarRegistros'])
         ->name('guardar-registros');
-    Route::get('/reportes/{id}/detalles', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'getReportDetails'])
+    Route::post('/calcular-horas', [AsistenciaPersonalController::class, 'calcularHoras'])
+        ->name('calcular-horas');
+    Route::get('/reportes/{id}/detalles', [AsistenciaPersonalController::class, 'getReportDetails'])
         ->name('reportes.detalles');
-    Route::get('/reportes/{id}/ausencias', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'getAbsenciasDelDia'])
+    Route::get('/reportes/{id}/ausencias', [AsistenciaPersonalController::class, 'getAbsenciasDelDia'])
         ->name('reportes.ausencias');
     Route::post('/guardar-asistencia-detallada', [App\Http\Controllers\API\AsistenciaDetalladaController::class, 'guardarCambios'])
         ->name('guardar-asistencia-detallada');
-    Route::post('/guardar-hora-extra-agregada', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'guardarHoraExtraAgregada'])
+    Route::post('/guardar-hora-extra-agregada', [AsistenciaPersonalController::class, 'guardarHoraExtraAgregada'])
         ->name('guardar-hora-extra-agregada');
-    Route::get('/obtener-todas-las-personas', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'obtenerTodasLasPersonas'])
-        ->name('obtener-todas-las-personas');
-    Route::post('/obtener-horas-extras-agregadas-batch', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'obtenerHorasExtrasAgregadasBatch'])
+    // Ruta de prueba temporal
+    Route::get('/obtener-todas-las-personas-test', function() {
+        return response()->json([
+            'success' => true,
+            'test' => 'OK',
+            'message' => 'La ruta test funciona'
+        ]);
+    })->middleware(['auth']);
+    Route::get('/test-simple', function() {
+        return response()->json(['ok' => true]);
+    });
+    Route::post('/obtener-horas-extras-agregadas-batch', [AsistenciaPersonalController::class, 'obtenerHorasExtrasAgregadasBatch'])
         ->name('obtener-horas-extras-agregadas-batch');
-    Route::get('/obtener-horas-extras-agregadas/{codigo_persona}', [App\Http\Controllers\Api\AsistenciaPersonalController::class, 'obtenerHorasExtrasAgregadas'])
+    Route::get('/obtener-horas-extras-agregadas/{codigo_persona}', [AsistenciaPersonalController::class, 'obtenerHorasExtrasAgregadas'])
         ->name('obtener-horas-extras-agregadas');
 });
 

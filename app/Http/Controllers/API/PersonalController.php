@@ -57,14 +57,18 @@ class PersonalController extends Controller
                 ], 404);
             }
 
+            $rolId = $request->input('id_rol');
+            
+            // Log para debugging
+            \Log::info("Intentando asignar rol_id: {$rolId} a personal: {$id}");
+            
             // Validar que id_rol sea válido si se proporciona
-            $request->validate([
+            $validated = $request->validate([
                 'id_rol' => 'nullable|integer|exists:roles,id'
             ]);
 
-            $personal->update([
-                'id_rol' => $request->input('id_rol')
-            ]);
+            $personal->id_rol = $validated['id_rol'];
+            $personal->save();
 
             // Recargar la relación para obtener el nombre del rol actualizado
             $personal->load('rol');
@@ -79,7 +83,20 @@ class PersonalController extends Controller
                     'rol' => $personal->rol ? $personal->rol->name : null,
                 ]
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Error de validación - El rol no existe en la base de datos',
+                'message' => $e->errors(),
+                'received_id_rol' => $request->input('id_rol')
+            ], 422);
         } catch (\Exception $e) {
+            \Log::error('Error al actualizar rol', [
+                'personal_id' => $id,
+                'id_rol' => $request->input('id_rol'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'error' => 'Error al actualizar el rol',
                 'message' => $e->getMessage()
