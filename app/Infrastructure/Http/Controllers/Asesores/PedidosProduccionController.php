@@ -623,4 +623,93 @@ class PedidosProduccionController
             ], 500);
         }
     }
+
+    /**
+     * POST /api/pedidos-produccion/actualizar-prenda
+     * Actualizar datos de una prenda específica dentro de un pedido
+     */
+    public function actualizarPrenda(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'pedidoId' => 'required|numeric',
+                'prendasIndex' => 'required|numeric|min:0',
+                'nombre' => 'sometimes|nullable|string',
+                'descripcion' => 'sometimes|nullable|string',
+                'talla_referencia' => 'sometimes|nullable|string',
+                'tallas' => 'sometimes|nullable|array',
+                'infoTecnica' => 'sometimes|nullable|array',
+                'observaciones' => 'sometimes|nullable|string',
+            ]);
+
+            $pedidoId = (int) $validated['pedidoId'];
+            $prendasIndex = (int) $validated['prendasIndex'];
+
+            Log::info(' Actualizando prenda', [
+                'pedido_id' => $pedidoId,
+                'prenda_index' => $prendasIndex,
+            ]);
+
+            // Obtener el pedido directamente por ID
+            $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            // Validar que el índice de prenda existe
+            $prendas = $pedido->prendas()->get()->toArray();
+            if (!isset($prendas[$prendasIndex])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada en este pedido',
+                ], 404);
+            }
+
+            // Obtener la prenda como modelo (no array) para poder guardar
+            $prenda = $pedido->prendas()->get()[$prendasIndex];
+
+            // Actualizar campos simples
+            if (isset($validated['nombre'])) {
+                $prenda->nombre_prenda = $validated['nombre'];
+            }
+            if (isset($validated['descripcion'])) {
+                $prenda->descripcion = $validated['descripcion'];
+            }
+
+            // Actualizar tallas (guardadas en cantidad_talla como JSON)
+            if (isset($validated['tallas'])) {
+                $prenda->cantidad_talla = $validated['tallas'];
+            }
+
+            // Guardar cambios
+            $prenda->save();
+
+            Log::info('✅ Prenda actualizada correctamente', [
+                'pedido_id' => $pedidoId,
+                'prenda_index' => $prendasIndex,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Prenda actualizada correctamente',
+                'prenda' => $prenda,
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error actualizando prenda', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar prenda: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
+

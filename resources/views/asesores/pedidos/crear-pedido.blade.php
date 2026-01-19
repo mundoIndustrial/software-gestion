@@ -49,6 +49,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
+    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-pedido.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
     

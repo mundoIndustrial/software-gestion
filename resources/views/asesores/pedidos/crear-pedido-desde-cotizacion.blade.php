@@ -164,6 +164,9 @@
     
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    
+    <!-- Componente: Editor de Prendas (para editar desde listado de pedidos) -->
+    <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}"></script>
 
     <script>
         // Datos del servidor

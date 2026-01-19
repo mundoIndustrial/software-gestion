@@ -14,6 +14,15 @@ window._galeríasPreview = {};
 window._idGaleriaPreview = 0;
 
 /**
+ * Helper para extraer URL de una imagen (que puede ser string u objeto)
+ */
+window._extraerURLImagen = function(img) {
+    if (!img) return '';
+    if (typeof img === 'string') return img;
+    return img.url || img.ruta || img.path || img.src || '';
+};
+
+/**
  * Registra una galería de imágenes y retorna un ID único
  */
 window._registrarGalería = function(imagenes, titulo) {
@@ -31,7 +40,7 @@ window._registrarGalería = function(imagenes, titulo) {
  */
 window._abrirGaleriaImagenesDesdeID = function(galeriaId) {
     if (galeriaId === null || galeriaId === undefined || !window._galeríasPreview[galeriaId]) {
-        console.warn(`⚠️ Galería ID ${galeriaId} no encontrada`);
+        console.warn(` Galería ID ${galeriaId} no encontrada`);
         return;
     }
     
@@ -44,6 +53,11 @@ window._abrirGaleriaImagenesDesdeID = function(galeriaId) {
  */
 window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
     if (!Array.isArray(imagenes) || imagenes.length === 0) return;
+    
+    // Normalizar imagenes - convertir objetos a URLs
+    const imagenesNormalizadas = imagenes.map(img => 
+        typeof img === 'string' ? img : (img.url || img.ruta || img.path || '')
+    );
     
     // Crear modal de galería
     const modalGaleria = document.createElement('div');
@@ -75,7 +89,7 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
     `;
     
     const imagen = document.createElement('img');
-    imagen.src = imagenes[indiceActual];
+    imagen.src = imagenesNormalizadas[indiceActual];
     imagen.style.cssText = `
         max-width: 100%;
         max-height: 75vh;
@@ -105,13 +119,13 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
         font-weight: 600;
     `;
     btnAnterior.onclick = () => {
-        indiceActual = (indiceActual - 1 + imagenes.length) % imagenes.length;
-        imagen.src = imagenes[indiceActual];
-        contador.textContent = `${indiceActual + 1} / ${imagenes.length}`;
+        indiceActual = (indiceActual - 1 + imagenesNormalizadas.length) % imagenesNormalizadas.length;
+        imagen.src = imagenesNormalizadas[indiceActual];
+        contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
     };
     
     const contador = document.createElement('span');
-    contador.textContent = `${indiceActual + 1} / ${imagenes.length}`;
+    contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
     
     const btnSiguiente = document.createElement('button');
     btnSiguiente.textContent = 'Siguiente →';
@@ -125,9 +139,9 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
         font-weight: 600;
     `;
     btnSiguiente.onclick = () => {
-        indiceActual = (indiceActual + 1) % imagenes.length;
-        imagen.src = imagenes[indiceActual];
-        contador.textContent = `${indiceActual + 1} / ${imagenes.length}`;
+        indiceActual = (indiceActual + 1) % imagenesNormalizadas.length;
+        imagen.src = imagenesNormalizadas[indiceActual];
+        contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
     };
     
     const btnCerrar = document.createElement('button');
@@ -205,7 +219,7 @@ window.abrirPreviewFacturaEnVivo = function() {
         return;
     }
     
-    console.log('📋 [PREVIEW] Datos capturados:', datosFormulario);
+    console.log(' [PREVIEW] Datos capturados:', datosFormulario);
     
     // Crear modal con la vista previa
     crearModalPreviewFactura(datosFormulario);
@@ -229,7 +243,7 @@ function capturarDatosFormulario() {
     const formaPago = document.getElementById('forma_de_pago_editable')?.value || 'No especificada';
     
     if (!cliente || cliente.trim() === '') {
-        console.error('❌ Cliente es requerido');
+        console.error(' Cliente es requerido');
         return null;
     }
     
@@ -260,7 +274,7 @@ function capturarDatosFormulario() {
         numero_pedido_temporal: Math.floor(Math.random() * 90000) + 10000
     };
     
-    console.log('✅ [PREVIEW] Datos capturados correctamente');
+    console.log(' [PREVIEW] Datos capturados correctamente');
     return datos;
 }
 
@@ -284,7 +298,7 @@ function capturarPrendas() {
     }
     
     if (!gestor) {
-        console.warn('⚠️  [PREVIEW] GestorPrendaSinCotizacion no disponible - intentando acceso alternativo');
+        console.warn('  [PREVIEW] GestorPrendaSinCotizacion no disponible - intentando acceso alternativo');
         // Intentar obtener del elemento data si existe
         const formElement = document.querySelector('[data-gestor-prendas]');
         if (formElement && formElement.__gestorPrendas) {
@@ -293,7 +307,7 @@ function capturarPrendas() {
     }
     
     if (!gestor) {
-        console.error('❌ [PREVIEW] GestorPrendaSinCotizacion no disponible en ninguna ubicación');
+        console.error(' [PREVIEW] GestorPrendaSinCotizacion no disponible en ninguna ubicación');
         return prendas;
     }
     
@@ -302,7 +316,7 @@ function capturarPrendas() {
         const prendasDelGestor = gestor.obtenerActivas ? gestor.obtenerActivas() : 
                                  (gestor.prendas ? Object.values(gestor.prendas) : []);
         
-        console.log(`📦 [PREVIEW] Prendas en gestor: ${prendasDelGestor.length}`);
+        console.log(` [PREVIEW] Prendas en gestor: ${prendasDelGestor.length}`);
         
         prendasDelGestor.forEach((prenda, index) => {
             // Extraer tallas del prenda preservando géneros CON CANTIDADES REALES
@@ -352,7 +366,7 @@ function capturarPrendas() {
             
             // Extraer procesos con todos sus detalles
             const procesos = [];
-            console.log(`     🔧 DEBUG Procesos para prenda ${index + 1}:`, prenda.procesos);
+            console.log(`      DEBUG Procesos para prenda ${index + 1}:`, prenda.procesos);
             if (prenda.procesos && typeof prenda.procesos === 'object') {
                 Object.entries(prenda.procesos).forEach(([key, proc]) => {
                     console.log(`        - Proceso "${key}":`, proc);
@@ -364,8 +378,8 @@ function capturarPrendas() {
                     const procDatos = proc?.datos || proc;
                     const procTipo = proc?.tipo || procDatos?.tipo;
                     
-                    console.log(`          ✅ procTipo: ${procTipo}`);
-                    console.log(`          ✅ procDatos:`, procDatos);
+                    console.log(`           procTipo: ${procTipo}`);
+                    console.log(`           procDatos:`, procDatos);
                     
                     if (procTipo && procDatos) {
                         // Extraer tallas por género para este proceso
@@ -388,14 +402,14 @@ function capturarPrendas() {
                                 // Si son arrays separados por género: {dama: ["M", "L"], caballero: []}
                                 // O si es un array plano: ["M", "L"]
                                 // En este caso, buscar la estructura de generosConTallas como fallback
-                                console.log(`        ⚠️  procDatos.tallas es array:`, procDatos.tallas);
+                                console.log(`          procDatos.tallas es array:`, procDatos.tallas);
                             } else {
                                 // Es un objeto: puede ser {dama: {M: 20, L: 20}} o similar
                                 Object.assign(tallasProceso, procDatos.tallas);
                             }
                         }
                         
-                        console.log(`        ✅ tallasProceso final:`, tallasProceso);
+                        console.log(`         tallasProceso final:`, tallasProceso);
                         
                         // Extraer ubicaciones como array si viene como string
                         let ubicaciones = procDatos.ubicaciones || [];
@@ -413,7 +427,7 @@ function capturarPrendas() {
                             imagenes = [];
                         }
                         
-                        // ✅ MAPEAR imágenes para convertir File objects a URLs
+                        //  MAPEAR imágenes para convertir File objects a URLs
                         imagenes = imagenes.map(img => {
                             if (img instanceof File) {
                                 // Si es un File object, crear blob URL
@@ -427,12 +441,21 @@ function capturarPrendas() {
                             } else if (typeof img === 'string') {
                                 // Si es una string URL
                                 return img;
+                            } else if (img?.url) {
+                                // Si es un objeto con propiedad url
+                                return img.url;
+                            } else if (img?.ruta) {
+                                // Si es un objeto con propiedad ruta
+                                return img.ruta;
+                            } else if (img?.path) {
+                                // Si es un objeto con propiedad path
+                                return img.path;
                             } else if (img?.src) {
                                 // Si tiene propiedad src
                                 return img.src;
                             } else {
                                 // Fallback: si es un objeto vacío o desconocido, retorna string vacío
-                                console.warn('⚠️ Imagen de proceso no reconocida:', img);
+                                console.warn(' Imagen de proceso no reconocida:', img);
                                 return '';
                             }
                         }).filter(url => url); // Filtrar URLs vacías
@@ -444,12 +467,12 @@ function capturarPrendas() {
                             imagenes: imagenes,
                             tallas: tallasProceso
                         };
-                        console.log(`           ✅ Proceso capturado:`, procObj);
+                        console.log(`            Proceso capturado:`, procObj);
                         procesos.push(procObj);
                     }
                 });
             }
-            console.log(`     ✅ Total de procesos para prenda ${index + 1}:`, procesos);
+            console.log(`      Total de procesos para prenda ${index + 1}:`, procesos);
             
             // Extraer datos de variantes si existen
             const variantes = prenda.variantes || {};
@@ -473,7 +496,7 @@ function capturarPrendas() {
             let imagenCapturada = '';
             
             // Log detallado de debugging
-            console.log(`     🔍 DEBUG Imagen para prenda ${index + 1}:`);
+            console.log(`      DEBUG Imagen para prenda ${index + 1}:`);
             console.log(`        - prenda.imagen: ${prenda.imagen}`);
             console.log(`        - prenda.imagen_prenda: ${prenda.imagen_prenda}`);
             console.log(`        - prenda.fotos: ${prenda.fotos}`);
@@ -484,35 +507,35 @@ function capturarPrendas() {
             }
             
             if (prenda.imagen) {
-                imagenCapturada = typeof prenda.imagen === 'string' ? prenda.imagen : prenda.imagen?.src || '';
-                console.log(`        ✅ Usando prenda.imagen: ${imagenCapturada}`);
+                imagenCapturada = typeof prenda.imagen === 'string' ? prenda.imagen : (prenda.imagen?.url || prenda.imagen?.ruta || prenda.imagen?.src || '');
+                console.log(`         Usando prenda.imagen: ${imagenCapturada}`);
             } else if (prenda.imagen_prenda) {
-                imagenCapturada = typeof prenda.imagen_prenda === 'string' ? prenda.imagen_prenda : prenda.imagen_prenda?.src || '';
-                console.log(`        ✅ Usando prenda.imagen_prenda: ${imagenCapturada}`);
+                imagenCapturada = typeof prenda.imagen_prenda === 'string' ? prenda.imagen_prenda : (prenda.imagen_prenda?.url || prenda.imagen_prenda?.ruta || prenda.imagen_prenda?.src || '');
+                console.log(`         Usando prenda.imagen_prenda: ${imagenCapturada}`);
             } else if (prenda.fotos && Array.isArray(prenda.fotos) && prenda.fotos.length > 0) {
                 const firstFoto = prenda.fotos[0];
                 imagenCapturada = typeof firstFoto === 'string' ? firstFoto : (firstFoto?.blobUrl || firstFoto?.src || firstFoto?.url || '');
-                console.log(`        ✅ Usando prenda.fotos[0]: ${imagenCapturada}`);
+                console.log(`         Usando prenda.fotos[0]: ${imagenCapturada}`);
             } else if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
                 const firstImagen = prenda.imagenes[0];
-                console.log(`        📸 DEBUG firstImagen:`, firstImagen);
-                console.log(`        📸 DEBUG firstImagen type:`, typeof firstImagen);
-                console.log(`        📸 DEBUG firstImagen constructor:`, firstImagen?.constructor?.name);
-                console.log(`        📸 DEBUG firstImagen keys:`, Object.keys(firstImagen || {}));
+                console.log(`         DEBUG firstImagen:`, firstImagen);
+                console.log(`         DEBUG firstImagen type:`, typeof firstImagen);
+                console.log(`         DEBUG firstImagen constructor:`, firstImagen?.constructor?.name);
+                console.log(`         DEBUG firstImagen keys:`, Object.keys(firstImagen || {}));
                 
                 // El componente ImagenesFormDataComponent devuelve: {file, nombre, tamaño}
                 // Sin previewUrl (blob URLs son efímeros)
                 // Generar blob URL on-demand si existe File object
                 if (firstImagen?.file instanceof File) {
                     imagenCapturada = URL.createObjectURL(firstImagen.file);
-                    console.log(`        ✅ Blob URL generado on-demand desde File object: ${imagenCapturada}`);
+                    console.log(`         Blob URL generado on-demand desde File object: ${imagenCapturada}`);
                 } else {
-                    // Fallback a otras propiedades
-                    imagenCapturada = firstImagen?.previewUrl || firstImagen?.blobUrl || firstImagen?.src || firstImagen?.url || firstImagen?.data || (typeof firstImagen === 'string' ? firstImagen : '');
-                    console.log(`        ⚠️ Usando fallback: ${imagenCapturada}`);
+                    // Fallback a otras propiedades - incluir url y ruta
+                    imagenCapturada = firstImagen?.previewUrl || firstImagen?.blobUrl || firstImagen?.src || firstImagen?.url || firstImagen?.ruta || firstImagen?.path || firstImagen?.data || (typeof firstImagen === 'string' ? firstImagen : '');
+                    console.log(`         Usando fallback: ${imagenCapturada}`);
                 }
                 
-                console.log(`        📸 DEBUG - propiedades encontradas en firstImagen:`);
+                console.log(`         DEBUG - propiedades encontradas en firstImagen:`);
                 console.log(`           - file instanceof File: ${firstImagen?.file instanceof File}`);
                 console.log(`           - previewUrl: ${firstImagen?.previewUrl}`);
                 console.log(`           - nombre: ${firstImagen?.nombre}`);
@@ -520,16 +543,16 @@ function capturarPrendas() {
                 
                 // Si aún no hay imagen
                 if (!imagenCapturada) {
-                    console.log(`        ⚠️ No se pudo generar imagen:`, firstImagen);
+                    console.log(`         No se pudo generar imagen:`, firstImagen);
                 }
             } else {
-                console.log(`        ❌ No se encontró imagen en ninguna propiedad`);
+                console.log(`         No se encontró imagen en ninguna propiedad`);
             }
             
             // Detectar imagen de tela con múltiples fallbacks - EXTRAER src si es objeto
             let imagenTelaCapturada = '';
             
-            console.log(`     🧵 DEBUG Imagen Tela para prenda ${index + 1}:`);
+            console.log(`     DEBUG Imagen Tela para prenda ${index + 1}:`);
             console.log(`        - prenda.imagen_tela: ${prenda.imagen_tela}`);
             console.log(`        - prenda.muestra_tela: ${prenda.muestra_tela}`);
             console.log(`        - prenda.imagenes_tela: ${prenda.imagenes_tela}`);
@@ -539,37 +562,37 @@ function capturarPrendas() {
             }
             
             if (prenda.imagen_tela) {
-                imagenTelaCapturada = typeof prenda.imagen_tela === 'string' ? prenda.imagen_tela : prenda.imagen_tela?.src || '';
-                console.log(`        ✅ Usando prenda.imagen_tela: ${imagenTelaCapturada}`);
+                imagenTelaCapturada = typeof prenda.imagen_tela === 'string' ? prenda.imagen_tela : (prenda.imagen_tela?.url || prenda.imagen_tela?.ruta || prenda.imagen_tela?.src || '');
+                console.log(`         Usando prenda.imagen_tela: ${imagenTelaCapturada}`);
             } else if (prenda.muestra_tela) {
-                imagenTelaCapturada = typeof prenda.muestra_tela === 'string' ? prenda.muestra_tela : prenda.muestra_tela?.src || '';
-                console.log(`        ✅ Usando prenda.muestra_tela: ${imagenTelaCapturada}`);
+                imagenTelaCapturada = typeof prenda.muestra_tela === 'string' ? prenda.muestra_tela : (prenda.muestra_tela?.url || prenda.muestra_tela?.ruta || prenda.muestra_tela?.src || '');
+                console.log(`         Usando prenda.muestra_tela: ${imagenTelaCapturada}`);
             } else if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela) && prenda.imagenes_tela.length > 0) {
                 const firstTela = prenda.imagenes_tela[0];
-                imagenTelaCapturada = typeof firstTela === 'string' ? firstTela : (firstTela?.blobUrl || firstTela?.src || firstTela?.url || firstTela?.data || '');
-                console.log(`        ✅ Usando prenda.imagenes_tela[0]: ${imagenTelaCapturada}`);
+                imagenTelaCapturada = typeof firstTela === 'string' ? firstTela : (firstTela?.url || firstTela?.ruta || firstTela?.blobUrl || firstTela?.src || firstTela?.path || firstTela?.data || '');
+                console.log(`         Usando prenda.imagenes_tela[0]: ${imagenTelaCapturada}`);
             } else if (prenda.telaFotos && Array.isArray(prenda.telaFotos) && prenda.telaFotos.length > 0) {
                 const firstTelaFoto = prenda.telaFotos[0];
-                imagenTelaCapturada = typeof firstTelaFoto === 'string' ? firstTelaFoto : (firstTelaFoto?.blobUrl || firstTelaFoto?.src || firstTelaFoto?.url || firstTelaFoto?.data || '');
-                console.log(`        ✅ Usando prenda.telaFotos[0]: ${imagenTelaCapturada}`);
+                imagenTelaCapturada = typeof firstTelaFoto === 'string' ? firstTelaFoto : (firstTelaFoto?.url || firstTelaFoto?.ruta || firstTelaFoto?.blobUrl || firstTelaFoto?.src || firstTelaFoto?.path || firstTelaFoto?.data || '');
+                console.log(`         Usando prenda.telaFotos[0]: ${imagenTelaCapturada}`);
             } else if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0 && 
                        prenda.telasAgregadas[0].imagenes && Array.isArray(prenda.telasAgregadas[0].imagenes)) {
                 const firstTelaAg = prenda.telasAgregadas[0].imagenes[0];
-                console.log(`        📸 DEBUG firstTelaAg:`, firstTelaAg);
-                console.log(`        📸 DEBUG firstTelaAg type:`, typeof firstTelaAg);
-                console.log(`        📸 DEBUG firstTelaAg constructor:`, firstTelaAg?.constructor?.name);
+                console.log(`         DEBUG firstTelaAg:`, firstTelaAg);
+                console.log(`         DEBUG firstTelaAg type:`, typeof firstTelaAg);
+                console.log(`         DEBUG firstTelaAg constructor:`, firstTelaAg?.constructor?.name);
                 
                 // Generar blob URL on-demand si es File object
                 if (firstTelaAg instanceof File) {
                     imagenTelaCapturada = URL.createObjectURL(firstTelaAg);
-                    console.log(`        ✅ Blob URL generado on-demand desde File (tela): ${imagenTelaCapturada}`);
+                    console.log(`         Blob URL generado on-demand desde File (tela): ${imagenTelaCapturada}`);
                 } else {
                     // Fallback si es objeto con propiedades
                     imagenTelaCapturada = typeof firstTelaAg === 'string' ? firstTelaAg : (firstTelaAg?.blobUrl || firstTelaAg?.previewUrl || firstTelaAg?.src || firstTelaAg?.url || firstTelaAg?.data || '');
-                    console.log(`        ⚠️ Fallback (tela): ${imagenTelaCapturada}`);
+                    console.log(`         Fallback (tela): ${imagenTelaCapturada}`);
                 }
             } else {
-                console.log(`        ❌ No se encontró imagen de tela en ninguna propiedad`);
+                console.log(`         No se encontró imagen de tela en ninguna propiedad`);
             }
             
             // Detectar tela y color desde telasAgregadas (array de telas)
@@ -591,10 +614,10 @@ function capturarPrendas() {
                         // Generar blob URL on-demand si es File object
                         if (telaImg instanceof File) {
                             imagenTelaCapturada = URL.createObjectURL(telaImg);
-                            console.log(`        ✅ Blob URL generado on-demand desde File (tela fallback): ${imagenTelaCapturada}`);
+                            console.log(`         Blob URL generado on-demand desde File (tela fallback): ${imagenTelaCapturada}`);
                         } else {
                             imagenTelaCapturada = typeof telaImg === 'string' ? telaImg : (telaImg?.blobUrl || telaImg?.previewUrl || telaImg?.src || telaImg?.url || '');
-                            console.log(`        ⚠️ Fallback (tela fallback): ${imagenTelaCapturada}`);
+                            console.log(`         Fallback (tela fallback): ${imagenTelaCapturada}`);
                         }
                     }
                 }
@@ -606,10 +629,10 @@ function capturarPrendas() {
             // Estrategia PRINCIPAL: Usar window._TALLAS_BACKUP_PERMANENTE (guardadas siempre)
             // Esto tiene los datos reales: {dama-S: 20, dama-M: 20, ...}
             const tallasCapturadasDisponibles = window._TALLAS_BACKUP_PERMANENTE || window.cantidadesTallas || window._TALLAS_CAPTURADAS_PREVIEW || window.cantidadesTallasPorGenero;
-            console.log(`     📊 DEBUG TALLAS - tallasCapturadasDisponibles:`, tallasCapturadasDisponibles);
+            console.log(`      DEBUG TALLAS - tallasCapturadasDisponibles:`, tallasCapturadasDisponibles);
             
             if (tallasCapturadasDisponibles && typeof tallasCapturadasDisponibles === 'object' && Object.keys(tallasCapturadasDisponibles).length > 0) {
-                console.log(`     ✅ Encontradas tallas, agrupando por género...`);
+                console.log(`      Encontradas tallas, agrupando por género...`);
                 // Agrupar por género
                 Object.entries(tallasCapturadasDisponibles).forEach(([clave, cantidad]) => {
                     // clave es formato "dama-S", "dama-M", etc
@@ -630,7 +653,7 @@ function capturarPrendas() {
                     }
                 });
             } else {
-                console.log(`     ❌ Tallas no disponibles, intentando fallbacks...`);
+                console.log(`      Tallas no disponibles, intentando fallbacks...`);
             }
             
             // Fallback: Si aún no tenemos tallas, intentar desde generosConTallas
@@ -672,11 +695,11 @@ function capturarPrendas() {
             
             // Fallback final: usar variable local tallas
             if (Object.keys(tallasReconstruidas).length === 0) {
-                console.log(`     📊 Fallback final: Usando variable local tallas`);
+                console.log(`      Fallback final: Usando variable local tallas`);
                 tallasReconstruidas = tallas;
             }
             
-            console.log(`     ✅ Tallas finales reconstruidas:`, tallasReconstruidas);
+            console.log(`      Tallas finales reconstruidas:`, tallasReconstruidas);
             
             prendas.push({
                 numero: index + 1,
@@ -691,12 +714,17 @@ function capturarPrendas() {
                     return img.blobUrl || img.previewUrl || img.src || img;
                 }) : (imagenCapturada ? [imagenCapturada] : []),
                 imagen_tela: imagenTelaCapturada,
-                imagenes_tela: prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas.filter(t => t.imagenes && t.imagenes.length > 0).flatMap(t => t.imagenes.map(img => {
+                imagenes_tela: prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela) ? prenda.imagenes_tela.map(img => {
                     if (img instanceof File) {
                         return URL.createObjectURL(img);
                     }
                     return img.blobUrl || img.previewUrl || img.src || img;
-                })) : (imagenTelaCapturada ? [imagenTelaCapturada] : []),
+                }) : (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas.filter(t => t.imagenes && t.imagenes.length > 0).flatMap(t => t.imagenes.map(img => {
+                    if (img instanceof File) {
+                        return URL.createObjectURL(img);
+                    }
+                    return img.blobUrl || img.previewUrl || img.src || img;
+                })) : (imagenTelaCapturada ? [imagenTelaCapturada] : [])),
                 manga: tipoManga && tipoManga !== 'No aplica' ? tipoManga : '',
                 obs_manga: obsManga,
                 broche: tipoBroche && tipoBroche !== 'No aplica' ? tipoBroche : '',
@@ -714,21 +742,21 @@ function capturarPrendas() {
                 procesos: procesos
             });
             
-            console.log(`  📌 Prenda ${index + 1}: ${prenda.nombre_producto}`);
-            console.log(`     🖼️  prenda.imagenes:`, prenda.imagenes);
-            console.log(`     🖼️  imagenCapturada type:`, typeof imagenCapturada);
-            console.log(`     🖼️  imagenCapturada value:`, imagenCapturada);
-            console.log(`     🖼️  Imagen CAPTURADA: ${imagenCapturada || '❌ no'}`);
-            console.log(`     🧵 Tela CAPTURADA: ${telaCapturada || '❌ no'} | Color CAPTURADO: ${colorCapturado || '❌ no'}`);
-            console.log(`     📋 Ref CAPTURADA: ${refCapturada || '❌ no'}`);
-            console.log(`     📏 Tallas: ${JSON.stringify(tallasReconstruidas)}`);
-            console.log(`     🔧 Procesos: ${procesos.length}`);
+            console.log(`   Prenda ${index + 1}: ${prenda.nombre_producto}`);
+            console.log(`      prenda.imagenes:`, prenda.imagenes);
+            console.log(`      imagenCapturada type:`, typeof imagenCapturada);
+            console.log(`      imagenCapturada value:`, imagenCapturada);
+            console.log(`      Imagen CAPTURADA: ${imagenCapturada || ' no'}`);
+            console.log(`      Tela CAPTURADA: ${telaCapturada || ' no'} | Color CAPTURADO: ${colorCapturado || ' no'}`);
+            console.log(`      Ref CAPTURADA: ${refCapturada || ' no'}`);
+            console.log(`      Tallas: ${JSON.stringify(tallasReconstruidas)}`);
+            console.log(`      Procesos: ${procesos.length}`);
         });
     } catch (error) {
-        console.error('❌ [PREVIEW] Error capturando prendas:', error);
+        console.error(' [PREVIEW] Error capturando prendas:', error);
     }
     
-    console.log(`✅ [PREVIEW] ${prendas.length} prenda(s) capturada(s) del gestor`);
+    console.log(` [PREVIEW] ${prendas.length} prenda(s) capturada(s) del gestor`);
     return prendas;
 }
 
@@ -760,7 +788,7 @@ function extraerTallas(container) {
  * Esta función captura procesos globales aplicables a todo el pedido
  */
 function capturarProcesos() {
-    console.log('🔧 [PREVIEW] Capturando procesos globales...');
+    console.log(' [PREVIEW] Capturando procesos globales...');
     
     const procesos = [];
     
@@ -774,7 +802,7 @@ function capturarProcesos() {
         }
     });
     
-    console.log(`✅ [PREVIEW] ${procesos.length} proceso(s) global(es) capturado(s)`);
+    console.log(` [PREVIEW] ${procesos.length} proceso(s) global(es) capturado(s)`);
     return procesos;
 }
 
@@ -817,7 +845,7 @@ function capturarEPP() {
         });
     });
     
-    console.log(`✅ [PREVIEW] ${epp.length} EPP capturado(s)`, epp);
+    console.log(` [PREVIEW] ${epp.length} EPP capturado(s)`, epp);
     return epp;
 }
 
@@ -871,7 +899,7 @@ function crearModalPreviewFactura(datos) {
             <!-- Header -->
             <div style="padding: 8px 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;">
                 <h3 style="margin: 0; color: #333; font-size: 12px; font-weight: 700;">
-                    📋 Pedido #${datos.numero_pedido_temporal} | ${datos.cliente}
+                     Pedido #${datos.numero_pedido_temporal} | ${datos.cliente}
                 </h3>
                 <button onclick="document.getElementById('invoice-preview-modal-wrapper').remove();" 
                         style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999; padding: 0; line-height: 1;">
@@ -907,7 +935,7 @@ function crearModalPreviewFactura(datos) {
         }
     });
     
-    console.log('✅ [PREVIEW] Modal de vista previa creado');
+    console.log(' [PREVIEW] Modal de vista previa creado');
 }
 
 /**
@@ -920,7 +948,7 @@ function generarHTMLFactura(datos) {
     const prendasHTML = datos.prendas.map((prenda, idx) => {
         // Tabla de Variantes (Tallas con especificaciones)
         let variantesHTML = '';
-        console.log(`     📦 DEBUG VARIANTES PARA PRENDA ${idx + 1}:`, prenda.variantes);
+        console.log(`      DEBUG VARIANTES PARA PRENDA ${idx + 1}:`, prenda.variantes);
         
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             // Agrupar variantes por talla para crear tabla
@@ -938,7 +966,7 @@ function generarHTMLFactura(datos) {
             
             variantesHTML = `
                 <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
-                    <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;">📋 VARIANTES (Tallas con Especificaciones)</div>
+                    <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> VARIANTES (Tallas con Especificaciones)</div>
                     <table style="width: 100%; font-size: 10px !important; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #f0f9ff; border-bottom: 2px solid #bfdbfe;">
@@ -986,7 +1014,7 @@ function generarHTMLFactura(datos) {
         
         const especificacionesHTML = (variacionesArray.length > 0 && !variantesHTML) ? `
             <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
-                <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;">📋 ESPECIFICACIONES</div>
+                <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> ESPECIFICACIONES</div>
                 <table style="width: 100%; font-size: 11px !important; border-collapse: collapse;">
                     <tbody>
                         ${variacionesArray.map((spec, idx) => `
@@ -1024,7 +1052,7 @@ function generarHTMLFactura(datos) {
                 ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                     <div>
                         <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Muestra Tela</div>
-                        <img src="${prenda.imagenes_tela[0]}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                        <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
                     </div>
                 ` : ''}
             </div>
@@ -1033,18 +1061,18 @@ function generarHTMLFactura(datos) {
         
         // Tallas por género (mejorado)
         let generosTallasHTML = '';
-        console.log(`     📏 DEBUG TALLAS PARA PRENDA ${idx + 1}:`, prenda.tallas);
+        console.log(`      DEBUG TALLAS PARA PRENDA ${idx + 1}:`, prenda.tallas);
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
             // prenda.tallas debería ser {dama: {S: 20, M: 20}, caballero: {}} o {Dama: {S: 20, M: 20}, Caballero: {}}
-            console.log(`     ✅ Tallas encontradas, estructura:`, JSON.stringify(prenda.tallas));
+            console.log(`      Tallas encontradas, estructura:`, JSON.stringify(prenda.tallas));
             const primeraClave = Object.keys(prenda.tallas)[0];
-            console.log(`     🔍 Primera clave: ${primeraClave}`);
+            console.log(`      Primera clave: ${primeraClave}`);
             const generosValidos = ['Masculino', 'Femenino', 'Unisex', 'Dama', 'Caballero', 'Niño', 'Niña', 'masculino', 'femenino', 'unisex', 'dama', 'caballero', 'niño', 'niña'];
             const esGenero = generosValidos.includes(primeraClave);
             const tieneSubobjetos = typeof prenda.tallas[primeraClave] === 'object' && !Array.isArray(prenda.tallas[primeraClave]);
             const esOrganizadaPorGenero = esGenero && tieneSubobjetos;
             
-            console.log(`     📊 esGenero: ${esGenero}, tieneSubobjetos: ${tieneSubobjetos}, esOrganizadaPorGenero: ${esOrganizadaPorGenero}`);
+            console.log(`      esGenero: ${esGenero}, tieneSubobjetos: ${tieneSubobjetos}, esOrganizadaPorGenero: ${esOrganizadaPorGenero}`);
             
             if (esOrganizadaPorGenero) {
                 // Tallas por género { Dama: {S: 20, M: 20}, Caballero: {} }
@@ -1052,7 +1080,7 @@ function generarHTMLFactura(datos) {
                     typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0
                 );
                 
-                console.log(`     🎯 Géneros con tallas después de filtrar:`, generosConTallas);
+                console.log(`      Géneros con tallas después de filtrar:`, generosConTallas);
                 
                 if (generosConTallas.length > 0) {
                     generosTallasHTML = `
@@ -1090,20 +1118,20 @@ function generarHTMLFactura(datos) {
         }
         
         // Procesos
-        console.log(`     📋 Renderizando procesos para prenda ${idx + 1}:`, prenda.procesos);
+        console.log(`      Renderizando procesos para prenda ${idx + 1}:`, prenda.procesos);
         const procesosListaHTML = prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0
             ? prenda.procesos.map(proc => {
                 console.log(`        - Renderizando proceso: `, proc);
                 // Renderizar tallas del proceso (también pueden ser por género)
                 let tallasProcHTML = '';
-                console.log(`        📊 DEBUG proc.tallas:`, proc.tallas);
+                console.log(`         DEBUG proc.tallas:`, proc.tallas);
                 if (proc.tallas && Object.keys(proc.tallas).length > 0) {
                     const procPrimeraClave = Object.keys(proc.tallas)[0];
-                    console.log(`        🔍 procPrimeraClave: ${procPrimeraClave}, tipo:`, typeof proc.tallas[procPrimeraClave]);
+                    console.log(`         procPrimeraClave: ${procPrimeraClave}, tipo:`, typeof proc.tallas[procPrimeraClave]);
                     const procEsGenero = typeof proc.tallas[procPrimeraClave] === 'object' && 
                                          !Array.isArray(proc.tallas[procPrimeraClave]);
                     
-                    console.log(`        📌 procEsGenero: ${procEsGenero}`);
+                    console.log(`         procEsGenero: ${procEsGenero}`);
                     
                     if (procEsGenero) {
                         // Por género - FILTRAR géneros vacíos
@@ -1111,7 +1139,7 @@ function generarHTMLFactura(datos) {
                             typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0
                         );
                         
-                        console.log(`        ✅ generosConTallasProc:`, generosConTallasProc);
+                        console.log(`         generosConTallasProc:`, generosConTallasProc);
                         
                         if (generosConTallasProc.length > 0) {
                             tallasProcHTML = `
@@ -1161,7 +1189,7 @@ function generarHTMLFactura(datos) {
                             <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #eee; display: flex; gap: 4px; position: relative;">
                                 ${Array.isArray(proc.imagenes) ? 
                                     `<div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipo}')">
-                                        <img src="${proc.imagenes[0]}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd;">
+                                        <img src="${window._extraerURLImagen(proc.imagenes[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd;">
                                         ${proc.imagenes.length > 1 ? `
                                             <div style="position: absolute; top: 0; right: 0; background: #3b82f6; color: white; font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 0 2px 0 2px; cursor: pointer;">
                                                 ${proc.imagenes.length}+
@@ -1191,9 +1219,9 @@ function generarHTMLFactura(datos) {
                     <div style="display: flex; gap: 8px; align-items: flex-start;">
                         <div style="flex-shrink: 0;">
                             ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
-                                <img src="${prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes, 'Imágenes de Prenda')})" title="Click para ver todas las imágenes">
+                                <img src="${window._extraerURLImagen(prenda.imagenes[0])}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes, 'Imágenes de Prenda')})" title="Click para ver todas las imágenes">
                             ` : `
-                                <div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 3px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 32px;">📦</div>
+                                <div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 3px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 32px;"></div>
                             `}
                         </div>
                         <div style="flex: 1; font-size: 10px;">
@@ -1209,7 +1237,7 @@ function generarHTMLFactura(datos) {
                         ${prenda.ref ? `<div style="margin-bottom: 6px;"><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
                         ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                             <div>
-                                <img src="${prenda.imagenes_tela[0]}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
+                                <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
                             </div>
                         ` : ''}
                     </div>
@@ -1264,7 +1292,7 @@ function generarHTMLFactura(datos) {
                 <!-- FILA INFERIOR: Procesos -->
                 ${procesosListaHTML ? `
                     <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
-                        <div style="font-size: 10px; font-weight: 700; color: #2c3e50; margin-bottom: 4px;">🔧 Procesos ${prenda.procesos && Array.isArray(prenda.procesos) ? `(${prenda.procesos.length})` : ''}</div>
+                        <div style="font-size: 10px; font-weight: 700; color: #2c3e50; margin-bottom: 4px;"> Procesos ${prenda.procesos && Array.isArray(prenda.procesos) ? `(${prenda.procesos.length})` : ''}</div>
                         ${procesosListaHTML}
                     </div>
                 ` : ''}
@@ -1368,7 +1396,7 @@ function guardarComoHTML(nombreArchivo) {
     elemento.click();
     document.body.removeChild(elemento);
     
-    console.log('✅ [PREVIEW] Archivo guardado');
+    console.log(' [PREVIEW] Archivo guardado');
 }
 
 // ========================================
@@ -1430,11 +1458,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.appendChild(btnPreview);
             }
             
-            console.log('✅ [PREVIEW] Botón de vista previa agregado al formulario');
+            console.log(' [PREVIEW] Botón de vista previa agregado al formulario');
         } else {
-            console.warn('⚠️  [PREVIEW] Formulario no encontrado');
+            console.warn('  [PREVIEW] Formulario no encontrado');
         }
     }, 500);
 });
 
-console.log('✅ [INVOICE PREVIEW] invoice-preview-live.js cargado');
+console.log(' [INVOICE PREVIEW] invoice-preview-live.js cargado');

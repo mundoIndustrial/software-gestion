@@ -341,6 +341,33 @@ class PedidosProduccionViewController
     }
 
     /**
+     * Obtener datos del pedido para edición modal
+     * GET /asesores/pedidos-produccion/{id}/datos-edicion
+     */
+    public function obtenerDatosEdicion($pedidoId)
+    {
+        try {
+            // Usar el mismo servicio que invoice-from-list usa
+            $service = app(\App\Application\Services\Asesores\ObtenerDatosFacturaService::class);
+            $datos = $service->obtener($pedidoId);
+            
+            \Log::info('[DATOS-EDICION] Datos cargados', ['pedido_id' => $pedidoId, 'prendas' => count($datos['prendas'] ?? [])]);
+
+            // Retornar en formato que la modal espera
+            return response()->json([
+                'success' => true,
+                'datos' => $datos
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[DATOS-EDICION] Error:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar datos del pedido'
+            ], 500);
+        }
+    }
+
+    /**
      * Crear reflectivo sin cotización (AJAX)
      */
     public function crearReflectivoSinCotizacion(Request $request)

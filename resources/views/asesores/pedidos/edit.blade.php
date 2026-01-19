@@ -192,14 +192,141 @@
 </template>
 @endsection
 
+<!-- Incluir modales necesarios para edición de prendas -->
+@include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
+@include('asesores.pedidos.modals.modal-seleccionar-tallas')
+@include('asesores.pedidos.modals.modal-proceso-generico')
+
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/pedidos.css') }}">
 @endpush
 
 @push('scripts')
+<!-- IMPORTANTE: Cargar PRIMERO el protector de datos principales -->
+<script src="{{ asset('js/modulos/crear-pedido/seguridad/protector-datos-principales.js') }}"></script>
+
+<!-- Scripts base de pedidos -->
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
+
+<!-- Scripts para gestión de ítems en modal (necesarios para edición modal de prendas) -->
+<script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+<script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
+
+<!-- ✅ SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
+<script src="{{ asset('js/services/epp/EppHttpService.js') }}"></script>
+
+<script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
+
+<!-- Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
 <script>
-    // Marcar como modo edición
-    document.getElementById('formCrearPedido').id = 'formEditarPedido';
+    // ✅ CRÍTICO: Esto se ejecuta INMEDIATAMENTE, NO en DOMContentLoaded
+    // Asegurar que imagenesPrendaStorage existe
+    if (!window.imagenesPrendaStorage) {
+        window.imagenesPrendaStorage = new ImageStorageService(3);
+        console.log('✅ [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que imagenesTelaStorage existe
+    if (!window.imagenesTelaStorage) {
+        window.imagenesTelaStorage = new ImageStorageService(3);
+        console.log('✅ [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que imagenesReflectivoStorage existe
+    if (!window.imagenesReflectivoStorage) {
+        window.imagenesReflectivoStorage = new ImageStorageService(3);
+        console.log('✅ [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que telasAgregadas existe
+    if (!window.telasAgregadas) {
+        window.telasAgregadas = [];
+        console.log('✅ [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que procesosSeleccionados existe
+    if (!window.procesosSeleccionados) {
+        window.procesosSeleccionados = {};
+        console.log('✅ [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
+    }
+</script>
+
+<!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
+<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+
+<!-- ✅ ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
+<link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+
+<!-- Manejadores de variaciones -->
+<script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+
+<!-- Componente tarjeta readonly (completo - funcional) -->
+<script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
+
+<!-- Manejadores de procesos -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
+
+<!-- Inicializar storages INMEDIATAMENTE (antes de que se cargue gestion-telas.js) -->
+<script>
+    // ✅ CRÍTICO: Esto se ejecuta INMEDIATAMENTE, NO en DOMContentLoaded
+    // Asegurar que imagenesPrendaStorage existe
+    if (!window.imagenesPrendaStorage) {
+        window.imagenesPrendaStorage = new ImageStorageService(3);
+        console.log('✅ [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que imagenesTelaStorage existe
+    if (!window.imagenesTelaStorage) {
+        window.imagenesTelaStorage = new ImageStorageService(3);
+        console.log('✅ [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que imagenesReflectivoStorage existe
+    if (!window.imagenesReflectivoStorage) {
+        window.imagenesReflectivoStorage = new ImageStorageService(3);
+        console.log('✅ [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que telasAgregadas existe
+    if (!window.telasAgregadas) {
+        window.telasAgregadas = [];
+        console.log('✅ [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
+    }
+
+    // Asegurar que procesosSeleccionados existe
+    if (!window.procesosSeleccionados) {
+        window.procesosSeleccionados = {};
+        console.log('✅ [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
+    }
+</script>
+
+<!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
+<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+
+<!-- Resto de handlers que necesitan DOMContentLoaded -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar asesora
+        const asesoraInput = document.getElementById('asesora_editable');
+        if (asesoraInput) {
+            asesoraInput.value = '{{ Auth::user()->name ?? '' }}';
+        }
+
+        // ✅ HANDLER: Botón agregar producto abre el modal de prenda
+        const btnAgregarProducto = document.getElementById('btnAgregarProducto');
+        if (btnAgregarProducto && window.gestionItemsUI) {
+            btnAgregarProducto.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('🎯 [EDIT] Botón agregar producto clickeado, abriendo modal de prenda');
+                window.gestionItemsUI.abrirModalAgregarPrendaNueva();
+            });
+        }
+    });
 </script>
 @endpush

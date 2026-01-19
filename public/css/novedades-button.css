@@ -310,12 +310,12 @@
 }
 
 .btn-add-new {
-    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    background: linear-gradient(135deg, #4689f5 0%, #3b82f6 100%);
     color: white;
 }
 
 .btn-add-new:hover {
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 4px 12px #3b82f6;
     transform: translateY(-2px);
 }
 

@@ -228,7 +228,7 @@
                                     ${procesos.map((proceso, procIdx) => `
                                         <div class="proceso-item" onclick="seleccionarProceso(${pedidoId}, ${prenda.id}, '${proceso.tipo_proceso}'); event.stopPropagation();">
                                             <span class="proceso-nombre">
-                                                <i class="fas fa-cogs" style="margin-right: 0.5rem; color: #7c3aed;"></i>
+                                                <i class="fas fa-cogs" style="margin-right: 0.5rem; color: #3b82f6;"></i>
                                                 ${proceso.nombre_proceso}
                                             </span>
                                             <span class="proceso-estado estado-${(proceso.estado || 'pendiente').toLowerCase().replace(/ /g, '-')}">

@@ -4,7 +4,7 @@ use App\Http\Controllers\Asesores\CrearPedidoEditableController;
 use App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'role:asesor'])->group(function () {
+Route::middleware(['auth:web', 'role:asesor'])->group(function () {
     Route::prefix('pedidos-editable')->name('pedidos-editable.')->group(function () {
         // Gestión de ítems
         Route::post('/items/agregar', [CrearPedidoEditableController::class, 'agregarItem'])->name('agregar-item');

@@ -204,22 +204,24 @@ window.manejarImagenesPrenda = function(input) {
             return;
         }
         
-        // Agregar imagen al storage - RETORNA OBJETO, NO PROMISE
-        const resultado = window.imagenesPrendaStorage.agregarImagen(input.files[0]);
-        
-        if (resultado.success) {
-            console.log(' [WRAPPER] Imagen de prenda agregada al storage');
-            actualizarPreviewPrenda();
-        } else if (resultado.reason === 'MAX_LIMIT') {
-            console.warn(' [WRAPPER] Límite de imágenes alcanzado');
-            mostrarModalLimiteImagenes();
-        } else if (resultado.reason === 'INVALID_FILE') {
-            console.warn(' [WRAPPER] Archivo inválido');
-            mostrarModalError('El archivo debe ser una imagen válida');
-        } else {
-            console.error(' [WRAPPER] Error desconocido:', resultado.reason);
-            mostrarModalError('Error al procesar la imagen');
-        }
+        // Agregar imagen al storage - AHORA RETORNA PROMISE
+        window.imagenesPrendaStorage.agregarImagen(input.files[0])
+            .then(() => {
+                console.log(' [WRAPPER] Imagen de prenda agregada al storage');
+                actualizarPreviewPrenda();
+            })
+            .catch(err => {
+                if (err.message === 'MAX_LIMIT') {
+                    console.warn(' [WRAPPER] Límite de imágenes alcanzado');
+                    mostrarModalLimiteImagenes();
+                } else if (err.message === 'INVALID_FILE') {
+                    console.warn(' [WRAPPER] Archivo inválido');
+                    mostrarModalError('El archivo debe ser una imagen válida');
+                } else {
+                    console.error(' [WRAPPER] Error:', err.message);
+                    mostrarModalError('Error al procesar la imagen: ' + err.message);
+                }
+            });
     } catch (err) {
         console.error(' [WRAPPER] Error inesperado:', err);
         mostrarModalError('Error al procesar imagen: ' + err.message);

@@ -10,7 +10,7 @@
         <div style="background: white; border-radius: 12px; max-width: 900px; width: 100%; max-height: 95vh; overflow-y: auto; box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);">
             
             <!-- Header -->
-            <div style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h2 style="margin: 0; font-size: 1.5rem; font-weight: bold;">Recibo de <span id="recibo-tipo-proceso">Proceso</span></h2>
                     <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.9rem;">
@@ -28,7 +28,7 @@
                 
                 <!-- Loading State -->
                 <div id="recibo-loading" style="display: none; text-align: center; padding: 2rem;">
-                    <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #7c3aed; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     <p style="margin-top: 1rem; color: #6b7280;">Cargando recibo...</p>
                 </div>
                 
@@ -72,7 +72,7 @@
         
         #recibo-dinamico-modal .recibo-seccion-titulo {
             background: #f3e8ff;
-            border-left: 4px solid #7c3aed;
+            border-left: 4px solid #3b82f6;
             padding: 1rem;
             font-weight: 600;
             color: #5b21b6;
@@ -161,7 +161,7 @@
         }
         
         #recibo-dinamico-modal .boton-primario {
-            background: #7c3aed;
+            background: #3b82f6;
             color: white;
         }
         

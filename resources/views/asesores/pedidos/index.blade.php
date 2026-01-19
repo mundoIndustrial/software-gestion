@@ -1675,7 +1675,7 @@
         if (window.setSpinnerConfig) {
             window.setSpinnerConfig({ enabled: false });
         }
-        console.log('✅ Spinner desactivado en página de pedidos');
+        console.log(' Spinner desactivado en página de pedidos');
     });
 
     // Asegurar que el spinner esté oculto al cargar
@@ -1689,7 +1689,7 @@
             spinner.style.display = 'none';
             spinner.style.visibility = 'hidden';
         }
-        console.log('✅ Spinner oculto al cargar la página');
+        console.log(' Spinner oculto al cargar la página');
     });
 
 
@@ -1801,11 +1801,291 @@
     }
 
     /**
-     * Editar pedido - redirige a la página de edición
+     * Editar pedido - abre modal de edición de prendas/EPP
      */
     function editarPedido(pedidoId) {
-        // Redirigir a la página de edición/creación del pedido
-        window.location.href = `/asesores/pedidos-produccion/crear-nuevo?editar=${pedidoId}`;
+        console.log('🖊️  Abriendo edición de pedido:', pedidoId);
+        
+        // Cargar datos del pedido
+        fetch(`/asesores/pedidos-produccion/${pedidoId}/datos-edicion`)
+            .then(res => res.json())
+            .then(respuesta => {
+                console.log('📦 Datos del pedido cargados:', respuesta);
+                
+                if (!respuesta.success) {
+                    throw new Error(respuesta.message || 'Error al cargar datos');
+                }
+                
+                // El servicio retorna datos en respuesta.datos
+                // datos.prendas es el array de prendas con toda la info
+                abrirModalEditarPedido(pedidoId, respuesta.datos);
+            })
+            .catch(err => {
+                console.error(' Error al cargar datos:', err);
+                Swal.fire('Error', 'No se pudo cargar el pedido: ' + err.message, 'error');
+            });
+    }
+    
+    /**
+     * Abrir modal de edición de pedido (factura interactiva)
+     */
+    function abrirModalEditarPedido(pedidoId, datosCompletos) {
+        console.log(' Abriendo modal de edición con factura:', pedidoId);
+        console.log(' Datos completos:', datosCompletos);
+        
+        // Generar factura
+        let htmlFactura = '';
+        if (window.generarHTMLFactura) {
+            htmlFactura = window.generarHTMLFactura(datosCompletos);
+            console.log(' Factura generada, largo:', htmlFactura.length);
+        } else {
+            console.warn(' generarHTMLFactura no disponible');
+            htmlFactura = '<p>Error: No se pudo generar la factura</p>';
+        }
+        
+        // Guardar datos en variable global para todas las funciones de edición
+        window.datosEdicionPedido = datosCompletos;
+        console.log(' Datos guardados en window.datosEdicionPedido');
+        
+        // Mostrar modal
+        Swal.fire({
+            title: ` Editar Pedido #${datosCompletos.numero_pedido}`,
+            html: `<div id="edicionFacturaContainer" style="width: 100%; text-align: left;"></div>`,
+            width: '900px',
+            showConfirmButton: true,
+            confirmButtonText: ' Listo',
+            confirmButtonColor: '#10b981',
+            allowOutsideClick: false,
+            didOpen: () => {
+                try {
+                    // Obtener el contenedor
+                    const container = document.getElementById('edicionFacturaContainer');
+                    if (!container) {
+                        console.error(' No se encontró contenedor');
+                        return;
+                    }
+                    
+                    // Agregar botones de edición
+                    const htmlBotones = `
+                        <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; border-left: 4px solid #6b7280; margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                            <button onclick="abrirEditarDatos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;"> Editar Datos</button>
+                            <button onclick="abrirEditarPrendas()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;"> Editar Prendas</button>
+                            <button onclick="abrirEditarEPP()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;"> Editar EPP</button>
+                        </div>
+                    `;
+                    
+                    // Inyectar botones + factura
+                    container.innerHTML = htmlBotones + `
+                        <div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">
+                            ${htmlFactura}
+                        </div>
+                    `;
+                    
+                    console.log(' Modal de edición inyectado en el DOM');
+                    document.querySelector('body').dataset.pedidoIdEdicion = pedidoId;
+                    
+                } catch (err) {
+                    console.error(' Error al inyectar modal:', err);
+                    document.getElementById('edicionFacturaContainer').innerHTML = '<p style="color: red;">Error al cargar la factura</p>';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                console.log(' Edición de pedido cerrada');
+            }
+        });
+    }
+    
+    /**
+     * Abrir formulario para editar datos generales del pedido
+     */
+    function abrirEditarDatos() {
+        if (!window.datosEdicionPedido) {
+            Swal.fire('Error', 'No hay datos del pedido disponibles', 'error');
+            return;
+        }
+        const datos = window.datosEdicionPedido;
+        console.log(' Abriendo edición de datos generales');
+        
+        const html = `
+            <div style="text-align: left;">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cliente</label>
+                    <input type="text" id="editCliente" value="${datos.cliente || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Forma de Pago</label>
+                    <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Observaciones</label>
+                    <textarea id="editObservaciones" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px;">${datos.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        
+        Swal.fire({
+            title: ' Editar Datos Generales',
+            html: html,
+            showConfirmButton: true,
+            showCancelButton: true,
+            confirmButtonText: ' Guardar',
+            confirmButtonColor: '#10b981',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const datosActualizados = {
+                    cliente: document.getElementById('editCliente').value,
+                    forma_de_pago: document.getElementById('editFormaPago').value,
+                    observaciones: document.getElementById('editObservaciones').value
+                };
+                console.log(' Guardando datos:', datosActualizados);
+                Swal.fire('', 'Datos guardados correctamente', 'success');
+            }
+        });
+    }
+    
+
+    
+    /**
+     * Abrir formulario para editar EPP del pedido (lista seleccionable)
+     */
+    function abrirEditarEPP() {
+        if (!window.datosEdicionPedido) {
+            Swal.fire('Error', 'No hay datos del pedido disponibles', 'error');
+            return;
+        }
+        const datos = window.datosEdicionPedido;
+        const epp = datos.epp || [];
+        console.log(' Abriendo lista de EPP:', epp.length);
+        
+        if (epp.length === 0) {
+            Swal.fire('', 'No hay EPP agregado en este pedido', 'info');
+            return;
+        }
+        
+        // Guardar EPP en variable global para acceso desde onclick
+        window.eppEdicion = {
+            pedidoId: datos.numero_pedido || datos.id,
+            epp: epp
+        };
+        
+        let htmlListaEPP = `
+            <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
+        `;
+        
+        epp.forEach((item, idx) => {
+            const nombre = item.nombre || item.descripcion || 'EPP sin nombre';
+            
+            htmlListaEPP += `
+                <button onclick="abrirEditarEPPEspecifico(${idx})" 
+                    style="
+                        background: white; 
+                        border: 2px solid #ec4899; 
+                        border-radius: 8px; 
+                        padding: 1rem; 
+                        text-align: left; 
+                        cursor: pointer; 
+                        transition: all 0.3s ease;
+                    "
+                    onmouseover="this.style.background='#fce7f3'; this.style.borderColor='#be185d';"
+                    onmouseout="this.style.background='white'; this.style.borderColor='#ec4899';">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;"> ${nombre.toUpperCase()}</h4>
+                            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
+                        </div>
+                        <span style="background: #ec4899; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
+                    </div>
+                </button>
+            `;
+        });
+        
+        htmlListaEPP += '</div>';
+        
+        Swal.fire({
+            title: ' Selecciona un EPP para Editar',
+            html: htmlListaEPP,
+            width: '600px',
+            showConfirmButton: false,
+            confirmButtonText: 'Cerrar',
+            showCancelButton: true,
+            cancelButtonText: 'Volver'
+        });
+    }
+    
+    /**
+     * Abrir modal de edición para un EPP específico
+     */
+    function abrirEditarEPPEspecifico(eppIndex) {
+        if (!window.eppEdicion) {
+            Swal.fire('Error', 'No hay datos de EPP disponibles', 'error');
+            return;
+        }
+        
+        const epp = window.eppEdicion.epp[eppIndex];
+        const pedidoId = window.eppEdicion.pedidoId;
+        
+        if (!epp) {
+            Swal.fire('Error', 'EPP no encontrado', 'error');
+            return;
+        }
+        
+        console.log(' Editando EPP:', epp);
+        
+        const html = `
+            <div style="text-align: left;">
+                <div style="background: #fce7f3; border-left: 4px solid #ec4899; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0; color: #1f2937; font-size: 1.1rem;">${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}</h3>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cantidad</label>
+                    <input type="number" id="eppCantidad" value="${epp.cantidad || 0}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-weight: 600;">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Descripción</label>
+                    <input type="text" id="eppDescripcion" value="${epp.descripcion || epp.nombre || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Observaciones</label>
+                    <textarea id="eppObservaciones" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px;">${epp.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        
+        Swal.fire({
+            title: ` Editar EPP - ${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}`,
+            html: html,
+            width: '600px',
+            showConfirmButton: true,
+            showCancelButton: true,
+            confirmButtonText: ' Guardar Cambios',
+            confirmButtonColor: '#ec4899',
+            cancelButtonText: 'Volver'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const cambios = {
+                    pedidoId: pedidoId,
+                    eppIndex: eppIndex,
+                    cantidad: parseInt(document.getElementById('eppCantidad').value) || 0,
+                    descripcion: document.getElementById('eppDescripcion').value,
+                    observaciones: document.getElementById('eppObservaciones').value
+                };
+                
+                console.log(' Guardando cambios de EPP:', cambios);
+                Swal.fire('', 'EPP actualizado correctamente', 'success');
+                
+                // Aquí podrías hacer un fetch para guardar en BD
+                // fetch(`/api/pedidos/${pedidoId}/epp/${eppIndex}`, {
+                //     method: 'PUT',
+                //     headers: {'Content-Type': 'application/json'},
+                //     body: JSON.stringify(cambios)
+                // })
+            }
+        });
     }
 
     /**
@@ -1816,7 +2096,7 @@
     function eliminarPedido(pedidoId) {
         // Prevenir eliminaciones concurrentes
         if (isDeleting) {
-            console.warn('⚠️ Ya hay una eliminación en proceso');
+            console.warn(' Ya hay una eliminación en proceso');
             return;
         }
         
@@ -1835,7 +2115,7 @@
         .then(data => {
             if (data.success) {
                 // Mostrar mensaje de éxito
-                mostrarNotificacion('✅ Pedido eliminado correctamente', 'success');
+                mostrarNotificacion(' Pedido eliminado correctamente', 'success');
                 
                 // Recargar la página después de 1 segundo
                 setTimeout(() => {
@@ -1843,13 +2123,13 @@
                 }, 1000);
             } else {
                 isDeleting = false;
-                mostrarNotificacion('❌ ' + (data.message || 'Error al eliminar el pedido'), 'error');
+                mostrarNotificacion(' ' + (data.message || 'Error al eliminar el pedido'), 'error');
             }
         })
         .catch(error => {
             isDeleting = false;
             console.error('Error:', error);
-            mostrarNotificacion('❌ Error al eliminar el pedido', 'error');
+            mostrarNotificacion(' Error al eliminar el pedido', 'error');
         });
     }
 
@@ -1979,6 +2259,44 @@
 <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
 <!-- Invoice Preview desde Lista de Pedidos -->
 <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
+
+<!-- Módulos para gestionar prendas en el modal -->
+<script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+
+<!-- Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
+<script>
+    // ✅ CRÍTICO: Esto se ejecuta INMEDIATAMENTE
+    if (!window.imagenesPrendaStorage) {
+        window.imagenesPrendaStorage = new ImageStorageService(3);
+        console.log('✅ [INDEX] imagenesPrendaStorage inicializado INMEDIATAMENTE');
+    }
+    if (!window.imagenesTelaStorage) {
+        window.imagenesTelaStorage = new ImageStorageService(3);
+        console.log('✅ [INDEX] imagenesTelaStorage inicializado INMEDIATAMENTE');
+    }
+    if (!window.imagenesReflectivoStorage) {
+        window.imagenesReflectivoStorage = new ImageStorageService(3);
+        console.log('✅ [INDEX] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
+    }
+    if (!window.telasAgregadas) {
+        window.telasAgregadas = [];
+    }
+    if (!window.procesosSeleccionados) {
+        window.procesosSeleccionados = {};
+    }
+</script>
+
+<!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
+<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+
+<!-- Modal Dinámico: Prenda Nueva -->
+<script src="{{ asset('js/componentes/modal-prenda-dinamico.js') }}"></script>
+
+<!-- Componente: Editor de Prendas Modal -->
+<script src="{{ asset('js/componentes/prenda-editor-modal.js') }}"></script>
 <!-- MODULAR ORDER TRACKING (SOLID Architecture) -->
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>

@@ -13,6 +13,23 @@
 window.telasAgregadas = [];
 window.imagenesTelaModalNueva = [];
 
+// ✅ GUARD: Asegurar que imagenesTelaStorage existe
+if (!window.imagenesTelaStorage) {
+    console.warn('⚠️ imagenesTelaStorage no inicializado en gestion-telas.js, creando fallback');
+    window.imagenesTelaStorage = {
+        obtenerImagenes: () => [],
+        agregarImagen: (file) => {
+            console.log('FALLBACK [gestion-telas]: Imagen agregada', file);
+            return Promise.resolve();
+        },
+        limpiar: () => {
+            console.log('FALLBACK [gestion-telas]: Storage limpiado');
+            return Promise.resolve();
+        },
+        obtenerBlob: (index) => null
+    };
+}
+
 // ========== AGREGAR NUEVA TELA ==========
 window.agregarTelaNueva = function() {
     console.log('🧵 [TELAS] agregarTelaNueva() LLAMADO');
@@ -269,7 +286,35 @@ window.manejarImagenTela = function(input) {
     window.imagenesTelaStorage.agregarImagen(file)
         .then(() => {
             console.log('✅ [TELAS] Imagen agregada. Total:', window.imagenesTelaStorage.obtenerImagenes().length);
-            // ✅ NO renderizar nada aquí - la imagen se renderizará cuando se agregue la tela a la tabla
+            
+            // ✅ Actualizar preview temporal en la primera fila
+            const preview = document.getElementById('nueva-prenda-tela-preview');
+            if (preview) {
+                preview.style.display = 'flex';
+                preview.innerHTML = '';
+                
+                const imagenes = window.imagenesTelaStorage.obtenerImagenes();
+                imagenes.forEach((img, idx) => {
+                    const imgEl = document.createElement('img');
+                    imgEl.src = img.previewUrl;
+                    imgEl.style.cssText = 'width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;';
+                    imgEl.onclick = () => {
+                        console.log(`Mostrando imagen ${idx}`);
+                    };
+                    preview.appendChild(imgEl);
+                });
+                
+                // Mostrar badge de cantidad si hay más de 1
+                if (imagenes.length > 1) {
+                    const badge = document.createElement('span');
+                    badge.style.cssText = 'position: absolute; background: #0066cc; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; margin-left: -12px; margin-top: 30px;';
+                    badge.textContent = `+${imagenes.length - 1}`;
+                    preview.appendChild(badge);
+                }
+                
+                console.log('✅ [TELAS] Preview actualizado con', imagenes.length, 'imagen(es)');
+            }
+            
             input.value = '';
         })
         .catch(err => {

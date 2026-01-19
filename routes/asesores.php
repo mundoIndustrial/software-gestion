@@ -59,6 +59,9 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::post('/pedidos/{id}/anular', [AsesoresAPIController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
     Route::get('/pedidos/{id}/factura-datos', [AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [AsesoresAPIController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
+    
+    // Actualizar prenda desde editor modal
+    Route::post('/pedidos-produccion/actualizar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrenda'])->name('pedidos.actualizar-prenda');
 
     // ========================================
     // RECIBOS - NUEVO MÓDULO

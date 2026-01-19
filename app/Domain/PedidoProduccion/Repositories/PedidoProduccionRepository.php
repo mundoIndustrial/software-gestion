@@ -197,11 +197,23 @@ class PedidoProduccionRepository
             // Obtener fotos de telas (con verificación)
             $fotoTelas = [];
             if ($prenda->fotosTelas && $prenda->fotosTelas->count() > 0) {
-                $fotoTelas = $prenda->fotosTelas->map(fn($f) => $f->url)->toArray();
+                $fotoTelas = $prenda->fotosTelas->map(fn($f) => [
+                    'id' => $f->id,
+                    'url' => $f->url,
+                    'ruta' => $f->url,
+                    'ruta_original' => $f->ruta_original ?? $f->url,
+                    'ruta_webp' => $f->ruta_webp ?? $f->url,
+                ])->toArray();
             }
             
             // Obtener todas las fotos de prenda
-            $fotosPrend = $prenda->fotos->map(fn($f) => $f->url)->toArray();
+            $fotosPrend = $prenda->fotos->map(fn($f) => [
+                'id' => $f->id,
+                'url' => $f->url,
+                'ruta' => $f->url,
+                'ruta_original' => $f->ruta_original ?? $f->url,
+                'ruta_webp' => $f->ruta_webp ?? $f->url,
+            ])->toArray();
             
             \Log::info('[FACTURA] Fotos de prenda: ' . json_encode([
                 'nombre_prenda' => $prenda->nombre_prenda,

@@ -53,6 +53,9 @@ class ObtenerDatosFacturaService
         // Usar el repository si está disponible
         $repository = resolve(\App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository::class);
         $datos = $repository->obtenerDatosFactura($pedido->id);
+        
+        // Agregar el ID del pedido para poder usarlo en el frontend
+        $datos['id'] = $pedido->id;
 
         Log::info('[FACTURA] Datos extraídos', [
             'numero_pedido' => $datos['numero_pedido'],

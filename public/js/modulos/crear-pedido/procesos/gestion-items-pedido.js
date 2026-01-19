@@ -11,7 +11,11 @@
 
 class GestionItemsUI {
     constructor() {
-        this.api = window.pedidosAPI;
+        // ✅ TOLERANTE: Esperar a que pedidosAPI esté disponible
+        this.api = window.pedidosAPI || {
+            obtenerItems: () => Promise.resolve({ items: [] }),
+            agregarItem: () => Promise.resolve({ success: false })
+        };
         this.items = [];
         this.prendaEditIndex = null;  // ✅ NUEVO: Rastrear índice de prenda siendo editada
         this.inicializar();
@@ -19,7 +23,12 @@ class GestionItemsUI {
 
     inicializar() {
         this.attachEventListeners();
-        this.cargarItems();
+        
+        // ✅ SOLO cargar ítems si estamos en contexto de creación (no edición)
+        if (document.getElementById('btn-agregar-item-cotizacion') || 
+            document.getElementById('btn-agregar-item-tipo')) {
+            this.cargarItems();
+        }
     }
 
     attachEventListeners() {
@@ -392,6 +401,16 @@ class GestionItemsUI {
         console.log('📝 [GestionItemsUI] cargarItemEnModal() - cargando prenda para editar');
         console.log('   Prenda recibida:', prenda);
         console.log('   Índice:', prendaIndex);
+        console.log('   📊 ESTRUCTURA COMPLETA DE PRENDA:');
+        console.log('      - nombre_producto:', prenda.nombre_producto);
+        console.log('      - tela:', prenda.tela);
+        console.log('      - color:', prenda.color);
+        console.log('      - referencia:', prenda.referencia);
+        console.log('      - imagen_tela:', prenda.imagen_tela);
+        console.log('      - telasAgregadas:', prenda.telasAgregadas);
+        console.log('      - telas:', prenda.telas);
+        console.log('      - imagenes:', prenda.imagenes);
+        console.log('      - TODAS LAS PROPIEDADES:', Object.keys(prenda).sort());
         
         // ✅ CRÍTICO: Establecer índice de edición ANTES de abrir modal
         this.prendaEditIndex = prendaIndex;
@@ -429,46 +448,146 @@ class GestionItemsUI {
             // Limpiar storage primero
             window.imagenesPrendaStorage.limpiar();
             
+            console.log('   Procesando imágenes:', prenda.imagenes.length);
+            
             // Agregar imágenes al storage
-            prenda.imagenes.forEach(img => {
-                if (img.file) {
+            prenda.imagenes.forEach((img, idx) => {
+                console.log(`   📋 Imagen ${idx}:`, typeof img, img);
+                
+                // Si es un File object (nueva imagen)
+                if (img && img.file instanceof File) {
                     window.imagenesPrendaStorage.agregarImagen(img.file);
-                    console.log(`   ✅ Imagen cargada: ${img.nombre}`);
+                    console.log(`   ✅ Imagen ${idx} cargada desde File`);
+                }
+                // Si es un objeto con URL (imagen de BD)
+                else if (img && (img.url || img.ruta)) {
+                    const urlImagen = img.url || img.ruta;
+                    console.log(`   📷 Imagen ${idx} desde BD URL: ${urlImagen}`);
+                    
+                    // Crear objeto de imagen que simule lo que espera el storage
+                    // Sin hacer fetch - usar URL directamente como preview
+                    if (!window.imagenesPrendaStorage.images) {
+                        window.imagenesPrendaStorage.images = [];
+                    }
+                    window.imagenesPrendaStorage.images.push({
+                        previewUrl: urlImagen,      // URL directo para preview
+                        nombre: `imagen_${idx}.webp`,
+                        tamaño: 0,
+                        file: null,                 // Sin File object
+                        urlDesdeDB: true            // Marcar que viene de BD
+                    });
+                    console.log(`   ✅ Imagen ${idx} agregada al storage (URL desde BD)`);
+                }
+                // Si es directamente una string (URL)
+                else if (typeof img === 'string') {
+                    console.log(`   📷 Imagen ${idx} es URL string: ${img}`);
+                    if (!window.imagenesPrendaStorage.images) {
+                        window.imagenesPrendaStorage.images = [];
+                    }
+                    window.imagenesPrendaStorage.images.push({
+                        previewUrl: img,
+                        nombre: `imagen_${idx}.webp`,
+                        tamaño: 0,
+                        file: null,
+                        urlDesdeDB: true
+                    });
+                    console.log(`   ✅ Imagen ${idx} agregada como URL string`);
                 }
             });
             
-            console.log(`✅ ${prenda.imagenes.length} imagen(es) cargada(s)`);
+            console.log(`✅ ${prenda.imagenes.length} imagen(es) procesadas`);
+            console.log(`   window.imagenesPrendaStorage.images:`, window.imagenesPrendaStorage.images);
+            console.log(`   window.actualizarPreviewPrenda existe?:`, typeof window.actualizarPreviewPrenda);
             
-            // Actualizar preview
+            // Actualizar preview - Si existe la función global, usarla. Si no, actualizar directamente
             if (window.actualizarPreviewPrenda) {
+                console.log('   ✅ Usando window.actualizarPreviewPrenda()...');
                 window.actualizarPreviewPrenda();
+            } else {
+                console.log('   ⚠️ window.actualizarPreviewPrenda no existe, actualizando preview directamente...');
+                
+                // Actualizar preview directamente
+                const preview = document.getElementById('nueva-prenda-foto-preview');
+                const contador = document.getElementById('nueva-prenda-foto-contador');
+                
+                if (preview && window.imagenesPrendaStorage.images.length > 0) {
+                    const primerImg = window.imagenesPrendaStorage.images[0];
+                    const urlImg = primerImg.previewUrl || primerImg.url;
+                    
+                    console.log('   📷 Actualizando preview con imagen:', urlImg);
+                    preview.innerHTML = `<img src="${urlImg}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" alt="Preview">`;
+                    preview.style.cursor = 'pointer';
+                    
+                    if (contador && window.imagenesPrendaStorage.images.length > 1) {
+                        contador.textContent = window.imagenesPrendaStorage.images.length;
+                    }
+                    console.log('   ✅ Preview actualizado directamente');
+                } else {
+                    console.warn('   ⚠️ No se pudo actualizar preview - elemento o imágenes no encontradas');
+                }
             }
         } else {
             console.log('📸 Sin imágenes para cargar');
+            console.log('   prenda.imagenes:', prenda.imagenes);
+            console.log('   window.imagenesPrendaStorage:', window.imagenesPrendaStorage);
         }
         
         // ========== CARGAR TELAS ==========
         console.log('🧵 Cargando telas...');
-        if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0 && window.telasAgregadas) {
-            // Limpiar telas existentes
+        console.log('   prenda.tela:', prenda.tela);
+        console.log('   prenda.color:', prenda.color);
+        console.log('   prenda.ref:', prenda.ref);
+        console.log('   prenda.referencia:', prenda.referencia);
+        console.log('   prenda.imagenes_tela:', prenda.imagenes_tela);
+        console.log('   prenda.telasAgregadas:', prenda.telasAgregadas);
+        console.log('   window.telasAgregadas:', window.telasAgregadas);
+        
+        // PRIMERO: Cargar desde propiedades raíz de BD (tela, color, ref, imagenes_tela)
+        // Esta es la estructura correcta para prendas guardadas en BD
+        if ((prenda.tela || prenda.color) && window.telasAgregadas) {
+            console.log('   ✅ Encontradas propiedades de tela en raíz (BD)');
             window.telasAgregadas.length = 0;
             
-            // Agregar telas
-            prenda.telasAgregadas.forEach(tela => {
-                window.telasAgregadas.push({
-                    color: tela.color || '',
-                    tela: tela.tela || '',
-                    referencia: tela.referencia || '',
-                    imagenes: tela.imagenes || []
-                });
-            });
+            const telaObj = {
+                color: prenda.color || '',
+                tela: prenda.tela || '',
+                referencia: prenda.ref || prenda.referencia || '',  // BD usa 'ref', no 'referencia'
+                imagenes: []
+            };
             
-            console.log(`✅ ${prenda.telasAgregadas.length} tela(s) cargada(s)`);
+            // Agregar imágenes de tela si existen
+            // En BD están en 'imagenes_tela' (sin la primera imagen que es imagen_tela)
+            if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
+                // La segunda imagen es la de tela real (primera es imagen_tela de portada)
+                if (prenda.imagenes_tela.length > 1) {
+                    telaObj.imagenes = [prenda.imagenes_tela[1]];  // Usar la segunda imagen (foto de tela)
+                    console.log('   📸 Imagen de tela encontrada:', prenda.imagenes_tela[1]);
+                } else if (prenda.imagenes_tela.length === 1) {
+                    // Si solo hay una, usarla
+                    telaObj.imagenes = [prenda.imagenes_tela[0]];
+                    console.log('   📸 Única imagen de tela encontrada:', prenda.imagenes_tela[0]);
+                }
+            }
+            
+            console.log('   ✅ Objeto tela construido:', telaObj);
+            window.telasAgregadas.push(telaObj);
+            console.log('   ✅ 1 tela cargada desde propiedades raíz (BD)');
             
             // Actualizar tabla de telas
             if (window.actualizarTablaTelas) {
+                console.log('   Llamando a actualizarTablaTelas...');
                 window.actualizarTablaTelas();
             }
+        }
+        // SEGUNDO: Si telasAgregadas viene del backend pero contiene variantes, ignorarlo
+        // (no es la ubicación correcta para datos de tela)
+        else {
+            console.log('   ⚠️ No hay datos de tela para cargar');
+            console.log('   Verificación:');
+            console.log('      - prenda.tela:', !!prenda.tela, '=', prenda.tela);
+            console.log('      - prenda.color:', !!prenda.color, '=', prenda.color);
+            console.log('      - window.telasAgregadas:', !!window.telasAgregadas);
+            console.log('      - prenda.telasAgregadas es array de variantes, no de telas');
         }
         
         // ========== CARGAR TALLAS Y CANTIDADES ==========
@@ -476,7 +595,57 @@ class GestionItemsUI {
         console.log('   prenda.tallas:', prenda.tallas);
         console.log('   prenda.cantidadesPorTalla:', prenda.cantidadesPorTalla);
         
-        if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+        // En BD, prenda.tallas es un OBJETO {genero: {talla: cantidad}}, no un array
+        if (prenda.tallas && typeof prenda.tallas === 'object' && !Array.isArray(prenda.tallas)) {
+            console.log('   ✅ Cargando tallas desde estructura de objeto de BD');
+            
+            // Inicializar variables globales si no existen
+            if (!window.cantidadesTallas) {
+                window.cantidadesTallas = {};
+            }
+            if (!window.tallasSeleccionadas) {
+                window.tallasSeleccionadas = {
+                    dama: { tallas: [], tipo: null },
+                    caballero: { tallas: [], tipo: null }
+                };
+            }
+            
+            // Procesar cada género
+            Object.keys(prenda.tallas).forEach(genero => {
+                const tallasDelGenero = prenda.tallas[genero];  // {L: 120, M: 20, S: 30}
+                const tallas = Object.keys(tallasDelGenero);    // ['L', 'M', 'S']
+                const cantidades = tallasDelGenero;              // {L: 120, M: 20, S: 30}
+                
+                console.log(`   Género: ${genero}, Tallas: ${tallas.join(', ')}`);
+                
+                // Guardar cantidades en window.cantidadesTallas
+                tallas.forEach(talla => {
+                    const tallaKey = `${genero}-${talla}`;
+                    window.cantidadesTallas[tallaKey] = cantidades[talla] || 0;
+                    console.log(`      ${tallaKey}: ${cantidades[talla]}`);
+                });
+                
+                // Guardar tallas seleccionadas
+                if (window.tallasSeleccionadas[genero]) {
+                    window.tallasSeleccionadas[genero].tallas = tallas;
+                    window.tallasSeleccionadas[genero].tipo = 'letra';  // Asumir tipo letra por defecto
+                }
+            });
+            
+            // Simular clic en los botones de géneros para que carguen las tallas en la UI
+            Object.keys(window.tallasSeleccionadas).forEach(genero => {
+                const btnGenero = document.querySelector(`[data-genero-btn="${genero}"]`);
+                if (btnGenero && window.tallasSeleccionadas[genero].tallas.length > 0) {
+                    setTimeout(() => {
+                        btnGenero.click();
+                        console.log(`   ✅ Activado género: ${genero}`);
+                    }, 100);
+                }
+            });
+            
+            console.log('✅ Tallas cargadas desde BD');
+        }
+        else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
             // Inicializar variables globales si no existen
             if (!window.cantidadesTallas) {
                 window.cantidadesTallas = {};
@@ -548,15 +717,24 @@ class GestionItemsUI {
         console.log('   prenda.variantes:', prenda.variantes);
         console.log('   prenda.tipo_manga:', prenda.tipo_manga);
         
-        // Determinar de dónde extraer las variaciones
-        const variaciones = prenda.variantes || {};
-        const tipoManga = variaciones.tipo_manga || prenda.tipo_manga || 'No aplica';
-        const obsManga = variaciones.obs_manga || prenda.obs_manga || '';
-        const tieneBolsillos = variaciones.tiene_bolsillos || prenda.tiene_bolsillos || false;
-        const obsBolsillos = variaciones.obs_bolsillos || prenda.obs_bolsillos || '';
-        const tipoBroche = variaciones.tipo_broche || prenda.tipo_broche || 'No aplica';
-        const obsBroche = variaciones.obs_broche || prenda.obs_broche || '';
-        const tieneReflectivo = variaciones.tiene_reflectivo || prenda.tiene_reflectivo || false;
+        // En BD, prenda.variantes es un ARRAY. Si existe, tomar el primer elemento
+        let variaciones = {};
+        if (Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            variaciones = prenda.variantes[0];  // ← ARREGLADO: Tomar primer elemento del array
+            console.log('   ✅ Variaciones extraídas de prenda.variantes[0]:', variaciones);
+        } else if (typeof prenda.variantes === 'object' && !Array.isArray(prenda.variantes)) {
+            variaciones = prenda.variantes;
+            console.log('   ✅ Variaciones extraídas como objeto');
+        }
+        
+        // Mapear nombres de propiedades: en BD puede ser 'manga' en lugar de 'tipo_manga'
+        const tipoManga = variaciones.tipo_manga || variaciones.manga || prenda.tipo_manga || 'No aplica';
+        const obsManga = variaciones.manga_obs || variaciones.obs_manga || prenda.obs_manga || '';
+        const tieneBolsillos = variaciones.tiene_bolsillos || variaciones.bolsillos || prenda.tiene_bolsillos || false;
+        const obsBolsillos = variaciones.bolsillos_obs || variaciones.obs_bolsillos || prenda.obs_bolsillos || '';
+        const tipoBroche = variaciones.tipo_broche || variaciones.broche || prenda.tipo_broche || 'No aplica';
+        const obsBroche = variaciones.broche_obs || variaciones.obs_broche || prenda.obs_broche || '';
+        const tieneReflectivo = variaciones.tiene_reflectivo || variaciones.reflectivo || prenda.tiene_reflectivo || false;
         
         console.log('   Variaciones extraídas:');
         console.log('   - tipo_manga:', tipoManga);
@@ -600,9 +778,57 @@ class GestionItemsUI {
         const brocheInput = document.getElementById('broche-input');
         const brocheObs = document.getElementById('broche-obs');
         
+        console.log('   DEBUG Broche:');
+        console.log('      - tipoBroche:', tipoBroche);
+        console.log('      - brocheInput element:', brocheInput);
+        if (brocheInput?.options) {
+            console.log('      - Opciones disponibles:');
+            Array.from(brocheInput.options).forEach((opt, i) => {
+                console.log(`         ${i}: ${opt.value} = ${opt.text}`);
+            });
+        }
+        
         if (aplicaBrocheCheckbox) {
             aplicaBrocheCheckbox.checked = tipoBroche !== 'No aplica' && tipoBroche !== '';
-            if (brocheInput) brocheInput.value = tipoBroche && tipoBroche !== 'No aplica' ? tipoBroche : 'boton';
+            if (brocheInput) {
+                // Normalizar valor: minúsculas + remover acentos completamente
+                let valorNormalizado = tipoBroche && tipoBroche !== 'No aplica' ? tipoBroche : 'boton';
+                // Remover acentos usando normalize
+                valorNormalizado = valorNormalizado
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')  // Remover todas las marcas diacríticas
+                    .trim();
+                
+                console.log('      - valorNormalizado:', valorNormalizado);
+                console.log('      - Buscando match en opciones...');
+                
+                // Buscar opción que matchee (exacto o similar)
+                let encontrado = false;
+                if (brocheInput.options) {
+                    for (let i = 0; i < brocheInput.options.length; i++) {
+                        const optionValue = brocheInput.options[i].value
+                            .toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .trim();
+                        
+                        if (optionValue === valorNormalizado) {
+                            brocheInput.value = brocheInput.options[i].value;
+                            console.log(`      ✅ Match encontrado: ${brocheInput.options[i].value}`);
+                            encontrado = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!encontrado) {
+                    console.log('      ⚠️ No se encontró match exacto, asignando valor normalizado');
+                    brocheInput.value = valorNormalizado;
+                }
+                
+                console.log(`      - brocheInput.value final: ${brocheInput.value}`);
+            }
             if (brocheInput) brocheInput.disabled = !aplicaBrocheCheckbox.checked;
             if (brocheInput) brocheInput.style.opacity = aplicaBrocheCheckbox.checked ? '1' : '0.5';
             if (brocheObs) brocheObs.value = obsBroche;
@@ -633,16 +859,43 @@ class GestionItemsUI {
         
         // ========== CARGAR DATOS COMPLETOS DE PROCESOS ==========
         console.log('🔧 Cargando datos completos de procesos...');
+        console.log('   prenda.procesos:', prenda.procesos);
         
         // ✅ NUEVO: Limpiar contenedor de tarjetas antes de cargar procesos
         const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
         if (contenedorTarjetas) {
             contenedorTarjetas.innerHTML = '';
-            // NO poner display:none aquí - dejar que renderizarTarjetasProcesos() controle el display
             console.log('🧹 Contenedor de tarjetas limpiado antes de cargar procesos');
         }
         
-        if (prenda.procesos && typeof prenda.procesos === 'object' && Object.keys(prenda.procesos).length > 0) {
+        // Los procesos pueden venir de dos estructuras:
+        // 1. ARRAY (BD): [{tipo: 'Proceso', observaciones: '...', imagenes: [...], ubicaciones: [...], ...}]
+        // 2. OBJETO (estructura antigua): {tipoProceso: {datos: {...}}}
+        
+        if (Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
+            console.log('   ✅ Procesos vienen como ARRAY de BD');
+            
+            // Si es un array, guardar directamente en window.procesosSeleccionados
+            // pero debemos extraer el tipo del nombre del proceso o del contenido
+            window.procesosSeleccionados = {};
+            
+            prenda.procesos.forEach((proceso, idx) => {
+                console.log(`   📋 Proceso ${idx}:`, proceso);
+                // El tipo está en proceso.tipo, pero es "Proceso" genérico
+                // Hay que detectar qué tipo de proceso es por observaciones o ubicaciones
+                
+                // Por ahora, guardarlos como están
+                window.procesosSeleccionados[`proceso_${idx}`] = {
+                    tipo: 'proceso_custom',
+                    datos: proceso
+                };
+            });
+            
+            console.log('✅ Procesos completos cargados:', window.procesosSeleccionados);
+        }
+        else if (prenda.procesos && typeof prenda.procesos === 'object' && Object.keys(prenda.procesos).length > 0) {
+            console.log('   ✅ Procesos vienen como OBJETO');
+            
             // Reinicializar window.procesosSeleccionados
             window.procesosSeleccionados = {};
             
@@ -659,7 +912,7 @@ class GestionItemsUI {
                     // Marcar el checkbox
                     const checkbox = document.getElementById(`checkbox-${tipoProceso}`);
                     if (checkbox) {
-                        checkbox._ignorarOnclick = true; // Evitar trigger del handler
+                        checkbox._ignorarOnclick = true;
                         checkbox.checked = true;
                         checkbox._ignorarOnclick = false;
                         console.log(`   ✅ Checkbox ${tipoProceso} marcado`);
@@ -668,14 +921,19 @@ class GestionItemsUI {
             });
             
             console.log('✅ Procesos completos cargados:', window.procesosSeleccionados);
-            
-            // Renderizar tarjetas de procesos
-            if (window.renderizarTarjetasProcesos) {
-                window.renderizarTarjetasProcesos();
-                console.log('🎨 Tarjetas de procesos renderizadas');
-            }
         } else {
-            console.log('ℹ️  Sin procesos completos para cargar');
+            console.log('ℹ️  Sin procesos para cargar');
+        }
+        
+        // ✅ NUEVO: Renderizar tarjetas de procesos
+        console.log('🎨 Renderizando tarjetas de procesos cargados...');
+        if (window.renderizarTarjetasProcesos) {
+            window.renderizarTarjetasProcesos();
+            console.log('✅ Tarjetas de procesos renderizadas');
+        } else {
+            console.warn('⚠️ window.renderizarTarjetasProcesos no existe, renderizando directamente...');
+            // Renderizar procesos directamente si la función no existe
+            this.renderizarProcesosDirectos();
         }
         
         // Guardar índice para actualización posterior
@@ -1511,8 +1769,40 @@ class GestionItemsUI {
                         if (prenda.telasAgregadas[0].tela) {
                             itemSinCot.tela = prenda.telasAgregadas[0].tela;
                         }
+                        // ✅ NUEVO: Incluir imagen de tela para el template
+                        if (prenda.telasAgregadas[0].imagenes && prenda.telasAgregadas[0].imagenes.length > 0) {
+                            const primeraTela = prenda.telasAgregadas[0];
+                            const primeraImagen = primeraTela.imagenes[0];
+                            // Usar blobUrl si existe, sino crear uno
+                            if (primeraImagen.blobUrl) {
+                                itemSinCot.imagenTela = primeraImagen.blobUrl;
+                            } else if (primeraImagen.file instanceof File) {
+                                itemSinCot.imagenTela = URL.createObjectURL(primeraImagen.file);
+                            } else if (typeof primeraImagen === 'string') {
+                                itemSinCot.imagenTela = primeraImagen;
+                            }
+                        }
                     }
                     console.log(`🧵 Telas encontradas:`, prenda.telasAgregadas.length);
+                    console.log(`🧵 imagenTela asignada:`, itemSinCot.imagenTela);
+                }
+                // ✅ NUEVO: Si viene de BD con estructura nueva (tela, color, imagenes_tela en raíz)
+                else if ((prenda.tela || prenda.color) && prenda.imagenes_tela) {
+                    console.log('📦 Construyendo item desde estructura de BD (tela, color, imagenes_tela)');
+                    itemSinCot.color = prenda.color || null;
+                    itemSinCot.tela = prenda.tela || null;
+                    itemSinCot.ref = prenda.ref || null;
+                    
+                    // Agregar imagen de tela desde imagenes_tela
+                    // La segunda imagen es la de tela real (primera es imagen_tela de portada)
+                    if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
+                        // Preferir segunda imagen si existe (es la foto de tela)
+                        const telaIndex = prenda.imagenes_tela.length > 1 ? 1 : 0;
+                        const fotoDatos = prenda.imagenes_tela[telaIndex];
+                        // Las fotos de BD tienen url, ruta_webp, ruta_original
+                        itemSinCot.imagenTela = fotoDatos.url || fotoDatos.ruta_webp || fotoDatos.ruta_original;
+                        console.log(`📸 Imagen de tela asignada desde imagenes_tela[${telaIndex}]:`, itemSinCot.imagenTela);
+                    }
                 }
                 // Fallback: si no hay telasAgregadas pero sí prenda.telas
                 else if (prenda.telas && prenda.telas.length > 0) {
@@ -2122,6 +2412,248 @@ class GestionItemsUI {
         document.body.style.overflow = 'hidden';
         
         console.log('✅ Modal mostrado exitosamente');
+    }
+
+    /**
+     * Renderizar procesos directamente si la función global no existe
+     */
+    renderizarProcesosDirectos() {
+        console.log('🎨 [FALLBACK] Renderizando procesos directamente...');
+        
+        const container = document.getElementById('contenedor-tarjetas-procesos');
+        if (!container) {
+            console.warn('⚠️ Contenedor de procesos no encontrado');
+            return;
+        }
+
+        const procesos = window.procesosSeleccionados || {};
+        const procesosArray = Object.entries(procesos);
+        
+        console.log('📊 Procesos a renderizar:', procesosArray.length);
+
+        if (procesosArray.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 1.5rem; color: #9ca3af;">
+                    <span class="material-symbols-rounded" style="font-size: 2rem; opacity: 0.3; display: block;">info</span>
+                    No hay procesos configurados
+                </div>
+            `;
+            container.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        
+        procesosArray.forEach(([key, proceso]) => {
+            const datos = proceso.datos || {};
+            const tipo = key.replace('proceso_', '');
+            
+            // Renderizar con el mismo HTML que renderizador-tarjetas-procesos.js
+            const ubicacionesTexto = datos.ubicaciones?.length > 0 
+                ? datos.ubicaciones.join(', ') 
+                : 'Sin ubicaciones';
+            
+            const damaObj = datos.tallas?.dama || {};
+            const caballeroObj = datos.tallas?.caballero || {};
+            const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
+            
+            html += `
+                <div class="tarjeta-proceso" data-tipo="${tipo}" style="
+                    background: white;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 8px;
+                    padding: 1rem;
+                    margin-bottom: 0.75rem;
+                    transition: all 0.2s;
+                ">
+                    <!-- Header -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-size: 1.5rem;">⚙️</span>
+                            <strong style="color: #111827; font-size: 1rem;">Proceso Personalizado</strong>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" onclick="window.editarProcesoEdicion('${tipo}')" 
+                                style="background: #f3f4f6; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center;" 
+                                title="Editar proceso">
+                                <i class="fas fa-edit" style="font-size: 1rem; color: #6b7280;"></i>
+                            </button>
+                            <button type="button" onclick="window.eliminarTarjetaProceso('${tipo}')" 
+                                style="background: #fee2e2; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center;" 
+                                title="Eliminar proceso">
+                                <i class="fas fa-trash-alt" style="font-size: 1rem; color: #dc2626;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Contenido -->
+                    <div style="display: grid; gap: 0.75rem;">
+                        ${(datos.imagenes?.length > 0) ? `
+                            <div>
+                                <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">IMÁGENES</div>
+                                <div style="position: relative; display: inline-block;">
+                                    <img src="${datos.imagenes[0]?.url || datos.imagenes[0]}" 
+                                        style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 2px solid #e5e7eb;" 
+                                        alt="Imagen del proceso">
+                                    ${datos.imagenes.length > 1 ? `
+                                        <span style="position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.75); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">
+                                            +${datos.imagenes.length - 1}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">UBICACIONES</div>
+                            <div style="color: #374151; font-size: 0.875rem;">${ubicacionesTexto}</div>
+                        </div>
+                        
+                        ${totalTallas > 0 ? `
+                            <div>
+                                <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">TALLAS (${totalTallas})</div>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                                    ${datos.tallas.dama && Object.keys(datos.tallas.dama).length > 0 ? `
+                                        <div>
+                                            <strong style="color: #be185d; margin-right: 0.5rem;">Dama:</strong>
+                                            ${Object.entries(datos.tallas.dama).map(([talla, cantidad]) => {
+                                                return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                                    ${talla}
+                                                    <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+                                                </span>`;
+                                            }).join('')}
+                                        </div>
+                                    ` : ''}
+                                    ${datos.tallas.caballero && Object.keys(datos.tallas.caballero).length > 0 ? `
+                                        <div>
+                                            <strong style="color: #1d4ed8; margin-right: 0.5rem;">Caballero:</strong>
+                                            ${Object.entries(datos.tallas.caballero).map(([talla, cantidad]) => {
+                                                return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                                    ${talla}
+                                                    <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+                                                </span>`;
+                                            }).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${datos.observaciones ? `
+                            <div>
+                                <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">OBSERVACIONES</div>
+                                <div style="color: #374151; font-size: 0.875rem; font-style: italic;">${datos.observaciones}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        container.style.display = 'block';
+        
+        console.log('✅ Procesos renderizados directamente');
+    }
+}
+
+/**
+ * Wrapper para editarProceso que funciona en contexto de edición
+ */
+window.editarProcesoEdicion = function(tipo) {
+    console.log(`✏️ Editando proceso en contexto de edición: ${tipo}`);
+    
+    // Asegurar que el modal de proceso esté encima
+    const modalProceso = document.getElementById('modal-proceso-generico');
+    if (modalProceso) {
+        modalProceso.style.zIndex = '10000';
+        console.log('   ✅ Z-index del modal de proceso establecido a 10000');
+    }
+    
+    // Usar la función global si existe
+    if (window.editarProceso && window.editarProceso !== window.editarProcesoEdicion) {
+        window.editarProceso(tipo);
+        return;
+    }
+    
+    // Si no existe, intentar abrir el modal genérico
+    if (window.abrirModalProcesoGenerico) {
+        window.abrirModalProcesoGenerico(tipo);
+        
+        // Asegurar nuevamente que el z-index esté alto después de abrir
+        if (modalProceso) {
+            setTimeout(() => {
+                modalProceso.style.zIndex = '10000';
+            }, 100);
+        }
+        
+        // Cargar datos en el modal
+        const proceso = window.procesosSeleccionados?.[tipo];
+        if (proceso?.datos) {
+            cargarDatosProcesoEnModalEdicion(tipo, proceso.datos);
+        }
+    } else {
+        console.error('❌ No se pudo abrir el modal de proceso');
+    }
+};
+
+/**
+ * Cargar datos de un proceso en el modal para editar (fallback)
+ */
+function cargarDatosProcesoEnModalEdicion(tipo, datos) {
+    console.log(`📝 Cargando datos en modal para editar:`, datos);
+    
+    // Limpiar imágenes anteriores
+    if (window.imagenesProcesoActual) {
+        window.imagenesProcesoActual = [null, null, null];
+    }
+    
+    // Cargar imágenes
+    const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
+    imagenes.forEach((img, idx) => {
+        if (img && idx < 3) {
+            const indice = idx + 1;
+            const preview = document.getElementById(`proceso-foto-preview-${indice}`);
+            
+            if (preview) {
+                const imgUrl = img instanceof File ? URL.createObjectURL(img) : img;
+                preview.innerHTML = `
+                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
+                    <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
+                        style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                        ×
+                    </button>
+                `;
+            }
+            
+            if (window.imagenesProcesoActual) {
+                window.imagenesProcesoActual[idx] = img;
+            }
+        }
+    });
+    
+    // Cargar ubicaciones
+    if (datos.ubicaciones && window.ubicacionesProcesoSeleccionadas) {
+        window.ubicacionesProcesoSeleccionadas.length = 0;
+        window.ubicacionesProcesoSeleccionadas.push(...datos.ubicaciones);
+        if (window.renderizarListaUbicaciones) {
+            window.renderizarListaUbicaciones();
+        }
+    }
+    
+    // Cargar observaciones
+    const obsInput = document.getElementById('proceso-observaciones');
+    if (obsInput && datos.observaciones) {
+        obsInput.value = datos.observaciones;
+    }
+    
+    // Cargar tallas
+    if (datos.tallas && window.tallasSeleccionadasProceso) {
+        window.tallasSeleccionadasProceso.dama = datos.tallas.dama || [];
+        window.tallasSeleccionadasProceso.caballero = datos.tallas.caballero || [];
+        if (window.actualizarResumenTallasProceso) {
+            window.actualizarResumenTallasProceso();
+        }
     }
 }
 

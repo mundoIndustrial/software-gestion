@@ -1,18 +1,299 @@
-<!-- MODAL: Agregar Prenda Nueva (Sin Cotización) -->
-<div id="modal-agregar-prenda-nueva" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 99999; align-items: center; justify-content: center; overflow-y: auto; padding: 2rem 0;">
-    <div class="modal-container modal-xl">
+/**
+ * MODAL PRENDA DINÁMICO
+ * Carga el modal del formulario de prendas dinámicamente en el DOM
+ * Evita conflictos CSS al inyectarlo directamente en el body
+ */
+
+class ModalPrendaDinamico {
+    constructor() {
+        this.modalId = 'modal-agregar-prenda-nueva';
+        this.modalHTML = null;
+        this.inicializarDependencias();
+    }
+
+    /**
+     * Inicializa las dependencias necesarias que podrían no estar disponibles
+     * en algunos contextos (como edición de pedidos)
+     */
+    inicializarDependencias() {
+        // ✅ FALLBACK: manejarCheckboxProceso si no existe
+        if (!window.manejarCheckboxProceso) {
+            console.warn('⚠️ manejarCheckboxProceso no encontrada, usando fallback');
+            window.manejarCheckboxProceso = (tipoProceso, estaChecked) => {
+                console.log(`🎯 [FALLBACK] manejarCheckboxProceso(${tipoProceso}, ${estaChecked})`);
+                // Fallback simple: solo registrar en consola
+                // El comportamiento real vendría de manejadores-procesos-prenda.js
+            };
+        }
+
+        // ✅ FALLBACK: window.imagenesTelaStorage si no existe
+        if (!window.imagenesTelaStorage) {
+            console.warn('⚠️ imagenesTelaStorage no encontrada, usando fallback');
+            window.imagenesTelaStorage = {
+                obtenerImagenes: () => [],
+                agregarImagen: (file) => {
+                    console.log('FALLBACK: Imagen agregada', file);
+                    return Promise.resolve();
+                },
+                limpiar: () => {
+                    console.log('FALLBACK: Storage limpiado');
+                    return Promise.resolve();
+                },
+                obtenerBlob: (index) => null
+            };
+        }
+
+        // ✅ FALLBACK: window.pedidosAPI si no existe
+        if (!window.pedidosAPI) {
+            console.warn('⚠️ pedidosAPI no encontrada, usando fallback');
+            window.pedidosAPI = {
+                obtenerItems: () => Promise.resolve({ items: [] }),
+                agregarItem: (data) => Promise.resolve({ success: true, items: [] })
+            };
+        }
+    }
+
+    /**
+     * Obtiene el HTML del modal
+     */
+    getModalHTML() {
+        return `<!-- MODAL: Agregar Prenda Nueva (Sin Cotización) - CON ESTILOS AISLADOS -->
+<style>
+#modal-agregar-prenda-nueva * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+#modal-agregar-prenda-nueva .form-prenda-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+#modal-agregar-prenda-nueva .form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+#modal-agregar-prenda-nueva .form-group {
+    margin-bottom: 1rem;
+}
+#modal-agregar-prenda-nueva .form-label-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: #0066cc;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+#modal-agregar-prenda-nueva .form-input,
+#modal-agregar-prenda-nueva .form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    resize: vertical;
+}
+#modal-agregar-prenda-nueva .form-input:focus,
+#modal-agregar-prenda-nueva .form-textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+#modal-agregar-prenda-nueva .form-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+#modal-agregar-prenda-nueva .foto-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+#modal-agregar-prenda-nueva .foto-panel-label {
+    font-weight: 700;
+    color: #0066cc;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+#modal-agregar-prenda-nueva .foto-preview {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #f9fafb;
+    min-height: 120px;
+}
+#modal-agregar-prenda-nueva .foto-preview:hover {
+    border-color: #0066cc;
+    background: #eff6ff;
+}
+#modal-agregar-prenda-nueva .foto-preview-lg {
+    height: 180px;
+}
+#modal-agregar-prenda-nueva .foto-preview-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+}
+#modal-agregar-prenda-nueva .foto-preview-content .material-symbols-rounded {
+    font-size: 2.5rem;
+}
+#modal-agregar-prenda-nueva .foto-preview-text {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+#modal-agregar-prenda-nueva .foto-counter {
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-align: center;
+}
+#modal-agregar-prenda-nueva .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#modal-agregar-prenda-nueva .btn-primary {
+    background: #0066cc;
+    color: white;
+}
+#modal-agregar-prenda-nueva .btn-primary:hover {
+    background: #0052a3;
+}
+#modal-agregar-prenda-nueva .btn-success {
+    background: #16a34a;
+    color: white;
+}
+#modal-agregar-prenda-nueva .btn-success:hover {
+    background: #15803d;
+}
+#modal-agregar-prenda-nueva .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+}
+#modal-agregar-prenda-nueva .btn-flex {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#modal-agregar-prenda-nueva .genero-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+#modal-agregar-prenda-nueva .btn-genero {
+    padding: 1rem;
+    border: 2px solid #d1d5db;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s;
+    font-weight: 600;
+    color: #374151;
+}
+#modal-agregar-prenda-nueva .btn-genero:hover {
+    border-color: #0066cc;
+    background: #eff6ff;
+}
+#modal-agregar-prenda-nueva .btn-genero[data-selected="true"] {
+    border-color: #0066cc;
+    background: #eff6ff;
+}
+#modal-agregar-prenda-nueva .btn-genero-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+#modal-agregar-prenda-nueva .btn-genero-check {
+    display: none;
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+#modal-agregar-prenda-nueva .btn-genero[data-selected="true"] .btn-genero-check {
+    display: block;
+}
+#modal-agregar-prenda-nueva .generos-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+#modal-agregar-prenda-nueva .total-box {
+    padding: 1rem;
+    background: #f0f9ff;
+    border-left: 4px solid #0066cc;
+    border-radius: 4px;
+    font-weight: 700;
+    color: #0066cc;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#modal-agregar-prenda-nueva .procesos-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+#modal-agregar-prenda-nueva .proceso-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+}
+#modal-agregar-prenda-nueva .proceso-checkbox:hover {
+    background: #f9fafb;
+}
+#modal-agregar-prenda-nueva .form-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #0066cc;
+}
+</style>
+
+<div id="modal-agregar-prenda-nueva" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 99999 !important; align-items: center; justify-content: center; overflow-y: auto; padding: 2rem 0; margin: 0; box-sizing: border-box;">
+    <div style="width: 90%; max-width: 1200px; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 90vh; margin: auto;">
         <!-- Header -->
-        <div class="modal-header modal-header-primary">
-            <h3 class="modal-title">
+        <div style="padding: 1.5rem; background: linear-gradient(135deg, #0066cc 0%, #004494 100%); border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <h3 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 0.75rem;">
                 <span class="material-symbols-rounded">add_box</span>Agregar Prenda Nueva
             </h3>
-            <button class="modal-close-btn" onclick="cerrarModalPrendaNueva()">
-                <span class="material-symbols-rounded">close</span>
+            <button style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='transparent'" onclick="window.modalPrendaDinamico.cerrar()">
+                <span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>
             </button>
         </div>
         
         <!-- Body -->
-        <div class="modal-body">
+        <div style="flex: 1; overflow-y: auto; padding: 1.5rem;">
             <form id="form-prenda-nueva">
                 <!-- Layout en 2 columnas: Datos a la izquierda, Fotos a la derecha -->
                 <div class="form-prenda-grid">
@@ -284,11 +565,81 @@
         </div>
         
         <!-- Footer -->
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="cerrarModalPrendaNueva()">Cancelar</button>
-            <button id="btn-guardar-prenda" class="btn btn-primary" onclick="agregarPrendaNueva()">
-                <span class="material-symbols-rounded">check</span>Agregar Prenda
+        <div style="padding: 1.5rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 1rem; flex-shrink: 0; border-radius: 0 0 12px 12px;">
+            <button style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: background 0.3s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'" onclick="window.modalPrendaDinamico.cerrar()">Cancelar</button>
+            <button id="btn-guardar-prenda" style="padding: 0.75rem 1.5rem; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; transition: background 0.3s;" onmouseover="this.style.background='#0052a3'" onmouseout="this.style.background='#0066cc'" onclick="agregarPrendaNueva()">
+                <span class="material-symbols-rounded" style="font-size: 1rem;">check</span>Agregar Prenda
             </button>
         </div>
     </div>
-</div>
+</div>`;
+    }
+
+    /**
+     * Inyecta el modal en el body
+     */
+    inyectar() {
+        // Verificar si ya existe
+        if (document.getElementById(this.modalId)) {
+            console.log('✅ Modal ya existe en DOM');
+            return true;
+        }
+
+        // Crear contenedor temporal
+        const div = document.createElement('div');
+        div.innerHTML = this.getModalHTML();
+        
+        // Inyectar TODOS los elementos (style + div modal) en body
+        while (div.firstChild) {
+            document.body.appendChild(div.firstChild);
+        }
+        
+        console.log('✅ Modal inyectado dinámicamente en body');
+        return true;
+    }
+
+    /**
+     * Abre el modal
+     */
+    abrir() {
+        // Primero inyectar si no existe
+        this.inyectar();
+        
+        // Buscar el modal
+        const modal = document.getElementById(this.modalId);
+        if (!modal) {
+            console.error('❌ No se pudo encontrar el modal después de inyectar');
+            return false;
+        }
+
+        // Mostrar con display flex
+        modal.style.display = 'flex';
+        console.log('✅ Modal abierto (inyectado dinámicamente)');
+        return true;
+    }
+
+    /**
+     * Cierra el modal
+     */
+    cerrar() {
+        const modal = document.getElementById(this.modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            console.log('✅ Modal cerrado');
+        }
+    }
+
+    /**
+     * Limpia y remueve el modal del DOM
+     */
+    remover() {
+        const modal = document.getElementById(this.modalId);
+        if (modal) {
+            modal.remove();
+            console.log('✅ Modal removido del DOM');
+        }
+    }
+}
+
+// Instancia global
+window.modalPrendaDinamico = new ModalPrendaDinamico();

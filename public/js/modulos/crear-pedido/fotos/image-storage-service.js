@@ -13,27 +13,32 @@ class ImageStorageService {
     /**
      * Agregar imagen desde input file
      * Usa URL.createObjectURL() para preview en lugar de base64
+     * RETORNA UNA PROMISE
      */
     agregarImagen(file) {
-        if (!file || !file.type.startsWith('image/')) {
-            return { success: false, reason: 'INVALID_FILE' };
-        }
+        return new Promise((resolve, reject) => {
+            if (!file || !file.type.startsWith('image/')) {
+                reject(new Error('INVALID_FILE'));
+                return;
+            }
 
-        if (this.images.length >= this.maxImages) {
-            return { success: false, reason: 'MAX_LIMIT' };
-        }
+            if (this.images.length >= this.maxImages) {
+                reject(new Error('MAX_LIMIT'));
+                return;
+            }
 
-        // Crear URL para preview sin base64
-        const previewUrl = URL.createObjectURL(file);
-        
-        this.images.push({
-            file: file,
-            previewUrl: previewUrl,
-            nombre: file.name,
-            tamaño: file.size,
+            // Crear URL para preview sin base64
+            const previewUrl = URL.createObjectURL(file);
+            
+            this.images.push({
+                file: file,
+                previewUrl: previewUrl,
+                nombre: file.name,
+                tamaño: file.size,
+            });
+
+            resolve({ success: true, images: this.images });
         });
-
-        return { success: true, images: this.images };
     }
 
     /**
