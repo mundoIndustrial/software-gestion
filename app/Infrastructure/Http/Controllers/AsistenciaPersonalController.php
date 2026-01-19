@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Personal;
@@ -488,35 +488,43 @@ class AsistenciaPersonalController extends Controller
                 // Determinar cantidad esperada de marcas
                 $cantidadEsperada = $esSabado ? 2 : 4;
                 
-                // Detectar y agregar marcas faltantes repetidamente hasta alcanzar la cantidad esperada
-                // Bucle: mientras haya menos marcas de las esperadas, intentar detectar más
-                while (count($horasOrdenadas) < $cantidadEsperada) {
-                    // Para sábado: si ya hay 2+ marcas, no agregar más
-                    if ($esSabado && count($horasOrdenadas) >= 2) {
-                        break;
-                    }
-                    
-                    $marcaFaltante = $this->detectarMarcaFaltante($personal, $horasOrdenadas, $registro['dia']);
-                    
-                    if ($marcaFaltante) {
-                        // Agregar la marca faltante solo si realmente falta
-                        $horasOrdenadas[] = $marcaFaltante['hora_esperada'];
+                // Lógica especial para rol 21: solo agregar marcas faltantes si tiene 4 marcas
+                $esRol21 = $personal->id_rol == 21;
+                
+                // Para rol 21 en días normales con menos de 4 marcas: NO agregar marcas faltantes
+                if ($esRol21 && !$esSabado && count($horasOrdenadas) < 4) {
+                    // No hacer nada, solo guardar lo que hay
+                } else {
+                    // Detectar y agregar marcas faltantes repetidamente hasta alcanzar la cantidad esperada
+                    // Bucle: mientras haya menos marcas de las esperadas, intentar detectar más
+                    while (count($horasOrdenadas) < $cantidadEsperada) {
+                        // Para sábado: si ya hay 2+ marcas, no agregar más
+                        if ($esSabado && count($horasOrdenadas) >= 2) {
+                            break;
+                        }
                         
-                        // Reordenar después de agregar
-                        $horasOrdenadas = $this->ordenarHorasCronologicamente($horasOrdenadas);
+                        $marcaFaltante = $this->detectarMarcaFaltante($personal, $horasOrdenadas, $registro['dia']);
                         
-                        // Registrar la marca faltante detectada
-                        $marcasFaltantes[] = [
-                            'codigo_persona' => $registro['id_persona'],
-                            'nombre_persona' => $personal->nombre_persona,
-                            'dia' => $registro['dia'],
-                            'marca' => $marcaFaltante['nombre_marca'],
-                            'hora_detectada' => $marcaFaltante['hora_esperada'],
-                            'status' => 'agregada_automaticamente'
-                        ];
-                    } else {
-                        // Si no hay más marcas faltantes detectadas, romper el bucle
-                        break;
+                        if ($marcaFaltante) {
+                            // Agregar la marca faltante solo si realmente falta
+                            $horasOrdenadas[] = $marcaFaltante['hora_esperada'];
+                            
+                            // Reordenar después de agregar
+                            $horasOrdenadas = $this->ordenarHorasCronologicamente($horasOrdenadas);
+                            
+                            // Registrar la marca faltante detectada
+                            $marcasFaltantes[] = [
+                                'codigo_persona' => $registro['id_persona'],
+                                'nombre_persona' => $personal->nombre_persona,
+                                'dia' => $registro['dia'],
+                                'marca' => $marcaFaltante['nombre_marca'],
+                                'hora_detectada' => $marcaFaltante['hora_esperada'],
+                                'status' => 'agregada_automaticamente'
+                            ];
+                        } else {
+                            // Si no hay más marcas faltantes detectadas, romper el bucle
+                            break;
+                        }
                     }
                 }
 
@@ -689,9 +697,9 @@ class AsistenciaPersonalController extends Controller
      * @param Personal $personal
      * @param array $horasRegistradas
      * @param string $dia (formato Y-m-d)
-     * @return array ['marca_faltante' => 'campo', 'hora_esperada' => 'HH:MM:SS'] o null
+     * @return array|null ['marca_faltante' => 'campo', 'hora_esperada' => 'HH:MM:SS'] o null
      */
-    private function detectarMarcaFaltante($personal, $horasRegistradas, $dia)
+    private function detectarMarcaFaltante($personal, $horasRegistradas, $dia): ?array
     {
         // Fechas especiales donde NO se valida marcas faltantes
         $fechasEspeciales = [
@@ -1091,6 +1099,49 @@ class AsistenciaPersonalController extends Controller
     }
 
     /**
+     * Calcular horas trabajadas y horas extras para un registro
+     * 
+     * Endpoint: POST /asistencia-personal/calcular-horas
+     * 
+     * @param Request $request con: codigo_persona, dia, horas (array)
+     * @return JsonResponse
+     */
+    public function calcularHoras(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'codigo_persona' => 'required|integer|exists:personal,codigo_persona',
+                'dia' => 'required|date_format:Y-m-d',
+                'horas' => 'required|array|min:1'
+            ]);
+
+            $personal = Personal::where('codigo_persona', $request->codigo_persona)->first();
+            if (!$personal) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Persona no encontrada'
+                ], 404);
+            }
+
+            $resultado = $this->calcularHorasTrabajadas(
+                $personal,
+                $request->horas,
+                $request->dia
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al calcular horas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener nombre legible de la marca
      */
     private function nombreMarca($campo)
@@ -1103,4 +1154,128 @@ class AsistenciaPersonalController extends Controller
         ];
         return $nombres[$campo] ?? $campo;
     }
+
+    /**
+     * Calcular horas trabajadas según el rol y cantidad de marcas
+     * 
+     * Para Rol 21:
+     * - Si tiene 4 marcas: calcular como rol normal (entrada mañana-salida mañana + entrada tarde-salida tarde)
+     * - Si tiene 2 o 3 marcas: contar solo desde la primera a la última marca
+     * 
+     * @param Personal $personal
+     * @param array $horas (array de horas en formato HH:MM:SS)
+     * @param string $dia (formato Y-m-d)
+     * @return array ['horas_trabajadas' => 'HH:MM:SS', 'horas_extras' => 'HH:MM:SS', 'metodo' => 'normal|rol21_parcial']
+     */
+    public function calcularHorasTrabajadas($personal, $horas, $dia)
+    {
+        // Convertir horas a segundos
+        $horasEnSegundos = [];
+        foreach ($horas as $hora) {
+            if ($hora) {
+                $partes = explode(':', $hora);
+                $segundos = intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+                $horasEnSegundos[] = $segundos;
+            }
+        }
+        
+        if (empty($horasEnSegundos)) {
+            return [
+                'horas_trabajadas' => '00:00:00',
+                'horas_extras' => '00:00:00',
+                'metodo' => 'sin_marcas'
+            ];
+        }
+
+        // Determinar si es sábado
+        $fechaObj = \DateTime::createFromFormat('Y-m-d', $dia);
+        $esSabado = $fechaObj ? $fechaObj->format('w') == 6 : false;
+
+        $esRol21 = $personal && $personal->id_rol == 21;
+        $cantidadMarcas = count($horasEnSegundos);
+
+        // Obtener horario del rol si existe
+        $horario = $personal ? HorarioPorRol::where('id_rol', $personal->id_rol)->first() : null;
+        
+        // Para rol 21: si tiene menos de 4 marcas (o menos de 2 en sábado), contar desde primera a última
+        if ($esRol21 && !$esSabado && $cantidadMarcas < 4) {
+            // Rol 21 con 2 o 3 marcas entre semana: contar desde primera a última
+            $primeraHora = min($horasEnSegundos);
+            $ultimaHora = max($horasEnSegundos);
+            $horasTrabajadas = $ultimaHora - $primeraHora;
+            
+            return [
+                'horas_trabajadas' => $this->segundosAHora($horasTrabajadas),
+                'horas_extras' => '00:00:00',
+                'metodo' => 'rol21_parcial',
+                'descripcion' => "Rol 21 con {$cantidadMarcas} marcas: calculado desde {$horas[array_key_first($horas)]} a {$horas[array_key_last($horas)]}"
+            ];
+        }
+
+        // Lógica normal: calcular bloques mañana y tarde
+        sort($horasEnSegundos);
+        
+        $horasTrabajadas = 0;
+        $metodoCálculo = 'normal';
+
+        if ($esSabado) {
+            // Sábado: 2 marcas (entrada - salida)
+            if ($cantidadMarcas >= 2) {
+                $entrada = $horasEnSegundos[0];
+                $salida = $horasEnSegundos[1];
+                $horasTrabajadas = $salida - $entrada;
+            }
+        } else {
+            // Entre semana
+            if ($cantidadMarcas >= 4) {
+                // 4 marcas: entrada_mañana, salida_mañana, entrada_tarde, salida_tarde
+                $bloqueManiana = $horasEnSegundos[1] - $horasEnSegundos[0];
+                $bloqueTarde = $horasEnSegundos[3] - $horasEnSegundos[2];
+                $horasTrabajadas = $bloqueManiana + $bloqueTarde;
+                $metodoCálculo = '4_marcas';
+            } elseif ($cantidadMarcas == 3) {
+                // 3 marcas: asumir entrada_mañana, salida_mañana, entrada_tarde o salida_tarde
+                // Si la tercera marca está lejos de las dos primeras, asumir que es entrada_tarde
+                $diferencia1 = $horasEnSegundos[1] - $horasEnSegundos[0];
+                $diferencia2 = $horasEnSegundos[2] - $horasEnSegundos[1];
+                
+                // Si la segunda diferencia es grande (> 1 hora), es entrada_tarde
+                if ($diferencia2 > 3600) {
+                    // Entrada mañana - Salida mañana - Entrada tarde (falta salida tarde)
+                    $horasTrabajadas = $diferencia1; // Solo contar mañana
+                    $metodoCálculo = '3_marcas_falta_salida_tarde';
+                } else {
+                    // Contar solo entrada a última marca
+                    $horasTrabajadas = $horasEnSegundos[2] - $horasEnSegundos[0];
+                    $metodoCálculo = '3_marcas_continuo';
+                }
+            } elseif ($cantidadMarcas == 2) {
+                // 2 marcas: contar desde primera a última
+                $horasTrabajadas = $horasEnSegundos[1] - $horasEnSegundos[0];
+                $metodoCálculo = '2_marcas_continuo';
+            } elseif ($cantidadMarcas == 1) {
+                // 1 marca: no se puede calcular
+                $horasTrabajadas = 0;
+                $metodoCálculo = '1_marca_incompleta';
+            }
+        }
+
+        // Calcular horas extras (si aplica)
+        $horasExtras = 0;
+        $horasNormales = $esSabado ? 4 : 8; // Jornada normal en horas
+        $segundosNormales = $horasNormales * 3600;
+        
+        if ($horasTrabajadas > $segundosNormales) {
+            $horasExtras = $horasTrabajadas - $segundosNormales;
+        }
+
+        return [
+            'horas_trabajadas' => $this->segundosAHora($horasTrabajadas),
+            'horas_extras' => $this->segundosAHora($horasExtras),
+            'metodo' => $metodoCálculo,
+            'segundos_trabajados' => $horasTrabajadas,
+            'segundos_extras' => $horasExtras
+        ];
+    }
 }
+

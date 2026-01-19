@@ -7,7 +7,8 @@ const PersonalRolesManager = {
     roles: [
         { id: 19, name: 'produccion' },
         { id: 20, name: 'administrativo' },
-        { id: 21, name: 'mixto' }
+        { id: 21, name: 'mixto' },
+        { id: 22, name: 'porteria' }
     ],
 
     allPersonalData: [], // Almacenar todos los datos para búsqueda

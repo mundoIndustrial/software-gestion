@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Modules\AsistenciaPersonal\Presentation\Controllers;
+namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\ReportePersonal;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-class AsistenciaPersonalController extends Controller
+class AsistenciaPersonalWebController extends Controller
 {
     /**
      * Display the main view for attendance management

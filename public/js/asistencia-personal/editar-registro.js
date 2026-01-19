@@ -346,9 +346,26 @@ const AsistenciaEditarRegistro = (() => {
         const fechaObj = new Date(fecha + 'T00:00:00');
         const esSabado = fechaObj.getDay() === 6;
 
-        // Para rol 21 entre semana: contar desde primera a última marca
-        if (!esSabado && idRol === 21) {
-            if (horasValidas.length >= 2) {
+        // Para rol porteria: calcula por bloques si tiene 4 marcas, o continuo si tiene 2 marcas
+        if (idRol === 22) {
+            if (horasValidas.length === 4) {
+                // Con 4 marcas: calcular por bloques (mañana + tarde)
+                const bloqueMañana = horasValidas[1] - horasValidas[0];
+                const bloqueTarde = horasValidas[3] - horasValidas[2];
+                return bloqueMañana + bloqueTarde;
+            } else if (horasValidas.length === 2) {
+                // Con 2 marcas: solo marca 1 a marca 2
+                return horasValidas[1] - horasValidas[0];
+            }
+        } else if (!esSabado && idRol === 21) {
+            // Para rol 21 entre semana: lógica especial según cantidad de marcas
+            if (horasValidas.length === 4) {
+                // Con 4 marcas: calcular como rol normal (bloque mañana + bloque tarde)
+                const bloqueMañana = horasValidas[1] - horasValidas[0];
+                const bloqueTarde = horasValidas[3] - horasValidas[2];
+                return bloqueMañana + bloqueTarde;
+            } else if (horasValidas.length >= 2) {
+                // Con 2 o 3 marcas: contar desde primera a última marca
                 return horasValidas[horasValidas.length - 1] - horasValidas[0];
             }
         } else {
@@ -448,12 +465,19 @@ const AsistenciaEditarRegistro = (() => {
         fetch('/asistencia-personal/guardar-hora-extra-agregada', {
             method: 'POST',
             headers: {
+                'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
             body: JSON.stringify(datos)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 mostrarNotificacion('✓ Hora extra guardada correctamente', 'success', 3000);
