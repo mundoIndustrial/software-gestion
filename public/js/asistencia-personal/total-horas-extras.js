@@ -1311,7 +1311,13 @@ const AsistenciaTotalHorasExtras = (() => {
 
     return {
         mostrarVista,
-        actualizarHorasAgregadas
+        actualizarHorasAgregadas,
+        obtenerPersonasConExtras: function() {
+            return personasConExtras;
+        },
+        obtenerTodasLasFechas: function() {
+            return todasLasFechas;
+        }
     };
 })();
 
