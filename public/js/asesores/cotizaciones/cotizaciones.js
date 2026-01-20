@@ -1304,6 +1304,28 @@ function recopilarDatos() {
     // Recopilar ubicaciones desde paso3_secciones_datos o seccionesSeleccionadasFriendly
     const ubicaciones = [];
     
+    // Obtener el tipo de cotización desde el input oculto
+    const tipoCotizacionInput = document.getElementById('tipo_cotizacion');
+    const tipoCotizacion = tipoCotizacionInput?.value || '';
+    
+    console.log('🔍 BUSCANDO UBICACIONES - Cotización tipo:', tipoCotizacion);
+    console.log('🔍 window.ubicacionesReflectivo existe?', !!window.ubicacionesReflectivo);
+    console.log('🔍 window.ubicacionesReflectivo:', window.ubicacionesReflectivo);
+    
+    // SI ES COTIZACIÓN COMBINADA (PL), BUSCAR EN PASO 4 (REFLECTIVO)
+    if (tipoCotizacion === 'PL' && Array.isArray(window.ubicacionesReflectivo) && window.ubicacionesReflectivo.length > 0) {
+        console.log('✅ ES COTIZACIÓN COMBINADA - Usando ubicaciones del PASO 4 (Reflectivo)');
+        window.ubicacionesReflectivo.forEach(ubic => {
+            ubicaciones.push({
+                ubicacion: ubic.ubicacion,
+                descripcion: ubic.descripcion
+            });
+        });
+    } 
+    // SI NO, BUSCAR EN PASO 3 (LOGO)
+    else {
+        console.log('ℹ️ NO ES COTIZACIÓN COMBINADA O NO HAY UBICACIONES REFLECTIVO - Buscando en PASO 3 (Logo)');
+    
     // Primero intentar desde el campo oculto paso3_secciones_datos (paso-tres.blade.php)
     const paso3_secciones_campo = document.getElementById('paso3_secciones_datos');
     if (paso3_secciones_campo && paso3_secciones_campo.value) {
@@ -1322,7 +1344,7 @@ function recopilarDatos() {
                 });
             }
         } catch (e) {
-            console.error(' Error parsing paso3_secciones_datos:', e);
+            console.error('❌ Error parsing paso3_secciones_datos:', e);
         }
     }
     
@@ -1339,6 +1361,8 @@ function recopilarDatos() {
             }
         });
     }
+    
+    const paso3_secciones_campo = document.getElementById('paso3_secciones_datos');
     
     console.log('📍 Ubicaciones recopiladas:', ubicaciones);
     console.log('📍 paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');

@@ -146,6 +146,9 @@
 <script src="{{ asset('js/asesores/color-tela-referencia.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/integracion-variantes-inline.js') }}"></script>
 
+<!-- 3b. Módulos específicos de paso-tres y reflectivo -->
+<script src="{{ asset('js/paso-tres-cotizacion-combinada.js') }}"></script>
+
 <!-- 4. Configuración global -->
 <script>
     window.tipoCotizacionGlobal = 'PL'; // Prenda-Logo
