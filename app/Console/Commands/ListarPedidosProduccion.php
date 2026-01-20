@@ -42,7 +42,7 @@ class ListarPedidosProduccion extends Command
         $pedidos = $query->orderBy('id', 'asc')->get();
 
         if ($pedidos->isEmpty()) {
-            $this->warn('⚠️  No hay pedidos');
+            $this->warn('  No hay pedidos');
             return;
         }
 
@@ -64,7 +64,7 @@ class ListarPedidosProduccion extends Command
 
         // Estadísticas
         $this->newLine();
-        $this->info('📊 ESTADÍSTICAS:');
+        $this->info(' ESTADÍSTICAS:');
         $this->info("   Total de pedidos: {$pedidos->count()}");
         
         if ($incluirEliminados) {
@@ -76,13 +76,13 @@ class ListarPedidosProduccion extends Command
 
         // IDs para debugging
         $this->newLine();
-        $this->info('🔍 IDs PARA DEBUGGING:');
+        $this->info(' IDs PARA DEBUGGING:');
         $ids = $pedidos->pluck('id')->implode(', ');
         $this->info("   {$ids}");
 
         // Números para debugging
         $this->newLine();
-        $this->info('🔍 NÚMEROS DE PEDIDO:');
+        $this->info(' NÚMEROS DE PEDIDO:');
         $numeros = $pedidos->pluck('numero_pedido')->implode(', ');
         $this->info("   {$numeros}");
     }

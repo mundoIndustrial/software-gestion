@@ -1,6 +1,6 @@
 #  Refactorización: Sistema de Recibos de Producción - Vista Intermedia
 
-## 🎯 Objetivo
+##  Objetivo
 Implementar una mejora de diseño y UX en la sección de pedidos (`/asesores/pedidos`) para:
 1. **Simplificar el menú contextual** - Eliminar submenús anidados infinitos
 2. **Crear vista intermedia de recibos** - Mostrar prendas y procesos de forma clara
@@ -205,7 +205,7 @@ window.abrirModalRecibo = function(pedidoId, prendaId, tipoProceso) {
 
 ---
 
-## 🎨 Componentes Principales
+##  Componentes Principales
 
 ### Modal Intermedio
 
@@ -226,8 +226,8 @@ window.abrirModalRecibo = function(pedidoId, prendaId, tipoProceso) {
 
 **Estados de Proceso (Color-coded):**
 - 🔴 Pendiente → Rojo claro
-- 🟡 En proceso → Amarillo claro
-- 🟢 Terminado → Verde claro
+-  En proceso → Amarillo claro
+-  Terminado → Verde claro
 
 ---
 
@@ -305,7 +305,7 @@ window.descargarReciboPDF()
 
 ---
 
-## 📊 Comparativa: Antes vs Después
+##  Comparativa: Antes vs Después
 
 | Aspecto | Antes | Después |
 |---------|-------|---------|
@@ -319,7 +319,7 @@ window.descargarReciboPDF()
 
 ---
 
-## 🔍 Testing Checklist
+##  Testing Checklist
 
 - [ ] Menú contextual muestra opción "Ver Recibos" correctamente
 - [ ] Clic en "Ver Recibos" abre modal intermedio
@@ -336,7 +336,7 @@ window.descargarReciboPDF()
 
 ---
 
-## 📝 Notas Técnicas
+##  Notas Técnicas
 
 ### Seguridad
 - Validación de autorización en controlador (verificar que pedido pertenece al usuario)

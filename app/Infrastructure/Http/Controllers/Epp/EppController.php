@@ -63,7 +63,7 @@ class EppController extends Controller
                 'total' => count($epps),
             ]);
         } catch (\DomainException $e) {
-            \Log::warning('⚠️  [EppController] DomainException:', [
+            \Log::warning('  [EppController] DomainException:', [
                 'message' => $e->getMessage(),
                 'termino' => $termino ?? null,
                 'categoria' => $categoria ?? null,

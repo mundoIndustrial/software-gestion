@@ -17,7 +17,7 @@ function tablerosApp() {
             if (this.showRecords) {
                 // Initialize filters when showing records
                 const currentTab = this.activeTab;
-                console.log('📊 Mostrando registros para tab:', currentTab);
+                console.log(' Mostrando registros para tab:', currentTab);
                 setTimeout(() => {
                     initializeTableFilters(currentTab);
                 }, 100);

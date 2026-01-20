@@ -670,7 +670,7 @@ window.guardarCantidadReflectivo = function(cantidadKey) {
         box.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';
         
         const titulo = document.createElement('h3');
-        titulo.textContent = '⚠️ Cantidad Excedida';
+        titulo.textContent = ' Cantidad Excedida';
         titulo.style.cssText = 'margin: 0 0 1rem 0; color: #ef4444; font-size: 1.1rem;';
         box.appendChild(titulo);
         
@@ -780,7 +780,7 @@ window.mostrarResumenReflectivo = function() {
     
     // Observaciones
     if (window.datosReflectivo.observaciones) {
-        html += `<p style="margin: 0.5rem 0;"><strong>📝 Observaciones:</strong> ${window.datosReflectivo.observaciones}</p>`;
+        html += `<p style="margin: 0.5rem 0;"><strong> Observaciones:</strong> ${window.datosReflectivo.observaciones}</p>`;
     }
     
     if (html === '') {

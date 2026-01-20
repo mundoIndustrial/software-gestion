@@ -407,7 +407,7 @@ function guardarCalculoCostos() {
     if (items.length === 0) {
         console.warn('No hay items para guardar');
         Swal.fire({
-            title: '⚠️ Sin Items',
+            title: ' Sin Items',
             html: `
                 <div style="text-align: left; color: #4b5563;">
                     <p style="margin: 0; font-size: 0.95rem;">
@@ -453,7 +453,7 @@ function guardarCalculoCostos() {
     if (Object.keys(costosTodasPrendas).length === 0) {
         console.error('No hay costos para guardar - objeto vacío');
         Swal.fire({
-            title: '⚠️ Sin Costos',
+            title: ' Sin Costos',
             html: `
                 <div style="text-align: left; color: #4b5563;">
                     <p style="margin: 0; font-size: 0.95rem;">
@@ -498,7 +498,7 @@ function guardarCalculoCostos() {
                         </p>
                         <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                             <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
-                                📊 Los costos han sido registrados correctamente en la base de datos
+                                 Los costos han sido registrados correctamente en la base de datos
                             </p>
                         </div>
                     </div>

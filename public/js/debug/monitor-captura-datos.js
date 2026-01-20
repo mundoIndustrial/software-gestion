@@ -64,7 +64,7 @@
             ];
 
             validaciones.forEach((val, i) => {
-                const icono = val.resultado ? '' : '⚠️';
+                const icono = val.resultado ? '' : '';
                 console.log(`${icono} ${i+1}. ${val.nombre}`);
                 console.log(`   └─ Valor:`, val.valor);
             });
@@ -114,7 +114,7 @@
 
         // Mostrar historial de cambios
         showHistory() {
-            console.log('\n%c📊 HISTORIAL DE CAPTURAS', 'color: #00FF00; font-weight: bold');
+            console.log('\n%c HISTORIAL DE CAPTURAS', 'color: #00FF00; font-weight: bold');
             
             this.snapshots.forEach((snapshot, i) => {
                 console.log(`\n🕐 Captura ${i+1} - ${snapshot.timestamp}`);
@@ -139,7 +139,7 @@
   window._monitor.showHelp()              - Ver esta ayuda
             `);
 
-            console.log('%c📝 CÓMO USAR:', 'color: #FFD700; font-weight: bold');
+            console.log('%c CÓMO USAR:', 'color: #FFD700; font-weight: bold');
             console.log(`
   1. Copia y pega este código en la consola
   2. Llena el formulario de crear prenda
@@ -149,7 +149,7 @@
   6. Verifica que todo sea 
             `);
 
-            console.log('%c🎯 QUÉ BUSCAR:', 'color: #FFD700; font-weight: bold');
+            console.log('%c QUÉ BUSCAR:', 'color: #FFD700; font-weight: bold');
             console.log(`
    tallasPorGenero debe ser un array con al menos 1 elemento
    cantidadesPorTalla debe tener claves (tallas) con valores > 0

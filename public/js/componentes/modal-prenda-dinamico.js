@@ -67,10 +67,10 @@ class ModalPrendaDinamico {
 
     /**
      * Inyecta el modal en el DOM
-     * ⚠️ DESHABILITADO: Usar el modal incluido en Blade en su lugar
+     *  DESHABILITADO: Usar el modal incluido en Blade en su lugar
      */
     inyectar() {
-        console.log('⚠️ [ModalPrendaDinamico] Inyección deshabilitada - usando Blade modal en su lugar');
+        console.log(' [ModalPrendaDinamico] Inyección deshabilitada - usando Blade modal en su lugar');
         const existsInDOM = !!document.getElementById(this.modalId);
         console.log(`   Modal Blade ${this.modalId} existe en DOM: ${existsInDOM}`);
         // El modal ya debe estar en el DOM desde el Blade template (modal-agregar-prenda-nueva.blade.php)

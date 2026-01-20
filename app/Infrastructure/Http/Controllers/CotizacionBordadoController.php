@@ -55,7 +55,7 @@ class CotizacionBordadoController extends Controller
             //  NO CREAR COTIZACIÓN AUTOMÁTICAMENTE
             // La cotización se crea cuando el usuario hace POST (envía el formulario)
             // Esto evita crear borradores vacíos innecesarios
-            Log::info('📝 Mostrando formulario vacío para crear nueva cotización', [
+            Log::info(' Mostrando formulario vacío para crear nueva cotización', [
                 'asesor_id' => Auth::id()
             ]);
         }
@@ -79,7 +79,7 @@ class CotizacionBordadoController extends Controller
             $foto = \App\Models\LogoFotoCot::find($fotoId);
             
             if (!$foto) {
-                Log::warning('⚠️ Imagen no encontrada:', ['foto_id' => $fotoId]);
+                Log::warning(' Imagen no encontrada:', ['foto_id' => $fotoId]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Imagen no encontrada'
@@ -187,7 +187,7 @@ class CotizacionBordadoController extends Controller
                     $cotizacion->update($datosActualizar);
                     Log::info(' Cotización actualizada', ['cotizacion_id' => $id, 'datos' => $datosActualizar]);
                 } else {
-                    Log::warning('⚠️ No se actualizó cotización - sin datos', ['cotizacion_id' => $id]);
+                    Log::warning(' No se actualizó cotización - sin datos', ['cotizacion_id' => $id]);
                 }
 
                 // Actualizar o crear logo_cotizacion
@@ -196,7 +196,7 @@ class CotizacionBordadoController extends Controller
                 
                 // Procesar técnicas (pueden venir como JSON string desde FormData o como array desde JSON)
                 $tecnicas = $request->input('tecnicas', '[]');
-                Log::info('🔍 Técnicas RAW recibidas:', ['tecnicas_raw' => $tecnicas, 'type' => gettype($tecnicas)]);
+                Log::info(' Técnicas RAW recibidas:', ['tecnicas_raw' => $tecnicas, 'type' => gettype($tecnicas)]);
                 
                 if (is_string($tecnicas)) {
                     $tecnicas = json_decode($tecnicas, true) ?? [];
@@ -217,7 +217,7 @@ class CotizacionBordadoController extends Controller
                 $descripcion = $request->input('descripcion', '');
                 $observacionesTecnicas = $request->input('observaciones_tecnicas', '');
                 
-                Log::info('📝 Datos recibidos en updateBorrador:', [
+                Log::info(' Datos recibidos en updateBorrador:', [
                     'descripcion' => $descripcion,
                     'observaciones_tecnicas' => $observacionesTecnicas,
                     'tecnicas' => $tecnicas,
@@ -252,7 +252,7 @@ class CotizacionBordadoController extends Controller
                 
                 // Recargar desde BD para verificar
                 $logoCotizacionRecargado = \App\Models\LogoCotizacion::find($logoCotizacion->id);
-                Log::info('🔍 Verificación post-guardado:', [
+                Log::info(' Verificación post-guardado:', [
                     'logo_id' => $logoCotizacion->id,
                     'cotizacion_id' => $id
                 ]);
@@ -344,7 +344,7 @@ class CotizacionBordadoController extends Controller
             
             // Verificar que existan antes de borrar
             $imagenesEnBD = DB::table('logo_fotos_cot')->whereIn('id', $idsABorrar)->get();
-            Log::info('📊 Imágenes encontradas en BD:', ['count' => $imagenesEnBD->count(), 'ids' => $imagenesEnBD->pluck('id')->toArray()]);
+            Log::info(' Imágenes encontradas en BD:', ['count' => $imagenesEnBD->count(), 'ids' => $imagenesEnBD->pluck('id')->toArray()]);
             
             try {
                 // Usar modelo Eloquent para borrar
@@ -425,7 +425,7 @@ class CotizacionBordadoController extends Controller
 
                 // Procesar técnicas (pueden venir como JSON string desde FormData)
                 $tecnicas = $request->input('tecnicas', '[]');
-                Log::info('🔍 Técnicas recibidas (raw):', ['tecnicas' => $tecnicas, 'tipo' => gettype($tecnicas)]);
+                Log::info(' Técnicas recibidas (raw):', ['tecnicas' => $tecnicas, 'tipo' => gettype($tecnicas)]);
                 
                 if (is_string($tecnicas)) {
                     $tecnicas = json_decode($tecnicas, true) ?? [];
@@ -502,7 +502,7 @@ class CotizacionBordadoController extends Controller
 
                 //  PROCESAR TÉCNICAS CON PRENDAS (nueva lógica)
                 if (!empty($tecnicas) && is_array($tecnicas) && count($tecnicas) > 0) {
-                    Log::info('🎨 Procesando técnicas agregadas desde el modal', [
+                    Log::info(' Procesando técnicas agregadas desde el modal', [
                         'count' => count($tecnicas),
                         'logo_cotizacion_id' => $logoCotizacion->id
                     ]);
@@ -594,7 +594,7 @@ class CotizacionBordadoController extends Controller
             ->first();
 
         if (!$logoCotizacion) {
-            Log::warning('⚠️ No se encontró logo_cotizacion para cotización', [
+            Log::warning(' No se encontró logo_cotizacion para cotización', [
                 'cotizacion_id' => $cotizacionId
             ]);
             return;
@@ -775,7 +775,7 @@ class CotizacionBordadoController extends Controller
                 }
             }
             
-            Log::info('📊 Archivos agrupados por técnica', [
+            Log::info(' Archivos agrupados por técnica', [
                 'tecnicas_con_archivos' => count($archivosAgrupados),
                 'estructura' => json_encode(array_map(
                     fn($t) => array_map(fn($p) => count($p), $t),
@@ -795,7 +795,7 @@ class CotizacionBordadoController extends Controller
 
                 // Validar que tenga tipo_logo
                 if (!isset($tecnica['tipo_logo']['id'])) {
-                    Log::warning("⚠️ Técnica sin tipo_logo válido, omitiendo");
+                    Log::warning(" Técnica sin tipo_logo válido, omitiendo");
                     continue;
                 }
 
@@ -813,7 +813,7 @@ class CotizacionBordadoController extends Controller
                 }
 
                 // Crear Request simulado
-                // ⚠️ Convertir es_combinada a string 'true'/'false' para validación
+                //  Convertir es_combinada a string 'true'/'false' para validación
                 $esCombinada = $tecnica['es_combinada'] ?? false;
                 $esCombinada = ($esCombinada === true || $esCombinada === 'true' || $esCombinada === 1 || $esCombinada === '1') ? 'true' : 'false';
                 
@@ -853,7 +853,7 @@ class CotizacionBordadoController extends Controller
                             'archivos_procesados' => $archivosCopiados
                         ]);
                     } else {
-                        Log::warning("⚠️ Técnica procesada con status {$statusCode}");
+                        Log::warning(" Técnica procesada con status {$statusCode}");
                     }
                 } catch (\Exception $e) {
                     Log::error(" Error procesando técnica", [

@@ -34,8 +34,8 @@
         window.modoEdicion = true;
         window.pedidoEdicionId = {{ $pedido->id }};
         window.pedidoEdicionData = @json($pedidoData);
-        console.log('📝 Modo edición activado para pedido:', window.pedidoEdicionId);
-        console.log('📊 Datos del pedido:', window.pedidoEdicionData);
+        console.log(' Modo edición activado para pedido:', window.pedidoEdicionId);
+        console.log(' Datos del pedido:', window.pedidoEdicionData);
     </script>
     
     <!-- Script de edición - carga DESPUÉS de todos los demás módulos -->

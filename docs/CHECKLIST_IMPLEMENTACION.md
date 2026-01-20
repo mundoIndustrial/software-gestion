@@ -6,7 +6,7 @@
 
 ---
 
-## 📦 COMPONENTES ENTREGADOS
+##  COMPONENTES ENTREGADOS
 
 ### 1. SERVICIO DE DOMINIO 
 - **Archivo:** `app/Domain/PedidoProduccion/Services/GuardarPedidoDesdeJSONService.php`
@@ -228,7 +228,7 @@ try {
 
 ---
 
-## 🔍 VERIFICACIÓN DE BD DESPUÉS DE GUARDAR
+##  VERIFICACIÓN DE BD DESPUÉS DE GUARDAR
 
 ### Query para verificar integridad completa:
 
@@ -314,7 +314,7 @@ WHERE prenda_pedido_id IN (
 
 ---
 
-## 📊 LISTA DE FICHEROS CREADOS/MODIFICADOS
+##  LISTA DE FICHEROS CREADOS/MODIFICADOS
 
 ### Creados:
 -  `app/Domain/PedidoProduccion/Services/GuardarPedidoDesdeJSONService.php`
@@ -343,7 +343,7 @@ WHERE prenda_pedido_id IN (
 
 ---
 
-## 🎯 CONCLUSIÓN
+##  CONCLUSIÓN
 
 La arquitectura está **100% implementada y lista para usar**. 
 

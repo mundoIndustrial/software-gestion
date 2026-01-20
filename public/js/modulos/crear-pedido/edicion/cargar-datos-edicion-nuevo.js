@@ -40,7 +40,7 @@ function esperarElementosYCargar(intentos = 0) {
     } else if (intentos < 30) {
         setTimeout(() => esperarElementosYCargar(intentos + 1), 200);
     } else {
-        console.warn('[EDICIÓN] ⚠️ Timeout esperando elementos del DOM');
+        console.warn('[EDICIÓN]  Timeout esperando elementos del DOM');
     }
 }
 
@@ -66,14 +66,14 @@ function cargarDatosEdicion() {
 
         // 2. Cargar prendas si existen
         if (pedido.prendas && Array.isArray(pedido.prendas) && pedido.prendas.length > 0) {
-            console.log('[EDICIÓN] 📦 Encontradas', pedido.prendas.length, 'prendas');
+            console.log('[EDICIÓN]  Encontradas', pedido.prendas.length, 'prendas');
             cargarPrendas(pedido.prendas);
         }
 
         // 2.5. Cargar EPPs si existen
         const datosCompletos = window.pedidoEditarData;
         if (datosCompletos && datosCompletos.epps && Array.isArray(datosCompletos.epps) && datosCompletos.epps.length > 0) {
-            console.log('[EDICIÓN] 🛡️ Encontrados', datosCompletos.epps.length, 'EPPs');
+            console.log('[EDICIÓN]  Encontrados', datosCompletos.epps.length, 'EPPs');
             cargarEPPs(datosCompletos.epps);
         }
 
@@ -93,7 +93,7 @@ function cargarDatosEdicion() {
 }
 
 function cargarInformacionGeneral(pedido) {
-    console.log('[EDICIÓN] 📝 Cargando información general...');
+    console.log('[EDICIÓN]  Cargando información general...');
     
     try {
         const campos = {
@@ -118,12 +118,12 @@ function cargarInformacionGeneral(pedido) {
 }
 
 function cargarPrendas(prendas) {
-    console.log('[EDICIÓN] 📦 Cargando', prendas.length, 'prendas...');
-    console.log('[EDICIÓN] 📊 Prendas raw del backend:', prendas);
+    console.log('[EDICIÓN]  Cargando', prendas.length, 'prendas...');
+    console.log('[EDICIÓN]  Prendas raw del backend:', prendas);
     
     // Asegurar que el gestor está inicializado
     if (!window.gestorPrendaSinCotizacion) {
-        console.log('[EDICIÓN] ⚠️ Inicializando gestor de prendas...');
+        console.log('[EDICIÓN]  Inicializando gestor de prendas...');
         if (typeof window.inicializarGestorSinCotizacion === 'function') {
             window.inicializarGestorSinCotizacion();
         } else if (window.GestorPrendaSinCotizacion) {
@@ -134,29 +134,29 @@ function cargarPrendas(prendas) {
     prendas.forEach((prenda, index) => {
         try {
             console.log(`[EDICIÓN] 📌 Agregando prenda ${index + 1}:`, prenda.nombre_prenda || 'Sin nombre');
-            console.log(`[EDICIÓN] 📊 Datos raw de prenda:`, prenda);
+            console.log(`[EDICIÓN]  Datos raw de prenda:`, prenda);
             
             // Parsear datos que vienen como strings JSON desde Blade
             let generosConTallas = prenda.generosConTallas;
-            console.log(`[EDICIÓN] 🔍 generosConTallas antes de parsear:`, generosConTallas, typeof generosConTallas);
+            console.log(`[EDICIÓN]  generosConTallas antes de parsear:`, generosConTallas, typeof generosConTallas);
             
             if (typeof generosConTallas === 'string') {
                 try {
                     generosConTallas = JSON.parse(generosConTallas);
                     console.log(`[EDICIÓN] ✓ generosConTallas parseado como JSON`);
                 } catch (e) {
-                    console.warn('[EDICIÓN] ⚠️ No se pudo parsear generosConTallas:', generosConTallas);
+                    console.warn('[EDICIÓN]  No se pudo parsear generosConTallas:', generosConTallas);
                     generosConTallas = {};
                 }
             }
-            console.log(`[EDICIÓN] 🔍 generosConTallas después de parsear:`, generosConTallas);
+            console.log(`[EDICIÓN]  generosConTallas después de parsear:`, generosConTallas);
             
             let variaciones = prenda.variaciones;
             if (typeof variaciones === 'string') {
                 try {
                     variaciones = JSON.parse(variaciones);
                 } catch (e) {
-                    console.warn('[EDICIÓN] ⚠️ No se pudo parsear variaciones:', variaciones);
+                    console.warn('[EDICIÓN]  No se pudo parsear variaciones:', variaciones);
                     variaciones = {};
                 }
             }
@@ -166,7 +166,7 @@ function cargarPrendas(prendas) {
                 try {
                     procesos = JSON.parse(procesos);
                 } catch (e) {
-                    console.warn('[EDICIÓN] ⚠️ No se pudo parsear procesos:', procesos);
+                    console.warn('[EDICIÓN]  No se pudo parsear procesos:', procesos);
                     procesos = {};
                 }
             }
@@ -177,7 +177,7 @@ function cargarPrendas(prendas) {
                 genero = [];
             }
             
-            console.log('[EDICIÓN] 📊 Datos parseados:', {
+            console.log('[EDICIÓN]  Datos parseados:', {
                 generosConTallas,
                 variaciones,
                 procesos,
@@ -239,12 +239,12 @@ function cargarPrendas(prendas) {
         // La función debería estar disponible en init-gestor-sin-cotizacion.js
         // Pero si no está, intentar renderizar directamente
         
-        console.log('[EDICIÓN] 🔍 Buscando función de renderizado...');
+        console.log('[EDICIÓN]  Buscando función de renderizado...');
         console.log('[EDICIÓN] typeof window.renderizarPrendasSinCotizacion:', typeof window.renderizarPrendasSinCotizacion);
         console.log('[EDICIÓN] typeof window.generarTarjetaPrendaReadOnly:', typeof window.generarTarjetaPrendaReadOnly);
         
         if (typeof window.renderizarPrendasSinCotizacion === 'function') {
-            console.log('[EDICIÓN] 🎨 Renderizando prendas (window.renderizarPrendasSinCotizacion)...');
+            console.log('[EDICIÓN]  Renderizando prendas (window.renderizarPrendasSinCotizacion)...');
             window.renderizarPrendasSinCotizacion();
             console.log('[EDICIÓN]  Prendas renderizadas');
             return;
@@ -252,7 +252,7 @@ function cargarPrendas(prendas) {
         
         // Alternativa: Si hay generador de tarjetas, usarlo directamente
         if (typeof window.generarTarjetaPrendaReadOnly === 'function' && window.gestorPrendaSinCotizacion) {
-            console.log('[EDICIÓN] 🎨 Renderizando prendas (generarTarjetaPrendaReadOnly)...');
+            console.log('[EDICIÓN]  Renderizando prendas (generarTarjetaPrendaReadOnly)...');
             
             const container = document.querySelector('[data-prendas-container]') || 
                             document.getElementById('prendas-container-editable') ||
@@ -283,11 +283,11 @@ function cargarPrendas(prendas) {
         }
         
         // ⭐ NUEVO: Esperar a que se carguen los módulos de prenda-tarjeta
-        console.warn('[EDICIÓN] ⚠️ Módulos prenda-tarjeta no disponibles, esperando evento "prenda-tarjeta-cargado"...');
+        console.warn('[EDICIÓN]  Módulos prenda-tarjeta no disponibles, esperando evento "prenda-tarjeta-cargado"...');
         
         function intentarRenderizarPrendas() {
             if (typeof window.generarTarjetaPrendaReadOnly === 'function' && window.gestorPrendaSinCotizacion) {
-                console.log('[EDICIÓN] 🎨 Renderizando prendas después de cargar módulos...');
+                console.log('[EDICIÓN]  Renderizando prendas después de cargar módulos...');
                 
                 const container = document.querySelector('[data-prendas-container]') || 
                                 document.getElementById('prendas-container-editable') ||
@@ -346,7 +346,7 @@ console.log(' [EDICIÓN] Módulo cargar-datos-edicion-nuevo.js cargado');
  * Cargar EPPs al pedido
  */
 function cargarEPPs(epps) {
-    console.log('[EDICIÓN] 🛡️ Cargando', epps.length, 'EPPs...');
+    console.log('[EDICIÓN]  Cargando', epps.length, 'EPPs...');
     
     try {
         // Asegurar que hay un contenedor de EPPs
@@ -355,7 +355,7 @@ function cargarEPPs(epps) {
                           document.querySelector('.epps-items-container');
         
         if (!eppContainer) {
-            console.warn('[EDICIÓN] ⚠️ No hay contenedor de EPPs, creando uno...');
+            console.warn('[EDICIÓN]  No hay contenedor de EPPs, creando uno...');
             // Si no existe, intentar encontrar dónde crear el contenedor
             const form = document.querySelector('form');
             if (form) {

@@ -18,7 +18,7 @@ function mostrarTab(tab) {
  * @param {string} tipo - 'todas', 'P', 'L', 'PL'
  */
 function mostrarTipo(tipo) {
-    console.log('🎯 mostrarTipo() llamado con tipo:', tipo);
+    console.log(' mostrarTipo() llamado con tipo:', tipo);
     
     // Actualizar estado visual de las pastillas
     const botones = document.querySelectorAll('.cotizacion-tab-btn');
@@ -45,10 +45,10 @@ function mostrarTipo(tipo) {
     
     // Verificar el display actual
     if (tabCotizaciones) {
-        console.log('📊 Tab Cotizaciones display:', window.getComputedStyle(tabCotizaciones).display);
+        console.log(' Tab Cotizaciones display:', window.getComputedStyle(tabCotizaciones).display);
     }
     if (tabBorradores) {
-        console.log('📊 Tab Borradores display:', window.getComputedStyle(tabBorradores).display);
+        console.log(' Tab Borradores display:', window.getComputedStyle(tabBorradores).display);
     }
     
     const esCotizacionesActivo = tabCotizaciones && window.getComputedStyle(tabCotizaciones).display === 'block';
@@ -59,7 +59,7 @@ function mostrarTipo(tipo) {
     
     // Si ninguno está activo, mostrar cotizaciones por defecto
     if (!esCotizacionesActivo && !esBorradoresActivo) {
-        console.warn('⚠️ Ningún tab activo, mostrando cotizaciones por defecto');
+        console.warn(' Ningún tab activo, mostrando cotizaciones por defecto');
         if (tabCotizaciones) {
             tabCotizaciones.style.display = 'block';
         }
@@ -67,7 +67,7 @@ function mostrarTipo(tipo) {
     
     // Oculta todas las secciones
     const seccionesTodas = document.querySelectorAll('.seccion-tipo');
-    console.log('🔍 Secciones encontradas:', seccionesTodas.length);
+    console.log(' Secciones encontradas:', seccionesTodas.length);
     seccionesTodas.forEach(sec => sec.style.display = 'none');
     
     // Mapeo de tipos a IDs de secciones
@@ -87,7 +87,7 @@ function mostrarTipo(tipo) {
         // Muestra solo la sección correspondiente al tab activo
         if (esCotizacionesActivo) {
             const cotElement = document.getElementById(secciones[tipo].cot);
-            console.log('🔍 Elemento cotizaciones encontrado:', !!cotElement, 'ID:', secciones[tipo].cot);
+            console.log(' Elemento cotizaciones encontrado:', !!cotElement, 'ID:', secciones[tipo].cot);
             if (cotElement) {
                 cotElement.style.display = 'block';
                 console.log(' Mostrando cotizaciones:', secciones[tipo].cot);
@@ -97,7 +97,7 @@ function mostrarTipo(tipo) {
         }
         if (esBorradoresActivo) {
             const borElement = document.getElementById(secciones[tipo].bor);
-            console.log('🔍 Elemento borradores encontrado:', !!borElement, 'ID:', secciones[tipo].bor);
+            console.log(' Elemento borradores encontrado:', !!borElement, 'ID:', secciones[tipo].bor);
             if (borElement) {
                 borElement.style.display = 'block';
                 console.log(' Mostrando borradores:', secciones[tipo].bor);
@@ -242,13 +242,13 @@ function eliminarCotizacion(id) {
                     console.log(' Eliminación exitosa, removiendo fila de la tabla');
                     // Animación de eliminación
                     const rows = document.querySelectorAll('table tbody tr');
-                    console.log('🔍 Total de filas encontradas:', rows.length);
+                    console.log(' Total de filas encontradas:', rows.length);
                     let rowRemoved = false;
                     rows.forEach(row => {
                         if (!rowRemoved) {
                             const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
                             if (cell) {
-                                console.log('🎯 Fila encontrada, animando eliminación');
+                                console.log(' Fila encontrada, animando eliminación');
                                 row.style.transition = 'opacity 0.3s ease';
                                 row.style.opacity = '0';
                                 setTimeout(() => {
@@ -347,7 +347,7 @@ function filtrarTablaEnVista(searchTerm) {
                     emptyMsg = document.createElement('div');
                     emptyMsg.className = 'empty-message';
                     emptyMsg.style.cssText = 'background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;';
-                    emptyMsg.innerHTML = '<p style="margin: 0; color: #666;">🔍 No se encontraron resultados para: <strong>' + searchTerm + '</strong></p>';
+                    emptyMsg.innerHTML = '<p style="margin: 0; color: #666;"> No se encontraron resultados para: <strong>' + searchTerm + '</strong></p>';
                     parent.insertBefore(emptyMsg, tbody.closest('div'));
                 }
                 emptyMsg.style.display = 'block';

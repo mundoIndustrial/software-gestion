@@ -163,7 +163,7 @@
         <script>
             // Inicializar búsqueda para cotizaciones pendientes
             function initSearchBar() {
-                console.log('🔍 Intentando inicializar búsqueda...');
+                console.log(' Intentando inicializar búsqueda...');
                 console.log('🌐 Ruta actual:', window.location.pathname);
                 
                 // Buscar el input de múltiples formas

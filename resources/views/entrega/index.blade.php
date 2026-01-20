@@ -49,7 +49,7 @@
                     <div class="stat-label">Total Prendas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">👕</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-number" id="costura-prendas">0</div>
                     <div class="stat-label">Prendas Diferentes</div>
                 </div>

@@ -18,7 +18,7 @@ class SetSecurityHeaders
     {
         $response = $next($request);
 
-        // ⚠️ IMPORTANTE: Remover cualquier CSP header previo para evitar conflictos
+        //  IMPORTANTE: Remover cualquier CSP header previo para evitar conflictos
         $response->headers->remove('Content-Security-Policy');
         $response->headers->remove('Content-Security-Policy-Report-Only');
 

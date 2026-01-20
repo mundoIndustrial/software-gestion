@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Test: Múltiples Telas, Referencias, Colores e Imágenes
  * 
- * ⚠️ IMPORTANTE: Este test usa DatabaseTransactions para AISLAR los cambios
+ *  IMPORTANTE: Este test usa DatabaseTransactions para AISLAR los cambios
  * No afecta la base de datos real - todos los cambios se revierten al finalizar
  */
 class CotizacionMultiplesTelasTest extends TestCase
@@ -135,7 +135,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         // VERIFICACIONES
         echo "\n";
         echo "════════════════════════════════════════════════════════\n";
-        echo "🔍 VERIFICACIONES\n";
+        echo " VERIFICACIONES\n";
         echo "════════════════════════════════════════════════════════\n";
 
         // 1. Verificar que la prenda se guardó

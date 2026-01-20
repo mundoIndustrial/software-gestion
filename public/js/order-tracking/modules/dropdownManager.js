@@ -9,12 +9,12 @@ const ViewDropdownManager = (() => {
      * Crea un dropdown para el botón Ver
      */
     function createViewButtonDropdown(orderId) {
-        console.log('%c🔧 [DROPDOWN] Creando dropdown para orden: ' + orderId, 'color: purple; font-weight: bold;');
+        console.log('%c [DROPDOWN] Creando dropdown para orden: ' + orderId, 'color: purple; font-weight: bold;');
         
         // Verificar si ya existe un dropdown
         const existingDropdown = document.querySelector(`.view-button-dropdown[data-order-id="${orderId}"]`);
         if (existingDropdown) {
-            console.log('⚠️ [DROPDOWN] Dropdown ya existe, removiendo...');
+            console.log(' [DROPDOWN] Dropdown ya existe, removiendo...');
             existingDropdown.remove();
             return;
         }

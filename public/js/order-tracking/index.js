@@ -3,7 +3,7 @@
  * Archivo de inicialización que carga todos los módulos en orden correcto
  */
 
-console.log('📦 Cargando módulos de Order Tracking v2...');
+console.log(' Cargando módulos de Order Tracking v2...');
 
 //  Cargar módulos en orden de dependencias
 const modulesLoaded = {
@@ -25,5 +25,5 @@ const allLoaded = Object.values(modulesLoaded).every(loaded => loaded);
 if (allLoaded) {
     console.log(' Todos los módulos cargados correctamente');
 } else {
-    console.warn('⚠️ Algunos módulos no están disponibles:', modulesLoaded);
+    console.warn(' Algunos módulos no están disponibles:', modulesLoaded);
 }

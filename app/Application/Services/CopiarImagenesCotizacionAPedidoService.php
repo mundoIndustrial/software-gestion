@@ -36,7 +36,7 @@ class CopiarImagenesCotizacionAPedidoService
                 return;
             }
 
-            \Log::info('🔍 Buscando fotos de reflectivo', [
+            \Log::info(' Buscando fotos de reflectivo', [
                 'reflectivo_id' => $reflectivo->id,
                 'fotos_ids_seleccionadas' => $fotosIdsSeleccionadas
             ]);
@@ -46,7 +46,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ->where('reflectivo_cotizacion_id', $reflectivo->id)
                 ->get();
 
-            \Log::info('🔍 Fotos encontradas', [
+            \Log::info(' Fotos encontradas', [
                 'cantidad' => $fotosReflectivo->count(),
                 'fotos' => $fotosReflectivo->toArray()
             ]);
@@ -303,7 +303,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ]);
             }
 
-            Log::info('🧵 Fotos de tela copiadas', [
+            Log::info(' Fotos de tela copiadas', [
                 'prenda_cot_id' => $prendaCot->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'cantidad_fotos_tela' => $fotosTela->count()

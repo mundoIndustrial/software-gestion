@@ -23,7 +23,7 @@ const PaginationManager = (() => {
             if (!controls) return;
 
             if (!pagination) {
-                console.warn('⚠️ Datos de paginación no disponibles');
+                console.warn(' Datos de paginación no disponibles');
                 return;
             }
 
@@ -31,7 +31,7 @@ const PaginationManager = (() => {
             const lastPage = pagination.last_page || 1;
             const total = pagination.total || 0;
 
-            console.log(`📊 Actualizando paginación: Página ${currentPage} de ${lastPage} (Total: ${total})`);
+            console.log(` Actualizando paginación: Página ${currentPage} de ${lastPage} (Total: ${total})`);
 
             if (html && html.trim().length > 0) {
                 controls.innerHTML = html;

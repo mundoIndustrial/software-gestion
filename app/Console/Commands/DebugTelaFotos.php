@@ -37,7 +37,7 @@ class DebugTelaFotos extends Command
 
         foreach ($prendas as $prenda) {
             $this->line("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->line("📦 Prenda ID: {$prenda->id} - {$prenda->nombre_producto}");
+            $this->line(" Prenda ID: {$prenda->id} - {$prenda->nombre_producto}");
             
             $telaFotos = $prenda->telaFotos()->get();
             $this->line("   Fotos de telas: {$telaFotos->count()}");

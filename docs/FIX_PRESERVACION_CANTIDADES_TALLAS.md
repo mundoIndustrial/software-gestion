@@ -10,7 +10,7 @@ Cuando el usuario:
 
 **Las cantidades de DAMA desaparecían** 🗑️
 
-## 🔍 Causa Raíz
+##  Causa Raíz
 
 Cuando se regeneraban las tarjetas en `actualizarTarjetasGeneros()`, los elementos DOM se reconstruían completamente, perdiendo los valores que el usuario había ingresado en los inputs.
 
@@ -62,7 +62,7 @@ Las cantidades se limpian SOLO en dos casos:
 - **Cuando eliminas un género**: Se eliminan sus cantidades
 - **Cuando confirmas la prenda**: Se limpian TODAS las cantidades
 
-## 📊 Flujo de Datos
+##  Flujo de Datos
 
 ```
 USUARIO INGRESA CANTIDAD
@@ -76,24 +76,24 @@ Modal se regenera pero restaura cantidad desde window.cantidadesTallas
 LA CANTIDAD PERSISTE 
 ```
 
-## 🎯 Logs Disponibles
+##  Logs Disponibles
 
 En la consola verás:
 ```
 💾 [GUARDAR CANTIDAD] dama-S: 5
-📊 [GUARDAR CANTIDAD] Cantidades actuales: {"dama-S":5,"dama-M":10}
+ [GUARDAR CANTIDAD] Cantidades actuales: {"dama-S":5,"dama-M":10}
 ```
 
 Cuando regenera:
 ```
-📊 [TOTAL PRENDAS] Cantidades en UI: 15 | Estado completo: {"dama-S":5,"dama-M":10}
+ [TOTAL PRENDAS] Cantidades en UI: 15 | Estado completo: {"dama-S":5,"dama-M":10}
 ```
 
 Cuando eliminas:
 ```
 🗑️ [ELIMINAR GÉNERO] Eliminando género: dama
 🧹 [ELIMINAR GÉNERO] Limpiando cantidades de: dama
-📊 [ELIMINAR GÉNERO] Cantidades después: {}
+ [ELIMINAR GÉNERO] Cantidades después: {}
 ```
 
 ## 🔄 Casos de Prueba

@@ -14,7 +14,7 @@ class VerificarGuardadoCotizacion extends Command
     {
         $cotizacionId = $this->argument('id');
 
-        $this->info("🔍 Verificando cotización ID: {$cotizacionId}");
+        $this->info(" Verificando cotización ID: {$cotizacionId}");
         $this->line('');
 
         // 1. Verificar cotización principal
@@ -70,13 +70,13 @@ class VerificarGuardadoCotizacion extends Command
 
     private function verificarPrendas($cotizacionId)
     {
-        $this->line('👕 PRENDAS (prendas_cot):');
+        $this->line(' PRENDAS (prendas_cot):');
         $prendas = DB::table('prendas_cot')
             ->where('cotizacion_id', $cotizacionId)
             ->get();
 
         if ($prendas->isEmpty()) {
-            $this->warn("⚠️ No hay prendas guardadas");
+            $this->warn(" No hay prendas guardadas");
             $this->line('');
             return;
         }
@@ -108,7 +108,7 @@ class VerificarGuardadoCotizacion extends Command
             ->get();
 
         if ($fotos->isEmpty()) {
-            $this->warn("⚠️ No hay fotos guardadas");
+            $this->warn(" No hay fotos guardadas");
             $this->line('');
             return;
         }
@@ -130,7 +130,7 @@ class VerificarGuardadoCotizacion extends Command
 
     private function verificarTelas($cotizacionId)
     {
-        $this->line('🧵 TELAS (prenda_telas_cot):');
+        $this->line(' TELAS (prenda_telas_cot):');
         $telas = DB::table('prenda_telas_cot')
             ->whereIn('prenda_cot_id',
                 DB::table('prendas_cot')
@@ -140,7 +140,7 @@ class VerificarGuardadoCotizacion extends Command
             ->get();
 
         if ($telas->isEmpty()) {
-            $this->warn("⚠️ No hay telas guardadas");
+            $this->warn(" No hay telas guardadas");
             $this->line('');
             return;
         }
@@ -173,7 +173,7 @@ class VerificarGuardadoCotizacion extends Command
             ->get();
 
         if ($tallas->isEmpty()) {
-            $this->warn("⚠️ No hay tallas guardadas");
+            $this->warn(" No hay tallas guardadas");
             $this->line('');
             return;
         }
@@ -195,7 +195,7 @@ class VerificarGuardadoCotizacion extends Command
 
     private function verificarVariantes($cotizacionId)
     {
-        $this->line('🎨 VARIANTES (prenda_variantes_cot):');
+        $this->line(' VARIANTES (prenda_variantes_cot):');
         $variantes = DB::table('prenda_variantes_cot')
             ->whereIn('prenda_cot_id',
                 DB::table('prendas_cot')
@@ -205,7 +205,7 @@ class VerificarGuardadoCotizacion extends Command
             ->get();
 
         if ($variantes->isEmpty()) {
-            $this->warn("⚠️ No hay variantes guardadas");
+            $this->warn(" No hay variantes guardadas");
             $this->line('');
             return;
         }

@@ -41,7 +41,7 @@ class InitializeLogoPedidoProcesses extends Command
                 $procesosCreados++;
                 $this->line(" Proceso creado para: {$logoPedido->numero_pedido}");
             } else {
-                $this->line("⏭️  Ya existe proceso para: {$logoPedido->numero_pedido}");
+                $this->line(" Ya existe proceso para: {$logoPedido->numero_pedido}");
             }
         }
 

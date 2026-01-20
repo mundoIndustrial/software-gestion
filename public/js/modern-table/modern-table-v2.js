@@ -34,7 +34,7 @@ class ModernTableV2 {
     }
 
     init() {
-        console.log('🔧 ModernTableV2.init() - Inicializando tabla...');
+        console.log(' ModernTableV2.init() - Inicializando tabla...');
         this.headers = ColumnManager.extractTableHeaders();
         
         StyleManager.applySavedSettings(this.storage);
@@ -122,7 +122,7 @@ class ModernTableV2 {
                     const orderId = row?.dataset.orderId;
                     console.log('📍 OrderId:', orderId);
                     
-                    // 🔧 Obtener column desde la celda td más cercana
+                    //  Obtener column desde la celda td más cercana
                     const td = cell.closest('.table-cell');
                     const column = td?.dataset.column;
                     console.log('📍 TD encontrado:', td ? 'SÍ' : 'NO');
@@ -131,13 +131,13 @@ class ModernTableV2 {
                     let content = cell.textContent;
                     console.log('📍 Content inicial:', content.substring(0, 50));
                     
-                    // 🔧 CORREGIR: Para descripcion_prendas, obtener contenido desde data-full-content del div .descripcion-preview
+                    //  CORREGIR: Para descripcion_prendas, obtener contenido desde data-full-content del div .descripcion-preview
                     if (column === 'descripcion_prendas') {
-                        console.log('🎯 Detectado descripcion_prendas - buscando .descripcion-preview...');
+                        console.log(' Detectado descripcion_prendas - buscando .descripcion-preview...');
                         
                         // Buscar el div .descripcion-preview dentro del cell-content
                         const descripcionDiv = cell.querySelector('.descripcion-preview');
-                        console.log('🎯 descripcionDiv encontrado en cell-content:', descripcionDiv ? 'SÍ' : 'NO');
+                        console.log(' descripcionDiv encontrado en cell-content:', descripcionDiv ? 'SÍ' : 'NO');
                         
                         if (descripcionDiv && descripcionDiv.dataset.fullContent) {
                             try {
@@ -147,7 +147,7 @@ class ModernTableV2 {
                                 console.error(' Error decodificando base64:', e);
                             }
                         } else {
-                            console.warn('⚠️ No se encontró .descripcion-preview o data-full-content');
+                            console.warn(' No se encontró .descripcion-preview o data-full-content');
                         }
                     }
                     
@@ -195,7 +195,7 @@ class ModernTableV2 {
                 const column = td?.dataset.column;
                 let content = cell.textContent;
                 
-                // 🔧 CORREGIR: Para descripcion_prendas, obtener contenido desde data-full-content
+                //  CORREGIR: Para descripcion_prendas, obtener contenido desde data-full-content
                 if (column === 'descripcion_prendas') {
                     const descripcionDiv = cell.querySelector('.descripcion-preview');
                     if (descripcionDiv && descripcionDiv.dataset.fullContent) {
@@ -270,12 +270,12 @@ class ModernTableV2 {
 
     async updateOrderStatus(dropdown) {
         // Status updates now handled by OrdersDropdownManager in orders-table-v2.js
-        console.log('⚠️ updateOrderStatus called on ModernTableV2 - should be handled by OrdersDropdownManager');
+        console.log(' updateOrderStatus called on ModernTableV2 - should be handled by OrdersDropdownManager');
     }
 
     async updateOrderArea(dropdown) {
         // Area updates now handled by OrdersDropdownManager in orders-table-v2.js
-        console.log('⚠️ updateOrderArea called on ModernTableV2 - should be handled by OrdersDropdownManager');
+        console.log(' updateOrderArea called on ModernTableV2 - should be handled by OrdersDropdownManager');
     }
 
     /**
@@ -294,7 +294,7 @@ class ModernTableV2 {
             const row = document.querySelector(`tr[data-numero-pedido="${ordenData.numero_pedido}"]`);
             
             if (!row) {
-                console.warn(`⚠️ Fila no encontrada para pedido ${ordenData.numero_pedido}`);
+                console.warn(` Fila no encontrada para pedido ${ordenData.numero_pedido}`);
                 return;
             }
 
@@ -355,21 +355,21 @@ class ModernTableV2 {
     }
 
     _populateCellModal(content, column) {
-        console.log('📝 Rellenando modal con contenido, longitud:', content.length);
+        console.log(' Rellenando modal con contenido, longitud:', content.length);
         
         const input = document.getElementById('cellEditInput');
-        console.log('📝 Input encontrado:', input ? 'SÍ' : 'NO');
+        console.log(' Input encontrado:', input ? 'SÍ' : 'NO');
         
         if (input) {
             input.value = content.split('\n').map(line => line.trimStart()).join('\n');
             input.focus();
             input.select();
-            console.log('📝 Input value asignado y enfocado');
+            console.log(' Input value asignado y enfocado');
         }
 
         const multilineColumns = ['descripcion', 'descripcion_prendas', 'novedades', 'cliente', 'encargado_orden', 'asesora', 'forma_de_pago'];
         const isMultilineColumn = multilineColumns.includes(column);
-        console.log('📝 Es columna multilínea:', isMultilineColumn);
+        console.log(' Es columna multilínea:', isMultilineColumn);
         
         const hint = document.getElementById('cellEditHint');
         console.log('💡 Hint encontrado:', hint ? 'SÍ' : 'NO');
@@ -384,7 +384,7 @@ class ModernTableV2 {
         console.log('🔘 Save btn encontrado:', saveBtn ? 'SÍ' : 'NO');
         console.log('🔘 Cancel btn encontrado:', cancelBtn ? 'SÍ' : 'NO');
         
-        // 🔧 Usar onclick en lugar de addEventListener para evitar múltiples listeners
+        //  Usar onclick en lugar de addEventListener para evitar múltiples listeners
         if (saveBtn) {
             saveBtn.onclick = () => {
                 console.log('💾 Save button clickeado');
@@ -516,11 +516,11 @@ globalThis.ModernTableV2 = ModernTableV2;
  */
 globalThis.initializeModernTable = () => {
     if (globalThis.modernTableInstance) {
-        console.warn('⚠️ ModernTableV2 ya está inicializada');
+        console.warn(' ModernTableV2 ya está inicializada');
         return globalThis.modernTableInstance;
     }
 
-    console.log('%c🔍 Inicializando ModernTableV2...', 'color: #00aa00; font-weight: bold; font-size: 14px;');
+    console.log('%c Inicializando ModernTableV2...', 'color: #00aa00; font-weight: bold; font-size: 14px;');
     
     // Verificar que todos los módulos están disponibles
     const requiredModules = [
@@ -540,7 +540,7 @@ globalThis.initializeModernTable = () => {
     // Verificar tabla en DOM
     const tabla = document.getElementById('tablaOrdenes');
     if (!tabla) {
-        console.warn('⚠️ Tabla #tablaOrdenes no encontrada');
+        console.warn(' Tabla #tablaOrdenes no encontrada');
         return null;
     }
 

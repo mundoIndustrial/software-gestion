@@ -23,7 +23,7 @@ class PrendaDataBuilder {
      * @returns {Object} {dama: {S: 5, M: 3}, caballero: {...}}
      */
     static construirGenerosConTallas(tallasPorGenero, cantidadesPorTalla) {
-        console.log('📊 PrendaDataBuilder: Construyendo generosConTallas');
+        console.log(' PrendaDataBuilder: Construyendo generosConTallas');
         console.log('   tallasPorGenero:', tallasPorGenero);
         console.log('   cantidadesPorTalla:', cantidadesPorTalla);
 
@@ -70,7 +70,7 @@ class PrendaDataBuilder {
      * @returns {Object} prendaNueva completamente formada
      */
     static construirPrendaNueva(datos) {
-        console.log('👕 PrendaDataBuilder: Construyendo prendaNueva');
+        console.log(' PrendaDataBuilder: Construyendo prendaNueva');
 
         // Validar datos esenciales
         if (!datos.nombrePrenda) {
@@ -217,7 +217,7 @@ class PrendaDataBuilder {
      * @returns {Object} Procesos configurables válidos
      */
     static obtenerProcesosConfigurablesValidos() {
-        console.log('🎨 PrendaDataBuilder: Obteniendo procesos configurables válidos');
+        console.log(' PrendaDataBuilder: Obteniendo procesos configurables válidos');
 
         let procesosConfigurables = window.obtenerProcesosConfigurables?.() || {};
 
@@ -241,7 +241,7 @@ class PrendaDataBuilder {
      * @returns {Object} {tipo_manga, obs_manga, tipo_broche, obs_broche, tiene_bolsillos, ...}
      */
     static construirVariacionesConfiguradas() {
-        console.log('🎯 PrendaDataBuilder: Construyendo variaciones configuradas');
+        console.log(' PrendaDataBuilder: Construyendo variaciones configuradas');
 
         const variaciones = {
             tipo_manga: 'No aplica',
@@ -296,7 +296,7 @@ class PrendaDataBuilder {
      * @returns {Object} Item formateado para backend
      */
     static construirItemParaEnvio(prenda, prendaIndex, fotosNuevas) {
-        console.log(`📦 PrendaDataBuilder: Construyendo item para envío (índice: ${prendaIndex})`);
+        console.log(` PrendaDataBuilder: Construyendo item para envío (índice: ${prendaIndex})`);
 
         const itemSinCot = {
             nombre_producto: prenda.nombre_producto,

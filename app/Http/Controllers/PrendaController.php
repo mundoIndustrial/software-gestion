@@ -185,7 +185,7 @@ class PrendaController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        \Log::info('🔍 Buscando prendas', [
+        \Log::info(' Buscando prendas', [
             'termino' => $request->input('q'),
         ]);
 
@@ -226,7 +226,7 @@ class PrendaController extends Controller
      */
     public function estadisticas(): JsonResponse
     {
-        \Log::info('📊 Obteniendo estadísticas de prendas');
+        \Log::info(' Obteniendo estadísticas de prendas');
 
         try {
             $estadisticas = $this->prendaService->obtenerEstadisticas();

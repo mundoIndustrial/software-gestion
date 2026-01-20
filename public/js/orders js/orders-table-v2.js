@@ -16,7 +16,7 @@
 console.log(' orders-table-v2.js cargado (Versión refactorizada con módulos SOLID)');
 
 // Verificar que todos los módulos estén disponibles
-console.log('🔍 Verificando módulos disponibles:');
+console.log(' Verificando módulos disponibles:');
 console.log('  - FormattingModule:', typeof FormattingModule !== 'undefined' ? '' : '');
 console.log('  - RowManager:', typeof RowManager !== 'undefined' ? '' : '');
 console.log('  - StorageModule:', typeof StorageModule !== 'undefined' ? '' : '');
@@ -89,7 +89,7 @@ function handleDiaEntregaChange() {
     if (UpdatesModule && UpdatesModule.updateOrderDiaEntrega) {
         UpdatesModule.updateOrderDiaEntrega(orderId, newValue);
     } else {
-        console.warn('⚠️ UpdatesModule no disponible para dia_entrega update');
+        console.warn(' UpdatesModule no disponible para dia_entrega update');
     }
 }
 
@@ -167,7 +167,7 @@ function updateRowColor(orderId, newStatus) {
             RowManager.updateRowColor(orden);
         }
     } else {
-        console.log('⚠️ RowManager no disponible para updateRowColor');
+        console.log(' RowManager no disponible para updateRowColor');
     }
 }
 
@@ -183,18 +183,18 @@ function actualizarDiasTabla() {
     console.log('🕐 actualizarDiasTabla iniciada...');
     const tabla = document.getElementById('tablaOrdenes');
     if (!tabla) {
-        console.warn('⚠️ Tabla no encontrada');
+        console.warn(' Tabla no encontrada');
         return;
     }
     
     const tbody = tabla.querySelector('tbody');
     if (!tbody) {
-        console.warn('⚠️ tbody no encontrado');
+        console.warn(' tbody no encontrado');
         return;
     }
     
     const filas = tbody.querySelectorAll('tr:not(.no-results)');
-    console.log(`📊 Procesando ${filas.length} filas`);
+    console.log(` Procesando ${filas.length} filas`);
     
     let actualizadas = 0;
     filas.forEach((fila, index) => {
@@ -592,14 +592,14 @@ async function viewDetail(pedido) {
         }
         
         console.log('%c [VIEWDETAIL] Todos los campos llenados, disparando evento open-modal', 'color: green; font-weight: bold;');
-        console.log('🔍 [VIEWDETAIL] Verificando listeners antes de dispatch:');
+        console.log(' [VIEWDETAIL] Verificando listeners antes de dispatch:');
         console.log('   - window listeners:', window.getEventListeners ? window.getEventListeners(window)['open-modal'] : 'N/A');
         
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
         console.log(' [VIEWDETAIL] Evento open-modal despachado');
     } catch (error) {
         console.error(' [VIEWDETAIL] Error loading order details:', error);
-        console.log('🔍 [VIEWDETAIL] Disparando open-modal incluso en caso de error...');
+        console.log(' [VIEWDETAIL] Disparando open-modal incluso en caso de error...');
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
     }
 }
@@ -705,7 +705,7 @@ window.addEventListener('storage', function(event) {
 
             const lastTimestamp = Number.parseInt(localStorage.getItem('last-orders-update-timestamp') || '0');
             if (timestamp && timestamp <= lastTimestamp) {
-                console.log('⏭️ Ignorando actualización duplicada');
+                console.log('Ignorando actualización duplicada');
                 return;
             }
 
@@ -796,7 +796,7 @@ window.addEventListener('error', function(event) {
 // WebSocket disconnect handling
 if (window.Echo) {
     window.Echo.connector.pusher.connection.bind('disconnected', function() {
-        console.warn('⚠️ WebSocket desconectado');
+        console.warn(' WebSocket desconectado');
         
         const reconnectTimeout = setTimeout(() => {
             if (window.Echo.connector.pusher.connection.state !== 'connected') {

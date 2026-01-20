@@ -78,7 +78,7 @@ class PrendaPedido extends Model
      */
     public function variantes(): HasMany
     {
-        return $this->hasMany(PrendaVariante::class, 'prenda_pedido_id');
+        return $this->hasMany(PrendaVariantePed::class, 'prenda_pedido_id');
     }
 
     /**

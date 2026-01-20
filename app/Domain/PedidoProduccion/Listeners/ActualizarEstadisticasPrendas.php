@@ -34,7 +34,7 @@ class ActualizarEstadisticasPrendas
     public function __invoke(PrendaPedidoAgregada $event): void
     {
         try {
-            Log::info('📊 [ActualizarEstadisticasPrendas] Procesando evento', [
+            Log::info(' [ActualizarEstadisticasPrendas] Procesando evento', [
                 'prenda_id' => $event->getPrendaId(),
                 'nombre' => $event->getNombrePrenda(),
                 'cantidad' => $event->getCantidad(),
@@ -63,7 +63,7 @@ class ActualizarEstadisticasPrendas
             ]);
 
         } catch (\Exception $e) {
-            Log::error('⚠️ Error al actualizar estadísticas', [
+            Log::error(' Error al actualizar estadísticas', [
                 'error' => $e->getMessage(),
                 'prenda_id' => $event->getPrendaId(),
             ]);

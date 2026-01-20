@@ -639,7 +639,7 @@
         // ============================================================
         function construirDescripcionDinamica() {
             const celdas = document.querySelectorAll('.descripcion-dinamica');
-            console.log('🔍 [DESCRIPCION] Total de celdas encontradas:', celdas.length);
+            console.log(' [DESCRIPCION] Total de celdas encontradas:', celdas.length);
             
             celdas.forEach((cell, index) => {
                 const descripcion = cell.dataset.descripcion || '';
@@ -665,7 +665,7 @@
 
                 // Si no hay datos de variantes, mostrar solo la descripción simple
                 if (!color && !tela && !tipoManga) {
-                    console.log(`⚠️ [DESCRIPCION] Celda ${index + 1}: Sin datos de variantes, mostrando descripción simple`);
+                    console.log(` [DESCRIPCION] Celda ${index + 1}: Sin datos de variantes, mostrando descripción simple`);
                     cell.innerHTML = descripcion || '-';
                     return;
                 }

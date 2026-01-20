@@ -101,7 +101,7 @@ formData.append('prendas', JSON.stringify(stateToSend.prendas));
 
 ---
 
-## 🔍 NUEVA FUNCIÓN: `transformStateForSubmit()`
+##  NUEVA FUNCIÓN: `transformStateForSubmit()`
 
 ### ¿Qué hace?
 
@@ -237,7 +237,7 @@ console.log('Índices únicos:', keys.size);
 
 ---
 
-## 🔧 MÉTODOS DE DIAGNÓSTICO
+##  MÉTODOS DE DIAGNÓSTICO
 
 ### 1. Validar Transformación
 
@@ -264,7 +264,7 @@ console.log(validation);
 handlers.printDiagnostics();
 
 // Imprime en consola:
-// 🔍 DIAGNÓSTICO DE TRANSFORMACIÓN
+//  DIAGNÓSTICO DE TRANSFORMACIÓN
 //  Estado transformado (sin File):
 //    { prendas: [...] }
 //  Validación:
@@ -273,7 +273,7 @@ handlers.printDiagnostics();
 
 ---
 
-## 📊 COMPARATIVA ANTES vs DESPUÉS
+##  COMPARATIVA ANTES vs DESPUÉS
 
 ### FormData enviada ANTES
 
@@ -296,7 +296,7 @@ prenda_0_proceso_1_img_0: <File>   Índice único
 
 ---
 
-## 🎯 GARANTÍAS IMPLEMENTADAS
+##  GARANTÍAS IMPLEMENTADAS
 
 | Garantía | Status | Verificación |
 |----------|--------|-------------|
@@ -382,7 +382,7 @@ describe('FormHandlers', () => {
 
 ---
 
-## 📝 NOTAS TÉCNICAS
+##  NOTAS TÉCNICAS
 
 ### ¿Por qué una función de transformación?
 

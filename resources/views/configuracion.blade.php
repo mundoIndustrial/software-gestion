@@ -235,7 +235,7 @@
                 <!-- Gráfico de Almacenamiento -->
                 <div class="col-lg-5">
                     <div class="config-card h-100">
-                        <div class="config-card-header text-center">📊 Uso de Almacenamiento</div>
+                        <div class="config-card-header text-center"> Uso de Almacenamiento</div>
                         <div style="max-width: 350px; margin: 0 auto; padding: 20px;">
                             <canvas id="storageChart"></canvas>
                         </div>

@@ -4,7 +4,7 @@
  * Carga los datos del pedido existente en el formulario de creación
  * para permitir edición con la interfaz completa
  * 
- * ⚠️ NOTA: Este script se carga DESPUÉS de que se incluya crear-pedido-desde-cotizacion.blade.php
+ *  NOTA: Este script se carga DESPUÉS de que se incluya crear-pedido-desde-cotizacion.blade.php
  * Por lo que todos los módulos necesarios ya estarán disponibles
  */
 
@@ -55,7 +55,7 @@ function esperarModulosYCargar(intentos = 0) {
     } else if (intentos < 50) {
         setTimeout(() => esperarModulosYCargar(intentos + 1), 200);
     } else {
-        console.warn('[EDICIÓN] ⚠️ Timeout esperando módulos. Cargando con módulos disponibles...');
+        console.warn('[EDICIÓN]  Timeout esperando módulos. Cargando con módulos disponibles...');
         cargarDatosEdicion();
         datosEdicionCargados = true;
     }
@@ -73,7 +73,7 @@ function cargarDatosEdicion() {
             return;
         }
 
-        console.log('[EDICIÓN] 📊 Estructura de datos:', {
+        console.log('[EDICIÓN]  Estructura de datos:', {
             pedido: datos.pedido ? '✓' : '✗',
             estados: datos.estados ? `✓ (${datos.estados.length})` : '✗',
             areas: datos.areas ? `✓ (${datos.areas.length})` : '✗',
@@ -84,7 +84,7 @@ function cargarDatosEdicion() {
 
         // 2. Cargar prendas si existen
         if (datos.pedido && datos.pedido.prendas && datos.pedido.prendas.length > 0) {
-            console.log('[EDICIÓN] 📦 Encontradas', datos.pedido.prendas.length, 'prendas');
+            console.log('[EDICIÓN]  Encontradas', datos.pedido.prendas.length, 'prendas');
             cargarPrendas(datos.pedido.prendas);
         }
 
@@ -103,7 +103,7 @@ function cargarDatosEdicion() {
 }
 
 function cargarInformacionGeneral(datos) {
-    console.log('[EDICIÓN] 📝 Cargando información general...');
+    console.log('[EDICIÓN]  Cargando información general...');
     
     try {
         const pedido = datos.pedido;
@@ -144,11 +144,11 @@ function cargarInformacionGeneral(datos) {
 }
 
 function cargarPrendas(prendas) {
-    console.log('[EDICIÓN] 📦 Cargando', prendas.length, 'prendas...');
+    console.log('[EDICIÓN]  Cargando', prendas.length, 'prendas...');
     
     // Asegurar que el gestor está inicializado
     if (!window.gestorPrendaSinCotizacion) {
-        console.log('[EDICIÓN] ⚠️ Inicializando gestor de prendas...');
+        console.log('[EDICIÓN]  Inicializando gestor de prendas...');
         if (typeof window.inicializarGestorSinCotizacion === 'function') {
             window.inicializarGestorSinCotizacion();
         } else {
@@ -193,15 +193,15 @@ function cargarPrendas(prendas) {
 
     // Renderizar todas las prendas
     if (typeof window.renderizarPrendasSinCotizacion === 'function') {
-        console.log('[EDICIÓN] 🎨 Renderizando prendas en la interfaz...');
+        console.log('[EDICIÓN]  Renderizando prendas en la interfaz...');
         window.renderizarPrendasSinCotizacion();
         console.log('[EDICIÓN]  Prendas renderizadas');
     } else if (typeof renderizarPrendasSinCotizacion === 'function') {
-        console.log('[EDICIÓN] 🎨 Renderizando prendas (función global)...');
+        console.log('[EDICIÓN]  Renderizando prendas (función global)...');
         renderizarPrendasSinCotizacion();
         console.log('[EDICIÓN]  Prendas renderizadas');
     } else {
-        console.warn('[EDICIÓN] ⚠️ Función renderizarPrendasSinCotizacion no disponible');
+        console.warn('[EDICIÓN]  Función renderizarPrendasSinCotizacion no disponible');
     }
 }
 

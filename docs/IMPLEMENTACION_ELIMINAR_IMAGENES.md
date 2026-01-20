@@ -166,8 +166,8 @@ Para probar:
 
 ## Notas Importantes
 
-1. ⚠️ El endpoint usa `forceDelete()` → Eliminación permanente
-2. ⚠️ Se eliminan archivos físicos del storage
+1.  El endpoint usa `forceDelete()` → Eliminación permanente
+2.  Se eliminan archivos físicos del storage
 3.  Hay logs en `laravel.log` para auditoría
 4.  CSRF token es validado automáticamente
 5.  Compatible con SoftDeletes en la BD

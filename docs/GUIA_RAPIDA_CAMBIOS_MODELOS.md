@@ -1,4 +1,4 @@
-# 🔧 GUÍA RÁPIDA: CAMBIOS EN MODELOS Y RELACIONES
+#  GUÍA RÁPIDA: CAMBIOS EN MODELOS Y RELACIONES
 
 **Última Actualización:** 16 de Enero, 2026
 

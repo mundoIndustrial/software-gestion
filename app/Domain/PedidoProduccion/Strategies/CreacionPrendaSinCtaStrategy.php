@@ -48,7 +48,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
         try {
             DB::beginTransaction();
 
-            Log::info('📦 [CreacionPrendaSinCtaStrategy] Procesando prenda', [
+            Log::info(' [CreacionPrendaSinCtaStrategy] Procesando prenda', [
                 'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
                 'numero_pedido' => $numeroPedido,
             ]);
@@ -57,7 +57,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
             $cantidadesPorTalla = $this->procesarCantidades($prendaData);
             $cantidadTotal = $this->calcularCantidadTotal($cantidadesPorTalla);
 
-            Log::debug('📊 [CreacionPrendaSinCtaStrategy] Cantidades procesadas', [
+            Log::debug(' [CreacionPrendaSinCtaStrategy] Cantidades procesadas', [
                 'cantidad_total' => $cantidadTotal,
                 'estructura' => count($cantidadesPorTalla) > 0 ? 'Válida' : 'Vacía',
             ]);
@@ -65,7 +65,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
             // ===== PASO 2: PROCESAR VARIANTES (ANTES LÍNEA 1200-1350) =====
             $variantes = $this->procesarVariantes($prendaData);
 
-            Log::debug('📝 [CreacionPrendaSinCtaStrategy] Variantes procesadas', [
+            Log::debug(' [CreacionPrendaSinCtaStrategy] Variantes procesadas', [
                 'color_id' => $variantes['color_id'],
                 'tela_id' => $variantes['tela_id'],
                 'tipo_manga_id' => $variantes['tipo_manga_id'],
@@ -182,7 +182,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     private function procesarCantidades(array $prendaData): array
     {
-        Log::debug('🔍 [procesarCantidades] Analizando estructuras de cantidad', [
+        Log::debug(' [procesarCantidades] Analizando estructuras de cantidad', [
             'tiene_cantidad_talla' => !empty($prendaData['cantidad_talla']),
             'tiene_cantidades_por_genero' => !empty($prendaData['cantidades_por_genero']),
             'tiene_cantidades' => !empty($prendaData['cantidades']),

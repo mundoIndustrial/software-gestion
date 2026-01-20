@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility)
  */
 
-console.log('📦 Cargando CellClickHandler...');
+console.log(' Cargando CellClickHandler...');
 
 const CellClickHandler = {
     /**
@@ -22,7 +22,7 @@ const CellClickHandler = {
      * Inicializar el módulo
      */
     initialize() {
-        console.log('🔧 Inicializando CellClickHandler...');
+        console.log(' Inicializando CellClickHandler...');
         this._attachCellClickListeners();
         this._listenForTableUpdates();
         console.log(' CellClickHandler inicializado');

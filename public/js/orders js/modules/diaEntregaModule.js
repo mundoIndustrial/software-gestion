@@ -115,7 +115,7 @@ const DiaEntregaModule = {
     _showValidationError(select, message) {
         select.classList.add('error-state');
         setTimeout(() => select.classList.remove('error-state'), 2000);
-        console.warn(`⚠️ ${message}`);
+        console.warn(` ${message}`);
     },
 
     /**
@@ -123,7 +123,7 @@ const DiaEntregaModule = {
      */
     _showWarning(select, message) {
         select.classList.add('warning-state');
-        console.log(`⚠️ ${message}`);
+        console.log(` ${message}`);
         setTimeout(() => select.classList.remove('warning-state'), 3000);
     },
 
@@ -157,7 +157,7 @@ const DiaEntregaModule = {
         }
 
         const oldDias = select.dataset.value || select.value;
-        console.log(`📝 Enviando actualización: Orden ${numeroOrden}, Días: ${days}, Anterior: ${oldDias}`);
+        console.log(` Enviando actualización: Orden ${numeroOrden}, Días: ${days}, Anterior: ${oldDias}`);
         UpdatesModule.updateOrderDiaEntrega(numeroOrden, days, oldDias, select);
     },
 

@@ -27,7 +27,7 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
         }
 
         try {
-            Log::info('👕 [ObtenerPrendasPorPedidoHandler] Obteniendo prendas', [
+            Log::info(' [ObtenerPrendasPorPedidoHandler] Obteniendo prendas', [
                 'pedido_id' => $query->getPedidoId(),
             ]);
 

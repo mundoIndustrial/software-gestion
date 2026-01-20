@@ -1,12 +1,12 @@
-# 🔍 ANÁLISIS DE DUPLICACIÓN DE CÓDIGO - REFACTOR NECESARIO
+#  ANÁLISIS DE DUPLICACIÓN DE CÓDIGO - REFACTOR NECESARIO
 
 **Fecha:** 20 de Enero 2026  
-**Estado:** ⚠️ CRÍTICO - Código altamente duplicado  
+**Estado:**  CRÍTICO - Código altamente duplicado  
 **Líneas de código:** +1000 (solo en index.blade.php)
 
 ---
 
-## 📊 RESUMEN EJECUTIVO
+##  RESUMEN EJECUTIVO
 
 El proyecto tiene **4 capas de duplicación**:
 1. **Funciones modales duplicadas** (abrirModal, cerrarModal, etc.)
@@ -29,7 +29,7 @@ El proyecto tiene **4 capas de duplicación**:
 - `public/js/users.js` (líneas 18+)
 - `resources/views/asesores/clientes/index.blade.php` (líneas 112+)
 
-#### 🎯 Funciones duplicadas:
+####  Funciones duplicadas:
 
 ```javascript
 //  PATRÓN DUPLICADO 1: Abrir/Cerrar Modal Genérico
@@ -69,7 +69,7 @@ function cerrarModal[X]() {
 - `public/js/asesores/cotizaciones-index.js` (Swal.fire inline)
 - `resources/views/asesores/reportes/index.blade.php` (inline)
 
-#### 🎯 Funciones duplicadas:
+####  Funciones duplicadas:
 
 ```javascript
 //  CONSOLIDAR EN: public/js/utilidades/modal-helpers.js
@@ -89,7 +89,7 @@ function mostrarToastError(mensaje) { ... }
 function mostrarNotificacion(mensaje, tipo = 'info') { ... }
 ```
 
-#### 📊 Métrica de duplicación:
+####  Métrica de duplicación:
 - **Líneas duplicadas:** ~180 líneas de código Swal.fire/Toast repetido
 - **Archivos:** 7 archivos tienen su propia versión
 - **Variantes:** 5+ versiones diferentes del mismo código
@@ -145,7 +145,7 @@ function eliminarTela(telaId, telaNombre) { ... }
 - `app/Http/Controllers/Asesores/CrearPedidoEditableController.php`
 - `app/Http/Controllers/SupervisorPedidosController.php`
 
-#### 🎯 Problema: God Object Pattern en AsesoresController
+####  Problema: God Object Pattern en AsesoresController
 
 ```php
 //  AsesoresController inyecta 16 servicios:
@@ -494,7 +494,7 @@ const result = await GenericModals.confirmar({
 
 ---
 
-## 📊 MÉTRICAS ESPERADAS
+##  MÉTRICAS ESPERADAS
 
 | Métrica | Antes | Después | Ahorro |
 |---------|--------|---------|--------|

@@ -229,7 +229,7 @@ window.abrirPreviewFacturaEnVivo = function() {
  * Captura los datos del formulario de creación de pedido
  */
 function capturarDatosFormulario() {
-    console.log('📝 [PREVIEW] Capturando datos del formulario...');
+    console.log(' [PREVIEW] Capturando datos del formulario...');
     
     // PRIMERO: Asegurar que las tallas estén en la variable de backup permanente
     if (window.cantidadesTallas && Object.keys(window.cantidadesTallas).length > 0) {
@@ -282,7 +282,7 @@ function capturarDatosFormulario() {
  * Captura las prendas del formulario usando el GestorPrendaSinCotizacion
  */
 function capturarPrendas() {
-    console.log('👕 [PREVIEW] Capturando prendas del gestor...');
+    console.log(' [PREVIEW] Capturando prendas del gestor...');
     
     const prendas = [];
     

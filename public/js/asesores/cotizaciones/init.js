@@ -35,13 +35,13 @@
                 // Propiedad anidada como "window.routes"
                 if (!propertyExists(window, modulo.name)) {
                     todosDisponibles = false;
-                    console.warn(`⚠️ Esperando ${modulo.description}...`);
+                    console.warn(` Esperando ${modulo.description}...`);
                 }
             } else {
                 // Función global
                 if (typeof window[modulo.name] !== 'function') {
                     todosDisponibles = false;
-                    console.warn(`⚠️ Esperando ${modulo.description}...`);
+                    console.warn(` Esperando ${modulo.description}...`);
                 }
             }
         }
@@ -60,7 +60,7 @@
 
     // Inicializar cuando el DOM esté listo
     function inicializarFormulario() {
-        console.log('🎯 Inicializando formulario de cotizaciones...');
+        console.log(' Inicializando formulario de cotizaciones...');
 
         // Configuración global
         if (typeof window.routes === 'object') {
@@ -84,13 +84,13 @@
             if (campo) {
                 // Input/change para cambios
                 campo.addEventListener('input', () => {
-                    console.log(`📝 Campo ${campoId} modificado, actualizando resumen...`);
+                    console.log(` Campo ${campoId} modificado, actualizando resumen...`);
                     if (typeof actualizarResumenFriendly === 'function') actualizarResumenFriendly();
                 });
                 
                 // Change para inputs de fecha/select
                 campo.addEventListener('change', () => {
-                    console.log(`📝 Campo ${campoId} cambiado, actualizando resumen...`);
+                    console.log(` Campo ${campoId} cambiado, actualizando resumen...`);
                     if (typeof actualizarResumenFriendly === 'function') actualizarResumenFriendly();
                 });
             }

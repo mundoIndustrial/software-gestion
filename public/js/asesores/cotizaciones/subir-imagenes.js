@@ -156,7 +156,7 @@ function manejarDropImagenes(event, cotizacionId, prendaId, tipo, callback) {
     const archivos = event.dataTransfer.files;
 
     if (archivos.length === 0) {
-        console.warn('⚠️ No se proporcionaron archivos');
+        console.warn(' No se proporcionaron archivos');
         return;
     }
 
@@ -192,7 +192,7 @@ function manejarInputImagenes(event, cotizacionId, prendaId, tipo, callback) {
     const archivos = event.target.files;
 
     if (archivos.length === 0) {
-        console.warn('⚠️ No se seleccionaron archivos');
+        console.warn(' No se seleccionaron archivos');
         return;
     }
 
@@ -227,7 +227,7 @@ function mostrarProgresoSubida(mensaje, porcentaje) {
     const elemento = document.getElementById('progreso-subida');
 
     if (!elemento) {
-        console.warn('⚠️ Elemento de progreso no encontrado');
+        console.warn(' Elemento de progreso no encontrado');
         return;
     }
 

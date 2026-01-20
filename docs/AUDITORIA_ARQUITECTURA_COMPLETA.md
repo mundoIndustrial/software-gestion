@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 OBJETIVO
+##  OBJETIVO
 
 Garantizar la integridad completa del flujo JSON + FormData desde frontend hasta backend en el sistema de pedidos de producción textil.
 
@@ -487,7 +487,7 @@ describe('submitPedido FormData keys', () => {
 
 ## 🚨 PROBLEMAS ADICIONALES POTENCIALES
 
-### ⚠️ Problema: Validación de metadatos
+###  Problema: Validación de metadatos
 
 **Riesgo:** El backend espera ciertos campos en el JSON
 
@@ -495,7 +495,7 @@ describe('submitPedido FormData keys', () => {
 - Función `transformStateForSubmit()` mantiene estructura consistente
 - Métodos de validación verifican integridad
 
-### ⚠️ Problema: Límite de tamaño de archivos
+###  Problema: Límite de tamaño de archivos
 
 **Riesgo:** Archivos muy grandes pueden no enviarse
 
@@ -503,7 +503,7 @@ describe('submitPedido FormData keys', () => {
 - Validar tamaño antes de adjuntar
 - Considerar chunked uploads para archivos grandes
 
-### ⚠️ Problema: Errores de red
+###  Problema: Errores de red
 
 **Riesgo:** Timeout o desconexión durante envío
 

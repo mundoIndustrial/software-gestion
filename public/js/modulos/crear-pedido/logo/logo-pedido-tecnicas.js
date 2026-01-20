@@ -106,7 +106,7 @@ function renderizarLogoPrendasTecnicas() {
     const container = document.getElementById('logo-prendas-tecnicas-container');
     
     if (!container) {
-        console.warn('⚠️ Contenedor #logo-prendas-tecnicas-container no encontrado');
+        console.warn(' Contenedor #logo-prendas-tecnicas-container no encontrado');
         return;
     }
     
@@ -131,7 +131,7 @@ function renderizarLogoPrendasTecnicas() {
         grupos[grupoId].push({ prenda, index });
     });
     
-    console.log('📦 Grupos detectados:', Object.keys(grupos).length);
+    console.log(' Grupos detectados:', Object.keys(grupos).length);
     Object.entries(grupos).forEach(([grupoId, items]) => {
         const esGrupoCombinado = grupoId.startsWith('combinado_');
         console.log(`   Grupo "${grupoId}": ${items.length} prenda(s), esGrupoCombinado=${esGrupoCombinado}`);
@@ -472,7 +472,7 @@ window.abrirModalEditarPrendaTecnica = function(index) {
         return;
     }
     
-    console.log('📝 Editando prenda técnica:', index, prenda);
+    console.log(' Editando prenda técnica:', index, prenda);
     
     // Detectar si es grupo COMBINADO y obtener todas las técnicas del grupo
     const esGrupoCombinado = prenda.grupo_combinado && logoPrendasTecnicas.some(p => p.grupo_combinado === prenda.grupo_combinado && p.tipo_logo_id !== prenda.tipo_logo_id);

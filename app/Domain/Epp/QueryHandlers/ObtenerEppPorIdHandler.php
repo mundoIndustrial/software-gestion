@@ -27,14 +27,14 @@ class ObtenerEppPorIdHandler implements QueryHandler
         }
 
         try {
-            Log::info('🔍 [ObtenerEppPorIdHandler] Obteniendo EPP', [
+            Log::info(' [ObtenerEppPorIdHandler] Obteniendo EPP', [
                 'id' => $query->getId(),
             ]);
 
             $epp = $this->eppService->obtenerEppPorId($query->getId());
 
             if (!$epp) {
-                Log::warning('⚠️ [ObtenerEppPorIdHandler] EPP no encontrado', [
+                Log::warning(' [ObtenerEppPorIdHandler] EPP no encontrado', [
                     'id' => $query->getId(),
                 ]);
                 return null;

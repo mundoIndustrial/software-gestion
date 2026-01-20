@@ -128,7 +128,7 @@ class ProcesarFotosTelasService
      */
     public function procesarImagenesLogo(Request $request): array
     {
-        Log::info('🎨 [LOGO-IMAGENES] Procesando imágenes del logo');
+        Log::info(' [LOGO-IMAGENES] Procesando imágenes del logo');
 
         $imagenesProcesadas = [];
         

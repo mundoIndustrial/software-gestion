@@ -22,7 +22,7 @@ use Tests\TestCase;
  * - Transacciones y locks para evitar race conditions
  * - Incrementos secuenciales de numero_cotizacion
  * 
- * ⚠️ NOTA: No usa RefreshDatabase para preservar datos existentes
+ *  NOTA: No usa RefreshDatabase para preservar datos existentes
  */
 class CotizacionesConcurrencyTest extends TestCase
 {

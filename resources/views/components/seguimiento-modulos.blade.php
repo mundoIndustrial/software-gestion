@@ -540,8 +540,8 @@ function updateSeguimientoTable(params) {
     seguimientoUrl.search = params.toString();
     seguimientoUrl.searchParams.set('section', currentSection);
 
-    console.log('🔍 updateSeguimientoTable - URL construida:', seguimientoUrl.toString());
-    console.log('🔍 Parámetros recibidos en updateSeguimientoTable:', params.toString());
+    console.log(' updateSeguimientoTable - URL construida:', seguimientoUrl.toString());
+    console.log(' Parámetros recibidos en updateSeguimientoTable:', params.toString());
 
     fetch(seguimientoUrl.toString(), {
         method: 'GET',
@@ -588,7 +588,7 @@ function getCurrentSection() {
 
 // Función para actualizar el contenido de la tabla de seguimiento
 function updateSeguimientoTableContent(seguimientoData, section = null) {
-    console.log('🔍 Buscando tabla de seguimiento...');
+    console.log(' Buscando tabla de seguimiento...');
     
     let tableContainer = null;
     
@@ -608,13 +608,13 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
     
     // Si no se encontró con la sección específica, buscar globalmente
     if (!tableContainer) {
-        console.log('🔍 Buscando tabla globalmente con .seguimiento-table');
+        console.log(' Buscando tabla globalmente con .seguimiento-table');
         tableContainer = document.querySelector('.seguimiento-table');
     }
     
     if (!tableContainer) {
         console.error(' No se encontró ninguna tabla .seguimiento-table');
-        console.log('🔍 Intentando buscar en todos los contenedores...');
+        console.log(' Intentando buscar en todos los contenedores...');
         
         // Intentar buscar en cada contenedor de sección
         const contenedores = ['seguimiento-container-produccion', 'seguimiento-container-polos', 'seguimiento-container-corte'];
@@ -812,7 +812,7 @@ function initializeSeguimientoRealtime() {
     
     // Evitar suscripciones duplicadas
     if (window.seguimientoChannelSubscribed) {
-        console.log('⚠️ Ya hay una suscripción activa, omitiendo...');
+        console.log(' Ya hay una suscripción activa, omitiendo...');
         return;
     }
     

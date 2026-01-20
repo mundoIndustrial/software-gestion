@@ -5,7 +5,7 @@
 
 ---
 
-## 📦 Archivos Creados
+##  Archivos Creados
 
 ### 1. `public/js/utilidades/dom-utils.js` (250 líneas)
 **Descripción:** Clase estática con 30+ helpers para manipulación del DOM
@@ -65,7 +65,7 @@ ModalCleanup.prepararParaNueva();
 
 ---
 
-## 📝 Archivos Modificados
+##  Archivos Modificados
 
 ### 1. `resources/views/asesores/pedidos/crear-pedido-nuevo.blade.php`
 **Cambios:**
@@ -116,7 +116,7 @@ abrirModalAgregarPrendaNueva() {
 
 ---
 
-## 📊 RESULTADOS CUANTITATIVOS
+##  RESULTADOS CUANTITATIVOS
 
 | Métrica | Antes | Después | Cambio |
 |---------|-------|---------|--------|
@@ -128,7 +128,7 @@ abrirModalAgregarPrendaNueva() {
 
 ---
 
-## 🎯 BENEFICIOS INMEDIATOS
+##  BENEFICIOS INMEDIATOS
 
 ### 1. **Legibilidad**
 ```javascript
@@ -160,7 +160,7 @@ DOMUtils.setCheckedAll(checkboxes, false);
 
 ---
 
-## 🔧 INTEGRACIÓN
+##  INTEGRACIÓN
 
 **Carga automática en:**
 -  `crear-pedido-nuevo.blade.php` - Pedidos nuevos

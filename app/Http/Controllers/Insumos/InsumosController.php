@@ -64,7 +64,7 @@ class InsumosController extends Controller
                 $allRecords = $query->with('prendas')->get();
                 $totalRegistros = $allRecords->count();
                 
-                \Log::info('📝 FILTRO DESCRIPCIÓN ARMADA - Registros totales encontrados:', [
+                \Log::info(' FILTRO DESCRIPCIÓN ARMADA - Registros totales encontrados:', [
                     'total_registros' => $totalRegistros,
                     'filtros_aplicados' => 'Estado (Pendiente, No iniciado, En Ejecución, Anulada) + Área (Corte, Creación de orden)'
                 ]);
@@ -181,7 +181,7 @@ class InsumosController extends Controller
     public function materiales(Request $request)
     {
         $startTime = microtime(true);
-        \Log::info('📊 INSUMOS: Iniciando carga de materiales');
+        \Log::info(' INSUMOS: Iniciando carga de materiales');
         
         $user = Auth::user();
         
@@ -238,7 +238,7 @@ class InsumosController extends Controller
         $hasFilters = false;
         if (!empty($filterColumns) && !empty($filterValuesArray)) {
             $hasFilters = true;
-            \Log::info('🔍 Filtros recibidos:', [
+            \Log::info(' Filtros recibidos:', [
                 'filterColumns' => $filterColumns,
                 'filterValuesArray' => $filterValuesArray
             ]);
@@ -376,12 +376,12 @@ class InsumosController extends Controller
             
             \Log::info('🔵 GUARDANDO MATERIALES - Pedido ID: ' . $orden->id . ', Número: ' . $orden->numero_pedido);
             \Log::info(' Materiales recibidos:', $validated['materiales']);
-            \Log::info('📊 Total de materiales: ' . count($validated['materiales']));
+            \Log::info(' Total de materiales: ' . count($validated['materiales']));
             
             foreach ($validated['materiales'] as $material) {
                 $isRecibido = $material['recibido'] === true || $material['recibido'] === 'true' || $material['recibido'] === 1 || $material['recibido'] === '1';
                 
-                \Log::info("🔍 Procesando material: {$material['nombre']}, recibido: {$material['recibido']}, isRecibido: " . ($isRecibido ? 'true' : 'false'));
+                \Log::info(" Procesando material: {$material['nombre']}, recibido: {$material['recibido']}, isRecibido: " . ($isRecibido ? 'true' : 'false'));
                 
                 if ($isRecibido) {
                     // Guardar/actualizar si recibido es true
@@ -413,12 +413,12 @@ class InsumosController extends Controller
                         $materialesEliminados++;
                         \Log::info("🗑️ Material eliminado: {$material['nombre']}");
                     } else {
-                        \Log::info("⚠️ No se encontró material para eliminar: {$material['nombre']}");
+                        \Log::info(" No se encontró material para eliminar: {$material['nombre']}");
                     }
                 }
             }
             
-            \Log::info("📊 Resumen: Guardados: $materialesGuardados, Eliminados: $materialesEliminados");
+            \Log::info(" Resumen: Guardados: $materialesGuardados, Eliminados: $materialesEliminados");
             
             $mensaje = [];
             if ($materialesGuardados > 0) {

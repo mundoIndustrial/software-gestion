@@ -32,12 +32,12 @@ class CambiarUserIdAAsesorId extends Command
             }
 
             if (!$tieneUserId) {
-                $this->warn('⚠️ La columna user_id no existe');
+                $this->warn(' La columna user_id no existe');
                 return;
             }
 
             if ($tieneAsesorId) {
-                $this->warn('⚠️ La columna asesor_id ya existe');
+                $this->warn(' La columna asesor_id ya existe');
                 return;
             }
 
@@ -63,7 +63,7 @@ class CambiarUserIdAAsesorId extends Command
                 ');
                 $this->info('    Foreign Key eliminada');
             } catch (\Exception $e) {
-                $this->warn('   ⚠️ Foreign Key no encontrada, continuando...');
+                $this->warn('    Foreign Key no encontrada, continuando...');
             }
 
             // Paso 4: Agregar FK nueva
@@ -91,7 +91,7 @@ class CambiarUserIdAAsesorId extends Command
                 ');
                 $this->info('    Índice agregado');
             } catch (\Exception $e) {
-                $this->warn('   ⚠️ Índice ya existe');
+                $this->warn('    Índice ya existe');
             }
 
             $this->newLine();
@@ -99,7 +99,7 @@ class CambiarUserIdAAsesorId extends Command
             $this->newLine();
 
             // Verificación
-            $this->line('📊 VERIFICACIÓN:');
+            $this->line(' VERIFICACIÓN:');
             $columnas = Schema::getColumns('cotizaciones');
             foreach ($columnas as $col) {
                 if ($col['name'] === 'asesor_id') {

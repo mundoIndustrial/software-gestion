@@ -50,7 +50,7 @@ function actualizarResumenReflectivo() {
                         border-radius: 4px;
                     `;
 
-                    const tipo = obs.tipo === 'checkbox' ? '☑️' : '📝';
+                    const tipo = obs.tipo === 'checkbox' ? '☑️' : '';
                     const valor = obs.valor ? ` = ${obs.valor}` : '';
                     div.innerHTML = `<strong>${tipo} ${obs.texto}</strong>${valor}`;
 
@@ -71,7 +71,7 @@ function actualizarResumenReflectivo() {
  * Esta función se llama cuando se navega al Paso 5
  */
 function actualizarResumenCompleto() {
-    console.log('📊 Actualizando resumen completo...');
+    console.log(' Actualizando resumen completo...');
 
     // Actualizar cliente
     const clienteInput = document.getElementById('cliente');
@@ -97,8 +97,8 @@ function actualizarResumenCompleto() {
         const resumenTipo = document.getElementById('resumen_tipo');
         if (resumenTipo) {
             const mapeoTipo = {
-                'M': '👕 Prendas',
-                'D': '🎨 Logos',
+                'M': ' Prendas',
+                'D': ' Logos',
                 'X': '✨ Prendas con Bordado'
             };
             resumenTipo.textContent = mapeoTipo[tipoVentaInput.value] || '-';
@@ -180,7 +180,7 @@ function actualizarResumenCompleto() {
  * Se llama desde irAlPaso(5)
  */
 window.actualizarResumenAlNavegar = function() {
-    console.log('🎯 Navegando al Paso 5 - Actualizando resumen...');
+    console.log(' Navegando al Paso 5 - Actualizando resumen...');
     setTimeout(() => {
         actualizarResumenCompleto();
     }, 100);

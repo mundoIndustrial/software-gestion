@@ -16,7 +16,7 @@ class VariantesService
     public function heredarVariantesDePrenda($cotizacion, $prendaPedido, int $index): void
     {
         try {
-            \Log::info('🔍 [heredarVariantes] Iniciando herencia de variantes', [
+            \Log::info(' [heredarVariantes] Iniciando herencia de variantes', [
                 'cotizacion_id' => $cotizacion->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'index' => $index,
@@ -28,7 +28,7 @@ class VariantesService
                 ->get();
             
             if (!isset($prendasCot[$index])) {
-                \Log::warning('⚠️ No se encontró prenda de cotización en índice', [
+                \Log::warning(' No se encontró prenda de cotización en índice', [
                     'index' => $index,
                     'total_prendas_cot' => $prendasCot->count()
                 ]);

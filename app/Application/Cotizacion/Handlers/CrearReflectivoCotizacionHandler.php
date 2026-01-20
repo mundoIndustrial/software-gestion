@@ -53,7 +53,7 @@ final class CrearReflectivoCotizacionHandler
                     $reflectivo->agregarObservacion($observacion);
                 }
             }
-            Log::info('📝 Observaciones agregadas', ['cantidad' => count($dto->observacionesGenerales)]);
+            Log::info(' Observaciones agregadas', ['cantidad' => count($dto->observacionesGenerales)]);
 
             // Persistir en base de datos
             $reflectivoGuardado = $cotizacion->reflectivo()->create([

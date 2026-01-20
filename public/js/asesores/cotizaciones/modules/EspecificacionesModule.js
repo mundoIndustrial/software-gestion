@@ -139,7 +139,7 @@ class EspecificacionesModule {
         const tbody = document.getElementById(tbodyId);
 
         if (!tbody) {
-            console.warn(`⚠️ No encontrado tbody: ${tbodyId}`);
+            console.warn(` No encontrado tbody: ${tbodyId}`);
             return;
         }
 

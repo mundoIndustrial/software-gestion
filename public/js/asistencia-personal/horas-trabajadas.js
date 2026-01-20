@@ -188,7 +188,7 @@ const AsistenciaHorasTrabajadas = (() => {
             const horaExtraResult = AsistenciaUtilidades.calcularHoraExtra(totalMinutos, calcResult.esSabado, registro.id_rol);
             
             let colorEstado = '#6c757d';
-            let iconoEstado = '⚠️';
+            let iconoEstado = '';
             
             if (calcResult.estado === 'completa') {
                 colorEstado = '#27ae60';

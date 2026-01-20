@@ -1,4 +1,4 @@
-# 📝 SÍNTESIS: CAMBIOS IMPLEMENTADOS EN CÓDIGO
+#  SÍNTESIS: CAMBIOS IMPLEMENTADOS EN CÓDIGO
 
 **Proyecto:** Pedidos de Producción Textil  
 **Archivo:** `public/js/pedidos-produccion/form-handlers.js`  
@@ -300,7 +300,7 @@ printDiagnostics() {
     const stateToSend = this.transformStateForSubmit(state);
     const validation = this.validateTransformation();
 
-    console.group('🔍 DIAGNÓSTICO DE TRANSFORMACIÓN');
+    console.group(' DIAGNÓSTICO DE TRANSFORMACIÓN');
 
     console.log(' Estado transformado (sin File):');
     console.log(JSON.stringify(stateToSend, null, 2));
@@ -314,7 +314,7 @@ printDiagnostics() {
     }
 
     if (validation.warnings.length > 0) {
-        console.warn('⚠️ ADVERTENCIAS:');
+        console.warn(' ADVERTENCIAS:');
         validation.warnings.forEach(warn => console.warn(`  - ${warn}`));
     }
 
@@ -330,14 +330,14 @@ printDiagnostics() {
 handlers.printDiagnostics();
 
 // Imprime:
-// 🔍 DIAGNÓSTICO DE TRANSFORMACIÓN
+//  DIAGNÓSTICO DE TRANSFORMACIÓN
 //  Estado transformado (sin File): {...}
 //  Validación: { valid: true, ... }
 ```
 
 ---
 
-## 📊 RESUMEN DE CAMBIOS
+##  RESUMEN DE CAMBIOS
 
 | # | Cambio | Líneas | Tipo | Status |
 |---|--------|--------|------|--------|
@@ -429,7 +429,7 @@ git merge feature/json-transformation-fix
 
 ---
 
-## 🎯 CHECKLIST DESPUÉS DE CAMBIOS
+##  CHECKLIST DESPUÉS DE CAMBIOS
 
 - [x] Cambios copiados correctamente
 - [x] No hay errores de sintaxis

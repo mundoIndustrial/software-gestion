@@ -154,7 +154,7 @@ final class CotizacionController extends Controller
     public function getReflectivoForEdit(int $id): JsonResponse
     {
         try {
-            Log::info('🔍 getReflectivoForEdit: INICIANDO', ['cotizacion_id' => $id, 'usuario_id' => Auth::id()]);
+            Log::info(' getReflectivoForEdit: INICIANDO', ['cotizacion_id' => $id, 'usuario_id' => Auth::id()]);
 
             // Obtener cotización reflectivo con TODAS las relaciones de prendas
             $cotizacion = \App\Models\Cotizacion::with([
@@ -208,7 +208,7 @@ final class CotizacionController extends Controller
                         $variantes = $prenda->variantes->toArray();
                     }
                     
-                    Log::info('📦 Prenda con reflectivo', [
+                    Log::info(' Prenda con reflectivo', [
                         'prenda_id' => $prenda->id,
                         'prenda_nombre' => $prenda->nombre_producto,
                         'tallas_count' => count($tallas),
@@ -375,7 +375,7 @@ final class CotizacionController extends Controller
             $foto = \App\Models\PrendaFotoCot::find($fotoId);
             
             if (!$foto) {
-                Log::warning('⚠️ Imagen no encontrada:', ['foto_id' => $fotoId]);
+                Log::warning(' Imagen no encontrada:', ['foto_id' => $fotoId]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Imagen no encontrada'
@@ -420,7 +420,7 @@ final class CotizacionController extends Controller
             $foto = \App\Models\PrendaTelaFotoCot::find($fotoId);
             
             if (!$foto) {
-                Log::warning('⚠️ Imagen de tela no encontrada:', ['foto_id' => $fotoId]);
+                Log::warning(' Imagen de tela no encontrada:', ['foto_id' => $fotoId]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Imagen no encontrada'
@@ -457,7 +457,7 @@ final class CotizacionController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            // 🔍 Verificar si es una actualización de borrador existente
+            //  Verificar si es una actualización de borrador existente
             $cotizacionIdExistente = $request->input('cotizacion_id');
             if ($cotizacionIdExistente) {
                 Log::info('CotizacionController@store: Detectada actualización de borrador existente', [
@@ -466,7 +466,7 @@ final class CotizacionController extends Controller
                 return $this->update($request, (int)$cotizacionIdExistente);
             }
             
-            // 🔍 LOG DE ZONA HORARIA
+            //  LOG DE ZONA HORARIA
             Log::info('🕐 ZONA HORARIA AL GUARDAR COTIZACIÓN', [
                 'config_timezone' => config('app.timezone'),
                 'php_timezone' => date_default_timezone_get(),
@@ -666,7 +666,7 @@ final class CotizacionController extends Controller
                 'numero_cotizacion' => $numeroCotizacion,
             ]);
 
-            // 🔍 LÓGICA: Si es COMBINADA (PL) pero NO hay logo, cambiar a PRENDA (P)
+            //  LÓGICA: Si es COMBINADA (PL) pero NO hay logo, cambiar a PRENDA (P)
             $tipoCotizacionEnviado = $request->input('tipo_cotizacion');
             $logoData = $request->input('logo', []);
             
@@ -925,7 +925,7 @@ final class CotizacionController extends Controller
             ]);
             
             // ======== DEBUG ALLFILES STRUCTURE ========
-            Log::info('🔍 ESTRUCTURA COMPLETA DE allFiles:', [
+            Log::info(' ESTRUCTURA COMPLETA DE allFiles:', [
                 'all_files_keys' => array_keys($allFiles),
                 'tiene_prendas' => isset($allFiles['prendas']),
                 'prendas_is_array' => isset($allFiles['prendas']) ? is_array($allFiles['prendas']) : false,
@@ -943,7 +943,7 @@ final class CotizacionController extends Controller
                     
                     if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
                         foreach ($prendaFiles['telas'] as $telaIdx => $telaData) {
-                            Log::info("     🧵 allFiles['prendas'][$idx]['telas'][$telaIdx]:", [
+                            Log::info("      allFiles['prendas'][$idx]['telas'][$telaIdx]:", [
                                 'keys' => array_keys((array)$telaData),
                                 'tiene_fotos' => isset($telaData['fotos']),
                                 'fotos_type' => isset($telaData['fotos']) ? gettype($telaData['fotos']) : 'N/A',
@@ -1107,7 +1107,7 @@ final class CotizacionController extends Controller
                         : json_decode($variante->telas_multiples, true);
                 }
                 
-                Log::info('🧵 Telas multiples de variante:', [
+                Log::info(' Telas multiples de variante:', [
                     'prenda_id' => $prendaModel->id,
                     'telas_count' => count($telasMultiples),
                     'telas' => $telasMultiples,
@@ -1245,7 +1245,7 @@ final class CotizacionController extends Controller
                             //  EN UPDATE: IGNORAR fotos_existentes (ya están guardadas)
                             //  EN CREATE: PROCESAR fotos_existentes (para copiar entre cotizaciones)
                             if (empty($fotosTelaExistentes) || $esUpdate) {
-                                Log::info('⏭️ UPDATE o fotos vacías - IGNORANDO fotos_existentes de tela para evitar duplicados', [
+                                Log::info('UPDATE o fotos vacías - IGNORANDO fotos_existentes de tela para evitar duplicados', [
                                     'prenda_id' => $prendaModel->id,
                                     'tela_index' => $telaIndex,
                                     'es_update' => $esUpdate,
@@ -1311,7 +1311,7 @@ final class CotizacionController extends Controller
                                 
                                 //  VERIFICAR si hay fotos en este índice de tela
                                 if (!isset($telaData['fotos']) || empty($telaData['fotos'])) {
-                                    Log::info('⏭️ No hay fotos para esta tela', [
+                                    Log::info('No hay fotos para esta tela', [
                                         'prenda_id' => $prendaModel->id,
                                         'tela_index' => $telaIndex,
                                         'telaData_keys' => array_keys($telaData),
@@ -1320,7 +1320,7 @@ final class CotizacionController extends Controller
                                 }
                                 
                                 $fotosArray = $telaData['fotos'];
-                                Log::info('📝 DEBUG fotos encontradas', [
+                                Log::info(' DEBUG fotos encontradas', [
                                     'tela_index' => $telaIndex,
                                     'fotos_type' => gettype($fotosArray),
                                     'fotos_count' => is_array($fotosArray) ? count($fotosArray) : 'N/A',
@@ -1654,7 +1654,7 @@ final class CotizacionController extends Controller
                         
                         // Si la foto no existe, simplemente continuar (puede haber sido eliminada)
                         if (!$fotoExistente) {
-                            Log::warning('⚠️ Foto de logo no encontrada, ignorando', ['foto_id' => $fotoIdExistente]);
+                            Log::warning(' Foto de logo no encontrada, ignorando', ['foto_id' => $fotoIdExistente]);
                             continue;
                         }
                         
@@ -1687,7 +1687,7 @@ final class CotizacionController extends Controller
                             
                             $orden++;
                         } catch (\Exception $e) {
-                            Log::warning('⚠️ Error al reutilizar foto de logo', [
+                            Log::warning(' Error al reutilizar foto de logo', [
                                 'foto_id' => $fotoIdExistente,
                                 'error' => $e->getMessage()
                             ]);
@@ -1708,7 +1708,7 @@ final class CotizacionController extends Controller
             // Obtener ubicación desde 'ubicaciones_reflectivo' (array JSON) o 'reflectivo.ubicacion' (string legacy)
             $ubicacionesData = $request->input('ubicaciones_reflectivo', '[]');
             
-            \Log::info('🔍 DEBUG storeReflectivo - Datos recibidos:', [
+            \Log::info(' DEBUG storeReflectivo - Datos recibidos:', [
                 'reflectivo_descripcion' => $reflectivoDescripcion,
                 'ubicaciones_data_tipo' => gettype($ubicacionesData),
                 'ubicaciones_data_raw' => $ubicacionesData,
@@ -1722,7 +1722,7 @@ final class CotizacionController extends Controller
                 $ubicacionesArray = (array)$ubicacionesData;
             }
             
-            \Log::info('🔍 DEBUG storeReflectivo - Ubicaciones después de decode:', [
+            \Log::info(' DEBUG storeReflectivo - Ubicaciones después de decode:', [
                 'ubicaciones_array' => $ubicacionesArray,
                 'ubicaciones_count' => count($ubicacionesArray),
                 'array_structure' => json_encode($ubicacionesArray),
@@ -1730,7 +1730,7 @@ final class CotizacionController extends Controller
             
             $reflectivoUbicacion = !empty($ubicacionesArray) ? json_encode($ubicacionesArray) : ($request->input('reflectivo.ubicacion', '') ?? '[]');
             
-            \Log::info('🔍 DEBUG storeReflectivo - Ubicación final a guardar:', [
+            \Log::info(' DEBUG storeReflectivo - Ubicación final a guardar:', [
                 'reflectivo_ubicacion' => $reflectivoUbicacion,
                 'sera_guardado' => !empty($reflectivoUbicacion),
             ]);
@@ -1784,7 +1784,7 @@ final class CotizacionController extends Controller
                         
                         foreach ($reflectivoArchivos as $foto) {
                             if ($orden > $maxImagenes) {
-                                Log::warning('⚠️ Se alcanzó el límite de 3 imágenes para reflectivo', [
+                                Log::warning(' Se alcanzó el límite de 3 imágenes para reflectivo', [
                                     'cotizacion_id' => $cotizacionId,
                                     'reflectivo_id' => $reflectivoCotizacion->id,
                                 ]);
@@ -1967,7 +1967,7 @@ final class CotizacionController extends Controller
             // Decodificar prendas del JSON string
             $prendas = json_decode($validated['prendas'], true);
             
-            Log::info('🔍 DEBUG storeReflectivo - Prendas recibidas:', [
+            Log::info(' DEBUG storeReflectivo - Prendas recibidas:', [
                 'prendas_json' => $validated['prendas'],
                 'prendas_decoded' => $prendas,
                 'prendas_count' => is_array($prendas) ? count($prendas) : 0,
@@ -2000,7 +2000,7 @@ final class CotizacionController extends Controller
                 }
             }
             
-            Log::info('🔍 DEBUG storeReflectivo - Especificaciones recibidas:', [
+            Log::info(' DEBUG storeReflectivo - Especificaciones recibidas:', [
                 'especificaciones_raw' => $validated['especificaciones'] ?? null,
                 'especificaciones_decoded' => $especificaciones,
                 'especificaciones_count' => count($especificaciones),
@@ -2157,7 +2157,7 @@ final class CotizacionController extends Controller
                             // Las imágenes vienen con el nombre: imagenes_reflectivo_prenda_{index}[] o imagenes_reflectivo_prenda_{index}
                             $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
                             
-                            Log::info('🔍 BUSCANDO IMÁGENES', [
+                            Log::info(' BUSCANDO IMÁGENES', [
                                 'prenda_index' => $prendaIndex,
                                 'campo_esperado' => $campoImagenes,
                                 'todos_archivos' => array_keys($request->allFiles()),
@@ -2209,7 +2209,7 @@ final class CotizacionController extends Controller
                                     }
                                 }
                             } else {
-                                Log::info('⚠️ NO HAY IMÁGENES PARA ESTA PRENDA', [
+                                Log::info(' NO HAY IMÁGENES PARA ESTA PRENDA', [
                                     'campo' => $campoImagenes,
                                     'prenda_index' => $prendaIndex,
                                     'todos_los_archivos' => json_encode(array_keys($request->allFiles())),
@@ -2230,7 +2230,7 @@ final class CotizacionController extends Controller
                         'imagenes_totales_guardadas' => count($imagenesGuardadas),
                     ]);
                 } else {
-                    Log::warning('⚠️ NO HAY PRENDAS PARA PROCESAR');
+                    Log::warning(' NO HAY PRENDAS PARA PROCESAR');
                 }
 
                 DB::commit();
@@ -2351,7 +2351,7 @@ final class CotizacionController extends Controller
                         $nuevasEspecificaciones = is_array($especificacionesData) ? $especificacionesData : [];
                     }
                     
-                    Log::info('🔍 DEBUG Especificaciones en updateReflectivo', [
+                    Log::info(' DEBUG Especificaciones en updateReflectivo', [
                         'especificaciones_data_recibida' => $especificacionesData,
                         'nuevas_especificaciones_parseadas' => $nuevasEspecificaciones,
                         'especificaciones_existentes' => $especificacionesExistentes,

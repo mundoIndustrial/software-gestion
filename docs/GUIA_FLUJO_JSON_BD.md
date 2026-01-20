@@ -1,4 +1,4 @@
-# 🎯 GUÍA DE IMPLEMENTACIÓN: FLUJO JSON → BD (REFACTORIZADO)
+#  GUÍA DE IMPLEMENTACIÓN: FLUJO JSON → BD (REFACTORIZADO)
 
 **Versión:** 1.0  
 **Fecha:** Enero 16, 2026  
@@ -358,7 +358,7 @@ $resultado = $this->guardarService->guardar($pedidoId, $prendas);
 
 ---
 
-## ⚠️ MANEJO DE ERRORES
+##  MANEJO DE ERRORES
 
 ### Validación falla
 ```json
@@ -395,15 +395,15 @@ $resultado = $this->guardarService->guardar($pedidoId, $prendas);
 
 ---
 
-## 🔍 LOGGING
+##  LOGGING
 
 El servicio registra todos los pasos:
 
 ```
 📥 [GuardarPedidoJSONController] POST /api/pedidos/guardar-desde-json
-📦 Datos recibidos: pedido_id=1, cantidad_prendas=2
+ Datos recibidos: pedido_id=1, cantidad_prendas=2
  Validación exitosa
-📝 [Guardado de prenda 1/2] Polo...
+ [Guardado de prenda 1/2] Polo...
   ├─  Creada PrendaPedido ID=5
   ├─  Guardadas 2 fotos de prenda
   ├─  Guardadas 1 foto de tela

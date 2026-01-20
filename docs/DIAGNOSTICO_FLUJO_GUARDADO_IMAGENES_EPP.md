@@ -1,12 +1,12 @@
 #  Diagnóstico: Flujo de Guardado de Imágenes del EPP
 
-## 🎯 Resumen Ejecutivo
+##  Resumen Ejecutivo
 
 Las imágenes del EPP **SE GUARDAN CORRECTAMENTE** en la tabla `pedido_epp_imagenes` cuando se crea un pedido. El flujo está bien implementado de extremo a extremo.
 
 ---
 
-## 📊 Estructura de la Tabla `pedido_epp_imagenes`
+##  Estructura de la Tabla `pedido_epp_imagenes`
 
 ```sql
 CREATE TABLE pedido_epp_imagenes (
@@ -97,7 +97,7 @@ if ($tipo === 'epp') {
                 // 🔑 GUARDAR IMAGEN TEMPORALMENTE
                 $path = $archivo->store('epp/temp', 'local');
                 
-                // 📝 GUARDAR REFERENCIA EN ARRAY
+                //  GUARDAR REFERENCIA EN ARRAY
                 $eppData['imagenes'][] = [
                     'archivo' => $path,        // Ruta temporal: epp/temp/xxxxx
                     'principal' => $imagenIdx === 0,  // Primera es principal
@@ -175,7 +175,7 @@ private function guardarImagenesDelEpp(PedidoEpp $pedidoEpp, array $imagenes): v
         }
         
         if ($archivo) {
-            // 🎯 INSERTAR EN pedido_epp_imagenes
+            //  INSERTAR EN pedido_epp_imagenes
             PedidoEppImagen::create([
                 'pedido_epp_id' => $pedidoEpp->id,
                 'archivo' => $archivo,              // Ruta: epp/temp/xxxxx
@@ -237,7 +237,7 @@ ORDER BY pe.id, pei.orden;
 
 ---
 
-## 🔍 Modelos Eloquent
+##  Modelos Eloquent
 
 ### PedidoEpp
 
@@ -344,7 +344,7 @@ $imagenes = DB::table('pedido_epp_imagenes')
 
 ---
 
-## 📝 Resumen del Flujo
+##  Resumen del Flujo
 
 ```
 1️⃣ Usuario selecciona imágenes en frontend
@@ -368,7 +368,7 @@ $imagenes = DB::table('pedido_epp_imagenes')
 
 ---
 
-## 🎯 Conclusión
+##  Conclusión
 
  **El sistema está funcionando correctamente.** Las imágenes del EPP se guardan:
 - En la tabla `pedido_epp_imagenes`

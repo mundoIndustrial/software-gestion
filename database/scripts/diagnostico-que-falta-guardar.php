@@ -13,7 +13,7 @@ echo "║  DIAGNÓSTICO AVANZADO - ¿QUÉ SE GUARDA Y QUÉ FALTA?             �
 echo "╚════════════════════════════════════════════════════════════════════╝\n\n";
 
 // ===== 1. ANALIZAR ÚLTIMOS PEDIDOS =====
-echo "📊 1. ANALIZANDO ÚLTIMOS PEDIDOS CREADOS\n";
+echo " 1. ANALIZANDO ÚLTIMOS PEDIDOS CREADOS\n";
 echo str_repeat("─", 70) . "\n";
 
 $pedidosDir = BASE_PATH . '/storage/app/public/pedidos';
@@ -83,12 +83,12 @@ if (file_exists($logFile)) {
         '/error.*proceso/i' => 'Errores en procesos',
     ];
     
-    echo "\n🔍 BÚSQUEDA DE ERRORES:\n";
+    echo "\n BÚSQUEDA DE ERRORES:\n";
     
     $encontrados = false;
     foreach ($patterns as $pattern => $desc) {
         if (preg_match($pattern, $content)) {
-            echo "   ⚠️  Encontrado: $desc\n";
+            echo "     Encontrado: $desc\n";
             $encontrados = true;
         }
     }
@@ -140,7 +140,7 @@ window.fetch = async (...args) => {
                 }
             }
             
-            console.log('\n📊 RESUMEN:');
+            console.log('\n RESUMEN:');
             console.log('   Prendas:', detalles.prendas);
             console.log('   Telas:', detalles.telas);
             console.log('   Procesos:', detalles.procesos);

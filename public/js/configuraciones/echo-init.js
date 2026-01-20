@@ -64,7 +64,7 @@
         });
 
         window.Echo.connector.pusher.connection.bind('unavailable', () => {
-            console.warn('⚠️ Servidor WebSocket no disponible');
+            console.warn(' Servidor WebSocket no disponible');
             updateConnectionStatus(false);
         });
 

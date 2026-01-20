@@ -74,7 +74,7 @@ function guardarProductosEnStorage() {
         });
         
         localStorage.setItem(STORAGE_PRODUCTOS_KEY, JSON.stringify(productos));
-        console.log('📦 Productos guardados en localStorage:', productos.length, 'productos');
+        console.log(' Productos guardados en localStorage:', productos.length, 'productos');
         
     } catch (error) {
         console.error(' Error al guardar productos:', error);
@@ -95,7 +95,7 @@ function cargarDatosDesdeStorage() {
         
         // Validar versión
         if (datos.version !== STORAGE_VERSION) {
-            console.warn('⚠️ Versión de datos incompatible, ignorando');
+            console.warn(' Versión de datos incompatible, ignorando');
             limpiarStorage();
             return false;
         }
@@ -351,16 +351,16 @@ function configurarAutoGuardado() {
 document.addEventListener('DOMContentLoaded', function() {
     //  DESACTIVADO: No cargar datos del localStorage
     // Esto evita que se carguen datos de cotizaciones anteriores
-    console.log('📝 localStorage DESACTIVADO - Formulario limpio');
+    console.log(' localStorage DESACTIVADO - Formulario limpio');
     
-    // ⚠️ NO limpiar si estamos en la página de bordado
+    //  NO limpiar si estamos en la página de bordado
     // La página de bordado declara sus propias variables globales DESPUÉS de que se carga este script
     if (window.location.pathname.includes('/cotizaciones-bordado/') || window.location.pathname.includes('/cotizaciones/bordado/')) {
-        console.log('⚠️ Página de bordado detectada - No se ejecuta limpiarFormularioCompleto()');
+        console.log(' Página de bordado detectada - No se ejecuta limpiarFormularioCompleto()');
     } else if (!window.location.search.includes('editar=')) {
         limpiarFormularioCompleto();
     } else {
-        console.log('⚠️ Modo edición detectado - No se limpian variables globales');
+        console.log(' Modo edición detectado - No se limpian variables globales');
     }
     
     //  DESACTIVADO: Auto-guardado desactivado
@@ -391,7 +391,7 @@ function mostrarEstorageSummary() {
     const productos = localStorage.getItem(STORAGE_PRODUCTOS_KEY);
     const specs = localStorage.getItem(STORAGE_SPECS_KEY);
     
-    let summary = '📊 Estado de localStorage:\n';
+    let summary = ' Estado de localStorage:\n';
     summary += datosGenerales ? '✓ Datos generales guardados\n' : '✗ Sin datos generales\n';
     
     if (productos) {

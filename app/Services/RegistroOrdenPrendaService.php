@@ -169,7 +169,7 @@ class RegistroOrdenPrendaService
     public function getParsedPrendasMessage(array $prendas, array $oldPrendas = []): string
     {
         if (empty($prendas)) {
-            return "📝 Descripción actualizada como texto libre. Para regenerar registros automáticamente, use el formato:\n\nPrenda 1: NOMBRE\nDescripción: detalles\nTallas: M:5, L:3";
+            return " Descripción actualizada como texto libre. Para regenerar registros automáticamente, use el formato:\n\nPrenda 1: NOMBRE\nDescripción: detalles\nTallas: M:5, L:3";
         }
 
         $totalTallasEncontradas = 0;
@@ -181,7 +181,7 @@ class RegistroOrdenPrendaService
             return " Descripción actualizada y registros regenerados automáticamente. Se procesaron " . count($prendas) . " prenda(s) con " . $totalTallasEncontradas . " talla(s).";
         }
 
-        return "⚠️ Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
+        return " Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
     }
 
     /**

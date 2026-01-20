@@ -23,11 +23,11 @@ const nombresProcesos = {
  * Renderizar todas las tarjetas de procesos en el modal de prenda
  */
 window.renderizarTarjetasProcesos = function() {
-    console.log('🎨 [TARJETAS-PROCESOS] Renderizando tarjetas de procesos');
+    console.log(' [TARJETAS-PROCESOS] Renderizando tarjetas de procesos');
     
     const container = document.getElementById('contenedor-tarjetas-procesos');
     if (!container) {
-        console.warn('⚠️ [TARJETAS-PROCESOS] Contenedor no encontrado');
+        console.warn(' [TARJETAS-PROCESOS] Contenedor no encontrado');
         return;
     }
     
@@ -35,7 +35,7 @@ window.renderizarTarjetasProcesos = function() {
     const procesos = window.procesosSeleccionados || {};
     const procesosConDatos = Object.keys(procesos).filter(tipo => procesos[tipo]?.datos);
     
-    console.log('📊 [TARJETAS-PROCESOS] Procesos con datos:', procesosConDatos.length);
+    console.log(' [TARJETAS-PROCESOS] Procesos con datos:', procesosConDatos.length);
     
     if (procesosConDatos.length === 0) {
         container.innerHTML = `
@@ -220,7 +220,7 @@ window.editarProceso = function(tipo) {
  * Cargar datos de un proceso en el modal para editar
  */
 function cargarDatosProcesoEnModal(tipo, datos) {
-    console.log(`📝 [TARJETAS-PROCESOS] Cargando datos en modal:`, datos);
+    console.log(` [TARJETAS-PROCESOS] Cargando datos en modal:`, datos);
     
     // Limpiar imágenes anteriores
     if (window.imagenesProcesoActual) {

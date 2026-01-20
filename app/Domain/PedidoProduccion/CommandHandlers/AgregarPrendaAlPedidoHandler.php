@@ -32,7 +32,7 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
         }
 
         try {
-            Log::info('👕 [AgregarPrendaAlPedidoHandler] Agregando prenda al pedido', [
+            Log::info(' [AgregarPrendaAlPedidoHandler] Agregando prenda al pedido', [
                 'pedido_id' => $command->getPedidoId(),
                 'tipo' => $command->getTipo(),
             ]);

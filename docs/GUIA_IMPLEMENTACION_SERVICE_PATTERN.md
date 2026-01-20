@@ -9,26 +9,26 @@ public/js/
 │   │
 │   ├── http/                          🔌 CAPA HTTP (Infraestructura)
 │   │   ├── HttpServiceConfig.js       ⚙️  Configuración centralizada
-│   │   ├── GenericHttpService.js      📦 Base genérica CRUD
-│   │   └── HttpErrorHandler.js        ⚠️  Manejo de errores HTTP
+│   │   ├── GenericHttpService.js       Base genérica CRUD
+│   │   └── HttpErrorHandler.js          Manejo de errores HTTP
 │   │
 │   ├── epp/                            DOMINIO: EPP
-│   │   ├── EppHttpService.js          🎯 Servicio EPP
+│   │   ├── EppHttpService.js           Servicio EPP
 │   │   ├── EppValidators.js            Validaciones EPP
 │   │   └── EppMappers.js              🔄 Transformación de datos
 │   │
 │   ├── prendas/                       👔 DOMINIO: Prendas
-│   │   ├── PrendasHttpService.js      🎯 Servicio Prendas
+│   │   ├── PrendasHttpService.js       Servicio Prendas
 │   │   ├── PrendasValidators.js        Validaciones
 │   │   └── PrendasMappers.js          🔄 Mapeos
 │   │
-│   ├── pedidos/                       📦 DOMINIO: Pedidos
-│   │   ├── PedidosHttpService.js      🎯 Servicio Pedidos
+│   ├── pedidos/                        DOMINIO: Pedidos
+│   │   ├── PedidosHttpService.js       Servicio Pedidos
 │   │   ├── PedidosValidators.js        Validaciones
 │   │   └── PedidosMappers.js          🔄 Mapeos
 │   │
 │   ├── procesos/                      ⚙️  DOMINIO: Procesos
-│   │   ├── ProcesosHttpService.js     🎯 Servicio Procesos
+│   │   ├── ProcesosHttpService.js      Servicio Procesos
 │   │   └── ProcesosMappers.js         🔄 Mapeos
 │   │
 │   └── index.js                       📤 Exportar todos (point of entry)
@@ -38,7 +38,7 @@ public/js/
 │   ├── crear-pedido/
 │   │   │
 │   │   ├── modales/                   🎭 MODALES
-│   │   │   ├── modal-agregar-epp.js   🛡️  (Usa EppHttpService)
+│   │   │   ├── modal-agregar-epp.js     (Usa EppHttpService)
 │   │   │   ├── modal-agregar-prenda.js 👔 (Usa PrendasHttpService)
 │   │   │   └── modal-proceso.js       ⚙️  (Usa ProcesosHttpService)
 │   │   │

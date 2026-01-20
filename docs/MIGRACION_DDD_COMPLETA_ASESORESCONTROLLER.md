@@ -1,4 +1,4 @@
-# 🎯 MIGRACIÓN DDD COMPLETA - AsesoresController
+#  MIGRACIÓN DDD COMPLETA - AsesoresController
 
 ## Resumen Ejecutivo
 
@@ -16,7 +16,7 @@ Se ha completado una migración DDD completa del `AsesoresController.php` (1497 
 
 ---
 
-## 📦 Servicios Creados (FASE 1-3)
+##  Servicios Creados (FASE 1-3)
 
 ### FASE 1: Servicios de Lectura (Read Layer)
 Ubicación: `app/Application/Services/Asesores/`
@@ -373,7 +373,7 @@ php artisan tinker
 
 ---
 
-## 📊 Comparativa de Tamaño
+##  Comparativa de Tamaño
 
 ```
 ANTES (Original):
@@ -407,7 +407,7 @@ RESULTADO:
 
 ---
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
 1. **Servicios usan Log:**
    - Cada operación loguea con emojis para debugging

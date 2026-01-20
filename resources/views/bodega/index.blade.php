@@ -309,7 +309,7 @@
     <!-- Script de inicialización de colores -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎨 Inicializando colores condicionales en bodega...');
+            console.log(' Inicializando colores condicionales en bodega...');
             
             // Esperar a que los scripts estén cargados
             setTimeout(() => {
@@ -317,7 +317,7 @@
                     console.log(' Aplicando colores a todas las filas');
                     window.applyAllRowConditionalColors();
                 } else {
-                    console.warn('⚠️ applyAllRowConditionalColors no está disponible');
+                    console.warn(' applyAllRowConditionalColors no está disponible');
                 }
             }, 100);
         });
@@ -327,7 +327,7 @@
     <script>
         // Esperar a que todo esté cargado
         setTimeout(() => {
-            console.log('🔍 DEBUGGING BODEGA');
+            console.log(' DEBUGGING BODEGA');
             console.log(' openEditModal existe:', typeof openEditModal);
             console.log(' applyAllRowConditionalColors existe:', typeof window.applyAllRowConditionalColors);
             console.log(' Filas con clase table-row:', document.querySelectorAll('.table-row').length);

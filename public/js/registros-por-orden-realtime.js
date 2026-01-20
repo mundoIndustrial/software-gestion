@@ -82,7 +82,7 @@ function removeRegistrosFromTable(pedido) {
  */
 function updateRegistrosInTable(pedido, registros) {
     if (!registros || registros.length === 0) {
-        console.log(`⚠️ No hay registros para actualizar del pedido ${pedido}`);
+        console.log(` No hay registros para actualizar del pedido ${pedido}`);
         return;
     }
 
@@ -113,7 +113,7 @@ function insertRegistroInTable(registro) {
     const visibleTable = document.querySelector('table[data-section]:not([style*="display: none"]) tbody');
     
     if (!visibleTable) {
-        console.log('⚠️ No hay tabla visible para insertar el registro');
+        console.log(' No hay tabla visible para insertar el registro');
         return;
     }
 

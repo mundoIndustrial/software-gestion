@@ -71,7 +71,7 @@ class PedidoProduccion extends Model
 
         // Disparar evento cuando se crea un pedido
         static::created(function ($model) {
-            \Log::info('🎯 [PedidoProduccion.boot] Hook created disparado', [
+            \Log::info(' [PedidoProduccion.boot] Hook created disparado', [
                 'pedido_id' => $model->id,
                 'numero_pedido' => $model->numero_pedido,
                 'tiene_cotizacion' => !is_null($model->cotizacion_id),
@@ -79,7 +79,7 @@ class PedidoProduccion extends Model
             
             // Solo disparar evento si hay cotización asociada
             if (!$model->cotizacion_id) {
-                \Log::info('⏭️ [PedidoProduccion.boot] Sin cotización, saltando evento PedidoCreado', [
+                \Log::info('[PedidoProduccion.boot] Sin cotización, saltando evento PedidoCreado', [
                     'pedido_id' => $model->id,
                 ]);
                 return;
@@ -94,7 +94,7 @@ class PedidoProduccion extends Model
                 ]);
                 event(new PedidoCreado($model, $asesor));
             } else {
-                \Log::warning('⚠️ [PedidoProduccion.boot] Asesor no encontrado para pedido', [
+                \Log::warning(' [PedidoProduccion.boot] Asesor no encontrado para pedido', [
                     'pedido_id' => $model->id,
                     'asesor_id' => $model->asesor_id,
                 ]);
@@ -226,7 +226,7 @@ class PedidoProduccion extends Model
 
         $resultado = implode("\n\n", $descripciones);
         
-        \Log::info('📦 [getDescripcionPrendasAttribute] Resultado final:', [
+        \Log::info(' [getDescripcionPrendasAttribute] Resultado final:', [
             'numero_pedido' => $this->numero_pedido,
             'total_prendas' => count($descripciones),
             'primeros_100_caracteres' => substr($resultado, 0, 100),

@@ -29,7 +29,7 @@ echo "\nTotal de pedidos en BD: {$totalPedidos}\n";
 // Buscar el pedido 45696 específicamente
 $pedido45696 = PedidoProduccion::where('numero_pedido', 45696)->first();
 if ($pedido45696) {
-    echo "\n⚠️  Pedido 45696 SÍ existe:\n";
+    echo "\n  Pedido 45696 SÍ existe:\n";
     echo "  ID: {$pedido45696->id}\n";
     echo "  Cliente: {$pedido45696->cliente}\n";
     echo "  Fecha creación: {$pedido45696->created_at}\n";

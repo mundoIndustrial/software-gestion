@@ -99,7 +99,7 @@ CREATE TABLE prenda_variantes (
 
 ---
 
-## 📊 Diagrama Entidad-Relación
+##  Diagrama Entidad-Relación
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -224,7 +224,7 @@ class PedidoProduccion extends Model {
 
 ---
 
-## 📝 Ejemplo de Uso
+##  Ejemplo de Uso
 
 ### Crear una Prenda
 
@@ -328,7 +328,7 @@ PrendaVariante::porColor($colorId)->get();
 
 ### Orden de Ejecución Crítico
 
-⚠️ **LAS MIGRACIONES DEBEN EJECUTARSE EN ESTE ORDEN:**
+ **LAS MIGRACIONES DEBEN EJECUTARSE EN ESTE ORDEN:**
 
 1. **`2026_01_16_normalize_prendas_pedido.php`**
    - Altera tabla EXISTENTE `prendas_pedido`
@@ -427,7 +427,7 @@ $variante->color()->exists();                 // true/false según datos
 
 ---
 
-## 🎯 Ventajas del Nuevo Diseño
+##  Ventajas del Nuevo Diseño
 
  **Normalización**: Datos en su forma más atómica  
  **Escalabilidad**: Fácil agregar nuevas variantes  
@@ -439,7 +439,7 @@ $variante->color()->exists();                 // true/false según datos
 
 ---
 
-## ⚠️ Notas Importantes
+##  Notas Importantes
 
 1. **Reflectivo**: NO incluido en este diseño. Se gestiona a través de `PrendaReflectivo` si es necesario.
 

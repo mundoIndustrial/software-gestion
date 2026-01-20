@@ -22,7 +22,7 @@ class MigrarImagenesLogo extends Command
                 ->where('imagenes', '!=', 'null')
                 ->get();
 
-            $this->info("📊 Logos encontrados: " . count($logos));
+            $this->info(" Logos encontrados: " . count($logos));
             $this->newLine();
 
             $totalMigradas = 0;
@@ -33,14 +33,14 @@ class MigrarImagenesLogo extends Command
                     $imagenes = json_decode($logo->imagenes, true);
 
                     if (!is_array($imagenes)) {
-                        $this->warn("⚠️ Logo {$logo->id}: Imágenes no es un array válido");
+                        $this->warn(" Logo {$logo->id}: Imágenes no es un array válido");
                         $errores++;
                         continue;
                     }
 
                     // Verificar máximo de 5 imágenes
                     if (count($imagenes) > 5) {
-                        $this->warn("⚠️ Logo {$logo->id}: Tiene " . count($imagenes) . " imágenes (máximo 5)");
+                        $this->warn(" Logo {$logo->id}: Tiene " . count($imagenes) . " imágenes (máximo 5)");
                         $imagenes = array_slice($imagenes, 0, 5);
                     }
 
@@ -85,7 +85,7 @@ class MigrarImagenesLogo extends Command
             if ($errores === 0) {
                 $this->info(" MIGRACIÓN COMPLETADA SIN ERRORES");
             } else {
-                $this->warn("⚠️ MIGRACIÓN COMPLETADA CON ERRORES");
+                $this->warn(" MIGRACIÓN COMPLETADA CON ERRORES");
             }
         } catch (\Exception $e) {
             $this->error('Error: ' . $e->getMessage());

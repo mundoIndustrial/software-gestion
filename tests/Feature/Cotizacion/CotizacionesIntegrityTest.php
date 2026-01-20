@@ -16,7 +16,7 @@ use Tests\TestCase;
 /**
  * Test Suite: Validación de Campos e Integridad
  * 
- * ⚠️ NOTA: No usa RefreshDatabase para preservar datos existentes
+ *  NOTA: No usa RefreshDatabase para preservar datos existentes
  * 
  * Este archivo complementa CotizacionesCompleteTest.php con validaciones
  * específicas de campos, constraints y validaciones de negocio.

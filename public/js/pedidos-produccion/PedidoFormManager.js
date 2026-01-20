@@ -1,5 +1,5 @@
 /**
- * 🎯 PEDIDO FORM MANAGER
+ *  PEDIDO FORM MANAGER
  * 
  * Gestor central de estado para formulario complejo de pedidos de producción.
  * Maneja:
@@ -43,7 +43,7 @@ class PedidoFormManager {
     // ==================== INICIALIZACIÓN ====================
 
     init() {
-        console.log('🎯 Inicializando PedidoFormManager...');
+        console.log(' Inicializando PedidoFormManager...');
         
         // Cargar estado guardado
         this.loadFromStorage();

@@ -161,7 +161,7 @@
     <div class="card-section expandible" data-section="tallas">
       <div class="section-header" onclick="toggleSection(this)">
         <span class="section-titulo">
-          <span class="icon">👕</span> Tallas (Total: {{ $totalUnidades }} unidades)
+          <span class="icon"></span> Tallas (Total: {{ $totalUnidades }} unidades)
         </span>
         <span class="section-toggle">▼</span>
       </div>

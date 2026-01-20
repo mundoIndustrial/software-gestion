@@ -42,7 +42,7 @@ class TestVariantesGenero extends Command
             }
             
             if (empty($prendasMultiplesGeneros)) {
-                $this->warn("⚠️ No hay prendas con múltiples géneros en BD");
+                $this->warn(" No hay prendas con múltiples géneros en BD");
                 $this->info("\nCreando prenda de prueba...");
                 
                 // Crear prenda de prueba
@@ -131,7 +131,7 @@ class TestVariantesGenero extends Command
                 }
                 
                 if (!empty($extras)) {
-                    $this->warn("   ⚠️ Variantes extras: " . implode(', ', $extras));
+                    $this->warn("    Variantes extras: " . implode(', ', $extras));
                     $todasOk = false;
                 }
                 

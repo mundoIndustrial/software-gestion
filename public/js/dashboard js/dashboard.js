@@ -378,9 +378,9 @@ const DataLoader = {
         // Mapeo de tipos de eventos a badges y estilos
         const eventTypeConfig = {
             'record_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '🆕' },
-            'record_updated': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '📝' },
+            'record_updated': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '' },
             'record_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '🗑️' },
-            'order_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '📦' },
+            'order_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '' },
             'status_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '🔄' },
             'area_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '📍' },
             'delivery_registered': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '' },
@@ -409,7 +409,7 @@ const DataLoader = {
                             <div class="meta">
                                 <span class="user-badge">👤 ${item.user}</span>
                                 <span class="time-badge">🕐 ${item.created_at}</span>
-                                ${item.pedido ? `<span class="pedido-badge">📦 #${item.pedido}</span>` : ''}
+                                ${item.pedido ? `<span class="pedido-badge"> #${item.pedido}</span>` : ''}
                                 ${detailsButton}
                             </div>
                         </div>
@@ -432,7 +432,7 @@ const DataLoader = {
         const params = new URLSearchParams({ date });
         const stats = await fetch(`/dashboard/audit-stats?${params}`).then(r => r.json());
         
-        console.log('📊 Estadísticas de Auditoría:', stats);
+        console.log(' Estadísticas de Auditoría:', stats);
         
         // Actualizar UI con estadísticas si existe un contenedor
         const statsContainer = document.getElementById('audit-stats-container');
@@ -473,7 +473,7 @@ function showModal(title, message, type = 'info') {
     const iconMap = {
         'success': '',
         'error': '',
-        'warning': '⚠️',
+        'warning': '',
         'info': '',
         'question': '❓'
     };
@@ -562,7 +562,7 @@ function showNotificationDetails(newsId, eventType) {
         detailsHTML += '</div>';
     } else if (eventType === 'record_updated' && metadata.changes) {
         // Mostrar cambios realizados
-        detailsHTML = '<h3>📝 Cambios realizados:</h3><div class="details-grid">';
+        detailsHTML = '<h3> Cambios realizados:</h3><div class="details-grid">';
         for (const [key, newValue] of Object.entries(metadata.changes)) {
             const oldValue = metadata.original?.[key] ?? 'N/A';
             const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

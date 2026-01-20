@@ -75,7 +75,7 @@ class GuardarPedidoProduccionService
      */
     private function guardarPrendas(PedidoProduccion $pedido, array $productos): void
     {
-        Log::info('🧵 [PRENDAS] Guardando ' . count($productos) . ' prendas');
+        Log::info(' [PRENDAS] Guardando ' . count($productos) . ' prendas');
 
         try {
             $pedidoPrendaService = new PedidoPrendaService();
@@ -106,7 +106,7 @@ class GuardarPedidoProduccionService
             return;
         }
 
-        Log::info('🎨 [LOGO] Guardando logo en pedido', ['pedido_id' => $pedido->id]);
+        Log::info(' [LOGO] Guardando logo en pedido', ['pedido_id' => $pedido->id]);
 
         try {
             $logoService = new PedidoLogoService();

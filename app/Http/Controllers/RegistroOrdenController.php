@@ -814,7 +814,7 @@ class RegistroOrdenController extends Controller
     public function updateNovedades(Request $request, $numeroPedido)
     {
         try {
-            \Log::info('📝 updateNovedades iniciado', ['numeroPedido' => $numeroPedido]);
+            \Log::info(' updateNovedades iniciado', ['numeroPedido' => $numeroPedido]);
             
             // Validar entrada
             $request->validate([
@@ -882,7 +882,7 @@ class RegistroOrdenController extends Controller
     public function addNovedad(Request $request, $numeroPedido)
     {
         try {
-            \Log::info('📝 addNovedad iniciado', ['numeroPedido' => $numeroPedido]);
+            \Log::info(' addNovedad iniciado', ['numeroPedido' => $numeroPedido]);
             
             // Validar entrada
             $request->validate([

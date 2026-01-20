@@ -24,7 +24,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">🎯 Seleccionar Pedido</h5>
+                    <h5 class="mb-0"> Seleccionar Pedido</h5>
                 </div>
                 <div class="card-body">
                     <div class="form-group">
@@ -51,7 +51,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">📊 Información del Pedido</h5>
+                    <h5 class="mb-0"> Información del Pedido</h5>
                 </div>
                 <div class="card-body">
                     <div id="pedido-info">
@@ -71,7 +71,7 @@
                 <!-- Contenedor principal para prendas -->
                 <div id="prendas-container" style="min-height: 400px;">
                     <div class="alert alert-info text-center py-5">
-                        <h5>👕 Agregue prendas al pedido</h5>
+                        <h5> Agregue prendas al pedido</h5>
                         <p class="text-muted mb-0">
                             Seleccione un pedido de producción y comience a agregar prendas
                         </p>
@@ -384,7 +384,7 @@
             const summary = formManager.getSummary();
             if (summary.prendas > 0) {
                 e.preventDefault();
-                e.returnValue = '⚠️ Tiene cambios sin enviar. ¿Está seguro de que desea salir?';
+                e.returnValue = ' Tiene cambios sin enviar. ¿Está seguro de que desea salir?';
                 return e.returnValue;
             }
         });

@@ -168,7 +168,7 @@ Abrir consola del navegador (F12) para ver logs:
 
 ```
  [RECEIPT MANAGER] Inicializado
-📊 Total de recibos: 9
+ Total de recibos: 9
 📄 Recibos: Array(9)
 📄 Renderizando recibo 1/9: {...}
 ```

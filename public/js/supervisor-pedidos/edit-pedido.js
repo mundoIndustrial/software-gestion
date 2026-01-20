@@ -407,7 +407,7 @@ function calcularFechaEstimada() {
             fieldOculto.value = data.fecha_estimada_iso;
             
             console.log(' Fecha estimada calculada:', data.fecha_estimada);
-            console.log('📝 Campo oculto actualizado:', fieldOculto.value);
+            console.log(' Campo oculto actualizado:', fieldOculto.value);
         } else {
             alert('Error al calcular la fecha estimada: ' + (data.message || 'Error desconocido'));
         }

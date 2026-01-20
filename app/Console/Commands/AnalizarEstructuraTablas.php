@@ -109,7 +109,7 @@ class AnalizarEstructuraTablas extends Command
             }
 
             // Obtener cantidad de registros
-            $this->info("\n📊 DATOS:");
+            $this->info("\n DATOS:");
             $this->info(str_repeat('-', 80));
 
             $count = DB::table($tabla)->count();

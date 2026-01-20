@@ -26,7 +26,7 @@ class CrearProcesosParaCotizacionReflectivo
         try {
             $pedido = $event->pedido;
 
-            Log::info('🎯 [CrearProcesosParaCotizacionReflectivo] Listener iniciado', [
+            Log::info(' [CrearProcesosParaCotizacionReflectivo] Listener iniciado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
@@ -51,7 +51,7 @@ class CrearProcesosParaCotizacionReflectivo
                 return;
             }
 
-            Log::info('🎯 CREAR PROCESOS PARA COTIZACIÓN REFLECTIVO', [
+            Log::info(' CREAR PROCESOS PARA COTIZACIÓN REFLECTIVO', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cotizacion_id' => $cotizacion->id,
@@ -97,7 +97,7 @@ class CrearProcesosParaCotizacionReflectivo
     {
         $numeroPedido = $pedido->numero_pedido;
 
-        Log::info('🔍 [LISTENER] Validación de procesos para pedido reflectivo', [
+        Log::info(' [LISTENER] Validación de procesos para pedido reflectivo', [
             'numero_pedido' => $numeroPedido,
         ]);
 
@@ -110,7 +110,7 @@ class CrearProcesosParaCotizacionReflectivo
         ]);
 
         if ($prendas->isEmpty()) {
-            Log::warning('⚠️ [LISTENER] No hay prendas en el pedido reflectivo', [
+            Log::warning(' [LISTENER] No hay prendas en el pedido reflectivo', [
                 'numero_pedido' => $numeroPedido,
             ]);
             return;

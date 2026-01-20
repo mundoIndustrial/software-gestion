@@ -20,8 +20,8 @@
  * @returns {string} HTML generado para la vista reflectivo
  */
 window.renderizarReflectivo = function(prendas, datosReflectivo = null) {
-    console.log('📦 RENDERIZANDO COTIZACIÓN TIPO REFLECTIVO');
-    console.log('📦 Datos reflectivo:', datosReflectivo);
+    console.log(' RENDERIZANDO COTIZACIÓN TIPO REFLECTIVO');
+    console.log(' Datos reflectivo:', datosReflectivo);
     
     // Parsear ubicaciones del reflectivo
     let ubicacionesReflectivo = [];
@@ -45,7 +45,7 @@ window.renderizarReflectivo = function(prendas, datosReflectivo = null) {
         if (!window.telasGaleria) window.telasGaleria = [];
         window.telasGaleria[index] = [];
         
-        console.log(`👕 Prenda ${index + 1}:`, prenda);
+        console.log(` Prenda ${index + 1}:`, prenda);
         console.log(`   - Tallas:`, prenda.tallas);
         console.log(`   - Tipo de tallas:`, typeof prenda.tallas);
         
@@ -366,7 +366,7 @@ window.manejarArchivosReflectivo = function(files) {
     let renderTimeout = null;
     
     if (fotosADeProcesar === 0) {
-        console.log('⚠️ No hay archivos de imagen para procesar');
+        console.log(' No hay archivos de imagen para procesar');
         return;
     }
     
@@ -394,7 +394,7 @@ window.manejarArchivosReflectivo = function(files) {
                     console.log(`📸 Foto agregada a reflectivo: ${file.name} (${fotosAgregadas}/${fotosADeProcesar})`);
                     console.log(`   ID: ${fotoId}`);
                 } else {
-                    console.log(`⚠️ Foto duplicada ignorada: ${file.name}`);
+                    console.log(` Foto duplicada ignorada: ${file.name}`);
                 }
                 
                 // Cuando se terminen de procesar todas las fotos, renderizar una sola vez con debounce

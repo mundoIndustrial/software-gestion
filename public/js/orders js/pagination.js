@@ -51,7 +51,7 @@ function _initializeControls() {
     // Aplicar colores condicionales a las filas
     if (typeof updateRowConditionalColors === 'function') {
         updateRowConditionalColors();
-        console.log('🎨 Colores condicionales aplicados después de cambiar página');
+        console.log(' Colores condicionales aplicados después de cambiar página');
     }
 }
 
@@ -149,7 +149,7 @@ function initializePaginationListeners() {
         e.stopPropagation();
         
         if (btn.disabled || paginationState.isLoading) {
-            console.log('⏭️ Botón deshabilitado o ya cargando, ignorando click');
+            console.log('Botón deshabilitado o ya cargando, ignorando click');
             return;
         }
         

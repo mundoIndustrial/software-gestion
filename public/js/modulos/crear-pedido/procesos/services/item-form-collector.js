@@ -18,7 +18,25 @@ class ItemFormCollector {
      * Recolectar datos completos del pedido
      */
     recolectarDatosPedido() {
-        const items = window.itemsPedido || [];
+        // Obtener items desde GestionItemsUI (prendas nuevas) y window.itemsPedido (EPPs)
+        let items = [];
+        
+        // Obtener prendas desde GestionItemsUI
+        if (window.gestionItemsUI && window.gestionItemsUI.obtenerItemsOrdenados) {
+            const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
+            items = items.concat(itemsOrdenados);
+            console.log(' [recolectarDatosPedido] Items desde GestionItemsUI:', itemsOrdenados.length);
+        }
+        
+        // Obtener EPPs desde window.itemsPedido (si no están ya en GestionItemsUI)
+        if (window.itemsPedido && window.itemsPedido.length > 0) {
+            const eppsDirectos = window.itemsPedido.filter(item => item.tipo === 'epp');
+            if (eppsDirectos.length > 0) {
+                items = items.concat(eppsDirectos);
+                console.log(' [recolectarDatosPedido] EPPs desde window.itemsPedido:', eppsDirectos.length);
+            }
+        }
+        
         console.log(' [recolectarDatosPedido] Items totales recibidos:', items.length);
         
         const itemsFormato = items.map((item, itemIndex) => {
@@ -45,11 +63,13 @@ class ItemFormCollector {
             
             const baseItem = {
                 tipo: item.tipo,
-                prenda: item.prenda?.nombre || item.nombre || '',
+                nombre_producto: item.nombre_producto || item.prenda?.nombre || item.nombre || '',
+                descripcion: item.descripcion || '',
                 origen: item.origen || 'bodega',
-                procesos: item.procesos || [],
-                tallas: item.tallas || [],
+                procesos: item.procesos || {},
+                cantidad_talla: item.cantidad_talla || {},
                 variaciones: item.variaciones || {},
+                telas: item.telas || item.telasAgregadas || [],
             };
             
             if (item.pedido_produccion_id) {
@@ -219,9 +239,19 @@ class ItemFormCollector {
         const procesosParaEnviar = this.extraerProcesos(prenda);
         const telas = this.extraerTelas(prenda);
 
+        // Extraer color y tela de la primera tela agregada (si existe)
+        let colorPrimera = prenda.color || null;
+        let telaPrimera = prenda.tela || null;
+        
+        if (!colorPrimera && !telaPrimera && prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
+            colorPrimera = prenda.telasAgregadas[0].color || null;
+            telaPrimera = prenda.telasAgregadas[0].tela || null;
+        }
+
         return {
             tipo: 'prenda_nueva',
             prenda: prenda.nombre_producto || '',
+            nombre_producto: prenda.nombre_producto || '',
             descripcion: prenda.descripcion || '',
             genero: prenda.genero || [],
             cantidad_talla: cantidadTalla,
@@ -229,8 +259,8 @@ class ItemFormCollector {
             variaciones: variaciones,
             origen: prenda.origen || 'bodega',
             de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
-            color: prenda.color || null,
-            tela: prenda.tela || null,
+            color: colorPrimera,
+            tela: telaPrimera,
             color_id: null,
             tela_id: null,
             tipo_manga_id: prenda.tipo_manga_id || null,

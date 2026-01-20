@@ -13,7 +13,7 @@ class AnalyzeCotizacion2Details extends Command
     public function handle()
     {
         $this->info('════════════════════════════════════════════════════════');
-        $this->info('🔍 ANÁLISIS DETALLADO: COTIZACIÓN 2');
+        $this->info(' ANÁLISIS DETALLADO: COTIZACIÓN 2');
         $this->info('════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -22,12 +22,12 @@ class AnalyzeCotizacion2Details extends Command
             ->where('cotizacion_id', 2)
             ->get();
 
-        $this->info('📦 PRENDAS EN COTIZACIÓN 2: ' . count($prendas));
+        $this->info(' PRENDAS EN COTIZACIÓN 2: ' . count($prendas));
         $this->line('────────────────────────────────────────────────────────');
         $this->newLine();
 
         foreach ($prendas as $prenda) {
-            $this->line("🧵 PRENDA ID: {$prenda->id} | Nombre: {$prenda->nombre_producto}");
+            $this->line(" PRENDA ID: {$prenda->id} | Nombre: {$prenda->nombre_producto}");
             $this->newLine();
 
             // 1. Fotos de la prenda
@@ -46,7 +46,7 @@ class AnalyzeCotizacion2Details extends Command
                 ->where('prenda_cot_id', $prenda->id)
                 ->get();
 
-            $this->line("   🧵 Telas: " . count($telas));
+            $this->line("    Telas: " . count($telas));
             foreach ($telas as $t) {
                 $this->line("      ID {$t->id}: color_id={$t->color_id}, tela_id={$t->tela_id}");
             }
@@ -69,7 +69,7 @@ class AnalyzeCotizacion2Details extends Command
                 ->first();
 
             if ($variantes) {
-                $this->line("   🎨 Variantes:");
+                $this->line("    Variantes:");
                 $this->line("      • Género ID: {$variantes->genero_id}");
                 $this->line("      • Tipo Manga: {$variantes->tipo_manga}");
                 $this->line("      • Tipo Broche ID: {$variantes->tipo_broche_id}");
@@ -84,7 +84,7 @@ class AnalyzeCotizacion2Details extends Command
 
         // RESUMEN
         $this->line('═════════════════════════════════════════════════════════');
-        $this->info('📊 RESUMEN');
+        $this->info(' RESUMEN');
         $this->line('═════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -108,7 +108,7 @@ class AnalyzeCotizacion2Details extends Command
         $this->newLine();
 
         if ($totalTelas < 4) {
-            $this->warn('⚠️  PROBLEMA: Se esperaban 4 telas (3 para camisa + 1 para pantalón)');
+            $this->warn('  PROBLEMA: Se esperaban 4 telas (3 para camisa + 1 para pantalón)');
             $this->error("   Pero solo se guardaron: $totalTelas");
             $this->newLine();
             $this->line('Posibles causas:');

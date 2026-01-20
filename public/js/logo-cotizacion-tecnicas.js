@@ -156,14 +156,14 @@ function abrirModalTecnicaCombinada(tecnicas) {
                     <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
                         <input type="radio" name="opcion-tecnicas" value="diferentes" style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
                         <div>
-                            <strong style="color: #333; display: block; font-size: 0.9rem;">🎯 Datos diferentes</strong>
+                            <strong style="color: #333; display: block; font-size: 0.9rem;"> Datos diferentes</strong>
                             <small style="color: #666; font-size: 0.8rem;">Cada técnica con su prenda</small>
                         </div>
                     </label>
                     <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
                         <input type="radio" name="opcion-tecnicas" value="por-talla" style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
                         <div>
-                            <strong style="color: #333; display: block; font-size: 0.9rem;">📊 Por talla</strong>
+                            <strong style="color: #333; display: block; font-size: 0.9rem;"> Por talla</strong>
                             <small style="color: #666; font-size: 0.8rem;">Técnicas diferentes según talla</small>
                         </div>
                     </label>
@@ -528,7 +528,7 @@ function abrirModalDatosIguales(tecnicas) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify({ nombre: nombrePrenda })
-            }).catch(e => console.warn('⚠️ No se pudo guardar prenda en historial:', e));
+            }).catch(e => console.warn(' No se pudo guardar prenda en historial:', e));
             
             // Validar ubicaciones
             const ubicacionesPorTecnica = {};
@@ -1024,7 +1024,7 @@ function mostrarFormularioTecnicaDiferente(index) {
             };
             
             console.log(` Técnica ${index} guardada en datosMultiplesTecnicas`);
-            console.log('📦 Estado actual:', window.datosMultiplesTecnicas);
+            console.log(' Estado actual:', window.datosMultiplesTecnicas);
             
             // Verificar si es la última técnica
             if (index === totalTecnicas - 1) {
@@ -1399,7 +1399,7 @@ async function guardarTecnica() {
         guardarTecnicaCombinada();
     } else if (window.modoTecnicasCombinadas === 'diferentes') {
         console.log(' Guardando técnicas con datos DIFERENTES');
-        console.log('📦 datosMultiplesTecnicas:', window.datosMultiplesTecnicas);
+        console.log(' datosMultiplesTecnicas:', window.datosMultiplesTecnicas);
         guardarTecnicasMultiples();
     } else if (window.modoTecnicasCombinadas === 'por-talla') {
         console.log(' Guardando técnicas POR TALLA');
@@ -1413,7 +1413,7 @@ async function guardarTecnica() {
 
 function guardarPrendaTecnicasPorTalla(datos) {
     console.log(' Guardando prenda con técnicas por talla');
-    console.log('📦 Datos:', datos);
+    console.log(' Datos:', datos);
     
     const tecnicas = window.tecnicasCombinadas;
     
@@ -1428,7 +1428,7 @@ function guardarPrendaTecnicasPorTalla(datos) {
             const tipo = tecnicas.find(t => t.id === tecnicaId);
             
             if (!tipo) {
-                console.warn(`⚠️ Técnica con ID ${tecnicaId} no encontrada`);
+                console.warn(` Técnica con ID ${tecnicaId} no encontrada`);
                 return;
             }
             
@@ -1450,7 +1450,7 @@ function guardarPrendaTecnicasPorTalla(datos) {
     });
     
     window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-    console.log(`📊 Total técnicas agregadas: ${tecnicasAgregadas.length}`);
+    console.log(` Total técnicas agregadas: ${tecnicasAgregadas.length}`);
     
     // Limpiar contexto
     window.tecnicasCombinadas = null;
@@ -1507,7 +1507,7 @@ function guardarTecnicaSimple() {
     console.log(' Técnica simple agregada:', nuevaTecnica);
     tecnicasAgregadas.push(nuevaTecnica);
     window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-    console.log(`📊 Total técnicas: ${tecnicasAgregadas.length}`);
+    console.log(` Total técnicas: ${tecnicasAgregadas.length}`);
     
     // Cerrar modal y actualizar
     cerrarModalAgregarTecnica();
@@ -1521,7 +1521,7 @@ function guardarTecnicaCombinada(datosForm) {
     
     // Si no se pasa datosForm, construirlo desde el formulario actual
     if (!datosForm) {
-        console.log('📝 Construyendo datosForm desde el formulario...');
+        console.log(' Construyendo datosForm desde el formulario...');
         
         // Validar que haya nombre de prenda
         const nombrePrenda = document.querySelector('.nombre_prenda')?.value.trim();
@@ -1582,7 +1582,7 @@ function guardarTecnicaCombinada(datosForm) {
         };
     }
     
-    console.log('📦 Datos del formulario:', datosForm);
+    console.log(' Datos del formulario:', datosForm);
     
     // Generar un ID único para el grupo combinado (basado en timestamp en milisegundos)
     // Esto garantiza unicidad a nivel de usuario y sesión
@@ -1641,7 +1641,7 @@ function guardarTecnicaCombinada(datosForm) {
             tecnicasAgregadas.push(nuevaTecnica);
         });
         
-        console.log(`📊 Total técnicas agregadas: ${tecnicasAgregadas.length}`);
+        console.log(` Total técnicas agregadas: ${tecnicasAgregadas.length}`);
         console.log(`🔗 Grupo combinado asignado: ${grupoId}`);
         
         window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
@@ -1659,7 +1659,7 @@ function guardarTecnicaCombinada(datosForm) {
         
         // Actualizar también el renderizado en logo-pedido-tecnicas.js si existe
         if (typeof renderizarLogoPrendasTecnicas === 'function') {
-            console.log('📊 Llamando a renderizarLogoPrendasTecnicas() para actualizar tabla de prendas');
+            console.log(' Llamando a renderizarLogoPrendasTecnicas() para actualizar tabla de prendas');
             renderizarLogoPrendasTecnicas();
         }
     });
@@ -1668,8 +1668,8 @@ function guardarTecnicaCombinada(datosForm) {
 function guardarTecnicasMultiples() {
     const datosMultiples = window.datosMultiplesTecnicas;
     
-    console.log('🔍 Intentando guardar técnicas múltiples');
-    console.log('📦 datosMultiples:', datosMultiples);
+    console.log(' Intentando guardar técnicas múltiples');
+    console.log(' datosMultiples:', datosMultiples);
     
     if (!datosMultiples || datosMultiples.length === 0) {
         Swal.fire({
@@ -1681,13 +1681,13 @@ function guardarTecnicasMultiples() {
         return;
     }
     
-    console.log(`📊 Cantidad de técnicas: ${datosMultiples.length}`);
+    console.log(` Cantidad de técnicas: ${datosMultiples.length}`);
     
     datosMultiples.forEach((item, idx) => {
-        console.log(`\n📝 Procesando técnica ${idx}:`, item);
+        console.log(`\n Procesando técnica ${idx}:`, item);
         
         if (!item || !item.tecnica) {
-            console.warn(`⚠️ Item ${idx} sin técnica`);
+            console.warn(` Item ${idx} sin técnica`);
             return;
         }
         
@@ -1708,7 +1708,7 @@ function guardarTecnicasMultiples() {
     });
     
     window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-    console.log(`\n📊 Total técnicas en array: ${tecnicasAgregadas.length}`);
+    console.log(`\n Total técnicas en array: ${tecnicasAgregadas.length}`);
     console.log(' tecnicasAgregadas:', tecnicasAgregadas);
     
     // Limpiar contexto
@@ -1777,19 +1777,19 @@ function extraerPrendasDelModal() {
         // Extraer datos de variaciones
         const variacionesPrenda = {};
         
-        console.log('🔍 Extrayendo variaciones de la fila:', fila);
+        console.log(' Extrayendo variaciones de la fila:', fila);
         
         // Verificar que la tabla existe
         const tablaVariaciones = fila.querySelector('.variaciones-table');
-        console.log('🔍 Tabla de variaciones encontrada:', !!tablaVariaciones);
+        console.log(' Tabla de variaciones encontrada:', !!tablaVariaciones);
         
         // MANGA
         const mangaInput = fila.querySelector('.variacion-manga');
-        console.log('🔍 Input manga encontrado:', !!mangaInput, 'Valor:', mangaInput?.value);
+        console.log(' Input manga encontrado:', !!mangaInput, 'Valor:', mangaInput?.value);
         const manga = mangaInput?.value?.trim();
         const obsMangaInput = fila.querySelector('.observacion-manga');
         const obsManga = obsMangaInput?.value?.trim();
-        console.log('📝 Manga:', { manga, obsManga });
+        console.log(' Manga:', { manga, obsManga });
         if (manga) {
             variacionesPrenda.manga = {
                 opcion: manga,
@@ -1799,11 +1799,11 @@ function extraerPrendasDelModal() {
         
         // BOLSILLOS
         const bolsillosInput = fila.querySelector('.variacion-bolsillos');
-        console.log('🔍 Input bolsillos encontrado:', !!bolsillosInput, 'Valor:', bolsillosInput?.value);
+        console.log(' Input bolsillos encontrado:', !!bolsillosInput, 'Valor:', bolsillosInput?.value);
         const bolsillos = bolsillosInput?.value?.trim();
         const obsBolsillosInput = fila.querySelector('.observacion-bolsillos');
         const obsBolsillos = obsBolsillosInput?.value?.trim();
-        console.log('📝 Bolsillos:', { bolsillos, obsBolsillos });
+        console.log(' Bolsillos:', { bolsillos, obsBolsillos });
         if (bolsillos) {
             variacionesPrenda.bolsillos = {
                 opcion: bolsillos,
@@ -1813,11 +1813,11 @@ function extraerPrendasDelModal() {
         
         // BROCHE/BOTÓN (es un SELECT)
         const brocheSelect = fila.querySelector('.variacion-broche');
-        console.log('🔍 Select broche encontrado:', !!brocheSelect, 'Valor:', brocheSelect?.value);
+        console.log(' Select broche encontrado:', !!brocheSelect, 'Valor:', brocheSelect?.value);
         const broche = brocheSelect?.value?.trim();
         const obsBrocheInput = fila.querySelector('.observacion-broche');
         const obsBroche = obsBrocheInput?.value?.trim();
-        console.log('📝 Broche:', { broche, obsBroche });
+        console.log(' Broche:', { broche, obsBroche });
         if (broche && broche !== '') {
             variacionesPrenda.broche_boton = {
                 opcion: broche,
@@ -1836,7 +1836,7 @@ function extraerPrendasDelModal() {
             variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null  // JSON con variaciones
         });
         
-        console.log('📦 Prenda agregada con variaciones:', prendas[prendas.length - 1]);
+        console.log(' Prenda agregada con variaciones:', prendas[prendas.length - 1]);
     });
     
     return prendas.length > 0 ? prendas : null;
@@ -1947,7 +1947,7 @@ async function guardarTecnicasEnBD() {
             console.log('📥 Response status:', response.status);
             const data = await response.json();
             
-            console.log('📦 Response data COMPLETO:', JSON.stringify(data, null, 2));
+            console.log(' Response data COMPLETO:', JSON.stringify(data, null, 2));
             
             if (!data.success) {
                 console.error(' Guardar Técnica - Error DETALLADO:', { 
@@ -2059,7 +2059,7 @@ function renderizarTecnicasAgregadas() {
         });
     });
     
-    console.log('📦 [renderizarTecnicasAgregadas] Agrupado por PRENDA:', Object.keys(prendasMap).length, 'prendas');
+    console.log(' [renderizarTecnicasAgregadas] Agrupado por PRENDA:', Object.keys(prendasMap).length, 'prendas');
     
     // Procesar las imágenes de File objects de forma asíncrona
     imagenesParaCargar.forEach(imgData => {
@@ -2448,7 +2448,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
         return;
     }
     
-    console.log('🔧 Editando grupo:', tecnicaIndices, tecnicasDelGrupo, 'Prenda filtro:', nombrePrendaFiltro);
+    console.log(' Editando grupo:', tecnicaIndices, tecnicasDelGrupo, 'Prenda filtro:', nombrePrendaFiltro);
     
     // Agrupar por NOMBRE DE PRENDA y mantener datos de CADA TÉCNICA
     const prendasMap = {};
@@ -2488,7 +2488,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
     // Convertir map a array
     const todasLasPrendas = Object.values(prendasMap);
     
-    console.log('📊 Prendas agrupadas:', todasLasPrendas);
+    console.log(' Prendas agrupadas:', todasLasPrendas);
     
     // Construir HTML de las prendas
     let prendasHTML = '<div style="max-height: 600px; overflow-y: auto;">';
@@ -2853,7 +2853,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 prendaIdxs.add(elem.getAttribute('data-prenda-idx'));
             });
             
-            console.log('🔍 Índices de prendas encontrados:', Array.from(prendaIdxs));
+            console.log(' Índices de prendas encontrados:', Array.from(prendaIdxs));
             
             prendaIdxs.forEach((prendaIdxStr) => {
                 const prendaIdx = parseInt(prendaIdxStr);
@@ -2862,7 +2862,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 const nombrePrenda = nombreInput ? nombreInput.value.trim().toUpperCase() : '';
                 
                 if (!nombrePrenda) {
-                    console.warn('⚠️ Prenda sin nombre en índice', prendaIdx);
+                    console.warn(' Prenda sin nombre en índice', prendaIdx);
                     valido = false;
                     return;
                 }
@@ -2921,7 +2921,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 });
                 
                 if (nuevasTallas.length === 0) {
-                    console.warn('⚠️ Prenda sin tallas en índice', prendaIdx);
+                    console.warn(' Prenda sin tallas en índice', prendaIdx);
                     valido = false;
                     return;
                 }
@@ -2943,7 +2943,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 return false;
             }
             
-            console.log('📦 Todas las prendas actualizadas:', prendasActualizadas);
+            console.log(' Todas las prendas actualizadas:', prendasActualizadas);
             return prendasActualizadas;
         }
     }).then((result) => {
@@ -2967,7 +2967,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     prenda.tecnicasData = result.value[prendaIdx].tecnicasData;
                     console.log(` Prenda ${prendaIdx} actualizada:`, prenda);
                 } else {
-                    console.warn(`⚠️ No hay datos para prenda ${prendaIdx}`);
+                    console.warn(` No hay datos para prenda ${prendaIdx}`);
                 }
             });
             
@@ -3133,8 +3133,8 @@ function abrirModalValidacionTecnica() {
     
     const modal = document.getElementById('modalValidacionTecnica');
     
-    console.log('🔍 Modal elemento:', modal);
-    console.log('🔍 Modal existe:', !!modal);
+    console.log(' Modal elemento:', modal);
+    console.log(' Modal existe:', !!modal);
     
     if (modal) {
         console.log(' Modal encontrado, mostrando...');

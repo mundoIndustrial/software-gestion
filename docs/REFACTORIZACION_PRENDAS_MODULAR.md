@@ -144,7 +144,7 @@ Se ha completado exitosamente la **refactorización del archivo monolítico `fun
 
 ## Beneficios Logrados
 
-### 📊 Métricas de Refactorización
+###  Métricas de Refactorización
 
 | Métrica | Antes | Después |
 |---------|-------|---------|
@@ -154,7 +154,7 @@ Se ha completado exitosamente la **refactorización del archivo monolítico `fun
 | Responsabilidades | Múltiples | Una |
 | Complejidad | Alta | Media |
 
-### 🎯 Mejoras Arquitectónicas
+###  Mejoras Arquitectónicas
 
  **Separación de Responsabilidades**
 - Core: Gestión base

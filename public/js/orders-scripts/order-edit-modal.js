@@ -387,7 +387,7 @@ function updatePrendaNumbers() {
 function showEditNotification(message, type = 'success') {
     const notification = document.getElementById('editNotification');
     if (!notification) {
-        console.warn('⚠️ Elemento #editNotification no encontrado');
+        console.warn(' Elemento #editNotification no encontrado');
         return;
     }
     notification.textContent = message;

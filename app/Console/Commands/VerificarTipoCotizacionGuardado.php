@@ -12,7 +12,7 @@ class VerificarTipoCotizacionGuardado extends Command
 
     public function handle()
     {
-        $this->info('🔍 VERIFICANDO tipo_cotizacion_id EN COTIZACIONES');
+        $this->info(' VERIFICANDO tipo_cotizacion_id EN COTIZACIONES');
         $this->newLine();
 
         // Obtener todas las cotizaciones con su tipo
@@ -32,7 +32,7 @@ class VerificarTipoCotizacionGuardado extends Command
             ->get();
 
         if ($cotizaciones->isEmpty()) {
-            $this->warn('⚠️ No hay cotizaciones registradas');
+            $this->warn(' No hay cotizaciones registradas');
             return;
         }
 
@@ -62,7 +62,7 @@ class VerificarTipoCotizacionGuardado extends Command
         }
 
         // Resumen
-        $this->line('📊 RESUMEN:');
+        $this->line(' RESUMEN:');
         $this->line("   Total de cotizaciones: {$cotizaciones->count()}");
         $this->line("    Con tipo asignado: {$conTipo}");
         $this->line("    Sin tipo asignado: {$sinTipo}");
@@ -98,7 +98,7 @@ class VerificarTipoCotizacionGuardado extends Command
             ->count();
 
         if ($cotizacionesSinTipoValido > 0) {
-            $this->warn("   ⚠️ {$cotizacionesSinTipoValido} cotización(es) con tipo_cotizacion_id inválido");
+            $this->warn("    {$cotizacionesSinTipoValido} cotización(es) con tipo_cotizacion_id inválido");
         } else {
             $this->line('    Todos los tipo_cotizacion_id son válidos');
         }

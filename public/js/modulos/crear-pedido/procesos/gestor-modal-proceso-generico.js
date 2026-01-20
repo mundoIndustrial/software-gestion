@@ -242,13 +242,13 @@ window.agregarUbicacionProceso = function() {
     const ubicacion = input?.value?.trim();
     
     if (!ubicacion) {
-        console.warn('⚠️ Campo de ubicación vacío');
+        console.warn(' Campo de ubicación vacío');
         return;
     }
     
     // Evitar duplicados
     if (ubicacionesProcesoSeleccionadas.includes(ubicacion)) {
-        console.warn(`⚠️ Ubicación "${ubicacion}" ya existe`);
+        console.warn(` Ubicación "${ubicacion}" ya existe`);
         return;
     }
     
@@ -324,7 +324,7 @@ window.aplicarProcesoParaTodasTallas = function() {
     window._tallasCantidadesProceso = tallasPrendaConCantidades;
     
     console.log(' Tallas aplicadas:', tallasSeleccionadasProceso);
-    console.log('📊 Cantidades guardadas:', window._tallasCantidadesProceso);
+    console.log(' Cantidades guardadas:', window._tallasCantidadesProceso);
     actualizarResumenTallasProceso();
 };
 
@@ -337,8 +337,8 @@ function obtenerTallasDeLaPrenda() {
     // Obtener cantidades desde backup permanente o global
     const cantidadesDisponibles = window._TALLAS_BACKUP_PERMANENTE || window.cantidadesTallas || {};
     
-    console.log('📊 [obtenerTallasDeLaPrenda] window.tallasSeleccionadas:', tallasGlobales);
-    console.log('📊 [obtenerTallasDeLaPrenda] Cantidades disponibles:', cantidadesDisponibles);
+    console.log(' [obtenerTallasDeLaPrenda] window.tallasSeleccionadas:', tallasGlobales);
+    console.log(' [obtenerTallasDeLaPrenda] Cantidades disponibles:', cantidadesDisponibles);
     
     // Obtener tallas de dama CON CANTIDADES
     if (tallasGlobales.dama && tallasGlobales.dama.tallas && Array.isArray(tallasGlobales.dama.tallas)) {
@@ -366,7 +366,7 @@ function obtenerTallasDeLaPrenda() {
         console.log(` Tallas caballero encontradas con cantidades:`, tallas.caballero);
     }
     
-    console.log('📊 [obtenerTallasDeLaPrenda] Tallas finales:', tallas);
+    console.log(' [obtenerTallasDeLaPrenda] Tallas finales:', tallas);
     return tallas;
 }
 
@@ -374,7 +374,7 @@ function obtenerTallasDeLaPrenda() {
 function mostrarModalAdvertenciaTallas() {
     const html = `
         <div style="text-align: center; padding: 2rem;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
             <h3 style="color: #dc2626; margin-bottom: 1rem;">Sin Tallas Seleccionadas</h3>
             <p style="color: #6b7280; margin-bottom: 1.5rem; line-height: 1.6;">
                 Debes seleccionar al menos una talla y su cantidad en la prenda 
@@ -444,8 +444,8 @@ window.abrirEditorTallasEspecificas = function() {
         return;
     }
     
-    console.log('📊 Tallas dama encontradas:', tallasDamaArray);
-    console.log('📊 Tallas caballero encontradas:', tallasCaballeroArray);
+    console.log(' Tallas dama encontradas:', tallasDamaArray);
+    console.log(' Tallas caballero encontradas:', tallasCaballeroArray);
     
     // Renderizar tallas DAMA (solo las seleccionadas en la prenda)
     const containerDama = document.getElementById('tallas-dama-container');
@@ -525,7 +525,7 @@ window.actualizarCantidadTallaProceso = function(input) {
     
     window.cantidadesTallas[`${genero}-${talla}`] = cantidad;
     
-    console.log(`📊 Cantidad actualizada: ${genero}-${talla} = ${cantidad}`);
+    console.log(` Cantidad actualizada: ${genero}-${talla} = ${cantidad}`);
 };
 
 // Cerrar editor de tallas
@@ -642,7 +642,7 @@ window.agregarProcesoAlPedido = function() {
         //  CRÍTICO: Guardar en procesosSeleccionados CON SINCRONIZACIÓN
         if (!window.procesosSeleccionados) {
             window.procesosSeleccionados = {};
-            console.warn('⚠️ window.procesosSeleccionados no existía, creado ahora');
+            console.warn(' window.procesosSeleccionados no existía, creado ahora');
         }
         
         // Si el proceso NO existe todavía, crearlo
@@ -651,7 +651,7 @@ window.agregarProcesoAlPedido = function() {
                 tipo: procesoActual,
                 datos: null
             };
-            console.log(`📝 Proceso ${procesoActual} creado en window.procesosSeleccionados`);
+            console.log(` Proceso ${procesoActual} creado en window.procesosSeleccionados`);
         }
         
         // Asignar los datos capturados
@@ -661,7 +661,7 @@ window.agregarProcesoAlPedido = function() {
         //  NUEVO: Renderizar tarjetas de procesos en el modal de prenda
         if (window.renderizarTarjetasProcesos) {
             window.renderizarTarjetasProcesos();
-            console.log('🎨 Tarjetas de procesos renderizadas');
+            console.log(' Tarjetas de procesos renderizadas');
         }
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente

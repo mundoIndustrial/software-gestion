@@ -38,7 +38,7 @@ class AnalyzeDeleteBehavior extends Command
 
         foreach ($agrupadas as $minuto => $grupo) {
             if ($grupo->count() > 1) {
-                $this->warn("⚠️  Minuto: {$minuto} - {$grupo->count()} cotizaciones");
+                $this->warn("  Minuto: {$minuto} - {$grupo->count()} cotizaciones");
                 foreach ($grupo as $cot) {
                     $eliminada = $cot->trashed() ? ' ELIMINADA' : ' ACTIVA';
                     $estado = $cot->es_borrador ? 'BORRADOR' : $cot->estado;

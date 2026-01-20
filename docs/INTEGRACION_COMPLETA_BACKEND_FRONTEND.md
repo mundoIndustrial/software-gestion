@@ -4,7 +4,7 @@
 
 ---
 
-## 📊 ARQUITECTURA COMPLETA
+##  ARQUITECTURA COMPLETA
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -395,7 +395,7 @@ DB::transaction() {
 
 ---
 
-## 📊 TABLAS INVOLUCRADAS
+##  TABLAS INVOLUCRADAS
 
 | Tabla | Propósito | Creada por | Registros por pedido |
 |-------|-----------|-----------|----------------------|
@@ -555,7 +555,7 @@ php artisan tinker
 
 ---
 
-## 🎯 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 1. **Inmediato:** Integración y testing
 2. **Semana 1:** Deployment en producción

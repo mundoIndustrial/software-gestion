@@ -199,7 +199,7 @@ class PrendaVariante extends Model
          */
         static::saved(function ($variante) {
             if ($variante->prendaPedido) {
-                \Log::info("📦 Variante guardada - Prenda ID: {$variante->prenda_pedido_id}");
+                \Log::info(" Variante guardada - Prenda ID: {$variante->prenda_pedido_id}");
             }
         });
 

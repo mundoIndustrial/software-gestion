@@ -27,7 +27,7 @@ const NotificationManager = (() => {
             const typeStyles = {
                 success: { bg: 'linear-gradient(135deg, #10b981, #059669)', icon: '', border: '#10b981' },
                 error: { bg: 'linear-gradient(135deg, #ef4444, #dc2626)', icon: '', border: '#ef4444' },
-                warning: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', icon: '⚠️', border: '#f59e0b' },
+                warning: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', icon: '', border: '#f59e0b' },
                 info: { bg: 'linear-gradient(135deg, #3b82f6, #2563eb)', icon: '', border: '#3b82f6' }
             };
 

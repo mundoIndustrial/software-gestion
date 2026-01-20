@@ -148,7 +148,7 @@ class PedidoFormHandlers {
 
             if (action === 'clear-pedido') {
                 e.preventDefault();
-                if (confirm('⚠️ ¿Está seguro de que desea limpiar todo el formulario?')) {
+                if (confirm(' ¿Está seguro de que desea limpiar todo el formulario?')) {
                     this.fm.clear();
                 }
             }
@@ -556,7 +556,7 @@ class PedidoFormHandlers {
      * Eliminar variante
      */
     deleteVariante(prendaId, varianteId) {
-        if (!confirm('⚠️ ¿Eliminar esta variante?')) return;
+        if (!confirm(' ¿Eliminar esta variante?')) return;
 
         this.fm.deleteVariante(prendaId, varianteId);
         this.ui.renderToast('success', ' Variante eliminada');
@@ -606,7 +606,7 @@ class PedidoFormHandlers {
      * Eliminar foto
      */
     deleteFoto(prendaId, fotoId, tipo) {
-        if (!confirm('⚠️ ¿Eliminar esta foto?')) return;
+        if (!confirm(' ¿Eliminar esta foto?')) return;
 
         this.fm.deleteFoto(prendaId, fotoId, tipo);
         this.ui.renderToast('success', ' Foto eliminada');
@@ -778,7 +778,7 @@ class PedidoFormHandlers {
      * Eliminar proceso
      */
     deleteProceso(prendaId, procesoId) {
-        if (!confirm('⚠️ ¿Eliminar este proceso?')) return;
+        if (!confirm(' ¿Eliminar este proceso?')) return;
 
         this.fm.deleteProceso(prendaId, procesoId);
         this.ui.renderToast('success', ' Proceso eliminado');
@@ -1031,12 +1031,12 @@ class PedidoFormHandlers {
                 <!-- HEADER -->
                 <div class="card mb-4 bg-dark text-white">
                     <div class="card-header">
-                        <h4>📦 Formulario de Pedido de Producción</h4>
+                        <h4> Formulario de Pedido de Producción</h4>
                     </div>
                     <div class="card-body">
                         ${state.pedido_produccion_id 
                             ? `<p class="mb-0"><strong>Pedido ID:</strong> ${state.pedido_produccion_id}</p>`
-                            : '<p class="mb-0 text-warning">⚠️ Debe seleccionar un pedido de producción</p>'
+                            : '<p class="mb-0 text-warning"> Debe seleccionar un pedido de producción</p>'
                         }
                     </div>
                 </div>
@@ -1120,7 +1120,7 @@ class PedidoFormHandlers {
                 }
                 if (typeof foto !== 'object' || foto === null) {
                     report.errors.push(
-                        `⚠️ Foto malformada en prenda[${pIdx}].fotos_prenda[${fIdx}]`
+                        ` Foto malformada en prenda[${pIdx}].fotos_prenda[${fIdx}]`
                     );
                 }
             });
@@ -1139,7 +1139,7 @@ class PedidoFormHandlers {
             (prenda.procesos || []).forEach((proceso, pIdx) => {
                 if (proceso.imagenes) {
                     report.warnings.push(
-                        `⚠️ Campo 'imagenes' aún existe en prenda procesos[${pIdx}] (debe estar vacío o ignorado)`
+                        ` Campo 'imagenes' aún existe en prenda procesos[${pIdx}] (debe estar vacío o ignorado)`
                     );
                 }
             });
@@ -1188,7 +1188,7 @@ class PedidoFormHandlers {
         const stateToSend = this.transformStateForSubmit(state);
         const validation = this.validateTransformation();
 
-        console.group('🔍 DIAGNÓSTICO DE TRANSFORMACIÓN');
+        console.group(' DIAGNÓSTICO DE TRANSFORMACIÓN');
 
         console.log(' Estado transformado (sin File):');
         console.log(JSON.stringify(stateToSend, null, 2));
@@ -1202,7 +1202,7 @@ class PedidoFormHandlers {
         }
 
         if (validation.warnings.length > 0) {
-            console.warn('⚠️ ADVERTENCIAS:');
+            console.warn(' ADVERTENCIAS:');
             validation.warnings.forEach(warn => console.warn(`  - ${warn}`));
         }
 

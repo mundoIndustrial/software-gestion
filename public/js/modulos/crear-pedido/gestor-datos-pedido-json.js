@@ -32,7 +32,7 @@ class GestorDatosPedidoJSON {
      * Agregar prenda al JSON
      */
     agregarPrenda(prendaData) {
-        console.log('📝 Agregando prenda al JSON centralizado:', prendaData.nombre);
+        console.log(' Agregando prenda al JSON centralizado:', prendaData.nombre);
         
         const prenda = {
             nombre: prendaData.nombre,
@@ -48,7 +48,7 @@ class GestorDatosPedidoJSON {
 
         this.datosCompletos.prendas.push(prenda);
         console.log(' Prenda agregada. Total prendas:', this.datosCompletos.prendas.length);
-        console.log('📊 Datos actuales:', JSON.parse(JSON.stringify(this.datosCompletos, (k, v) => 
+        console.log(' Datos actuales:', JSON.parse(JSON.stringify(this.datosCompletos, (k, v) => 
             v instanceof File ? `[File: ${v.name}]` : v
         )));
 
@@ -74,7 +74,7 @@ class GestorDatosPedidoJSON {
      */
     agregarTelaAPrenda(indicePrenda, telaData) {
         if (this.datosCompletos.prendas[indicePrenda]) {
-            console.log('🧵 Agregando tela a prenda:', indicePrenda);
+            console.log(' Agregando tela a prenda:', indicePrenda);
             
             this.datosCompletos.prendas[indicePrenda].telas.push({
                 tela: telaData.tela,
@@ -108,7 +108,7 @@ class GestorDatosPedidoJSON {
      */
     agregarVariacionesAPrenda(indicePrenda, variaciones) {
         if (this.datosCompletos.prendas[indicePrenda]) {
-            console.log('📝 Agregando variaciones a prenda:', indicePrenda);
+            console.log(' Agregando variaciones a prenda:', indicePrenda);
             
             this.datosCompletos.prendas[indicePrenda].variaciones = {
                 ...this.datosCompletos.prendas[indicePrenda].variaciones,
@@ -124,7 +124,7 @@ class GestorDatosPedidoJSON {
      */
     agregarCantidadesAPrenda(indicePrenda, cantidades) {
         if (this.datosCompletos.prendas[indicePrenda]) {
-            console.log('📊 Agregando cantidades a prenda:', indicePrenda);
+            console.log(' Agregando cantidades a prenda:', indicePrenda);
             
             this.datosCompletos.prendas[indicePrenda].cantidades = {
                 ...this.datosCompletos.prendas[indicePrenda].cantidades,
@@ -170,7 +170,7 @@ class GestorDatosPedidoJSON {
 
         // Iterar prendas
         this.datosCompletos.prendas.forEach((prenda, prendaIdx) => {
-            console.log(`\n👕 PRENDA ${prendaIdx}: ${prenda.nombre}`);
+            console.log(`\n PRENDA ${prendaIdx}: ${prenda.nombre}`);
 
             // Datos básicos de prenda
             formData.append(`prendas[${prendaIdx}][nombre]`, prenda.nombre);
@@ -193,7 +193,7 @@ class GestorDatosPedidoJSON {
 
             // Telas
             if (prenda.telas && prenda.telas.length > 0) {
-                console.log(`   🧵 Telas: ${prenda.telas.length}`);
+                console.log(`    Telas: ${prenda.telas.length}`);
                 prenda.telas.forEach((tela, telaIdx) => {
                     formData.append(`prendas[${prendaIdx}][telas][${telaIdx}][tela]`, tela.tela);
                     formData.append(`prendas[${prendaIdx}][telas][${telaIdx}][color]`, tela.color);
@@ -244,7 +244,7 @@ class GestorDatosPedidoJSON {
 
             // Variaciones
             if (prenda.variaciones && Object.keys(prenda.variaciones).length > 0) {
-                console.log(`   📝 Variaciones: ${Object.keys(prenda.variaciones).length}`);
+                console.log(`    Variaciones: ${Object.keys(prenda.variaciones).length}`);
                 Object.entries(prenda.variaciones).forEach(([clave, valor]) => {
                     formData.append(`prendas[${prendaIdx}][variaciones][${clave}]`, valor);
                 });
@@ -252,7 +252,7 @@ class GestorDatosPedidoJSON {
 
             // Cantidades
             if (prenda.cantidades && Object.keys(prenda.cantidades).length > 0) {
-                console.log(`   📊 Cantidades: ${Object.keys(prenda.cantidades).length}`);
+                console.log(`    Cantidades: ${Object.keys(prenda.cantidades).length}`);
                 Object.entries(prenda.cantidades).forEach(([clave, cantidad]) => {
                     formData.append(`prendas[${prendaIdx}][cantidades][${clave}]`, cantidad);
                     contadores.cantidades++;

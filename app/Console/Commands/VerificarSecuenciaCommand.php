@@ -18,7 +18,7 @@ class VerificarSecuenciaCommand extends Command
             $todos = DB::table('numero_secuencias')->get();
             
             if ($todos->isEmpty()) {
-                $this->warn('⚠️  Tabla numero_secuencias está vacía');
+                $this->warn('  Tabla numero_secuencias está vacía');
             } else {
                 $this->info(' Contenido actual:');
                 foreach ($todos as $row) {
@@ -32,7 +32,7 @@ class VerificarSecuenciaCommand extends Command
                 ->first();
             
             if (!$universal) {
-                $this->warn('⚠️  Secuencia universal NO EXISTE, creando...');
+                $this->warn('  Secuencia universal NO EXISTE, creando...');
                 DB::table('numero_secuencias')->insert([
                     'tipo' => 'cotizaciones_universal',
                     'siguiente' => 1,

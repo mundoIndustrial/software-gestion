@@ -1,6 +1,6 @@
 #  Ajustes de Descripción Dinámica para Recibos de Costura
 
-## 🎯 Objetivo
+##  Objetivo
 Ajustar la construcción dinámica de la **DESCRIPCIÓN** para recibos de **Costura / Costura-Bodega** con un formato profesional y enumerado con puntos.
 
 ##  Cambios Realizados
@@ -9,7 +9,7 @@ Ajustar la construcción dinámica de la **DESCRIPCIÓN** para recibos de **Cost
 1. **[public/js/asesores/receipt-manager.js](public/js/asesores/receipt-manager.js)** - Funciones de construcción
 2. **[public/js/orders js/order-detail-modal-proceso-dinamico.js](public/js/orders%20js/order-detail-modal-proceso-dinamico.js)** - Integración en el modal
 
-### 🔧 Implementación
+###  Implementación
 
 #### Paso 1: Identificación del Recibo
 Se valida si el tipo de recibo es `"costura"` o `"costura-bodega"` en el modal.
@@ -22,7 +22,7 @@ El HTML se inyecta en el contenedor `#descripcion-text` del modal.
 
 ---
 
-## 📊 Formato Visual Final
+##  Formato Visual Final
 
 ```
 CAMISA DRILL
@@ -53,7 +53,7 @@ CABALLERO: M: 10
 
 ---
 
-## 📊 Estructura de Datos Soportada
+##  Estructura de Datos Soportada
 
 ### Formato 1: Tallas Aplanadas (del modal)
 ```javascript
@@ -149,7 +149,7 @@ prenda = {
 
 ---
 
-## 🔍 Verificación
+##  Verificación
 
 Para verificar que todo funciona:
 1. Ir a http://servermi:8000/asesores/pedidos

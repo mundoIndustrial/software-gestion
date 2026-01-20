@@ -23,7 +23,7 @@ use Tests\TestCase;
 /**
  * Test Suite Completo: Cotizaciones - 11 por Tipo
  * 
- * ⚠️ NOTA: No usa RefreshDatabase para preservar datos existentes
+ *  NOTA: No usa RefreshDatabase para preservar datos existentes
  * 
  * Objetivo: Validar que se puede crear 11 cotizaciones por tipo sin errores,
  * incluyendo TODOS los campos, fotos y relaciones.
@@ -319,7 +319,7 @@ class CotizacionesCompleteTest extends TestCase
     /**
      * TEST 6: CONCURRENCIA - 3 Asesores creando 11 cotizaciones cada uno simultáneamente
      * 
-     * ⚠️ NOTA: Este test simula concurrencia. En producción, se debería usar
+     *  NOTA: Este test simula concurrencia. En producción, se debería usar
      * herramientas como Guzzle HTTP con promesas para verdadera concurrencia.
      */
     public function test_concurrencia_multiples_asesores(): void

@@ -13,14 +13,14 @@ class AnalizarCotizaciones extends Command
 
     public function handle()
     {
-        $this->info('🔍 ANALIZANDO COTIZACIONES EN LA BASE DE DATOS');
+        $this->info(' ANALIZANDO COTIZACIONES EN LA BASE DE DATOS');
         $this->line('');
 
         // Obtener usuario_id del argumento o usar el actual
         $usuarioId = $this->option('usuario_id');
 
         // Estadísticas generales
-        $this->line('📊 ESTADÍSTICAS GENERALES:');
+        $this->line(' ESTADÍSTICAS GENERALES:');
         $totalCotizaciones = Cotizacion::count();
         $this->info("   Total de cotizaciones: {$totalCotizaciones}");
 
@@ -48,7 +48,7 @@ class AnalizarCotizaciones extends Command
         $this->line('');
 
         // Análisis por tipo_venta
-        $this->line('🎨 ANÁLISIS POR TIPO_VENTA:');
+        $this->line(' ANÁLISIS POR TIPO_VENTA:');
         $tipoVentas = Cotizacion::select('tipo_venta', DB::raw('count(*) as total'))
             ->groupBy('tipo_venta')
             ->get();
@@ -99,7 +99,7 @@ class AnalizarCotizaciones extends Command
 
         // Análisis detallado por usuario
         if ($usuarioId) {
-            $this->line("📊 ANÁLISIS DETALLADO DEL USUARIO {$usuarioId}:");
+            $this->line(" ANÁLISIS DETALLADO DEL USUARIO {$usuarioId}:");
             $cotizacionesUsuario = Cotizacion::where('asesor_id', $usuarioId)
                 ->orderBy('created_at', 'desc')
                 ->get(['id', 'numero_cotizacion', 'tipo_venta', 'cliente', 'es_borrador', 'estado', 'created_at']);

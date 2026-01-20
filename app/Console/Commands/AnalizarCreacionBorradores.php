@@ -53,7 +53,7 @@ class AnalizarCreacionBorradores extends Command
         
         foreach ($agrupadas as $minuto => $grupo) {
             if (count($grupo) > 1) {
-                $this->warn("⚠️  {$minuto} - {$grupo->count()} cotizaciones creadas al MISMO MINUTO");
+                $this->warn("  {$minuto} - {$grupo->count()} cotizaciones creadas al MISMO MINUTO");
                 foreach ($grupo as $cot) {
                     $estado = $cot->es_borrador ? 'BORRADOR' : $cot->estado;
                     $this->line("    - ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | ESTADO: {$estado} | {$cot->created_at->format('H:i:s')}");

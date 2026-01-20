@@ -210,7 +210,7 @@
         <div style="padding: 24px;">
             <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
                 <p style="margin: 0; color: #991b1b; font-size: 0.875rem;">
-                    <strong>⚠️ Atención:</strong> Al enviar a corrección, se eliminarán todas las aprobaciones registradas y la cotización volverá al contador para revisión.
+                    <strong> Atención:</strong> Al enviar a corrección, se eliminarán todas las aprobaciones registradas y la cotización volverá al contador para revisión.
                 </p>
             </div>
             
@@ -899,7 +899,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #1e5ba8 0%, #1e40af 100%); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
             <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                📊 COSTOS DE PRENDAS
+                 COSTOS DE PRENDAS
             </h2>
             <button onclick="cerrarVisorCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                 ✕

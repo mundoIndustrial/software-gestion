@@ -39,7 +39,7 @@ if (!window.ImageGalleryZoomModule) {
                 // Verificar que el elemento existe antes de acceder a su propiedad style
                 const imagenesSection = document.getElementById('imagenes-section');
                 if (!imagenesSection) {
-                    console.warn('⚠️ El elemento imagenes-section no existe en el DOM');
+                    console.warn(' El elemento imagenes-section no existe en el DOM');
                     return;
                 }
 

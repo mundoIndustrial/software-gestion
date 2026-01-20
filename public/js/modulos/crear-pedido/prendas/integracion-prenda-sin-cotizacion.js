@@ -11,7 +11,7 @@
  */
 window.validarPrendasTipoPrendaSinCotizacion = function() {
     if (!window.gestorPrendaSinCotizacion) {
-        console.warn('⚠️ GestorPrendaSinCotizacion no inicializado');
+        console.warn(' GestorPrendaSinCotizacion no inicializado');
         return false;
     }
 
@@ -62,7 +62,7 @@ window.validarPrendasTipoPrendaSinCotizacion = function() {
 window.sincronizarCantidadesDelDOM = function() {
     try {
         if (!window.gestorPrendaSinCotizacion) {
-            console.warn(`⚠️ Gestor no disponible`);
+            console.warn(` Gestor no disponible`);
             return;
         }
         
@@ -85,11 +85,11 @@ window.sincronizarCantidadesDelDOM = function() {
             }
         }
         
-        console.log(`📊 Total de inputs de display encontrados en DOM: ${displayInputs.length}`);
+        console.log(` Total de inputs de display encontrados en DOM: ${displayInputs.length}`);
         
         // Si encontramos inputs, sincronizarlos
         if (displayInputs.length > 0) {
-            console.log(`🔍 Leyendo valores de inputs...`);
+            console.log(` Leyendo valores de inputs...`);
             const cantidadesPorPrenda = {};
             
             displayInputs.forEach((displayInput, i) => {
@@ -117,7 +117,7 @@ window.sincronizarCantidadesDelDOM = function() {
                     const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(parseInt(prendaIndex));
                     
                     if (!prenda) {
-                        console.warn(`⚠️ Prenda ${prendaIndex} no existe en gestor`);
+                        console.warn(` Prenda ${prendaIndex} no existe en gestor`);
                         return;
                     }
                     
@@ -140,7 +140,7 @@ window.sincronizarCantidadesDelDOM = function() {
         } else {
             // Sin inputs de display
             console.log(` Sin inputs de display en DOM. Los datos ya deberían estar en el gestor.`);
-            console.log(`🔍 Estado actual del gestor:`);
+            console.log(` Estado actual del gestor:`);
             const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
             prendas.forEach((prenda, idx) => {
                 console.log(`   Prenda ${idx} (${prenda.nombre_producto}):`, prenda.generosConTallas);
@@ -167,12 +167,12 @@ window.obtenerDatosPrendasTipoPrendaSinCotizacion = function() {
         };
     }
 
-    console.log(`📊 ANTES DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
+    console.log(` ANTES DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
 
     //  CRÍTICO: Sincronizar datos del DOM antes de obtenerlos
     window.sincronizarCantidadesDelDOM();
 
-    console.log(`📊 DESPUÉS DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
+    console.log(` DESPUÉS DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
 
     return window.gestorPrendaSinCotizacion.obtenerDatosFormato();
 };
@@ -213,7 +213,7 @@ window.obtenerResumenPrendasTipoPrendaSinCotizacion = function() {
                 <strong style="color: #0052a3;">Prenda ${index + 1}: ${prenda.nombre_producto || 'Sin nombre'}</strong>
                 <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
                     <div>📏 Tallas: ${tallas}</div>
-                    <div>🎨 Telas: ${telas}</div>
+                    <div> Telas: ${telas}</div>
                     <div>📸 Fotos: ${fotos}</div>
                 </div>
             </div>
@@ -234,7 +234,7 @@ window.hookPreValidacionPrendaSinCotizacion = function() {
     const tipoPrendaSelect = document.getElementById('tipo_pedido_nuevo')?.value;
     
     if (tipoNuevo && tipoPrendaSelect === 'P') {
-        console.log('🔍 Pre-validación: Modo PRENDA sin cotización detectado');
+        console.log(' Pre-validación: Modo PRENDA sin cotización detectado');
         return window.validarPrendasTipoPrendaSinCotizacion();
     }
     
@@ -261,7 +261,7 @@ window.hookSerializacionPrendaSinCotizacion = function(datosEnvio) {
         datosEnvio.prendasEliminadas = datosPrenda.prendasEliminadas;
         datosEnvio.tipoPedidoNuevo = 'P'; // PRENDA
         
-        console.log('📦 Datos PRENDA agregados:', datosEnvio);
+        console.log(' Datos PRENDA agregados:', datosEnvio);
     }
     
     return datosEnvio;
@@ -278,7 +278,7 @@ window.enviarPrendaSinCotizacion = function() {
             console.log(`🚀 ============ INICIANDO ENVÍO PRENDA SIN COTIZACIÓN ============`);
             
             // Validar datos
-            console.log(`🔍 [1] Validando prendas...`);
+            console.log(` [1] Validando prendas...`);
             if (!window.validarPrendasTipoPrendaSinCotizacion()) {
                 console.error(` Validación fallida`);
                 reject(new Error('Validación fallida'));
@@ -306,7 +306,7 @@ window.enviarPrendaSinCotizacion = function() {
             }
 
             // Crear FormData con todos los datos del JSON
-            console.log(`🔍 [2] Preparando FormData desde gestorDatosPedidoJSON...`);
+            console.log(` [2] Preparando FormData desde gestorDatosPedidoJSON...`);
             const formData = window.gestorDatosPedidoJSON.crearFormData();
             
             // Agregar cliente y forma de pago
@@ -317,7 +317,7 @@ window.enviarPrendaSinCotizacion = function() {
             console.log(` [2] FormData preparado`);
 
             // Enviar al servidor
-            console.log(`🔍 [3] Enviando FormData al servidor...`);
+            console.log(` [3] Enviando FormData al servidor...`);
             
             const response = await fetch('/asesores/pedidos-produccion/crear-prenda-sin-cotizacion', {
                 method: 'POST',
@@ -382,13 +382,13 @@ window.enviarPrendaSinCotizacion = function() {
                     const checkboxBodega = container.querySelector('.checkbox-de-bodega');
                     if (checkboxBodega) {
                         prenda.de_bodega = checkboxBodega.checked;
-                        logWithEmoji('📦', `Prenda ${index}: de_bodega sincronizado = ${prenda.de_bodega}`);
+                        logWithEmoji('', `Prenda ${index}: de_bodega sincronizado = ${prenda.de_bodega}`);
                     }
                 }
             });
 
             // 🔴 USAR FormData PARA ENVIAR ARCHIVOS
-            console.log(`🔍 [3] Construyendo FormData...`);
+            console.log(` [3] Construyendo FormData...`);
             const formData = new FormData();
             formData.append('cliente', cliente);
             formData.append('forma_de_pago', formaPago);
@@ -396,7 +396,7 @@ window.enviarPrendaSinCotizacion = function() {
 
             // Agregar prendas como JSON
             datosPrenda.prendas.forEach((prenda, index) => {
-                console.log(`\n🔍 [3.${index}] Procesando prenda #${index}: ${prenda.nombre_producto}`);
+                console.log(`\n [3.${index}] Procesando prenda #${index}: ${prenda.nombre_producto}`);
                 
                 formData.append(`prendas[${index}][nombre_producto]`, prenda.nombre_producto || '');
                 formData.append(`prendas[${index}][descripcion]`, prenda.descripcion || '');
@@ -411,8 +411,8 @@ window.enviarPrendaSinCotizacion = function() {
                 //  ESTRUCTURA DE TALLAS POR GÉNERO: {genero: {talla: cantidad}}
                 let cantidadPorGeneroTalla = {};
                 
-                console.log(`   📊 generosConTallas en prenda:`, prenda.generosConTallas);
-                console.log(`   📊 cantidadesPorTalla en prenda:`, prenda.cantidadesPorTalla);
+                console.log(`    generosConTallas en prenda:`, prenda.generosConTallas);
+                console.log(`    cantidadesPorTalla en prenda:`, prenda.cantidadesPorTalla);
                 
                 if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
                     // Usar la estructura optimizada
@@ -425,7 +425,7 @@ window.enviarPrendaSinCotizacion = function() {
                     });
                     console.log(`    Convertida estructura antigua a:`, cantidadPorGeneroTalla);
                 } else {
-                    console.warn(`   ⚠️ NO HAY CANTIDADES DE TALLAS PARA ESTA PRENDA`);
+                    console.warn(`    NO HAY CANTIDADES DE TALLAS PARA ESTA PRENDA`);
                 }
                 
                 //  ENVIAR cantidad_talla COMO JSON ÚNICO
@@ -433,7 +433,7 @@ window.enviarPrendaSinCotizacion = function() {
                 if (Object.keys(cantidadPorGeneroTalla).length > 0) {
                     formData.append(`prendas[${index}][cantidad_talla]`, JSON.stringify(cantidadPorGeneroTalla));
                 } else {
-                    console.warn(`   ⚠️ Enviando cantidad_talla vacío`);
+                    console.warn(`    Enviando cantidad_talla vacío`);
                     formData.append(`prendas[${index}][cantidad_talla]`, JSON.stringify({}));
                 }
                 
@@ -446,13 +446,14 @@ window.enviarPrendaSinCotizacion = function() {
                     });
                 }
 
-                //  AGREGAR OBSERVACIONES
-                const obs_manga = prenda.variantes?.tipo_manga_obs || prenda.obs_manga || '';
-                const obs_broche = prenda.variantes?.tipo_broche_obs || prenda.obs_broche || '';
-                const obs_bolsillos = prenda.variantes?.tiene_bolsillos_obs || prenda.obs_bolsillos || '';
-                const obs_reflectivo = prenda.variantes?.tiene_reflectivo_obs || prenda.obs_reflectivo || '';
+                //  AGREGAR OBSERVACIONES - Capturar desde el DOM del modal o desde prenda
+                // Primero intentar desde el DOM del modal (si está abierto)
+                let obs_manga = document.getElementById('manga-obs')?.value?.trim() || prenda.variantes?.tipo_manga_obs || prenda.obs_manga || '';
+                let obs_broche = document.getElementById('broche-obs')?.value?.trim() || prenda.variantes?.tipo_broche_obs || prenda.obs_broche || '';
+                let obs_bolsillos = document.getElementById('bolsillos-obs')?.value?.trim() || prenda.variantes?.tiene_bolsillos_obs || prenda.obs_bolsillos || '';
+                let obs_reflectivo = document.getElementById('reflectivo-obs')?.value?.trim() || prenda.variantes?.tiene_reflectivo_obs || prenda.obs_reflectivo || '';
                 
-                console.log(`   📝 Obs - Manga: "${obs_manga}", Broche: "${obs_broche}", Bolsillos: "${obs_bolsillos}", Reflectivo: "${obs_reflectivo}"`);
+                console.log(`    Obs - Manga: "${obs_manga}", Broche: "${obs_broche}", Bolsillos: "${obs_bolsillos}", Reflectivo: "${obs_reflectivo}"`);
                 
                 formData.append(`prendas[${index}][obs_manga]`, obs_manga);
                 formData.append(`prendas[${index}][obs_broche]`, obs_broche);
@@ -577,7 +578,7 @@ window.enviarPrendaSinCotizacion = function() {
                 });
             });
             // Enviar al servidor
-            console.log(`🔍 [4] Enviando FormData al servidor...`);
+            console.log(` [4] Enviando FormData al servidor...`);
             console.log(` FormData contiene:`, {
                 cliente: cliente,
                 forma_de_pago: formaPago,
@@ -638,7 +639,7 @@ window.enviarPrendaSinCotizacion = function() {
             //  NO RECARGAR LA PÁGINA - Mantener el formulario intacto
             // Hacer scroll al error para que el usuario lo vea
             Swal.fire({
-                title: '⚠️ Error al enviar',
+                title: ' Error al enviar',
                 text: error.message,
                 icon: 'error',
                 confirmButtonText: 'Entendido',

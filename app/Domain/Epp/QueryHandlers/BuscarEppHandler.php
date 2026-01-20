@@ -27,7 +27,7 @@ class BuscarEppHandler implements QueryHandler
         }
 
         try {
-            Log::info('🔍 [BuscarEppHandler] Buscando EPP', [
+            Log::info(' [BuscarEppHandler] Buscando EPP', [
                 'termino' => $query->getTermino(),
             ]);
 

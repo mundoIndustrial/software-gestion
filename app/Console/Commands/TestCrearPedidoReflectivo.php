@@ -54,7 +54,7 @@ class TestCrearPedidoReflectivo extends Command
         }
 
         if (empty($prendas)) {
-            $this->warn('⚠️ No hay prendas en la cotización');
+            $this->warn(' No hay prendas en la cotización');
             return 1;
         }
 
@@ -111,7 +111,7 @@ class TestCrearPedidoReflectivo extends Command
             $this->info("\n Pedido guardado en BD");
 
             // Verificar procesos creados
-            $this->line("\n🔍 VERIFICANDO PROCESOS CREADOS:");
+            $this->line("\n VERIFICANDO PROCESOS CREADOS:");
             
             $procesos = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                 ->distinct('proceso')

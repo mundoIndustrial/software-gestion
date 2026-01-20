@@ -20,7 +20,7 @@
 
 ---
 
-## 🎯 Metricas de Impacto Finales
+##  Metricas de Impacto Finales
 
 ### Reducción de Líneas por Método:
 
@@ -135,7 +135,7 @@ PrendaDataBuilder.construirItemParaEnvio(prenda, prendaIndex, fotosNuevas)
 
 ---
 
-## 🔧 Integraciones Completadas
+##  Integraciones Completadas
 
 ### Template Blade Actualizado
 **Archivo:** `crear-pedido-nuevo.blade.php`
@@ -177,7 +177,7 @@ const telaResult = TelaProcessor.cargarTelaDesdeBaseDatos(prenda);
 if (telaResult.procesada && telaResult.telaObj) {
     TelaProcessor.agregarTelaAlStorage(telaResult.telaObj);
 } else {
-    console.log('⚠️  Sin datos de tela para cargar');
+    console.log('  Sin datos de tela para cargar');
 }
 ```
 
@@ -185,7 +185,7 @@ if (telaResult.procesada && telaResult.telaObj) {
 
 ---
 
-## 📊 Estadísticas de Código
+##  Estadísticas de Código
 
 ### Archivos Nuevos:
 - `tela-processor.js`: 290 líneas (con JSDoc)
@@ -251,7 +251,7 @@ if (telaResult.procesada && telaResult.telaObj) {
 
 ---
 
-## 📝 Documentación Generada
+##  Documentación Generada
 
 ### Archivos de Documentación:
 - `FASE1_COMPLETADA.md` - Phase 1 results (DOM Utils + Modal Cleanup)

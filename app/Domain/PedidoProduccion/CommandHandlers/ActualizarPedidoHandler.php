@@ -42,7 +42,7 @@ class ActualizarPedidoHandler implements CommandHandler
 
             // Validar que hay actualizaciones
             if (!$command->tieneActualizaciones()) {
-                Log::warning('⚠️ [ActualizarPedidoHandler] Sin cambios para actualizar');
+                Log::warning(' [ActualizarPedidoHandler] Sin cambios para actualizar');
                 return $pedido;
             }
 

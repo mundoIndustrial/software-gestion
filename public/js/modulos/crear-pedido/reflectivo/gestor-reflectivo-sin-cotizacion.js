@@ -162,7 +162,7 @@ class GestorReflectivoSinCotizacion {
         const espacioDisponible = Math.max(0, 3 - fotosActuales);
 
         if (espacioDisponible <= 0) {
-            logWithEmoji('⚠️', `Máximo 3 fotos permitidas para prenda ${prendaIndex + 1}`);
+            logWithEmoji('', `Máximo 3 fotos permitidas para prenda ${prendaIndex + 1}`);
             return;
         }
 

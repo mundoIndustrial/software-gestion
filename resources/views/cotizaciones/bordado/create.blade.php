@@ -659,9 +659,9 @@ function agregarTecnica() {
     const tecnica = selector.value;
     
     console.log('➕ Agregando técnica:', tecnica);
-    console.log('📊 tecnicasSeleccionadas antes:', tecnicasSeleccionadas);
-    console.log('📊 Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
-    console.log('📊 Es array?', Array.isArray(tecnicasSeleccionadas));
+    console.log(' tecnicasSeleccionadas antes:', tecnicasSeleccionadas);
+    console.log(' Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
+    console.log(' Es array?', Array.isArray(tecnicasSeleccionadas));
     
     if (!tecnica) {
         Swal.fire({
@@ -690,8 +690,8 @@ function agregarTecnica() {
     }
     
     tecnicasSeleccionadas.push(tecnica);
-    console.log('📊 tecnicasSeleccionadas después de push:', tecnicasSeleccionadas);
-    console.log('📊 Length después de push:', tecnicasSeleccionadas.length);
+    console.log(' tecnicasSeleccionadas después de push:', tecnicasSeleccionadas);
+    console.log(' Length después de push:', tecnicasSeleccionadas.length);
     selector.value = '';
     renderizarTecnicas();
 }
@@ -777,7 +777,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     //  NO LLAMAR guardarTecnicasEnBD() AQUÍ
     // Las técnicas se guardarán DESPUÉS de crear la cotización en el servidor
     // Esto evita crear una cotización vacía de borrador
-    console.log('📝 Preparando envío de cotización con técnicas...');
+    console.log(' Preparando envío de cotización con técnicas...');
 
     // Detectar cuál botón se presionó PRIMERO
     const submitButton = e.submitter;
@@ -817,7 +817,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     });
 
     if (!cliente || !asesora) {
-        Swal.fire('⚠️ Campos Incompletos', 'Completa el cliente y otros campos obligatorios', 'warning');
+        Swal.fire(' Campos Incompletos', 'Completa el cliente y otros campos obligatorios', 'warning');
         document.querySelectorAll('button[type="submit"]').forEach(btn => {
             btn.disabled = false;
             btn.style.opacity = '1';
@@ -832,9 +832,9 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     console.log('🔵 Botón presionado:', submitButton?.textContent?.trim());
     console.log('🔵 Acción:', action);
     console.log('⏳ Enviando cotización...');
-    console.log('🎨 tecnicasSeleccionadas ANTES de enviar:', tecnicasSeleccionadas);
-    console.log('🎨 Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
-    console.log('🎨 Es array?', Array.isArray(tecnicasSeleccionadas));
+    console.log(' tecnicasSeleccionadas ANTES de enviar:', tecnicasSeleccionadas);
+    console.log(' Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
+    console.log(' Es array?', Array.isArray(tecnicasSeleccionadas));
 
     // Determinar si es edición o creación
     let url, method;
@@ -892,13 +892,13 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     };
 
     console.log(' Datos a enviar:', data);
-    console.log('🎨 window.tecnicasAgregadas:', window.tecnicasAgregadas);
-    console.log('📝 Observaciones generales:', observacionesDelDOM);
+    console.log(' window.tecnicasAgregadas:', window.tecnicasAgregadas);
+    console.log(' Observaciones generales:', observacionesDelDOM);
 
     // Verificar si hay imágenes nuevas EN EL LOGO O EN LAS TÉCNICAS
     const tieneImagenesNuevas = imagenesSeleccionadas.some(img => !img.existing);
     const tieneImagenesEnTecnicas = (data.tecnicas || []).some(tecnica => {
-        console.log('🔍 Checando técnica:', tecnica.tipo_logo.nombre, 'prendas:', tecnica.prendas.length);
+        console.log(' Checando técnica:', tecnica.tipo_logo.nombre, 'prendas:', tecnica.prendas.length);
         return (tecnica.prendas || []).some(prenda => {
             console.log('  🔹 Checando prenda:', prenda.nombre_prenda, 'imagenes_files:', !!prenda.imagenes_files, 'length:', prenda.imagenes_files ? prenda.imagenes_files.length : 0);
             return prenda.imagenes_files && prenda.imagenes_files.length > 0;
@@ -909,7 +909,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     console.log('📸 ¿Tiene imágenes nuevas en LOGO?', tieneImagenesNuevas);
     console.log('📸 ¿Tiene imágenes en TÉCNICAS?', tieneImagenesEnTecnicas);
     console.log(' ¿Debe usar FormData?', debeUsarFormData);
-    console.log('📊 window.tecnicasAgregadas:', window.tecnicasAgregadas);
+    console.log(' window.tecnicasAgregadas:', window.tecnicasAgregadas);
     
     if (debeUsarFormData) {
         // Si hay imágenes nuevas, usar FormData (un solo fetch)
@@ -1153,10 +1153,10 @@ function cargarDatosBorrador(cotizacion) {
                 // Renderizar las técnicas seleccionadas
                 renderizarTecnicas();
             } else {
-                console.log('⚠️ Técnicas no es un array:', tecnicas);
+                console.log(' Técnicas no es un array:', tecnicas);
             }
         } else {
-            console.log('⚠️ No se encontraron técnicas en logo_cotizacion');
+            console.log(' No se encontraron técnicas en logo_cotizacion');
         }
 
         // Cargar observaciones técnicas

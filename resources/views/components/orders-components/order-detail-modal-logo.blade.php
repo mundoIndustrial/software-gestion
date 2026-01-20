@@ -99,7 +99,7 @@ function toggleFacturaLogo() {
     console.log(' [TOGGLE FACTURA LOGO] Iniciando cambio a factura...');
     console.trace('📍 [TOGGLE FACTURA LOGO] Stack trace de quién llamó esta función');
     
-    // ⚠️ IMPORTANTE: Buscar SOLO dentro del modal de logo
+    //  IMPORTANTE: Buscar SOLO dentro del modal de logo
     const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
     if (!modalWrapper) {
         console.error(' [TOGGLE FACTURA LOGO] No se encontró el wrapper del modal de logo');
@@ -140,7 +140,7 @@ function toggleFacturaLogo() {
 function toggleGaleriaLogo() {
     console.log(' [TOGGLE GALERIA LOGO] Iniciando cambio a galería...');
     
-    // ⚠️ IMPORTANTE: Buscar SOLO dentro del modal de logo
+    //  IMPORTANTE: Buscar SOLO dentro del modal de logo
     const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
     if (!modalWrapper) {
         console.error(' [TOGGLE GALERIA LOGO] No se encontró el wrapper del modal de logo');
@@ -193,7 +193,7 @@ function toggleGaleriaLogo() {
         galeria = document.createElement('div');
         galeria.id = 'galeria-modal-logo';
         galeria.style.cssText = 'width: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 400px; max-height: 600px; overflow-y: auto;';
-        // ⚠️ IMPORTANTE: Agregar al container del modal de LOGO, no al de costura
+        //  IMPORTANTE: Agregar al container del modal de LOGO, no al de costura
         if (container) {
             container.appendChild(galeria);
             console.log(' [TOGGLE GALERIA LOGO] Galería creada y agregada al DOM del modal de logo');
@@ -345,7 +345,7 @@ function loadGaleriaLogo(container, pedido) {
                 
                 console.log(' [GALERIA LOGO] Total de imágenes cargadas:', allImagesLogo.length);
             } else {
-                console.warn('⚠️ [GALERIA LOGO] No hay imágenes de logo para mostrar');
+                console.warn(' [GALERIA LOGO] No hay imágenes de logo para mostrar');
                 html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay imágenes de bordado para este pedido</p>';
             }
             
@@ -354,11 +354,11 @@ function loadGaleriaLogo(container, pedido) {
             console.log(' [GALERIA LOGO] HTML de galería generado y renderizado en el DOM');
             
             // DEBUG: Verificar que el HTML está en el DOM y es visible
-            console.log('🔍 [DEBUG GALERIA] container.innerHTML length:', container.innerHTML.length);
-            console.log('🔍 [DEBUG GALERIA] container.style.display:', container.style.display);
-            console.log('🔍 [DEBUG GALERIA] container.offsetHeight:', container.offsetHeight);
-            console.log('🔍 [DEBUG GALERIA] container.offsetWidth:', container.offsetWidth);
-            console.log('🔍 [DEBUG GALERIA] Elemento visible en DOM:', container);
+            console.log(' [DEBUG GALERIA] container.innerHTML length:', container.innerHTML.length);
+            console.log(' [DEBUG GALERIA] container.style.display:', container.style.display);
+            console.log(' [DEBUG GALERIA] container.offsetHeight:', container.offsetHeight);
+            console.log(' [DEBUG GALERIA] container.offsetWidth:', container.offsetWidth);
+            console.log(' [DEBUG GALERIA] Elemento visible en DOM:', container);
         })
         .catch(error => {
             console.error(' [GALERIA LOGO] Error al cargar imágenes:', error);

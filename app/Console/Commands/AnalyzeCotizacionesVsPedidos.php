@@ -13,7 +13,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
     public function handle()
     {
         $this->info('════════════════════════════════════════════════════════');
-        $this->info('🔍 ANÁLISIS: COTIZACIONES vs PEDIDOS');
+        $this->info(' ANÁLISIS: COTIZACIONES vs PEDIDOS');
         $this->info('════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -47,7 +47,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
 
         // DIAGNÓSTICO DE COTIZACIÓN 2
         $this->line('═════════════════════════════════════════════════════════');
-        $this->info('🔍 DIAGNÓSTICO: ¿Dónde se guardó la Cotización 2?');
+        $this->info(' DIAGNÓSTICO: ¿Dónde se guardó la Cotización 2?');
         $this->line('═════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -79,13 +79,13 @@ class AnalyzeCotizacionesVsPedidos extends Command
             $prendasPedido = DB::table('prendas_pedido')->count();
             $this->line("📍 En tabla `prendas_pedido` (Estructura de PEDIDOS):");
             $this->line("   ├─ TOTAL prendas_pedido: $prendasPedido");
-            $this->line("   └─ ⚠️  NO tiene cotizacion_id, solo numero_pedido");
+            $this->line("   └─   NO tiene cotizacion_id, solo numero_pedido");
 
             $this->newLine();
 
             // Diagnóstico
             $this->line('═════════════════════════════════════════════════════════');
-            $this->warn('⚠️  PROBLEMA IDENTIFICADO:');
+            $this->warn('  PROBLEMA IDENTIFICADO:');
             $this->line('═════════════════════════════════════════════════════════');
             $this->newLine();
 
@@ -136,7 +136,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
                 $this->line("      • {$col->COLUMN_NAME}");
             }
 
-            $this->line("   📊 Registros: $count");
+            $this->line("    Registros: $count");
             $this->newLine();
 
         } catch (\Exception $e) {

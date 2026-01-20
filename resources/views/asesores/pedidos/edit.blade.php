@@ -332,7 +332,7 @@
         if (btnAgregarProducto && window.gestionItemsUI) {
             btnAgregarProducto.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('🎯 [EDIT] Botón agregar producto clickeado, abriendo modal de prenda');
+                console.log(' [EDIT] Botón agregar producto clickeado, abriendo modal de prenda');
                 window.gestionItemsUI.abrirModalAgregarPrendaNueva();
             });
         }

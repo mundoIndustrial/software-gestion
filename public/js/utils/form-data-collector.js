@@ -68,7 +68,7 @@ class FormDataCollector {
 
         if (currentLogoCotizacion && Object.keys(currentLogoCotizacion).length > 0) {
             // Desde cotización
-            console.log('📦 Usando datos de currentLogoCotizacion');
+            console.log(' Usando datos de currentLogoCotizacion');
             
             // Técnicas
             if (currentLogoCotizacion.tecnicas) {
@@ -105,7 +105,7 @@ class FormDataCollector {
             
         } else {
             // Desde formulario DOM
-            console.log('📝 Leyendo datos del DOM');
+            console.log(' Leyendo datos del DOM');
             
             // Técnicas
             tecnicas = this.obtenerTecnicasDelDOM();
@@ -158,7 +158,7 @@ class FormDataCollector {
                 console.log(' Técnicas desde hidden:', tecnicas);
                 return tecnicas;
             } catch (e) {
-                console.warn('⚠️ Error parseando técnicas:', e);
+                console.warn(' Error parseando técnicas:', e);
             }
         }
         
@@ -169,7 +169,7 @@ class FormDataCollector {
             if (tecnicaText) tecnicas.push(tecnicaText);
         });
         
-        console.log('🎨 Técnicas desde badges:', tecnicas);
+        console.log(' Técnicas desde badges:', tecnicas);
         return tecnicas;
     }
 
@@ -198,7 +198,7 @@ class FormDataCollector {
                 console.log('📍 Secciones desde hidden:', secciones);
                 return secciones;
             } catch (e) {
-                console.warn('⚠️ Error parseando secciones:', e);
+                console.warn(' Error parseando secciones:', e);
             }
         }
         

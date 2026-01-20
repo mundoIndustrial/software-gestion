@@ -92,7 +92,7 @@
 
 ---
 
-## 🔍 VERIFICACIÓN FUNCIONAL
+##  VERIFICACIÓN FUNCIONAL
 
 ### Backend - Estructura correcta
 
@@ -228,7 +228,7 @@ console.log(result.valid);
 
 ---
 
-## 📊 VERIFICACIÓN DE INTEGRACIÓN
+##  VERIFICACIÓN DE INTEGRACIÓN
 
 ### Paso 1: Backend listo
 
@@ -425,7 +425,7 @@ tail -f storage/logs/laravel.log
 
 ---
 
-## 🎯 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 1. **Verificar:** Usar este checklist
 2. **Testear:** Crear 3 pedidos de prueba

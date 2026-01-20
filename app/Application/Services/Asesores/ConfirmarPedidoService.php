@@ -91,7 +91,7 @@ class ConfirmarPedidoService
                 $resultados['exitosos'][$borradorId] = $pedido;
             } catch (\Exception $e) {
                 $resultados['errores'][$borradorId] = $e->getMessage();
-                Log::warning('⚠️ [CONFIRMAR-LOTE] Error en pedido ' . $borradorId, [
+                Log::warning(' [CONFIRMAR-LOTE] Error en pedido ' . $borradorId, [
                     'error' => $e->getMessage()
                 ]);
             }
@@ -113,17 +113,17 @@ class ConfirmarPedidoService
         $pedido = PedidoProduccion::find($borradorId);
 
         if (!$pedido) {
-            Log::warning('⚠️ [PUEDE-CONFIRMAR] Pedido no encontrado: ' . $borradorId);
+            Log::warning(' [PUEDE-CONFIRMAR] Pedido no encontrado: ' . $borradorId);
             return false;
         }
 
         if ($pedido->numero_pedido !== null) {
-            Log::warning('⚠️ [PUEDE-CONFIRMAR] Pedido ya confirmado: ' . $borradorId);
+            Log::warning(' [PUEDE-CONFIRMAR] Pedido ya confirmado: ' . $borradorId);
             return false;
         }
 
         if ($pedido->prendas()->count() === 0) {
-            Log::warning('⚠️ [PUEDE-CONFIRMAR] Pedido sin prendas: ' . $borradorId);
+            Log::warning(' [PUEDE-CONFIRMAR] Pedido sin prendas: ' . $borradorId);
             return false;
         }
 

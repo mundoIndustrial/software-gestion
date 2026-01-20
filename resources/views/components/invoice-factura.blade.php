@@ -540,7 +540,7 @@
         </div>
 
         <!-- Prendas Section -->
-        <div class="section-title">👕 Detalles de Prendas</div>
+        <div class="section-title"> Detalles de Prendas</div>
         
         @if($orden && $orden->prendas && $orden->prendas->count() > 0)
             @foreach($orden->prendas as $index => $prenda)

@@ -8,7 +8,7 @@ Las imágenes de procesos se estaban guardando como:
 -  Codificadas como base64 en la transmisión
 -  Sin conversión de formatos
 
-## 🔧 SOLUCIÓN IMPLEMENTADA
+##  SOLUCIÓN IMPLEMENTADA
 
 ### 1. **Frontend** (`public/js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js`)
 
@@ -86,7 +86,7 @@ if ($imagenData instanceof UploadedFile) {
 }
 ```
 
-## 📊 COMPARATIVA
+##  COMPARATIVA
 
 | Aspecto | Antes | Después |
 |--------|-------|---------|
@@ -143,14 +143,14 @@ if ($imagenData instanceof UploadedFile) {
 9. Frontend accede directo: /public/procesos-imagenes/...
 ```
 
-## 📝 COMPATIBILIDAD
+##  COMPATIBILIDAD
 
  **Mantiene compatibilidad** con:
 - Imágenes base64 legacy (si aún existen)
 - Código que envía arrays con datos
 - Logs anteriores
 
-⚠️ **Requerimientos nuevos**:
+ **Requerimientos nuevos**:
 - `Intervention\Image\ImageManager` (ya instalado)
 - Permisos de escritura en `public/procesos-imagenes/`
 
@@ -173,7 +173,7 @@ Eliminar carpeta antigua:
 rm -rf storage/app/procesos-imagenes/
 ```
 
-## 🎯 RESULTADO FINAL
+##  RESULTADO FINAL
 
 -  Imágenes como WebP (formato moderno)
 -  Guardadas en ruta pública (accesible)

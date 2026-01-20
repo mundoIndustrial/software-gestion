@@ -554,7 +554,7 @@ npx jasmine
 
 ---
 
-## 📊 COBERTURA ESPERADA
+##  COBERTURA ESPERADA
 
 | Área | Tests | Status |
 |------|-------|--------|
@@ -569,7 +569,7 @@ npx jasmine
 
 ---
 
-## 🎯 CRITERIOS DE ÉXITO
+##  CRITERIOS DE ÉXITO
 
 Todos los tests DEBEN pasar:
 
@@ -612,7 +612,7 @@ handlers.printDiagnostics();
 
 ---
 
-## 📝 Checkpoints
+##  Checkpoints
 
 Ejecutar antes de cada fase:
 

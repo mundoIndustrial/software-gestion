@@ -13,7 +13,7 @@ class VerificarTablasCotizaciones extends Command
 
     public function handle()
     {
-        $this->info('🔍 VERIFICANDO ESTRUCTURA DE TABLAS DE COTIZACIONES');
+        $this->info(' VERIFICANDO ESTRUCTURA DE TABLAS DE COTIZACIONES');
         $this->newLine();
 
         // Tablas a verificar
@@ -49,7 +49,7 @@ class VerificarTablasCotizaciones extends Command
 
         // Obtener columnas
         $columnas = Schema::getColumns($nombreTabla);
-        $this->line("   📊 Columnas: " . count($columnas));
+        $this->line("    Columnas: " . count($columnas));
 
         foreach ($columnas as $columna) {
             $tipo = $columna['type'];

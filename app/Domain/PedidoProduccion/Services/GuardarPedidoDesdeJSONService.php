@@ -165,7 +165,7 @@ class GuardarPedidoDesdeJSONService
                     $contador++;
                 }
             } catch (\Exception $e) {
-                \Log::warning("⚠️ Error al guardar foto de prenda: {$e->getMessage()}");
+                \Log::warning(" Error al guardar foto de prenda: {$e->getMessage()}");
             }
         }
 
@@ -209,7 +209,7 @@ class GuardarPedidoDesdeJSONService
                     $contador++;
                 }
             } catch (\Exception $e) {
-                \Log::warning("⚠️ Error al guardar foto de tela: {$e->getMessage()}");
+                \Log::warning(" Error al guardar foto de tela: {$e->getMessage()}");
             }
         }
 
@@ -253,7 +253,7 @@ class GuardarPedidoDesdeJSONService
 
         foreach ($procesos as $procesoData) {
             if (empty($procesoData['tipo_proceso_id'])) {
-                \Log::warning('⚠️ Proceso sin tipo_proceso_id, omitiendo');
+                \Log::warning(' Proceso sin tipo_proceso_id, omitiendo');
                 continue;
             }
 
@@ -311,7 +311,7 @@ class GuardarPedidoDesdeJSONService
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::warning("⚠️ Error al guardar imagen de proceso: {$e->getMessage()}");
+                \Log::warning(" Error al guardar imagen de proceso: {$e->getMessage()}");
             }
         }
     }

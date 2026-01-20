@@ -12,7 +12,7 @@ class FixMigrations extends Command
 
     public function handle()
     {
-        $this->info('🔧 Marcando todas las migraciones del 2026 como ejecutadas...\n');
+        $this->info(' Marcando todas las migraciones del 2026 como ejecutadas...\n');
 
         // Obtener todas las migraciones que no están registradas
         $archivos = glob(database_path('migrations/2026_*.php'));

@@ -1,6 +1,6 @@
 # Análisis de Responsabilidades del Controlador
 
-## 🔍 PROBLEMAS IDENTIFICADOS
+##  PROBLEMAS IDENTIFICADOS
 
 El controlador `PedidosProduccionController.php` actualmente tiene **MÚLTIPLES RESPONSABILIDADES** que violan el principio de Single Responsibility:
 
@@ -139,14 +139,14 @@ El controlador valida reglas de negocio:
 ```php
 // Línea 1600-1604
 if (!$cotizacion->tipoCotizacion) {
-    \Log::info('⏭️ No hay tipo de cotización asociado');
+    \Log::info('No hay tipo de cotización asociado');
     return;
 }
 
 // Línea 1606-1612
 $tipoCotizacion = strtolower(trim($cotizacion->tipoCotizacion->nombre ?? ''));
 if ($tipoCotizacion !== 'reflectivo') {
-    \Log::info('⏭️ No es cotización reflectivo');
+    \Log::info('No es cotización reflectivo');
     return;
 }
 ```
@@ -160,10 +160,10 @@ if ($tipoCotizacion !== 'reflectivo') {
 El controlador tiene logging de lógica de negocio (no solo de HTTP):
 
 ```php
-\Log::info('📦 [SIN COTIZACIÓN] Creando pedido', [...]);
+\Log::info(' [SIN COTIZACIÓN] Creando pedido', [...]);
 \Log::info(' Pedido creado', [...]);
 \Log::info(' Prendas encontradas', [...]);
-\Log::info('🔍 [DESCRIPCION] Construyendo descripción', [...]);
+\Log::info(' [DESCRIPCION] Construyendo descripción', [...]);
 ```
 
 **PROBLEMA:** El logging de lógica de negocio debería estar en los servicios.
@@ -196,7 +196,7 @@ El controlador tiene métodos marcados como LEGACY que aún no se han eliminado:
 
 ---
 
-## 📊 RESUMEN DE VIOLACIONES DDD
+##  RESUMEN DE VIOLACIONES DDD
 
 | Responsabilidad | Líneas Aprox | Debería estar en |
 |----------------|--------------|------------------|
@@ -245,7 +245,7 @@ public function crearDesdeCotizacion($cotizacionId)
 
 ---
 
-## 🎯 ACCIONES REQUERIDAS
+##  ACCIONES REQUERIDAS
 
 ### 1. **Crear Repositorios Adicionales**
 - `PedidoProduccionRepository` - Para queries de pedidos
@@ -280,4 +280,4 @@ public function crearDesdeCotizacion($cotizacionId)
 **Código a mover a servicios:** ~1060 líneas  
 **Controlador Final Esperado:** ~300 líneas 
 
-**Reducción Total:** 88% 🎯
+**Reducción Total:** 88% 

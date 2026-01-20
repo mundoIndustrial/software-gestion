@@ -44,7 +44,7 @@ async function guardarCotizacion() {
     // Debug: Mostrar estado del contenedor antes de recopilar
     const contenedorDebug = document.getElementById('tecnicas_seleccionadas');
     if (contenedorDebug) {
-        console.log('📊 DEBUG - Técnicas en DOM:');
+        console.log(' DEBUG - Técnicas en DOM:');
         console.log('   - innerHTML:', contenedorDebug.innerHTML);
         console.log('   - children count:', contenedorDebug.children.length);
         Array.from(contenedorDebug.children).forEach((child, i) => {
@@ -69,7 +69,7 @@ async function guardarCotizacion() {
     console.log(' Llamando a recopilarDatos()...');
     const datos = recopilarDatos();
     
-    console.log('📦 Datos recopilados:', {
+    console.log(' Datos recopilados:', {
         existe: !!datos,
         cliente: datos?.cliente,
         productos: datos?.productos?.length || 0,
@@ -150,7 +150,7 @@ async function guardarCotizacion() {
         formData.append('tipo_venta_paso3', tipoVentaPaso3);  // Enviar PASO 3 independiente
         formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
         
-        console.log('📝 Datos básicos agregados:', {
+        console.log(' Datos básicos agregados:', {
             tipo: 'borrador',
             accion: 'guardar',
             es_borrador: '1',
@@ -162,7 +162,7 @@ async function guardarCotizacion() {
         // Si estamos editando un borrador, enviar el ID
         if (window.cotizacionIdActual) {
             formData.append('cotizacion_id', window.cotizacionIdActual);
-            console.log('📝 Editando cotización existente ID:', window.cotizacionIdActual);
+            console.log(' Editando cotización existente ID:', window.cotizacionIdActual);
         }
         
         // Enviar fotos a eliminar (marcadas como eliminadas)
@@ -181,7 +181,7 @@ async function guardarCotizacion() {
         formData.append('secciones', JSON.stringify(datos.ubicaciones || []));
         formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
         
-        console.log('📝 Datos de texto agregados:', {
+        console.log(' Datos de texto agregados:', {
             descripcion_logo: datos.descripcion_logo ? 'Sí' : 'No',
             tecnicas: datos.tecnicas?.length || 0,
             secciones: datos.ubicaciones?.length || 0,
@@ -203,7 +203,7 @@ async function guardarCotizacion() {
                 // Variantes como array (no JSON string)
                 const variantes = producto.variantes || {};
                 
-                console.log(`🔍 DEBUG VARIANTES PRODUCTO ${index}:`, {
+                console.log(` DEBUG VARIANTES PRODUCTO ${index}:`, {
                     keys: Object.keys(variantes),
                     tipo_manga_id: variantes.tipo_manga_id,
                     tipo_manga: variantes.tipo_manga,
@@ -271,7 +271,7 @@ async function guardarCotizacion() {
                 }
                 
                 //  TELAS (File objects desde datos.productos, window.telasSeleccionadas, o imagenesEnMemoria)
-                console.log(`🧵 Procesando telas para prenda ${index}...`);
+                console.log(` Procesando telas para prenda ${index}...`);
                 console.log(`   DEBUG: datos.productos[${index}].telas =`, datos.productos?.[index]?.telas?.length || 0);
                 
                 let telasYaProcesadas = false;
@@ -279,7 +279,7 @@ async function guardarCotizacion() {
                 // OPCIÓN 1: Procesar telas desde datos.productos[index].telas (PRIMERO - PREFERIDA)
                 // Esta opción tiene prioridad porque contiene la estructura consistente
                 if (datos.productos && datos.productos[index] && datos.productos[index].telas && datos.productos[index].telas.length > 0) {
-                    console.log(`🧵 Opción 1: Procesando telas desde datos.productos[${index}].telas:`, datos.productos[index].telas.length);
+                    console.log(` Opción 1: Procesando telas desde datos.productos[${index}].telas:`, datos.productos[index].telas.length);
                     const telasDelProducto = datos.productos[index].telas;
                     const telasPorIndice = {};
                     
@@ -303,7 +303,7 @@ async function guardarCotizacion() {
                     telasYaProcesadas = true;
                     console.log(' Opción 1 completada para prenda ' + index);
                 } else {
-                    console.log('⚠️ Opción 1: No hay telas en datos.productos[' + index + '].telas');
+                    console.log(' Opción 1: No hay telas en datos.productos[' + index + '].telas');
                 }
                 
                 // OPCIÓN 2: Buscar telas en window.telasSeleccionadas (FALLBACK SOLO SI OPCIÓN 1 NO FUNCIONÓ)
@@ -311,17 +311,17 @@ async function guardarCotizacion() {
                     const prendaCard = document.querySelectorAll('.producto-card')[index];
                     if (prendaCard) {
                         const productoId = prendaCard.dataset.productoId;
-                        console.log(`🧵 Opción 2: Producto ID: ${productoId} - FALLBACK porque Opción 1 no encontró datos`);
+                        console.log(` Opción 2: Producto ID: ${productoId} - FALLBACK porque Opción 1 no encontró datos`);
                         
                         if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
                             const telasObj = window.telasSeleccionadas[productoId];
-                            console.log(`🧵 telasSeleccionadas encontrado para ${productoId}:`, telasObj);
+                            console.log(` telasSeleccionadas encontrado para ${productoId}:`, telasObj);
                             
                             // Iterar sobre cada tela (los índices son las claves del objeto)
                             for (let telaIdx in telasObj) {
                                 if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
                                     const fotosDelaTela = telasObj[telaIdx];
-                                    console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
+                                    console.log(` Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
                                     
                                     // Agregar cada foto de esta tela al FormData
                                     fotosDelaTela.forEach((foto, fotoIdx) => {
@@ -337,7 +337,7 @@ async function guardarCotizacion() {
                             telasYaProcesadas = true;
                             console.log(' Opción 2 (fallback) completada para prenda ' + index);
                         } else {
-                            console.log(`⚠️ Opción 2: No hay telas en window.telasSeleccionadas para ${productoId}`);
+                            console.log(` Opción 2: No hay telas en window.telasSeleccionadas para ${productoId}`);
                         }
                     }
                 }
@@ -346,7 +346,7 @@ async function guardarCotizacion() {
                 if (!telasYaProcesadas && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                     const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
                     if (telasDeEstaPrenda.length > 0) {
-                        console.log(`🧵 Opción 3: Usando fallback telaConIndice (última opción)`);
+                        console.log(` Opción 3: Usando fallback telaConIndice (última opción)`);
                         const telasPorIndice = {};
                         telasDeEstaPrenda.forEach(item => {
                             const telaIdx = item.telaIndex || 0;
@@ -377,7 +377,7 @@ async function guardarCotizacion() {
                 }
                 
                 if (!telasYaProcesadas) {
-                    console.log('⚠️ ADVERTENCIA: No se encontraron telas para prenda ' + index + ' en ninguna opción');
+                    console.log(' ADVERTENCIA: No se encontraron telas para prenda ' + index + ' en ninguna opción');
                 }
             });
         }
@@ -424,7 +424,7 @@ async function guardarCotizacion() {
                 console.log(` IDs de logos existentes: [${logosExistentes.join(',')}]`);
             }
         } else {
-            console.log('⚠️ No hay imágenes de logo en memoria');
+            console.log(' No hay imágenes de logo en memoria');
         }
         
         //  LOGO - FOTOS GUARDADAS (Para conservar las existentes al reguardar)
@@ -444,10 +444,10 @@ async function guardarCotizacion() {
                     }
                 });
             } else {
-                console.log('⚠️ No hay fotos guardadas en la galería');
+                console.log(' No hay fotos guardadas en la galería');
             }
         } else {
-            console.log('⚠️ No se encontró el elemento galeria_imagenes');
+            console.log(' No se encontró el elemento galeria_imagenes');
         }
         
         console.log('📤 FORMDATA A ENVIAR:', {
@@ -461,7 +461,7 @@ async function guardarCotizacion() {
         });
         
         // Debug: Mostrar contenido del FormData
-        console.log('🔍 DEBUG - Contenido completo del FormData:');
+        console.log(' DEBUG - Contenido completo del FormData:');
         for (let pair of formData.entries()) {
             if (!pair[0].includes('[fotos]')) {  // Excluir archivos para no saturar el log
                 console.log(`   ${pair[0]}: ${pair[1]}`);
@@ -498,7 +498,7 @@ async function guardarCotizacion() {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': csrfToken
-                // ⚠️ NO incluir 'Content-Type': 'application/json' - FormData lo establece automáticamente
+                //  NO incluir 'Content-Type': 'application/json' - FormData lo establece automáticamente
             },
             body: formData
         });
@@ -779,7 +779,7 @@ async function enviarCotizacion() {
             html: `
                 <div style="text-align: left; margin: 20px 0;">
                     <p style="margin: 0 0 15px 0; font-size: 1rem; color: #ef4444; font-weight: bold;">
-                        ⚠️ No puedes enviar sin completar las especificaciones
+                         No puedes enviar sin completar las especificaciones
                     </p>
                     <p style="margin: 0 0 15px 0; font-size: 0.9rem; color: #666;">
                         Las especificaciones son <strong>OBLIGATORIAS</strong> para que el cliente entienda todos los detalles de su pedido.
@@ -934,7 +934,7 @@ async function procederEnviarCotizacion() {
     
     // LOG DETALLADO DE VARIANTES
     if (datos.productos && datos.productos.length > 0) {
-        console.log('🔍 DETALLE DE VARIANTES A ENVIAR:');
+        console.log(' DETALLE DE VARIANTES A ENVIAR:');
         datos.productos.forEach((prod, idx) => {
             console.log(`  Producto ${idx}:`, JSON.stringify(prod.variantes, null, 2));
         });
@@ -954,7 +954,7 @@ async function procederEnviarCotizacion() {
             formData.append('cotizacion_id', window.cotizacionIdActual);
             console.log(' Cotización ID para actualización:', window.cotizacionIdActual);
         } else {
-            console.warn('⚠️ No hay cotizacion_id - Se creará una NUEVA cotización');
+            console.warn(' No hay cotizacion_id - Se creará una NUEVA cotización');
         }
         
         formData.append('cliente', datos.cliente);
@@ -1051,14 +1051,14 @@ async function procederEnviarCotizacion() {
                         formData.append(`prendas[${index}][fotos_existentes]`, JSON.stringify(fotosExistentes));
                         console.log(` IDs de fotos existentes de prenda: [${fotosExistentes.join(',')}]`);
                     } else if (fotosExistentes.length > 0 && window.cotizacionIdActual) {
-                        console.log(`⏭️ UPDATE detectado - NO enviando IDs de fotos de prenda existentes para evitar duplicados`);
+                        console.log(`UPDATE detectado - NO enviando IDs de fotos de prenda existentes para evitar duplicados`);
                     }
                 }
                 
                 //  🔒 TELAS YA FUERON GUARDADAS EN guardarCotizacion()
                 // Las telas se procesaron y guardaron en la BD durante guardarCotizacion()
                 // NO RE-PROCESAR aquí para evitar DUPLICACIÓN
-                console.log(`🧵 SKIP: Telas para prenda ${index} ya fueron guardadas en guardarCotizacion()`);
+                console.log(` SKIP: Telas para prenda ${index} ya fueron guardadas en guardarCotizacion()`);
                 console.log(`   → Las telas ya están en prenda_tela_fotos_cot, no re-procesar`);
                 console.log(`   → Esto previene la duplicación de registros en BD`);
             });
@@ -1098,10 +1098,10 @@ async function procederEnviarCotizacion() {
                     }
                 });
             } else {
-                console.log('⚠️ No hay fotos existentes en la galería');
+                console.log(' No hay fotos existentes en la galería');
             }
         } else {
-            console.log('⚠️ No se encontró el elemento galeria_imagenes');
+            console.log(' No se encontró el elemento galeria_imagenes');
         }
         
         console.log('📤 FORMDATA A ENVIAR (ENVIAR):', {
@@ -1118,7 +1118,7 @@ async function procederEnviarCotizacion() {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                // ⚠️ NO incluir 'Content-Type': 'application/json' - FormData lo establece automáticamente
+                //  NO incluir 'Content-Type': 'application/json' - FormData lo establece automáticamente
             },
             body: formData
         });

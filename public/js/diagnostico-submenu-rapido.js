@@ -1,5 +1,5 @@
 // Script de diagnóstico rápido para submenu
-console.log('🔍 === DIAGNÓSTICO SUBMENU INICIADO ===');
+console.log(' === DIAGNÓSTICO SUBMENU INICIADO ===');
 
 // Esperar a que el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 3. Estilos computados
     const computed = window.getComputedStyle(firstSubmenu);
-    console.log('\n🎨 Estilos computados:');
+    console.log('\n Estilos computados:');
     console.log('  - max-height:', computed.maxHeight);
     console.log('  - opacity:', computed.opacity);
     console.log('  - overflow:', computed.overflow);

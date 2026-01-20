@@ -525,7 +525,7 @@
     <div class="fullscreen-container">
         <div class="header">
             <div>
-                <h1>📊 Seguimiento de Módulos - {{ ucfirst($section) }}</h1>
+                <h1> Seguimiento de Módulos - {{ ucfirst($section) }}</h1>
                 <div class="header-info">
                     @if(request('filter_type'))
                         <span>

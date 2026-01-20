@@ -989,7 +989,7 @@
         fotosGrid.innerHTML = '';
         
         if (!fotos || fotos.length === 0) {
-            console.log('⚠️ No hay fotos disponibles');
+            console.log(' No hay fotos disponibles');
             fotosGrid.innerHTML = `
                 <div class="empty-fotos">
                     <span class="material-symbols-rounded">image_not_supported</span>
@@ -1229,7 +1229,7 @@
         
         //  USAR EL MISMO ENDPOINT QUE ASESORES: /registros/{numeroPedido}
         const apiUrl = '/registros/' + numeroPedido;
-        console.log('📝 URL API (mismo que asesores):', apiUrl);
+        console.log(' URL API (mismo que asesores):', apiUrl);
         
         fetch(apiUrl)
             .then(function(response) {
@@ -1241,9 +1241,9 @@
             })
             .then(function(data) {
                 console.log(' Datos del API recibidos:', data);
-                console.log('🔍 DEBUG - data.descripcion_prendas:', data.descripcion_prendas);
-                console.log('🔍 DEBUG - data.prendas:', data.prendas);
-                console.log('🔍 DEBUG - data.prendas?.length:', data.prendas?.length);
+                console.log(' DEBUG - data.descripcion_prendas:', data.descripcion_prendas);
+                console.log(' DEBUG - data.prendas:', data.prendas);
+                console.log(' DEBUG - data.prendas?.length:', data.prendas?.length);
                 
                 //  USAR LOS DATOS DIRECTAMENTE DEL CONTROLADOR (igual que asesores)
                 const pedidoData = {
@@ -1262,9 +1262,9 @@
                 console.log(' descripcion_prendas disponible:', !!pedidoData.descripcion);
                 
                 if (window.llenarReciboCosturaMobile) {
-                    console.log('🎨 Llamando a llenarReciboCosturaMobile...');
+                    console.log(' Llamando a llenarReciboCosturaMobile...');
                     window.llenarReciboCosturaMobile(pedidoData);
-                    console.log('🎨 llenarReciboCosturaMobile completado');
+                    console.log(' llenarReciboCosturaMobile completado');
                 } else {
                     console.error(' Función llenarReciboCosturaMobile NO encontrada');
                 }

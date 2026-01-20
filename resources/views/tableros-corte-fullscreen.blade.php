@@ -376,7 +376,7 @@
     <div class="fullscreen-container">
         <div class="header">
             <div>
-                <h1>📊 Dashboard Corte - Vista Completa</h1>
+                <h1> Dashboard Corte - Vista Completa</h1>
                 <div class="header-info">
                     @if(request('filter_type'))
                         <span>
@@ -637,7 +637,7 @@
     
     // Función para actualizar las tablas con datos JSON
     function updateCorteTablas(horasData, operariosData) {
-        console.log('📊 Actualizando tablas con datos JSON', { horasData, operariosData });
+        console.log(' Actualizando tablas con datos JSON', { horasData, operariosData });
         
         // Actualizar tabla de horas
         const horasTable = document.querySelector('.table-section:nth-child(1) tbody');
@@ -809,7 +809,7 @@
                 }
             }
             
-            console.log('🎯 Filtros iniciales cargados:', Object.keys(filterParams).length > 0 ? filterParams : 'NINGUNO - Mostrando TODOS los datos');
+            console.log(' Filtros iniciales cargados:', Object.keys(filterParams).length > 0 ? filterParams : 'NINGUNO - Mostrando TODOS los datos');
             
             setTimeout(initializeCorteFullscreenRealtime, 1000);
         });
@@ -835,7 +835,7 @@
             }
         }
         
-        console.log('🎯 Filtros iniciales cargados:', Object.keys(filterParams).length > 0 ? filterParams : 'NINGUNO - Mostrando TODOS los datos');
+        console.log(' Filtros iniciales cargados:', Object.keys(filterParams).length > 0 ? filterParams : 'NINGUNO - Mostrando TODOS los datos');
         
         setTimeout(initializeCorteFullscreenRealtime, 1000);
     }

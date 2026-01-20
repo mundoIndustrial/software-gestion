@@ -40,7 +40,7 @@ routes/
 
 ---
 
-## 📊 FASE POR FASE - DETALLES TÉCNICOS
+##  FASE POR FASE - DETALLES TÉCNICOS
 
 ### FASE 1: Servicios de Lectura (530 líneas)
 
@@ -322,7 +322,7 @@ public function __construct(
 
 ---
 
-## 📦 CHECKLIST DE MIGRACIÓN
+##  CHECKLIST DE MIGRACIÓN
 
 ### Pre-Migración:
 - [x] Análisis de dependencias
@@ -372,7 +372,7 @@ public function __construct(
 
 ---
 
-## 📝 DOCUMENTACIÓN RELACIONADA
+##  DOCUMENTACIÓN RELACIONADA
 
 - [MIGRACION_DDD_COMPLETA_ASESORESCONTROLLER.md](./MIGRACION_DDD_COMPLETA_ASESORESCONTROLLER.md)
 - [ARQUITECTURA_PEDIDOS_PRODUCCION.md](./ARQUITECTURA_PEDIDOS_PRODUCCION.md)

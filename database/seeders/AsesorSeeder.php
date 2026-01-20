@@ -28,14 +28,14 @@ class AsesorSeeder extends Seeder
         $existingUser = User::where('email', 'asesor@mundoindustrial.com')->first();
         
         if ($existingUser) {
-            $this->command->warn('⚠️  El usuario asesor ya existe:');
+            $this->command->warn('  El usuario asesor ya existe:');
             $this->command->info('   Nombre: ' . $existingUser->name);
             $this->command->info('   Email: ' . $existingUser->email);
             $this->command->info('   Rol: ' . ($existingUser->role ? $existingUser->role->name : 'Sin rol'));
             
             // Verificar si tiene el rol correcto
             if ($existingUser->role_id !== $roleAsesor->id) {
-                $this->command->warn('   ⚠️  El usuario no tiene el rol de asesor. Actualizando...');
+                $this->command->warn('     El usuario no tiene el rol de asesor. Actualizando...');
                 $existingUser->role_id = $roleAsesor->id;
                 $existingUser->save();
                 $this->command->info('    Rol actualizado correctamente');

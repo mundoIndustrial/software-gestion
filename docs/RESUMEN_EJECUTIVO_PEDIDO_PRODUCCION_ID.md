@@ -8,7 +8,7 @@
 
 ---
 
-## 🎯 OBJETIVO CUMPLIDO
+##  OBJETIVO CUMPLIDO
 
  **Asignar correctamente `pedido_produccion_id` a todas las prendas**
 - Las prendas se crean con FK correcta a `pedidos_produccion`
@@ -17,18 +17,18 @@
 
 ---
 
-## 📊 RESULTADOS
+##  RESULTADOS
 
 | Métrica | Antes | Después | Mejora |
 |---------|-------|---------|--------|
 | Prendas con FK correcta | 0% | 100% |  |
 | Errores MySQL NOT NULL |  Presentes |  Eliminados |  |
-| Logs de depuración |  Ninguno | 📝 8+ puntos |  |
-| Consistencia de `numero_pedido` | ⚠️ Duplicado |  Single source |  |
+| Logs de depuración |  Ninguno |  8+ puntos |  |
+| Consistencia de `numero_pedido` |  Duplicado |  Single source |  |
 
 ---
 
-## 📦 CAMBIOS REALIZADOS
+##  CAMBIOS REALIZADOS
 
 ### Modelos (2 archivos)
 ```
@@ -162,7 +162,7 @@ Paso 3: Frontend envía al backend
    ↓ [Log] 📤 Objeto pedido final a enviar
    
 Paso 4: Backend crea pedido
-   ↓ [Log] 🎯 Pedido creado con id=42, numero_pedido=1025
+   ↓ [Log]  Pedido creado con id=42, numero_pedido=1025
    
 Paso 5: Backend crea prendas
    ↓ [Log]  Prenda guardada con pedido_produccion_id=42
@@ -173,7 +173,7 @@ Paso 6: Frontend recibe confirmación
 
 ---
 
-## 🛡️ GARANTÍAS
+##  GARANTÍAS
 
 | Aspecto | Verificación | Status |
 |---------|-------------|--------|
@@ -282,7 +282,7 @@ docs/
 
 ---
 
-## 🎯 MÉTRICAS FINALES
+##  MÉTRICAS FINALES
 
 | Métrica | Valor |
 |---------|-------|

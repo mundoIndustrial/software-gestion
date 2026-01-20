@@ -33,7 +33,7 @@ class PedidoPrendaService
      */
     public function guardarPrendasEnPedido(PedidoProduccion $pedido, array $prendas): void
     {
-        Log::info('📦 [PedidoPrendaService::guardarPrendasEnPedido] INICIO - Análisis completo', [
+        Log::info(' [PedidoPrendaService::guardarPrendasEnPedido] INICIO - Análisis completo', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'cantidad_prendas' => count($prendas),
@@ -52,10 +52,10 @@ class PedidoPrendaService
             $index = 1;
             $prendasCreadas = [];
             
-            \Log::info('📦 [INICIANDO LOOP] Guardando ' . count($prendas) . ' prendas del pedido ' . $pedido->id);
+            \Log::info(' [INICIANDO LOOP] Guardando ' . count($prendas) . ' prendas del pedido ' . $pedido->id);
             
             foreach ($prendas as $prendaIndex => $prendaData) {
-                \Log::info("🟡 [PRENDA #{$index}] ANTES - Guardando prenda #{$index} de " . count($prendas), [
+                \Log::info(" [PRENDA #{$index}] ANTES - Guardando prenda #{$index} de " . count($prendas), [
                     'prendaIndex' => $prendaIndex,
                     'nombre' => $prendaData['nombre_producto'] ?? 'SIN NOMBRE',
                 ]);
@@ -82,7 +82,7 @@ class PedidoPrendaService
                 $index++;
             }
             
-            \Log::info("🎯 [RESUMEN] Prendas creadas en este ciclo", [
+            \Log::info(" [RESUMEN] Prendas creadas en este ciclo", [
                 'prendas_totales' => count($prendasCreadas),
                 'ids_creadas' => $prendasCreadas,
                 'ids_unicos' => count(array_unique($prendasCreadas)),
@@ -155,7 +155,7 @@ class PedidoPrendaService
         //  PROCESAR VARIACIONES: Crear si no existen
         // Si recibimos nombres (strings) en lugar de IDs, crear o buscar
         
-        \Log::info('🔧 [PedidoPrendaService::guardarPrenda] INICIO - Procesando variaciones', [
+        \Log::info(' [PedidoPrendaService::guardarPrenda] INICIO - Procesando variaciones', [
             'color_recibido' => $prendaData['color'] ?? 'NO ESPECIFICADO',
             'color_id_recibido' => $prendaData['color_id'] ?? 'NO ESPECIFICADO',
             'tela_recibida' => $prendaData['tela'] ?? 'NO ESPECIFICADA',
@@ -168,7 +168,7 @@ class PedidoPrendaService
         
         // COLOR: Si viene nombre, crear/obtener; si viene ID, usar directamente
         if (!empty($prendaData['color']) && empty($prendaData['color_id'])) {
-            \Log::info('🎨 [PedidoPrendaService::guardarPrenda] Procesando COLOR', [
+            \Log::info(' [PedidoPrendaService::guardarPrenda] Procesando COLOR', [
                 'color_nombre' => $prendaData['color'],
                 'color_id_actual' => $prendaData['color_id'] ?? 'NULL',
             ]);
@@ -188,7 +188,7 @@ class PedidoPrendaService
                 ]);
             }
         } else {
-            \Log::info('⏭️ [PedidoPrendaService] Color SALTADO', [
+            \Log::info('[PedidoPrendaService] Color SALTADO', [
                 'color_nombre_vacio' => empty($prendaData['color']),
                 'color_id_existe' => !empty($prendaData['color_id']),
                 'color_nombre' => $prendaData['color'] ?? 'NULL',
@@ -198,7 +198,7 @@ class PedidoPrendaService
         
         // TELA: Si viene nombre, crear/obtener; si viene ID, usar directamente
         if (!empty($prendaData['tela']) && empty($prendaData['tela_id'])) {
-            \Log::info('🧵 [PedidoPrendaService::guardarPrenda] Procesando TELA', [
+            \Log::info(' [PedidoPrendaService::guardarPrenda] Procesando TELA', [
                 'tela_nombre' => $prendaData['tela'],
                 'tela_id_actual' => $prendaData['tela_id'] ?? 'NULL',
             ]);
@@ -218,7 +218,7 @@ class PedidoPrendaService
                 ]);
             }
         } else {
-            \Log::info('⏭️ [PedidoPrendaService] Tela SALTADA', [
+            \Log::info('[PedidoPrendaService] Tela SALTADA', [
                 'tela_nombre_vacia' => empty($prendaData['tela']),
                 'tela_id_existe' => !empty($prendaData['tela_id']),
                 'tela_nombre' => $prendaData['tela'] ?? 'NULL',
@@ -301,9 +301,11 @@ class PedidoPrendaService
         
         //  PROCESAR CANTIDADES: Soportar múltiples géneros
         $cantidadTallaFinal = [];
-        $cantidadesInput = $prendaData['cantidades'] ?? $prendaData['cantidad_talla'] ?? null;
+        // IMPORTANTE: cantidad_talla ya viene procesada desde el controlador/transformador
+        $cantidadesInput = $prendaData['cantidad_talla'] ?? $prendaData['cantidades'] ?? null;
         
-        \Log::info('📊 [PedidoPrendaService::guardarPrenda] PROCESANDO CANTIDADES', [
+        \Log::info(' [PedidoPrendaService::guardarPrenda] PROCESANDO CANTIDADES', [
+            'cantidad_talla_en_prendaData' => $prendaData['cantidad_talla'] ?? 'NO EXISTE',
             'cantidades_input' => $cantidadesInput,
             'tipo_cantidades' => gettype($cantidadesInput),
             'cantidad_talla_keys' => $cantidadesInput && is_array($cantidadesInput) ? array_keys($cantidadesInput) : 'N/A',
@@ -332,9 +334,14 @@ class PedidoPrendaService
                     'cantidades_estructura' => $cantidadesInput,
                 ]);
                 
-                $cantidadTallaFinal = $esEstructuraGenero ? $cantidadesInput : $cantidadesInput;
+                $cantidadTallaFinal = $cantidadesInput;
             }
         }
+        
+        \Log::info(' [PedidoPrendaService::guardarPrenda] CANTIDAD_TALLA_FINAL ANTES DE GUARDAR', [
+            'cantidad_talla_final' => $cantidadTallaFinal,
+            'es_vacio' => empty($cantidadTallaFinal),
+        ]);
         
         // Crear prenda principal usando PrendaPedido (tabla correcta)
         // ACTUALIZACIÓN [16/01/2026]: Usar pedido_produccion_id en lugar de numero_pedido
@@ -355,7 +362,7 @@ class PedidoPrendaService
         ]);
 
         //  LOG: Después de guardar - VERIFICAR QUE EL ID SEA ÚNICO
-        \Log::info("🟢 [PRENDA #{$index}] DESPUÉS DE CREATE - Prenda creada", [
+        \Log::info(" [PRENDA #{$index}] DESPUÉS DE CREATE - Prenda creada", [
             'prenda_id_nueva' => $prenda->id,
             'nombre_prenda' => $prenda->nombre_prenda,
             'pedido_id' => $prenda->pedido_produccion_id,
@@ -374,7 +381,9 @@ class PedidoPrendaService
         ]);
 
         // 2.  CREAR VARIANTES en prenda_pedido_variantes desde cantidad_talla
-        if (!empty($prendaData['cantidad_talla'])) {
+        // IMPORTANTE: Crear variante incluso si cantidad_talla está vacío
+        // La variante es el registro de características de la prenda
+        {
             // Parsear variaciones si viene como JSON string
             $variacionesParsed = $prendaData['variaciones'];
             if (is_string($variacionesParsed)) {
@@ -383,7 +392,7 @@ class PedidoPrendaService
             
             $this->crearVariantesDesdeCantidadTalla(
                 $prenda, 
-                $prendaData['cantidad_talla'],
+                $prendaData['cantidad_talla'] ?? [],
                 // Pasar los IDs procesados para que se asignen a cada variante
                 $prendaData['color_id'] ?? null,
                 $prendaData['tela_id'] ?? null,
@@ -599,6 +608,15 @@ class PedidoPrendaService
             try {
                 // CASO 1: UploadedFile (archivo real subido)
                 if ($foto instanceof UploadedFile) {
+                    Log::info(' [guardarFotosPrenda] Procesando UploadedFile', [
+                        'prenda_id' => $prenda->id,
+                        'index' => $index,
+                        'nombre_archivo' => $foto->getClientOriginalName(),
+                        'tamaño' => $foto->getSize(),
+                        'mime_type' => $foto->getMimeType(),
+                        'pedido_id' => $prenda->pedido_produccion_id,
+                    ]);
+                    
                     //  NO REQUIERE procesoDetalle - fotos son independientes
                     $resultado = $this->guardarArchivoImagenEnWeb(
                         $foto,
@@ -609,6 +627,10 @@ class PedidoPrendaService
                     );
                     $rutaRelativa = $resultado['ruta_relativa'];
                     
+                    Log::info(' [guardarFotosPrenda] Archivo procesado exitosamente', [
+                        'ruta_relativa' => $rutaRelativa,
+                    ]);
+                    
                     DB::table('prenda_fotos_pedido')->insert([
                         'prenda_pedido_id' => $prenda->id,
                         'ruta_original' => $foto->getClientOriginalName(),
@@ -617,20 +639,6 @@ class PedidoPrendaService
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    
-                    // Guardar también en prenda_fotos_tela_pedido si hay color/tela
-                    if ($colorId && $telaId) {
-                        DB::table('prenda_fotos_tela_pedido')->insert([
-                            'prenda_pedido_id' => $prenda->id,
-                            'tela_id' => $telaId,
-                            'color_id' => $colorId,
-                            'ruta_original' => $foto->getClientOriginalName(),
-                            'ruta_webp' => $rutaRelativa,
-                            'orden' => $index + 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
                     
                     Log::info(" Foto de prenda guardada (UploadedFile)", [
                         'prenda_id' => $prenda->id,
@@ -659,19 +667,6 @@ class PedidoPrendaService
                         'updated_at' => now(),
                     ]);
                     
-                    if ($colorId && $telaId) {
-                        DB::table('prenda_fotos_tela_pedido')->insert([
-                            'prenda_pedido_id' => $prenda->id,
-                            'tela_id' => $telaId,
-                            'color_id' => $colorId,
-                            'ruta_original' => $foto['archivo']->getClientOriginalName(),
-                            'ruta_webp' => $rutaRelativa,
-                            'orden' => $index + 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                    
                     Log::info(" Foto de prenda guardada (Array con UploadedFile)", [
                         'prenda_id' => $prenda->id,
                         'index' => $index,
@@ -681,10 +676,8 @@ class PedidoPrendaService
                 // CASO 3: URL directa (string)
                 elseif (is_string($foto) && filter_var($foto, FILTER_VALIDATE_URL)) {
                     // Solo guardar la URL directamente, sin procesamiento
-                    DB::table('prenda_fotos_tela_pedido')->insert([
+                    DB::table('prenda_fotos_pedido')->insert([
                         'prenda_pedido_id' => $prenda->id,
-                        'tela_id' => $telaId,
-                        'color_id' => $colorId,
                         'ruta_original' => $foto,
                         'ruta_webp' => $foto,
                         'orden' => $index + 1,
@@ -700,14 +693,11 @@ class PedidoPrendaService
                 }
                 // CASO 4: Array con URL (tipo, nombre, url)
                 elseif (is_array($foto) && isset($foto['url']) && filter_var($foto['url'], FILTER_VALIDATE_URL)) {
-                    DB::table('prenda_fotos_tela_pedido')->insert([
+                    DB::table('prenda_fotos_pedido')->insert([
                         'prenda_pedido_id' => $prenda->id,
-                        'tela_id' => $telaId,
-                        'color_id' => $colorId,
                         'ruta_original' => $foto['url'],
                         'ruta_webp' => $foto['url'],
                         'orden' => $index + 1,
-                        'observaciones' => $foto['tipo'] ?? null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -767,7 +757,7 @@ class PedidoPrendaService
      */
     private function guardarFotosTelas(PrendaPedido $prenda, array $telas): void
     {
-        Log::info('🧵 [PedidoPrendaService::guardarFotosTelas] Guardando fotos de telas', [
+        Log::info(' [PedidoPrendaService::guardarFotosTelas] Guardando fotos de telas', [
             'prenda_id' => $prenda->id,
             'cantidad_telas' => count($telas),
             'telas_estructura' => array_map(function($t, $idx) {
@@ -1127,15 +1117,6 @@ class PedidoPrendaService
             // - Las variantes son CARACTERÍSTICAS (color, tela, manga, broche, bolsillos)
             // - Crear UNA SOLA variante por combinación de características, NO una por talla
             
-            // Validar que existe al menos uno de los IDs de características
-            if (empty($colorId) && empty($telaId) && empty($tipoMangaId) && empty($tipoBrocheBotonId) && empty($mangaObs) && empty($bolsillosObs) && empty($brocheObs)) {
-                \Log::warning('  [crearVariantesDesdeCantidadTalla] No hay características para guardar variante', [
-                    'prenda_id' => $prenda->id,
-                    'cantidad_talla_presente' => !empty($cantidadTalla),
-                ]);
-                return;
-            }
-
             // Verificar que cantidad_talla tiene datos (validar que la prenda tiene tallas asignadas)
             $tieneTallas = false;
             if (is_array($cantidadTalla)) {
@@ -1145,12 +1126,16 @@ class PedidoPrendaService
                 $tieneTallas = !empty($decoded);
             }
 
+            // Si no hay tallas, no crear variante
             if (!$tieneTallas) {
-                \Log::warning('  [crearVariantesDesdeCantidadTalla] cantidad_talla está vacío', [
+                \Log::warning('  [crearVariantesDesdeCantidadTalla] cantidad_talla está vacío, no se crea variante', [
                     'prenda_id' => $prenda->id,
                 ]);
                 return;
             }
+
+            // Si hay tallas, SIEMPRE crear variante (incluso si todas las características son NULL)
+            // La variante registra las características de la prenda para esas tallas
 
             \Log::info(' [crearVariantesDesdeCantidadTalla] Creando UNA SOLA variante con características', [
                 'prenda_id' => $prenda->id,
@@ -1162,16 +1147,31 @@ class PedidoPrendaService
 
             //  CREAR UNA ÚNICA VARIANTE CON TODAS LAS CARACTERÍSTICAS
             // Las tallas y cantidades ya están guardadas en prendas_pedido.cantidad_talla JSON
-            $prenda->variantes()->create([
-                'color_id' => $colorId,
-                'tela_id' => $telaId,
+            $variante = $prenda->variantes()->create([
                 'tipo_manga_id' => $tipoMangaId,
                 'tipo_broche_boton_id' => $tipoBrocheBotonId,
                 'manga_obs' => $mangaObs,
                 'broche_boton_obs' => $brocheObs,
                 'tiene_bolsillos' => $tieneBolsillos,
                 'bolsillos_obs' => $bolsillosObs,
+                'tiene_reflectivo' => $tieneReflectivo,
+                'reflectivo_obs' => $reflectivoObs,
             ]);
+
+            // Guardar color y tela en tabla separada prenda_pedido_colores_telas
+            if ($colorId || $telaId) {
+                \App\Models\PrendaPedidoColorTela::create([
+                    'prenda_pedido_id' => $prenda->id,
+                    'color_id' => $colorId,
+                    'tela_id' => $telaId,
+                ]);
+                
+                \Log::info(' [crearVariantesDesdeCantidadTalla] Color y tela guardados en tabla separada', [
+                    'prenda_id' => $prenda->id,
+                    'color_id' => $colorId,
+                    'tela_id' => $telaId,
+                ]);
+            }
 
             \Log::info(' [crearVariantesDesdeCantidadTalla] Variante creada exitosamente', [
                 'prenda_id' => $prenda->id,
@@ -1515,7 +1515,7 @@ class PedidoPrendaService
             try {
                 $imagen = \Intervention\Image\ImageManager::gd()->read($archivo->getRealPath());
             } catch (\Exception $e) {
-                \Log::warning('⚠️ Error con GD, intentando ImageMagick', ['error' => $e->getMessage()]);
+                \Log::warning(' Error con GD, intentando ImageMagick', ['error' => $e->getMessage()]);
                 try {
                     $imagen = \Intervention\Image\ImageManager::imagick()->read($archivo->getRealPath());
                 } catch (\Exception $e2) {

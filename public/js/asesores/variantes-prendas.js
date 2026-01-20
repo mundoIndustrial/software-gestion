@@ -111,7 +111,7 @@ function mostrarSelectorVariantes(inputElement) {
     
     // Si no se reconoce el tipo, mostrar campos básicos
     if (!tipoPrenda) {
-        console.log('⚠️ Tipo de prenda no reconocido, mostrando campos básicos de variantes');
+        console.log(' Tipo de prenda no reconocido, mostrando campos básicos de variantes');
         crearSelectorVariantesBasico(inputElement, nombrePrenda);
         return;
     }
@@ -155,7 +155,7 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
     // Obtener la primera palabra (palabra principal)
     const palabraPrincipal = nombreUpper.split(/\s+/)[0];
     
-    console.log('🔍 DEBUG mostrarSelectorJeanPantalon:', {
+    console.log(' DEBUG mostrarSelectorJeanPantalon:', {
         nombrePrenda: nombrePrenda,
         nombreUpper: nombreUpper,
         palabraPrincipal: palabraPrincipal
@@ -165,7 +165,7 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
     const esJean = /^JEAN/.test(palabraPrincipal);
     const esPantalon = /^PANTALÓ?N/.test(palabraPrincipal);
     
-    console.log('🔍 DEBUG esJean:', esJean, 'esPantalon:', esPantalon);
+    console.log(' DEBUG esJean:', esJean, 'esPantalon:', esPantalon);
     
     if (esJean || esPantalon) {
         const tipoLabel = esJean ? 'JEAN' : 'PANTALÓN';
@@ -203,7 +203,7 @@ function toggleMangaInput(checkbox) {
     let container = checkbox.closest('tr') || checkbox.closest('td') || checkbox.closest('div');
     
     if (!container) {
-        console.warn('⚠️ No se encontró contenedor para el checkbox de manga');
+        console.warn(' No se encontró contenedor para el checkbox de manga');
         return;
     }
     
@@ -211,7 +211,7 @@ function toggleMangaInput(checkbox) {
     const mangaIdInput = container.querySelector('.manga-id-input');
     
     if (!mangaInput) {
-        console.warn('⚠️ No se encontró .manga-input en el contenedor');
+        console.warn(' No se encontró .manga-input en el contenedor');
         return;
     }
     
@@ -583,7 +583,7 @@ function seleccionarManga(id, nombre, element) {
     const input = td.querySelector('.manga-input');
     const idInput = td.querySelector('.manga-id-input');
     
-    console.log(`🔍 DEBUG seleccionarManga:`, {
+    console.log(` DEBUG seleccionarManga:`, {
         id: id,
         nombre: nombre,
         td_encontrado: !!td,

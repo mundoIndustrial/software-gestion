@@ -97,7 +97,7 @@ class PedidoStateManager {
     setPrendas(prendas) {
         this.prendas = prendas;
         this.notifyObservers('prendas', this.getPrendas());
-        console.log(`👕 ${prendas.length} prendas cargadas`);
+        console.log(` ${prendas.length} prendas cargadas`);
     }
 
     /**
@@ -186,7 +186,7 @@ class PedidoStateManager {
         this.esReflectivo = tipo === 'RF';
         this.esLogo = tipo === 'L' || tipo === 'PL';
         this.notifyObservers('tipo', tipo);
-        console.log(`🎯 Tipo de pedido: ${tipo}`);
+        console.log(` Tipo de pedido: ${tipo}`);
     }
 
     /**
@@ -372,7 +372,7 @@ class PedidoStateManager {
         if (logo && logo.id) {
             this.logoCotizacionId = logo.id;
         }
-        console.log(`🎨 Logo establecido`);
+        console.log(` Logo establecido`);
     }
 
     /**
@@ -487,7 +487,7 @@ class PedidoStateManager {
      * Imprimir estado en consola (debugging)
      */
     debug() {
-        console.log('📊 ESTADO ACTUAL DEL PEDIDO:');
+        console.log(' ESTADO ACTUAL DEL PEDIDO:');
         console.table({
             'Cotización ID': this.cotizacion.id,
             'Cliente': this.cotizacion.cliente,

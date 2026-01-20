@@ -1,6 +1,6 @@
 #  Script de Análisis: ¿Por qué NO se guardan variaciones y observaciones?
 
-## 🔍 Resumen Ejecutivo
+##  Resumen Ejecutivo
 
 Cuando envías un pedido con prendas que tienen **variaciones** (manga, broche, bolsillos, reflectivo) y **observaciones**, los datos **DEBEN** fluir a través de estos puntos:
 
@@ -28,7 +28,7 @@ const item = {
         bolsillos: {tipo: true, observacion: "bolsillos de pecho"},
         reflectivo: {tipo: true, observacion: "3 franjas"}
     },
-    // ⚠️ PROBLEMA 1: Se envían también a nivel superior
+    //  PROBLEMA 1: Se envían también a nivel superior
     obs_manga: "con puño",
     obs_bolsillos: "bolsillos de pecho", 
     obs_broche: "",
@@ -294,7 +294,7 @@ Si ves `NULL` o valores vacíos en observaciones → **El dato NO llegó al serv
 
 ---
 
-## 🔧 Diagnóstico Rápido
+##  Diagnóstico Rápido
 
 Copia este código en `dd()` o `dump()` en el controlador:
 
@@ -357,7 +357,7 @@ protected $fillable = [
 
 ---
 
-## 📊 Mapa del Flujo Completo
+##  Mapa del Flujo Completo
 
 ```
 ┌─────────────────────────────────┐
@@ -404,7 +404,7 @@ protected $fillable = [
 
 ---
 
-## 🎯 Próximos Pasos
+##  Próximos Pasos
 
 1. **Ejecuta los logs**: Crea un pedido de prueba y busca los 4 puntos de verification en logs
 2. **Identifica el punto de ruptura**: ¿Dónde se pierden los datos?

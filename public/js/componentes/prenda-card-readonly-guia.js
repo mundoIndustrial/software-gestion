@@ -1,9 +1,9 @@
 /**
- * ⚠️  ARCHIVO DEPRECADO - VER MÓDULO NUEVO
+ *   ARCHIVO DEPRECADO - VER MÓDULO NUEVO
  * 
  * Este archivo es SOLO REFERENCIA. El código ha sido migrado a estructura modular.
  * 
- * 📦 NUEVA ESTRUCTURA (prenda-tarjeta/):
+ *  NUEVA ESTRUCTURA (prenda-tarjeta/):
  * - prenda-tarjeta/loader.js (⭐ USA ESTO - carga automática)
  * - prenda-tarjeta/index.js (función principal)
  * - prenda-tarjeta/secciones.js (secciones expandibles)
@@ -21,7 +21,7 @@
  */
 
 // ============================================
-// ⚠️  NOTA: Este es código de referencia
+//   NOTA: Este es código de referencia
 // ============================================
 // El código real está en los módulos de prenda-tarjeta/
 

@@ -27,7 +27,7 @@ class ObtenerEppPorCategoriaHandler implements QueryHandler
         }
 
         try {
-            Log::info('🔍 [ObtenerEppPorCategoriaHandler] Obteniendo EPP por categoría', [
+            Log::info(' [ObtenerEppPorCategoriaHandler] Obteniendo EPP por categoría', [
                 'categoria' => $query->getCategoria(),
             ]);
 
@@ -41,7 +41,7 @@ class ObtenerEppPorCategoriaHandler implements QueryHandler
             return $epps;
 
         } catch (\DomainException $e) {
-            Log::warning('⚠️ [ObtenerEppPorCategoriaHandler] Categoría inválida', [
+            Log::warning(' [ObtenerEppPorCategoriaHandler] Categoría inválida', [
                 'error' => $e->getMessage(),
                 'categoria' => $query->getCategoria(),
             ]);

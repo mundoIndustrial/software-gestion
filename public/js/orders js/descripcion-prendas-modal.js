@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Decodificar desde base64
                             const decodedContent = atob(encodedContent);
                             params.content = decodedContent;
-                            console.log('📦 Contenido de descripcion_prendas decodificado:', decodedContent.substring(0, 100));
+                            console.log(' Contenido de descripcion_prendas decodificado:', decodedContent.substring(0, 100));
                         }
                     }
                 }

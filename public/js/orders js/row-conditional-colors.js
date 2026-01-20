@@ -55,7 +55,7 @@ function applyRowConditionalColors(row) {
     // Aplicar color según rango de días
     if (diasTotales >= 5 && diasTotales <= 9) {
         row.classList.add('dias-5-9');
-        console.log(`🟡 Fila con ${diasTotales} días (amarillo claro)`);
+        console.log(` Fila con ${diasTotales} días (amarillo claro)`);
     } else if (diasTotales >= 10 && diasTotales <= 15) {
         row.classList.add('dias-10-15');
         console.log(`🔴 Fila con ${diasTotales} días (rojo claro)`);
@@ -88,7 +88,7 @@ function initializeStatusChangeListeners() {
             const row = e.target.closest('.table-row');
             if (row) {
                 applyRowConditionalColors(row);
-                console.log(`🎨 Color de fila actualizado para estado: ${e.target.value}`);
+                console.log(` Color de fila actualizado para estado: ${e.target.value}`);
             }
         }
     });
@@ -100,7 +100,7 @@ function initializeStatusChangeListeners() {
 document.addEventListener('DOMContentLoaded', function() {
     applyAllRowConditionalColors();
     initializeStatusChangeListeners();
-    console.log('🎨 Sistema de colores condicionales inicializado');
+    console.log(' Sistema de colores condicionales inicializado');
 });
 
 /**

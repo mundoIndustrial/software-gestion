@@ -60,7 +60,7 @@
                         window.currentDatosReflectivo = data.reflectivo || null;
                         window.currentEspecificaciones = data.especificaciones || null;
 
-                        logWithEmoji('🎯', 'Gestores inicializados con datos de cotización');
+                        logWithEmoji('', 'Gestores inicializados con datos de cotización');
                     })
                     .catch(error => {
                         console.error(' Error cargando cotización:', error);

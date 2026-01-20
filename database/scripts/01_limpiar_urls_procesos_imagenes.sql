@@ -30,7 +30,7 @@ SELECT
     CASE 
         WHEN ruta_webp LIKE 'http%' THEN ' URL Completa'
         WHEN ruta_webp LIKE 'storage/%' THEN ' Ruta Relativa'
-        WHEN ruta_webp LIKE '/storage/%' THEN '⚠️ Ruta con /'
+        WHEN ruta_webp LIKE '/storage/%' THEN ' Ruta con /'
         ELSE '❓ Otro formato'
     END as tipo_ruta
 FROM pedidos_procesos_imagenes
@@ -41,7 +41,7 @@ SELECT
     CASE 
         WHEN ruta_webp LIKE 'http%' THEN ' URL Completa'
         WHEN ruta_webp LIKE 'storage/%' THEN ' Ruta Relativa'
-        WHEN ruta_webp LIKE '/storage/%' THEN '⚠️ Ruta con /'
+        WHEN ruta_webp LIKE '/storage/%' THEN ' Ruta con /'
         ELSE '❓ Otro formato'
     END as tipo_ruta,
     COUNT(*) as cantidad

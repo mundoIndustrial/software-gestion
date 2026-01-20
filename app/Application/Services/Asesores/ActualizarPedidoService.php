@@ -19,7 +19,7 @@ class ActualizarPedidoService
      */
     public function actualizar($pedidoIdentifier, array $datos): PedidoProduccion
     {
-        Log::info('📝 [ACTUALIZAR] Actualizando pedido', [
+        Log::info(' [ACTUALIZAR] Actualizando pedido', [
             'identificador' => $pedidoIdentifier,
             'campos' => array_keys($datos)
         ]);
@@ -70,7 +70,7 @@ class ActualizarPedidoService
      */
     public function actualizarCampos($pedidoIdentifier, array $campos): PedidoProduccion
     {
-        Log::info('📝 [ACTUALIZAR-CAMPOS] Actualizando campos específicos', [
+        Log::info(' [ACTUALIZAR-CAMPOS] Actualizando campos específicos', [
             'campos' => array_keys($campos)
         ]);
 
@@ -95,7 +95,7 @@ class ActualizarPedidoService
      */
     private function actualizarPrendas(PedidoProduccion $pedido, array $prendas): void
     {
-        Log::info('🧵 [ACTUALIZAR-PRENDAS] Actualizando ' . count($prendas) . ' prendas');
+        Log::info(' [ACTUALIZAR-PRENDAS] Actualizando ' . count($prendas) . ' prendas');
 
         try {
             // Eliminar prendas antiguas

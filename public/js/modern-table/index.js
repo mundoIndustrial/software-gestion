@@ -5,7 +5,7 @@
 
 // Cargar módulos en orden de dependencias
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📦 Cargando módulos de ModernTable...');
+    console.log(' Cargando módulos de ModernTable...');
     
     // Los módulos ya están cargados por los scripts del template
     // Este archivo sirve como referencia de la arquitectura modular

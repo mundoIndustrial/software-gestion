@@ -36,13 +36,13 @@ class CrearPedidoProduccionJob
         CopiarImagenesCotizacionAPedidoService $copiarImagenesService,
         EnriquecerDatosService $enriquecerService
     ): PedidoProduccion {
-        \Log::info('🟢 [CrearPedidoProduccionJob] ===== INICIO JOB HANDLE =====');
-        \Log::info('🟢 [CrearPedidoProduccionJob] Servicios inyectados correctamente');
+        \Log::info(' [CrearPedidoProduccionJob] ===== INICIO JOB HANDLE =====');
+        \Log::info(' [CrearPedidoProduccionJob] Servicios inyectados correctamente');
         
         // Usar transacción para garantizar atomicidad
         return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService, $copiarImagenesService, $enriquecerService) {
             \Log::info('� [CrearPedidoProduccionJob] Dentro de transacción DB');
-            \Log::info('🟢 [CrearPedidoProduccionJob] Datos del DTO', [
+            \Log::info(' [CrearPedidoProduccionJob] Datos del DTO', [
                 'dto_forma_de_pago' => $this->dto->formaDePago,
                 'dto_cliente' => $this->dto->cliente,
                 'dto_cotizacion_id' => $this->dto->cotizacionId,
@@ -58,12 +58,12 @@ class CrearPedidoProduccionJob
             //  ENRIQUECER PRENDAS DEL FRONTEND CON IDs FALTANTES
             $prendasEnriquecidas = $enriquecerService->enriquecerPrendas($prendasArray);
             
-            \Log::info('🔍 [CrearPedidoProduccionJob] Prendas enriquecidas - DETALLE COMPLETO', [
+            \Log::info(' [CrearPedidoProduccionJob] Prendas enriquecidas - DETALLE COMPLETO', [
                 'total_prendas' => count($prendasEnriquecidas),
                 'prendas_completas' => $prendasEnriquecidas,
             ]);
             
-            \Log::info('🔍 [CrearPedidoProduccionJob] Primera prenda - análisis de telas', [
+            \Log::info(' [CrearPedidoProduccionJob] Primera prenda - análisis de telas', [
                 'primera_prenda_tela_id' => $prendasEnriquecidas[0]['tela_id'] ?? null,
                 'primera_prenda_color_id' => $prendasEnriquecidas[0]['color_id'] ?? null,
                 'primera_prenda_telas' => $prendasEnriquecidas[0]['telas'] ?? null,
@@ -85,7 +85,7 @@ class CrearPedidoProduccionJob
                 
                 $numeroPedido = $secuenciaRow->siguiente;
                 
-                \Log::info('🔍 [CrearPedidoProduccionJob] Número obtenido de secuencia', [
+                \Log::info(' [CrearPedidoProduccionJob] Número obtenido de secuencia', [
                     'secuencia_row' => $secuenciaRow,
                     'numero_pedido_raw' => $numeroPedido,
                     'tipo_numero_pedido' => gettype($numeroPedido),
@@ -97,7 +97,7 @@ class CrearPedidoProduccionJob
                 if (is_string($numeroPedido) && str_contains($numeroPedido, 'PEP-')) {
                     // Si viene con prefijo, extraer solo el número
                     $numeroPedido = (int) str_replace('PEP-', '', $numeroPedido);
-                    \Log::warning('⚠️ [CrearPedidoProduccionJob] Número tenía prefijo PEP-, se extrajo solo el número', [
+                    \Log::warning(' [CrearPedidoProduccionJob] Número tenía prefijo PEP-, se extrajo solo el número', [
                         'numero_limpio' => $numeroPedido
                     ]);
                 } else {
@@ -119,7 +119,7 @@ class CrearPedidoProduccionJob
                 $this->prendas
             );
 
-            \Log::info('🔍 [CrearPedidoProduccionJob] Datos a guardar en PedidoProduccion', [
+            \Log::info(' [CrearPedidoProduccionJob] Datos a guardar en PedidoProduccion', [
                 'numero_pedido' => $numeroPedido,
                 'tipo_numero_pedido' => gettype($numeroPedido),
                 'forma_de_pago' => $this->dto->formaDePago,
@@ -154,7 +154,7 @@ class CrearPedidoProduccionJob
             //  USAR PRENDAS ENRIQUECIDAS CON IDs CORRECTOS
             // Guardar prendas en tablas normalizadas (DDD)
             if (!empty($prendasEnriquecidas)) {
-                \Log::info('🟢 [CrearPedidoProduccionJob] Guardando prendas en pedido - ANÁLISIS ANTES DE GUARDAR', [
+                \Log::info(' [CrearPedidoProduccionJob] Guardando prendas en pedido - ANÁLISIS ANTES DE GUARDAR', [
                     'total_prendas' => count($prendasEnriquecidas),
                     'primera_prenda_tela_id' => $prendasEnriquecidas[0]['tela_id'] ?? null,
                     'primera_prenda_color_id' => $prendasEnriquecidas[0]['color_id'] ?? null,
@@ -166,13 +166,13 @@ class CrearPedidoProduccionJob
                 \Log::info(' [CrearPedidoProduccionJob] Prendas guardadas exitosamente');
             }
 
-        // ⏭️ NO COPIAR IMÁGENES DE COTIZACIÓN AUTOMÁTICAMENTE
+        // NO COPIAR IMÁGENES DE COTIZACIÓN AUTOMÁTICAMENTE
         // Las fotos se guardarán a través del endpoint separado guardarFotosPedido()
         // De esta forma respetamos exactamente lo que el usuario seleccionó/eliminó
         
-        \Log::info('⏭️ [CrearPedidoProduccionJob] NO copiando imágenes de cotización');
-        \Log::info('⏭️ [CrearPedidoProduccionJob] Las fotos serán guardadas a través de endpoint /pedidos/guardar-fotos');
-        \Log::info('⏭️ [CrearPedidoProduccionJob] Esto garantiza respetar las fotos que el usuario eliminó');
+        \Log::info('[CrearPedidoProduccionJob] NO copiando imágenes de cotización');
+        \Log::info('[CrearPedidoProduccionJob] Las fotos serán guardadas a través de endpoint /pedidos/guardar-fotos');
+        \Log::info('[CrearPedidoProduccionJob] Esto garantiza respetar las fotos que el usuario eliminó');
 
             // Guardar logo si existe (DDD)
             if (!empty($this->dto->logo)) {

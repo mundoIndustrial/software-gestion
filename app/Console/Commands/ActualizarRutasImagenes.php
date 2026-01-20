@@ -37,7 +37,7 @@ class ActualizarRutasImagenes extends Command
 
             $this->info(" Fotos de telas actualizadas: $telasActualizadas");
         } else {
-            $this->info("⚠️ Tabla prenda_tela_fotos no existe, omitiendo...");
+            $this->info(" Tabla prenda_tela_fotos no existe, omitiendo...");
         }
 
         // Actualizar logo_fotos si existe
@@ -52,7 +52,7 @@ class ActualizarRutasImagenes extends Command
 
             $this->info(" Fotos de logos actualizadas: $logoActualizadas");
         } else {
-            $this->info("⚠️ Tabla logo_fotos no existe, omitiendo...");
+            $this->info(" Tabla logo_fotos no existe, omitiendo...");
         }
 
         $this->info("\n Todas las rutas han sido actualizadas correctamente.");

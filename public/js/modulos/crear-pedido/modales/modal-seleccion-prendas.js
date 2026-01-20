@@ -12,7 +12,7 @@ let cotizacionActual = null;
  * Abrir modal con prendas de cotización
  */
 window.abrirModalSeleccionPrendas = function(cotizacion) {
-    console.log('🎨 Abriendo modal para cotización:', cotizacion.numero_cotizacion);
+    console.log(' Abriendo modal para cotización:', cotizacion.numero_cotizacion);
     
     cotizacionActual = cotizacion;
     prendasSeleccionadas = [];
@@ -28,11 +28,11 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
     fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacion.id}`)
         .then(response => response.json())
         .then(data => {
-            console.log('📦 Datos recibidos del backend:', data);
-            console.log('🔍 Tipo de cotización:', data.tipo_cotizacion_codigo);
-            console.log('🔍 Tiene prendas normales:', data.prendas?.length || 0);
-            console.log('🔍 Tiene prendas técnicas (logo):', data.prendas_tecnicas?.length || 0);
-            console.log('🔍 Tiene logo:', data.logo ? 'Sí' : 'No');
+            console.log(' Datos recibidos del backend:', data);
+            console.log(' Tipo de cotización:', data.tipo_cotizacion_codigo);
+            console.log(' Tiene prendas normales:', data.prendas?.length || 0);
+            console.log(' Tiene prendas técnicas (logo):', data.prendas_tecnicas?.length || 0);
+            console.log(' Tiene logo:', data.logo ? 'Sí' : 'No');
             
             if (data.error) {
                 console.error(' Error al cargar prendas:', data.error);
@@ -44,8 +44,8 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
             let prendasNormales = data.prendas || [];
             let prendasTecnicas = data.prendas_tecnicas || [];
             
-            console.log('🔍 Prendas normales:', prendasNormales);
-            console.log('🔍 Prendas técnicas:', prendasTecnicas);
+            console.log(' Prendas normales:', prendasNormales);
+            console.log(' Prendas técnicas:', prendasTecnicas);
             
             prendasCotizacion = [...prendasNormales, ...prendasTecnicas];
             console.log(' Total prendas extraídas:', prendasCotizacion.length);
@@ -53,7 +53,7 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
             
             // Si no hay prendas, mostrar mensaje
             if (prendasCotizacion.length === 0) {
-                console.warn('⚠️ ADVERTENCIA: Esta cotización no tiene prendas asociadas');
+                console.warn(' ADVERTENCIA: Esta cotización no tiene prendas asociadas');
                 console.warn('   - Prendas normales:', prendasNormales.length);
                 console.warn('   - Prendas técnicas:', prendasTecnicas.length);
                 console.warn('   - Tipo de cotización:', data.tipo_cotizacion_codigo);
@@ -79,7 +79,7 @@ function renderizarPrendasModal() {
     
     listaPrendas.innerHTML = '';
     
-    console.log('🎨 Renderizando prendas en modal. Total:', prendasCotizacion.length);
+    console.log(' Renderizando prendas en modal. Total:', prendasCotizacion.length);
     
     if (prendasCotizacion.length === 0) {
         listaPrendas.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay prendas disponibles en esta cotización</p>';
@@ -113,10 +113,10 @@ function renderizarPrendasModal() {
                     </label>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
                         <span style="padding: 0.25rem 0.75rem; background: #f3f4f6; color: #374151; border-radius: 12px; font-size: 0.875rem;">
-                            📦 ${cantidad} unidades
+                             ${cantidad} unidades
                         </span>
                         <span style="padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.875rem;">
-                            🔧 ${procesosTexto}
+                             ${procesosTexto}
                         </span>
                     </div>
                     <div style="margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 6px;">
@@ -201,7 +201,7 @@ window.togglePrendaSeleccion = function(index) {
         console.log(' Prenda deseleccionada:', prenda.nombre_producto || prenda.nombre_prenda);
     }
     
-    console.log('📊 Total prendas seleccionadas:', prendasSeleccionadas.length);
+    console.log(' Total prendas seleccionadas:', prendasSeleccionadas.length);
 };
 
 /**
@@ -280,7 +280,7 @@ window.agregarPrendasSeleccionadas = function() {
         
         // Convertir tallas al formato esperado
         let tallas = [];
-        console.log('🔍 Buscando tallas en prenda:', {
+        console.log(' Buscando tallas en prenda:', {
             tiene_tallas: !!prenda.tallas,
             tiene_talla_cantidad: !!prenda.talla_cantidad,
             tallas: prenda.tallas,
@@ -306,7 +306,7 @@ window.agregarPrendasSeleccionadas = function() {
                     console.log(' Tallas desde prenda.talla_cantidad (JSON):', tallas);
                 }
             } catch (e) {
-                console.warn('⚠️ Error al parsear talla_cantidad:', e);
+                console.warn(' Error al parsear talla_cantidad:', e);
             }
         }
         
@@ -320,7 +320,7 @@ window.agregarPrendasSeleccionadas = function() {
         }
         
         if (tallas.length === 0) {
-            console.warn('⚠️ No se encontraron tallas en la prenda');
+            console.warn(' No se encontraron tallas en la prenda');
         }
         
         // Estructura de la prenda para el ítem
@@ -381,7 +381,7 @@ window.agregarPrendasSeleccionadas = function() {
         }
     });
     
-    console.log('📊 Total ítems en pedido:', window.itemsPedido.length);
+    console.log(' Total ítems en pedido:', window.itemsPedido.length);
     
     // Actualizar vista
     window.actualizarVistaItems();

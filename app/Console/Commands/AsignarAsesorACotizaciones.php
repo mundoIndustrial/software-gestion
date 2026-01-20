@@ -37,7 +37,7 @@ class AsignarAsesorACotizaciones extends Command
             $query->whereIn('id', $ids);
             $this->info("Filtrando por IDs: " . implode(', ', $ids));
         } else {
-            $this->warn("⚠️  Asignando a TODAS las cotizaciones sin asesor_id");
+            $this->warn("  Asignando a TODAS las cotizaciones sin asesor_id");
         }
 
         $this->line('');
@@ -49,7 +49,7 @@ class AsignarAsesorACotizaciones extends Command
             return 0;
         }
 
-        $this->info("📊 Cotizaciones a actualizar: {$total}");
+        $this->info(" Cotizaciones a actualizar: {$total}");
         $this->line('');
 
         // Confirmar

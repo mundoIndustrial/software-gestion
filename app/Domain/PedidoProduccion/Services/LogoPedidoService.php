@@ -234,7 +234,7 @@ class LogoPedidoService
         try {
             DB::beginTransaction();
 
-            Log::info('🎨 [LogoPedidoService::guardarDatos] Iniciando', [
+            Log::info(' [LogoPedidoService::guardarDatos] Iniciando', [
                 'pedido_id' => $pedidoId,
                 'logo_cotizacion_id' => $logoCotizacionId,
                 'cantidad' => $cantidad,
@@ -259,7 +259,7 @@ class LogoPedidoService
                     $clienteObj = DB::table('clientes')->where('id', $cotizacion->cliente_id)->first();
                     $cliente = $clienteObj?->nombre ?? 'Sin nombre';
 
-                    Log::info('🎨 [LogoPedidoService] Cliente obtenido de cotización', [
+                    Log::info(' [LogoPedidoService] Cliente obtenido de cotización', [
                         'cliente' => $cliente,
                     ]);
                 }
@@ -277,7 +277,7 @@ class LogoPedidoService
                 }
             }
 
-            Log::info('🎨 [LogoPedidoService] Búsqueda completada', [
+            Log::info(' [LogoPedidoService] Búsqueda completada', [
                 'encontrado' => $logoPedidoExistente ? 'SÍ' : 'NO',
             ]);
 

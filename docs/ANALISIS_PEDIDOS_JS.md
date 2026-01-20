@@ -1,9 +1,9 @@
-📊 ANÁLISIS EXHAUSTIVO: pedidos.js
+ ANÁLISIS EXHAUSTIVO: pedidos.js
 ================================================================================
 
 ARCHIVO: public/js/asesores/pedidos.js
 TAMAÑO: ~600 líneas
-ESTADO: ⚠️ Alto Acoplamiento + Duplicación Masiva
+ESTADO:  Alto Acoplamiento + Duplicación Masiva
 
 ================================================================================
 1️⃣ DUPLICACIÓN CRÍTICA - RECOLECCIÓN DE PRODUCTOS
@@ -265,7 +265,7 @@ Validator.check(cantidad && precio && subtotal, 'Inputs no encontrados', () => {
 IMPACTO: ⭐⭐ Bajo - Validación mejorada
 
 ================================================================================
-📊 RESUMEN DE IMPACTO
+ RESUMEN DE IMPACTO
 ================================================================================
 
 | Duplicación | Líneas | Impacto | Solución |
@@ -279,7 +279,7 @@ IMPACTO: ⭐⭐ Bajo - Validación mejorada
 | **TOTAL** | **310 líneas** | **CRÍTICO** | **Refactorizar YA** |
 
 ================================================================================
-🎯 REFACTORIZACIÓN PROPUESTA
+ REFACTORIZACIÓN PROPUESTA
 ================================================================================
 
 PASO 1: Crear ProductCollectorService (20 líneas)

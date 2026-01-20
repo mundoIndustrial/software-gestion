@@ -46,7 +46,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
         try {
             DB::beginTransaction();
 
-            Log::info('📦 [CreacionPrendaReflectivoStrategy] Procesando prenda reflectivo', [
+            Log::info(' [CreacionPrendaReflectivoStrategy] Procesando prenda reflectivo', [
                 'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
                 'numero_pedido' => $numeroPedido,
             ]);
@@ -55,7 +55,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
             $cantidadTallaGenero = $this->procesarCantidadesReflectivo($prendaData);
             $cantidadTotal = $this->calcularCantidadTotalReflectivo($cantidadTallaGenero);
 
-            Log::debug('📊 [CreacionPrendaReflectivoStrategy] Cantidades procesadas', [
+            Log::debug(' [CreacionPrendaReflectivoStrategy] Cantidades procesadas', [
                 'cantidad_total' => $cantidadTotal,
                 'estructura_generos' => count($cantidadTallaGenero),
             ]);
@@ -153,7 +153,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
      */
     private function procesarCantidadesReflectivo(array $prendaData): array
     {
-        Log::debug('🔍 [procesarCantidadesReflectivo] Buscando estructura de cantidad');
+        Log::debug(' [procesarCantidadesReflectivo] Buscando estructura de cantidad');
 
         $cantidad = $prendaData['cantidad_talla'] ?? [];
 

@@ -4,7 +4,7 @@
 
 Se ha iniciado la refactorización del controlador `PedidosProduccionController.php` (3091 líneas) aplicando principios de **Domain-Driven Design (DDD)** y **SOLID**.
 
-## 🎯 Problemas Identificados
+##  Problemas Identificados
 
 1. **God Object Controller**: 3091 líneas, 30+ métodos, múltiples responsabilidades
 2. **Lógica de negocio en controlador**: Cálculos, validaciones, transformaciones
@@ -27,7 +27,7 @@ app/Domain/PedidoProduccion/
 └── ValueObjects/                      🔄 Pendiente
 ```
 
-## 📦 Servicios Creados
+##  Servicios Creados
 
 ### 1. NumeracionService
 **Responsabilidad**: Generar números secuenciales únicos para pedidos
@@ -149,7 +149,7 @@ public function crearFormEditable()
 4. **Mantenible**: Cambios en lógica de negocio no afectan al controlador
 5. **Escalable**: Fácil agregar nuevas funcionalidades
 
-### 🎯 Principios SOLID Aplicados
+###  Principios SOLID Aplicados
 - **S**ingle Responsibility: Cada servicio tiene una responsabilidad
 - **O**pen/Closed: Servicios abiertos a extensión, cerrados a modificación
 - **L**iskov Substitution: Interfaces consistentes
@@ -188,7 +188,7 @@ public function crearFormEditable()
 3. **Crear DTOs**: Para validación y transferencia de datos
 4. **Documentar**: PHPDoc completo en todos los servicios
 
-## 📝 Notas Importantes
+##  Notas Importantes
 
 - **No romper funcionalidad existente**: La refactorización es incremental
 - **Mantener compatibilidad**: Los métodos legacy se marcan como deprecated

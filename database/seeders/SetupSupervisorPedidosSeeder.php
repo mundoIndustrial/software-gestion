@@ -20,7 +20,7 @@ class SetupSupervisorPedidosSeeder extends Seeder
         $this->command->newLine();
 
         // Paso 1: Crear el rol
-        $this->command->info('📝 Paso 1: Creando rol "supervisor_pedidos"...');
+        $this->command->info(' Paso 1: Creando rol "supervisor_pedidos"...');
         $this->call(SupervisorPedidosRoleSeeder::class);
         $this->command->newLine();
 

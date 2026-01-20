@@ -4,7 +4,7 @@
         'disponibilidad' => ['emoji' => '', 'label' => 'DISPONIBILIDAD'],
         'forma_pago' => ['emoji' => '💳', 'label' => 'FORMA DE PAGO'],
         'regimen' => ['emoji' => '🏛️', 'label' => 'RÉGIMEN'],
-        'se_ha_vendido' => ['emoji' => '📊', 'label' => 'SE HA VENDIDO'],
+        'se_ha_vendido' => ['emoji' => '', 'label' => 'SE HA VENDIDO'],
         'ultima_venta' => ['emoji' => '💰', 'label' => 'ÚLTIMA VENTA'],
         'flete' => ['emoji' => '🚚', 'label' => 'FLETE DE ENVÍO']
     ];

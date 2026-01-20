@@ -33,7 +33,7 @@ const HolidayManager = (() => {
                 return festivosCache;
             }
         } catch (error) {
-            console.log('⚠️ API de festivos no disponible, usando fallback');
+            console.log(' API de festivos no disponible, usando fallback');
         }
         
         festivosCache = FESTIVOS_COLOMBIA_2025;

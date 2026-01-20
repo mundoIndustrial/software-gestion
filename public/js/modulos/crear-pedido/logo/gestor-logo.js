@@ -72,7 +72,7 @@ class GestorLogo {
             });
         }
 
-        logWithEmoji('🎨', `Logo inicializado con ${this.tecnicas.length} técnicas y ${this.ubicaciones.length} ubicaciones`);
+        logWithEmoji('', `Logo inicializado con ${this.tecnicas.length} técnicas y ${this.ubicaciones.length} ubicaciones`);
     }
 
     /**

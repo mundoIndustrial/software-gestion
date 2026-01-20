@@ -149,7 +149,7 @@ async function loadBodegaFestivos() {
  * Abrir modal de seguimiento de bodega
  */
 function openBodegaTrackingModal(pedido) {
-    console.log('🔍 Abriendo tracking de bodega para pedido:', pedido);
+    console.log(' Abriendo tracking de bodega para pedido:', pedido);
     bodegaCurrentTrackingOrder = pedido;
     
     // Cargar festivos primero, luego datos
@@ -198,7 +198,7 @@ async function loadBodegaTrackingData(pedido) {
         }
         
         const orden = await response.json();
-        console.log('📦 Orden completa:', orden);
+        console.log(' Orden completa:', orden);
         
         // Actualizar información básica
         document.getElementById('bodegaTrackingOrderNumber').textContent = `#${orden.pedido || '-'}`;
@@ -263,7 +263,7 @@ function calculateTotalDias(orden) {
                 if (fechaFin) {
                     const diasHabiles = calculateBusinessDays(fechaInicio, fechaFin, bodegaFestivos);
                     totalDiasHabiles += diasHabiles;
-                    console.log(`📊 ${procesoActual.nombre} → ${procesoSiguiente.nombre}: ${diasHabiles} días hábiles`);
+                    console.log(` ${procesoActual.nombre} → ${procesoSiguiente.nombre}: ${diasHabiles} días hábiles`);
                     break;  // Salir del loop interno después de encontrar la siguiente fecha
                 }
             }
@@ -273,7 +273,7 @@ function calculateTotalDias(orden) {
     
     // Si no se calculó nada, usar fallback: sumar campos de días registrados
     if (totalDiasHabiles === 0) {
-        console.log('⚠️  No hay pares de fechas con ambas válidas, usando campos de días registrados');
+        console.log('  No hay pares de fechas con ambas válidas, usando campos de días registrados');
         
         const diasFields = [
             'dias_orden',
@@ -304,7 +304,7 @@ function calculateTotalDias(orden) {
         });
     }
     
-    console.log(`📊 TOTAL DE DÍAS HÁBILES: ${totalDiasHabiles}`);
+    console.log(` TOTAL DE DÍAS HÁBILES: ${totalDiasHabiles}`);
     return totalDiasHabiles;
 }
 
@@ -420,7 +420,7 @@ function buildBodegaProcessTimeline(orden) {
             if (fechaFin) {
                 diasHabiles = calculateBusinessDays(fechaInicio, fechaFin, bodegaFestivos);
                 siguienteProceso = procesoSiguiente.nombre;
-                console.log(`📊 ${proceso.nombre} → ${siguienteProceso}: ${diasHabiles} días hábiles`);
+                console.log(` ${proceso.nombre} → ${siguienteProceso}: ${diasHabiles} días hábiles`);
                 break;
             }
         }
@@ -499,7 +499,7 @@ function createBodegaTimelineItem(number, processName, isCompleted, fecha, encar
  * Inicializar event listeners
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📦 Bodega Tracking Script Initialized');
+    console.log(' Bodega Tracking Script Initialized');
     
     // Cerrar modal con botón
     const closeBtn = document.getElementById('closeBodegaTrackingModal');

@@ -330,7 +330,7 @@ public function obtenerResumenValidacion($prendaId, PrendaService $prendaService
 
 ---
 
-## 📊 Comparativa: Antes vs Después
+##  Comparativa: Antes vs Después
 
 ### ANTES (sin Phase 4 & 6)
 
@@ -482,7 +482,7 @@ SOLUCIÓN: Una única fuente de verdad
 
 ---
 
-## 📝 Archivos Creados/Modificados
+##  Archivos Creados/Modificados
 
 ```
 tests/

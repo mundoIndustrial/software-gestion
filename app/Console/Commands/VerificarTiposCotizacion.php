@@ -12,13 +12,13 @@ class VerificarTiposCotizacion extends Command
 
     public function handle()
     {
-        $this->info('🔍 VERIFICANDO TIPOS DE COTIZACIÓN');
+        $this->info(' VERIFICANDO TIPOS DE COTIZACIÓN');
         $this->newLine();
 
         $tipos = DB::table('tipos_cotizacion')->get();
 
         if ($tipos->isEmpty()) {
-            $this->warn('⚠️ No hay tipos de cotización registrados');
+            $this->warn(' No hay tipos de cotización registrados');
             return;
         }
 
@@ -35,7 +35,7 @@ class VerificarTiposCotizacion extends Command
         }
 
         // Resumen
-        $this->line('📊 RESUMEN:');
+        $this->line(' RESUMEN:');
         $this->line("   Total: {$tipos->count()} tipos");
         $activos = $tipos->where('activo', true)->count();
         $this->line("   Activos: {$activos}");

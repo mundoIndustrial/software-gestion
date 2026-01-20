@@ -112,7 +112,7 @@ if (window.generarTarjetaPrendaReadOnly && window.gestorPrendaSinCotizacion) {
 
 if (typeof generarTarjetaPrendaReadOnly !== 'function') {
     console.warn(`
-⚠️  ADVERTENCIA: generarTarjetaPrendaReadOnly NO está disponible.
+  ADVERTENCIA: generarTarjetaPrendaReadOnly NO está disponible.
 
 Posibles causas:
 1. El módulo prenda-tarjeta/loader.js no se está cargando
@@ -130,7 +130,7 @@ SOLUCIÓN:
   * interacciones.js
   * index.js
 - Verificar en DevTools > Console si hay errores de sintaxis
-- Ver console.log con prefijo 📦, 📄, 📷, 🎯, , ✨ para ver el proceso de carga
+- Ver console.log con prefijo , 📄, 📷, , , ✨ para ver el proceso de carga
     `);
 }
 

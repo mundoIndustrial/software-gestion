@@ -109,7 +109,7 @@ function attachProcessButtonListeners(procesos) {
     // Usar event delegation en el contenedor del timeline
     const timelineContainer = document.getElementById('trackingTimelineContainer');
     if (!timelineContainer) {
-        console.warn('⚠️ trackingTimelineContainer no encontrado');
+        console.warn(' trackingTimelineContainer no encontrado');
         return;
     }
     

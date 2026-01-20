@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const opciones = filtrarCotizaciones(misCotizaciones, filtro);
 
         if (misCotizaciones.length === 0) {
-            dropdown.innerHTML = '<div style="padding: 1.5rem; text-align: center;"><div style="color: #ef4444; font-weight: 600; margin-bottom: 0.5rem;">⚠️ No hay cotizaciones aprobadas</div><div style="color: #6b7280; font-size: 0.875rem;">No tienes cotizaciones con estado APROBADA o APROBADO PARA PEDIDO.<br>Crea una cotización y espera su aprobación.</div></div>';
+            dropdown.innerHTML = '<div style="padding: 1.5rem; text-align: center;"><div style="color: #ef4444; font-weight: 600; margin-bottom: 0.5rem;"> No hay cotizaciones aprobadas</div><div style="color: #6b7280; font-size: 0.875rem;">No tienes cotizaciones con estado APROBADA o APROBADO PARA PEDIDO.<br>Crea una cotización y espera su aprobación.</div></div>';
         } else if (opciones.length === 0) {
             dropdown.innerHTML = `<div style="padding: 1rem; color: #9ca3af; text-align: center;">No se encontraron cotizaciones</div>`;
         } else {
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             paso3Alerta.innerHTML = ' Puedes editar los campos de cada prenda, cambiar cantidades por talla, o eliminar prendas que no desees incluir en el pedido.';
                         }
                     } else {
-                        console.warn('⚠️ No se encontraron los elementos paso3_titulo_logo o paso3_alerta_logo');
+                        console.warn(' No se encontraron los elementos paso3_titulo_logo o paso3_alerta_logo');
                     }
                     
                     // Actualizar el título dinámico junto al círculo del índice 3
@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log(' Título dinámico actualizado:', tituloPrendasDinamico.textContent);
                         }
                     } else {
-                        console.warn('⚠️ No se encontró el elemento titulo-prendas-dinamico');
+                        console.warn(' No se encontró el elemento titulo-prendas-dinamico');
                     }
                     
                     // Mostrar/ocultar botón "Agregar Prenda Técnica" solo cuando hay cotización seleccionada
@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let logoCotizacionId = null;  // ID del LogoCotizacion para guardar en BD
 
     // Usar constantes del archivo de configuración (línea 4)
-    // 🔧 Función renderizarCamposLogo() movida a logo-pedido.js
+    //  Función renderizarCamposLogo() movida a logo-pedido.js
 
     // ============================================================
     // OCULTAR LOADING Y MOSTRAR SELECT CUANDO TODO ESTÉ CARGADO

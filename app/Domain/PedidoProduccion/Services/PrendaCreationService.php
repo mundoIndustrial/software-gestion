@@ -49,7 +49,7 @@ class PrendaCreationService
         array $prendaData,
         string $numeroPedido
     ): PrendaPedido {
-        Log::info('📦 [PrendaCreationService::crearPrendaSinCotizacion] Iniciando con estrategia', [
+        Log::info(' [PrendaCreationService::crearPrendaSinCotizacion] Iniciando con estrategia', [
             'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
             'numero_pedido' => $numeroPedido,
         ]);
@@ -119,7 +119,7 @@ class PrendaCreationService
         array $prendaData,
         string $numeroPedido
     ): PrendaPedido {
-        Log::info('📦 [PrendaCreationService::crearPrendaReflectivo] Iniciando con estrategia', [
+        Log::info(' [PrendaCreationService::crearPrendaReflectivo] Iniciando con estrategia', [
             'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
             'numero_pedido' => $numeroPedido,
         ]);

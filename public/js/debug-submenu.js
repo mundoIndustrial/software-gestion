@@ -1,5 +1,5 @@
 // Debug script para verificar funcionamiento de submenus
-console.log('🔍 === SUBMENU DEBUG SCRIPT INICIADO ===');
+console.log(' === SUBMENU DEBUG SCRIPT INICIADO ===');
 
 // Verificar estructura HTML
 const submenuToggles = document.querySelectorAll('.submenu-toggle');
@@ -13,7 +13,7 @@ if (submenus.length > 0) {
   const firstSubmenu = submenus[0];
   const computed = window.getComputedStyle(firstSubmenu);
   
-  console.group('📊 Estilos Computados del Primer Submenu:');
+  console.group(' Estilos Computados del Primer Submenu:');
   console.log('max-height:', computed.maxHeight);
   console.log('opacity:', computed.opacity);
   console.log('overflow:', computed.overflow);
@@ -37,7 +37,7 @@ if (submenuToggles.length > 0) {
       
       setTimeout(() => {
         const computed = window.getComputedStyle(submenu);
-        console.log('📊 Después del click:');
+        console.log(' Después del click:');
         console.log('  - max-height:', computed.maxHeight);
         console.log('  - opacity:', computed.opacity);
         console.log('  - Clases:', submenu.className);
@@ -50,7 +50,7 @@ if (submenuToggles.length > 0) {
 const sidebarContent = document.querySelector('.sidebar-content');
 if (sidebarContent) {
   const computed = window.getComputedStyle(sidebarContent);
-  console.group('📊 Estilos del Contenedor .sidebar-content:');
+  console.group(' Estilos del Contenedor .sidebar-content:');
   console.log('overflow-x:', computed.overflowX);
   console.log('overflow-y:', computed.overflowY);
   console.log('overflow:', computed.overflow);

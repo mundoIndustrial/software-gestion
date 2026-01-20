@@ -81,7 +81,7 @@
 | `construirDescripcion*()` | Formateo de datos | `PedidoFormatService` |
 | `construirTallasFormato()` | Serialización | `PedidoFormatService::formatSizes()` |
 
-#### 🟢 SE QUEDA EN FRONTEND (JavaScript Modules):
+####  SE QUEDA EN FRONTEND (JavaScript Modules):
 
 | Función | Por qué | Dónde |
 |---------|--------|-------|
@@ -404,7 +404,7 @@ class FilterModule {
 
 ---
 
-## 📊 RESUMEN: QUÉ MIGRAR
+##  RESUMEN: QUÉ MIGRAR
 
 ###  AL BACKEND:
 
@@ -422,7 +422,7 @@ class FilterModule {
 | Formateo tallas | `PedidoFormatService` | `formatSizes()` |
 | Serializar JSON | `PedidoResource` | `toArray()` |
 
-### 🟢 AL FRONTEND:
+###  AL FRONTEND:
 
 | Qué | Archivo | Método |
 |-----|---------|--------|
@@ -435,7 +435,7 @@ class FilterModule {
 
 ---
 
-## 🎯 ORDEN DE IMPLEMENTACIÓN
+##  ORDEN DE IMPLEMENTACIÓN
 
 1. **Backend primero** - Services + Controller
 2. **Frontend después** - Modules + Services

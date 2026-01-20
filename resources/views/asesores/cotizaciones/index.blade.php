@@ -268,7 +268,7 @@
                 📄 PDF Prenda
             </a>
             <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, 'logo'); return false;" class="pdf-menu-option">
-                🎨 PDF Logo
+                 PDF Logo
             </a>
         `;
 

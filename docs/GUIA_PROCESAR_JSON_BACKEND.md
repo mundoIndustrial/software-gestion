@@ -6,7 +6,7 @@
 
 ---
 
-## 📦 ESTRUCTURA RECIBIDA EN BACKEND
+##  ESTRUCTURA RECIBIDA EN BACKEND
 
 ### FormData Recibido
 
@@ -27,7 +27,7 @@ FormData {
 
 ---
 
-## 🔍 DESCIFRANDO LA ESTRUCTURA
+##  DESCIFRANDO LA ESTRUCTURA
 
 ### JSON String
 
@@ -93,7 +93,7 @@ FormData {
 
 ---
 
-## 🔧 PSEUDOCÓDIGO PARA PROCESAR
+##  PSEUDOCÓDIGO PARA PROCESAR
 
 ### Paso 1: Extraer y validar JSON
 
@@ -177,7 +177,7 @@ foreach ($prendas as $prendaIdx => $prendaData) {
         $proceso->save();
         
         // Procesar imágenes del proceso
-        // ⚠️ IMPORTANTE: Notar que el JSON NO contiene imagenes
+        //  IMPORTANTE: Notar que el JSON NO contiene imagenes
         // Las imagenes vienen SOLO en FormData
         
         // Buscar imágenes de este proceso
@@ -204,7 +204,7 @@ foreach ($prendas as $prendaIdx => $prendaData) {
 
 ---
 
-## 🎯 PUNTOS CRÍTICOS
+##  PUNTOS CRÍTICOS
 
 ### 1. Índices deben coincidir exactamente
 

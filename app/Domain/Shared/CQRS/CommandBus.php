@@ -51,7 +51,7 @@ class CommandBus
     {
         $this->handlers[$commandClass] = $handlerClass;
         
-        Log::debug('📝 CommandBus: Handler registrado', [
+        Log::debug(' CommandBus: Handler registrado', [
             'command' => $commandClass,
             'handler' => $handlerClass,
         ]);

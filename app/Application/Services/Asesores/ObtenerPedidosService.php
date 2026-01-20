@@ -20,7 +20,7 @@ class ObtenerPedidosService
      */
     public function obtener(?string $tipo = null, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        \Log::info('🔍 [OBTENER PEDIDOS] Iniciando búsqueda', [
+        \Log::info(' [OBTENER PEDIDOS] Iniciando búsqueda', [
             'tipo' => $tipo,
             'filtros' => $filtros,
             'por_pagina' => $perPage
@@ -149,7 +149,7 @@ class ObtenerPedidosService
      */
     public function obtenerEstados(): array
     {
-        \Log::info('📊 [ESTADOS] Obteniendo estados únicos');
+        \Log::info(' [ESTADOS] Obteniendo estados únicos');
 
         $estados = PedidoProduccion::select('estado')
             ->whereNotNull('estado')
@@ -157,7 +157,7 @@ class ObtenerPedidosService
             ->pluck('estado')
             ->toArray();
 
-        \Log::info('📊 [ESTADOS] Encontrados', ['count' => count($estados), 'estados' => $estados]);
+        \Log::info(' [ESTADOS] Encontrados', ['count' => count($estados), 'estados' => $estados]);
 
         return $estados;
     }

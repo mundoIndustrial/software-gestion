@@ -56,10 +56,16 @@ class ModalCleanup {
      * Limpiar todos los storages globales
      */
     static limpiarStorages() {
-        // Limpiar storage de imágenes
+        // Limpiar storage de imágenes de prenda
         if (window.imagenesPrendaStorage) {
             window.imagenesPrendaStorage.limpiar?.();
-            console.log('🧹 [ModalCleanup] Storage de imágenes limpiado');
+            console.log('🧹 [ModalCleanup] Storage de imágenes de prenda limpiado');
+        }
+
+        // Limpiar storage de imágenes de tela
+        if (window.imagenesTelaStorage) {
+            window.imagenesTelaStorage.limpiar?.();
+            console.log('🧹 [ModalCleanup] Storage de imágenes de tela limpiado');
         }
 
         // Limpiar telas agregadas
@@ -285,7 +291,7 @@ class ModalCleanup {
      * Preparar modal para creación de NUEVA prenda
      */
     static prepararParaNueva() {
-        console.log('🎯 [ModalCleanup] Preparando modal para crear NUEVA prenda');
+        console.log(' [ModalCleanup] Preparando modal para crear NUEVA prenda');
         
         // Debug: Verificar si los campos de tela existen ANTES de limpiar
         const telaField = document.getElementById('nueva-prenda-tela');
@@ -317,15 +323,14 @@ class ModalCleanup {
      * @param {number} prendaIndex - Índice de la prenda a editar
      */
     static prepararParaEditar(prendaIndex) {
-        console.log(`🎯 [ModalCleanup] Preparando modal para EDITAR prenda (índice: ${prendaIndex})`);
+        console.log(` [ModalCleanup] Preparando modal para EDITAR prenda (índice: ${prendaIndex})`);
         
+        // NO limpiar storages en modo edición - se cargarán los datos de la prenda
+        // Solo limpiar formulario e inputs
         this.limpiarFormulario();
-        this.limpiarStorages();
+        // NO llamar a limpiarStorages() - preservar telas e imágenes
         this.limpiarCheckboxes(true); // Preservar procesos
         this.limpiarContenedores();
-        
-        // Preservar procesos existentes
-        // this.limpiarProcesos(true) - mantener para que se carguen desde prenda
         
         // Establecer índice de edición
         window.prendaEditIndex = prendaIndex;

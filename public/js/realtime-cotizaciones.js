@@ -20,7 +20,7 @@
     // Listen to general quotations channel
     window.Echo.channel('cotizaciones')
         .listen('.cotizacion.creada', (event) => {
-            console.log('📝 Nueva cotización creada:', event);
+            console.log(' Nueva cotización creada:', event);
             handleNuevaCotizacion(event);
         })
         .listen('.cotizacion.estado.cambiado', (event) => {
@@ -36,7 +36,7 @@
     if (userId) {
         window.Echo.channel(`cotizaciones.asesor.${userId}`)
             .listen('.cotizacion.creada', (event) => {
-                console.log('📝 Tu cotización fue creada:', event);
+                console.log(' Tu cotización fue creada:', event);
                 handleNuevaCotizacion(event);
             })
             .listen('.cotizacion.estado.cambiado', (event) => {
@@ -54,7 +54,7 @@
     // Listen to contador channel
     window.Echo.channel('cotizaciones.contador')
         .listen('.cotizacion.creada', (event) => {
-            console.log('📝 Nueva cotización para revisar:', event);
+            console.log(' Nueva cotización para revisar:', event);
             handleNuevaCotizacion(event);
             if (event.estado === 'ENVIADA_CONTADOR') {
                 mostrarNotificacion('Nueva Cotización', 'Hay una nueva cotización para revisar');

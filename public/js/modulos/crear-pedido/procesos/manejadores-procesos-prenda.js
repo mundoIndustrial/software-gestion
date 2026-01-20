@@ -31,7 +31,7 @@ const procesosNombres = {
  * @param {boolean} estaChecked - si el checkbox está marcado
  */
 window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
-    console.log(`🎯 manejarCheckboxProceso(${tipoProceso}, ${estaChecked})`);
+    console.log(` manejarCheckboxProceso(${tipoProceso}, ${estaChecked})`);
     
     if (estaChecked) {
         // Registrar el proceso

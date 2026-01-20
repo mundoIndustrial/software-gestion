@@ -39,7 +39,7 @@ class AnalyzeQuotation extends Command
             ->where('cotizacion_id', $cotizacionId)
             ->get();
 
-        $this->info('📦 PRENDAS GUARDADAS: ' . count($prendas));
+        $this->info(' PRENDAS GUARDADAS: ' . count($prendas));
         $this->line('────────────────────────────────────────');
 
         foreach ($prendas as $prenda) {
@@ -50,7 +50,7 @@ class AnalyzeQuotation extends Command
                 ->where('prenda_pedido_id', $prenda->id)
                 ->get();
 
-            $this->line("   🧵 Telas guardadas: " . count($telas));
+            $this->line("    Telas guardadas: " . count($telas));
 
             if ($telas->isEmpty()) {
                 $this->line("       SIN TELAS");
@@ -78,7 +78,7 @@ class AnalyzeQuotation extends Command
         }
 
         // 3. Resumen
-        $this->info('📊 RESUMEN:');
+        $this->info(' RESUMEN:');
         $this->line('────────────────────────────────────────');
 
         $totalTelas = DB::table('prenda_telas')
@@ -99,7 +99,7 @@ class AnalyzeQuotation extends Command
 
         // 4. Diagnóstico
         $this->newLine();
-        $this->info('🔍 DIAGNÓSTICO:');
+        $this->info(' DIAGNÓSTICO:');
         $this->line('────────────────────────────────────────');
 
         if ($totalTelas === 0) {
@@ -109,7 +109,7 @@ class AnalyzeQuotation extends Command
         }
 
         if ($totalFotosTelas === 0) {
-            $this->warn('⚠️  ADVERTENCIA: No hay fotos de telas');
+            $this->warn('  ADVERTENCIA: No hay fotos de telas');
         } else {
             $this->info(" Se guardaron $totalFotosTelas fotos de telas");
         }

@@ -65,7 +65,7 @@ storage/
 - deleted_at
 ```
 
-## 📝 Métodos Actualizado
+##  Métodos Actualizado
 
 ### `guardarFotosPrenda()`
 - Guarda en: `storage/prendas/{numero_pedido}/prenda/`
@@ -84,7 +84,7 @@ storage/
 - Solo guarda: `ruta_webp` (relativa a storage)
 - Formato: WebP
 
-## 🔧 Acceso a las Imágenes
+##  Acceso a las Imágenes
 
 Para acceder a las imágenes desde vistas:
 
@@ -126,7 +126,7 @@ Se ejecutaron 4 migraciones:
 3. `2026_01_16_000004_simplify_prenda_fotos_tela_pedido_table.php` 
    - Eliminó campos innecesarios de `prenda_fotos_tela_pedido`
 
-## 📦 Archivos Modificados
+##  Archivos Modificados
 
 1. `app/Application/Services/PedidoPrendaService.php`
    - Actualizado: `guardarFotosPrenda()`

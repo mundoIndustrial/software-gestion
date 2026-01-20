@@ -226,7 +226,7 @@ window.Galeria = {
      * Muestra una imagen en grande
      */
     mostrarImagenGrande: function(index) {
-        console.log('🔍 [IMAGEN] Mostrando imagen', index + 1, 'de', this.allImages.length);
+        console.log(' [IMAGEN] Mostrando imagen', index + 1, 'de', this.allImages.length);
         this.currentImageIndex = index;
         
         if (!this.allImages || this.allImages.length === 0) {

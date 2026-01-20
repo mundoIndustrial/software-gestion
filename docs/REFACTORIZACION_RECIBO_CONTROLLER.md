@@ -1,4 +1,4 @@
-# 🎯 REFACTORIZACIÓN RECIBO CONTROLLER - PATRÓN DDD
+#  REFACTORIZACIÓN RECIBO CONTROLLER - PATRÓN DDD
 
 ## Resumen
 
@@ -16,7 +16,7 @@ El `ReciboController` en `app/Infrastructure/Http/Controllers/Asesores/` ha sido
 
 ---
 
-## 📦 Servicios Creados
+##  Servicios Creados
 
 ### 1. ObtenerRecibosService.php (240 líneas)
 Ubicación: `app/Application/Services/Recibos/`
@@ -139,7 +139,7 @@ class ReciboController extends Controller
 
 ---
 
-## 🎨 Métodos del Controller
+##  Métodos del Controller
 
 | Método | Antes | Después | Servicio |
 |--------|-------|---------|----------|
@@ -249,7 +249,7 @@ assert(!empty($resultado));
 
 ---
 
-## 📊 Comparativa de Tamaño
+##  Comparativa de Tamaño
 
 ```
 ANTES:
@@ -291,7 +291,7 @@ AsesoresController (Gestión de Pedidos)
 
 ---
 
-## 📝 Rutas Asociadas
+##  Rutas Asociadas
 
 ```php
 // En routes/asesores.php

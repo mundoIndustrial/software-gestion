@@ -24,7 +24,7 @@
      * pero ahora usa el gestor
      */
     window.crearPedidoSinCotizacionConGestor = function() {
-        console.log('🎯 Iniciando creación de pedido sin cotización (CON GESTOR)');
+        console.log(' Iniciando creación de pedido sin cotización (CON GESTOR)');
         
         // Inicializar si no existe
         if (!window.gestorPedidoSinCotizacion) {
@@ -178,7 +178,7 @@
         
         if (tipoNuevo && tipoPrendaSelect === 'P') {
             // Usar módulo especializado para PRENDA sin cotización
-            console.log('🎯 Detectado: Pedido tipo PRENDA sin cotización - usando módulo especializado');
+            console.log(' Detectado: Pedido tipo PRENDA sin cotización - usando módulo especializado');
             return window.enviarPrendaSinCotizacion()
                 .then(response => {
                     // La redirección la maneja enviarPrendaSinCotizacion
@@ -193,7 +193,7 @@
         // Detectar si es tipo REFLECTIVO sin cotización
         if (tipoNuevo && tipoPrendaSelect === 'R') {
             // Usar módulo especializado para REFLECTIVO sin cotización
-            console.log('🎯 Detectado: Pedido tipo REFLECTIVO sin cotización - usando módulo especializado');
+            console.log(' Detectado: Pedido tipo REFLECTIVO sin cotización - usando módulo especializado');
             return window.enviarReflectivoSinCotizacion()
                 .then(response => {
                     // La redirección la maneja enviarReflectivoSinCotizacion
@@ -210,7 +210,7 @@
             window.inicializarGestorSinCotizacion();
         }
 
-        console.log('📦 Procesando envío de pedido SIN COTIZACIÓN');
+        console.log(' Procesando envío de pedido SIN COTIZACIÓN');
 
         return window.gestorPedidoSinCotizacion.enviarAlServidor()
             .then(response => {

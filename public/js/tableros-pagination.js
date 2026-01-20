@@ -6,7 +6,7 @@
     
     // Evitar inicialización múltiple
     if (window.tablerosPaginationInitialized) {
-        console.log('⚠️ Paginación ya inicializada, omitiendo...');
+        console.log(' Paginación ya inicializada, omitiendo...');
         return;
     }
     window.tablerosPaginationInitialized = true;
@@ -72,7 +72,7 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log('📦 Respuesta recibida:', data);
+            console.log(' Respuesta recibida:', data);
             
             // Verificar si hay error
             if (data.error || !data.pagination) {
@@ -92,7 +92,7 @@
                 // Los listeners se mantendrán activos gracias a la delegación de eventos en document
                 console.log(` Controles de paginación actualizados para ${section}`);
             } else {
-                console.warn(`⚠️ No se pudieron actualizar controles de paginación:`, {
+                console.warn(` No se pudieron actualizar controles de paginación:`, {
                     hasPagination: !!data.pagination,
                     hasLinksHtml: data.pagination ? !!data.pagination.links_html : false,
                     hasPaginationControls: !!paginationControls

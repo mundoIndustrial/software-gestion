@@ -15,7 +15,7 @@ class DebugPedido extends Command
     {
         $id = $this->argument('id');
 
-        $this->info("🔍 Inspeccionando pedido: {$id}\n");
+        $this->info(" Inspeccionando pedido: {$id}\n");
 
         // 1. Query directa a la BD
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -89,7 +89,7 @@ class DebugPedido extends Command
         $testPedido = PedidoProduccion::withTrashed()->find($id);
         if ($testPedido) {
             if ($testPedido->trashed()) {
-                $this->warn("⚠️  El pedido ya está eliminado (soft deleted)");
+                $this->warn("  El pedido ya está eliminado (soft deleted)");
             } else {
                 $this->info(" El pedido está activo, puede eliminarse");
             }

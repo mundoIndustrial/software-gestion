@@ -56,13 +56,13 @@ function initializeItemCardInteractions() {
   document.addEventListener('click', function(e) {
     // Botón Menú - Toggle dropdown
     if (e.target.closest('.btn-menu-expandible')) {
-      console.log('🎯 [ITEM-CARD-INTERACTIONS] Click en btn-menu-expandible detectado');
+      console.log(' [ITEM-CARD-INTERACTIONS] Click en btn-menu-expandible detectado');
       e.preventDefault();
       e.stopPropagation();
       const button = e.target.closest('.btn-menu-expandible');
       console.log('🔘 [ITEM-CARD-INTERACTIONS] Button:', button);
       const wrapper = button.closest('.btn-menu-wrapper');
-      console.log('📦 [ITEM-CARD-INTERACTIONS] Wrapper encontrado?', !!wrapper);
+      console.log(' [ITEM-CARD-INTERACTIONS] Wrapper encontrado?', !!wrapper);
       
       // Validar que wrapper existe
       if (!wrapper) {
@@ -163,7 +163,7 @@ function handleEditarItem(itemIndex) {
   }
 
   const item = window.itemsPedido[itemIndex];
-  console.log('📦 [EDITAR] Item a editar:', item);
+  console.log(' [EDITAR] Item a editar:', item);
 
   // Cargar datos en el modal
   if (window.cargarItemEnModal && typeof window.cargarItemEnModal === 'function') {
@@ -187,13 +187,13 @@ function updateItemCardInteractions() {
   
   // Verificar que los elementos existan en el DOM
   const menuButtons = document.querySelectorAll('.btn-menu-expandible');
-  console.log('🔍 [UPDATE-ITEM-CARD] Menu buttons encontrados:', menuButtons.length);
+  console.log(' [UPDATE-ITEM-CARD] Menu buttons encontrados:', menuButtons.length);
   
   const menuWrappers = document.querySelectorAll('.btn-menu-wrapper');
-  console.log('🔍 [UPDATE-ITEM-CARD] Menu wrappers encontrados:', menuWrappers.length);
+  console.log(' [UPDATE-ITEM-CARD] Menu wrappers encontrados:', menuWrappers.length);
   
   const menuDropdowns = document.querySelectorAll('.menu-dropdown');
-  console.log('🔍 [UPDATE-ITEM-CARD] Menu dropdowns encontrados:', menuDropdowns.length);
+  console.log(' [UPDATE-ITEM-CARD] Menu dropdowns encontrados:', menuDropdowns.length);
   
   // Verificar estructura de cada wrapper
   menuWrappers.forEach((wrapper, idx) => {

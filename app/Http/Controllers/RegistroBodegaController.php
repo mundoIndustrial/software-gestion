@@ -110,7 +110,7 @@ class RegistroBodegaController extends Controller
             $ordenes = $query->paginate(50);
 
             // LOG: Registrar cantidad de resultados
-            \Log::info("📊 RESULTADOS DEL FILTRO", [
+            \Log::info(" RESULTADOS DEL FILTRO", [
                 'total_registros' => $ordenes->total(),
                 'registros_en_pagina' => count($ordenes->items()),
                 'pagina_actual' => $ordenes->currentPage(),
@@ -347,7 +347,7 @@ class RegistroBodegaController extends Controller
     public function update(Request $request, $pedido)
     {
         try {
-            \Log::info('📝 UPDATE REQUEST RECIBIDO', [
+            \Log::info(' UPDATE REQUEST RECIBIDO', [
                 'pedido' => $pedido,
                 'all_data' => $request->all(),
                 'area_recibida' => $request->get('area'),
@@ -461,7 +461,7 @@ class RegistroBodegaController extends Controller
             // Procesar prendas si se enviaron
             if ($request->has('prendas') && is_array($request->get('prendas'))) {
                 $prendas = $request->get('prendas');
-                \Log::info('📦 PRENDAS RECIBIDAS PARA GUARDAR', ['prendas' => $prendas, 'pedido' => $pedido]);
+                \Log::info(' PRENDAS RECIBIDAS PARA GUARDAR', ['prendas' => $prendas, 'pedido' => $pedido]);
                 
                 // Eliminar prendas existentes y reemplazar con las nuevas
                 DB::table('registros_por_orden_bodega')
@@ -933,10 +933,10 @@ class RegistroBodegaController extends Controller
                     
                     $mensaje = " Descripción actualizada y registros regenerados automáticamente. Se procesaron " . count($prendas) . " prenda(s) con " . $totalTallasEncontradas . " talla(s).";
                 } else {
-                    $mensaje = "⚠️ Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
+                    $mensaje = " Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
                 }
             } else {
-                $mensaje = "📝 Descripción actualizada como texto libre. Para regenerar registros automáticamente, use el formato:\n\nPrenda 1: NOMBRE\nDescripción: detalles\nTallas: M:5, L:3";
+                $mensaje = " Descripción actualizada como texto libre. Para regenerar registros automáticamente, use el formato:\n\nPrenda 1: NOMBRE\nDescripción: detalles\nTallas: M:5, L:3";
             }
 
             DB::commit();
@@ -1242,7 +1242,7 @@ class RegistroBodegaController extends Controller
     public function updateNovedadesBodega(Request $request, $pedido)
     {
         try {
-            \Log::info('📝 updateNovedadesBodega iniciado', ['pedido' => $pedido]);
+            \Log::info(' updateNovedadesBodega iniciado', ['pedido' => $pedido]);
             
             // Validar entrada
             $request->validate([
@@ -1304,7 +1304,7 @@ class RegistroBodegaController extends Controller
     public function addNovedadBodega(Request $request, $pedido)
     {
         try {
-            \Log::info('📝 addNovedadBodega iniciado', ['pedido' => $pedido]);
+            \Log::info(' addNovedadBodega iniciado', ['pedido' => $pedido]);
             
             // Validar entrada
             $request->validate([

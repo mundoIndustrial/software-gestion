@@ -26,7 +26,7 @@ Nuevo:   tipo_broche_boton_id (FK → tipos_broche_boton.id)
 
 ---
 
-## 🎯 CAMBIOS REALIZADOS
+##  CAMBIOS REALIZADOS
 
 ### 1. MODELOS ACTUALIZADOS
 
@@ -179,7 +179,7 @@ $prenda['tipo_broche_boton_id'] = $broqueId;
 
 ---
 
-## 📊 RELACIONES ACTUALIZADAS
+##  RELACIONES ACTUALIZADAS
 
 ### Diagrama de Relaciones
 
@@ -212,7 +212,7 @@ $prenda['tipo_broche_boton_id'] = $broqueId;
 
 ---
 
-## 🔍 CAMPOS JSON DESDE FRONTEND
+##  CAMPOS JSON DESDE FRONTEND
 
 El frontend envía datos con la siguiente estructura. Estos deben coincidir con los nombres de columna en la base de datos:
 
@@ -258,7 +258,7 @@ DESPUÉS: tipo_broche_boton_id
 
 ---
 
-## 📝 MIGRACIONES RELACIONADAS
+##  MIGRACIONES RELACIONADAS
 
 Estas migraciones deben ejecutarse para que los cambios de tabla se reflejen en la base de datos:
 

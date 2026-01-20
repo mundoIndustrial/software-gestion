@@ -39,7 +39,7 @@ class TodosTiposCotizacionesTest extends TestCase
             echo "{$detalle}\n";
         }
         
-        echo "\n📊 VALIDACIÓN:\n";
+        echo "\n VALIDACIÓN:\n";
         echo "================\n\n";
         
         // Verificar: sin duplicados

@@ -138,7 +138,7 @@ window.manejarImagenesProceso = function(input) {
  * Abre el modal para seleccionar tallas del proceso
  */
 window.abrirModalSeleccionarTallasProceso = function(genero) {
-    console.log(`🎯 Seleccionando tallas para ${procesoActual} - ${genero}`);
+    console.log(` Seleccionando tallas para ${procesoActual} - ${genero}`);
     
     // Guardar referencia para que el gestor de tallas sepa que es para un proceso
     window._tallas_modal_tipo = 'proceso';

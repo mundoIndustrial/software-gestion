@@ -619,7 +619,7 @@ function showNotificationDetailModal(notif) {
             </div>
             <div style="padding: 1.5rem;">
                 <div style="margin-bottom: 1rem;">
-                    <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.95rem;">📝 Descripción</h3>
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.95rem;"> Descripción</h3>
                     <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">${notif.description}</p>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">

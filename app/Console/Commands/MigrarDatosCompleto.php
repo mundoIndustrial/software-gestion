@@ -151,11 +151,11 @@ class MigrarDatosCompleto extends Command
         $force = $this->option('force');
 
         if ($dryRun) {
-            $this->warn("⚠️  MODO DRY-RUN: Los datos NO se guardarán\n");
+            $this->warn("  MODO DRY-RUN: Los datos NO se guardarán\n");
         }
 
         if ($force) {
-            $this->error("⚠️  MODO FORCE: Se eliminarán TODOS los datos, incluyendo pedidos con cotizacion_id\n");
+            $this->error("  MODO FORCE: Se eliminarán TODOS los datos, incluyendo pedidos con cotizacion_id\n");
             if (!$this->confirm('¿Estás seguro? Esta acción NO se puede deshacer.')) {
                 $this->info("Operación cancelada.");
                 return 0;
@@ -192,11 +192,11 @@ class MigrarDatosCompleto extends Command
             $this->migrarClientes($dryRun);
 
             // PASO 3: Migrar Pedidos
-            $this->info("📦 PASO 3: Migrando Pedidos...\n");
+            $this->info(" PASO 3: Migrando Pedidos...\n");
             $this->migrarPedidos($dryRun);
 
             // PASO 4: Migrar Prendas
-            $this->info("👕 PASO 4: Migrando Prendas...\n");
+            $this->info(" PASO 4: Migrando Prendas...\n");
             $this->migrarPrendas($dryRun);
 
             // PASO 5: Migrar Procesos
@@ -225,14 +225,14 @@ class MigrarDatosCompleto extends Command
         $this->info("\n");
         $this->info(str_repeat("=", 100));
         $this->info("║  🚀 MIGRACIÓN COMPLETA DE DATOS - MUNDO INDUSTRIAL");
-        $this->info("║  📊 Basado en análisis exhaustivo de base de datos");
+        $this->info("║   Basado en análisis exhaustivo de base de datos");
         $this->info(str_repeat("=", 100));
         $this->info("\n");
     }
 
     private function verificarTablasOrigen()
     {
-        $this->info("🔍 Verificando tablas de origen...\n");
+        $this->info(" Verificando tablas de origen...\n");
 
         $tablasRequeridas = ['tabla_original', 'registros_por_orden'];
         $faltantes = [];
@@ -258,7 +258,7 @@ class MigrarDatosCompleto extends Command
 
     private function analizarDatos()
     {
-        $this->info("📊 ANÁLISIS DE DATOS A MIGRAR\n");
+        $this->info(" ANÁLISIS DE DATOS A MIGRAR\n");
         $this->info(str_repeat("=", 100) . "\n");
 
         // Análisis de tabla_original
@@ -325,7 +325,7 @@ class MigrarDatosCompleto extends Command
 
         if ($force) {
             // MODO FORCE: Eliminar TODO
-            $this->warn("   ⚠️  MODO FORCE: Eliminando TODOS los datos...");
+            $this->warn("     MODO FORCE: Eliminando TODOS los datos...");
             
             $countProc = DB::table('procesos_prenda')->count();
             DB::table('procesos_prenda')->truncate();
@@ -399,7 +399,7 @@ class MigrarDatosCompleto extends Command
             ->pluck('asesora')
             ->toArray();
 
-        $this->line("   📊 Asesoras encontradas: " . count($asesorasOriginales));
+        $this->line("    Asesoras encontradas: " . count($asesorasOriginales));
 
         $bar = $this->output->createProgressBar(count($asesorasOriginales));
         $bar->start();
@@ -454,7 +454,7 @@ class MigrarDatosCompleto extends Command
             ->pluck('cliente')
             ->toArray();
 
-        $this->line("   📊 Clientes encontrados: " . count($clientesOriginales));
+        $this->line("    Clientes encontrados: " . count($clientesOriginales));
 
         $bar = $this->output->createProgressBar(count($clientesOriginales));
         $bar->start();
@@ -516,7 +516,7 @@ class MigrarDatosCompleto extends Command
             ->distinct()
             ->get();
 
-        $this->line("   📊 Pedidos a migrar: " . $pedidosOriginales->count());
+        $this->line("    Pedidos a migrar: " . $pedidosOriginales->count());
 
         $bar = $this->output->createProgressBar($pedidosOriginales->count());
         $bar->start();
@@ -577,7 +577,7 @@ class MigrarDatosCompleto extends Command
             ->groupBy('pedido', 'nombre_prenda', 'descripcion')
             ->get();
 
-        $this->line("   📊 Prendas a migrar: " . $prendas->count());
+        $this->line("    Prendas a migrar: " . $prendas->count());
 
         $bar = $this->output->createProgressBar($prendas->count());
         $bar->start();
@@ -651,7 +651,7 @@ class MigrarDatosCompleto extends Command
     private function migrarProcesos($dryRun)
     {
         $pedidos = PedidoProduccion::all();
-        $this->line("   📊 Procesando " . $pedidos->count() . " pedidos");
+        $this->line("    Procesando " . $pedidos->count() . " pedidos");
 
         $bar = $this->output->createProgressBar($pedidos->count());
         $bar->start();
@@ -724,7 +724,7 @@ class MigrarDatosCompleto extends Command
     private function actualizarAreasYFechas($dryRun)
     {
         $pedidos = PedidoProduccion::whereNull('cotizacion_id')->get();
-        $this->line("   📊 Actualizando " . $pedidos->count() . " pedidos");
+        $this->line("    Actualizando " . $pedidos->count() . " pedidos");
 
         $bar = $this->output->createProgressBar($pedidos->count());
         $bar->start();
@@ -757,7 +757,7 @@ class MigrarDatosCompleto extends Command
 
     private function validarMigracion()
     {
-        $this->info("🔍 VALIDANDO INTEGRIDAD DE LA MIGRACIÓN\n");
+        $this->info(" VALIDANDO INTEGRIDAD DE LA MIGRACIÓN\n");
         $this->info(str_repeat("=", 100) . "\n");
 
         $errores = [];
@@ -765,12 +765,12 @@ class MigrarDatosCompleto extends Command
         // Validar pedidos
         $pedidosSinAsesor = DB::table('pedidos_produccion')->whereNull('asesor_id')->whereNull('cotizacion_id')->count();
         if ($pedidosSinAsesor > 0) {
-            $errores[] = "⚠️  $pedidosSinAsesor pedidos sin asesor_id";
+            $errores[] = "  $pedidosSinAsesor pedidos sin asesor_id";
         }
 
         $pedidosSinCliente = DB::table('pedidos_produccion')->whereNull('cliente_id')->whereNull('cotizacion_id')->count();
         if ($pedidosSinCliente > 0) {
-            $errores[] = "⚠️  $pedidosSinCliente pedidos sin cliente_id";
+            $errores[] = "  $pedidosSinCliente pedidos sin cliente_id";
         }
 
         // Validar prendas huérfanas
@@ -795,7 +795,7 @@ class MigrarDatosCompleto extends Command
         if (empty($errores)) {
             $this->info(" VALIDACIÓN EXITOSA: No se encontraron problemas de integridad\n");
         } else {
-            $this->warn("⚠️  SE ENCONTRARON PROBLEMAS:\n");
+            $this->warn("  SE ENCONTRARON PROBLEMAS:\n");
             foreach ($errores as $error) {
                 $this->line("   $error");
             }
@@ -807,7 +807,7 @@ class MigrarDatosCompleto extends Command
         $totalPrendas = DB::table('prendas_pedido')->count();
         $totalProcesos = DB::table('procesos_prenda')->count();
 
-        $this->info("📊 ESTADÍSTICAS FINALES:");
+        $this->info(" ESTADÍSTICAS FINALES:");
         $this->line("   Total pedidos: " . number_format($totalPedidos));
         $this->line("   Total prendas: " . number_format($totalPrendas));
         $this->line("   Total procesos: " . number_format($totalProcesos));
@@ -821,7 +821,7 @@ class MigrarDatosCompleto extends Command
     {
         $this->info("\n");
         $this->info(str_repeat("=", 100));
-        $this->info("📊 RESUMEN DE MIGRACIÓN COMPLETA");
+        $this->info(" RESUMEN DE MIGRACIÓN COMPLETA");
         $this->info(str_repeat("=", 100) . "\n");
 
         $tabla = [
@@ -841,7 +841,7 @@ class MigrarDatosCompleto extends Command
         $this->table(['Concepto', 'Cantidad'], $tabla);
 
         if ($dryRun) {
-            $this->warn("\n⚠️  MODO DRY-RUN: Los datos NO fueron guardados");
+            $this->warn("\n  MODO DRY-RUN: Los datos NO fueron guardados");
             $this->info("✓ Ejecuta sin --dry-run para realizar la migración real\n");
         } else {
             $this->info("\n MIGRACIÓN COMPLETADA EXITOSAMENTE");

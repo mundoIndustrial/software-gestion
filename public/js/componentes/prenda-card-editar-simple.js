@@ -36,7 +36,7 @@ function obtenerPedidoId() {
  */
 function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     console.log('🖊️  [EDITAR-MODAL] Abriendo prenda para editar');
-    console.log('📦 Prenda:', prenda);
+    console.log(' Prenda:', prenda);
     console.log('📍 Pedido ID:', pedidoId);
     
     // Si no viene pedidoId, intentar obtenerlo
@@ -83,7 +83,7 @@ function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
             
             // Extraer datos editados
             const datosModificados = extraerDatosModalEdicion(prendaEditable);
-            console.log('📦 Datos para guardar:', datosModificados);
+            console.log(' Datos para guardar:', datosModificados);
             
             // Guardar en BD
             if (pedidoId && prenda.id) {
@@ -163,7 +163,7 @@ function hacerFacturaEditable(htmlFactura, prenda) {
     });
     
     // === 2. EDITAR TALLAS (Tabla) ===
-    console.log('👕 Buscando tablas de tallas...');
+    console.log(' Buscando tablas de tallas...');
     temp.querySelectorAll('table').forEach((table) => {
         const filas = table.querySelectorAll('tbody tr');
         let esTablaTallas = false;
@@ -251,7 +251,7 @@ function extraerDatosModalEdicion(prendaOriginal) {
             const nombreCampo = celdas[0]?.textContent.trim().toLowerCase() || '';
             const valor = input.value.trim();
             
-            console.log(`   📝 Variación ${nombreCampo}: ${valor}`);
+            console.log(`    Variación ${nombreCampo}: ${valor}`);
             
             datos.variantes = datos.variantes || {};
             
@@ -269,7 +269,7 @@ function extraerDatosModalEdicion(prendaOriginal) {
         const talla = input.dataset.talla;
         
         if (talla) {
-            console.log(`   👕 Talla ${talla}: ${cantidad}`);
+            console.log(`    Talla ${talla}: ${cantidad}`);
             
             // Buscar género de la fila
             const fila = input.closest('tr');
@@ -341,20 +341,20 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
     console.log('🔄 Re-renderizando tarjeta prenda:', prendaIndex);
     
     if (!window.gestorPrendaSinCotizacion || !window.generarTarjetaPrendaReadOnly) {
-        console.warn('⚠️  Gestor o función no disponible');
+        console.warn('  Gestor o función no disponible');
         return;
     }
     
     const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
     if (!prenda) {
-        console.warn('⚠️  Prenda no encontrada');
+        console.warn('  Prenda no encontrada');
         return;
     }
     
     // Buscar tarjeta en DOM
     const tarjeta = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
     if (!tarjeta) {
-        console.warn('⚠️  Tarjeta no encontrada en DOM');
+        console.warn('  Tarjeta no encontrada en DOM');
         return;
     }
     
@@ -369,4 +369,4 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
 }
 
 console.log(' Componente prenda-card-editar-simple cargado');
-console.log('📝 Función: abrirEditarPrendaModal(prenda, index, pedidoId)');
+console.log(' Función: abrirEditarPrendaModal(prenda, index, pedidoId)');

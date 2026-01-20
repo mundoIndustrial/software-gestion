@@ -7,7 +7,7 @@ echo "Verificando tabla numero_secuencias...\n";
 try {
     $tabla = DB::table('numero_secuencias')->first();
     if (!$tabla) {
-        echo "⚠️  Tabla está vacía\n";
+        echo "  Tabla está vacía\n";
     }
     
     $todos = DB::table('numero_secuencias')->get();
@@ -22,7 +22,7 @@ try {
         ->first();
     
     if (!$universal) {
-        echo "\n⚠️  Secuencia universal NO EXISTE, creando...\n";
+        echo "\n  Secuencia universal NO EXISTE, creando...\n";
         DB::table('numero_secuencias')->insert([
             'tipo' => 'cotizaciones_universal',
             'siguiente' => 1,

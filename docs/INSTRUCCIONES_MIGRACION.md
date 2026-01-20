@@ -212,7 +212,7 @@ $resultado = $guardarService->guardar($pedidoId, $prendas);
 
 ---
 
-## 📝 CAMBIOS EN RUTAS
+##  CAMBIOS EN RUTAS
 
 ### Antigua ruta (DESACTIVADA):
 ```php
@@ -289,7 +289,7 @@ php artisan test --filter GuardarPedidoTest
 
 ---
 
-## 📊 COMPARATIVA
+##  COMPARATIVA
 
 | Aspecto | Antiguo | Nuevo |
 |---------|---------|-------|
@@ -303,7 +303,7 @@ php artisan test --filter GuardarPedidoTest
 
 ---
 
-## 🎯 RESUMEN
+##  RESUMEN
 
 **Antes:**
 ```

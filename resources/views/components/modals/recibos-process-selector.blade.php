@@ -311,7 +311,7 @@
                     const estadoClass = recibo.estado ? recibo.estado.toLowerCase().replace(' ', '-') : 'pendiente';
                     const estadoLabel = recibo.estado || 'Pendiente';
                     
-                    // ⚠️ CRÍTICO: Pasar tipo como STRING puro
+                    //  CRÍTICO: Pasar tipo como STRING puro
                     const tipoString = String(recibo.tipo);
                     
                     html += `
@@ -356,14 +356,14 @@
 
     /**
      * Selecciona un proceso específico
-     * ⚠️ GARANTIZA que tipoProceso siempre sea STRING
+     *  GARANTIZA que tipoProceso siempre sea STRING
      * @param {number} prendaId - ID de la prenda (DEBE ser número)
      * @param {string} tipoProceso - Tipo/nombre del proceso (DEBE ser STRING)
      */
     window.seleccionarProceso = function(prendaId, tipoProceso) {
         console.log('%c[SELECTOR] ===== SELECCIONANDO RECIBO =====', 'color: #10b981; font-weight: bold; font-size: 12px;');
         
-        // ⚠️ CRÍTICO: Validación defensiva
+        //  CRÍTICO: Validación defensiva
         if (typeof tipoProceso !== 'string') {
             console.error('%c[SELECTOR]  ERROR: tipoProceso DEBE ser STRING', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof tipoProceso, tipoProceso);
             alert('Error: tipo de recibo debe ser texto (STRING)');

@@ -12,7 +12,7 @@ function actualizarSelectTallasSinCot(select) {
     
     const container = select.closest('.tipo-prenda-row');
     if (!container) {
-        console.warn('⚠️ No se encontró .tipo-prenda-row');
+        console.warn(' No se encontró .tipo-prenda-row');
         return;
     }
     
@@ -70,7 +70,7 @@ function actualizarSelectTallasSinCot(select) {
     console.log(' LIMPIEZA COMPLETA FINALIZADA');
     
     if (tipo === 'letra') {
-        console.log('📝 Configurando LETRAS');
+        console.log(' Configurando LETRAS');
         
         // Mostrar selector de modo para LETRAS
         modoSelect.style.display = 'block';
@@ -79,7 +79,7 @@ function actualizarSelectTallasSinCot(select) {
         
         // Agregar event listener al modoSelect para LETRAS
         modoSelect._handlerLetras = function() {
-            console.log('📝 Modo cambiado para LETRAS:', this.value);
+            console.log(' Modo cambiado para LETRAS:', this.value);
             actualizarModoLetrasSinCot(container, this.value);
         };
         modoSelect.addEventListener('change', modoSelect._handlerLetras);
@@ -90,7 +90,7 @@ function actualizarSelectTallasSinCot(select) {
         tallaRangoSelectors.style.display = 'none';
         
         // Crear botones de LETRAS
-        console.log('📝 Creando botones de LETRAS');
+        console.log(' Creando botones de LETRAS');
         botonesDiv.innerHTML = '';
         tallasLetras.forEach(talla => {
             const btn = document.createElement('button');
@@ -128,7 +128,7 @@ function actualizarSelectTallasSinCot(select) {
             console.log('🔢 No hay género preseleccionado, esperando selección');
             // Mostrar selector de modo sin mostrar botones aún
             modoSelect.style.display = 'none';
-            console.warn('⚠️ Por favor selecciona un género en la prenda antes de elegir tallas');
+            console.warn(' Por favor selecciona un género en la prenda antes de elegir tallas');
         }
     }
 }
@@ -180,7 +180,7 @@ function actualizarBotonesPorGeneroSinCot(container, genero) {
  * REPLICACIÓN EXACTA de actualizarModoLetras() de tallas.js
  */
 function actualizarModoLetrasSinCot(container, modo) {
-    console.log('📝 Modo LETRAS:', modo);
+    console.log(' Modo LETRAS:', modo);
     const tallaBotones = container.querySelector('.talla-botones');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const botonesDiv = container.querySelector('.talla-botones-container');
@@ -308,17 +308,17 @@ function actualizarModoNumerosSinCot(container, modo) {
  * Actualiza selectores de rango para NÚMEROS
  */
 function actualizarSelectoresRangoNumerosSinCot(container, genero) {
-    console.log('📊 actualizarSelectoresRangoNumerosSinCot() llamado con género:', genero);
+    console.log(' actualizarSelectoresRangoNumerosSinCot() llamado con género:', genero);
     
     const desdeSelect = container.querySelector('.talla-desde');
     const hastaSelect = container.querySelector('.talla-hasta');
     
     let tallas = [];
     if (genero === 'dama') {
-        console.log('📊 Usando tallas DAMA para rango');
+        console.log(' Usando tallas DAMA para rango');
         tallas = tallasDama;
     } else if (genero === 'caballero') {
-        console.log('📊 Usando tallas CABALLERO para rango');
+        console.log(' Usando tallas CABALLERO para rango');
         tallas = tallasCaballero;
     }
     
@@ -542,7 +542,7 @@ function crearOActualizarTablaCantidadesSinCot(container, prendaIndex) {
     // Buscar o crear contenedor de tabla dentro de tallas-section
     const tallasSection = container.querySelector('.tallas-section');
     if (!tallasSection) {
-        console.warn('⚠️ No se encontró .tallas-section');
+        console.warn(' No se encontró .tallas-section');
         return;
     }
     
@@ -619,5 +619,5 @@ function crearOActualizarTablaCantidadesSinCot(container, prendaIndex) {
         });
     });
     
-    console.log('📊 Tabla de cantidades actualizada');
+    console.log(' Tabla de cantidades actualizada');
 }

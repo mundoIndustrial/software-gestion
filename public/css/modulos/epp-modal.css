@@ -1,0 +1,212 @@
+/**
+ * EPP Modal Styles
+ * Estilos para el modal de agregar EPP al pedido
+ */
+
+/* ============================================================================
+   ANIMACIONES GLOBALES
+   ============================================================================ */
+
+@keyframes slideDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ============================================================================
+   ESTILOS DE BACKDROP (Fondo oscuro)
+   ============================================================================ */
+
+.epp-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+/* ============================================================================
+   ESTILOS DE MODAL
+   ============================================================================ */
+
+.epp-modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    animation: slideUp 0.3s ease;
+}
+
+/* ============================================================================
+   ESTILOS DE ICONOS Y CÍRCULOS
+   ============================================================================ */
+
+.epp-modal-icon-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    margin-bottom: 1rem;
+}
+
+.epp-modal-icon-circle.success {
+    background: #10b981;
+}
+
+.epp-modal-icon-circle.error {
+    background: #ef4444;
+}
+
+.epp-modal-icon-circle.loading {
+    background: #3b82f6;
+}
+
+.epp-modal-icon-circle.info {
+    background: #3b82f6;
+}
+
+.epp-modal-icon-circle span {
+    color: white;
+    font-size: 32px;
+}
+
+.epp-modal-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(59, 130, 246, 0.3);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* ============================================================================
+   ESTILOS DE TÍTULOS Y TEXTOS
+   ============================================================================ */
+
+.epp-modal-title {
+    margin: 0 0 0.75rem 0;
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.epp-modal-message {
+    margin: 0 0 1.5rem 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.epp-modal-message.small {
+    margin: 0;
+}
+
+/* ============================================================================
+   ESTILOS DE BOTONES
+   ============================================================================ */
+
+.epp-modal-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 1.5rem;
+}
+
+.epp-modal-button.success {
+    background: #10b981;
+    color: white;
+}
+
+.epp-modal-button.success:hover {
+    background: #059669;
+}
+
+.epp-modal-button.error {
+    background: #ef4444;
+    color: white;
+}
+
+.epp-modal-button.error:hover {
+    background: #dc2626;
+}
+
+.epp-modal-button.info {
+    background: #3b82f6;
+    color: white;
+}
+
+.epp-modal-button.info:hover {
+    background: #1d4ed8;
+}
+
+/* ============================================================================
+   ESTILOS DE CONTENEDOR DE CONTENIDO
+   ============================================================================ */
+
+.epp-modal-content-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+.epp-modal-icon-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+.epp-modal-icon-wrapper.animated {
+    animation: scaleIn 0.5s ease;
+}
+
+/* ============================================================================
+   ESTILOS DE ERROR EN BUSCADOR
+   ============================================================================ */
+
+.epp-search-error {
+    padding: 1rem;
+    color: #dc2626;
+    text-align: center;
+}

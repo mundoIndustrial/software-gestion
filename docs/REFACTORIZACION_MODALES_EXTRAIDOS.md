@@ -29,7 +29,7 @@ Están en `crear-desde-cotizacion-editable.blade.php` líneas inline:
 -  Agregado script `modales-dinamicos.js` al push de scripts
 -  Orden correcto: constantes → modales-dinamicos → otros módulos
 
-## 🎯 Próximos Pasos (Opcionales)
+##  Próximos Pasos (Opcionales)
 
 Si deseas continuar limpiando, quedan:
 1. Extraer `mostrarGaleriaImagenes()` (línea ~732)

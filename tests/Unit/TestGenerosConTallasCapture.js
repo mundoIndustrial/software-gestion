@@ -51,7 +51,7 @@ class TestGenerosConTallasCapture {
             }
         });
 
-        console.log('📊 Entrada:');
+        console.log(' Entrada:');
         console.log('  tallasPorGenero:', JSON.stringify(tallasPorGenero, null, 2));
         console.log('  cantidadesPorTalla:', cantidadesPorTalla);
 
@@ -107,7 +107,7 @@ class TestGenerosConTallasCapture {
             });
         });
 
-        console.log('📊 Entrada (generosConTallas):');
+        console.log(' Entrada (generosConTallas):');
         console.log(JSON.stringify(generosConTallas, null, 2));
 
         console.log('\n Salida (cantidadTalla para API):');
@@ -159,7 +159,7 @@ class TestGenerosConTallasCapture {
             };
         });
 
-        console.log('📊 Entrada (cantidadTalla):');
+        console.log(' Entrada (cantidadTalla):');
         console.log(cantidadTalla);
 
         console.log('\n Salida (array tallas):');
@@ -382,7 +382,7 @@ class TestGenerosConTallasCapture {
             }
         });
 
-        console.log(`\n📊 Resultado: ${passCount}/${validaciones.length} validaciones pasadas`);
+        console.log(`\n Resultado: ${passCount}/${validaciones.length} validaciones pasadas`);
     }
 
     // Ejecutar todos los tests
@@ -403,7 +403,7 @@ class TestGenerosConTallasCapture {
         console.log('╔════════════════════════════════════════════════════════════════╗');
         console.log('║                       RESUMEN FINAL                              ║');
         console.log('╚════════════════════════════════════════════════════════════════╝');
-        console.log(`\n📊 Tests ejecutados: ${this.totalTests}`);
+        console.log(`\n Tests ejecutados: ${this.totalTests}`);
         console.log(` Tests pasados: ${this.passedTests}`);
         console.log(` Tests fallados: ${this.totalTests - this.passedTests}`);
         

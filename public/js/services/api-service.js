@@ -190,7 +190,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async validarPedido(pedidoData) {
-        console.log(`🔍 Validando datos de pedido...`);
+        console.log(` Validando datos de pedido...`);
         
         // Endpoint futuro para validación en backend
         // Por ahora retornamos validación local
@@ -317,7 +317,7 @@ class ApiService {
                 throw error;
             }
             
-            console.log(`⚠️ Reintentando... (${retries} intentos restantes)`);
+            console.log(` Reintentando... (${retries} intentos restantes)`);
             await new Promise(resolve => setTimeout(resolve, delay));
             return this.retry(fn, retries - 1, delay);
         }

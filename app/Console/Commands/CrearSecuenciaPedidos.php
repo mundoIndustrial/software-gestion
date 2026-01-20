@@ -24,7 +24,7 @@ class CrearSecuenciaPedidos extends Command
                 $this->line("   Tipo: {$seq->tipo}");
                 $this->line("   Siguiente: {$seq->siguiente}");
             } else {
-                $this->warn("⚠️  Secuencia NO EXISTE, creando...");
+                $this->warn("  Secuencia NO EXISTE, creando...");
                 
                 // Obtener el máximo actual
                 $maxActual = DB::table('pedidos_produccion')->max('numero_pedido');

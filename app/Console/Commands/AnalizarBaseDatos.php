@@ -27,7 +27,7 @@ class AnalizarBaseDatos extends Command
      */
     private function analizarTodasLasTablas()
     {
-        $this->info('📊 ANÁLISIS COMPLETO DE LA BASE DE DATOS');
+        $this->info(' ANÁLISIS COMPLETO DE LA BASE DE DATOS');
         $this->line('');
 
         // Obtener todas las tablas
@@ -58,7 +58,7 @@ class AnalizarBaseDatos extends Command
 
         // Obtener estructura
         $columnas = DB::select("DESCRIBE {$nombreTabla}");
-        $this->line('🔧 ESTRUCTURA:');
+        $this->line(' ESTRUCTURA:');
         $this->table(
             ['Campo', 'Tipo', 'Nulo', 'Clave', 'Por Defecto', 'Extra'],
             array_map(function ($col) {
@@ -81,7 +81,7 @@ class AnalizarBaseDatos extends Command
         // Mostrar primeros registros
         if ($count > 0) {
             $this->line('');
-            $this->line('📝 PRIMEROS 5 REGISTROS:');
+            $this->line(' PRIMEROS 5 REGISTROS:');
             $registros = DB::table($nombreTabla)->limit(5)->get();
 
             if ($registros->isNotEmpty()) {

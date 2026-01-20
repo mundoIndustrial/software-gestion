@@ -74,7 +74,7 @@ function abrirEditarPrendas() {
  * Usa modal dinámico para evitar conflictos CSS
  */
 function abrirEditarPrendaEspecifica(prendasIndex) {
-    console.log('🎯 [PRENDA EDITOR] abrirEditarPrendaEspecifica() llamado con índice:', prendasIndex);
+    console.log(' [PRENDA EDITOR] abrirEditarPrendaEspecifica() llamado con índice:', prendasIndex);
     
     if (!window.prendasEdicion) {
         console.error(' window.prendasEdicion no existe');
@@ -132,7 +132,7 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     };
     
     // ESTRATEGIA 1: Usar GestionItemsUI si existe (mejor opción - misma apariencia que crear-nuevo)
-    console.log('🔍 Buscando GestionItemsUI para usar igual modal que en crear-nuevo...');
+    console.log(' Buscando GestionItemsUI para usar igual modal que en crear-nuevo...');
     if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
         console.log(' GestionItemsUI ENCONTRADO - Usando para abrir modal igual a crear-nuevo');
         
@@ -159,7 +159,7 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
         return;
     }
     
-    console.warn('⚠️ GestionItemsUI no disponible, intentando fallback manual');
+    console.warn(' GestionItemsUI no disponible, intentando fallback manual');
     console.log('🔄 Abriendo modal con método manual...');
     
     // ESTRATEGIA 2: Fallback manual si GestionItemsUI no está disponible
@@ -380,11 +380,11 @@ window.obtenerModalPrendaNueva = function() {
         return modal;
     }
     
-    console.log('🔍 Modal no encontrado en document actual, buscando en otros contextos...');
+    console.log(' Modal no encontrado en document actual, buscando en otros contextos...');
     
     // Buscar en iframes
     const iframes = document.querySelectorAll('iframe');
-    console.log(`🔍 Buscando en ${iframes.length} iframes...`);
+    console.log(` Buscando en ${iframes.length} iframes...`);
     for (let iframe of iframes) {
         try {
             modal = iframe.contentDocument?.getElementById('modal-agregar-prenda-nueva');
@@ -411,12 +411,12 @@ window.obtenerModalPrendaNueva = function() {
     }
     
     console.log(' Modal NO encontrado en ningún contexto');
-    console.log('🔍 Elementos disponibles en el documento:');
+    console.log(' Elementos disponibles en el documento:');
     console.log('   - Total de divs:', document.querySelectorAll('div').length);
     const modalsEnDOM = Array.from(document.querySelectorAll('[id*="modal"]')).map(el => el.id);
     console.log('   - IDs que contienen "modal":', modalsEnDOM);
     if (modalsEnDOM.length === 0) {
-        console.warn('⚠️ NO HAY NINGUN MODAL EN EL DOM - El archivo blade probablemente no fue incluido');
+        console.warn(' NO HAY NINGUN MODAL EN EL DOM - El archivo blade probablemente no fue incluido');
     }
     
     return null;

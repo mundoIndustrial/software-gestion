@@ -91,13 +91,13 @@ function obtenerPastillaSeleccionada() {
  * Establecer pastilla activa por tipo
  */
 function establecerPastillaActiva(tipo) {
-    console.log('🔧 Estableciendo pastilla activa:', tipo);
+    console.log(' Estableciendo pastilla activa:', tipo);
     
     const btn = document.querySelector(`.cotizacion-tab-btn[data-tipo="${tipo}"]`);
     if (btn) {
         seleccionarPastilla(btn);
     } else {
-        console.warn(`⚠️ No se encontró pastilla de tipo: ${tipo}`);
+        console.warn(` No se encontró pastilla de tipo: ${tipo}`);
     }
 }
 
@@ -118,13 +118,13 @@ function obtenerInfoPastilla(tipo) {
     const info = {
         'prenda': {
             nombre: 'Prenda',
-            icon: '👕',
+            icon: '',
             descripcion: 'Solo prendas sin logo',
             color: '#3b82f6'
         },
         'logo': {
             nombre: 'Logo',
-            icon: '🎨',
+            icon: '',
             descripcion: 'Solo logos y diseños',
             color: '#8b5cf6'
         },
@@ -146,7 +146,7 @@ function validarPastillaSeleccionada() {
     const pastilla = obtenerPastillaSeleccionada();
     
     if (!pastilla) {
-        console.warn('⚠️ No hay pastilla seleccionada');
+        console.warn(' No hay pastilla seleccionada');
         Swal.fire({
             title: 'Selecciona un tipo',
             text: 'Debes seleccionar el tipo de cotización antes de continuar',

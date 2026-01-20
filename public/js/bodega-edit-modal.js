@@ -10,7 +10,7 @@ let bodegaPrendaUniqueId = 0; // ID único para cada prenda
  */
 function openEditModal(pedido) {
     console.log('🖱️ Click en botón Editar, pedido:', pedido);
-    console.log('🔍 Verificando si openBodegaEditModal existe:', typeof openBodegaEditModal);
+    console.log(' Verificando si openBodegaEditModal existe:', typeof openBodegaEditModal);
     if (typeof openBodegaEditModal === 'function') {
         openBodegaEditModal(pedido);
     } else {
@@ -22,7 +22,7 @@ function openEditModal(pedido) {
  * Inicializar modal de edición de bodega
  */
 function initializeBodegaEditModal() {
-    console.log('📦 Bodega Edit Modal Script Loaded');
+    console.log(' Bodega Edit Modal Script Loaded');
     
     // Event delegation para botones de editar
     document.addEventListener('click', function(e) {
@@ -60,27 +60,27 @@ async function openBodegaEditModal(pedido) {
             return;
         }
         console.log(' Modal encontrado en el DOM');
-        console.log('📊 Computado style display:', window.getComputedStyle(modal).display);
+        console.log(' Computado style display:', window.getComputedStyle(modal).display);
         
         // Cargar datos de la orden
-        console.log('📦 Cargando datos de la orden...');
+        console.log(' Cargando datos de la orden...');
         await loadBodegaOrderData(pedido);
         
         // Cargar prendas y tallas
-        console.log('👕 Cargando prendas...');
+        console.log(' Cargando prendas...');
         await loadBodegaPrendas(pedido);
         
         // Mostrar modal
-        console.log('🎯 Mostrando modal...');
+        console.log(' Mostrando modal...');
         showBodegaEditModal();
         
         // Verificar que se mostró
         setTimeout(() => {
             const computedStyle = window.getComputedStyle(modal);
-            console.log('📊 Después de mostrar - display:', computedStyle.display);
-            console.log('📊 Después de mostrar - visibility:', computedStyle.visibility);
-            console.log('📊 Después de mostrar - opacity:', computedStyle.opacity);
-            console.log('📊 Después de mostrar - z-index:', computedStyle.zIndex);
+            console.log(' Después de mostrar - display:', computedStyle.display);
+            console.log(' Después de mostrar - visibility:', computedStyle.visibility);
+            console.log(' Después de mostrar - opacity:', computedStyle.opacity);
+            console.log(' Después de mostrar - z-index:', computedStyle.zIndex);
         }, 100);
         
         console.log(' Modal abierto exitosamente');
@@ -119,7 +119,7 @@ async function loadBodegaOrderData(pedido) {
         if (!response.ok) throw new Error('Error al cargar datos');
         
         const orden = await response.json();
-        console.log('📦 Orden completa recibida:', orden);
+        console.log(' Orden completa recibida:', orden);
         console.log('📍 Área recibida:', orden.area);
         
         // Llenar información general
@@ -151,7 +151,7 @@ async function loadBodegaPrendas(pedido) {
         });
         
         if (!response.ok) {
-            console.warn('⚠️ No se pudieron cargar las prendas');
+            console.warn(' No se pudieron cargar las prendas');
             return;
         }
         
@@ -190,7 +190,7 @@ async function loadBodegaPrendas(pedido) {
         
         console.log(` ${prendasArray.length} prendas cargadas`);
     } catch (error) {
-        console.warn('⚠️ No se pudieron cargar las prendas:', error);
+        console.warn(' No se pudieron cargar las prendas:', error);
     }
 }
 
@@ -374,7 +374,7 @@ function updateBodegaPrendaNumbers() {
 function showBodegaEditModal() {
     const modal = document.getElementById('bodegaEditModal');
     if (modal) {
-        console.log('🎯 Mostrando modal de edición');
+        console.log(' Mostrando modal de edición');
         modal.style.display = 'flex';
         modal.style.visibility = 'visible';
         modal.style.opacity = '1';
@@ -465,7 +465,7 @@ async function saveBodegaChanges(pedido) {
 function showBodegaEditNotification(message, type = 'success') {
     const notification = document.getElementById('editBodegaNotification');
     if (!notification) {
-        console.warn('⚠️ Elemento #editBodegaNotification no encontrado');
+        console.warn(' Elemento #editBodegaNotification no encontrado');
         return;
     }
     notification.textContent = message;

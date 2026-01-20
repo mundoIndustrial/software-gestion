@@ -24,7 +24,7 @@ class GenerarPDFRecibosService
             // Si no está instalada, retornar datos para descarga del frontend
             
             if (!class_exists('\PDF')) {
-                Log::warning('⚠️ [PDF] Librería PDF no instalada, retornando datos');
+                Log::warning(' [PDF] Librería PDF no instalada, retornando datos');
                 return $this->generarDatosPDF($datosRecibo, $pedidoId);
             }
 
@@ -56,7 +56,7 @@ class GenerarPDFRecibosService
      */
     private function generarDatosPDF(array $datosRecibo, int $pedidoId): array
     {
-        Log::info('📊 [PDF-DATOS] Preparando datos para PDF frontend');
+        Log::info(' [PDF-DATOS] Preparando datos para PDF frontend');
 
         $datos = [
             'success' => true,
@@ -146,7 +146,7 @@ class GenerarPDFRecibosService
      */
     public function generarVistaPreviaHTML(array $datosRecibo, int $pedidoId): string
     {
-        Log::info('🎨 [VISTA-PREVIA] Generando HTML de recibo');
+        Log::info(' [VISTA-PREVIA] Generando HTML de recibo');
 
         try {
             $html = view('asesores.recibos.pdf', [
@@ -181,7 +181,7 @@ class GenerarPDFRecibosService
             // TODO: Implementar con Mailable
             // Mail::send(new ReciboMail($datosRecibo, $pedidoId));
 
-            Log::warning('⚠️ [EMAIL] Envío por email no implementado aún');
+            Log::warning(' [EMAIL] Envío por email no implementado aún');
 
             return false;
 

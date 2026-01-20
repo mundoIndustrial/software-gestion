@@ -327,7 +327,7 @@ function renderizarImagenesReflectivo(prendaIndex, imagenes = []) {
  * @param {Array} tallas - Array de tallas
  */
 /**
- * ⚠️ FUNCIÓN DEPRECADA - Se mantiene por compatibilidad
+ *  FUNCIÓN DEPRECADA - Se mantiene por compatibilidad
  * Ya no se usa el sistema de tags, ahora usa generosConTallas
  */
 function renderizarTallasReflectivo(prendaIndex, tallas = []) {

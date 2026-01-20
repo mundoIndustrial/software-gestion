@@ -128,7 +128,7 @@ class ProductoModule {
 
         // Prevenir eliminaciones duplicadas
         if (card.dataset.eliminando === 'true') {
-            console.log('⚠️ Este producto ya está siendo eliminado');
+            console.log(' Este producto ya está siendo eliminado');
             return;
         }
 
@@ -161,8 +161,8 @@ class ProductoModule {
     confirmarEliminacion(card, productoId) {
         // Marcar como en proceso de eliminación
         card.dataset.eliminando = 'true';
-        console.log(`🔍 Card antes de remover:`, card);
-        console.log(`🔍 Contenedor tiene ${this.contenedor.querySelectorAll('.producto-card').length} productos`);
+        console.log(` Card antes de remover:`, card);
+        console.log(` Contenedor tiene ${this.contenedor.querySelectorAll('.producto-card').length} productos`);
 
         // Limpiar datos asociados
         delete window.fotosSeleccionadas[productoId];
@@ -170,7 +170,7 @@ class ProductoModule {
 
         card.remove();
         console.log(` Card removida del DOM`);
-        console.log(`🔍 Contenedor ahora tiene ${this.contenedor.querySelectorAll('.producto-card').length} productos`);
+        console.log(` Contenedor ahora tiene ${this.contenedor.querySelectorAll('.producto-card').length} productos`);
         
         this.renumerarProductos();
         console.log(` Productos renumerados`);

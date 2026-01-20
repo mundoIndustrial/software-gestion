@@ -45,7 +45,7 @@ class BuscarPedidoPorNumeroHandler implements QueryHandler
                 ->first();
 
             if (!$pedido) {
-                Log::warning('⚠️ [BuscarPedidoPorNumeroHandler] Pedido no encontrado', [
+                Log::warning(' [BuscarPedidoPorNumeroHandler] Pedido no encontrado', [
                     'numero_pedido' => $query->getNumeroPedido(),
                 ]);
                 return null;

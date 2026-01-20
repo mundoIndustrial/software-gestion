@@ -24,13 +24,13 @@ Cumple con:
  │   └── GenericHttpService.js     // 🏗️ Infraestructura base
  │
  ├── epp
- │   └── EppHttpService.js         // 📦 Dominio EPP
+ │   └── EppHttpService.js         //  Dominio EPP
  │
  ├── prendas
- │   └── PrendasHttpService.js     // 📦 Dominio Prendas
+ │   └── PrendasHttpService.js     //  Dominio Prendas
  │
  ├── pedidos
- │   └── PedidosHttpService.js     // 📦 Dominio Pedidos
+ │   └── PedidosHttpService.js     //  Dominio Pedidos
  │
  └── ...otros dominios
 ```

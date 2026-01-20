@@ -67,7 +67,7 @@ function cargarBorrador(cotizacion) {
         
         // Solo continuar si hay especificaciones decodificadas
         if (Object.keys(especificacionesDecodificadas).length === 0) {
-            console.log('⚠️ No hay especificaciones para cargar');
+            console.log(' No hay especificaciones para cargar');
             return;
         }
         
@@ -94,7 +94,7 @@ function cargarBorrador(cotizacion) {
                             const valorItem = item.valor || '';
                             const observacion = item.observacion || '';
                             
-                            console.log(`🔍 DEBUG Especificación ${key}[${index}]:`, {
+                            console.log(` DEBUG Especificación ${key}[${index}]:`, {
                                 valor: valorItem,
                                 observacion: observacion
                             });
@@ -107,7 +107,7 @@ function cargarBorrador(cotizacion) {
                             const tbodyId = tbodyMapping[key] || `tbody_${key}`;
                             const tbody = document.getElementById(tbodyId);
                             
-                            console.log(`🔍 Buscando tbody: ${tbodyId} para clave: ${key}`);
+                            console.log(` Buscando tbody: ${tbodyId} para clave: ${key}`);
                             
                             if (tbody) {
                                 const filas = tbody.querySelectorAll('tr');
@@ -154,7 +154,7 @@ function cargarBorrador(cotizacion) {
                                     console.log(` Checkbox marcado para: ${valorItem}`);
                                 }
                             } else {
-                                console.log(`⚠️ No se encontró fila disponible para: ${valorItem} en ${key}`);
+                                console.log(` No se encontró fila disponible para: ${valorItem} en ${key}`);
                             }
                         }
                     });
@@ -220,7 +220,7 @@ function cargarBorrador(cotizacion) {
                 
                 // Nombre del producto
                 const inputNombre = productoActual.querySelector('input[name*="nombre_producto"]');
-                console.log('🔍 Buscando input nombre:', {
+                console.log(' Buscando input nombre:', {
                     encontrado: !!inputNombre,
                     selector: 'input[name*="nombre_producto"]',
                     indice: prendaIndexActual
@@ -241,7 +241,7 @@ function cargarBorrador(cotizacion) {
                 
                 // Descripción
                 const textareaDesc = productoActual.querySelector('textarea[name*="descripcion"]');
-                console.log('🔍 Buscando textarea descripción:', {
+                console.log(' Buscando textarea descripción:', {
                     encontrado: !!textareaDesc,
                     selector: 'textarea[name*="descripcion"]',
                     indice: prendaIndexActual
@@ -329,7 +329,7 @@ function cargarBorrador(cotizacion) {
                                         tallasActivadas++;
                                         console.log(' Talla activada:', tallaValor);
                                     } else {
-                                        console.log('⚠️ Botón de talla no encontrado:', tallaValor);
+                                        console.log(' Botón de talla no encontrado:', tallaValor);
                                         // Debug: mostrar botones disponibles
                                         const botonesDisponibles = productoActual.querySelectorAll('.talla-btn');
                                         console.log('📏 Botones disponibles:', Array.from(botonesDisponibles).map(b => b.dataset.talla));
@@ -361,19 +361,19 @@ function cargarBorrador(cotizacion) {
                     
                     // Si variantes es un array, tomar el primer elemento
                     if (Array.isArray(variantes) && variantes.length > 0) {
-                        console.log('🎨 Variantes como array, tomando primer elemento');
+                        console.log(' Variantes como array, tomando primer elemento');
                         variantes = variantes[0];
                     }
                     
                     // Si aún no hay variantes, intentar con .prendas_variantes
                     if (!variantes && prenda.prendas_variantes && Array.isArray(prenda.prendas_variantes) && prenda.prendas_variantes.length > 0) {
-                        console.log('🎨 Variantes no encontradas, usando prendas_variantes');
+                        console.log(' Variantes no encontradas, usando prendas_variantes');
                         variantes = prenda.prendas_variantes[0];
                     }
                     
                     if (variantes && typeof variantes === 'object') {
-                        console.log('🎨 Cargando variantes:', variantes);
-                        console.log('🎨 Genero ID:', variantes.genero_id, 'Color:', variantes.color, 'Tela:', variantes.tela);
+                        console.log(' Cargando variantes:', variantes);
+                        console.log(' Genero ID:', variantes.genero_id, 'Color:', variantes.color, 'Tela:', variantes.tela);
                         
                         // Cargar género en el selector de TALLAS A COTIZAR
                         if (variantes.genero_id !== undefined && variantes.genero_id !== null) {
@@ -383,7 +383,7 @@ function cargarBorrador(cotizacion) {
                                 let valorGenero = '';
                                 if (variantes.genero_id === 4 || variantes.genero_id === '4') {
                                     // 4 = Ambos (ya no disponible, se ignora)
-                                    console.log('⚠️ Género "Ambos" ya no está disponible - selecciona manualmente');
+                                    console.log(' Género "Ambos" ya no está disponible - selecciona manualmente');
                                     valorGenero = '';
                                 } else if (variantes.genero_id === 1 || variantes.genero_id === '1') {
                                     valorGenero = 'dama';
@@ -396,13 +396,13 @@ function cargarBorrador(cotizacion) {
                                     generoSelect.dispatchEvent(new Event('change', { bubbles: true }));
                                     console.log(' Género cargado en selector de tallas:', valorGenero, '(ID:', variantes.genero_id, ')');
                                 } else {
-                                    console.log('⚠️ Género ID no mapeado:', variantes.genero_id);
+                                    console.log(' Género ID no mapeado:', variantes.genero_id);
                                 }
                             } else {
-                                console.log('⚠️ Selector .talla-genero-select no encontrado');
+                                console.log(' Selector .talla-genero-select no encontrado');
                             }
                         } else {
-                            console.log('⚠️ genero_id no disponible o es null/undefined');
+                            console.log(' genero_id no disponible o es null/undefined');
                         }
                         
                         // Color
@@ -430,7 +430,7 @@ function cargarBorrador(cotizacion) {
                                         telaSelect.dispatchEvent(new Event('change', { bubbles: true }));
                                     }, 100);
                                 } else {
-                                    console.log('⚠️ Selector .tela-input no encontrado');
+                                    console.log(' Selector .tela-input no encontrado');
                                 }
                             }
                             
@@ -454,13 +454,13 @@ function cargarBorrador(cotizacion) {
                                     refInput.dispatchEvent(new Event('input', { bubbles: true }));
                                     console.log(' Referencia cargada:', primeraTela.referencia);
                                 } else {
-                                    console.log('⚠️ Selector .referencia-input no encontrado');
+                                    console.log(' Selector .referencia-input no encontrado');
                                 }
                             }
                             
                             // CREAR FILAS ADICIONALES PARA TELAS 2, 3, etc.
                             if (variantes.telas_multiples.length > 1) {
-                                console.log('🧵 Creando', variantes.telas_multiples.length - 1, 'filas adicionales de telas');
+                                console.log(' Creando', variantes.telas_multiples.length - 1, 'filas adicionales de telas');
                                 
                                 setTimeout(() => {
                                     const btnAgregarTela = productoActual.querySelector('.btn-agregar-tela');
@@ -486,11 +486,11 @@ function cargarBorrador(cotizacion) {
                                                     return tr.querySelector('input[name*="[tela_id]"]') !== null;
                                                 });
                                                 
-                                                console.log('🔍 Total de filas de telas encontradas:', todasLasFilas.length);
+                                                console.log(' Total de filas de telas encontradas:', todasLasFilas.length);
                                                 const nuevaFila = todasLasFilas[index];
                                                 
                                                 if (nuevaFila) {
-                                                    console.log('🔍 Llenando fila', index, 'con:', telaData);
+                                                    console.log(' Llenando fila', index, 'con:', telaData);
                                                     
                                                     // Color
                                                     if (telaData.color) {
@@ -502,7 +502,7 @@ function cargarBorrador(cotizacion) {
                                                             colorInput.dispatchEvent(new Event('blur', { bubbles: true }));
                                                             console.log('   ✓ Color asignado:', telaData.color, 'Clase:', colorInput.className);
                                                         } else {
-                                                            console.log('   ⚠️ Color input NO encontrado en fila', index);
+                                                            console.log('    Color input NO encontrado en fila', index);
                                                         }
                                                     }
                                                     
@@ -516,7 +516,7 @@ function cargarBorrador(cotizacion) {
                                                             telaInput.dispatchEvent(new Event('blur', { bubbles: true }));
                                                             console.log('   ✓ Tela asignada:', telaData.tela, 'Clase:', telaInput.className);
                                                         } else {
-                                                            console.log('   ⚠️ Tela input NO encontrado en fila', index);
+                                                            console.log('    Tela input NO encontrado en fila', index);
                                                         }
                                                     }
                                                     
@@ -532,7 +532,7 @@ function cargarBorrador(cotizacion) {
                                                     
                                                     console.log(' Tela', index + 1, 'cargada:', telaData.color, telaData.tela, telaData.referencia);
                                                 } else {
-                                                    console.log('⚠️ Fila', index, 'no encontrada');
+                                                    console.log(' Fila', index, 'no encontrada');
                                                 }
                                                 
                                                 // Crear siguiente fila
@@ -546,7 +546,7 @@ function cargarBorrador(cotizacion) {
                                 }, 400);
                             }
                         } else {
-                            console.log('⚠️ telas_multiples no disponible o vacío en variantes');
+                            console.log(' telas_multiples no disponible o vacío en variantes');
                         }
                         
                         // Manga - Checkbox y Select
@@ -773,9 +773,9 @@ function cargarBorrador(cotizacion) {
                         };
                         
                         window.variacionesGuardadas.push(variacionesObj);
-                        console.log('🎨 Variaciones guardadas en window.variacionesGuardadas[' + (window.variacionesGuardadas.length - 1) + ']:', variacionesObj);
+                        console.log(' Variaciones guardadas en window.variacionesGuardadas[' + (window.variacionesGuardadas.length - 1) + ']:', variacionesObj);
                     } else {
-                        console.log('⚠️ No hay variantes para cargar o estructura no soportada');
+                        console.log(' No hay variantes para cargar o estructura no soportada');
                     }
                     
                     // Cargar fotos de prenda
@@ -821,14 +821,14 @@ function cargarBorrador(cotizacion) {
                                     console.log(' Foto de prenda cargada:', urlFoto, 'ID:', foto.id);
                                 });
                             } else {
-                                console.log('⚠️ Contenedor .fotos-preview no encontrado');
+                                console.log(' Contenedor .fotos-preview no encontrado');
                             }
                         }, 500);
                     }
                     
                     // Cargar fotos de tela CON DISTRIBUCIÓN POR ÍNDICE
                     if (prenda.tela_fotos && Array.isArray(prenda.tela_fotos) && prenda.tela_fotos.length > 0) {
-                        console.log('🧵 Cargando', prenda.tela_fotos.length, 'fotos de telas');
+                        console.log(' Cargando', prenda.tela_fotos.length, 'fotos de telas');
                         
                         // Delay mayor para esperar a que se creen todas las filas de telas
                         setTimeout(() => {
@@ -842,13 +842,13 @@ function cargarBorrador(cotizacion) {
                                 fotosPorTela[telaIdx].push(fotoData);
                             });
                             
-                            console.log('🧵 Fotos agrupadas por tela:', fotosPorTela);
+                            console.log(' Fotos agrupadas por tela:', fotosPorTela);
                             
                             // Buscar todas las filas de telas que tengan input de tela_id
                             const filasTabla = Array.from(productoActual.querySelectorAll('table tbody tr')).filter(tr => {
                                 return tr.querySelector('input[name*="[tela_id]"]') !== null;
                             });
-                            console.log('🧵 Filas de telas encontradas:', filasTabla.length);
+                            console.log(' Filas de telas encontradas:', filasTabla.length);
                             
                             // Distribuir fotos a cada fila según su índice
                             filasTabla.forEach((fila, filaIdx) => {
@@ -902,7 +902,7 @@ function cargarBorrador(cotizacion) {
             setTimeout(() => intentarCargar(), 500);
         });
     } else {
-        console.log('⚠️ No hay prendas/productos para cargar o están en formato no soportado:', {prendas, tipo: typeof prendas});
+        console.log(' No hay prendas/productos para cargar o están en formato no soportado:', {prendas, tipo: typeof prendas});
     }
     
     // Cargar técnicas
@@ -1031,11 +1031,11 @@ function cargarBorrador(cotizacion) {
             
             // Cargar telas en window.imagenesEnMemoria
             if (prenda.tela_fotos && Array.isArray(prenda.tela_fotos)) {
-                console.log(`🧵 Telas encontradas para prenda ${prendaIdx}:`, prenda.tela_fotos.length);
+                console.log(` Telas encontradas para prenda ${prendaIdx}:`, prenda.tela_fotos.length);
                 prenda.tela_fotos.forEach((tela, telaIdx) => {
                     if (tela.ruta_original || tela.ruta_webp) {
                         const rutaTela = tela.ruta_original || tela.ruta_webp;
-                        console.log(`🧵 Tela ${telaIdx}:`, rutaTela);
+                        console.log(` Tela ${telaIdx}:`, rutaTela);
                         
                         // Agregar a window.imagenesEnMemoria.telaConIndice
                         if (!window.imagenesEnMemoria.telaConIndice) {
@@ -1121,7 +1121,7 @@ function cargarBorrador(cotizacion) {
                     
                     // Cargar fotos de telas (desde tela_fotos) - DISTRIBUIDAS POR TELA_INDEX
                     const fotoTelaPreview = card.querySelector('.foto-tela-preview');
-                    console.log(`🧵 DEBUG Tela Preview:`, {
+                    console.log(` DEBUG Tela Preview:`, {
                         encontrado: !!fotoTelaPreview,
                         selector: '.foto-tela-preview',
                         tela_fotos_existe: !!prenda.tela_fotos,
@@ -1130,7 +1130,7 @@ function cargarBorrador(cotizacion) {
                     });
                     
                     if (prenda.tela_fotos && Array.isArray(prenda.tela_fotos) && prenda.tela_fotos.length > 0) {
-                        console.log(`🧵 Cargando ${prenda.tela_fotos.length} fotos de tela en sus respectivas filas`);
+                        console.log(` Cargando ${prenda.tela_fotos.length} fotos de tela en sus respectivas filas`);
                         
                         // Esperar a que las filas de telas estén renderizadas
                         setTimeout(() => {
@@ -1147,11 +1147,11 @@ function cargarBorrador(cotizacion) {
                                 fotosPorTela[telaIdx].push(fotoData);
                             });
                             
-                            console.log('🧵 Fotos agrupadas por tela:', fotosPorTela);
+                            console.log(' Fotos agrupadas por tela:', fotosPorTela);
                             
                             // Obtener todas las filas de telas
                             const filasTabla = card.querySelectorAll('tbody[id^="tabla-telas-"] tr');
-                            console.log(`🧵 Filas de telas encontradas: ${filasTabla.length}`);
+                            console.log(` Filas de telas encontradas: ${filasTabla.length}`);
                             
                             // Para cada fila de tela, agregar sus fotos correspondientes
                             filasTabla.forEach((fila, filaIdx) => {
@@ -1209,7 +1209,7 @@ function cargarBorrador(cotizacion) {
     
     // Cargar datos del logo (Paso 4)
     if (cotizacion.logo_cotizacion) {
-        console.log('🎨 Cargando datos del logo:', cotizacion.logo_cotizacion);
+        console.log(' Cargando datos del logo:', cotizacion.logo_cotizacion);
         
         // Cargar tipo de venta del logo (PASO 3)
         if (cotizacion.logo_cotizacion.tipo_venta) {
@@ -1250,7 +1250,7 @@ function cargarBorrador(cotizacion) {
                 
                 setTimeout(() => {
                     const tecnicasContainer = document.getElementById('tecnicas_seleccionadas');
-                    console.log('🎨 DEBUG Técnicas:', { container: !!tecnicasContainer, tecnicas: tecnicas });
+                    console.log(' DEBUG Técnicas:', { container: !!tecnicasContainer, tecnicas: tecnicas });
                     if (tecnicasContainer) {
                         tecnicas.forEach(tecnica => {
                             const div = document.createElement('div');
@@ -1272,7 +1272,7 @@ function cargarBorrador(cotizacion) {
         if (cotizacion.logo_cotizacion.observaciones_tecnicas) {
             setTimeout(() => {
                 const obsTecnicasTextarea = document.querySelector('textarea[name="observaciones_tecnicas"]');
-                console.log('📝 DEBUG Obs Técnicas:', { textarea: !!obsTecnicasTextarea, valor: cotizacion.logo_cotizacion.observaciones_tecnicas });
+                console.log(' DEBUG Obs Técnicas:', { textarea: !!obsTecnicasTextarea, valor: cotizacion.logo_cotizacion.observaciones_tecnicas });
                 if (obsTecnicasTextarea) {
                     obsTecnicasTextarea.value = cotizacion.logo_cotizacion.observaciones_tecnicas;
                     obsTecnicasTextarea.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1612,7 +1612,7 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
                         
                         // Si no encontró con ambos atributos, buscar solo con data-ruta
                         if (eliminados === 0) {
-                            console.log('⚠️ No encontrado con ambos atributos, buscando solo por data-ruta...');
+                            console.log(' No encontrado con ambos atributos, buscando solo por data-ruta...');
                             const allDivs = galeriaImagenes.querySelectorAll('div');
                             allDivs.forEach(div => {
                                 const img = div.querySelector('img');
@@ -1637,12 +1637,12 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
                     //  PASO 2: Eliminar también de window.imagenesEnMemoria.logo
                     if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
                         const beforeCount = window.imagenesEnMemoria.logo.length;
-                        console.log('🔍 ANTES - window.imagenesEnMemoria.logo:', window.imagenesEnMemoria.logo);
-                        console.log(`🔍 Intentando eliminar: "${rutaFoto}"`);
+                        console.log(' ANTES - window.imagenesEnMemoria.logo:', window.imagenesEnMemoria.logo);
+                        console.log(` Intentando eliminar: "${rutaFoto}"`);
                         
                         // Extraer solo el nombre del archivo para comparación más flexible
                         const nombreArchivo = rutaFoto.split('/').pop();
-                        console.log(`🔍 Nombre del archivo a eliminar: "${nombreArchivo}"`);
+                        console.log(` Nombre del archivo a eliminar: "${nombreArchivo}"`);
                         
                         window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter((imagen, idx) => {
                             console.log(`   [${idx}] Evaluando imagen:`, imagen);
@@ -1684,7 +1684,7 @@ async function eliminarFotoLogoInmediatamente(rutaFoto, cotizacionId) {
                             return true;  // Mantener otros tipos
                         });
                         
-                        console.log('🔍 DESPUÉS - window.imagenesEnMemoria.logo:', window.imagenesEnMemoria.logo);
+                        console.log(' DESPUÉS - window.imagenesEnMemoria.logo:', window.imagenesEnMemoria.logo);
                         console.log(` Eliminación completada. Antes: ${beforeCount}, Después: ${window.imagenesEnMemoria.logo.length} (Eliminados: ${beforeCount - window.imagenesEnMemoria.logo.length})`);
                     }
                     

@@ -89,7 +89,7 @@ function loadGaleriaMobile(container) {
         })
         .then(data => {
             console.log(' [GALERIA MOBILE] Datos recibidos:', data);
-            console.log('📊 [GALERIA MOBILE] Total prendas:', data.prendas?.length || 0);
+            console.log(' [GALERIA MOBILE] Total prendas:', data.prendas?.length || 0);
             
             // Construir array de todas las imágenes para el visor
             allImagesMobile = [];
@@ -98,7 +98,7 @@ function loadGaleriaMobile(container) {
             html += '</div>';
             html += '<div style="padding: 20px; flex: 1; overflow-y: auto;">';
             
-            console.log('📦 [GALERIA MOBILE] Iniciando construcción de galería...');
+            console.log(' [GALERIA MOBILE] Iniciando construcción de galería...');
             
             // Mostrar prendas con sus imágenes (separando fotos de prenda/tela de fotos de logo)
             let fotosLogo = [];
@@ -217,7 +217,7 @@ function loadGaleriaMobile(container) {
                 
                 console.log(' [GALERIA MOBILE] Total de imágenes cargadas:', allImagesMobile.length);
             } else {
-                console.warn('⚠️ [GALERIA MOBILE] No hay imágenes para mostrar');
+                console.warn(' [GALERIA MOBILE] No hay imágenes para mostrar');
                 html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay imágenes para este pedido</p>';
             }
             
@@ -351,10 +351,10 @@ function previousImageMobile() {
 <script>
 // Función para llenar el recibo móvil
 window.llenarReciboCosturaMobile = function(data) {
-    console.log('🎨 === INICIANDO llenarReciboCosturaMobile ===');
-    console.log('🎨 Datos recibidos:', data);
-    console.log('🎨 data.fecha:', data.fecha);
-    console.log('🎨 typeof data.fecha:', typeof data.fecha);
+    console.log(' === INICIANDO llenarReciboCosturaMobile ===');
+    console.log(' Datos recibidos:', data);
+    console.log(' data.fecha:', data.fecha);
+    console.log(' typeof data.fecha:', typeof data.fecha);
     
     // Fecha - parsear correctamente
     if (data.fecha && data.fecha !== 'N/A') {
@@ -409,11 +409,11 @@ window.llenarReciboCosturaMobile = function(data) {
             console.error(' Fecha inválida');
         }
     } else {
-        console.log('⚠️ Sin fecha en data');
+        console.log(' Sin fecha en data');
     }
 
     // Información básica
-    console.log('📝 Llenando información básica...');
+    console.log(' Llenando información básica...');
     const asesora = document.getElementById('mobile-asesora');
     const formaPago = document.getElementById('mobile-forma-pago');
     const cliente = document.getElementById('mobile-cliente');
@@ -421,7 +421,7 @@ window.llenarReciboCosturaMobile = function(data) {
     const encargado = document.getElementById('mobile-encargado');
     const prendasEntregadas = document.getElementById('mobile-prendas-entregadas');
     
-    console.log('📝 Elementos encontrados - asesora:', !!asesora, 'forma_pago:', !!formaPago, 'cliente:', !!cliente, 'numero:', !!numeroPedido, 'encargado:', !!encargado, 'prendas:', !!prendasEntregadas);
+    console.log(' Elementos encontrados - asesora:', !!asesora, 'forma_pago:', !!formaPago, 'cliente:', !!cliente, 'numero:', !!numeroPedido, 'encargado:', !!encargado, 'prendas:', !!prendasEntregadas);
     
     if (asesora) asesora.textContent = data.asesora || 'N/A';
     if (formaPago) formaPago.textContent = data.formaPago || 'N/A';
@@ -458,7 +458,7 @@ window.llenarReciboCosturaMobile = function(data) {
     //  PRIMERO: Si existe descripcion_prendas construida en el controlador, usarla directamente (IGUAL QUE ASESORES)
     if (descripcionPrendasCompleta && descripcionPrendasCompleta.trim() !== '' && descripcionPrendasCompleta !== 'N/A') {
         console.log(' [MOBILE] Usando descripcion_prendas del controlador con paginación');
-        console.log('📝 [DESCRIPCION COMPLETA]:\n' + descripcionPrendasCompleta);
+        console.log(' [DESCRIPCION COMPLETA]:\n' + descripcionPrendasCompleta);
         
         // Limpiar espacios al inicio de cada línea
         const descripcionLimpia = descripcionPrendasCompleta
@@ -506,7 +506,7 @@ window.llenarReciboCosturaMobile = function(data) {
             }
         }
         
-        console.log('📊 [MOBILE] Total bloques de prendas:', bloquesPrendas.length);
+        console.log(' [MOBILE] Total bloques de prendas:', bloquesPrendas.length);
         
         // Aplicar paginación
         const startIndex = window.prendaCarouselIndex || 0;
@@ -567,7 +567,7 @@ window.llenarReciboCosturaMobile = function(data) {
         
     } else if (todasLasPrendas.length > 0) {
         // FALLBACK: Generar descripción dinámica desde prendas (igual que asesores)
-        console.log('⚠️ [MOBILE] Usando lógica de construcción dinámica (descripcion_prendas vacía)');
+        console.log(' [MOBILE] Usando lógica de construcción dinámica (descripcion_prendas vacía)');
         
         const startIndex = window.prendaCarouselIndex || 0;
         const endIndex = startIndex + PRENDAS_POR_PAGINA;
@@ -575,8 +575,8 @@ window.llenarReciboCosturaMobile = function(data) {
         
         // Generar descripción dinámica para cada prenda (igual que asesores)
         prendasActuales.forEach((prenda, index) => {
-            console.log('🔍 [PRENDA] Datos completos:', JSON.stringify(prenda, null, 2));
-            console.log('🔍 [PRENDA] Keys disponibles:', Object.keys(prenda));
+            console.log(' [PRENDA] Datos completos:', JSON.stringify(prenda, null, 2));
+            console.log(' [PRENDA] Keys disponibles:', Object.keys(prenda));
             
             let html = '';
             
@@ -701,7 +701,7 @@ window.llenarReciboCosturaMobile = function(data) {
             console.log(' Descripción inyectada en el DOM');
         } else {
             descElement.innerHTML = '<em style="font-size: 10px; color: #999;">Sin descripción</em>';
-            console.log('⚠️ Sin descripción válida');
+            console.log(' Sin descripción válida');
         }
     }
     
@@ -809,6 +809,6 @@ window.llenarReciboCosturaMobile = function(data) {
         console.log('🎪 Carousel no requerido - solo', totalBloques, 'bloque(s)');
     }
     
-    console.log('🎨 === llenarReciboCosturaMobile COMPLETADO ===');
+    console.log(' === llenarReciboCosturaMobile COMPLETADO ===');
 };
 </script>

@@ -26,7 +26,7 @@ class RegistrarAuditoriaPedido
     public function __invoke(PedidoProduccionCreado $event): void
     {
         try {
-            Log::info('📝 Registrando auditoría de pedido', [
+            Log::info(' Registrando auditoría de pedido', [
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
             ]);

@@ -8,7 +8,7 @@
 // ============================================
 // 1️⃣ VERIFICAR ESTADO ACTUAL
 // ============================================
-console.log('🔍 ========== DEBUG RENDERIZADO PRENDAS ==========');
+console.log(' ========== DEBUG RENDERIZADO PRENDAS ==========');
 
 console.log('1️⃣ Verificando componentes globales...');
 console.log('   ✓ GestionItemsUI:', typeof window.gestionItemsUI !== 'undefined' ? '' : '');
@@ -82,7 +82,7 @@ console.log('   4. Haz click en "Agregar Prenda"');
 console.log('   5. Luego ejecuta en consola: debugVerificarUltimaPrenda()');
 
 window.debugVerificarUltimaPrenda = function() {
-    console.log('\n🔍 Verificando última prenda agregada...');
+    console.log('\n Verificando última prenda agregada...');
     
     if (!window.gestorPrendaSinCotizacion) {
         console.error(' GestorPrendaSinCotizacion no existe');
@@ -91,7 +91,7 @@ window.debugVerificarUltimaPrenda = function() {
     
     const prendas = window.gestorPrendaSinCotizacion.prendas;
     if (prendas.length === 0) {
-        console.warn('⚠️  No hay prendas en el gestor');
+        console.warn('  No hay prendas en el gestor');
         return;
     }
     
@@ -106,7 +106,7 @@ window.debugVerificarUltimaPrenda = function() {
     const ultimaCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendas.length - 1}"]`);
     if (ultimaCard) {
         const tieneProcesosEnDOM = ultimaCard.innerHTML.includes('PROCESOS CONFIGURADOS');
-        console.log('\n🎨 Verificación en DOM:');
+        console.log('\n Verificación en DOM:');
         console.log('   ¿Tarjeta renderizada en DOM?', '');
         console.log('   ¿Contiene sección de procesos?', tieneProcesosEnDOM ? '' : '');
         

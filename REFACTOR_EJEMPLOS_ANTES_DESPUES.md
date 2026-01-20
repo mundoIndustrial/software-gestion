@@ -1,4 +1,4 @@
-# 📝 EJEMPLOS DE REFACTORIZACIÓN ANTES/DESPUÉS
+#  EJEMPLOS DE REFACTORIZACIÓN ANTES/DESPUÉS
 
 ## 1️⃣ EJEMPLO: Eliminar Pedido
 
@@ -149,7 +149,7 @@ function eliminarCotizacion(id, numero) {
 }
 ```
 
-**📊 Métricas:**
+** Métricas:**
 - Líneas eliminadas: **~150 líneas**
 - Archivos: 3 simplificados
 - Mantenibilidad: +200%
@@ -277,7 +277,7 @@ if (result.isConfirmed) {
 }
 ```
 
-**📊 Beneficios:**
+** Beneficios:**
 - Líneas de código duplicado: **~180 líneas eliminadas**
 - Archivos consolidados: 7 → 1
 - Consistencia visual: 100%
@@ -381,7 +381,7 @@ function abrirModalImagen(src, titulo) {
 }
 ```
 
-**📊 Beneficios:**
+** Beneficios:**
 - Líneas de código duplicado: **~800+ líneas eliminadas**
 - Modales genéricos: 5+ implementaciones → 1
 - Consistencia: 100%
@@ -573,7 +573,7 @@ Route::prefix('asesores')->middleware('auth')->group(function () {
 });
 ```
 
-**📊 Beneficios:**
+** Beneficios:**
 - Métodos consolidados: 30+ en 2 controladores → 15 en 1
 - Endpoints duplicados: 3 → 1
 - Single Responsibility: +300%
@@ -609,7 +609,7 @@ Route::prefix('asesores')->middleware('auth')->group(function () {
 
 ---
 
-## 🎯 RESULTADO FINAL
+##  RESULTADO FINAL
 
 **Antes:**
 - 1000+ líneas de JS duplicado

@@ -12,7 +12,7 @@ class TestNumeroCotizacion extends Command
 
     public function handle()
     {
-        $this->info('📊 Verificando números de cotización existentes:');
+        $this->info(' Verificando números de cotización existentes:');
         
         $cotizaciones = Cotizacion::whereNotNull('numero_cotizacion')
             ->orderBy('numero_cotizacion', 'desc')

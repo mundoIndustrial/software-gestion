@@ -31,7 +31,7 @@ if (file_exists($logFile)) {
         if (strpos($line, 'error') !== false || strpos($line, 'Error') !== false) {
             echo " " . substr($trimmed, 0, 100) . "\n";
         } elseif (strpos($line, 'exception') !== false) {
-            echo "⚠️  " . substr($trimmed, 0, 100) . "\n";
+            echo "  " . substr($trimmed, 0, 100) . "\n";
         } else {
             echo "   " . substr($trimmed, 0, 100) . "\n";
         }
@@ -76,7 +76,7 @@ if (is_dir($pedidosDir)) {
     $carpetas = array_filter(scandir($pedidosDir), fn($f) => $f !== '.' && $f !== '..' && is_dir($pedidosDir . '/' . $f));
     
     if (empty($carpetas)) {
-        echo "⚠️  NO HAY CARPETAS DE PEDIDOS CREADAS\n";
+        echo "  NO HAY CARPETAS DE PEDIDOS CREADAS\n";
     } else {
         echo "📁 Carpetas de pedidos: " . count($carpetas) . "\n\n";
         
@@ -173,7 +173,7 @@ foreach ($pathsToCheck as $rel => $desc) {
 echo "\n";
 
 // ===== 6. BÚSQUEDA DE ERRORES EN LOGS =====
-echo "🔍 6. BÚSQUEDA DE ERRORES ESPECÍFICOS\n";
+echo " 6. BÚSQUEDA DE ERRORES ESPECÍFICOS\n";
 echo str_repeat("─", 70) . "\n";
 
 if (file_exists($logFile)) {
@@ -189,7 +189,7 @@ if (file_exists($logFile)) {
     
     foreach ($busquedas as $buscar => $desc) {
         if (strpos($content, $buscar) !== false) {
-            echo "⚠️  Se encontraron referencias a: $desc ($buscar)\n";
+            echo "  Se encontraron referencias a: $desc ($buscar)\n";
         }
     }
     

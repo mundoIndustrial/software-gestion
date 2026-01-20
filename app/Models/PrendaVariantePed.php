@@ -3,20 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * PrendaVariantePed Model
  * 
  * Representa una variante de una prenda en un pedido
- * Equivalente a PrendaVarianteCot pero para pedidos
+ * Guarda: tipo_manga_id, tipo_broche_boton_id, tiene_bolsillos, tiene_reflectivo y observaciones
+ * Los colores y telas se guardan en PrendaPedidoColorTela
  */
 class PrendaVariantePed extends Model
 {
-    use SoftDeletes;
-
-    protected $table = 'prenda_variantes_ped';
+    protected $table = 'prenda_pedido_variantes';
     protected $guarded = [];
     protected $casts = [
         'telas_multiples' => 'json',
@@ -27,6 +26,30 @@ class PrendaVariantePed extends Model
      */
     public function prenda(): BelongsTo
     {
-        return $this->belongsTo(PrendaPed::class, 'prenda_ped_id');
+        return $this->belongsTo(PrendaPedido::class, 'prenda_pedido_id');
+    }
+
+    /**
+     * Relación: Tiene muchos colores y telas
+     */
+    public function coloresTelas(): HasMany
+    {
+        return $this->hasMany(PrendaPedidoColorTela::class, 'prenda_pedido_id', 'prenda_pedido_id');
+    }
+
+    /**
+     * Relación: Tipo de manga
+     */
+    public function tipoManga(): BelongsTo
+    {
+        return $this->belongsTo(TipoManga::class, 'tipo_manga_id');
+    }
+
+    /**
+     * Relación: Tipo de broche
+     */
+    public function tipoBroche(): BelongsTo
+    {
+        return $this->belongsTo(TipoBroche::class, 'tipo_broche_boton_id');
     }
 }

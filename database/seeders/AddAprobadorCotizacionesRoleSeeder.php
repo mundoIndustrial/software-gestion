@@ -26,7 +26,7 @@ class AddAprobadorCotizacionesRoleSeeder extends Seeder
 
             $this->command->info(' Rol aprobador_cotizaciones agregado exitosamente');
         } else {
-            $this->command->warn('⚠️ El rol aprobador_cotizaciones ya existe');
+            $this->command->warn(' El rol aprobador_cotizaciones ya existe');
         }
     }
 }

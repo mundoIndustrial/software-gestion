@@ -320,10 +320,10 @@ class CotizacionPrendaController extends Controller
         ]);
 
         if (!is_array($prendasData) || empty($prendasData)) {
-            Log::info('⚠️ No hay archivos de prendas para procesar');
+            Log::info(' No hay archivos de prendas para procesar');
             
             // Intentar acceder de otra forma
-            \Log::info('🔍 Intentando acceder a archivos de otra forma...');
+            \Log::info(' Intentando acceder a archivos de otra forma...');
             if (isset($allFiles['prendas'])) {
                 \Log::info(' Encontrado en allFiles[prendas]', [
                     'tipo' => gettype($allFiles['prendas']),
@@ -338,7 +338,7 @@ class CotizacionPrendaController extends Controller
 
         // Procesar cada prenda
         foreach ($prendasData as $prendaIndex => $prendaFiles) {
-            \Log::info('📦 Procesando archivos de prenda', [
+            \Log::info(' Procesando archivos de prenda', [
                 'prenda_index' => $prendaIndex,
                 'keys' => is_array($prendaFiles) ? array_keys($prendaFiles) : 'no es array',
             ]);
@@ -403,7 +403,7 @@ class CotizacionPrendaController extends Controller
                 // Obtener la prenda para acceder a sus variantes
                 $prendas = $cotizacion->prendas;
                 if (!$prendas || !isset($prendas[$prendaIndex])) {
-                    \Log::warning('⚠️ Prenda no encontrada para procesar telas', ['prenda_index' => $prendaIndex]);
+                    \Log::warning(' Prenda no encontrada para procesar telas', ['prenda_index' => $prendaIndex]);
                     continue;
                 }
                 
@@ -418,7 +418,7 @@ class CotizacionPrendaController extends Controller
                         : json_decode($variante->telas_multiples, true);
                 }
                 
-                \Log::info('🧵 Telas multiples de variante:', [
+                \Log::info(' Telas multiples de variante:', [
                     'prenda_id' => $prenda->id,
                     'telas_count' => count($telasMultiples),
                     'telas' => $telasMultiples,
@@ -432,7 +432,7 @@ class CotizacionPrendaController extends Controller
                     // Buscar o crear color
                     $colorId = null;
                     if (!empty($telaInfo['color'])) {
-                        \Log::info('🎨 Buscando color', ['color_nombre' => $telaInfo['color']]);
+                        \Log::info(' Buscando color', ['color_nombre' => $telaInfo['color']]);
                         $color = DB::table('colores_prenda')
                             ->where('nombre', $telaInfo['color'])
                             ->first();
@@ -450,13 +450,13 @@ class CotizacionPrendaController extends Controller
                             \Log::info(' Color encontrado', ['color' => $telaInfo['color'], 'id' => $colorId]);
                         }
                     } else {
-                        \Log::warning('⚠️ Color vacío en telaInfo', ['telaInfo' => $telaInfo]);
+                        \Log::warning(' Color vacío en telaInfo', ['telaInfo' => $telaInfo]);
                     }
                     
                     // Buscar o crear tela
                     $telaId = null;
                     if (!empty($telaInfo['tela'])) {
-                        \Log::info('🧵 Buscando tela', ['tela_nombre' => $telaInfo['tela']]);
+                        \Log::info(' Buscando tela', ['tela_nombre' => $telaInfo['tela']]);
                         $tela = DB::table('telas_prenda')
                             ->where('nombre', trim($telaInfo['tela']))
                             ->first();
@@ -475,7 +475,7 @@ class CotizacionPrendaController extends Controller
                             \Log::info(' Tela encontrada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
                         }
                     } else {
-                        \Log::warning('⚠️ Tela vacía en telaInfo', ['telaInfo' => $telaInfo]);
+                        \Log::warning(' Tela vacía en telaInfo', ['telaInfo' => $telaInfo]);
                     }
 
                     // GUARDAR REGISTRO EN prenda_telas_cot
@@ -549,7 +549,7 @@ class CotizacionPrendaController extends Controller
                     }
                 }
                 
-                \Log::info('📊 Resumen después de procesar telas_multiples', [
+                \Log::info(' Resumen después de procesar telas_multiples', [
                     'prenda_id' => $prenda->id,
                     'telaCotIds_mapeados' => $telaCotIds,
                     'cantidad_mapeos' => count($telaCotIds),
@@ -574,7 +574,7 @@ class CotizacionPrendaController extends Controller
                         }
                         
                         if (!$telaInfo) {
-                            \Log::warning('⚠️ No se encontró info de tela en telas_multiples', [
+                            \Log::warning(' No se encontró info de tela en telas_multiples', [
                                 'tela_index' => $telaIndex,
                             ]);
                             continue;

@@ -74,8 +74,8 @@ En `index.blade.php`, agregar ANTES de otros scripts (`<script>`):
     window.modalContext = 'pedidos';
     
     //  Verificar que los servicios estén disponibles
-    console.log('🔧 UIModalService disponible:', !!window.UI);
-    console.log('🔧 DeletionService disponible:', !!window.Deletion);
+    console.log(' UIModalService disponible:', !!window.UI);
+    console.log(' DeletionService disponible:', !!window.Deletion);
 ```
 
 #### Paso 2: Verificar en el navegador
@@ -165,7 +165,7 @@ function eliminarCotizacion(id) {
 }
 
 function eliminarCotizacion(id, numeroCotizacion) {
-    // ⚠️ OTRA VARIANTE - DEDUPLICAR
+    //  OTRA VARIANTE - DEDUPLICAR
     // ...
 }
 ```
@@ -630,12 +630,12 @@ grep -r "function eliminarPedido\|function mostrarExito" public/js/ resources/ -
 - Eliminado 500+ líneas de código duplicado
 - Mejorada consistencia visual en modales
 
-### 📊 Métricas
+###  Métricas
 - Líneas eliminadas: ~650
 - Archivos simplificados: 10+
 - Controladores consolidados: 2 → 1
 
-### 📝 Notas
+###  Notas
 - Los servicios se cargan automáticamente en index.blade.php
 - Las URLs de endpoints ahora son consistentes
 ```
@@ -703,7 +703,7 @@ grep -r "pedidos-produccion" public/js/ | head -20
 
 ---
 
-## 🎯 TIEMPO TOTAL ESTIMADO
+##  TIEMPO TOTAL ESTIMADO
 
 | Fase | Tiempo |
 |------|--------|

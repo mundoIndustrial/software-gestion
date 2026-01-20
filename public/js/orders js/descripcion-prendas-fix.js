@@ -3,7 +3,7 @@
  * Se ejecuta ANTES de orders-table-v2.js para interceptar la extracción de contenido
  */
 
-console.log('🔧 descripcion-prendas-fix.js cargado');
+console.log(' descripcion-prendas-fix.js cargado');
 
 // Función para obtener el contenido real de descripcion_prendas
 function obtenerContenidoDescripcionPrendas(cell, column) {
@@ -11,7 +11,7 @@ function obtenerContenidoDescripcionPrendas(cell, column) {
         return null;
     }
     
-    console.log('🔍 Buscando contenido de descripcion_prendas...');
+    console.log(' Buscando contenido de descripcion_prendas...');
     
     // Buscar el div con data-full-content
     const descripcionDiv = cell.querySelector('.descripcion-preview');
@@ -73,7 +73,7 @@ document.addEventListener('dblclick', function(e) {
     // Verificar si es descripcion_prendas
     const column = cell.getAttribute('data-column') || 'unknown';
     if (column === 'descripcion_prendas' && cellText.dataset.fullDescripcion) {
-        console.log('🎯 Interceptando dblclick en descripcion_prendas');
+        console.log(' Interceptando dblclick en descripcion_prendas');
         
         // Guardar el contenido en un lugar donde orders-table-v2.js pueda encontrarlo
         window.lastDescripcionPrendasContent = cellText.dataset.fullDescripcion;
@@ -83,7 +83,7 @@ document.addEventListener('dblclick', function(e) {
         if (row) {
             const numeroPedido = row.getAttribute('data-orden-id');
             window.lastNumeroPedido = numeroPedido;
-            console.log('📦 Contenido guardado en window.lastDescripcionPrendasContent para pedido:', numeroPedido);
+            console.log(' Contenido guardado en window.lastDescripcionPrendasContent para pedido:', numeroPedido);
             
             // Obtener datos de prendas si es una cotización
             obtenerDatosPrendasParaModal(numeroPedido);
@@ -105,7 +105,7 @@ function obtenerDatosPrendasParaModal(numeroPedido) {
         return response.json();
     })
     .then(data => {
-        console.log('📊 Datos de orden obtenidos:', data);
+        console.log(' Datos de orden obtenidos:', data);
         // Guardar datos para que showOrderDescriptionModal los use
         window.lastOrderData = data;
     })

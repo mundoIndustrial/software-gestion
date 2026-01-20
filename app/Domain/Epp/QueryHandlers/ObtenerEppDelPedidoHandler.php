@@ -27,7 +27,7 @@ class ObtenerEppDelPedidoHandler implements QueryHandler
         }
 
         try {
-            Log::info('🔍 [ObtenerEppDelPedidoHandler] Obteniendo EPP del pedido', [
+            Log::info(' [ObtenerEppDelPedidoHandler] Obteniendo EPP del pedido', [
                 'pedido_id' => $query->getPedidoId(),
             ]);
 

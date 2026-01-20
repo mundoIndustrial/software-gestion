@@ -6,7 +6,7 @@
     </label>
     <div style="position: relative;">
         <input type="text" id="cotizacion_search" 
-               placeholder="🔍 Buscar por número, cliente o asesora..." 
+               placeholder=" Buscar por número, cliente o asesora..." 
                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                autocomplete="off">
         <input type="hidden" id="cotizacion_id" name="cotizacion_id" required>

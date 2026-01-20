@@ -209,7 +209,7 @@ class EjecutarMigracionImagenes extends Command
 
         $this->line("    {$totalMigradas} imagen(es) de logo(s) migrada(s)");
         if ($errores > 0) {
-            $this->warn("   ⚠️ {$errores} error(es) durante migración");
+            $this->warn("    {$errores} error(es) durante migración");
         }
     }
 
@@ -270,7 +270,7 @@ class EjecutarMigracionImagenes extends Command
                     DROP FOREIGN KEY prenda_telas_cot_variante_prenda_cot_id_foreign
                 ');
             } catch (\Exception $e) {
-                $this->warn('   ⚠️ FK antigua no encontrada, continuando...');
+                $this->warn('    FK antigua no encontrada, continuando...');
             }
 
             // Eliminar columna antigua
@@ -336,7 +336,7 @@ class EjecutarMigracionImagenes extends Command
             FROM logo_fotos_cot
         ');
 
-        $this->line('   📊 Registros por tabla:');
+        $this->line('    Registros por tabla:');
         foreach ($stats as $stat) {
             $this->line("      • {$stat->tabla}: {$stat->cantidad}");
         }

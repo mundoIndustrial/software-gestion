@@ -248,7 +248,7 @@ class RegistroOrdenQueryController extends Controller
         
         if ($logoPedido) {
             // Es un LogoPedido, devolverlo con toda su información
-            \Log::info('📦 [RegistroOrdenQueryController::show] Encontrado LogoPedido', [
+            \Log::info(' [RegistroOrdenQueryController::show] Encontrado LogoPedido', [
                 'numero_pedido' => $pedido,
                 'pedido_id' => $logoPedido->pedido_id,
                 'logo_cotizacion_id' => $logoPedido->logo_cotizacion_id,
@@ -262,7 +262,7 @@ class RegistroOrdenQueryController extends Controller
                     $pedidoProd = \App\Models\PedidoProduccion::with('asesora')->find($logoPedido->pedido_id);
                     
                     if ($pedidoProd) {
-                        \Log::info('📦 Encontrado PedidoProduccion, completando datos', [
+                        \Log::info(' Encontrado PedidoProduccion, completando datos', [
                             'pedido_id' => $logoPedido->pedido_id,
                             'cliente' => $pedidoProd->cliente,
                             'asesora' => $pedidoProd->asesora?->name,
@@ -288,7 +288,7 @@ class RegistroOrdenQueryController extends Controller
                             \Log::info(' [PASO 1] Descripción completada desde PedidoProduccion');
                         }
                     } else {
-                        \Log::warning('⚠️ [PASO 1] PedidoProduccion no encontrado', ['pedido_id' => $logoPedido->pedido_id]);
+                        \Log::warning(' [PASO 1] PedidoProduccion no encontrado', ['pedido_id' => $logoPedido->pedido_id]);
                     }
                 } catch (\Exception $e) {
                     \Log::error(' [PASO 1] Error al buscar PedidoProduccion', ['error' => $e->getMessage()]);
@@ -301,7 +301,7 @@ class RegistroOrdenQueryController extends Controller
                     $logoCot = \App\Models\LogoCotizacion::with('cotizacion')->find($logoPedido->logo_cotizacion_id);
                     
                     if ($logoCot && $logoCot->cotizacion) {
-                        \Log::info('📦 Encontrado LogoCotizacion, completando datos', [
+                        \Log::info(' Encontrado LogoCotizacion, completando datos', [
                             'cliente' => $logoCot->cotizacion->cliente,
                             'fecha' => $logoCot->cotizacion->fecha_de_creacion
                         ]);
@@ -323,7 +323,7 @@ class RegistroOrdenQueryController extends Controller
                             \Log::info(' [PASO 2] Descripción completada desde LogoCotizacion');
                         }
                     } else {
-                        \Log::warning('⚠️ [PASO 2] LogoCotizacion no encontrado o sin cotización', ['logo_cotizacion_id' => $logoPedido->logo_cotizacion_id]);
+                        \Log::warning(' [PASO 2] LogoCotizacion no encontrado o sin cotización', ['logo_cotizacion_id' => $logoPedido->logo_cotizacion_id]);
                     }
                 } catch (\Exception $e) {
                     \Log::error(' [PASO 2] Error al buscar LogoCotizacion', ['error' => $e->getMessage()]);
@@ -448,7 +448,7 @@ class RegistroOrdenQueryController extends Controller
         $orderArray['descripcion_prendas'] = $descripcionPrendas;
         
         // Obtener prendas formateadas para el modal
-        \Log::info('🔍 [getOrderDetails] Obteniendo prendas para pedido', [
+        \Log::info(' [getOrderDetails] Obteniendo prendas para pedido', [
             'pedido' => $pedido,
             'es_cotizacion' => $esCotizacion,
         ]);
@@ -967,7 +967,7 @@ class RegistroOrdenQueryController extends Controller
         $descripcionConTallas = '';
         $descripcionBase = $order->descripcion_prendas ?? '';
         
-        \Log::info('🔍 [buildDescripcionConTallas] Descripción recibida:', [
+        \Log::info(' [buildDescripcionConTallas] Descripción recibida:', [
             'pedido' => $order->numero_pedido,
             'longitud' => strlen($descripcionBase),
             'comienza_con' => substr($descripcionBase, 0, 100),
@@ -1023,7 +1023,7 @@ class RegistroOrdenQueryController extends Controller
                 // CASO REFLECTIVO: Usar descripción tal cual (ya contiene tallas y cantidad total)
                 $descripcionConTallas = '';
                 
-                \Log::info('🔍 [REFLECTIVO] Construyendo descripción reflectivo', [
+                \Log::info(' [REFLECTIVO] Construyendo descripción reflectivo', [
                     'pedido' => $order->numero_pedido,
                     'esReflectivo' => $esReflectivo,
                     'total_prendas' => $order->prendas ? $order->prendas->count() : 0,
@@ -1236,7 +1236,7 @@ class RegistroOrdenQueryController extends Controller
     private function getLogoImages($pedido, $normalize)
     {
         try {
-            \Log::info('🎨 [getLogoImages] Iniciando búsqueda de imágenes de logo', [
+            \Log::info(' [getLogoImages] Iniciando búsqueda de imágenes de logo', [
                 'numero_pedido' => $pedido
             ]);
 
@@ -1253,7 +1253,7 @@ class RegistroOrdenQueryController extends Controller
                 })
                 ->first(['id', 'numero_pedido', 'pedido_id', 'cliente', 'asesora', 'forma_de_pago']);
 
-            \Log::info('🎨 [getLogoImages] Logo pedido encontrado', [
+            \Log::info(' [getLogoImages] Logo pedido encontrado', [
                 'logo_pedido_id' => $logoPedido?->id,
                 'pedido_id' => $logoPedido?->pedido_id,
                 'numero_pedido' => $logoPedido?->numero_pedido
@@ -1273,7 +1273,7 @@ class RegistroOrdenQueryController extends Controller
                         ->where('numero_pedido', $pedidoProduccion->numero_pedido)
                         ->get(['id', 'nombre_prenda']);
                     
-                    \Log::info('🎨 [getLogoImages] Prendas encontradas', [
+                    \Log::info(' [getLogoImages] Prendas encontradas', [
                         'total' => $prendas->count()
                     ]);
                     
@@ -1315,7 +1315,7 @@ class RegistroOrdenQueryController extends Controller
                 }
             }
 
-            \Log::info('🎨 [getLogoImages] Resultado final', [
+            \Log::info(' [getLogoImages] Resultado final', [
                 'total_logos' => count($logos),
                 'total_imagenes' => collect($logos)->sum(fn($l) => count($l['imagenes'] ?? []))
             ]);
@@ -1347,7 +1347,7 @@ class RegistroOrdenQueryController extends Controller
     public function showLogoPedidoById($id)
     {
         try {
-            // 🔍 Buscar LogoPedido por ID
+            //  Buscar LogoPedido por ID
             $logoPedido = LogoPedido::find($id);
             
             if (!$logoPedido) {
@@ -1359,7 +1359,7 @@ class RegistroOrdenQueryController extends Controller
 
             $logoPedidoArray = $logoPedido->toArray();
             
-            \Log::info('🔍 [API] showLogoPedidoById buscando ID: ' . $id, [
+            \Log::info(' [API] showLogoPedidoById buscando ID: ' . $id, [
                 'cliente' => $logoPedidoArray['cliente'] ?? null,
                 'asesora' => $logoPedidoArray['asesora'] ?? null,
                 'descripcion' => $logoPedidoArray['descripcion'] ?? null,
@@ -1387,7 +1387,7 @@ class RegistroOrdenQueryController extends Controller
                         \Log::info(' [PASO 1 API] Completados datos desde PedidoProduccion #' . $logoPedido->pedido_id);
                     }
                 } catch (\Exception $e) {
-                    \Log::warning('⚠️ [PASO 1 API] Error al obtener PedidoProduccion: ' . $e->getMessage());
+                    \Log::warning(' [PASO 1 API] Error al obtener PedidoProduccion: ' . $e->getMessage());
                 }
             }
 
@@ -1412,7 +1412,7 @@ class RegistroOrdenQueryController extends Controller
                         \Log::info(' [PASO 2 API] Completados datos desde LogoCotizacion #' . $logoPedido->logo_cotizacion_id);
                     }
                 } catch (\Exception $e) {
-                    \Log::warning('⚠️ [PASO 2 API] Error al obtener LogoCotizacion: ' . $e->getMessage());
+                    \Log::warning(' [PASO 2 API] Error al obtener LogoCotizacion: ' . $e->getMessage());
                 }
             }
 

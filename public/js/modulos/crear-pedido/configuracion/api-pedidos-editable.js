@@ -262,7 +262,7 @@ class PedidosEditableWebClient {
             pedidoData.items.forEach((item, itemIdx) => {
                 //  SI ES EPP, PROCESARLO DIFERENTE
                 if (item.tipo === 'epp') {
-                    console.log(`🛡️ Procesando EPP en FormData: índice ${itemIdx}`);
+                    console.log(` Procesando EPP en FormData: índice ${itemIdx}`);
                     
                     // Usar 'items' en lugar de 'prendas' para EPP
                     formData.append(`items[${itemIdx}][tipo]`, 'epp');

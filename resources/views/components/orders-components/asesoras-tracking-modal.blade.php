@@ -412,7 +412,7 @@ async function fillAsesorasTimeline(pedido) {
         const container = document.getElementById('asesorasTimelineContainer');
         if (!container) return;
         
-        console.log('🔍 [ASESORAS TIMELINE] Obteniendo procesos para pedido:', pedido);
+        console.log(' [ASESORAS TIMELINE] Obteniendo procesos para pedido:', pedido);
         
         // Obtener los procesos del pedido (misma lógica que en tracking)
         let responseData = null;
@@ -431,7 +431,7 @@ async function fillAsesorasTimeline(pedido) {
                 console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/ordenes:', responseData);
             }
         } catch (error) {
-            console.log('⚠️ [ASESORAS TIMELINE] Error en /api/ordenes, intentando /api/tabla-original');
+            console.log(' [ASESORAS TIMELINE] Error en /api/ordenes, intentando /api/tabla-original');
         }
         
         // Si falla, intentar con /api/tabla-original/{pedido}/procesos
@@ -449,7 +449,7 @@ async function fillAsesorasTimeline(pedido) {
                     console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original:', responseData);
                 }
             } catch (error) {
-                console.log('⚠️ [ASESORAS TIMELINE] Error en /api/tabla-original');
+                console.log(' [ASESORAS TIMELINE] Error en /api/tabla-original');
             }
         }
         
@@ -468,7 +468,7 @@ async function fillAsesorasTimeline(pedido) {
                     console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original-bodega:', responseData);
                 }
             } catch (error) {
-                console.log('⚠️ [ASESORAS TIMELINE] Error en /api/tabla-original-bodega');
+                console.log(' [ASESORAS TIMELINE] Error en /api/tabla-original-bodega');
             }
         }
         
@@ -480,17 +480,17 @@ async function fillAsesorasTimeline(pedido) {
                 procesos = responseData;
             } else if (responseData.procesos && Array.isArray(responseData.procesos)) {
                 procesos = responseData.procesos;
-                console.log('🔍 [ASESORAS TIMELINE] Procesos extraídos de responseData.procesos');
+                console.log(' [ASESORAS TIMELINE] Procesos extraídos de responseData.procesos');
             }
         }
         
         if (!procesos || procesos.length === 0) {
-            console.log('⚠️ [ASESORAS TIMELINE] No hay procesos disponibles');
+            console.log(' [ASESORAS TIMELINE] No hay procesos disponibles');
             container.innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 0.9rem;">Sin procesos registrados</p>';
             return;
         }
         
-        console.log('📊 [ASESORAS TIMELINE] Total de procesos:', procesos.length);
+        console.log(' [ASESORAS TIMELINE] Total de procesos:', procesos.length);
         
         // Ordenar procesos por fecha de inicio
         procesos.sort((a, b) => {

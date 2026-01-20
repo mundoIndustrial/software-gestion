@@ -24,7 +24,7 @@ class LoggerApp {
         colores: true,
         grupos: {
             GestionItemsUI: '📌',
-            TelaProcessor: '🧵',
+            TelaProcessor: '',
             PrendaDataBuilder: '🏗️',
             ValidadorPrenda: '✔️',
             Modal: '🪟',
@@ -112,7 +112,7 @@ class LoggerApp {
     static warn(mensaje, grupo = null, datos = null) {
         if (this.nivelActivo('warn')) {
             const prefijo = this.obtenerPrefijo(grupo);
-            console.warn(`%c${prefijo} ⚠️  ${mensaje}`, 'color: #ff9900; font-weight: bold;');
+            console.warn(`%c${prefijo}   ${mensaje}`, 'color: #ff9900; font-weight: bold;');
             if (datos !== null) {
                 console.warn('  └─ Datos:', datos);
             }

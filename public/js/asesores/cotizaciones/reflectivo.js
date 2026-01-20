@@ -145,7 +145,7 @@ function renderizarGaleriaReflectivo() {
         galeria.appendChild(div);
     });
 
-    console.log('📊 Total imágenes reflectivo:', imagenesReflectivo.length);
+    console.log(' Total imágenes reflectivo:', imagenesReflectivo.length);
 }
 
 // ============================================================================
@@ -322,7 +322,7 @@ function agregarObservacionReflectivo() {
  * Recopilar datos del reflectivo
  */
 function recopilarDatosReflectivo() {
-    console.log('📦 Recopilando datos del reflectivo...');
+    console.log(' Recopilando datos del reflectivo...');
 
     const descripcion = document.getElementById('descripcion_reflectivo')?.value || '';
 
@@ -375,7 +375,7 @@ function limpiarReflectivo() {
  * Inicializar módulo de reflectivo
  */
 function inicializarReflectivo() {
-    console.log('🔧 Inicializando módulo de reflectivo');
+    console.log(' Inicializando módulo de reflectivo');
     inicializarDragDropReflectivo();
 }
 

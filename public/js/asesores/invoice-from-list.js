@@ -53,7 +53,7 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
  * Crea y muestra el modal con la factura
  */
 function crearModalFacturaDesdeListaPedidos(datos) {
-    console.log('🎨 [FACTURA] Creando modal de factura');
+    console.log(' [FACTURA] Creando modal de factura');
     
     // Agregar estilos de impresión al documento si no existen
     if (!document.getElementById('print-styles-factura')) {
@@ -141,7 +141,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
         htmlFactura = generarHTMLFactura(datos);
         console.log(' [FACTURA] Usando generarHTMLFactura de invoice-preview-live.js');
     } else {
-        console.warn('⚠️  [FACTURA] generarHTMLFactura no encontrada, usando fallback simple');
+        console.warn('  [FACTURA] generarHTMLFactura no encontrada, usando fallback simple');
         htmlFactura = `<div style="padding: 20px;"><p>Pedido #${datos.numero_pedido}</p><p>Cliente: ${datos.cliente}</p></div>`;
     }
     
@@ -501,7 +501,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
  * Usa el componente order-detail-modal.blade.php existente
  */
 function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
-    console.log('🎨 [RECIBOS] Creando modal de recibos usando order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
+    console.log(' [RECIBOS] Creando modal de recibos usando order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
     
     // Crear overlay
     const overlay = document.createElement('div');
@@ -569,7 +569,7 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
  * Carga el componente order-detail-modal e inyecta los datos
  */
 function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null) {
-    console.log('📦 [RECIBOS] Inyectando componente order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
+    console.log(' [RECIBOS] Inyectando componente order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
     
     // Usar directamente el HTML que funciona (sin fetch, para evitar problemas con Blade)
     contenedor.innerHTML = `
@@ -655,7 +655,7 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
         
         // Cargar ReceiptManager
         if (typeof ReceiptManager === 'undefined') {
-            console.log('📦 [RECIBOS] Cargando ReceiptManager...');
+            console.log(' [RECIBOS] Cargando ReceiptManager...');
             cargarReceiptManager(() => {
                 window.receiptManager = new ReceiptManager(datos, prendasIndex);
             });

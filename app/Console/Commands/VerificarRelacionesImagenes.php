@@ -13,7 +13,7 @@ class VerificarRelacionesImagenes extends Command
 
     public function handle()
     {
-        $this->info('🔍 VERIFICANDO RELACIONES DE IMÁGENES');
+        $this->info(' VERIFICANDO RELACIONES DE IMÁGENES');
         $this->newLine();
 
         // Verificar tabla logo_fotos_cot
@@ -47,7 +47,7 @@ class VerificarRelacionesImagenes extends Command
         $this->info('    EXISTE');
 
         $columnas = Schema::getColumns('logo_fotos_cot');
-        $this->line('   📊 Columnas:');
+        $this->line('    Columnas:');
 
         foreach ($columnas as $col) {
             $tipo = $col['type'];
@@ -63,7 +63,7 @@ class VerificarRelacionesImagenes extends Command
         ");
 
         if (empty($fks)) {
-            $this->warn('      ⚠️ No hay Foreign Keys definidas');
+            $this->warn('       No hay Foreign Keys definidas');
         } else {
             foreach ($fks as $fk) {
                 $this->line("      • {$fk->CONSTRAINT_NAME}");
@@ -88,7 +88,7 @@ class VerificarRelacionesImagenes extends Command
         $this->info('    EXISTE');
 
         $columnas = Schema::getColumns('prenda_tela_fotos_cot');
-        $this->line('   📊 Columnas:');
+        $this->line('    Columnas:');
 
         foreach ($columnas as $col) {
             $tipo = $col['type'];
@@ -104,7 +104,7 @@ class VerificarRelacionesImagenes extends Command
         ");
 
         if (empty($fks)) {
-            $this->warn('      ⚠️ No hay Foreign Keys definidas');
+            $this->warn('       No hay Foreign Keys definidas');
         } else {
             foreach ($fks as $fk) {
                 $this->line("      • {$fk->CONSTRAINT_NAME}");
@@ -129,7 +129,7 @@ class VerificarRelacionesImagenes extends Command
         $this->info('    EXISTE');
 
         $columnas = Schema::getColumns('prenda_fotos_cot');
-        $this->line('   📊 Columnas:');
+        $this->line('    Columnas:');
 
         foreach ($columnas as $col) {
             $tipo = $col['type'];
@@ -145,7 +145,7 @@ class VerificarRelacionesImagenes extends Command
         ");
 
         if (empty($fks)) {
-            $this->warn('      ⚠️ No hay Foreign Keys definidas');
+            $this->warn('       No hay Foreign Keys definidas');
         } else {
             foreach ($fks as $fk) {
                 $this->line("      • {$fk->CONSTRAINT_NAME}");
@@ -177,7 +177,7 @@ class VerificarRelacionesImagenes extends Command
         ");
 
         if (empty($fks)) {
-            $this->warn('   ⚠️ No hay Foreign Keys encontradas');
+            $this->warn('    No hay Foreign Keys encontradas');
         } else {
             foreach ($fks as $fk) {
                 $this->line("    {$fk->TABLE_NAME}.{$fk->COLUMN_NAME}");
@@ -190,7 +190,7 @@ class VerificarRelacionesImagenes extends Command
 
     private function verificarDatos()
     {
-        $this->line('📊 VERIFICACIÓN DE DATOS');
+        $this->line(' VERIFICACIÓN DE DATOS');
 
         // Logo fotos
         $logoFotos = DB::table('logo_fotos_cot')->count();
@@ -205,7 +205,7 @@ class VerificarRelacionesImagenes extends Command
         $this->line("   • prenda_fotos_cot: {$prendaFotos} registros");
 
         // Verificar integridad referencial
-        $this->line('   🔍 Integridad Referencial:');
+        $this->line('    Integridad Referencial:');
 
         // Logo fotos sin logo
         $logoFotosSinLogo = DB::table('logo_fotos_cot')
@@ -214,7 +214,7 @@ class VerificarRelacionesImagenes extends Command
             ->count();
 
         if ($logoFotosSinLogo > 0) {
-            $this->warn("      ⚠️ {$logoFotosSinLogo} foto(s) de logo sin logo asociado");
+            $this->warn("       {$logoFotosSinLogo} foto(s) de logo sin logo asociado");
         } else {
             $this->line('       Todas las fotos de logo tienen logo asociado');
         }
@@ -226,7 +226,7 @@ class VerificarRelacionesImagenes extends Command
             ->count();
 
         if ($telaFotosSinPrenda > 0) {
-            $this->warn("      ⚠️ {$telaFotosSinPrenda} foto(s) de tela sin prenda asociada");
+            $this->warn("       {$telaFotosSinPrenda} foto(s) de tela sin prenda asociada");
         } else {
             $this->line('       Todas las fotos de tela tienen prenda asociada');
         }

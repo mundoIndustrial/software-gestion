@@ -70,7 +70,7 @@ class OperariosCortadoresSeeder extends Seeder
                 
                 $this->command->info(" Operario creado: {$operario['name']} (ID: {$operario['id']})");
             } else {
-                $this->command->warn("⚠️ El operario con ID {$operario['id']} ya existe. Se omite.");
+                $this->command->warn(" El operario con ID {$operario['id']} ya existe. Se omite.");
             }
         }
 

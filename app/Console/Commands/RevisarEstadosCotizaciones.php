@@ -35,7 +35,7 @@ class RevisarEstadosCotizaciones extends Command
         $this->info("Total que se mostrarían: " . $aprobadas->count());
         
         if ($aprobadas->count() === 0) {
-            $this->warn("\n⚠️ NO HAY COTIZACIONES APROBADAS");
+            $this->warn("\n NO HAY COTIZACIONES APROBADAS");
             $this->line("\n¿Deseas actualizar 5 cotizaciones al estado APROBADA_COTIZACIONES?");
             
             if ($this->confirm('¿Actualizar?')) {

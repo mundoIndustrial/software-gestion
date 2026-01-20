@@ -1,4 +1,4 @@
-# 🔧 FIX: Variaciones de Prendas - Problema de Valores por Defecto
+#  FIX: Variaciones de Prendas - Problema de Valores por Defecto
 
 **Fecha:** 16 de Enero de 2026  
 **Problema Principal:** Las variaciones de prendas (manga, broche/botón, bolsillos, reflectivo) se sobrescribían con valores por defecto en lugar de mantener los valores seleccionados por el usuario.
@@ -48,7 +48,7 @@ prenda.variantes = {
 **Cambio:** Agregar validación exhaustiva al capturar valores del modal
 
 ```javascript
-// 🔍 VALIDACIÓN EXHAUSTIVA: MANGA
+//  VALIDACIÓN EXHAUSTIVA: MANGA
 const plicaManga = document.getElementById('aplica-manga');
 if (plicaManga?.checked) {
     const mangaInput = document.getElementById('manga-input');
@@ -75,8 +75,8 @@ if (plicaManga?.checked) {
 **Cambio:** Usar `prendaNueva.variantes` en lugar de propiedades individuales
 
 ```javascript
-// 🔍 VERIFICAR VARIACIONES ANTES DE GUARDAR
-console.log('🔍 [JSON GESTOR] Variantes extraídas:', prendaNueva.variantes);
+//  VERIFICAR VARIACIONES ANTES DE GUARDAR
+console.log(' [JSON GESTOR] Variantes extraídas:', prendaNueva.variantes);
 
 window.gestorDatosPedidoJSON.agregarPrenda({
     // ...
@@ -109,7 +109,7 @@ tiene_bolsillos: prenda.variantes?.tiene_bolsillos ?? false  // preserva false s
 
 ```javascript
 //  CONSTRUIR VARIACIONES DESDE LA FUENTE CORRECTA (prenda.variantes)
-console.log(`🔍 [VARIACIONES] Procesando prenda ${prendaIndex}:`, {
+console.log(` [VARIACIONES] Procesando prenda ${prendaIndex}:`, {
     tieneVariantes: !!prenda.variantes,
     varianteKeys: Object.keys(prenda.variantes || {}),
     variantes: prenda.variantes
@@ -147,7 +147,7 @@ console.log(`📤 [VARIACIONES JSON] Objeto final para backend:`, variaciones);
 **Cambio:** Logs exhaustivos para confirmar valores correctos
 
 ```javascript
-// 🔍 LOG CRÍTICO: Confirmar que las variaciones NO son valores por defecto
+//  LOG CRÍTICO: Confirmar que las variaciones NO son valores por defecto
 itemsFormato.forEach((item, idx) => {
     if (item.variaciones) {
         const manga = item.variaciones.manga;
@@ -163,7 +163,7 @@ itemsFormato.forEach((item, idx) => {
         console.log(`    - Bolsillos: tiene=${bolsillos?.tiene} obs="${bolsillos?.observacion}"`);
         
         if (esDefaultManga && esDefaultBolsillos && ...) {
-            console.warn(`  ⚠️  ADVERTENCIA: Ítem ${idx} tiene TODAS las variaciones por defecto`);
+            console.warn(`    ADVERTENCIA: Ítem ${idx} tiene TODAS las variaciones por defecto`);
         }
     }
 });
@@ -194,7 +194,7 @@ if (!empty($prendaData['broche']) && empty($prendaData['tipo_broche_boton_id']))
 
 ---
 
-## 🔍 CÓMO DEBUGGEAR EN EL NAVEGADOR
+##  CÓMO DEBUGGEAR EN EL NAVEGADOR
 
 ### Paso 1: Abrir DevTools
 ```
@@ -206,7 +206,7 @@ Busca estos logs en orden:
 
 #### A. CAPTURA DE VARIACIONES (Al crear prenda)
 ```
-🔍 [VARIACIONES CAPTURA] ===== MANGA =====
+ [VARIACIONES CAPTURA] ===== MANGA =====
    - aplica-manga checkbox encontrado: true
    - manga-input VALUE: "ret"
     MANGA CAPTURADA: {tipo: "ret", obs: "reter"}
@@ -219,7 +219,7 @@ Busca estos logs en orden:
 
 #### B. GUARDADO EN GESTOR JSON
 ```
-🔍 [JSON GESTOR] Variantes extraídas:
+ [JSON GESTOR] Variantes extraídas:
 {
     tipo_manga: "ret",
     obs_manga: "reter",
@@ -235,7 +235,7 @@ Busca estos logs en orden:
 
 #### C. RECUPERACIÓN EN recolectarDatosPedido()
 ```
-🔍 [VARIACIONES] Procesando prenda 0:
+ [VARIACIONES] Procesando prenda 0:
 {
     tieneVariantes: true,
     varianteKeys: ["tipo_manga", "obs_manga", ...],
@@ -265,7 +265,7 @@ Busca estos logs en orden:
 
 #### D. VALIDACIÓN FINAL (Antes de envío)
 ```
-🔍 [VARIACIONES - ANTES DE ENVIAR] VALIDACIÓN EXHAUSTIVA:
+ [VARIACIONES - ANTES DE ENVIAR] VALIDACIÓN EXHAUSTIVA:
   Ítem 0 (Nombre Prenda):
     - Manga: tipo="ret" (esDefault=false)
     - Bolsillos: tiene=true obs="tert" (esDefault=false)
@@ -309,7 +309,7 @@ Busca estos logs en orden:
 
 ---
 
-## 📊 FLUJO COMPLETO DE DATOS
+##  FLUJO COMPLETO DE DATOS
 
 ```
 ┌─────────────────────────────────────────┐
@@ -425,12 +425,12 @@ Esperado:
     obs_reflectivo: ""
 
 Log esperado:
-    ⚠️ Reflectivo NO seleccionado (checkbox desmarcado)
+     Reflectivo NO seleccionado (checkbox desmarcado)
 ```
 
 ---
 
-## 📝 ARCHIVOS MODIFICADOS
+##  ARCHIVOS MODIFICADOS
 
 1. **c:\Users\Usuario\Documents\mundoindustrial\public\js\modulos\crear-pedido\procesos\gestion-items-pedido.js**
    - Líneas ~750-832: Validación exhaustiva de captura
@@ -460,7 +460,7 @@ Después de estos cambios:
 
 ## 📞 SOPORTE
 
-Si los logs muestran `⚠️` pero esperas ``:
+Si los logs muestran `` pero esperas ``:
 
 1. Verifica que los checkboxes están marcados en el modal
 2. Verifica que los inputs tienen valores (no vacíos)

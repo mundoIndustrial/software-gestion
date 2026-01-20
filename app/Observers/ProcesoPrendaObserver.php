@@ -62,7 +62,7 @@ class ProcesoPrendaObserver
                 return;
             }
 
-            \Log::info('🔍 [Observer] Actualizando área del pedido', [
+            \Log::info(' [Observer] Actualizando área del pedido', [
                 'numero_pedido' => $numeroPedido,
                 'area_actual' => $pedido->area,
             ]);
@@ -175,7 +175,7 @@ class ProcesoPrendaObserver
                 return;
             }
 
-            \Log::info("🔍 Buscando último proceso después de eliminar", [
+            \Log::info(" Buscando último proceso después de eliminar", [
                 'numero_pedido' => $numeroPedido,
                 'proceso_eliminado' => $procesoEliminado,
                 'area_actual' => $pedido->area
@@ -212,7 +212,7 @@ class ProcesoPrendaObserver
                     'estado_nuevo' => $ultimoProceso->estado_proceso
                 ]);
             } else {
-                \Log::warning("⚠️ No hay procesos restantes después de eliminar", [
+                \Log::warning(" No hay procesos restantes después de eliminar", [
                     'numero_pedido' => $numeroPedido,
                     'proceso_eliminado' => $procesoEliminado
                 ]);

@@ -129,7 +129,7 @@ class GestorPrendaSinCotizacion {
      */
     obtenerPorIndice(index) {
         const prenda = this.prendas[index] || null;
-        console.log(`🔍 [GESTOR] obtenerPorIndice(${index})`);
+        console.log(` [GESTOR] obtenerPorIndice(${index})`);
         console.log(`   Prenda retornada:`, prenda);
         console.log(`   prenda.imagenes:`, prenda?.imagenes);
         console.log(`   prenda.imagenes?.length:`, prenda?.imagenes?.length);

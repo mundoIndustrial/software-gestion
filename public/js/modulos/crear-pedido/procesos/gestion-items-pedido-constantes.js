@@ -129,7 +129,7 @@ const VISTA_PREVIA_ITEM_TEMPLATE = `
         </div>
         <div style="text-align: right;">
             <div style="background: #fef3c7; color: #92400e; padding: 0.75rem 1.25rem; border-radius: 6px; font-weight: 700; font-size: 1.1rem;">
-                📦 {{unidades}} unidades
+                 {{unidades}} unidades
             </div>
         </div>
     </div>
@@ -333,7 +333,7 @@ const VISTA_PREVIA_ITEM_ESTRUCTURA = `
         </div>
         <div style="text-align: right;">
             <div style="{{unidadesStyle}}">
-                📦 {{cantidad}} unidades
+                 {{cantidad}} unidades
             </div>
         </div>
     </div>

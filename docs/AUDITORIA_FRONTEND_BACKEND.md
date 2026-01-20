@@ -1,10 +1,10 @@
-# 🔍 AUDITORÍA CRÍTICA: INTEGRACIÓN FRONTEND → BACKEND
+#  AUDITORÍA CRÍTICA: INTEGRACIÓN FRONTEND → BACKEND
 
 **Análisis exhaustivo del flujo JSON y detección de problemas**
 
 ---
 
-## ⚠️ PROBLEMAS IDENTIFICADOS
+##  PROBLEMAS IDENTIFICADOS
 
 ### PROBLEMA 1: SERIALIZACIÓN DE ARCHIVOS EN JSON
 
@@ -54,7 +54,7 @@ state.prendas.forEach((prenda, pIdx) => {
 - La segunda declaración sobrescribe la primera
 - Los nombres de archivos quedan incorrectos
 
-**Impacto:** ⚠️ ALTO
+**Impacto:**  ALTO
 - Fotos de procesos se adjuntan con índices incorrectos
 - Backend no puede mapear archivos a procesos
 
@@ -248,7 +248,7 @@ async submitPedido() {
 
 ---
 
-## 📊 COMPARATIVA: ANTES vs DESPUÉS
+##  COMPARATIVA: ANTES vs DESPUÉS
 
 ### ANTES ( Incorrecto)
 
@@ -339,7 +339,7 @@ state.prendas.forEach((prenda, pIdx) => {
 
 ---
 
-## 📝 CHECKLIST DE REVISIÓN
+##  CHECKLIST DE REVISIÓN
 
 - [ ] Método `transformStateForSubmit()` agregado
 - [ ] `submitPedido()` usa estado transformado

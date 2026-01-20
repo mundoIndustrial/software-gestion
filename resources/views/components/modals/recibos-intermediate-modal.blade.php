@@ -290,7 +290,7 @@
         }
     };
     
-    // ⚠️ NOTA: seleccionarProceso fue movido a recibos-process-selector.blade.php
+    //  NOTA: seleccionarProceso fue movido a recibos-process-selector.blade.php
     // para evitar conflicto de nombres. Ver recibos-process-selector.blade.php línea 363
     
     // Cerrar modal al hacer clic fuera

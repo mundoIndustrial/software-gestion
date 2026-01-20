@@ -187,7 +187,7 @@ class FormModule {
             }
         });
 
-        const message = errors.map(e => `⚠️ ${e.message}`).join('\n\n');
+        const message = errors.map(e => ` ${e.message}`).join('\n\n');
         alert(message);
     }
 
@@ -239,7 +239,7 @@ class FormModule {
 
         // Productos
         const productCards = document.querySelectorAll('.producto-card');
-        console.log('📦 Productos encontrados:', productCards.length);
+        console.log(' Productos encontrados:', productCards.length);
         
         for (let index = 0; index < productCards.length; index++) {
             try {
@@ -261,7 +261,7 @@ class FormModule {
     async addProductToFormData(formData, card, index) {
         const productoId = card.dataset.productoId;
 
-        console.log(`🔍 Procesando producto ${index}:`, {
+        console.log(` Procesando producto ${index}:`, {
             productoId,
             fotosDisponibles: window.fotosSeleccionadas ? Object.keys(window.fotosSeleccionadas) : [],
             telasDisponibles: window.telasSeleccionadas ? Object.keys(window.telasSeleccionadas) : []
@@ -296,13 +296,13 @@ class FormModule {
                 }
             });
         } else {
-            console.log(`⚠️ No hay fotos para ${productoId}`);
+            console.log(` No hay fotos para ${productoId}`);
         }
 
         // Telas - Procesar múltiples telas por prenda
         // Capturar datos de cada fila de tela de la tabla
         const tblasRows = card.querySelectorAll('.fila-tela');
-        console.log(`🧵 Filas de telas encontradas para ${productoId}:`, tblasRows.length);
+        console.log(` Filas de telas encontradas para ${productoId}:`, tblasRows.length);
         
         tblasRows.forEach((row, rowIdx) => {
             const telaIndex = row.getAttribute('data-tela-index') || rowIdx;
@@ -314,7 +314,7 @@ class FormModule {
             const telaId = telaIdInput ? telaIdInput.value : null;
             const referencia = referenciaInput ? referenciaInput.value : null;
             
-            console.log(`🧵 Procesando fila de tela ${telaIndex}:`, {
+            console.log(` Procesando fila de tela ${telaIndex}:`, {
                 colorId,
                 telaId,
                 referencia,

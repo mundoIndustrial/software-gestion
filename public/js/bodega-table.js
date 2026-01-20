@@ -4,7 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📦 Bodega Table Script Inicializado');
+    console.log(' Bodega Table Script Inicializado');
     
     // Inicializar filtros
     initializeBodegaFilters();
@@ -23,7 +23,7 @@ function initializeBodegaFilters() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const columnName = this.dataset.columnName;
-            console.log('🔍 Abriendo filtro para:', columnName);
+            console.log(' Abriendo filtro para:', columnName);
             openFilterModal(columnName);
         });
     });
@@ -288,7 +288,7 @@ function showNotification(message, type = 'info') {
  * Editar orden
  */
 function openEditModal(pedido) {
-    console.log(`📝 Abriendo editor para pedido ${pedido}`);
+    console.log(` Abriendo editor para pedido ${pedido}`);
     openBodegaEditModal(pedido);
 }
 
@@ -343,13 +343,13 @@ function createViewButtonDropdown(pedido) {
         const trackingBtn = dropdown.querySelector('.tracking-option');
         
         detailBtn.addEventListener('click', function() {
-            console.log('🔍 Abriendo detalle de bodega:', pedido);
+            console.log(' Abriendo detalle de bodega:', pedido);
             openDetailBodega(pedido);
             dropdown.remove();
         });
         
         trackingBtn.addEventListener('click', function() {
-            console.log('📊 Abriendo seguimiento de bodega:', pedido);
+            console.log(' Abriendo seguimiento de bodega:', pedido);
             openBodegaTrackingModal(pedido);
             dropdown.remove();
         });
@@ -364,7 +364,7 @@ function createViewButtonDropdown(pedido) {
             });
         }, 0);
     } else {
-        console.warn('⚠️ No se encontró el botón Ver para el pedido:', pedido);
+        console.warn(' No se encontró el botón Ver para el pedido:', pedido);
     }
 }
 

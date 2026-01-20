@@ -1,4 +1,4 @@
-# 📊 Análisis de Refactorización - gestion-items-pedido.js
+#  Análisis de Refactorización - gestion-items-pedido.js
 
 **Archivo:** `public/js/modulos/crear-pedido/procesos/gestion-items-pedido.js`  
 **Tamaño:** 2,519 líneas  
@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 OPORTUNIDADES DE REFACTORIZACIÓN
+##  OPORTUNIDADES DE REFACTORIZACIÓN
 
 ### 1️⃣ HELPERS PARA DOM MANIPULATION
 **Ubicación:** Disperso en todo el archivo  
@@ -166,9 +166,9 @@ class PrendaDataBuilder {
 
 ```javascript
 //  ACTUAL
-console.log('📝 [GestionItemsUI] cargarItemEnModal()');
+console.log(' [GestionItemsUI] cargarItemEnModal()');
 console.log('   Prenda recibida:', prenda);
-console.log('   📊 ESTRUCTURA COMPLETA DE PRENDA:');
+console.log('    ESTRUCTURA COMPLETA DE PRENDA:');
 console.log(' Campos básicos cargados');
 
 //  SOLUCIÓN: Logger centralizado
@@ -255,7 +255,7 @@ if (!validacion.valido) {
 
 ---
 
-## 📊 RESUMEN DE IMPACTO
+##  RESUMEN DE IMPACTO
 
 | Oportunidad | Líneas Afectadas | Reducción Código | Beneficio Principal |
 |-------------|------------------|------------------|-------------------|
@@ -274,7 +274,7 @@ if (!validacion.valido) {
 
 ---
 
-## 🎯 RECOMENDACIÓN
+##  RECOMENDACIÓN
 
 ### FASE 1 (Rápido - 2-3 horas)
 1.  Crear `dom-utils.js` con helpers básicos

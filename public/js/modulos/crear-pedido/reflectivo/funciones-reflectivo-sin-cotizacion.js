@@ -18,7 +18,7 @@
  * Se llama cuando se selecciona "Nuevo Pedido" > "REFLECTIVO"
  */
 function crearPedidoTipoReflectivoSinCotizacion() {
-    console.log('🎯 INICIANDO: Crear pedido tipo REFLECTIVO sin cotización');
+    console.log(' INICIANDO: Crear pedido tipo REFLECTIVO sin cotización');
 
     // Mostrar los pasos 2 y 3
     const seccionInfoPrenda = document.getElementById('seccion-info-prenda');
@@ -692,7 +692,7 @@ window.actualizarCantidadTallaReflectivo = function(prendaIndex, talla, cantidad
     }
     
     prenda.cantidadesPorTalla[talla] = parseInt(cantidad) || 0;
-    logWithEmoji('📝', `Cantidad de ${talla} actualizada a ${cantidad}`);
+    logWithEmoji('', `Cantidad de ${talla} actualizada a ${cantidad}`);
 };
 
 // Agregar listener para sincronizar cantidades de tallas
@@ -957,7 +957,7 @@ window.enviarReflectivoSinCotizacion = function() {
  * Abrir flujo de selección de géneros y tallas
  */
 window.agregarTallasAlGeneroReflectivo = function(prendaIndex, genero) {
-    console.log(`🎯 Abriendo flujo de tallas para género: ${genero}`);
+    console.log(` Abriendo flujo de tallas para género: ${genero}`);
     
     const prendaCard = document.querySelector(`.prenda-card-reflectivo[data-prenda-index="${prendaIndex}"]`);
     if (!prendaCard) {
@@ -1240,7 +1240,7 @@ function agregarTallasAlGeneroReflectivo_Interno(prendaIndex, genero, tallas, ti
             `.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${genero}"][data-talla="${talla}"]`
         );
         if (existente) {
-            console.warn(`⚠️ Talla ${talla} ya existe para ${genero}`);
+            console.warn(` Talla ${talla} ya existe para ${genero}`);
             return; // Saltar si ya existe
         }
 

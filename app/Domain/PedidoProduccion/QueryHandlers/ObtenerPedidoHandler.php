@@ -39,7 +39,7 @@ class ObtenerPedidoHandler implements QueryHandler
         }
 
         try {
-            Log::info('🔍 [ObtenerPedidoHandler] Buscando pedido', [
+            Log::info(' [ObtenerPedidoHandler] Buscando pedido', [
                 'pedido_id' => $query->getPedidoId(),
             ]);
 
@@ -61,7 +61,7 @@ class ObtenerPedidoHandler implements QueryHandler
                 ->first();
 
             if (!$pedido) {
-                Log::warning('⚠️ [ObtenerPedidoHandler] Pedido no encontrado', [
+                Log::warning(' [ObtenerPedidoHandler] Pedido no encontrado', [
                     'pedido_id' => $query->getPedidoId(),
                 ]);
                 return null;

@@ -63,7 +63,7 @@ class GenerateEppImages extends Command
                     $this->error(" Error creando $filename: " . $e->getMessage());
                 }
             } else {
-                $this->info("⏭️  Ya existe: $filename");
+                $this->info(" Ya existe: $filename");
             }
         }
 

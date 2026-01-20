@@ -72,7 +72,7 @@ window.saveNewNovedad = async function() {
     const btnSaveNew = document.querySelector('.btn-save-new');
 
     if (!novedad) {
-        showNotification('⚠️ Ingresa una novedad antes de guardar', 'warning');
+        showNotification(' Ingresa una novedad antes de guardar', 'warning');
         return;
     }
 

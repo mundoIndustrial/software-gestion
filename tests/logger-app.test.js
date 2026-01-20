@@ -5,7 +5,7 @@
  * Tests para la clase LoggerApp
  * Cobertura: 10 métodos de logging
  * 
- * ⚠️ IMPORTANTE: Estos tests NO tocan la base de datos
+ *  IMPORTANTE: Estos tests NO tocan la base de datos
  * - Usan MOCK console methods exclusivamente
  * - Sin calls a BD
  * - Completamente aislados (solo console mocking)

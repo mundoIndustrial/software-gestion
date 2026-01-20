@@ -1,4 +1,4 @@
-# 📊 Script SQL para Verificar Datos de Variaciones Guardados
+#  Script SQL para Verificar Datos de Variaciones Guardados
 
 ## Verificación 1: ¿Se guardaron las observaciones?
 
@@ -304,7 +304,7 @@ GROUP BY p.numero_pedido;
 
 ---
 
-## 🔧 Cómo usar estos scripts
+##  Cómo usar estos scripts
 
 1. Abre tu cliente MySQL (phpMyAdmin, MySQL Workbench, etc.)
 2. Conecta a la BD `mundoindustrial`
@@ -314,7 +314,7 @@ GROUP BY p.numero_pedido;
 
 ---
 
-## 🎯 Interpretación de Resultados
+##  Interpretación de Resultados
 
 | Campo | Valor Esperado | Si está NULL/vacío | Significa |
 |-------|-----------------|------------------|-----------|

@@ -63,7 +63,7 @@ class EliminarEppDelPedidoHandler implements CommandHandler
             ];
 
         } catch (\DomainException $e) {
-            Log::warning('⚠️ [EliminarEppDelPedidoHandler] Error de dominio', [
+            Log::warning(' [EliminarEppDelPedidoHandler] Error de dominio', [
                 'error' => $e->getMessage(),
             ]);
             throw $e;

@@ -3,7 +3,7 @@
  * Pega esto en la consola cuando hayas agregado una prenda
  */
 
-console.log('\n%c🔍 DIAGNÓSTICO REAL DE DATOS EN TIEMPO REAL', 'color: #FF0000; font-size: 16px; font-weight: bold');
+console.log('\n%c DIAGNÓSTICO REAL DE DATOS EN TIEMPO REAL', 'color: #FF0000; font-size: 16px; font-weight: bold');
 console.log('%c═══════════════════════════════════════════════════════════', 'color: #FF0000');
 
 // PASO 1: Ver qué hay en el gestor
@@ -11,7 +11,7 @@ console.log('\n%c1️⃣  DATOS EN GESTOR (antes de enviar)', 'color: #FF6600; f
 
 if (window.gestorPrendaSinCotizacion) {
     const prendasActivas = window.gestorPrendaSinCotizacion.obtenerActivas();
-    console.log(`📊 Total de prendas activas: ${prendasActivas.length}`);
+    console.log(` Total de prendas activas: ${prendasActivas.length}`);
     
     prendasActivas.forEach((prenda, index) => {
         console.log(`\n🏷️  PRENDA ${index}:`);
@@ -30,7 +30,7 @@ if (window.gestorPrendaSinCotizacion) {
     const prendasActivas = window.gestorPrendaSinCotizacion.obtenerActivas();
     
     prendasActivas.forEach((prenda, prendaIndex) => {
-        console.log(`\n🔧 Procesando prenda ${prendaIndex}: "${prenda.nombre_producto}"`);
+        console.log(`\n Procesando prenda ${prendaIndex}: "${prenda.nombre_producto}"`);
         
         // Simular el código actual (QUE ESTÁ FALLANDO)
         console.log('\n   MÉTODO ACTUAL (INCORRECTO):');
@@ -78,7 +78,7 @@ if (window.gestorPrendaSinCotizacion) {
         console.log(`      CORRECTO: Incluye géneros en las claves`);
         
         // PASO 3: Comparar arrays
-        console.log('\n  📊 COMPARACIÓN:');
+        console.log('\n   COMPARACIÓN:');
         console.log(`     Actual (incorrecto):   [${Object.keys(cantidadTallaActual).join(', ')}]`);
         console.log(`     Correcto:               [${Object.keys(cantidadTallaCorrecta).join(', ')}]`);
         
@@ -97,7 +97,7 @@ if (window.gestorPrendaSinCotizacion) {
     const prendasActivas = window.gestorPrendaSinCotizacion.obtenerActivas();
     
     prendasActivas.forEach((prenda, index) => {
-        console.log(`\n📦 Item ${index} (con formato actual - INCORRECTO):`);
+        console.log(`\n Item ${index} (con formato actual - INCORRECTO):`);
         
         // Simular el payload incorrecto
         const cantidadTallaIncorrecto = {};
@@ -124,7 +124,7 @@ if (window.gestorPrendaSinCotizacion) {
         console.log(` PROBLEMA: tallas = ${JSON.stringify(payloadIncorrecto.tallas)} (VACÍO o SIN GÉNERO)`);
         
         // Simular el payload correcto
-        console.log(`\n📦 Item ${index} (con formato correcto - ARREGLADO):`);
+        console.log(`\n Item ${index} (con formato correcto - ARREGLADO):`);
         
         const cantidadTallaCorrect = {};
         if (prenda.generosConTallas) {
@@ -179,7 +179,7 @@ console.log(`
    Backend espera: tallas != [] ✓ (pasa)
    Y contiene información del género ✓
 
-🔧 CAMBIO A HACER:
+ CAMBIO A HACER:
    Línea 1022 - Cambiar:
    cantidadTalla[talla] = cantidad
    

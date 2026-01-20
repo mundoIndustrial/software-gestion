@@ -6,7 +6,7 @@
  * USO: Copia todo y pega en la consola (F12 → Console)
  */
 
-console.log('🔍 ========== DEBUG CRÍTICO: TARJETA NO RENDERIZA ==========\n');
+console.log(' ========== DEBUG CRÍTICO: TARJETA NO RENDERIZA ==========\n');
 
 // ============================================
 // 1️⃣ VERIFICAR COMPONENTES BÁSICOS
@@ -31,9 +31,9 @@ console.log('\n2️⃣ Estado del Gestor:\n');
 
 if (window.gestorPrendaSinCotizacion) {
     const gestor = window.gestorPrendaSinCotizacion;
-    console.log(`   📊 Prendas en gestor.prendas: ${gestor.prendas.length}`);
-    console.log(`   📊 Prendas activas: ${gestor.obtenerActivas().length}`);
-    console.log(`   📊 Prendas eliminadas: ${Array.from(gestor.prendasEliminadas).join(', ') || '[ninguna]'}`);
+    console.log(`    Prendas en gestor.prendas: ${gestor.prendas.length}`);
+    console.log(`    Prendas activas: ${gestor.obtenerActivas().length}`);
+    console.log(`    Prendas eliminadas: ${Array.from(gestor.prendasEliminadas).join(', ') || '[ninguna]'}`);
     
     if (gestor.prendas.length > 0) {
         console.log('\n   Detalles de prendas:');
@@ -57,13 +57,13 @@ const container = document.getElementById(containerID);
 
 if (container) {
     console.log(`    Container encontrado: #${containerID}`);
-    console.log(`   📊 Contenido HTML actual:`);
+    console.log(`    Contenido HTML actual:`);
     console.log(`       Longitud: ${container.innerHTML.length} caracteres`);
     console.log(`       ¿Vacío? ${container.innerHTML.trim() === '' ? ' SÍ' : ' NO'}`);
     
     // Contar elementos dentro
     const tarjetas = container.querySelectorAll('.prenda-card-editable');
-    console.log(`   📊 Tarjetas renderizadas: ${tarjetas.length}`);
+    console.log(`    Tarjetas renderizadas: ${tarjetas.length}`);
 } else {
     console.error(`    Container NO encontrado: #${containerID}`);
     console.log('\n   Buscando containers alternativos...');
@@ -119,7 +119,7 @@ window.debugAgregarPrendaDePrueba = function() {
     const indice = window.gestorPrendaSinCotizacion.agregarPrenda(prendaPrueba);
     
     console.log(`    Prenda agregada en índice: ${indice}`);
-    console.log(`   📊 Prendas activas ahora: ${window.gestorPrendaSinCotizacion.obtenerActivas().length}`);
+    console.log(`    Prendas activas ahora: ${window.gestorPrendaSinCotizacion.obtenerActivas().length}`);
     
     // Intentar renderizar
     console.log('   Intentando renderizar...');
@@ -132,7 +132,7 @@ window.debugAgregarPrendaDePrueba = function() {
             const container = document.getElementById('prendas-container-editable');
             if (container) {
                 const tarjetas = container.querySelectorAll('.prenda-card-editable');
-                console.log(`   📊 Resultado: ${tarjetas.length} tarjetas renderizadas`);
+                console.log(`    Resultado: ${tarjetas.length} tarjetas renderizadas`);
             }
         }, 200);
     } else {
@@ -148,7 +148,7 @@ console.log('   Ejecuta: debugAgregarPrendaDePrueba()');
 console.log('\n6️⃣ Función de Diagnóstico Completo:\n');
 
 window.debugDiagnosticoCompleto = function() {
-    console.log('🔍 ========== DIAGNÓSTICO COMPLETO ==========\n');
+    console.log(' ========== DIAGNÓSTICO COMPLETO ==========\n');
     
     const gestor = window.gestorPrendaSinCotizacion;
     if (!gestor) {
@@ -156,12 +156,12 @@ window.debugDiagnosticoCompleto = function() {
         return;
     }
     
-    console.log('📊 ESTADO ACTUAL:');
+    console.log(' ESTADO ACTUAL:');
     console.log(`   - Prendas totales: ${gestor.prendas.length}`);
     console.log(`   - Prendas activas: ${gestor.obtenerActivas().length}`);
     console.log(`   - Prendas eliminadas: ${Array.from(gestor.prendasEliminadas).length}`);
     
-    console.log('\n🔍 ANÁLISIS:');
+    console.log('\n ANÁLISIS:');
     
     if (gestor.prendas.length === 0) {
         console.log('    PROBLEMA 1: No hay PRENDAS EN EL GESTOR');

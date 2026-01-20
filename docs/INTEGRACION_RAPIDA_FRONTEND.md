@@ -4,7 +4,7 @@
 
 ---
 
-## 📦 ARCHIVOS GENERADOS
+##  ARCHIVOS GENERADOS
 
 ```
 public/js/pedidos-produccion/
@@ -74,7 +74,7 @@ class PedidoProduccionController extends Controller
 
 ---
 
-## 🎨 PASO 3: Verificar dependencias en Blade
+##  PASO 3: Verificar dependencias en Blade
 
 **Archivo:** `resources/views/layouts/app.blade.php`
 
@@ -195,7 +195,7 @@ El formulario se adapta automáticamente a:
 **Si algo falla:**
 
 1. Abrir consola (F12)
-2. Buscar mensajes  o ⚠️
+2. Buscar mensajes  o 
 3. Ejecutar:
    ```javascript
    // Ver estado
@@ -247,7 +247,7 @@ El formulario se adapta automáticamente a:
 
 ---
 
-## 📊 ESTADÍSTICAS DEL CÓDIGO
+##  ESTADÍSTICAS DEL CÓDIGO
 
 | Componente | Líneas | Método | Propósito |
 |-----------|--------|--------|-----------|
@@ -261,7 +261,7 @@ El formulario se adapta automáticamente a:
 
 ---
 
-## 🎯 CARACTERÍSTICAS IMPLEMENTADAS
+##  CARACTERÍSTICAS IMPLEMENTADAS
 
 ###  Gestión de estado
 - Pedido completo

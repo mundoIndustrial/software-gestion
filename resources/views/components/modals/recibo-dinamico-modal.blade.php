@@ -188,7 +188,7 @@
      * @param {string} tipoProceso - Tipo de proceso (ej: 'costura', 'bordado')
      */
     window.abrirModalRecibo = async function(pedidoId, prendaId, tipoProceso) {
-        // ⚠️ VALIDACIÓN DEFENSIVA
+        //  VALIDACIÓN DEFENSIVA
         if (typeof tipoProceso !== 'string') {
             console.error('%c[RECIBO-DINAMICO]  ERROR: tipoProceso DEBE ser STRING', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof tipoProceso, tipoProceso);
             alert('Error: tipo de recibo debe ser texto (STRING)');

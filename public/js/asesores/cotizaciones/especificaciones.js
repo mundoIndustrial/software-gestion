@@ -48,13 +48,13 @@ function guardarEspecificaciones() {
         'tbody_flete': 'flete'
     };
     
-    console.log('🔍 Buscando especificaciones en modal...');
+    console.log(' Buscando especificaciones en modal...');
     
     // Procesar cada categoría
     Object.entries(categoriasMap).forEach(([tbodyId, categoriaKey]) => {
         const tbody = document.getElementById(tbodyId);
         if (!tbody) {
-            console.warn(`⚠️ No encontrado: ${tbodyId}`);
+            console.warn(` No encontrado: ${tbodyId}`);
             return;
         }
         
@@ -128,7 +128,7 @@ function guardarEspecificaciones() {
     
     window.especificacionesSeleccionadas = especificaciones;
     console.log(' Especificaciones guardadas:', especificaciones);
-    console.log('📊 Total categorías:', Object.keys(especificaciones).length);
+    console.log(' Total categorías:', Object.keys(especificaciones).length);
     
     //  ACTUALIZAR COLOR DEL BOTÓN ENVIAR
     actualizarColorBotonEnviar();
@@ -154,7 +154,7 @@ function actualizarColorBotonEnviar() {
         // Rojo: falta especificaciones
         btnEnviar.style.background = '#ef4444';
         btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
-        btnEnviar.title = '⚠️ Falta completar especificaciones';
+        btnEnviar.title = ' Falta completar especificaciones';
         console.log('🔴 Botón ENVIAR en ROJO - Falta completar especificaciones');
     }
 }

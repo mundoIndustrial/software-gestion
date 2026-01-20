@@ -26,7 +26,7 @@ class AddSupervisorPlantaRoleSeeder extends Seeder
 
             $this->command->info(' Rol supervisor_planta agregado exitosamente');
         } else {
-            $this->command->warn('⚠️ El rol supervisor_planta ya existe');
+            $this->command->warn(' El rol supervisor_planta ya existe');
         }
     }
 }

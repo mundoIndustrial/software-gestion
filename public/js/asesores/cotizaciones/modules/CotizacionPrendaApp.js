@@ -181,7 +181,7 @@ class CotizacionPrendaApp {
      * Muestra errores de validación
      */
     showValidationErrors(errors) {
-        const message = errors.map(e => `⚠️ ${e.message}`).join('\n\n');
+        const message = errors.map(e => ` ${e.message}`).join('\n\n');
         alert(message);
     }
 

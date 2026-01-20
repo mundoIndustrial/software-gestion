@@ -88,7 +88,7 @@
             console.log(' Evento LOAD disparado');
             const overlay = document.getElementById('loading-overlay');
             if (overlay) {
-                console.log('🎯 Overlay encontrado');
+                console.log(' Overlay encontrado');
                 overlay.style.pointerEvents = 'none';
                 console.log('🚫 pointer-events: none aplicado');
                 overlay.classList.add('hidden');
@@ -104,7 +104,7 @@
             console.log('⚡ Documento ya está en readyState complete');
             const overlay = document.getElementById('loading-overlay');
             if (overlay) {
-                console.log('🎯 Overlay encontrado en readyState complete');
+                console.log(' Overlay encontrado en readyState complete');
                 overlay.style.pointerEvents = 'none';
                 overlay.classList.add('hidden');
                 console.log('👻 Clase hidden agregada en readyState complete');

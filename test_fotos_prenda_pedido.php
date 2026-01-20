@@ -27,7 +27,7 @@ if (!$prenda) {
     return;
 }
 
-echo "👕 Prenda encontrada: {$prenda->nombre_prenda} (ID: {$prenda->id})\n";
+echo " Prenda encontrada: {$prenda->nombre_prenda} (ID: {$prenda->id})\n";
 
 // 3. Verificar fotos de la prenda
 $fotos = \DB::table('prenda_fotos_pedido')
@@ -51,7 +51,7 @@ if (count($fotos) > 0) {
         })->toArray(),
     ], JSON_PRETTY_PRINT) . "\n";
 } else {
-    echo "⚠️  No hay fotos para esta prenda\n";
+    echo "  No hay fotos para esta prenda\n";
 }
 
 // 4. Verificar el flujo de datos del recibo

@@ -1,6 +1,6 @@
 # ANÁLISIS Y REFACTORIZACIÓN DE INDEX.BLADE.PHP - PEDIDOS
 
-## 📊 ANÁLISIS ACTUAL
+##  ANÁLISIS ACTUAL
 
 ### Archivo: `resources/views/asesores/pedidos/index.blade.php`
 - **Líneas totales:** 2329
@@ -85,7 +85,7 @@ app/Traits/
 └── PedidoFormattingTrait.php   ← Métodos compartidos formato
 ```
 
-### 🟢 FRONTEND (JAVASCRIPT) - INTERACCIÓN UI
+###  FRONTEND (JAVASCRIPT) - INTERACCIÓN UI
 
 ```
 resources/views/asesores/pedidos/
@@ -175,7 +175,7 @@ resources/views/asesores/pedidos/
 
 ---
 
-## 🎯 RESPONSABILIDADES POR CAPA (SÓLIDA SEPARACIÓN)
+##  RESPONSABILIDADES POR CAPA (SÓLIDA SEPARACIÓN)
 
 ### 1️⃣ BACKEND - PedidosController (LÓGICA PRINCIPAL)
 
@@ -612,7 +612,7 @@ Ventajas:
 
 ---
 
-## 🎯 RESULTADOS ESPERADOS
+##  RESULTADOS ESPERADOS
 
 | Métrica | Antes | Después |
 |---------|-------|---------|

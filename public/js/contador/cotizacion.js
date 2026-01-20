@@ -526,7 +526,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                 </p>
                 <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                     <p style="margin: 0; font-size: 0.85rem; color: #92400e; font-weight: 600;">
-                        ⚠️ Se eliminarán PERMANENTEMENTE:
+                         Se eliminarán PERMANENTEMENTE:
                     </p>
                     <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem; font-size: 0.85rem; color: #92400e;">
                         <li><strong>Base de datos:</strong>

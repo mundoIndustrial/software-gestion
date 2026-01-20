@@ -893,17 +893,17 @@ Route::middleware(['auth', 'verified'])->prefix('api')->name('api.')->group(func
 // ========================================
 Route::middleware(['auth', 'role:asesor'])->prefix('asesores/pedidos-editable')->name('asesores.pedidos-editable.')->group(function () {
     // Gestión de ítems (retorna JSON)
-    Route::post('items/agregar', [App\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'agregarItem'])
+    Route::post('items/agregar', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'agregarItem'])
         ->name('agregar-item');
-    Route::post('items/eliminar', [App\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'eliminarItem'])
+    Route::post('items/eliminar', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'eliminarItem'])
         ->name('eliminar-item');
-    Route::get('items', [App\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItems'])
+    Route::get('items', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItems'])
         ->name('obtener-items');
     
     // Validación y creación
-    Route::post('validar', [App\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'validarPedido'])
+    Route::post('validar', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'validarPedido'])
         ->name('validar');
-    Route::post('crear', [App\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearPedido'])
+    Route::post('crear', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearPedido'])
         ->name('crear');
 });
 

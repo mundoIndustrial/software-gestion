@@ -75,7 +75,7 @@ class CrearPrendaAction
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('⚠️ Error despachando job de imágenes', [
+            \Log::error(' Error despachando job de imágenes', [
                 'prenda_id' => $prendaId,
                 'error' => $e->getMessage(),
             ]);

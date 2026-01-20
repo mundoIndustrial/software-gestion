@@ -294,7 +294,7 @@ class TallaComponent {
                             ✋ MANUAL<br><small>Seleccionar una por una</small>
                         </button>
                         <button type="button" class="swal2-confirm swal2-styled" id="btn-rango" style="flex: 1;">
-                            📊 RANGO<br><small>Desde... hasta</small>
+                             RANGO<br><small>Desde... hasta</small>
                         </button>
                     </div>
                 </div>

@@ -88,7 +88,7 @@
             });
 
             if (this.cotizaciones.length === 0) {
-                this.dropdown.innerHTML = '<div style="padding: 1rem; color: #ef4444; text-align: center;"><strong>⚠️ No hay cotizaciones aprobadas</strong><br><small>No tienes cotizaciones en estado APROBADA_COTIZACIONES o APROBADO_PARA_PEDIDO</small></div>';
+                this.dropdown.innerHTML = '<div style="padding: 1rem; color: #ef4444; text-align: center;"><strong> No hay cotizaciones aprobadas</strong><br><small>No tienes cotizaciones en estado APROBADA_COTIZACIONES o APROBADO_PARA_PEDIDO</small></div>';
             } else if (opciones.length === 0) {
                 this.dropdown.innerHTML = `<div style="padding: 1rem; color: #9ca3af; text-align: center;">No se encontraron cotizaciones<br><small>Total disponibles: ${this.cotizaciones.length}</small></div>`;
             } else {

@@ -145,7 +145,7 @@ function mostrarModalErrorCostos(mensaje) {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             text-align: center;
         ">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
             <h2 style="color: #ef4444; margin: 0 0 1rem 0; font-size: 1.5rem;">Error al Cargar Costos</h2>
             <p style="color: #666; margin: 0 0 1.5rem 0; line-height: 1.6;">
                 Ocurrió un error al intentar cargar los costos de la cotización.

@@ -293,13 +293,13 @@ class DashboardController extends Controller
     private function getNotificationTitle($tableName)
     {
         $titles = [
-            'entrega_pedido_costura' => '📦 Entrega Costura - Pedido',
+            'entrega_pedido_costura' => ' Entrega Costura - Pedido',
             'entrega_pedido_corte' => '✂️ Entrega Corte - Pedido',
             'entrega_bodega_costura' => '🏭 Entrega Costura - Bodega',
             'entrega_bodega_corte' => '🏭 Entrega Corte - Bodega',
             'registro_piso_produccion' => '⚙️ Registro - Producción',
             'registro_piso_corte' => '✂️ Registro - Corte',
-            'registro_piso_polo' => '👕 Registro - Polos',
+            'registro_piso_polo' => ' Registro - Polos',
         ];
         
         return $titles[$tableName] ?? 'Notificación del Sistema';

@@ -1,6 +1,6 @@
 # ARQUITECTURA DEL SISTEMA DE PEDIDOS DE PRODUCCIÓN
 
-## ⚠️ ARQUITECTURA ACTUAL - SISTEMA DE ÍTEMS CON SPLIT DE PROCESOS
+##  ARQUITECTURA ACTUAL - SISTEMA DE ÍTEMS CON SPLIT DE PROCESOS
 
 **Última actualización:** Enero 2026
 
@@ -18,7 +18,7 @@
 
 ---
 
-## 🎯 CONCEPTO PRINCIPAL
+##  CONCEPTO PRINCIPAL
 
 ### **1 Prenda con Proceso = 2 Ítems Separados**
 
@@ -133,7 +133,7 @@ PRENDA: Polo con Bordado
 
 ---
 
-## 📊 ESTRUCTURA DE DATOS
+##  ESTRUCTURA DE DATOS
 
 ### Estructura de Ítem Completa
 
@@ -204,13 +204,13 @@ PRENDA: Polo con Bordado
    │ Prendas de COT-2024-001         │
    ├─────────────────────────────────┤
    │ ☑ Polo                          │
-   │   📦 50 unidades                │
-   │   🔧 Procesos: Bordado          │
+   │    50 unidades                │
+   │    Procesos: Bordado          │
    │   📍 Origen: ○ Bodega ○ Confec. │
    │                                 │
    │ ☑ Camisa Drill                  │
-   │   📦 30 unidades                │
-   │   🔧 Procesos: Estampado        │
+   │    30 unidades                │
+   │    Procesos: Estampado        │
    │   📍 Origen: ○ Bodega ○ Confec. │
    │                                 │
    │ [Agregar Prendas Seleccionadas] │
@@ -476,9 +476,9 @@ itemsPedido = [
 ```
 1. Polo
    🏪 BASE (Bodega)
-   📦 50 unidades
+    50 unidades
    🏷️ COSTURA-BODEGA
-   🔧 Sin procesos
+    Sin procesos
 ```
 
 ### Ejemplo 2: Pedido con Proceso (Split)
@@ -513,15 +513,15 @@ itemsPedido = [
 ```
 1. Camisa
    ✂️ BASE (Confección)
-   📦 30 unidades
+    30 unidades
    🏷️ COSTURA-CONFECCIÓN
-   🔧 Sin procesos
+    Sin procesos
 
 2. Camisa (PROCESO)
    ✂️ PROCESO (Confección)
-   📦 30 unidades
+    30 unidades
    🏷️ BORDADO
-   🔧 Bordado
+    Bordado
 ```
 
 ### Ejemplo 3: Pedido Combinado (Múltiples Prendas)
@@ -553,7 +553,7 @@ itemsPedido = [
 
 ---
 
-## 🔧 MANTENIMIENTO Y DEBUGGING
+##  MANTENIMIENTO Y DEBUGGING
 
 ### Logs Importantes
 
@@ -561,9 +561,9 @@ El sistema genera logs detallados en cada paso:
 
 ```javascript
 // Al cargar cotización
-console.log('📦 Datos recibidos del backend:', data);
-console.log('🔍 Tiene prendas normales:', data.prendas?.length);
-console.log('🔍 Tiene prendas técnicas (logo):', data.prendas_tecnicas?.length);
+console.log(' Datos recibidos del backend:', data);
+console.log(' Tiene prendas normales:', data.prendas?.length);
+console.log(' Tiene prendas técnicas (logo):', data.prendas_tecnicas?.length);
 
 // Al calcular cantidades
 console.log('🔢 Calculando cantidad total para:', nombrePrenda);
@@ -571,11 +571,11 @@ console.log('   Usando cantidad directa:', prenda.cantidad);
 
 // Al agregar ítems
 console.log('➕ Agregando prendas seleccionadas. Total checkboxes:', checkboxes.length);
-console.log('📊 itemsPedido antes de agregar:', itemsPedido.length);
-console.log('📊 itemsPedido después de agregar:', itemsPedido.length);
+console.log(' itemsPedido antes de agregar:', itemsPedido.length);
+console.log(' itemsPedido después de agregar:', itemsPedido.length);
 
 // Al renderizar
-console.log('🎨 Renderizando ítems. Total:', itemsPedido.length);
+console.log(' Renderizando ítems. Total:', itemsPedido.length);
 console.log('  🔸 Renderizando ítem 1:', item.prenda?.nombre);
 ```
 
@@ -594,7 +594,7 @@ Para verificar que el sistema funciona correctamente:
 
 ---
 
-## 📝 NOTAS FINALES
+##  NOTAS FINALES
 
 ### Ventajas del Sistema Actual
 

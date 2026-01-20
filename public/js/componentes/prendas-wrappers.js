@@ -57,7 +57,7 @@ window.cerrarModalPrendaNueva = function() {
             console.log(' [WRAPPER] Texto del botón reseteado a "Agregar Prenda"');
         }
         
-        // ⚠️ SEGURIDAD: Limpiar SOLO el formulario del modal de prenda (form-prenda-nueva)
+        //  SEGURIDAD: Limpiar SOLO el formulario del modal de prenda (form-prenda-nueva)
         // NUNCA limpiar el formulario principal (formCrearPedidoEditable)
         const form = document.getElementById('form-prenda-nueva');
         if (form) {

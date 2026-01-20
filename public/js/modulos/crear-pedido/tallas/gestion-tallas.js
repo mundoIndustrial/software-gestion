@@ -133,7 +133,7 @@ window.mostrarTallasDisponibles = function(tipo) {
  * Seleccionar tipo de talla (LETRA o NÚMERO)
  */
 window.seleccionarTipoTalla = function(tipo) {
-    console.log('🎯 [TIPO TALLA] Seleccionado:', tipo);
+    console.log(' [TIPO TALLA] Seleccionado:', tipo);
     
     window.tipoTallaSeleccionado = tipo;
     
@@ -156,7 +156,7 @@ window.seleccionarTipoTalla = function(tipo) {
             btnNumero.style.background = 'white';
             btnNumero.style.borderColor = '#d1d5db';
             btnNumero.style.color = '#1f2937';
-            console.log('📝 [TIPO TALLA] Modo LETRA activado');
+            console.log(' [TIPO TALLA] Modo LETRA activado');
         } else {
             btnNumero.style.background = '#0066cc';
             btnNumero.style.borderColor = '#0066cc';
@@ -170,7 +170,7 @@ window.seleccionarTipoTalla = function(tipo) {
     
     // SOLO limpiar tallas si el tipo está CAMBIANDO (no si es el mismo tipo en edición)
     if (estaCambiandoTipo) {
-        console.log('⚠️ [TIPO TALLA] Tipo cambió de', tipoAnterior, 'a', tipo, '- Limpiando tallas');
+        console.log(' [TIPO TALLA] Tipo cambió de', tipoAnterior, 'a', tipo, '- Limpiando tallas');
         window.tallasSeleccionadas[window.generoActualModal].tallas = [];
     } else if (!tipoAnterior) {
         console.log(' [TIPO TALLA] Primera selección de tipo, inicializando tallas vacías');
@@ -217,8 +217,8 @@ window.mostrarSelectorTipo = function() {
  * SINCRONIZACIÓN: Si el otro género ya tiene tipo, se usa automáticamente
  */
 window.abrirModalSeleccionarTallas = function(genero) {
-    console.log('🎯 [MODAL TALLAS] Abriendo para:', genero);
-    console.log('📊 [MODAL TALLAS] Estado actual:', JSON.stringify(window.tallasSeleccionadas));
+    console.log(' [MODAL TALLAS] Abriendo para:', genero);
+    console.log(' [MODAL TALLAS] Estado actual:', JSON.stringify(window.tallasSeleccionadas));
     
     window.generoActualModal = genero;
     
@@ -229,7 +229,7 @@ window.abrirModalSeleccionarTallas = function(genero) {
     const otroGenero = genero === 'dama' ? 'caballero' : 'dama';
     const tipoDelOtroGenero = window.tallasSeleccionadas[otroGenero].tipo;
     
-    console.log('🔍 [MODAL TALLAS] Sincronización - Género actual tipo:', tipoDelGeneroActual, '| Otro género:', otroGenero, 'tipo:', tipoDelOtroGenero);
+    console.log(' [MODAL TALLAS] Sincronización - Género actual tipo:', tipoDelGeneroActual, '| Otro género:', otroGenero, 'tipo:', tipoDelOtroGenero);
     
     const modal = document.createElement('div');
     modal.id = `modal-tallas-${genero}`;
@@ -271,7 +271,7 @@ window.abrirModalSeleccionarTallas = function(genero) {
         
         const msgEditando = document.createElement('div');
         msgEditando.style.cssText = 'background: #dbeafe; border: 1px solid #93c5fd; border-radius: 6px; padding: 1rem; text-align: center; font-size: 0.9rem; color: #1e40af;';
-        msgEditando.innerHTML = `<strong> Editando:</strong><br>Tallas ya seleccionadas como <strong>${tipoDelGeneroActual === 'letra' ? '📝 LETRA' : '🔢 NÚMERO'}</strong>`;
+        msgEditando.innerHTML = `<strong> Editando:</strong><br>Tallas ya seleccionadas como <strong>${tipoDelGeneroActual === 'letra' ? ' LETRA' : '🔢 NÚMERO'}</strong>`;
         selectorTipo.appendChild(msgEditando);
         
         // Seleccionar automáticamente el tipo
@@ -286,7 +286,7 @@ window.abrirModalSeleccionarTallas = function(genero) {
         
         const msgSincro = document.createElement('div');
         msgSincro.style.cssText = 'background: #dbeafe; border: 1px solid #93c5fd; border-radius: 6px; padding: 1rem; text-align: center; font-size: 0.9rem; color: #1e40af;';
-        msgSincro.innerHTML = `<strong> Tipo sincronizado:</strong><br>Se usa el tipo <strong>${tipoDelOtroGenero === 'letra' ? '📝 LETRA' : '🔢 NÚMERO'}</strong> que ya seleccionaste en ${otroGenero}`;
+        msgSincro.innerHTML = `<strong> Tipo sincronizado:</strong><br>Se usa el tipo <strong>${tipoDelOtroGenero === 'letra' ? ' LETRA' : '🔢 NÚMERO'}</strong> que ya seleccionaste en ${otroGenero}`;
         selectorTipo.appendChild(msgSincro);
         
         // Seleccionar automáticamente el tipo
@@ -414,7 +414,7 @@ window.abrirModalSeleccionarTallas = function(genero) {
     btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#0066cc';
     btnConfirmar.onclick = () => {
         if (window.tallasSeleccionadas[genero].tallas.length === 0) {
-            alert('⚠️ Debes seleccionar al menos una talla');
+            alert(' Debes seleccionar al menos una talla');
             return;
         }
         cerrarModalTallas(genero);
@@ -445,10 +445,10 @@ window.cerrarModalTallas = function(genero) {
  */
 window.crearTarjetaGenero = function(genero) {
     console.log(' [TARJETA] Creando tarjeta para:', genero);
-    console.log('📊 [TARJETA] Tallas seleccionadas:', JSON.stringify(window.tallasSeleccionadas[genero]));
+    console.log(' [TARJETA] Tallas seleccionadas:', JSON.stringify(window.tallasSeleccionadas[genero]));
     
     if (window.tallasSeleccionadas[genero].tallas.length === 0) {
-        console.warn('⚠️ [TARJETA] No hay tallas seleccionadas para', genero);
+        console.warn(' [TARJETA] No hay tallas seleccionadas para', genero);
         return;
     }
     
@@ -545,7 +545,7 @@ window.crearTarjetaGenero = function(genero) {
         
         // Limpiar tallas del género
         window.tallasSeleccionadas[genero] = { tallas: [], tipo: null };
-        console.log('📊 [ELIMINAR] Tallas limpiadas para:', genero);
+        console.log(' [ELIMINAR] Tallas limpiadas para:', genero);
         
         // Limpiar cantidades de este género
         Object.keys(window.cantidadesTallas).forEach(key => {
@@ -631,7 +631,7 @@ window.actualizarTotalPrendas = function() {
     const totalElement = document.getElementById('total-prendas');
     if (totalElement) {
         totalElement.textContent = total;
-        console.log('📊 [TOTAL] Actualizado a:', total);
+        console.log(' [TOTAL] Actualizado a:', total);
     }
 };
 
@@ -651,7 +651,7 @@ window.obtenerTallasYCantidades = function() {
         }
     });
     
-    console.log('📦 [DATOS] Tallas y cantidades:', JSON.stringify(resultado));
+    console.log(' [DATOS] Tallas y cantidades:', JSON.stringify(resultado));
     return resultado;
 };
 
@@ -663,8 +663,8 @@ window.validarTallasSeleccionadas = function() {
     const caballero = window.tallasSeleccionadas.caballero.tallas.length > 0;
     
     if (!dama && !caballero) {
-        console.warn('⚠️ [VALIDACIÓN] Debe seleccionar al menos tallas de un género');
-        alert('⚠️ Debe seleccionar al menos tallas de un género (DAMA o CABALLERO)');
+        console.warn(' [VALIDACIÓN] Debe seleccionar al menos tallas de un género');
+        alert(' Debe seleccionar al menos tallas de un género (DAMA o CABALLERO)');
         return false;
     }
     

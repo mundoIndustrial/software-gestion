@@ -1,6 +1,6 @@
 # PLAN DE REFACTOR CORRECTO - BACKEND YA EXISTE
 
-## 🔍 SITUACIÓN ACTUAL
+##  SITUACIÓN ACTUAL
 
 **Backend:**  Ya existe y trae datos correctamente
 - `AsesoresController@index()` - Trae $pedidos formateados
@@ -179,7 +179,7 @@ function construirDescripcionComoPrenda(prenda) {
 
 ---
 
-## 📊 ENDPOINTS DEL BACKEND A USAR
+##  ENDPOINTS DEL BACKEND A USAR
 
 ### YA EXISTEN - Solo usar en JS:
 
@@ -230,7 +230,7 @@ GET /asesores/pedidos/:id/datos-edicion → JSON (si existe)
 
 ---
 
-## 🎯 RESUMEN FINAL
+##  RESUMEN FINAL
 
 ### LO QUE NO HAY QUE HACER:
 

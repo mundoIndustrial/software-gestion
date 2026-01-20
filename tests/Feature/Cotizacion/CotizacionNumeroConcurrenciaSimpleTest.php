@@ -59,7 +59,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         
         $this->assertGreaterThan(0, $secuencias->count(), 'No hay secuencias. Ejecuta: php artisan db:seed --class=NumeroSecuenciasSeeder');
         
-        echo "\n📊 SECUENCIAS ENCONTRADAS:\n";
+        echo "\n SECUENCIAS ENCONTRADAS:\n";
         foreach ($secuencias as $sec) {
             echo "  - {$sec->tipo}: próximo_numero = {$sec->proximo_numero}\n";
         }

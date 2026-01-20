@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility)
  */
 
-console.log('📦 Cargando CellEditModal...');
+console.log(' Cargando CellEditModal...');
 
 const CellEditModal = {
     /**
@@ -33,7 +33,7 @@ const CellEditModal = {
      * Inicializar el módulo
      */
     initialize() {
-        console.log('🔧 Inicializando CellEditModal...');
+        console.log(' Inicializando CellEditModal...');
         this._createModalHTML();
         this._attachEventListeners();
         console.log(' CellEditModal inicializado');
@@ -282,7 +282,7 @@ const CellEditModal = {
             return response.json();
         })
         .then(data => {
-            console.log('📊 Datos de orden obtenidos:', data);
+            console.log(' Datos de orden obtenidos:', data);
             
             if (data.prendas && data.prendas.length > 0) {
                 // Guardar estado para paginación

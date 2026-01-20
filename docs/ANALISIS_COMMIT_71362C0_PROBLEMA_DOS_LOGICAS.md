@@ -1,4 +1,4 @@
-# 📊 Análisis del Commit 71362c0 - El Problema de las Dos Lógicas
+#  Análisis del Commit 71362c0 - El Problema de las Dos Lógicas
 
 **Fecha:** 20 de Enero, 2026
 **Commit:** `71362c0` - "ajustes para poder editar un pedido"
@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 El Problema Identificado
+##  El Problema Identificado
 
 El commit que añadió funcionalidad de **editar pedidos** rompió la funcionalidad de **crear nuevos pedidos**, pero el error NO estaba en el código nuevo. Estaba en el **mismatch entre dos lógicas completamente diferentes**:
 
@@ -118,7 +118,7 @@ return view('asesores.pedidos.crear-pedido-nuevo', $datos);
 
 ---
 
-## 🔧 La Solución Implementada
+##  La Solución Implementada
 
 Ahora el controlador pasa **AMBAS estructuras** correctamente:
 
@@ -145,7 +145,7 @@ return view('asesores.pedidos.crear-pedido-nuevo', $datos);
 
 ---
 
-## 📊 Diagrama de Flujo
+##  Diagrama de Flujo
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

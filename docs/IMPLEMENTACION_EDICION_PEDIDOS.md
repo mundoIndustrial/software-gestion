@@ -1,9 +1,9 @@
-# 📝 IMPLEMENTACIÓN: EDICIÓN DE PEDIDOS
+#  IMPLEMENTACIÓN: EDICIÓN DE PEDIDOS
 
 **Fecha:** 19 de Enero de 2026  
 **Objetivo:** Permitir editar pedidos existentes usando la interfaz completa de creación
 
-## 🎯 Cambios Realizados
+##  Cambios Realizados
 
 ### 1. Backend - Controlador
 
@@ -103,7 +103,7 @@ GET /asesores/pedidos/{pedido}/edit
     => Nombre: pedidos.edit
 ```
 
-## 📊 Flujo de Edición
+##  Flujo de Edición
 
 ```
 1. Usuario hace clic en "Editar" en la tabla de pedidos
@@ -169,7 +169,7 @@ Para integración más completa, se podrían:
    - Historial de cambios
    - Confirmación antes de eliminar prendas
 
-## 📝 Notas
+##  Notas
 
 - El sistema mantiene la misma interfaz para crear y editar
 - Los datos se cargan dinámicamente en JavaScript

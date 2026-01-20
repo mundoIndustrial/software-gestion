@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Asesores\CrearPedidoEditableController;
+use App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController;
 use App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController;
 use Illuminate\Support\Facades\Route;
 

@@ -6,7 +6,7 @@
 
 ---
 
-## 📊 Cambios Realizados
+##  Cambios Realizados
 
 ### Antes: Monolito de 1618 líneas 
 - 1 clase gigante (`GestionItemsUI`)
@@ -154,7 +154,7 @@ constructor(opciones = {}) {
 
 ---
 
-## 📦 Servicios Creados
+##  Servicios Creados
 
 ### NotificationService
 ```javascript

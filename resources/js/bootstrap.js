@@ -15,7 +15,7 @@ import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
 // Debug: Mostrar variables de entorno
-console.log('🔧 Configuración de Echo/Reverb:');
+console.log(' Configuración de Echo/Reverb:');
 console.log('VITE_REVERB_APP_KEY:', import.meta.env.VITE_REVERB_APP_KEY);
 console.log('VITE_REVERB_HOST:', import.meta.env.VITE_REVERB_HOST);
 console.log('VITE_REVERB_PORT:', import.meta.env.VITE_REVERB_PORT);
@@ -45,7 +45,7 @@ window.Echo.connector.pusher.connection.bind('error', (err) => {
 });
 
 window.Echo.connector.pusher.connection.bind('disconnected', () => {
-    console.warn('⚠️ WebSocket desconectado');
+    console.warn(' WebSocket desconectado');
 });
 
 console.log(' Echo inicializado y disponible globalmente como window.Echo');

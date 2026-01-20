@@ -74,7 +74,7 @@ class QueryBus
         $handlerClass = $this->handlers[$queryClass];
 
         try {
-            Log::info('🔍 [QueryBus] Ejecutando query', [
+            Log::info(' [QueryBus] Ejecutando query', [
                 'query' => class_basename($query),
                 'handler' => class_basename($handlerClass),
             ]);

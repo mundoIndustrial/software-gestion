@@ -27,7 +27,7 @@ const RealtimeOrderHandler = {
         }
         
         if (!row) {
-            console.warn(`⚠️ Fila no encontrada para pedido ${ordenData.numero_pedido} o ID ${ordenData.id}`);
+            console.warn(` Fila no encontrada para pedido ${ordenData.numero_pedido} o ID ${ordenData.id}`);
             return;
         }
 
@@ -40,7 +40,7 @@ const RealtimeOrderHandler = {
 
         // Aplicar colores condicionales si cambió el estado
         if (changedFields && changedFields.includes('estado')) {
-            console.log(`🎨 Aplicando colores condicionales para estado: ${ordenData.estado}`);
+            console.log(` Aplicando colores condicionales para estado: ${ordenData.estado}`);
             applyRowConditionalColors(row);
         }
 
@@ -51,7 +51,7 @@ const RealtimeOrderHandler = {
      * Actualizar un campo específico de la fila
      */
     _updateField(row, field, ordenData) {
-        console.log(`📝 Actualizando campo: ${field}`);
+        console.log(` Actualizando campo: ${field}`);
 
         if (field === 'estado') {
             const dropdown = row.querySelector('.estado-dropdown');
@@ -172,12 +172,12 @@ const RealtimeOrderHandler = {
             );
             const statusClass = `estado-${value.toLowerCase().replace(/ /g, '-')}`;
             dropdown.classList.add(statusClass);
-            console.log(`🎨 Clase de estado-dropdown actualizada: ${statusClass}`);
+            console.log(` Clase de estado-dropdown actualizada: ${statusClass}`);
         }
         // Para area-dropdown (si hay estilos en el futuro)
         else if (dropdown.classList.contains('area-dropdown')) {
             // Aquí se pueden agregar estilos de área si es necesario
-            console.log(`🎨 Área dropdown actualizado: ${value}`);
+            console.log(` Área dropdown actualizado: ${value}`);
         }
     }
 };
@@ -216,7 +216,7 @@ function initializeOrdenesRealtimeListeners() {
             console.log('📡 Llamando RealtimeOrderHandler.updateOrderRow');
             RealtimeOrderHandler.updateOrderRow(e.orden, e.changedFields);
         } else {
-            console.warn('⚠️ RealtimeOrderHandler no está disponible');
+            console.warn(' RealtimeOrderHandler no está disponible');
         }
     });
 

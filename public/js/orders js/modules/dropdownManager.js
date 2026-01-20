@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility), DIP (Dependency Inversion)
  */
 
-console.log('📦 Cargando OrdersDropdownManager...');
+console.log(' Cargando OrdersDropdownManager...');
 
 const OrdersDropdownManager = {
     debounceMap: new Map(),
@@ -52,7 +52,7 @@ const OrdersDropdownManager = {
      * Manejador de cambio de área
      */
     handleAreaChange(e) {
-        console.log('🎯 handleAreaChange INICIO', e.target);
+        console.log(' handleAreaChange INICIO', e.target);
         
         const dropdown = e.target;
         const orderId = dropdown.dataset.ordenId || dropdown.dataset.id;
@@ -67,7 +67,7 @@ const OrdersDropdownManager = {
         }
         
         console.log(`📍 Área seleccionada (visualización): ${newValue}`);
-        console.log(`📊 Datos: orderId=${orderId}, oldValue=${oldValue}, newValue=${newValue}`);
+        console.log(` Datos: orderId=${orderId}, oldValue=${oldValue}, newValue=${newValue}`);
         
         if (!orderId) {
             console.error(' No se encontró orderId en el dropdown');
@@ -139,7 +139,7 @@ const OrdersDropdownManager = {
         const statusClass = `estado-${newStatus.toLowerCase().replace(/ /g, '-')}`;
         dropdown.classList.add(statusClass);
         
-        console.log(`🎨 Clase de dropdown actualizada: ${statusClass}`);
+        console.log(` Clase de dropdown actualizada: ${statusClass}`);
     }
 };
 

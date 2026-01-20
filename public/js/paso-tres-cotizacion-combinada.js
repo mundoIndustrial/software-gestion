@@ -33,7 +33,7 @@ function obtenerPrendasDelPaso2() {
             productosCards = document.querySelectorAll('.producto-card');
         }
         
-        console.log('🔍 Buscando prendas en PASO 2 - Encontradas:', productosCards.length);
+        console.log(' Buscando prendas en PASO 2 - Encontradas:', productosCards.length);
         
         productosCards.forEach((card, idx) => {
             console.log(`🔸 Analizando prenda ${idx + 1}...`);
@@ -396,7 +396,7 @@ function abrirModalTecnicaCombinada(tecnicas) {
                     <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
                         <input type="radio" name="opcion-tecnicas-p3" value="diferentes" style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
                         <div>
-                            <strong style="color: #333; display: block; font-size: 0.9rem;">🎯 Datos diferentes</strong>
+                            <strong style="color: #333; display: block; font-size: 0.9rem;"> Datos diferentes</strong>
                             <small style="color: #666; font-size: 0.8rem;">Cada técnica con su prenda</small>
                         </div>
                     </label>
@@ -1410,7 +1410,7 @@ function renderizarTecnicasAgregadasPaso3() {
             bodyHTML += `
                 <div style="margin-bottom: 1rem;">
                     <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                        👕 Tallas:
+                         Tallas:
                     </span>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
             `;
@@ -1430,7 +1430,7 @@ function renderizarTecnicasAgregadasPaso3() {
         if (datosPrenda.observaciones) {
             bodyHTML += `
                 <div style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 0.8rem; border-radius: 4px; margin-bottom: 1rem;">
-                    <span style="font-size: 0.75rem; font-weight: 600; color: #92400e;">📝 Observaciones:</span>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #92400e;"> Observaciones:</span>
                     <p style="margin: 0.4rem 0 0 0; font-size: 0.8rem; color: #78350f;">
                         ${datosPrenda.observaciones}
                     </p>
@@ -2414,7 +2414,7 @@ function agregarFilaPrendaPaso3() {
         const espacioDisponible = 3 - imagenesPaso2.length;
         
         if (espacioDisponible <= 0) {
-            Swal.fire('⚠️ Límite alcanzado', `Ya hay ${imagenesPaso2.length} imagen(es) del PASO 2. Máximo 3 imágenes total.`, 'warning');
+            Swal.fire(' Límite alcanzado', `Ya hay ${imagenesPaso2.length} imagen(es) del PASO 2. Máximo 3 imágenes total.`, 'warning');
             return;
         }
         
@@ -2467,7 +2467,7 @@ function guardarTecnicaPaso3() {
     const listaPrendas = document.getElementById('listaPrendasPaso3');
     
     if (!listaPrendas || listaPrendas.children.length === 0) {
-        Swal.fire('⚠️ Error', 'Debes agregar al menos una prenda', 'warning');
+        Swal.fire(' Error', 'Debes agregar al menos una prenda', 'warning');
         return;
     }
     
@@ -2539,12 +2539,12 @@ function guardarTecnicaPaso3() {
         };
         
         if (!nombreBase) {
-            Swal.fire('⚠️ Error', `Debes seleccionar una prenda en la prenda ${idx + 1}`, 'warning');
+            Swal.fire(' Error', `Debes seleccionar una prenda en la prenda ${idx + 1}`, 'warning');
             return;
         }
         
         if (ubicaciones.length === 0) {
-            Swal.fire('⚠️ Error', `La prenda "${nombre}" debe tener al menos una ubicación`, 'warning');
+            Swal.fire(' Error', `La prenda "${nombre}" debe tener al menos una ubicación`, 'warning');
             return;
         }
         
@@ -2633,7 +2633,7 @@ function agregarPrendaReflectivoPaso4() {
             
             <!-- TIPO DE PRENDA - DROPDOWN CON PRENDAS DEL PASO 2 -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">👕 TIPO DE PRENDA</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;"> TIPO DE PRENDA</label>
                 <select class="tipo-prenda-reflectivo select-prenda-paso2-reflectivo" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; cursor: pointer;">
                     <option value="">-- Selecciona una prenda --</option>
                     ${prendasPaso2.map(prenda => {
@@ -2657,7 +2657,7 @@ function agregarPrendaReflectivoPaso4() {
             
             <!-- DESCRIPCIÓN -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📝 DESCRIPCIÓN</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;"> DESCRIPCIÓN</label>
                 <textarea class="descripcion-reflectivo" rows="2" placeholder="Describe el reflectivo para esta prenda (tipo, tamaño, color, ubicación, etc.)..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.9rem;"></textarea>
             </div>
             
@@ -2778,7 +2778,7 @@ function agregarPrendaReflectivoPaso4() {
     // LISTENER: Cuando se selecciona una prenda, cargar sus tallas, imágenes y variaciones
     const selectPrenda = fila.querySelector('.select-prenda-paso2-reflectivo');
     selectPrenda.addEventListener('change', (e) => {
-        console.log(`🎯 SELECT PRENDA CAMBIÓ - Prenda ${prendasIndex}:`, e.target.value);
+        console.log(` SELECT PRENDA CAMBIÓ - Prenda ${prendasIndex}:`, e.target.value);
         
         const selectedOption = e.target.options[e.target.selectedIndex];
         const tallasJson = selectedOption.getAttribute('data-tallas');
@@ -2816,7 +2816,7 @@ function agregarPrendaReflectivoPaso4() {
                 console.error(' Error al parsear tallas:', err);
             }
         } else {
-            console.warn('⚠️ No hay tallasJson en el atributo data-tallas');
+            console.warn(' No hay tallasJson en el atributo data-tallas');
         }
         
         // CARGAR VARIACIONES DE PRENDA DESDE PASO 2
@@ -2911,7 +2911,7 @@ function agregarPrendaReflectivoPaso4() {
                 console.error(' Error al parsear imágenes:', err);
             }
         } else {
-            console.warn('⚠️ No hay imagenesJson en el atributo data-imagenes');
+            console.warn(' No hay imagenesJson en el atributo data-imagenes');
         }
     });
     
@@ -3018,7 +3018,7 @@ function procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContain
     
     const maxImagenes = 3;
     if (prenda.imagenes.length + archivos.length > maxImagenes) {
-        Swal.fire('⚠️', `Máximo ${maxImagenes} imágenes permitidas`, 'warning');
+        Swal.fire('', `Máximo ${maxImagenes} imágenes permitidas`, 'warning');
         return;
     }
     
@@ -3287,7 +3287,7 @@ function abrirModalUbicacionReflectivoPaso4(prendasIndex, fila) {
     const seccion = inputSeccion.value.trim().toUpperCase();
 
     if (!seccion) {
-        Swal.fire('⚠️', 'Por favor escribe una sección (ej: PECHO, ESPALDA, MANGA...)', 'warning');
+        Swal.fire('', 'Por favor escribe una sección (ej: PECHO, ESPALDA, MANGA...)', 'warning');
         return;
     }
 
@@ -3335,7 +3335,7 @@ function guardarUbicacionReflectivoPaso4(prendasIndex) {
     const desc = document.getElementById(`descUbicacionReflectivoPaso4-${prendasIndex}`).value.trim();
     
     if (!desc) {
-        Swal.fire('⚠️', 'Por favor escribe una descripción', 'warning');
+        Swal.fire('', 'Por favor escribe una descripción', 'warning');
         return;
     }
     
@@ -3347,7 +3347,7 @@ function guardarUbicacionReflectivoPaso4(prendasIndex) {
     // Verificar que no exista duplicada
     const existe = prenda.ubicaciones.some(u => u.ubicacion === seccion && u.descripcion === desc);
     if (existe) {
-        Swal.fire('⚠️', 'Esta ubicación ya fue agregada', 'warning');
+        Swal.fire('', 'Esta ubicación ya fue agregada', 'warning');
         return;
     }
     
@@ -3391,7 +3391,7 @@ function renderizarUbicacionesReflectivoPaso4(prendasIndex) {
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
-                    <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem; font-weight: 700;">🎯 ${ubicacionText}</h4>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem; font-weight: 700;"> ${ubicacionText}</h4>
                     <p style="margin: 0; color: #666; font-size: 0.85rem; line-height: 1.4;">${descText}</p>
                 </div>
                 <button type="button" onclick="eliminarUbicacionReflectivoPaso4(${prendasIndex}, ${index})" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 10px;">×</button>

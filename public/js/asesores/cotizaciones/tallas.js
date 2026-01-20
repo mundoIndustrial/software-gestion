@@ -9,13 +9,13 @@ const tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '
 function actualizarGeneroSeleccionado(select) {
     const productoCard = select.closest('.producto-card');
     if (!productoCard) {
-        console.warn('⚠️ No se encontró .producto-card para actualizar genero_id');
+        console.warn(' No se encontró .producto-card para actualizar genero_id');
         return;
     }
     
     const generoInput = productoCard.querySelector('.genero-id-hidden');
     if (!generoInput) {
-        console.warn('⚠️ No se encontró .genero-id-hidden');
+        console.warn(' No se encontró .genero-id-hidden');
         return;
     }
     
@@ -127,7 +127,7 @@ function actualizarSelectTallas(select) {
     console.log(' LIMPIEZA COMPLETA FINALIZADA');
     
     if (tipo === 'letra') {
-        console.log('📝 Configurando LETRAS');
+        console.log(' Configurando LETRAS');
         // LETRAS ahora muestra selector de género
         if (generoSelect) {
             generoSelect.style.display = 'block';
@@ -142,7 +142,7 @@ function actualizarSelectTallas(select) {
         
         // Agregar event listener al modoSelect para LETRAS
         modoSelect._handlerLetras = function() {
-            console.log('📝 Modo cambiado para LETRAS:', this.value);
+            console.log(' Modo cambiado para LETRAS:', this.value);
             actualizarModoLetras(container, this.value);
         };
         modoSelect.addEventListener('change', modoSelect._handlerLetras);
@@ -153,7 +153,7 @@ function actualizarSelectTallas(select) {
         tallaRangoSelectors.style.display = 'none';
         
         // Crear botones de LETRAS
-        console.log('📝 Creando botones de LETRAS');
+        console.log(' Creando botones de LETRAS');
         botonesDiv.innerHTML = '';
         tallasLetras.forEach(talla => {
             const btn = document.createElement('button');
@@ -271,8 +271,8 @@ function actualizarSelectoresRangoLetras(container) {
  * Actualiza el modo de selección de tallas
  */
 function actualizarModoTallas(select) {
-    console.log('🎯 actualizarModoTallas() llamado');
-    console.log('🎯 select.value:', select.value);
+    console.log(' actualizarModoTallas() llamado');
+    console.log(' select.value:', select.value);
     
     const container = select.closest('.producto-section');
     const tallaBotones = container.querySelector('.talla-botones');
@@ -280,8 +280,8 @@ function actualizarModoTallas(select) {
     const botonesDiv = container.querySelector('.talla-botones-container');
     const modo = select.value;
     
-    console.log('🎯 Modo:', modo);
-    console.log('🎯 Elementos:', {
+    console.log(' Modo:', modo);
+    console.log(' Elementos:', {
         tallaBotones: !!tallaBotones,
         tallaRangoSelectors: !!tallaRangoSelectors,
         botonesDiv: !!botonesDiv
@@ -302,7 +302,7 @@ function actualizarModoTallas(select) {
         tallaBotones.style.display = 'none';
         tallaRangoSelectors.style.display = 'flex';
         
-        console.log('📊 Antes de actualizarSelectoresRango()');
+        console.log(' Antes de actualizarSelectoresRango()');
         actualizarSelectoresRango(container);
         
         const desdeSelect = container.querySelector('.talla-desde');
@@ -313,7 +313,7 @@ function actualizarModoTallas(select) {
         console.log('📍 TALLAS EN RANGO HASTA:', optionsHasta);
         
     } else {
-        console.log('⚠️ Modo no reconocido, ocultando todo');
+        console.log(' Modo no reconocido, ocultando todo');
         tallaBotones.style.display = 'none';
         tallaRangoSelectors.style.display = 'none';
     }
@@ -323,15 +323,15 @@ function actualizarModoTallas(select) {
  * Actualiza los selectores de rango
  */
 function actualizarSelectoresRango(container) {
-    console.log('📊 actualizarSelectoresRango() llamado');
+    console.log(' actualizarSelectoresRango() llamado');
     
     const generoSelect = container.querySelector('.talla-genero-select');
     const desdeSelect = container.querySelector('.talla-desde');
     const hastaSelect = container.querySelector('.talla-hasta');
     const genero = generoSelect.value;
     
-    console.log('📊 Género en rango:', genero);
-    console.log('📊 Elementos encontrados:', {
+    console.log(' Género en rango:', genero);
+    console.log(' Elementos encontrados:', {
         generoSelect: !!generoSelect,
         desdeSelect: !!desdeSelect,
         hastaSelect: !!hastaSelect
@@ -339,16 +339,16 @@ function actualizarSelectoresRango(container) {
     
     let tallas = [];
     if (genero === 'dama') {
-        console.log('📊 Usando tallas DAMA para rango');
+        console.log(' Usando tallas DAMA para rango');
         tallas = tallasDama;
     } else if (genero === 'caballero') {
-        console.log('📊 Usando tallas CABALLERO para rango');
+        console.log(' Usando tallas CABALLERO para rango');
         tallas = tallasCaballero;
     } else {
-        console.log('⚠️ Género no reconocido en rango:', genero);
+        console.log(' Género no reconocido en rango:', genero);
     }
     
-    console.log('📊 Tallas a mostrar en rango:', tallas);
+    console.log(' Tallas a mostrar en rango:', tallas);
     
     desdeSelect.innerHTML = '<option value="">Desde</option>';
     hastaSelect.innerHTML = '<option value="">Hasta</option>';
@@ -412,7 +412,7 @@ function agregarTallasRango(btn) {
     
     const tallasRango = tallas.slice(desdeIdx, hastaIdx + 1);
     
-    console.log('📊 agregarTallasRango() - Tallas a agregar:', tallasRango);
+    console.log(' agregarTallasRango() - Tallas a agregar:', tallasRango);
     
     // LIMPIAR todos los divs previamente agregados
     tallasAgregadas.querySelectorAll('div').forEach(div => {
@@ -446,20 +446,20 @@ function agregarTallasRango(btn) {
  * Actualiza los botones según el género seleccionado
  */
 function actualizarBotonesPorGenero(container, genero) {
-    console.log('🔍 actualizarBotonesPorGenero() llamado con genero:', genero);
+    console.log(' actualizarBotonesPorGenero() llamado con genero:', genero);
     
     const tallaBotones = container.querySelector('.talla-botones');
     const botonesDiv = container.querySelector('.talla-botones-container');
     const modoSelect = container.querySelector('.talla-modo-select');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     
-    console.log('🔍 Elementos encontrados:', {
+    console.log(' Elementos encontrados:', {
         tallaBotones: !!tallaBotones,
         botonesDiv: !!botonesDiv,
         modoSelect: !!modoSelect,
         tallaRangoSelectors: !!tallaRangoSelectors
     });
-    console.log('🔍 Valor actual de modoSelect:', modoSelect.value);
+    console.log(' Valor actual de modoSelect:', modoSelect.value);
     
     // LIMPIAR COMPLETAMENTE ANTES DE CAMBIAR
     botonesDiv.innerHTML = '';
@@ -682,7 +682,7 @@ function actualizarBotonesPorGenero(container, genero) {
  * Actualiza los botones para género en selección de letras
  */
 function actualizarBotonesPorGeneroLetras(container, genero) {
-    console.log('📝 actualizarBotonesPorGeneroLetras() llamado con genero:', genero);
+    console.log(' actualizarBotonesPorGeneroLetras() llamado con genero:', genero);
     
     const modoSelect = container.querySelector('.talla-modo-select');
     const botonesDiv = container.querySelector('.talla-botones-container');
@@ -691,7 +691,7 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
     
     // LIMPIAR COMPLETAMENTE ANTES DE CAMBIAR
     botonesDiv.innerHTML = '';
-    console.log('📝 botonesDiv limpiado');
+    console.log(' botonesDiv limpiado');
     
     // Eliminar pestañas anteriores si existen
     const tabsAnteriores = container.querySelector('.tabs-genero-letras');
@@ -702,11 +702,11 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
     // Ocultar secciones
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
-    console.log('📝 tallaBotones y tallaRangoSelectors ocultados');
+    console.log(' tallaBotones y tallaRangoSelectors ocultados');
     
     // Resetear el modoSelect al cambiar de género en LETRAS
     modoSelect.value = '';
-    console.log('📝 Valor actual de modoSelect:', modoSelect.value);
+    console.log(' Valor actual de modoSelect:', modoSelect.value);
     
     // Remover listeners anteriores
     if (modoSelect._handler) {
@@ -720,20 +720,20 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
     
     // Para "ambos", mostrar directamente sin necesidad de modo
     if (genero === 'ambos') {
-        console.log('📝 AMBOS (Letras) - Sin diferencia de género en letras');
+        console.log(' AMBOS (Letras) - Sin diferencia de género en letras');
         modoSelect.style.display = 'block';
         modoSelect._handlerLetras = function() {
-            console.log('📝 LETRAS (Ambos): Modo cambiado a:', this.value);
+            console.log(' LETRAS (Ambos): Modo cambiado a:', this.value);
             actualizarModoLetras(container, this.value);
         };
         modoSelect.addEventListener('change', modoSelect._handlerLetras);
     } else {
         modoSelect.style.display = 'block';
-        console.log('📝 modoSelect mostrado (valor actual:', modoSelect.value, ')');
+        console.log(' modoSelect mostrado (valor actual:', modoSelect.value, ')');
         
-        console.log('📝 Agregando evento onchange al modoSelect para LETRAS');
+        console.log(' Agregando evento onchange al modoSelect para LETRAS');
         modoSelect._handlerLetras = function() {
-            console.log('📝 LETRAS: Modo cambiado a:', this.value);
+            console.log(' LETRAS: Modo cambiado a:', this.value);
             actualizarModoLetras(container, this.value);
         };
         modoSelect.addEventListener('change', modoSelect._handlerLetras);
@@ -751,8 +751,8 @@ function agregarTallasSeleccionadas(btn) {
     const tallasHidden = container.querySelector('.tallas-hidden');
     
     console.log('🔵 agregarTallasSeleccionadas() llamado');
-    console.log('📊 Botones activos encontrados:', botonesActivos.length);
-    console.log('📝 Tallas:', Array.from(botonesActivos).map(b => b.dataset.talla).join(', '));
+    console.log(' Botones activos encontrados:', botonesActivos.length);
+    console.log(' Tallas:', Array.from(botonesActivos).map(b => b.dataset.talla).join(', '));
     
     if (botonesActivos.length === 0) {
         alert('Por favor selecciona al menos una talla');
@@ -797,7 +797,7 @@ function agregarTallasSeleccionadas(btn) {
  */
 function actualizarTallasHidden(container) {
     if (!container) {
-        console.warn('⚠️ Container no encontrado en actualizarTallasHidden');
+        console.warn(' Container no encontrado en actualizarTallasHidden');
         return;
     }
     
@@ -805,7 +805,7 @@ function actualizarTallasHidden(container) {
     const tallasHidden = container.querySelector('.tallas-hidden');
     
     if (!tallasAgregadas || !tallasHidden) {
-        console.warn('⚠️ Elementos de tallas no encontrados');
+        console.warn(' Elementos de tallas no encontrados');
         return;
     }
     
@@ -815,7 +815,7 @@ function actualizarTallasHidden(container) {
         const span = tag.querySelector('span');
         if (span) {
             tallas.push(span.textContent);
-            console.log('📝 Talla encontrada en div:', span.textContent);
+            console.log(' Talla encontrada en div:', span.textContent);
         }
     });
     

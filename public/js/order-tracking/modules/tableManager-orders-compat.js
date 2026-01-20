@@ -28,7 +28,7 @@ const TableManager = (() => {
     function getTableRows() {
         const tabla = getOrdersTable();
         if (!tabla) {
-            console.warn('⚠️ Tabla de órdenes no encontrada');
+            console.warn(' Tabla de órdenes no encontrada');
             return [];
         }
         
@@ -54,7 +54,7 @@ const TableManager = (() => {
             return;
         }
         
-        console.log(`📊 Actualizando días en ${rows.length} órdenes`);
+        console.log(` Actualizando días en ${rows.length} órdenes`);
         
         let actualizadas = 0;
         

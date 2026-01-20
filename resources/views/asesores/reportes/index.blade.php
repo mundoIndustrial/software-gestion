@@ -140,7 +140,7 @@
                                 👥 Clientes
                                 @break
                             @default
-                                📊 General
+                                 General
                         @endswitch
                     </div>
                     
@@ -216,7 +216,7 @@
                     <option value="ventas">📈 Ventas</option>
                     <option value="produccion">🏭 Producción</option>
                     <option value="clientes">👥 Clientes</option>
-                    <option value="general">📊 General</option>
+                    <option value="general"> General</option>
                 </select>
             </div>
 

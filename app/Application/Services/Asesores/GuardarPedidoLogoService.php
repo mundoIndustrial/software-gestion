@@ -108,7 +108,7 @@ class GuardarPedidoLogoService
     {
         // Chequear por tipo_cotizacion explícito
         if ($tipoCotizacion === 'L') {
-            Log::info('🎨 [LOGO-CHECK] Tipo cotización explícito: L');
+            Log::info(' [LOGO-CHECK] Tipo cotización explícito: L');
             return true;
         }
 
@@ -122,7 +122,7 @@ class GuardarPedidoLogoService
             
             $esLogo = $tipoCodigoQuery && $tipoCodigoQuery->codigo === 'L';
             
-            Log::info('🎨 [LOGO-CHECK] Verificado en cotización', [
+            Log::info(' [LOGO-CHECK] Verificado en cotización', [
                 'cotizacion_id' => $cotizacionId,
                 'codigo' => $tipoCodigoQuery?->codigo ?? 'NULL',
                 'es_logo' => $esLogo

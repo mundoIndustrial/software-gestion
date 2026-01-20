@@ -11,7 +11,7 @@ const TrackingUI = (() => {
     function getModal() {
         let modal = document.getElementById('orderTrackingModal');
         if (!modal) {
-            console.warn('⚠️ Modal de seguimiento no encontrado en el DOM');
+            console.warn(' Modal de seguimiento no encontrado en el DOM');
         }
         return modal;
     }

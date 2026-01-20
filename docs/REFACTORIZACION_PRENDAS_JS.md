@@ -1,4 +1,4 @@
-# 🔧 REFACTORIZACIÓN: prendas.js
+#  REFACTORIZACIÓN: prendas.js
 
 **Fecha:** 14 Enero 2026  
 **Estado:**  COMPLETADO  
@@ -6,7 +6,7 @@
 
 ---
 
-## 📊 RESUMEN DE CAMBIOS
+##  RESUMEN DE CAMBIOS
 
 ### Antes
 ```
@@ -183,7 +183,7 @@ window.guardarCantidadTalla()         // Guardar cantidades
 
 ---
 
-## ⚠️ NOTAS IMPORTANTES
+##  NOTAS IMPORTANTES
 
 ### Variables Globales Aún Activas
 ```javascript
@@ -246,7 +246,7 @@ Si hay problemas, revisar:
 
 ---
 
-## 🎯 FLUJO DE UNA LLAMADA
+##  FLUJO DE UNA LLAMADA
 
 Cuando el usuario hace click en "Agregar Prenda":
 
@@ -269,7 +269,7 @@ Este patrón asegura que:
 
 ---
 
-## 📊 RESUMEN DE CAMBIOS
+##  RESUMEN DE CAMBIOS
 
 ### Antes
 ```
@@ -449,7 +449,7 @@ window.guardarCantidadTalla()         // Guardar cantidades
 
 ---
 
-## ⚠️ NOTAS IMPORTANTES
+##  NOTAS IMPORTANTES
 
 ### Variables Globales Aún Activas
 ```javascript

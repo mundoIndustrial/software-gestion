@@ -118,7 +118,7 @@ $prenda = PrendaPedido::create([
 1. **En `recolectarDatosPedido()` - Línea 1019:**
 ```javascript
 const itemsFormato = items.map((item, itemIndex) => {
-    // 🔍 LOG: Verificar pedido_produccion_id si existe
+    //  LOG: Verificar pedido_produccion_id si existe
     if (item.pedido_produccion_id) {
         baseItem.pedido_produccion_id = item.pedido_produccion_id;
         console.log(` [Item ${itemIndex}] Incluido pedido_produccion_id: ${item.pedido_produccion_id}`);
@@ -146,7 +146,7 @@ return pedidoFinal;
 async manejarSubmitFormulario(e) {
     // ... validaciones previas ...
     
-    // 🔍 LOG CRÍTICO: Verificar estructura antes de enviar
+    //  LOG CRÍTICO: Verificar estructura antes de enviar
     console.log(' [manejarSubmitFormulario] Datos del pedido recolectados:');
     console.log('   Cliente:', pedidoData.cliente);
     console.log('   Items totales:', pedidoData.items.length);
@@ -172,7 +172,7 @@ async manejarSubmitFormulario(e) {
 
 ---
 
-## 🔍 LOGS DE DEPURACIÓN AÑADIDOS
+##  LOGS DE DEPURACIÓN AÑADIDOS
 
 ### En Frontend
 
@@ -201,7 +201,7 @@ async manejarSubmitFormulario(e) {
 **Ubicación:** storage/logs/laravel.log
 
 ```
-[16-Jan-2026 14:30:45] local.INFO: 📦 [PedidoPrendaService::guardarPrendasEnPedido] INICIO
+[16-Jan-2026 14:30:45] local.INFO:  [PedidoPrendaService::guardarPrendasEnPedido] INICIO
    pedido_id => 42
    numero_pedido => 1025
    cantidad_prendas => 2
@@ -247,10 +247,10 @@ MySQL: SUCCESS - FK correcta, no NULL
 
 | Archivo | Cambio | Líneas | Impacto |
 |---------|--------|--------|---------|
-| `app/Models/PrendaPedido.php` | Agregar comentario en `numero_pedido` | 28-35 | 📝 Claridad |
+| `app/Models/PrendaPedido.php` | Agregar comentario en `numero_pedido` | 28-35 |  Claridad |
 | `app/Models/PedidoProduccion.php` | Cambiar FK a `pedido_produccion_id` | 155-162 |  Crítico |
 | `app/Application/Services/PedidoPrendaService.php` | Cambiar `numero_pedido` → `pedido_produccion_id` | 235-252 |  Crítico |
-| `public/js/modulos/crear-pedido/procesos/gestion-items-pedido.js` | Agregar logs de depuración | 1019-1212 | 🔍 Debugging |
+| `public/js/modulos/crear-pedido/procesos/gestion-items-pedido.js` | Agregar logs de depuración | 1019-1212 |  Debugging |
 
 ---
 

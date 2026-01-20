@@ -57,7 +57,7 @@ class UIModalService {
         const modal = document.getElementById(id);
         
         if (!modal) {
-            console.warn(`⚠️ Modal con ID '${id}' no encontrado`);
+            console.warn(` Modal con ID '${id}' no encontrado`);
             return false;
         }
 
@@ -105,7 +105,7 @@ class UIModalService {
         const modal = document.getElementById(id);
         
         if (!modal) {
-            console.warn(`⚠️ Modal con ID '${id}' no encontrado`);
+            console.warn(` Modal con ID '${id}' no encontrado`);
             return false;
         }
 
@@ -342,7 +342,7 @@ class UIModalService {
      * @param {string} mensaje - Mensaje a mostrar
      */
     static toastAdvertencia(mensaje) {
-        return this._mostrarToast(mensaje, 'warning', '⚠️');
+        return this._mostrarToast(mensaje, 'warning', '');
     }
 
     /**

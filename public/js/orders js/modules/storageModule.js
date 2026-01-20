@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility), DIP (Dependency Inversion)
  */
 
-console.log('📦 Cargando StorageModule...');
+console.log(' Cargando StorageModule...');
 
 const StorageModule = {
     lastTimestamp: 0,

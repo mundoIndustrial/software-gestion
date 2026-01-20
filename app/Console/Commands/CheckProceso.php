@@ -35,7 +35,7 @@ class CheckProceso extends Command
         // Verificar bodega
         $bodega = \DB::table('tabla_original_bodega')->where('pedido', $numeroPedido)->first();
         if ($bodega) {
-            $this->info("📦 EN BODEGA:");
+            $this->info(" EN BODEGA:");
             $this->line("   Estado: " . $bodega->estado);
         }
     }

@@ -12,7 +12,7 @@ class RecreatePedidoEppTables extends Command
 
     public function handle()
     {
-        $this->info('🔧 Recreando tablas de pedido_epp...\n');
+        $this->info(' Recreando tablas de pedido_epp...\n');
 
         // Eliminar los registros de migraciones para que se puedan ejecutar de nuevo
         $migracionesAEliminar = [

@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
 @endsection
 
 @section('content')
@@ -39,7 +40,7 @@
             'estados' => $estados ?? [],
             'areas' => $areas ?? []
         ]) !!};
-        console.log('📝 Modo edición: Editando pedido #{{ $pedidoEditarId }}');
+        console.log(' Modo edición: Editando pedido #{{ $pedidoEditarId }}');
         console.log(' Datos cargados:', window.pedidoEditarData);
     </script>
 @endif
@@ -197,6 +198,27 @@
         }
     </script>
     
+    <!-- EPP Services - Deben cargarse ANTES del modal -->
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}"></script>
+    
+    <!-- EPP Services SOLID - Mejoras de refactorización -->
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}"></script>
+    
+    <!-- EPP Templates e Interfaces -->
+    <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}"></script>
+    
+    <!-- EPP Initialization -->
+    <script src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}"></script>
+    
+    <!-- Modal EPP (refactorizado) - Carga DESPUÉS de los servicios -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
@@ -250,6 +272,11 @@
     
     <!-- Manejadores de variaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+    
+    <!-- SERVICIOS MODULARES para tarjeta readonly (DEBEN cargarse ANTES) -->
+    <script src="{{ asset('js/componentes/services/image-converter-service.js') }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-service.js') }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}"></script>
     
     <!-- Componente tarjeta readonly (completo - funcional) -->
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
@@ -315,7 +342,7 @@
                     return;
                 }
                 
-                console.log('🎯 Abriendo modal para tipo:', tipoPedido);
+                console.log(' Abriendo modal para tipo:', tipoPedido);
                 
                 // Manejar diferentes tipos de pedido
                 if (tipoPedido === 'P') {
@@ -349,7 +376,7 @@
         window.abrirModalSegunTipo = function() {
             const tipoPedido = selectTipoPedidoNuevo.value;
             
-            console.log('🎯 Abriendo modal para tipo:', tipoPedido);
+            console.log(' Abriendo modal para tipo:', tipoPedido);
             
             if (tipoPedido === 'EPP') {
                 window.abrirModalAgregarEPP();

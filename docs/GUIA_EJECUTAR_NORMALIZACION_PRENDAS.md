@@ -150,7 +150,7 @@ $variante->tela->nombre
 
 ---
 
-## 🔍 VALIDACIÓN DETALLADA (Opcional)
+##  VALIDACIÓN DETALLADA (Opcional)
 
 ### Integridad Referencial
 
@@ -186,7 +186,7 @@ DB::table('prenda_variantes')
 
 ---
 
-## ⚠️ ROLLBACK (Si algo falla)
+##  ROLLBACK (Si algo falla)
 
 ### Opción 1: Rollback automático
 
@@ -239,7 +239,7 @@ $prendas = $pedido->prendasPed;
 
 ---
 
-## 📊 CONSULTAS ÚTILES POST-MIGRACIÓN
+##  CONSULTAS ÚTILES POST-MIGRACIÓN
 
 ### Obtener Todas las Prendas de un Pedido
 

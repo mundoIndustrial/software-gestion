@@ -44,7 +44,7 @@ class PedidoSubmitHandler {
                        logoSeccionesSeleccionadas?.length > 0 || 
                        logoFotosSeleccionadas?.length > 0;
 
-        console.log('🎯 Tipo de cotización:', {
+        console.log(' Tipo de cotización:', {
             tipo: tipoInfo.tipo,
             esCombinada: tipoInfo.esCombinada,
             esLogoSolo: tipoInfo.esLogoSolo,
@@ -63,13 +63,13 @@ class PedidoSubmitHandler {
                 prendasCargadas,
                 prendasEliminadas
             );
-            console.log('📦 Prendas a enviar:', prendasParaEnviar);
+            console.log(' Prendas a enviar:', prendasParaEnviar);
         }
 
         // Recopilar datos de logo (para LOGO SOLO o COMBINADA)
         if (tipoInfo.esLogoSolo || tipoInfo.esCombinada) {
             datosLogo = window.FormDataCollector.recopilarDatosLogo(currentLogoCotizacion);
-            console.log('🎨 Datos de logo:', datosLogo);
+            console.log(' Datos de logo:', datosLogo);
         }
 
         // ============================================================
@@ -181,7 +181,7 @@ class PedidoSubmitHandler {
             fotos: logoFotos
         };
 
-        console.log('🎨 Datos del logo a guardar:', bodyLogoPedido);
+        console.log(' Datos del logo a guardar:', bodyLogoPedido);
 
         const response = await fetch('/asesores/pedidos/guardar-logo-pedido', {
             method: 'POST',
@@ -212,7 +212,7 @@ class PedidoSubmitHandler {
         if (tipoInfo.esLogoSolo) {
             // LOGO SOLO
             const numeroLogo = resultadoPedido.numero_pedido || 'LOGO-PENDIENTE';
-            mensaje = `Pedido de LOGO creado exitosamente<br><br><strong>🎨 Logo:</strong> ${numeroLogo}`;
+            mensaje = `Pedido de LOGO creado exitosamente<br><br><strong> Logo:</strong> ${numeroLogo}`;
             
         } else if (tipoInfo.esCombinada) {
             // COMBINADA
@@ -221,19 +221,19 @@ class PedidoSubmitHandler {
 
             if (!hayDataLogo) {
                 // Solo prendas
-                mensaje = `Pedido de PRENDAS creado exitosamente<br><br><strong>📦 Pedido:</strong> ${numeroPrendas}`;
+                mensaje = `Pedido de PRENDAS creado exitosamente<br><br><strong> Pedido:</strong> ${numeroPrendas}`;
             } else {
                 // Prendas + Logo
                 const numeroLogo = resultadoLogo?.numero_pedido_logo || resultadoLogo?.logo_pedido?.numero_pedido || 'N/A';
                 mensaje = `Pedidos creados exitosamente<br><br>` +
-                         `<strong>📦 Pedido Producción:</strong> ${numeroPrendas}<br>` +
-                         `<strong>🎨 Pedido Logo:</strong> ${numeroLogo}`;
+                         `<strong> Pedido Producción:</strong> ${numeroPrendas}<br>` +
+                         `<strong> Pedido Logo:</strong> ${numeroLogo}`;
             }
             
         } else {
             // PRENDA NORMAL
             const numeroPedido = resultadoPedido.numero_pedido || resultadoPedido.pedido_numero || 'N/A';
-            mensaje = `Pedido creado exitosamente<br><br><strong>📦 Pedido:</strong> ${numeroPedido}`;
+            mensaje = `Pedido creado exitosamente<br><br><strong> Pedido:</strong> ${numeroPedido}`;
         }
 
         Swal.fire({

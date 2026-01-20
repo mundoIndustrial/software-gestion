@@ -158,7 +158,7 @@ class EppRepository implements EppRepositoryInterface
             }
         } catch (\Exception $e) {
             // Log del error pero no detener el mapeo
-            \Illuminate\Support\Facades\Log::warning('⚠️  Error mapeando imágenes EPP', [
+            \Illuminate\Support\Facades\Log::warning('  Error mapeando imágenes EPP', [
                 'epp_id' => $modelo->id,
                 'error' => $e->getMessage(),
             ]);

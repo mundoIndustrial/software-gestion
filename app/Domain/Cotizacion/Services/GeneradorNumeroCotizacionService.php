@@ -45,7 +45,7 @@ class GeneradorNumeroCotizacionService
             // Formatear con padding
             $numeroCotizacion = str_pad($proximoNumero, 6, '0', STR_PAD_LEFT);
             
-            Log::info('📊 Número de cotización generado (Domain Service)', [
+            Log::info(' Número de cotización generado (Domain Service)', [
                 'tipo_cotizacion_id' => $tipoCotizacionId,
                 'numero_cotizacion' => $numeroCotizacion,
                 'proximo_numero' => $proximoNumero,
@@ -76,7 +76,7 @@ class GeneradorNumeroCotizacionService
             
             $numeroCotizacion = str_pad($proximoNumero, 6, '0', STR_PAD_LEFT);
             
-            Log::info('📊 Número de cotización generado (Global)', [
+            Log::info(' Número de cotización generado (Global)', [
                 'numero_cotizacion' => $numeroCotizacion,
                 'proximo_numero' => $proximoNumero,
                 'timestamp' => now()

@@ -37,7 +37,7 @@ class NotificarClientePedidoCreado
             $asesor = User::find($event->getAseoreId());
             
             if (!$asesor) {
-                Log::warning('⚠️ Asesor no encontrado para notificación', [
+                Log::warning(' Asesor no encontrado para notificación', [
                     'asesor_id' => $event->getAseoreId(),
                 ]);
                 return;

@@ -169,7 +169,7 @@ async function borrarImagenLogo(fotoId, element) {
         
         //  IMPORTANTE: Eliminar también de window.imagenesEnMemoria.logo por ID
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
-            console.log(`🔍 Eliminando de memoria por fotoId: ${fotoId}`);
+            console.log(` Eliminando de memoria por fotoId: ${fotoId}`);
             const beforeCount = window.imagenesEnMemoria.logo.length;
             
             window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter(imagen => {

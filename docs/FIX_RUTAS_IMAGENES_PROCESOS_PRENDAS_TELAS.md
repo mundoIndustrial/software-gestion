@@ -1,6 +1,6 @@
 # FIX: Rutas de Imágenes (Procesos, Prendas y Telas) - 16 ENE 2026
 
-## 🎯 Problema Identificado
+##  Problema Identificado
 
 Las rutas de imágenes se estaban guardando con la URL completa del servidor:
 ```
@@ -97,7 +97,7 @@ mysql -u usuario -p nombre_bd < database/scripts/01_limpiar_urls_procesos_imagen
  **Consistencia**: Todos los tipos de imágenes usan el mismo formato  
  **Performance**: Menor tamaño de datos en BD  
 
-## 🔍 Cómo Verificar
+##  Cómo Verificar
 
 ```php
 // Test - Verificar que retorna ruta relativa

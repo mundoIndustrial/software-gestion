@@ -302,7 +302,7 @@
         <!-- Observaciones si la orden está anulada -->
         @if($orden->estado === 'Anulada' && $orden->motivo_anulacion)
         <div class="observaciones">
-            <label>⚠️ Motivo de Anulación</label>
+            <label> Motivo de Anulación</label>
             <p>{{ $orden->motivo_anulacion }}</p>
             <p style="margin-top: 10px; font-size: 11px;">
                 <strong>Anulada por:</strong> {{ $orden->usuario_anulacion ?? 'N/A' }}<br>

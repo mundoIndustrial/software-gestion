@@ -7,7 +7,7 @@
 
 ---
 
-## 🎯 PUNTO DE INICIO
+##  PUNTO DE INICIO
 
 ### ¿Cuál es la situación?
 
@@ -129,7 +129,7 @@ El sistema de pedidos presenta 3 problemas CRÍTICOS en la integración frontend
 
 ---
 
-## 🎯 GUÍA DE USO POR ROL
+##  GUÍA DE USO POR ROL
 
 ### 👨‍💻 Desarrollador Frontend
 
@@ -203,7 +203,7 @@ await handlers.submitPedido();
 
 ---
 
-### 📊 Product Owner / Manager
+###  Product Owner / Manager
 
 **Lee en orden:**
 1. [ENTREGA_FINAL_AUDITORIA.md](ENTREGA_FINAL_AUDITORIA.md) - Resumen ejecutivo
@@ -217,7 +217,7 @@ await handlers.submitPedido();
 
 ---
 
-## 🔍 BÚSQUEDA RÁPIDA
+##  BÚSQUEDA RÁPIDA
 
 ### ¿Necesito...?
 
@@ -244,7 +244,7 @@ await handlers.submitPedido();
 
 ---
 
-## 📊 MATRIZ DE CONTENIDOS
+##  MATRIZ DE CONTENIDOS
 
 | Documento | Frontend | Backend | QA | Manager | Tech Lead |
 |-----------|----------|---------|----|---------|-----------| 
@@ -362,7 +362,7 @@ public/js/pedidos-produccion/
 
 ---
 
-## 🎯 PRÓXIMAS ACCIONES
+##  PRÓXIMAS ACCIONES
 
 ### Inmediato
 1.  Revisar documentación (estás aquí)
@@ -409,7 +409,7 @@ Cada documento tiene un propósito específico:
 
 ---
 
-## 📊 ESTADÍSTICAS
+##  ESTADÍSTICAS
 
 | Métrica | Valor |
 |---------|-------|

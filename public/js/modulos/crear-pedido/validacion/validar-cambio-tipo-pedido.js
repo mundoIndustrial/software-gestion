@@ -121,7 +121,7 @@
                 .join('');
 
             Swal.fire({
-                title: '⚠️ ¿Cambiar tipo de pedido?',
+                title: ' ¿Cambiar tipo de pedido?',
                 html: `
                     <div style="text-align: center;">
                         <p style="margin-bottom: 1rem; font-size: 0.95rem;">
@@ -158,7 +158,7 @@
         const tipoNuevoRadio = document.getElementById('tipo_nuevo_pedido');
 
         if (!tipoDesdeRadio || !tipoNuevoRadio) {
-            console.warn('⚠️ [validar-cambio-tipo-pedido] No se encontraron los radios de tipo de pedido');
+            console.warn(' [validar-cambio-tipo-pedido] No se encontraron los radios de tipo de pedido');
             return;
         }
 

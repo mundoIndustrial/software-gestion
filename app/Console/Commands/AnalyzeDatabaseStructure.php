@@ -20,12 +20,12 @@ class AnalyzeDatabaseStructure extends Command
         // 1. Obtener todas las tablas
         $tables = DB::select('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()');
         
-        $this->info("📊 TOTAL DE TABLAS: " . count($tables));
+        $this->info(" TOTAL DE TABLAS: " . count($tables));
         $this->newLine();
 
         // 2. Tablas relacionadas con cotizaciones
         $this->line('═════════════════════════════════════════════════════════');
-        $this->info('🎯 TABLAS RELACIONADAS CON COTIZACIONES');
+        $this->info(' TABLAS RELACIONADAS CON COTIZACIONES');
         $this->line('═════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -94,7 +94,7 @@ class AnalyzeDatabaseStructure extends Command
 
             // Contar registros
             $count = DB::table($tableName)->count();
-            $this->line("   📊 Registros: $count");
+            $this->line("    Registros: $count");
             
             $this->newLine();
 

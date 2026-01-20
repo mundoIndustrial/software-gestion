@@ -57,7 +57,7 @@ class CambiarEstadoPedidoHandler implements CommandHandler
 
             // Registrar en historial de cambios
             if ($command->getRazon()) {
-                Log::info('📝 Razón del cambio de estado', [
+                Log::info(' Razón del cambio de estado', [
                     'razon' => $command->getRazon(),
                 ]);
             }

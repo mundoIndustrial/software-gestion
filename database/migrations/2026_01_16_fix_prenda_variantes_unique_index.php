@@ -26,7 +26,7 @@ return new class extends Migration
                 try {
                     $table->dropUnique('unique_prenda_variante');
                 } catch (\Exception $e) {
-                    \Log::warning('⚠️ No se pudo eliminar índice unique_prenda_variante', [
+                    \Log::warning(' No se pudo eliminar índice unique_prenda_variante', [
                         'error' => $e->getMessage()
                     ]);
                 }
@@ -49,7 +49,7 @@ return new class extends Migration
                 try {
                     $table->dropUnique('unique_prenda_talla');
                 } catch (\Exception $e) {
-                    \Log::warning('⚠️ Error revertiendo cambios', ['error' => $e->getMessage()]);
+                    \Log::warning(' Error revertiendo cambios', ['error' => $e->getMessage()]);
                 }
             });
         }

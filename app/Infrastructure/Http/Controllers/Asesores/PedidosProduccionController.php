@@ -105,7 +105,7 @@ class PedidosProduccionController
     public function show(int|string $id): JsonResponse
     {
         try {
-            Log::info('🔍 [PedidosController] GET /api/pedidos/{id}', ['id' => $id]);
+            Log::info(' [PedidosController] GET /api/pedidos/{id}', ['id' => $id]);
 
             $pedido = $this->queryBus->execute(new ObtenerPedidoQuery($id));
 
@@ -458,7 +458,7 @@ class PedidosProduccionController
     public function filtrarPorEstado(Request $request): JsonResponse
     {
         try {
-            Log::info('🔍 [PedidosController] GET /api/pedidos/filtro/estado');
+            Log::info(' [PedidosController] GET /api/pedidos/filtro/estado');
 
             $validated = $request->validate([
                 'estado' => 'required|string|in:activo,pendiente,completado,cancelado',

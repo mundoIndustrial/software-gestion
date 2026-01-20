@@ -16,7 +16,7 @@ class TestImageController extends Controller
             ]);
 
             $archivo = $request->file('image');
-            Log::info('🔍 Test: Archivo recibido', [
+            Log::info(' Test: Archivo recibido', [
                 'nombre' => $archivo->getClientOriginalName(),
                 'tipo' => $archivo->getMimeType(),
                 'tamaño' => $archivo->getSize(),

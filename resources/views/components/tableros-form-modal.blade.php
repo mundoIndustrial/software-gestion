@@ -440,7 +440,7 @@
     height: 18px;
 }
 
-/* 🎯 Botón Seleccionar todas */
+/*  Botón Seleccionar todas */
 .tableros-form-modal-container .btn-seleccionar-todas {
     background: linear-gradient(135deg, #FF6B35 0%, #e55a2b 100%);
     color: white;

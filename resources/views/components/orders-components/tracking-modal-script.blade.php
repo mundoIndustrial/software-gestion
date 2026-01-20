@@ -7,24 +7,24 @@ window.isAdmin = @json(auth()->check() && auth()->user()->role && auth()->user()
 const processoIconMap = {
     'Pedido Recibido': '',
     'Creación Orden': '',
-    'Insumos': '🧵',
-    'Insumos y Telas': '🧵',
+    'Insumos': '',
+    'Insumos y Telas': '',
     'Corte': '✂️',
-    'Bordado': '🎨',
+    'Bordado': '',
     'Estampado': '🖨️',
     'Costura': '👗',
-    'Polos': '👕',
-    'Taller': '🔧',
+    'Polos': '',
+    'Taller': '',
     'Lavandería': '🧺',
     'Lavanderia': '🧺',
     'Arreglos': '🪡',
     'Control de Calidad': '',
     'Control-Calidad': '',
-    'Entrega': '📦',
+    'Entrega': '',
     'Despacho': '🚚',
     'Despachos': '🚚',
     'Reflectivo': '✨',
-    'Marras': '🔍'
+    'Marras': ''
 };
 
 function getProcessIcon(proceso) {

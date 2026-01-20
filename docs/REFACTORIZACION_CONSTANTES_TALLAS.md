@@ -1,4 +1,4 @@
-# 📦 Refactorización: Constantes de Tallas Extraídas
+#  Refactorización: Constantes de Tallas Extraídas
 
 ##  Cambio Realizado
 
@@ -38,20 +38,20 @@ El archivo se carga automáticamente en [crear-desde-cotizacion-editable.blade.p
 
 **IMPORTANTE**: Se carga PRIMERO, antes de los otros módulos, para asegurar disponibilidad global.
 
-## 🎯 Ventajas
+##  Ventajas
 
 -  **Mantenibilidad**: Un solo lugar para modificar tallas
 -  **Reutilización**: Disponible en otros archivos sin duplicación
 -  **Limpieza**: Blade template más limpio
 -  **Escalabilidad**: Fácil agregar nuevas categorías de tallas
 
-## 📝 Localización
+##  Localización
 
 | Archivo | Propósito |
 |---------|-----------|
 | [public/js/constantes-tallas.js](../../../public/js/constantes-tallas.js) | Definiciones centralizadas |
 | [recursos/views/asesores/pedidos/crear-desde-cotizacion-editable.blade.php](crear-desde-cotizacion-editable.blade.php#L234) | Importación en script |
 
-## 🔧 Para Modificar Tallas
+##  Para Modificar Tallas
 
 Solo edita [public/js/constantes-tallas.js](../../../public/js/constantes-tallas.js) y los cambios se reflejarán automáticamente en todos lados.

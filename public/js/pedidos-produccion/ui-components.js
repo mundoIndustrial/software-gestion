@@ -1,5 +1,5 @@
 /**
- * 🎨 UI COMPONENTS
+ *  UI COMPONENTS
  * 
  * Componentes reutilizables para renderizar el formulario de pedidos.
  * Funciones puras que retornan HTML strings (framework-agnostic).
@@ -50,10 +50,10 @@ const UIComponents = {
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <div class="badge-group">
-                                <span class="badge badge-info">👕 ${this.capitalize(prenda.genero || 'unisex')}</span>
-                                <span class="badge badge-secondary">📦 ${variantesCount} variante${variantesCount !== 1 ? 's' : ''}</span>
-                                <span class="badge badge-success">📊 ${itemsCount} items totales</span>
-                                <span class="badge badge-warning">🎨 ${procesosCount} proceso${procesosCount !== 1 ? 's' : ''}</span>
+                                <span class="badge badge-info"> ${this.capitalize(prenda.genero || 'unisex')}</span>
+                                <span class="badge badge-secondary"> ${variantesCount} variante${variantesCount !== 1 ? 's' : ''}</span>
+                                <span class="badge badge-success"> ${itemsCount} items totales</span>
+                                <span class="badge badge-warning"> ${procesosCount} proceso${procesosCount !== 1 ? 's' : ''}</span>
                                 <span class="badge badge-dark">📷 ${fotosCount} foto${fotosCount !== 1 ? 's' : ''}</span>
                                 ${prenda.de_bodega ? '<span class="badge badge-info">🏭 De bodega</span>' : ''}
                             </div>
@@ -122,7 +122,7 @@ const UIComponents = {
                                            data-action="upload-foto-prenda" data-prenda-id="${prenda._id}">
                                 </div>
                                 <div class="col-md-6">
-                                    <h6>🧵 Fotos de tela</h6>
+                                    <h6> Fotos de tela</h6>
                                     <div class="foto-gallery mb-3">
                                         ${prenda.fotos_tela && prenda.fotos_tela.length > 0
                                             ? prenda.fotos_tela.map(f => this.renderFotoThumb(f, prenda._id, 'tela')).join('')
@@ -163,8 +163,8 @@ const UIComponents = {
             <tr data-variante-id="${variante._id}">
                 <td class="font-weight-bold">${this.escape(variante.talla)}</td>
                 <td><span class="badge badge-primary">${variante.cantidad}</span></td>
-                <td>${variante.color_id ? `🎨 ID:${variante.color_id}` : '-'}</td>
-                <td>${variante.tela_id ? `🧵 ID:${variante.tela_id}` : '-'}</td>
+                <td>${variante.color_id ? ` ID:${variante.color_id}` : '-'}</td>
+                <td>${variante.tela_id ? ` ID:${variante.tela_id}` : '-'}</td>
                 <td>
                     <button class="btn btn-xs btn-secondary" 
                             data-action="edit-variante" 
@@ -293,7 +293,7 @@ const UIComponents = {
         const icon = {
             'success': '',
             'error': '',
-            'warning': '⚠️',
+            'warning': '',
             'info': ''
         }[type] || '';
 
@@ -362,7 +362,7 @@ const UIComponents = {
 
         return `
             <div class="alert alert-danger">
-                <h6>⚠️ Errores de validación</h6>
+                <h6> Errores de validación</h6>
                 <ul class="mb-0">${errorList}</ul>
             </div>
         `;

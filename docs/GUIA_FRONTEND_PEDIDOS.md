@@ -1,4 +1,4 @@
-# 🎯 GUÍA: FRONTEND PROFESIONAL DE PEDIDOS
+#  GUÍA: FRONTEND PROFESIONAL DE PEDIDOS
 
 **Arquitectura moderna, escalable y mantenible para capturar pedidos de producción textil**
 
@@ -524,7 +524,7 @@ function testPersistencia() {
 
 ---
 
-## 🔧 TROUBLESHOOTING
+##  TROUBLESHOOTING
 
 ### Problema: "FormManager no está definido"
 
@@ -663,7 +663,7 @@ const data = {
 
 ---
 
-## 📊 ESTRUCTURA DE DATOS FINAL
+##  ESTRUCTURA DE DATOS FINAL
 
 ```javascript
 {
@@ -743,7 +743,7 @@ const data = {
 
 ---
 
-## 🎯 CHECKLIST DE INTEGRACIÓN
+##  CHECKLIST DE INTEGRACIÓN
 
 - [ ] Archivos JS copiados a `public/js/pedidos-produccion/`
 - [ ] Vista Blade creada en `resources/views/asesores/pedidos/`

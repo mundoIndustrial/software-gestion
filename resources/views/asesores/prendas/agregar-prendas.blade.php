@@ -32,7 +32,7 @@
                         >
                         <div class="prenda-suggestions mt-2 space-y-1">
                             <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>
-                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👕 CAMISETA', this)">👕 CAMISETA</div>
+                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda(' CAMISETA', this)"> CAMISETA</div>
                             <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('🎽 POLO', this)">🎽 POLO</div>
                             <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👖 PANTALÓN', this)">👖 PANTALÓN</div>
                         </div>

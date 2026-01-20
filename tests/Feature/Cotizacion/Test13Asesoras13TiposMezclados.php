@@ -25,7 +25,7 @@ use Tests\TestCase;
  * ...
  * COT-000013 → Prenda
  * 
- * ⚠️ NO USA RefreshDatabase - preserva datos existentes
+ *  NO USA RefreshDatabase - preserva datos existentes
  */
 class Test13Asesoras13TiposMezclados extends TestCase
 {
@@ -88,7 +88,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         $resultados = [];
         $errores = [];
 
-        echo "📝 Creando 13 cotizaciones de tipos mezclados...\n";
+        echo " Creando 13 cotizaciones de tipos mezclados...\n";
         echo "─────────────────────────────────────────────\n";
 
         // Simular 13 asesoras creando cotizaciones secuencialmente
@@ -142,7 +142,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         }
 
         echo "\n─────────────────────────────────────────────\n";
-        echo "📊 ANÁLISIS DE RESULTADOS\n";
+        echo " ANÁLISIS DE RESULTADOS\n";
         echo "─────────────────────────────────────────────\n";
 
         // VERIFICACIÓN 1: Cantidad correcta
@@ -218,7 +218,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "   • Tipos mezclados registrados \n";
         echo "   • Secuencia actualizada correctamente \n";
         echo "   • Datos persistidos en BD \n";
-        echo "\n🎯 CONCLUSIÓN: Sistema listo para producción con 13+ asesoras simultáneas\n\n";
+        echo "\n CONCLUSIÓN: Sistema listo para producción con 13+ asesoras simultáneas\n\n";
     }
 
     /**
@@ -348,6 +348,6 @@ class Test13Asesoras13TiposMezclados extends TestCase
 
         $this->assertEquals(50, count($numeros));
         $this->assertEquals(50, $unicos);
-        echo "\n🎯 Test de estrés completado exitosamente\n\n";
+        echo "\n Test de estrés completado exitosamente\n\n";
     }
 }

@@ -30,7 +30,7 @@ class TestEnviarCotizacion extends Command
         $this->info("👤 Usuario: {$usuario->name} (ID: {$usuario->id})");
         
         // 1. GUARDAR COMO BORRADOR
-        $this->info("\n📝 PASO 1: Guardar como BORRADOR...");
+        $this->info("\n PASO 1: Guardar como BORRADOR...");
         
         $dtoEnvio = CrearCotizacionDTO::desdeArray([
             'usuario_id' => $usuario->id,
@@ -104,7 +104,7 @@ class TestEnviarCotizacion extends Command
             
             // Verificar en BD
             $cotizacion = \App\Models\Cotizacion::find($resultArray['id']);
-            $this->info("\n📊 Verificación en BD:");
+            $this->info("\n Verificación en BD:");
             $this->info("   ID: {$cotizacion->id}");
             $this->info("   Número: {$cotizacion->numero_cotizacion}");
             $this->info("   Estado: {$cotizacion->estado}");

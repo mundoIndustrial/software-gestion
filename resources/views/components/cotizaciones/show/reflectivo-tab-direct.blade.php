@@ -154,7 +154,7 @@
                                                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 2rem; opacity: 0; transition: opacity 0.2s;"
                                                      onmouseover="this.style.opacity='1'" 
                                                      onmouseout="this.style.opacity='0'">
-                                                    🔍
+                                                    
                                                 </div>
                                             </div>
                                         </div>
@@ -166,7 +166,7 @@
                                 <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Fotos del Reflectivo</h4>
                                 <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 1.5rem;">
                                     <p style="color: #92400e; font-size: 0.9rem; margin: 0;">
-                                        ⚠️ Sin fotos
+                                         Sin fotos
                                         @if($reflectivoPrenda)
                                             (Reflectivo ID: {{ $reflectivoPrenda->id }})
                                         @else
@@ -187,7 +187,7 @@
                                             'disponibilidad' => ['emoji' => '', 'label' => 'DISPONIBILIDAD'],
                                             'forma_pago' => ['emoji' => '💳', 'label' => 'FORMA DE PAGO'],
                                             'regimen' => ['emoji' => '🏛️', 'label' => 'RÉGIMEN'],
-                                            'se_ha_vendido' => ['emoji' => '📊', 'label' => 'SE HA VENDIDO'],
+                                            'se_ha_vendido' => ['emoji' => '', 'label' => 'SE HA VENDIDO'],
                                             'ultima_venta' => ['emoji' => '💰', 'label' => 'ÚLTIMA VENTA'],
                                             'flete' => ['emoji' => '🚚', 'label' => 'FLETE DE ENVÍO']
                                         ];

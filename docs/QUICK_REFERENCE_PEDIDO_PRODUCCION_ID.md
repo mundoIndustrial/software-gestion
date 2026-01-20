@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 QUÉ SE CAMBIÓ
+##  QUÉ SE CAMBIÓ
 
 ### Backend (PHP)
 
@@ -70,7 +70,7 @@ return {
 
 #### 2. Logs Agregados
 ```javascript
-// 🔍 En consola ahora verás:
+//  En consola ahora verás:
 📤 Objeto pedido final a enviar: {...}
  [manejarSubmitFormulario] Datos del pedido recolectados:
    Cliente: EMPRESA XYZ
@@ -83,7 +83,7 @@ return {
 
 ---
 
-## 📊 IMPACTO
+##  IMPACTO
 
 | Componente | Antes | Después | Beneficio |
 |-----------|-------|---------|-----------|
@@ -91,7 +91,7 @@ return {
 | Validación MySQL |  Falla NOT NULL |  Passa |  Sin errores |
 | `numero_pedido` |  Enviado desde FE |  Generado en BE |  Single source of truth |
 | `tipo_broche_id` |  Antiguo |  `tipo_broche_boton_id` |  Consistente |
-| Logs de Debug |  Ninguno | 📝 Múltiples |  Fácil debugging |
+| Logs de Debug |  Ninguno |  Múltiples |  Fácil debugging |
 
 ---
 
@@ -200,9 +200,9 @@ tail -f storage/logs/laravel.log | grep "PedidoPrendaService"
 | Problema | Síntoma | Solución |
 |----------|---------|----------|
 | MySQL error NOT NULL en `pedido_produccion_id` |  Pedido no se crea | Ver: Service usa `pedido_produccion_id` al guardar |
-| `numero_pedido` aparece en JSON | ⚠️ Aviso | Comentado en frontend, ignorado en backend |
+| `numero_pedido` aparece en JSON |  Aviso | Comentado en frontend, ignorado en backend |
 | Prenda sin `pedido_produccion_id` |  Orfana | Verificar que relación `prendas()` usa FK correcto |
-| Logs no aparecen | 🔍 No visible | Abrir DevTools F12 en navegador |
+| Logs no aparecen |  No visible | Abrir DevTools F12 en navegador |
 
 ---
 

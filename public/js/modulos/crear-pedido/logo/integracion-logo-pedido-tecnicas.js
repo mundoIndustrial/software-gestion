@@ -49,7 +49,7 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
         
         // Mostrar estructura completa de prendas técnicas
         if (resultado.prendas_tecnicas && resultado.prendas_tecnicas.length > 0) {
-            console.log('📦 DETALLES DE PRENDAS TÉCNICAS:');
+            console.log(' DETALLES DE PRENDAS TÉCNICAS:');
             resultado.prendas_tecnicas.forEach((prenda, index) => {
                 console.log(`   Prenda ${index}:`, {
                     id: prenda.id,
@@ -62,7 +62,7 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
                 });
             });
         } else {
-            console.log('⚠️ INTEGRACION: prendas_tecnicas está vacío o no existe');
+            console.log(' INTEGRACION: prendas_tecnicas está vacío o no existe');
             console.log('   - resultado.prendas_tecnicas:', resultado.prendas_tecnicas);
         }
         
@@ -71,11 +71,11 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
             cargarLogoPrendasDesdeCotizacion(resultado.prendas_tecnicas);
             console.log(' INTEGRACION: logoPrendasTecnicas después de cargar:', window.logoPrendasTecnicas);
         } else {
-            console.log('⚠️ INTEGRACION: No hay prendas técnicas en la respuesta');
+            console.log(' INTEGRACION: No hay prendas técnicas en la respuesta');
             window.logoPrendasTecnicas = [];
         }
     } else {
-        console.log('⚠️ INTEGRACION: No hay datos de logo en la respuesta');
+        console.log(' INTEGRACION: No hay datos de logo en la respuesta');
         console.log('   - resultado.logo:', resultado?.logo);
     }
     
@@ -87,8 +87,8 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
 // =========================================================
 
 window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTecnicasLogoNuevo() {
-    console.log('🎨 INTEGRACION: Mostrando nueva sección de prendas técnicas');
-    console.log('📦 Estado actual de logoPrendasTecnicas:', window.logoPrendasTecnicas);
+    console.log(' INTEGRACION: Mostrando nueva sección de prendas técnicas');
+    console.log(' Estado actual de logoPrendasTecnicas:', window.logoPrendasTecnicas);
     console.log('   - Cantidad de prendas:', window.logoPrendasTecnicas?.length || 0);
     if (window.logoPrendasTecnicas && window.logoPrendasTecnicas.length > 0) {
         window.logoPrendasTecnicas.forEach((prenda, i) => {
@@ -107,7 +107,7 @@ window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTe
     // Encontrar el contenedor de prendas
     const prendasContainer = document.getElementById('prendas-container-editable');
     if (!prendasContainer) {
-        console.warn('⚠️ INTEGRACION: Contenedor de prendas no encontrado');
+        console.warn(' INTEGRACION: Contenedor de prendas no encontrado');
         return;
     }
     
@@ -123,7 +123,7 @@ window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTe
     `;
     
     // Renderizar las prendas técnicas que ya están cargadas
-    console.log('📦 Prendas técnicas para renderizar:', window.logoPrendasTecnicas.length);
+    console.log(' Prendas técnicas para renderizar:', window.logoPrendasTecnicas.length);
     console.log('   - Llamando a renderizarLogoPrendasTecnicas()...');
     
     try {

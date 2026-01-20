@@ -3,7 +3,7 @@
  * Permite filtrar por cualquier columna con modal interactivo
  */
 
-console.log('📊 filter-system.js cargado');
+console.log(' filter-system.js cargado');
 
 let currentFilterColumn = null;
 let activeFilters = {};
@@ -340,7 +340,7 @@ async function openFilterModal(column) {
         filterOptions.parentElement.insertBefore(indicator, filterOptions);
     }
     
-    console.log(`🔍 Modal de filtro abierto para: ${column}`);
+    console.log(` Modal de filtro abierto para: ${column}`);
 }
 
 /**
@@ -546,7 +546,7 @@ async function applyFiltersToBackend(page = 1) {
             
             // Actualizar paginación
             console.log('📡 Respuesta del backend - Paginación:', result.pagination);
-            console.log('📊 Cálculo de páginas: total=' + result.pagination.total + ', per_page=' + result.pagination.per_page + ', last_page=' + result.pagination.last_page);
+            console.log(' Cálculo de páginas: total=' + result.pagination.total + ', per_page=' + result.pagination.per_page + ', last_page=' + result.pagination.last_page);
             updatePaginationInfo(result.pagination);
             
             // Actualizar URL con filtros
@@ -945,7 +945,7 @@ function updateFilterBadges() {
                 
                 console.log(`🔴 Badge agregado a "${column}": ${values.length}`);
             } else {
-                console.warn(`⚠️ No se encontró botón para columna: ${column}`);
+                console.warn(` No se encontró botón para columna: ${column}`);
             }
         }
     });
@@ -996,7 +996,7 @@ function filterTable() {
         if (showRow) visibleCount++;
     });
     
-    console.log(`📊 Tabla filtrada: ${visibleCount} filas visibles`);
+    console.log(` Tabla filtrada: ${visibleCount} filas visibles`);
 }
 
 /**

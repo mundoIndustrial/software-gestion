@@ -25,7 +25,7 @@ const NavSearch = {
      * Inicializar búsqueda en el nav
      */
     initialize() {
-        console.log('🔍 Inicializando NavSearch');
+        console.log(' Inicializando NavSearch');
 
         const searchInput = document.getElementById('navSearchInput');
         const searchClear = document.getElementById('navSearchClear');
@@ -114,7 +114,7 @@ const NavSearch = {
         }
 
         // Ejecutar búsqueda inmediatamente (sin debounce)
-        console.log(`🔍 Búsqueda iniciada por Enter: ${query}`);
+        console.log(` Búsqueda iniciada por Enter: ${query}`);
         this.performSearch(query);
     },
 
@@ -133,7 +133,7 @@ const NavSearch = {
      * Realizar búsqueda
      */
     async performSearch(query, page = 1) {
-        console.log(`🔍 Buscando: ${query} (página ${page})`);
+        console.log(` Buscando: ${query} (página ${page})`);
 
         this.state.isLoading = true;
 
@@ -163,7 +163,7 @@ const NavSearch = {
                 const searchData = await searchResponse.json();
                 const ordenes = searchData.data || searchData.ordenes || [];
                 console.log(' Resultados recibidos:', ordenes.length, 'órdenes');
-                console.log('📊 Paginación:', searchData.pagination);
+                console.log(' Paginación:', searchData.pagination);
 
                 // Guardar estado de búsqueda
                 this.state.isSearchActive = true;
@@ -198,11 +198,11 @@ const NavSearch = {
      * Actualizar tabla dinámicamente sin recargar
      */
     updateTableDynamically(ordenes, pagination) {
-        console.log('📊 Actualizando tabla dinámicamente');
+        console.log(' Actualizando tabla dinámicamente');
 
         const tableBody = document.querySelector('.table-body');
         if (!tableBody) {
-            console.warn('⚠️ Tabla no encontrada');
+            console.warn(' Tabla no encontrada');
             return;
         }
 
@@ -455,7 +455,7 @@ const NavSearch = {
         const paginationControls = document.getElementById('paginationControls');
 
         if (!paginationInfo || !paginationControls) {
-            console.warn('⚠️ Controles de paginación no encontrados');
+            console.warn(' Controles de paginación no encontrados');
             return;
         }
 

@@ -16,14 +16,14 @@
 ### ImagenService
 - `guardarImagenComoWebp()` - Línea ~2571
 
-## 📊 Resumen
+##  Resumen
 
 **Total de métodos duplicados a eliminar:** ~8 métodos
 **Líneas estimadas a eliminar:** ~600-800 líneas
 **Controlador actual:** ~2900 líneas
 **Controlador después:** ~2100-2300 líneas
 
-## 🎯 Próximos Pasos
+##  Próximos Pasos
 
 1. Eliminar completamente los métodos duplicados (no solo renombrar)
 2. Verificar que todas las llamadas usen los servicios

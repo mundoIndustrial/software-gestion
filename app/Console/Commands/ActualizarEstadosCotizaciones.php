@@ -70,7 +70,7 @@ class ActualizarEstadosCotizaciones extends Command
 
         // Verificar estados finales
         $this->line('');
-        $this->info('📊 ESTADOS FINALES:');
+        $this->info(' ESTADOS FINALES:');
         $estadosFinales = Cotizacion::select('estado')->distinct()->pluck('estado')->toArray();
         foreach ($estadosFinales as $estado) {
             $count = Cotizacion::where('estado', $estado)->count();

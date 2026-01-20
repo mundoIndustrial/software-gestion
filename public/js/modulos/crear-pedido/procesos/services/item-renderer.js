@@ -34,20 +34,55 @@ class ItemRenderer {
     }
 
     /**
-     * Renderizar lista de ítems
+     * Renderizar lista de ítems con agrupación
      */
     async renderizar(items, container) {
         container.innerHTML = '';
 
-        for (let index = 0; index < items.length; index++) {
-            const item = items[index];
-            try {
-                const html = await this.obtenerHTMLItem(item, index);
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                container.appendChild(tempDiv.firstElementChild);
-            } catch (error) {
-                console.error(`Error al renderizar ítem ${index}:`, error);
+        // Separar items por tipo
+        const prendas = [];
+        const epps = [];
+        
+        items.forEach((item, idx) => {
+            // Detectar tipo: si tiene 'telasAgregadas' o 'generosConTallas' es prenda, si no es EPP
+            if (item.telasAgregadas || item.generosConTallas || item.variantes) {
+                prendas.push({ item, index: idx });
+            } else {
+                epps.push({ item, index: idx });
+            }
+        });
+
+        // Renderizar grupo PRENDAS
+        if (prendas.length > 0) {
+            const headerPrendas = this._crearEncabezadoGrupo(' Prendas', prendas.length);
+            container.appendChild(headerPrendas);
+            
+            for (const { item, index } of prendas) {
+                try {
+                    const html = await this.obtenerHTMLItem(item, index);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    container.appendChild(tempDiv.firstElementChild);
+                } catch (error) {
+                    console.error(`Error al renderizar prenda ${index}:`, error);
+                }
+            }
+        }
+
+        // Renderizar grupo EPPs
+        if (epps.length > 0) {
+            const headerEPPs = this._crearEncabezadoGrupo(' EPPs', epps.length);
+            container.appendChild(headerEPPs);
+            
+            for (const { item, index } of epps) {
+                try {
+                    const html = await this.obtenerHTMLItem(item, index);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    container.appendChild(tempDiv.firstElementChild);
+                } catch (error) {
+                    console.error(`Error al renderizar EPP ${index}:`, error);
+                }
             }
         }
 
@@ -55,20 +90,143 @@ class ItemRenderer {
     }
 
     /**
-     * Obtener HTML de un ítem desde el servidor
+     * Crear encabezado de grupo
+     */
+    _crearEncabezadoGrupo(titulo, cantidad) {
+        const header = document.createElement('div');
+        header.className = 'grupo-items-header';
+        header.style.cssText = `
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0 1rem 0;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid #0ea5e9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        `;
+        
+        header.innerHTML = `
+            <h3 style="margin: 0; color: #0369a1; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem;">
+                ${titulo}
+            </h3>
+            <span style="background: #0ea5e9; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700;">
+                ${cantidad}
+            </span>
+        `;
+        
+        return header;
+    }
+
+    /**
+     * Obtener HTML de un ítem usando la tarjeta ReadOnly
      */
     async obtenerHTMLItem(item, index) {
-        if (!this.apiService) {
-            throw new Error('API Service no configurado');
+        // Detectar si es un EPP
+        if (item.tipo === 'epp' || item.epp_id) {
+            console.log(`[ItemRenderer] Renderizando EPP para ítem ${index}`);
+            return this._generarTarjetaEPP(item, index);
         }
 
-        const resultado = await this.apiService.renderizarItemCard(item, index);
+        // Usar la función generarTarjetaPrendaReadOnly para prendas
+        if (typeof window.generarTarjetaPrendaReadOnly === 'function') {
+            console.log(`[ItemRenderer] Usando generarTarjetaPrendaReadOnly para ítem ${index}`);
+            return window.generarTarjetaPrendaReadOnly(item, index);
+        }
+
+        throw new Error('generarTarjetaPrendaReadOnly no está disponible');
+    }
+
+    /**
+     * Generar tarjeta de EPP
+     */
+    _generarTarjetaEPP(epp, index) {
+        const galeriaHTML = this._generarGaleriaEPP(epp.imagenes || []);
         
-        if (!resultado.success || !resultado.html) {
-            throw new Error(resultado.error || 'Error al renderizar componente');
+        // Calcular número de item global (considerando prendas y EPPs)
+        let numeroItem = 1;
+        if (window.gestionItemsUI && window.gestionItemsUI.ordenItems) {
+            numeroItem = window.gestionItemsUI.ordenItems.length;
+        }
+        
+        return `
+            <div class="item-epp-card" data-epp-index="${index}" data-epp-id="${epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; position: relative;">
+                <!-- Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div>
+                        <span style="display: inline-block; background: #e0f2fe; color: #0066cc; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">EPP ${numeroItem}</span>
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${epp.nombre}</h4>
+                        <p style="margin: 0; font-size: 0.875rem; color: #6b7280;">Código: ${epp.codigo} | Categoría: ${epp.categoria}</p>
+                    </div>
+                    <button class="btn-menu-epp" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
+                </div>
+
+                <!-- Detalles -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Talla</p>
+                        <p style="margin: 0; font-size: 1rem; font-weight: 500; color: #1f2937;">${epp.talla || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Cantidad</p>
+                        <p style="margin: 0; font-size: 1rem; font-weight: 500; color: #1f2937;">${epp.cantidad || 0}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Observaciones</p>
+                        <p style="margin: 0; font-size: 1rem; font-weight: 500; color: #1f2937;">${epp.observaciones || 'N/A'}</p>
+                    </div>
+                </div>
+
+                ${galeriaHTML}
+
+                <!-- Menú -->
+                <div class="submenu-epp" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 2rem; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 100;">
+                    <button 
+                        type="button"
+                        class="btn-editar-epp"
+                        data-item-id="${epp.epp_id}"
+                        style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
+                        onmouseover="this.style.background = '#f9fafb';"
+                        onmouseout="this.style.background = 'transparent';"
+                    >
+                        Editar
+                    </button>
+                    <button 
+                        type="button"
+                        class="btn-eliminar-epp"
+                        data-item-id="${epp.epp_id}"
+                        style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
+                        onmouseover="this.style.background = '#fef2f2';"
+                        onmouseout="this.style.background = 'transparent';"
+                    >
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Generar galería de imágenes para EPP
+     */
+    _generarGaleriaEPP(imagenes) {
+        if (!imagenes || imagenes.length === 0) {
+            return '';
         }
 
-        return resultado.html;
+        return `
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;">
+                <p style="margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;">Imágenes</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
+                    ${imagenes.map(img => `
+                        <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
+                            <img src="${img.url}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
     }
 
     /**
@@ -222,7 +380,7 @@ class ItemRenderer {
         
         const nombre = item.prenda?.nombre || item.nombre || 'Prenda';
         const cantidadTotal = item.cantidad || (item.tallas?.reduce((sum, t) => sum + (t.cantidad || 0), 0) || 0);
-        const origen = item.origen === 'bodega' ? '📦 BODEGA' : '🏭 CONFECCIÓN';
+        const origen = item.origen === 'bodega' ? ' BODEGA' : '🏭 CONFECCIÓN';
         
         itemDiv.innerHTML = `
             <div style="${estilos.itemTitulo || this.getEstiloItemTitulo()}">

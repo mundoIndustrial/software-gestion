@@ -13,7 +13,7 @@ class AnalyzeDatabase extends Command
 
     public function handle()
     {
-        $this->info('🔍 Analizando base de datos...\n');
+        $this->info(' Analizando base de datos...\n');
 
         // Obtener todas las tablas actuales
         $tablasActuales = DB::select('SHOW TABLES');
@@ -119,12 +119,12 @@ class AnalyzeDatabase extends Command
         }
 
         if (!empty($tablasExtras)) {
-            $this->warn("\n⚠️ TABLAS EXTRAS (no esperadas): " . count($tablasExtras));
+            $this->warn("\n TABLAS EXTRAS (no esperadas): " . count($tablasExtras));
             $this->table(['Tabla'], array_map(fn($t) => [$t], array_values($tablasExtras)));
         }
 
         // Analizar columnas de tablas importantes
-        $this->info("\n\n📊 ANÁLISIS DETALLADO DE TABLAS CRÍTICAS:\n");
+        $this->info("\n\n ANÁLISIS DETALLADO DE TABLAS CRÍTICAS:\n");
 
         $tablasAnalizar = ['epps', 'epp_categorias', 'pedido_epp', 'pedido_epp_imagenes', 'pedidos_produccion'];
 

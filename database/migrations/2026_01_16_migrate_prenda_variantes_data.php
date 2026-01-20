@@ -141,7 +141,7 @@ return new class extends Migration
                 ->exists();
 
             if ($existe) {
-                \Log::debug("  ⚠️ Variante ya existe (skipped): Talla={$talla}");
+                \Log::debug("   Variante ya existe (skipped): Talla={$talla}");
                 return;
             }
 
@@ -177,7 +177,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \Log::warning('⚠️ [Migración de Datos] ROLLBACK: Eliminando variantes creadas...');
+        \Log::warning(' [Migración de Datos] ROLLBACK: Eliminando variantes creadas...');
 
         try {
             // Eliminar todas las variantes creadas en esta migración

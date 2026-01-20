@@ -41,7 +41,7 @@ class TestPrendaCotizacionTemplate extends Command
 
         $numeroPedido = (int)$numeroPedido;
 
-        $this->info("🔍 Probando plantilla para pedido: {$numeroPedido}");
+        $this->info(" Probando plantilla para pedido: {$numeroPedido}");
         $this->newLine();
 
         try {
@@ -52,7 +52,7 @@ class TestPrendaCotizacionTemplate extends Command
             $prendas = $service->generarPlantillaPrendas($numeroPedido);
 
             if (empty($prendas)) {
-                $this->warn('⚠️  No se encontraron prendas para este pedido');
+                $this->warn('  No se encontraron prendas para este pedido');
                 return 0;
             }
 

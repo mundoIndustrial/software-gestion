@@ -13,14 +13,14 @@ class VerificarProcesosReflectivo extends Command
 
     public function handle()
     {
-        $this->info('🔍 VERIFICAR PROCESOS REFLECTIVOS');
+        $this->info(' VERIFICAR PROCESOS REFLECTIVOS');
         $this->line(str_repeat('=', 60));
 
         // Obtener últimos 5 pedidos
         $pedidos = PedidoProduccion::latest()->take(5)->get();
 
         foreach ($pedidos as $pedido) {
-            $this->line("\n📦 Pedido: {$pedido->numero_pedido}");
+            $this->line("\n Pedido: {$pedido->numero_pedido}");
             $this->line("   ID: {$pedido->id}");
             $this->line("   Cotización: {$pedido->numero_cotizacion}");
             

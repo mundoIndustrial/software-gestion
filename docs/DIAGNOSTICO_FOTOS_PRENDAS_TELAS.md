@@ -1,4 +1,4 @@
-# 🔍 DIAGNÓSTICO: Fotos de Prendas y Telas No Se Guardan
+#  DIAGNÓSTICO: Fotos de Prendas y Telas No Se Guardan
 
 ##  PROBLEMA IDENTIFICADO
 
@@ -11,7 +11,7 @@ En cambio, las fotos de **procesos** (reflectivo, etc.) SÍ se guardan correctam
 ### Estado del Log del Usuario (16/01/2026)
 ```
 📸 Fotos encontradas en prenda.imagenes: 1
-🧵 Telas encontradas: 1
+ Telas encontradas: 1
 📷 Agregado imagen tela: 0/0 = CODIGO DE TELA.png
 📷 Agregado archivo: reflectivo/0 = CAMISA DRILL.png
 ```
@@ -133,7 +133,7 @@ $prendaData = [
 
 ---
 
-## 📊 CAMBIOS EN ARCHIVOS
+##  CAMBIOS EN ARCHIVOS
 
 ### [CrearPedidoEditableController.php](app/Http/Controllers/Asesores/CrearPedidoEditableController.php)
 
@@ -162,15 +162,15 @@ $prendaData = [
 
 2. **Verificar logs** en `storage/logs/laravel.log`:
    ```
-   📦 [CrearPedidoEditableController] Prendas listas para guardar
+    [CrearPedidoEditableController] Prendas listas para guardar
    - tiene_fotos: 1
    - tiene_telas: 1
    
-   🎨 [PedidoPrendaService::guardarFotosPrenda] Guardando fotos de prenda
+    [PedidoPrendaService::guardarFotosPrenda] Guardando fotos de prenda
    - cantidad: 1
    - fotos_estructura: [{"index": 0, "es_UploadedFile": true, "nombre": "..."}]
    
-   🧵 [PedidoPrendaService::guardarFotosTelas] Guardando fotos de telas
+    [PedidoPrendaService::guardarFotosTelas] Guardando fotos de telas
    - cantidad_telas: 1
    - telas_estructura: [{"tela_index": 0, "tiene_fotos": 1}]
    ```

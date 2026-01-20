@@ -171,13 +171,13 @@ function agregarFotos(files, dropZone) {
     const fotosNuevasActuales = window.fotosSeleccionadas[productoId].length;
     const totalFotosActuales = fotosGuardadas + fotosNuevasActuales;
     
-    console.log(`📊 Fotos guardadas: ${fotosGuardadas}, Fotos nuevas actuales: ${fotosNuevasActuales}, Total actual: ${totalFotosActuales}`);
+    console.log(` Fotos guardadas: ${fotosGuardadas}, Fotos nuevas actuales: ${fotosNuevasActuales}, Total actual: ${totalFotosActuales}`);
     
     // Calcular cuántas fotos podemos agregar
     const espacioDisponible = 3 - totalFotosActuales;
     
     if (espacioDisponible <= 0) {
-        console.warn(`⚠️ Límite de 3 fotos alcanzado. No se puede agregar más fotos.`);
+        console.warn(` Límite de 3 fotos alcanzado. No se puede agregar más fotos.`);
         return;
     }
     
@@ -204,7 +204,7 @@ function agregarFotos(files, dropZone) {
     // Mostrar mensaje si no se pudieron agregar todas las fotos seleccionadas
     if (files.length > fotosParaAgregar.length) {
         const noAgregadas = files.length - fotosParaAgregar.length;
-        console.warn(`⚠️ Solo se agregaron ${fotosParaAgregar.length} de ${files.length} fotos. Límite de 3 fotos alcanzado.`);
+        console.warn(` Solo se agregaron ${fotosParaAgregar.length} de ${files.length} fotos. Límite de 3 fotos alcanzado.`);
     }
     actualizarPreviewFotos(dropZone);
 }
@@ -212,14 +212,14 @@ function agregarFotos(files, dropZone) {
 function actualizarPreviewFotos(input) {
     const productoCard = input.closest('.producto-card');
     if (!productoCard) {
-        console.warn('⚠️ No se encontró .producto-card');
+        console.warn(' No se encontró .producto-card');
         return;
     }
     const productoId = productoCard.dataset.productoId || 'default';
     
     let container = null;
     const label = input.closest('label');
-    console.log('🔍 Buscando contenedor para fotos:');
+    console.log(' Buscando contenedor para fotos:');
     console.log('   - label:', label);
     
     if (label && label.parentElement) {
@@ -515,7 +515,7 @@ function eliminarFotoById(productoId, fotoId) {
     // Encontrar la foto por su ID único
     const fotoAEliminar = fotosPreview.querySelector(`[data-foto-id="${fotoId}"]`);
     if (!fotoAEliminar) {
-        console.warn(`⚠️ No se encontró foto con ID: ${fotoId}`);
+        console.warn(` No se encontró foto con ID: ${fotoId}`);
         return;
     }
     
@@ -636,7 +636,7 @@ function actualizarNumerosPreview(fotosPreview) {
             spanNumero.textContent = index + 1;
         }
     });
-    console.log(`📊 Números de fotos actualizados. Total: ${todasLasFotos.length}`);
+    console.log(` Números de fotos actualizados. Total: ${todasLasFotos.length}`);
 }
 
 function agregarFotoTela(input) {
@@ -691,7 +691,7 @@ function agregarFotoTela(input) {
     });
     
     // Mostrar estado actual de telasSeleccionadas
-    console.log('📊 Estado actual de telasSeleccionadas:', JSON.stringify({
+    console.log(' Estado actual de telasSeleccionadas:', JSON.stringify({
         productoId,
         telaIndex,
         fotosAlmacenadas: window.telasSeleccionadas[productoId][telaIndex].length,
@@ -794,7 +794,7 @@ function eliminarFotoTelaById(fotoTelaId) {
     // Encontrar el contenedor de fotos de tela
     const fotoElement = document.querySelector(`[data-foto-tela-id="${fotoTelaId}"]`);
     if (!fotoElement) {
-        console.warn(`⚠️ No se encontró foto de tela con ID: ${fotoTelaId}`);
+        console.warn(` No se encontró foto de tela con ID: ${fotoTelaId}`);
         return;
     }
     
@@ -809,14 +809,14 @@ function eliminarFotoTelaById(fotoTelaId) {
         }
         if (!window.fotosEliminadasServidor.telas.includes(fotoIdServidor)) {
             window.fotosEliminadasServidor.telas.push(fotoIdServidor);
-            console.log(`📝 Foto de tela ID ${fotoIdServidor} marcada para eliminar del servidor`);
+            console.log(` Foto de tela ID ${fotoIdServidor} marcada para eliminar del servidor`);
         }
     }
     
     // Obtener el contenedor (foto-tela-preview)
     const container = fotoElement.closest('.foto-tela-preview');
     if (!container) {
-        console.warn(`⚠️ No se encontró contenedor .foto-tela-preview`);
+        console.warn(` No se encontró contenedor .foto-tela-preview`);
         return;
     }
     
@@ -893,7 +893,7 @@ function buscarPrendas(input) {
     
     // Validar que el contenedor existe
     if (!container) {
-        console.warn('⚠️ Contenedor .prenda-search-container no encontrado');
+        console.warn(' Contenedor .prenda-search-container no encontrado');
         return;
     }
     
@@ -901,7 +901,7 @@ function buscarPrendas(input) {
     
     // Validar que suggestions existe
     if (!suggestions) {
-        console.warn('⚠️ Elemento .prenda-suggestions no encontrado');
+        console.warn(' Elemento .prenda-suggestions no encontrado');
         return;
     }
     
@@ -956,21 +956,21 @@ function toggleSeccion(btn) {
 // ============ TÉCNICAS ============
 
 function agregarTecnica() {
-    console.log('🔧 agregarTecnica() llamado');
+    console.log(' agregarTecnica() llamado');
     console.log('⏰ Timestamp:', new Date().toISOString());
     
     const selector = document.getElementById('selector_tecnicas');
-    console.log('🔧 Selector encontrado:', !!selector);
+    console.log(' Selector encontrado:', !!selector);
     
     if (!selector) {
-        console.error('🔧 ERROR: No se encontró selector_tecnicas');
+        console.error(' ERROR: No se encontró selector_tecnicas');
         return;
     }
     
     const tecnica = selector.value;
-    console.log('🔧 Técnica seleccionada:', tecnica);
-    console.log('🔧 Value del selector:', selector.value);
-    console.log('🔧 Options disponibles:', Array.from(selector.options).map(o => o.value));
+    console.log(' Técnica seleccionada:', tecnica);
+    console.log(' Value del selector:', selector.value);
+    console.log(' Options disponibles:', Array.from(selector.options).map(o => o.value));
     
     if (!tecnica) {
         alert('Por favor selecciona una técnica');
@@ -978,8 +978,8 @@ function agregarTecnica() {
     }
     
     const contenedor = document.getElementById('tecnicas_seleccionadas');
-    console.log('🔧 Contenedor encontrado:', !!contenedor);
-    console.log('🔧 innerHTML del contenedor ANTES:', contenedor.innerHTML);
+    console.log(' Contenedor encontrado:', !!contenedor);
+    console.log(' innerHTML del contenedor ANTES:', contenedor.innerHTML);
     
     if (Array.from(contenedor.children).some(tag => tag.textContent.includes(tecnica))) {
         alert('Esta técnica ya está agregada');
@@ -1125,7 +1125,7 @@ function agregarFilaTela(btn) {
     const filasExistentes = tbody.querySelectorAll('.fila-tela');
     const nuevoIndice = filasExistentes.length;
     
-    console.log('📊 agregarFilaTela DEBUG:', {
+    console.log(' agregarFilaTela DEBUG:', {
         filasActuales: filasExistentes.length,
         nuevoIndice,
         tblasLength: tbody ? tbody.childNodes.length : 'sin tbody'
@@ -1176,7 +1176,7 @@ function agregarFilaTela(btn) {
     tbody.appendChild(nuevaFila);
     
     console.log(' Nueva fila de tela agregada con índice:', nuevoIndice);
-    console.log('🧵 Fila agregada - inputs actualizados:', {
+    console.log(' Fila agregada - inputs actualizados:', {
         colorInput: nuevaFila.querySelector('.color-id-input')?.getAttribute('name'),
         telaInput: nuevaFila.querySelector('.tela-id-input')?.getAttribute('name'),
         fotosInput: nuevaFila.querySelector('.input-file-tela')?.getAttribute('name')

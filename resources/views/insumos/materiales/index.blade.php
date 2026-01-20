@@ -702,11 +702,11 @@
         
         console.log('🔵 Guardando materiales para pedido:', ordenPedido);
         console.log('📍 Checkboxes encontrados:', checkboxes.length);
-        console.log('🔍 Buscando en:', `input[type="checkbox"][id^="checkbox_"]`);
+        console.log(' Buscando en:', `input[type="checkbox"][id^="checkbox_"]`);
         
         // Debug: mostrar todos los checkboxes de la página
         const todosCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-        console.log('📊 Total de checkboxes en la página:', todosCheckboxes.length);
+        console.log(' Total de checkboxes en la página:', todosCheckboxes.length);
         todosCheckboxes.forEach((cb, i) => {
             console.log(`  ${i}: id=${cb.id}, checked=${cb.checked}`);
         });

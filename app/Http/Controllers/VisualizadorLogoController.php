@@ -22,7 +22,7 @@ class VisualizadorLogoController extends Controller
      */
     public function getCotizaciones(Request $request)
     {
-        \Log::info('🔍 ===== INICIO getCotizaciones =====');
+        \Log::info(' ===== INICIO getCotizaciones =====');
         
         $query = Cotizacion::with([
             'asesor',
@@ -63,7 +63,7 @@ class VisualizadorLogoController extends Controller
 
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
-            \Log::info('📊 Filtro de estado aplicado:', ['estado' => $request->estado]);
+            \Log::info(' Filtro de estado aplicado:', ['estado' => $request->estado]);
         }
 
         if ($request->filled('fecha_desde')) {
@@ -82,7 +82,7 @@ class VisualizadorLogoController extends Controller
         // Paginación
         $cotizaciones = $query->paginate(20);
         
-        \Log::info('📦 Total de cotizaciones encontradas:', ['total' => $cotizaciones->total()]);
+        \Log::info(' Total de cotizaciones encontradas:', ['total' => $cotizaciones->total()]);
         
         // Log detallado de cada cotización
         foreach ($cotizaciones->items() as $index => $cot) {

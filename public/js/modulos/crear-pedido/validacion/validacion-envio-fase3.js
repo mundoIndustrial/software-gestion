@@ -74,7 +74,7 @@
             .join('');
 
         mostrarError(
-            '⚠️ Validación fallida',
+            ' Validación fallida',
             `<ul style="margin: 1rem 0; padding-left: 1.5rem;">${listaErrores}</ul>`,
             10000  // Duración más larga para leer errores
         );
@@ -233,14 +233,14 @@
         const validacion = window.validarFormularioConGestores();
 
         if (!validacion.valido) {
-            console.warn('⚠️ Validación fallida:', validacion.errores);
+            console.warn(' Validación fallida:', validacion.errores);
             window.mostrarErroresValidacion(validacion.errores);
             return Promise.reject('Validación fallida');
         }
 
         // 2. PREPARAR DATOS
         const datos = window.prepararDatosParaEnvio();
-        console.log('📦 Datos preparados para envío:', datos);
+        console.log(' Datos preparados para envío:', datos);
 
         // 3. ENVIAR
         return window.enviarDatosAlServidor(datos, endpoint)

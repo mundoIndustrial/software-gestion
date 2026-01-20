@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility), OCP (Open/Closed)
  */
 
-console.log('📦 Cargando UpdatesModule...');
+console.log(' Cargando UpdatesModule...');
 
 const UpdatesModule = {
     baseUrl: window.updateUrl || '/registros',
@@ -35,7 +35,7 @@ const UpdatesModule = {
                     // Aplicar colores condicionales
                     if (typeof applyRowConditionalColors === 'function') {
                         applyRowConditionalColors(row);
-                        console.log(`🎨 Colores condicionales aplicados para estado: ${newStatus}`);
+                        console.log(` Colores condicionales aplicados para estado: ${newStatus}`);
                     }
                 }
                 
@@ -141,7 +141,7 @@ const UpdatesModule = {
             if (dropdown) {
                 dropdown.value = oldArea;
                 dropdown.dataset.value = oldArea;
-                console.log(`⚠️ Dropdown restaurado a valor anterior: ${oldArea}`);
+                console.log(` Dropdown restaurado a valor anterior: ${oldArea}`);
             }
         }
     },
@@ -154,7 +154,7 @@ const UpdatesModule = {
             // Obtener los procesos de la orden
             const response = await fetch(`/api/ordenes/${orderId}/procesos`);
             if (!response.ok) {
-                console.warn('⚠️ No se pudieron obtener los procesos');
+                console.warn(' No se pudieron obtener los procesos');
                 return;
             }
             
@@ -218,12 +218,12 @@ const UpdatesModule = {
     updateOrderDiaEntrega(orderId, newDias, oldDias, dropdown) {
         const valorAEnviar = (newDias === '' || newDias === null) ? null : Number.parseInt(newDias);
         
-        console.log(`📝 Actualizando día de entrega: Pedido ${orderId}, Días: ${valorAEnviar}`);
+        console.log(` Actualizando día de entrega: Pedido ${orderId}, Días: ${valorAEnviar}`);
         
         this._sendUpdate(`${this.baseUrl}/${orderId}`, { dia_de_entrega: valorAEnviar }, (data) => {
             if (data.success) {
                 console.log(` Día de entrega actualizado`);
-                console.log(`📊 Datos recibidos del servidor:`, data);
+                console.log(` Datos recibidos del servidor:`, data);
                 
                 if (dropdown) {
                     // Actualizar el valor del dropdown localmente
@@ -237,13 +237,13 @@ const UpdatesModule = {
                 if (!row) {
                     row = document.querySelector(`.table-row[data-orden-id="${orderId}"]`);
                 }
-                console.log(`🔍 Buscando fila para orden ${orderId}, encontrada:`, !!row);
+                console.log(` Buscando fila para orden ${orderId}, encontrada:`, !!row);
                 
                 if (row) {
                     console.log(` Ejecutando executeRowUpdate para orden ${orderId}`);
                     RowManager.executeRowUpdate(row, data, orderId, valorAEnviar);
                 } else {
-                    console.warn(`⚠️ No se encontró fila para actualizar orden ${orderId}`);
+                    console.warn(` No se encontró fila para actualizar orden ${orderId}`);
                 }
             } else {
                 this._handleError(dropdown, oldDias, 'dia_de_entrega');
@@ -312,20 +312,20 @@ const UpdatesModule = {
             // Buscar la fila en la tabla (por numero_pedido, que es orderId)
             const tabla = document.querySelector('table#tablaOrdenes tbody');
             if (!tabla) {
-                console.warn('⚠️ Tabla no encontrada para refrescar');
+                console.warn(' Tabla no encontrada para refrescar');
                 return;
             }
             
             const fila = tabla.querySelector(`tr[data-numero-pedido="${orderId}"]`);
             if (!fila) {
-                console.warn(`⚠️ Fila ${orderId} no encontrada en tabla`);
+                console.warn(` Fila ${orderId} no encontrada en tabla`);
                 return;
             }
             
             // Obtener el dropdown de área de esta fila
             const dropdown = fila.querySelector(`.area-dropdown[data-id="${orderId}"]`);
             if (!dropdown) {
-                console.warn(`⚠️ Dropdown de área no encontrado en fila ${orderId}`);
+                console.warn(` Dropdown de área no encontrado en fila ${orderId}`);
                 return;
             }
             
@@ -375,7 +375,7 @@ const UpdatesModule = {
         const statusClass = `estado-${newStatus.toLowerCase().replace(/ /g, '-')}`;
         dropdown.classList.add(statusClass);
         
-        console.log(`🎨 Clase de dropdown actualizada: ${statusClass}`);
+        console.log(` Clase de dropdown actualizada: ${statusClass}`);
     }
 };
 

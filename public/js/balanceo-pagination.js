@@ -4,7 +4,7 @@
     
     // Evitar inicialización múltiple
     if (window.balanceoPaginationInitialized) {
-        console.log('⚠️ Paginación de balanceo ya inicializada');
+        console.log(' Paginación de balanceo ya inicializada');
         return;
     }
     window.balanceoPaginationInitialized = true;
@@ -29,7 +29,7 @@
         const page = btn.dataset.page;
         if (!page) return;
         
-        console.log(`🎯 Cargando página ${page} de balanceo...`);
+        console.log(` Cargando página ${page} de balanceo...`);
         
         isLoading = true;
         const startTime = performance.now();
@@ -65,7 +65,7 @@
                 throw new Error('Respuesta inválida del servidor');
             }
             
-            console.log(`🔧 Tiempo del servidor: ${data.debug.server_time_ms}ms`);
+            console.log(` Tiempo del servidor: ${data.debug.server_time_ms}ms`);
             
             // Actualizar grid de prendas
             if (prendasGrid) {
@@ -110,7 +110,7 @@
             console.log(` Página ${page} cargada en ${totalTime}ms (${(totalTime/1000).toFixed(2)}s)`);
             
             if (totalTime > 1000) {
-                console.warn(`⚠️ Carga lenta: ${totalTime}ms`);
+                console.warn(` Carga lenta: ${totalTime}ms`);
             }
         })
         .catch(error => {

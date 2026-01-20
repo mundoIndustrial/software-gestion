@@ -13,7 +13,7 @@ return function () {
     $codigo = 'GAF-SEG-' . time();
     $descripcion = 'Gafas de seguridad para protección ocular - Test: ' . date('Y-m-d H:i:s');
 
-    echo "📝 Datos a crear:\n";
+    echo " Datos a crear:\n";
     echo "  - Nombre: $nombre\n";
     echo "  - Categoría: $categoria\n";
     echo "  - Código: $codigo\n";
@@ -30,7 +30,7 @@ return function () {
         $resultado = $commandBus->execute($command);
 
         echo " EPP creado exitosamente!\n";
-        echo "📊 Resultado:\n";
+        echo " Resultado:\n";
         echo json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 
     } catch (\Exception $e) {

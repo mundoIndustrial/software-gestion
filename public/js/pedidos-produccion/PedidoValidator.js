@@ -1,5 +1,5 @@
 /**
- * 🔍 PEDIDO VALIDATOR
+ *  PEDIDO VALIDATOR
  * 
  * Validador exhaustivo del estado completo del pedido.
  * Valida TODAS las reglas de negocio antes de permitir envío.
@@ -188,7 +188,7 @@ class PedidoValidator {
         // Si la descripción es muy corta y la prenda es compleja, avisar
         if (prenda.descripcion && prenda.descripcion.length < 10 && prenda.variantes.length > 1) {
             if (!errors[prefix]) errors[prefix] = [];
-            errors[prefix].push('⚠️ Descripción muy breve para prenda con múltiples variantes');
+            errors[prefix].push(' Descripción muy breve para prenda con múltiples variantes');
         }
     }
 

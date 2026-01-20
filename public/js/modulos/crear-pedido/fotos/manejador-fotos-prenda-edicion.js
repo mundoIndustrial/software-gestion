@@ -18,7 +18,7 @@ window.manejarArchivosFotosPrenda = function(archivos, prendaIndex) {
     console.log('   prendaIndex:', prendaIndex);
     
     if (!archivos || archivos.length === 0) {
-        console.warn('⚠️  [FOTOS-EDICIÓN] No hay archivos seleccionados');
+        console.warn('  [FOTOS-EDICIÓN] No hay archivos seleccionados');
         return;
     }
     
@@ -52,7 +52,7 @@ window.manejarArchivosFotosTela = function(archivos, prendaIndex, telaIndex) {
     console.log('   telaIndex:', telaIndex);
     
     if (!archivos || archivos.length === 0) {
-        console.warn('⚠️  [FOTOS-EDICIÓN] No hay archivos seleccionados');
+        console.warn('  [FOTOS-EDICIÓN] No hay archivos seleccionados');
         return;
     }
     

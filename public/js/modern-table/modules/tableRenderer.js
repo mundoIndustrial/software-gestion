@@ -220,7 +220,7 @@ const TableRenderer = (() => {
                     
                     // Si no hay data-column, intentar extraerlo del texto
                     if (!key) {
-                        console.warn(`⚠️ Encabezado sin data-column en índice ${i}`);
+                        console.warn(` Encabezado sin data-column en índice ${i}`);
                         continue;
                     }
                     

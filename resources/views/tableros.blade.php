@@ -204,14 +204,14 @@
             </div>
         </div>
 
-        <div x-show="activeTab === 'polos'" class="chart-placeholder" x-init="console.log('🔍 POLOS TAB - activeTab:', activeTab, 'showRecords:', showRecords)">
+        <div x-show="activeTab === 'polos'" class="chart-placeholder" x-init="console.log(' POLOS TAB - activeTab:', activeTab, 'showRecords:', showRecords)">
             <!-- Barra de opciones unificada -->
             @include('components.top-controls')
 
             <!-- Seguimiento módulos (visible by default) -->
-            <div x-show="!showRecords" id="seguimiento-container-polos" x-init="console.log('📊 Seguimiento Polos - showRecords:', showRecords, 'Visible:', !showRecords)">
+            <div x-show="!showRecords" id="seguimiento-container-polos" x-init="console.log(' Seguimiento Polos - showRecords:', showRecords, 'Visible:', !showRecords)">
                 <script>
-                    console.log('🔍 Datos de seguimientoPolos:', @json($seguimientoPolos));
+                    console.log(' Datos de seguimientoPolos:', @json($seguimientoPolos));
                 </script>
                 @include('components.seguimiento-modulos', ['section' => 'polos', 'seguimiento' => $seguimientoPolos])
             </div>
@@ -524,7 +524,7 @@ let isSearchingCell = false; // Flag para evitar actualizar seguimiento durante 
 function actualizarSeguimientoDebounced(section) {
     // NO actualizar si estamos buscando una celda
     if (isSearchingCell) {
-        console.log(`⏭️ Saltando actualización de seguimiento porque isSearchingCell=true`);
+        console.log(`Saltando actualización de seguimiento porque isSearchingCell=true`);
         return;
     }
     
@@ -536,7 +536,7 @@ function actualizarSeguimientoDebounced(section) {
     // Esperar 1500ms antes de recargar el seguimiento (antes era 500ms)
     // Si se llama de nuevo antes de que termine el timeout, se cancela el anterior
     seguimientoDebounceTimers[section] = setTimeout(() => {
-        console.log(`📊 Actualizando seguimiento de ${section} después del debounce...`);
+        console.log(` Actualizando seguimiento de ${section} después del debounce...`);
         if (typeof recargarSeguimientoEspecifico === 'function') {
             recargarSeguimientoEspecifico(section);
         }
@@ -576,21 +576,21 @@ let modalOpening = false;
 function handleCellDoubleClick() {
     // ⚡ Evitar múltiples aperturas del modal
     if (modalOpening) {
-        console.log('⏭️ Modal ya está abriéndose, ignorando doble clic');
+        console.log('Modal ya está abriéndose, ignorando doble clic');
         return;
     }
     
     console.log('🖱️ Doble clic detectado en celda');
     currentCell = this;
     const row = this.closest('tr');
-    console.log('🔍 Row encontrado:', !!row);
-    console.log('🔍 Row dataset:', row?.dataset);
+    console.log(' Row encontrado:', !!row);
+    console.log(' Row dataset:', row?.dataset);
     currentRowId = row?.dataset?.id;
     currentColumn = this.dataset.column;
 
     // Obtener el valor a mostrar (preferir textContent que tiene el nombre, no el ID)
     const currentValue = this.textContent.trim();
-    console.log(`📝 Editando - ID: ${currentRowId}, Columna: ${currentColumn}, Valor: ${currentValue}`);
+    console.log(` Editando - ID: ${currentRowId}, Columna: ${currentColumn}, Valor: ${currentValue}`);
     
     if (!currentRowId) {
         console.error(' ERROR: No se pudo obtener el ID del registro');
@@ -675,7 +675,7 @@ function setupAutocomplete(type) {
                 searchUrl = '/search-telas';
             }
             
-            console.log(`🔍 Buscando ${type}: "${query}"`);
+            console.log(` Buscando ${type}: "${query}"`);
             
             fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
                 .then(response => {
@@ -881,7 +881,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Datos a enviar (permitir agregar campos adicionales cuando se requiera)
         const payload = { [columnName]: newValue, section: section };
-        console.log(`📝 Columna original: ${currentColumn}, Columna mapeada: ${columnName}`);
+        console.log(` Columna original: ${currentColumn}, Columna mapeada: ${columnName}`);
 
         // Mapear PARADAS PROGRAMADAS -> TIEMPO PARA PROGRAMADA (segundos)
         function mapParadaToSeconds(valor) {
@@ -1002,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const patchStart = performance.now();
         
-        // 🎯 FIX: Actualizar la celda INMEDIATAMENTE en el front (Optimistic Update)
+        //  FIX: Actualizar la celda INMEDIATAMENTE en el front (Optimistic Update)
         // Sin esperar respuesta del servidor
         if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
             currentCell.dataset.value = displayName;
@@ -1029,8 +1029,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             console.log(` Respuesta del servidor:`, data);
-            console.log(`🔍 data.data existe:`, !!data.data);
-            console.log(`🔍 data.data contenido:`, data.data);
+            console.log(` data.data existe:`, !!data.data);
+            console.log(` data.data contenido:`, data.data);
             const totalTime = performance.now() - startTime;
             console.log(`⏱️ TIMINGS TOTALES:
             - Búsqueda: ${timings.searchRequest?.toFixed(2) || 'N/A'}ms
@@ -1039,9 +1039,9 @@ document.addEventListener('DOMContentLoaded', function() {
             - TOTAL: ${totalTime.toFixed(2)}ms
             `);
             if (data.success) {
-                // 🎯 FIX: Si se cambió una relación (operario, máquina, tela), obtener el nombre actualizado del servidor
+                //  FIX: Si se cambió una relación (operario, máquina, tela), obtener el nombre actualizado del servidor
                 if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn) && data.data) {
-                    console.log(`🔍 Intentando extraer relación de data.data para columna: ${currentColumn}`);
+                    console.log(` Intentando extraer relación de data.data para columna: ${currentColumn}`);
                     // El servidor devolvió el registro actualizado con las relaciones cargadas
                     let displayValue = displayName;
                     
@@ -1074,14 +1074,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             registrosMap[section][currentRowId].tela = data.data.tela;
                         }
                     } else {
-                        console.log(`⚠️ No se encontró relación en data.data. data.data.operario:`, data.data.operario, 'data.data.maquina:', data.data.maquina, 'data.data.tela:', data.data.tela, 'data.data.hora:', data.data.hora);
+                        console.log(` No se encontró relación en data.data. data.data.operario:`, data.data.operario, 'data.data.maquina:', data.data.maquina, 'data.data.tela:', data.data.tela, 'data.data.hora:', data.data.hora);
                     }
                     
                     currentCell.dataset.value = displayValue;
                     currentCell.textContent = displayValue;
                     console.log(` Celda confirmada con nombre desde servidor: ${displayValue}`);
                 } else if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn)) {
-                    console.log(`⚠️ No hay data.data para extraer, usando displayName: ${displayName}`);
+                    console.log(` No hay data.data para extraer, usando displayName: ${displayName}`);
                     // Asegurar que se muestra el displayName (ya actualizado en optimistic update)
                     currentCell.dataset.value = displayName;
                     currentCell.textContent = displayName;
@@ -1562,7 +1562,7 @@ function initializeRealtimeListeners() {
 
     // Verificar si ya hay suscripciones activas (de seguimiento-modulos)
     if (window.tablerosChannelSubscribed) {
-        console.log('⚠️ Listeners de tableros ya inicializados, omitiendo...');
+        console.log(' Listeners de tableros ya inicializados, omitiendo...');
         return;
     }
     
@@ -1591,7 +1591,7 @@ function initializeRealtimeListeners() {
             }
             
             // También notificar al seguimiento para que se actualice
-            console.log('📊 Notificando actualización al seguimiento de producción...');
+            console.log(' Notificando actualización al seguimiento de producción...');
             if (typeof recargarSeguimientoEspecifico === 'function') {
                 recargarSeguimientoEspecifico('produccion');
             }
@@ -1622,7 +1622,7 @@ function initializeRealtimeListeners() {
             }
             
             // También notificar al seguimiento para que se actualice
-            console.log('📊 Notificando actualización al seguimiento de polos...');
+            console.log(' Notificando actualización al seguimiento de polos...');
             if (typeof recargarSeguimientoEspecifico === 'function') {
                 recargarSeguimientoEspecifico('polos');
             }
@@ -1646,7 +1646,7 @@ function initializeRealtimeListeners() {
         // El dashboard-tables-corte.blade.php tiene su propio listener
         const corteTable = document.querySelector('table[data-section="corte"]');
         if (!corteTable) {
-            console.log('⏭️ Tabla de corte no visible, ignorando evento');
+            console.log('Tabla de corte no visible, ignorando evento');
             return;
         }
         
@@ -1676,7 +1676,7 @@ function agregarRegistroTiempoReal(registro, section) {
     if (!table) {
         console.warn(`Tabla no encontrada para sección: ${section}`);
         // Aún así, actualizar el seguimiento con debounce
-        console.log('📊 Actualizando seguimiento aunque no haya tabla visible...');
+        console.log(' Actualizando seguimiento aunque no haya tabla visible...');
         if (typeof actualizarSeguimientoDebounced === 'function') {
             actualizarSeguimientoDebounced(section);
         }
@@ -1924,7 +1924,7 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         } else if (tabText.includes('corte')) {
             currentSection = 'corte';
         }
-        console.log('🎯 Tablero detectado por tab-card activo:', currentSection);
+        console.log(' Tablero detectado por tab-card activo:', currentSection);
     } else {
         // Método 2: Buscar el contenedor visible (sin display: none)
         const visibleTab = document.querySelector('.chart-placeholder:not([style*="display: none"])');
@@ -1936,7 +1936,7 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
                 else if (xShow.includes('corte')) currentSection = 'corte';
             }
         }
-        console.log('🎯 Tablero detectado por contenedor visible:', currentSection);
+        console.log(' Tablero detectado por contenedor visible:', currentSection);
     }
     
     // Construir URL con filtros
@@ -1953,7 +1953,7 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
     
     // Buscar el contenedor del componente de seguimiento por ID específico
     const containerId = `seguimiento-container-${currentSection}`;
-    console.log(`🔍 Buscando contenedor con ID: ${containerId}`);
+    console.log(` Buscando contenedor con ID: ${containerId}`);
     
     const seguimientoContainer = document.getElementById(containerId);
     
@@ -1962,7 +1962,7 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         console.log(' Contenedores disponibles:', 
             Array.from(document.querySelectorAll('[id^="seguimiento-container-"]')).map(el => el.id)
         );
-        console.log('⚠️ Recargando página completa...');
+        console.log(' Recargando página completa...');
         window.location.href = url.toString();
         return;
     }
@@ -1995,7 +1995,7 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         
         // Buscar el nuevo contenedor de seguimiento en el HTML recibido por ID
         const newContainerId = `seguimiento-container-${currentSection}`;
-        console.log(`🔍 Buscando nuevo contenedor con ID: ${newContainerId}`);
+        console.log(` Buscando nuevo contenedor con ID: ${newContainerId}`);
         
         const newSeguimientoContainer = tempDiv.querySelector(`#${newContainerId}`);
         
@@ -2058,7 +2058,7 @@ if (document.readyState === 'loading') {
 
 // Paginación AJAX sin recargar la página
 function initializePaginationAjax() {
-    console.log('🔧 Inicializando event listeners de paginación AJAX');
+    console.log(' Inicializando event listeners de paginación AJAX');
     
     document.addEventListener('click', function(e) {
         console.log('👆 Click detectado en:', e.target);
@@ -2067,14 +2067,14 @@ function initializePaginationAjax() {
         const paginationLink = e.target.closest('.pagination-link, .pagination-btn:not([disabled])');
         
         if (paginationLink) {
-            console.log('🎯 Click en elemento de paginación:', paginationLink);
-            console.log('🎯 Texto del elemento:', paginationLink.textContent.trim());
-            console.log('🎯 Tag:', paginationLink.tagName);
-            console.log('🎯 Clases:', paginationLink.className);
+            console.log(' Click en elemento de paginación:', paginationLink);
+            console.log(' Texto del elemento:', paginationLink.textContent.trim());
+            console.log(' Tag:', paginationLink.tagName);
+            console.log(' Clases:', paginationLink.className);
             
             // Si es un botón activo, no hacer nada
             if (paginationLink.classList.contains('active')) {
-                console.log('⚠️ Es el botón activo, no hacer nada');
+                console.log(' Es el botón activo, no hacer nada');
                 return;
             }
             
@@ -2086,7 +2086,7 @@ function initializePaginationAjax() {
             // Primero intentar obtener de data-page
             if (paginationLink.dataset.page) {
                 page = paginationLink.dataset.page;
-                console.log('📊 Página obtenida del data-page:', page);
+                console.log(' Página obtenida del data-page:', page);
             }
             // Si es un enlace, obtener la página de la URL
             else if (paginationLink.tagName === 'A' && paginationLink.href) {
@@ -2117,7 +2117,7 @@ function initializePaginationAjax() {
                 section = paginationContainer.dataset.section || 'produccion';
             }
             
-            console.log('🎯 Sección detectada:', section);
+            console.log(' Sección detectada:', section);
             
             console.log(' Sección determinada:', section);
             
@@ -2151,11 +2151,11 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
     const paginationNav = paginationContainer.querySelector('.pagination');
     if (!paginationNav) {
         console.error(' No se encontró paginationNav dentro de:', paginationContainer);
-        console.log('🔍 Elementos dentro del container:', paginationContainer.innerHTML);
+        console.log(' Elementos dentro del container:', paginationContainer.innerHTML);
         
         // Buscar en todo el documento como fallback
         const allPaginations = document.querySelectorAll('.pagination');
-        console.log('🔍 Todas las paginaciones encontradas:', allPaginations.length);
+        console.log(' Todas las paginaciones encontradas:', allPaginations.length);
         
         if (allPaginations.length > 0) {
             // Buscar la paginación de la sección correcta
@@ -2165,7 +2165,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
                 const paginationContainer = pagination.closest('.table-pagination');
                 if (paginationContainer && paginationContainer.dataset.section === section) {
                     fallbackNav = pagination;
-                    console.log(`🎯 Paginación encontrada para sección ${section}:`, fallbackNav);
+                    console.log(` Paginación encontrada para sección ${section}:`, fallbackNav);
                 }
             });
             
@@ -2196,7 +2196,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
             clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
             clickedElement.style.color = 'white';
             clickedElement.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.4)';
-            console.log('🎨 Estilos aplicados directamente al elemento clickeado');
+            console.log(' Estilos aplicados directamente al elemento clickeado');
         }
         return;
     }
@@ -2224,7 +2224,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
     clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
     clickedElement.style.color = 'white';
     clickedElement.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.4)';
-    console.log('🎨 Estilos aplicados directamente al elemento clickeado');
+    console.log(' Estilos aplicados directamente al elemento clickeado');
     
     // PASO 5: Actualizar barra de progreso inmediatamente (estimado)
     const progressFill = paginationContainer.querySelector('.progress-fill');
@@ -2243,7 +2243,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
         if (maxPage > 0) {
             const progressPercent = (parseInt(page) / maxPage) * 100;
             progressFill.style.width = progressPercent + '%';
-            console.log(`📊 Barra de progreso actualizada INMEDIATAMENTE: ${progressPercent}%`);
+            console.log(` Barra de progreso actualizada INMEDIATAMENTE: ${progressPercent}%`);
         }
     }
 }
@@ -2361,7 +2361,7 @@ function updatePaginationLinks(pagination, section) {
     if (progressFill && pagination.last_page > 0) {
         const progressPercent = (pagination.current_page / pagination.last_page) * 100;
         progressFill.style.width = progressPercent + '%';
-        console.log(`📊 Barra de progreso: ${progressPercent}%`);
+        console.log(` Barra de progreso: ${progressPercent}%`);
     }
     
     console.log(` Paginación actualizada para ${section}`);

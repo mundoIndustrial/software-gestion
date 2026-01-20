@@ -41,7 +41,7 @@ class ObtenerPedidoDetalleService
      */
     public function obtenerConPrendas($pedidoIdentifier): PedidoProduccion
     {
-        Log::info('🧵 [DETALLE-PRENDAS] Obteniendo con prendas');
+        Log::info(' [DETALLE-PRENDAS] Obteniendo con prendas');
 
         $pedido = PedidoProduccion::findOrFail($this->obtenerPedido($pedidoIdentifier)->id);
         $pedido->load(['prendas' => function ($q) {
@@ -62,7 +62,7 @@ class ObtenerPedidoDetalleService
      */
     public function obtenerCompleto($pedidoIdentifier): PedidoProduccion
     {
-        Log::info('📊 [DETALLE-COMPLETO] Obteniendo datos completos');
+        Log::info(' [DETALLE-COMPLETO] Obteniendo datos completos');
 
         $pedido = $this->obtenerPedido($pedidoIdentifier);
 

@@ -75,7 +75,7 @@ class ObtenerRecibosService
      */
     public function obtenerResumen(int $pedidoId): array
     {
-        Log::info('📊 [RECIBO-RESUMEN] Obteniendo resumen para pedido: ' . $pedidoId);
+        Log::info(' [RECIBO-RESUMEN] Obteniendo resumen para pedido: ' . $pedidoId);
 
         $datos = $this->obtenerRecibo($pedidoId);
 
@@ -103,7 +103,7 @@ class ObtenerRecibosService
      */
     public function obtenerProcesosPrenda(int $pedidoId, int $prendaId): array
     {
-        Log::info('🔍 [RECIBO-PROCESOS] Obteniendo procesos', [
+        Log::info(' [RECIBO-PROCESOS] Obteniendo procesos', [
             'pedido_id' => $pedidoId,
             'prenda_id' => $prendaId
         ]);

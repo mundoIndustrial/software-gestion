@@ -62,7 +62,7 @@
 
             <!-- Técnicas -->
             <div class="tecnicas-section" id="tecnicasSection" style="display: none;">
-                <h3 class="section-title">🎨 Técnicas</h3>
+                <h3 class="section-title"> Técnicas</h3>
                 <div id="modalTecnicas" class="tecnicas-container">
                     <!-- Se llenará dinámicamente -->
                 </div>
@@ -70,7 +70,7 @@
 
             <!-- Observaciones Técnicas -->
             <div class="obs-tecnicas-section" id="obsTecnicasSection" style="display: none;">
-                <h3 class="section-title">📝 Observaciones Técnicas</h3>
+                <h3 class="section-title"> Observaciones Técnicas</h3>
                 <div id="modalObsTecnicas" class="obs-box">
                     <!-- Se llenará dinámicamente -->
                 </div>

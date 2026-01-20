@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility), OCP (Open/Closed)
  */
 
-console.log('📦 Cargando RowManager...');
+console.log(' Cargando RowManager...');
 
 const RowManager = {
     /**
@@ -29,7 +29,7 @@ const RowManager = {
         }
 
         this._applyRowStyles(row, newStatus, totalDias, diaDeEntrega);
-        console.log(`🎨 Color actualizado para orden ${orderId}: estado="${newStatus}", totalDias=${totalDias}`);
+        console.log(` Color actualizado para orden ${orderId}: estado="${newStatus}", totalDias=${totalDias}`);
     },
 
     /**
@@ -117,7 +117,7 @@ const RowManager = {
             const totalDias = data.totalDiasCalculados[orderId] || 0;
             const estado = data.order?.estado || '';
 
-            console.log(`📊 totalDias: ${totalDias}, estado: ${estado}`);
+            console.log(` totalDias: ${totalDias}, estado: ${estado}`);
 
             // Actualizar fecha estimada (incluso si es null para limpiar)
             // Buscar por clase fecha-estimada-cell (para div.table-row)
@@ -128,7 +128,7 @@ const RowManager = {
                 fechaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"]');
             }
             
-            console.log(`🔍 Buscando celda fecha estimada, encontrada:`, !!fechaCell);
+            console.log(` Buscando celda fecha estimada, encontrada:`, !!fechaCell);
             
             if (fechaCell) {
                 let spanFecha = fechaCell.querySelector('.fecha-estimada-span');
@@ -151,16 +151,16 @@ const RowManager = {
                         console.log(` Fecha estimada limpiada (valor null)`);
                     }
                 } else {
-                    console.warn(`⚠️ No se encontró span dentro de fechaCell`);
+                    console.warn(` No se encontró span dentro de fechaCell`);
                 }
             } else {
-                console.warn(`⚠️ No se encontró celda de fecha estimada`);
+                console.warn(` No se encontró celda de fecha estimada`);
             }
 
             // Actualizar estilos
             this._applyRowStyles(row, estado, totalDias, valorAEnviar);
         } else {
-            console.warn(`⚠️ No hay totalDiasCalculados en data`);
+            console.warn(` No hay totalDiasCalculados en data`);
         }
     },
 

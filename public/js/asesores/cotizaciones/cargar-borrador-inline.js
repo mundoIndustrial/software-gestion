@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Cargar técnicas
         if (cotizacion.tecnicas && Array.isArray(cotizacion.tecnicas)) {
-            console.log('🔧 Cargando técnicas:', cotizacion.tecnicas);
+            console.log(' Cargando técnicas:', cotizacion.tecnicas);
             cotizacion.tecnicas.forEach(tecnica => {
                 const selector = document.getElementById('selector_tecnicas');
                 if (selector) {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Cargar observaciones generales
         if (cotizacion.observaciones_generales && Array.isArray(cotizacion.observaciones_generales)) {
-            console.log('📝 Cargando observaciones generales:', cotizacion.observaciones_generales);
+            console.log(' Cargando observaciones generales:', cotizacion.observaciones_generales);
             const contenedor = document.getElementById('observaciones_lista');
             if (contenedor) {
                 cotizacion.observaciones_generales.forEach(obs => {

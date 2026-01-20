@@ -100,7 +100,7 @@
             if (typeof mostrarSeccionPrendasTecnicasLogoNuevo === 'function') {
                 mostrarSeccionPrendasTecnicasLogoNuevo();
             } else {
-                console.warn('⚠️ mostrarSeccionPrendasTecnicasLogoNuevo no está disponible');
+                console.warn(' mostrarSeccionPrendasTecnicasLogoNuevo no está disponible');
             }
         }
 

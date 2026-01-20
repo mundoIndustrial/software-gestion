@@ -67,7 +67,7 @@
 
 ---
 
-## 🔧 CAMBIOS EN CÓDIGO
+##  CAMBIOS EN CÓDIGO
 
 ### Archivo Principal: `form-handlers.js`
 
@@ -117,7 +117,7 @@ printDiagnostics() {
 
 ---
 
-## 🎯 PROBLEMAS CORREGIDOS
+##  PROBLEMAS CORREGIDOS
 
 | Problema | Severidad | Ubicación Original | Solución |
 |----------|-----------|-------------------|----------|
@@ -209,7 +209,7 @@ Backend recibe FormData correcta
 
 ---
 
-## 🔍 PUNTOS DE CONTROL
+##  PUNTOS DE CONTROL
 
 ### Punto 1: Validación de Entrada
 ```javascript
@@ -239,7 +239,7 @@ formData.append(`prenda_${pIdx}_proceso_${pIdx}_img_${iIdx}`, file);
 
 ---
 
-## 📊 MÉTRICAS
+##  MÉTRICAS
 
 | Métrica | Valor |
 |---------|-------|
@@ -385,7 +385,7 @@ dd(json_decode($request->input('prendas'), true));
 
 ---
 
-## 🎯 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 1. **Hoy:** Revisar cambios implementados
 2. **Mañana:** Testing manual con datos reales

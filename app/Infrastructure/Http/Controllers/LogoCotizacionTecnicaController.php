@@ -269,7 +269,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('⚠️ Errores de validación', ['errors' => $e->errors()]);
+            Log::warning(' Errores de validación', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',

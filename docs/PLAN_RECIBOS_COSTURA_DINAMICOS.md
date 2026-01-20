@@ -1,6 +1,6 @@
 #  Plan: Recibos de Costura Dinámicos por Prenda y Proceso
 
-## 🎯 Objetivo
+##  Objetivo
 
 Implementar un sistema de recibos donde **cada recibo corresponde a un proceso específico**:
 
@@ -135,7 +135,7 @@ Agregar botón "Ver Recibos" que:
 
 ---
 
-## 📊 Estructura de Datos
+##  Estructura de Datos
 
 ### Formato de Datos para Recibos
 
@@ -214,7 +214,7 @@ const recibos = [
 
 ---
 
-## 🎨 Diseño Visual
+##  Diseño Visual
 
 ### Recibo Base (reutilizar actual)
 
@@ -339,7 +339,7 @@ Usuario puede continuar navegando
 
 ---
 
-## 📝 Cambios Necesarios en Archivos Existentes
+##  Cambios Necesarios en Archivos Existentes
 
 ### 1. `invoice-preview-live.js` (línea ~1350)
 Agregar botón "Ver Recibos":
@@ -365,7 +365,7 @@ GET /api/pedidos/{id}/recibos
 
 ---
 
-## 🎯 Ejemplo de Uso
+##  Ejemplo de Uso
 
 ### Generar Array de Recibos
 

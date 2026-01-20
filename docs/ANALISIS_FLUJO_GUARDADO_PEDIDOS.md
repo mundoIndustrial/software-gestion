@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 OBJETIVO
+##  OBJETIVO
 
 Verificar que **TODO** lo que el usuario ingresa en el formulario de crear nuevo pedido se guarde correctamente en la base de datos, incluyendo:
 
@@ -162,7 +162,7 @@ Construye el objeto pedidoData con estructura:
    }
    ```
 
-6. **Genera número de pedido** (⚠️ Secuencial simple, NO seguro para concurrencia)
+6. **Genera número de pedido** ( Secuencial simple, NO seguro para concurrencia)
    ```php
    $ultimoPedido = PedidoProduccion::orderBy('id', 'desc')->first();
    $numeroPedido = ($ultimoPedido?->numero_pedido ?? 0) + 1;
@@ -347,7 +347,7 @@ Para cada prenda en `$prendasParaGuardar`:
 ```sql
 CREATE TABLE pedidos_produccion (
     id BIGINT PRIMARY KEY,
-    numero_pedido INT UNIQUE NOT NULL, -- ⚠️ Generado sin lock DB
+    numero_pedido INT UNIQUE NOT NULL, --  Generado sin lock DB
     cotizacion_id BIGINT NULLABLE,
     numero_cotizacion VARCHAR NULLABLE,
     cliente VARCHAR NOT NULL,
@@ -496,7 +496,7 @@ CREATE TABLE proceso_prenda_imagen (
 
 ---
 
-## ⚠️ PROBLEMAS IDENTIFICADOS
+##  PROBLEMAS IDENTIFICADOS
 
 ### 1. 🔴 GENERACIÓN DE NÚMERO DE PEDIDO SIN DB LOCK
 
@@ -523,7 +523,7 @@ $numeroPedido = DB::transaction(function () {
 $numeroPedido = $this->numeracionService->generarNumeroPedido();
 ```
 
-### 2. 🟡 VALIDACIÓN DE TALLAS INCONSISTENTE
+### 2.  VALIDACIÓN DE TALLAS INCONSISTENTE
 
 **Localización:** `CrearPedidoEditableController.php` línea ~180-190
 
@@ -541,7 +541,7 @@ $tipoProcesado = match($tipo) {
 };
 ```
 
-### 3. 🟡 PROCESSING DE PROCESOS DESDE FORMDATA COMPLEJO
+### 3.  PROCESSING DE PROCESOS DESDE FORMDATA COMPLEJO
 
 **Localización:** `CrearPedidoEditableController.php` línea ~270-290
 
@@ -560,7 +560,7 @@ if ($procesosFormData && isset($procesosFormData[$itemIndex])) {
 
 **Riesgo:** Si la estructura de FormData no coincide exactamente, las imágenes del proceso pueden perderse.
 
-### 4. 🟡 OBSERVACIONES EN MÚLTIPLES UBICACIONES
+### 4.  OBSERVACIONES EN MÚLTIPLES UBICACIONES
 
 **Localización:** `CrearPedidoEditableController.php` línea ~310-325
 
@@ -604,7 +604,7 @@ public function crearPedido(Request $request): JsonResponse
 }
 ```
 
-### 6. 🟡 SIN VALIDACIÓN DE CANTIDAD TOTAL CERO
+### 6.  SIN VALIDACIÓN DE CANTIDAD TOTAL CERO
 
 **Localización:** `CrearPedidoEditableController.php` línea ~350
 
@@ -623,7 +623,7 @@ if ($cantidadTotal <= 0) {
 $pedido->update(['cantidad_total' => $cantidadTotal]);
 ```
 
-### 7. 🟡 MANEJO DE CLIENTE NO EXPLÍCITO
+### 7.  MANEJO DE CLIENTE NO EXPLÍCITO
 
 **Localización:** `CrearPedidoEditableController.php` línea ~235-242
 
@@ -655,7 +655,7 @@ if (!$cliente) {
 
 ---
 
-## 📊 FLUJO VISUAL COMPLETO
+##  FLUJO VISUAL COMPLETO
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -729,7 +729,7 @@ if (!$cliente) {
 
 ---
 
-## 🔍 VERIFICACIÓN DE INTEGRIDAD
+##  VERIFICACIÓN DE INTEGRIDAD
 
 ### Consulta SQL para validar pedido completo:
 
@@ -761,7 +761,7 @@ WHERE prenda_pedido_id IN (
 
 ---
 
-## 📝 RECOMENDACIONES
+##  RECOMENDACIONES
 
 ### CRÍTICAS 🔴
 
@@ -774,7 +774,7 @@ WHERE prenda_pedido_id IN (
 3. **Validar cantidad_total > 0**
    - Rechazar pedidos sin cantidad
 
-### IMPORTANTES 🟡
+### IMPORTANTES 
 
 4. **Normalizar tipos de ítems**
    - Mapear todas las variantes ('nuevo', 'prenda_nueva', etc.) a un valor standard
@@ -789,7 +789,7 @@ WHERE prenda_pedido_id IN (
 7. **Documentar estructura de FormData de procesos**
    - La reconstrucción es compleja y propensa a errores
 
-### MEJORAS 🟢
+### MEJORAS 
 
 8. **Agregar logs en puntos críticos**
    - Facilita debugging cuando falla el guardado

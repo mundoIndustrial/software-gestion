@@ -7,17 +7,17 @@
 
 ---
 
-## 🎯 Requisitos Implementados
+##  Requisitos Implementados
 
 ###  Migraciones (Orden Crítico)
 
 ---
 
-## 🎯 Requisitos Implementados
+##  Requisitos Implementados
 
 ###  Migraciones (Orden Crítico)
 
-⚠️ **EJECUTAR EN ESTE ORDEN:**
+ **EJECUTAR EN ESTE ORDEN:**
 
 1. **`2026_01_16_normalize_prendas_pedido.php`** 
    - ALTER TABLE `prendas_pedido` (tabla existente)
@@ -106,7 +106,7 @@
 
 ---
 
-## 📊 Ejemplos de Uso
+##  Ejemplos de Uso
 
 ### Crear Prenda con Variantes
 
@@ -179,7 +179,7 @@ foreach ($pedido->prendasPed as $prenda) {
 
 ---
 
-## 🔍 Validación
+##  Validación
 
 ### Migraciones
 
@@ -248,7 +248,7 @@ PrendaVariante::conBolsillos()->count();
 
 ---
 
-## ⚠️ Consideraciones Importantes
+##  Consideraciones Importantes
 
 1. **Orden de Migraciones**:
    - CRÍTICO: Ejecutar en orden especificado

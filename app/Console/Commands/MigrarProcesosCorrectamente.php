@@ -109,7 +109,7 @@ class MigrarProcesosCorrectamente extends Command
         $dryRun = $this->option('dry-run');
 
         if ($dryRun) {
-            $this->warn("⚠️  MODO DRY-RUN: Los datos NO se guardarán\n");
+            $this->warn("  MODO DRY-RUN: Los datos NO se guardarán\n");
         }
 
         try {
@@ -123,7 +123,7 @@ class MigrarProcesosCorrectamente extends Command
             }
 
             // PASO 2: Migrar procesos
-            $this->info("\n📦 PASO 2: Migrando procesos desde tabla_original...\n");
+            $this->info("\n PASO 2: Migrando procesos desde tabla_original...\n");
             $this->migrarProcesos($dryRun);
 
             // PASO 3: Actualizar áreas en pedidos_produccion
@@ -145,7 +145,7 @@ class MigrarProcesosCorrectamente extends Command
     private function migrarProcesos($dryRun)
     {
         $pedidos = DB::table('tabla_original')->get();
-        $this->line("   📊 Pedidos a procesar: " . $pedidos->count());
+        $this->line("    Pedidos a procesar: " . $pedidos->count());
 
         $bar = $this->output->createProgressBar($pedidos->count());
         $bar->start();
@@ -163,7 +163,7 @@ class MigrarProcesosCorrectamente extends Command
 
                 // VERIFICAR: ¿Este pedido tiene cotizacion_id?
                 if ($pedido->cotizacion_id !== null) {
-                    // ⚠️ SALTAR: Este pedido tiene cotizacion_id
+                    //  SALTAR: Este pedido tiene cotizacion_id
                     $procesos_saltados++;
                     $bar->advance();
                     continue;
@@ -230,14 +230,14 @@ class MigrarProcesosCorrectamente extends Command
         $this->newLine();
         $this->line("    Procesos migrados: {$this->stats['procesos_migrados']}\n");
         if ($procesos_saltados > 0) {
-            $this->line("   ⚠️  Procesos saltados (pedido con cotizacion_id): {$procesos_saltados}\n");
+            $this->line("     Procesos saltados (pedido con cotizacion_id): {$procesos_saltados}\n");
         }
     }
 
     private function actualizarAreas($dryRun)
     {
         $pedidos = PedidoProduccion::all();
-        $this->line("   📊 Actualizando áreas en " . $pedidos->count() . " pedidos");
+        $this->line("    Actualizando áreas en " . $pedidos->count() . " pedidos");
 
         $bar = $this->output->createProgressBar($pedidos->count());
         $bar->start();
@@ -344,7 +344,7 @@ class MigrarProcesosCorrectamente extends Command
     private function mostrarResumen($dryRun)
     {
         $this->info("\n" . str_repeat("=", 140));
-        $this->info("📊 RESUMEN DE MIGRACIÓN DE PROCESOS");
+        $this->info(" RESUMEN DE MIGRACIÓN DE PROCESOS");
         $this->info(str_repeat("=", 140));
 
         $tabla = $this->table(
@@ -356,7 +356,7 @@ class MigrarProcesosCorrectamente extends Command
         );
 
         if ($dryRun) {
-            $this->warn("\n⚠️  MODO DRY-RUN: Los datos NO fueron guardados");
+            $this->warn("\n  MODO DRY-RUN: Los datos NO fueron guardados");
         } else {
             $this->info("\n MIGRACIÓN DE PROCESOS COMPLETADA EXITOSAMENTE");
         }

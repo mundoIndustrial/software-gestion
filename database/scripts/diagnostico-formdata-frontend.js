@@ -5,7 +5,7 @@
  * para ver exactamente qué se está enviando
  */
 
-console.log('🔍 INICIANDO DIAGNÓSTICO DE FormData');
+console.log(' INICIANDO DIAGNÓSTICO DE FormData');
 
 // Interceptar fetch
 const originalFetch = window.fetch;
@@ -52,7 +52,7 @@ window.fetch = function(...args) {
                 }
             }
             
-            console.log('📊 RESUMEN:');
+            console.log(' RESUMEN:');
             console.log('   • Imágenes/Archivos: ' + formDataAnalisis.imagenesContadas);
             console.log('   • Tamaño total: ' + (formDataAnalisis.tamaño / 1024 / 1024).toFixed(2) + ' MB');
             
@@ -69,7 +69,7 @@ window.fetch = function(...args) {
                 });
             });
             
-            console.log('\n🔍 DETALLES DE PROCESOS (si existen):');
+            console.log('\n DETALLES DE PROCESOS (si existen):');
             
             // Analizar campos de procesos
             const procesosFields = [];
@@ -82,14 +82,14 @@ window.fetch = function(...args) {
             if (procesosFields.length > 0) {
                 console.log('   Encontrados ' + procesosFields.length + ' campos de procesos:');
                 procesosFields.forEach(p => {
-                    console.log('   ✓ ' + p.key + ' → ' + (p.isFile ? '📷 ARCHIVO' : '📝 TEXTO'));
+                    console.log('   ✓ ' + p.key + ' → ' + (p.isFile ? '📷 ARCHIVO' : ' TEXTO'));
                 });
             } else {
-                console.log('   ⚠️  NO SE ENCONTRARON CAMPOS DE PROCESOS');
+                console.log('     NO SE ENCONTRARON CAMPOS DE PROCESOS');
             }
             
         } else if (config?.body) {
-            console.log('📝 Body (no es FormData):', config.body.substring(0, 200));
+            console.log(' Body (no es FormData):', config.body.substring(0, 200));
         }
         
         console.log('\n Diagnóstico completado. El servidor recibirá esta información.\n');
@@ -100,7 +100,7 @@ window.fetch = function(...args) {
 };
 
 console.log(' Diagnóstico activado. Ahora haz clic en "Guardar Pedido"');
-console.log('📊 Se mostrará el análisis del FormData que se envía\n');
+console.log(' Se mostrará el análisis del FormData que se envía\n');
 
 // Función auxiliar para monitorear errores de red
 window.addEventListener('error', function(event) {

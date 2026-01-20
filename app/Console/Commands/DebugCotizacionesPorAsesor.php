@@ -66,7 +66,7 @@ class DebugCotizacionesPorAsesor extends Command
         }
 
         if ($aprobadas->count() === 0) {
-            $this->warn("\n⚠️ NO HAY COTIZACIONES APROBADAS PARA ESTE ASESOR");
+            $this->warn("\n NO HAY COTIZACIONES APROBADAS PARA ESTE ASESOR");
             $this->line("\nPARA PROBAR, PUEDES EJECUTAR:");
             $this->line("php artisan debug:actualizar-estado-cotizaciones $asesor_id");
         }

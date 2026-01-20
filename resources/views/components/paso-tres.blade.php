@@ -83,7 +83,7 @@
                 <option value="CHAQUETA">
             </datalist>
             <div id="errorSeccionPrenda" style="display: none; color: #ef4444; font-size: 0.85rem; font-weight: 600; padding: 0.5rem; background: #fee2e2; border-radius: 4px; margin-bottom: 10px;">
-                ⚠️ Debes seleccionar una ubicación
+                 Debes seleccionar una ubicación
             </div>
             
             <div id="secciones_agregadas" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;"></div>
@@ -274,7 +274,7 @@ function agregarSeccion() {
     errorDiv.style.display = 'none';
 
     abrirModalUbicaciones(ubicacion, [], (nuevasUbicaciones, obs) => {
-        console.log('🎯 CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
+        console.log(' CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
         seccionesSeleccionadas.push({
             ubicacion: ubicacion,
             opciones: nuevasUbicaciones,
@@ -613,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         console.log(' PASO-TRES - agregarSeccion redefinida correctamente');
-        console.log('🎯 PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
+        console.log(' PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
     }, 100);
 });
 </script>

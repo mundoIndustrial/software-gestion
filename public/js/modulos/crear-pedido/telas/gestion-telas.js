@@ -15,7 +15,7 @@ window.imagenesTelaModalNueva = [];
 
 //  GUARD: Asegurar que imagenesTelaStorage existe
 if (!window.imagenesTelaStorage) {
-    console.warn('⚠️ imagenesTelaStorage no inicializado en gestion-telas.js, creando fallback');
+    console.warn(' imagenesTelaStorage no inicializado en gestion-telas.js, creando fallback');
     window.imagenesTelaStorage = {
         obtenerImagenes: () => [],
         agregarImagen: (file) => {
@@ -34,13 +34,13 @@ if (!window.imagenesTelaStorage) {
 
 // ========== AGREGAR NUEVA TELA ==========
 window.agregarTelaNueva = function() {
-    console.log('🧵 [TELAS] agregarTelaNueva() LLAMADO');
+    console.log(' [TELAS] agregarTelaNueva() LLAMADO');
     
     const color = document.getElementById('nueva-prenda-color').value.trim().toUpperCase();
     const tela = document.getElementById('nueva-prenda-tela').value.trim().toUpperCase();
     const referencia = document.getElementById('nueva-prenda-referencia').value.trim().toUpperCase();
     
-    console.log('🧵 [TELAS] Valores:', { color, tela, referencia });
+    console.log(' [TELAS] Valores:', { color, tela, referencia });
     
     // Validación
     if (!color) {
@@ -61,7 +61,7 @@ window.agregarTelaNueva = function() {
     
     // Obtener imágenes del storage temporal - SOLO GUARDAR FILE OBJECTS (no blob URLs)
     const imagenesTemporales = window.imagenesTelaStorage.obtenerImagenes();
-    console.log('🧵 [TELAS] Imágenes temporales:', imagenesTemporales.length);
+    console.log(' [TELAS] Imágenes temporales:', imagenesTemporales.length);
     
     // Copiar SOLO los File objects y metadatos (NO el previewUrl volátil)
     const imagenesCopia = imagenesTemporales.map(img => ({
@@ -104,7 +104,7 @@ window.agregarTelaNueva = function() {
     }
     
     // Actualizar tabla
-    console.log('🧵 [TELAS] Llamando a actualizarTablaTelas()');
+    console.log(' [TELAS] Llamando a actualizarTablaTelas()');
     actualizarTablaTelas();
 };
 
@@ -119,25 +119,25 @@ window.actualizarTablaTelas = function() {
         return;
     }
     
-    console.log('📊 [TELAS] actualizarTablaTelas llamado. telasAgregadas:', window.telasAgregadas);
+    console.log(' [TELAS] actualizarTablaTelas llamado. telasAgregadas:', window.telasAgregadas);
     
     // Limpiar tbody excepto la fila de inputs (la primera fila)
     const filas = Array.from(tbody.querySelectorAll('tr'));
-    console.log('📊 [TELAS] Filas en tbody:', filas.length);
+    console.log(' [TELAS] Filas en tbody:', filas.length);
     
     filas.forEach((fila, index) => {
-        console.log(`📊 [TELAS] Fila ${index}:`, fila.innerHTML.substring(0, 50));
+        console.log(` [TELAS] Fila ${index}:`, fila.innerHTML.substring(0, 50));
         if (index > 0) {
             fila.remove();
-            console.log(`📊 [TELAS] Removida fila ${index}`);
+            console.log(` [TELAS] Removida fila ${index}`);
         }
     });
     
-    console.log('📊 [TELAS] Actualizando tabla con', window.telasAgregadas.length, 'telas');
+    console.log(' [TELAS] Actualizando tabla con', window.telasAgregadas.length, 'telas');
     
     // Agregar filas con los datos
     window.telasAgregadas.forEach((telaData, index) => {
-        console.log(`📊 [TELAS] Agregando tela ${index}:`, telaData);
+        console.log(` [TELAS] Agregando tela ${index}:`, telaData);
         
         const tr = document.createElement('tr');
         tr.style.cssText = 'border-bottom: 1px solid #e5e7eb;';
@@ -169,7 +169,7 @@ window.actualizarTablaTelas = function() {
                 } else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);
                 } else {
-                    console.warn(`⚠️ [TELAS] No se pudo procesar imagen ${imgIndex}:`, img);
+                    console.warn(` [TELAS] No se pudo procesar imagen ${imgIndex}:`, img);
                     blobUrl = '';
                 }
                 if (blobUrl) {
@@ -325,13 +325,13 @@ window.manejarImagenTela = function(input) {
 };
 
 /**
- * ⚠️ DEPRECATED: Ya no se usa - las imágenes de tela se renderizan en actualizarTablaTelas()
+ *  DEPRECATED: Ya no se usa - las imágenes de tela se renderizan en actualizarTablaTelas()
  * Las imágenes se renderizaban en este punto, pero causaba errores porque la fila
  * de la tela aún no existía en la tabla. Ahora solo se renderizan cuando la tela
  * se agrega y se crea su fila correspondiente.
  */
 window.actualizarPreviewTela = function() {
-    console.warn('⚠️ [TELAS] actualizarPreviewTela() NO DEBE LLAMARSE - usar actualizarTablaTelas() en su lugar');
+    console.warn(' [TELAS] actualizarPreviewTela() NO DEBE LLAMARSE - usar actualizarTablaTelas() en su lugar');
 };
 
 /**
@@ -411,7 +411,7 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
  * Obtener telas para envío
  */
 window.obtenerTelasParaEnvio = function() {
-    console.log('📦 [TELAS] Preparando datos de telas para envío');
+    console.log(' [TELAS] Preparando datos de telas para envío');
     return window.telasAgregadas;
 };
 
@@ -449,7 +449,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     
     //  Evitar que se reabra la galería mientras está en uso
     if (window.__galeriaTelaAbierta) {
-        console.warn('⚠️ [GALERÍA TELA] Galería ya está abierta, ignorando');
+        console.warn(' [GALERÍA TELA] Galería ya está abierta, ignorando');
         return;
     }
     window.__galeriaTelaAbierta = true;

@@ -355,7 +355,7 @@ function renderizarComparacion(data, contenedor) {
 
             <div class="comparar-prendas-section">
                 <div class="comparar-prendas-title">
-                    <span>👕 Prendas del Pedido</span>
+                    <span> Prendas del Pedido</span>
                     <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${pedido.prendas.length}</span>
                 </div>
                 <div class="comparar-prendas-list">
@@ -405,7 +405,7 @@ function renderizarComparacion(data, contenedor) {
             ${cotizacion ? `
                 <div class="comparar-prendas-section">
                     <div class="comparar-prendas-title">
-                        <span>👕 Prendas de la Cotización</span>
+                        <span> Prendas de la Cotización</span>
                         <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${cotizacion.prendas.length}</span>
                     </div>
                     <div class="comparar-prendas-list">

@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility)
  */
 
-console.log('📦 Cargando NotificationModule...');
+console.log(' Cargando NotificationModule...');
 
 const NotificationModule = {
     /**

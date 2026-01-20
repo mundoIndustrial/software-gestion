@@ -64,7 +64,7 @@ class PrendaComponent {
                 <!-- Header -->
                 <div class="prenda-header">
                     <div class="prenda-title">
-                        👕 Prenda ${index + 1}: ${prenda.nombre_producto || 'Sin nombre'}
+                         Prenda ${index + 1}: ${prenda.nombre_producto || 'Sin nombre'}
                     </div>
                     <div class="prenda-actions">
                         <button type="button" 

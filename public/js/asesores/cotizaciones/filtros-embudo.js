@@ -45,16 +45,16 @@ class FiltroEmbudo {
                 return response.text();
             })
             .then(text => {
-                console.log('📝 Respuesta raw:', text);
+                console.log(' Respuesta raw:', text);
                 const data = JSON.parse(text);
                 console.log(' Valores de filtro cargados:', data);
-                console.log('📊 Tipo de datos:', typeof data);
-                console.log('📊 Es array:', Array.isArray(data));
-                console.log('📊 Fechas:', data.fechas?.length ?? 0);
-                console.log('📊 Códigos:', data.codigos?.length ?? 0);
-                console.log('📊 Clientes:', data.clientes?.length ?? 0);
-                console.log('📊 Tipos:', data.tipos?.length ?? 0);
-                console.log('📊 Estados:', data.estados?.length ?? 0);
+                console.log(' Tipo de datos:', typeof data);
+                console.log(' Es array:', Array.isArray(data));
+                console.log(' Fechas:', data.fechas?.length ?? 0);
+                console.log(' Códigos:', data.codigos?.length ?? 0);
+                console.log(' Clientes:', data.clientes?.length ?? 0);
+                console.log(' Tipos:', data.tipos?.length ?? 0);
+                console.log(' Estados:', data.estados?.length ?? 0);
                 this.valoresFiltro = data;
                 this.poblarSelectores();
             })
@@ -137,7 +137,7 @@ class FiltroEmbudo {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'filter-search-input';
-        input.placeholder = '🔍 Buscar...';
+        input.placeholder = ' Buscar...';
         input.setAttribute('data-columna', columna);
 
         // Evento de búsqueda
@@ -174,7 +174,7 @@ class FiltroEmbudo {
             modal.classList.add('active');
             // Enfocar el primer input
             const input = modal.querySelector('input, select');
-            console.log('📝 Input encontrado:', !!input);
+            console.log(' Input encontrado:', !!input);
             if (input) {
                 setTimeout(() => input.focus(), 100);
             }
@@ -345,7 +345,7 @@ class FiltroEmbudo {
                 `;
                 tabla.parentElement.appendChild(mensajeDiv);
             }
-            mensajeDiv.textContent = '🔍 No se encontraron resultados con los filtros aplicados';
+            mensajeDiv.textContent = ' No se encontraron resultados con los filtros aplicados';
         } else {
             if (mensajeDiv) {
                 mensajeDiv.remove();
@@ -392,8 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Funciones globales para usar en HTML
 
 function abrirFiltro(columna) {
-    console.log('🎯 abrirFiltro() llamado con columna:', columna);
-    console.log('📦 filtroEmbudo existe:', !!filtroEmbudo);
+    console.log(' abrirFiltro() llamado con columna:', columna);
+    console.log(' filtroEmbudo existe:', !!filtroEmbudo);
     if (filtroEmbudo) {
         console.log(' Llamando a abrirModal()');
         filtroEmbudo.abrirModal(columna);

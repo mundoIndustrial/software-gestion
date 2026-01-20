@@ -527,7 +527,7 @@
                             <input type="text" name="productos_prenda[][nombre_producto]" class="prenda-search-input input-large" placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)" required onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);" onchange="actualizarResumenPrenda(); mostrarSelectorVariantes(this);" style="font-size: 0.75rem; padding: 0.4rem;">
                             <div class="prenda-suggestions">
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>
-                                <div class="prenda-suggestion-item" onclick="seleccionarPrenda('👕 CAMISETA', this)">👕 CAMISETA</div>
+                                <div class="prenda-suggestion-item" onclick="seleccionarPrenda(' CAMISETA', this)"> CAMISETA</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('🎽 POLO', this)">🎽 POLO</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('👖 PANTALÓN', this)">👖 PANTALÓN</div>
                                 <div class="prenda-suggestion-item" onclick="seleccionarPrenda('👗 FALDA', this)">👗 FALDA</div>
@@ -1093,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                    console.log('⚠️ ATRIBUTO STYLE CAMBIÓ:', menu.style.display);
+                    console.log(' ATRIBUTO STYLE CAMBIÓ:', menu.style.display);
                     console.trace('Stack trace:');
                 }
             });

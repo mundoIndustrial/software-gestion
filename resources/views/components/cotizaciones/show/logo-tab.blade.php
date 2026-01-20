@@ -606,11 +606,11 @@
         indiceActual = indiceInicial;
         const modalFotos = document.getElementById('modalFotos');
         console.log(' Modal encontrado:', modalFotos);
-        console.log('📊 Display anterior:', modalFotos.style.display);
+        console.log(' Display anterior:', modalFotos.style.display);
         
         modalFotos.style.display = 'flex';
-        console.log('📊 Display nuevo:', modalFotos.style.display);
-        console.log('🎨 Visible:', window.getComputedStyle(modalFotos).display);
+        console.log(' Display nuevo:', modalFotos.style.display);
+        console.log(' Visible:', window.getComputedStyle(modalFotos).display);
         
         mostrarFoto();
         document.body.style.overflow = 'hidden';
@@ -628,7 +628,7 @@
     function mostrarFoto() {
         console.log(' mostrarFoto() - indiceActual:', indiceActual, 'total:', fotosActuales.length);
         if (fotosActuales.length === 0) {
-            console.warn('⚠️ No hay fotos para mostrar');
+            console.warn(' No hay fotos para mostrar');
             return;
         }
         
@@ -636,7 +636,7 @@
         const contadorElement = document.getElementById('contadorFoto');
         
         console.log(' Imagen element:', imgElement);
-        console.log('📊 Contador element:', contadorElement);
+        console.log(' Contador element:', contadorElement);
         
         if (imgElement && contadorElement) {
             imgElement.src = fotosActuales[indiceActual];

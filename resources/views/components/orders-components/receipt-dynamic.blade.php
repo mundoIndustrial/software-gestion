@@ -87,7 +87,7 @@ class ReceiptManager {
         this.indexActual = 0;
 
         console.log(' [RECEIPT MANAGER] Inicializado');
-        console.log('📊 Total de recibos:', this.recibos.length);
+        console.log(' Total de recibos:', this.recibos.length);
         console.log('📄 Recibos:', this.recibos);
 
         this.inicializarEventos();

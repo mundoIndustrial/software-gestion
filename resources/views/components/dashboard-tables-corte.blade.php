@@ -130,7 +130,7 @@ let dashboardFilterParams = {};
 
 // Función para obtener filtros desde inputs o URL
 function obtenerFiltrosDashboard() {
-    console.log('🔍 Obteniendo filtros del dashboard...');
+    console.log(' Obteniendo filtros del dashboard...');
     
     // Resetear filtros
     dashboardFilterParams = {};
@@ -209,7 +209,7 @@ function recargarDashboardCorte() {
     });
     
     console.log('🌐 URL de recarga:', url.toString());
-    console.log('📊 Parámetros de filtro:', Object.keys(dashboardFilterParams).length > 0 ? dashboardFilterParams : 'NINGUNO - Trayendo TODOS los datos');
+    console.log(' Parámetros de filtro:', Object.keys(dashboardFilterParams).length > 0 ? dashboardFilterParams : 'NINGUNO - Trayendo TODOS los datos');
     
     // Hacer petición AJAX para obtener datos actualizados
     fetch(url.toString(), {
@@ -360,7 +360,7 @@ function initializeCorteChannel() {
     
     // Obtener y guardar filtros globales en el componente
     obtenerFiltrosDashboard();
-    console.log('📊 Filtros capturados para dashboard:', dashboardFilterParams);
+    console.log(' Filtros capturados para dashboard:', dashboardFilterParams);
 
     if (window.Echo) {
         console.log('Suscribiéndose al canal "corte"...');
@@ -377,7 +377,7 @@ function initializeCorteChannel() {
         
         channel.listen('CorteRecordCreated', (e) => {
             console.log('🎉 Evento CorteRecordCreated recibido en dashboard-tables-corte!');
-            console.log('📊 Usando filtros:', dashboardFilterParams);
+            console.log(' Usando filtros:', dashboardFilterParams);
             
             // ⚡ DEBOUNCE: Evitar múltiples recargas en corto tiempo
             // Cancelar el timeout anterior si existe

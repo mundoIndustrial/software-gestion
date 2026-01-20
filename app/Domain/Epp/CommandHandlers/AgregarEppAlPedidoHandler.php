@@ -62,12 +62,12 @@ class AgregarEppAlPedidoHandler implements CommandHandler
             ];
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning('⚠️ [AgregarEppAlPedidoHandler] Validación fallida', [
+            Log::warning(' [AgregarEppAlPedidoHandler] Validación fallida', [
                 'error' => $e->getMessage(),
             ]);
             throw $e;
         } catch (\DomainException $e) {
-            Log::warning('⚠️ [AgregarEppAlPedidoHandler] Error de dominio', [
+            Log::warning(' [AgregarEppAlPedidoHandler] Error de dominio', [
                 'error' => $e->getMessage(),
             ]);
             throw $e;

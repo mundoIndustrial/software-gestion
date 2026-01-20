@@ -14,7 +14,7 @@ const TableManager = {
      */
     async init() {
         if (this.initialized) {
-            console.warn('⚠️ TableManager ya fue inicializado');
+            console.warn(' TableManager ya fue inicializado');
             return;
         }
 
@@ -45,7 +45,7 @@ const TableManager = {
      * FASE 1: Módulos sin dependencias
      */
     _loadPhase1() {
-        console.log('📦 Fase 1: Inicializando módulos base...');
+        console.log(' Fase 1: Inicializando módulos base...');
         
         // Estos módulos no dependen de otros
         this.modules.notification = NotificationModule;
@@ -64,7 +64,7 @@ const TableManager = {
      * FASE 2: Módulos con dependencias
      */
     _loadPhase2() {
-        console.log('📦 Fase 2: Inicializando módulos dependientes...');
+        console.log(' Fase 2: Inicializando módulos dependientes...');
         
         // UpdatesModule depende de NotificationModule
         this.modules.updates = UpdatesModule;
@@ -91,7 +91,7 @@ const TableManager = {
      * FASE 3: Integraciones y configuraciones
      */
     _loadPhase3() {
-        console.log('📦 Fase 3: Configurando integraciones...');
+        console.log(' Fase 3: Configurando integraciones...');
         
         // Inicializar todos los dropdowns
         this._initializeAllDropdowns();
@@ -106,7 +106,7 @@ const TableManager = {
      * FASE 4: Listeners globales
      */
     _attachGlobalListeners() {
-        console.log('📦 Fase 4: Adjuntando listeners globales...');
+        console.log(' Fase 4: Adjuntando listeners globales...');
         
         // Detectar cuando la página está a punto de recargar
         window.addEventListener('beforeunload', () => {
@@ -159,7 +159,7 @@ const TableManager = {
      */
     getModule(moduleName) {
         if (!this.modules[moduleName]) {
-            console.warn(`⚠️ Módulo '${moduleName}' no encontrado`);
+            console.warn(` Módulo '${moduleName}' no encontrado`);
             return null;
         }
         return this.modules[moduleName];
@@ -221,7 +221,7 @@ const TableManager = {
         });
         
         if (missing.length > 0) {
-            console.warn(`⚠️ Módulos faltantes: ${missing.join(', ')}`);
+            console.warn(` Módulos faltantes: ${missing.join(', ')}`);
             return false;
         }
         

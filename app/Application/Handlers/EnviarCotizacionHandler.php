@@ -49,7 +49,7 @@ class EnviarCotizacionHandler
 
             // Validar que sea un borrador
             if (!$cotizacion->es_borrador) {
-                Log::warning('⚠️ Intento de enviar cotización ya enviada', [
+                Log::warning(' Intento de enviar cotización ya enviada', [
                     'cotizacion_id' => $command->cotizacionId,
                     'numero_cotizacion' => $cotizacion->numero_cotizacion
                 ]);

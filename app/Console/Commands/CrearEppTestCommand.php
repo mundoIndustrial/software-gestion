@@ -26,7 +26,7 @@ class CrearEppTestCommand extends Command
         $codigo = 'GAF-SEG-' . time();
         $descripcion = 'Gafas de seguridad para protección ocular - Test: ' . date('Y-m-d H:i:s');
 
-        $this->info('📝 Datos a crear:');
+        $this->info(' Datos a crear:');
         $this->line("  - Nombre: $nombre");
         $this->line("  - Categoría: $categoria");
         $this->line("  - Código: $codigo");
@@ -44,7 +44,7 @@ class CrearEppTestCommand extends Command
             $resultado = $this->commandBus->execute($command);
 
             $this->info(' EPP creado exitosamente!');
-            $this->info('📊 Resultado:');
+            $this->info(' Resultado:');
             $this->line(json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             return self::SUCCESS;

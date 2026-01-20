@@ -373,7 +373,7 @@ const ProcessManager = (() => {
                             
                             console.log(' UpdatesModule.updateOrderArea completado');
                         } else {
-                            console.warn('⚠️ UpdatesModule no disponible, intentando alternativa...');
+                            console.warn(' UpdatesModule no disponible, intentando alternativa...');
                             const tabla = document.querySelector('table#tablaOrdenes tbody');
                             const areaDropdown = tabla ? tabla.querySelector(`.area-dropdown[data-id="${procesoData.numero_pedido}"]`) : null;
                             if (areaDropdown) {
@@ -408,7 +408,7 @@ const ProcessManager = (() => {
                             reloadTrackingModal();
                             console.log(' Modal recargado con reloadTrackingModal');
                         } else {
-                            console.warn('⚠️ No se encontró función para recargar el modal');
+                            console.warn(' No se encontró función para recargar el modal');
                         }
                     } catch (error) {
                         console.error('Error recargando tracking:', error);
@@ -439,12 +439,12 @@ const ProcessManager = (() => {
     function _refreshTableRow(numeroPedido) {
         return (async () => {
             try {
-                console.log(`📊 Refrescando fila ${numeroPedido} en tabla...`);
+                console.log(` Refrescando fila ${numeroPedido} en tabla...`);
                 
                 // Obtener los procesos actuales desde el API
                 const procesosResponse = await fetch(`/api/ordenes/${numeroPedido}/procesos`);
                 if (!procesosResponse.ok) {
-                    console.warn(`⚠️ No se pudieron obtener procesos para ${numeroPedido}`);
+                    console.warn(` No se pudieron obtener procesos para ${numeroPedido}`);
                     return;
                 }
                 
@@ -461,7 +461,7 @@ const ProcessManager = (() => {
                 
                 // Si no hay pendiente, buscar el primer no-completado
                 if (!proximoProceso) {
-                    console.log('⚠️ No hay proceso Pendiente, buscando próximo no-completado...');
+                    console.log(' No hay proceso Pendiente, buscando próximo no-completado...');
                     proximoProceso = procesos.find(p => p.estado_proceso !== 'Completado');
                 }
                 
@@ -476,13 +476,13 @@ const ProcessManager = (() => {
                 // Buscar la fila en la tabla
                 const tabla = document.querySelector('table#tablaOrdenes tbody');
                 if (!tabla) {
-                    console.warn('⚠️ Tabla no encontrada');
+                    console.warn(' Tabla no encontrada');
                     return;
                 }
                 
                 const fila = tabla.querySelector(`tr[data-numero-pedido="${numeroPedido}"]`);
                 if (!fila) {
-                    console.warn(`⚠️ Fila ${numeroPedido} no encontrada en tabla`);
+                    console.warn(` Fila ${numeroPedido} no encontrada en tabla`);
                     return;
                 }
                 
@@ -502,7 +502,7 @@ const ProcessManager = (() => {
                         console.log(` Fila ${numeroPedido} ya estaba actualizada: ${newArea}`);
                     }
                 } else {
-                    console.warn(`⚠️ Dropdown de área no encontrado en fila ${numeroPedido}`);
+                    console.warn(` Dropdown de área no encontrado en fila ${numeroPedido}`);
                 }
             } catch (error) {
                 console.error(` Error refrescando fila ${numeroPedido}:`, error);

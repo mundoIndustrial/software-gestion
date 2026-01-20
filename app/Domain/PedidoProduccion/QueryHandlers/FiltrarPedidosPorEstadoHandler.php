@@ -27,7 +27,7 @@ class FiltrarPedidosPorEstadoHandler implements QueryHandler
         }
 
         try {
-            Log::info('🔍 [FiltrarPedidosPorEstadoHandler] Filtrando pedidos', [
+            Log::info(' [FiltrarPedidosPorEstadoHandler] Filtrando pedidos', [
                 'estado' => $query->getEstado(),
                 'page' => $query->getPage(),
             ]);
