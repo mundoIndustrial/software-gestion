@@ -110,7 +110,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         flex-direction: column;
         align-items: center; 
         justify-content: flex-start;
-        z-index: 9999; 
+        z-index: 100001; 
         padding: 0;
         margin: 0;
         overflow: hidden;
@@ -219,7 +219,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                 // Establecer z-index más alto que la galería
                 const swalContainer = document.querySelector('.swal2-container');
                 if (swalContainer) {
-                    swalContainer.style.zIndex = '11000';
+                    swalContainer.style.zIndex = '100002';
                 }
             }
         }).then((result) => {

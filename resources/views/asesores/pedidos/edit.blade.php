@@ -259,6 +259,15 @@
 <!-- ✅ ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
 <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
 
+<!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
 
 <!-- Manejadores de variaciones -->

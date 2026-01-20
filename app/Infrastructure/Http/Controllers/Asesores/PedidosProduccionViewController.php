@@ -54,28 +54,74 @@ class PedidosProduccionViewController
     /**
      * Mostrar formulario para crear pedido nuevo (sin cotización)
      * También soporta edición de pedidos existentes via parámetro ?editar=id
+     * 
+     * FLUJOS:
+     * 1. CREAR NUEVO: Inicia con estructura vacía que el frontend rellena (JSON)
+     * 2. EDITAR: Carga datos de BD y los convierte a estructura del frontend
      */
     public function crearFormEditableNuevo(Request $request): View
     {
         $editarId = $request->query('editar');
-        $datos = [];
+        
+        // ✅ ESTRUCTURA POR DEFECTO para "crear nuevo" (frontend JSON)
+        $datos = [
+            'modoEdicion' => false,
+            'pedido' => (object)[
+                'id' => null,
+                'numero_pedido' => null,
+                'cliente' => '',
+                'forma_de_pago' => '',
+                'observaciones' => '',
+                'estado' => 'pendiente',
+                'fecha_de_creacion_de_orden' => date('Y-m-d'),
+                'asesor_id' => auth()->id(),
+            ],
+            'prendas' => [],
+            'epps' => [],
+            'estados' => [
+                'No iniciado',
+                'En Ejecución',
+                'Entregado',
+                'Anulada'
+            ],
+            'areas' => [
+                'Creación de Orden',
+                'Corte',
+                'Costura',
+                'Bordado',
+                'Estampado',
+                'Control-Calidad',
+                'Entrega',
+                'Polos',
+                'Taller',
+                'Insumos',
+                'Lavandería',
+                'Arreglos',
+                'Despachos'
+            ]
+        ];
 
-        // Si es modo edición, cargar datos del pedido
+        // ✅ Si es modo edición: cargar datos de BD y convertir a estructura del frontend
         if ($editarId) {
             try {
-                $pedido = PedidoProduccion::findOrFail($editarId);
-                // Obtener datos del pedido para pre-llenar
                 $service = app(ObtenerPedidoDetalleService::class);
+                // El servicio ya convierte BD → Estructura Frontend
                 $datos = $service->obtenerParaEdicion($editarId);
                 $datos['modoEdicion'] = true;
                 $datos['pedidoEditarId'] = $editarId;
                 
-                \Log::info('[EDITAR] Cargando pedido para edición', [
+                \Log::info('[EDITAR] Pedido cargado para edición', [
                     'pedido_id' => $editarId,
-                    'cliente' => $datos['pedido']->cliente ?? 'N/A'
+                    'cliente' => $datos['pedido']->cliente ?? 'N/A',
+                    'prendas' => count($datos['prendas'] ?? []),
+                    'epps' => count($datos['epps'] ?? [])
                 ]);
             } catch (\Exception $e) {
-                \Log::warning('[EDITAR] Error cargando pedido', ['error' => $e->getMessage()]);
+                \Log::warning('[EDITAR] Error cargando pedido, iniciando vacío', [
+                    'error' => $e->getMessage(),
+                    'pedido_id' => $editarId
+                ]);
+                // Continuar con estructura vacía si hay error
             }
         }
 

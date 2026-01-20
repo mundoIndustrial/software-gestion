@@ -32,7 +32,7 @@
     <script>
         window.modoEdicion = true;
         window.pedidoEditarId = {{ $pedidoEditarId }};
-        // ✅ Pasar datos completos con pedido, prendas, EPPs, etc.
+        // Pasar datos completos con pedido, prendas, EPPs, etc.
         window.pedidoEditarData = {!! json_encode([
             'pedido' => $pedido ?? [],
             'epps' => $epps ?? [],
@@ -175,15 +175,58 @@
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     
-    <!-- ✅ SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
+    <!-- SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
     <script src="{{ asset('js/services/epp/EppHttpService.js') }}"></script>
+
+    <!-- ✅ CRÍTICO: Cargar image-storage-service ANTES de gestion-telas.js -->
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+    
+    <!-- ✅ Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
+    <script>
+        if (!window.imagenesPrendaStorage) {
+            window.imagenesPrendaStorage = new ImageStorageService(3);
+            console.log('✅ [CREAR-PEDIDO-NUEVO] imagenesPrendaStorage inicializado');
+        }
+        if (!window.imagenesTelaStorage) {
+            window.imagenesTelaStorage = new ImageStorageService(3);
+            console.log('✅ [CREAR-PEDIDO-NUEVO] imagenesTelaStorage inicializado');
+        }
+        if (!window.imagenesReflectivoStorage) {
+            window.imagenesReflectivoStorage = new ImageStorageService(3);
+            console.log('✅ [CREAR-PEDIDO-NUEVO] imagenesReflectivoStorage inicializado');
+        }
+    </script>
     
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
     
-    <!-- ✅ ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
+    <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
     <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+    
+    <!-- Constantes y helpers -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}"></script>
+    
+    <!-- UTILIDADES (Helpers de DOM y Limpieza) -->
+    <script src="{{ asset('js/utilidades/dom-utils.js') }}"></script>
+    <script src="{{ asset('js/utilidades/modal-cleanup.js') }}"></script>
+    
+    <!-- UTILIDADES (Procesamiento de datos de prenda) -->
+    <script src="{{ asset('js/utilidades/tela-processor.js') }}"></script>
+    <script src="{{ asset('js/utilidades/prenda-data-builder.js') }}"></script>
+    
+    <!-- UTILIDADES (Validación y Logging - Phase 3) -->
+    <script src="{{ asset('js/utilidades/logger-app.js') }}"></script>
+    <script src="{{ asset('js/utilidades/validador-prenda.js') }}"></script>
+    
+    <!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
     
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
@@ -196,7 +239,6 @@
     
     <!-- Cargar módulos de gestión de pedidos -->
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}"></script>
     
@@ -209,13 +251,21 @@
     <!-- Manejadores de variaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
     
-    <!-- ✅ Componente tarjeta readonly (completo - funcional) -->
+    <!-- Componente tarjeta readonly (completo - funcional) -->
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
     
-    <!-- ✅ Edición simple de prendas (reutiliza factura) -->
+    <!-- ✅ CRÍTICO: Cargar manejadores-procesos-prenda ANTES de modal-prenda-dinamico.js -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+    
+    <!-- Modal de prendas - Constantes HTML (DEBE cargarse ANTES del modal principal) -->
+    <script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>
+    
+    <!-- Modal de prendas - Clase principal (usa constantes) -->
+    <script src="{{ asset('js/componentes/modal-prenda-dinamico.js') }}"></script>
+    
+    <!-- Edición simple de prendas (reutiliza factura) -->
     <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
     
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
 
@@ -223,10 +273,7 @@
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar storages de imágenes
-        window.imagenesPrendaStorage = new ImageStorageService(3);
-        window.imagenesTelaStorage = new ImageStorageService(3);
-        window.imagenesReflectivoStorage = new ImageStorageService(3);
+        // ✅ Storages ya inicializados en el script anterior (antes de cargar gestion-telas.js)
         
         // Configurar asesora
         document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';
@@ -312,16 +359,16 @@
             }
         };
 
-        console.log('✅ Vista de nuevo pedido inicializada');
+        console.log('Vista de nuevo pedido inicializada');
     });
 </script>
 
-<!-- ✅ Script para cargar datos en modo edición -->
+<!-- Script para cargar datos en modo edición -->
 @if($modoEdicion ?? false)
 <script src="{{ asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
 @endif
 
-<!-- ✅ Script para Vista Previa en Vivo de Factura -->
+<!-- Script para Vista Previa en Vivo de Factura -->
 <script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
 
 <!-- Script para interactividad de item-cards -->

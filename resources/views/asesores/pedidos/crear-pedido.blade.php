@@ -40,7 +40,16 @@
     <!-- ✅ GESTOR CENTRALIZADO JSON - Debe cargarse PRIMERO -->
     <script src="{{ asset('js/modulos/crear-pedido/gestor-datos-pedido-json.js') }}"></script>
     
-    <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
+    <!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+    
+    <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes y servicios -->
     <!-- Módulos para COTIZACIONES (crear pedido desde cotización) -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>

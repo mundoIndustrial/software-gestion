@@ -159,8 +159,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const cotizacion = {!! json_encode($cotizacion->toArray()) !!};
-        console.log('📂 Datos de cotización recibidos:', cotizacion);
-        console.log('📂 Cotización ID:', cotizacion.id);
+        console.log(' Datos de cotización recibidos:', cotizacion);
+        console.log(' Cotización ID:', cotizacion.id);
         
         // Guardar ID en variable global para actualizar después
         window.cotizacionIdActual = cotizacion.id;

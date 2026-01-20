@@ -332,21 +332,57 @@ window.manejarImagenTela = function(input) {
             return;
         }
         
-        // Agregar imagen al storage - RETORNA OBJETO, NO PROMISE
-        const resultado = window.imagenesTelaStorage.agregarImagen(input.files[0]);
+        console.log(' [WRAPPER] Llamando a agregarImagen()...');
+        // Agregar imagen al storage - RETORNA UNA PROMISE
+        const promesa = window.imagenesTelaStorage.agregarImagen(input.files[0]);
         
-        if (resultado.success) {
-            console.log(' [WRAPPER] Imagen de tela agregada al storage');
-            actualizarPreviewTela();
-        } else if (resultado.reason === 'MAX_LIMIT') {
-            console.warn(' [WRAPPER] Límite de imágenes alcanzado');
-            mostrarModalLimiteImagenes();
-        } else if (resultado.reason === 'INVALID_FILE') {
-            console.warn(' [WRAPPER] Archivo inválido');
-            mostrarModalError('El archivo debe ser una imagen válida');
+        console.log(' [WRAPPER] agregarImagen retornó:', promesa);
+        console.log(' [WRAPPER] Es Promise:', promesa instanceof Promise);
+        
+        // Manejar como Promise
+        if (promesa instanceof Promise) {
+            promesa
+                .then((resultado) => {
+                    console.log(' [WRAPPER] ✅ Promise resuelta - resultado:', resultado);
+                    if (typeof actualizarPreviewTela === 'function') {
+                        actualizarPreviewTela();
+                    } else {
+                        console.warn(' [WRAPPER] actualizarPreviewTela no es una función');
+                    }
+                })
+                .catch((error) => {
+                    console.error(' [WRAPPER] Promise rechazada - error:', error.message);
+                    if (error.message === 'MAX_LIMIT') {
+                        console.warn(' [WRAPPER] Límite de imágenes alcanzado');
+                        if (typeof mostrarModalLimiteImagenes === 'function') {
+                            mostrarModalLimiteImagenes();
+                        }
+                    } else if (error.message === 'INVALID_FILE') {
+                        console.warn(' [WRAPPER] Archivo inválido');
+                        mostrarModalError('El archivo debe ser una imagen válida');
+                    } else {
+                        console.error(' [WRAPPER] Error desconocido:', error.message);
+                        mostrarModalError('Error al procesar la imagen: ' + error.message);
+                    }
+                });
         } else {
-            console.error(' [WRAPPER] Error desconocido:', resultado.reason);
-            mostrarModalError('Error al procesar la imagen');
+            // Fallback: si no es Promise, tratar como objeto sincrónico
+            console.warn(' [WRAPPER] agregarImagen() no retornó Promise, tratando como sincrónico');
+            if (promesa && promesa.success === true) {
+                console.log(' [WRAPPER] ✅ Imagen agregada (sincrónico)');
+                if (typeof actualizarPreviewTela === 'function') {
+                    actualizarPreviewTela();
+                }
+            } else if (promesa && promesa.reason === 'MAX_LIMIT') {
+                if (typeof mostrarModalLimiteImagenes === 'function') {
+                    mostrarModalLimiteImagenes();
+                }
+            } else if (promesa && promesa.reason === 'INVALID_FILE') {
+                mostrarModalError('El archivo debe ser una imagen válida');
+            } else {
+                console.error(' [WRAPPER] Resultado inválido:', promesa);
+                mostrarModalError('Error al procesar la imagen');
+            }
         }
     } catch (err) {
         console.error(' [WRAPPER] Error inesperado:', err);
@@ -476,7 +512,7 @@ console.log(' [WRAPPERS] Módulo prendas-wrappers.js cargado');
  */
 window.mostrarModalLimiteImagenes = function() {
     const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10001;';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100000;';
     
     const box = document.createElement('div');
     box.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';
@@ -508,7 +544,7 @@ window.mostrarModalLimiteImagenes = function() {
  */
 window.mostrarModalError = function(mensaje) {
     const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10001;';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100000;';
     
     const box = document.createElement('div');
     box.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';

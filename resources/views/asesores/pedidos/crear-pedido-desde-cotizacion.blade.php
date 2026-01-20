@@ -141,6 +141,16 @@
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+    
+    <!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+    
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
     

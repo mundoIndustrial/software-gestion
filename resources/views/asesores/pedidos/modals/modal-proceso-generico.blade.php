@@ -1,5 +1,5 @@
 <!-- MODAL: Agregar Proceso Genérico (Reflectivo, Estampado, Bordado, DTF, Sublimado) -->
-<div id="modal-proceso-generico" class="modal-overlay" style="z-index: 10000;">
+<div id="modal-proceso-generico" class="modal-overlay" style="z-index: 100000;">
     <div class="modal-container modal-xl">
         <!-- Header -->
         <div class="modal-header modal-header-primary">
@@ -115,7 +115,7 @@
 </div>
 
 <!-- MODAL SECUNDARIO: Editor de Tallas Específicas -->
-<div id="modal-editor-tallas" class="modal-overlay" style="z-index: 10001; display: none;">
+<div id="modal-editor-tallas" class="modal-overlay" style="z-index: 100002; display: none;">
     <div class="modal-container modal-lg">
         <!-- Header -->
         <div class="modal-header modal-header-primary">

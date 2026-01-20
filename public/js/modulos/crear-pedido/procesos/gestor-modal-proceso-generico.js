@@ -393,7 +393,7 @@ function mostrarModalAdvertenciaTallas() {
     const modal = document.createElement('div');
     modal.id = 'modal-advertencia-tallas';
     modal.className = 'modal-overlay';
-    modal.style.zIndex = '10002';
+    modal.style.zIndex = '100002';
     modal.innerHTML = `
         <div class="modal-container modal-sm">
             <div class="modal-header" style="background: #fef2f2; border-bottom: 2px solid #fecaca;">

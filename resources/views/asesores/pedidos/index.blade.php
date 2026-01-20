@@ -2290,7 +2290,24 @@
 <!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
 <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
+
+<!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+
+<!-- Dependencias para Modal Dinámico -->
+<script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+
+<!-- Modal Dinámico: Constantes HTML (DEBE cargarse ANTES del modal principal) -->
+<script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>
 
 <!-- Modal Dinámico: Prenda Nueva -->
 <script src="{{ asset('js/componentes/modal-prenda-dinamico.js') }}"></script>
@@ -2308,6 +2325,4 @@
 <script src="{{ asset('js/order-tracking/modules/tableManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}"></script>
-<!-- Debug: Script de diagnóstico para eliminar pedidos -->
-<script src="{{ asset('js/asesores/debug-eliminar-pedido.js') }}"></script>
 @endpush

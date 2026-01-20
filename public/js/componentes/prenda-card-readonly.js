@@ -15,7 +15,7 @@
  * @returns {string} HTML de la tarjeta
  */
 function generarTarjetaPrendaReadOnly(prenda, indice) {
-    console.log('🔍 DEBUG: generarTarjetaPrendaReadOnly - Prenda recibida:', prenda);
+    console.log(' DEBUG: generarTarjetaPrendaReadOnly - Prenda recibida:', prenda);
     
     // Usar las propiedades correctas
     const imagenes = prenda.imagenes || prenda.fotos || [];
@@ -26,16 +26,16 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         const img = imagenes[0];
         //  Primero intentar usar blobUrl si ya existe (creado al guardar)
         if (img && img.blobUrl && typeof img.blobUrl === 'string') {
-            console.log('🔄 Usando blob URL ya creado');
+            console.log(' Usando blob URL ya creado');
             fotoPrincipal = img.blobUrl;
         }
         // Si es un objeto con propiedad 'file', es un File object
         else if (img && img.file instanceof File) {
-            console.log('🔄 Convirtiendo File object a blob URL');
+            console.log(' Convirtiendo File object a blob URL');
             fotoPrincipal = URL.createObjectURL(img.file);
         } else if (img instanceof File) {
             // Si es directamente un File
-            console.log('🔄 File directo, convirtiendo a blob URL');
+            console.log(' File directo, convirtiendo a blob URL');
             fotoPrincipal = URL.createObjectURL(img);
         } else if (typeof img === 'string') {
             // Si ya es una URL
@@ -44,7 +44,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
             // Si es un objeto con array de imagenes (como las telas)
             const innerImg = img.imagenes[0];
             if (innerImg instanceof File) {
-                console.log('🔄 Imagen anidada es File, convirtiendo');
+                console.log(' Imagen anidada es File, convirtiendo');
                 fotoPrincipal = URL.createObjectURL(innerImg);
             } else if (innerImg.blobUrl) {
                 fotoPrincipal = innerImg.blobUrl;
@@ -69,7 +69,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         color = prenda.color || 'N/A';
         referencia = prenda.ref || prenda.referencia || 'N/A';  // BD usa 'ref', no 'referencia'
         
-        console.log('📋 Tela obtenida de propiedades raíz (BD):', {tela, color, referencia});
+        console.log(' Tela obtenida de propiedades raíz (BD):', {tela, color, referencia});
         
         // Obtener foto de tela desde imagenes_tela
         // La segunda imagen es la de tela real (primera es imagen_tela de portada)
@@ -79,7 +79,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
             const fotoDatos = prenda.imagenes_tela[telaIndex];
             // Las fotos de BD tienen estructura: {url, ruta_webp, ruta_original, ...}
             telaFoto = fotoDatos.url || fotoDatos.ruta_webp || fotoDatos.ruta_original || null;
-            console.log('📸 Foto de tela obtenida de imagenes_tela[' + telaIndex + ']:', telaFoto);
+            console.log(' Foto de tela obtenida de imagenes_tela[' + telaIndex + ']:', telaFoto);
         }
     }
     // SEGUNDO: Intentar desde telasAgregadas (prendas nuevas recién creadas)
@@ -89,19 +89,19 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         color = telaPrincipal.color || 'N/A';
         referencia = telaPrincipal.referencia || 'N/A';
         
-        console.log('📋 Tela obtenida de telasAgregadas:', {tela, color, referencia});
+        console.log(' Tela obtenida de telasAgregadas:', {tela, color, referencia});
         
         // Obtener foto de tela y convertir si es necesario
         if (telaPrincipal.imagenes && Array.isArray(telaPrincipal.imagenes) && telaPrincipal.imagenes.length > 0) {
             const imgTela = telaPrincipal.imagenes[0];
             //  Primero intentar usar blobUrl si ya existe
             if (imgTela && imgTela.blobUrl && typeof imgTela.blobUrl === 'string') {
-                console.log('🔄 Usando blob URL de tela ya creado');
+                console.log(' Usando blob URL de tela ya creado');
                 telaFoto = imgTela.blobUrl;
             }
             // Convertir si es File object (igual que con imágenes de prenda)
             else if (imgTela && imgTela.file instanceof File) {
-                console.log('🔄 Convirtiendo File object de tela a blob URL');
+                console.log(' Convirtiendo File object de tela a blob URL');
                 telaFoto = URL.createObjectURL(imgTela.file);
             } else if (imgTela instanceof File) {
                 telaFoto = URL.createObjectURL(imgTela);
@@ -118,14 +118,14 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         color = telaPrincipal.color || 'N/A';
         referencia = telaPrincipal.referencia || 'N/A';
         
-        console.log('📋 Tela obtenida de prenda.telas (BD antigua):', {tela, color, referencia});
+        console.log(' Tela obtenida de prenda.telas (BD antigua):', {tela, color, referencia});
         
         // Obtener foto de tela desde telaFotos (relación de BD)
         if (telaPrincipal.telaFotos && Array.isArray(telaPrincipal.telaFotos) && telaPrincipal.telaFotos.length > 0) {
             const primerFoto = telaPrincipal.telaFotos[0];
             // Las fotos de BD tienen estructura: {url, ruta_webp, ruta_original, ...}
             telaFoto = primerFoto.url || primerFoto.ruta_webp || primerFoto.ruta_original || null;
-            console.log('📸 Foto de tela obtenida de telaFotos:', telaFoto);
+            console.log(' Foto de tela obtenida de telaFotos:', telaFoto);
         }
     }
     // CUARTO: Fallback a variantes si existen
@@ -133,13 +133,13 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         tela = prenda.variantes?.tela || prenda.tela || 'N/A';
         color = prenda.variantes?.color || prenda.color || 'N/A';
         referencia = prenda.variantes?.referencia || prenda.referencia || prenda.ref || 'N/A';
-        console.log('📋 Tela obtenida de fallback variantes:', {tela, color, referencia});
+        console.log(' Tela obtenida de fallback variantes:', {tela, color, referencia});
     }
 
-    console.log('📸 Foto principal:', fotoPrincipal);
-    console.log('📋 Tela:', tela, 'Color:', color, 'Referencia:', referencia);
-    console.log('📸 Foto tela:', telaFoto);
-    console.log('📊 Tallas disponibles:', prenda.tallas || prenda.generosConTallas);
+    console.log(' Foto principal:', fotoPrincipal);
+    console.log(' Tela:', tela, 'Color:', color, 'Referencia:', referencia);
+    console.log(' Foto tela:', telaFoto);
+    console.log(' Tallas disponibles:', prenda.tallas || prenda.generosConTallas);
     console.log('⚙️  Procesos:', prenda.procesos);
 
     // Construir HTML de variaciones expandible
@@ -147,7 +147,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
     
     // Construir HTML combinado de tallas y cantidades
     const tallasYCantidadesHTML = construirSeccionTallasYCantidades(prenda, indice);
-    console.log(`📋 HTML Tallas y Cantidades generado. Largo: ${tallasYCantidadesHTML.length} caracteres`);
+    console.log(` HTML Tallas y Cantidades generado. Largo: ${tallasYCantidadesHTML.length} caracteres`);
     
     // Construir HTML de procesos expandible
     const procesosHTML = construirSeccionProcesos(prenda, indice);
@@ -190,7 +190,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
                                 data-foto-index="0"
                                 style="cursor: pointer; width: 120px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
                                 onload="console.log(' Imagen de prenda cargada:', '${fotoPrincipal}')"
-                                onerror="console.error('❌ Error al cargar imagen de prenda:', '${fotoPrincipal}')"
+                                onerror="console.error(' Error al cargar imagen de prenda:', '${fotoPrincipal}')"
                                 onmouseover="this.style.boxShadow='0 4px 16px rgba(14,165,233,0.3)'; this.style.borderColor='#0ea5e9'; this.parentElement.querySelector('.foto-overlay-icon').style.opacity='1';"
                                 onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; this.style.borderColor='#e5e7eb'; this.parentElement.querySelector('.foto-overlay-icon').style.opacity='0';"
                             />
@@ -241,7 +241,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
                                     style="cursor: pointer; width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 2px solid #e5e7eb; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.08);"
                                     title="Click para ver galería de telas"
                                     onload="console.log(' Foto de tela cargada')"
-                                    onerror="console.error('❌ Error al cargar foto de tela')"
+                                    onerror="console.error(' Error al cargar foto de tela')"
                                     onmouseover="this.style.boxShadow='0 4px 12px rgba(14,165,233,0.3)'; this.style.borderColor='#0ea5e9'; this.style.transform='scale(1.05)';"
                                     onmouseout="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.08)'; this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)';"
                                 />
@@ -274,9 +274,9 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
  * Construir sección expandible de VARIACIONES
  */
 function construirSeccionVariaciones(prenda, indice) {
-    console.log('🔄 Construyendo VARIACIONES para prenda:', indice);
+    console.log(' Construyendo VARIACIONES para prenda:', indice);
     const variantes = prenda.variantes || {};
-    console.log('📊 Variantes disponibles:', variantes);
+    console.log(' Variantes disponibles:', variantes);
     
     // Mapeo de variaciones con sus propiedades
     const variacionesMapeo = [
@@ -295,7 +295,7 @@ function construirSeccionVariaciones(prenda, indice) {
     console.log(` Variaciones aplicadas: ${variacionesAplicadas.length}`);
     
     if (variacionesAplicadas.length === 0) {
-        console.log('⚠️  Sin variaciones aplicadas para prenda', indice);
+        console.log('  Sin variaciones aplicadas para prenda', indice);
         return '';
     }
 
@@ -308,7 +308,7 @@ function construirSeccionVariaciones(prenda, indice) {
         console.log(`📝 [VARIACION] ${label}: valor='${valor}', obsKey='${obsKey}', observaciones='${observaciones}'`);
         
         if (label === 'Bolsillos') {
-            console.log('🔍 [BOLSILLOS RENDERIZADO] Detalles:');
+            console.log(' [BOLSILLOS RENDERIZADO] Detalles:');
             console.log('  - tiene_bolsillos:', variantes.tiene_bolsillos);
             console.log('  - obs_bolsillos:', variantes.obs_bolsillos);
         }
@@ -363,14 +363,14 @@ function construirSeccionVariaciones(prenda, indice) {
  * Construir sección COMBINADA de TALLAS Y CANTIDADES
  */
 function construirSeccionTallasYCantidades(prenda, indice) {
-    console.log('👕📊 Construyendo TALLAS Y CANTIDADES para prenda:', indice);
+    console.log('👕 Construyendo TALLAS Y CANTIDADES para prenda:', indice);
     
     // Obtener tallas
     let tallas = prenda.tallas;
     let generosConTallas = prenda.generosConTallas;
     const cantidadesPorTalla = prenda.cantidadesPorTalla || {};
     
-    console.log('📋 prenda.tallas:', tallas);
+    console.log(' prenda.tallas:', tallas);
     console.log('📈 Cantidades disponibles:', cantidadesPorTalla);
     
     // Estructurar datos por género
@@ -413,7 +413,7 @@ function construirSeccionTallasYCantidades(prenda, indice) {
     console.log(` Total tallas: ${totalTallas}, Total cantidades: ${totalCantidades}`);
     
     if (totalTallas === 0) {
-        console.log('⚠️  Sin datos para prenda', indice);
+        console.log('  Sin datos para prenda', indice);
         return '';
     }
 
@@ -475,13 +475,13 @@ function construirSeccionTallasYCantidades(prenda, indice) {
 function construirSeccionProcesos(prenda, indice) {
     console.log('⚙️  Construyendo PROCESOS para prenda:', indice);
     const procesos = prenda.procesos || {};
-    console.log('📊 Procesos disponibles:', procesos);
+    console.log(' Procesos disponibles:', procesos);
     
     const procesosConDatos = Object.entries(procesos).filter(([_, proc]) => proc && (proc.datos !== null || proc.tipo));
     console.log(` Procesos con datos: ${procesosConDatos.length}`);
     
     if (procesosConDatos.length === 0) {
-        console.log('⚠️  Sin procesos para prenda', indice);
+        console.log('  Sin procesos para prenda', indice);
         return '';
     }
 
@@ -747,12 +747,12 @@ document.addEventListener('click', (e) => {
                         }
                         console.log(`    Prendas re-renderizadas. Total activas: ${prendas.length}`);
                     } else {
-                        console.error('❌ Container o función de renderizado no disponibles');
+                        console.error(' Container o función de renderizado no disponibles');
                     }
                     
                     console.log(`    Prenda ${prendaIndex + 1} eliminada`);
                 } else {
-                    console.warn('   ⚠️  No se encontró método eliminar');
+                    console.warn('     No se encontró método eliminar');
                 }
             }
         });
@@ -776,7 +776,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
     // Click en foto principal de prenda
     if (e.target.classList.contains('foto-principal-readonly')) {
-        console.log('📸 Click en foto principal');
+        console.log(' Click en foto principal');
         e.stopPropagation();
         const prendaIndex = parseInt(e.target.dataset.prendaIndex);
         console.log(`   Prenda índice: ${prendaIndex}`);
@@ -784,8 +784,8 @@ document.addEventListener('click', (e) => {
         if (window.gestorPrendaSinCotizacion) {
             const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
             console.log('   Prenda obtenida para galería:', prenda);
-            console.log('   📸 Prenda.imagenes en obtenerPorIndice:', prenda?.imagenes);
-            console.log('   📸 Prenda.imagenes?.length:', prenda?.imagenes?.length);
+            console.log('    Prenda.imagenes en obtenerPorIndice:', prenda?.imagenes);
+            console.log('    Prenda.imagenes?.length:', prenda?.imagenes?.length);
             if (prenda) {
                 abrirGaleriaFotosModal(prenda, prendaIndex);
             }
@@ -794,7 +794,7 @@ document.addEventListener('click', (e) => {
 
     // Click en foto de tela
     if (e.target.classList.contains('foto-tela-readonly')) {
-        console.log('🧵 Click en foto de tela');
+        console.log(' Click en foto de tela');
         e.stopPropagation();
         const prendaIndex = parseInt(e.target.dataset.prendaIndex);
         console.log(`   Prenda índice: ${prendaIndex}`);
@@ -813,13 +813,13 @@ document.addEventListener('click', (e) => {
  * Abrir modal de galería de fotos con navegación
  */
 function abrirGaleriaFotosModal(prenda, prendaIndex) {
-    console.log('🖼️  Abriendo galería de fotos para prenda:', prendaIndex);
-    console.log('🔍 [FOTO-PRENDA] Objeto prenda completo:', prenda);
-    console.log('🔍 [FOTO-PRENDA] prenda.imagenes:', prenda.imagenes);
-    console.log('🔍 [FOTO-PRENDA] prenda.fotos:', prenda.fotos);
-    console.log('🔍 [FOTO-PRENDA] typeof prenda.imagenes:', typeof prenda.imagenes);
-    console.log('🔍 [FOTO-PRENDA] Array.isArray(prenda.imagenes):', Array.isArray(prenda.imagenes));
-    console.log('🔍 [FOTO-PRENDA] prenda.imagenes?.length:', prenda.imagenes?.length);
+    console.log('  Abriendo galería de fotos para prenda:', prendaIndex);
+    console.log(' [FOTO-PRENDA] Objeto prenda completo:', prenda);
+    console.log(' [FOTO-PRENDA] prenda.imagenes:', prenda.imagenes);
+    console.log(' [FOTO-PRENDA] prenda.fotos:', prenda.fotos);
+    console.log(' [FOTO-PRENDA] typeof prenda.imagenes:', typeof prenda.imagenes);
+    console.log(' [FOTO-PRENDA] Array.isArray(prenda.imagenes):', Array.isArray(prenda.imagenes));
+    console.log(' [FOTO-PRENDA] prenda.imagenes?.length:', prenda.imagenes?.length);
     
     //  CORRECCIÓN: Revisar si tienen elementos, no solo si existen
     let imagenes = (prenda.imagenes?.length > 0 ? prenda.imagenes : null) || 
@@ -864,9 +864,9 @@ function abrirGaleriaFotosModal(prenda, prendaIndex) {
     console.log(`    Fotos procesadas: ${fotosUrls.length}`, fotosUrls);
     
     if (fotosUrls.length === 0) {
-        console.warn('⚠️  Sin fotos disponibles');
+        console.warn('  Sin fotos disponibles');
         Swal.fire({
-            title: '📸 Sin fotos',
+            title: ' Sin fotos',
             html: '<p style="color: #666;">Esta prenda no tiene fotos cargadas</p>',
             icon: 'info',
             confirmButtonText: 'OK',
@@ -910,7 +910,7 @@ function abrirGaleriaFotosModal(prenda, prendaIndex) {
     };
 
     Swal.fire({
-        title: `📸 ${prenda.nombre_producto}`,
+        title: ` ${prenda.nombre_producto}`,
         html: generarContenidoGaleria(indiceActual),
         width: '600px',
         confirmButtonText: 'Cerrar',
@@ -952,16 +952,16 @@ function abrirGaleriaFotosModal(prenda, prendaIndex) {
  * Abrir modal de galería de fotos de tela con navegación
  */
 function abrirGaleriaTelasModal(prenda, prendaIndex) {
-    console.log('🧵 Abriendo galería de fotos de tela para prenda:', prendaIndex);
+    console.log(' Abriendo galería de fotos de tela para prenda:', prendaIndex);
     
     // Obtener telas de la prenda
     const telas = prenda.telasAgregadas || [];
     console.log(`   Telas disponibles: ${telas.length}`, telas);
     
     if (telas.length === 0) {
-        console.warn('⚠️  Sin telas disponibles');
+        console.warn('  Sin telas disponibles');
         Swal.fire({
-            title: '🧵 Sin telas',
+            title: ' Sin telas',
             html: '<p style="color: #666;">Esta prenda no tiene telas cargadas</p>',
             icon: 'info',
             confirmButtonText: 'OK',
@@ -1004,9 +1004,9 @@ function abrirGaleriaTelasModal(prenda, prendaIndex) {
     console.log(`   Telas con fotos: ${telasConFotos.length}`, telasConFotos);
 
     if (telasConFotos.length === 0) {
-        console.warn('⚠️  Sin fotos de telas disponibles');
+        console.warn('  Sin fotos de telas disponibles');
         Swal.fire({
-            title: '📸 Sin fotos',
+            title: ' Sin fotos',
             html: '<p style="color: #666;">Las telas no tienen fotos cargadas</p>',
             icon: 'info',
             confirmButtonText: 'OK',
@@ -1068,7 +1068,7 @@ function abrirGaleriaTelasModal(prenda, prendaIndex) {
     };
 
     Swal.fire({
-        title: `🧵 Telas - ${prenda.nombre_producto}`,
+        title: ` Telas - ${prenda.nombre_producto}`,
         html: generarContenidoGaleriaTela(telaActualIdx, fotoActualIdx),
         width: '600px',
         confirmButtonText: 'Cerrar',
@@ -1107,4 +1107,4 @@ function abrirGaleriaTelasModal(prenda, prendaIndex) {
 }
 
 console.log(' Componente prenda-card-readonly cargado con DEBUG LOGGING');
-console.log('📊 Los logs mostrarán: estructura de datos, fotos, variantes, tallas y procesos');
+console.log(' Los logs mostrarán: estructura de datos, fotos, variantes, tallas y procesos');

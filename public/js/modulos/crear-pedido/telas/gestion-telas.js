@@ -28,6 +28,8 @@ if (!window.imagenesTelaStorage) {
         },
         obtenerBlob: (index) => null
     };
+} else {
+    console.log('✅ [GESTION-TELAS] imagenesTelaStorage disponible y listo');
 }
 
 // ========== AGREGAR NUEVA TELA ==========
@@ -342,7 +344,7 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
     let indiceActual = indiceInicial;
     
     const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; padding: 0;';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100001; padding: 0;';
     
     const container = document.createElement('div');
     container.style.cssText = 'position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; max-width: 100%; max-height: 100%;';

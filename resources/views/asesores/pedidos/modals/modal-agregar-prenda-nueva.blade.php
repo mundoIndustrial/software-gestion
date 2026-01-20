@@ -84,29 +84,29 @@
                     
                     <!-- Tabla de telas -->
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; table-layout: fixed;">
                             <thead>
                                 <tr style="background: #0066cc; border-bottom: 2px solid #0066cc;">
-                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Tela</th>
-                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Color</th>
-                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white;">Referencia</th>
-                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white;">Imagen Tela</th>
-                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white; width: 30px;"></th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Tela</th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Color</th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Referencia</th>
+                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Imagen Tela</th>
+                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;"></th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-telas">
                                 <!-- Fila para agregar nueva tela -->
                                 <tr style="border-bottom: 1px solid #e5e7eb;">
-                                    <td style="padding: 0.5rem;">
+                                    <td style="padding: 0.5rem; width: 20%;">
                                         <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
-                                    <td style="padding: 0.5rem;">
+                                    <td style="padding: 0.5rem; width: 20%;">
                                         <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
-                                    <td style="padding: 0.5rem;">
+                                    <td style="padding: 0.5rem; width: 20%;">
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
-                                    <td style="padding: 0.5rem; text-align: center; vertical-align: top;">
+                                    <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
                                         <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar imagen (opcional)">
                                             <span class="material-symbols-rounded" style="font-size: 1.2rem;">image</span>
                                         </button>
@@ -114,7 +114,7 @@
                                         <!-- Preview temporal dentro de la celda - EN EL FLUJO VISUAL Y VISIBLE -->
                                         <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;"></div>
                                     </td>
-                                    <td style="padding: 0.5rem; text-align: center;">
+                                    <td style="padding: 0.5rem; text-align: center; width: 20%;">
                                         <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
                                             <span class="material-symbols-rounded" style="font-size: 1.2rem;">add</span>Agregar
                                         </button>
