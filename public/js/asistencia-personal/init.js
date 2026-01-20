@@ -160,6 +160,12 @@ const AsistenciaPersonal = (() => {
                     e.preventDefault();
                     console.log('Navegando a Horas Trabajadas');
                     
+                    // Ocultar botón de descarga PDF
+                    const btnDescargarPDFMenu = document.getElementById('btnDescargarPDFMenu');
+                    if (btnDescargarPDFMenu) {
+                        btnDescargarPDFMenu.style.display = 'none';
+                    }
+                    
                     // Si venimos de Total Horas Extras, restaurar vista anterior
                     const tabsContainer = document.querySelector('.tabs-container');
                     if (tabsContainer && tabsContainer.style.display === 'none') {
@@ -179,6 +185,12 @@ const AsistenciaPersonal = (() => {
                 menuRegistros.addEventListener('click', function(e) {
                     e.preventDefault();
                     console.log('Navegando a Registros');
+                    
+                    // Ocultar botón de descarga PDF
+                    const btnDescargarPDFMenu = document.getElementById('btnDescargarPDFMenu');
+                    if (btnDescargarPDFMenu) {
+                        btnDescargarPDFMenu.style.display = 'none';
+                    }
                     
                     // Si venimos de Total Horas Extras, restaurar vista anterior
                     const tabsContainer = document.querySelector('.tabs-container');
@@ -203,8 +215,11 @@ const AsistenciaPersonal = (() => {
                     
                     if (reporteActual) {
                         AsistenciaTotalHorasExtras.mostrarVista(reporteActual);
+                        
+                        // Mostrar botón de descargar PDF después de que se carga la vista
                         setTimeout(() => {
                             inicializarBusquedaTotalHorasExtras();
+                            mostrarBotonDescargarPDF();
                         }, 100);
                     }
                     
@@ -374,6 +389,56 @@ const AsistenciaPersonal = (() => {
             console.error('Error al cargar detalles:', error);
             alert('Error al cargar los detalles del reporte: ' + error.message);
         });
+    }
+
+    /**
+     * Mostrar botón de descargar PDF y conectarlo con la función
+     */
+    function mostrarBotonDescargarPDF() {
+        const btnDescargarPDFMenu = document.getElementById('btnDescargarPDFMenu');
+        if (btnDescargarPDFMenu) {
+            btnDescargarPDFMenu.style.display = 'flex';
+            
+            // Remover listeners anteriores para evitar duplicados
+            const newBtn = btnDescargarPDFMenu.cloneNode(true);
+            btnDescargarPDFMenu.parentNode.replaceChild(newBtn, btnDescargarPDFMenu);
+            
+            // Agregar listener al nuevo botón
+            const btnNuevo = document.getElementById('btnDescargarPDFMenu');
+            if (btnNuevo) {
+                btnNuevo.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Descargando PDF de Total Horas Extras...');
+                    
+                    // Obtener datos del módulo AsistenciaTotalHorasExtras
+                    if (typeof AsistenciaTotalHorasExtras !== 'undefined') {
+                        const personasConExtras = AsistenciaTotalHorasExtras.obtenerPersonasConExtras();
+                        const todasLasFechas = AsistenciaTotalHorasExtras.obtenerTodasLasFechas();
+                        
+                        console.log('Personas con extras:', personasConExtras);
+                        console.log('Fechas:', todasLasFechas);
+                        
+                        if (personasConExtras && personasConExtras.length > 0 && todasLasFechas && todasLasFechas.length > 0) {
+                            // Llamar a la función de descarga del PDF
+                            if (typeof PDFGenerator !== 'undefined' && PDFGenerator.descargar) {
+                                PDFGenerator.descargar(personasConExtras, todasLasFechas);
+                            } else {
+                                alert('Error: No se pudo inicializar el generador de PDF');
+                                console.error('PDFGenerator no disponible');
+                            }
+                        } else {
+                            alert('No hay datos para descargar. Asegúrate de que hay personas con horas extras registradas.');
+                            console.warn('Datos insuficientes:', { personasConExtras, todasLasFechas });
+                        }
+                    } else {
+                        alert('Error: Módulo de horas extras no disponible');
+                        console.error('AsistenciaTotalHorasExtras no disponible');
+                    }
+                });
+                
+                console.log('✓ Botón de descargar PDF configurado');
+            }
+        }
     }
 
     return {

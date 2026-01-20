@@ -163,42 +163,8 @@ const AsistenciaUtilidades = (() => {
         let bloqueMañanaCalculado = false;
         let bloqueTardeCalculado = false;
         
-        // Rol porteria (22): calcula por bloques si tiene 4 marcas, o continuo si tiene 2 marcas
-        if (idRol === 22) {
-            if (horasValidas.length === 4) {
-                // Con 4 marcas: calcular por bloques (mañana + tarde)
-                const entrada_manana = horasValidas[0];
-                const salida_manana = horasValidas[1];
-                const entrada_tarde = horasValidas[2];
-                const salida_tarde = horasValidas[3];
-                
-                let bloqueMañana = 0;
-                let bloqueTarde = 0;
-                
-                if (entrada_manana < salida_manana) {
-                    bloqueMañana = salida_manana - entrada_manana;
-                    totalMinutos += bloqueMañana;
-                    bloqueMañanaCalculado = true;
-                    console.log(`[ROL PORTERIA - 4 MARCAS] Bloque Mañana: ${entrada_manana} → ${salida_manana} = ${bloqueMañana.toFixed(2)} minutos`);
-                }
-                
-                if (entrada_tarde < salida_tarde) {
-                    bloqueTarde = salida_tarde - entrada_tarde;
-                    totalMinutos += bloqueTarde;
-                    bloqueTardeCalculado = true;
-                    console.log(`[ROL PORTERIA - 4 MARCAS] Bloque Tarde: ${entrada_tarde} → ${salida_tarde} = ${bloqueTarde.toFixed(2)} minutos`);
-                }
-            } else if (horasValidas.length === 2) {
-                // Con 2 marcas: contar desde primera a segunda marca
-                const primera_marca = horasValidas[0];
-                const segunda_marca = horasValidas[1];
-                
-                const duracion = segunda_marca - primera_marca;
-                totalMinutos = duracion;
-                bloqueMañanaCalculado = true;
-                console.log(`[ROL PORTERIA - 2 MARCAS] Marca 1 a Marca 2: ${primera_marca} → ${segunda_marca} = ${duracion.toFixed(2)} minutos`);
-            }
-        } else if (!diaSabado && idRol === 21) {
+        // Rol 21 entre semana: lógica especial según cantidad de marcas
+        if (!diaSabado && idRol === 21) {
             // Rol 21 entre semana: lógica especial según cantidad de marcas
             if (horasValidas.length === 4) {
                 // Con 4 marcas: calcular como rol normal (bloque mañana + bloque tarde)

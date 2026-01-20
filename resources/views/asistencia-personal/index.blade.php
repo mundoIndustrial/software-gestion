@@ -327,6 +327,8 @@
                                 <th>Salida Mañana</th>
                                 <th>Entrada Tarde</th>
                                 <th>Salida Tarde</th>
+                                <th>Entrada Sábado</th>
+                                <th>Salida Sábado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -388,11 +390,31 @@
                 <div id="editarRegistroDatosDelDia" style="display: none; margin-bottom: 20px;">
                     <div style="background: #f9f9f9; padding: 15px; border-radius: 4px;">
                         <h4 style="margin-top: 0;">Marcas del Día:</h4>
-                        <div id="editarRegistroMarcas" style="margin-bottom: 15px;">
+                        
+                        <!-- Lista de Marcas -->
+                        <div id="editarRegistroMarcas" style="margin-bottom: 20px; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 250px; overflow-y: auto;">
+                            <p style="color: #999; text-align: center; margin: 20px 0;">Sin marcas registradas</p>
                         </div>
                         
-                        <div style="margin-bottom: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-                            <strong>Total Horas Trabajadas: <span id="editarRegistroTotalHoras">0:00:00</span></strong>
+                        <!-- Agregar Nueva Marca -->
+                        <div style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border: 1px solid #81c784; border-radius: 4px;">
+                            <h5 style="margin-top: 0; margin-bottom: 15px; color: #2e7d32;">✚ Agregar Nueva Marca</h5>
+                            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px;">Hora:</label>
+                                    <input 
+                                        type="time" 
+                                        id="editarRegistroNuevaMarca" 
+                                        placeholder="HH:MM:SS"
+                                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                                    >
+                                </div>
+                                <button id="editarRegistroAgregarMarcaBtn" class="btn btn-success" style="padding: 8px 16px;">Agregar</button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 4px;">
+                            <strong style="color: #1976d2;">Total Horas Trabajadas: <span id="editarRegistroTotalHoras">0:00:00</span></strong>
                         </div>
 
                         <!-- Campo Agregar Hora Extra -->

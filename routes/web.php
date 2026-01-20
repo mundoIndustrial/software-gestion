@@ -851,6 +851,8 @@ Route::middleware(['auth'])->prefix('asistencia-personal')->name('asistencia-per
         ->name('guardar-asistencia-detallada');
     Route::post('/guardar-hora-extra-agregada', [AsistenciaPersonalController::class, 'guardarHoraExtraAgregada'])
         ->name('guardar-hora-extra-agregada');
+    Route::post('/guardar-marcas-editadas', [AsistenciaPersonalController::class, 'guardarMarcasEditadas'])
+        ->name('guardar-marcas-editadas');
     // Ruta de prueba temporal
     Route::get('/obtener-todas-las-personas-test', function() {
         return response()->json([

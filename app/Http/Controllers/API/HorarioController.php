@@ -30,6 +30,8 @@ class HorarioController extends Controller
                         'salida_manana' => $this->formatHora($horario->salida_manana),
                         'entrada_tarde' => $this->formatHora($horario->entrada_tarde),
                         'salida_tarde' => $this->formatHora($horario->salida_tarde),
+                        'entrada_sabado' => $this->formatHora($horario->entrada_sabado),
+                        'salida_sabado' => $this->formatHora($horario->salida_sabado),
                     ];
                 });
 
@@ -109,6 +111,8 @@ class HorarioController extends Controller
                 'salida_manana' => 'nullable|date_format:H:i:s',
                 'entrada_tarde' => 'nullable|date_format:H:i:s',
                 'salida_tarde' => 'nullable|date_format:H:i:s',
+                'entrada_sabado' => 'nullable|date_format:H:i:s',
+                'salida_sabado' => 'nullable|date_format:H:i:s',
             ]);
 
             $horario->update($request->only([
@@ -116,6 +120,8 @@ class HorarioController extends Controller
                 'salida_manana',
                 'entrada_tarde',
                 'salida_tarde',
+                'entrada_sabado',
+                'salida_sabado',
             ]));
 
             $horario->load('rol');
@@ -155,6 +161,8 @@ class HorarioController extends Controller
                 'salida_manana' => 'nullable|date_format:H:i:s',
                 'entrada_tarde' => 'nullable|date_format:H:i:s',
                 'salida_tarde' => 'nullable|date_format:H:i:s',
+                'entrada_sabado' => 'nullable|date_format:H:i:s',
+                'salida_sabado' => 'nullable|date_format:H:i:s',
             ]);
 
             $horario = HorarioPorRol::create($request->all());
@@ -170,6 +178,8 @@ class HorarioController extends Controller
                     'salida_manana' => $horario->salida_manana,
                     'entrada_tarde' => $horario->entrada_tarde,
                     'salida_tarde' => $horario->salida_tarde,
+                    'entrada_sabado' => $horario->entrada_sabado,
+                    'salida_sabado' => $horario->salida_sabado,
                 ]
             ], 201);
         } catch (\Exception $e) {
