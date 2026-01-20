@@ -488,15 +488,18 @@ class AsistenciaPersonalController extends Controller
                 // Determinar cantidad esperada de marcas
                 $cantidadEsperada = $esSabado ? 2 : 4;
                 
-                // Lógica especial para rol 21: solo agregar marcas faltantes si tiene 4 marcas
+                // Lógica especial para rol 21 y 22
                 $esRol21 = $personal->id_rol == 21;
+                $esRol22 = $personal->id_rol == 22;
                 
-                // Para rol 21 en días normales con menos de 4 marcas: NO agregar marcas faltantes
-                if ($esRol21 && !$esSabado && count($horasOrdenadas) < 4) {
-                    // No hacer nada, solo guardar lo que hay
+                if ($esRol21) {
+                    // Para rol 21: usar método especial de completación
+                    $horasOrdenadas = $this->completarMarcasRol21($personal, $horasOrdenadas, $registro['dia']);
+                } elseif ($esRol22) {
+                    // Para rol 22 (portería): usar método especial de completación
+                    $horasOrdenadas = $this->completarMarcasRol22($personal, $horasOrdenadas, $registro['dia']);
                 } else {
-                    // Detectar y agregar marcas faltantes repetidamente hasta alcanzar la cantidad esperada
-                    // Bucle: mientras haya menos marcas de las esperadas, intentar detectar más
+                    // Para otros roles: detectar y agregar marcas faltantes repetidamente
                     while (count($horasOrdenadas) < $cantidadEsperada) {
                         // Para sábado: si ya hay 2+ marcas, no agregar más
                         if ($esSabado && count($horasOrdenadas) >= 2) {
@@ -697,6 +700,223 @@ class AsistenciaPersonalController extends Controller
      * @param Personal $personal
      * @param array $horasRegistradas
      * @param string $dia (formato Y-m-d)
+     * @return array|null ['marca_faltante' => 'campo', 'hora_esperada' => 'HH:MM:SS'] o null
+     */
+    private function completarMarcasRol22($personal, $horasRegistradas, $dia): array
+    {
+        /**
+         * Lógica especial para rol 22 (PORTERIA):
+         * Entre semana (lunes-viernes):
+         * - Si tiene 2 marcas: calcular desde marca 1 a marca 2
+         * - Si tiene 3 marcas: completar marca faltante usando rol 20 como fallback
+         * - Jornada normal: 8 horas
+         * 
+         * Sábados:
+         * - Horario: 07:00:00 a 15:00:00 (8 horas)
+         * - Si tiene 2 marcas: calcular desde marca 1 a marca 2
+         */
+        
+        // Obtener objeto fecha
+        $fechaObj = \DateTime::createFromFormat('Y-m-d', $dia);
+        $esSabado = $fechaObj ? $fechaObj->format('w') == 6 : false;
+        
+        $horasCompletadas = array_values($horasRegistradas); // Hacer copia
+        
+        // Si es sábado, usar horario de portería: 07:00 a 15:00
+        if ($esSabado) {
+            // En sábado, si tiene menos de 2 marcas, completar con horario portería
+            if (count($horasCompletadas) < 2) {
+                // Agregar entrada sábado: 07:00:00
+                if (count($horasCompletadas) == 0) {
+                    $horasCompletadas[] = '07:00:00';
+                }
+                // Agregar salida sábado: 15:00:00
+                if (count($horasCompletadas) < 2) {
+                    $horasCompletadas[] = '15:00:00';
+                }
+            }
+            return $this->ordenarHorasCronologicamente($horasCompletadas);
+        }
+        
+        // Entre semana
+        if (count($horasCompletadas) == 2) {
+            // Tiene 2 marcas: contar desde marca 1 a marca 2
+            return $horasCompletadas;
+        } elseif (count($horasCompletadas) == 3) {
+            // Tiene 3 marcas: completar marca faltante usando rol 20
+            $horarioRol20 = HorarioPorRol::where('id_rol', 20)->first();
+            
+            if (!$horarioRol20) {
+                return $horasCompletadas;
+            }
+            
+            // Convertir horas a segundos para análisis
+            $horasEnSegundos = array_map(function($hora) {
+                if (!$hora) return null;
+                $partes = explode(':', $hora);
+                return intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+            }, $horasCompletadas);
+            
+            $horasEnSegundos = array_filter($horasEnSegundos, fn($h) => $h !== null);
+            sort($horasEnSegundos);
+            
+            // Horario rol 20
+            $entrada20 = $this->horaASegundos($horarioRol20->entrada_manana);
+            $salida20 = $this->horaASegundos($horarioRol20->salida_manana);
+            $entrada20Tarde = $this->horaASegundos($horarioRol20->entrada_tarde);
+            $salida20Tarde = $this->horaASegundos($horarioRol20->salida_tarde);
+            
+            // Lógica: si tiene 3 marcas, probablemente falta entrada o salida mañana/tarde
+            // Analizamos la distancia entre marcas para determinar cuál falta
+            if (count($horasEnSegundos) == 3) {
+                $diff1 = $horasEnSegundos[1] - $horasEnSegundos[0];
+                $diff2 = $horasEnSegundos[2] - $horasEnSegundos[1];
+                
+                // Si la primera diferencia es pequeña (< 1 hora), probablemente sean entrada-salida mañana
+                // y falta entrada tarde o salida tarde
+                if ($diff1 < 3600) {
+                    // Falta entrada o salida tarde
+                    // Si diff2 es muy grande, falta entrada tarde
+                    if ($diff2 > 7200) { // > 2 horas
+                        // Agregar entrada tarde
+                        $horasCompletadas[] = $this->segundosAHora($entrada20Tarde);
+                    } else {
+                        // Agregar salida tarde (pero es menos probable)
+                        $horasCompletadas[] = $this->segundosAHora($salida20Tarde);
+                    }
+                } else {
+                    // Probablemente falta salida mañana
+                    // Insertar entre primera y segunda marca
+                    $horasCompletadas[] = $this->segundosAHora($salida20);
+                }
+            }
+        } elseif (count($horasCompletadas) == 1) {
+            // Solo 1 marca: completar con rol 20
+            // Agregar salida mañana
+            $horarioRol20 = HorarioPorRol::where('id_rol', 20)->first();
+            if ($horarioRol20) {
+                $horasCompletadas[] = $this->segundosAHora($this->horaASegundos($horarioRol20->salida_manana));
+            }
+        }
+        
+        return $this->ordenarHorasCronologicamente($horasCompletadas);
+    }
+
+    /**
+     * Completar marcas para Rol 21 (MIXTO)
+     * @return array Horas ordenadas
+     */
+    private function completarMarcasRol21($personal, $horasRegistradas, $dia): array
+    {
+        /**
+         * Lógica especial para rol 21 (MIXTO):
+         * - Si tiene 3 marcas: usar horario rol 21 para completar salida tarde (4ª marca)
+         * - Si le faltan entradas: usar horario rol 20 como fallback
+         */
+        
+        // Obtener objeto fecha
+        $fechaObj = \DateTime::createFromFormat('Y-m-d', $dia);
+        $esSabado = $fechaObj ? $fechaObj->format('w') == 6 : false;
+        
+        $horasCompletadas = array_values($horasRegistradas); // Hacer copia
+        
+        // Si es sábado, completar solo si tiene 1 marca
+        if ($esSabado && count($horasCompletadas) >= 2) {
+            return $horasCompletadas;
+        }
+        
+        // Si no es sábado y tiene 4 marcas, retornar sin cambios
+        if (!$esSabado && count($horasCompletadas) >= 4) {
+            return $horasCompletadas;
+        }
+        
+        // Obtener horarios de rol 21 y rol 20
+        $horarioRol21 = HorarioPorRol::where('id_rol', 21)->first();
+        $horarioRol20 = HorarioPorRol::where('id_rol', 20)->first();
+        
+        if (!$horarioRol21 && !$horarioRol20) {
+            return $horasCompletadas; // No hay horarios disponibles
+        }
+        
+        // Convertir horas a segundos para comparación
+        $horasEnSegundos = array_map(function($hora) {
+            if (!$hora) return null;
+            $partes = explode(':', $hora);
+            return intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+        }, $horasCompletadas);
+        
+        $horasEnSegundos = array_filter($horasEnSegundos, fn($h) => $h !== null);
+        sort($horasEnSegundos);
+        
+        if ($esSabado) {
+            // Sábado: espera 2 marcas (entrada y salida)
+            if (count($horasEnSegundos) == 0 && $horarioRol21) {
+                // Agregar entrada sábado
+                $entradaSabado = $this->horaASegundos($horarioRol21->entrada_sabado) 
+                    ?: $this->horaASegundos($horarioRol20->entrada_sabado);
+                if ($entradaSabado) {
+                    $horasCompletadas[] = $this->segundosAHora($entradaSabado);
+                }
+            } elseif (count($horasEnSegundos) == 1) {
+                // Tiene entrada, agregar salida sábado
+                $salidaSabado = $this->horaASegundos($horarioRol21->salida_sabado) 
+                    ?: $this->horaASegundos($horarioRol20->salida_sabado);
+                if ($salidaSabado) {
+                    $horasCompletadas[] = $this->segundosAHora($salidaSabado);
+                }
+            }
+        } else {
+            // Día de semana: espera 4 marcas
+            $horariosRol21 = [
+                'entrada_manana' => $this->horaASegundos($horarioRol21?->entrada_manana),
+                'salida_manana' => $this->horaASegundos($horarioRol21?->salida_manana),
+                'entrada_tarde' => $this->horaASegundos($horarioRol21?->entrada_tarde),
+                'salida_tarde' => $this->horaASegundos($horarioRol21?->salida_tarde)
+            ];
+            
+            $horariosRol20 = [
+                'entrada_manana' => $this->horaASegundos($horarioRol20?->entrada_manana),
+                'salida_manana' => $this->horaASegundos($horarioRol20?->salida_manana),
+                'entrada_tarde' => $this->horaASegundos($horarioRol20?->entrada_tarde),
+                'salida_tarde' => $this->horaASegundos($horarioRol20?->salida_tarde)
+            ];
+            
+            // Mapeo de marcas esperadas en orden
+            $marcasEsperadas = ['entrada_manana', 'salida_manana', 'entrada_tarde', 'salida_tarde'];
+            
+            // Si tiene 3 marcas, lo más probable es que le falte salida_tarde
+            if (count($horasEnSegundos) == 3) {
+                $salidaTarde = $horariosRol21['salida_tarde'] ?: $horariosRol20['salida_tarde'];
+                if ($salidaTarde) {
+                    $horasCompletadas[] = $this->segundosAHora($salidaTarde);
+                }
+            } elseif (count($horasEnSegundos) == 2) {
+                // Tiene entrada_manana y salida_manana, agregar entrada_tarde
+                $entradaTarde = $horariosRol21['entrada_tarde'] ?: $horariosRol20['entrada_tarde'];
+                if ($entradaTarde) {
+                    $horasCompletadas[] = $this->segundosAHora($entradaTarde);
+                }
+            } elseif (count($horasEnSegundos) == 1) {
+                // Agregar salida_manana
+                $salidaManana = $horariosRol21['salida_manana'] ?: $horariosRol20['salida_manana'];
+                if ($salidaManana) {
+                    $horasCompletadas[] = $this->segundosAHora($salidaManana);
+                }
+            } elseif (count($horasEnSegundos) == 0) {
+                // Agregar entrada_manana
+                $entradaManana = $horariosRol21['entrada_manana'] ?: $horariosRol20['entrada_manana'];
+                if ($entradaManana) {
+                    $horasCompletadas[] = $this->segundosAHora($entradaManana);
+                }
+            }
+        }
+        
+        // Retornar horas ordenadas cronológicamente
+        return $this->ordenarHorasCronologicamente($horasCompletadas);
+    }
+
+    /**
+     * Detectar marcas faltantes para roles no-mixtos
      * @return array|null ['marca_faltante' => 'campo', 'hora_esperada' => 'HH:MM:SS'] o null
      */
     private function detectarMarcaFaltante($personal, $horasRegistradas, $dia): ?array
@@ -973,6 +1193,74 @@ class AsistenciaPersonalController extends Controller
     }
 
     /**
+     * Guardar marcas editadas para un día específico
+     */
+    public function guardarMarcasEditadas(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'codigo_persona' => 'required|exists:personal,codigo_persona',
+                'id_reporte' => 'required|exists:reportes_personal,id',
+                'fecha' => 'required|date_format:Y-m-d',
+                'marcas' => 'required|array',
+                'marcas.*' => 'date_format:H:i:s'
+            ]);
+
+            $codigoPersona = $request->codigo_persona;
+            $idReporte = $request->id_reporte;
+            $fecha = $request->fecha;
+            $marcas = $request->marcas;
+
+            // Buscar el registro del día
+            $registroHuella = RegistroHorasHuella::where('codigo_persona', $codigoPersona)
+                ->where('id_reporte', $idReporte)
+                ->where('dia', $fecha)
+                ->first();
+
+            if (!$registroHuella) {
+                // Si no existe, crear uno nuevo
+                $registroHuella = new RegistroHorasHuella();
+                $registroHuella->codigo_persona = $codigoPersona;
+                $registroHuella->id_reporte = $idReporte;
+                $registroHuella->dia = $fecha;
+            }
+
+            // Convertir el array de marcas a JSON con formato compatible
+            // Las marcas vienen como HH:MM:SS
+            $horasJSON = [];
+            foreach ($marcas as $index => $marca) {
+                // Usar formato genérico para mantener compatibilidad
+                $horasJSON['Hora ' . ($index + 1)] = $marca;
+            }
+
+            $registroHuella->horas = $horasJSON;
+            $registroHuella->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Marcas actualizadas correctamente',
+                'data' => [
+                    'fecha' => $fecha,
+                    'marcas_guardadas' => count($marcas),
+                    'horas' => $horasJSON
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error guardarMarcasEditadas: ' . $e->getMessage(), [
+                'codigo_persona' => $request->codigo_persona ?? null,
+                'id_reporte' => $request->id_reporte ?? null,
+                'fecha' => $request->fecha ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar las marcas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener todas las personas disponibles (para búsqueda en modal)
      */
     public function obtenerTodasLasPersonas(): JsonResponse
@@ -1192,23 +1480,60 @@ class AsistenciaPersonalController extends Controller
         $esSabado = $fechaObj ? $fechaObj->format('w') == 6 : false;
 
         $esRol21 = $personal && $personal->id_rol == 21;
+        $esRol22 = $personal && $personal->id_rol == 22;
         $cantidadMarcas = count($horasEnSegundos);
 
         // Obtener horario del rol si existe
         $horario = $personal ? HorarioPorRol::where('id_rol', $personal->id_rol)->first() : null;
         
-        // Para rol 21: si tiene menos de 4 marcas (o menos de 2 en sábado), contar desde primera a última
-        if ($esRol21 && !$esSabado && $cantidadMarcas < 4) {
-            // Rol 21 con 2 o 3 marcas entre semana: contar desde primera a última
+        // Para rol 21: si tiene menos de 4 marcas entre semana (o menos de 2 en sábado), contar desde primera a última
+        if ($esRol21 && (($esSabado && $cantidadMarcas < 2) || (!$esSabado && $cantidadMarcas < 4))) {
+            // Rol 21 con marcas incompletas: contar desde primera a última
             $primeraHora = min($horasEnSegundos);
             $ultimaHora = max($horasEnSegundos);
             $horasTrabajadas = $ultimaHora - $primeraHora;
             
+            // Calcular horas extras incluso para rol 21 con marcas incompletas
+            $horasExtras = 0;
+            $horasNormales = $esSabado ? 4 : 8; // Jornada normal: 4h sábado, 8h entre semana
+            $segundosNormales = $horasNormales * 3600;
+            
+            if ($horasTrabajadas > $segundosNormales) {
+                $horasExtras = $horasTrabajadas - $segundosNormales;
+            }
+            
             return [
                 'horas_trabajadas' => $this->segundosAHora($horasTrabajadas),
-                'horas_extras' => '00:00:00',
+                'horas_extras' => $this->segundosAHora($horasExtras),
                 'metodo' => 'rol21_parcial',
-                'descripcion' => "Rol 21 con {$cantidadMarcas} marcas: calculado desde {$horas[array_key_first($horas)]} a {$horas[array_key_last($horas)]}"
+                'descripcion' => "Rol 21 con {$cantidadMarcas} marcas: calculado desde {$horas[array_key_first($horas)]} a {$horas[array_key_last($horas)]}",
+                'segundos_trabajados' => $horasTrabajadas,
+                'segundos_extras' => $horasExtras
+            ];
+        }
+
+        // Para rol 22 (PORTERIA): calcular desde primera a última marca, jornada de 8 horas
+        if ($esRol22 && $cantidadMarcas >= 2) {
+            // Rol 22 con 2 o más marcas: contar desde primera a última
+            $primeraHora = min($horasEnSegundos);
+            $ultimaHora = max($horasEnSegundos);
+            $horasTrabajadas = $ultimaHora - $primeraHora;
+            
+            // Calcular horas extras: jornada normal es 8 horas
+            $horasExtras = 0;
+            $segundosNormales = 8 * 3600; // 8 horas = 28800 segundos
+            
+            if ($horasTrabajadas > $segundosNormales) {
+                $horasExtras = $horasTrabajadas - $segundosNormales;
+            }
+            
+            return [
+                'horas_trabajadas' => $this->segundosAHora($horasTrabajadas),
+                'horas_extras' => $this->segundosAHora($horasExtras),
+                'metodo' => 'rol22_porteria',
+                'descripcion' => "Rol 22 (Portería) con {$cantidadMarcas} marcas: calculado desde {$horas[array_key_first($horas)]} a {$horas[array_key_last($horas)]}",
+                'segundos_trabajados' => $horasTrabajadas,
+                'segundos_extras' => $horasExtras
             ];
         }
 

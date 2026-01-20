@@ -67,7 +67,7 @@ const GestionHorariosManager = {
         tbody.innerHTML = '';
 
         if (horarios.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">No hay horarios registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">No hay horarios registrados</td></tr>';
             return;
         }
 
@@ -86,6 +86,12 @@ const GestionHorariosManager = {
                 </td>
                 <td>
                     <input type="time" class="hora-input" data-horario-id="${horario.id}" data-campo="salida_tarde" value="${horario.salida_tarde || ''}" />
+                </td>
+                <td>
+                    <input type="time" class="hora-input" data-horario-id="${horario.id}" data-campo="entrada_sabado" value="${horario.entrada_sabado || ''}" />
+                </td>
+                <td>
+                    <input type="time" class="hora-input" data-horario-id="${horario.id}" data-campo="salida_sabado" value="${horario.salida_sabado || ''}" />
                 </td>
                 <td>
                     <button class="btn-save-horario" data-horario-id="${horario.id}">
@@ -120,6 +126,8 @@ const GestionHorariosManager = {
             salida_manana: document.querySelector(`input[data-horario-id="${horarioId}"][data-campo="salida_manana"]`)?.value || null,
             entrada_tarde: document.querySelector(`input[data-horario-id="${horarioId}"][data-campo="entrada_tarde"]`)?.value || null,
             salida_tarde: document.querySelector(`input[data-horario-id="${horarioId}"][data-campo="salida_tarde"]`)?.value || null,
+            entrada_sabado: document.querySelector(`input[data-horario-id="${horarioId}"][data-campo="entrada_sabado"]`)?.value || null,
+            salida_sabado: document.querySelector(`input[data-horario-id="${horarioId}"][data-campo="salida_sabado"]`)?.value || null,
         };
 
         // Convertir a formato HH:MM:SS

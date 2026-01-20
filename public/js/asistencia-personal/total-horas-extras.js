@@ -10,6 +10,7 @@ const AsistenciaTotalHorasExtras = (() => {
     let todasLasFechas = [];
     let horasExtrasAgregadas = {}; // {codigo_persona: {fecha: horas}}
     let personasConExtras = []; // Variable global del módulo para acceso desde catch
+    let registrosPorPersona = {}; // Registros agrupados por persona para acceso desde múltiples funciones
 
     /**
      * Convertir string HH:MM:SS a minutos totales
@@ -102,23 +103,6 @@ const AsistenciaTotalHorasExtras = (() => {
             } else if (horasValidas.length >= 2) {
                 // Con 2 o 3 marcas: desde primera a última marca
                 const bloqueMinutos = horasValidas[horasValidas.length - 1] - horasValidas[0];
-                const bloqueMinutosRedondeado = Math.round(bloqueMinutos);
-                horasContablesManana = contarHorasPor56Minutos(bloqueMinutosRedondeado);
-            }
-        } else if (idRol === 22) {
-            // Para rol porteria: calcula por bloques si tiene 4 marcas, o continuo si tiene 2 marcas
-            if (horasValidas.length === 4) {
-                // Con 4 marcas: calcular por bloques (mañana + tarde)
-                const bloqueManana = horasValidas[1] - horasValidas[0];
-                const bloqueMananaRedondeado = Math.round(bloqueManana);
-                horasContablesManana = contarHorasPor56Minutos(bloqueMananaRedondeado);
-                
-                const bloqueTarde = horasValidas[3] - horasValidas[2];
-                const bloqueTardeRedondeado = Math.round(bloqueTarde);
-                horasContablesTarde = contarHorasPor56Minutos(bloqueTardeRedondeado);
-            } else if (horasValidas.length === 2) {
-                // Con 2 marcas: contar desde marca 1 a marca 2
-                const bloqueMinutos = horasValidas[1] - horasValidas[0];
                 const bloqueMinutosRedondeado = Math.round(bloqueMinutos);
                 horasContablesManana = contarHorasPor56Minutos(bloqueMinutosRedondeado);
             }
@@ -311,22 +295,27 @@ const AsistenciaTotalHorasExtras = (() => {
                 if (!data) return; // Si fue redirigido
                 
                 if (data.success && data.data) {
-                    // Inicializar el módulo con todas las personas
-                    AsistenciaEditarRegistro.init(data.data || [], idReporte, todasLasFechas);
+                    // Inicializar el módulo con las personas (convertir a array y pasar con registros)
+                    // Usar registrosPorPersona que tiene la estructura completa con registros
+                    const personasConRegistros = Object.values(registrosPorPersona || {});
+                    AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
                 } else if (data.error) {
                     console.error('Error al cargar personas:', data.message);
                     // Fallback a personas con extras si falla
-                    AsistenciaEditarRegistro.init(personasConExtras || [], idReporte, todasLasFechas);
+                    const personasConRegistros = Object.values(registrosPorPersona || {});
+                    AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
                 } else {
                     console.error('Error al cargar personas - respuesta sin datos');
                     // Fallback a personas con extras si falla
-                    AsistenciaEditarRegistro.init(personasConExtras || [], idReporte, todasLasFechas);
+                    const personasConRegistros = Object.values(registrosPorPersona || {});
+                    AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
                 }
             })
             .catch(error => {
                 console.error('Error cargando todas las personas:', error);
                 // Fallback a personas con extras si falla
-                AsistenciaEditarRegistro.init(personasConExtras || [], idReporte, todasLasFechas);
+                const personasConRegistros = Object.values(registrosPorPersona || {});
+                AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
             });
     }
 
@@ -379,8 +368,8 @@ const AsistenciaTotalHorasExtras = (() => {
         
         todasLasFechas = Array.from(fechasSet).sort();
         
-        // Agrupar registros por persona
-        const registrosPorPersona = {};
+        // Agrupar registros por persona (usar variable de módulo)
+        registrosPorPersona = {};
         reporte.registros_por_persona.forEach(registro => {
             
             const personaId = registro.codigo_persona;
