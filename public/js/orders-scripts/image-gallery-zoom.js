@@ -239,6 +239,6 @@ if (!window.ImageGalleryZoomModule) {
     window.openImageZoom = window.ImageGalleryZoomModule.openImageZoom;
     window.closeImageZoom = window.ImageGalleryZoomModule.closeImageZoom;
 
-    console.log('✅ ImageGalleryZoomModule cargado - Evitando redeclaraciones de isDragging');
+    console.log(' ImageGalleryZoomModule cargado - Evitando redeclaraciones de isDragging');
 }
 

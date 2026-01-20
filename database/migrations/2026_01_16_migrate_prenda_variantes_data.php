@@ -35,7 +35,7 @@ return new class extends Migration
             $prendasProcesadas = 0;
 
             foreach ($prendas as $prenda) {
-                \Log::info("📋 Procesando prenda: {$prenda->nombre_prenda} (ID: {$prenda->id})");
+                \Log::info(" Procesando prenda: {$prenda->nombre_prenda} (ID: {$prenda->id})");
 
                 // Decodificar cantidad_talla si es JSON
                 $cantidadTalla = [];
@@ -88,12 +88,12 @@ return new class extends Migration
                 $prendasProcesadas++;
             }
 
-            \Log::info("✅ [Migración de Datos] Completada", [
+            \Log::info(" [Migración de Datos] Completada", [
                 'prendas_procesadas' => $prendasProcesadas,
                 'variantes_creadas' => $variantesCreadas,
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ [Migración de Datos] Error:', [
+            \Log::error(' [Migración de Datos] Error:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -162,9 +162,9 @@ return new class extends Migration
                 'updated_at' => now(),
             ]);
 
-            \Log::debug("  ✅ Variante creada: Talla={$talla}, Cantidad={$cantidad}");
+            \Log::debug("   Variante creada: Talla={$talla}, Cantidad={$cantidad}");
         } catch (\Exception $e) {
-            \Log::error("  ❌ Error creando variante", [
+            \Log::error("   Error creando variante", [
                 'talla' => $talla,
                 'error' => $e->getMessage(),
             ]);
@@ -183,9 +183,9 @@ return new class extends Migration
             // Eliminar todas las variantes creadas en esta migración
             // (Nota: Si se ejecutó down de la migración anterior, las variantes se eliminan automáticamente)
             DB::table('prenda_pedido_variantes')->truncate();
-            \Log::info('✅ Variantes eliminadas');
+            \Log::info(' Variantes eliminadas');
         } catch (\Exception $e) {
-            \Log::error('❌ Error en rollback', [
+            \Log::error(' Error en rollback', [
                 'error' => $e->getMessage(),
             ]);
         }

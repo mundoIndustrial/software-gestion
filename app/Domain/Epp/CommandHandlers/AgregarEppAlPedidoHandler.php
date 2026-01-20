@@ -49,7 +49,7 @@ class AgregarEppAlPedidoHandler implements CommandHandler
                 $command->getObservaciones()
             );
 
-            Log::info('✅ [AgregarEppAlPedidoHandler] EPP agregado correctamente', [
+            Log::info(' [AgregarEppAlPedidoHandler] EPP agregado correctamente', [
                 'pedido_id' => $command->getPedidoId(),
                 'epp_id' => $command->getEppId(),
             ]);
@@ -72,7 +72,7 @@ class AgregarEppAlPedidoHandler implements CommandHandler
             ]);
             throw $e;
         } catch (\Exception $e) {
-            Log::error('❌ [AgregarEppAlPedidoHandler] Error agregando EPP', [
+            Log::error(' [AgregarEppAlPedidoHandler] Error agregando EPP', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $command->getPedidoId(),
                 'epp_id' => $command->getEppId(),

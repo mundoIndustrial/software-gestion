@@ -25,10 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Add security headers middleware globally
         $middleware->append(\App\Http\Middleware\SetSecurityHeaders::class);
         
-        // ✅ Add memory cleanup middleware to prevent memory exhaustion
+        //  Add memory cleanup middleware to prevent memory exhaustion
         $middleware->append(\App\Http\Middleware\CleanupMemoryAfterRequest::class);
         
-        // ✅ Handle storage images conversion (PNG -> WebP fallback)
+        //  Handle storage images conversion (PNG -> WebP fallback)
         $middleware->append(\App\Http\Middleware\HandleStorageImages::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -171,7 +171,7 @@ class CotizacionesCompleteTest extends TestCase
         // Verificar que los números son únicos
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n✅ TEST MUESTRA: {$i} cotizaciones creadas con éxito\n";
+        echo "\n TEST MUESTRA: {$i} cotizaciones creadas con éxito\n";
         echo "Números: " . implode(', ', $numerosSecuenciales) . "\n";
     }
 
@@ -205,7 +205,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n✅ TEST PROTOTIPO: {$i} cotizaciones creadas con éxito\n";
+        echo "\n TEST PROTOTIPO: {$i} cotizaciones creadas con éxito\n";
     }
 
     /**
@@ -238,7 +238,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n✅ TEST GRANDE: {$i} cotizaciones creadas con éxito\n";
+        echo "\n TEST GRANDE: {$i} cotizaciones creadas con éxito\n";
     }
 
     /**
@@ -271,7 +271,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n✅ TEST BORDADO: {$i} cotizaciones creadas con éxito\n";
+        echo "\n TEST BORDADO: {$i} cotizaciones creadas con éxito\n";
     }
 
     /**
@@ -312,7 +312,7 @@ class CotizacionesCompleteTest extends TestCase
 
         $this->assertEquals(count($todoNumeros), count(array_unique($todoNumeros)));
 
-        echo "\n✅ TEST SECUENCIAL: Todos los números son únicos\n";
+        echo "\n TEST SECUENCIAL: Todos los números son únicos\n";
         echo "Total cotizaciones: " . count($todoNumeros) . "\n";
     }
 
@@ -354,7 +354,7 @@ class CotizacionesCompleteTest extends TestCase
 
         // 4. Números están distribuidos
         sort($numerosGlobales);
-        echo "\n✅ TEST CONCURRENCIA: 3 Asesores × 11 Cotizaciones = 33 Total\n";
+        echo "\n TEST CONCURRENCIA: 3 Asesores × 11 Cotizaciones = 33 Total\n";
         echo "Primeros números: " . implode(', ', array_slice($numerosGlobales, 0, 5)) . "\n";
         echo "Últimos números: " . implode(', ', array_slice($numerosGlobales, -5)) . "\n";
     }

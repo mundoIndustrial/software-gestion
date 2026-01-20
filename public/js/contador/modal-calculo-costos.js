@@ -494,7 +494,7 @@ function guardarCalculoCostos() {
                 html: `
                     <div style="text-align: left; color: #4b5563;">
                         <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
-                            ✅ ${data.message}
+                             ${data.message}
                         </p>
                         <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                             <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
@@ -517,7 +517,7 @@ function guardarCalculoCostos() {
             });
         } else {
             Swal.fire({
-                title: '❌ Error',
+                title: ' Error',
                 html: `
                     <div style="text-align: left; color: #4b5563;">
                         <p style="margin: 0; font-size: 0.95rem;">
@@ -538,7 +538,7 @@ function guardarCalculoCostos() {
         console.error('Error al guardar costos:', error);
         
         Swal.fire({
-            title: '❌ Error de Conexión',
+            title: ' Error de Conexión',
             html: `
                 <div style="text-align: left; color: #4b5563;">
                     <p style="margin: 0; font-size: 0.95rem;">

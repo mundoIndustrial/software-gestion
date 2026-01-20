@@ -11,10 +11,10 @@
 console.log('🔍 ========== DEBUG RENDERIZADO PRENDAS ==========');
 
 console.log('1️⃣ Verificando componentes globales...');
-console.log('   ✓ GestionItemsUI:', typeof window.gestionItemsUI !== 'undefined' ? '✅' : '❌');
-console.log('   ✓ GestorPrendaSinCotizacion:', typeof window.gestorPrendaSinCotizacion !== 'undefined' ? '✅' : '❌');
-console.log('   ✓ obtenerProcesosConfigurables:', typeof window.obtenerProcesosConfigurables === 'function' ? '✅' : '❌');
-console.log('   ✓ renderizarPrendasTipoPrendaSinCotizacion:', typeof window.renderizarPrendasTipoPrendaSinCotizacion === 'function' ? '✅' : '❌');
+console.log('   ✓ GestionItemsUI:', typeof window.gestionItemsUI !== 'undefined' ? '' : '');
+console.log('   ✓ GestorPrendaSinCotizacion:', typeof window.gestorPrendaSinCotizacion !== 'undefined' ? '' : '');
+console.log('   ✓ obtenerProcesosConfigurables:', typeof window.obtenerProcesosConfigurables === 'function' ? '' : '');
+console.log('   ✓ renderizarPrendasTipoPrendaSinCotizacion:', typeof window.renderizarPrendasTipoPrendaSinCotizacion === 'function' ? '' : '');
 
 // ============================================
 // 2️⃣ REVISAR PROCESOS SELECCIONADOS
@@ -55,7 +55,7 @@ if (window.gestorPrendaSinCotizacion) {
 console.log('\n4️⃣ Verificar DOM renderizado:');
 const container = document.getElementById('prendas-container-editable');
 const prendaCards = document.querySelectorAll('.prenda-card-editable');
-console.log(`   Container encontrado: ${container ? '✅' : '❌'}`);
+console.log(`   Container encontrado: ${container ? '' : ''}`);
 console.log(`   Tarjetas renderizadas: ${prendaCards.length}`);
 
 if (prendaCards.length > 0) {
@@ -65,8 +65,8 @@ if (prendaCards.length > 0) {
         const tieneProcesos = card.innerHTML.includes('PROCESOS CONFIGURADOS');
         const tieneTelas = card.innerHTML.includes('Telas');
         console.log(`   Tarjeta ${idx}: "${title}"`);
-        console.log(`      - ¿Tiene sección de procesos? ${tieneProcesos ? '✅' : '❌'}`);
-        console.log(`      - ¿Tiene sección de telas? ${tieneTelas ? '✅' : '❌'}`);
+        console.log(`      - ¿Tiene sección de procesos? ${tieneProcesos ? '' : ''}`);
+        console.log(`      - ¿Tiene sección de telas? ${tieneTelas ? '' : ''}`);
     });
 }
 
@@ -85,7 +85,7 @@ window.debugVerificarUltimaPrenda = function() {
     console.log('\n🔍 Verificando última prenda agregada...');
     
     if (!window.gestorPrendaSinCotizacion) {
-        console.error('❌ GestorPrendaSinCotizacion no existe');
+        console.error(' GestorPrendaSinCotizacion no existe');
         return;
     }
     
@@ -96,7 +96,7 @@ window.debugVerificarUltimaPrenda = function() {
     }
     
     const ultimaPrenda = prendas[prendas.length - 1];
-    console.log('\n📋 Datos de la última prenda:');
+    console.log('\n Datos de la última prenda:');
     console.log('   Nombre:', ultimaPrenda.nombre_producto);
     console.log('   Género(s):', ultimaPrenda.genero);
     console.log('   Procesos guardados:', Object.keys(ultimaPrenda.procesos || {}));
@@ -107,15 +107,15 @@ window.debugVerificarUltimaPrenda = function() {
     if (ultimaCard) {
         const tieneProcesosEnDOM = ultimaCard.innerHTML.includes('PROCESOS CONFIGURADOS');
         console.log('\n🎨 Verificación en DOM:');
-        console.log('   ¿Tarjeta renderizada en DOM?', '✅');
-        console.log('   ¿Contiene sección de procesos?', tieneProcesosEnDOM ? '✅' : '❌');
+        console.log('   ¿Tarjeta renderizada en DOM?', '');
+        console.log('   ¿Contiene sección de procesos?', tieneProcesosEnDOM ? '' : '');
         
         if (tieneProcesosEnDOM) {
             const seccionProcesos = ultimaCard.querySelector('[style*="PROCESOS"]');
-            console.log('   HTML de procesos encontrado:', seccionProcesos ? '✅' : '❌');
+            console.log('   HTML de procesos encontrado:', seccionProcesos ? '' : '');
         }
     } else {
-        console.error('❌ Tarjeta no encontrada en DOM');
+        console.error(' Tarjeta no encontrada en DOM');
     }
 };
 
@@ -128,23 +128,23 @@ window.debugLimpiarYReiniciar = function() {
     // Limpiar procesos
     if (window.limpiarProcesosSeleccionados) {
         window.limpiarProcesosSeleccionados();
-        console.log('   ✅ Procesos limpiados');
+        console.log('    Procesos limpiados');
     }
     
     // Limpiar imágenes
     if (window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage.limpiar();
-        console.log('   ✅ Imágenes limpiadas');
+        console.log('    Imágenes limpiadas');
     }
     
     // Cerrar modal
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
         modal.style.display = 'none';
-        console.log('   ✅ Modal cerrado');
+        console.log('    Modal cerrado');
     }
     
-    console.log('✅ Estado limpiado. Listo para nueva prueba.');
+    console.log(' Estado limpiado. Listo para nueva prueba.');
 };
 
 // ============================================
@@ -156,4 +156,4 @@ console.log('   • debugLimpiarYReiniciar() - Limpia el estado actual');
 console.log('   • window.procesosSeleccionados - Ver procesos seleccionados');
 console.log('   • window.gestorPrendaSinCotizacion.prendas - Ver todas las prendas');
 
-console.log('\n✅ Debug iniciado. Revisa los logs arriba para el estado actual.');
+console.log('\n Debug iniciado. Revisa los logs arriba para el estado actual.');

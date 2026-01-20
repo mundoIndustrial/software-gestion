@@ -13,14 +13,14 @@ class ValidateNumeroCotizacionSync extends Command
     public function handle()
     {
         $this->line("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        $this->line("✅ VALIDACIÓN: Generación Sincrónica de Números");
+        $this->line(" VALIDACIÓN: Generación Sincrónica de Números");
         $this->line("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
         try {
             // TEST 1: Verificar tabla existe
             $this->info("TEST 1: Verificar tabla numero_secuencias");
             $secuencias = DB::table('numero_secuencias')->get();
-            $this->info("✅ Secuencias encontradas: " . $secuencias->count());
+            $this->info(" Secuencias encontradas: " . $secuencias->count());
             foreach ($secuencias as $s) {
                 $this->line("   - {$s->tipo}: siguiente = {$s->siguiente}");
             }
@@ -56,9 +56,9 @@ class ValidateNumeroCotizacionSync extends Command
             $this->line("   Únicos: " . count($unicos));
 
             if (count($unicos) === count($numeros)) {
-                $this->line("   ✅ ¡NO HAY DUPLICADOS!");
+                $this->line("    ¡NO HAY DUPLICADOS!");
             } else {
-                $this->error("   ❌ ERROR: Hay duplicados");
+                $this->error("    ERROR: Hay duplicados");
                 return 1;
             }
             $this->line("");
@@ -69,12 +69,12 @@ class ValidateNumeroCotizacionSync extends Command
             $todosValidos = true;
             foreach ($numeros as $num) {
                 if (!preg_match($patron, $num)) {
-                    $this->error("   ❌ Inválido: $num");
+                    $this->error("    Inválido: $num");
                     $todosValidos = false;
                 }
             }
             if ($todosValidos) {
-                $this->line("   ✅ Todos los formatos son correctos");
+                $this->line("    Todos los formatos son correctos");
             } else {
                 return 1;
             }
@@ -114,9 +114,9 @@ class ValidateNumeroCotizacionSync extends Command
             $this->line("   Bordado: $numeroBordado");
 
             if ($numeroPrenda !== $numeroBordado) {
-                $this->line("   ✅ Diferentes tipos no interfieren");
+                $this->line("    Diferentes tipos no interfieren");
             } else {
-                $this->error("   ❌ ERROR: Tipos interfieren");
+                $this->error("    ERROR: Tipos interfieren");
                 return 1;
             }
             $this->line("");
@@ -129,13 +129,13 @@ class ValidateNumeroCotizacionSync extends Command
             }
 
             $this->line("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->info("✅ TODOS LOS TESTS COMPLETADOS CON ÉXITO");
+            $this->info(" TODOS LOS TESTS COMPLETADOS CON ÉXITO");
             $this->line("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
             return 0;
 
         } catch (\Exception $e) {
-            $this->error("\n❌ ERROR: " . $e->getMessage());
+            $this->error("\n ERROR: " . $e->getMessage());
             $this->error($e->getFile() . ":" . $e->getLine() . "\n");
             return 1;
         }

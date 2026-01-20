@@ -1170,13 +1170,13 @@ function abrirModalEspecificaciones() {
     const especificacionesGuardadas = document.getElementById('especificaciones').value;
     
     console.log('🔓 Abriendo modal de especificaciones');
-    console.log('📋 Especificaciones guardadas en campo:', especificacionesGuardadas);
+    console.log(' Especificaciones guardadas en campo:', especificacionesGuardadas);
     
     // Si hay especificaciones guardadas, cargarlas en los checkboxes y observaciones
     if (especificacionesGuardadas && especificacionesGuardadas !== '{}' && especificacionesGuardadas !== '[]' && especificacionesGuardadas !== '') {
         try {
             const datos = JSON.parse(especificacionesGuardadas);
-            console.log('✅ Datos parseados:', datos);
+            console.log(' Datos parseados:', datos);
             console.log('📊 Estructura de datos:', Object.keys(datos));
             
             // FORMATO 1: Estructura con forma_pago, disponibilidad, etc (desde cotizaciones.especificaciones)
@@ -1184,7 +1184,7 @@ function abrirModalEspecificaciones() {
             
             // Si tiene estructura de array (forma_pago, disponibilidad, etc)
             if (datos.forma_pago || datos.disponibilidad || datos.regimen) {
-                console.log('📦 Detectado FORMATO COTIZACIONES - JSON estructurado');
+                console.log(' Detectado FORMATO COTIZACIONES - JSON estructurado');
                 
                 // Procesar FORMA_PAGO
                 if (datos.forma_pago && Array.isArray(datos.forma_pago)) {
@@ -1226,7 +1226,7 @@ function abrirModalEspecificaciones() {
                 
                 // Procesar DISPONIBILIDAD
                 if (datos.disponibilidad && Array.isArray(datos.disponibilidad)) {
-                    console.log('📦 Procesando disponibilidad:', datos.disponibilidad);
+                    console.log(' Procesando disponibilidad:', datos.disponibilidad);
                     datos.disponibilidad.forEach((disp) => {
                         const valorNormalizado = disp.valor.toLowerCase();
                         const checkboxName = `tabla_orden[${valorNormalizado}]`;
@@ -1370,7 +1370,7 @@ function abrirModalEspecificaciones() {
                 }
             } else {
                 // FORMATO 2: Estructura tabla_orden[field] (anterior)
-                console.log('📋 Detectado FORMATO ANTERIOR - tabla_orden[field]');
+                console.log(' Detectado FORMATO ANTERIOR - tabla_orden[field]');
                 
                 Object.keys(datos).forEach((key) => {
                     const element = document.querySelector(`[name="${key}"]`);
@@ -1386,10 +1386,10 @@ function abrirModalEspecificaciones() {
                 });
             }
         } catch (e) {
-            console.error('❌ Error al cargar especificaciones:', e);
+            console.error(' Error al cargar especificaciones:', e);
         }
     } else {
-        console.log('ℹ️ No hay especificaciones guardadas, limpiando checkboxes');
+        console.log(' No hay especificaciones guardadas, limpiando checkboxes');
         // Limpiar todos los checkboxes si no hay especificaciones guardadas
         document.querySelectorAll('[name^="tabla_orden"]').forEach((element) => {
             if (element.type === 'checkbox') {
@@ -1429,7 +1429,7 @@ function guardarEspecificacionesReflectivo() {
     
     const modal = document.getElementById('modalEspecificaciones');
     if (!modal) {
-        console.error('❌ Modal no encontrado');
+        console.error(' Modal no encontrado');
         return;
     }
     
@@ -1453,7 +1453,7 @@ function guardarEspecificacionesReflectivo() {
     });
     
     // PROCESAR DISPONIBILIDAD
-    console.log('📦 Procesando DISPONIBILIDAD...');
+    console.log(' Procesando DISPONIBILIDAD...');
     const disponibilidadCheckboxes = [
         { checkbox: 'bodega', label: 'Bodega', obsField: 'bodega_obs' },
         { checkbox: 'cucuta', label: 'Cúcuta', obsField: 'cucuta_obs' },
@@ -1510,7 +1510,7 @@ function guardarEspecificacionesReflectivo() {
                 checked: checkbox?.checked
             });
             
-            // ✅ Si el checkbox está marcado, guardar aunque el valor esté vacío
+            //  Si el checkbox está marcado, guardar aunque el valor esté vacío
             if (checkbox && checkbox.checked) {
                 const valorTexto = valorInput?.value.trim() || 'Sí'; // Valor por defecto "Sí" si está vacío
                 especificaciones.se_ha_vendido.push({
@@ -1540,7 +1540,7 @@ function guardarEspecificacionesReflectivo() {
                 checked: checkbox?.checked
             });
             
-            // ✅ Si el checkbox está marcado, guardar aunque el valor esté vacío
+            //  Si el checkbox está marcado, guardar aunque el valor esté vacío
             if (checkbox && checkbox.checked) {
                 const valorTexto = valorInput?.value.trim() || 'Sí'; // Valor por defecto "Sí" si está vacío
                 especificaciones.ultima_venta.push({
@@ -1570,7 +1570,7 @@ function guardarEspecificacionesReflectivo() {
                 checked: checkbox?.checked
             });
             
-            // ✅ Si el checkbox está marcado, guardar aunque el valor esté vacío
+            //  Si el checkbox está marcado, guardar aunque el valor esté vacío
             if (checkbox && checkbox.checked) {
                 const valorTexto = valorInput?.value.trim() || 'Sí'; // Valor por defecto "Sí" si está vacío
                 especificaciones.flete.push({
@@ -1586,9 +1586,9 @@ function guardarEspecificacionesReflectivo() {
     const especificacionesJSON = JSON.stringify(especificaciones);
     document.getElementById('especificaciones').value = especificacionesJSON;
     
-    console.log('✅ Especificaciones guardadas en campo oculto');
+    console.log(' Especificaciones guardadas en campo oculto');
     console.log('📊 Estructura final:', especificaciones);
-    console.log('📋 JSON guardado:', especificacionesJSON);
+    console.log(' JSON guardado:', especificacionesJSON);
     
     cerrarModalEspecificaciones();
 }
@@ -1834,16 +1834,16 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         return;
     }
 
-    // ✅ RECOPILAR PRENDAS CON SUS TALLAS Y UBICACIONES (POR PRENDA)
+    //  RECOPILAR PRENDAS CON SUS TALLAS Y UBICACIONES (POR PRENDA)
     const prendas = [];
     document.querySelectorAll('.producto-card').forEach((prenda, index) => {
         const tipo = prenda.querySelector('[name*="tipo_prenda"]')?.value || '';
         const descripcion = prenda.querySelector('[name*="descripcion"]')?.value || '';
         
-        // ✅ RECOPILAR GÉNERO DE ESTA PRENDA
+        //  RECOPILAR GÉNERO DE ESTA PRENDA
         const genero = prenda.querySelector('.talla-genero-select-reflectivo')?.value || '';
         
-        // ✅ RECOPILAR TALLAS Y CANTIDADES
+        //  RECOPILAR TALLAS Y CANTIDADES
         const tallas = [];
         const cantidades = {};
         
@@ -1860,7 +1860,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 tallas.push(talla);
                 cantidades[talla] = 1; // Valor por defecto
             });
-            console.log(`  ✅ Tallas desde campo oculto:`, tallasArray);
+            console.log(`   Tallas desde campo oculto:`, tallasArray);
         } else {
             // Fallback: leer desde el DOM visual
             const tallasContainer = prenda.querySelector('.tallas-agregadas-reflectivo');
@@ -1880,7 +1880,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             console.log(`  📏 Tallas desde DOM visual:`, tallas);
         }
 
-        // ✅ RECOPILAR UBICACIONES DE ESTA PRENDA ESPECÍFICA
+        //  RECOPILAR UBICACIONES DE ESTA PRENDA ESPECÍFICA
         const ubicacionesDePrenda = [];
         const ubicacionesContainer = prenda.querySelector('.ubicaciones-agregadas-reflectivo');
         if (ubicacionesContainer) {
@@ -1907,12 +1907,12 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 tipo: tipo,
                 descripcion: descripcion,
                 tallas: tallas,
-                genero: genero,  // ✅ AGREGAR GÉNERO
-                cantidades: cantidades,  // ✅ AGREGAR CANTIDADES POR TALLA
-                ubicaciones: ubicacionesDePrenda  // ✅ Ubicaciones específicas de esta prenda
+                genero: genero,  //  AGREGAR GÉNERO
+                cantidades: cantidades,  //  AGREGAR CANTIDADES POR TALLA
+                ubicaciones: ubicacionesDePrenda  //  Ubicaciones específicas de esta prenda
             });
             
-            console.log(`✅ Prenda ${index + 1}: ${tipo}`);
+            console.log(` Prenda ${index + 1}: ${tipo}`);
             console.log(`   📍 Ubicaciones: ${ubicacionesDePrenda.length}`);
             console.log(`   👤 Género: ${genero || 'No especificado'}`);
             console.log(`   📏 Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'Ninguna'}`);
@@ -1924,7 +1924,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         return;
     }
 
-    // ✅ Las ubicaciones ya están incluidas en cada objeto de prenda
+    //  Las ubicaciones ya están incluidas en cada objeto de prenda
     // Ya no necesitamos recopilarlas por separado
 
     const submitButton = e.submitter;
@@ -1941,7 +1941,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     
     // DEBUG: Log de datos que se envían
     // DEBUG: Log de datos que se envían
-    console.log('📦 DATOS QUE SE ENVIARÁN:');
+    console.log(' DATOS QUE SE ENVIARÁN:');
     console.log('   cliente:', cliente);
     console.log('   fecha:', fecha);
     console.log('   action:', action);
@@ -1949,7 +1949,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     console.log('   tipo_venta:', document.getElementById('header-tipo-venta').value);
     console.log('   prendas completas:', JSON.stringify(prendas, null, 2));
     
-    formData.append('prendas', JSON.stringify(prendas)); // ✅ Enviar prendas con ubicaciones incluidas
+    formData.append('prendas', JSON.stringify(prendas)); //  Enviar prendas con ubicaciones incluidas
     formData.append('especificaciones', document.getElementById('especificaciones').value || '');
     formData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
     formData.append('observaciones_generales', JSON.stringify([]));
@@ -1960,7 +1960,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         console.log(`   Prenda ${i + 1}: ${p.tipo} - ${p.ubicaciones.length} ubicaciones`);
     });
 
-    // ✅ AGREGAR IMÁGENES POR PRENDA CON SU ÍNDICE
+    //  AGREGAR IMÁGENES POR PRENDA CON SU ÍNDICE
     console.log('🔵 PROCESANDO IMÁGENES POR PRENDA:');
     document.querySelectorAll('.producto-card').forEach((prenda, prendaIndex) => {
         const input = prenda.querySelector('.input-file-reflectivo');
@@ -1971,7 +1971,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 // Agregar imagen con índice de prenda
                 const campoNombre = 'imagenes_reflectivo_prenda_' + prendaIndex + '[]';
                 formData.append(campoNombre, file);
-                console.log('    ✅ Imagen ' + (fileIdx + 1) + ': "' + file.name + '" → "' + campoNombre + '"');
+                console.log('     Imagen ' + (fileIdx + 1) + ': "' + file.name + '" → "' + campoNombre + '"');
             });
             console.log('📸 Prenda ' + prendaIndex + ': ' + input.files.length + ' imágenes agregadas');
         } else {
@@ -1992,12 +1992,12 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         if (window.esEdicion && window.cotizacionIdActual) {
             // EDICIÓN: Usar POST con _method=PUT para compatibilidad con FormData
             url = '/asesores/cotizaciones/reflectivo/' + window.cotizacionIdActual;
-            metodo = 'POST'; // ✅ Cambiar a POST
+            metodo = 'POST'; //  Cambiar a POST
             console.log('✏️ EDICIÓN - Enviando a:', url);
             
             // Limpiar FormData anterior y reconstruir con datos de edición
             const editFormData = new FormData();
-            editFormData.append('_method', 'PUT'); // ✅ Simular PUT con POST
+            editFormData.append('_method', 'PUT'); //  Simular PUT con POST
             editFormData.append('cliente', cliente);
             editFormData.append('asesora', document.getElementById('asesora').value);
             editFormData.append('fecha', fecha);
@@ -2009,7 +2009,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             editFormData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
             editFormData.append('observaciones_generales', JSON.stringify([]));
             
-            // ✅ AGREGAR IMÁGENES POR PRENDA (IGUAL QUE EN CREACIÓN)
+            //  AGREGAR IMÁGENES POR PRENDA (IGUAL QUE EN CREACIÓN)
             document.querySelectorAll('.producto-card').forEach((prenda, prendaIndex) => {
                 const input = prenda.querySelector('.input-file-reflectivo');
                 if (input && input.files.length > 0) {
@@ -2027,7 +2027,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             }
             
             bodyData = editFormData;
-            console.log('📦 FormData para edición construido');
+            console.log(' FormData para edición construido');
         } else {
             // CREACIÓN: Usar POST storeReflectivo con FormData
             url = '/asesores/cotizaciones/reflectivo/guardar';
@@ -2055,7 +2055,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 : 'Tu cotización ha sido enviada al contador para su revisión y aprobación.';
             
             const numeroCot = result.data?.cotizacion?.numero_cotizacion || result.numero_cotizacion;
-            console.log('✅ Respuesta exitosa:', {
+            console.log(' Respuesta exitosa:', {
                 success: true,
                 action: action,
                 numeroCotizacion: numeroCot,
@@ -2064,11 +2064,11 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             
             mostrarModalExito(titulo, mensaje, numeroCot, action === 'enviar');
         } else {
-            console.error('❌ Error en respuesta:', result);
+            console.error(' Error en respuesta:', result);
             let mensajeError = result.message || 'Error al guardar';
             
             if (result.errors) {
-                console.log('📋 Campos con error (errors):');
+                console.log(' Campos con error (errors):');
                 const errores = [];
                 for (const [campo, msgs] of Object.entries(result.errors)) {
                     const mensaje = Array.isArray(msgs) ? msgs[0] : msgs;
@@ -2077,7 +2077,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 }
                 mensajeError = 'Errores de validación:\n' + errores.join('\n');
             } else if (result.errores) {
-                console.log('📋 Campos con error (errores):');
+                console.log(' Campos con error (errores):');
                 const errores = [];
                 for (const [campo, msgs] of Object.entries(result.errores)) {
                     const mensaje = Array.isArray(msgs) ? msgs[0] : msgs;
@@ -2087,7 +2087,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 mensajeError = 'Errores:\n' + errores.join('\n');
             }
             
-            console.error('❌ Error completo:', {
+            console.error(' Error completo:', {
                 success: false,
                 message: result.message,
                 errors: result.errors,
@@ -2096,11 +2096,11 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             });
             
             // Mostrar error de forma más legible
-            alert(`❌ ${mensajeError}`);
+            alert(` ${mensajeError}`);
         }
     } catch (error) {
-        console.error('❌ Error de conexión:', error);
-        alert(`❌ Error de conexión: ${error.message}\n\nVerifica la consola para más detalles.`);
+        console.error(' Error de conexión:', error);
+        alert(` Error de conexión: ${error.message}\n\nVerifica la consola para más detalles.`);
     }
 });
 
@@ -2182,7 +2182,7 @@ function mostrarModalConfirmarEliminar(fotoId, fotoUrl, contenedor) {
     const btnConfirmar = document.getElementById('btnConfirmarEliminar');
     
     if (!modal || !btnConfirmar) {
-        console.error('❌ Modal de confirmación no encontrado');
+        console.error(' Modal de confirmación no encontrado');
         return;
     }
     
@@ -2215,16 +2215,16 @@ function mostrarModalConfirmarEliminar(fotoId, fotoUrl, contenedor) {
             const result = await response.json();
             
             if (result.success) {
-                console.log('✅ Foto eliminada del servidor:', result);
+                console.log(' Foto eliminada del servidor:', result);
                 // Remover del DOM
                 contenedor.remove();
-                console.log('✅ Foto eliminada del DOM');
+                console.log(' Foto eliminada del DOM');
             } else {
-                console.error('❌ Error al eliminar foto:', result.message);
+                console.error(' Error al eliminar foto:', result.message);
                 alert('Error al eliminar la foto: ' + result.message);
             }
         } catch (error) {
-            console.error('❌ Error de conexión al eliminar foto:', error);
+            console.error(' Error de conexión al eliminar foto:', error);
             alert('Error de conexión al eliminar la foto. Por favor, intenta de nuevo.');
         }
     };
@@ -2253,7 +2253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Si hay datos iniciales (edición), cargarlos
     const datosIniciales = {!! isset($datosIniciales) ? $datosIniciales : 'null' !!};
     
-    console.log('📋 Datos iniciales recibidos:', datosIniciales);
+    console.log(' Datos iniciales recibidos:', datosIniciales);
     
     if (datosIniciales) {
         try {
@@ -2346,7 +2346,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('    ✓ Descripción:', prenda.descripcion);
                     }
                     
-                    // ✅ CARGAR GÉNERO DE LA PRENDA
+                    //  CARGAR GÉNERO DE LA PRENDA
                     const generoSelect = clone.querySelector('.talla-genero-select-reflectivo');
                     if (generoSelect && prenda.genero) {
                         // Mostrar el select de género
@@ -2355,7 +2355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('    ✓ Género:', prenda.genero);
                     }
                     
-                    // ✅ CARGAR TALLAS DE LA PRENDA
+                    //  CARGAR TALLAS DE LA PRENDA
                     if (prenda.tallas && prenda.tallas.length > 0) {
                         console.log('    ✓ Tallas:', prenda.tallas);
                         const prendaCard = clone;
@@ -2393,7 +2393,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Agregar el clone al DOM primero
                     contenedor.appendChild(clone);
                     
-                    // ✅ CARGAR FOTOS - Después de agregar al DOM para evitar duplicación
+                    //  CARGAR FOTOS - Después de agregar al DOM para evitar duplicación
                     const fotosParaCargar = prenda.reflectivo?.fotos || prenda.fotos || [];
                     if (fotosParaCargar && fotosParaCargar.length > 0) {
                         console.log('    ✓ Fotos a cargar:', fotosParaCargar.length);
@@ -2402,7 +2402,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const fotosContainer = prendaCard.querySelector('.fotos-preview-reflectivo');
                         
                         if (fotosContainer) {
-                            // ✅ LIMPIAR el contenedor antes de agregar fotos
+                            //  LIMPIAR el contenedor antes de agregar fotos
                             const fotosExistentes = fotosContainer.children.length;
                             console.log('    📸 Fotos existentes en contenedor:', fotosExistentes);
                             fotosContainer.innerHTML = '';
@@ -2418,13 +2418,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 `;
                                 fotosContainer.appendChild(imgDiv);
                             });
-                            console.log('    ✅ Total fotos en contenedor después de cargar:', fotosContainer.children.length);
+                            console.log('     Total fotos en contenedor después de cargar:', fotosContainer.children.length);
                         }
                     } else {
                         console.log('    ⚠️ No hay fotos para esta prenda');
                     }
                     
-                    // ✅ CARGAR UBICACIONES DE ESTA PRENDA (después de agregar al DOM)
+                    //  CARGAR UBICACIONES DE ESTA PRENDA (después de agregar al DOM)
                     if (prenda.reflectivo && prenda.reflectivo.ubicacion) {
                         console.log('📍 Cargando ubicaciones para prenda', index + 1);
                         const prendaCard = contenedor.lastElementChild;
@@ -2487,20 +2487,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 });
-                console.log('✅ Prendas cargadas correctamente');
+                console.log(' Prendas cargadas correctamente');
             } else {
                 console.log('⚠️ No hay prendas, agregando una por defecto');
                 agregarProductoPrenda();
             }
             
-            // ✅ FOTOS YA SE CARGAN POR PRENDA (líneas 2229-2258)
+            //  FOTOS YA SE CARGAN POR PRENDA (líneas 2229-2258)
             // No cargar fotos globalmente para evitar duplicación
             console.log('🔍 Buscando reflectivo en datosIniciales...');
             console.log('   reflectivo_cotizacion:', datosIniciales.reflectivo_cotizacion ? 'EXISTE' : 'NO');
             console.log('   reflectivo:', datosIniciales.reflectivo ? 'EXISTE' : 'NO');
             
             const reflectivo = datosIniciales.reflectivo_cotizacion || datosIniciales.reflectivo;
-            console.log('ℹ️ Fotos cargadas por prenda (no globalmente para evitar duplicaciones)');
+            console.log(' Fotos cargadas por prenda (no globalmente para evitar duplicaciones)');
             
             // Cargar descripción del reflectivo (si existe)
             if (reflectivo && reflectivo.descripcion) {
@@ -2512,17 +2512,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // ✅ NO CARGAR UBICACIÓN GLOBAL - Ya se cargan por PRENDA (línea ~2108)
+            //  NO CARGAR UBICACIÓN GLOBAL - Ya se cargan por PRENDA (línea ~2108)
             // Las ubicaciones deben cargarse dentro del contexto de cada prenda, no globalmente
             // Esto previene duplicación en la primera prenda
-            console.log('ℹ️ Ubicaciones cargadas por prenda (no globalmente para evitar duplicaciones)');
+            console.log(' Ubicaciones cargadas por prenda (no globalmente para evitar duplicaciones)');
         } catch (e) {
-            console.error('❌ Error cargando datos iniciales:', e);
+            console.error(' Error cargando datos iniciales:', e);
             console.error('Stack:', e.stack);
             agregarProductoPrenda();
         }
     } else {
-        console.log('ℹ️ No hay datos iniciales, agregando prenda por defecto');
+        console.log(' No hay datos iniciales, agregando prenda por defecto');
         agregarProductoPrenda();
     }
 
@@ -2556,7 +2556,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         generoInput.value = generoId;
-        console.log('✅ genero_id actualizado a:', generoId);
+        console.log(' genero_id actualizado a:', generoId);
     };
 
     // Mapeos de tallas por tipo y género (copiado de tallas.js)
@@ -2575,7 +2575,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tallaRangoSelectors = container.querySelector('.talla-rango-selectors-reflectivo');
         const tipo = select.value;
         
-        console.log('📋 Tipo seleccionado:', tipo);
+        console.log(' Tipo seleccionado:', tipo);
         
         // LIMPIAR COMPLETAMENTE TODO
         botonesDiv.innerHTML = '';
@@ -2648,7 +2648,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 botonesDiv.appendChild(btn);
             });
-            console.log('✅ Botones de LETRAS creados');
+            console.log(' Botones de LETRAS creados');
             
         } else if (tipo === 'numero') {
             console.log('🔢 Configurando NÚMEROS');
@@ -2871,7 +2871,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const generoSelect = card.querySelector('.talla-genero-select-reflectivo');
         
         console.log('🔢 Agregando rango - Desde:', tallaDesde, 'Hasta:', tallaHasta);
-        console.log('📋 Tipo seleccionado:', tipoSelect.value);
+        console.log(' Tipo seleccionado:', tipoSelect.value);
         console.log('👥 Género select value:', generoSelect.value);
         
         if (!tallaDesde || !tallaHasta) {
@@ -2896,7 +2896,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        console.log('📋 Array de tallas a usar:', tallas);
+        console.log(' Array de tallas a usar:', tallas);
         console.log('🔍 Buscando en array:', tallaDesde, 'y', tallaHasta);
         
         const indexDesde = tallas.indexOf(tallaDesde);
@@ -2905,7 +2905,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('📍 Índices encontrados - Desde:', indexDesde, 'Hasta:', indexHasta);
         
         if (indexDesde === -1 || indexHasta === -1) {
-            console.error('❌ Tallas no encontradas en el array');
+            console.error(' Tallas no encontradas en el array');
             console.error('Disponibles:', tallas);
             console.error('Buscando:', tallaDesde, tallaHasta);
             alert('Las tallas seleccionadas no son válidas');
@@ -2918,7 +2918,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const tallasRango = tallas.slice(indexDesde, indexHasta + 1);
-        console.log('✅ Tallas en rango:', tallasRango);
+        console.log(' Tallas en rango:', tallasRango);
         
         tallasRango.forEach(talla => {
             const existe = Array.from(tallasAgregadas.querySelectorAll('div')).some(tag =>
@@ -2939,7 +2939,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tallasSection.style.display = 'block';
         actualizarTallasHiddenReflectivo(card);
-        console.log('✅ Rango agregado correctamente');
+        console.log(' Rango agregado correctamente');
     };
 
     window.actualizarTallasHiddenReflectivo = function(container) {
@@ -2974,7 +2974,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         tallasHidden.value = tallas.join(', ');
-        console.log('✅ Campo oculto actualizado con tallas:', tallasHidden.value);
+        console.log(' Campo oculto actualizado con tallas:', tallasHidden.value);
     };
 });
 </script>

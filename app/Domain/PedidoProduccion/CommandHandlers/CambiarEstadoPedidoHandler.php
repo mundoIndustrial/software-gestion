@@ -48,7 +48,7 @@ class CambiarEstadoPedidoHandler implements CommandHandler
 
             $this->validator->validateTransicion($estadoActual, $nuevoEstado);
             
-            Log::info('✅ [CambiarEstadoPedidoHandler] Validación de transición pasada', []);
+            Log::info(' [CambiarEstadoPedidoHandler] Validación de transición pasada', []);
 
             // Cambiar estado
             $pedido->update([
@@ -62,7 +62,7 @@ class CambiarEstadoPedidoHandler implements CommandHandler
                 ]);
             }
 
-            Log::info('✅ [CambiarEstadoPedidoHandler] Estado actualizado', [
+            Log::info(' [CambiarEstadoPedidoHandler] Estado actualizado', [
                 'pedido_id' => $pedido->id,
                 'estado_anterior' => $estadoActual,
                 'estado_nuevo' => $nuevoEstado,
@@ -76,7 +76,7 @@ class CambiarEstadoPedidoHandler implements CommandHandler
             return $pedido;
 
         } catch (\Exception $e) {
-            Log::error('❌ [CambiarEstadoPedidoHandler] Error cambiando estado', [
+            Log::error(' [CambiarEstadoPedidoHandler] Error cambiando estado', [
                 'pedido_id' => $command->getPedidoId(),
                 'error' => $e->getMessage(),
             ]);

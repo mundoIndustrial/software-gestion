@@ -499,7 +499,7 @@
 
     @vite(['resources/js/app.js'])
     <script>
-        console.log('✅ Echo cargado desde Vite:', typeof window.Echo);
+        console.log(' Echo cargado desde Vite:', typeof window.Echo);
 
         document.addEventListener('DOMContentLoaded', function() {
             function closeFullscreen() {

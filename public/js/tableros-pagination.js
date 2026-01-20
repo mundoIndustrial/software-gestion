@@ -82,7 +82,7 @@
             // Actualizar tabla con el HTML del servidor
             if (data.table_html && tableBody) {
                 tableBody.innerHTML = data.table_html;
-                console.log('✅ Tabla actualizada');
+                console.log(' Tabla actualizada');
             }
             
             // Actualizar controles de paginación usando el HTML del servidor
@@ -90,7 +90,7 @@
             if (data.pagination && data.pagination.links_html && paginationControls) {
                 paginationControls.innerHTML = data.pagination.links_html;
                 // Los listeners se mantendrán activos gracias a la delegación de eventos en document
-                console.log(`✅ Controles de paginación actualizados para ${section}`);
+                console.log(` Controles de paginación actualizados para ${section}`);
             } else {
                 console.warn(`⚠️ No se pudieron actualizar controles de paginación:`, {
                     hasPagination: !!data.pagination,
@@ -132,7 +132,7 @@
             }
         })
         .catch(error => {
-            console.error('❌ Error en paginación:', error);
+            console.error(' Error en paginación:', error);
             if (tableBody) {
                 tableBody.style.opacity = '1';
                 tableBody.style.pointerEvents = 'auto';

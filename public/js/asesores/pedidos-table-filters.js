@@ -24,7 +24,7 @@ function loadFiltersFromLocalStorage() {
             selectedFilters = JSON.parse(saved);
             return true;
         } catch (e) {
-            console.error('❌ Error al cargar filtros:', e);
+            console.error(' Error al cargar filtros:', e);
             return false;
         }
     }
@@ -56,7 +56,7 @@ function getColumnIndexByName(columnName) {
         }
     }
     
-    console.warn(`❌ Columna "${columnName}" NO encontrada`);
+    console.warn(` Columna "${columnName}" NO encontrada`);
     return -1;
 }
 
@@ -66,7 +66,7 @@ function getColumnIndexByName(columnName) {
 function getColumnValuesFromTableByName(columnName) {
     const columnIndex = getColumnIndexByName(columnName);
     if (columnIndex === -1) {
-        console.warn(`❌ Columna "${columnName}" no encontrada`);
+        console.warn(` Columna "${columnName}" no encontrada`);
         return [];
     }
     
@@ -644,7 +644,7 @@ function initializeFilterButtons() {
         });
     });
     
-    // ✅ Aplicar filtros a la tabla
+    //  Aplicar filtros a la tabla
     if (Object.keys(selectedFilters).length > 0) {
         applyTableFilters();
         updateFilterBadges();
@@ -762,7 +762,7 @@ function updateFilterBadges() {
 function updateClearButtonVisibility() {
     const clearBtn = document.getElementById('btnClearAllFilters');
     if (!clearBtn) {
-        console.warn('❌ Botón flotante no encontrado');
+        console.warn(' Botón flotante no encontrado');
         return;
     }
     

@@ -73,7 +73,7 @@ class EppController extends Controller
                 'message' => $e->getMessage(),
             ], 400);
         } catch (\Exception $e) {
-            \Log::error('❌ [EppController] Error al buscar EPP:', [
+            \Log::error(' [EppController] Error al buscar EPP:', [
                 'message' => $e->getMessage(),
                 'termino' => $termino ?? null,
                 'categoria' => $categoria ?? null,

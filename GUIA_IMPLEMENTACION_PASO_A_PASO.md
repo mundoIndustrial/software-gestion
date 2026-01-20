@@ -6,12 +6,12 @@
 
 ---
 
-## 📋 PREREQUISITOS
+##  PREREQUISITOS
 
-- ✅ Backup del proyecto
-- ✅ Git branch creado: `refactor/consolidate-modales`
-- ✅ Entender el análisis previo
-- ✅ Tener acceso a todos los archivos
+-  Backup del proyecto
+-  Git branch creado: `refactor/consolidate-modales`
+-  Entender el análisis previo
+-  Tener acceso a todos los archivos
 
 ---
 
@@ -33,8 +33,8 @@ mkdir -p public/js/utilidades
 # Verificar archivos necesarios
 ls -la public/js/utilidades/
 # Debe contener:
-# - ui-modal-service.js ✅ (ya creado)
-# - deletion-service.js ✅ (ya creado)
+# - ui-modal-service.js  (ya creado)
+# - deletion-service.js  (ya creado)
 ```
 
 #### Paso 3: Documentar estado actual
@@ -64,7 +64,7 @@ En `index.blade.php`, agregar ANTES de otros scripts (`<script>`):
 **Reemplazar por:**
 ```php
 @push('scripts')
-<!-- ✅ NUEVOS SERVICIOS CENTRALIZADOS (CARGAR PRIMERO) -->
+<!--  NUEVOS SERVICIOS CENTRALIZADOS (CARGAR PRIMERO) -->
 <script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
 <script src="{{ asset('js/utilidades/deletion-service.js') }}"></script>
 
@@ -73,7 +73,7 @@ En `index.blade.php`, agregar ANTES de otros scripts (`<script>`):
     window.fetchUrl = '/registros';
     window.modalContext = 'pedidos';
     
-    // ✅ Verificar que los servicios estén disponibles
+    //  Verificar que los servicios estén disponibles
     console.log('🔧 UIModalService disponible:', !!window.UI);
     console.log('🔧 DeletionService disponible:', !!window.Deletion);
 ```
@@ -97,7 +97,7 @@ Reemplazar todas las variantes de `eliminarPedido()`, `eliminarCotizacion()`, et
 **Buscar y reemplazar:**
 
 ```javascript
-// ❌ VIEJO: 100+ líneas
+//  VIEJO: 100+ líneas
 function confirmarEliminarPedido(pedidoId, numeroPedido) {
     // ... modal HTML completo ...
 }
@@ -120,7 +120,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 **Por:**
 
 ```javascript
-// ✅ NUEVO: 5 líneas
+//  NUEVO: 5 líneas
 function confirmarEliminarPedido(pedidoId, numeroPedido) {
     Deletion.eliminarPedido(pedidoId, numeroPedido);
 }
@@ -263,7 +263,7 @@ Este archivo será casi completamente reemplazado por `UIModalService`.
 
 **Eliminar completamente:**
 ```javascript
-// ❌ REMOVER - Ya en UIModalService
+//  REMOVER - Ya en UIModalService
 function confirmarEliminacion(titulo, mensaje, callback) { ... }
 function mostrarExito(titulo, mensaje, duracion) { ... }
 function mostrarError(titulo, mensaje) { ... }
@@ -274,7 +274,7 @@ function confirmarAccion(mensaje) { ... }
 
 **Reemplazar uso en archivos por:**
 ```javascript
-// ✅ NUEVO
+//  NUEVO
 UI.exito('Título', 'Mensaje');
 UI.error('Título', 'Mensaje');
 UI.advertencia('Título', 'Mensaje');
@@ -368,7 +368,7 @@ async function abrirModalDescripcion(pedidoId, tipo) {
         
         Swal.close(); // Cerrar modal de carga
         
-        // ✅ Usar UIModalService
+        //  Usar UIModalService
         UI.contenido({
             titulo: 'Prendas y Procesos',
             html: htmlContenido,
@@ -423,7 +423,7 @@ function abrirModalCelda(titulo, contenido, isHtml = false) {
 **Mantener funciones específicas pero simplificar:**
 
 ```javascript
-// ✅ Mantener pero simplificar
+//  Mantener pero simplificar
 function abrirEditarDatos() {
     const datos = window.datosEdicionPedido;
     const html = `
@@ -480,7 +480,7 @@ class PedidosController extends Controller
         private ItemPedidoService $itemService,
     ) {}
 
-    // ✅ Todos los métodos documentados en REFACTOR_EJEMPLOS_ANTES_DESPUES.md
+    //  Todos los métodos documentados en REFACTOR_EJEMPLOS_ANTES_DESPUES.md
     
     public function index() { ... }
     public function show($id) { ... }
@@ -497,14 +497,14 @@ class PedidosController extends Controller
 
 **Buscar:**
 ```php
-// ❌ VIEJO: 2 controladores para pedidos
+//  VIEJO: 2 controladores para pedidos
 Route::resource('pedidos', 'AsesoresController');
 Route::resource('pedidos-produccion', 'CrearPedidoEditableController');
 ```
 
 **Reemplazar por:**
 ```php
-// ✅ NUEVO: 1 controlador consolidado
+//  NUEVO: 1 controlador consolidado
 Route::prefix('asesores')->middleware('auth')->group(function () {
     // Rutas RESTful
     Route::apiResource('pedidos', Asesores\PedidosController::class);
@@ -604,7 +604,7 @@ describe('UIModalService', () => {
 #### Paso 1: Remover archivos obsoletos
 
 ```bash
-# ❌ Estos archivos pueden ser eliminados o reducidos
+#  Estos archivos pueden ser eliminados o reducidos
 rm public/js/modulos/crear-pedido/utilidades/helpers-pedido-editable.js  # SI NO SE USA EN OTROS LADOS
 
 # O simplemente dejar como fallback
@@ -623,7 +623,7 @@ grep -r "function eliminarPedido\|function mostrarExito" public/js/ resources/ -
 ```markdown
 ## Versión X.X.X - Refactor de Modales y Notificaciones
 
-### ✅ Cambios
+###  Cambios
 - Centralizado UIModalService para todos los modales y notificaciones
 - Centralizado DeletionService para operaciones de eliminación
 - Consolidado PedidosController (AsesoresController + CrearPedidoEditableController)
@@ -642,28 +642,28 @@ grep -r "function eliminarPedido\|function mostrarExito" public/js/ resources/ -
 
 ---
 
-## ✅ CHECKLIST FINAL
+##  CHECKLIST FINAL
 
 ### Antes de hacer commit:
 
-- [ ] ✅ UIModalService cargado y funcional
-- [ ] ✅ DeletionService cargado y funcional
-- [ ] ✅ Todas las funciones de eliminación refactorizadas
-- [ ] ✅ Todas las notificaciones usando UI.*
-- [ ] ✅ Modales consolidados en UIModalService
-- [ ] ✅ Backend consolidado (PedidosController)
-- [ ] ✅ URLs actualizadas en frontend
-- [ ] ✅ No hay código duplicado (verificado con grep)
-- [ ] ✅ Testing manual completado sin errores
-- [ ] ✅ Consola del navegador sin errores
+- [ ]  UIModalService cargado y funcional
+- [ ]  DeletionService cargado y funcional
+- [ ]  Todas las funciones de eliminación refactorizadas
+- [ ]  Todas las notificaciones usando UI.*
+- [ ]  Modales consolidados en UIModalService
+- [ ]  Backend consolidado (PedidosController)
+- [ ]  URLs actualizadas en frontend
+- [ ]  No hay código duplicado (verificado con grep)
+- [ ]  Testing manual completado sin errores
+- [ ]  Consola del navegador sin errores
 
 ### Antes de hacer merge a main:
 
-- [ ] ✅ Code Review realizado
-- [ ] ✅ Tests E2E pasaron
-- [ ] ✅ Ningún breakage en funcionalidad
-- [ ] ✅ Documentación actualizada
-- [ ] ✅ CHANGELOG actualizado
+- [ ]  Code Review realizado
+- [ ]  Tests E2E pasaron
+- [ ]  Ningún breakage en funcionalidad
+- [ ]  Documentación actualizada
+- [ ]  CHANGELOG actualizado
 
 ---
 

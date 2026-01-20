@@ -50,7 +50,7 @@ class TodosTiposCotizacionesTest extends TestCase
         echo "Números únicos: {$unicos}\n";
         
         $this->assertEquals($total, $unicos, 'No debe haber números duplicados');
-        echo "✅ Sin duplicados\n\n";
+        echo " Sin duplicados\n\n";
         
         // Verificar: secuencia consecutiva
         sort($numeros_generados);
@@ -58,9 +58,9 @@ class TodosTiposCotizacionesTest extends TestCase
         
         echo "Rango: " . min($numeros_generados) . " a " . max($numeros_generados) . "\n";
         $this->assertEquals($numeros_generados, $esperado, 'La secuencia debe ser consecutiva');
-        echo "✅ Secuencia consecutiva\n\n";
+        echo " Secuencia consecutiva\n\n";
         
-        echo "✅ PRUEBA EXITOSA\n";
+        echo " PRUEBA EXITOSA\n";
         echo "=================\n";
         echo "Todos los tipos de cotizaciones comparten la MISMA secuencia global.\n";
         echo "→ Normal, Prenda, Bordado, Reflectivo todos en la MISMA numeración\n";

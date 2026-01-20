@@ -46,13 +46,13 @@ class RegistrarAuditoriaPedido
                 'updated_at' => now(),
             ]);
 
-            Log::info('✅ Auditoría de pedido registrada', [
+            Log::info(' Auditoría de pedido registrada', [
                 'pedido_id' => $event->getPedidoId(),
                 'evento' => $event->getEventName(),
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error registrando auditoría', [
+            Log::error(' Error registrando auditoría', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $event->getPedidoId(),
             ]);

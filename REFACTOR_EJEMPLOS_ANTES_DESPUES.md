@@ -2,7 +2,7 @@
 
 ## 1️⃣ EJEMPLO: Eliminar Pedido
 
-### ❌ ANTES (Duplicado en 3 lugares)
+###  ANTES (Duplicado en 3 lugares)
 
 **Ubicación 1: `index.blade.php` (líneas 515-567)**
 ```javascript
@@ -126,7 +126,7 @@ function eliminarCotizacion(id) {
 }
 ```
 
-### ✅ DESPUÉS (Con UIModalService + DeletionService)
+###  DESPUÉS (Con UIModalService + DeletionService)
 
 **Ubicación: `index.blade.php` (2 líneas)**
 ```javascript
@@ -158,7 +158,7 @@ function eliminarCotizacion(id, numero) {
 
 ## 2️⃣ EJEMPLO: Notificaciones (Toast/Swal)
 
-### ❌ ANTES (Duplicado en 7 archivos)
+###  ANTES (Duplicado en 7 archivos)
 
 **Archivo 1: `index.blade.php`**
 ```javascript
@@ -249,7 +249,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 
 Y así en 4 archivos más...
 
-### ✅ DESPUÉS (Con UIModalService)
+###  DESPUÉS (Con UIModalService)
 
 **Reemplaza TODO lo anterior en TODOS los archivos:**
 
@@ -287,11 +287,11 @@ if (result.isConfirmed) {
 
 ## 3️⃣ EJEMPLO: Modales Genéricos
 
-### ❌ ANTES (Modales inline en HTML en 5+ lugares)
+###  ANTES (Modales inline en HTML en 5+ lugares)
 
 **`index.blade.php`**
 ```javascript
-// ❌ Líneas 70-200: Código HTML/JS para modal de motivo de anulación
+//  Líneas 70-200: Código HTML/JS para modal de motivo de anulación
 function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
     const modalHTML = `
         <div id="motivoAnulacionModal" style="...">
@@ -315,7 +315,7 @@ function cerrarModalMotivo() {
     }
 }
 
-// ❌ Líneas 370-450: Código para modal de descripción
+//  Líneas 370-450: Código para modal de descripción
 function abrirModalCelda(titulo, contenido, isHtml = false) {
     // 80 líneas de código para un modal genérico
     const modalHTML = `...`;
@@ -329,7 +329,7 @@ function cerrarModalCelda() {
 
 **`cotizaciones-show.js`**
 ```javascript
-// ❌ Líneas 52-397: Otra implementación de galería/modal
+//  Líneas 52-397: Otra implementación de galería/modal
 function abrirModalImagen(src, titulo, imagenes = null, indiceActual = 0) {
     // 345 líneas de código para galerías de imágenes
 }
@@ -339,11 +339,11 @@ function cerrarModalImagen() {
 }
 ```
 
-### ✅ DESPUÉS (Con servicios centralizados)
+###  DESPUÉS (Con servicios centralizados)
 
 **`index.blade.php` (refactorizado)**
 ```javascript
-// ✅ Mostrar motivo de anulación
+//  Mostrar motivo de anulación
 function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
     const html = `
         <div><strong>Motivo:</strong> ${motivo}</div>
@@ -358,7 +358,7 @@ function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
     });
 }
 
-// ✅ Mostrar descripción
+//  Mostrar descripción
 function abrirModalDescripcion(pedidoId, tipo) {
     const html = construirDescripcionComoPrenda(...);
     UI.contenido({
@@ -371,7 +371,7 @@ function abrirModalDescripcion(pedidoId, tipo) {
 
 **`cotizaciones-show.js` (refactorizado)**
 ```javascript
-// ✅ Mostrar galería
+//  Mostrar galería
 function abrirModalImagen(src, titulo) {
     UI.contenido({
         titulo: titulo,
@@ -391,7 +391,7 @@ function abrirModalImagen(src, titulo) {
 
 ## 4️⃣ EJEMPLO: Backend - Consolidar Controladores
 
-### ❌ ANTES (God Object)
+###  ANTES (God Object)
 
 **`AsesoresController.php`**
 ```php
@@ -421,7 +421,7 @@ class AsesoresController extends Controller {
     public function deletePedido(...) { ... }
 }
 
-// ❌ TAMBIÉN en CrearPedidoEditableController
+//  TAMBIÉN en CrearPedidoEditableController
 class CrearPedidoEditableController extends Controller {
     public function agregarItem(Request $request) { ... }
     public function eliminarItem(...) { ... }
@@ -429,7 +429,7 @@ class CrearPedidoEditableController extends Controller {
 }
 ```
 
-### ✅ DESPUÉS (Controlador consolidado)
+###  DESPUÉS (Controlador consolidado)
 
 **`PedidosController.php` (nuevo)**
 ```php
@@ -473,7 +473,7 @@ class PedidosController extends Controller
     }
 
     /**
-     * ✅ UN SOLO ENDPOINT para datos de edición
+     *  UN SOLO ENDPOINT para datos de edición
      * (Reemplaza: /asesores/pedidos/{id}/datos-edicion
      *  Y:         /asesores/pedidos-produccion/{id}/datos-edicion)
      */
@@ -557,7 +557,7 @@ class PedidosController extends Controller
 **Registro de rutas: `routes/web.php`**
 ```php
 Route::prefix('asesores')->middleware('auth')->group(function () {
-    // ✅ Un solo controlador para pedidos
+    //  Un solo controlador para pedidos
     Route::apiResource('pedidos', PedidosController::class);
     
     // Endpoints especiales
@@ -581,7 +581,7 @@ Route::prefix('asesores')->middleware('auth')->group(function () {
 
 ---
 
-## 📋 LISTA DE CAMBIOS POR ARCHIVO
+##  LISTA DE CAMBIOS POR ARCHIVO
 
 ### Archivos a REFACTORIZAR:
 

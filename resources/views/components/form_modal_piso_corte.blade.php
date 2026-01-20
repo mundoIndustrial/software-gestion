@@ -762,7 +762,7 @@
                 const cached = this.searchCache.get(cacheKey);
                 
                 if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
-                    console.log('📦 Cache hit para:', query);
+                    console.log(' Cache hit para:', query);
                     return cached.data;
                 }
                 
@@ -1140,7 +1140,7 @@
             }
 
             onSuccess(response) {
-                NotificationManager.showSuccess('✅ Registro guardado correctamente');
+                NotificationManager.showSuccess(' Registro guardado correctamente');
                 this.closeModal();
                 this.resetForm();
                 this.updateTable(response.registro);
@@ -1172,7 +1172,7 @@
                 
                 // Agregar contexto basado en el tipo de error
                 if (response.error_type === 'validation') {
-                    errorMessage = `❌ Error de Validación:\n\n${errorMessage}`;
+                    errorMessage = ` Error de Validación:\n\n${errorMessage}`;
                     
                     // Si hay errores específicos, mostrarlos
                     if (response.errors && typeof response.errors === 'object') {
@@ -1182,11 +1182,11 @@
                         errorMessage += `\n\nDetalles:\n${errorList}`;
                     }
                 } else if (response.error_type === 'database') {
-                    errorMessage = `❌ Error de Base de Datos:\n\n${errorMessage}`;
+                    errorMessage = ` Error de Base de Datos:\n\n${errorMessage}`;
                 } else if (response.error_type === 'system') {
-                    errorMessage = `❌ Error del Sistema:\n\n${errorMessage}`;
+                    errorMessage = ` Error del Sistema:\n\n${errorMessage}`;
                 } else {
-                    errorMessage = `❌ Error:\n\n${errorMessage}`;
+                    errorMessage = ` Error:\n\n${errorMessage}`;
                 }
                 
                 // Mostrar el error
@@ -1208,21 +1208,21 @@
             handleNetworkError(error) {
                 console.error('Error de red:', error);
                 
-                let errorMessage = '❌ Error de Conexión:\n\n';
+                let errorMessage = ' Error de Conexión:\n\n';
                 
                 if (error.message === 'Network request failed') {
                     errorMessage += 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
                 } else if (error.message === 'Timeout') {
                     errorMessage += 'La solicitud tardó demasiado tiempo. Intenta nuevamente.';
                 } else if (error.response && error.response.status === 422) {
-                    errorMessage = '❌ Error de Validación:\n\n';
+                    errorMessage = ' Error de Validación:\n\n';
                     if (error.response.data && error.response.data.message) {
                         errorMessage += error.response.data.message;
                     } else {
                         errorMessage += 'Hay errores en los datos enviados.';
                     }
                 } else if (error.response && error.response.status === 500) {
-                    errorMessage = '❌ Error del Servidor:\n\n';
+                    errorMessage = ' Error del Servidor:\n\n';
                     if (error.response.data && error.response.data.message) {
                         errorMessage += error.response.data.message;
                     } else {

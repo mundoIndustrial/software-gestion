@@ -655,7 +655,7 @@
                 const obsBroche = cell.dataset.obsBroche || '';
                 const cantidadTallaJSON = cell.dataset.cantidadTalla || '{}';
 
-                console.log(`📋 [DESCRIPCION] Celda ${index + 1}:`, {
+                console.log(` [DESCRIPCION] Celda ${index + 1}:`, {
                     descripcion,
                     color,
                     tela,
@@ -670,7 +670,7 @@
                     return;
                 }
 
-                console.log(`✅ [DESCRIPCION] Celda ${index + 1}: Construyendo descripción dinámica`);
+                console.log(` [DESCRIPCION] Celda ${index + 1}: Construyendo descripción dinámica`);
 
                 // Construir descripción dinámica
                 let html = '';

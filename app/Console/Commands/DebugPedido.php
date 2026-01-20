@@ -23,10 +23,10 @@ class DebugPedido extends Command
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         $raw = DB::table('pedidos_produccion')->where('id', $id)->first();
         if ($raw) {
-            $this->info("✅ Encontrado en BD");
+            $this->info(" Encontrado en BD");
             $this->table(['Campo', 'Valor'], array_map(fn($k, $v) => [$k, $v], array_keys((array)$raw), array_values((array)$raw)));
         } else {
-            $this->error("❌ NO encontrado en BD");
+            $this->error(" NO encontrado en BD");
         }
 
         // 2. Con SoftDeletes incluidos
@@ -36,14 +36,14 @@ class DebugPedido extends Command
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         $withTrashed = PedidoProduccion::withTrashed()->find($id);
         if ($withTrashed) {
-            $this->info("✅ Encontrado con withTrashed()");
+            $this->info(" Encontrado con withTrashed()");
             $this->info("  - ID: {$withTrashed->id}");
             $this->info("  - Número: {$withTrashed->numero_pedido}");
             $this->info("  - Cliente: {$withTrashed->cliente}");
             $this->info("  - deleted_at: " . ($withTrashed->deleted_at ? $withTrashed->deleted_at : "NULL"));
             $this->info("  - trashed(): " . ($withTrashed->trashed() ? "SÍ" : "NO"));
         } else {
-            $this->error("❌ NO encontrado ni con withTrashed()");
+            $this->error(" NO encontrado ni con withTrashed()");
         }
 
         // 3. Sin soft deletes (query normal)
@@ -53,12 +53,12 @@ class DebugPedido extends Command
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         $normal = PedidoProduccion::find($id);
         if ($normal) {
-            $this->info("✅ Encontrado con find() normal");
+            $this->info(" Encontrado con find() normal");
             $this->info("  - ID: {$normal->id}");
             $this->info("  - Número: {$normal->numero_pedido}");
             $this->info("  - Cliente: {$normal->cliente}");
         } else {
-            $this->error("❌ NO encontrado con find() normal");
+            $this->error(" NO encontrado con find() normal");
         }
 
         // 4. SQL Query
@@ -91,7 +91,7 @@ class DebugPedido extends Command
             if ($testPedido->trashed()) {
                 $this->warn("⚠️  El pedido ya está eliminado (soft deleted)");
             } else {
-                $this->info("✅ El pedido está activo, puede eliminarse");
+                $this->info(" El pedido está activo, puede eliminarse");
             }
         }
     }

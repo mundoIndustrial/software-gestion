@@ -20,7 +20,7 @@ class LogoPedido extends Model
         'cantidad',
         'tecnicas',
         'observaciones_tecnicas',
-        'secciones',  // ✅ Cambiar de 'ubicaciones' a 'secciones' (nombre real de columna)
+        'secciones',  //  Cambiar de 'ubicaciones' a 'secciones' (nombre real de columna)
         'cliente',
         'asesora',
         'forma_de_pago',
@@ -36,7 +36,7 @@ class LogoPedido extends Model
 
     protected $casts = [
         'tecnicas' => 'json',
-        'secciones' => 'json',  // ✅ Cambiar de 'ubicaciones' a 'secciones'
+        'secciones' => 'json',  //  Cambiar de 'ubicaciones' a 'secciones'
     ];
 
     /**

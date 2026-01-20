@@ -1,4 +1,4 @@
-# 📋 Plan: Recibos de Costura Dinámicos por Prenda y Proceso
+#  Plan: Recibos de Costura Dinámicos por Prenda y Proceso
 
 ## 🎯 Objetivo
 
@@ -266,7 +266,7 @@ const recibos = [
 ```
 Factura (invoice-preview-live.js)
     │
-    ├─ [BOTÓN] 📋 Ver Recibos de Procesos
+    ├─ [BOTÓN]  Ver Recibos de Procesos
     │
     └─ ABRE: Modal/Vista con recibos dinámicos
 ```
@@ -308,34 +308,34 @@ Usuario puede continuar navegando
 ## 🛠️ Implementación por Fases
 
 ### **FASE 1: Crear Componente Base**
-- ✅ Crear `receipt-dynamic.blade.php`
-- ✅ Crear `receipt-manager.js` (gestor de recibos)
-- ✅ Crear `receipt-dynamic.css` (basado en order-detail-modal.css)
-- ✅ Crear función para generar array de recibos desde datos del pedido
+-  Crear `receipt-dynamic.blade.php`
+-  Crear `receipt-manager.js` (gestor de recibos)
+-  Crear `receipt-dynamic.css` (basado en order-detail-modal.css)
+-  Crear función para generar array de recibos desde datos del pedido
 
 ### **FASE 2: Lógica de Navegación**
-- ✅ Implementar navegación anterior/siguiente entre recibos
-- ✅ Actualizar dinámicamente título, subtítulo y contenido
-- ✅ Mostrar contador "Recibo X de Y"
-- ✅ Desactivar botón anterior en primer recibo
-- ✅ Desactivar botón siguiente en último recibo
+-  Implementar navegación anterior/siguiente entre recibos
+-  Actualizar dinámicamente título, subtítulo y contenido
+-  Mostrar contador "Recibo X de Y"
+-  Desactivar botón anterior en primer recibo
+-  Desactivar botón siguiente en último recibo
 
 ### **FASE 3: Generación de Contenido**
-- ✅ Para COSTURA: mostrar datos de prenda (color, tela, talla, cantidad)
-- ✅ Para PROCESOS: mostrar especificaciones del proceso + imágenes
-- ✅ Cambiar título según tipo de recibo
-- ✅ Formatear descripción según tipo
+-  Para COSTURA: mostrar datos de prenda (color, tela, talla, cantidad)
+-  Para PROCESOS: mostrar especificaciones del proceso + imágenes
+-  Cambiar título según tipo de recibo
+-  Formatear descripción según tipo
 
 ### **FASE 4: Integración con Factura**
-- ✅ Agregar botón en `invoice-preview-live.js`
-- ✅ Pasar datos desde factura a recibos
-- ✅ Abrir modal/vista con recibos
-- ✅ Implementar función de impresión
+-  Agregar botón en `invoice-preview-live.js`
+-  Pasar datos desde factura a recibos
+-  Abrir modal/vista con recibos
+-  Implementar función de impresión
 
 ### **FASE 5: Refinamiento**
-- ✅ Mejorar estilos
-- ✅ Testing con pedidos reales
-- ✅ Ajustes de responsive design
+-  Mejorar estilos
+-  Testing con pedidos reales
+-  Ajustes de responsive design
 
 ---
 
@@ -346,15 +346,15 @@ Agregar botón "Ver Recibos":
 ```javascript
 // Después del botón de imprimir, agregar:
 <button onclick="abrirRecibosModal(${JSON.stringify(datos)})">
-    📋 Ver Recibos de Procesos
+     Ver Recibos de Procesos
 </button>
 ```
 
 ### 2. `PedidoProduccionRepository.php`
 Ya tiene la estructura necesaria en método `obtenerParaFactura()`:
-- ✅ Carga prendas con procesos
-- ✅ Incluye especificaciones
-- ✅ Incluye imágenes
+-  Carga prendas con procesos
+-  Incluye especificaciones
+-  Incluye imágenes
 
 ### 3. Controlador (si existe endpoint para recibos)
 Crear endpoint opcional:
@@ -520,7 +520,7 @@ class ReceiptManager {
 
 ---
 
-## ✅ Checklist de Implementación
+##  Checklist de Implementación
 
 - [ ] Crear `receipt-dynamic.blade.php`
 - [ ] Crear `receipt-manager.js`

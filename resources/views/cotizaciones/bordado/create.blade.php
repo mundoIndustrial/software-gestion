@@ -636,12 +636,12 @@ function manejarImagenes(files) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    console.log('✅ Imagen borrada de la BD:', imagenAEliminar.id);
+                    console.log(' Imagen borrada de la BD:', imagenAEliminar.id);
                 } else {
-                    console.error('❌ Error al borrar imagen:', data.message);
+                    console.error(' Error al borrar imagen:', data.message);
                 }
             })
-            .catch(error => console.error('❌ Error en petición:', error));
+            .catch(error => console.error(' Error en petición:', error));
         }
     }
     
@@ -774,7 +774,7 @@ document.getElementById('header-fecha').addEventListener('change', function() {
 document.getElementById('cotizacionBordadoForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    // ✅ NO LLAMAR guardarTecnicasEnBD() AQUÍ
+    //  NO LLAMAR guardarTecnicasEnBD() AQUÍ
     // Las técnicas se guardarán DESPUÉS de crear la cotización en el servidor
     // Esto evita crear una cotización vacía de borrador
     console.log('📝 Preparando envío de cotización con técnicas...');
@@ -782,7 +782,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     // Detectar cuál botón se presionó PRIMERO
     const submitButton = e.submitter;
     if (!submitButton) {
-        console.error('❌ No se detectó el botón de envío');
+        console.error(' No se detectó el botón de envío');
         return;
     }
 
@@ -810,7 +810,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const asesora = document.getElementById('asesora')?.value || '';
     const observacionesTecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
 
-    console.log('📋 Valores sincronizados:', {
+    console.log(' Valores sincronizados:', {
         cliente: cliente,
         asesora: asesora,
         observacionesTecnicas: observacionesTecnicas
@@ -875,7 +875,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const headerFechaElement = document.getElementById('header-fecha');
     const headerTipoVentaElement = document.getElementById('header-tipo-venta');
     
-    // ✅ Usar window.tecnicasAgregadas si está disponible (viene de logo-cotizacion-tecnicas.js)
+    //  Usar window.tecnicasAgregadas si está disponible (viene de logo-cotizacion-tecnicas.js)
     // Si no está disponible, usar array vacío
     const tecnicasAEnviar = typeof window.tecnicasAgregadas !== 'undefined' ? window.tecnicasAgregadas : [];
     
@@ -891,7 +891,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         tipo_venta_bordado: headerTipoVentaElement?.value || ''
     };
 
-    console.log('📦 Datos a enviar:', data);
+    console.log(' Datos a enviar:', data);
     console.log('🎨 window.tecnicasAgregadas:', window.tecnicasAgregadas);
     console.log('📝 Observaciones generales:', observacionesDelDOM);
 
@@ -908,7 +908,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     
     console.log('📸 ¿Tiene imágenes nuevas en LOGO?', tieneImagenesNuevas);
     console.log('📸 ¿Tiene imágenes en TÉCNICAS?', tieneImagenesEnTecnicas);
-    console.log('📦 ¿Debe usar FormData?', debeUsarFormData);
+    console.log(' ¿Debe usar FormData?', debeUsarFormData);
     console.log('📊 window.tecnicasAgregadas:', window.tecnicasAgregadas);
     
     if (debeUsarFormData) {
@@ -920,9 +920,9 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             formData.append('_method', 'PUT');
         }
 
-        // ✅ EXTRAER Y PROCESAR ARCHIVOS DE TÉCNICAS ANTES DE SERIALIZARLAS
+        //  EXTRAER Y PROCESAR ARCHIVOS DE TÉCNICAS ANTES DE SERIALIZARLAS
         console.log('📸 Procesando archivos de técnicas...');
-        console.log('📦 data.tecnicas ANTES de extraer:', data.tecnicas);
+        console.log(' data.tecnicas ANTES de extraer:', data.tecnicas);
         let totalArchivosEnTecnicas = 0;
         
         // Crear versión sin archivos para JSON
@@ -965,8 +965,8 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             };
         });
         
-        console.log(`✅ ${totalArchivosEnTecnicas} archivos extraídos de técnicas`);
-        console.log('📦 tecnicasParaJSON:', tecnicasParaJSON);
+        console.log(` ${totalArchivosEnTecnicas} archivos extraídos de técnicas`);
+        console.log(' tecnicasParaJSON:', tecnicasParaJSON);
         data.tecnicas = tecnicasParaJSON;
 
         // Agregar datos JSON al FormData
@@ -1009,7 +1009,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 }
             });
         } catch (error) {
-            console.error('❌ Error en el fetch con FormData:', error);
+            console.error(' Error en el fetch con FormData:', error);
             throw error;
         }
     } else {
@@ -1034,7 +1034,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 body: JSON.stringify(data)
             });
         } catch (error) {
-            console.error('❌ Error en el fetch con JSON:', error);
+            console.error(' Error en el fetch con JSON:', error);
             throw error;
         }
     }
@@ -1051,7 +1051,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             }
             
             Swal.fire({
-                title: '✅ Éxito',
+                title: ' Éxito',
                 text: result.message || 'Cotización guardada exitosamente',
                 icon: 'success',
                 confirmButtonText: 'Continuar'
@@ -1059,17 +1059,17 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 window.location.href = result.redirect;
             });
         } else {
-            console.error('❌ Respuesta del servidor indica error:', result);
+            console.error(' Respuesta del servidor indica error:', result);
             Swal.fire({
-                title: '❌ Error al Guardar',
+                title: ' Error al Guardar',
                 text: result.message || 'No se pudo guardar la cotización',
                 icon: 'error'
             });
         }
     } catch (error) {
-        console.error('❌ Error en el fetch:', error);
+        console.error(' Error en el fetch:', error);
         Swal.fire({
-            title: '❌ Error en la Conexión',
+            title: ' Error en la Conexión',
             text: error.message || 'No se pudo conectar con el servidor',
             icon: 'error'
         });
@@ -1106,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             localStorage.setItem('cotizacion_bordado_datos', JSON.stringify(datos));
         } catch (error) {
-            console.error('❌ Error al guardar bordado:', error);
+            console.error(' Error al guardar bordado:', error);
         }
     }
 
@@ -1135,7 +1135,7 @@ function cargarDatosBorrador(cotizacion) {
         }
         
         if (nombreCliente) {
-            console.log('✅ Cargando cliente:', nombreCliente);
+            console.log(' Cargando cliente:', nombreCliente);
             document.getElementById('header-cliente').value = nombreCliente;
             document.getElementById('cliente').value = nombreCliente;
         } else {
@@ -1212,7 +1212,7 @@ function cargarDatosBorrador(cotizacion) {
         }
 
     } catch (error) {
-        console.error('❌ Error al cargar datos del borrador:', error);
+        console.error(' Error al cargar datos del borrador:', error);
     }
 }
 

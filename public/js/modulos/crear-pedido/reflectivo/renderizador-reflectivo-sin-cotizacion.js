@@ -25,7 +25,7 @@ function renderizarPrendaReflectivoSinCotizacion(prenda, index) {
             <div class="prenda-title" style="font-weight: 700; font-size: 1.125rem; color: #333;">
                 <i class="fas fa-fire-alt" style="margin-right: 0.5rem; color: #1e40af;"></i>Prenda Reflectivo
             </div>
-            <!-- ✅ Botón eliminar OCULTO en tipo Reflectivo (máximo 1 prenda) -->
+            <!--  Botón eliminar OCULTO en tipo Reflectivo (máximo 1 prenda) -->
         </div>
 
         <!-- CONTENIDO -->
@@ -331,7 +331,7 @@ function renderizarImagenesReflectivo(prendaIndex, imagenes = []) {
  * Ya no se usa el sistema de tags, ahora usa generosConTallas
  */
 function renderizarTallasReflectivo(prendaIndex, tallas = []) {
-    // ✅ NUEVO: Renderizar con sistema de géneros como en PRENDA
+    //  NUEVO: Renderizar con sistema de géneros como en PRENDA
     // Las tallas se renderizarán cuando se agreguen a través de agregarTallasAlGeneroReflectivo()
     return; // No hacer nada, el nuevo sistema maneja todo
 }

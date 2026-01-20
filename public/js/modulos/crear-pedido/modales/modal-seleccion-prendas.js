@@ -35,7 +35,7 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
             console.log('🔍 Tiene logo:', data.logo ? 'Sí' : 'No');
             
             if (data.error) {
-                console.error('❌ Error al cargar prendas:', data.error);
+                console.error(' Error al cargar prendas:', data.error);
                 alert('Error: ' + data.error);
                 return;
             }
@@ -48,8 +48,8 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
             console.log('🔍 Prendas técnicas:', prendasTecnicas);
             
             prendasCotizacion = [...prendasNormales, ...prendasTecnicas];
-            console.log('📋 Total prendas extraídas:', prendasCotizacion.length);
-            console.log('📋 Prendas:', prendasCotizacion);
+            console.log(' Total prendas extraídas:', prendasCotizacion.length);
+            console.log(' Prendas:', prendasCotizacion);
             
             // Si no hay prendas, mostrar mensaje
             if (prendasCotizacion.length === 0) {
@@ -62,7 +62,7 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
             renderizarPrendasModal();
         })
         .catch(error => {
-            console.error('❌ Error al cargar prendas:', error);
+            console.error(' Error al cargar prendas:', error);
             alert('Error al cargar las prendas de la cotización');
         });
 };
@@ -73,7 +73,7 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
 function renderizarPrendasModal() {
     const listaPrendas = document.getElementById('lista-prendas-modal');
     if (!listaPrendas) {
-        console.error('❌ No se encontró elemento lista-prendas-modal');
+        console.error(' No se encontró elemento lista-prendas-modal');
         return;
     }
     
@@ -148,7 +148,7 @@ function renderizarPrendasModal() {
         listaPrendas.appendChild(prendaDiv);
     });
     
-    console.log('✅ Prendas renderizadas en modal');
+    console.log(' Prendas renderizadas en modal');
 }
 
 /**
@@ -194,11 +194,11 @@ window.togglePrendaSeleccion = function(index) {
             prenda: prenda,
             origen: 'bodega' // Por defecto bodega
         });
-        console.log('✅ Prenda seleccionada:', prenda.nombre_producto || prenda.nombre_prenda);
+        console.log(' Prenda seleccionada:', prenda.nombre_producto || prenda.nombre_prenda);
     } else {
         // Remover de seleccionadas
         prendasSeleccionadas = prendasSeleccionadas.filter(p => p.index !== index);
-        console.log('❌ Prenda deseleccionada:', prenda.nombre_producto || prenda.nombre_prenda);
+        console.log(' Prenda deseleccionada:', prenda.nombre_producto || prenda.nombre_prenda);
     }
     
     console.log('📊 Total prendas seleccionadas:', prendasSeleccionadas.length);
@@ -303,7 +303,7 @@ window.agregarPrendasSeleccionadas = function() {
                         talla: t.talla || t,
                         cantidad: t.cantidad || 0
                     }));
-                    console.log('✅ Tallas desde prenda.talla_cantidad (JSON):', tallas);
+                    console.log(' Tallas desde prenda.talla_cantidad (JSON):', tallas);
                 }
             } catch (e) {
                 console.warn('⚠️ Error al parsear talla_cantidad:', e);
@@ -316,7 +316,7 @@ window.agregarPrendasSeleccionadas = function() {
                 talla: t.talla || t,
                 cantidad: t.cantidad || 0
             }));
-            console.log('✅ Tallas desde prenda.tallas:', tallas);
+            console.log(' Tallas desde prenda.tallas:', tallas);
         }
         
         if (tallas.length === 0) {
@@ -361,7 +361,7 @@ window.agregarPrendasSeleccionadas = function() {
                 data: cotizacionActual
             });
             
-            console.log(`✅ Prenda "${nombrePrenda}" agregada como 2 ítems (BASE + PROCESO)`);
+            console.log(` Prenda "${nombrePrenda}" agregada como 2 ítems (BASE + PROCESO)`);
         } else {
             // Sin procesos: 1 solo ítem
             window.itemsPedido.push({
@@ -377,7 +377,7 @@ window.agregarPrendasSeleccionadas = function() {
                 data: cotizacionActual
             });
             
-            console.log(`✅ Prenda "${nombrePrenda}" agregada como 1 ítem (sin procesos)`);
+            console.log(` Prenda "${nombrePrenda}" agregada como 1 ítem (sin procesos)`);
         }
     });
     
@@ -398,26 +398,26 @@ function calcularCantidadTotal(prenda) {
     
     // Si tiene cantidad directa, usarla
     if (prenda.cantidad && typeof prenda.cantidad === 'number') {
-        console.log('  ✅ Usando cantidad directa:', prenda.cantidad);
+        console.log('   Usando cantidad directa:', prenda.cantidad);
         return prenda.cantidad;
     }
     
     // Si tiene talla_cantidad (array de objetos)
     if (prenda.talla_cantidad && Array.isArray(prenda.talla_cantidad)) {
         const total = prenda.talla_cantidad.reduce((sum, t) => sum + (t.cantidad || 0), 0);
-        console.log('  ✅ Calculado desde talla_cantidad (array):', total);
+        console.log('   Calculado desde talla_cantidad (array):', total);
         return total;
     }
     
     // Si tiene tallas (array de objetos)
     if (prenda.tallas && Array.isArray(prenda.tallas)) {
         const total = prenda.tallas.reduce((sum, t) => sum + (t.cantidad || 0), 0);
-        console.log('  ✅ Calculado desde tallas (array):', total);
+        console.log('   Calculado desde tallas (array):', total);
         return total;
     }
     
-    console.log('  ❌ No se pudo calcular, retornando 0');
+    console.log('   No se pudo calcular, retornando 0');
     return 0;
 }
 
-console.log('✅ Módulo modal-seleccion-prendas.js cargado correctamente');
+console.log(' Módulo modal-seleccion-prendas.js cargado correctamente');

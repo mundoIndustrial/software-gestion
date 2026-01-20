@@ -58,7 +58,7 @@ function guardarEspecificaciones() {
             return;
         }
         
-        console.log(`📋 Procesando ${categoriaKey} (${tbodyId})`);
+        console.log(` Procesando ${categoriaKey} (${tbodyId})`);
         
         const filas = tbody.querySelectorAll('tr');
         const valoresSeleccionados = [];
@@ -114,7 +114,7 @@ function guardarEspecificaciones() {
                         observacion: observacion || ''
                     };
                     valoresSeleccionados.push(item);
-                    console.log(`      ✅ Valor guardado: ${valor} | Obs: ${observacion || '(vacío)'}`);
+                    console.log(`       Valor guardado: ${valor} | Obs: ${observacion || '(vacío)'}`);
                 }
             }
         });
@@ -122,21 +122,21 @@ function guardarEspecificaciones() {
         // Solo guardar la categoría si tiene valores seleccionados
         if (valoresSeleccionados.length > 0) {
             especificaciones[categoriaKey] = valoresSeleccionados;
-            console.log(`✅ ${categoriaKey}:`, valoresSeleccionados);
+            console.log(` ${categoriaKey}:`, valoresSeleccionados);
         }
     });
     
     window.especificacionesSeleccionadas = especificaciones;
-    console.log('✅ Especificaciones guardadas:', especificaciones);
+    console.log(' Especificaciones guardadas:', especificaciones);
     console.log('📊 Total categorías:', Object.keys(especificaciones).length);
     
-    // ✅ ACTUALIZAR COLOR DEL BOTÓN ENVIAR
+    //  ACTUALIZAR COLOR DEL BOTÓN ENVIAR
     actualizarColorBotonEnviar();
     
     cerrarModalEspecificaciones();
 }
 
-// ✅ FUNCIÓN PARA ACTUALIZAR COLOR DEL BOTÓN ENVIAR
+//  FUNCIÓN PARA ACTUALIZAR COLOR DEL BOTÓN ENVIAR
 function actualizarColorBotonEnviar() {
     const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
     if (!btnEnviar) return;
@@ -148,8 +148,8 @@ function actualizarColorBotonEnviar() {
         // Verde: tiene especificaciones
         btnEnviar.style.background = '#10b981';
         btnEnviar.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
-        btnEnviar.title = '✅ Especificaciones completadas - Listo para enviar';
-        console.log('✅ Botón ENVIAR en VERDE - Especificaciones completadas');
+        btnEnviar.title = ' Especificaciones completadas - Listo para enviar';
+        console.log(' Botón ENVIAR en VERDE - Especificaciones completadas');
     } else {
         // Rojo: falta especificaciones
         btnEnviar.style.background = '#ef4444';
@@ -189,7 +189,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// ✅ INICIALIZAR COLOR DEL BOTÓN AL CARGAR LA PÁGINA
+//  INICIALIZAR COLOR DEL BOTÓN AL CARGAR LA PÁGINA
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         actualizarColorBotonEnviar();
@@ -345,11 +345,11 @@ function guardarUbicacionFriendly(ubicacion) {
     document.getElementById('seccion_prenda').value = '';
     renderizarSeccionesFriendly();
     
-    // ✅ ACTUALIZAR EL CAMPO OCULTO paso3_secciones_datos
+    //  ACTUALIZAR EL CAMPO OCULTO paso3_secciones_datos
     const campoOculto = document.getElementById('paso3_secciones_datos');
     if (campoOculto) {
         campoOculto.value = JSON.stringify(seccionesSeleccionadasFriendly);
-        console.log('✅ Campo paso3_secciones_datos actualizado:', seccionesSeleccionadasFriendly);
+        console.log(' Campo paso3_secciones_datos actualizado:', seccionesSeleccionadasFriendly);
     }
 }
 
@@ -422,11 +422,11 @@ function eliminarSeccionFriendly(index) {
     seccionesSeleccionadasFriendly.splice(index, 1);
     renderizarSeccionesFriendly();
     
-    // ✅ ACTUALIZAR EL CAMPO OCULTO paso3_secciones_datos
+    //  ACTUALIZAR EL CAMPO OCULTO paso3_secciones_datos
     const campoOculto = document.getElementById('paso3_secciones_datos');
     if (campoOculto) {
         campoOculto.value = JSON.stringify(seccionesSeleccionadasFriendly);
-        console.log('✅ Campo paso3_secciones_datos actualizado (eliminación):', seccionesSeleccionadasFriendly);
+        console.log(' Campo paso3_secciones_datos actualizado (eliminación):', seccionesSeleccionadasFriendly);
     }
 }
 

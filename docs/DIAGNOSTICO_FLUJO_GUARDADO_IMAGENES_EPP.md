@@ -1,4 +1,4 @@
-# 📋 Diagnóstico: Flujo de Guardado de Imágenes del EPP
+#  Diagnóstico: Flujo de Guardado de Imágenes del EPP
 
 ## 🎯 Resumen Ejecutivo
 
@@ -28,10 +28,10 @@ CREATE TABLE pedido_epp_imagenes (
 ```
 
 **Características:**
-- ✅ Foreign key a `pedido_epp.id` con `ON DELETE CASCADE`
-- ✅ Campo `principal` para marcar imagen de portada
-- ✅ Campo `orden` para ordenar imágenes
-- ✅ Timestamps para auditoría
+-  Foreign key a `pedido_epp.id` con `ON DELETE CASCADE`
+-  Campo `principal` para marcar imagen de portada
+-  Campo `orden` para ordenar imágenes
+-  Timestamps para auditoría
 
 ---
 
@@ -76,7 +76,7 @@ items[1][imagenes][0] → File object (siguiente EPP)
 **Archivo:** `app/Http/Controllers/Asesores/CrearPedidoEditableController.php` (líneas 340-385)
 
 ```php
-// ✅ SI ES EPP, PROCESARLO SEPARADAMENTE
+//  SI ES EPP, PROCESARLO SEPARADAMENTE
 if ($tipo === 'epp') {
     // Construir objeto EPP para guardar
     $eppData = [
@@ -87,7 +87,7 @@ if ($tipo === 'epp') {
         'tallas_medidas' => $item['tallas_medidas'] ?? $item['talla'],
     ];
     
-    // ✅ PROCESAR IMÁGENES DEL EPP
+    //  PROCESAR IMÁGENES DEL EPP
     $imagenKey = "items.{$itemIndex}.imagenes";
     $imagenesDelEpp = $request->file($imagenKey) ?? [];
     
@@ -211,7 +211,7 @@ VALUES
 
 ---
 
-## ✅ Verificación: ¿Las Imágenes se Guardan?
+##  Verificación: ¿Las Imágenes se Guardan?
 
 ### Query para Verificar:
 
@@ -230,10 +230,10 @@ ORDER BY pe.id, pei.orden;
 ```
 
 ### Resultados Esperados:
-- ✅ Debe haber un registro en `pedido_epp` por cada EPP
-- ✅ Debe haber registros en `pedido_epp_imagenes` para cada imagen
-- ✅ `principal = 1` para la primera imagen
-- ✅ `orden` debe ser secuencial: 0, 1, 2, ...
+-  Debe haber un registro en `pedido_epp` por cada EPP
+-  Debe haber registros en `pedido_epp_imagenes` para cada imagen
+-  `principal = 1` para la primera imagen
+-  `orden` debe ser secuencial: 0, 1, 2, ...
 
 ---
 
@@ -363,14 +363,14 @@ $imagenes = DB::table('pedido_epp_imagenes')
    ↓
 8️⃣ Crea registros en pedido_epp_imagenes (uno por imagen)
    ↓
-✅ Imágenes guardadas en BD con orden y marcas principales
+ Imágenes guardadas en BD con orden y marcas principales
 ```
 
 ---
 
 ## 🎯 Conclusión
 
-✅ **El sistema está funcionando correctamente.** Las imágenes del EPP se guardan:
+ **El sistema está funcionando correctamente.** Las imágenes del EPP se guardan:
 - En la tabla `pedido_epp_imagenes`
 - Con referencia correcta a `pedido_epp_id`
 - Con marcas de `principal` y `orden`

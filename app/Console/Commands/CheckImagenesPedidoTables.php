@@ -24,7 +24,7 @@ class CheckImagenesPedidoTables extends Command
         foreach ($tablas as $tabla) {
             $existe = DB::getSchemaBuilder()->hasTable($tabla);
             if ($existe) {
-                $this->line("✅ $tabla");
+                $this->line(" $tabla");
                 
                 $count = DB::table($tabla)->count();
                 $this->line("   Registros: $count");
@@ -38,7 +38,7 @@ class CheckImagenesPedidoTables extends Command
                     }
                 }
             } else {
-                $this->error("❌ $tabla NO EXISTE");
+                $this->error(" $tabla NO EXISTE");
             }
             $this->line("");
         }

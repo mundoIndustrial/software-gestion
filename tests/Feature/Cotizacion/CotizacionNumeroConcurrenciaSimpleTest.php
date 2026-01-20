@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
 {
     /**
-     * ✅ TEST: Generar número con pessimistic lock
+     *  TEST: Generar número con pessimistic lock
      * 
      * Valida que el lock funciona sin timeout
      */
@@ -43,7 +43,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
             $this->assertNotNull($numero);
             $this->assertMatchesRegularExpression('/^COT-\d{8}-\d{3}$/', $numero);
             
-            echo "\n✅ NÚMERO GENERADO: $numero\n";
+            echo "\n NÚMERO GENERADO: $numero\n";
             
         } catch (\Throwable $e) {
             $this->fail("Error al generar número: " . $e->getMessage());
@@ -51,7 +51,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
     }
 
     /**
-     * ✅ TEST: Verificar estado de tabla numero_secuencias
+     *  TEST: Verificar estado de tabla numero_secuencias
      */
     public function test_tabla_numero_secuencias_existe_y_tiene_datos()
     {
@@ -66,7 +66,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
     }
 
     /**
-     * ✅ TEST: Generar 3 números secuenciales
+     *  TEST: Generar 3 números secuenciales
      */
     public function test_genera_tres_numeros_secuenciales()
     {
@@ -93,19 +93,19 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         $this->assertCount(3, $numeros);
         $this->assertEquals(3, count(array_unique($numeros)), 'Los números no son únicos');
         
-        echo "\n📋 NÚMEROS GENERADOS:\n";
+        echo "\n NÚMEROS GENERADOS:\n";
         foreach ($numeros as $i => $n) {
             echo "  " . ($i + 1) . ". $n\n";
         }
     }
 
     /**
-     * ✅ TEST: Verificar que existen cotizaciones en BD
+     *  TEST: Verificar que existen cotizaciones en BD
      */
     public function test_cotizaciones_existen_en_bd()
     {
         $count = DB::table('cotizacions')->count();
-        echo "\n📦 COTIZACIONES EN BD: $count\n";
+        echo "\n COTIZACIONES EN BD: $count\n";
         
         $this->assertGreaterThan(0, $count, 'No hay cotizaciones. Crea algunas primero.');
     }

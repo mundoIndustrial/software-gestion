@@ -525,7 +525,7 @@ class OrdenController extends Controller
                 'observaciones' => $validated['observaciones'] ?? null,
             ]);
 
-            \Log::info('✅ Proceso actualizado correctamente', [
+            \Log::info(' Proceso actualizado correctamente', [
                 'proceso_id' => $id,
                 'numero_pedido' => $validated['numero_pedido'],
                 'nuevo_estado' => $validated['estado_proceso'],

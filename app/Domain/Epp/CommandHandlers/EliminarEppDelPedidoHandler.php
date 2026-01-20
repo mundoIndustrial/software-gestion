@@ -50,7 +50,7 @@ class EliminarEppDelPedidoHandler implements CommandHandler
                 $command->getEppId()
             );
 
-            Log::info('✅ [EliminarEppDelPedidoHandler] EPP eliminado correctamente', [
+            Log::info(' [EliminarEppDelPedidoHandler] EPP eliminado correctamente', [
                 'pedido_id' => $command->getPedidoId(),
                 'epp_id' => $command->getEppId(),
             ]);
@@ -68,7 +68,7 @@ class EliminarEppDelPedidoHandler implements CommandHandler
             ]);
             throw $e;
         } catch (\Exception $e) {
-            Log::error('❌ [EliminarEppDelPedidoHandler] Error eliminando EPP', [
+            Log::error(' [EliminarEppDelPedidoHandler] Error eliminando EPP', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $command->getPedidoId(),
                 'epp_id' => $command->getEppId(),

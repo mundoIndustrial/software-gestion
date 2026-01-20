@@ -38,7 +38,7 @@
 
             <!-- Productos -->
             <div class="products-section">
-                <h3 class="section-title">📦 Productos</h3>
+                <h3 class="section-title"> Productos</h3>
                 <div id="modalProductos" class="products-container">
                     <!-- Se llenará dinámicamente -->
                 </div>

@@ -30,7 +30,7 @@
                             <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
                             <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                             <td>
-                                <span class="badge-entregar">📦 Entregar</span>
+                                <span class="badge-entregar"> Entregar</span>
                             </td>
                             <td>
                                 <div class="cotizaciones-actions">
@@ -86,7 +86,7 @@ function openCotizacionModal(cotizacionId) {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
-                document.getElementById('modalEstado').textContent = '📦 Entregar';
+                document.getElementById('modalEstado').textContent = ' Entregar';
 
                 // Llenar productos
                 const productosContainer = document.getElementById('modalProductos');
@@ -219,7 +219,7 @@ document.addEventListener('keydown', function(event) {
 // Callback para procesar resultado de subida de imágenes
 function procesarResultadoSubidaImagenes(resultado) {
     if (resultado.success) {
-        console.log('✅ Imágenes subidas exitosamente:', resultado.rutas);
+        console.log(' Imágenes subidas exitosamente:', resultado.rutas);
         
         // Mostrar notificación de éxito
         Swal.fire({
@@ -235,7 +235,7 @@ function procesarResultadoSubidaImagenes(resultado) {
             openCotizacionModal(cotizacionId);
         }
     } else {
-        console.error('❌ Error al subir imágenes:', resultado.errores);
+        console.error(' Error al subir imágenes:', resultado.errores);
         
         // Mostrar errores
         let mensajeError = 'Errores al subir imágenes:\n';

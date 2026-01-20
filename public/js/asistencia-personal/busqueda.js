@@ -216,7 +216,7 @@ const AsistenciaBusqueda = (() => {
                 iconoEstado = '✓';
             } else if (registro.estado === 'incompleta_excepcion') {
                 colorEstado = '#f39c12';
-                iconoEstado = 'ℹ️';
+                iconoEstado = '';
             } else if (registro.estado === 'incompleta') {
                 colorEstado = '#e74c3c';
                 iconoEstado = '✗';

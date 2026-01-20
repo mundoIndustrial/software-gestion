@@ -102,7 +102,7 @@
                                 {{ $pedido->cantidad_total ?? 0 }}
                             </td>
                             <script>
-                                console.log('📦 [Pedido {{ $pedido->id }}]', {
+                                console.log(' [Pedido {{ $pedido->id }}]', {
                                     numero_pedido: {{ $pedido->numero_pedido }},
                                     cliente: '{{ $pedido->cliente }}',
                                     cantidad_total_db: {{ $pedido->cantidad_total ?? 'null' }},

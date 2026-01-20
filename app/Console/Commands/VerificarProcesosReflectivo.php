@@ -27,7 +27,7 @@ class VerificarProcesosReflectivo extends Command
             if ($pedido->cotizacion) {
                 $this->line("   Tipo Cotización: " . ($pedido->cotizacion->tipoCotizacion?->nombre ?? 'N/A'));
             } else {
-                $this->line("   ❌ SIN COTIZACIÓN");
+                $this->line("    SIN COTIZACIÓN");
             }
 
             // Obtener procesos
@@ -35,7 +35,7 @@ class VerificarProcesosReflectivo extends Command
                 ->distinct('proceso')
                 ->get(['proceso', 'encargado', 'estado_proceso']);
 
-            $this->line("   Procesos: " . ($procesos->count() > 0 ? $procesos->count() : '❌ NINGUNO'));
+            $this->line("   Procesos: " . ($procesos->count() > 0 ? $procesos->count() : ' NINGUNO'));
             
             foreach ($procesos as $proceso) {
                 $encargado = $proceso->encargado ? " ✓ {$proceso->encargado}" : " (Sin asignar)";
@@ -43,6 +43,6 @@ class VerificarProcesosReflectivo extends Command
             }
         }
 
-        $this->line("\n✅ Verificación completada");
+        $this->line("\n Verificación completada");
     }
 }

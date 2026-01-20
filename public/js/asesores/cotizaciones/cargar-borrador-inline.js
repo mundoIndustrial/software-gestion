@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const textareaObs = document.getElementById('observaciones_tecnicas');
             if (textareaObs) {
                 textareaObs.value = cotizacion.observaciones_tecnicas;
-                console.log('✅ Observaciones técnicas cargadas');
+                console.log(' Observaciones técnicas cargadas');
             }
         }
         
@@ -96,9 +96,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        console.log('✅ Borrador cargado completamente');
+        console.log(' Borrador cargado completamente');
         actualizarResumenFriendly();
     } catch (error) {
-        console.error('❌ Error al cargar borrador:', error);
+        console.error(' Error al cargar borrador:', error);
     }
 });

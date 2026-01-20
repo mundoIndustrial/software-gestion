@@ -27,18 +27,18 @@ class ListarCategoriasEppHandler implements QueryHandler
         }
 
         try {
-            Log::info('📋 [ListarCategoriasEppHandler] Listando categorías');
+            Log::info(' [ListarCategoriasEppHandler] Listando categorías');
 
             $categorias = $this->eppService->obtenerCategorias();
 
-            Log::info('✅ [ListarCategoriasEppHandler] Categorías listadas', [
+            Log::info(' [ListarCategoriasEppHandler] Categorías listadas', [
                 'cantidad' => count($categorias),
             ]);
 
             return $categorias;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ListarCategoriasEppHandler] Error listando categorías', [
+            Log::error(' [ListarCategoriasEppHandler] Error listando categorías', [
                 'error' => $e->getMessage(),
             ]);
 

@@ -30,14 +30,14 @@ class PedidoFormHandlers {
     init(containerId) {
         this.container = document.getElementById(containerId);
         if (!this.container) {
-            console.error(`❌ No se encontró elemento: ${containerId}`);
+            console.error(` No se encontró elemento: ${containerId}`);
             return;
         }
 
         this.attachEventListeners();
         this.listenToFormChanges();
 
-        console.log('✅ Event listeners adjuntados');
+        console.log(' Event listeners adjuntados');
     }
 
     /**
@@ -163,7 +163,7 @@ class PedidoFormHandlers {
                 this.closeModal();
             }
         } catch (error) {
-            console.error(`❌ Error en handler ${action}:`, error);
+            console.error(` Error en handler ${action}:`, error);
             this.ui.renderToast('error', `Error: ${error.message}`);
         }
     }
@@ -237,7 +237,7 @@ class PedidoFormHandlers {
         `;
 
         this.showModal('Agregar prenda', form, [
-            { label: '✅ Guardar', action: 'modal-save', variant: 'primary' }
+            { label: ' Guardar', action: 'modal-save', variant: 'primary' }
         ]);
 
         this.currentModalContext = { type: 'add-prenda' };
@@ -293,7 +293,7 @@ class PedidoFormHandlers {
         `;
 
         this.showModal('Editar prenda', form, [
-            { label: '✅ Guardar', action: 'modal-save', variant: 'primary' }
+            { label: ' Guardar', action: 'modal-save', variant: 'primary' }
         ]);
 
         this.currentModalContext = { type: 'edit-prenda', prendaId };
@@ -316,7 +316,7 @@ class PedidoFormHandlers {
                 genero: formData.genero || null,
                 de_bodega: formData.de_bodega === 'on'
             });
-            this.ui.renderToast('success', `✅ Prenda "${formData.nombre_prenda}" agregada`);
+            this.ui.renderToast('success', ` Prenda "${formData.nombre_prenda}" agregada`);
         } else {
             this.fm.editPrenda(this.currentModalContext.prendaId, {
                 nombre_prenda: formData.nombre_prenda,
@@ -324,7 +324,7 @@ class PedidoFormHandlers {
                 genero: formData.genero || null,
                 de_bodega: formData.de_bodega === 'on'
             });
-            this.ui.renderToast('success', '✅ Prenda actualizada');
+            this.ui.renderToast('success', ' Prenda actualizada');
         }
 
         this.closeModal();
@@ -335,12 +335,12 @@ class PedidoFormHandlers {
      */
     deletePrenda(prendaId) {
         const prenda = this.fm.getPrenda(prendaId);
-        if (!confirm(`❌ ¿Confirma eliminar "${prenda.nombre_prenda}"? Se perderán todas sus variantes y procesos.`)) {
+        if (!confirm(` ¿Confirma eliminar "${prenda.nombre_prenda}"? Se perderán todas sus variantes y procesos.`)) {
             return;
         }
 
         this.fm.deletePrenda(prendaId);
-        this.ui.renderToast('success', '✅ Prenda eliminada');
+        this.ui.renderToast('success', ' Prenda eliminada');
     }
 
     // ==================== VARIANTE OPERATIONS ====================
@@ -417,7 +417,7 @@ class PedidoFormHandlers {
         `;
 
         this.showModal('Agregar variante', form, [
-            { label: '✅ Guardar', action: 'modal-save', variant: 'primary' }
+            { label: ' Guardar', action: 'modal-save', variant: 'primary' }
         ]);
 
         this.currentModalContext = { type: 'add-variante', prendaId };
@@ -502,7 +502,7 @@ class PedidoFormHandlers {
         `;
 
         this.showModal('Editar variante', form, [
-            { label: '✅ Guardar', action: 'modal-save', variant: 'primary' }
+            { label: ' Guardar', action: 'modal-save', variant: 'primary' }
         ]);
 
         this.currentModalContext = { type: 'edit-variante', prendaId, varianteId };
@@ -539,14 +539,14 @@ class PedidoFormHandlers {
 
         if (this.currentModalContext.type === 'add-variante') {
             this.fm.addVariante(this.currentModalContext.prendaId, data);
-            this.ui.renderToast('success', `✅ Variante talla ${data.talla} agregada`);
+            this.ui.renderToast('success', ` Variante talla ${data.talla} agregada`);
         } else {
             this.fm.editVariante(
                 this.currentModalContext.prendaId,
                 this.currentModalContext.varianteId,
                 data
             );
-            this.ui.renderToast('success', '✅ Variante actualizada');
+            this.ui.renderToast('success', ' Variante actualizada');
         }
 
         this.closeModal();
@@ -559,7 +559,7 @@ class PedidoFormHandlers {
         if (!confirm('⚠️ ¿Eliminar esta variante?')) return;
 
         this.fm.deleteVariante(prendaId, varianteId);
-        this.ui.renderToast('success', '✅ Variante eliminada');
+        this.ui.renderToast('success', ' Variante eliminada');
     }
 
     // ==================== FOTO OPERATIONS ====================
@@ -588,10 +588,10 @@ class PedidoFormHandlers {
 
                 if (tipo === 'tela') {
                     this.fm.addFotoTela(prendaId, fotoData);
-                    this.ui.renderToast('success', `✅ Foto de tela cargada`);
+                    this.ui.renderToast('success', ` Foto de tela cargada`);
                 } else {
                     this.fm.addFotoPrenda(prendaId, fotoData);
-                    this.ui.renderToast('success', `✅ Foto de prenda cargada`);
+                    this.ui.renderToast('success', ` Foto de prenda cargada`);
                 }
             } catch (error) {
                 this.ui.renderToast('error', error.message);
@@ -609,7 +609,7 @@ class PedidoFormHandlers {
         if (!confirm('⚠️ ¿Eliminar esta foto?')) return;
 
         this.fm.deleteFoto(prendaId, fotoId, tipo);
-        this.ui.renderToast('success', '✅ Foto eliminada');
+        this.ui.renderToast('success', ' Foto eliminada');
     }
 
     // ==================== PROCESO OPERATIONS ====================
@@ -660,7 +660,7 @@ class PedidoFormHandlers {
         `;
 
         this.showModal('Agregar proceso', form, [
-            { label: '✅ Guardar', action: 'modal-save', variant: 'primary' }
+            { label: ' Guardar', action: 'modal-save', variant: 'primary' }
         ]);
 
         this.currentModalContext = { type: 'add-proceso', prendaId };
@@ -727,7 +727,7 @@ class PedidoFormHandlers {
         `;
 
         this.showModal('Editar proceso', form, [
-            { label: '✅ Guardar', action: 'modal-save', variant: 'primary' }
+            { label: ' Guardar', action: 'modal-save', variant: 'primary' }
         ]);
 
         this.currentModalContext = { type: 'edit-proceso', prendaId, procesoId };
@@ -761,14 +761,14 @@ class PedidoFormHandlers {
 
         if (this.currentModalContext.type === 'add-proceso') {
             this.fm.addProceso(this.currentModalContext.prendaId, data);
-            this.ui.renderToast('success', '✅ Proceso agregado');
+            this.ui.renderToast('success', ' Proceso agregado');
         } else {
             this.fm.editProceso(
                 this.currentModalContext.prendaId,
                 this.currentModalContext.procesoId,
                 data
             );
-            this.ui.renderToast('success', '✅ Proceso actualizado');
+            this.ui.renderToast('success', ' Proceso actualizado');
         }
 
         this.closeModal();
@@ -781,7 +781,7 @@ class PedidoFormHandlers {
         if (!confirm('⚠️ ¿Eliminar este proceso?')) return;
 
         this.fm.deleteProceso(prendaId, procesoId);
-        this.ui.renderToast('success', '✅ Proceso eliminado');
+        this.ui.renderToast('success', ' Proceso eliminado');
     }
 
     // ==================== MODAL OPERATIONS ====================
@@ -854,12 +854,12 @@ class PedidoFormHandlers {
             this.ui.renderToast('success', reporte.mensaje);
         } else {
             const errorHtml = this.ui.renderValidationErrors(reporte.errores);
-            this.showModal('❌ Errores de validación', errorHtml, []);
+            this.showModal(' Errores de validación', errorHtml, []);
         }
     }
 
     /**
-     * ✅ TRANSFORMACIÓN DE ESTADO PARA ENVÍO
+     *  TRANSFORMACIÓN DE ESTADO PARA ENVÍO
      * 
      * Transforma el estado para eliminar objetos File no serializables.
      * Preserva SOLO los metadatos necesarios para el backend.
@@ -896,7 +896,7 @@ class PedidoFormHandlers {
                 fotos_prenda: (prenda.fotos_prenda || []).map(foto => ({
                     nombre: foto.nombre,
                     observaciones: foto.observaciones || ''
-                    // ❌ NO incluir: foto.file (va en FormData)
+                    //  NO incluir: foto.file (va en FormData)
                 })),
 
                 // Fotos de tela: SOLO metadatos (sin File)
@@ -904,7 +904,7 @@ class PedidoFormHandlers {
                     nombre: foto.nombre,
                     color: foto.color || '',
                     observaciones: foto.observaciones || ''
-                    // ❌ NO incluir: foto.file (va en FormData)
+                    //  NO incluir: foto.file (va en FormData)
                 })),
 
                 // Procesos: SOLO metadatos de procesos, imagenes van separadas
@@ -912,7 +912,7 @@ class PedidoFormHandlers {
                     tipo_proceso_id: p.tipo_proceso_id,
                     ubicaciones: p.ubicaciones || [],
                     observaciones: p.observaciones || ''
-                    // ❌ NO incluir: p.imagenes (van en FormData)
+                    //  NO incluir: p.imagenes (van en FormData)
                 }))
             }))
         };
@@ -927,7 +927,7 @@ class PedidoFormHandlers {
 
         if (!reporte.valid) {
             const errorHtml = this.ui.renderValidationErrors(reporte.errores);
-            this.showModal('❌ No se puede enviar', errorHtml, []);
+            this.showModal(' No se puede enviar', errorHtml, []);
             return;
         }
 
@@ -937,17 +937,17 @@ class PedidoFormHandlers {
         console.log('📤 Enviando pedido...', state);
 
         try {
-            // ✅ TRANSFORMAR ESTADO: Eliminar File objects, mantener solo metadatos
+            //  TRANSFORMAR ESTADO: Eliminar File objects, mantener solo metadatos
             const stateToSend = this.transformStateForSubmit(state);
 
             // Preparar FormData con archivos
             const formData = new FormData();
             formData.append('pedido_produccion_id', state.pedido_produccion_id);
             
-            // ✅ ENVIAR JSON LIMPIO (sin File objects)
+            //  ENVIAR JSON LIMPIO (sin File objects)
             formData.append('prendas', JSON.stringify(stateToSend.prendas));
 
-            // ✅ ADJUNTAR ARCHIVOS CON ÍNDICES CORRECTOS
+            //  ADJUNTAR ARCHIVOS CON ÍNDICES CORRECTOS
             state.prendas.forEach((prenda, prendaIdx) => {
                 // Fotos de prenda
                 (prenda.fotos_prenda || []).forEach((foto, fotoIdx) => {
@@ -963,7 +963,7 @@ class PedidoFormHandlers {
                     }
                 });
 
-                // ✅ CORREGIDO: Usar procesoIdx (no reutilizar prendaIdx)
+                //  CORREGIDO: Usar procesoIdx (no reutilizar prendaIdx)
                 (prenda.procesos || []).forEach((proceso, procesoIdx) => {
                     (proceso.imagenes || []).forEach((img, imgIdx) => {
                         if (img.file) {
@@ -992,11 +992,11 @@ class PedidoFormHandlers {
             }
 
             if (result.success) {
-                this.ui.renderToast('success', `✅ Pedido guardado: ${result.numero_pedido}`);
+                this.ui.renderToast('success', ` Pedido guardado: ${result.numero_pedido}`);
                 
                 // Mostrar resumen
                 const resumen = this.ui.renderResumen(result);
-                this.showModal('✅ ¡Pedido guardado exitosamente!', resumen, []);
+                this.showModal(' ¡Pedido guardado exitosamente!', resumen, []);
 
                 // Limpiar después de 3 segundos
                 setTimeout(() => {
@@ -1007,7 +1007,7 @@ class PedidoFormHandlers {
                 throw new Error(result.message || 'Error desconocido');
             }
         } catch (error) {
-            console.error('❌ Error enviando pedido:', error);
+            console.error(' Error enviando pedido:', error);
             this.ui.renderToast('error', `Error: ${error.message}`);
         } finally {
             this.isSubmitting = false;
@@ -1048,7 +1048,7 @@ class PedidoFormHandlers {
                 <div class="prendas-container">
                     ${prendas.length > 0
                         ? prendas.map(p => this.ui.renderPrendaCard(p)).join('')
-                        : '<div class="alert alert-info">ℹ️ No hay prendas agregadas aún</div>'
+                        : '<div class="alert alert-info"> No hay prendas agregadas aún</div>'
                     }
                 </div>
 
@@ -1079,7 +1079,7 @@ class PedidoFormHandlers {
     // ==================== DIAGNOSTIC & VALIDATION ====================
 
     /**
-     * ✅ VALIDAR INTEGRIDAD DE TRANSFORMACIÓN
+     *  VALIDAR INTEGRIDAD DE TRANSFORMACIÓN
      * 
      * Garantiza que:
      * 1. JSON es serializable (sin File objects)
@@ -1105,7 +1105,7 @@ class PedidoFormHandlers {
             report.metadata.jsonSize = jsonString.length;
         } catch (error) {
             report.valid = false;
-            report.errors.push(`❌ JSON NO serializable: ${error.message}`);
+            report.errors.push(` JSON NO serializable: ${error.message}`);
         }
 
         // TEST 2: No hay File objects en el JSON
@@ -1115,7 +1115,7 @@ class PedidoFormHandlers {
                 if (foto.file instanceof File) {
                     report.valid = false;
                     report.errors.push(
-                        `❌ File encontrado en prenda[${pIdx}].fotos_prenda[${fIdx}]`
+                        ` File encontrado en prenda[${pIdx}].fotos_prenda[${fIdx}]`
                     );
                 }
                 if (typeof foto !== 'object' || foto === null) {
@@ -1130,7 +1130,7 @@ class PedidoFormHandlers {
                 if (foto.file instanceof File) {
                     report.valid = false;
                     report.errors.push(
-                        `❌ File encontrado en prenda[${pIdx}].fotos_tela[${fIdx}]`
+                        ` File encontrado en prenda[${pIdx}].fotos_tela[${fIdx}]`
                     );
                 }
             });
@@ -1153,7 +1153,7 @@ class PedidoFormHandlers {
                     const key = `prenda_${prendaIdx}_foto_${fotoIdx}`;
                     if (formDataKeys.has(key)) {
                         report.valid = false;
-                        report.errors.push(`❌ Índice duplicado: ${key}`);
+                        report.errors.push(` Índice duplicado: ${key}`);
                     }
                     formDataKeys.add(key);
                 }
@@ -1165,7 +1165,7 @@ class PedidoFormHandlers {
                         const key = `prenda_${prendaIdx}_proceso_${procesoIdx}_img_${imgIdx}`;
                         if (formDataKeys.has(key)) {
                             report.valid = false;
-                            report.errors.push(`❌ Índice duplicado: ${key}`);
+                            report.errors.push(` Índice duplicado: ${key}`);
                         }
                         formDataKeys.add(key);
                     }
@@ -1179,7 +1179,7 @@ class PedidoFormHandlers {
     }
 
     /**
-     * ✅ IMPRIMIR DIAGNÓSTICO EN CONSOLA
+     *  IMPRIMIR DIAGNÓSTICO EN CONSOLA
      * 
      * Útil para debugging durante desarrollo.
      */
@@ -1190,14 +1190,14 @@ class PedidoFormHandlers {
 
         console.group('🔍 DIAGNÓSTICO DE TRANSFORMACIÓN');
 
-        console.log('✅ Estado transformado (sin File):');
+        console.log(' Estado transformado (sin File):');
         console.log(JSON.stringify(stateToSend, null, 2));
 
-        console.log('\n✅ Validación:');
+        console.log('\n Validación:');
         console.table(validation);
 
         if (validation.errors.length > 0) {
-            console.error('❌ ERRORES ENCONTRADOS:');
+            console.error(' ERRORES ENCONTRADOS:');
             validation.errors.forEach(err => console.error(`  - ${err}`));
         }
 

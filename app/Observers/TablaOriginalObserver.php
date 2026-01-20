@@ -258,7 +258,7 @@ class TablaOriginalObserver
                 // Verificar si es fin de semana o festivo
                 if (!$esWeekend && !$esFestivo) {
                     $diasContados++;
-                    Log::info("OBSERVER: ✅ DÍA HÁBIL CONTADO - Iteración " . $iteracion, [
+                    Log::info("OBSERVER:  DÍA HÁBIL CONTADO - Iteración " . $iteracion, [
                         'pedido' => $orden->pedido,
                         'fecha' => $fechaActual->format('Y-m-d'),
                         'nombre_dia' => $nombreDia,
@@ -266,7 +266,7 @@ class TablaOriginalObserver
                     ]);
                 } else {
                     $razon = $esWeekend ? 'FIN DE SEMANA' : 'FESTIVO';
-                    Log::info("OBSERVER: ❌ DÍA NO HÁBIL SALTADO - Iteración " . $iteracion . " (" . $razon . ")", [
+                    Log::info("OBSERVER:  DÍA NO HÁBIL SALTADO - Iteración " . $iteracion . " (" . $razon . ")", [
                         'pedido' => $orden->pedido,
                         'fecha' => $fechaActual->format('Y-m-d'),
                         'nombre_dia' => $nombreDia,
@@ -283,7 +283,7 @@ class TablaOriginalObserver
                         'dias_contados' => $diasContados
                     ]);
                 } else {
-                    Log::info("OBSERVER: ✅ SE ALCANZARON LOS DÍAS REQUERIDOS", [
+                    Log::info("OBSERVER:  SE ALCANZARON LOS DÍAS REQUERIDOS", [
                         'pedido' => $orden->pedido,
                         'fecha_final' => $fechaActual->format('Y-m-d'),
                         'dias_contados' => $diasContados
@@ -318,7 +318,7 @@ class TablaOriginalObserver
                 'dias_calendario_totales' => $diasDiferencia,
                 'dias_hábiles_contados' => $diasContados,
                 'dias_solicitados' => $diasRequeridos,
-                'resultado' => $diasContados === $diasRequeridos ? '✅ CORRECTO' : '❌ ERROR'
+                'resultado' => $diasContados === $diasRequeridos ? ' CORRECTO' : ' ERROR'
             ]);
 
         } catch (\Exception $e) {

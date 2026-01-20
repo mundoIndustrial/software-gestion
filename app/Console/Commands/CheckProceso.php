@@ -19,7 +19,7 @@ class CheckProceso extends Command
         $procesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)->get();
 
         if ($procesos->count() > 0) {
-            $this->info("📋 PROCESOS ENCONTRADOS:\n");
+            $this->info(" PROCESOS ENCONTRADOS:\n");
             foreach ($procesos as $p) {
                 $this->line("   ID: " . $p->id);
                 $this->line("   Proceso: " . $p->proceso);
@@ -29,7 +29,7 @@ class CheckProceso extends Command
                 $this->line("");
             }
         } else {
-            $this->error("❌ NO hay procesos\n");
+            $this->error(" NO hay procesos\n");
         }
 
         // Verificar bodega

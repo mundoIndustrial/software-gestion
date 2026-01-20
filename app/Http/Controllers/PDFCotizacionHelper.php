@@ -39,13 +39,13 @@ class PDFCotizacionHelper
         // Generar contenido
         $pdfContent = $mpdf->Output('', 'S');
         
-        // ✅ CRÍTICO: Destruir objeto inmediatamente
+        //  CRÍTICO: Destruir objeto inmediatamente
         unset($mpdf);
         
-        // ✅ Limpiar HTML de memoria
+        //  Limpiar HTML de memoria
         unset($html);
         
-        // ✅ Forzar limpieza
+        //  Forzar limpieza
         gc_collect_cycles();
         gc_mem_caches();
         

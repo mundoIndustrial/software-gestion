@@ -39,7 +39,7 @@ window.abrirFacturaEnModal = async function(numeroPedido) {
         abrirFacturaEnIframe(numeroPedido);
         
     } catch (error) {
-        console.error('❌ [INVOICE] Error al cargar factura:', error);
+        console.error(' [INVOICE] Error al cargar factura:', error);
         alert('Error al cargar la factura. Intenta nuevamente.');
     }
 };
@@ -76,7 +76,7 @@ window.abrirFacturaEnIframe = function(numeroPedido) {
             <div style="background: white; border-radius: 8px; width: 100%; max-width: 1000px; height: 90vh; display: flex; flex-direction: column; box-shadow: 0 5px 40px rgba(0,0,0,0.3);">
                 <!-- Header -->
                 <div style="padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0; color: #2c3e50;">📋 Factura</h3>
+                    <h3 style="margin: 0; color: #2c3e50;"> Factura</h3>
                     <button onclick="document.getElementById('invoice-modal-wrapper').remove();" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
                 </div>
                 
@@ -148,4 +148,4 @@ window.InvoiceManager = {
     descargar: window.descargarFactura
 };
 
-console.log('✅ [INVOICE] invoice-modal-integration.js cargado correctamente');
+console.log(' [INVOICE] invoice-modal-integration.js cargado correctamente');

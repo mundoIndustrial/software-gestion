@@ -11,7 +11,7 @@
 **Ubicación:** `form-handlers.js` línea 875-884
 
 ```javascript
-// ❌ INCORRECTO - Se intenta serializar File objects
+//  INCORRECTO - Se intenta serializar File objects
 formData.append('prendas', JSON.stringify(state.prendas));
 // state.prendas contiene: { fotos_prenda: [{ file: File {}, ... }], ... }
 ```
@@ -21,7 +21,7 @@ formData.append('prendas', JSON.stringify(state.prendas));
 - Los objetos `File` no son serializables a JSON
 - El backend recibe `prendas` con campos `file` indefinidos
 
-**Impacto:** ❌ CRÍTICO
+**Impacto:**  CRÍTICO
 - El JSON llega al backend sin la información de fotos
 - El backend no puede procesar las referencias a archivos
 - Las fotos se pierden
@@ -33,13 +33,13 @@ formData.append('prendas', JSON.stringify(state.prendas));
 **Ubicación:** `form-handlers.js` línea 887-897
 
 ```javascript
-// ❌ PROBLEMA: Se usa pIdx (índice de prenda) dos veces
+//  PROBLEMA: Se usa pIdx (índice de prenda) dos veces
 state.prendas.forEach((prenda, pIdx) => {
     (prenda.fotos_prenda || []).forEach((foto, fIdx) => {
         formData.append(`prenda_${pIdx}_foto_${fIdx}`, foto.file);
     });
     
-    // ❌ AQUÍ pIdx se reutiliza en procesos
+    //  AQUÍ pIdx se reutiliza en procesos
     (prenda.procesos || []).forEach((proceso, pIdx) => {
         // pIdx SOBRESCRIBE el índice de prenda
         (proceso.imagenes || []).forEach((img, iIdx) => {
@@ -94,14 +94,14 @@ state.prendas.forEach((prenda, pIdx) => {
 }
 ```
 
-**Impacto:** ❌ CRÍTICO
+**Impacto:**  CRÍTICO
 - Backend recibe JSON malformado
 - Validación puede fallar
 - Datos inconsistentes
 
 ---
 
-## ✅ SOLUCIÓN: TRANSFORMACIÓN DE JSON ANTES DE SERIALIZAR
+##  SOLUCIÓN: TRANSFORMACIÓN DE JSON ANTES DE SERIALIZAR
 
 ### Paso 1: Crear función de transformación
 
@@ -167,7 +167,7 @@ async submitPedido() {
 
     if (!reporte.valid) {
         const errorHtml = this.ui.renderValidationErrors(reporte.errores);
-        this.showModal('❌ No se puede enviar', errorHtml, []);
+        this.showModal(' No se puede enviar', errorHtml, []);
         return;
     }
 
@@ -178,13 +178,13 @@ async submitPedido() {
     try {
         const formData = new FormData();
         
-        // ✅ Usar estado transformado (sin objects File)
+        //  Usar estado transformado (sin objects File)
         const stateToSend = this.transformStateForSubmit(state);
         
         formData.append('pedido_produccion_id', state.pedido_produccion_id);
         formData.append('prendas', JSON.stringify(stateToSend.prendas));
 
-        // ✅ CORREGIDO: Adjuntar archivos con índices correctos
+        //  CORREGIDO: Adjuntar archivos con índices correctos
         state.prendas.forEach((prenda, prendaIdx) => {
             (prenda.fotos_prenda || []).forEach((foto, fotoIdx) => {
                 if (foto.file) {
@@ -198,7 +198,7 @@ async submitPedido() {
                 }
             });
 
-            // ✅ CORREGIDO: Usar procesoIdx en lugar de reutilizar prendaIdx
+            //  CORREGIDO: Usar procesoIdx en lugar de reutilizar prendaIdx
             (prenda.procesos || []).forEach((proceso, procesoIdx) => {
                 (proceso.imagenes || []).forEach((img, imgIdx) => {
                     if (img.file) {
@@ -226,9 +226,9 @@ async submitPedido() {
         }
 
         if (result.success) {
-            this.ui.renderToast('success', `✅ Pedido guardado: ${result.numero_pedido}`);
+            this.ui.renderToast('success', ` Pedido guardado: ${result.numero_pedido}`);
             const resumen = this.ui.renderResumen(result);
-            this.showModal('✅ ¡Pedido guardado exitosamente!', resumen, []);
+            this.showModal(' ¡Pedido guardado exitosamente!', resumen, []);
 
             setTimeout(() => {
                 this.fm.clear();
@@ -238,7 +238,7 @@ async submitPedido() {
             throw new Error(result.message || 'Error desconocido');
         }
     } catch (error) {
-        console.error('❌ Error enviando pedido:', error);
+        console.error(' Error enviando pedido:', error);
         this.ui.renderToast('error', `Error: ${error.message}`);
     } finally {
         this.isSubmitting = false;
@@ -250,7 +250,7 @@ async submitPedido() {
 
 ## 📊 COMPARATIVA: ANTES vs DESPUÉS
 
-### ANTES (❌ Incorrecto)
+### ANTES ( Incorrecto)
 
 ```javascript
 // FormData contiene:
@@ -258,18 +258,18 @@ async submitPedido() {
   pedido_produccion_id: 1,
   prendas: "{
     fotos_prenda: [{
-      file: <File object> ❌ NO SERIALIZABLE,
+      file: <File object>  NO SERIALIZABLE,
       nombre: 'foto.jpg',
       ...
     }]
-  }" ❌ MALFORMADO
+  }"  MALFORMADO
   
   prenda_0_foto_0: <File>,
-  prenda_0_proceso_0_img_0: <File> ❌ ÍNDICE INCORRECTO (pIdx reutilizado)
+  prenda_0_proceso_0_img_0: <File>  ÍNDICE INCORRECTO (pIdx reutilizado)
 }
 ```
 
-### DESPUÉS (✅ Correcto)
+### DESPUÉS ( Correcto)
 
 ```javascript
 // FormData contiene:
@@ -278,12 +278,12 @@ async submitPedido() {
   prendas: "{
     fotos_prenda: [{
       nombre: 'foto.jpg',
-      observaciones: '' ✅ SIN File
+      observaciones: ''  SIN File
     }]
-  }" ✅ CORRECTO
+  }"  CORRECTO
   
   prenda_0_foto_0: <File>,
-  prenda_0_proceso_0_img_0: <File> ✅ ÍNDICE CORRECTO
+  prenda_0_proceso_0_img_0: <File>  ÍNDICE CORRECTO
 }
 ```
 
@@ -297,7 +297,7 @@ async submitPedido() {
 // Verificar que el JSON sea válido
 const stateToSend = handlers.transformStateForSubmit(formManager.getState());
 const json = JSON.stringify(stateToSend.prendas);
-console.log(json); // ✅ Debe ser string válido, sin [object Object]
+console.log(json); //  Debe ser string válido, sin [object Object]
 ```
 
 ### Test 2: FormData correcta
@@ -311,7 +311,7 @@ formData.append('prenda_0_foto_0', new File([], 'test.jpg'));
 for (let [key, value] of formData.entries()) {
     console.log(key, value instanceof File ? '<File>' : typeof value);
 }
-// ✅ Debe mostrar: prendas, <string>, prenda_0_foto_0, <File>
+//  Debe mostrar: prendas, <string>, prenda_0_foto_0, <File>
 ```
 
 ### Test 3: Índices correctos
@@ -323,19 +323,19 @@ state.prendas.forEach((prenda, pIdx) => {
         console.log(`prenda_${pIdx}_proceso_${procIdx}`);
     });
 });
-// ✅ Debe mostrar: prenda_0_proceso_0, prenda_0_proceso_1, prenda_1_proceso_0, etc.
+//  Debe mostrar: prenda_0_proceso_0, prenda_0_proceso_1, prenda_1_proceso_0, etc.
 ```
 
 ---
 
 ## 🔒 GARANTÍAS DE INTEGRIDAD
 
-- ✅ JSON es serializable (sin File objects)
-- ✅ Archivos se adjuntan correctamente en FormData
-- ✅ Índices son únicos y correctos
-- ✅ Backend recibe estructura esperada
-- ✅ Validación de datos consistente
-- ✅ Transacción en BD garantizada
+-  JSON es serializable (sin File objects)
+-  Archivos se adjuntan correctamente en FormData
+-  Índices son únicos y correctos
+-  Backend recibe estructura esperada
+-  Validación de datos consistente
+-  Transacción en BD garantizada
 
 ---
 

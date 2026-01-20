@@ -25,7 +25,7 @@ class ActualizarTipoCotizacionIdSeeder extends Seeder
             $tipoCotizacion = TipoCotizacion::where('codigo', $tipo)->first();
 
             if (!$tipoCotizacion) {
-                $this->command->error("❌ Tipo de cotización no encontrado: {$tipo}");
+                $this->command->error(" Tipo de cotización no encontrado: {$tipo}");
                 continue;
             }
 
@@ -33,13 +33,13 @@ class ActualizarTipoCotizacionIdSeeder extends Seeder
                 $cotizacion->update([
                     'tipo_cotizacion_id' => $tipoCotizacion->id
                 ]);
-                $this->command->info("✅ Cotización #{$cotizacion->id} - Tipo: {$tipoCotizacion->nombre}");
+                $this->command->info(" Cotización #{$cotizacion->id} - Tipo: {$tipoCotizacion->nombre}");
             } catch (\Exception $e) {
-                $this->command->error("❌ Error en cotización #{$cotizacion->id}: " . $e->getMessage());
+                $this->command->error(" Error en cotización #{$cotizacion->id}: " . $e->getMessage());
             }
         }
 
-        $this->command->info('✅ Todas las cotizaciones han sido procesadas');
+        $this->command->info(' Todas las cotizaciones han sido procesadas');
     }
 
     /**

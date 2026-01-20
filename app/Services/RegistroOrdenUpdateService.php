@@ -125,7 +125,7 @@ class RegistroOrdenUpdateService
     {
         $updates = [];
 
-        // ✅ SIEMPRE actualizar si el campo fue enviado, incluso si es null (deseleccionar)
+        //  SIEMPRE actualizar si el campo fue enviado, incluso si es null (deseleccionar)
         $updates['dia_de_entrega'] = $diaEntrega;
         
         if ($diaEntrega !== null) {

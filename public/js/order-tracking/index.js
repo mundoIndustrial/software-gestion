@@ -5,7 +5,7 @@
 
 console.log('📦 Cargando módulos de Order Tracking v2...');
 
-// ✅ Cargar módulos en orden de dependencias
+//  Cargar módulos en orden de dependencias
 const modulesLoaded = {
     dateUtils: typeof DateUtils !== 'undefined',
     holidayManager: typeof HolidayManager !== 'undefined',
@@ -18,12 +18,12 @@ const modulesLoaded = {
     dropdownManager: typeof DropdownManager !== 'undefined'
 };
 
-console.log('📋 Estado de módulos:', modulesLoaded);
+console.log(' Estado de módulos:', modulesLoaded);
 
 // Verificar que todos los módulos estén disponibles
 const allLoaded = Object.values(modulesLoaded).every(loaded => loaded);
 if (allLoaded) {
-    console.log('✅ Todos los módulos cargados correctamente');
+    console.log(' Todos los módulos cargados correctamente');
 } else {
     console.warn('⚠️ Algunos módulos no están disponibles:', modulesLoaded);
 }

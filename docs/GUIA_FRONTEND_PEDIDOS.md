@@ -4,7 +4,7 @@
 
 ---
 
-## 📋 TABLA DE CONTENIDOS
+##  TABLA DE CONTENIDOS
 
 1. [Arquitectura](#arquitectura)
 2. [Componentes](#componentes)
@@ -131,11 +131,11 @@ manager.off('prenda:added', callback);
 
 **Características:**
 
-- ✅ Auto-guardado en localStorage cada 30s
-- ✅ Persistencia entre sesiones
-- ✅ Event emitters para cambios
-- ✅ Validación de estructura en métodos
-- ✅ IDs únicos para cada elemento
+-  Auto-guardado en localStorage cada 30s
+-  Persistencia entre sesiones
+-  Event emitters para cambios
+-  Validación de estructura en métodos
+-  IDs únicos para cada elemento
 
 ### 2. **PedidoValidator.js** (150+ líneas)
 
@@ -202,11 +202,11 @@ UIComponents.formatFileSize(bytes);  // Formato archivo
 
 **Características:**
 
-- ✅ Componentes sin estado (funciones puras)
-- ✅ HTML seguro (escape de caracteres especiales)
-- ✅ Responsive design
-- ✅ Animaciones suaves
-- ✅ Bootstrap 4 compatible
+-  Componentes sin estado (funciones puras)
+-  HTML seguro (escape de caracteres especiales)
+-  Responsive design
+-  Animaciones suaves
+-  Bootstrap 4 compatible
 
 ### 4. **form-handlers.js** (400+ líneas)
 
@@ -223,11 +223,11 @@ handlers.destroy();                // Limpiar
 
 **Eventos capturados:**
 
-- ✅ Clicks en botones (add, edit, delete)
-- ✅ Cambios en inputs
-- ✅ Cargas de archivos
-- ✅ Envíos de formularios
-- ✅ Cambios en el manager (listeners)
+-  Clicks en botones (add, edit, delete)
+-  Cambios en inputs
+-  Cargas de archivos
+-  Envíos de formularios
+-  Cambios en el manager (listeners)
 
 ---
 
@@ -309,7 +309,7 @@ const response = await fetch('/api/pedidos/guardar-desde-json', {
 });
 
 const result = await response.json();
-console.log('✅ Pedido guardado:', result);
+console.log(' Pedido guardado:', result);
 ```
 
 ---
@@ -435,7 +435,7 @@ function testEstadoBase() {
     assert(manager.getState().prendas.length === 0, 'Prendas debe estar vacío');
     assert(manager.getSummary().completo === false, 'No debe estar completo');
     
-    console.log('✅ Test 1 pasado');
+    console.log(' Test 1 pasado');
 }
 
 // Ejecutar: testEstadoBase();
@@ -464,7 +464,7 @@ function testPrendaCRUD() {
     manager.deletePrenda(prenda._id);
     assert(!manager.getPrenda(prenda._id), 'Debe estar eliminada');
     
-    console.log('✅ Test 2 pasado');
+    console.log(' Test 2 pasado');
 }
 ```
 
@@ -493,7 +493,7 @@ function testValidacion() {
     result = PedidoValidator.validar(manager.getState());
     assert(result.valid, 'Debe ser válido');
     
-    console.log('✅ Test 3 pasado');
+    console.log(' Test 3 pasado');
 }
 ```
 
@@ -518,7 +518,7 @@ function testPersistencia() {
     assert(m2.getState().pedido_produccion_id === 1, 'Debe cargar pedido ID');
     assert(m2.getPrendas().length === 1, 'Debe cargar prendas');
     
-    console.log('✅ Test 4 pasado');
+    console.log(' Test 4 pasado');
 }
 ```
 
@@ -775,4 +775,4 @@ console.log(PedidoValidator.obtenerReporte(...));// Ver errores
 
 ---
 
-**¡Listo para producción! ✅**
+**¡Listo para producción! **

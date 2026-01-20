@@ -34,6 +34,6 @@ class NumeroSecuenciasSeeder extends Seeder
             }
         }
 
-        echo "✅ Secuencias de cotizaciones inicializadas\n";
+        echo " Secuencias de cotizaciones inicializadas\n";
     }
 }

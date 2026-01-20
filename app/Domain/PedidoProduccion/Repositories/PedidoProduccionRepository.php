@@ -24,9 +24,9 @@ class PedidoProduccionRepository
             'prendas.fotos',
             'prendas.fotosTelas',
             'prendas.procesos',
-            'prendas.procesos.tipoProceso',  // ✅ NUEVO: Cargar el nombre del tipo de proceso
+            'prendas.procesos.tipoProceso',  //  NUEVO: Cargar el nombre del tipo de proceso
             'prendas.procesos.imagenes',
-            'epps.epp.categoria',  // ✅ Cargar la categoría del EPP
+            'epps.epp.categoria',  //  Cargar la categoría del EPP
             'epps.imagenes',
         ])->find($id);
     }
@@ -291,7 +291,7 @@ class PedidoProduccionRepository
             $datos['total_items'] += $cantidadTotal;
         }
 
-        // ✅ AGREGAR EPP A LOS DATOS DE FACTURA
+        //  AGREGAR EPP A LOS DATOS DE FACTURA
         $datos['epps'] = [];
         foreach ($pedido->epps as $pedidoEpp) {
             // $pedidoEpp es el modelo PedidoEpp que contiene los datos del EPP agregado al pedido
@@ -481,7 +481,7 @@ class PedidoProduccionRepository
                 // Imágenes del proceso
                 $imagenesProceso = $proc->imagenes ? $proc->imagenes->map(fn($img) => $img->url)->toArray() : [];
                 
-                // ✅ Obtener nombre del tipo de proceso (desde la relación cargada)
+                //  Obtener nombre del tipo de proceso (desde la relación cargada)
                 $nombreProceso = 'Proceso';
                 if ($proc->tipoProceso && $proc->tipoProceso->nombre) {
                     $nombreProceso = $proc->tipoProceso->nombre;
@@ -503,7 +503,7 @@ class PedidoProduccionRepository
             // Construir prenda para recibos
             $prendasFormato = [
                 'id' => $prenda->id,
-                'prenda_pedido_id' => $prenda->id,  // ✅ ID para consultar fotos
+                'prenda_pedido_id' => $prenda->id,  //  ID para consultar fotos
                 'numero' => $prendaIndex + 1,
                 'nombre' => $prenda->nombre_prenda,
                 'origen' => $prenda->origen ?? 'confección',

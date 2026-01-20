@@ -33,9 +33,9 @@ class ListarPedidosProduccion extends Command
 
         if ($incluirEliminados) {
             $query->withTrashed();
-            $this->info('📋 Listando pedidos (incluyendo eliminados)');
+            $this->info(' Listando pedidos (incluyendo eliminados)');
         } else {
-            $this->info('📋 Listando pedidos activos');
+            $this->info(' Listando pedidos activos');
         }
 
         // Obtener pedidos

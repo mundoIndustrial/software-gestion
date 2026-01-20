@@ -71,14 +71,14 @@ class VariantesService
                 'descripcion_variaciones' => $variante->descripcion_adicional ?? null,
             ]);
             
-            \Log::info('✅ Variantes heredadas exitosamente', [
+            \Log::info(' Variantes heredadas exitosamente', [
                 'prenda_pedido_id' => $prendaPedido->id,
                 'color_id' => $colorId,
                 'tela_id' => $telaId,
             ]);
             
         } catch (\Exception $e) {
-            \Log::error('❌ Error heredando variantes', [
+            \Log::error(' Error heredando variantes', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

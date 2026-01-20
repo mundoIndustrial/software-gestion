@@ -44,7 +44,7 @@ class ObtenerRecibosService
             throw new \Exception('Pedido no encontrado', 404);
         }
 
-        Log::info('✅ [RECIBO] Datos obtenidos correctamente', [
+        Log::info(' [RECIBO] Datos obtenidos correctamente', [
             'pedido_id' => $pedidoId,
             'prendas' => count($datos['prendas'] ?? []),
             'procesos' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? []))
@@ -58,11 +58,11 @@ class ObtenerRecibosService
      */
     public function listarRecibos(array $filtros = []): LengthAwarePaginator
     {
-        Log::info('📋 [RECIBOS] Listando recibos', ['filtros' => $filtros]);
+        Log::info(' [RECIBOS] Listando recibos', ['filtros' => $filtros]);
 
         $pedidos = $this->asesoresRepository->obtenerPedidosProduccion($filtros);
 
-        Log::info('✅ [RECIBOS] Listado completado', [
+        Log::info(' [RECIBOS] Listado completado', [
             'cantidad' => $pedidos->count(),
             'total' => $pedidos->total()
         ]);
@@ -89,7 +89,7 @@ class ObtenerRecibosService
             'forma_pago' => $datos['forma_pago'] ?? 'No especificado',
         ];
 
-        Log::info('✅ [RECIBO-RESUMEN] Resumen generado', [
+        Log::info(' [RECIBO-RESUMEN] Resumen generado', [
             'numero_pedido' => $resumen['numero_pedido'],
             'total_prendas' => $resumen['total_prendas'],
             'total_procesos' => $resumen['total_procesos']
@@ -118,7 +118,7 @@ class ObtenerRecibosService
             throw new \Exception('Prenda no encontrada en el recibo', 404);
         }
 
-        Log::info('✅ [RECIBO-PROCESOS] Procesos obtenidos', [
+        Log::info(' [RECIBO-PROCESOS] Procesos obtenidos', [
             'prenda_id' => $prendaId,
             'procesos_count' => count($prendas['procesos'] ?? [])
         ]);
@@ -139,7 +139,7 @@ class ObtenerRecibosService
 
         $estados = $this->asesoresRepository->obtenerEstados();
 
-        Log::info('✅ [RECIBO] Estados disponibles', ['count' => count($estados)]);
+        Log::info(' [RECIBO] Estados disponibles', ['count' => count($estados)]);
 
         return $estados;
     }

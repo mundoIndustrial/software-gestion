@@ -100,7 +100,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
                 'de_bodega' => (int)($prendaData['de_bodega'] ?? 0),
             ]);
 
-            Log::info('✅ [CreacionPrendaSinCtaStrategy] Prenda creada', [
+            Log::info(' [CreacionPrendaSinCtaStrategy] Prenda creada', [
                 'prenda_pedido_id' => $prendaPedido->id,
                 'nombre' => $prendaPedido->nombre_prenda,
             ]);
@@ -117,7 +117,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
 
             DB::commit();
 
-            Log::info('✅ [CreacionPrendaSinCtaStrategy] Prenda completamente procesada', [
+            Log::info(' [CreacionPrendaSinCtaStrategy] Prenda completamente procesada', [
                 'prenda_id' => $prendaPedido->id,
                 'cantidad_total' => $cantidadTotal,
             ]);
@@ -127,7 +127,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('❌ [CreacionPrendaSinCtaStrategy] Error al procesar prenda', [
+            Log::error(' [CreacionPrendaSinCtaStrategy] Error al procesar prenda', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

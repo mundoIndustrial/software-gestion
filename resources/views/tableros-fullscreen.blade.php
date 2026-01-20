@@ -782,7 +782,7 @@
             return;
         }
 
-        console.log('✅ Echo disponible, suscribiendo a canales...');
+        console.log(' Echo disponible, suscribiendo a canales...');
 
         // Determinar la sección actual desde la URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -838,7 +838,7 @@
             }
         });
 
-        console.log('✅ Listeners configurados en fullscreen para todas las secciones');
+        console.log(' Listeners configurados en fullscreen para todas las secciones');
     }
 
     // Inicializar cuando el DOM esté listo

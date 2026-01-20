@@ -43,7 +43,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable");
         }
         
-        echo "\n✅ Cotizacion: Todos los campos están en fillable\n";
+        echo "\n Cotizacion: Todos los campos están en fillable\n";
     }
 
     /**
@@ -71,7 +71,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertArrayHasKey('observaciones_generales', $casts, 'observaciones_generales debe tener cast');
         $this->assertEquals('array', $casts['observaciones_generales']);
         
-        echo "\n✅ Cotizacion: Todos los casts están configurados correctamente\n";
+        echo "\n Cotizacion: Todos los casts están configurados correctamente\n";
     }
 
     /**
@@ -93,7 +93,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable de PrendaTelaCot");
         }
         
-        echo "\n✅ PrendaTelaCot: Todos los campos están en fillable\n";
+        echo "\n PrendaTelaCot: Todos los campos están en fillable\n";
     }
 
     /**
@@ -109,7 +109,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertTrue(method_exists($tela, 'color'), 'Debe tener método color()');
         $this->assertTrue(method_exists($tela, 'tela'), 'Debe tener método tela()');
         
-        echo "\n✅ PrendaTelaCot: Todas las relaciones existen\n";
+        echo "\n PrendaTelaCot: Todas las relaciones existen\n";
     }
 
     /**
@@ -126,7 +126,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertArrayHasKey('telas_multiples', $casts, 'telas_multiples debe tener cast');
         $this->assertEquals('json', $casts['telas_multiples']);
         
-        echo "\n✅ PrendaVarianteCot: Campo telas_multiples está sincronizado\n";
+        echo "\n PrendaVarianteCot: Campo telas_multiples está sincronizado\n";
     }
 
     /**
@@ -156,7 +156,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable de HistorialCambiosCotizacion");
         }
         
-        echo "\n✅ HistorialCambiosCotizacion: Todos los campos están en fillable\n";
+        echo "\n HistorialCambiosCotizacion: Todos los campos están en fillable\n";
     }
 
     /**
@@ -169,7 +169,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertTrue(method_exists($historial, 'cotizacion'), 'Debe tener método cotizacion()');
         $this->assertTrue(method_exists($historial, 'usuario'), 'Debe tener método usuario()');
         
-        echo "\n✅ HistorialCambiosCotizacion: Todas las relaciones existen\n";
+        echo "\n HistorialCambiosCotizacion: Todas las relaciones existen\n";
     }
 
     /**
@@ -186,7 +186,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertTrue(method_exists($prenda, 'tallas'), 'Debe tener método tallas()');
         $this->assertTrue(method_exists($prenda, 'variantes'), 'Debe tener método variantes()');
         
-        echo "\n✅ PrendaCot: Todas las relaciones existen\n";
+        echo "\n PrendaCot: Todas las relaciones existen\n";
     }
 
     /**
@@ -198,15 +198,15 @@ class CotizacionSincronizacionTest extends TestCase
         echo "╔════════════════════════════════════════════════════════════╗\n";
         echo "║  RESUMEN DE SINCRONIZACIÓN - COTIZACIONES DDD              ║\n";
         echo "╠════════════════════════════════════════════════════════════╣\n";
-        echo "║  ✅ Tabla cotizaciones                                      ║\n";
+        echo "║   Tabla cotizaciones                                      ║\n";
         echo "║     - Campos: imagenes, tecnicas, observaciones_tecnicas   ║\n";
         echo "║     - Campos: ubicaciones, observaciones_generales         ║\n";
-        echo "║  ✅ Tabla prenda_variantes_cot                              ║\n";
+        echo "║   Tabla prenda_variantes_cot                              ║\n";
         echo "║     - Campo: telas_multiples (JSON)                        ║\n";
-        echo "║  ✅ Tabla prenda_telas_cot                                  ║\n";
+        echo "║   Tabla prenda_telas_cot                                  ║\n";
         echo "║     - Campos: color_id, tela_id, variante_prenda_cot_id    ║\n";
         echo "║     - Relaciones: color(), tela(), variante()              ║\n";
-        echo "║  ✅ Tabla historial_cambios_cotizaciones                    ║\n";
+        echo "║   Tabla historial_cambios_cotizaciones                    ║\n";
         echo "║     - Tabla creada con estructura completa                 ║\n";
         echo "║     - Relaciones: cotizacion(), usuario()                  ║\n";
         echo "╚════════════════════════════════════════════════════════════╝\n";

@@ -107,7 +107,7 @@ elseif (!empty($item['tela'])) {
 ### Cambio en Frontend (16/01/2026)
 En `gestion-items-pedido.js` línea 1318-1323:
 ```javascript
-// ✅ AHORA CON COMENTARIO EXPLICATIVO
+//  AHORA CON COMENTARIO EXPLICATIVO
 color: prenda.color || null,           // ← Nombre de color (string)
 tela: prenda.tela || null,             // ← Nombre de tela (string)
 color_id: null,                        // ← Intencionalmente NULL
@@ -133,8 +133,8 @@ console.log('🔎 [COLOR/TELA] Item ${prendaIndex}:', {
 ### 2. En el Backend (Laravel Log)
 El backend debe registrar:
 ```
-✅ Color creado/obtenido: nombre=ROJO, id=5
-✅ Tela creada/obtenida: nombre=ALGODÓN, id=12
+ Color creado/obtenido: nombre=ROJO, id=5
+ Tela creada/obtenida: nombre=ALGODÓN, id=12
 ```
 
 ### 3. En la Base de Datos
@@ -169,7 +169,7 @@ SI tela_id es NULL y tela es "ALGODÓN":
     ↓
 SALVA EN BD: variante con color_id=5, tela_id=12
     ↓
-ÉXITO ✅
+ÉXITO 
 ```
 
 ## Nota Importante: Observaciones (Manga, Bolsillos, Broche)

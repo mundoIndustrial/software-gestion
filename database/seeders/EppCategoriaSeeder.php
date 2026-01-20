@@ -71,6 +71,6 @@ class EppCategoriaSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ EppCategoriaSeeder ejecutado correctamente. ' . EppCategoria::count() . ' categorías creadas.');
+        $this->command->info(' EppCategoriaSeeder ejecutado correctamente. ' . EppCategoria::count() . ' categorías creadas.');
     }
 }

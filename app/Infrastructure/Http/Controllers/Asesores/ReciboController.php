@@ -41,7 +41,7 @@ class ReciboController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ [RECIBO] Error', ['error' => $e->getMessage()]);
+            Log::error(' [RECIBO] Error', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
@@ -57,7 +57,7 @@ class ReciboController extends Controller
             return response()->json($datos);
 
         } catch (\Exception $e) {
-            Log::error('❌ [RECIBO-JSON] Error', ['error' => $e->getMessage()]);
+            Log::error(' [RECIBO-JSON] Error', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage(),
             ], $e->getCode() ?: 500);
@@ -76,7 +76,7 @@ class ReciboController extends Controller
             return $this->generarPDFService->generarPDF($datos, $id);
 
         } catch (\Exception $e) {
-            Log::error('❌ [RECIBO-PDF] Error', ['error' => $e->getMessage()]);
+            Log::error(' [RECIBO-PDF] Error', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage(),
             ], $e->getCode() ?: 500);
@@ -100,7 +100,7 @@ class ReciboController extends Controller
             return view('asesores.recibos.index', compact('pedidos', 'estados'));
 
         } catch (\Exception $e) {
-            Log::error('❌ [RECIBOS-INDEX] Error', ['error' => $e->getMessage()]);
+            Log::error(' [RECIBOS-INDEX] Error', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
@@ -119,7 +119,7 @@ class ReciboController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ [RECIBO-RESUMEN] Error', ['error' => $e->getMessage()]);
+            Log::error(' [RECIBO-RESUMEN] Error', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage(),
             ], $e->getCode() ?: 500);
@@ -140,7 +140,7 @@ class ReciboController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ [RECIBO-PROCESOS] Error', ['error' => $e->getMessage()]);
+            Log::error(' [RECIBO-PROCESOS] Error', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage(),
             ], $e->getCode() ?: 500);

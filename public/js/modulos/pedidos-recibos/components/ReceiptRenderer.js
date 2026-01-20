@@ -112,11 +112,11 @@ export class ReceiptRenderer {
             if (typeof window.ReceiptManager !== 'undefined' && window.ReceiptManager.prototype.construirDescripcionCostura) {
                 const rm = new window.ReceiptManager({prendas: []}, null, null);
                 html = rm.construirDescripcionCostura(prendaData);
-                console.log('[ReceiptRenderer] ✅ Usando ReceiptManager');
+                console.log('[ReceiptRenderer]  Usando ReceiptManager');
             } else {
                 // Usar formateador
                 html = Formatters.construirDescripcionCostura(prendaData);
-                console.log('[ReceiptRenderer] ✅ Usando Formatters');
+                console.log('[ReceiptRenderer]  Usando Formatters');
             }
         } else {
             // Para otros procesos

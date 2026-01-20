@@ -36,7 +36,7 @@ const CellEditModal = {
         console.log('🔧 Inicializando CellEditModal...');
         this._createModalHTML();
         this._attachEventListeners();
-        console.log('✅ CellEditModal inicializado');
+        console.log(' CellEditModal inicializado');
     },
 
     /**
@@ -304,7 +304,7 @@ const CellEditModal = {
             }
         })
         .catch(error => {
-            console.error('❌ Error obteniendo datos de orden:', error);
+            console.error(' Error obteniendo datos de orden:', error);
             if (contentDiv) {
                 contentDiv.textContent = currentValue || '(vacío)';
             }
@@ -439,14 +439,14 @@ ${prenda.atributos}<br>
         });
 
         contentDiv.innerHTML = html;
-        console.log('✅ Plantilla de cotización renderizada');
+        console.log(' Plantilla de cotización renderizada');
     },
 
     /**
      * Cerrar el modal
      */
     close() {
-        console.log('❌ Cerrando modal de edición');
+        console.log(' Cerrando modal de edición');
 
         const modal = document.getElementById(this.config.modalId);
         const overlay = document.getElementById(this.config.overlayId);
@@ -487,4 +487,4 @@ document.addEventListener('DOMContentLoaded', () => {
     CellEditModal.initialize();
 });
 
-console.log('✅ CellEditModal cargado');
+console.log(' CellEditModal cargado');

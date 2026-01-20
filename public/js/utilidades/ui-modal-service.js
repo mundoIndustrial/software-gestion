@@ -92,7 +92,7 @@ class UIModalService {
             document.addEventListener('keydown', handleEsc);
         }
 
-        console.log(`✅ Modal '${id}' abierto`);
+        console.log(` Modal '${id}' abierto`);
         return true;
     }
 
@@ -122,7 +122,7 @@ class UIModalService {
             document.body.style.overflow = '';
         }
 
-        console.log(`✅ Modal '${id}' cerrado`);
+        console.log(` Modal '${id}' cerrado`);
         return true;
     }
 
@@ -134,7 +134,7 @@ class UIModalService {
             modal.style.display = 'none';
         });
         document.body.style.overflow = '';
-        console.log('✅ Todos los modales cerrados');
+        console.log(' Todos los modales cerrados');
     }
 
     // ============================================================
@@ -318,7 +318,7 @@ class UIModalService {
      * @param {string} mensaje - Mensaje a mostrar
      */
     static toastExito(mensaje) {
-        return this._mostrarToast(mensaje, 'success', '✅');
+        return this._mostrarToast(mensaje, 'success', '');
     }
 
     /**
@@ -326,7 +326,7 @@ class UIModalService {
      * @param {string} mensaje - Mensaje a mostrar
      */
     static toastError(mensaje) {
-        return this._mostrarToast(mensaje, 'error', '❌');
+        return this._mostrarToast(mensaje, 'error');
     }
 
     /**
@@ -334,7 +334,7 @@ class UIModalService {
      * @param {string} mensaje - Mensaje a mostrar
      */
     static toastInfo(mensaje) {
-        return this._mostrarToast(mensaje, 'info', 'ℹ️');
+        return this._mostrarToast(mensaje, 'info', '');
     }
 
     /**
@@ -507,4 +507,4 @@ if (!document.getElementById('ui-modal-service-styles')) {
 
 window.UI = UIModalService;
 
-console.log('✅ UIModalService cargado y disponible como window.UI');
+console.log(' UIModalService cargado y disponible como window.UI');

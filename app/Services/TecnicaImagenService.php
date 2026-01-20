@@ -98,7 +98,7 @@ class TecnicaImagenService
 
             $tamañoWebP = Storage::disk('public')->size($rutaWebp);
 
-            \Log::info('✅ WebP guardado', [
+            \Log::info(' WebP guardado', [
                 'ruta' => $rutaWebp,
                 'tamaño_bytes' => $tamañoWebP
             ]);
@@ -110,7 +110,7 @@ class TecnicaImagenService
             $contenidoThumb = $thumbnail->toWebp(75);
             Storage::disk('public')->put($rutaMiniatura, $contenidoThumb);
 
-            \Log::info('✅ Miniatura guardada', [
+            \Log::info(' Miniatura guardada', [
                 'ruta' => $rutaMiniatura,
                 'tamaño_bytes' => Storage::disk('public')->size($rutaMiniatura)
             ]);
@@ -126,7 +126,7 @@ class TecnicaImagenService
             ];
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error al guardar imagen de técnica', [
+            \Log::error(' Error al guardar imagen de técnica', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
@@ -149,7 +149,7 @@ class TecnicaImagenService
                 $rutas[] = $resultado;
                 \Log::info("✓ Imagen {$index} guardada");
             } catch (\Exception $e) {
-                \Log::error("❌ Error en imagen {$index}", ['error' => $e->getMessage()]);
+                \Log::error(" Error en imagen {$index}", ['error' => $e->getMessage()]);
                 // Continuar con la siguiente
             }
         }

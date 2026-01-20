@@ -50,14 +50,14 @@ class ProtectorDatosPrincipales {
             const element = document.getElementById(fieldId);
             if (element) {
                 this.datosPrincipales[fieldId] = element.value;
-                console.log(`   ✅ ${fieldId}: "${element.value}"`);
+                console.log(`    ${fieldId}: "${element.value}"`);
             }
         });
 
         // Agregar listener para monitor cambios accidentales
         this.iniciarMoniteo();
         this.guardados = true;
-        console.log('✅ [ProtectorDatosPrincipales] Datos guardados');
+        console.log(' [ProtectorDatosPrincipales] Datos guardados');
     }
 
     /**
@@ -108,7 +108,7 @@ class ProtectorDatosPrincipales {
                 const valorAnterior = element.value;
                 element.value = valor;
 
-                console.log(`   ✅ ${fieldId} restaurado: "${valorAnterior}" → "${valor}"`);
+                console.log(`    ${fieldId} restaurado: "${valorAnterior}" → "${valor}"`);
 
                 // Disparar evento change para actualizar componentes
                 const event = new Event('input', { bubbles: true });
@@ -116,7 +116,7 @@ class ProtectorDatosPrincipales {
             }
         });
 
-        console.log('✅ [ProtectorDatosPrincipales] Datos restaurados');
+        console.log(' [ProtectorDatosPrincipales] Datos restaurados');
     }
 
     /**
@@ -138,4 +138,4 @@ class ProtectorDatosPrincipales {
 // Crear instancia global
 window.protectorDatosPrincipales = new ProtectorDatosPrincipales();
 
-console.log('✅ Módulo ProtectorDatosPrincipales cargado');
+console.log(' Módulo ProtectorDatosPrincipales cargado');

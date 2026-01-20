@@ -52,7 +52,7 @@ class CotizacionBordadoController extends Controller
                 'tiene_logo_cotizacion' => $cotizacion->logoCotizacion ? 'SI' : 'NO'
             ]);
         } else {
-            // ✅ NO CREAR COTIZACIÓN AUTOMÁTICAMENTE
+            //  NO CREAR COTIZACIÓN AUTOMÁTICAMENTE
             // La cotización se crea cuando el usuario hace POST (envía el formulario)
             // Esto evita crear borradores vacíos innecesarios
             Log::info('📝 Mostrando formulario vacío para crear nueva cotización', [
@@ -89,7 +89,7 @@ class CotizacionBordadoController extends Controller
             // Borrar la imagen
             $foto->forceDelete();
             
-            Log::info('✅ Imagen borrada exitosamente:', ['foto_id' => $fotoId]);
+            Log::info(' Imagen borrada exitosamente:', ['foto_id' => $fotoId]);
             
             return response()->json([
                 'success' => true,
@@ -97,7 +97,7 @@ class CotizacionBordadoController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            Log::error('❌ Error al borrar imagen:', ['error' => $e->getMessage()]);
+            Log::error(' Error al borrar imagen:', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al borrar imagen: ' . $e->getMessage()
@@ -168,7 +168,7 @@ class CotizacionBordadoController extends Controller
                 if ($esEnvio) {
                     $usuarioId = Auth::id();
                     $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
-                    Log::info('✅ Número generado para envío', ['numero' => $numeroCotizacion, 'cotizacion_id' => $id]);
+                    Log::info(' Número generado para envío', ['numero' => $numeroCotizacion, 'cotizacion_id' => $id]);
                 }
 
                 // Actualizar cotización principal
@@ -185,7 +185,7 @@ class CotizacionBordadoController extends Controller
 
                 if (!empty($datosActualizar)) {
                     $cotizacion->update($datosActualizar);
-                    Log::info('✅ Cotización actualizada', ['cotizacion_id' => $id, 'datos' => $datosActualizar]);
+                    Log::info(' Cotización actualizada', ['cotizacion_id' => $id, 'datos' => $datosActualizar]);
                 } else {
                     Log::warning('⚠️ No se actualizó cotización - sin datos', ['cotizacion_id' => $id]);
                 }
@@ -243,7 +243,7 @@ class CotizacionBordadoController extends Controller
                     $datosActualizar  // Actualizar solo campos válidos
                 );
                 
-                Log::info('✅ logo_cotizaciones actualizado/creado', [
+                Log::info(' logo_cotizaciones actualizado/creado', [
                     'cotizacion_id' => $id,
                     'logo_id' => $logoCotizacion->id,
                     'observaciones_generales' => $datosActualizar['observaciones_generales'] ?? 'NO ACTUALIZADO',
@@ -281,7 +281,7 @@ class CotizacionBordadoController extends Controller
                     }
                 ])->findOrFail($id);
 
-                Log::info('✅ Borrador de bordado actualizado', [
+                Log::info(' Borrador de bordado actualizado', [
                     'cotizacion_id' => $id,
                     'descripcion' => $descripcion,
                     'tecnicas_count' => count($tecnicas),
@@ -309,7 +309,7 @@ class CotizacionBordadoController extends Controller
                 return $resultado;
 
             } catch (\Exception $e) {
-                Log::error('❌ Error al actualizar borrador de bordado', [
+                Log::error(' Error al actualizar borrador de bordado', [
                     'error' => $e->getMessage(),
                     'cotizacion_id' => $id
                 ]);
@@ -324,7 +324,7 @@ class CotizacionBordadoController extends Controller
                 2 // tipo_cotizacion_id para Logo/Bordado
             )->onQueue('cotizaciones');
 
-            Log::info('📋 Job de envío encolado', [
+            Log::info(' Job de envío encolado', [
                 'cotizacion_id' => $id,
                 'numero' => $resultado['numero_cotizacion'] ?? null,
                 'queue' => 'cotizaciones'
@@ -349,13 +349,13 @@ class CotizacionBordadoController extends Controller
             try {
                 // Usar modelo Eloquent para borrar
                 $borradas = \App\Models\LogoFotoCot::whereIn('id', $idsABorrar)->forceDelete();
-                Log::info('✅ Imágenes borradas con forceDelete:', ['filas_borradas' => $borradas, 'ids_borrados' => $idsABorrar]);
+                Log::info(' Imágenes borradas con forceDelete:', ['filas_borradas' => $borradas, 'ids_borrados' => $idsABorrar]);
                 
                 // Verificar post-borrado
                 $imagenesRestantes = DB::table('logo_fotos_cot')->whereIn('id', $idsABorrar)->count();
-                Log::info('✅ Verificación post-borrado:', ['restantes' => $imagenesRestantes]);
+                Log::info(' Verificación post-borrado:', ['restantes' => $imagenesRestantes]);
             } catch (\Exception $e) {
-                Log::error('❌ Error al borrar imágenes DESPUÉS de transacción:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                Log::error(' Error al borrar imágenes DESPUÉS de transacción:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             }
         }
         
@@ -418,7 +418,7 @@ class CotizacionBordadoController extends Controller
                 if (!$esBorrador) {
                     $usuarioId = Auth::id();
                     $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
-                    Log::info('✅ Número generado sincronicamente', [
+                    Log::info(' Número generado sincronicamente', [
                         'numero' => $numeroCotizacion
                     ]);
                 }
@@ -430,27 +430,27 @@ class CotizacionBordadoController extends Controller
                 if (is_string($tecnicas)) {
                     $tecnicas = json_decode($tecnicas, true) ?? [];
                 }
-                Log::info('✅ Técnicas procesadas:', ['tecnicas' => $tecnicas]);
+                Log::info(' Técnicas procesadas:', ['tecnicas' => $tecnicas]);
                 
                 // Procesar secciones (pueden venir como JSON string desde FormData)
                 $secciones = $request->input('secciones', '[]');
                 if (is_string($secciones)) {
                     $secciones = json_decode($secciones, true) ?? [];
                 }
-                Log::info('✅ Secciones procesadas:', ['secciones' => $secciones]);
+                Log::info(' Secciones procesadas:', ['secciones' => $secciones]);
                 
                 // Procesar observaciones generales (pueden venir como JSON string desde FormData)
                 $observacionesGenerales = $request->input('observaciones_generales', '[]');
                 if (is_string($observacionesGenerales)) {
                     $observacionesGenerales = json_decode($observacionesGenerales, true) ?? [];
                 }
-                Log::info('✅ Observaciones generales procesadas:', ['observaciones' => $observacionesGenerales]);
+                Log::info(' Observaciones generales procesadas:', ['observaciones' => $observacionesGenerales]);
                 
                 // Buscar el tipo de cotización "Logo/Bordado" dinámicamente
                 $tipoBordado = \App\Models\TipoCotizacion::where('codigo', 'L')->first();
                 
                 if (!$tipoBordado) {
-                    Log::error('❌ Tipo de cotización "Logo" (L) no encontrado en tipos_cotizacion');
+                    Log::error(' Tipo de cotización "Logo" (L) no encontrado en tipos_cotizacion');
                     return response()->json([
                         'success' => false,
                         'message' => 'Error: Tipo de cotización Logo no está registrado en el sistema.',
@@ -471,12 +471,12 @@ class CotizacionBordadoController extends Controller
                     'especificaciones' => json_encode($request->input('especificaciones', [])),
                 ]);
 
-                Log::info('✅ Cotización de Bordado creada en tabla cotizaciones', [
+                Log::info(' Cotización de Bordado creada en tabla cotizaciones', [
                     'cotizacion_id' => $cotizacion->id,
                     'numero_cotizacion' => $numeroCotizacion,
                 ]);
 
-                // ✅ CREAR LogoCotizacion - NO viene del formulario, se crea aquí
+                //  CREAR LogoCotizacion - NO viene del formulario, se crea aquí
                 // Todos los datos de técnicas, prendas, etc se crean en este request
                 $logoCotizacion = \App\Models\LogoCotizacion::create([
                     'cotizacion_id' => $cotizacion->id,
@@ -484,12 +484,12 @@ class CotizacionBordadoController extends Controller
                     'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
                 ]);
 
-                Log::info('✅ LogoCotizacion creado nuevo', [
+                Log::info(' LogoCotizacion creado nuevo', [
                     'logo_id' => $logoCotizacion->id,
                     'cotizacion_id' => $cotizacion->id
                 ]);
                 
-                Log::info('✅ Detalles de bordado guardados en tabla logo_cotizaciones', [
+                Log::info(' Detalles de bordado guardados en tabla logo_cotizaciones', [
                     'cotizacion_id' => $cotizacion->id,
                     'logo_id' => $logoCotizacion->id,
                     'estado' => 'nueva_cotizacion'
@@ -500,7 +500,7 @@ class CotizacionBordadoController extends Controller
                     $this->procesarImagenesCotizacion($request, $cotizacion->id);
                 }
 
-                // ✅ PROCESAR TÉCNICAS CON PRENDAS (nueva lógica)
+                //  PROCESAR TÉCNICAS CON PRENDAS (nueva lógica)
                 if (!empty($tecnicas) && is_array($tecnicas) && count($tecnicas) > 0) {
                     Log::info('🎨 Procesando técnicas agregadas desde el modal', [
                         'count' => count($tecnicas),
@@ -509,7 +509,7 @@ class CotizacionBordadoController extends Controller
                     
                     $this->procesarTecnicasDelFormulario($tecnicas, $logoCotizacion->id, $request);
                 } else {
-                    Log::info('ℹ️ No hay técnicas para procesar', [
+                    Log::info(' No hay técnicas para procesar', [
                         'tecnicas_count' => is_array($tecnicas) ? count($tecnicas) : 0,
                         'tecnicas_type' => gettype($tecnicas)
                     ]);
@@ -522,7 +522,7 @@ class CotizacionBordadoController extends Controller
                         2 // tipo_cotizacion_id para Logo/Bordado
                     )->onQueue('cotizaciones');
 
-                    Log::info('📋 Job de envío encolado (número ya existe)', [
+                    Log::info(' Job de envío encolado (número ya existe)', [
                         'cotizacion_id' => $cotizacion->id,
                         'numero' => $numeroCotizacion,
                         'queue' => 'cotizaciones'
@@ -567,7 +567,7 @@ class CotizacionBordadoController extends Controller
                 ], 201);
 
             } catch (\Exception $e) {
-                Log::error('❌ Error al guardar cotización de Bordado', [
+                Log::error(' Error al guardar cotización de Bordado', [
                     'error' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
@@ -651,7 +651,7 @@ class CotizacionBordadoController extends Controller
                         'updated_at' => now(),
                     ]);
 
-                    Log::info('✅ Imagen guardada en logo_fotos_cot', [
+                    Log::info(' Imagen guardada en logo_fotos_cot', [
                         'logo_cotizacion_id' => $logoCotizacionId,
                         'ruta' => $rutaOriginal,
                         'orden' => $orden,
@@ -662,7 +662,7 @@ class CotizacionBordadoController extends Controller
                     $orden++;
 
                 } catch (\Exception $e) {
-                    Log::error('❌ Error al guardar imagen', [
+                    Log::error(' Error al guardar imagen', [
                         'error' => $e->getMessage(),
                         'archivo' => $archivo->getClientOriginalName()
                     ]);
@@ -848,7 +848,7 @@ class CotizacionBordadoController extends Controller
                     $statusCode = $response->getStatusCode();
                     
                     if ($statusCode === 201) {
-                        Log::info("✅ Técnica agregada exitosamente", [
+                        Log::info(" Técnica agregada exitosamente", [
                             'tipo_logo' => $tecnica['tipo_logo']['nombre'],
                             'archivos_procesados' => $archivosCopiados
                         ]);
@@ -856,17 +856,17 @@ class CotizacionBordadoController extends Controller
                         Log::warning("⚠️ Técnica procesada con status {$statusCode}");
                     }
                 } catch (\Exception $e) {
-                    Log::error("❌ Error procesando técnica", [
+                    Log::error(" Error procesando técnica", [
                         'tipo_logo' => $tecnica['tipo_logo']['nombre'] ?? 'desconocido',
                         'error' => $e->getMessage()
                     ]);
                 }
             }
 
-            Log::info("✅ Todas las técnicas procesadas");
+            Log::info(" Todas las técnicas procesadas");
 
         } catch (\Exception $e) {
-            Log::error('❌ Error en procesarTecnicasDelFormulario()', [
+            Log::error(' Error en procesarTecnicasDelFormulario()', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()

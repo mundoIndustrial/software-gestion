@@ -36,7 +36,7 @@
 
         // Validar estructura actual
         validate() {
-            console.log('\n%c📋 VALIDACIÓN DE DATOS ACTUALES', 'color: #00CCFF; font-weight: bold');
+            console.log('\n%c VALIDACIÓN DE DATOS ACTUALES', 'color: #00CCFF; font-weight: bold');
             
             const snapshot = this.captureSnapshot();
             
@@ -64,7 +64,7 @@
             ];
 
             validaciones.forEach((val, i) => {
-                const icono = val.resultado ? '✅' : '⚠️';
+                const icono = val.resultado ? '' : '⚠️';
                 console.log(`${icono} ${i+1}. ${val.nombre}`);
                 console.log(`   └─ Valor:`, val.valor);
             });
@@ -95,19 +95,19 @@
                     }
                 });
 
-                console.log('✅ generosConTallas simulado:');
+                console.log(' generosConTallas simulado:');
                 console.table(generosConTallas);
                 
                 // Validaciones finales
                 const esValido = Object.keys(generosConTallas).length > 0 &&
                                Object.values(generosConTallas).every(g => Object.keys(g).length > 0);
                 
-                console.log(`\n${esValido ? '✅' : '❌'} Estructura válida:`, esValido);
+                console.log(`\n${esValido ? '' : ''} Estructura válida:`, esValido);
                 
                 return generosConTallas;
                 
             } catch (error) {
-                console.error('❌ Error al simular:', error.message);
+                console.error(' Error al simular:', error.message);
                 return null;
             }
         },
@@ -146,15 +146,15 @@
   3. Selecciona un género (Dama/Caballero)
   4. Selecciona tallas y cantidades
   5. Ejecuta: window._monitor.validate()
-  6. Verifica que todo sea ✅
+  6. Verifica que todo sea 
             `);
 
             console.log('%c🎯 QUÉ BUSCAR:', 'color: #FFD700; font-weight: bold');
             console.log(`
-  ✅ tallasPorGenero debe ser un array con al menos 1 elemento
-  ✅ cantidadesPorTalla debe tener claves (tallas) con valores > 0
-  ✅ Al simular, generosConTallas debe estar poblado
-  ❌ Si ve objetos vacíos {} o arrays vacíos [], hay un problema
+   tallasPorGenero debe ser un array con al menos 1 elemento
+   cantidadesPorTalla debe tener claves (tallas) con valores > 0
+   Al simular, generosConTallas debe estar poblado
+   Si ve objetos vacíos {} o arrays vacíos [], hay un problema
             `);
 
             console.log('%c═══════════════════════════════════════════════════════════\n', 'color: #00CCFF');

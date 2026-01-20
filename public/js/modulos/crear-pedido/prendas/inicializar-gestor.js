@@ -11,11 +11,11 @@
 window.inicializarGestorPrendaSinCotizacion = function() {
     if (!window.gestorPrendaSinCotizacion) {
         window.gestorPrendaSinCotizacion = new GestorPrendaSinCotizacion();
-        console.log('✅ GestorPrendaSinCotizacion inicializado');
+        console.log(' GestorPrendaSinCotizacion inicializado');
     }
 };
 
 // Inicializar automáticamente cuando se carga este script
 window.inicializarGestorPrendaSinCotizacion();
 
-console.log('✅ [INIT] Inicializador de gestor cargado');
+console.log(' [INIT] Inicializador de gestor cargado');

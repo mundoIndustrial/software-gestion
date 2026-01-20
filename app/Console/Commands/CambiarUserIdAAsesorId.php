@@ -42,32 +42,32 @@ class CambiarUserIdAAsesorId extends Command
             }
 
             // Paso 1: Agregar columna asesor_id
-            $this->line('📋 Paso 1: Agregando columna asesor_id...');
+            $this->line(' Paso 1: Agregando columna asesor_id...');
             DB::statement('
                 ALTER TABLE cotizaciones 
                 ADD COLUMN asesor_id BIGINT UNSIGNED NULL AFTER id
             ');
-            $this->info('   ✅ Columna asesor_id agregada');
+            $this->info('    Columna asesor_id agregada');
 
             // Paso 2: Copiar datos de user_id a asesor_id
-            $this->line('📋 Paso 2: Copiando datos de user_id a asesor_id...');
+            $this->line(' Paso 2: Copiando datos de user_id a asesor_id...');
             DB::statement('UPDATE cotizaciones SET asesor_id = user_id');
-            $this->info('   ✅ Datos copiados');
+            $this->info('    Datos copiados');
 
             // Paso 3: Eliminar FK antigua
-            $this->line('📋 Paso 3: Eliminando Foreign Key antigua...');
+            $this->line(' Paso 3: Eliminando Foreign Key antigua...');
             try {
                 DB::statement('
                     ALTER TABLE cotizaciones 
                     DROP FOREIGN KEY cotizaciones_user_id_foreign
                 ');
-                $this->info('   ✅ Foreign Key eliminada');
+                $this->info('    Foreign Key eliminada');
             } catch (\Exception $e) {
                 $this->warn('   ⚠️ Foreign Key no encontrada, continuando...');
             }
 
             // Paso 4: Agregar FK nueva
-            $this->line('📋 Paso 4: Agregando Foreign Key nueva...');
+            $this->line(' Paso 4: Agregando Foreign Key nueva...');
             DB::statement('
                 ALTER TABLE cotizaciones 
                 ADD CONSTRAINT cotizaciones_asesor_id_foreign 
@@ -75,27 +75,27 @@ class CambiarUserIdAAsesorId extends Command
                 REFERENCES users(id) 
                 ON DELETE SET NULL
             ');
-            $this->info('   ✅ Foreign Key nueva agregada');
+            $this->info('    Foreign Key nueva agregada');
 
             // Paso 5: Eliminar columna user_id
-            $this->line('📋 Paso 5: Eliminando columna user_id...');
+            $this->line(' Paso 5: Eliminando columna user_id...');
             DB::statement('ALTER TABLE cotizaciones DROP COLUMN user_id');
-            $this->info('   ✅ Columna user_id eliminada');
+            $this->info('    Columna user_id eliminada');
 
             // Paso 6: Agregar índice
-            $this->line('📋 Paso 6: Agregando índice...');
+            $this->line(' Paso 6: Agregando índice...');
             try {
                 DB::statement('
                     ALTER TABLE cotizaciones 
                     ADD INDEX idx_asesor_id (asesor_id)
                 ');
-                $this->info('   ✅ Índice agregado');
+                $this->info('    Índice agregado');
             } catch (\Exception $e) {
                 $this->warn('   ⚠️ Índice ya existe');
             }
 
             $this->newLine();
-            $this->info('✅ CAMBIO COMPLETADO EXITOSAMENTE');
+            $this->info(' CAMBIO COMPLETADO EXITOSAMENTE');
             $this->newLine();
 
             // Verificación
@@ -103,7 +103,7 @@ class CambiarUserIdAAsesorId extends Command
             $columnas = Schema::getColumns('cotizaciones');
             foreach ($columnas as $col) {
                 if ($col['name'] === 'asesor_id') {
-                    $this->line("   ✅ Columna asesor_id: {$col['type']}");
+                    $this->line("    Columna asesor_id: {$col['type']}");
                 }
             }
 
@@ -111,10 +111,10 @@ class CambiarUserIdAAsesorId extends Command
             $this->line("   📈 Total de cotizaciones: {$cantidad}");
 
             $conAsesor = DB::table('cotizaciones')->whereNotNull('asesor_id')->count();
-            $this->line("   ✅ Cotizaciones con asesor_id: {$conAsesor}");
+            $this->line("    Cotizaciones con asesor_id: {$conAsesor}");
 
         } catch (\Exception $e) {
-            $this->error('❌ ERROR: ' . $e->getMessage());
+            $this->error(' ERROR: ' . $e->getMessage());
             return 1;
         }
 

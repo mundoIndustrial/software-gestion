@@ -23,7 +23,7 @@ class RecreatePedidoEppTables extends Command
 
         foreach ($migracionesAEliminar as $migracion) {
             DB::table('migrations')->where('migration', $migracion)->delete();
-            $this->line("✅ Eliminado registro: $migracion");
+            $this->line(" Eliminado registro: $migracion");
         }
 
         $this->info("\n🚀 Ejecutando migraciones...\n");
@@ -32,6 +32,6 @@ class RecreatePedidoEppTables extends Command
         $this->call('migrate', ['--path' => 'database/migrations/2026_01_17_create_pedido_epp_table.php']);
         $this->call('migrate', ['--path' => 'database/migrations/2026_01_17_create_pedido_epp_imagenes_table.php']);
 
-        $this->info("\n✅ Tablas recreadas exitosamente");
+        $this->info("\n Tablas recreadas exitosamente");
     }
 }

@@ -35,22 +35,22 @@ class VerificarGuardadoCotizacion extends Command
         // 6. Verificar variantes
         $this->verificarVariantes($cotizacionId);
 
-        $this->info('✅ Verificación completada');
+        $this->info(' Verificación completada');
     }
 
     private function verificarCotizacion($cotizacionId)
     {
-        $this->line('📋 COTIZACIÓN PRINCIPAL:');
+        $this->line(' COTIZACIÓN PRINCIPAL:');
         $cotizacion = DB::table('cotizaciones')
             ->where('id', $cotizacionId)
             ->first();
 
         if (!$cotizacion) {
-            $this->error("❌ Cotización NO encontrada");
+            $this->error(" Cotización NO encontrada");
             return;
         }
 
-        $this->info("✅ Cotización encontrada");
+        $this->info(" Cotización encontrada");
         $this->table(
             ['Campo', 'Valor'],
             [
@@ -81,7 +81,7 @@ class VerificarGuardadoCotizacion extends Command
             return;
         }
 
-        $this->info("✅ {$prendas->count()} prenda(s) encontrada(s)");
+        $this->info(" {$prendas->count()} prenda(s) encontrada(s)");
         $this->table(
             ['ID', 'Nombre', 'Descripción', 'Cantidad'],
             $prendas->map(function ($p) {
@@ -113,7 +113,7 @@ class VerificarGuardadoCotizacion extends Command
             return;
         }
 
-        $this->info("✅ {$fotos->count()} foto(s) encontrada(s)");
+        $this->info(" {$fotos->count()} foto(s) encontrada(s)");
         $this->table(
             ['ID', 'Prenda ID', 'Nombre', 'URL'],
             $fotos->map(function ($f) {
@@ -145,7 +145,7 @@ class VerificarGuardadoCotizacion extends Command
             return;
         }
 
-        $this->info("✅ {$telas->count()} tela(s) encontrada(s)");
+        $this->info(" {$telas->count()} tela(s) encontrada(s)");
         $this->table(
             ['ID', 'Prenda ID', 'Color', 'Nombre Tela', 'Referencia'],
             $telas->map(function ($t) {
@@ -178,7 +178,7 @@ class VerificarGuardadoCotizacion extends Command
             return;
         }
 
-        $this->info("✅ {$tallas->count()} talla(s) encontrada(s)");
+        $this->info(" {$tallas->count()} talla(s) encontrada(s)");
         $this->table(
             ['ID', 'Prenda ID', 'Talla', 'Cantidad'],
             $tallas->map(function ($t) {
@@ -210,7 +210,7 @@ class VerificarGuardadoCotizacion extends Command
             return;
         }
 
-        $this->info("✅ {$variantes->count()} variante(s) encontrada(s)");
+        $this->info(" {$variantes->count()} variante(s) encontrada(s)");
         $this->table(
             ['ID', 'Prenda ID', 'Tipo Prenda', 'Género', 'Bolsillos', 'Reflectivo'],
             $variantes->map(function ($v) {

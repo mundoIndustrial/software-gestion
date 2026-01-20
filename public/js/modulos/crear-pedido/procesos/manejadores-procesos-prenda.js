@@ -40,9 +40,9 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
                 tipo: tipoProceso,
                 datos: null
             };
-            // ✅ CRÍTICO: Sincronizar con window inmediatamente
+            //  CRÍTICO: Sincronizar con window inmediatamente
             window.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
-            console.log(`✅ Proceso ${tipoProceso} registrado y sincronizado con window`);
+            console.log(` Proceso ${tipoProceso} registrado y sincronizado con window`);
         }
         
         // Actualizar resumen visual
@@ -50,10 +50,10 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
         
         // Abrir modal para capturar detalles del proceso
         window.abrirModalProcesoGenerico(tipoProceso);
-        console.log(`✅ Modal abierto para ${tipoProceso}`);
+        console.log(` Modal abierto para ${tipoProceso}`);
     } else {
         // Usuario desmarcó el checkbox
-        console.log(`❌ Removiendo proceso ${tipoProceso}`);
+        console.log(` Removiendo proceso ${tipoProceso}`);
         delete procesosSeleccionados[tipoProceso];
         delete window.procesosSeleccionados[tipoProceso];
         actualizarResumenProcesos();
@@ -122,7 +122,7 @@ window.limpiarProcesosSeleccionados = function() {
     const seccionResumen = document.getElementById('seccion-procesos-resumen');
     if (seccionResumen) seccionResumen.style.display = 'none';
     
-    console.log('✅ [PROCESOS] Procesos limpiados completamente');
+    console.log(' [PROCESOS] Procesos limpiados completamente');
 };
 
-console.log('✅ Módulo manejadores-procesos-prenda.js cargado correctamente');
+console.log(' Módulo manejadores-procesos-prenda.js cargado correctamente');

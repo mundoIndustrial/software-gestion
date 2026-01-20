@@ -40,7 +40,7 @@
             'areas' => $areas ?? []
         ]) !!};
         console.log('📝 Modo edición: Editando pedido #{{ $pedidoEditarId }}');
-        console.log('📦 Datos cargados:', window.pedidoEditarData);
+        console.log(' Datos cargados:', window.pedidoEditarData);
     </script>
 @endif
 
@@ -178,22 +178,22 @@
     <!-- SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
     <script src="{{ asset('js/services/epp/EppHttpService.js') }}"></script>
 
-    <!-- ✅ CRÍTICO: Cargar image-storage-service ANTES de gestion-telas.js -->
+    <!--  CRÍTICO: Cargar image-storage-service ANTES de gestion-telas.js -->
     <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
     
-    <!-- ✅ Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
+    <!--  Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
     <script>
         if (!window.imagenesPrendaStorage) {
             window.imagenesPrendaStorage = new ImageStorageService(3);
-            console.log('✅ [CREAR-PEDIDO-NUEVO] imagenesPrendaStorage inicializado');
+            console.log(' [CREAR-PEDIDO-NUEVO] imagenesPrendaStorage inicializado');
         }
         if (!window.imagenesTelaStorage) {
             window.imagenesTelaStorage = new ImageStorageService(3);
-            console.log('✅ [CREAR-PEDIDO-NUEVO] imagenesTelaStorage inicializado');
+            console.log(' [CREAR-PEDIDO-NUEVO] imagenesTelaStorage inicializado');
         }
         if (!window.imagenesReflectivoStorage) {
             window.imagenesReflectivoStorage = new ImageStorageService(3);
-            console.log('✅ [CREAR-PEDIDO-NUEVO] imagenesReflectivoStorage inicializado');
+            console.log(' [CREAR-PEDIDO-NUEVO] imagenesReflectivoStorage inicializado');
         }
     </script>
     
@@ -219,7 +219,7 @@
     <script src="{{ asset('js/utilidades/logger-app.js') }}"></script>
     <script src="{{ asset('js/utilidades/validador-prenda.js') }}"></script>
     
-    <!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+    <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
@@ -254,7 +254,7 @@
     <!-- Componente tarjeta readonly (completo - funcional) -->
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
     
-    <!-- ✅ CRÍTICO: Cargar manejadores-procesos-prenda ANTES de modal-prenda-dinamico.js -->
+    <!--  CRÍTICO: Cargar manejadores-procesos-prenda ANTES de modal-prenda-dinamico.js -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
     
     <!-- Modal de prendas - Constantes HTML (DEBE cargarse ANTES del modal principal) -->
@@ -273,7 +273,7 @@
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
 
     document.addEventListener('DOMContentLoaded', function() {
-        // ✅ Storages ya inicializados en el script anterior (antes de cargar gestion-telas.js)
+        //  Storages ya inicializados en el script anterior (antes de cargar gestion-telas.js)
         
         // Configurar asesora
         document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';

@@ -211,10 +211,10 @@ function updateOrderStatus(pedido, newStatus) {
     })
     .then(response => {
         if (response.ok) {
-            console.log('✅ Estado actualizado correctamente');
+            console.log(' Estado actualizado correctamente');
             showNotification('Estado actualizado correctamente', 'success');
         } else {
-            console.error('❌ Error al actualizar estado');
+            console.error(' Error al actualizar estado');
             showNotification('Error al actualizar estado', 'error');
         }
     })
@@ -242,10 +242,10 @@ function updateOrderArea(pedido, newArea) {
     })
     .then(response => {
         if (response.ok) {
-            console.log('✅ Área actualizada correctamente');
+            console.log(' Área actualizada correctamente');
             showNotification('Área actualizada correctamente', 'success');
         } else {
-            console.error('❌ Error al actualizar área');
+            console.error(' Error al actualizar área');
             showNotification('Error al actualizar área', 'error');
         }
     })
@@ -336,7 +336,7 @@ function createViewButtonDropdown(pedido) {
         dropdown.style.zIndex = '9999';
         document.body.appendChild(dropdown);
         
-        console.log('✅ Dropdown creado');
+        console.log(' Dropdown creado');
         
         // Agregar event listeners
         const detailBtn = dropdown.querySelector('.detail-option');

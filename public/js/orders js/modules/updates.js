@@ -17,7 +17,7 @@ const UpdatesModule = {
         
         this._sendUpdate(`${this.baseUrl}/${orderId}`, { estado: newStatus }, (data) => {
             if (data.success) {
-                console.log('✅ Estado actualizado correctamente');
+                console.log(' Estado actualizado correctamente');
                 
                 // Actualizar la fila en la tabla con los colores condicionales
                 const row = document.querySelector(`.table-row[data-orden-id="${orderId}"]`);
@@ -69,13 +69,13 @@ const UpdatesModule = {
             const data = await response.json();
             
             if (response.ok && (data.success || data)) {
-                console.log('✅ Área actualizada en procesos_prenda');
+                console.log(' Área actualizada en procesos_prenda');
                 
                 // Actualizar el dropdown visualmente
                 if (dropdown) {
                     dropdown.value = newArea;
                     dropdown.dataset.value = newArea;
-                    console.log(`✅ Dropdown actualizado visualmente: ${newArea}`);
+                    console.log(` Dropdown actualizado visualmente: ${newArea}`);
                     
                     // 🆕 CRÍTICO: Marcar como cambio programático para evitar loop
                     dropdown.dataset.programmaticChange = 'true';
@@ -83,7 +83,7 @@ const UpdatesModule = {
                     // 🆕 CRÍTICO: Dispatchear evento change para activar listeners
                     const changeEvent = new Event('change', { bubbles: true, cancelable: true });
                     dropdown.dispatchEvent(changeEvent);
-                    console.log(`✅ Evento 'change' disparado en dropdown (marcado como programático)`);
+                    console.log(` Evento 'change' disparado en dropdown (marcado como programático)`);
                 }
                 
                 // 🆕 Actualizar clase de color del dropdown de área si existe
@@ -101,15 +101,15 @@ const UpdatesModule = {
                 const row = document.querySelector(`.table-row[data-orden-id="${orderId}"]`);
                 if (row && typeof applyRowConditionalColors === 'function') {
                     applyRowConditionalColors(row);
-                    console.log('✅ Colores condicionales aplicados para área');
+                    console.log(' Colores condicionales aplicados para área');
                 }
                 
                 if (window.RowManager && typeof window.RowManager.updateRowColor === 'function') {
                     window.RowManager.updateRowColor(orderId);
-                    console.log('✅ Color de fila actualizado');
+                    console.log(' Color de fila actualizado');
                 } else if (RowManager && typeof RowManager.updateRowColor === 'function') {
                     RowManager.updateRowColor(orderId);
-                    console.log('✅ Color de fila actualizado');
+                    console.log(' Color de fila actualizado');
                 }
                 
                 console.log('📢 Broadcast de actualización de área');
@@ -125,19 +125,19 @@ const UpdatesModule = {
                     // Está en la tabla, hacer un pequeño refresh visual
                     dropdown.blur();
                     dropdown.focus();
-                    console.log('✅ Dropdown refrescado visualmente (blur/focus)');
+                    console.log(' Dropdown refrescado visualmente (blur/focus)');
                 }
                 
                 // 🆕 CRÍTICO: Forzar refrescamiento de la fila en la tabla desde el servidor
                 // Esto asegura que la tabla se vea actualizada incluso si el modal estaba abierto
                 this._refreshRowInTable(orderId, newArea);
                 
-                console.log('✅ Actualización de área completada');
+                console.log(' Actualización de área completada');
             } else {
                 throw new Error(data.message || 'Error desconocido al actualizar área');
             }
         } catch (error) {
-            console.error('❌ Error en updateOrderArea:', error);
+            console.error(' Error en updateOrderArea:', error);
             if (dropdown) {
                 dropdown.value = oldArea;
                 dropdown.dataset.value = oldArea;
@@ -175,7 +175,7 @@ const UpdatesModule = {
                 await this._updateProcessState(procesos[newAreaIndex], 'Pendiente');
             }
         } catch (error) {
-            console.error('❌ Error al actualizar estados de procesos:', error);
+            console.error(' Error al actualizar estados de procesos:', error);
         }
     },
 
@@ -204,10 +204,10 @@ const UpdatesModule = {
             }
             
             const data = await response.json();
-            console.log(`✅ Proceso actualizado: ${proceso.proceso} → ${nuevoEstado}`);
+            console.log(` Proceso actualizado: ${proceso.proceso} → ${nuevoEstado}`);
             return data;
         } catch (error) {
-            console.error(`❌ Error al actualizar proceso ${proceso.proceso}:`, error);
+            console.error(` Error al actualizar proceso ${proceso.proceso}:`, error);
             throw error;
         }
     },
@@ -222,14 +222,14 @@ const UpdatesModule = {
         
         this._sendUpdate(`${this.baseUrl}/${orderId}`, { dia_de_entrega: valorAEnviar }, (data) => {
             if (data.success) {
-                console.log(`✅ Día de entrega actualizado`);
+                console.log(` Día de entrega actualizado`);
                 console.log(`📊 Datos recibidos del servidor:`, data);
                 
                 if (dropdown) {
                     // Actualizar el valor del dropdown localmente
                     dropdown.value = valorAEnviar || '';
                     dropdown.classList.remove('updating', 'orange-highlight');
-                    console.log(`✅ Dropdown actualizado localmente: ${dropdown.value}`);
+                    console.log(` Dropdown actualizado localmente: ${dropdown.value}`);
                 }
                 
                 // Buscar la fila (puede ser tr o div.table-row)
@@ -240,7 +240,7 @@ const UpdatesModule = {
                 console.log(`🔍 Buscando fila para orden ${orderId}, encontrada:`, !!row);
                 
                 if (row) {
-                    console.log(`📋 Ejecutando executeRowUpdate para orden ${orderId}`);
+                    console.log(` Ejecutando executeRowUpdate para orden ${orderId}`);
                     RowManager.executeRowUpdate(row, data, orderId, valorAEnviar);
                 } else {
                     console.warn(`⚠️ No se encontró fila para actualizar orden ${orderId}`);
@@ -273,14 +273,14 @@ const UpdatesModule = {
      */
     _handleResponse(response) {
         if (response.status >= 500) {
-            console.error(`❌ Error del servidor (${response.status})`);
+            console.error(` Error del servidor (${response.status})`);
             NotificationModule.showAutoReload('Error del servidor. Recargando página...', 2000);
             setTimeout(() => window.location.reload(), 2000);
             return Promise.reject('Server error');
         }
         
         if (response.status === 401 || response.status === 419) {
-            console.error(`❌ Sesión expirada (${response.status})`);
+            console.error(` Sesión expirada (${response.status})`);
             NotificationModule.showAutoReload('Sesión expirada. Recargando página...', 1000);
             setTimeout(() => window.location.reload(), 1000);
             return Promise.reject('Session expired');
@@ -340,11 +340,11 @@ const UpdatesModule = {
             const event = new Event('input', { bubbles: true });
             dropdown.dispatchEvent(event);
             
-            console.log(`✅ Dropdown de tabla refrescado: ${newArea}`);
-            console.log(`✅ Evento 'input' disparado para actualizar vista`);
+            console.log(` Dropdown de tabla refrescado: ${newArea}`);
+            console.log(` Evento 'input' disparado para actualizar vista`);
             
         } catch (error) {
-            console.error('❌ Error refrescando fila en tabla:', error);
+            console.error(' Error refrescando fila en tabla:', error);
         }
     },
 
@@ -383,4 +383,4 @@ const UpdatesModule = {
 window.UpdatesModule = UpdatesModule;
 globalThis.UpdatesModule = UpdatesModule;
 
-console.log('✅ UpdatesModule cargado y disponible globalmente');
+console.log(' UpdatesModule cargado y disponible globalmente');

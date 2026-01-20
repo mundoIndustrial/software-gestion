@@ -1,6 +1,6 @@
 # Refactorización DDD - Pedidos de Producción
 
-## 📋 Resumen
+##  Resumen
 
 Se ha iniciado la refactorización del controlador `PedidosProduccionController.php` (3091 líneas) aplicando principios de **Domain-Driven Design (DDD)** y **SOLID**.
 
@@ -12,17 +12,17 @@ Se ha iniciado la refactorización del controlador `PedidosProduccionController.
 4. **Sin servicios de dominio**: Lógica dispersa y duplicada
 5. **Transacciones DB en controlador**: Debería estar en servicios
 
-## ✅ Arquitectura DDD Implementada
+##  Arquitectura DDD Implementada
 
 ```
 app/Domain/PedidoProduccion/
 ├── Services/
-│   ├── NumeracionService.php          ✅ Generación de números únicos
-│   ├── DescripcionService.php         ✅ Construcción de descripciones
-│   ├── ImagenService.php              ✅ Procesamiento de imágenes
-│   └── PedidoProduccionService.php    ✅ Lógica de negocio principal
+│   ├── NumeracionService.php           Generación de números únicos
+│   ├── DescripcionService.php          Construcción de descripciones
+│   ├── ImagenService.php               Procesamiento de imágenes
+│   └── PedidoProduccionService.php     Lógica de negocio principal
 ├── Repositories/
-│   └── CotizacionRepository.php       ✅ Acceso a datos de cotizaciones
+│   └── CotizacionRepository.php        Acceso a datos de cotizaciones
 ├── DTOs/                              🔄 Pendiente
 └── ValueObjects/                      🔄 Pendiente
 ```
@@ -39,9 +39,9 @@ $numeroLogo = $this->numeracionService->generarNumeroLogoPedido();
 ```
 
 **Características**:
-- ✅ Usa DB locks para prevenir race conditions
-- ✅ Maneja secuencias separadas para pedidos y logos
-- ✅ Formato específico para cada tipo
+-  Usa DB locks para prevenir race conditions
+-  Maneja secuencias separadas para pedidos y logos
+-  Formato específico para cada tipo
 
 ### 2. DescripcionService
 **Responsabilidad**: Construir descripciones formateadas de prendas
@@ -73,10 +73,10 @@ $ruta = $this->imagenService->guardarImagenComoWebp(
 ```
 
 **Características**:
-- ✅ Convierte automáticamente a WebP
-- ✅ Calidad optimizada (85%)
-- ✅ Nombres únicos con timestamp
-- ✅ Validación de archivos
+-  Convierte automáticamente a WebP
+-  Calidad optimizada (85%)
+-  Nombres únicos con timestamp
+-  Validación de archivos
 
 ### 4. PedidoProduccionService
 **Responsabilidad**: Orquestar la creación y gestión de pedidos
@@ -142,7 +142,7 @@ public function crearFormEditable()
 
 ## 📈 Beneficios de la Refactorización
 
-### ✅ Ventajas Inmediatas
+###  Ventajas Inmediatas
 1. **Separación de Responsabilidades**: Cada clase tiene una única responsabilidad
 2. **Testeable**: Los servicios pueden testearse independientemente
 3. **Reutilizable**: Los servicios se pueden usar en otros controladores
@@ -158,7 +158,7 @@ public function crearFormEditable()
 
 ## 🔄 Estado de la Refactorización
 
-### ✅ Completado
+###  Completado
 - [x] NumeracionService
 - [x] DescripcionService
 - [x] ImagenService
@@ -173,7 +173,7 @@ public function crearFormEditable()
 - [ ] Crear Value Objects para conceptos de dominio
 - [ ] Tests unitarios para servicios
 
-### 📋 Pendiente
+###  Pendiente
 - [ ] LogoPedidoService (lógica específica de logos)
 - [ ] ReflectivoPedidoService (lógica específica de reflectivos)
 - [ ] PrendaRepository

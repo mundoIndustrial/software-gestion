@@ -46,7 +46,7 @@ return new class extends Migration
         // Eliminar columnas
         \DB::statement("ALTER TABLE prenda_pedido_variantes DROP COLUMN talla, DROP COLUMN cantidad");
 
-        \Log::info('✅ [Migración 2026_01_19] Columnas talla y cantidad eliminadas de prenda_pedido_variantes');
+        \Log::info(' [Migración 2026_01_19] Columnas talla y cantidad eliminadas de prenda_pedido_variantes');
     }
 
     /**

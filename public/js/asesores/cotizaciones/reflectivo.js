@@ -77,7 +77,7 @@ function manejarArchivosReflectivo(files) {
 
             imagenesReflectivo.push(imagen);
             renderizarGaleriaReflectivo();
-            console.log('✅ Imagen agregada:', file.name);
+            console.log(' Imagen agregada:', file.name);
         };
 
         reader.readAsDataURL(file);
@@ -333,7 +333,7 @@ function recopilarDatosReflectivo() {
         observaciones_generales: observacionesReflectivo
     };
 
-    console.log('✅ Datos reflectivo recopilados:', datos);
+    console.log(' Datos reflectivo recopilados:', datos);
     return datos;
 }
 
@@ -348,7 +348,7 @@ function validarReflectivo() {
         return false;
     }
 
-    console.log('✅ Reflectivo validado correctamente');
+    console.log(' Reflectivo validado correctamente');
     return true;
 }
 

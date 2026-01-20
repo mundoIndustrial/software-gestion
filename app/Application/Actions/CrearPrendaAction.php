@@ -34,14 +34,14 @@ class CrearPrendaAction
                 $this->procesarImagenesAsync($prenda->id, $dto->fotos);
             }
 
-            \Log::info('✅ CrearPrendaAction completada', [
+            \Log::info(' CrearPrendaAction completada', [
                 'prenda_id' => $prenda->id,
             ]);
 
             return $prenda;
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error en CrearPrendaAction', [
+            \Log::error(' Error en CrearPrendaAction', [
                 'error' => $e->getMessage(),
                 'nombre' => $dto->nombre_producto,
             ]);

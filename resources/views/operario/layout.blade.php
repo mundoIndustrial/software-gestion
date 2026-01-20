@@ -81,11 +81,11 @@
     </div>
     
     <script>
-        console.log('📦 Script de loading overlay iniciado (operario)');
+        console.log(' Script de loading overlay iniciado (operario)');
         
         // Ocultar loading cuando todo esté cargado
         window.addEventListener('load', function() {
-            console.log('✅ Evento LOAD disparado');
+            console.log(' Evento LOAD disparado');
             const overlay = document.getElementById('loading-overlay');
             if (overlay) {
                 console.log('🎯 Overlay encontrado');
@@ -94,7 +94,7 @@
                 overlay.classList.add('hidden');
                 console.log('👻 Clase hidden agregada');
             } else {
-                console.log('❌ Overlay NO encontrado');
+                console.log(' Overlay NO encontrado');
             }
         });
         

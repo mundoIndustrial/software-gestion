@@ -9,7 +9,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1>📦 Crear Pedido de Producción</h1>
+                    <h1> Crear Pedido de Producción</h1>
                     <p class="text-muted">Formulario complejo para capturar y organizar prendas, variantes, fotos y procesos</p>
                 </div>
                 <a href="{{ route('asesores.pedidos-produccion.index') }}" class="btn btn-secondary">
@@ -86,12 +86,12 @@
         <div class="col-12">
             <div class="card border-info">
                 <div class="card-header bg-light">
-                    <h5 class="mb-0">ℹ️ Ayuda</h5>
+                    <h5 class="mb-0"> Ayuda</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>📋 Estructura del formulario</h6>
+                            <h6> Estructura del formulario</h6>
                             <ul class="small">
                                 <li><strong>Prenda:</strong> Nombre, descripción, género, origen</li>
                                 <li><strong>Variante:</strong> Talla, cantidad, color, tela, detalles especiales</li>
@@ -102,10 +102,10 @@
                         <div class="col-md-6">
                             <h6>💡 Consejos</h6>
                             <ul class="small">
-                                <li>✅ Todo se guarda en el navegador automáticamente</li>
-                                <li>✅ Puede cerrar y volver sin perder datos</li>
-                                <li>✅ Valide antes de enviar</li>
-                                <li>✅ Las imágenes se procesarán en el servidor</li>
+                                <li> Todo se guarda en el navegador automáticamente</li>
+                                <li> Puede cerrar y volver sin perder datos</li>
+                                <li> Valide antes de enviar</li>
+                                <li> Las imágenes se procesarán en el servidor</li>
                             </ul>
                         </div>
                     </div>
@@ -338,7 +338,7 @@
                 formManager.setPedidoId(pedidoId);
                 actualizarInfoPedido(pedidoId);
                 handlers.render();
-                UIComponents.renderToast('success', '✅ Pedido seleccionado');
+                UIComponents.renderToast('success', ' Pedido seleccionado');
             }
         });
 
@@ -397,7 +397,7 @@
         window.UIComponents = UIComponents;
         window.PedidoValidator = PedidoValidator;
 
-        console.log('✅ Formulario inicializado correctamente');
+        console.log(' Formulario inicializado correctamente');
         console.log('💡 Acceso en consola: window.formManager, window.handlers, etc.');
     });
 </script>
@@ -412,7 +412,7 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="modalExitoPedidoLabel">✅ Pedido Creado Exitosamente</h5>
+                <h5 class="modal-title" id="modalExitoPedidoLabel"> Pedido Creado Exitosamente</h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>

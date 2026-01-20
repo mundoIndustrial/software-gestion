@@ -114,13 +114,13 @@ class EliminarImagenesCotizacionService
                     $this->eliminarFoto($fotoGuardada->ruta_original);
                     $fotoGuardada->delete();
                     
-                    Log::info('❌ Foto de logo ELIMINADA', [
+                    Log::info(' Foto de logo ELIMINADA', [
                         'logo_id' => $logoCotizacionId,
                         'foto_id' => $fotoGuardada->id,
                         'ruta' => $fotoGuardada->ruta_original
                     ]);
                 } else {
-                    Log::info('✅ Foto de logo CONSERVADA', [
+                    Log::info(' Foto de logo CONSERVADA', [
                         'logo_id' => $logoCotizacionId,
                         'foto_id' => $fotoGuardada->id,
                         'ruta' => $fotoGuardada->ruta_original

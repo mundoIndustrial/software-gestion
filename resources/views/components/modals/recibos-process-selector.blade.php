@@ -266,7 +266,7 @@
             // PASO 1: Construir lista de recibos (BASE + ADICIONALES)
             const recibos = [];
 
-            // ✅ RECIBO BASE - SIEMPRE PRIMERO
+            //  RECIBO BASE - SIEMPRE PRIMERO
             const reciboBase = {
                 tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
                 nombre: prenda.de_bodega == 1 ? "Costura - Bodega" : "Costura",
@@ -275,7 +275,7 @@
             };
             recibos.push(reciboBase);
 
-            // ✅ PROCESOS ADICIONALES
+            //  PROCESOS ADICIONALES
             const procesos = prenda.procesos || [];
             procesos.forEach((proc) => {
                 // Garantizar que tipo_proceso es STRING
@@ -365,13 +365,13 @@
         
         // ⚠️ CRÍTICO: Validación defensiva
         if (typeof tipoProceso !== 'string') {
-            console.error('%c[SELECTOR] ❌ ERROR: tipoProceso DEBE ser STRING', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof tipoProceso, tipoProceso);
+            console.error('%c[SELECTOR]  ERROR: tipoProceso DEBE ser STRING', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof tipoProceso, tipoProceso);
             alert('Error: tipo de recibo debe ser texto (STRING)');
             return;
         }
         
         if (typeof prendaId !== 'number') {
-            console.error('%c[SELECTOR] ❌ ERROR: prendaId DEBE ser NÚMERO', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof prendaId, prendaId);
+            console.error('%c[SELECTOR]  ERROR: prendaId DEBE ser NÚMERO', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof prendaId, prendaId);
             alert('Error: ID de prenda debe ser número');
             return;
         }
@@ -394,7 +394,7 @@
         cerrarSelectorRecibos();
 
         // Abrir modal de recibo con el proceso específico
-        // ✅ Pasar como STRING puro
+        //  Pasar como STRING puro
         window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipoString);
     };
 

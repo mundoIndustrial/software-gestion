@@ -29,7 +29,7 @@
             '#cotizacion_selected_editable',
             function(id, numero, cliente, asesora, formaPago) {
                 // Callback cuando se selecciona una cotización
-                console.log('📋 Cotización seleccionada:', { id, numero, cliente, asesora, formaPago });
+                console.log(' Cotización seleccionada:', { id, numero, cliente, asesora, formaPago });
                 
                 // Actualizar campos del formulario
                 document.getElementById('cotizacion_id_editable').value = id;
@@ -63,13 +63,13 @@
                         logWithEmoji('🎯', 'Gestores inicializados con datos de cotización');
                     })
                     .catch(error => {
-                        console.error('❌ Error cargando cotización:', error);
+                        console.error(' Error cargando cotización:', error);
                         mostrarError('Error', 'No se pudieron cargar los datos de la cotización');
                     });
             }
         );
 
-        logWithEmoji('✅', 'GestorCotizacion inicializado');
+        logWithEmoji('', 'GestorCotizacion inicializado');
     };
 
     // =====================================================================
@@ -81,7 +81,7 @@
             'prendas-container-editable'
         );
 
-        logWithEmoji('✅', `GestorPrendas inicializado con ${window.gestorPrendas.obtenerTodas().length} prendas`);
+        logWithEmoji('', `GestorPrendas inicializado con ${window.gestorPrendas.obtenerTodas().length} prendas`);
     };
 
     // =====================================================================
@@ -90,7 +90,7 @@
     window.inicializarGestorLogo = function(logoCotizacion = {}) {
         window.gestorLogo = new GestorLogo(logoCotizacion);
         
-        logWithEmoji('✅', 'GestorLogo inicializado');
+        logWithEmoji('', 'GestorLogo inicializado');
     };
 
     // =====================================================================
@@ -221,7 +221,7 @@
         // Inicializar gestor de logo vacío
         window.inicializarGestorLogo();
 
-        logWithEmoji('✅', 'Gestores FASE 2 listos para usar');
+        logWithEmoji('', 'Gestores FASE 2 listos para usar');
     });
 
 })();

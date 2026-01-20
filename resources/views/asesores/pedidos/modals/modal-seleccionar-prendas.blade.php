@@ -3,7 +3,7 @@
     <div class="modal-container modal-lg">
         <!-- Header -->
         <div class="modal-header modal-header-gradient">
-            <h3 class="modal-title">📋 Seleccionar Prendas de la Cotización</h3>
+            <h3 class="modal-title"> Seleccionar Prendas de la Cotización</h3>
             <button class="modal-close-btn" onclick="cerrarModalPrendas()">✕</button>
         </div>
         

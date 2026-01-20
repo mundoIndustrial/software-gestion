@@ -634,14 +634,14 @@
                 document.getElementById('modalExito').style.display = 'flex';
             } else {
                 // Mostrar modal de error
-                document.getElementById('exitoTitulo').textContent = '❌ Error';
+                document.getElementById('exitoTitulo').textContent = ' Error';
                 document.getElementById('exitoMensaje').textContent = data.message || 'No se pudo completar el proceso';
                 document.getElementById('modalExito').style.display = 'flex';
             }
         } catch (error) {
             console.error('Error:', error);
             // Mostrar modal de error
-            document.getElementById('exitoTitulo').textContent = '❌ Error';
+            document.getElementById('exitoTitulo').textContent = ' Error';
             document.getElementById('exitoMensaje').textContent = 'Error al completar el proceso';
             document.getElementById('modalExito').style.display = 'flex';
         }

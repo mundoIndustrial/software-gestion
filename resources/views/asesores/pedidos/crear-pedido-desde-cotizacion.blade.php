@@ -12,7 +12,7 @@
 
 <!-- Header Full Width -->
 <div class="page-header">
-    <h1>📋 Crear Pedido de Producción desde Cotización</h1>
+    <h1> Crear Pedido de Producción desde Cotización</h1>
     <p>Selecciona una cotización y personaliza tu pedido</p>
 </div>
 
@@ -142,7 +142,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
     
-    <!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+    <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
@@ -208,7 +208,7 @@
             const hiddenInput = document.getElementById('cotizacion_id_editable');
             
             if (!searchInput) {
-                console.error('❌ No se encontró el input de búsqueda');
+                console.error(' No se encontró el input de búsqueda');
                 return;
             }
             
@@ -282,7 +282,7 @@
                 // Guardar para usar en agregar prendas
                 window.cotizacionSeleccionadaActual = cotizacion;
                 
-                console.log('✅ Cotización seleccionada:', cotizacion);
+                console.log(' Cotización seleccionada:', cotizacion);
                 
                 // Abrir modal de selección de prendas
                 if (typeof window.abrirModalSeleccionPrendas === 'function') {
@@ -303,8 +303,8 @@
                 seccionItems.style.display = 'block';
             }
             
-            console.log('✅ Vista de cotización inicializada');
-            console.log('📋 Cotizaciones disponibles:', window.cotizacionesData.length);
+            console.log(' Vista de cotización inicializada');
+            console.log(' Cotizaciones disponibles:', window.cotizacionesData.length);
         });
     </script>
 @endpush

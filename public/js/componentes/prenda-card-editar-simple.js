@@ -57,7 +57,7 @@ function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     // Obtener HTML de factura
     if (typeof generarHTMLFactura !== 'function') {
-        console.error('❌ generarHTMLFactura no disponible');
+        console.error(' generarHTMLFactura no disponible');
         Swal.fire('Error', 'No se puede generar el formulario', 'error');
         return;
     }
@@ -97,27 +97,27 @@ function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
             // Actualizar en gestor local
             if (window.gestorPrendaSinCotizacion) {
                 window.gestorPrendaSinCotizacion.actualizar(prendaIndex, datosModificados);
-                console.log('✅ Prenda actualizada en gestor local');
+                console.log(' Prenda actualizada en gestor local');
             }
             
             return true;
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            console.log('✅ Edición guardada');
+            console.log(' Edición guardada');
             
             // Re-renderizar tarjeta
             reRenderizarTarjetaPrendaEditada(prendaIndex);
             
             Swal.fire({
-                title: '✅ Guardado',
+                title: ' Guardado',
                 text: 'Prenda actualizada correctamente',
                 icon: 'success',
                 timer: 2000,
                 showConfirmButton: false
             });
         } else {
-            console.log('❌ Edición cancelada');
+            console.log(' Edición cancelada');
         }
     });
 }
@@ -132,12 +132,12 @@ function hacerFacturaEditable(htmlFactura, prenda) {
     temp.innerHTML = htmlFactura;
     
     // === 1. EDITAR VARIACIONES (Tabla) ===
-    console.log('📋 Buscando tablas de variaciones...');
+    console.log(' Buscando tablas de variaciones...');
     temp.querySelectorAll('table').forEach((table) => {
         const header = table.previousElementSibling?.textContent || '';
         
         if (header.includes('VARIANTES') || header.includes('ESPECIFICACIONES')) {
-            console.log('   ✅ Haciendo editable:', header);
+            console.log('    Haciendo editable:', header);
             
             table.querySelectorAll('tbody tr').forEach((row) => {
                 const cells = row.querySelectorAll('td');
@@ -177,7 +177,7 @@ function hacerFacturaEditable(htmlFactura, prenda) {
         });
         
         if (esTablaTallas) {
-            console.log('   ✅ Haciendo editable tabla de tallas');
+            console.log('    Haciendo editable tabla de tallas');
             
             filas.forEach(row => {
                 const cells = row.querySelectorAll('td');
@@ -238,7 +238,7 @@ function hacerFacturaEditable(htmlFactura, prenda) {
  * Extraer datos del modal de edición
  */
 function extraerDatosModalEdicion(prendaOriginal) {
-    console.log('📋 Extrayendo datos del modal...');
+    console.log(' Extrayendo datos del modal...');
     
     const datos = JSON.parse(JSON.stringify(prendaOriginal));
     
@@ -293,7 +293,7 @@ function extraerDatosModalEdicion(prendaOriginal) {
         }
     });
     
-    console.log('✅ Datos extraídos:', datos);
+    console.log(' Datos extraídos:', datos);
     return datos;
 }
 
@@ -318,17 +318,17 @@ async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
         
         if (!response.ok) {
             const error = await response.json();
-            console.error('❌ Error en respuesta:', error);
+            console.error(' Error en respuesta:', error);
             Swal.fire('Error', `No se pudo guardar: ${error.message}`, 'error');
             return false;
         }
         
         const result = await response.json();
-        console.log('✅ Prenda guardada en BD:', result);
+        console.log(' Prenda guardada en BD:', result);
         return true;
         
     } catch (error) {
-        console.error('❌ Error guardando:', error);
+        console.error(' Error guardando:', error);
         Swal.fire('Error', 'Error de conexión al guardar', 'error');
         return false;
     }
@@ -365,8 +365,8 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
     
     // Reemplazar tarjeta
     tarjeta.replaceWith(nuevoElemento.firstElementChild);
-    console.log('✅ Tarjeta re-renderizada');
+    console.log(' Tarjeta re-renderizada');
 }
 
-console.log('✅ Componente prenda-card-editar-simple cargado');
+console.log(' Componente prenda-card-editar-simple cargado');
 console.log('📝 Función: abrirEditarPrendaModal(prenda, index, pedidoId)');

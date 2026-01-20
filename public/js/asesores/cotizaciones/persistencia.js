@@ -43,11 +43,11 @@ function guardarDatosEnStorage() {
         // Guardar también especificaciones de forma independiente
         if (window.especificacionesSeleccionadas && Object.keys(window.especificacionesSeleccionadas).length > 0) {
             localStorage.setItem(STORAGE_SPECS_KEY, JSON.stringify(window.especificacionesSeleccionadas));
-            console.log('📋 Especificaciones guardadas:', window.especificacionesSeleccionadas);
+            console.log(' Especificaciones guardadas:', window.especificacionesSeleccionadas);
         }
         
     } catch (error) {
-        console.error('❌ Error al guardar en localStorage:', error);
+        console.error(' Error al guardar en localStorage:', error);
     }
 }
 
@@ -77,7 +77,7 @@ function guardarProductosEnStorage() {
         console.log('📦 Productos guardados en localStorage:', productos.length, 'productos');
         
     } catch (error) {
-        console.error('❌ Error al guardar productos:', error);
+        console.error(' Error al guardar productos:', error);
     }
 }
 
@@ -87,7 +87,7 @@ function cargarDatosDesdeStorage() {
     try {
         const datosGuardados = localStorage.getItem(STORAGE_KEY_PREFIX + 'datos_generales');
         if (!datosGuardados) {
-            console.log('ℹ️ No hay datos guardados en localStorage');
+            console.log(' No hay datos guardados en localStorage');
             return false;
         }
         
@@ -117,12 +117,12 @@ function cargarDatosDesdeStorage() {
         }
         
         const fecha = new Date(datos.timestamp).toLocaleString('es-CO');
-        console.log(`✅ Datos cargados desde localStorage (última modificación: ${fecha})`);
+        console.log(` Datos cargados desde localStorage (última modificación: ${fecha})`);
         
         return true;
         
     } catch (error) {
-        console.error('❌ Error al cargar desde localStorage:', error);
+        console.error(' Error al cargar desde localStorage:', error);
         return false;
     }
 }
@@ -131,7 +131,7 @@ function cargarProductosDesdeStorage() {
     try {
         const productosGuardados = localStorage.getItem(STORAGE_PRODUCTOS_KEY);
         if (!productosGuardados) {
-            console.log('ℹ️ No hay productos guardados en localStorage');
+            console.log(' No hay productos guardados en localStorage');
             return false;
         }
         
@@ -173,11 +173,11 @@ function cargarProductosDesdeStorage() {
             }
         });
         
-        console.log(`✅ ${productos.length} productos cargados desde localStorage`);
+        console.log(` ${productos.length} productos cargados desde localStorage`);
         return true;
         
     } catch (error) {
-        console.error('❌ Error al cargar productos:', error);
+        console.error(' Error al cargar productos:', error);
         return false;
     }
 }
@@ -208,7 +208,7 @@ function limpiarStorage() {
         console.log('🗑️ localStorage limpiado completamente');
         console.log('🗑️ Variables globales limpiadas');
     } catch (error) {
-        console.error('❌ Error al limpiar localStorage:', error);
+        console.error(' Error al limpiar localStorage:', error);
     }
 }
 
@@ -327,10 +327,10 @@ function limpiarFormularioCompleto() {
         // NO limpiar tecnicasSeleccionadas, seccionesSeleccionadas, observacionesGenerales, imagenesSeleccionadas
         // porque se declaran DESPUÉS de que se carga este script
         
-        console.log('✅ Limpieza completa del formulario finalizada');
+        console.log(' Limpieza completa del formulario finalizada');
         
     } catch (error) {
-        console.error('❌ Error al limpiar formulario:', error);
+        console.error(' Error al limpiar formulario:', error);
     }
 }
 
@@ -349,7 +349,7 @@ function configurarAutoGuardado() {
 // ============ INICIALIZACIÓN ============
 
 document.addEventListener('DOMContentLoaded', function() {
-    // ✅ DESACTIVADO: No cargar datos del localStorage
+    //  DESACTIVADO: No cargar datos del localStorage
     // Esto evita que se carguen datos de cotizaciones anteriores
     console.log('📝 localStorage DESACTIVADO - Formulario limpio');
     
@@ -363,10 +363,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('⚠️ Modo edición detectado - No se limpian variables globales');
     }
     
-    // ✅ DESACTIVADO: Auto-guardado desactivado
+    //  DESACTIVADO: Auto-guardado desactivado
     // configurarAutoGuardado();
     
-    // ✅ DESACTIVADO: No guardar antes de cerrar
+    //  DESACTIVADO: No guardar antes de cerrar
     // window.addEventListener('beforeunload', function() {
     //     guardarDatosEnStorage();
     //     guardarProductosEnStorage();
@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (originalGuardarEspecificaciones) {
         window.guardarEspecificaciones = function() {
             originalGuardarEspecificaciones();
-            // ✅ DESACTIVADO: No guardar en localStorage
+            //  DESACTIVADO: No guardar en localStorage
             // guardarDatosEnStorage();
             console.log('✓ Especificaciones guardadas');
         };

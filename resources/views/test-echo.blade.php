@@ -58,7 +58,7 @@
             Verificando canal 'corte'...
         </div>
         
-        <h2>📋 Log de Eventos</h2>
+        <h2> Log de Eventos</h2>
         <div id="log"></div>
     </div>
     
@@ -79,11 +79,11 @@
             const echoStatus = document.getElementById('echo-status');
             if (window.Echo) {
                 echoStatus.className = 'status success';
-                echoStatus.textContent = '✅ Echo está disponible';
+                echoStatus.textContent = ' Echo está disponible';
                 addLog('Echo está disponible', 'success');
             } else {
                 echoStatus.className = 'status error';
-                echoStatus.textContent = '❌ Echo NO está disponible';
+                echoStatus.textContent = ' Echo NO está disponible';
                 addLog('Echo NO está disponible - Verifica que Vite esté corriendo', 'error');
                 return;
             }
@@ -93,13 +93,13 @@
             
             window.Echo.connector.pusher.connection.bind('connected', () => {
                 connStatus.className = 'status success';
-                connStatus.textContent = '✅ WebSocket conectado a Reverb';
+                connStatus.textContent = ' WebSocket conectado a Reverb';
                 addLog('WebSocket conectado exitosamente', 'success');
             });
             
             window.Echo.connector.pusher.connection.bind('error', (err) => {
                 connStatus.className = 'status error';
-                connStatus.textContent = '❌ Error de conexión: ' + JSON.stringify(err);
+                connStatus.textContent = ' Error de conexión: ' + JSON.stringify(err);
                 addLog('Error de conexión: ' + JSON.stringify(err), 'error');
             });
             
@@ -109,13 +109,13 @@
             
             channel.subscribed(() => {
                 channelStatus.className = 'status success';
-                channelStatus.textContent = '✅ Suscrito al canal "corte"';
+                channelStatus.textContent = ' Suscrito al canal "corte"';
                 addLog('Suscrito exitosamente al canal "corte"', 'success');
             });
             
             channel.error((error) => {
                 channelStatus.className = 'status error';
-                channelStatus.textContent = '❌ Error en canal: ' + JSON.stringify(error);
+                channelStatus.textContent = ' Error en canal: ' + JSON.stringify(error);
                 addLog('Error en canal "corte": ' + JSON.stringify(error), 'error');
             });
             

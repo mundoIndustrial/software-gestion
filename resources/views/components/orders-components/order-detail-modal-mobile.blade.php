@@ -60,9 +60,9 @@ let currentPedidoNumeroMobile = null;
 function loadGaleriaMobile(container) {
     // Obtener número de pedido
     const pedidoElement = document.getElementById('mobile-numero-pedido');
-    console.log('🖼️ [GALERIA MOBILE] Elemento pedido:', pedidoElement);
+    console.log(' [GALERIA MOBILE] Elemento pedido:', pedidoElement);
     if (!pedidoElement) {
-        console.error('❌ [GALERIA MOBILE] No se encontró elemento mobile-numero-pedido');
+        console.error(' [GALERIA MOBILE] No se encontró elemento mobile-numero-pedido');
         return;
     }
     
@@ -70,9 +70,9 @@ function loadGaleriaMobile(container) {
     const pedidoMatch = pedidoText.match(/\d+/);
     const pedido = pedidoMatch ? pedidoMatch[0] : null;
     
-    console.log('🖼️ [GALERIA MOBILE] Número de pedido extraído:', pedido);
+    console.log(' [GALERIA MOBILE] Número de pedido extraído:', pedido);
     if (!pedido) {
-        console.error('❌ [GALERIA MOBILE] No se pudo extraer número de pedido');
+        console.error(' [GALERIA MOBILE] No se pudo extraer número de pedido');
         return;
     }
     
@@ -80,15 +80,15 @@ function loadGaleriaMobile(container) {
     
     // Cargar imágenes
     const url = `/registros/${pedido}/images`;
-    console.log('🖼️ [GALERIA MOBILE] Haciendo fetch a:', url);
+    console.log(' [GALERIA MOBILE] Haciendo fetch a:', url);
     
     fetch(url)
         .then(response => {
-            console.log('🖼️ [GALERIA MOBILE] Respuesta recibida:', response.status);
+            console.log(' [GALERIA MOBILE] Respuesta recibida:', response.status);
             return response.json();
         })
         .then(data => {
-            console.log('🖼️ [GALERIA MOBILE] Datos recibidos:', data);
+            console.log(' [GALERIA MOBILE] Datos recibidos:', data);
             console.log('📊 [GALERIA MOBILE] Total prendas:', data.prendas?.length || 0);
             
             // Construir array de todas las imágenes para el visor
@@ -171,7 +171,7 @@ function loadGaleriaMobile(container) {
                 
                 // Mostrar fotos de logo al final
                 if (fotosLogo.length > 0) {
-                    console.log('🖼️ [GALERIA MOBILE] Mostrando fotos de logo. Total grupos:', fotosLogo.length);
+                    console.log(' [GALERIA MOBILE] Mostrando fotos de logo. Total grupos:', fotosLogo.length);
                     
                     fotosLogo.forEach(item => {
                         const fotosAMostrar = item.fotos.slice(0, 4);
@@ -215,7 +215,7 @@ function loadGaleriaMobile(container) {
                     });
                 }
                 
-                console.log('✅ [GALERIA MOBILE] Total de imágenes cargadas:', allImagesMobile.length);
+                console.log(' [GALERIA MOBILE] Total de imágenes cargadas:', allImagesMobile.length);
             } else {
                 console.warn('⚠️ [GALERIA MOBILE] No hay imágenes para mostrar');
                 html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay imágenes para este pedido</p>';
@@ -223,17 +223,17 @@ function loadGaleriaMobile(container) {
             
             html += '</div>';
             container.innerHTML = html;
-            console.log('✅ [GALERIA MOBILE] HTML de galería generado y renderizado en el DOM');
+            console.log(' [GALERIA MOBILE] HTML de galería generado y renderizado en el DOM');
         })
         .catch(error => {
-            console.error('❌ [GALERIA MOBILE] Error al cargar imágenes:', error);
+            console.error(' [GALERIA MOBILE] Error al cargar imágenes:', error);
             container.innerHTML = '<p style="text-align: center; color: #999;">Error al cargar imágenes</p>';
         });
 }
 
 function openImageViewerMobile(index) {
     currentImageIndexMobile = index;
-    console.log('🖼️ [VIEWER MOBILE] Abriendo imagen:', index);
+    console.log(' [VIEWER MOBILE] Abriendo imagen:', index);
     
     // Crear modal si no existe
     let modal = document.getElementById('image-viewer-modal-mobile');
@@ -386,27 +386,27 @@ window.llenarReciboCosturaMobile = function(data) {
         
         // Validar que sea una fecha válida
         if (!isNaN(fecha)) {
-            console.log('✅ Fecha válida:', fecha);
+            console.log(' Fecha válida:', fecha);
             const dayBox = document.getElementById('fecha-dia');
             const monthBox = document.getElementById('fecha-mes');
             const yearBox = document.getElementById('fecha-year');
             
-            console.log('✅ Elementos encontrados - dayBox:', !!dayBox, 'monthBox:', !!monthBox, 'yearBox:', !!yearBox);
+            console.log(' Elementos encontrados - dayBox:', !!dayBox, 'monthBox:', !!monthBox, 'yearBox:', !!yearBox);
             
             if (dayBox) {
                 dayBox.textContent = fecha.getDate();
-                console.log('✅ Día actualizado:', fecha.getDate());
+                console.log(' Día actualizado:', fecha.getDate());
             }
             if (monthBox) {
                 monthBox.textContent = (fecha.getMonth() + 1);
-                console.log('✅ Mes actualizado:', fecha.getMonth() + 1);
+                console.log(' Mes actualizado:', fecha.getMonth() + 1);
             }
             if (yearBox) {
                 yearBox.textContent = fecha.getFullYear();
-                console.log('✅ Año actualizado:', fecha.getFullYear());
+                console.log(' Año actualizado:', fecha.getFullYear());
             }
         } else {
-            console.error('❌ Fecha inválida');
+            console.error(' Fecha inválida');
         }
     } else {
         console.log('⚠️ Sin fecha en data');
@@ -430,7 +430,7 @@ window.llenarReciboCosturaMobile = function(data) {
     if (encargado) encargado.textContent = data.encargado || '-';
     if (prendasEntregadas) prendasEntregadas.textContent = data.prendasEntregadas || '0/0';
     
-    console.log('✅ Información básica actualizada');
+    console.log(' Información básica actualizada');
 
     // Función helper para convertir markdown bold *** a <strong>
     const convertMarkdownBold = (texto) => {
@@ -445,19 +445,19 @@ window.llenarReciboCosturaMobile = function(data) {
     }
 
     // Descripción - IGUAL QUE ASESORES: Priorizar descripcion_prendas del controlador
-    console.log('📋 Procesando descripción...');
-    console.log('📋 data.descripcion:', data.descripcion);
-    console.log('📋 data.prendas:', data.prendas);
-    console.log('📋 data.prendas?.length:', data.prendas?.length);
+    console.log(' Procesando descripción...');
+    console.log(' data.descripcion:', data.descripcion);
+    console.log(' data.prendas:', data.prendas);
+    console.log(' data.prendas?.length:', data.prendas?.length);
     
     let descripcionHTML = '';
     const descripcionPrendasCompleta = data.descripcion || '';
     const todasLasPrendas = data.prendas || [];
     const PRENDAS_POR_PAGINA = 2;
     
-    // ✅ PRIMERO: Si existe descripcion_prendas construida en el controlador, usarla directamente (IGUAL QUE ASESORES)
+    //  PRIMERO: Si existe descripcion_prendas construida en el controlador, usarla directamente (IGUAL QUE ASESORES)
     if (descripcionPrendasCompleta && descripcionPrendasCompleta.trim() !== '' && descripcionPrendasCompleta !== 'N/A') {
-        console.log('✅ [MOBILE] Usando descripcion_prendas del controlador con paginación');
+        console.log(' [MOBILE] Usando descripcion_prendas del controlador con paginación');
         console.log('📝 [DESCRIPCION COMPLETA]:\n' + descripcionPrendasCompleta);
         
         // Limpiar espacios al inicio de cada línea
@@ -698,7 +698,7 @@ window.llenarReciboCosturaMobile = function(data) {
     if (descElement) {
         if (descripcionHTML) {
             descElement.innerHTML = descripcionHTML;
-            console.log('✅ Descripción inyectada en el DOM');
+            console.log(' Descripción inyectada en el DOM');
         } else {
             descElement.innerHTML = '<em style="font-size: 10px; color: #999;">Sin descripción</em>';
             console.log('⚠️ Sin descripción válida');
@@ -760,7 +760,7 @@ window.llenarReciboCosturaMobile = function(data) {
                 };
                 
                 arrowContainer.appendChild(prevBtn);
-                console.log('✅ Botón anterior agregado');
+                console.log(' Botón anterior agregado');
             }
             
             // Botón siguiente (> derecha)
@@ -795,10 +795,10 @@ window.llenarReciboCosturaMobile = function(data) {
                 };
                 
                 arrowContainer.appendChild(nextBtn);
-                console.log('✅ Botón siguiente agregado');
+                console.log(' Botón siguiente agregado');
             }
             
-            console.log('✅ Botones de navegación actualizados - Página:', currentPage + 1, '/', totalPaginas, '| Retroceder:', puedeRetroceder, '| Avanzar:', puedeAvanzar);
+            console.log(' Botones de navegación actualizados - Página:', currentPage + 1, '/', totalPaginas, '| Retroceder:', puedeRetroceder, '| Avanzar:', puedeAvanzar);
         }
     } else {
         // Ocultar el contenedor de flechas si no hay más de 2 bloques

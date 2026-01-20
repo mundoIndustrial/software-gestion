@@ -62,7 +62,7 @@
                 // 🔑 LIMPIAR dashboardFilterParams GLOBAL para mostrar todos los datos
                 if (typeof dashboardFilterParams !== 'undefined') {
                     dashboardFilterParams = {};
-                    console.log('✅ dashboardFilterParams limpiado - Mostrando TODOS los datos');
+                    console.log(' dashboardFilterParams limpiado - Mostrando TODOS los datos');
                 }
 
                 // Clear URL parameters
@@ -165,7 +165,7 @@
                         }
                     }
                     
-                    console.log('✅ dashboardFilterParams actualizado para tiempo real:', dashboardFilterParams);
+                    console.log(' dashboardFilterParams actualizado para tiempo real:', dashboardFilterParams);
                 }
                 
                 // Llamar a la función para actualizar las tablas del dashboard
@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Actualizar la URL sin recargar
         window.history.replaceState({}, '', url.toString());
-        console.log('✅ Todos los filtros limpiados al recargar la página');
+        console.log(' Todos los filtros limpiados al recargar la página');
         
         // También limpiar sessionStorage de filtros de columnas
         const section = url.searchParams.get('section') || 'produccion';

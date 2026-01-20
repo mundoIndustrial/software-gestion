@@ -122,7 +122,7 @@ class EppDomainService
                 $epp->imagenes()
             );
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('❌ Error formatando imágenes EPP', [
+            \Illuminate\Support\Facades\Log::error(' Error formatando imágenes EPP', [
                 'epp_id' => $epp->id(),
                 'error' => $e->getMessage(),
             ]);

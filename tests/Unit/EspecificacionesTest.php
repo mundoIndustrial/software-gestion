@@ -49,7 +49,7 @@ class EspecificacionesTest extends TestCase
         $this->assertEquals('Común', $especificaciones['regimen'][0]['valor']);
         $this->assertEquals('', $especificaciones['regimen'][0]['observacion']);
 
-        echo "\n✅ TEST PASADO: Estructura de especificaciones es correcta\n";
+        echo "\n TEST PASADO: Estructura de especificaciones es correcta\n";
         $this->assertTrue(true);
     }
 
@@ -79,7 +79,7 @@ class EspecificacionesTest extends TestCase
             $decodificado['disponibilidad'][0]['observacion']
         );
 
-        echo "\n✅ TEST PASADO: JSON encoding/decoding funciona correctamente\n";
+        echo "\n TEST PASADO: JSON encoding/decoding funciona correctamente\n";
         $this->assertTrue(true);
     }
 
@@ -98,7 +98,7 @@ class EspecificacionesTest extends TestCase
         $this->assertEmpty($decodificado);
         $this->assertEquals('[]', $json);
 
-        echo "\n✅ TEST PASADO: Especificaciones vacías se manejan correctamente\n";
+        echo "\n TEST PASADO: Especificaciones vacías se manejan correctamente\n";
         $this->assertTrue(true);
     }
 
@@ -151,7 +151,7 @@ class EspecificacionesTest extends TestCase
         // Verificar que se preservó la estructura
         $this->assertEquals($especificaciones, $decodificado);
 
-        echo "\n✅ TEST PASADO: Múltiples valores por categoría se guardan correctamente\n";
+        echo "\n TEST PASADO: Múltiples valores por categoría se guardan correctamente\n";
         $this->assertTrue(true);
     }
 }

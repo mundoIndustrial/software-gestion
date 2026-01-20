@@ -45,7 +45,7 @@ class ConfirmarPedidoService
 
             DB::commit();
 
-            Log::info('✅ [CONFIRMAR] Pedido confirmado', [
+            Log::info(' [CONFIRMAR] Pedido confirmado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $numeroPedido
             ]);
@@ -54,7 +54,7 @@ class ConfirmarPedidoService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('❌ [CONFIRMAR] Error al confirmar', [
+            Log::error(' [CONFIRMAR] Error al confirmar', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -97,7 +97,7 @@ class ConfirmarPedidoService
             }
         }
 
-        Log::info('✅ [CONFIRMAR-LOTE] Completado', [
+        Log::info(' [CONFIRMAR-LOTE] Completado', [
             'exitosos' => count($resultados['exitosos']),
             'errores' => count($resultados['errores'])
         ]);
@@ -127,7 +127,7 @@ class ConfirmarPedidoService
             return false;
         }
 
-        Log::info('✅ [PUEDE-CONFIRMAR] Pedido listo para confirmar: ' . $borradorId);
+        Log::info(' [PUEDE-CONFIRMAR] Pedido listo para confirmar: ' . $borradorId);
         return true;
     }
 }

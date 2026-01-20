@@ -21,11 +21,11 @@ class AsignarAsesorACotizaciones extends Command
         // Validar que el asesor existe
         $asesor = \App\Models\User::find($asesorId);
         if (!$asesor) {
-            $this->error("❌ El asesor con ID {$asesorId} no existe");
+            $this->error(" El asesor con ID {$asesorId} no existe");
             return 1;
         }
 
-        $this->info("✅ Asesor encontrado: {$asesor->name} (ID: {$asesorId})");
+        $this->info(" Asesor encontrado: {$asesor->name} (ID: {$asesorId})");
         $this->line('');
 
         // Construir query
@@ -62,7 +62,7 @@ class AsignarAsesorACotizaciones extends Command
         $updated = $query->update(['asesor_id' => $asesorId]);
 
         $this->line('');
-        $this->info("✅ Actualización completada");
+        $this->info(" Actualización completada");
         $this->info("   Cotizaciones actualizadas: {$updated}");
 
         return 0;

@@ -20,7 +20,7 @@ class VerificarSecuenciaCommand extends Command
             if ($todos->isEmpty()) {
                 $this->warn('⚠️  Tabla numero_secuencias está vacía');
             } else {
-                $this->info('✅ Contenido actual:');
+                $this->info(' Contenido actual:');
                 foreach ($todos as $row) {
                     $this->line("   Tipo: {$row->tipo}, Siguiente: {$row->siguiente}");
                 }
@@ -39,13 +39,13 @@ class VerificarSecuenciaCommand extends Command
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $this->info('✅ Secuencia universal CREADA con valor inicial 1');
+                $this->info(' Secuencia universal CREADA con valor inicial 1');
             } else {
-                $this->info("✅ Secuencia universal ya existe (siguiente: {$universal->siguiente})");
+                $this->info(" Secuencia universal ya existe (siguiente: {$universal->siguiente})");
             }
             
         } catch (\Exception $e) {
-            $this->error('❌ Error: ' . $e->getMessage());
+            $this->error(' Error: ' . $e->getMessage());
             return 1;
         }
         

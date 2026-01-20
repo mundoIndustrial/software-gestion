@@ -73,14 +73,14 @@ class ProcesarEnvioCotizacionJob implements ShouldQueue
 
             $cotizacion = $handler->handle($command);
 
-            Log::info('✅ ProcesarEnvioCotizacionJob - Completado exitosamente', [
+            Log::info(' ProcesarEnvioCotizacionJob - Completado exitosamente', [
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => $cotizacion->numero_cotizacion,
                 'job_id' => $this->job->getJobId() ?? 'unknown'
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ ProcesarEnvioCotizacionJob - Error al procesar', [
+            Log::error(' ProcesarEnvioCotizacionJob - Error al procesar', [
                 'cotizacion_id' => $this->cotizacionId,
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -97,7 +97,7 @@ class ProcesarEnvioCotizacionJob implements ShouldQueue
                 ]);
                 $this->release($this->backoff);
             } else {
-                Log::error('❌ ProcesarEnvioCotizacionJob - Máximo de intentos alcanzado', [
+                Log::error(' ProcesarEnvioCotizacionJob - Máximo de intentos alcanzado', [
                     'cotizacion_id' => $this->cotizacionId,
                     'intentos' => $this->attempts()
                 ]);
@@ -111,7 +111,7 @@ class ProcesarEnvioCotizacionJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error('❌ ProcesarEnvioCotizacionJob - Job fallido permanentemente', [
+        Log::error(' ProcesarEnvioCotizacionJob - Job fallido permanentemente', [
             'cotizacion_id' => $this->cotizacionId,
             'error' => $exception->getMessage(),
             'job_id' => $this->job->getJobId() ?? 'unknown'

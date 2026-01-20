@@ -210,8 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Debug: Mostrar estructura de datos
         console.log('📊 ===== INICIO renderizarCotizaciones =====');
-        console.log('📦 Objeto cotizaciones completo:', cotizaciones);
-        console.log('📋 Array de datos:', cotizaciones.data);
+        console.log(' Objeto cotizaciones completo:', cotizaciones);
+        console.log(' Array de datos:', cotizaciones.data);
         console.log('📊 Total de registros:', cotizaciones.data.length);
         
         if (cotizaciones.data.length > 0) {

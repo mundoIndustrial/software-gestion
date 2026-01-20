@@ -54,7 +54,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertEquals('COT-TEST-001', $cot->numero_cotizacion);
         $this->assertEquals($this->asesor->id, $cot->asesor_id);
 
-        echo "\n✅ Cotización creada: COT-TEST-001\n";
+        echo "\n Cotización creada: COT-TEST-001\n";
     }
 
     /**
@@ -116,7 +116,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertCount(5, $numeros);
         $this->assertEquals(5, count(array_unique($numeros)));
 
-        echo "\n✅ 5 Cotizaciones secuenciales creadas\n";
+        echo "\n 5 Cotizaciones secuenciales creadas\n";
         echo "Números: " . implode(', ', $numeros) . "\n";
     }
 
@@ -146,7 +146,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertFalse($cot->es_borrador);
         $this->assertEquals('enviada', $cot->estado);
 
-        echo "\n✅ Todos los campos requeridos válidos\n";
+        echo "\n Todos los campos requeridos válidos\n";
     }
 
     /**
@@ -167,7 +167,7 @@ class CotizacionesRapidoTest extends TestCase
             $this->assertNotNull($tipo->nombre);
         }
 
-        echo "\n✅ 3 Tipos de cotización disponibles (M, P, G)\n";
+        echo "\n 3 Tipos de cotización disponibles (M, P, G)\n";
     }
 
     /**
@@ -193,6 +193,6 @@ class CotizacionesRapidoTest extends TestCase
             $this->assertEquals($estado, $cot->estado);
         }
 
-        echo "\n✅ Estados válidos: enviada, aceptada, rechazada\n";
+        echo "\n Estados válidos: enviada, aceptada, rechazada\n";
     }
 }

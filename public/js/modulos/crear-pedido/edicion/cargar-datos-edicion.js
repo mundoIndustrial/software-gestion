@@ -45,7 +45,7 @@ function esperarModulosYCargar(intentos = 0) {
     const tieneModoCargado = window.modoEdicion && window.pedidoEdicionData;
 
     if (tieneModoCargado && datosEdicionCargados === false) {
-        console.log('[EDICIÓN] ✅ Datos disponibles, cargando...', {
+        console.log('[EDICIÓN]  Datos disponibles, cargando...', {
             tieneGestor,
             tieneRenderizador,
             intentos
@@ -91,13 +91,13 @@ function cargarDatosEdicion() {
         // 3. Actualizar título
         actualizarTituloPagina(datos);
 
-        console.log('[EDICIÓN] ✅ Datos cargados correctamente');
+        console.log('[EDICIÓN]  Datos cargados correctamente');
         
         // Ocultar overlay después de un pequeño delay para que se vea la transición
         setTimeout(() => ocultarLoadingOverlay(), 300);
 
     } catch (error) {
-        console.error('[EDICIÓN] ❌ Error cargando datos:', error);
+        console.error('[EDICIÓN]  Error cargando datos:', error);
         ocultarLoadingOverlay();
     }
 }
@@ -139,7 +139,7 @@ function cargarInformacionGeneral(datos) {
         });
 
     } catch (error) {
-        console.error('[EDICIÓN] ❌ Error cargando información general:', error);
+        console.error('[EDICIÓN]  Error cargando información general:', error);
     }
 }
 
@@ -187,7 +187,7 @@ function cargarPrendas(prendas) {
             console.log(`[EDICIÓN] ✓ Prenda ${index + 1} agregada al gestor (índice: ${prendasIndex})`);
 
         } catch (error) {
-            console.error(`[EDICIÓN] ❌ Error procesando prenda ${index + 1}:`, error);
+            console.error(`[EDICIÓN]  Error procesando prenda ${index + 1}:`, error);
         }
     });
 
@@ -195,11 +195,11 @@ function cargarPrendas(prendas) {
     if (typeof window.renderizarPrendasSinCotizacion === 'function') {
         console.log('[EDICIÓN] 🎨 Renderizando prendas en la interfaz...');
         window.renderizarPrendasSinCotizacion();
-        console.log('[EDICIÓN] ✅ Prendas renderizadas');
+        console.log('[EDICIÓN]  Prendas renderizadas');
     } else if (typeof renderizarPrendasSinCotizacion === 'function') {
         console.log('[EDICIÓN] 🎨 Renderizando prendas (función global)...');
         renderizarPrendasSinCotizacion();
-        console.log('[EDICIÓN] ✅ Prendas renderizadas');
+        console.log('[EDICIÓN]  Prendas renderizadas');
     } else {
         console.warn('[EDICIÓN] ⚠️ Función renderizarPrendasSinCotizacion no disponible');
     }
@@ -250,5 +250,5 @@ function ocultarLoadingOverlay() {
     }
 }
 
-console.log('✅ [EDICIÓN] Módulo de edición cargado y listo');
+console.log(' [EDICIÓN] Módulo de edición cargado y listo');
 

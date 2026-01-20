@@ -34,9 +34,9 @@ const TableManager = {
             this._attachGlobalListeners();
             
             this.initialized = true;
-            console.log('✅ TableManager inicializado correctamente');
+            console.log(' TableManager inicializado correctamente');
         } catch (error) {
-            console.error('❌ Error al inicializar TableManager:', error);
+            console.error(' Error al inicializar TableManager:', error);
             this._handleInitializationError(error);
         }
     },
@@ -57,7 +57,7 @@ const TableManager = {
             StorageModule.initializeListener();
         }
         
-        console.log('✅ Fase 1 completada');
+        console.log(' Fase 1 completada');
     },
 
     /**
@@ -84,7 +84,7 @@ const TableManager = {
             DiaEntregaModule.initialize();
         }
         
-        console.log('✅ Fase 2 completada');
+        console.log(' Fase 2 completada');
     },
 
     /**
@@ -99,7 +99,7 @@ const TableManager = {
         // Configurar handlers de WebSocket
         this._setupWebSocketHandlers();
         
-        console.log('✅ Fase 3 completada');
+        console.log(' Fase 3 completada');
     },
 
     /**
@@ -122,7 +122,7 @@ const TableManager = {
             }
         });
         
-        console.log('✅ Fase 4 completada');
+        console.log(' Fase 4 completada');
     },
 
     /**
@@ -133,7 +133,7 @@ const TableManager = {
         const areaSelects = document.querySelectorAll('.area-select');
         const diaSelects = document.querySelectorAll('.dia-entrega-select');
         
-        console.log(`📋 Encontrados: ${statusSelects.length} dropdowns estado, ${areaSelects.length} área, ${diaSelects.length} día`);
+        console.log(` Encontrados: ${statusSelects.length} dropdowns estado, ${areaSelects.length} área, ${diaSelects.length} día`);
         
         // Inicializar dropdowns de estado y área
         if (DropdownManager.initializeStatusDropdowns) {
@@ -187,7 +187,7 @@ const TableManager = {
      * Manejar errores de inicialización
      */
     _handleInitializationError(error) {
-        console.error('❌ Error crítico:', error);
+        console.error(' Error crítico:', error);
         
         // Mostrar notificación al usuario
         if (NotificationModule && NotificationModule.showError) {
@@ -225,7 +225,7 @@ const TableManager = {
             return false;
         }
         
-        console.log('✅ Todas las dependencias disponibles');
+        console.log(' Todas las dependencias disponibles');
         return true;
     }
 };

@@ -6,7 +6,7 @@
 (function() {
   'use strict';
 
-  console.log('✅ Tracking Modal Handler Loaded');
+  console.log(' Tracking Modal Handler Loaded');
 
   // Inicializar event listeners del modal
   function initTrackingModalListeners() {
@@ -48,7 +48,7 @@
       }
     });
 
-    console.log('✅ Event listeners del modal inicializados');
+    console.log(' Event listeners del modal inicializados');
   }
 
   // Inicializar cuando el DOM esté listo

@@ -60,7 +60,7 @@ class CrearPedidoHandler implements CommandHandler
                 'cantidad_inicial' => $command->getCantidadInicial(),
             ]);
 
-            Log::info('✅ [CrearPedidoHandler] Validaciones pasadas', []);
+            Log::info(' [CrearPedidoHandler] Validaciones pasadas', []);
 
 
 
@@ -84,7 +84,7 @@ class CrearPedidoHandler implements CommandHandler
                 'estado' => 'activo',
             ]);
 
-            Log::info('✅ [CrearPedidoHandler] Pedido creado en BD', [
+            Log::info(' [CrearPedidoHandler] Pedido creado en BD', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
@@ -98,7 +98,7 @@ class CrearPedidoHandler implements CommandHandler
             cache()->forget('pedidos_lista');
             cache()->forget('pedidos_recientes');
 
-            Log::info('✅ [CrearPedidoHandler] Pedido creado exitosamente', [
+            Log::info(' [CrearPedidoHandler] Pedido creado exitosamente', [
                 'pedido_id' => $pedido->id,
                 'eventos_emitidos' => count($agregado->getUncommittedEvents()),
             ]);
@@ -106,7 +106,7 @@ class CrearPedidoHandler implements CommandHandler
             return $pedido;
 
         } catch (\Exception $e) {
-            Log::error('❌ [CrearPedidoHandler] Error creando pedido', [
+            Log::error(' [CrearPedidoHandler] Error creando pedido', [
                 'numero_pedido' => $command->getNumeroPedido(),
                 'error' => $e->getMessage(),
             ]);

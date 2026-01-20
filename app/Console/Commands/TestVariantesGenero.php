@@ -48,7 +48,7 @@ class TestVariantesGenero extends Command
                 // Crear prenda de prueba
                 $pedidoId = DB::table('pedidos_produccion')->first()?->id;
                 if (!$pedidoId) {
-                    $this->error("❌ No hay pedidos en BD");
+                    $this->error(" No hay pedidos en BD");
                     return 1;
                 }
                 
@@ -64,7 +64,7 @@ class TestVariantesGenero extends Command
                     'de_bodega' => 1,
                 ]);
                 
-                $this->info("✅ Prenda creada: ID {$prenda->id}");
+                $this->info(" Prenda creada: ID {$prenda->id}");
                 $prendasMultiplesGeneros[] = [
                     'id' => $prenda->id,
                     'nombre' => $prenda->nombre_prenda,
@@ -73,7 +73,7 @@ class TestVariantesGenero extends Command
                 ];
             }
             
-            $this->info("✅ Encontradas " . count($prendasMultiplesGeneros) . " prenda(s) con múltiples géneros\n");
+            $this->info(" Encontradas " . count($prendasMultiplesGeneros) . " prenda(s) con múltiples géneros\n");
 
             // 2️⃣ VERIFICAR VARIANTES
             $this->info("2️⃣ Verificando variantes guardadas...\n");
@@ -86,7 +86,7 @@ class TestVariantesGenero extends Command
                 $cantidadTalla = $prendasInfo['cantidad_talla'];
                 $generosEsperados = $prendasInfo['generos'];
                 
-                $this->line("📋 Prenda: {$prendasNombre} (ID: {$prendasId})");
+                $this->line(" Prenda: {$prendasNombre} (ID: {$prendasId})");
                 $this->line("   Cantidad Talla: " . json_encode($cantidadTalla));
                 
                 // Obtener variantes
@@ -98,7 +98,7 @@ class TestVariantesGenero extends Command
                 $this->line("   Variantes en BD: " . $variantes->count());
                 
                 if ($variantes->count() === 0) {
-                    $this->error("   ❌ SIN VARIANTES");
+                    $this->error("    SIN VARIANTES");
                     $todasOk = false;
                     continue;
                 }
@@ -126,7 +126,7 @@ class TestVariantesGenero extends Command
                 $extras = array_diff($variatesEncontradas, $variatesExpectadas);
                 
                 if (!empty($faltantes)) {
-                    $this->error("   ❌ Variantes faltantes: " . implode(', ', $faltantes));
+                    $this->error("    Variantes faltantes: " . implode(', ', $faltantes));
                     $todasOk = false;
                 }
                 
@@ -136,7 +136,7 @@ class TestVariantesGenero extends Command
                 }
                 
                 if (empty($faltantes) && empty($extras)) {
-                    $this->info("   ✅ Todas las variantes correctas");
+                    $this->info("    Todas las variantes correctas");
                 }
                 
                 $this->line("");
@@ -145,16 +145,16 @@ class TestVariantesGenero extends Command
             // 3️⃣ RESULTADO FINAL
             $this->info("========================================");
             if ($todasOk) {
-                $this->info("✅ TEST EXITOSO: Variantes con genero-talla funcionan correctamente");
+                $this->info(" TEST EXITOSO: Variantes con genero-talla funcionan correctamente");
             } else {
-                $this->error("❌ TEST FALLÓ: Hay problemas con las variantes");
+                $this->error(" TEST FALLÓ: Hay problemas con las variantes");
             }
             $this->info("========================================\n");
             
             return $todasOk ? 0 : 1;
 
         } catch (\Exception $e) {
-            $this->error("❌ Error: {$e->getMessage()}");
+            $this->error(" Error: {$e->getMessage()}");
             $this->line("\nStack trace:");
             $this->line($e->getTraceAsString());
             return 1;

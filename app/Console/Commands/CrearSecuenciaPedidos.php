@@ -20,7 +20,7 @@ class CrearSecuenciaPedidos extends Command
                 ->first();
             
             if ($seq) {
-                $this->info("✅ Secuencia YA EXISTE");
+                $this->info(" Secuencia YA EXISTE");
                 $this->line("   Tipo: {$seq->tipo}");
                 $this->line("   Siguiente: {$seq->siguiente}");
             } else {
@@ -40,18 +40,18 @@ class CrearSecuenciaPedidos extends Command
                     'updated_at' => now(),
                 ]);
                 
-                $this->info("✅ Secuencia CREADA");
+                $this->info(" Secuencia CREADA");
             }
             
             // Mostrar todas
-            $this->line("\n📋 Todas las secuencias en numero_secuencias:");
+            $this->line("\n Todas las secuencias en numero_secuencias:");
             $todas = DB::table('numero_secuencias')->get();
             foreach ($todas as $s) {
                 $this->line("   - {$s->tipo}: {$s->siguiente}");
             }
             
         } catch (\Exception $e) {
-            $this->error("❌ Error: " . $e->getMessage());
+            $this->error(" Error: " . $e->getMessage());
             return 1;
         }
 

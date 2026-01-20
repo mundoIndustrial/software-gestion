@@ -22,11 +22,11 @@ class AnalyzeQuotation extends Command
         // 1. Cotización básica
         $cot = DB::table('cotizaciones')->find($cotizacionId);
         if (!$cot) {
-            $this->error("❌ Cotización $cotizacionId no encontrada");
+            $this->error(" Cotización $cotizacionId no encontrada");
             return 1;
         }
 
-        $this->info('✅ COTIZACIÓN ENCONTRADA:');
+        $this->info(' COTIZACIÓN ENCONTRADA:');
         $this->line("   ID: {$cot->id}");
         $this->line("   Cliente ID: {$cot->cliente_id}");
         $this->line("   Tipo: " . ($cot->tipo ?? 'NULL'));
@@ -53,7 +53,7 @@ class AnalyzeQuotation extends Command
             $this->line("   🧵 Telas guardadas: " . count($telas));
 
             if ($telas->isEmpty()) {
-                $this->line("      ❌ SIN TELAS");
+                $this->line("       SIN TELAS");
             } else {
                 foreach ($telas as $idx => $tela) {
                     $this->line("      Tela " . ($idx + 1) . ": Color={$tela->color_id}, Tela={$tela->tela_id}, Ref={$tela->referencia}");
@@ -103,15 +103,15 @@ class AnalyzeQuotation extends Command
         $this->line('────────────────────────────────────────');
 
         if ($totalTelas === 0) {
-            $this->error('❌ CRÍTICO: No hay telas guardadas');
+            $this->error(' CRÍTICO: No hay telas guardadas');
         } else {
-            $this->info("✅ Se guardaron $totalTelas telas");
+            $this->info(" Se guardaron $totalTelas telas");
         }
 
         if ($totalFotosTelas === 0) {
             $this->warn('⚠️  ADVERTENCIA: No hay fotos de telas');
         } else {
-            $this->info("✅ Se guardaron $totalFotosTelas fotos de telas");
+            $this->info(" Se guardaron $totalFotosTelas fotos de telas");
         }
 
         return 0;

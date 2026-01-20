@@ -192,10 +192,10 @@
                 
                 if (searchInput && typeof aplicarBusquedaYFiltros === 'function') {
                     searchInput.addEventListener('input', aplicarBusquedaYFiltros);
-                    console.log('✅ Búsqueda inicializada correctamente en input:', searchInput.id || searchInput.className);
+                    console.log(' Búsqueda inicializada correctamente en input:', searchInput.id || searchInput.className);
                     return true;
                 } else {
-                    console.error('❌ No se pudo inicializar la búsqueda:', {
+                    console.error(' No se pudo inicializar la búsqueda:', {
                         inputExists: !!searchInput,
                         functionExists: typeof aplicarBusquedaYFiltros === 'function'
                     });

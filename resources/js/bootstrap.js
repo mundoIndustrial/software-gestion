@@ -37,15 +37,15 @@ window.Echo = new Echo(echoConfig);
 
 // Verificar conexión
 window.Echo.connector.pusher.connection.bind('connected', () => {
-    console.log('✅ WebSocket conectado exitosamente a Reverb');
+    console.log(' WebSocket conectado exitosamente a Reverb');
 });
 
 window.Echo.connector.pusher.connection.bind('error', (err) => {
-    console.error('❌ Error de conexión WebSocket:', err);
+    console.error(' Error de conexión WebSocket:', err);
 });
 
 window.Echo.connector.pusher.connection.bind('disconnected', () => {
     console.warn('⚠️ WebSocket desconectado');
 });
 
-console.log('✅ Echo inicializado y disponible globalmente como window.Echo');
+console.log(' Echo inicializado y disponible globalmente como window.Echo');

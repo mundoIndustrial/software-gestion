@@ -70,20 +70,20 @@ class MigrarImagenesLogo extends Command
                         $totalMigradas++;
                     }
 
-                    $this->line("✅ Logo {$logo->id}: " . count($imagenes) . " imagen(es) migrada(s)");
+                    $this->line(" Logo {$logo->id}: " . count($imagenes) . " imagen(es) migrada(s)");
                 } catch (\Exception $e) {
-                    $this->error("❌ Error migrando logo {$logo->id}: " . $e->getMessage());
+                    $this->error(" Error migrando logo {$logo->id}: " . $e->getMessage());
                     $errores++;
                 }
             }
 
             $this->newLine();
             $this->info("📈 RESUMEN:");
-            $this->line("   ✅ Imágenes migradas: {$totalMigradas}");
-            $this->line("   ❌ Errores: {$errores}");
+            $this->line("    Imágenes migradas: {$totalMigradas}");
+            $this->line("    Errores: {$errores}");
 
             if ($errores === 0) {
-                $this->info("✅ MIGRACIÓN COMPLETADA SIN ERRORES");
+                $this->info(" MIGRACIÓN COMPLETADA SIN ERRORES");
             } else {
                 $this->warn("⚠️ MIGRACIÓN COMPLETADA CON ERRORES");
             }

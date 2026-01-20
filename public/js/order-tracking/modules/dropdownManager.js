@@ -49,7 +49,7 @@ const ViewDropdownManager = (() => {
             dropdown.style.zIndex = '9999';
             document.body.appendChild(dropdown);
             
-            console.log('✅ [DROPDOWN] Dropdown creado y agregado al DOM');
+            console.log(' [DROPDOWN] Dropdown creado y agregado al DOM');
             
             // Cerrar dropdown al hacer click fuera
             setTimeout(() => {
@@ -61,7 +61,7 @@ const ViewDropdownManager = (() => {
                 });
             }, 0);
         } else {
-            console.warn('❌ [DROPDOWN] No se encontró el botón Ver para la orden:', orderId);
+            console.warn(' [DROPDOWN] No se encontró el botón Ver para la orden:', orderId);
         }
     }
     

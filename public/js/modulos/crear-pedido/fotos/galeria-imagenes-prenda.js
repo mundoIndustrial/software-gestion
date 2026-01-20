@@ -10,9 +10,9 @@
  * @param {number} indiceInicial - Índice inicial a mostrar
  */
 window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indiceInicial = 0) {
-    console.log('🖼️ [GALERÍA PRENDA] Abriendo galería para prenda', prendaIndex);
+    console.log(' [GALERÍA PRENDA] Abriendo galería para prenda', prendaIndex);
     
-    // ✅ Detectar si estamos creando o editando
+    //  Detectar si estamos creando o editando
     const estamosCriando = window.gestionItemsUI?.prendaEditIndex === null;
     const estamoEditando = window.gestionItemsUI?.prendaEditIndex !== null && window.gestionItemsUI?.prendaEditIndex !== undefined;
     console.log(`📊 [GALERÍA PRENDA] Estado: ${estamosCriando ? 'CREANDO' : estamoEditando ? 'EDITANDO' : 'DESCONOCIDO'}`);
@@ -20,13 +20,13 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     let imagenesActuales = [];
     const prenda = estamoEditando ? window.gestorPrendaSinCotizacion?.obtenerPorIndice(window.gestionItemsUI.prendaEditIndex) : null;
     
-    // ✅ Si estamos EDITANDO, obtener imágenes guardadas
+    //  Si estamos EDITANDO, obtener imágenes guardadas
     if (estamoEditando && prenda) {
         imagenesActuales = prenda.imagenes || [];
         console.log('✏️ [GALERÍA PRENDA] Modo EDICIÓN - Imágenes guardadas:', imagenesActuales.length);
     }
     
-    // ✅ Siempre sincronizar con imágenes temporales del storage
+    //  Siempre sincronizar con imágenes temporales del storage
     if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerTodas) {
         const imagenesTemporales = window.imagenesPrendaStorage.obtenerTodas();
         console.log('📸 [GALERÍA PRENDA] Imágenes temporales en storage:', imagenesTemporales.length);
@@ -48,29 +48,29 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
             });
             
             imagenesActuales = Array.from(imagenesMap.values());
-            console.log('✅ [GALERÍA PRENDA] Imágenes combinadas (salvadas + temporales):', imagenesActuales.length);
+            console.log(' [GALERÍA PRENDA] Imágenes combinadas (salvadas + temporales):', imagenesActuales.length);
         }
     }
     
-    // ✅ Si estamos CREANDO y no hay storage, usar las que pasaron como parámetro
+    //  Si estamos CREANDO y no hay storage, usar las que pasaron como parámetro
     if (estamosCriando && imagenesActuales.length === 0 && imagenes && imagenes.length > 0) {
         imagenesActuales = imagenes;
         console.log('➕ [GALERÍA PRENDA] Modo CREACIÓN - Usando imágenes del parámetro:', imagenesActuales.length);
     }
     
     if (!imagenesActuales || imagenesActuales.length === 0) {
-        console.error('❌ [GALERÍA PRENDA] No hay imágenes para mostrar');
+        console.error(' [GALERÍA PRENDA] No hay imágenes para mostrar');
         return;
     }
     
-    // ✅ Evitar que se reabra la galería mientras está en uso
+    //  Evitar que se reabra la galería mientras está en uso
     if (window.__galeriaPrendaAbierta) {
         console.warn('⚠️ [GALERÍA PRENDA] Galería ya está abierta, ignorando');
         return;
     }
     window.__galeriaPrendaAbierta = true;
     
-    console.log('🖼️ [GALERÍA PRENDA] Abriendo galería para prenda', prendaIndex, ':', imagenesActuales.length, 'imágenes');
+    console.log(' [GALERÍA PRENDA] Abriendo galería para prenda', prendaIndex, ':', imagenesActuales.length, 'imágenes');
     
     // Crear blob URLs válidos para las imágenes
     const imagenesConBlobUrl = imagenesActuales.map((img, idx) => {
@@ -80,7 +80,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         } else if (img.blobUrl && img.blobUrl.startsWith('blob:')) {
             blobUrl = img.blobUrl;
         } else {
-            console.error(`❌ [GALERÍA PRENDA] Imagen ${idx} sin File o blob URL válido`);
+            console.error(` [GALERÍA PRENDA] Imagen ${idx} sin File o blob URL válido`);
             return null;
         }
         return {
@@ -90,7 +90,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     }).filter(img => img !== null);
     
     if (imagenesConBlobUrl.length === 0) {
-        console.error('❌ [GALERÍA PRENDA] No se pudieron crear blob URLs válidos');
+        console.error(' [GALERÍA PRENDA] No se pudieron crear blob URLs válidos');
         window.__galeriaPrendaAbierta = false;
         return;
     }
@@ -135,12 +135,12 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     
     imgContainer.appendChild(imgModal);
     
-    // ✅ Crear contador ANTES de la función actualizarImagen
+    //  Crear contador ANTES de la función actualizarImagen
     const contador = document.createElement('span');
     contador.textContent = (indiceActual + 1) + ' de ' + imagenesConBlobUrl.length;
     contador.style.cssText = 'color: white; font-size: 1rem; font-weight: 500; min-width: 80px; text-align: center;';
     
-    // ✅ Función para actualizar la imagen mostrada (ahora contador existe)
+    //  Función para actualizar la imagen mostrada (ahora contador existe)
     const actualizarImagen = (nuevoIndice) => {
         indiceActual = nuevoIndice;
         const newBlobUrl = imagenesConBlobUrl[indiceActual].blobUrl;
@@ -195,7 +195,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         
         // Verificar si Swal está disponible
         if (!window.Swal) {
-            console.error('❌ [GALERÍA PRENDA] Sweet Alert no disponible, usando confirm nativo');
+            console.error(' [GALERÍA PRENDA] Sweet Alert no disponible, usando confirm nativo');
             eliminarEnProceso = false;
             
             if (confirm('¿Eliminar esta imagen? Esta acción no se puede deshacer.')) {
@@ -223,35 +223,35 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                 }
             }
         }).then((result) => {
-            console.log('📋 [GALERÍA PRENDA] Resultado del diálogo:', result.isConfirmed);
+            console.log(' [GALERÍA PRENDA] Resultado del diálogo:', result.isConfirmed);
             eliminarEnProceso = false;
             
             if (result.isConfirmed) {
                 procederConEliminacion();
             }
         }).catch((error) => {
-            console.error('❌ [GALERÍA PRENDA] Error en Swal:', error);
+            console.error(' [GALERÍA PRENDA] Error en Swal:', error);
             eliminarEnProceso = false;
         });
     };
     
-    // ✅ Función extraída para manejar la eliminación
+    //  Función extraída para manejar la eliminación
     const procederConEliminacion = () => {
-        console.log('✅ [GALERÍA PRENDA] Confirmada eliminación de imagen');
+        console.log(' [GALERÍA PRENDA] Confirmada eliminación de imagen');
         
         // Determinar dónde está la imagen para eliminarla correctamente
         let imagenEliminada = false;
         
-        // ✅ SI ESTAMOS EDITANDO: eliminar del modelo prenda
+        //  SI ESTAMOS EDITANDO: eliminar del modelo prenda
         if (estamoEditando && prenda && prenda.imagenes) {
             if (indiceActual < prenda.imagenes.length) {
                 prenda.imagenes.splice(indiceActual, 1);
-                console.log('✅ [GALERÍA PRENDA] Imagen eliminada del modelo de prenda guardada');
+                console.log(' [GALERÍA PRENDA] Imagen eliminada del modelo de prenda guardada');
                 imagenEliminada = true;
             }
         }
         
-        // ✅ SI ESTAMOS CREANDO: eliminar del storage temporal
+        //  SI ESTAMOS CREANDO: eliminar del storage temporal
         if (estamosCriando && window.imagenesPrendaStorage) {
             try {
                 // El storage usa obtenerImagenes() para obtener las imágenes
@@ -262,12 +262,12 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                     // Si el índice está dentro de las imágenes temporales, eliminarlo del storage
                     if (indiceActual < imagenesTemporales.length) {
                         window.imagenesPrendaStorage.eliminarImagen(indiceActual);
-                        console.log('✅ [GALERÍA PRENDA] Imagen eliminada del storage temporal con índice:', indiceActual);
+                        console.log(' [GALERÍA PRENDA] Imagen eliminada del storage temporal con índice:', indiceActual);
                         imagenEliminada = true;
                     }
                 }
             } catch (error) {
-                console.error('❌ [GALERÍA PRENDA] Error al eliminar del storage:', error);
+                console.error(' [GALERÍA PRENDA] Error al eliminar del storage:', error);
             }
         }
         
@@ -276,7 +276,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
             imagenesConBlobUrl.splice(indiceActual, 1);
             console.log('📊 [GALERÍA PRENDA] Array local actualizado:', imagenesConBlobUrl.length, 'imágenes restantes');
         } else {
-            console.error('❌ [GALERÍA PRENDA] No se pudo eliminar la imagen');
+            console.error(' [GALERÍA PRENDA] No se pudo eliminar la imagen');
         }
         
         // Verificar si quedan imágenes
@@ -339,9 +339,9 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     btnCerrar.onmouseover = () => btnCerrar.style.background = '#5a6268';
     btnCerrar.onmouseout = () => btnCerrar.style.background = '#6c757d';
     btnCerrar.onclick = () => {
-        console.log('❌ [GALERÍA PRENDA] Cerrando galería');
+        console.log(' [GALERÍA PRENDA] Cerrando galería');
         
-        // ✅ Sincronizar el preview principal después de cerrar galería
+        //  Sincronizar el preview principal después de cerrar galería
         if (window.actualizarPreviewPrenda) {
             console.log('🔄 [GALERÍA PRENDA] Sincronizando preview de prendas');
             window.actualizarPreviewPrenda();
@@ -357,7 +357,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     modal.appendChild(toolbar);
     document.body.appendChild(modal);
     
-    console.log('✅ [GALERÍA PRENDA] Galería abierta');
+    console.log(' [GALERÍA PRENDA] Galería abierta');
 };
 
-console.log('✅ [GALERÍA-PRENDA] Módulo galeria-imagenes-prenda.js cargado');
+console.log(' [GALERÍA-PRENDA] Módulo galeria-imagenes-prenda.js cargado');

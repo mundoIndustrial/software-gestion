@@ -17,12 +17,12 @@ class AsesorSeeder extends Seeder
         $roleAsesor = Role::where('name', 'asesor')->first();
         
         if (!$roleAsesor) {
-            $this->command->error('❌ El rol "asesor" no existe.');
+            $this->command->error(' El rol "asesor" no existe.');
             $this->command->error('   Ejecuta primero: php artisan db:seed --class=RolesSeeder');
             return;
         }
         
-        $this->command->info('✅ Rol "asesor" encontrado (ID: ' . $roleAsesor->id . ')');
+        $this->command->info(' Rol "asesor" encontrado (ID: ' . $roleAsesor->id . ')');
         
         // Verificar si ya existe el usuario
         $existingUser = User::where('email', 'asesor@mundoindustrial.com')->first();
@@ -38,7 +38,7 @@ class AsesorSeeder extends Seeder
                 $this->command->warn('   ⚠️  El usuario no tiene el rol de asesor. Actualizando...');
                 $existingUser->role_id = $roleAsesor->id;
                 $existingUser->save();
-                $this->command->info('   ✅ Rol actualizado correctamente');
+                $this->command->info('    Rol actualizado correctamente');
             }
             
             return;
@@ -53,7 +53,7 @@ class AsesorSeeder extends Seeder
         ]);
         
         $this->command->info('');
-        $this->command->info('✅ Usuario asesor creado exitosamente:');
+        $this->command->info(' Usuario asesor creado exitosamente:');
         $this->command->info('   Nombre: ' . $asesor->name);
         $this->command->info('   Email: ' . $asesor->email);
         $this->command->info('   Password: asesor123');

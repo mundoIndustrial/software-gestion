@@ -1,9 +1,9 @@
-# 📋 Ajustes de Descripción Dinámica para Recibos de Costura
+#  Ajustes de Descripción Dinámica para Recibos de Costura
 
 ## 🎯 Objetivo
 Ajustar la construcción dinámica de la **DESCRIPCIÓN** para recibos de **Costura / Costura-Bodega** con un formato profesional y enumerado con puntos.
 
-## ✅ Cambios Realizados
+##  Cambios Realizados
 
 ### Archivos Modificados
 1. **[public/js/asesores/receipt-manager.js](public/js/asesores/receipt-manager.js)** - Funciones de construcción
@@ -44,12 +44,12 @@ CABALLERO: M: 10
 
 ## 🔑 Características Clave
 
-✅ **Puntos (•) en detalles técnicos** - NO números ni asteriscos  
-✅ **Tallas aplanadas o anidadas** - Soporta ambos formatos  
-✅ **BOLSILLOS** - Solo si existe observación  
-✅ **BROCHE o BOTÓN** - Una sola vez, prioriza BROCHE  
-✅ **Género automático** - DAMA → CABALLERO  
-✅ **Manejo de variantes** - Solo primera, sin repeticiones  
+ **Puntos (•) en detalles técnicos** - NO números ni asteriscos  
+ **Tallas aplanadas o anidadas** - Soporta ambos formatos  
+ **BOLSILLOS** - Solo si existe observación  
+ **BROCHE o BOTÓN** - Una sola vez, prioriza BROCHE  
+ **Género automático** - DAMA → CABALLERO  
+ **Manejo de variantes** - Solo primera, sin repeticiones  
 
 ---
 
@@ -96,7 +96,7 @@ CABALLERO: M: 10
 
 ## 🧪 Casos de Prueba
 
-### ✅ Test 1: Costura-Bodega Completa
+###  Test 1: Costura-Bodega Completa
 ```javascript
 prenda = {
     nombre: "CAMISA DRILL",
@@ -119,9 +119,9 @@ prenda = {
 }
 ```
 
-**Resultado esperado:** ✅ 5 bloques completos, sin [object Object]
+**Resultado esperado:**  5 bloques completos, sin [object Object]
 
-### ✅ Test 2: Costura Mínima
+###  Test 2: Costura Mínima
 ```javascript
 prenda = {
     nombre: "POLO",
@@ -135,17 +135,17 @@ prenda = {
 }
 ```
 
-**Resultado esperado:** ✅ Solo 2 bloques (nombre + línea técnica + tallas)
+**Resultado esperado:**  Solo 2 bloques (nombre + línea técnica + tallas)
 
 ---
 
 ## 🚫 Lo que NO hace
 
-- ❌ NO muestra `[object Object]`
-- ❌ NO usa números para enumeración (usa • puntos)
-- ❌ NO muestra bloque de detalles si no hay datos
-- ❌ NO repite por talla
-- ❌ NO aplica a otros procesos
+-  NO muestra `[object Object]`
+-  NO usa números para enumeración (usa • puntos)
+-  NO muestra bloque de detalles si no hay datos
+-  NO repite por talla
+-  NO aplica a otros procesos
 
 ---
 
@@ -156,13 +156,13 @@ Para verificar que todo funciona:
 2. Abrir un pedido
 3. Ver el recibo de costura
 4. Verificar:
-   - ✅ Nombre de prenda visible
-   - ✅ Línea técnica completa (TELA | COLOR | REF | MANGA)
-   - ✅ Detalles con puntos (• BOLSILLOS, • BROCHE)
-   - ✅ Tallas correctas (DAMA: S: 10, M: 20)
-   - ✅ NO hay [object Object]
-   - ✅ NO hay números (1., 2., etc.)
+   -  Nombre de prenda visible
+   -  Línea técnica completa (TELA | COLOR | REF | MANGA)
+   -  Detalles con puntos (• BOLSILLOS, • BROCHE)
+   -  Tallas correctas (DAMA: S: 10, M: 20)
+   -  NO hay [object Object]
+   -  NO hay números (1., 2., etc.)
 
 ---
 
-**Implementación completada y corregida el 19 de enero de 2026** ✅
+**Implementación completada y corregida el 19 de enero de 2026** 

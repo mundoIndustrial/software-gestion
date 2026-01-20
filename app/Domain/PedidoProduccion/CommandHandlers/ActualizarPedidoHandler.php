@@ -60,7 +60,7 @@ class ActualizarPedidoHandler implements CommandHandler
             // Validar datos antes de actualizar
             $this->validator->validateUpdate($datos);
             
-            Log::info('✅ [ActualizarPedidoHandler] Validaciones pasadas', []);
+            Log::info(' [ActualizarPedidoHandler] Validaciones pasadas', []);
             if ($command->getCliente()) {
                 $datos['cliente'] = $command->getCliente();
             }
@@ -71,7 +71,7 @@ class ActualizarPedidoHandler implements CommandHandler
             // Actualizar
             $pedido->update($datos);
 
-            Log::info('✅ [ActualizarPedidoHandler] Pedido actualizado', [
+            Log::info(' [ActualizarPedidoHandler] Pedido actualizado', [
                 'pedido_id' => $pedido->id,
                 'campos_actualizados' => count($datos),
             ]);
@@ -84,7 +84,7 @@ class ActualizarPedidoHandler implements CommandHandler
             return $pedido;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ActualizarPedidoHandler] Error actualizando pedido', [
+            Log::error(' [ActualizarPedidoHandler] Error actualizando pedido', [
                 'pedido_id' => $command->getPedidoId(),
                 'error' => $e->getMessage(),
             ]);

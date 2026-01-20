@@ -67,12 +67,12 @@ class PedidoPrendaService
                 
                 $this->guardarPrenda($pedido, $prendaData, $index);
                 
-                // ✅ VERIFICAR QUE LA PRENDA SE CREÓ CON UN ID ÚNICO
+                //  VERIFICAR QUE LA PRENDA SE CREÓ CON UN ID ÚNICO
                 $ultimaPrenda = PrendaPedido::where('pedido_produccion_id', $pedido->id)
                     ->orderBy('id', 'desc')
                     ->first();
                 
-                \Log::info("✅ [PRENDA #{$index}] DESPUÉS - Prenda creada con ID", [
+                \Log::info(" [PRENDA #{$index}] DESPUÉS - Prenda creada con ID", [
                     'prenda_id_nueva' => $ultimaPrenda->id ?? 'NO ENCONTRADA',
                     'nombre_prenda' => $ultimaPrenda->nombre_prenda ?? 'NO ENCONTRADA',
                     'prendas_en_pedido' => PrendaPedido::where('pedido_produccion_id', $pedido->id)->count(),
@@ -327,7 +327,7 @@ class PedidoPrendaService
                     }
                 }
                 
-                \Log::info('✅ [PedidoPrendaService::guardarPrenda] Estructura de cantidades validada', [
+                \Log::info(' [PedidoPrendaService::guardarPrenda] Estructura de cantidades validada', [
                     'es_estructura_genero' => $esEstructuraGenero,
                     'cantidades_estructura' => $cantidadesInput,
                 ]);
@@ -362,9 +362,9 @@ class PedidoPrendaService
             'cantidad_prendas_ahora' => PrendaPedido::where('pedido_produccion_id', $pedido->id)->count(),
         ]);
 
-        // ✅ VERIFICAR QUE LA PRENDA SE GUARDÓ EN LA BD
+        //  VERIFICAR QUE LA PRENDA SE GUARDÓ EN LA BD
         $prendaVerificacion = PrendaPedido::find($prenda->id);
-        \Log::info('✅ VERIFICACIÓN POST-GUARDADO DE PRENDA (prenda #' . $index . '):', [
+        \Log::info(' VERIFICACIÓN POST-GUARDADO DE PRENDA (prenda #' . $index . '):', [
             'prenda_id_creada' => $prenda->id,
             'prenda_existe_en_bd' => $prendaVerificacion ? true : false,
             'prenda_id_verificado' => $prendaVerificacion->id ?? 'NO ENCONTRADA',
@@ -389,12 +389,12 @@ class PedidoPrendaService
                 $prendaData['tela_id'] ?? null,
                 $prendaData['tipo_manga_id'] ?? null,
                 $prendaData['tipo_broche_boton_id'] ?? null,
-                // ✅ Pasar las observaciones para guardarlas en variantes
+                //  Pasar las observaciones para guardarlas en variantes
                 $prendaData['obs_manga'] ?? $prendaData['manga_obs'] ?? '',
                 $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '',
                 $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '',
                 $prendaData['obs_reflectivo'] ?? $prendaData['reflectivo_obs'] ?? '',
-                // ✅ Pasar los booleanos de variaciones
+                //  Pasar los booleanos de variaciones
                 $variacionesParsed['bolsillos']['tiene'] ?? $prendaData['tiene_bolsillos'] ?? false,
                 $variacionesParsed['reflectivo']['tiene'] ?? $prendaData['tiene_reflectivo'] ?? false
             );
@@ -599,7 +599,7 @@ class PedidoPrendaService
             try {
                 // CASO 1: UploadedFile (archivo real subido)
                 if ($foto instanceof UploadedFile) {
-                    // ✅ NO REQUIERE procesoDetalle - fotos son independientes
+                    //  NO REQUIERE procesoDetalle - fotos son independientes
                     $resultado = $this->guardarArchivoImagenEnWeb(
                         $foto,
                         null,  // sin procesoDetalleId
@@ -640,7 +640,7 @@ class PedidoPrendaService
                 }
                 // CASO 2: Array con UploadedFile
                 elseif (is_array($foto) && isset($foto['archivo']) && $foto['archivo'] instanceof UploadedFile) {
-                    // ✅ NO REQUIERE procesoDetalle - fotos son independientes
+                    //  NO REQUIERE procesoDetalle - fotos son independientes
                     $resultado = $this->guardarArchivoImagenEnWeb(
                         $foto['archivo'],
                         null,  // sin procesoDetalleId
@@ -791,7 +791,7 @@ class PedidoPrendaService
                 try {
                     // SOLO UploadedFile - NO strings, NO base64
                     if ($foto instanceof UploadedFile) {
-                        // ✅ NO REQUIERE procesoDetalle - fotos de tela son independientes
+                        //  NO REQUIERE procesoDetalle - fotos de tela son independientes
                         $resultado = $this->guardarArchivoImagenEnWeb(
                             $foto,
                             null,  // sin procesoDetalleId
@@ -820,7 +820,7 @@ class PedidoPrendaService
                             'tamaño_bytes' => $tamaño,
                         ]);
                     } elseif (is_array($foto) && isset($foto['archivo']) && $foto['archivo'] instanceof UploadedFile) {
-                        // ✅ NO REQUIERE procesoDetalle - fotos de tela son independientes
+                        //  NO REQUIERE procesoDetalle - fotos de tela son independientes
                         $resultado = $this->guardarArchivoImagenEnWeb(
                             $foto['archivo'],
                             null,  // sin procesoDetalleId
@@ -1111,7 +1111,7 @@ class PedidoPrendaService
         ?int $telaId = null,
         ?int $tipoMangaId = null,
         ?int $tipoBrocheBotonId = null,
-        // ✅ NUEVOS PARÁMETROS: Observaciones y variaciones booleanas
+        //  NUEVOS PARÁMETROS: Observaciones y variaciones booleanas
         string $mangaObs = '',
         string $bolsillosObs = '',
         string $brocheObs = '',
@@ -1121,7 +1121,7 @@ class PedidoPrendaService
     ): void
     {
         try {
-            // ✅ CAMBIO CRÍTICO [19/01/2026]:
+            //  CAMBIO CRÍTICO [19/01/2026]:
             // Después de eliminar talla/cantidad de prenda_pedido_variantes:
             // - Las tallas/cantidades ahora viven en prendas_pedido.cantidad_talla (JSON)
             // - Las variantes son CARACTERÍSTICAS (color, tela, manga, broche, bolsillos)
@@ -1160,7 +1160,7 @@ class PedidoPrendaService
                 'tipo_broche_boton_id' => $tipoBrocheBotonId,
             ]);
 
-            // ✅ CREAR UNA ÚNICA VARIANTE CON TODAS LAS CARACTERÍSTICAS
+            //  CREAR UNA ÚNICA VARIANTE CON TODAS LAS CARACTERÍSTICAS
             // Las tallas y cantidades ya están guardadas en prendas_pedido.cantidad_talla JSON
             $prenda->variantes()->create([
                 'color_id' => $colorId,
@@ -1476,7 +1476,7 @@ class PedidoPrendaService
                     throw new \Exception("Prenda pedido no encontrada");
                 }
                 
-                // ✅ FIX #3: Usar pedido_produccion_id, no pedido_id
+                //  FIX #3: Usar pedido_produccion_id, no pedido_id
                 $pedidoId = $prendaPedido->pedido_produccion_id;
                 
                 if (!$pedidoId) {
@@ -1511,7 +1511,7 @@ class PedidoPrendaService
                 mkdir($directorio, 0755, true);
             }
             
-            // ✅ FIX: Convertir a WebP usando ImageManager con sintaxis correcta
+            //  FIX: Convertir a WebP usando ImageManager con sintaxis correcta
             try {
                 $imagen = \Intervention\Image\ImageManager::gd()->read($archivo->getRealPath());
             } catch (\Exception $e) {
@@ -1556,7 +1556,7 @@ class PedidoPrendaService
             
             $rutaWeb = asset("storage/{$rutaRelativa}");
             
-            // ✅ IMPORTANTE: Guardar también la ruta relativa (sin dominio) para portabilidad entre servidores
+            //  IMPORTANTE: Guardar también la ruta relativa (sin dominio) para portabilidad entre servidores
             $rutaRelativaSimple = "storage/{$rutaRelativa}";
             
             Log::info(" Archivo guardado como WebP", [
@@ -1571,7 +1571,7 @@ class PedidoPrendaService
             
             return [
                 'ruta_web' => $rutaWeb,
-                'ruta_relativa' => $rutaRelativaSimple,  // ✅ Nueva: ruta sin dominio
+                'ruta_relativa' => $rutaRelativaSimple,  //  Nueva: ruta sin dominio
                 'tamaño' => $tamaño,
             ];
         } catch (\Exception $e) {

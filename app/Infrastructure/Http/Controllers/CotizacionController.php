@@ -159,30 +159,30 @@ final class CotizacionController extends Controller
             // Obtener cotización reflectivo con TODAS las relaciones de prendas
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
-                'prendas.tallas',           // ✅ Tallas de cada prenda
-                'prendas.variantes',        // ✅ Género y variantes
-                'prendas.reflectivo.fotos', // ✅ Reflectivo y fotos
+                'prendas.tallas',           //  Tallas de cada prenda
+                'prendas.variantes',        //  Género y variantes
+                'prendas.reflectivo.fotos', //  Reflectivo y fotos
             ])->findOrFail($id);
 
-            Log::info('✅ Cotización cargada', ['cotizacion_id' => $cotizacion->id, 'asesor_id' => $cotizacion->asesor_id]);
+            Log::info(' Cotización cargada', ['cotizacion_id' => $cotizacion->id, 'asesor_id' => $cotizacion->asesor_id]);
 
             // Verificar que el usuario es propietario
             if ($cotizacion->asesor_id !== Auth::id()) {
-                Log::warning('❌ Usuario no autorizado', ['cotizacion_asesor' => $cotizacion->asesor_id, 'usuario_actual' => Auth::id()]);
+                Log::warning(' Usuario no autorizado', ['cotizacion_asesor' => $cotizacion->asesor_id, 'usuario_actual' => Auth::id()]);
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
             }
 
             // Verificar que es reflectivo y borrador
             if ($cotizacion->es_borrador === false) {
-                Log::warning('❌ No es borrador', ['cotizacion_id' => $id, 'es_borrador' => $cotizacion->es_borrador]);
+                Log::warning(' No es borrador', ['cotizacion_id' => $id, 'es_borrador' => $cotizacion->es_borrador]);
                 return response()->json(['success' => false, 'message' => 'Solo se pueden editar borradores'], 403);
             }
 
-            // ✅ PROCESAR PRENDAS CON SUS REFLECTIVOS Y TALLAS
+            //  PROCESAR PRENDAS CON SUS REFLECTIVOS Y TALLAS
             $prendasProcesadas = [];
             if ($cotizacion->prendas) {
                 foreach ($cotizacion->prendas as $prenda) {
-                    $reflectivo = $prenda->reflectivo->first();  // ✅ Obtener el primer (único) reflectivo
+                    $reflectivo = $prenda->reflectivo->first();  //  Obtener el primer (único) reflectivo
                     $fotos = $reflectivo?->fotos ?? [];
                     
                     // Procesar tallas con sus cantidades
@@ -221,23 +221,23 @@ final class CotizacionController extends Controller
                         'id' => $prenda->id,
                         'tipo' => $prenda->nombre_producto,
                         'descripcion' => $prenda->descripcion ?? '',
-                        'tallas' => $tallas,                    // ✅ Array de tallas
-                        'cantidades' => $cantidades,           // ✅ Cantidades por talla
-                        'genero' => $genero,                   // ✅ Género (dama/caballero)
-                        'variantes' => $variantes,             // ✅ Todas las variantes
+                        'tallas' => $tallas,                    //  Array de tallas
+                        'cantidades' => $cantidades,           //  Cantidades por talla
+                        'genero' => $genero,                   //  Género (dama/caballero)
+                        'variantes' => $variantes,             //  Todas las variantes
                         'reflectivo' => $reflectivo ? [
                             'id' => $reflectivo->id,
                             'descripcion' => $reflectivo->descripcion,
                             'tipo_venta' => $reflectivo->tipo_venta,
                             'ubicacion' => $reflectivo->ubicacion,
                             'observaciones_generales' => $reflectivo->observaciones_generales,
-                            'fotos' => $fotos->toArray(),  // ✅ Fotos de ESTA prenda
+                            'fotos' => $fotos->toArray(),  //  Fotos de ESTA prenda
                         ] : null,
                     ];
                 }
             }
 
-            Log::info('✅ CotizacionController@getReflectivoForEdit: Cotización RF cargada para editar', [
+            Log::info(' CotizacionController@getReflectivoForEdit: Cotización RF cargada para editar', [
                 'cotizacion_id' => $cotizacion->id,
                 'prendas_count' => count($prendasProcesadas),
                 'prendas_con_reflectivo' => collect($prendasProcesadas)->filter(fn($p) => $p['reflectivo'] !== null)->count(),
@@ -247,7 +247,7 @@ final class CotizacionController extends Controller
                 'success' => true,
                 'data' => [
                     'cotizacion' => $cotizacion->toArray(),
-                    'prendas' => $prendasProcesadas,  // ✅ Prendas con tallas, género y reflectivos
+                    'prendas' => $prendasProcesadas,  //  Prendas con tallas, género y reflectivos
                 ],
             ]);
         } catch (\Exception $e) {
@@ -308,9 +308,9 @@ final class CotizacionController extends Controller
                 'prendas.telaFotos',
                 'prendas.tallas',
                 'prendas.variantes',
-                'prendas.reflectivo.fotos',  // ✅ Cargar reflectivo de cada prenda con sus fotos
+                'prendas.reflectivo.fotos',  //  Cargar reflectivo de cada prenda con sus fotos
                 'logoCotizacion.fotos',
-                'logoCotizacion.prendas.fotos',  // ✅ Cargar prendas técnicas con sus fotos
+                'logoCotizacion.prendas.fotos',  //  Cargar prendas técnicas con sus fotos
                 'reflectivoCotizacion.fotos',  // Mantener para compatibilidad con cotizaciones antiguas
                 'tipoCotizacion'
             ])->findOrFail($id);
@@ -390,7 +390,7 @@ final class CotizacionController extends Controller
             // Borrar la imagen de la BD
             $foto->forceDelete();
             
-            Log::info('✅ Imagen de prenda borrada exitosamente:', ['foto_id' => $fotoId]);
+            Log::info(' Imagen de prenda borrada exitosamente:', ['foto_id' => $fotoId]);
             
             return response()->json([
                 'success' => true,
@@ -398,7 +398,7 @@ final class CotizacionController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            Log::error('❌ Error al borrar imagen de prenda:', ['error' => $e->getMessage()]);
+            Log::error(' Error al borrar imagen de prenda:', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al borrar imagen: ' . $e->getMessage()
@@ -435,7 +435,7 @@ final class CotizacionController extends Controller
             // Borrar la imagen de la BD
             $foto->forceDelete();
             
-            Log::info('✅ Imagen de tela borrada exitosamente:', ['foto_id' => $fotoId]);
+            Log::info(' Imagen de tela borrada exitosamente:', ['foto_id' => $fotoId]);
             
             return response()->json([
                 'success' => true,
@@ -443,7 +443,7 @@ final class CotizacionController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            Log::error('❌ Error al borrar imagen de tela:', ['error' => $e->getMessage()]);
+            Log::error(' Error al borrar imagen de tela:', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al borrar imagen: ' . $e->getMessage()
@@ -478,7 +478,7 @@ final class CotizacionController extends Controller
             ]);
             
             // Mapear productos_friendly -> prendas para compatibilidad frontend
-            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
             $allData = $request->all();
             $prendasRecibidas = $allData['prendas'] ?? $allData['productos_friendly'] ?? $request->input('prendas', $request->input('productos_friendly', []));
             $especificacionesRecibidas = $request->input('especificaciones', []);
@@ -507,7 +507,7 @@ final class CotizacionController extends Controller
                 'prendas_keys' => array_keys($prendasRecibidas),
             ]);
             
-            Log::info('📋 ESPECIFICACIONES RECIBIDAS DEL FRONTEND', [
+            Log::info(' ESPECIFICACIONES RECIBIDAS DEL FRONTEND', [
                 'especificaciones_raw' => $especificacionesRecibidas,
                 'especificaciones_type' => gettype($especificacionesRecibidas),
                 'especificaciones_keys' => is_array($especificacionesRecibidas) ? array_keys($especificacionesRecibidas) : 'no es array',
@@ -566,7 +566,7 @@ final class CotizacionController extends Controller
                 'logo_data' => $logoData,
             ]);
 
-            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
             $allData = $request->all();
             $prendasRecibidas = $allData['prendas'] ?? $request->input('prendas', []);
             
@@ -771,7 +771,7 @@ final class CotizacionController extends Controller
             }
 
             // Procesar prendas y eliminar imágenes no incluidas SOLO si se envían nuevas imágenes
-            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
             $allData = $request->all();
             $prendasRecibidas = $allData['prendas'] ?? $request->input('prendas', []);
             $allFiles = $request->allFiles();
@@ -903,7 +903,7 @@ final class CotizacionController extends Controller
     private function procesarImagenesCotizacion(Request $request, int $cotizacionId): void
     {
         try {
-            // ✅ OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
+            //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
             $allData = $request->all();
             $prendas = $allData['prendas'] ?? $request->input('prendas', []);
             $allFiles = $request->allFiles();
@@ -980,8 +980,8 @@ final class CotizacionController extends Controller
                     $fotosPrendaExistentes = [];
                 }
                 
-                // ✅ EN UPDATE: IGNORAR fotos_existentes (ya están guardadas)
-                // ✅ EN CREATE: PROCESAR fotos_existentes (para copiar entre cotizaciones)
+                //  EN UPDATE: IGNORAR fotos_existentes (ya están guardadas)
+                //  EN CREATE: PROCESAR fotos_existentes (para copiar entre cotizaciones)
                 if (!empty($fotosPrendaExistentes) && !$esUpdate) {
                     foreach ($fotosPrendaExistentes as $fotoId) {
                         $fotoExistente = \App\Models\PrendaFotoCot::find($fotoId);
@@ -1003,7 +1003,7 @@ final class CotizacionController extends Controller
                                 'alto' => $fotoExistente->alto,
                                 'tamaño' => $fotoExistente->tamaño,
                             ]);
-                            Log::info('✅ Foto de prenda existente copiada', [
+                            Log::info(' Foto de prenda existente copiada', [
                                 'foto_id' => $fotoId,
                                 'prenda_id' => $prendaModel->id,
                                 'orden' => $ordenFotosPrenda,
@@ -1097,7 +1097,7 @@ final class CotizacionController extends Controller
 
                 // Procesar imágenes de telas - NUEVA LÓGICA
                 // Obtener telas_multiples del JSON de variantes para asociar color_id y tela_id
-                // ✅ REFRESH: Recargar el modelo para obtener las variantes recién creadas
+                //  REFRESH: Recargar el modelo para obtener las variantes recién creadas
                 $prendaModel->refresh();
                 $variante = $prendaModel->variantes()->first();
                 $telasMultiples = [];
@@ -1132,7 +1132,7 @@ final class CotizacionController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
-                            Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
+                            Log::info(' Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
                         } else {
                             $colorId = $color->id;
                         }
@@ -1153,7 +1153,7 @@ final class CotizacionController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
-                            Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
+                            Log::info(' Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
                         } else {
                             $telaId = $tela->id;
                         }
@@ -1185,7 +1185,7 @@ final class CotizacionController extends Controller
                                 $telaCotIds[$telaIndex] = $prendaTelaCotId;
                             }
                             
-                            Log::info('✅ Registro guardado en prenda_telas_cot (desde telas_multiples)', [
+                            Log::info(' Registro guardado en prenda_telas_cot (desde telas_multiples)', [
                                 'prenda_telas_cot_id' => $prendaTelaCotId,
                                 'prenda_id' => $prendaModel->id,
                                 'variante_id' => $variante->id,
@@ -1203,7 +1203,7 @@ final class CotizacionController extends Controller
                                 $telaCotIds[$telaIndex] = $existente->id;
                             }
                             
-                            Log::info('ℹ️ Registro ya existe en prenda_telas_cot', [
+                            Log::info(' Registro ya existe en prenda_telas_cot', [
                                 'prenda_id' => $prendaModel->id,
                                 'prenda_tela_cot_id' => $existente->id,
                                 'color' => $telaInfo['color'] ?? '',
@@ -1242,8 +1242,8 @@ final class CotizacionController extends Controller
                                 $fotosTelaExistentes = [];
                             }
                             
-                            // ✅ EN UPDATE: IGNORAR fotos_existentes (ya están guardadas)
-                            // ✅ EN CREATE: PROCESAR fotos_existentes (para copiar entre cotizaciones)
+                            //  EN UPDATE: IGNORAR fotos_existentes (ya están guardadas)
+                            //  EN CREATE: PROCESAR fotos_existentes (para copiar entre cotizaciones)
                             if (empty($fotosTelaExistentes) || $esUpdate) {
                                 Log::info('⏭️ UPDATE o fotos vacías - IGNORANDO fotos_existentes de tela para evitar duplicados', [
                                     'prenda_id' => $prendaModel->id,
@@ -1277,7 +1277,7 @@ final class CotizacionController extends Controller
                                             'created_at' => now(),
                                             'updated_at' => now(),
                                         ]);
-                                        Log::info('✅ Foto de tela copiada de otra prenda', [
+                                        Log::info(' Foto de tela copiada de otra prenda', [
                                             'foto_id' => $fotoId,
                                             'prenda_origen_id' => $fotoExistente->prenda_cot_id,
                                             'prenda_destino_id' => $prendaModel->id,
@@ -1291,7 +1291,7 @@ final class CotizacionController extends Controller
                             
                             // Nuevas fotos de tela (subidas)
                             if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
-                                Log::info('🖼️ Encontrado grupo de fotos de tela', [
+                                Log::info(' Encontrado grupo de fotos de tela', [
                                     'prenda_index' => $index,
                                     'tela_index' => $telaIndex,
                                     'cantidad_archivos' => count($telaData['fotos']),
@@ -1309,7 +1309,7 @@ final class CotizacionController extends Controller
                                 // Obtener prenda_tela_cot_id del mapeo
                                 $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
                                 
-                                // ✅ VERIFICAR si hay fotos en este índice de tela
+                                //  VERIFICAR si hay fotos en este índice de tela
                                 if (!isset($telaData['fotos']) || empty($telaData['fotos'])) {
                                     Log::info('⏭️ No hay fotos para esta tela', [
                                         'prenda_id' => $prendaModel->id,
@@ -1333,9 +1333,9 @@ final class CotizacionController extends Controller
                                     $fotosArray = [$fotosArray];
                                 }
                                 
-                                // ✅ Verificar que sea un array
+                                //  Verificar que sea un array
                                 if (!is_array($fotosArray)) {
-                                    Log::warning('❌ fotosArray no es array', [
+                                    Log::warning(' fotosArray no es array', [
                                         'tela_index' => $telaIndex,
                                         'tipo' => gettype($fotosArray),
                                     ]);
@@ -1365,7 +1365,7 @@ final class CotizacionController extends Controller
                                                 'updated_at' => now(),
                                             ]);
 
-                                            Log::info('✅ Foto de tela guardada en prenda_tela_fotos_cot', [
+                                            Log::info(' Foto de tela guardada en prenda_tela_fotos_cot', [
                                                 'prenda_id' => $prendaModel->id,
                                                 'prenda_tela_cot_id' => $prendaTelaCotId,
                                                 'referencia' => $telaInfo['referencia'] ?? '',
@@ -1374,7 +1374,7 @@ final class CotizacionController extends Controller
                                             ]);
                                             $ordenFotosTela++;
                                         } catch (\Exception $e) {
-                                            \Log::error('❌ Error guardando foto de tela', [
+                                            \Log::error(' Error guardando foto de tela', [
                                                 'error' => $e->getMessage(),
                                                 'archivo' => $archivoFoto->getClientOriginalName(),
                                             ]);
@@ -1470,7 +1470,7 @@ final class CotizacionController extends Controller
                             'updated_at' => now(),
                         ]);
 
-                        Log::info('✅ Foto de tela copiada automáticamente', [
+                        Log::info(' Foto de tela copiada automáticamente', [
                             'prenda_tela_cot_id' => $telaCot->id,
                             'foto_anterior_id' => $fotoAnterior->id,
                             'ruta' => $rutaAUsar,
@@ -1482,7 +1482,7 @@ final class CotizacionController extends Controller
                 }
             }
             } catch (\Exception $e) {
-                Log::error('❌ Error en fallback de fotos existentes de telas', [
+                Log::error(' Error en fallback de fotos existentes de telas', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
@@ -1553,7 +1553,7 @@ final class CotizacionController extends Controller
                 
                 $logoExistente->update($datosActualizar);
                 $logoCotizacion = $logoExistente;
-                Log::info('✅ LogoCotizacion ACTUALIZADO (ya existía)', [
+                Log::info(' LogoCotizacion ACTUALIZADO (ya existía)', [
                     'cotizacion_id' => $cotizacionId,
                     'logo_id' => $logoCotizacion->id,
                     'descripcion_guardada' => $logoDescripcion,
@@ -1566,7 +1566,7 @@ final class CotizacionController extends Controller
                     'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
                     'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
                 ]);
-                Log::info('✅ LogoCotizacion CREADO (nuevo)', [
+                Log::info(' LogoCotizacion CREADO (nuevo)', [
                     'cotizacion_id' => $cotizacionId,
                     'logo_id' => $logoCotizacion->id,
                 ]);
@@ -1611,7 +1611,7 @@ final class CotizacionController extends Controller
                                 'orden' => $orden,
                             ]);
                             
-                            Log::info('✅ Logo foto CREADA EN BD', [
+                            Log::info(' Logo foto CREADA EN BD', [
                                 'cotizacion_id' => $cotizacionId,
                                 'foto_id' => $fotoCreada->id ?? 'NULL',
                                 'logo_cotizacion_id' => $logoCotizacion->id,
@@ -1619,7 +1619,7 @@ final class CotizacionController extends Controller
                                 'orden' => $orden
                             ]);
                         } catch (\Exception $e) {
-                            Log::error('❌ ERROR al crear foto de logo', [
+                            Log::error(' ERROR al crear foto de logo', [
                                 'cotizacion_id' => $cotizacionId,
                                 'logo_cotizacion_id' => $logoCotizacion->id,
                                 'error' => $e->getMessage(),
@@ -1677,7 +1677,7 @@ final class CotizacionController extends Controller
                                 'orden' => $orden,
                             ]);
                             
-                            Log::info('✅ Foto de logo reutilizada (copiada)', [
+                            Log::info(' Foto de logo reutilizada (copiada)', [
                                 'nuevo_foto_id' => $fotoCopiadaCreada->id,
                                 'foto_original_id' => $fotoIdExistente,
                                 'logo_cotizacion_id' => $logoCotizacion->id,
@@ -1812,7 +1812,7 @@ final class CotizacionController extends Controller
                         }
                     }
                 } catch (\Exception $e) {
-                    Log::error('❌ Error al guardar reflectivo', [
+                    Log::error(' Error al guardar reflectivo', [
                         'cotizacion_id' => $cotizacionId,
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString(),
@@ -2018,7 +2018,7 @@ final class CotizacionController extends Controller
             try {
                 // Obtener o crear cliente
                 $cliente = $this->obtenerOCrearClienteService->ejecutar($validated['cliente']);
-                Log::info('✅ Cliente obtenido/creado', ['cliente_id' => $cliente->id]);
+                Log::info(' Cliente obtenido/creado', ['cliente_id' => $cliente->id]);
 
                 // Determinar estado
                 $esBorrador = ($validated['action'] === 'borrador');
@@ -2042,14 +2042,14 @@ final class CotizacionController extends Controller
                     'fecha_envio' => !$esBorrador ? \Carbon\Carbon::now('America/Bogota') : null,
                 ]);
 
-                Log::info('✅ Cotización RF creada', [
+                Log::info(' Cotización RF creada', [
                     'cotizacion_id' => $cotizacion->id,
                     'especificaciones_guardadas' => $cotizacion->especificaciones,
                     'especificaciones_type' => gettype($cotizacion->especificaciones),
                     'especificaciones_count' => is_array($cotizacion->especificaciones) ? count($cotizacion->especificaciones) : 0,
                 ]);
 
-                // ✅ PROCESAR PRENDAS Y CREAR UN REFLECTIVO POR CADA PRENDA
+                //  PROCESAR PRENDAS Y CREAR UN REFLECTIVO POR CADA PRENDA
                 $imagenesGuardadas = [];
                 
                 Log::info('🔵 INICIANDO LOOP DE PRENDAS', [
@@ -2085,7 +2085,7 @@ final class CotizacionController extends Controller
                                         'cantidad' => (int)$cantidad,
                                     ]);
                                 }
-                                Log::info('✅ Tallas guardadas para prenda', [
+                                Log::info(' Tallas guardadas para prenda', [
                                     'prenda_cot_id' => $prendaCot->id,
                                     'tallas_count' => count($prenda['tallas']),
                                     'tallas' => $prenda['tallas'],
@@ -2093,7 +2093,7 @@ final class CotizacionController extends Controller
                                 ]);
                             }
 
-                            // 2b. ✅ GUARDAR GÉNERO EN prenda_variantes_cot SI EXISTE
+                            // 2b.  GUARDAR GÉNERO EN prenda_variantes_cot SI EXISTE
                             if (!empty($prenda['genero'])) {
                                 // Mapear valores del frontend a IDs de la tabla generos_prenda
                                 $generoId = null;
@@ -2115,7 +2115,7 @@ final class CotizacionController extends Controller
                                         ['prenda_cot_id' => $prendaCot->id],
                                         ['genero_id' => $generoId]
                                     );
-                                    Log::info('✅ Género guardado en prenda_variantes_cot', [
+                                    Log::info(' Género guardado en prenda_variantes_cot', [
                                         'prenda_cot_id' => $prendaCot->id,
                                         'genero' => $prenda['genero'],
                                         'genero_id' => $generoId
@@ -2123,7 +2123,7 @@ final class CotizacionController extends Controller
                                 }
                             }
 
-                            // 3. ✅ CREAR REFLECTIVO ESPECÍFICO PARA ESTA PRENDA
+                            // 3.  CREAR REFLECTIVO ESPECÍFICO PARA ESTA PRENDA
                             // Obtener ubicaciones de esta prenda
                             $ubicacionesDePrenda = $prenda['ubicaciones'] ?? [];
                             if (is_string($ubicacionesDePrenda)) {
@@ -2139,7 +2139,7 @@ final class CotizacionController extends Controller
                             // Crear reflectivo vinculado a esta prenda específica
                             $reflectivo = \App\Models\ReflectivoCotizacion::create([
                                 'cotizacion_id' => $cotizacion->id,
-                                'prenda_cot_id' => $prendaCot->id,  // ✅ Vinculado a la prenda
+                                'prenda_cot_id' => $prendaCot->id,  //  Vinculado a la prenda
                                 'descripcion' => $validated['descripcion_reflectivo'],
                                 'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? null,
                                 'ubicacion' => json_encode($ubicacionesDePrenda),
@@ -2147,13 +2147,13 @@ final class CotizacionController extends Controller
                                 'imagenes' => json_encode([]),
                             ]);
 
-                            Log::info('✅ ReflectivoCotizacion creado para prenda', [
+                            Log::info(' ReflectivoCotizacion creado para prenda', [
                                 'reflectivo_id' => $reflectivo->id,
                                 'prenda_cot_id' => $prendaCot->id,
                                 'ubicaciones_count' => count($ubicacionesDePrenda)
                             ]);
 
-                            // 4. ✅ PROCESAR IMÁGENES DE ESTA PRENDA ESPECÍFICA
+                            // 4.  PROCESAR IMÁGENES DE ESTA PRENDA ESPECÍFICA
                             // Las imágenes vienen con el nombre: imagenes_reflectivo_prenda_{index}[] o imagenes_reflectivo_prenda_{index}
                             $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
                             
@@ -2172,7 +2172,7 @@ final class CotizacionController extends Controller
                             }
                             
                             if ($archivos) {
-                                Log::info('✅ ENCONTRADAS IMÁGENES PARA PRENDA', [
+                                Log::info(' ENCONTRADAS IMÁGENES PARA PRENDA', [
                                     'prenda_index' => $prendaIndex,
                                     'campo' => $campoImagenes,
                                     'cantidad' => is_array($archivos) ? count($archivos) : 1,
@@ -2216,7 +2216,7 @@ final class CotizacionController extends Controller
                                 ]);
                             }
                         } else {
-                            Log::warning('❌ PRENDA NO ES ARRAY', [
+                            Log::warning(' PRENDA NO ES ARRAY', [
                                 'prenda_index' => $prendaIndex,
                                 'prenda_type' => gettype($prenda),
                                 'prenda_value' => $prenda,
@@ -2224,7 +2224,7 @@ final class CotizacionController extends Controller
                         }
                     }
                     $prendasCount = is_array($prendas) ? count($prendas) : 0;
-                    Log::info('✅ LOOP COMPLETADO - Prendas y reflectivos guardados', [
+                    Log::info(' LOOP COMPLETADO - Prendas y reflectivos guardados', [
                         'cotizacion_id' => $cotizacion->id,
                         'prendas_count' => $prendasCount,
                         'imagenes_totales_guardadas' => count($imagenesGuardadas),
@@ -2241,7 +2241,7 @@ final class CotizacionController extends Controller
                     'reflectivoCotizacion.fotos',
                 ])->findOrFail($cotizacion->id);
 
-                Log::info('✅ CotizacionController@storeReflectivo - Exitoso', [
+                Log::info(' CotizacionController@storeReflectivo - Exitoso', [
                     'cotizacion_id' => $cotizacion->id,
                     'estado' => $estado,
                     'imagenes_count' => count($imagenesGuardadas),
@@ -2262,14 +2262,14 @@ final class CotizacionController extends Controller
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('❌ Error de validación', ['errores' => $e->errors()]);
+            Log::error(' Error de validación', ['errores' => $e->errors()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
                 'errores' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('❌ CotizacionController@storeReflectivo: Error', [
+            Log::error(' CotizacionController@storeReflectivo: Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -2298,7 +2298,7 @@ final class CotizacionController extends Controller
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
             }
 
-            // ✅ Decodificar JSON strings cuando vienen de FormData con _method=PUT
+            //  Decodificar JSON strings cuando vienen de FormData con _method=PUT
             if ($request->has('prendas') && is_string($request->input('prendas'))) {
                 $request->merge(['prendas' => json_decode($request->input('prendas'), true)]);
             }
@@ -2369,9 +2369,9 @@ final class CotizacionController extends Controller
                         }
                         
                         $especificacionesArray = $nuevasEspecificaciones;
-                        Log::info('✅ Actualizando especificaciones con nuevos datos');
+                        Log::info(' Actualizando especificaciones con nuevos datos');
                     } else {
-                        Log::info('ℹ️ Preservando especificaciones existentes (nuevas están vacías)');
+                        Log::info(' Preservando especificaciones existentes (nuevas están vacías)');
                     }
                 }
 
@@ -2387,11 +2387,11 @@ final class CotizacionController extends Controller
                     'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? $cotizacion->tipo_venta ?? 'M',
                 ]);
 
-                Log::info('✅ Cotización RF actualizada', ['cotizacion_id' => $cotizacion->id]);
+                Log::info(' Cotización RF actualizada', ['cotizacion_id' => $cotizacion->id]);
 
-                // ✅ ACTUALIZAR PRENDAS Y SUS REFLECTIVOS (NUEVO SISTEMA)
+                //  ACTUALIZAR PRENDAS Y SUS REFLECTIVOS (NUEVO SISTEMA)
                 if (isset($validated['prendas']) && is_array($validated['prendas'])) {
-                    // 1. ✅ PRESERVAR FOTOS EXISTENTES ANTES DE ELIMINAR
+                    // 1.  PRESERVAR FOTOS EXISTENTES ANTES DE ELIMINAR
                     $fotosExistentesPorPrenda = [];
                     $prendasExistentes = \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)
                         ->with('reflectivo.fotos')
@@ -2475,7 +2475,7 @@ final class CotizacionController extends Controller
                                 }
                             }
 
-                            // ✅ CREAR REFLECTIVO PARA ESTA PRENDA CON SUS UBICACIONES
+                            //  CREAR REFLECTIVO PARA ESTA PRENDA CON SUS UBICACIONES
                             $ubicacionesDePrenda = $prenda['ubicaciones'] ?? [];
                             if (is_string($ubicacionesDePrenda)) {
                                 $ubicacionesDePrenda = json_decode($ubicacionesDePrenda, true) ?? [];
@@ -2496,13 +2496,13 @@ final class CotizacionController extends Controller
                                 'imagenes' => json_encode([]),
                             ]);
 
-                            Log::info('✅ Prenda y reflectivo actualizados', [
+                            Log::info(' Prenda y reflectivo actualizados', [
                                 'prenda_cot_id' => $prendaCot->id,
                                 'reflectivo_id' => $reflectivo->id,
                                 'ubicaciones_count' => count($ubicacionesDePrenda)
                             ]);
 
-                            // ✅ PROCESAR IMÁGENES DE ESTA PRENDA
+                            //  PROCESAR IMÁGENES DE ESTA PRENDA
                             $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
                             $nuevasFotosGuardadas = false;
                             
@@ -2546,7 +2546,7 @@ final class CotizacionController extends Controller
                             }
                         }
                     }
-                    Log::info('✅ Prendas y reflectivos actualizados', ['cotizacion_id' => $cotizacion->id, 'prendas_count' => count($prendasArray)]);
+                    Log::info(' Prendas y reflectivos actualizados', ['cotizacion_id' => $cotizacion->id, 'prendas_count' => count($prendasArray)]);
                 }
 
                 // NOTA: Ya no usamos un reflectivo global, cada prenda tiene el suyo
@@ -2559,7 +2559,7 @@ final class CotizacionController extends Controller
                     'prendas.reflectivo.fotos'
                 ])->findOrFail($cotizacion->id);
 
-                Log::info('✅ CotizacionController@updateReflectivo - Exitoso', [
+                Log::info(' CotizacionController@updateReflectivo - Exitoso', [
                     'cotizacion_id' => $cotizacion->id,
                     'prendas_count' => $cotizacionCompleta->prendas->count(),
                 ]);
@@ -2578,14 +2578,14 @@ final class CotizacionController extends Controller
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('❌ Error de validación', ['errores' => $e->errors()]);
+            Log::error(' Error de validación', ['errores' => $e->errors()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
                 'errores' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('❌ CotizacionController@updateReflectivo: Error', [
+            Log::error(' CotizacionController@updateReflectivo: Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -2659,14 +2659,14 @@ final class CotizacionController extends Controller
 
             // Si es Reflectivo (tipo 4), mostrar la vista
             if ($tipoCotizacionId === 4) {
-                // ✅ Cargar datos completos del reflectivo CON TALLAS, FOTOS Y REFLECTIVO POR PRENDA
+                //  Cargar datos completos del reflectivo CON TALLAS, FOTOS Y REFLECTIVO POR PRENDA
                 $cotizacion->load([
                     'cliente',
                     'prendas',
                     'prendas.tallas',
-                    'prendas.fotos',              // ✅ AGREGAR: Cargar fotos de prendas
-                    'prendas.variantes',          // ✅ Cargar variantes (para genero_id)
-                    'prendas.reflectivo.fotos'    // ✅ Cargar reflectivo de cada prenda
+                    'prendas.fotos',              //  AGREGAR: Cargar fotos de prendas
+                    'prendas.variantes',          //  Cargar variantes (para genero_id)
+                    'prendas.reflectivo.fotos'    //  Cargar reflectivo de cada prenda
                 ]);
                 
                 // Preparar datos iniciales en formato JSON
@@ -2677,7 +2677,7 @@ final class CotizacionController extends Controller
                         return $talla->talla; // Solo el nombre de la talla
                     })->toArray() : [];
                     
-                    // ✅ Incluir cantidades por talla
+                    //  Incluir cantidades por talla
                     $prendasArray['cantidades'] = [];
                     if ($prenda->tallas) {
                         foreach ($prenda->tallas as $talla) {
@@ -2685,7 +2685,7 @@ final class CotizacionController extends Controller
                         }
                     }
                     
-                    // ✅ Incluir género desde prenda_variantes_cot
+                    //  Incluir género desde prenda_variantes_cot
                     $prendasArray['genero'] = null;
                     if ($prenda->variantes && $prenda->variantes->count() > 0) {
                         $variante = $prenda->variantes->first();
@@ -2703,10 +2703,10 @@ final class CotizacionController extends Controller
                         }
                     }
                     
-                    // ✅ Forzar inclusión de fotos de la prenda
+                    //  Forzar inclusión de fotos de la prenda
                     $prendasArray['fotos'] = $prenda->fotos ? $prenda->fotos->toArray() : [];
                     
-                    // ✅ Incluir reflectivo específico de esta prenda
+                    //  Incluir reflectivo específico de esta prenda
                     if ($prenda->reflectivo && $prenda->reflectivo->count() > 0) {
                         $reflectivoPrenda = $prenda->reflectivo->first();
                         $prendasArray['reflectivo'] = $reflectivoPrenda->toArray();
@@ -2734,7 +2734,7 @@ final class CotizacionController extends Controller
                     'cliente' => $cotizacion->cliente ? ['id' => $cotizacion->cliente->id, 'nombre' => $cotizacion->cliente->nombre] : null,
                     'fecha_inicio' => $cotizacion->fecha_inicio,
                     'especificaciones' => $cotizacion->especificaciones,
-                    'prendas' => $prendasConTallas,  // ✅ Cada prenda incluye su propio reflectivo
+                    'prendas' => $prendasConTallas,  //  Cada prenda incluye su propio reflectivo
                     'reflectivo_cotizacion' => $reflectivoGlobal ? $reflectivoGlobal->toArray() : null,
                     'reflectivo' => $reflectivoGlobal ? $reflectivoGlobal->toArray() : null,
                 ];
@@ -2840,7 +2840,7 @@ final class CotizacionController extends Controller
                     ->delete();
             }
             
-            // ✅ Buscar y eliminar de ReflectivoCotizacionFoto (fotos de reflectivo)
+            //  Buscar y eliminar de ReflectivoCotizacionFoto (fotos de reflectivo)
             foreach ($rutasABuscar as $ruta) {
                 $fotosEliminadas += \App\Models\ReflectivoCotizacionFoto::where('ruta_original', $ruta)
                     ->orWhere('ruta_webp', $ruta)

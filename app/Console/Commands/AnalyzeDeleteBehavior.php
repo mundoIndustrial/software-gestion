@@ -21,7 +21,7 @@ class AnalyzeDeleteBehavior extends Command
 
         foreach ($todas as $cot) {
             $estado = $cot->es_borrador ? 'BORRADOR' : $cot->estado;
-            $eliminada = $cot->trashed() ? '❌ ELIMINADA' : '✅ ACTIVA';
+            $eliminada = $cot->trashed() ? ' ELIMINADA' : ' ACTIVA';
             $cliente = $cot->cliente ? $cot->cliente->nombre : 'SIN CLIENTE';
             
             $this->line("ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | ESTADO: {$estado} | {$eliminada} | CLIENTE: {$cliente} | CREADA: {$cot->created_at->format('Y-m-d H:i:s')}");
@@ -40,7 +40,7 @@ class AnalyzeDeleteBehavior extends Command
             if ($grupo->count() > 1) {
                 $this->warn("⚠️  Minuto: {$minuto} - {$grupo->count()} cotizaciones");
                 foreach ($grupo as $cot) {
-                    $eliminada = $cot->trashed() ? '❌ ELIMINADA' : '✅ ACTIVA';
+                    $eliminada = $cot->trashed() ? ' ELIMINADA' : ' ACTIVA';
                     $estado = $cot->es_borrador ? 'BORRADOR' : $cot->estado;
                     $this->line("    ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | {$eliminada} | {$estado}");
                 }

@@ -28,7 +28,7 @@ class ObtenerPedidoDetalleService
             throw new \Exception('No tienes permiso para ver este pedido', 403);
         }
 
-        Log::info('✅ [DETALLE] Pedido encontrado', [
+        Log::info(' [DETALLE] Pedido encontrado', [
             'numero_pedido' => $pedido->numero_pedido,
             'cliente' => $pedido->cliente
         ]);
@@ -50,7 +50,7 @@ class ObtenerPedidoDetalleService
             }]);
         }]);
 
-        Log::info('✅ [DETALLE-PRENDAS] Cargadas', [
+        Log::info(' [DETALLE-PRENDAS] Cargadas', [
             'prendas_count' => $pedido->prendas->count()
         ]);
 
@@ -71,29 +71,29 @@ class ObtenerPedidoDetalleService
             throw new \Exception('No tienes permiso para ver este pedido', 403);
         }
 
-        // ✅ Cargar TODAS las relaciones necesarias
+        //  Cargar TODAS las relaciones necesarias
         $pedido->load([
             'prendas' => function ($q) {
                 $q->with([
                     'procesos' => function ($q2) {
-                        $q2->with(['tipoProceso', 'imagenes'])  // ✅ Cargar tipoProceso e imagenes
+                        $q2->with(['tipoProceso', 'imagenes'])  //  Cargar tipoProceso e imagenes
                           ->orderBy('created_at', 'desc');
                     },
-                    'fotos',           // ✅ Fotos de prendas
-                    'fotosTelas',      // ✅ Fotos de telas
-                    'variantes' => function ($q3) {  // ✅ Variantes con todas sus relaciones
+                    'fotos',           //  Fotos de prendas
+                    'fotosTelas',      //  Fotos de telas
+                    'variantes' => function ($q3) {  //  Variantes con todas sus relaciones
                         $q3->with(['tela', 'color', 'tipoManga', 'tipoBrocheBoton']);
                     }
                 ]);
             },
             'asesora',
             'logoPedidos',
-            'epps' => function ($q) {  // ✅ EPPs del pedido
+            'epps' => function ($q) {  //  EPPs del pedido
                 $q->with(['epp', 'imagenes']);
             }
         ]);
 
-        Log::info('✅ [DETALLE-COMPLETO] Datos completos listos', [
+        Log::info(' [DETALLE-COMPLETO] Datos completos listos', [
             'prendas' => $pedido->prendas->count(),
             'epps' => $pedido->epps->count() ?? 0,
             'logos' => $pedido->logoPedidos->count() ?? 0
@@ -104,7 +104,7 @@ class ObtenerPedidoDetalleService
 
     /**
      * Obtener datos de edición (formulario)
-     * ✅ NUEVO: Transforma prendas a la estructura esperada por GestorPrendaSinCotizacion
+     *  NUEVO: Transforma prendas a la estructura esperada por GestorPrendaSinCotizacion
      */
     public function obtenerParaEdicion($pedidoIdentifier): array
     {
@@ -112,14 +112,14 @@ class ObtenerPedidoDetalleService
 
         $pedido = $this->obtenerCompleto($pedidoIdentifier);
 
-        // ✅ Transformar prendas a estructura del gestor
+        //  Transformar prendas a estructura del gestor
         $prendasTransformadas = $this->transformarPrendasParaEdicion($pedido->prendas);
 
-        // ✅ Clonar el pedido y reemplazar prendas
+        //  Clonar el pedido y reemplazar prendas
         $pedidoData = $pedido->toArray();
         $pedidoData['prendas'] = $prendasTransformadas;
 
-        // ✅ Transformar EPPs
+        //  Transformar EPPs
         $epps = [];
         if ($pedido->epps) {
             foreach ($pedido->epps as $pedidoEpp) {
@@ -137,7 +137,7 @@ class ObtenerPedidoDetalleService
 
         $datos = [
             'pedido' => (object) $pedidoData,
-            'epps' => $epps,  // ✅ Incluir EPPs
+            'epps' => $epps,  //  Incluir EPPs
             'estados' => [
                 'No iniciado',
                 'En Ejecución',
@@ -161,7 +161,7 @@ class ObtenerPedidoDetalleService
             ]
         ];
 
-        Log::info('✅ [EDICION] Datos listos', [
+        Log::info(' [EDICION] Datos listos', [
             'pedido_id' => $pedido->id,
             'prendas_transformadas' => count($prendasTransformadas),
             'epps' => count($epps)
@@ -171,7 +171,7 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * ✅ NUEVO: Transformar prendas de Eloquent a estructura del gestor
+     *  NUEVO: Transformar prendas de Eloquent a estructura del gestor
      */
     private function transformarPrendasParaEdicion($prendas)
     {
@@ -181,7 +181,7 @@ class ObtenerPedidoDetalleService
             $variantes = $this->construirVariantes($prenda);
             $procesos = $this->construirProcesos($prenda);
             
-            // ✅ Extraer datos de variación de las variantes (tomar del primer variante)
+            //  Extraer datos de variación de las variantes (tomar del primer variante)
             $primerVariante = $prenda->variantes && $prenda->variantes->count() > 0 
                 ? $prenda->variantes->first() 
                 : null;
@@ -221,7 +221,7 @@ class ObtenerPedidoDetalleService
                 'nombre_prenda' => $prenda->nombre_prenda,
                 'descripcion' => $prenda->descripcion,
                 'genero' => [], // Se llenará desde generosConTallas
-                'generosConTallas' => $generosConTallas, // ✅ Dejar como objeto, Blade hace @json()
+                'generosConTallas' => $generosConTallas, //  Dejar como objeto, Blade hace @json()
                 'tipo_manga' => $tipo_manga,
                 'obs_manga' => $obs_manga,
                 'tipo_broche' => $tipo_broche,
@@ -232,16 +232,16 @@ class ObtenerPedidoDetalleService
                 'obs_reflectivo' => $obs_reflectivo,
                 'tallas' => $this->obtenerTallasDelPrenda($prenda),
                 'cantidadesPorTalla' => $this->obtenerCantidadesPorTalla($prenda),
-                'variantes' => $variantes, // ✅ Dejar como objeto
+                'variantes' => $variantes, //  Dejar como objeto
                 'telas' => $prenda->telas ?? [],
                 'telasAgregadas' => $this->construirTelasAgregadas($prenda),
-                'fotos' => $this->obtenerFotosPrenda($prenda),  // ✅ Convertir con URLs
+                'fotos' => $this->obtenerFotosPrenda($prenda),  //  Convertir con URLs
                 'telaFotos' => $this->obtenerFotosTelas($prenda),
-                'imagenes' => $this->obtenerFotosPrenda($prenda),  // ✅ Convertir con URLs
+                'imagenes' => $this->obtenerFotosPrenda($prenda),  //  Convertir con URLs
                 'origen' => $prenda->origen ?? 'bodega',
                 'de_bodega' => (int)($prenda->de_bodega ?? 1),
-                'procesos' => $procesos, // ✅ Dejar como objeto
-                'variaciones' => $variantes, // ✅ Dejar como objeto
+                'procesos' => $procesos, //  Dejar como objeto
+                'variaciones' => $variantes, //  Dejar como objeto
             ];
         })->toArray();
     }
@@ -256,7 +256,7 @@ class ObtenerPedidoDetalleService
     {
         $generosConTallas = [];
         
-        // ✅ cantidad_talla viene como JSON string
+        //  cantidad_talla viene como JSON string
         $cantidadTalla = $prenda->cantidad_talla;
         
         if (is_string($cantidadTalla)) {
@@ -278,7 +278,7 @@ class ObtenerPedidoDetalleService
     {
         $tallas = [];
         
-        // ✅ cantidad_talla viene como JSON string
+        //  cantidad_talla viene como JSON string
         $cantidadTalla = $prenda->cantidad_talla;
         if (is_string($cantidadTalla)) {
             $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
@@ -316,7 +316,7 @@ class ObtenerPedidoDetalleService
      */
     private function construirTelasAgregadas($prenda)
     {
-        // ✅ Obtener telas desde prenda_pedido_variantes (con relaciones tela y color cargadas)
+        //  Obtener telas desde prenda_pedido_variantes (con relaciones tela y color cargadas)
         $telas = [];
         
         if (isset($prenda->variantes) && $prenda->variantes && count($prenda->variantes) > 0) {
@@ -368,7 +368,7 @@ class ObtenerPedidoDetalleService
         $fotos = [];
         if (isset($prenda->fotosTelas) && $prenda->fotosTelas) {
             $fotosTelas = is_array($prenda->fotosTelas) ? $prenda->fotosTelas : $prenda->fotosTelas->toArray();
-            // ✅ Filtrar solo las fotos que sean de telas (contienen '/telas/' en la ruta)
+            //  Filtrar solo las fotos que sean de telas (contienen '/telas/' en la ruta)
             foreach ($fotosTelas as $foto) {
                 if (isset($foto['url']) && strpos($foto['url'], '/telas/') !== false) {
                     $fotos[] = $foto;
@@ -399,7 +399,7 @@ class ObtenerPedidoDetalleService
         
         if (isset($prenda->procesos) && is_iterable($prenda->procesos)) {
             foreach ($prenda->procesos as $proceso) {
-                // ✅ Obtener el SLUG del tipo de proceso (para usar como clave)
+                //  Obtener el SLUG del tipo de proceso (para usar como clave)
                 $slugTipoProceso = 'proceso';  // default
                 $nombreTipoProceso = 'Proceso';
                 
@@ -408,7 +408,7 @@ class ObtenerPedidoDetalleService
                     $nombreTipoProceso = $proceso->tipoProceso->nombre ?? $proceso->tipoProceso->tipo ?? 'Proceso';
                 }
                 
-                // ✅ Obtener imágenes transformadas a URLs
+                //  Obtener imágenes transformadas a URLs
                 $imagenes = [];
                 if ($proceso->imagenes && $proceso->imagenes->count() > 0) {
                     $imagenes = $proceso->imagenes->map(function ($img) {
@@ -421,7 +421,7 @@ class ObtenerPedidoDetalleService
                     })->toArray();
                 }
                 
-                // ✅ Parsear ubicaciones (pueden ser array o JSON)
+                //  Parsear ubicaciones (pueden ser array o JSON)
                 $ubicaciones = [];
                 if ($proceso->ubicaciones) {
                     if (is_string($proceso->ubicaciones)) {
@@ -431,7 +431,7 @@ class ObtenerPedidoDetalleService
                     }
                 }
                 
-                // ✅ Construir estructura de tallas
+                //  Construir estructura de tallas
                 $tallas = [];
                 $tallasDama = is_string($proceso->tallas_dama) 
                     ? (json_decode($proceso->tallas_dama, true) ?? []) 
@@ -447,18 +447,18 @@ class ObtenerPedidoDetalleService
                     $tallas['caballero'] = $tallasCalballero;
                 }
                 
-                // ✅ Usar el SLUG como clave para agrupar (reflectivo, bordado, estampado, dtf, sublimado)
+                //  Usar el SLUG como clave para agrupar (reflectivo, bordado, estampado, dtf, sublimado)
                 if (!isset($procesos[$slugTipoProceso])) {
                     $procesos[$slugTipoProceso] = [
                         'id' => $proceso->tipo_proceso_id,
-                        'tipo' => $nombreTipoProceso,  // ✅ Nombre del tipo de proceso
-                        'slug' => $slugTipoProceso,    // ✅ Slug del tipo de proceso
-                        'nombre' => $nombreTipoProceso,  // ✅ Nombre para compatibilidad
+                        'tipo' => $nombreTipoProceso,  //  Nombre del tipo de proceso
+                        'slug' => $slugTipoProceso,    //  Slug del tipo de proceso
+                        'nombre' => $nombreTipoProceso,  //  Nombre para compatibilidad
                         'datos' => [
-                            'ubicaciones' => $ubicaciones,  // ✅ Ubicaciones parseadas
+                            'ubicaciones' => $ubicaciones,  //  Ubicaciones parseadas
                             'observaciones' => $proceso->observaciones ?? '',
-                            'tallas' => $tallas,  // ✅ Tallas parseadas
-                            'imagenes' => $imagenes,  // ✅ Imágenes con URLs
+                            'tallas' => $tallas,  //  Tallas parseadas
+                            'imagenes' => $imagenes,  //  Imágenes con URLs
                         ]
                     ];
                 }
@@ -478,7 +478,7 @@ class ObtenerPedidoDetalleService
     {
         $tallas = [];
         
-        // ✅ cantidad_talla viene como JSON string
+        //  cantidad_talla viene como JSON string
         $cantidadTalla = $proceso->cantidad_talla ?? null;
         if (is_string($cantidadTalla)) {
             $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
@@ -515,7 +515,7 @@ class ObtenerPedidoDetalleService
      */
     public function obtenerBasico($pedidoIdentifier): array
     {
-        Log::info('ℹ️ [BASICO] Obteniendo información básica');
+        Log::info(' [BASICO] Obteniendo información básica');
 
         $pedido = $this->obtenerPedido($pedidoIdentifier);
 

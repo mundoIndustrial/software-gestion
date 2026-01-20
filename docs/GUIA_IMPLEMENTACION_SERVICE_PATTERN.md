@@ -12,19 +12,19 @@ public/js/
 │   │   ├── GenericHttpService.js      📦 Base genérica CRUD
 │   │   └── HttpErrorHandler.js        ⚠️  Manejo de errores HTTP
 │   │
-│   ├── epp/                           📋 DOMINIO: EPP
+│   ├── epp/                            DOMINIO: EPP
 │   │   ├── EppHttpService.js          🎯 Servicio EPP
-│   │   ├── EppValidators.js           ✅ Validaciones EPP
+│   │   ├── EppValidators.js            Validaciones EPP
 │   │   └── EppMappers.js              🔄 Transformación de datos
 │   │
 │   ├── prendas/                       👔 DOMINIO: Prendas
 │   │   ├── PrendasHttpService.js      🎯 Servicio Prendas
-│   │   ├── PrendasValidators.js       ✅ Validaciones
+│   │   ├── PrendasValidators.js        Validaciones
 │   │   └── PrendasMappers.js          🔄 Mapeos
 │   │
 │   ├── pedidos/                       📦 DOMINIO: Pedidos
 │   │   ├── PedidosHttpService.js      🎯 Servicio Pedidos
-│   │   ├── PedidosValidators.js       ✅ Validaciones
+│   │   ├── PedidosValidators.js        Validaciones
 │   │   └── PedidosMappers.js          🔄 Mapeos
 │   │
 │   ├── procesos/                      ⚙️  DOMINIO: Procesos
@@ -555,7 +555,7 @@ async function buscarTelas(termino) {
 }
 ```
 
-**✅ Sin cambiar GenericHttpService o servicios anteriores**
+** Sin cambiar GenericHttpService o servicios anteriores**
 
 ---
 
@@ -620,13 +620,13 @@ describe('EppHttpService', () => {
 
 ```javascript
 // Verificar que servicios están disponibles
-console.log(window.GenericHttpService);     // ✅ debe existir
-console.log(window.EppHttpService);         // ✅ debe existir
-console.log(window.HttpServiceConfig);      // ✅ debe existir
+console.log(window.GenericHttpService);     //  debe existir
+console.log(window.EppHttpService);         //  debe existir
+console.log(window.HttpServiceConfig);      //  debe existir
 
 // Instanciar y verificar
 const eppService = new EppHttpService('/api');
-console.log(eppService);                    // ✅ debe mostrar instancia
+console.log(eppService);                    //  debe mostrar instancia
 
 // Llamar método y ver request
 await eppService.buscar('casco');
@@ -638,10 +638,10 @@ await eppService.buscar('casco');
 ## Conclusión
 
 Esta estructura es:
-- ✅ **Profesional** (usada en empresas Fortune 500)
-- ✅ **Escalable** (agregar servicios sin cambiar existentes)
-- ✅ **Mantenible** (centralizado y ordenado)
-- ✅ **Testeable** (fácil de mockear)
-- ✅ **Alineada con DDD** (paralela a backend)
+-  **Profesional** (usada en empresas Fortune 500)
+-  **Escalable** (agregar servicios sin cambiar existentes)
+-  **Mantenible** (centralizado y ordenado)
+-  **Testeable** (fácil de mockear)
+-  **Alineada con DDD** (paralela a backend)
 
 **Implementa con confianza.**

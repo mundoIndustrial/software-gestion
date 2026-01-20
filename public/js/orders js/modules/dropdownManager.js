@@ -19,7 +19,7 @@ const OrdersDropdownManager = {
             dropdown.removeEventListener('change', this.handleStatusChange.bind(this));
             dropdown.addEventListener('change', this.handleStatusChange.bind(this));
         });
-        console.log('✅ Dropdowns de estado inicializados');
+        console.log(' Dropdowns de estado inicializados');
     },
 
     /**
@@ -31,7 +31,7 @@ const OrdersDropdownManager = {
             dropdown.removeEventListener('change', this.handleAreaChange.bind(this));
             dropdown.addEventListener('change', this.handleAreaChange.bind(this));
         });
-        console.log('✅ Dropdowns de área inicializados');
+        console.log(' Dropdowns de área inicializados');
     },
 
     /**
@@ -61,7 +61,7 @@ const OrdersDropdownManager = {
         
         // 🆕 Detectar si el cambio fue programático (iniciado por UpdatesModule)
         if (dropdown.dataset.programmaticChange === 'true') {
-            console.log('ℹ️ Cambio programático detectado, ignorando para evitar loop');
+            console.log(' Cambio programático detectado, ignorando para evitar loop');
             dropdown.dataset.programmaticChange = 'false';
             return;
         }
@@ -70,7 +70,7 @@ const OrdersDropdownManager = {
         console.log(`📊 Datos: orderId=${orderId}, oldValue=${oldValue}, newValue=${newValue}`);
         
         if (!orderId) {
-            console.error('❌ No se encontró orderId en el dropdown');
+            console.error(' No se encontró orderId en el dropdown');
             return;
         }
         
@@ -80,7 +80,7 @@ const OrdersDropdownManager = {
         
         console.log('🔄 Llamando updateWithDebounce...');
         this.updateWithDebounce('area', orderId, newValue, oldValue, dropdown);
-        console.log('✅ updateWithDebounce llamado');
+        console.log(' updateWithDebounce llamado');
     },
 
     /**
@@ -105,14 +105,14 @@ const OrdersDropdownManager = {
                 if (typeof UpdatesModule !== 'undefined' && UpdatesModule.updateOrderStatus) {
                     UpdatesModule.updateOrderStatus(orderId, newValue, oldValue, element);
                 } else {
-                    console.error('❌ UpdatesModule.updateOrderStatus no disponible');
+                    console.error(' UpdatesModule.updateOrderStatus no disponible');
                 }
             } else if (type === 'area') {
                 if (typeof UpdatesModule !== 'undefined' && UpdatesModule.updateOrderArea) {
                     console.log(`📞 Llamando UpdatesModule.updateOrderArea(${orderId}, ${newValue}, ${oldValue})`);
                     UpdatesModule.updateOrderArea(orderId, newValue, oldValue, element);
                 } else {
-                    console.error('❌ UpdatesModule.updateOrderArea no disponible');
+                    console.error(' UpdatesModule.updateOrderArea no disponible');
                 }
             }
         }, this.debounceDelay);
@@ -147,5 +147,5 @@ const OrdersDropdownManager = {
 window.OrdersDropdownManager = OrdersDropdownManager;
 globalThis.OrdersDropdownManager = OrdersDropdownManager;
 
-console.log('✅ OrdersDropdownManager cargado y disponible globalmente');
+console.log(' OrdersDropdownManager cargado y disponible globalmente');
 

@@ -557,7 +557,7 @@ function updateSeguimientoTable(params) {
         return response.json();
     })
     .then(data => {
-        console.log('✅ Datos de seguimiento recibidos:', data);
+        console.log(' Datos de seguimiento recibidos:', data);
         updateSeguimientoTableContent(data);
     })
     .catch(error => {
@@ -600,9 +600,9 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
         const container = document.getElementById(containerId);
         if (container) {
             tableContainer = container.querySelector('.seguimiento-table');
-            console.log(`✅ Contenedor encontrado, tabla=${!!tableContainer}`);
+            console.log(` Contenedor encontrado, tabla=${!!tableContainer}`);
         } else {
-            console.error(`❌ No se encontró el contenedor ${containerId}`);
+            console.error(` No se encontró el contenedor ${containerId}`);
         }
     }
     
@@ -613,7 +613,7 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
     }
     
     if (!tableContainer) {
-        console.error('❌ No se encontró ninguna tabla .seguimiento-table');
+        console.error(' No se encontró ninguna tabla .seguimiento-table');
         console.log('🔍 Intentando buscar en todos los contenedores...');
         
         // Intentar buscar en cada contenedor de sección
@@ -629,7 +629,7 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
         return;
     }
     
-    console.log('✅ Tabla encontrada:', tableContainer);
+    console.log(' Tabla encontrada:', tableContainer);
 
     // Actualizar módulos disponibles
     const modulosDisponibles = seguimientoData.modulosDisponibles || [];
@@ -756,7 +756,7 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
 
     console.log('🔄 Actualizando innerHTML de la tabla...');
     tableContainer.innerHTML = html;
-    console.log('✅ Tabla actualizada con nuevo HTML');
+    console.log(' Tabla actualizada con nuevo HTML');
 }
 
 // Función auxiliar para formatear números
@@ -808,7 +808,7 @@ function initializeSeguimientoRealtime() {
         return;
     }
 
-    console.log('✅ Echo disponible, suscribiendo a canales...');
+    console.log(' Echo disponible, suscribiendo a canales...');
     
     // Evitar suscripciones duplicadas
     if (window.seguimientoChannelSubscribed) {
@@ -822,7 +822,7 @@ function initializeSeguimientoRealtime() {
     // para evitar duplicación. Este componente solo expone las funciones
     // de recarga que son llamadas desde tableros.blade.php
     
-    console.log('✅ Funciones de seguimiento disponibles (listeners manejados por tableros.blade.php)');
+    console.log(' Funciones de seguimiento disponibles (listeners manejados por tableros.blade.php)');
 }
 
 // Función para recargar los datos de seguimiento
@@ -852,7 +852,7 @@ function recargarSeguimiento() {
         const seguimientoData = data.seguimiento || data;
         
         if (seguimientoData && seguimientoData.modulosDisponibles) {
-            console.log('✅ Actualizando tabla de seguimiento...');
+            console.log(' Actualizando tabla de seguimiento...');
             console.log('Módulos:', seguimientoData.modulosDisponibles);
             console.log('Totales:', seguimientoData.totales);
             
@@ -862,9 +862,9 @@ function recargarSeguimiento() {
             // Redibujar la tabla usando la función existente
             updateSeguimientoTableContent(seguimientoData);
             
-            console.log('✅ Tabla de seguimiento actualizada');
+            console.log(' Tabla de seguimiento actualizada');
         } else {
-            console.error('❌ No se recibieron datos de seguimiento válidos');
+            console.error(' No se recibieron datos de seguimiento válidos');
             console.error('Estructura recibida:', data);
         }
     })
@@ -893,13 +893,13 @@ function recargarSeguimientoEspecifico(section) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(`✅ Datos de seguimiento recibidos para ${section}:`, data);
+        console.log(` Datos de seguimiento recibidos para ${section}:`, data);
         
         // Los datos pueden venir en data.seguimiento o directamente en data
         const seguimientoData = data.seguimiento || data;
         
         if (seguimientoData && seguimientoData.modulosDisponibles) {
-            console.log('✅ Actualizando tabla de seguimiento...');
+            console.log(' Actualizando tabla de seguimiento...');
             console.log('Módulos:', seguimientoData.modulosDisponibles);
             console.log('Totales:', seguimientoData.totales);
             
@@ -909,14 +909,14 @@ function recargarSeguimientoEspecifico(section) {
             // Redibujar la tabla usando la función existente, pasando la sección
             updateSeguimientoTableContent(seguimientoData, section);
             
-            console.log(`✅ Tabla de seguimiento de ${section} actualizada`);
+            console.log(` Tabla de seguimiento de ${section} actualizada`);
         } else {
-            console.error('❌ No se recibieron datos de seguimiento válidos');
+            console.error(' No se recibieron datos de seguimiento válidos');
             console.error('Estructura recibida:', data);
         }
     })
     .catch(error => {
-        console.error(`❌ Error al recargar seguimiento de ${section}:`, error);
+        console.error(` Error al recargar seguimiento de ${section}:`, error);
     });
 }
 

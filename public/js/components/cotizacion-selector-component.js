@@ -178,7 +178,7 @@
                 }
             })
             .catch(error => {
-                console.error('❌ Error al cargar cotización:', error);
+                console.error(' Error al cargar cotización:', error);
                 const prendasContainer = document.getElementById('prendas-container');
                 if (prendasContainer) {
                     prendasContainer.innerHTML = '<p class="text-red-500">Error al cargar los datos: ' + error.message + '</p>';

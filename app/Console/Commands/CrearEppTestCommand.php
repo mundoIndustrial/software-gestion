@@ -43,14 +43,14 @@ class CrearEppTestCommand extends Command
 
             $resultado = $this->commandBus->execute($command);
 
-            $this->info('✅ EPP creado exitosamente!');
+            $this->info(' EPP creado exitosamente!');
             $this->info('📊 Resultado:');
             $this->line(json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('❌ Error al crear EPP:');
+            $this->error(' Error al crear EPP:');
             $this->error('   ' . $e->getMessage());
 
             return self::FAILURE;

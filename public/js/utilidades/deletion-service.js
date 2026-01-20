@@ -67,19 +67,19 @@ class DeletionService {
             reloadPage = this.config.reloadOnSuccess
         } = config;
 
-        // ✅ Validaciones
+        //  Validaciones
         if (!endpoint) {
-            console.error('❌ [DeletionService] endpoint es requerido');
+            console.error(' [DeletionService] endpoint es requerido');
             UI.toastError('Error: configuración incompleta');
             return;
         }
 
         if (!resourceName) {
-            console.error('❌ [DeletionService] resourceName es requerido');
+            console.error(' [DeletionService] resourceName es requerido');
             return;
         }
 
-        // ✅ 1. Solicitar confirmación
+        //  1. Solicitar confirmación
         console.log(`🗑️ [DeletionService] Confirmando eliminación de ${resourceName} #${identifier}`);
         
         const confirmed = await UI.confirmarEliminacion(resourceName, identifier);
@@ -88,14 +88,14 @@ class DeletionService {
             return;
         }
 
-        // ✅ 2. Mostrar estado de carga
+        //  2. Mostrar estado de carga
         UI.cargando(
             `Eliminando ${resourceName}...`,
             `Por favor espera mientras se elimina ${resourceName}`
         );
 
         try {
-            // ✅ 3. Hacer petición DELETE
+            //  3. Hacer petición DELETE
             console.log(`📤 [DeletionService] DELETE ${endpoint}`);
             
             const response = await fetch(endpoint, {
@@ -109,9 +109,9 @@ class DeletionService {
 
             const data = await response.json();
 
-            // ✅ 4. Manejar respuesta
+            //  4. Manejar respuesta
             if (response.ok && data.success) {
-                console.log(`✅ [DeletionService] ${resourceName} eliminado correctamente`);
+                console.log(` [DeletionService] ${resourceName} eliminado correctamente`);
                 
                 // Cerrar modal de carga
                 Swal.close();
@@ -138,7 +138,7 @@ class DeletionService {
             }
 
         } catch (error) {
-            console.error(`❌ [DeletionService] Error:`, error);
+            console.error(` [DeletionService] Error:`, error);
             
             // Cerrar modal de carga
             Swal.close();
@@ -410,4 +410,4 @@ class DeletionService {
 
 window.Deletion = DeletionService;
 
-console.log('✅ DeletionService cargado y disponible como window.Deletion');
+console.log(' DeletionService cargado y disponible como window.Deletion');

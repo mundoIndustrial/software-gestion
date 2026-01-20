@@ -471,7 +471,7 @@ function showNotificationDetailModal(notif) {
     
     const metadataHTML = notif.metadata ? `
         <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-            <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: 0.95rem;">📋 Información Adicional</h4>
+            <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: 0.95rem;"> Información Adicional</h4>
             <div style="background: var(--bg-hover); padding: 1rem; border-radius: 8px; font-size: 0.85rem;">
                 <pre style="margin: 0; color: var(--text-secondary); overflow-x: auto; white-space: pre-wrap; word-break: break-word;">
 ${JSON.stringify(notif.metadata, null, 2)}

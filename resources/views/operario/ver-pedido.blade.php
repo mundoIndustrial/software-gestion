@@ -956,7 +956,7 @@
     function llenarDatosModal() {
         // Esta función ahora solo es usada por el API
         // Los datos se llenan a través de llenarReciboCosturaMobile()
-        console.log('✅ llenarDatosModal: datos ya se llenan desde el API');
+        console.log(' llenarDatosModal: datos ya se llenan desde el API');
     }
 
     // Detectar si es móvil
@@ -965,7 +965,7 @@
     }
 
     // Generar imagen al cargar la página - Ejecutar inmediatamente
-    console.log('✅ Script cargado - verificando elementos del DOM');
+    console.log(' Script cargado - verificando elementos del DOM');
     
     /**
      * Función: llenarFotos
@@ -975,13 +975,13 @@
     let indiceActualGaleria = 0; // Índice de la foto actual en la galería
     
     function llenarFotos(fotos) {
-        console.log('🖼️ Función llenarFotos llamada con', fotos.length, 'fotos');
+        console.log(' Función llenarFotos llamada con', fotos.length, 'fotos');
         
         fotosGlobales = fotos; // Guardar fotos globalmente
         
         const fotosGrid = document.getElementById('fotos-grid');
         if (!fotosGrid) {
-            console.error('❌ No se encontró elemento #fotos-grid');
+            console.error(' No se encontró elemento #fotos-grid');
             return;
         }
         
@@ -1023,7 +1023,7 @@
             fotosGrid.appendChild(fotoCard);
         });
         
-        console.log('✅ Galería de fotos cargada con', fotos.length, 'imagen(es) - Lazy loading activado');
+        console.log(' Galería de fotos cargada con', fotos.length, 'imagen(es) - Lazy loading activado');
     }
     
     /**
@@ -1198,11 +1198,11 @@
     });
     
     // Generar imagen al cargar la página - Ejecutar inmediatamente
-    console.log('✅ Script cargado - verificando elementos del DOM');
+    console.log(' Script cargado - verificando elementos del DOM');
     
     // Esperar un poco para asegurar que el DOM esté listo
     setTimeout(function() {
-        console.log('✅ Iniciando verificación de móvil');
+        console.log(' Iniciando verificación de móvil');
         llenarDatosModal();
         
         console.log('📱 Verificando elementos del DOM...');
@@ -1211,8 +1211,8 @@
         console.log('📱 Container mobile encontrado?', !!containerMobile);
         
         if (!containerMobile) {
-            console.error('❌ ERROR: No se encontró #factura-container-mobile en el DOM');
-            console.log('📋 IDs en el documento:', document.querySelectorAll('[id]').length);
+            console.error(' ERROR: No se encontró #factura-container-mobile en el DOM');
+            console.log(' IDs en el documento:', document.querySelectorAll('[id]').length);
             return;
         }
         
@@ -1223,11 +1223,11 @@
         console.log('📱 Número de pedido del data-attribute:', numeroPedido);
         
         if (!numeroPedido) {
-            console.error('❌ ERROR: No hay data-numero-pedido en el contenedor');
+            console.error(' ERROR: No hay data-numero-pedido en el contenedor');
             return;
         }
         
-        // ✅ USAR EL MISMO ENDPOINT QUE ASESORES: /registros/{numeroPedido}
+        //  USAR EL MISMO ENDPOINT QUE ASESORES: /registros/{numeroPedido}
         const apiUrl = '/registros/' + numeroPedido;
         console.log('📝 URL API (mismo que asesores):', apiUrl);
         
@@ -1240,12 +1240,12 @@
                 return response.json();
             })
             .then(function(data) {
-                console.log('✅ Datos del API recibidos:', data);
+                console.log(' Datos del API recibidos:', data);
                 console.log('🔍 DEBUG - data.descripcion_prendas:', data.descripcion_prendas);
                 console.log('🔍 DEBUG - data.prendas:', data.prendas);
                 console.log('🔍 DEBUG - data.prendas?.length:', data.prendas?.length);
                 
-                // ✅ USAR LOS DATOS DIRECTAMENTE DEL CONTROLADOR (igual que asesores)
+                //  USAR LOS DATOS DIRECTAMENTE DEL CONTROLADOR (igual que asesores)
                 const pedidoData = {
                     fecha: data.fecha_de_creacion_de_orden || data.fecha_creacion || new Date().toISOString().split('T')[0],
                     asesora: data.asesora || 'N/A',
@@ -1258,15 +1258,15 @@
                     prendas: data.prendas || []
                 };
                 
-                console.log('📦 Datos reformateados:', pedidoData);
-                console.log('📋 descripcion_prendas disponible:', !!pedidoData.descripcion);
+                console.log(' Datos reformateados:', pedidoData);
+                console.log(' descripcion_prendas disponible:', !!pedidoData.descripcion);
                 
                 if (window.llenarReciboCosturaMobile) {
                     console.log('🎨 Llamando a llenarReciboCosturaMobile...');
                     window.llenarReciboCosturaMobile(pedidoData);
                     console.log('🎨 llenarReciboCosturaMobile completado');
                 } else {
-                    console.error('❌ Función llenarReciboCosturaMobile NO encontrada');
+                    console.error(' Función llenarReciboCosturaMobile NO encontrada');
                 }
                 
                 // ===== CARGAR FOTOS DESDE ENDPOINT DE IMÁGENES (igual que asesores) =====
@@ -1297,13 +1297,13 @@
                         llenarFotos(todasLasFotos);
                     })
                     .catch(function(error) {
-                        console.error('❌ Error al cargar imágenes:', error);
+                        console.error(' Error al cargar imágenes:', error);
                         llenarFotos([]);
                     });
             })
             .catch(function(error) {
-                console.error('❌ Error en fetch:', error);
-                console.error('❌ Stack:', error.stack);
+                console.error(' Error en fetch:', error);
+                console.error(' Stack:', error.stack);
             });
     }, 500);
 
@@ -1467,7 +1467,7 @@
                 // Actualizar estado en la UI
                 actualizarEstadoEnUI(data.estado_nuevo);
                 
-                mostrarModalRespuesta('✅ Éxito', data.message, 'success');
+                mostrarModalRespuesta(' Éxito', data.message, 'success');
                 
                 // Limpiar formulario
                 document.getElementById('form-reportar-novedad').reset();
@@ -1478,12 +1478,12 @@
                     location.reload();
                 }, 2000);
             } else {
-                mostrarModalRespuesta('❌ Error', data.message, 'error');
+                mostrarModalRespuesta(' Error', data.message, 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            mostrarModalRespuesta('❌ Error', 'Error al enviar la novedad', 'error');
+            mostrarModalRespuesta(' Error', 'Error al enviar la novedad', 'error');
         });
     }
 

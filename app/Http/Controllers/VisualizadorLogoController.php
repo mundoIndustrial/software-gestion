@@ -40,7 +40,7 @@ class VisualizadorLogoController extends Controller
 
         $tiposPermitidos = array_filter([$tipoLogoId, $tipoCombinada1Id, $tipoCombinada2Id]);
         
-        \Log::info('📋 Tipos de cotización permitidos:', [
+        \Log::info(' Tipos de cotización permitidos:', [
             'tipoLogoId' => $tipoLogoId,
             'tipoCombinada1Id' => $tipoCombinada1Id,
             'tipoCombinada2Id' => $tipoCombinada2Id,
@@ -99,7 +99,7 @@ class VisualizadorLogoController extends Controller
             ]);
         }
         
-        \Log::info('✅ ===== FIN getCotizaciones =====');
+        \Log::info(' ===== FIN getCotizaciones =====');
 
         return response()->json([
             'success' => true,

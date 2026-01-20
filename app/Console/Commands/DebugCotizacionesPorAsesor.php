@@ -62,7 +62,7 @@ class DebugCotizacionesPorAsesor extends Command
         $this->info("Total APROBADAS: " . $aprobadas->count());
         foreach ($aprobadas as $cot) {
             $cliente = $cot->cliente ? $cot->cliente->nombre : 'SIN CLIENTE';
-            $this->line("  ✅ ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | CLIENTE: $cliente | PRENDAS: " . $cot->prendasCotizaciones->count());
+            $this->line("   ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | CLIENTE: $cliente | PRENDAS: " . $cot->prendasCotizaciones->count());
         }
 
         if ($aprobadas->count() === 0) {

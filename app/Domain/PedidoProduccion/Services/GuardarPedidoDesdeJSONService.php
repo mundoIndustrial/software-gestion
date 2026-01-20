@@ -224,7 +224,7 @@ class GuardarPedidoDesdeJSONService
         $contador = 0;
 
         foreach ($variantes as $varianteData) {
-            // ✅ [19/01/2026] Talla y cantidad YA se guardan en prendas_pedido.cantidad_talla (JSON)
+            //  [19/01/2026] Talla y cantidad YA se guardan en prendas_pedido.cantidad_talla (JSON)
             // Las variantes son ahora SOLO combinaciones de características (color, tela, manga, broche, bolsillos)
 
             $prendaPedido->variantes()->create([

@@ -217,7 +217,7 @@
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
-            <div x-show="showRecords" class="records-table-container" x-init="console.log('📋 Tabla Polos - showRecords:', showRecords, 'Visible:', showRecords)">
+            <div x-show="showRecords" class="records-table-container" x-init="console.log(' Tabla Polos - showRecords:', showRecords, 'Visible:', showRecords)">
                 <div class="table-scroll-container">
                     <table class="modern-table" data-section="polos">
                         <thead class="table-head">
@@ -593,7 +593,7 @@ function handleCellDoubleClick() {
     console.log(`📝 Editando - ID: ${currentRowId}, Columna: ${currentColumn}, Valor: ${currentValue}`);
     
     if (!currentRowId) {
-        console.error('❌ ERROR: No se pudo obtener el ID del registro');
+        console.error(' ERROR: No se pudo obtener el ID del registro');
         alert('Error: No se pudo identificar el registro');
         return;
     }
@@ -696,7 +696,7 @@ function setupAutocomplete(type) {
                         items = data.telas;
                     }
                     
-                    console.log(`✅ Encontrados ${items.length} resultados para ${type}`);
+                    console.log(` Encontrados ${items.length} resultados para ${type}`);
                     
                     items.forEach(item => {
                         const option = document.createElement('option');
@@ -713,7 +713,7 @@ function setupAutocomplete(type) {
                         datalist.appendChild(option);
                     });
                 })
-                .catch(error => console.error(`❌ Error buscando ${type}:`, error));
+                .catch(error => console.error(` Error buscando ${type}:`, error));
         }, 300);
     };
     
@@ -823,7 +823,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             window.editableCellListenerAttached = true;
-            console.log('✅ Event delegation para celdas editables adjuntado UNA sola vez');
+            console.log(' Event delegation para celdas editables adjuntado UNA sola vez');
         }
     }
 
@@ -930,7 +930,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     newValue = cachedData[dataKey];
                     payload[columnName] = newValue;
                     timings.cacheHit = performance.now() - startTime;
-                    console.log(`✅ ${columnName} obtenido del caché:`, cachedData, `(${timings.cacheHit.toFixed(2)}ms)`);
+                    console.log(` ${columnName} obtenido del caché:`, cachedData, `(${timings.cacheHit.toFixed(2)}ms)`);
                 } else {
                     const searchStart = performance.now();
                     // ⚡ OPTIMIZACIÓN: Marcar que estamos buscando para evitar actualizaciones de seguimiento
@@ -968,7 +968,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const keyToStore = cacheType === 'hora' ? String(data[displayKey]) : String(data[displayKey]).toUpperCase();
                         searchCache[cacheType][keyToStore] = data;
                         
-                        console.log(`✅ ${columnName} encontrado/creado y cacheado:`, data, `(búsqueda: ${timings.searchRequest.toFixed(2)}ms)`);
+                        console.log(` ${columnName} encontrado/creado y cacheado:`, data, `(búsqueda: ${timings.searchRequest.toFixed(2)}ms)`);
                     } else {
                         hideLoading();
                         alert(`Error al procesar ${columnName}`);
@@ -977,12 +977,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     } finally {
                         // ⚡ OPTIMIZACIÓN: Resetear el flag después de búsqueda
                         isSearchingCell = false;
-                        console.log(`✅ isSearchingCell = false (búsqueda completada)`);
+                        console.log(` isSearchingCell = false (búsqueda completada)`);
                     }
                 }
             }
         } catch (error) {
-            console.error('❌ Error al buscar/crear:', error);
+            console.error(' Error al buscar/crear:', error);
             isSearchingCell = false; // Resetear también en caso de error
             hideLoading();
             alert('Error al procesar el cambio');
@@ -998,7 +998,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         console.log(`📤 Enviando PATCH a /tableros/${currentRowId}`);
-        console.log(`📦 Payload:`, payload);
+        console.log(` Payload:`, payload);
         
         const patchStart = performance.now();
         
@@ -1007,7 +1007,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
             currentCell.dataset.value = displayName;
             currentCell.textContent = displayName;
-            console.log(`✅ Celda actualizada INMEDIATAMENTE en el front: ${displayName}`);
+            console.log(` Celda actualizada INMEDIATAMENTE en el front: ${displayName}`);
         } else if (currentColumn !== 'paradas_programadas') {
             // Para otros campos que no son paradas_programadas, actualizar también inmediatamente
             currentCell.dataset.value = newValue;
@@ -1028,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            console.log(`✅ Respuesta del servidor:`, data);
+            console.log(` Respuesta del servidor:`, data);
             console.log(`🔍 data.data existe:`, !!data.data);
             console.log(`🔍 data.data contenido:`, data.data);
             const totalTime = performance.now() - startTime;
@@ -1047,28 +1047,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (currentColumn === 'hora_id' && data.data.hora && typeof data.data.hora === 'object') {
                         displayValue = data.data.hora.hora;
-                        console.log(`✅ Extraído hora: ${displayValue}`);
+                        console.log(` Extraído hora: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].hora = data.data.hora;
                         }
                     } else if (currentColumn === 'operario_id' && data.data.operario && typeof data.data.operario === 'object') {
                         displayValue = data.data.operario.name;
-                        console.log(`✅ Extraído operario: ${displayValue}`);
+                        console.log(` Extraído operario: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].operario = data.data.operario;
                         }
                     } else if (currentColumn === 'maquina_id' && data.data.maquina && typeof data.data.maquina === 'object') {
                         displayValue = data.data.maquina.nombre_maquina;
-                        console.log(`✅ Extraído maquina: ${displayValue}`);
+                        console.log(` Extraído maquina: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].maquina = data.data.maquina;
                         }
                     } else if (currentColumn === 'tela_id' && data.data.tela && typeof data.data.tela === 'object') {
                         displayValue = data.data.tela.nombre_tela;
-                        console.log(`✅ Extraído tela: ${displayValue}`);
+                        console.log(` Extraído tela: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].tela = data.data.tela;
@@ -1079,13 +1079,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     currentCell.dataset.value = displayValue;
                     currentCell.textContent = displayValue;
-                    console.log(`✅ Celda confirmada con nombre desde servidor: ${displayValue}`);
+                    console.log(` Celda confirmada con nombre desde servidor: ${displayValue}`);
                 } else if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn)) {
                     console.log(`⚠️ No hay data.data para extraer, usando displayName: ${displayName}`);
                     // Asegurar que se muestra el displayName (ya actualizado en optimistic update)
                     currentCell.dataset.value = displayName;
                     currentCell.textContent = displayName;
-                    console.log(`✅ Celda confirmada con: ${displayName}`);
+                    console.log(` Celda confirmada con: ${displayName}`);
                 } else {
                     currentCell.dataset.value = newValue;
                     currentCell.textContent = formatDisplayValue(currentColumn, newValue);
@@ -1155,13 +1155,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification('Cambios guardados correctamente', 'success');
             } else {
                 hideLoading();
-                console.error('❌ Error del servidor:', data.message);
-                console.error('❌ Respuesta completa:', data);
+                console.error(' Error del servidor:', data.message);
+                console.error(' Respuesta completa:', data);
                 alert('Error al guardar: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('❌ Error de red:', error);
+            console.error(' Error de red:', error);
             hideLoading();
             alert('Error al guardar los cambios: ' + error.message);
         });
@@ -1246,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log('✅ Registro duplicado exitosamente:', data.registro);
+                console.log(' Registro duplicado exitosamente:', data.registro);
                 
                 // Agregar el registro a la tabla INMEDIATAMENTE (sin esperar WebSocket)
                 console.log('⚡ Agregando registro a la tabla inmediatamente...');
@@ -1376,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log('✅ Registro eliminado del servidor:', id);
+                console.log(' Registro eliminado del servidor:', id);
                 
                 // Ocultar loading
                 hideLoading();
@@ -1552,10 +1552,10 @@ function initializeRealtimeListeners() {
         });
     });
     
-    console.log('✅ Mapa de registros inicializado. Contenido:', registrosMap);
+    console.log(' Mapa de registros inicializado. Contenido:', registrosMap);
 
     if (!window.Echo) {
-        console.error('❌ Echo NO está disponible. Reintentando en 500ms...');
+        console.error(' Echo NO está disponible. Reintentando en 500ms...');
         setTimeout(initializeRealtimeListeners, 500);
         return;
     }
@@ -1567,15 +1567,15 @@ function initializeRealtimeListeners() {
     }
     
     window.tablerosChannelSubscribed = true;
-    console.log('✅ Echo disponible. Suscribiendo a canales...');
+    console.log(' Echo disponible. Suscribiendo a canales...');
 
     // Canal de Producción
     const produccionChannel = window.Echo.channel('produccion');
     produccionChannel.subscribed(() => {
-        console.log('✅ Suscrito al canal "produccion"');
+        console.log(' Suscrito al canal "produccion"');
     });
     produccionChannel.error((error) => {
-        console.error('❌ Error en canal "produccion":', error);
+        console.error(' Error en canal "produccion":', error);
     });
     produccionChannel.listen('ProduccionRecordCreated', (e) => {
         console.log('🎉 Evento ProduccionRecordCreated recibido!', e);
@@ -1603,10 +1603,10 @@ function initializeRealtimeListeners() {
     // Canal de Polo
     const poloChannel = window.Echo.channel('polo');
     poloChannel.subscribed(() => {
-        console.log('✅ Suscrito al canal "polo"');
+        console.log(' Suscrito al canal "polo"');
     });
     poloChannel.error((error) => {
-        console.error('❌ Error en canal "polo":', error);
+        console.error(' Error en canal "polo":', error);
     });
     poloChannel.listen('PoloRecordCreated', (e) => {
         console.log('🎉 Evento PoloRecordCreated recibido!', e);
@@ -1634,10 +1634,10 @@ function initializeRealtimeListeners() {
     // Canal de Corte
     const corteChannel = window.Echo.channel('corte');
     corteChannel.subscribed(() => {
-        console.log('✅ Suscrito al canal "corte"');
+        console.log(' Suscrito al canal "corte"');
     });
     corteChannel.error((error) => {
-        console.error('❌ Error en canal "corte":', error);
+        console.error(' Error en canal "corte":', error);
     });
     corteChannel.listen('CorteRecordCreated', (e) => {
         console.log('🎉 Evento CorteRecordCreated recibido!', e);
@@ -1665,7 +1665,7 @@ function initializeRealtimeListeners() {
         }
     });
 
-    console.log('✅ Todos los listeners configurados');
+    console.log(' Todos los listeners configurados');
 }
 
 // Función para agregar un registro en tiempo real a la tabla
@@ -1812,7 +1812,7 @@ function agregarRegistroTiempoReal(registro, section) {
     // 🗺️ Guardar referencia al registro para poder actualizarlo si se edita
     registrosMap[section][registro.id] = registro;
 
-    console.log(`✅ Registro ${registro.id} agregado a la tabla de ${section}`);
+    console.log(` Registro ${registro.id} agregado a la tabla de ${section}`);
     
     // ⚡ OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
     if (typeof actualizarSeguimientoDebounced === 'function') {
@@ -1958,8 +1958,8 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
     const seguimientoContainer = document.getElementById(containerId);
     
     if (!seguimientoContainer) {
-        console.log(`❌ No se encontró contenedor de seguimiento para ${currentSection}`);
-        console.log('📋 Contenedores disponibles:', 
+        console.log(` No se encontró contenedor de seguimiento para ${currentSection}`);
+        console.log(' Contenedores disponibles:', 
             Array.from(document.querySelectorAll('[id^="seguimiento-container-"]')).map(el => el.id)
         );
         console.log('⚠️ Recargando página completa...');
@@ -1967,7 +1967,7 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         return;
     }
     
-    console.log('✅ Contenedor de seguimiento encontrado:', seguimientoContainer);
+    console.log(' Contenedor de seguimiento encontrado:', seguimientoContainer);
     
     // Mostrar indicador de carga
     seguimientoContainer.style.opacity = '0.5';
@@ -2000,8 +2000,8 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         const newSeguimientoContainer = tempDiv.querySelector(`#${newContainerId}`);
         
         if (!newSeguimientoContainer) {
-            console.log('❌ No se encontró nuevo contenedor en HTML recibido');
-            console.log('📋 IDs disponibles en HTML recibido:', 
+            console.log(' No se encontró nuevo contenedor en HTML recibido');
+            console.log(' IDs disponibles en HTML recibido:', 
                 Array.from(tempDiv.querySelectorAll('[id^="seguimiento-container-"]')).map(el => el.id)
             );
         }
@@ -2010,7 +2010,7 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
             // Reemplazar el contenido completo del contenedor
             console.log('🔄 Reemplazando contenido del contenedor...');
             seguimientoContainer.innerHTML = newSeguimientoContainer.innerHTML;
-            console.log('✅ Componente de seguimiento actualizado completamente');
+            console.log(' Componente de seguimiento actualizado completamente');
             
             // Restaurar opacidad
             seguimientoContainer.style.opacity = '1';
@@ -2019,12 +2019,12 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
             // Actualizar URL sin recargar
             window.history.pushState({}, '', url.toString());
             
-            console.log('✅ Filtro aplicado exitosamente');
+            console.log(' Filtro aplicado exitosamente');
             return;
         }
         
         // Si no se encontró el nuevo contenedor, recargar la página
-        console.log('❌ No se pudo actualizar el componente, recargando página...');
+        console.log(' No se pudo actualizar el componente, recargando página...');
         window.location.href = url.toString();
     })
     .catch(error => {
@@ -2105,7 +2105,7 @@ function initializePaginationAjax() {
             }
             
             if (!page) {
-                console.log('❌ No se pudo obtener el número de página');
+                console.log(' No se pudo obtener el número de página');
                 return;
             }
             
@@ -2119,7 +2119,7 @@ function initializePaginationAjax() {
             
             console.log('🎯 Sección detectada:', section);
             
-            console.log('📋 Sección determinada:', section);
+            console.log(' Sección determinada:', section);
             
             // ✨ ACTUALIZAR BOTÓN ACTIVO INMEDIATAMENTE (antes del AJAX)
             updateActiveButtonImmediately(paginationLink, section, page);
@@ -2127,11 +2127,11 @@ function initializePaginationAjax() {
             // Hacer petición AJAX
             loadPage(page, section);
         } else {
-            console.log('❌ Click NO fue en elemento de paginación');
+            console.log(' Click NO fue en elemento de paginación');
         }
     });
     
-    console.log('✅ Event listeners de paginación inicializados');
+    console.log(' Event listeners de paginación inicializados');
 }
 
 // Función para actualizar el botón activo INMEDIATAMENTE al hacer click
@@ -2142,15 +2142,15 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
     
     const paginationContainer = document.querySelector(`[data-section="${section}"]`);
     if (!paginationContainer) {
-        console.error('❌ No se encontró paginationContainer para sección:', section);
+        console.error(' No se encontró paginationContainer para sección:', section);
         return;
     }
     
-    console.log('✅ paginationContainer encontrado:', paginationContainer);
+    console.log(' paginationContainer encontrado:', paginationContainer);
     
     const paginationNav = paginationContainer.querySelector('.pagination');
     if (!paginationNav) {
-        console.error('❌ No se encontró paginationNav dentro de:', paginationContainer);
+        console.error(' No se encontró paginationNav dentro de:', paginationContainer);
         console.log('🔍 Elementos dentro del container:', paginationContainer.innerHTML);
         
         // Buscar en todo el documento como fallback
@@ -2190,7 +2190,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
             
             // PASO 2: Agregar 'active' al elemento clickeado
             clickedElement.classList.add('active');
-            console.log(`✅ Clases después de agregar active: ${clickedElement.className}`);
+            console.log(` Clases después de agregar active: ${clickedElement.className}`);
             
             // PASO 3: Aplicar estilos directamente SOLO al elemento clickeado
             clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
@@ -2201,7 +2201,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
         return;
     }
     
-    console.log('📋 Elementos encontrados en paginación:');
+    console.log(' Elementos encontrados en paginación:');
     
     // PASO 1: Quitar 'active' y estilos de TODOS los botones/enlaces
     paginationNav.querySelectorAll('button, a').forEach((element, index) => {
@@ -2218,7 +2218,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
     
     // PASO 2: Agregar 'active' al elemento clickeado
     clickedElement.classList.add('active');
-    console.log(`✅ Clases después de agregar active: ${clickedElement.className}`);
+    console.log(` Clases después de agregar active: ${clickedElement.className}`);
     
     // PASO 3: Aplicar estilos directamente SOLO al elemento clickeado
     clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
@@ -2306,7 +2306,7 @@ function loadPage(page, section) {
             // Actualizar URL sin recargar
             window.history.pushState({}, '', url.toString());
             
-            console.log('✅ Tabla actualizada exitosamente');
+            console.log(' Tabla actualizada exitosamente');
         } catch (updateError) {
             console.error('Error al actualizar tabla:', updateError);
             // No recargar la página, solo mostrar el error
@@ -2344,7 +2344,7 @@ function updatePaginationLinks(pagination, section) {
     const paginationControls = paginationContainer.querySelector('.pagination-controls');
     if (paginationControls && pagination.links_html) {
         paginationControls.innerHTML = pagination.links_html;
-        console.log(`✅ Enlaces de paginación actualizados desde el servidor`);
+        console.log(` Enlaces de paginación actualizados desde el servidor`);
         
         // Re-attach event listeners after updating pagination HTML
         attachPaginationClickListeners(section);
@@ -2364,7 +2364,7 @@ function updatePaginationLinks(pagination, section) {
         console.log(`📊 Barra de progreso: ${progressPercent}%`);
     }
     
-    console.log(`✅ Paginación actualizada para ${section}`);
+    console.log(` Paginación actualizada para ${section}`);
 }
 
 function updateTableContent(registros, columns, section) {
@@ -2379,7 +2379,7 @@ function updateTableContent(registros, columns, section) {
         const table = tbody.closest('table');
         if (table && table.dataset.section === section) {
             tableBody = tbody;
-            console.log(`✅ Tabla encontrada para sección ${section}:`, table);
+            console.log(` Tabla encontrada para sección ${section}:`, table);
         }
     });
     

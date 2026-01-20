@@ -264,7 +264,7 @@ async function markNotificationAsRead(notificationId) {
         await window.fetchAPI(`/asesores/notifications/${notificationId}/mark-read`, {
             method: 'POST'
         });
-        console.log(`✅ Notificación ${notificationId} marcada como leída`);
+        console.log(` Notificación ${notificationId} marcada como leída`);
     } catch (error) {
         console.error(`Error marcando notificación ${notificationId}:`, error);
     }

@@ -26,6 +26,6 @@ function renderizarCamposLogo(logoCotizacion) {
     if (typeof mostrarSeccionPrendasTecnicasLogoNuevo === 'function') {
         mostrarSeccionPrendasTecnicasLogoNuevo();
     } else {
-        console.error('❌ Error: mostrarSeccionPrendasTecnicasLogoNuevo no está disponible');
+        console.error(' Error: mostrarSeccionPrendasTecnicasLogoNuevo no está disponible');
     }
 }

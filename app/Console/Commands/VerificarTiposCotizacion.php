@@ -22,7 +22,7 @@ class VerificarTiposCotizacion extends Command
             return;
         }
 
-        $this->line('📋 Tipos de Cotización:');
+        $this->line(' Tipos de Cotización:');
         $this->newLine();
 
         foreach ($tipos as $tipo) {
@@ -30,7 +30,7 @@ class VerificarTiposCotizacion extends Command
             $this->line("   Código: <fg=yellow>{$tipo->codigo}</>");
             $this->line("   Nombre: <fg=green>{$tipo->nombre}</>");
             $this->line("   Descripción: {$tipo->descripcion}");
-            $this->line("   Activo: " . ($tipo->activo ? '✅' : '❌'));
+            $this->line("   Activo: " . ($tipo->activo ? '' : ''));
             $this->newLine();
         }
 
@@ -58,6 +58,6 @@ class VerificarTiposCotizacion extends Command
         }
 
         $this->newLine();
-        $this->info('✅ VERIFICACIÓN COMPLETADA');
+        $this->info(' VERIFICACIÓN COMPLETADA');
     }
 }

@@ -24,17 +24,18 @@
 @endpush
 
 @push('scripts')
-<!-- ✅ SERVICIOS CENTRALIZADOS - Cargar PRIMERO -->
+<!--  SERVICIOS CENTRALIZADOS - Cargar PRIMERO -->
 <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
 <script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
 <script src="{{ asset('js/utilidades/deletion-service.js') }}"></script>
+<script src="{{ asset('js/utilidades/galeria-service.js') }}"></script>
 
 <script>
-    // ✅ Configurar variables globales
+    //  Configurar variables globales
     window.fetchUrl = '/registros';
     window.modalContext = 'pedidos';
 
-    // ✅ REFACTORIZADO: verMotivoanulacion() - Usar UIModalService
+    //  REFACTORIZADO: verMotivoanulacion() - Usar UIModalService
     function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
         const html = `
             <div style="text-align: left;">
@@ -62,14 +63,14 @@
         `;
         
         UI.contenido({
-            titulo: `📋 Motivo de anulación - Pedido #${numeroPedido}`,
+            titulo: ` Motivo de anulación - Pedido #${numeroPedido}`,
             html: html,
             ancho: '500px'
         });
     }
 
 
-    // ✅ REFACTORIZADO: abrirModalDescripcion() - Usar UIModalService
+    //  REFACTORIZADO: abrirModalDescripcion() - Usar UIModalService
     async function abrirModalDescripcion(pedidoId, tipo) {
         try {
             UI.cargando('Cargando información...', 'Por favor espera');
@@ -100,7 +101,7 @@
             }
             
             UI.contenido({
-                titulo: '📦 Prendas y Procesos',
+                titulo: ' Prendas y Procesos',
                 html: htmlContenido,
                 ancho: '800px'
             });
@@ -248,7 +249,7 @@
 
 
 
-    // ✅ REFACTORIZADO: confirmarEliminarPedido - Usar DeletionService
+    //  REFACTORIZADO: confirmarEliminarPedido - Usar DeletionService
     function confirmarEliminarPedido(pedidoId, numeroPedido) {
         Deletion.eliminarPedido(pedidoId, numeroPedido);
     }
@@ -294,7 +295,7 @@
             titulo: `✏️ Editar Pedido #${datosCompletos.numero_pedido}`,
             html: htmlBotones + `<div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">${htmlFactura}</div>`,
             ancho: '900px',
-            confirmButtonText: '✅ Listo'
+            confirmButtonText: ' Listo'
         });
     }
     
@@ -435,9 +436,9 @@
         });
     }
 
-    // ✅ REFACTORIZADO: eliminarPedido - DeletionService maneja todo (confirmación, fetch, notificaciones)
+    //  REFACTORIZADO: eliminarPedido - DeletionService maneja todo (confirmación, fetch, notificaciones)
 
-    // ✅ REFACTORIZADO: mostrarNotificacion - Usar UIModalService.toastExito()/toastError() en su lugar
+    //  REFACTORIZADO: mostrarNotificacion - Usar UIModalService.toastExito()/toastError() en su lugar
 
     /**
      * Buscador principal: buscar por número de pedido o cliente
@@ -537,18 +538,18 @@
 
 <!-- Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
 <script>
-    // ✅ CRÍTICO: Esto se ejecuta INMEDIATAMENTE
+    //  CRÍTICO: Esto se ejecuta INMEDIATAMENTE
     if (!window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage = new ImageStorageService(3);
-        console.log('✅ [INDEX] imagenesPrendaStorage inicializado INMEDIATAMENTE');
+        console.log(' [INDEX] imagenesPrendaStorage inicializado INMEDIATAMENTE');
     }
     if (!window.imagenesTelaStorage) {
         window.imagenesTelaStorage = new ImageStorageService(3);
-        console.log('✅ [INDEX] imagenesTelaStorage inicializado INMEDIATAMENTE');
+        console.log(' [INDEX] imagenesTelaStorage inicializado INMEDIATAMENTE');
     }
     if (!window.imagenesReflectivoStorage) {
         window.imagenesReflectivoStorage = new ImageStorageService(3);
-        console.log('✅ [INDEX] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
+        console.log(' [INDEX] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
     }
     if (!window.telasAgregadas) {
         window.telasAgregadas = [];
@@ -562,7 +563,7 @@
 <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
 
-<!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+<!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>

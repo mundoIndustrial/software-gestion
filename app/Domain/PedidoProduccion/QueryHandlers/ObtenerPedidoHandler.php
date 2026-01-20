@@ -70,7 +70,7 @@ class ObtenerPedidoHandler implements QueryHandler
             // Cachear por 1 hora
             cache()->put($cacheKey, $pedido, now()->addHour());
 
-            Log::info('✅ [ObtenerPedidoHandler] Pedido obtenido de BD y cacheado', [
+            Log::info(' [ObtenerPedidoHandler] Pedido obtenido de BD y cacheado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'prendas_count' => $pedido->prendas?->count() ?? 0,
@@ -80,7 +80,7 @@ class ObtenerPedidoHandler implements QueryHandler
             return $pedido;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ObtenerPedidoHandler] Error obteniendo pedido', [
+            Log::error(' [ObtenerPedidoHandler] Error obteniendo pedido', [
                 'pedido_id' => $query->getPedidoId(),
                 'error' => $e->getMessage(),
             ]);

@@ -96,13 +96,13 @@ let currentImageIndexLogo = 0;
 let currentPedidoNumberLogo = null; // Variable global para guardar el número de pedido
 
 function toggleFacturaLogo() {
-    console.log('🎬 [TOGGLE FACTURA LOGO] Iniciando cambio a factura...');
+    console.log(' [TOGGLE FACTURA LOGO] Iniciando cambio a factura...');
     console.trace('📍 [TOGGLE FACTURA LOGO] Stack trace de quién llamó esta función');
     
     // ⚠️ IMPORTANTE: Buscar SOLO dentro del modal de logo
     const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
     if (!modalWrapper) {
-        console.error('❌ [TOGGLE FACTURA LOGO] No se encontró el wrapper del modal de logo');
+        console.error(' [TOGGLE FACTURA LOGO] No se encontró el wrapper del modal de logo');
         return;
     }
     
@@ -112,15 +112,15 @@ function toggleFacturaLogo() {
         container.style.padding = '1.5cm';  // Restaurar padding original
         container.style.alignItems = 'center';  // Restaurar center
         container.style.justifyContent = 'center';  // Restaurar center
-        container.style.height = 'auto';  // ✅ Restaurar altura automática
+        container.style.height = 'auto';  //  Restaurar altura automática
         container.style.width = '100%';
     }
     
-    // ✅ RESTAURAR el tamaño original del wrapper
+    //  RESTAURAR el tamaño original del wrapper
     modalWrapper.style.maxWidth = '672px';
     modalWrapper.style.width = '90%';
     modalWrapper.style.height = 'auto';
-    console.log('✅ [TOGGLE FACTURA LOGO] Wrapper restaurado a tamaño original');
+    console.log(' [TOGGLE FACTURA LOGO] Wrapper restaurado a tamaño original');
     
     const card = modalWrapper.querySelector('.order-detail-card');
     if (card) card.style.display = 'block';
@@ -138,29 +138,29 @@ function toggleFacturaLogo() {
 }
 
 function toggleGaleriaLogo() {
-    console.log('🎬 [TOGGLE GALERIA LOGO] Iniciando cambio a galería...');
+    console.log(' [TOGGLE GALERIA LOGO] Iniciando cambio a galería...');
     
     // ⚠️ IMPORTANTE: Buscar SOLO dentro del modal de logo
     const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
     if (!modalWrapper) {
-        console.error('❌ [TOGGLE GALERIA LOGO] No se encontró el wrapper del modal de logo');
+        console.error(' [TOGGLE GALERIA LOGO] No se encontró el wrapper del modal de logo');
         return;
     }
     
     // Ocultar factura y mostrar galería
     const card = modalWrapper.querySelector('.order-detail-card');
-    console.log('📋 [TOGGLE GALERIA LOGO] Card encontrada:', !!card);
+    console.log(' [TOGGLE GALERIA LOGO] Card encontrada:', !!card);
     if (card) {
         card.style.display = 'none';
-        console.log('✅ [TOGGLE GALERIA LOGO] Card ocultada, display:', card.style.display);
+        console.log(' [TOGGLE GALERIA LOGO] Card ocultada, display:', card.style.display);
     }
     
     // Configurar el contenedor para la galería
     const container = modalWrapper.querySelector('.order-detail-modal-container');
-    console.log('📦 [TOGGLE GALERIA LOGO] Container encontrado:', !!container);
+    console.log(' [TOGGLE GALERIA LOGO] Container encontrado:', !!container);
     
     if (container) {
-        console.log('📦 [TOGGLE GALERIA LOGO] Container antes:', {
+        console.log(' [TOGGLE GALERIA LOGO] Container antes:', {
             padding: container.style.padding,
             alignItems: container.style.alignItems,
             justifyContent: container.style.justifyContent,
@@ -168,14 +168,14 @@ function toggleGaleriaLogo() {
             width: container.style.width
         });
         
-        // ✅ Remover padding para que el header quede pegado arriba
+        //  Remover padding para que el header quede pegado arriba
         container.style.padding = '0';
         container.style.alignItems = 'stretch';
         container.style.justifyContent = 'flex-start';
         container.style.height = 'auto';
         container.style.width = '100%';
         
-        console.log('📦 [TOGGLE GALERIA LOGO] Container después:', {
+        console.log(' [TOGGLE GALERIA LOGO] Container después:', {
             padding: container.style.padding,
             alignItems: container.style.alignItems,
             justifyContent: container.style.justifyContent,
@@ -186,7 +186,7 @@ function toggleGaleriaLogo() {
     
     // Crear galería si no existe
     let galeria = document.getElementById('galeria-modal-logo');
-    console.log('🖼️ [TOGGLE GALERIA LOGO] Galería existente:', !!galeria);
+    console.log(' [TOGGLE GALERIA LOGO] Galería existente:', !!galeria);
     
     if (!galeria) {
         console.log('🔨 [TOGGLE GALERIA LOGO] Creando nueva galería...');
@@ -196,16 +196,16 @@ function toggleGaleriaLogo() {
         // ⚠️ IMPORTANTE: Agregar al container del modal de LOGO, no al de costura
         if (container) {
             container.appendChild(galeria);
-            console.log('✅ [TOGGLE GALERIA LOGO] Galería creada y agregada al DOM del modal de logo');
+            console.log(' [TOGGLE GALERIA LOGO] Galería creada y agregada al DOM del modal de logo');
         } else {
-            console.error('❌ [TOGGLE GALERIA LOGO] No se pudo agregar galería, container no encontrado');
+            console.error(' [TOGGLE GALERIA LOGO] No se pudo agregar galería, container no encontrado');
             return;
         }
     }
     
     galeria.style.display = 'flex';
-    console.log('🖼️ [TOGGLE GALERIA LOGO] Galería display establecido a flex');
-    console.log('🖼️ [TOGGLE GALERIA LOGO] Galería estado:', {
+    console.log(' [TOGGLE GALERIA LOGO] Galería display establecido a flex');
+    console.log(' [TOGGLE GALERIA LOGO] Galería estado:', {
         display: galeria.style.display,
         width: galeria.style.width,
         height: galeria.style.height,
@@ -213,12 +213,12 @@ function toggleGaleriaLogo() {
         offsetHeight: galeria.offsetHeight
     });
     
-    // ✅ Obtener número de pedido directamente del DOM (usando ID único del modal logo)
+    //  Obtener número de pedido directamente del DOM (usando ID único del modal logo)
     const pedidoElement = document.getElementById('order-pedido-logo');
-    console.log('🖼️ [TOGGLE GALERIA LOGO] Elemento pedido:', pedidoElement);
+    console.log(' [TOGGLE GALERIA LOGO] Elemento pedido:', pedidoElement);
     
     if (!pedidoElement) {
-        console.error('❌ [TOGGLE GALERIA LOGO] No se encontró elemento order-pedido-logo');
+        console.error(' [TOGGLE GALERIA LOGO] No se encontró elemento order-pedido-logo');
         galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
         return;
     }
@@ -227,11 +227,11 @@ function toggleGaleriaLogo() {
     const pedidoMatch = pedidoText.match(/\d+/); // Buscar solo dígitos (ahora es 00120)
     const pedido = pedidoMatch ? pedidoMatch[0] : null;
     
-    console.log('🖼️ [TOGGLE GALERIA LOGO] Texto del pedido:', pedidoText);
-    console.log('🖼️ [TOGGLE GALERIA LOGO] Número de pedido extraído:', pedido);
+    console.log(' [TOGGLE GALERIA LOGO] Texto del pedido:', pedidoText);
+    console.log(' [TOGGLE GALERIA LOGO] Número de pedido extraído:', pedido);
     
     if (!pedido) {
-        console.error('❌ [TOGGLE GALERIA LOGO] No se pudo extraer número de pedido');
+        console.error(' [TOGGLE GALERIA LOGO] No se pudo extraer número de pedido');
         galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
         return;
     }
@@ -247,40 +247,40 @@ function toggleGaleriaLogo() {
     document.getElementById('btn-galeria-logo').style.border = 'none';
     document.getElementById('btn-galeria-logo').style.color = 'white';
     
-    console.log('🎬 [TOGGLE GALERIA LOGO] RESUMEN FINAL:');
+    console.log(' [TOGGLE GALERIA LOGO] RESUMEN FINAL:');
     console.log('  - Card display:', document.querySelector('.order-detail-card')?.style.display);
     console.log('  - Galería display:', galeria.style.display);
     console.log('  - Galería offsetHeight:', galeria.offsetHeight);
     console.log('  - Galería offsetWidth:', galeria.offsetWidth);
     console.log('  - Container height:', document.querySelector('.order-detail-modal-container')?.style.height);
     console.log('  - Wrapper height:', document.getElementById('order-detail-modal-wrapper-logo')?.style.height);
-    console.log('✅ [TOGGLE GALERIA LOGO] Completado');
+    console.log(' [TOGGLE GALERIA LOGO] Completado');
 }
 
 function loadGaleriaLogo(container, pedido) {
     // Validar que tenemos el número de pedido
     if (!pedido) {
-        console.error('❌ [GALERIA LOGO] No se proporcionó número de pedido');
+        console.error(' [GALERIA LOGO] No se proporcionó número de pedido');
         container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
         return;
     }
     
-    console.log('🖼️ [GALERIA LOGO] Cargando galería para pedido:', pedido);
+    console.log(' [GALERIA LOGO] Cargando galería para pedido:', pedido);
     
-    // ✅ Remover el # del número de pedido si existe
+    //  Remover el # del número de pedido si existe
     const pedidoLimpio = pedido.replace('#', '');
     
     // Cargar imágenes de logo
     const url = `/registros/${pedidoLimpio}/images?tipo=logo`;
-    console.log('🖼️ [GALERIA LOGO] Haciendo fetch a:', url);
+    console.log(' [GALERIA LOGO] Haciendo fetch a:', url);
     
     fetch(url)
         .then(response => {
-            console.log('🖼️ [GALERIA LOGO] Respuesta recibida:', response.status);
+            console.log(' [GALERIA LOGO] Respuesta recibida:', response.status);
             return response.json();
         })
         .then(data => {
-            console.log('🖼️ [GALERIA LOGO] Datos recibidos:', data);
+            console.log(' [GALERIA LOGO] Datos recibidos:', data);
             
             // Construir array de todas las imágenes para el visor
             allImagesLogo = [];
@@ -289,7 +289,7 @@ function loadGaleriaLogo(container, pedido) {
             html += '</div>';
             html += '<div style="padding: 20px; flex: 1; overflow-y: auto;">';
             
-            console.log('📦 [GALERIA LOGO] Iniciando construcción de galería...');
+            console.log(' [GALERIA LOGO] Iniciando construcción de galería...');
             
             // Mostrar solo fotos de logo
             if (data.logos && data.logos.length > 0) {
@@ -343,7 +343,7 @@ function loadGaleriaLogo(container, pedido) {
                     }
                 });
                 
-                console.log('✅ [GALERIA LOGO] Total de imágenes cargadas:', allImagesLogo.length);
+                console.log(' [GALERIA LOGO] Total de imágenes cargadas:', allImagesLogo.length);
             } else {
                 console.warn('⚠️ [GALERIA LOGO] No hay imágenes de logo para mostrar');
                 html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay imágenes de bordado para este pedido</p>';
@@ -351,7 +351,7 @@ function loadGaleriaLogo(container, pedido) {
             
             html += '</div>';
             container.innerHTML = html;
-            console.log('✅ [GALERIA LOGO] HTML de galería generado y renderizado en el DOM');
+            console.log(' [GALERIA LOGO] HTML de galería generado y renderizado en el DOM');
             
             // DEBUG: Verificar que el HTML está en el DOM y es visible
             console.log('🔍 [DEBUG GALERIA] container.innerHTML length:', container.innerHTML.length);
@@ -361,14 +361,14 @@ function loadGaleriaLogo(container, pedido) {
             console.log('🔍 [DEBUG GALERIA] Elemento visible en DOM:', container);
         })
         .catch(error => {
-            console.error('❌ [GALERIA LOGO] Error al cargar imágenes:', error);
+            console.error(' [GALERIA LOGO] Error al cargar imágenes:', error);
             container.innerHTML = '<p style="text-align: center; color: #999;">Error al cargar imágenes de bordado</p>';
         });
 }
 
 function openImageViewerLogo(index) {
     currentImageIndexLogo = index;
-    console.log('🖼️ [VIEWER LOGO] Abriendo imagen:', index);
+    console.log(' [VIEWER LOGO] Abriendo imagen:', index);
     
     // Crear modal si no existe
     let modal = document.getElementById('image-viewer-modal-logo');

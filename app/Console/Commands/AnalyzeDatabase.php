@@ -22,7 +22,7 @@ class AnalyzeDatabase extends Command
             return $tabla->$key;
         }, $tablasActuales);
 
-        $this->info("✅ Tablas encontradas: " . count($nombreTablas) . "\n");
+        $this->info(" Tablas encontradas: " . count($nombreTablas) . "\n");
 
         // Tablas que deberían existir según el sistema
         $tablasEsperadas = [
@@ -112,10 +112,10 @@ class AnalyzeDatabase extends Command
         $tablasExtras = array_diff($nombreTablas, $tablasEsperadas);
 
         if (!empty($tablasFaltantes)) {
-            $this->error("\n❌ TABLAS FALTANTES: " . count($tablasFaltantes));
+            $this->error("\n TABLAS FALTANTES: " . count($tablasFaltantes));
             $this->table(['Tabla'], array_map(fn($t) => [$t], array_values($tablasFaltantes)));
         } else {
-            $this->info("\n✅ Todas las tablas esperadas existen");
+            $this->info("\n Todas las tablas esperadas existen");
         }
 
         if (!empty($tablasExtras)) {
@@ -130,7 +130,7 @@ class AnalyzeDatabase extends Command
 
         foreach ($tablasAnalizar as $tabla) {
             if (in_array($tabla, $nombreTablas)) {
-                $this->info("✅ $tabla");
+                $this->info(" $tabla");
                 
                 $columnas = DB::select("DESCRIBE $tabla");
                 foreach ($columnas as $col) {
@@ -140,7 +140,7 @@ class AnalyzeDatabase extends Command
                 }
                 $this->line('');
             } else {
-                $this->error("❌ $tabla - NO EXISTE");
+                $this->error(" $tabla - NO EXISTE");
             }
         }
 

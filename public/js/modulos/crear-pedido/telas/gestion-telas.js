@@ -13,7 +13,7 @@
 window.telasAgregadas = [];
 window.imagenesTelaModalNueva = [];
 
-// ✅ GUARD: Asegurar que imagenesTelaStorage existe
+//  GUARD: Asegurar que imagenesTelaStorage existe
 if (!window.imagenesTelaStorage) {
     console.warn('⚠️ imagenesTelaStorage no inicializado en gestion-telas.js, creando fallback');
     window.imagenesTelaStorage = {
@@ -29,7 +29,7 @@ if (!window.imagenesTelaStorage) {
         obtenerBlob: (index) => null
     };
 } else {
-    console.log('✅ [GESTION-TELAS] imagenesTelaStorage disponible y listo');
+    console.log(' [GESTION-TELAS] imagenesTelaStorage disponible y listo');
 }
 
 // ========== AGREGAR NUEVA TELA ==========
@@ -79,8 +79,8 @@ window.agregarTelaNueva = function() {
         imagenes: imagenesCopia
     });
     
-    console.log('✅ [TELAS] Tela agregada a telasAgregadas. Total ahora:', window.telasAgregadas.length);
-    console.log('✅ [TELAS] telasAgregadas:', window.telasAgregadas);
+    console.log(' [TELAS] Tela agregada a telasAgregadas. Total ahora:', window.telasAgregadas.length);
+    console.log(' [TELAS] telasAgregadas:', window.telasAgregadas);
     
     // Limpiar inputs
     document.getElementById('nueva-prenda-color').value = '';
@@ -115,7 +115,7 @@ window.actualizarTablaTelas = function() {
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
-        console.error('❌ [TELAS] No se encontró tbody-telas');
+        console.error(' [TELAS] No se encontró tbody-telas');
         return;
     }
     
@@ -207,10 +207,10 @@ window.actualizarTablaTelas = function() {
         
         tr.innerHTML = html;
         tbody.appendChild(tr);
-        console.log(`✅ [TELAS] Tela ${index} agregada a la tabla`);
+        console.log(` [TELAS] Tela ${index} agregada a la tabla`);
     });
     
-    console.log('✅ [TELAS] Tabla actualizada. Filas en tbody ahora:', tbody.querySelectorAll('tr').length);
+    console.log(' [TELAS] Tabla actualizada. Filas en tbody ahora:', tbody.querySelectorAll('tr').length);
 };
 
 /**
@@ -287,9 +287,9 @@ window.manejarImagenTela = function(input) {
     // Agregar imagen al storage
     window.imagenesTelaStorage.agregarImagen(file)
         .then(() => {
-            console.log('✅ [TELAS] Imagen agregada. Total:', window.imagenesTelaStorage.obtenerImagenes().length);
+            console.log(' [TELAS] Imagen agregada. Total:', window.imagenesTelaStorage.obtenerImagenes().length);
             
-            // ✅ Actualizar preview temporal en la primera fila
+            //  Actualizar preview temporal en la primera fila
             const preview = document.getElementById('nueva-prenda-tela-preview');
             if (preview) {
                 preview.style.display = 'flex';
@@ -314,7 +314,7 @@ window.manejarImagenTela = function(input) {
                     preview.appendChild(badge);
                 }
                 
-                console.log('✅ [TELAS] Preview actualizado con', imagenes.length, 'imagen(es)');
+                console.log(' [TELAS] Preview actualizado con', imagenes.length, 'imagen(es)');
             }
             
             input.value = '';
@@ -374,7 +374,7 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
     };
     toolbar.appendChild(btnAnterior);
     
-    // ❌ BOTÓN ELIMINAR REMOVIDO - Solo usar la X para cerrar la galería
+    //  BOTÓN ELIMINAR REMOVIDO - Solo usar la X para cerrar la galería
     
     const contador = document.createElement('div');
     contador.style.cssText = 'color: white; font-size: 0.95rem; font-weight: 500; min-width: 80px; text-align: center;';
@@ -434,27 +434,27 @@ window.limpiarTelas = function() {
  * @param {number} indiceInicial - Índice inicial a mostrar
  */
 window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInicial = 0) {
-    // ✅ Obtener la tela específica y sus imágenes (fuente de verdad por tela)
+    //  Obtener la tela específica y sus imágenes (fuente de verdad por tela)
     const telaActual = window.telasAgregadas && window.telasAgregadas[telaIndex] ? window.telasAgregadas[telaIndex] : null;
     if (!telaActual) {
-        console.error('❌ [GALERÍA TELA] No se encontró la tela en índice', telaIndex);
+        console.error(' [GALERÍA TELA] No se encontró la tela en índice', telaIndex);
         return;
     }
     const imagenesActuales = telaActual.imagenes || [];
     
     if (!imagenesActuales || imagenesActuales.length === 0) {
-        console.error('❌ [GALERÍA TELA] No hay imágenes para mostrar');
+        console.error(' [GALERÍA TELA] No hay imágenes para mostrar');
         return;
     }
     
-    // ✅ Evitar que se reabra la galería mientras está en uso
+    //  Evitar que se reabra la galería mientras está en uso
     if (window.__galeriaTelaAbierta) {
         console.warn('⚠️ [GALERÍA TELA] Galería ya está abierta, ignorando');
         return;
     }
     window.__galeriaTelaAbierta = true;
     
-    console.log('🖼️ [GALERÍA TELA] Abriendo galería para tela', telaIndex, ':', imagenesActuales.length, 'imágenes');
+    console.log(' [GALERÍA TELA] Abriendo galería para tela', telaIndex, ':', imagenesActuales.length, 'imágenes');
     
     // Crear nuevos blob URLs para evitar que se revoquen
     const imagenesConBlobUrl = imagenesActuales.map((img, idx) => {
@@ -464,7 +464,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
         } else if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
             blobUrl = img.previewUrl;
         } else {
-            console.error(`❌ [GALERÍA TELA] Imagen ${idx} sin File o blob URL válido`);
+            console.error(` [GALERÍA TELA] Imagen ${idx} sin File o blob URL válido`);
             return null;
         }
         return {
@@ -475,7 +475,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     }).filter(img => img !== null);
     
     if (imagenesConBlobUrl.length === 0) {
-        console.error('❌ [GALERÍA TELA] No se pudieron crear blob URLs válidos');
+        console.error(' [GALERÍA TELA] No se pudieron crear blob URLs válidos');
         window.__galeriaTelaAbierta = false;
         return;
     }
@@ -497,7 +497,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     
     imgContainer.appendChild(imgModal);
     
-    // ✅ Función auxiliar para actualizar la imagen
+    //  Función auxiliar para actualizar la imagen
     const actualizarImagen = (nuevoIndice) => {
         indiceActual = nuevoIndice;
         const newBlobUrl = imagenesConBlobUrl[indiceActual].previewUrl;
@@ -523,7 +523,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     };
     toolbar.appendChild(btnAnterior);
     
-    // ❌ BOTÓN ELIMINAR REMOVIDO - Solo usar la X del formulario para eliminar
+    //  BOTÓN ELIMINAR REMOVIDO - Solo usar la X del formulario para eliminar
     // Las imágenes de telas se eliminan desde el formulario, no desde la galería
     
     const contador = document.createElement('div');
@@ -553,7 +553,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     btnCerrar.onclick = () => {
         if (cerrando) return;
         cerrando = true;
-        console.log('❌ [GALERÍA TELA] Cerrando');
+        console.log(' [GALERÍA TELA] Cerrando');
         cerrarGaleria();
     };
     toolbar.appendChild(btnCerrar);
@@ -575,7 +575,7 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
         }
     };
     
-    // ✅ Función para cerrar la galería y limpiar flags
+    //  Función para cerrar la galería y limpiar flags
     const cerrarGaleria = () => {
         document.removeEventListener('keydown', handleEsc);
         modal.remove();
@@ -587,5 +587,5 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex = 0, indiceInic
     modal.appendChild(container);
     document.body.appendChild(modal);
     
-    console.log('✅ [GALERÍA TELA] Galería abierta');
+    console.log(' [GALERÍA TELA] Galería abierta');
 };

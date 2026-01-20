@@ -22,9 +22,9 @@ function cargarTiposPrenda() {
         .then(res => res.json())
         .then(tipos => {
             tiposPrendaCache = tipos;
-            console.log('✅ Tipos de prenda cargados:', tipos.length);
+            console.log(' Tipos de prenda cargados:', tipos.length);
         })
-        .catch(err => console.error('❌ Error cargando tipos:', err));
+        .catch(err => console.error(' Error cargando tipos:', err));
 }
 
 /**
@@ -116,7 +116,7 @@ function mostrarSelectorVariantes(inputElement) {
         return;
     }
 
-    console.log('✅ Tipo reconocido:', tipoPrenda.nombre);
+    console.log(' Tipo reconocido:', tipoPrenda.nombre);
     
     // IMPORTANTE: Mostrar campos de variantes PRIMERO (siempre)
     // Luego intentar cargar variaciones específicas si existen
@@ -127,7 +127,7 @@ function mostrarSelectorVariantes(inputElement) {
         // Las variaciones específicas se cargarían aquí si fueran necesarias
         // Por ahora, los campos básicos ya están visibles
         if (variaciones) {
-            console.log('✅ Variaciones cargadas para:', tipoPrenda.nombre);
+            console.log(' Variaciones cargadas para:', tipoPrenda.nombre);
         }
     });
 }
@@ -185,13 +185,13 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
         tipoJeanPantalon_inline.style.display = 'flex';
         tipoJeanPantalon_inline.style.visibility = 'visible';
         tipoJeanPantalon_inline.style.opacity = '1';
-        console.log('✅ Selector Tipo de JEAN/PANTALÓN mostrado para:', nombrePrenda);
+        console.log(' Selector Tipo de JEAN/PANTALÓN mostrado para:', nombrePrenda);
     } else {
         tipoJeanPantalon_inline.style.display = 'none';
         tipoJeanPantalon_inline.style.visibility = 'hidden';
         tipoJeanPantalon_inline.style.opacity = '0';
         tipoJeanPantalon_inline_container.innerHTML = '';
-        console.log('❌ Selector Tipo de JEAN/PANTALÓN ocultado para:', nombrePrenda);
+        console.log(' Selector Tipo de JEAN/PANTALÓN ocultado para:', nombrePrenda);
     }
 }
 
@@ -358,7 +358,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
     // Insertar después del input de nombre
     inputElement.parentElement.insertAdjacentHTML('afterend', selectorHTML);
     
-    console.log('✅ Selector de variantes creado para:', tipoPrenda.nombre);
+    console.log(' Selector de variantes creado para:', tipoPrenda.nombre);
 }
 
 /**
@@ -417,7 +417,7 @@ function crearSelectorVariantesEnSeccion(inputElement, tipoPrenda, variaciones) 
         tipoJeanPantalon_inline.style.display = 'none';
     }
     
-    console.log('✅ Tabla de variaciones lista para:', tipoPrenda.nombre);
+    console.log(' Tabla de variaciones lista para:', tipoPrenda.nombre);
 }
 
 /**
@@ -463,7 +463,7 @@ function crearSelectorVariantesBasico(inputElement, nombrePrenda) {
         tipoJeanPantalon_inline.style.display = 'none';
     }
     
-    console.log('✅ Tabla de variaciones básica mostrada para:', nombrePrenda);
+    console.log(' Tabla de variaciones básica mostrada para:', nombrePrenda);
 }
 
 /**
@@ -515,7 +515,7 @@ function obtenerVariantesSeleccionadas(productoCard) {
  * Por lo que no es necesario hacer nada adicional
  */
 function agregarVariantesAlFormulario() {
-    console.log('✅ Variantes ya están en los inputs del formulario');
+    console.log(' Variantes ya están en los inputs del formulario');
 }
 
 /**
@@ -595,14 +595,14 @@ function seleccionarManga(id, nombre, element) {
     input.value = nombre;
     idInput.value = id;
     
-    console.log(`✅ DEBUG después de asignar:`, {
+    console.log(` DEBUG después de asignar:`, {
         input_value: input.value,
         idInput_value: idInput.value
     });
     
     td.querySelector('.manga-suggestions').style.display = 'none';
     
-    console.log(`✅ Manga seleccionada: ${nombre} (ID: ${id})`);
+    console.log(` Manga seleccionada: ${nombre} (ID: ${id})`);
 }
 
 function crearMangaDesdeInput(input) {
@@ -626,7 +626,7 @@ function crearMangaDesdeInput(input) {
         idInput.value = nuevoId;
         td.querySelector('.manga-suggestions').style.display = 'none';
         
-        console.log(`✅ Nueva manga creada: ${valor} (ID: ${nuevoId})`);
+        console.log(` Nueva manga creada: ${valor} (ID: ${nuevoId})`);
     }
 }
 
@@ -650,7 +650,7 @@ function crearMangaDesdeSelector(valor, element) {
         idInput.value = nuevoId;
         td.querySelector('.manga-suggestions').style.display = 'none';
         
-        console.log(`✅ Nueva manga creada desde selector: ${valor} (ID: ${nuevoId})`);
+        console.log(` Nueva manga creada desde selector: ${valor} (ID: ${nuevoId})`);
     }
 }
 
@@ -706,7 +706,7 @@ function seleccionarBroche(id, nombre, element) {
     idInput.value = id;
     div.querySelector('.broche-suggestions').style.display = 'none';
     
-    console.log(`✅ Broche seleccionado: ${nombre} (ID: ${id})`);
+    console.log(` Broche seleccionado: ${nombre} (ID: ${id})`);
 }
 
 function crearBrocheDesdeInput(input) {
@@ -730,7 +730,7 @@ function crearBrocheDesdeInput(input) {
         idInput.value = nuevoId;
         div.querySelector('.broche-suggestions').style.display = 'none';
         
-        console.log(`✅ Nuevo broche creado: ${valor} (ID: ${nuevoId})`);
+        console.log(` Nuevo broche creado: ${valor} (ID: ${nuevoId})`);
     }
 }
 
@@ -754,7 +754,7 @@ function crearBrocheDesdeSelector(valor, element) {
         idInput.value = nuevoId;
         div.querySelector('.broche-suggestions').style.display = 'none';
         
-        console.log(`✅ Nuevo broche creado desde selector: ${valor} (ID: ${nuevoId})`);
+        console.log(` Nuevo broche creado desde selector: ${valor} (ID: ${nuevoId})`);
     }
 }
 

@@ -26,7 +26,7 @@ class SupervisorPedidosRoleSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            $this->command->info('✅ Rol "supervisor_pedidos" creado exitosamente.');
+            $this->command->info(' Rol "supervisor_pedidos" creado exitosamente.');
         } else {
             $this->command->warn('⚠️  El rol "supervisor_pedidos" ya existe.');
         }

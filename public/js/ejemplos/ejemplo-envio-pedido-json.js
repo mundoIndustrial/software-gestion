@@ -256,20 +256,20 @@ class ClientePedidosJSON {
             const data = await response.json();
 
             if (!response.ok) {
-                console.error('❌ Validación fallida:', data.errors);
+                console.error(' Validación fallida:', data.errors);
                 return {
                     valid: false,
                     errors: data.errors
                 };
             }
 
-            console.log('✅ JSON válido');
+            console.log(' JSON válido');
             return {
                 valid: true,
                 message: data.message
             };
         } catch (error) {
-            console.error('❌ Error en validación:', error);
+            console.error(' Error en validación:', error);
             return {
                 valid: false,
                 error: error.message
@@ -295,7 +295,7 @@ class ClientePedidosJSON {
             const data = await response.json();
 
             if (!response.ok) {
-                console.error('❌ Error al guardar:', data.errors || data.message);
+                console.error(' Error al guardar:', data.errors || data.message);
                 return {
                     success: false,
                     message: data.message,
@@ -303,10 +303,10 @@ class ClientePedidosJSON {
                 };
             }
 
-            console.log('✅ Pedido guardado correctamente:', data);
+            console.log(' Pedido guardado correctamente:', data);
             return data;
         } catch (error) {
-            console.error('❌ Error en envío:', error);
+            console.error(' Error en envío:', error);
             return {
                 success: false,
                 error: error.message
@@ -330,11 +330,11 @@ async function enviarPedidoSimple() {
     const resultado = await clientePedidos.ejemplo1_PrendaSimple();
     
     if (resultado.success) {
-        console.log(`✅ Pedido ${resultado.numero_pedido} guardado`);
+        console.log(` Pedido ${resultado.numero_pedido} guardado`);
         console.log(`Cantidad de prendas: ${resultado.cantidad_prendas}`);
         console.log(`Cantidad de items: ${resultado.cantidad_items}`);
     } else {
-        console.error('❌ Error:', resultado.message);
+        console.error(' Error:', resultado.message);
         if (resultado.errors) {
             console.error('Detalles:', resultado.errors);
         }
@@ -362,7 +362,7 @@ async function validarYGuardar() {
     const validacion = await clientePedidos.validar(datosJSON);
     
     if (!validacion.valid) {
-        console.error('❌ Datos inválidos:', validacion.errors);
+        console.error(' Datos inválidos:', validacion.errors);
         return;
     }
 

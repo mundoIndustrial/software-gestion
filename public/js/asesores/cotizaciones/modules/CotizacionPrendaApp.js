@@ -43,7 +43,7 @@ class CotizacionPrendaApp {
         // Configurar listeners globales
         this.setupGlobalListeners();
 
-        console.log('✅ CotizacionPrendaApp inicializado correctamente');
+        console.log(' CotizacionPrendaApp inicializado correctamente');
     }
 
     /**
@@ -76,7 +76,7 @@ class CotizacionPrendaApp {
      */
     onAgregarProducto() {
         const productoId = this.modules.producto.agregarProducto();
-        console.log(`✅ Producto agregado: ${productoId}`);
+        console.log(` Producto agregado: ${productoId}`);
 
         // Cerrar menú flotante
         const menu = document.getElementById('menuFlotante');
@@ -135,7 +135,7 @@ class CotizacionPrendaApp {
         const validation = this.validate();
 
         if (!validation.valid) {
-            console.error('❌ Errores de validación:', validation.errors);
+            console.error(' Errores de validación:', validation.errors);
             this.showValidationErrors(validation.errors);
             return false;
         }
@@ -190,7 +190,7 @@ class CotizacionPrendaApp {
      */
     reset() {
         this.modules.especificaciones?.limpiar?.();
-        console.log('✅ Aplicación reiniciada');
+        console.log(' Aplicación reiniciada');
     }
 }
 

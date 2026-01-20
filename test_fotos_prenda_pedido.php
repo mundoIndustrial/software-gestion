@@ -13,17 +13,17 @@
 $pedido = \App\Models\PedidoProduccion::with('prendas.fotos')->first();
 
 if (!$pedido) {
-    echo "❌ No hay pedidos en la base de datos\n";
+    echo " No hay pedidos en la base de datos\n";
     return;
 }
 
-echo "📋 Pedido encontrado: #{$pedido->numero_pedido}\n";
+echo " Pedido encontrado: #{$pedido->numero_pedido}\n";
 
 // 2. Obtener una prenda del pedido
 $prenda = $pedido->prendas()->first();
 
 if (!$prenda) {
-    echo "❌ El pedido no tiene prendas\n";
+    echo " El pedido no tiene prendas\n";
     return;
 }
 
@@ -40,7 +40,7 @@ $fotos = \DB::table('prenda_fotos_pedido')
 echo "📸 Fotos encontradas: " . count($fotos) . "\n";
 
 if (count($fotos) > 0) {
-    echo "✅ OK - El endpoint debería retornar:\n";
+    echo " OK - El endpoint debería retornar:\n";
     echo json_encode([
         'success' => true,
         'fotos' => $fotos->map(function($f) {
@@ -59,7 +59,7 @@ $datos = app(\App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepositor
 
 if (isset($datos['prendas'][0])) {
     $prendaDelRecibo = $datos['prendas'][0];
-    echo "\n📦 Datos del recibo para la primera prenda:\n";
+    echo "\n Datos del recibo para la primera prenda:\n";
     echo "   - prenda_pedido_id: " . ($prendaDelRecibo['prenda_pedido_id'] ?? 'NO ENCONTRADO') . "\n";
     echo "   - id: " . ($prendaDelRecibo['id'] ?? 'NO ENCONTRADO') . "\n";
 }

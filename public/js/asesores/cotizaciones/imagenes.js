@@ -49,7 +49,7 @@ function agregarImagenes(newFiles) {
     // Guardar en memoria
     newFilesArray.forEach(file => {
         window.imagenesEnMemoria.logo.push(file);
-        console.log(`✅ Imagen guardada en memoria: ${file.name}`);
+        console.log(` Imagen guardada en memoria: ${file.name}`);
     });
     
     const dt = new DataTransfer();
@@ -92,18 +92,18 @@ function mostrarImagenes(files) {
                             const fileEliminado = archivosAcumulados[posicion];
                             console.log(`🗑️ Eliminando imagen de bordado: ${fileEliminado?.name || 'desconocida'}`);
                             
-                            // ✅ IMPORTANTE: Eliminar también de window.imagenesEnMemoria.logo
+                            //  IMPORTANTE: Eliminar también de window.imagenesEnMemoria.logo
                             if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
                                 const beforeCount = window.imagenesEnMemoria.logo.length;
                                 window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter(img => {
                                     // Comparar por nombre si es un archivo, o por propiedad si es un objeto
                                     if (img && typeof img === 'object' && img.name === fileEliminado?.name) {
-                                        console.log(`❌ Eliminado de memoria global:`, img.name);
+                                        console.log(` Eliminado de memoria global:`, img.name);
                                         return false;
                                     }
                                     return true;
                                 });
-                                console.log(`✅ Eliminación completada. Antes: ${beforeCount}, Después: ${window.imagenesEnMemoria.logo.length}`);
+                                console.log(` Eliminación completada. Antes: ${beforeCount}, Después: ${window.imagenesEnMemoria.logo.length}`);
                             }
                             
                             archivosAcumulados.splice(posicion, 1);

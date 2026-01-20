@@ -39,7 +39,7 @@ class AnalizarBaseDatos extends Command
             $this->line('');
         }
 
-        $this->info('✅ Análisis completado');
+        $this->info(' Análisis completado');
     }
 
     /**
@@ -47,12 +47,12 @@ class AnalizarBaseDatos extends Command
      */
     private function analizarTabla($nombreTabla)
     {
-        $this->info("📋 Tabla: {$nombreTabla}");
+        $this->info(" Tabla: {$nombreTabla}");
         $this->line(str_repeat('-', 80));
 
         // Verificar si la tabla existe
         if (!Schema::hasTable($nombreTabla)) {
-            $this->error("❌ La tabla '{$nombreTabla}' no existe");
+            $this->error(" La tabla '{$nombreTabla}' no existe");
             return;
         }
 

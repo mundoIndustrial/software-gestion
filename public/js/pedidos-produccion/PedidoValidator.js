@@ -41,7 +41,7 @@ class PedidoValidator {
         return {
             valid,
             errors,
-            mensaje: valid ? '✅ Pedido válido' : '❌ El pedido tiene errores'
+            mensaje: valid ? ' Pedido válido' : ' El pedido tiene errores'
         };
     }
 

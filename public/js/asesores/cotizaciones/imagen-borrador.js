@@ -42,7 +42,7 @@ async function borrarImagenPrenda(fotoId, element) {
         if (fotoContainer) {
             fotoContainer.remove();
         }
-        console.log('✅ Imagen de prenda eliminada:', fotoId);
+        console.log(' Imagen de prenda eliminada:', fotoId);
         
         // Mostrar notificación
         Swal.fire({
@@ -55,7 +55,7 @@ async function borrarImagenPrenda(fotoId, element) {
         });
         
     } catch (error) {
-        console.error('❌ Error al eliminar imagen de prenda:', error);
+        console.error(' Error al eliminar imagen de prenda:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -104,7 +104,7 @@ async function borrarImagenTela(fotoId, element) {
         if (fotoContainer) {
             fotoContainer.remove();
         }
-        console.log('✅ Imagen de tela eliminada:', fotoId);
+        console.log(' Imagen de tela eliminada:', fotoId);
         
         // Mostrar notificación
         Swal.fire({
@@ -117,7 +117,7 @@ async function borrarImagenTela(fotoId, element) {
         });
         
     } catch (error) {
-        console.error('❌ Error al eliminar imagen de tela:', error);
+        console.error(' Error al eliminar imagen de tela:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -167,7 +167,7 @@ async function borrarImagenLogo(fotoId, element) {
             fotoContainer.remove();
         }
         
-        // ✅ IMPORTANTE: Eliminar también de window.imagenesEnMemoria.logo por ID
+        //  IMPORTANTE: Eliminar también de window.imagenesEnMemoria.logo por ID
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
             console.log(`🔍 Eliminando de memoria por fotoId: ${fotoId}`);
             const beforeCount = window.imagenesEnMemoria.logo.length;
@@ -175,16 +175,16 @@ async function borrarImagenLogo(fotoId, element) {
             window.imagenesEnMemoria.logo = window.imagenesEnMemoria.logo.filter(imagen => {
                 // Si es un objeto con fotoId
                 if (imagen && typeof imagen === 'object' && imagen.fotoId === fotoId) {
-                    console.log(`❌ Eliminando de memoria:`, imagen);
+                    console.log(` Eliminando de memoria:`, imagen);
                     return false;  // Eliminar
                 }
                 return true;  // Mantener
             });
             
-            console.log(`✅ Eliminación completada. Antes: ${beforeCount}, Después: ${window.imagenesEnMemoria.logo.length}`);
+            console.log(` Eliminación completada. Antes: ${beforeCount}, Después: ${window.imagenesEnMemoria.logo.length}`);
         }
         
-        console.log('✅ Imagen de logo eliminada:', fotoId);
+        console.log(' Imagen de logo eliminada:', fotoId);
         
         // Mostrar notificación
         Swal.fire({
@@ -197,7 +197,7 @@ async function borrarImagenLogo(fotoId, element) {
         });
         
     } catch (error) {
-        console.error('❌ Error al eliminar imagen de logo:', error);
+        console.error(' Error al eliminar imagen de logo:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',

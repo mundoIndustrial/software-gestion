@@ -26,17 +26,17 @@ function crearPedidoTipoReflectivoSinCotizacion() {
     if (seccionInfoPrenda) seccionInfoPrenda.style.display = 'block';
     if (seccionPrendas) seccionPrendas.style.display = 'block';
 
-    // ✅ ACTUALIZAR TÍTULO DINÁMICO
+    //  ACTUALIZAR TÍTULO DINÁMICO
     const tituloPrendasDinamico = document.getElementById('titulo-prendas-dinamico');
     if (tituloPrendasDinamico) {
         tituloPrendasDinamico.innerHTML = 'Nuevo Pedido Reflectivo';
-        console.log('✅ Título dinámico actualizado a REFLECTIVO');
+        console.log(' Título dinámico actualizado a REFLECTIVO');
     }
 
     // Limpiar container
     const container = document.getElementById('prendas-container-editable');
     if (!container) {
-        console.error('❌ Container no encontrado: prendas-container-editable');
+        console.error(' Container no encontrado: prendas-container-editable');
         return;
     }
 
@@ -74,7 +74,7 @@ function crearPedidoTipoReflectivoSinCotizacion() {
     `;
     container.insertBefore(mensajeUI, container.firstChild);
 
-    logWithEmoji('✅', 'Formulario de reflectivo creado');
+    logWithEmoji('', 'Formulario de reflectivo creado');
 }
 
 /**
@@ -88,7 +88,7 @@ function agregarPrendaReflectivoSinCotizacion() {
     const container = document.getElementById('prendas-container-editable');
 
     if (!container || !gestor) {
-        console.error('❌ Gestor o container no disponible');
+        console.error(' Gestor o container no disponible');
         return -1;
     }
 
@@ -105,7 +105,7 @@ function agregarPrendaReflectivoSinCotizacion() {
     renderizarTallasReflectivo(index, prenda.tallas || []);
     renderizarUbicacionesReflectivo(index, prenda.ubicaciones || []);
     
-    // ✅ NUEVO: Renderizar tallas existentes en generosConTallas
+    //  NUEVO: Renderizar tallas existentes en generosConTallas
     if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
         Object.keys(prenda.generosConTallas).forEach(genero => {
             renderizarTallasDelGeneroReflectivo(index, genero);
@@ -115,7 +115,7 @@ function agregarPrendaReflectivoSinCotizacion() {
     // Mostrar botón de agregar más prendas
     mostrarBotonAgregarMasPrendas();
 
-    logWithEmoji('✅', `Prenda reflectivo ${index + 1} renderizada`);
+    logWithEmoji('', `Prenda reflectivo ${index + 1} renderizada`);
     return index;
 }
 
@@ -132,7 +132,7 @@ function eliminarPrendaReflectivoSinCotizacion(index) {
             if (card) {
                 card.remove();
                 window.gestorReflectivoSinCotizacion.eliminar(index);
-                logWithEmoji('✅', `Prenda reflectivo ${index + 1} eliminada`);
+                logWithEmoji('', `Prenda reflectivo ${index + 1} eliminada`);
             }
         }
     } else {
@@ -142,7 +142,7 @@ function eliminarPrendaReflectivoSinCotizacion(index) {
                 if (card) {
                     card.remove();
                     window.gestorReflectivoSinCotizacion.eliminar(index);
-                    logWithEmoji('✅', `Prenda reflectivo ${index + 1} eliminada`);
+                    logWithEmoji('', `Prenda reflectivo ${index + 1} eliminada`);
                 }
             }
         });
@@ -173,7 +173,7 @@ function eliminarImagenReflectivo(prendaIndex, imagenIndex) {
     gestor.eliminarFoto(prendaIndex, imagenIndex);
     renderizarImagenesReflectivo(prendaIndex, gestor.obtenerFotosNuevas(prendaIndex));
 
-    logWithEmoji('✅', `Imagen eliminada`);
+    logWithEmoji('', `Imagen eliminada`);
 }
 
 /**
@@ -292,7 +292,7 @@ window.confirmarAgregarTallaReflectivo = function(prendaIndex) {
         Swal.close();
     }
 
-    logWithEmoji('✅', `Talla ${talla} agregada a prenda ${prendaIndex + 1}`);
+    logWithEmoji('', `Talla ${talla} agregada a prenda ${prendaIndex + 1}`);
 };
 
 /**
@@ -316,7 +316,7 @@ function eliminarTallaReflectivo(prendaIndex, talla) {
     gestor.eliminarTalla(prendaIndex, talla);
     renderizarTallasReflectivo(prendaIndex, gestor.obtenerPorIndice(prendaIndex).tallas);
 
-    logWithEmoji('✅', `Talla ${talla} eliminada`);
+    logWithEmoji('', `Talla ${talla} eliminada`);
 }
 
 /**
@@ -392,13 +392,13 @@ function mostrarBotonAgregarMasPrendas() {
     const container = document.getElementById('prendas-container-editable');
     if (!container) return;
 
-    // ✅ REFLECTIVO: NO mostrar botón agregar más prendas (solo se permite 1 prenda)
+    //  REFLECTIVO: NO mostrar botón agregar más prendas (solo se permite 1 prenda)
     const btnAnterior = container.querySelector('.btn-agregar-mas-prendas-reflectivo');
     if (btnAnterior) {
         btnAnterior.remove();
     }
     
-    console.log('ℹ️ No se muestra botón "Agregar Prenda" en tipo Reflectivo (máximo 1 prenda permitida)');
+    console.log(' No se muestra botón "Agregar Prenda" en tipo Reflectivo (máximo 1 prenda permitida)');
 }
 
 /**
@@ -614,7 +614,7 @@ window.agregarTallasSeleccionadasReflectivo = function(boton) {
         btn.style.color = '#1e40af';
     });
     
-    logWithEmoji('✅', `${tallasParaAgregar.length} talla(s) agregada(s)`);
+    logWithEmoji('', `${tallasParaAgregar.length} talla(s) agregada(s)`);
 };
 
 /**
@@ -677,7 +677,7 @@ window.agregarTallasRangoReflectivo = function(boton) {
     fila.querySelector('.talla-desde-reflectivo').value = '';
     fila.querySelector('.talla-hasta-reflectivo').value = '';
     
-    logWithEmoji('✅', `${tallasAgregar.length} talla(s) agregada(s) por rango`);
+    logWithEmoji('', `${tallasAgregar.length} talla(s) agregada(s) por rango`);
 };
 
 /**
@@ -763,7 +763,7 @@ window.guardarUbicacionReflectivo = function(prendaIndex) {
     // Cerrar modal
     window.cerrarModalAgregarUbicacionReflectivo();
 
-    logWithEmoji('✅', `Ubicación "${ubicacion}" guardada para prenda ${prendaIndex + 1}`);
+    logWithEmoji('', `Ubicación "${ubicacion}" guardada para prenda ${prendaIndex + 1}`);
 };
 
 /**
@@ -788,14 +788,14 @@ window.enviarReflectivoSinCotizacion = function() {
         try {
             const gestor = window.gestorReflectivoSinCotizacion;
 
-            // ✅ CORREGIDO: Usar datos del gestor directamente en lugar del DOM
+            //  CORREGIDO: Usar datos del gestor directamente en lugar del DOM
             // El gestor ya tiene los datos actualizados
             const prendas = gestor.obtenerActivas();
             
             // Validar
             const validacion = gestor.validar();
             if (!validacion.valido) {
-                console.error('❌ Validación fallida:', validacion.errores);
+                console.error(' Validación fallida:', validacion.errores);
                 let mensajeError = 'Errores de validación:\n';
                 validacion.errores.forEach(error => {
                     mensajeError += `• ${error}\n`;
@@ -834,13 +834,13 @@ window.enviarReflectivoSinCotizacion = function() {
             prendas.forEach((prenda, index) => {
                 formData.append(`prendas[${index}][nombre_producto]`, prenda.nombre_producto || '');
                 formData.append(`prendas[${index}][descripcion]`, prenda.descripcion || '');
-                // ✅ CORREGIDO: Enviar generosSeleccionados en lugar de genero
+                //  CORREGIDO: Enviar generosSeleccionados en lugar de genero
                 const generosStr = (prenda.generosSeleccionados && prenda.generosSeleccionados.length > 0) 
                     ? JSON.stringify(prenda.generosSeleccionados) 
                     : '';
                 formData.append(`prendas[${index}][genero]`, generosStr);
 
-                // ✅ NUEVO: Usar generosConTallas en lugar de cantidadesPorTalla
+                //  NUEVO: Usar generosConTallas en lugar de cantidadesPorTalla
                 if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
                     Object.entries(prenda.generosConTallas).forEach(([genero, tallas]) => {
                         Object.entries(tallas).forEach(([talla, cantidad]) => {
@@ -880,7 +880,7 @@ window.enviarReflectivoSinCotizacion = function() {
                         
                         if (archivo) {
                             formData.append(`prendas[${prendaIndex}][fotos][]`, archivo);
-                            logWithEmoji('✅', `Imagen de reflectivo ${prendaIndex + 1} agregada: ${archivo.name}`);
+                            logWithEmoji('', `Imagen de reflectivo ${prendaIndex + 1} agregada: ${archivo.name}`);
                         } else if (typeof foto === 'string') {
                             formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
                         }
@@ -897,7 +897,7 @@ window.enviarReflectivoSinCotizacion = function() {
                             
                             if (archivo) {
                                 formData.append(`prendas[${prendaIndex}][fotos][]`, archivo);
-                                logWithEmoji('✅', `Imagen de reflectivo ${prendaIndex + 1} agregada: ${archivo.name}`);
+                                logWithEmoji('', `Imagen de reflectivo ${prendaIndex + 1} agregada: ${archivo.name}`);
                             } else if (typeof foto === 'string') {
                                 formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
                             }
@@ -922,7 +922,7 @@ window.enviarReflectivoSinCotizacion = function() {
             const data = await response.json();
 
             if (data.success) {
-                logWithEmoji('✅', 'Pedido REFLECTIVO creado exitosamente', data);
+                logWithEmoji('', 'Pedido REFLECTIVO creado exitosamente', data);
                 
                 Swal.fire({
                     icon: 'success',
@@ -941,7 +941,7 @@ window.enviarReflectivoSinCotizacion = function() {
                 throw new Error(data.message || 'Error desconocido en el servidor');
             }
         } catch (error) {
-            console.error('❌ Error al enviar pedido REFLECTIVO:', error);
+            console.error(' Error al enviar pedido REFLECTIVO:', error);
             Swal.fire('Error', error.message || 'Error al crear el pedido', 'error');
             reject(error);
         }
@@ -961,13 +961,13 @@ window.agregarTallasAlGeneroReflectivo = function(prendaIndex, genero) {
     
     const prendaCard = document.querySelector(`.prenda-card-reflectivo[data-prenda-index="${prendaIndex}"]`);
     if (!prendaCard) {
-        console.error(`❌ Prenda card no encontrada`);
+        console.error(` Prenda card no encontrada`);
         return;
     }
 
     const prenda = window.gestorReflectivoSinCotizacion.obtenerPorIndice(prendaIndex);
     if (!prenda) {
-        console.error(`❌ Prenda no encontrada en gestor`);
+        console.error(` Prenda no encontrada en gestor`);
         return;
     }
 
@@ -1255,7 +1255,7 @@ function agregarTallasAlGeneroReflectivo_Interno(prendaIndex, genero, tallas, ti
         inputTalla.dataset.tipoTalla = tipoTalla;
 
         prendaCard.appendChild(inputTalla);
-        console.log(`✅ Input creado para ${genero} ${talla}`);
+        console.log(` Input creado para ${genero} ${talla}`);
     });
 
     // Re-renderizar la sección del género
@@ -1359,7 +1359,7 @@ function renderizarTallasDelGeneroReflectivo(prendaIndex, genero) {
                     prenda.generosConTallas[gen] = {};
                 }
                 prenda.generosConTallas[gen][talla] = cantidad;
-                console.log(`✅ Cantidad actualizada - Prenda: ${prendaIdx}, Género: ${gen}, Talla: ${talla}, Cantidad: ${cantidad}`);
+                console.log(` Cantidad actualizada - Prenda: ${prendaIdx}, Género: ${gen}, Talla: ${talla}, Cantidad: ${cantidad}`);
             }
         });
     });
@@ -1404,4 +1404,4 @@ window.eliminarTallaDelGeneroReflectivo = function(prendaIndex, genero, talla) {
     });
 };
 
-logWithEmoji('✅', 'Funciones de reflectivo sin cotización cargadas');
+logWithEmoji('', 'Funciones de reflectivo sin cotización cargadas');

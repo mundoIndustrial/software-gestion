@@ -6,11 +6,11 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// ✅ Configuración de límites para prevenir agotamiento de memoria
+//  Configuración de límites para prevenir agotamiento de memoria
 ini_set('memory_limit', '256M'); // Reducido para forzar mejor gestión de memoria
 ini_set('max_execution_time', '60'); // Reducido para detectar problemas más rápido
 
-// ✅ Habilitar recolección de basura agresiva
+//  Habilitar recolección de basura agresiva
 gc_enable();
 ini_set('zend.enable_gc', '1');
 

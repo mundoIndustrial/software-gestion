@@ -32,19 +32,19 @@ class VerificarRelacionesImagenes extends Command
         $this->verificarDatos();
 
         $this->newLine();
-        $this->info('✅ VERIFICACIÓN COMPLETADA');
+        $this->info(' VERIFICACIÓN COMPLETADA');
     }
 
     private function verificarTablaLogoFotos()
     {
-        $this->line('📋 Tabla: <fg=cyan>logo_fotos_cot</>');
+        $this->line(' Tabla: <fg=cyan>logo_fotos_cot</>');
 
         if (!Schema::hasTable('logo_fotos_cot')) {
-            $this->error('   ❌ NO EXISTE');
+            $this->error('    NO EXISTE');
             return;
         }
 
-        $this->info('   ✅ EXISTE');
+        $this->info('    EXISTE');
 
         $columnas = Schema::getColumns('logo_fotos_cot');
         $this->line('   📊 Columnas:');
@@ -78,14 +78,14 @@ class VerificarRelacionesImagenes extends Command
 
     private function verificarTablaPrendaTelaFotos()
     {
-        $this->line('📋 Tabla: <fg=cyan>prenda_tela_fotos_cot</>');
+        $this->line(' Tabla: <fg=cyan>prenda_tela_fotos_cot</>');
 
         if (!Schema::hasTable('prenda_tela_fotos_cot')) {
-            $this->error('   ❌ NO EXISTE');
+            $this->error('    NO EXISTE');
             return;
         }
 
-        $this->info('   ✅ EXISTE');
+        $this->info('    EXISTE');
 
         $columnas = Schema::getColumns('prenda_tela_fotos_cot');
         $this->line('   📊 Columnas:');
@@ -119,14 +119,14 @@ class VerificarRelacionesImagenes extends Command
 
     private function verificarTablaPrendaFotos()
     {
-        $this->line('📋 Tabla: <fg=cyan>prenda_fotos_cot</>');
+        $this->line(' Tabla: <fg=cyan>prenda_fotos_cot</>');
 
         if (!Schema::hasTable('prenda_fotos_cot')) {
-            $this->error('   ❌ NO EXISTE');
+            $this->error('    NO EXISTE');
             return;
         }
 
-        $this->info('   ✅ EXISTE');
+        $this->info('    EXISTE');
 
         $columnas = Schema::getColumns('prenda_fotos_cot');
         $this->line('   📊 Columnas:');
@@ -180,7 +180,7 @@ class VerificarRelacionesImagenes extends Command
             $this->warn('   ⚠️ No hay Foreign Keys encontradas');
         } else {
             foreach ($fks as $fk) {
-                $this->line("   ✅ {$fk->TABLE_NAME}.{$fk->COLUMN_NAME}");
+                $this->line("    {$fk->TABLE_NAME}.{$fk->COLUMN_NAME}");
                 $this->line("      → {$fk->REFERENCED_TABLE_NAME}({$fk->REFERENCED_COLUMN_NAME})");
             }
         }
@@ -216,7 +216,7 @@ class VerificarRelacionesImagenes extends Command
         if ($logoFotosSinLogo > 0) {
             $this->warn("      ⚠️ {$logoFotosSinLogo} foto(s) de logo sin logo asociado");
         } else {
-            $this->line('      ✅ Todas las fotos de logo tienen logo asociado');
+            $this->line('       Todas las fotos de logo tienen logo asociado');
         }
 
         // Prenda tela fotos sin prenda
@@ -228,7 +228,7 @@ class VerificarRelacionesImagenes extends Command
         if ($telaFotosSinPrenda > 0) {
             $this->warn("      ⚠️ {$telaFotosSinPrenda} foto(s) de tela sin prenda asociada");
         } else {
-            $this->line('      ✅ Todas las fotos de tela tienen prenda asociada');
+            $this->line('       Todas las fotos de tela tienen prenda asociada');
         }
 
         $this->newLine();

@@ -4,7 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📦 Bodega Detail Modal Script Loaded');
+    console.log(' Bodega Detail Modal Script Loaded');
     initializeBodegaDetailModal();
 });
 
@@ -165,11 +165,11 @@ function displayBodegaDetailModal(orden) {
                 prendasValue.textContent = `${orden.total_entregado || orden.cantidad || 0}/${orden.cantidad || 0}`;
             }
 
-            console.log('✅ Modal de detalle completado y mostrando...');
+            console.log(' Modal de detalle completado y mostrando...');
             showBodegaDetailModal();
         } else if (attempts++ > 20) {
             clearInterval(checkElements);
-            console.error('❌ Timeout esperando elementos del modal');
+            console.error(' Timeout esperando elementos del modal');
         }
     }, 100);
 }
@@ -280,21 +280,21 @@ function showBodegaDetailModal() {
         detail: 'bodega-order-detail'
     }));
     
-    console.log('✅ Evento open-modal disparado');
+    console.log(' Evento open-modal disparado');
 }
 
 /**
  * Cerrar modal de detalle
  */
 function closeBodegaDetailModal() {
-    console.log('❌ Cerrando modal de detalle de bodega...');
+    console.log(' Cerrando modal de detalle de bodega...');
     
     // Disparar evento Alpine.js para cerrar el modal
     window.dispatchEvent(new CustomEvent('close-modal', {
         detail: 'bodega-order-detail'
     }));
     
-    console.log('✅ Evento close-modal disparado');
+    console.log(' Evento close-modal disparado');
 }
 
 /**

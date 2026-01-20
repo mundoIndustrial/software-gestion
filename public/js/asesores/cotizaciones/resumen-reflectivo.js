@@ -20,14 +20,14 @@ function actualizarResumenReflectivo() {
     const descElement = document.getElementById('resumen_reflectivo_desc');
     if (descElement) {
         descElement.textContent = descripcion;
-        console.log('✅ Descripción reflectivo actualizada:', descripcion);
+        console.log(' Descripción reflectivo actualizada:', descripcion);
     }
 
     // Actualizar ubicación
     const ubicElement = document.getElementById('resumen_reflectivo_ubicacion');
     if (ubicElement) {
         ubicElement.textContent = ubicacion;
-        console.log('✅ Ubicación reflectivo actualizada:', ubicacion);
+        console.log(' Ubicación reflectivo actualizada:', ubicacion);
     }
 
     // Actualizar observaciones generales
@@ -56,14 +56,14 @@ function actualizarResumenReflectivo() {
 
                     obsElement.appendChild(div);
                 });
-                console.log('✅ Observaciones reflectivo actualizadas:', observacionesReflectivo.length);
+                console.log(' Observaciones reflectivo actualizadas:', observacionesReflectivo.length);
             }
         } else {
             obsElement.innerHTML = '<p style="color: #999; font-size: 0.9rem;">Sin observaciones</p>';
         }
     }
 
-    console.log('✅ Resumen del reflectivo actualizado correctamente');
+    console.log(' Resumen del reflectivo actualizado correctamente');
 }
 
 /**
@@ -172,7 +172,7 @@ function actualizarResumenCompleto() {
     // Actualizar reflectivo
     actualizarResumenReflectivo();
 
-    console.log('✅ Resumen completo actualizado');
+    console.log(' Resumen completo actualizado');
 }
 
 /**

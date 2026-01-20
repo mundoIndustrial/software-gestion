@@ -44,7 +44,7 @@ const RealtimeOrderHandler = {
             applyRowConditionalColors(row);
         }
 
-        console.log(`✅ Fila ${ordenData.numero_pedido} actualizada en tiempo real`);
+        console.log(` Fila ${ordenData.numero_pedido} actualizada en tiempo real`);
     },
 
     /**
@@ -62,7 +62,7 @@ const RealtimeOrderHandler = {
                 // 🆕 Actualizar clase de color del dropdown
                 this._updateDropdownColorClass(dropdown, ordenData.estado);
                 
-                console.log(`✅ Estado actualizado: ${ordenData.estado}`);
+                console.log(` Estado actualizado: ${ordenData.estado}`);
             }
         } else if (field === 'area') {
             const dropdown = row.querySelector('.area-dropdown');
@@ -73,13 +73,13 @@ const RealtimeOrderHandler = {
                 // 🆕 Actualizar clase de color del dropdown
                 this._updateDropdownColorClass(dropdown, ordenData.area);
                 
-                console.log(`✅ Área actualizada: ${ordenData.area}`);
+                console.log(` Área actualizada: ${ordenData.area}`);
             }
         } else if (field === 'dia_de_entrega') {
             const dropdown = row.querySelector('.dia-entrega-dropdown');
             if (dropdown && ordenData.dia_de_entrega !== undefined) {
                 dropdown.value = ordenData.dia_de_entrega || '';
-                console.log(`✅ Día de entrega actualizado: ${ordenData.dia_de_entrega}`);
+                console.log(` Día de entrega actualizado: ${ordenData.dia_de_entrega}`);
             }
         } else if (field === 'fecha_estimada_de_entrega') {
             // 🆕 Actualizar fecha estimada en tiempo real
@@ -111,7 +111,7 @@ const RealtimeOrderHandler = {
                     fechaCell.setAttribute('data-fecha-estimada', fechaFormato);
                 }
                 
-                console.log(`✅ Fecha estimada actualizada en tiempo real: ${fechaFormato}`);
+                console.log(` Fecha estimada actualizada en tiempo real: ${fechaFormato}`);
             }
         } else if (field === 'novedades') {
             // 🆕 Actualizar campo de novedades en tiempo real
@@ -131,7 +131,7 @@ const RealtimeOrderHandler = {
                         textSpan.textContent = 'Sin novedades';
                         textSpan.classList.add('empty');
                     }
-                    console.log(`✅ Novedades actualizadas en tiempo real: ${ordenData.novedades ? 'Con contenido' : 'Vacío'}`);
+                    console.log(` Novedades actualizadas en tiempo real: ${ordenData.novedades ? 'Con contenido' : 'Vacío'}`);
                 }
             }
         }
@@ -190,22 +190,22 @@ function initializeOrdenesRealtimeListeners() {
     console.log('window.Echo disponible:', !!window.Echo);
 
     if (!window.Echo) {
-        console.error('❌ Echo NO está disponible. Reintentando en 500ms...');
+        console.error(' Echo NO está disponible. Reintentando en 500ms...');
         setTimeout(initializeOrdenesRealtimeListeners, 500);
         return;
     }
 
-    console.log('✅ Echo disponible. Suscribiendo al canal "ordenes"...');
+    console.log(' Echo disponible. Suscribiendo al canal "ordenes"...');
 
     // Canal de Órdenes
     const ordenesChannel = window.Echo.channel('ordenes');
 
     ordenesChannel.subscribed(() => {
-        console.log('✅ Suscrito al canal "ordenes"');
+        console.log(' Suscrito al canal "ordenes"');
     });
 
     ordenesChannel.error((error) => {
-        console.error('❌ Error en canal "ordenes":', error);
+        console.error(' Error en canal "ordenes":', error);
     });
 
     ordenesChannel.listen('OrdenUpdated', (e) => {
@@ -220,7 +220,7 @@ function initializeOrdenesRealtimeListeners() {
         }
     });
 
-    console.log('✅ Listener de órdenes configurado');
+    console.log(' Listener de órdenes configurado');
 }
 
 // Initialize when DOM is ready

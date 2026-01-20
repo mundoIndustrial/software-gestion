@@ -63,11 +63,11 @@
  * └── README.md           ← Documentación completa
  * 
  * VENTAJAS DE LA ESTRUCTURA MODULAR:
- * ✅ Más fácil de mantener
- * ✅ Más fácil de debuggear (cada módulo tiene su responsabilidad)
- * ✅ Más fácil de extender
- * ✅ Menos acoplamiento
- * ✅ Mejor separación de concerns
+ *  Más fácil de mantener
+ *  Más fácil de debuggear (cada módulo tiene su responsabilidad)
+ *  Más fácil de extender
+ *  Menos acoplamiento
+ *  Mejor separación de concerns
  */
 
 /**
@@ -79,7 +79,7 @@ console.log(`
 ║  INTEGRACIÓN TARJETA READONLY - PEDIDOS (MODULAR)            ║
 ╚═══════════════════════════════════════════════════════════════╝
 
-✅ Para verificar que todo está integrado, ejecuta en consola:
+ Para verificar que todo está integrado, ejecuta en consola:
 
 // 1. Ver si el componente está cargado
 console.log('¿Función principal cargada?', typeof generarTarjetaPrendaReadOnly === 'function');
@@ -101,7 +101,7 @@ if (window.generarTarjetaPrendaReadOnly && window.gestorPrendaSinCotizacion) {
         container.innerHTML = prendas.map((p, i) => 
             generarTarjetaPrendaReadOnly(p, i)
         ).join('');
-        console.log('✅ Tarjetas renderizadas manualmente');
+        console.log(' Tarjetas renderizadas manualmente');
     }
 }
 `);
@@ -130,7 +130,7 @@ SOLUCIÓN:
   * interacciones.js
   * index.js
 - Verificar en DevTools > Console si hay errores de sintaxis
-- Ver console.log con prefijo 📦, 📄, 📷, 🎯, 📋, ✨ para ver el proceso de carga
+- Ver console.log con prefijo 📦, 📄, 📷, 🎯, , ✨ para ver el proceso de carga
     `);
 }
 
@@ -146,4 +146,4 @@ document.addEventListener('custom-event-prenda', (e) => {
     console.log('Evento en prenda:', e.detail);
 });
 
-console.log('✅ Integración cargada correctamente - Esperando módulos prenda-tarjeta...');
+console.log(' Integración cargada correctamente - Esperando módulos prenda-tarjeta...');

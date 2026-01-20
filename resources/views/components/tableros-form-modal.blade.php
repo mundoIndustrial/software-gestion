@@ -703,7 +703,7 @@
             .then(data => {
                 if (data.success) {
                     // Mostrar mensaje de éxito
-                    mostrarMensajeExito(`✅ Se registraron ${registros.length} registro(s) correctamente.`);
+                    mostrarMensajeExito(` Se registraron ${registros.length} registro(s) correctamente.`);
 
                     // Cerrar modal y resetear formulario
                     window.dispatchEvent(new CustomEvent('close-modal', { detail: 'tableros-form' }));

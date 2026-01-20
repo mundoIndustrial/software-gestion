@@ -38,7 +38,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     * ✅ TEST 1: Generación simple de número
+     *  TEST 1: Generación simple de número
      * 
      * Valida:
      * - El número se genera en formato COT-YYYYMMDD-NNN
@@ -52,11 +52,11 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertNotNull($numero);
         $this->assertMatchesRegularExpression('/^COT-\d{8}-\d{3}$/', $numero);
         
-        Log::info('✅ TEST 1: Número generado correctamente', ['numero' => $numero]);
+        Log::info(' TEST 1: Número generado correctamente', ['numero' => $numero]);
     }
 
     /**
-     * ✅ TEST 2: Números secuenciales incrementan
+     *  TEST 2: Números secuenciales incrementan
      * 
      * Valida:
      * - El primer número termina en -001
@@ -76,7 +76,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertStringEndsWith('-002', $numero2);
         $this->assertStringEndsWith('-003', $numero3);
 
-        Log::info('✅ TEST 2: Secuencia correcta', [
+        Log::info(' TEST 2: Secuencia correcta', [
             'num1' => $numero1,
             'num2' => $numero2,
             'num3' => $numero3,
@@ -84,7 +84,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     * ✅ TEST 3: El lock pessimista previene duplicados
+     *  TEST 3: El lock pessimista previene duplicados
      * 
      * Simula dos transacciones que inician casi simultáneamente.
      * Con el lock, uno espera al otro → no hay duplicados
@@ -116,14 +116,14 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertStringEndsWith('-004', $numeros[3]);
         $this->assertStringEndsWith('-005', $numeros[4]);
 
-        Log::info('✅ TEST 3: Lock pessimista funciona', [
+        Log::info(' TEST 3: Lock pessimista funciona', [
             'numeros' => $numeros,
             'unicos' => count(array_unique($numeros)),
         ]);
     }
 
     /**
-     * ✅ TEST 4: Diferentes tipos de secuencias no interfieren
+     *  TEST 4: Diferentes tipos de secuencias no interfieren
      * 
      * Valida:
      * - cotizaciones_prenda genera 001
@@ -144,7 +144,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertStringEndsWith('-001', $numeroBordado);
         $this->assertStringEndsWith('-002', $numeroPrenda2);
 
-        Log::info('✅ TEST 4: Tipos independientes', [
+        Log::info(' TEST 4: Tipos independientes', [
             'prenda1' => $numeroPrenda,
             'bordado' => $numeroBordado,
             'prenda2' => $numeroPrenda2,
@@ -152,7 +152,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     * ✅ TEST 5: Estados de secuencia correctos después de generaciones
+     *  TEST 5: Estados de secuencia correctos después de generaciones
      */
     public function test_estado_secuencia_despues_generaciones()
     {
@@ -165,11 +165,11 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $secuencia = NumeroSecuencia::where('tipo', 'cotizaciones_prenda')->first();
         $this->assertEquals(4, $secuencia->proximo_numero);
 
-        Log::info('✅ TEST 5: Contador correcto', ['proximo' => $secuencia->proximo_numero]);
+        Log::info(' TEST 5: Contador correcto', ['proximo' => $secuencia->proximo_numero]);
     }
 
     /**
-     * ✅ TEST 6: Formato de fecha en número es dinámico (hoy)
+     *  TEST 6: Formato de fecha en número es dinámico (hoy)
      */
     public function test_numero_incluye_fecha_actual()
     {
@@ -179,7 +179,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertStringContainsString($hoy, $numero);
         $this->assertMatchesRegularExpression("/COT-$hoy-\d{3}/", $numero);
 
-        Log::info('✅ TEST 6: Fecha en número', ['numero' => $numero, 'fecha' => $hoy]);
+        Log::info(' TEST 6: Fecha en número', ['numero' => $numero, 'fecha' => $hoy]);
     }
 
     /**

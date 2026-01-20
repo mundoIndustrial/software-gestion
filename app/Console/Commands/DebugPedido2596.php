@@ -14,7 +14,7 @@ class DebugPedido2596 extends Command
     {
         $pedido = PedidoProduccion::find(2596);
         if ($pedido) {
-            $this->info("✅ Pedido 2596 encontrado");
+            $this->info(" Pedido 2596 encontrado");
             $this->info("Prendas en pedido: " . $pedido->prendas->count());
             
             foreach ($pedido->prendas as $prenda) {
@@ -31,7 +31,7 @@ class DebugPedido2596 extends Command
                 }
             }
         } else {
-            $this->error("❌ Pedido 2596 no encontrado");
+            $this->error(" Pedido 2596 no encontrado");
         }
     }
 }

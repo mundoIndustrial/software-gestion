@@ -40,12 +40,12 @@ class RevisarEstadosCotizaciones extends Command
             
             if ($this->confirm('¿Actualizar?')) {
                 $updatedCount = Cotizacion::limit(5)->update(['estado' => 'APROBADA_COTIZACIONES']);
-                $this->info("✅ Se actualizaron $updatedCount cotizaciones a APROBADA_COTIZACIONES");
+                $this->info(" Se actualizaron $updatedCount cotizaciones a APROBADA_COTIZACIONES");
             }
         } else {
             foreach ($aprobadas as $cot) {
                 $cliente = $cot->cliente ? $cot->cliente->nombre : 'SIN CLIENTE';
-                $this->line("✅ ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | CLIENTE: $cliente");
+                $this->line(" ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | CLIENTE: $cliente");
             }
         }
     }

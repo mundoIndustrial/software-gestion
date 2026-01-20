@@ -177,7 +177,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/api/registros/dias-batch', [RegistroOrdenQueryController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
     Route::post('/api/registros/{id}/calcular-fecha-estimada', [RegistroOrdenQueryController::class, 'calcularFechaEstimada'])->name('api.registros.calcular-fecha-estimada');
     
-    // ✅ Ruta para traer LogoPedido por ID
+    //  Ruta para traer LogoPedido por ID
     Route::get('/api/logo-pedidos/{id}', [RegistroOrdenQueryController::class, 'showLogoPedidoById'])->name('api.logo-pedidos.show');
     
     Route::post('/registros', [RegistroOrdenController::class, 'store'])->name('registros.store');

@@ -291,11 +291,11 @@ const UIComponents = {
         }[type] || 'bg-info';
 
         const icon = {
-            'success': '✅',
-            'error': '❌',
+            'success': '',
+            'error': '',
             'warning': '⚠️',
-            'info': 'ℹ️'
-        }[type] || 'ℹ️';
+            'info': ''
+        }[type] || '';
 
         const html = `
             <div class="toast ${bgClass} text-white position-fixed" 
@@ -337,7 +337,7 @@ const UIComponents = {
     renderResumen(summary) {
         return `
             <div class="alert alert-info">
-                <h5>📋 Resumen del pedido</h5>
+                <h5> Resumen del pedido</h5>
                 <ul class="mb-0">
                     <li>Pedido ID: <strong>${summary.pedido_id || 'N/A'}</strong></li>
                     <li>Prendas: <strong>${summary.prendas}</strong></li>
@@ -345,7 +345,7 @@ const UIComponents = {
                     <li>Items a producir: <strong>${summary.items}</strong></li>
                     <li>Procesos: <strong>${summary.procesos}</strong></li>
                 </ul>
-                <small class="text-muted">Estado: ${summary.completo ? '✅ Listo para enviar' : '❌ Incompleto'}</small>
+                <small class="text-muted">Estado: ${summary.completo ? ' Listo para enviar' : ' Incompleto'}</small>
             </div>
         `;
     },

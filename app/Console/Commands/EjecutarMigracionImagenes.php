@@ -32,10 +32,10 @@ class EjecutarMigracionImagenes extends Command
             $this->paso5_verificacion();
 
             $this->newLine();
-            $this->info('✅ MIGRACIÓN COMPLETADA EXITOSAMENTE');
+            $this->info(' MIGRACIÓN COMPLETADA EXITOSAMENTE');
             return 0;
         } catch (\Exception $e) {
-            $this->error('❌ ERROR EN MIGRACIÓN: ' . $e->getMessage());
+            $this->error(' ERROR EN MIGRACIÓN: ' . $e->getMessage());
             $this->error('Trace: ' . $e->getTraceAsString());
             return 1;
         }
@@ -43,7 +43,7 @@ class EjecutarMigracionImagenes extends Command
 
     private function paso1_crearTablas()
     {
-        $this->info('📋 PASO 1: Creando nuevas tablas...');
+        $this->info(' PASO 1: Creando nuevas tablas...');
 
         // Crear tabla prenda_tela_fotos_cot
         DB::statement('
@@ -68,7 +68,7 @@ class EjecutarMigracionImagenes extends Command
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ');
 
-        $this->line('   ✅ Tabla prenda_tela_fotos_cot creada');
+        $this->line('    Tabla prenda_tela_fotos_cot creada');
 
         // Crear tabla logo_fotos_cot
         DB::statement('
@@ -93,12 +93,12 @@ class EjecutarMigracionImagenes extends Command
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ');
 
-        $this->line('   ✅ Tabla logo_fotos_cot creada');
+        $this->line('    Tabla logo_fotos_cot creada');
     }
 
     private function paso2_migrarTelas()
     {
-        $this->info('📋 PASO 2: Migrando fotos de telas...');
+        $this->info(' PASO 2: Migrando fotos de telas...');
 
         // Verificar si la columna 'tipo' existe
         $columnas = DB::select("DESCRIBE prenda_fotos_cot");
@@ -112,7 +112,7 @@ class EjecutarMigracionImagenes extends Command
         }
 
         if (!$tieneColumna) {
-            $this->line('   ℹ️ Columna "tipo" no existe, fotos de telas ya fueron migradas o no existen');
+            $this->line('    Columna "tipo" no existe, fotos de telas ya fueron migradas o no existen');
             return;
         }
 
@@ -121,7 +121,7 @@ class EjecutarMigracionImagenes extends Command
             ->count();
 
         if ($cantidad === 0) {
-            $this->line('   ℹ️ No hay fotos de telas para migrar');
+            $this->line('    No hay fotos de telas para migrar');
             return;
         }
 
@@ -153,12 +153,12 @@ class EjecutarMigracionImagenes extends Command
             WHERE tipo = "tela"
         ');
 
-        $this->line("   ✅ {$cantidad} foto(s) de telas migrada(s)");
+        $this->line("    {$cantidad} foto(s) de telas migrada(s)");
     }
 
     private function paso3_migrarLogos()
     {
-        $this->info('📋 PASO 3: Migrando imágenes de logos...');
+        $this->info(' PASO 3: Migrando imágenes de logos...');
 
         $logos = DB::table('logo_cotizaciones')
             ->whereNotNull('imagenes')
@@ -207,7 +207,7 @@ class EjecutarMigracionImagenes extends Command
             }
         }
 
-        $this->line("   ✅ {$totalMigradas} imagen(es) de logo(s) migrada(s)");
+        $this->line("    {$totalMigradas} imagen(es) de logo(s) migrada(s)");
         if ($errores > 0) {
             $this->warn("   ⚠️ {$errores} error(es) durante migración");
         }
@@ -215,7 +215,7 @@ class EjecutarMigracionImagenes extends Command
 
     private function paso4_modificarTablas()
     {
-        $this->info('📋 PASO 4: Modificando tablas existentes...');
+        $this->info(' PASO 4: Modificando tablas existentes...');
 
         // Verificar si la columna 'tipo' existe antes de eliminarla
         $columnas = DB::select("DESCRIBE prenda_fotos_cot");
@@ -230,9 +230,9 @@ class EjecutarMigracionImagenes extends Command
 
         if ($tieneColumna) {
             DB::statement('ALTER TABLE prenda_fotos_cot DROP COLUMN tipo');
-            $this->line('   ✅ Columna "tipo" eliminada de prenda_fotos_cot');
+            $this->line('    Columna "tipo" eliminada de prenda_fotos_cot');
         } else {
-            $this->line('   ℹ️ Columna "tipo" ya no existe en prenda_fotos_cot');
+            $this->line('    Columna "tipo" ya no existe en prenda_fotos_cot');
         }
 
         // Modificar prenda_telas_cot
@@ -294,9 +294,9 @@ class EjecutarMigracionImagenes extends Command
                 MODIFY COLUMN prenda_cot_id BIGINT UNSIGNED NOT NULL
             ');
 
-            $this->line('   ✅ Tabla prenda_telas_cot modificada');
+            $this->line('    Tabla prenda_telas_cot modificada');
         } else {
-            $this->line('   ℹ️ Tabla prenda_telas_cot ya está modificada');
+            $this->line('    Tabla prenda_telas_cot ya está modificada');
         }
 
         // Agregar índices
@@ -312,12 +312,12 @@ class EjecutarMigracionImagenes extends Command
             // Índice ya existe
         }
 
-        $this->line('   ✅ Índices verificados en prenda_fotos_cot');
+        $this->line('    Índices verificados en prenda_fotos_cot');
     }
 
     private function paso5_verificacion()
     {
-        $this->info('📋 PASO 5: Verificación final...');
+        $this->info(' PASO 5: Verificación final...');
 
         $stats = DB::select('
             SELECT 

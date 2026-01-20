@@ -32,7 +32,7 @@ class AnalizarCotizaciones extends Command
         $this->line('');
 
         // Análisis por es_borrador
-        $this->line('📋 ANÁLISIS POR ESTADO (es_borrador):');
+        $this->line(' ANÁLISIS POR ESTADO (es_borrador):');
         $borradores = Cotizacion::where('es_borrador', 1)->count();
         $enviadas = Cotizacion::where('es_borrador', 0)->count();
         $this->info("   Borradores (es_borrador = 1): {$borradores}");
@@ -123,6 +123,6 @@ class AnalizarCotizaciones extends Command
         }
 
         $this->line('');
-        $this->info('✅ Análisis completado');
+        $this->info(' Análisis completado');
     }
 }

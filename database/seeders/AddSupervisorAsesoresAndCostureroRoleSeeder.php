@@ -40,7 +40,7 @@ class AddSupervisorAsesoresAndCostureroRoleSeeder extends Seeder
             );
         }
 
-        echo "\n✅ Roles insertados correctamente:\n";
+        echo "\n Roles insertados correctamente:\n";
         echo "   - supervisor_asesores\n";
         echo "   - costurero\n\n";
     }

@@ -125,7 +125,7 @@ class HttpService {
 
             // Validar que la respuesta sea correcta
             if (!response.ok) {
-                console.error('❌ Error del servidor:', {
+                console.error(' Error del servidor:', {
                     status: response.status,
                     statusText: response.statusText,
                     data: responseData
@@ -142,7 +142,7 @@ class HttpService {
 
             return responseData.success !== undefined ? responseData : { success: true, ...responseData };
         } catch (error) {
-            console.error('❌ Error en HttpService:', error);
+            console.error(' Error en HttpService:', error);
             return {
                 success: false,
                 message: error.message

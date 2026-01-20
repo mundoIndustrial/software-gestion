@@ -2,13 +2,13 @@
 
 ## 🔍 SITUACIÓN ACTUAL
 
-**Backend:** ✅ Ya existe y trae datos correctamente
+**Backend:**  Ya existe y trae datos correctamente
 - `AsesoresController@index()` - Trae $pedidos formateados
 - `ObtenerPedidosService` - Aplica filtros y búsqueda
 - `ObtenerDatosRecibosService` - Trae prendas y procesos
 - `EliminarPedidoService`, `AnularPedidoService` - Acciones
 
-**Frontend:** ❌ Código duplicado en index.blade.php
+**Frontend:**  Código duplicado en index.blade.php
 - 2329 líneas en UN archivo
 - Funciones JS de formateo ya hechas en backend
 - Lógica de filtrado/búsqueda copiada
@@ -16,36 +16,36 @@
 
 ---
 
-## ✅ PLAN SIMPLIFICADO - QUÉ REALMENTE HACER
+##  PLAN SIMPLIFICADO - QUÉ REALMENTE HACER
 
 ### NO HACER:
 ```
-❌ Crear nuevos services en backend - YA EXISTEN
-❌ Cambiar rutas - FUNCIONAN CORRECTAMENTE
-❌ Refactorizar PedidosController - ES CORRECTO
-❌ Crear nuevas queries/commands - INNECESARIO
+ Crear nuevos services en backend - YA EXISTEN
+ Cambiar rutas - FUNCIONAN CORRECTAMENTE
+ Refactorizar PedidosController - ES CORRECTO
+ Crear nuevas queries/commands - INNECESARIO
 ```
 
 ### SÍ HACER:
 ```
-✅ Limpiar index.blade.php (2329 → ~150 líneas)
-✅ Sacar CSS a archivos separados
-✅ Sacar HTML a componentes
-✅ Sacar JS a modules
-✅ Eliminar código DUPLICADO
-✅ Apuntar a endpoints existentes del backend
+ Limpiar index.blade.php (2329 → ~150 líneas)
+ Sacar CSS a archivos separados
+ Sacar HTML a componentes
+ Sacar JS a modules
+ Eliminar código DUPLICADO
+ Apuntar a endpoints existentes del backend
 ```
 
 ---
 
-## 📋 LISTA DE LO QUE VA A OCURRIR
+##  LISTA DE LO QUE VA A OCURRIR
 
 ### PASO 1: Eliminar duplicación en index.blade.php
 
 **Qué estamos haciendo MAL:**
 
 ```php
-// ❌ MALO: Recibir datos y formatear EN BLADE
+//  MALO: Recibir datos y formatear EN BLADE
 @php
     // Formatear manualmente prendas, procesos
     foreach ($pedidos as $pedido) {
@@ -53,7 +53,7 @@
     }
 @endphp
 
-// ❌ MALO: Usar funciones JS para formateo
+//  MALO: Usar funciones JS para formateo
 <script>
 function construirDescripcionComoPrenda(prenda) {
     // Formatear HTML de descripción
@@ -64,7 +64,7 @@ function construirDescripcionComoPrenda(prenda) {
 **Qué DEBERÍA ser:**
 
 ```php
-// ✅ BIEN: Backend ya lo trae formateado
+//  BIEN: Backend ya lo trae formateado
 // El controlador trae: $pedidos con toda la info serializada
 <x-pedidos.table-rows :pedidos="$pedidos" />
 ```
@@ -77,10 +77,10 @@ function construirDescripcionComoPrenda(prenda) {
 
 ```bash
 # Verificar qué servicios traen datos
-✅ ObtenerPedidosService::obtener() → trae $pedidos paginated
-✅ ObtenerDatosRecibosService::obtener() → trae prendas + procesos
-✅ Rutas: GET /asesores/pedidos (blade) OK
-✅ APIs: GET /api/pedidos (JSON) OK
+ ObtenerPedidosService::obtener() → trae $pedidos paginated
+ ObtenerDatosRecibosService::obtener() → trae prendas + procesos
+ Rutas: GET /asesores/pedidos (blade) OK
+ APIs: GET /api/pedidos (JSON) OK
 ```
 
 **Conclusión:**
@@ -122,13 +122,13 @@ function construirDescripcionComoPrenda(prenda) {
 
 #### 2.4 Eliminar Duplicación
 ```
-❌ ELIMINAR:
+ ELIMINAR:
 - construirDescripcionComoPrenda() - backend lo hace
 - construirDescripcionComoProceso() - backend lo hace
 - construirTallasFormato() - backend lo hace
 - editarPedido(), eliminarPedido(), etc - solo llamadas HTTP
 
-✅ MANTENER:
+ MANTENER:
 - Event listeners
 - Efectos visuales
 - Gestión de modales visuales
@@ -207,25 +207,25 @@ GET /asesores/pedidos/:id/datos-edicion → JSON (si existe)
 ### Funciones JS a ELIMINAR (ya no se necesitan):
 
 ```js
-❌ construirDescripcionComoPrenda() - Backend lo serializa
-❌ construirDescripcionComoProceso() - Backend lo serializa
-❌ construirTallasFormato() - Backend lo serializa
-❌ abrirModalDescripcion() - Solo abre modal UI
-❌ abrirEditarDatos() - Backend trae datos
-❌ abrirEditarEPP() - Backend trae datos
-❌ abrirEditarEPPEspecifico() - Backend trae datos
-❌ navigarFiltro() - Ya no existe
-❌ getDataAttributeFromColumn() - No existe en nueva arquitectura
+ construirDescripcionComoPrenda() - Backend lo serializa
+ construirDescripcionComoProceso() - Backend lo serializa
+ construirTallasFormato() - Backend lo serializa
+ abrirModalDescripcion() - Solo abre modal UI
+ abrirEditarDatos() - Backend trae datos
+ abrirEditarEPP() - Backend trae datos
+ abrirEditarEPPEspecifico() - Backend trae datos
+ navigarFiltro() - Ya no existe
+ getDataAttributeFromColumn() - No existe en nueva arquitectura
 ```
 
 ### Funciones JS a MANTENER (solo UI):
 
 ```js
-✅ mostrarNotificacion() - UI
-✅ abrirModalCelda() - UI (abre modal, solo eso)
-✅ abrirConfirmDelete() - UI (confirmación)
-✅ Event listeners - UI (atar eventos)
-✅ Efectos visuales - UI (animaciones)
+ mostrarNotificacion() - UI
+ abrirModalCelda() - UI (abre modal, solo eso)
+ abrirConfirmDelete() - UI (confirmación)
+ Event listeners - UI (atar eventos)
+ Efectos visuales - UI (animaciones)
 ```
 
 ---
@@ -235,22 +235,22 @@ GET /asesores/pedidos/:id/datos-edicion → JSON (si existe)
 ### LO QUE NO HAY QUE HACER:
 
 ```
-❌ Backend refactor - YA ESTÁ BIEN
-❌ Crear Services nuevos - YA EXISTEN
-❌ Cambiar controladores - FUNCIONAN
-❌ Cambiar rutas - OK
-❌ Crear APIs nuevas - NO NECESARIO
+ Backend refactor - YA ESTÁ BIEN
+ Crear Services nuevos - YA EXISTEN
+ Cambiar controladores - FUNCIONAN
+ Cambiar rutas - OK
+ Crear APIs nuevas - NO NECESARIO
 ```
 
 ### LO QUE SÍ HAY QUE HACER:
 
 ```
-✅ Organizar archivos frontend
-✅ Sacar CSS a carpetas
-✅ Sacar HTML a componentes
-✅ Sacar JS a modules
-✅ Eliminar código duplicado
-✅ Apuntar JS a endpoints existentes
+ Organizar archivos frontend
+ Sacar CSS a carpetas
+ Sacar HTML a componentes
+ Sacar JS a modules
+ Eliminar código duplicado
+ Apuntar JS a endpoints existentes
 ```
 
 ---

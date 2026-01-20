@@ -77,7 +77,7 @@ class TelaComponent {
                         const telasSection = container.querySelector('[data-section="telas"]');
                         if (telasSection) {
                             telasSection.innerHTML = window.renderizarTelasPrendaTipo(prenda, prendaIndex);
-                            console.log('✅ Sección de telas re-renderizada con fotos nuevas');
+                            console.log(' Sección de telas re-renderizada con fotos nuevas');
                         }
                     }
                 }

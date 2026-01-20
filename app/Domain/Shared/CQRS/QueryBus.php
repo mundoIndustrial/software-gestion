@@ -50,7 +50,7 @@ class QueryBus
     {
         $this->handlers[$queryClass] = $handlerClass;
         
-        Log::debug('📋 QueryBus: Handler registrado', [
+        Log::debug(' QueryBus: Handler registrado', [
             'query' => $queryClass,
             'handler' => $handlerClass,
         ]);
@@ -85,7 +85,7 @@ class QueryBus
             // Ejecutar el handler
             $resultado = $handler->handle($query);
 
-            Log::info('✅ [QueryBus] Query ejecutada exitosamente', [
+            Log::info(' [QueryBus] Query ejecutada exitosamente', [
                 'query' => class_basename($query),
                 'resultado_type' => gettype($resultado),
             ]);
@@ -93,7 +93,7 @@ class QueryBus
             return $resultado;
 
         } catch (Exception $e) {
-            Log::error('❌ [QueryBus] Error ejecutando query', [
+            Log::error(' [QueryBus] Error ejecutando query', [
                 'query' => $queryClass,
                 'error' => $e->getMessage(),
             ]);

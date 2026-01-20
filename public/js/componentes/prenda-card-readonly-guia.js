@@ -265,4 +265,4 @@ function renderizarPrendasEnTarjetas() {
  *    - Click en Eliminar → abre confirmación
  */
 
-console.log('✅ Guía de uso prenda-card-readonly cargada');
+console.log(' Guía de uso prenda-card-readonly cargada');

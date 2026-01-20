@@ -168,10 +168,10 @@
         // Esperar a que los módulos estén cargados
         setTimeout(() => {
             if (typeof cargarBorrador === 'function') {
-                console.log('✅ Llamando a cargarBorrador()');
+                console.log(' Llamando a cargarBorrador()');
                 cargarBorrador(cotizacion);
             } else {
-                console.error('❌ Función cargarBorrador no encontrada');
+                console.error(' Función cargarBorrador no encontrada');
             }
         }, 1000);
     });

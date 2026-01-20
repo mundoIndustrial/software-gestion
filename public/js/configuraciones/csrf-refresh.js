@@ -59,7 +59,7 @@
                     metaTag.setAttribute('content', data.token);
                     
                     if (CONFIG.DEBUG) {
-                        console.log('✅ Token CSRF actualizado:', {
+                        console.log(' Token CSRF actualizado:', {
                             timestamp: data.timestamp,
                             token_preview: data.token.substring(0, 10) + '...'
                         });
@@ -80,7 +80,7 @@
                     
                     return true;
                 } else {
-                    console.error('❌ Meta tag csrf-token no encontrado');
+                    console.error(' Meta tag csrf-token no encontrado');
                     return false;
                 }
             } else {
@@ -88,7 +88,7 @@
             }
             
         } catch (error) {
-            console.error('❌ Error al refrescar token CSRF:', error);
+            console.error(' Error al refrescar token CSRF:', error);
             
             // Si falla, NO mostrar advertencia para no interrumpir al usuario
             // Solo loguear el error en consola
@@ -167,7 +167,7 @@
         // Verificar que exista el meta tag
         const metaTag = document.querySelector('meta[name="csrf-token"]');
         if (!metaTag) {
-            console.error('❌ Sistema de refresh CSRF no iniciado: meta tag no encontrado');
+            console.error(' Sistema de refresh CSRF no iniciado: meta tag no encontrado');
             return;
         }
         

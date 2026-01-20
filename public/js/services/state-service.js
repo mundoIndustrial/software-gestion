@@ -67,7 +67,7 @@ class PedidoStateManager {
     setCotizacion(data) {
         this.cotizacion = { ...this.cotizacion, ...data };
         this.notifyObservers('cotizacion', this.cotizacion);
-        console.log('📋 Cotización actualizada:', this.cotizacion);
+        console.log(' Cotización actualizada:', this.cotizacion);
     }
 
     /**
@@ -531,7 +531,7 @@ class PedidoStateManager {
             this.especificaciones = state.especificaciones || null;
             this.datosReflectivo = state.datosReflectivo || null;
         } catch (error) {
-            console.error('❌ Error al importar estado:', error);
+            console.error(' Error al importar estado:', error);
         }
     }
 }

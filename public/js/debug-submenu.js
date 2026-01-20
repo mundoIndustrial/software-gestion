@@ -3,10 +3,10 @@ console.log('🔍 === SUBMENU DEBUG SCRIPT INICIADO ===');
 
 // Verificar estructura HTML
 const submenuToggles = document.querySelectorAll('.submenu-toggle');
-console.log(`✅ Encontrados ${submenuToggles.length} botones submenu-toggle`);
+console.log(` Encontrados ${submenuToggles.length} botones submenu-toggle`);
 
 const submenus = document.querySelectorAll('.submenu');
-console.log(`✅ Encontrados ${submenus.length} elementos .submenu`);
+console.log(` Encontrados ${submenus.length} elementos .submenu`);
 
 // Verificar estilos computados de un submenu
 if (submenus.length > 0) {
@@ -57,4 +57,4 @@ if (sidebarContent) {
   console.groupEnd();
 }
 
-console.log('✅ === SUBMENU DEBUG SCRIPT COMPLETADO ===');
+console.log(' === SUBMENU DEBUG SCRIPT COMPLETADO ===');

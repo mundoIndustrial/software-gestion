@@ -89,7 +89,7 @@ class HistorialProcesos {
         if (historial && historial.length > 0) {
             html += `
                 <div class="historial-cambios">
-                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #1f2937;">📋 Historial de Cambios</h3>
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #1f2937;"> Historial de Cambios</h3>
                     <div style="max-height: 300px; overflow-y: auto;">
             `;
 
@@ -195,5 +195,5 @@ class HistorialProcesos {
 // Inicializar instancia global
 window.historialProcesos = new HistorialProcesos();
 
-console.log('✅ Sistema de historial de procesos cargado');
+console.log(' Sistema de historial de procesos cargado');
 

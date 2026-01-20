@@ -100,13 +100,13 @@ FormData {
 ```php
 // Laravel
 Route::post('/api/pedidos/guardar-desde-json', function (Request $request) {
-    // ✅ Obtener JSON string
+    //  Obtener JSON string
     $prendasJson = $request->input('prendas');
     
-    // ✅ Parsear a array
+    //  Parsear a array
     $prendas = json_decode($prendasJson, true);
     
-    // ✅ Validar que JSON es válido
+    //  Validar que JSON es válido
     if (json_last_error() !== JSON_ERROR_NONE) {
         return response()->json([
             'success' => false,
@@ -114,7 +114,7 @@ Route::post('/api/pedidos/guardar-desde-json', function (Request $request) {
         ], 400);
     }
     
-    // ✅ Validar estructura esperada
+    //  Validar estructura esperada
     if (!is_array($prendas)) {
         return response()->json([
             'success' => false,
@@ -128,7 +128,7 @@ Route::post('/api/pedidos/guardar-desde-json', function (Request $request) {
 
 ```php
 foreach ($prendas as $prendaIdx => $prendaData) {
-    // ✅ Crear prenda
+    //  Crear prenda
     $prenda = new Prenda([
         'nombre_prenda' => $prendaData['nombre_prenda'],
         'descripcion' => $prendaData['descripcion'],
@@ -137,14 +137,14 @@ foreach ($prendas as $prendaIdx => $prendaData) {
     ]);
     $prenda->save();
     
-    // ✅ Procesar variantes
+    //  Procesar variantes
     foreach ($prendaData['variantes'] as $varianteData) {
         $variante = new Variante($varianteData);
         $variante->prenda_id = $prenda->id;
         $variante->save();
     }
     
-    // ✅ Procesar fotos de prenda
+    //  Procesar fotos de prenda
     foreach ($prendaData['fotos_prenda'] as $fotoIdx => $fotoData) {
         // Key en FormData: prenda_0_foto_0
         $fileKey = "prenda_{$prendaIdx}_foto_{$fotoIdx}";
@@ -165,7 +165,7 @@ foreach ($prendas as $prendaIdx => $prendaData) {
         }
     }
     
-    // ✅ Procesar procesos y sus imágenes
+    //  Procesar procesos y sus imágenes
     foreach ($prendaData['procesos'] as $procesoIdx => $procesoData) {
         // Crear proceso
         $proceso = new Proceso([
@@ -210,27 +210,27 @@ foreach ($prendas as $prendaIdx => $prendaData) {
 
 ```
 JSON: prendas[0].fotos_prenda[0]
-FormData: prenda_0_foto_0  ✅ Coincide
+FormData: prenda_0_foto_0   Coincide
 
 JSON: prendas[0].procesos[1].imagenes (NO EXISTE EN JSON)
-FormData: prenda_0_proceso_1_img_0  ✅ Correlación válida
+FormData: prenda_0_proceso_1_img_0   Correlación válida
 ```
 
 ### 2. JSON NO contiene File objects
 
 ```javascript
-// ❌ NUNCA verás esto en el JSON:
+//  NUNCA verás esto en el JSON:
 {
   "fotos": [{
-    "file": {},  // ❌ NO ESTÁ
+    "file": {},  //  NO ESTÁ
     "nombre": "x.jpg"
   }]
 }
 
-// ✅ SIEMPRE verás esto:
+//  SIEMPRE verás esto:
 {
   "fotos": [{
-    "nombre": "x.jpg"  // ✅ SIN file
+    "nombre": "x.jpg"  //  SIN file
   }]
 }
 ```
@@ -242,7 +242,7 @@ FormData: prenda_0_proceso_1_img_0  ✅ Correlación válida
 // Siempre están en FormData con su propia key
 
 JSON: { fotos: [{ nombre: "x.jpg" }] }
-FormData: prenda_0_foto_0 = <File>  ✅ Correlacionable
+FormData: prenda_0_foto_0 = <File>   Correlacionable
 ```
 
 ### 4. Metadatos en JSON, archivos en FormData
@@ -275,11 +275,11 @@ if (json_decode($json) === null) {
 $prendas = json_decode($request->input('prendas'), true);
 
 foreach ($prendas as $prenda) {
-    // ✅ Verificar campos obligatorios
+    //  Verificar campos obligatorios
     Assert::notEmpty($prenda['nombre_prenda']);
     Assert::notEmpty($prenda['genero']);
     
-    // ✅ Verificar arrays esperados
+    //  Verificar arrays esperados
     Assert::isArray($prenda['variantes']);
     Assert::isArray($prenda['fotos_prenda']);
     Assert::isArray($prenda['procesos']);
@@ -350,7 +350,7 @@ class PedidoController extends Controller
      */
     public function guardarDesdeJson(Request $request)
     {
-        // ✅ Paso 1: Extraer y validar JSON
+        //  Paso 1: Extraer y validar JSON
         $prendasJson = $request->input('prendas');
         
         if (empty($prendasJson)) {
@@ -369,14 +369,14 @@ class PedidoController extends Controller
             ], 400);
         }
         
-        // ✅ Paso 2: Iniciar transacción
+        //  Paso 2: Iniciar transacción
         \DB::beginTransaction();
         
         try {
             $pedidoId = $request->input('pedido_produccion_id');
             $createdPrendas = [];
             
-            // ✅ Paso 3: Procesar cada prenda
+            //  Paso 3: Procesar cada prenda
             foreach ($prendas as $prendaIdx => $prendaData) {
                 
                 // Crear prenda
@@ -388,7 +388,7 @@ class PedidoController extends Controller
                     'de_bodega' => $prendaData['de_bodega'] ?? false
                 ]);
                 
-                // ✅ Procesar variantes (solo metadatos)
+                //  Procesar variantes (solo metadatos)
                 if (!empty($prendaData['variantes'])) {
                     foreach ($prendaData['variantes'] as $varianteData) {
                         Variante::create(
@@ -397,7 +397,7 @@ class PedidoController extends Controller
                     }
                 }
                 
-                // ✅ Procesar fotos de prenda (metadata + archivo)
+                //  Procesar fotos de prenda (metadata + archivo)
                 if (!empty($prendaData['fotos_prenda'])) {
                     foreach ($prendaData['fotos_prenda'] as $fotoIdx => $fotoData) {
                         $fileKey = "prenda_{$prendaIdx}_foto_{$fotoIdx}";
@@ -419,7 +419,7 @@ class PedidoController extends Controller
                     }
                 }
                 
-                // ✅ Procesar procesos
+                //  Procesar procesos
                 if (!empty($prendaData['procesos'])) {
                     foreach ($prendaData['procesos'] as $procesoIdx => $procesoData) {
                         
@@ -432,7 +432,7 @@ class PedidoController extends Controller
                             'observaciones' => $procesoData['observaciones'] ?? ''
                         ]);
                         
-                        // ✅ Procesar imágenes del proceso
+                        //  Procesar imágenes del proceso
                         for ($imgIdx = 0; $imgIdx < 100; $imgIdx++) {
                             $fileKey = "prenda_{$prendaIdx}_proceso_{$procesoIdx}_img_{$imgIdx}";
                             
@@ -458,10 +458,10 @@ class PedidoController extends Controller
                 $createdPrendas[] = $prenda;
             }
             
-            // ✅ Paso 4: Commit de transacción
+            //  Paso 4: Commit de transacción
             \DB::commit();
             
-            // ✅ Paso 5: Retornar éxito
+            //  Paso 5: Retornar éxito
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido guardado correctamente',
@@ -477,7 +477,7 @@ class PedidoController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            // ❌ Rollback en caso de error
+            //  Rollback en caso de error
             \DB::rollback();
             
             return response()->json([
@@ -506,24 +506,24 @@ class PedidoController extends Controller
 
 ## 🚨 ERRORES COMUNES
 
-### ❌ Error: "JSON inválido"
+###  Error: "JSON inválido"
 
 **Causa:** El frontend no usó `transformStateForSubmit()`  
 **Solución:** Verificar que el frontend envía JSON limpio
 
-### ❌ Error: "Archivo no encontrado: prenda_0_foto_0"
+###  Error: "Archivo no encontrado: prenda_0_foto_0"
 
 **Causa:** Índice en JSON no coincide con FormData  
 **Solución:** Verificar nombrado de keys
 
-### ❌ Error: "Imagen duplicada"
+###  Error: "Imagen duplicada"
 
 **Causa:** Reutilización de variable `pIdx` en bucles anidados  
 **Solución:** Usar `procesoIdx` en lugar de `pIdx`
 
 ---
 
-## ✅ VERIFICACIÓN EN BACKEND
+##  VERIFICACIÓN EN BACKEND
 
 ```php
 // Test: Verificar que recibimos estructura correcta

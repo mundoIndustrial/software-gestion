@@ -21,7 +21,7 @@ const componentes = {
 };
 
 Object.entries(componentes).forEach(([nombre, existe]) => {
-    console.log(`   ${existe ? '✅' : '❌'} ${nombre}`);
+    console.log(`   ${existe ? '' : ''} ${nombre}`);
 });
 
 // ============================================
@@ -38,13 +38,13 @@ if (window.gestorPrendaSinCotizacion) {
     if (gestor.prendas.length > 0) {
         console.log('\n   Detalles de prendas:');
         gestor.prendas.forEach((prenda, idx) => {
-            const estado = gestor.prendasEliminadas.has(idx) ? '❌ (eliminada)' : '✅';
+            const estado = gestor.prendasEliminadas.has(idx) ? ' (eliminada)' : '';
             console.log(`   ${estado} Prenda ${idx}: "${prenda.nombre_producto}"`);
             console.log(`       - Procesos: ${Object.keys(prenda.procesos || {}).length > 0 ? Object.keys(prenda.procesos).join(', ') : '[ninguno]'}`);
         });
     }
 } else {
-    console.error('❌ GestorPrendaSinCotizacion no existe');
+    console.error(' GestorPrendaSinCotizacion no existe');
 }
 
 // ============================================
@@ -56,16 +56,16 @@ const containerID = 'prendas-container-editable';
 const container = document.getElementById(containerID);
 
 if (container) {
-    console.log(`   ✅ Container encontrado: #${containerID}`);
+    console.log(`    Container encontrado: #${containerID}`);
     console.log(`   📊 Contenido HTML actual:`);
     console.log(`       Longitud: ${container.innerHTML.length} caracteres`);
-    console.log(`       ¿Vacío? ${container.innerHTML.trim() === '' ? '❌ SÍ' : '✅ NO'}`);
+    console.log(`       ¿Vacío? ${container.innerHTML.trim() === '' ? ' SÍ' : ' NO'}`);
     
     // Contar elementos dentro
     const tarjetas = container.querySelectorAll('.prenda-card-editable');
     console.log(`   📊 Tarjetas renderizadas: ${tarjetas.length}`);
 } else {
-    console.error(`   ❌ Container NO encontrado: #${containerID}`);
+    console.error(`    Container NO encontrado: #${containerID}`);
     console.log('\n   Buscando containers alternativos...');
     document.querySelectorAll('[id*="container"], [id*="items"], [id*="prendas"]').forEach(el => {
         console.log(`   - ${el.id} (${el.tagName})`);
@@ -78,10 +78,10 @@ if (container) {
 console.log('\n4️⃣ Procesos Seleccionados:\n');
 
 if (typeof window.procesosSeleccionados !== 'undefined') {
-    console.log(`   Procesos: ${Object.keys(window.procesosSeleccionados).length > 0 ? Object.keys(window.procesosSeleccionados).join(', ') : '❌ [vacío]'}`);
+    console.log(`   Procesos: ${Object.keys(window.procesosSeleccionados).length > 0 ? Object.keys(window.procesosSeleccionados).join(', ') : ' [vacío]'}`);
     console.log(`   Contenido completo:`, window.procesosSeleccionados);
 } else {
-    console.error('   ❌ window.procesosSeleccionados no existe');
+    console.error('    window.procesosSeleccionados no existe');
 }
 
 // ============================================
@@ -93,7 +93,7 @@ window.debugAgregarPrendaDePrueba = function() {
     console.log('🧪 Iniciando prueba de agregar prenda...\n');
     
     if (!window.gestorPrendaSinCotizacion) {
-        console.error('❌ Gestor no existe');
+        console.error(' Gestor no existe');
         return;
     }
     
@@ -118,14 +118,14 @@ window.debugAgregarPrendaDePrueba = function() {
     console.log('   Agregando prenda de prueba al gestor...');
     const indice = window.gestorPrendaSinCotizacion.agregarPrenda(prendaPrueba);
     
-    console.log(`   ✅ Prenda agregada en índice: ${indice}`);
+    console.log(`    Prenda agregada en índice: ${indice}`);
     console.log(`   📊 Prendas activas ahora: ${window.gestorPrendaSinCotizacion.obtenerActivas().length}`);
     
     // Intentar renderizar
     console.log('   Intentando renderizar...');
     if (typeof window.renderizarPrendasTipoPrendaSinCotizacion === 'function') {
         window.renderizarPrendasTipoPrendaSinCotizacion();
-        console.log('   ✅ Renderizado ejecutado');
+        console.log('    Renderizado ejecutado');
         
         // Verificar resultado
         setTimeout(() => {
@@ -136,7 +136,7 @@ window.debugAgregarPrendaDePrueba = function() {
             }
         }, 200);
     } else {
-        console.error('   ❌ Función de renderizado no encontrada');
+        console.error('    Función de renderizado no encontrada');
     }
 };
 
@@ -152,7 +152,7 @@ window.debugDiagnosticoCompleto = function() {
     
     const gestor = window.gestorPrendaSinCotizacion;
     if (!gestor) {
-        console.error('❌ Gestor no existe');
+        console.error(' Gestor no existe');
         return;
     }
     
@@ -164,32 +164,32 @@ window.debugDiagnosticoCompleto = function() {
     console.log('\n🔍 ANÁLISIS:');
     
     if (gestor.prendas.length === 0) {
-        console.log('   ❌ PROBLEMA 1: No hay PRENDAS EN EL GESTOR');
+        console.log('    PROBLEMA 1: No hay PRENDAS EN EL GESTOR');
         console.log('      → Prenda no se agregó correctamente');
         console.log('      → Revisa agregarPrendaNueva() en gestion-items-pedido.js');
     } else if (gestor.obtenerActivas().length === 0) {
-        console.log('   ❌ PROBLEMA 2: Todas las prendas están ELIMINADAS');
+        console.log('    PROBLEMA 2: Todas las prendas están ELIMINADAS');
         console.log(`      → Prendas eliminadas: ${Array.from(gestor.prendasEliminadas).join(', ')}`);
         console.log('      → Algo está llamando a gestor.eliminar()');
     } else {
-        console.log('   ✅ Hay prendas activas en el gestor');
+        console.log('    Hay prendas activas en el gestor');
         
         // Verificar container
         const container = document.getElementById('prendas-container-editable');
         if (!container) {
-            console.log('   ❌ PROBLEMA 3: Container NO EXISTE');
+            console.log('    PROBLEMA 3: Container NO EXISTE');
             console.log('      → ID esperado: prendas-container-editable');
             console.log('      → Revisa el HTML de la página');
         } else {
-            console.log('   ✅ Container existe en DOM');
+            console.log('    Container existe en DOM');
             
             const tarjetas = container.querySelectorAll('.prenda-card-editable');
             if (tarjetas.length === 0) {
-                console.log('   ❌ PROBLEMA 4: Container VACÍO - Tarjetas no renderizadas');
+                console.log('    PROBLEMA 4: Container VACÍO - Tarjetas no renderizadas');
                 console.log('      → Función renderizarPrendasTipoPrendaSinCotizacion() no renderiza');
                 console.log('      → Posible error en sincronizarDatosAntesDERenderizar()');
             } else {
-                console.log(`   ✅ ${tarjetas.length} tarjeta(s) renderizada(s) correctamente`);
+                console.log(`    ${tarjetas.length} tarjeta(s) renderizada(s) correctamente`);
             }
         }
     }
@@ -215,13 +215,13 @@ if (window.gestorPrendaSinCotizacion) {
         
         const resultado = gestorOriginal.call(this, datos);
         
-        console.log(`   ✅ Agregada con índice: ${resultado}`);
+        console.log(`    Agregada con índice: ${resultado}`);
         console.log(`   Total en gestor ahora: ${this.prendas.length}`);
         
         return resultado;
     };
-    console.log('   ✅ Interceptor instalado');
+    console.log('    Interceptor instalado');
 }
 
-console.log('\n✅ Debug iniciado. Ahora agrega una prenda y luego ejecuta:');
+console.log('\n Debug iniciado. Ahora agrega una prenda y luego ejecuta:');
 console.log('   debugDiagnosticoCompleto()');

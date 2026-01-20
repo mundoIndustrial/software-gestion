@@ -173,7 +173,7 @@ class MigrateTablaOriginalCompleto extends Command
             $this->mostrarResumen($dryRun);
 
         } catch (\Exception $e) {
-            $this->error("\n❌ Error en la migración: " . $e->getMessage());
+            $this->error("\n Error en la migración: " . $e->getMessage());
             \Log::error('Migración error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return 1;
         }
@@ -382,7 +382,7 @@ class MigrateTablaOriginalCompleto extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->line("   ✅ Pedidos migrados: {$this->stats['pedidos_migrados']}");
+        $this->line("    Pedidos migrados: {$this->stats['pedidos_migrados']}");
         $this->newLine();
     }
 
@@ -572,7 +572,7 @@ class MigrateTablaOriginalCompleto extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->line("   ✅ Procesos migrados: {$this->stats['procesos_migrados']}");
+        $this->line("    Procesos migrados: {$this->stats['procesos_migrados']}");
         $this->newLine();
     }
 
@@ -602,7 +602,7 @@ class MigrateTablaOriginalCompleto extends Command
             $this->warn("\n⚠️  MODO DRY-RUN: Los datos NO fueron guardados en la base de datos");
             $this->info("✓ Ejecuta sin --dry-run para realizar la migración real\n");
         } else {
-            $this->info("\n✅ MIGRACIÓN COMPLETADA EXITOSAMENTE");
+            $this->info("\n MIGRACIÓN COMPLETADA EXITOSAMENTE");
             $this->info("✓ Ejecuta: php artisan validate:migracion-completa");
             $this->info("✓ Para validar la integridad de los datos migrados\n");
         }

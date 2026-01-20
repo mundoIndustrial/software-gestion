@@ -54,14 +54,14 @@ class BuscarPedidoPorNumeroHandler implements QueryHandler
             // Cachear por 1 hora
             cache()->put($cacheKey, $pedido, now()->addHour());
 
-            Log::info('✅ [BuscarPedidoPorNumeroHandler] Pedido encontrado', [
+            Log::info(' [BuscarPedidoPorNumeroHandler] Pedido encontrado', [
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
             return $pedido;
 
         } catch (\Exception $e) {
-            Log::error('❌ [BuscarPedidoPorNumeroHandler] Error buscando pedido', [
+            Log::error(' [BuscarPedidoPorNumeroHandler] Error buscando pedido', [
                 'numero_pedido' => $query->getNumeroPedido(),
                 'error' => $e->getMessage(),
             ]);

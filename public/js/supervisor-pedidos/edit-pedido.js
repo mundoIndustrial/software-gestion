@@ -232,7 +232,7 @@ function crearPrendaHTML(prenda, index) {
                 </div>
                 
                 <div class="variaciones-section" style="margin-top: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 0.5rem; border-left: 4px solid #1e40af;">
-                    <strong style="display: block; margin-bottom: 1rem; color: #333333; font-size: 1rem;">📋 Variaciones de la Prenda:</strong>
+                    <strong style="display: block; margin-bottom: 1rem; color: #333333; font-size: 1rem;"> Variaciones de la Prenda:</strong>
                     <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #d0d0d0; border-radius: 4px; overflow: hidden; font-size: 0.9rem;">
                         <thead>
                             <tr style="background: #f0f0f0; border-bottom: 2px solid #d0d0d0;">
@@ -406,7 +406,7 @@ function calcularFechaEstimada() {
             // Guardar la fecha ISO en el campo oculto para enviar al servidor
             fieldOculto.value = data.fecha_estimada_iso;
             
-            console.log('✅ Fecha estimada calculada:', data.fecha_estimada);
+            console.log(' Fecha estimada calculada:', data.fecha_estimada);
             console.log('📝 Campo oculto actualizado:', fieldOculto.value);
         } else {
             alert('Error al calcular la fecha estimada: ' + (data.message || 'Error desconocido'));

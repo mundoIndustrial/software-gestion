@@ -356,7 +356,7 @@ class RegistroBodegaController extends Controller
             $orden = TablaOriginalBodega::where('pedido', $pedido)->firstOrFail();
 
             $areaOptions = $this->getEnumOptions('tabla_original_bodega', 'area');
-            \Log::info('📋 AREA OPTIONS DISPONIBLES', ['areaOptions' => $areaOptions]);
+            \Log::info(' AREA OPTIONS DISPONIBLES', ['areaOptions' => $areaOptions]);
 
             $estadoOptions = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
 
@@ -386,7 +386,7 @@ class RegistroBodegaController extends Controller
                 'area' => 'nullable|in:' . implode(',', $areaOptions),
             ]);
 
-            \Log::info('✅ VALIDACIÓN EXITOSA', ['validatedData' => $validatedData]);
+            \Log::info(' VALIDACIÓN EXITOSA', ['validatedData' => $validatedData]);
 
             // Validar columnas adicionales permitidas como strings
             $additionalValidation = [];
@@ -483,7 +483,7 @@ class RegistroBodegaController extends Controller
                     }
                 }
                 
-                \Log::info('✅ PRENDAS GUARDADAS EXITOSAMENTE', ['pedido' => $pedido]);
+                \Log::info(' PRENDAS GUARDADAS EXITOSAMENTE', ['pedido' => $pedido]);
             }
 
             return response()->json(['success' => true, 'updated_fields' => $updatedFields]);
@@ -931,7 +931,7 @@ class RegistroBodegaController extends Controller
                     }
                     $orden->update(['cantidad' => $totalCantidad]);
                     
-                    $mensaje = "✅ Descripción actualizada y registros regenerados automáticamente. Se procesaron " . count($prendas) . " prenda(s) con " . $totalTallasEncontradas . " talla(s).";
+                    $mensaje = " Descripción actualizada y registros regenerados automáticamente. Se procesaron " . count($prendas) . " prenda(s) con " . $totalTallasEncontradas . " talla(s).";
                 } else {
                     $mensaje = "⚠️ Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
                 }
@@ -960,7 +960,7 @@ class RegistroBodegaController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => '❌ Error de validación: Los datos proporcionados no son válidos. Verifique el formato e intente nuevamente.',
+                'message' => ' Error de validación: Los datos proporcionados no son válidos. Verifique el formato e intente nuevamente.',
                 'errors' => $e->errors()
             ], 422);
 
@@ -1252,14 +1252,14 @@ class RegistroBodegaController extends Controller
             // Buscar el registro en tabla_original_bodega
             $registro = TablaOriginalBodega::where('pedido', $pedido)->firstOrFail();
             
-            \Log::info('✅ Registro encontrado', ['pedido' => $pedido]);
+            \Log::info(' Registro encontrado', ['pedido' => $pedido]);
 
             // Actualizar novedades
             $registro->update([
                 'novedades' => $request->input('novedades', '')
             ]);
             
-            \Log::info('✅ Novedades actualizadas', ['novedades' => $request->input('novedades', '')]);
+            \Log::info(' Novedades actualizadas', ['novedades' => $request->input('novedades', '')]);
 
             // Registrar en auditoría si existe
             if (class_exists('App\Models\AuditLog')) {
@@ -1283,13 +1283,13 @@ class RegistroBodegaController extends Controller
                 ]
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::error('❌ Registro no encontrado en bodega', ['pedido' => $pedido]);
+            \Log::error(' Registro no encontrado en bodega', ['pedido' => $pedido]);
             return response()->json([
                 'success' => false,
                 'message' => 'Registro no encontrado'
             ], 404);
         } catch (\Exception $e) {
-            \Log::error('❌ Error al actualizar novedades bodega: ' . $e->getMessage());
+            \Log::error(' Error al actualizar novedades bodega: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar las novedades: ' . $e->getMessage()
@@ -1338,7 +1338,7 @@ class RegistroBodegaController extends Controller
                 'novedades' => $novedadesNuevas
             ]);
             
-            \Log::info('✅ Novedad agregada en bodega', [
+            \Log::info(' Novedad agregada en bodega', [
                 'usuario' => $usuario,
                 'fecha_hora' => $fechaHora,
                 'novedad' => $request->input('novedad')
@@ -1366,13 +1366,13 @@ class RegistroBodegaController extends Controller
                 ]
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::error('❌ Registro no encontrado en bodega', ['pedido' => $pedido]);
+            \Log::error(' Registro no encontrado en bodega', ['pedido' => $pedido]);
             return response()->json([
                 'success' => false,
                 'message' => 'Registro no encontrado'
             ], 404);
         } catch (\Exception $e) {
-            \Log::error('❌ Error al agregar novedad en bodega: ' . $e->getMessage());
+            \Log::error(' Error al agregar novedad en bodega: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al agregar la novedad: ' . $e->getMessage()

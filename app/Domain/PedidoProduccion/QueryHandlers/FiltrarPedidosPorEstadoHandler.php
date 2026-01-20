@@ -38,7 +38,7 @@ class FiltrarPedidosPorEstadoHandler implements QueryHandler
                 ->orderBy('created_at', 'desc')
                 ->paginate($query->getPerPage(), ['*'], 'page', $query->getPage());
 
-            Log::info('✅ [FiltrarPedidosPorEstadoHandler] Pedidos filtrados', [
+            Log::info(' [FiltrarPedidosPorEstadoHandler] Pedidos filtrados', [
                 'estado' => $query->getEstado(),
                 'total' => $pedidos->total(),
             ]);
@@ -46,7 +46,7 @@ class FiltrarPedidosPorEstadoHandler implements QueryHandler
             return $pedidos;
 
         } catch (\Exception $e) {
-            Log::error('❌ [FiltrarPedidosPorEstadoHandler] Error filtrando pedidos', [
+            Log::error(' [FiltrarPedidosPorEstadoHandler] Error filtrando pedidos', [
                 'estado' => $query->getEstado(),
                 'error' => $e->getMessage(),
             ]);

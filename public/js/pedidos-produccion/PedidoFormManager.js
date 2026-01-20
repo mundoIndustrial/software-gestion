@@ -53,7 +53,7 @@ class PedidoFormManager {
             this.startAutoSave();
         }
 
-        console.log('✅ PedidoFormManager inicializado');
+        console.log(' PedidoFormManager inicializado');
     }
 
     // ==================== PERSISTENCIA ====================
@@ -69,7 +69,7 @@ class PedidoFormManager {
             );
             console.log('💾 Estado guardado en localStorage');
         } catch (error) {
-            console.error('❌ Error guardando estado:', error);
+            console.error(' Error guardando estado:', error);
         }
     }
 
@@ -84,7 +84,7 @@ class PedidoFormManager {
                 console.log('📂 Estado cargado desde localStorage');
             }
         } catch (error) {
-            console.error('❌ Error cargando estado:', error);
+            console.error(' Error cargando estado:', error);
         }
     }
 
@@ -128,12 +128,12 @@ class PedidoFormManager {
      */
     setPedidoId(pedidoId) {
         if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
-            throw new Error('❌ pedido_produccion_id debe ser un número > 0');
+            throw new Error(' pedido_produccion_id debe ser un número > 0');
         }
         this.state.pedido_produccion_id = pedidoId;
         this.saveToStorage();
         this.notifyListeners('pedido:updated');
-        console.log(`✅ Pedido ID establecido: ${pedidoId}`);
+        console.log(` Pedido ID establecido: ${pedidoId}`);
     }
 
     /**
@@ -155,7 +155,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('prenda:added', { prenda });
         
-        console.log(`✅ Prenda agregada (ID: ${prenda._id})`);
+        console.log(` Prenda agregada (ID: ${prenda._id})`);
         return prenda;
     }
 
@@ -181,13 +181,13 @@ class PedidoFormManager {
      */
     editPrenda(prendaId, updates) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         Object.assign(prenda, updates);
         this.saveToStorage();
         this.notifyListeners('prenda:updated', { prendaId, updates });
         
-        console.log(`✅ Prenda actualizada: ${prendaId}`);
+        console.log(` Prenda actualizada: ${prendaId}`);
         return prenda;
     }
 
@@ -203,7 +203,7 @@ class PedidoFormManager {
      */
     deletePrenda(prendaId) {
         const index = this.state.prendas.findIndex(p => p._id === prendaId);
-        if (index === -1) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (index === -1) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const prenda = this.state.prendas[index];
         this.state.prendas.splice(index, 1);
@@ -211,7 +211,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('prenda:deleted', { prendaId });
         
-        console.log(`✅ Prenda eliminada: ${prendaId}`);
+        console.log(` Prenda eliminada: ${prendaId}`);
         return prenda;
     }
 
@@ -229,7 +229,7 @@ class PedidoFormManager {
      */
     addVariante(prendaId, dataVariante = {}) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const variante = {
             _id: this.generateId(),
@@ -249,7 +249,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('variante:added', { prendaId, variante });
         
-        console.log(`✅ Variante agregada a prenda ${prendaId}`);
+        console.log(` Variante agregada a prenda ${prendaId}`);
         return variante;
     }
 
@@ -258,10 +258,10 @@ class PedidoFormManager {
      */
     editVariante(prendaId, varianteId, updates) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const variante = prenda.variantes.find(v => v._id === varianteId);
-        if (!variante) throw new Error(`❌ Variante no encontrada: ${varianteId}`);
+        if (!variante) throw new Error(` Variante no encontrada: ${varianteId}`);
 
         Object.assign(variante, updates);
         this.saveToStorage();
@@ -275,10 +275,10 @@ class PedidoFormManager {
      */
     deleteVariante(prendaId, varianteId) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const index = prenda.variantes.findIndex(v => v._id === varianteId);
-        if (index === -1) throw new Error(`❌ Variante no encontrada: ${varianteId}`);
+        if (index === -1) throw new Error(` Variante no encontrada: ${varianteId}`);
 
         const variante = prenda.variantes[index];
         prenda.variantes.splice(index, 1);
@@ -304,10 +304,10 @@ class PedidoFormManager {
      */
     addFotoPrenda(prendaId, fotoData) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         if (prenda.fotos_prenda.length >= this.config.maxFotosPerPrenda) {
-            throw new Error(`❌ Máximo ${this.config.maxFotosPerPrenda} fotos por prenda`);
+            throw new Error(` Máximo ${this.config.maxFotosPerPrenda} fotos por prenda`);
         }
 
         const foto = {
@@ -324,7 +324,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('foto:added', { prendaId, foto });
         
-        console.log(`✅ Foto agregada a prenda ${prendaId}`);
+        console.log(` Foto agregada a prenda ${prendaId}`);
         return foto;
     }
 
@@ -333,7 +333,7 @@ class PedidoFormManager {
      */
     addFotoTela(prendaId, fotoData) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const foto = {
             _id: this.generateId(),
@@ -358,12 +358,12 @@ class PedidoFormManager {
      */
     deleteFoto(prendaId, fotoId, tipo = 'prenda') {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const fotos = tipo === 'tela' ? prenda.fotos_tela : prenda.fotos_prenda;
         const index = fotos.findIndex(f => f._id === fotoId);
         
-        if (index === -1) throw new Error(`❌ Foto no encontrada: ${fotoId}`);
+        if (index === -1) throw new Error(` Foto no encontrada: ${fotoId}`);
 
         const foto = fotos[index];
         fotos.splice(index, 1);
@@ -397,7 +397,7 @@ class PedidoFormManager {
      */
     addProceso(prendaId, dataProceso = {}) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const proceso = {
             _id: this.generateId(),
@@ -411,7 +411,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('proceso:added', { prendaId, proceso });
         
-        console.log(`✅ Proceso agregado a prenda ${prendaId}`);
+        console.log(` Proceso agregado a prenda ${prendaId}`);
         return proceso;
     }
 
@@ -420,10 +420,10 @@ class PedidoFormManager {
      */
     editProceso(prendaId, procesoId, updates) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const proceso = prenda.procesos.find(p => p._id === procesoId);
-        if (!proceso) throw new Error(`❌ Proceso no encontrado: ${procesoId}`);
+        if (!proceso) throw new Error(` Proceso no encontrado: ${procesoId}`);
 
         Object.assign(proceso, updates);
         this.saveToStorage();
@@ -437,10 +437,10 @@ class PedidoFormManager {
      */
     deleteProceso(prendaId, procesoId) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const index = prenda.procesos.findIndex(p => p._id === procesoId);
-        if (index === -1) throw new Error(`❌ Proceso no encontrado: ${procesoId}`);
+        if (index === -1) throw new Error(` Proceso no encontrado: ${procesoId}`);
 
         const proceso = prenda.procesos[index];
         prenda.procesos.splice(index, 1);
@@ -456,10 +456,10 @@ class PedidoFormManager {
      */
     addImagenProceso(prendaId, procesoId, imagenData) {
         const prenda = this.getPrenda(prendaId);
-        if (!prenda) throw new Error(`❌ Prenda no encontrada: ${prendaId}`);
+        if (!prenda) throw new Error(` Prenda no encontrada: ${prendaId}`);
 
         const proceso = prenda.procesos.find(p => p._id === procesoId);
-        if (!proceso) throw new Error(`❌ Proceso no encontrado: ${procesoId}`);
+        if (!proceso) throw new Error(` Proceso no encontrado: ${procesoId}`);
 
         const imagen = {
             _id: this.generateId(),
@@ -523,7 +523,7 @@ class PedidoFormManager {
             try {
                 callback(data);
             } catch (error) {
-                console.error(`❌ Error en listener ${event}:`, error);
+                console.error(` Error en listener ${event}:`, error);
             }
         });
     }

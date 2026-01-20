@@ -102,7 +102,7 @@ $ruta = storage_path($imagenProceso->ruta_webp); // Ruta completa del archivo
 $url = asset('storage/' . $imagenProceso->ruta_webp); // URL pública
 ```
 
-## ✅ Ventajas de Esta Estructura
+##  Ventajas de Esta Estructura
 
 1. **Organización clara**: Todas las imágenes de un pedido en una carpeta
 2. **Separación por tipo**: prenda, tela, proceso (cada proceso con su subcarpeta)
@@ -117,13 +117,13 @@ $url = asset('storage/' . $imagenProceso->ruta_webp); // URL pública
 
 Se ejecutaron 4 migraciones:
 
-1. `2026_01_16_000002_simplify_procesos_imagenes_table.php` ✅
+1. `2026_01_16_000002_simplify_procesos_imagenes_table.php` 
    - Eliminó campos innecesarios de `pedidos_procesos_imagenes`
 
-2. `2026_01_16_000003_simplify_prenda_fotos_pedido_table.php` ✅
+2. `2026_01_16_000003_simplify_prenda_fotos_pedido_table.php` 
    - Eliminó campos innecesarios de `prenda_fotos_pedido`
 
-3. `2026_01_16_000004_simplify_prenda_fotos_tela_pedido_table.php` ✅
+3. `2026_01_16_000004_simplify_prenda_fotos_tela_pedido_table.php` 
    - Eliminó campos innecesarios de `prenda_fotos_tela_pedido`
 
 ## 📦 Archivos Modificados

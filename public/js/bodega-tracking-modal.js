@@ -52,14 +52,14 @@ async function loadBodegaFestivos() {
             }
             
             if (bodegaFestivos.length > 0) {
-                console.log('  ✅ Festivos cargados desde API local: ' + bodegaFestivos.length);
+                console.log('   Festivos cargados desde API local: ' + bodegaFestivos.length);
                 console.log('     Primer festivo: ' + bodegaFestivos[0]);
                 console.log('     Último festivo: ' + bodegaFestivos[bodegaFestivos.length-1] + '\n');
                 return;
             }
         }
     } catch (error) {
-        console.log('  ❌ API local no disponible: ' + error.message);
+        console.log('   API local no disponible: ' + error.message);
     }
     
     // 2️⃣ Intentar con API pública de zolv.co
@@ -78,14 +78,14 @@ async function loadBodegaFestivos() {
                 .map(f => f.date.split('T')[0]);
             
             if (bodegaFestivos.length > 0) {
-                console.log('  ✅ Festivos cargados desde zolv.co: ' + bodegaFestivos.length);
+                console.log('   Festivos cargados desde zolv.co: ' + bodegaFestivos.length);
                 console.log('     Primer festivo: ' + bodegaFestivos[0]);
                 console.log('     Último festivo: ' + bodegaFestivos[bodegaFestivos.length-1] + '\n');
                 return;
             }
         }
     } catch (error) {
-        console.log('  ❌ zolv.co no disponible: ' + error.message);
+        console.log('   zolv.co no disponible: ' + error.message);
     }
     
     // 3️⃣ Intentar con API Calendarific
@@ -104,7 +104,7 @@ async function loadBodegaFestivos() {
                 bodegaFestivos = data.response.holidays.map(h => h.date.split('T')[0]);
                 
                 if (bodegaFestivos.length > 0) {
-                    console.log('  ✅ Festivos cargados desde Calendarific: ' + bodegaFestivos.length);
+                    console.log('   Festivos cargados desde Calendarific: ' + bodegaFestivos.length);
                     console.log('     Primer festivo: ' + bodegaFestivos[0]);
                     console.log('     Último festivo: ' + bodegaFestivos[bodegaFestivos.length-1] + '\n');
                     return;
@@ -112,7 +112,7 @@ async function loadBodegaFestivos() {
             }
         }
     } catch (error) {
-        console.log('  ❌ Calendarific no disponible: ' + error.message);
+        console.log('   Calendarific no disponible: ' + error.message);
     }
     
     // 4️⃣ Fallback: Usar festivos comunes de Colombia si todas las APIs fallan
@@ -163,7 +163,7 @@ function openBodegaTrackingModal(pedido) {
             modal.style.opacity = '1';
         }
     }).catch(error => {
-        console.error('❌ Error al cargar tracking:', error);
+        console.error(' Error al cargar tracking:', error);
         alert('Error al cargar los datos del seguimiento');
     });
 }

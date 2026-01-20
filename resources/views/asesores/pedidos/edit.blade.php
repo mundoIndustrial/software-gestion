@@ -214,52 +214,52 @@
 <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
 
-<!-- ✅ SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
+<!--  SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
 <script src="{{ asset('js/services/epp/EppHttpService.js') }}"></script>
 
 <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
 
 <!-- Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
 <script>
-    // ✅ CRÍTICO: Esto se ejecuta INMEDIATAMENTE, NO en DOMContentLoaded
+    //  CRÍTICO: Esto se ejecuta INMEDIATAMENTE, NO en DOMContentLoaded
     // Asegurar que imagenesPrendaStorage existe
     if (!window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage = new ImageStorageService(3);
-        console.log('✅ [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesTelaStorage existe
     if (!window.imagenesTelaStorage) {
         window.imagenesTelaStorage = new ImageStorageService(3);
-        console.log('✅ [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesReflectivoStorage existe
     if (!window.imagenesReflectivoStorage) {
         window.imagenesReflectivoStorage = new ImageStorageService(3);
-        console.log('✅ [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que telasAgregadas existe
     if (!window.telasAgregadas) {
         window.telasAgregadas = [];
-        console.log('✅ [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que procesosSeleccionados existe
     if (!window.procesosSeleccionados) {
         window.procesosSeleccionados = {};
-        console.log('✅ [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
     }
 </script>
 
 <!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
 <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
 
-<!-- ✅ ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
+<!--  ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
 <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
 
-<!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+<!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
@@ -283,35 +283,35 @@
 
 <!-- Inicializar storages INMEDIATAMENTE (antes de que se cargue gestion-telas.js) -->
 <script>
-    // ✅ CRÍTICO: Esto se ejecuta INMEDIATAMENTE, NO en DOMContentLoaded
+    //  CRÍTICO: Esto se ejecuta INMEDIATAMENTE, NO en DOMContentLoaded
     // Asegurar que imagenesPrendaStorage existe
     if (!window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage = new ImageStorageService(3);
-        console.log('✅ [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesTelaStorage existe
     if (!window.imagenesTelaStorage) {
         window.imagenesTelaStorage = new ImageStorageService(3);
-        console.log('✅ [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesReflectivoStorage existe
     if (!window.imagenesReflectivoStorage) {
         window.imagenesReflectivoStorage = new ImageStorageService(3);
-        console.log('✅ [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que telasAgregadas existe
     if (!window.telasAgregadas) {
         window.telasAgregadas = [];
-        console.log('✅ [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que procesosSeleccionados existe
     if (!window.procesosSeleccionados) {
         window.procesosSeleccionados = {};
-        console.log('✅ [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
+        console.log(' [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
     }
 </script>
 
@@ -327,7 +327,7 @@
             asesoraInput.value = '{{ Auth::user()->name ?? '' }}';
         }
 
-        // ✅ HANDLER: Botón agregar producto abre el modal de prenda
+        //  HANDLER: Botón agregar producto abre el modal de prenda
         const btnAgregarProducto = document.getElementById('btnAgregarProducto');
         if (btnAgregarProducto && window.gestionItemsUI) {
             btnAgregarProducto.addEventListener('click', function(e) {

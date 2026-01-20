@@ -50,7 +50,7 @@ window.cerrarModalPrendaNueva = function() {
         modal.classList.remove('active');
         console.log(' [WRAPPER] Modal cerrado');
         
-        // ✅ NUEVO: Resetear texto del botón a "Agregar Prenda"
+        //  NUEVO: Resetear texto del botón a "Agregar Prenda"
         const btnGuardar = document.getElementById('btn-guardar-prenda');
         if (btnGuardar) {
             btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Agregar Prenda';
@@ -65,7 +65,7 @@ window.cerrarModalPrendaNueva = function() {
             console.log(' [WRAPPER] Formulario del modal de prenda reseteado');
         }
         
-        // ✅ SEGURIDAD: SOLO limpiar campos ESPECÍFICOS del modal de prenda
+        //  SEGURIDAD: SOLO limpiar campos ESPECÍFICOS del modal de prenda
         // Esto previene que se limpien accidentalmente campos del formulario principal
         const inputsLimpiarModal = [
             'nueva-prenda-nombre',
@@ -343,7 +343,7 @@ window.manejarImagenTela = function(input) {
         if (promesa instanceof Promise) {
             promesa
                 .then((resultado) => {
-                    console.log(' [WRAPPER] ✅ Promise resuelta - resultado:', resultado);
+                    console.log(' [WRAPPER]  Promise resuelta - resultado:', resultado);
                     if (typeof actualizarPreviewTela === 'function') {
                         actualizarPreviewTela();
                     } else {
@@ -369,7 +369,7 @@ window.manejarImagenTela = function(input) {
             // Fallback: si no es Promise, tratar como objeto sincrónico
             console.warn(' [WRAPPER] agregarImagen() no retornó Promise, tratando como sincrónico');
             if (promesa && promesa.success === true) {
-                console.log(' [WRAPPER] ✅ Imagen agregada (sincrónico)');
+                console.log(' [WRAPPER]  Imagen agregada (sincrónico)');
                 if (typeof actualizarPreviewTela === 'function') {
                     actualizarPreviewTela();
                 }

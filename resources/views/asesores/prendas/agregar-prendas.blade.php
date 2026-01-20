@@ -333,7 +333,7 @@
         <!-- Tabla de Prendas Agregadas -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                📋 Prendas Agregadas (<span id="contador-prendas">0</span>)
+                 Prendas Agregadas (<span id="contador-prendas">0</span>)
             </h2>
 
             <div id="prendas-tabla" class="space-y-3">
@@ -505,7 +505,7 @@ function actualizarTabla() {
                 <p><strong>Tela:</strong> ${prenda.tela}</p>
                 <p><strong>Referencia:</strong> ${prenda.referencia || 'N/A'}</p>
                 ${prenda.descripcion ? `<p class="col-span-full"><strong>Descripción:</strong> ${prenda.descripcion}</p>` : ''}
-                <p class="col-span-full"><strong>Prenda de Bodega:</strong> <span style="color: ${prenda.prendaBodega ? '#10b981' : '#ef4444'}; font-weight: bold;">${prenda.prendaBodega ? '✅ Sí' : '❌ No'}</span></p>
+                <p class="col-span-full"><strong>Prenda de Bodega:</strong> <span style="color: ${prenda.prendaBodega ? '#10b981' : '#ef4444'}; font-weight: bold;">${prenda.prendaBodega ? ' Sí' : ' No'}</span></p>
             </div>
 
             <div class="bg-white dark:bg-gray-800 rounded p-3">

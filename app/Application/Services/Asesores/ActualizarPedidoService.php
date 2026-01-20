@@ -41,7 +41,7 @@ class ActualizarPedidoService
             // Actualizar datos del pedido
             if (!empty($updateData)) {
                 $pedido->update($updateData);
-                Log::info('✅ [ACTUALIZAR] Datos del pedido actualizados');
+                Log::info(' [ACTUALIZAR] Datos del pedido actualizados');
             }
 
             // Actualizar prendas si se enviaron
@@ -51,13 +51,13 @@ class ActualizarPedidoService
 
             DB::commit();
 
-            Log::info('✅ [ACTUALIZAR] Pedido actualizado completamente', ['pedido_id' => $pedido->id]);
+            Log::info(' [ACTUALIZAR] Pedido actualizado completamente', ['pedido_id' => $pedido->id]);
 
             return $pedido;
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('❌ [ACTUALIZAR] Error al actualizar', [
+            Log::error(' [ACTUALIZAR] Error al actualizar', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -82,10 +82,10 @@ class ActualizarPedidoService
 
         try {
             $pedido->update($campos);
-            Log::info('✅ [ACTUALIZAR-CAMPOS] Campos actualizados', ['pedido_id' => $pedido->id]);
+            Log::info(' [ACTUALIZAR-CAMPOS] Campos actualizados', ['pedido_id' => $pedido->id]);
             return $pedido;
         } catch (\Exception $e) {
-            Log::error('❌ [ACTUALIZAR-CAMPOS] Error', ['error' => $e->getMessage()]);
+            Log::error(' [ACTUALIZAR-CAMPOS] Error', ['error' => $e->getMessage()]);
             throw $e;
         }
     }
@@ -111,9 +111,9 @@ class ActualizarPedidoService
                 ]);
             }
 
-            Log::info('✅ [ACTUALIZAR-PRENDAS] Prendas actualizadas');
+            Log::info(' [ACTUALIZAR-PRENDAS] Prendas actualizadas');
         } catch (\Exception $e) {
-            Log::error('❌ [ACTUALIZAR-PRENDAS] Error', ['error' => $e->getMessage()]);
+            Log::error(' [ACTUALIZAR-PRENDAS] Error', ['error' => $e->getMessage()]);
             throw $e;
         }
     }
@@ -157,7 +157,7 @@ class ActualizarPedidoService
             $pedidoAnterior = $pedido->estado;
             $pedido->update(['estado' => $nuevoEstado]);
             
-            Log::info('✅ [CAMBIAR-ESTADO] Estado cambiado', [
+            Log::info(' [CAMBIAR-ESTADO] Estado cambiado', [
                 'pedido_id' => $pedido->id,
                 'estado_anterior' => $pedidoAnterior,
                 'estado_nuevo' => $nuevoEstado
@@ -165,7 +165,7 @@ class ActualizarPedidoService
 
             return $pedido;
         } catch (\Exception $e) {
-            Log::error('❌ [CAMBIAR-ESTADO] Error', ['error' => $e->getMessage()]);
+            Log::error(' [CAMBIAR-ESTADO] Error', ['error' => $e->getMessage()]);
             throw $e;
         }
     }

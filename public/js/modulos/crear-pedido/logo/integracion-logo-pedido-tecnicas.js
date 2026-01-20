@@ -28,7 +28,7 @@ window.renderizarPrendasEditables = function(prendas, logoCotizacion = null, esp
     }
     
     // Si NO es LOGO, usar el flujo original
-    console.log('ℹ️ INTEGRACION: No es LOGO, usando renderizado original');
+    console.log(' INTEGRACION: No es LOGO, usando renderizado original');
     return originalRenderizarPrendasEditables(prendas, logoCotizacion, especificacionesCotizacion, esReflectivo, datosReflectivo, esLogo, tipoCotizacion);
 };
 
@@ -69,7 +69,7 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
         // Cargar las prendas técnicas desde la respuesta
         if (resultado.prendas_tecnicas && resultado.prendas_tecnicas.length > 0) {
             cargarLogoPrendasDesdeCotizacion(resultado.prendas_tecnicas);
-            console.log('✅ INTEGRACION: logoPrendasTecnicas después de cargar:', window.logoPrendasTecnicas);
+            console.log(' INTEGRACION: logoPrendasTecnicas después de cargar:', window.logoPrendasTecnicas);
         } else {
             console.log('⚠️ INTEGRACION: No hay prendas técnicas en la respuesta');
             window.logoPrendasTecnicas = [];
@@ -102,7 +102,7 @@ window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTe
     }
     
     // Ya no es necesario cambiar el título, ahora es estático en el HTML
-    console.log('✅ Sección de prendas técnicas lista');
+    console.log(' Sección de prendas técnicas lista');
     
     // Encontrar el contenedor de prendas
     const prendasContainer = document.getElementById('prendas-container-editable');
@@ -128,9 +128,9 @@ window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTe
     
     try {
         renderizarLogoPrendasTecnicas();
-        console.log('✅ renderizarLogoPrendasTecnicas() ejecutada correctamente');
+        console.log(' renderizarLogoPrendasTecnicas() ejecutada correctamente');
     } catch (error) {
-        console.error('❌ Error al ejecutar renderizarLogoPrendasTecnicas():', error);
+        console.error(' Error al ejecutar renderizarLogoPrendasTecnicas():', error);
     }
 }
 
@@ -156,11 +156,11 @@ window.recopilarDatosLogoPedido = function() {
 window.validarLogoPedido = function() {
     // Validar que existan prendas técnicas
     if (!validarLogoPrendasTecnicas()) {
-        console.error('❌ Validación de prendas técnicas fallida');
+        console.error(' Validación de prendas técnicas fallida');
         return false;
     }
     
-    console.log('✅ Logo pedido validado correctamente');
+    console.log(' Logo pedido validado correctamente');
     return true;
 };
 

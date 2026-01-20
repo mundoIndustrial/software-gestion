@@ -100,7 +100,7 @@ class ImagenProcesadorService
             $contenidoWebP = $image->toWebp(85);
             Storage::disk('public')->put($rutaRelativa, $contenidoWebP);
             
-            \Log::info('✅ Imagen guardada como WebP', [
+            \Log::info(' Imagen guardada como WebP', [
                 'ruta' => $rutaRelativa,
                 'existe' => Storage::disk('public')->exists($rutaRelativa),
                 'size' => Storage::disk('public')->size($rutaRelativa)
@@ -110,7 +110,7 @@ class ImagenProcesadorService
             return $rutaRelativa;
             
         } catch (\Exception $e) {
-            \Log::error('❌ Error al procesar imagen', [
+            \Log::error(' Error al procesar imagen', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -139,7 +139,7 @@ class ImagenProcesadorService
                 $urls[] = $url;
                 \Log::info("✓ Imagen {$index} procesada", ['url' => $url]);
             } catch (\Exception $e) {
-                \Log::error("❌ Error procesando imagen {$index}", [
+                \Log::error(" Error procesando imagen {$index}", [
                     'error' => $e->getMessage()
                 ]);
                 // Continuar con la siguiente imagen

@@ -58,16 +58,16 @@ class GenerateEppImages extends Command
                     });
                     
                     $img->save($filepath);
-                    $this->info("✅ Creada: $filename");
+                    $this->info(" Creada: $filename");
                 } catch (\Exception $e) {
-                    $this->error("❌ Error creando $filename: " . $e->getMessage());
+                    $this->error(" Error creando $filename: " . $e->getMessage());
                 }
             } else {
                 $this->info("⏭️  Ya existe: $filename");
             }
         }
 
-        $this->info('✅ Imágenes de EPP generadas correctamente');
+        $this->info(' Imágenes de EPP generadas correctamente');
     }
 }
 

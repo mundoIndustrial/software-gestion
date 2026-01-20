@@ -38,7 +38,7 @@ class AnalyzeDatabaseStructure extends Command
         // 3. Todas las tablas listadas
         $this->newLine();
         $this->line('═════════════════════════════════════════════════════════');
-        $this->info('📋 TODAS LAS TABLAS DE LA BD');
+        $this->info(' TODAS LAS TABLAS DE LA BD');
         $this->line('═════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -68,11 +68,11 @@ class AnalyzeDatabaseStructure extends Command
             ", [$tableName]);
 
             if (empty($columns)) {
-                $this->line("❌ Tabla '$tableName' NO EXISTE");
+                $this->line(" Tabla '$tableName' NO EXISTE");
                 return;
             }
 
-            $this->info("✅ Tabla: $tableName");
+            $this->info(" Tabla: $tableName");
             $this->line("   ┌─────────────────────────────────────────────────────────┐");
 
             foreach ($columns as $col) {
@@ -99,7 +99,7 @@ class AnalyzeDatabaseStructure extends Command
             $this->newLine();
 
         } catch (\Exception $e) {
-            $this->error("❌ Error analizando tabla '$tableName': " . $e->getMessage());
+            $this->error(" Error analizando tabla '$tableName': " . $e->getMessage());
             $this->newLine();
         }
     }

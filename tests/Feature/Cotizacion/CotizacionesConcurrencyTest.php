@@ -87,7 +87,7 @@ class CotizacionesConcurrencyTest extends TestCase
         sort($numerosOrdenados);
         $this->assertEquals($numeros, $numerosOrdenados);
 
-        echo "\n✅ 100 Cotizaciones creadas sin duplicados\n";
+        echo "\n 100 Cotizaciones creadas sin duplicados\n";
         echo "Primero: " . $numeros[0] . ", Último: " . $numeros[99] . "\n";
     }
 
@@ -155,7 +155,7 @@ class CotizacionesConcurrencyTest extends TestCase
         // Todos los números deben ser únicos
         $this->assertEquals(33, count(array_unique($numerosGlobales)));
 
-        echo "\n✅ 3 Asesores × 11 Cotizaciones = 33 Total (Intercalado)\n";
+        echo "\n 3 Asesores × 11 Cotizaciones = 33 Total (Intercalado)\n";
         echo "Números únicos: " . count(array_unique($numerosGlobales)) . "\n";
     }
 
@@ -199,7 +199,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $cotizacionesCount = Cotizacion::where('numero_cotizacion', 'COT-ROLLBACK-001')->count();
         $this->assertEquals(0, $cotizacionesCount);
 
-        echo "\n✅ Rollback funcionó correctamente\n";
+        echo "\n Rollback funcionó correctamente\n";
     }
 
     /**
@@ -242,7 +242,7 @@ class CotizacionesConcurrencyTest extends TestCase
         // En producción, deberías implementar protección en el modelo
         $this->assertNotNull($cotRefresco->numero_cotizacion);
 
-        echo "\n✅ Número de cotización actualizado correctamente\n";
+        echo "\n Número de cotización actualizado correctamente\n";
     }
 
     /**
@@ -320,7 +320,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $cotRefresco = Cotizacion::with('prendas.fotos.tallas')->find($cot->id);
         $this->assertCount(10, $cotRefresco->prendas);
 
-        echo "\n✅ Cotización con máximas prendas/fotos creada correctamente\n";
+        echo "\n Cotización con máximas prendas/fotos creada correctamente\n";
         echo "Prendas: $prendasCount, Fotos: $fotosCount\n";
     }
 
@@ -379,7 +379,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $totalCots = Cotizacion::count();
         $this->assertGreaterThanOrEqual(15, $totalCots);
 
-        echo "\n✅ Múltiples tipos de cotización funcionan correctamente\n";
+        echo "\n Múltiples tipos de cotización funcionan correctamente\n";
         echo "Tipo M: 5, Tipo P: 5, Tipo G: 5 = 15 Total\n";
     }
 
@@ -441,7 +441,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $this->assertLessThan(30, $tiempoTotal); // Debe tomar menos de 30 segundos
 
         $tiempoFormato = number_format($tiempoTotal, 2);
-        echo "\n✅ 50 Cotizaciones completas creadas en {$tiempoFormato} segundos\n";
+        echo "\n 50 Cotizaciones completas creadas en {$tiempoFormato} segundos\n";
         echo "Promedio: " . number_format($tiempoTotal / 50, 2) . " segundos por cotización\n";
     }
 
@@ -488,6 +488,6 @@ class CotizacionesConcurrencyTest extends TestCase
         // Debe estar marcado como eliminado
         $this->assertNotNull(Cotizacion::withTrashed()->find($cotId)->deleted_at);
 
-        echo "\n✅ Soft delete funcionó correctamente\n";
+        echo "\n Soft delete funcionó correctamente\n";
     }
 }

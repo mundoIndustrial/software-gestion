@@ -1,7 +1,7 @@
 /**
  * UIModule - Gestión de UI y eventos
  * 
- * ✅ SOLID Principles:
+ *  SOLID Principles:
  * - Single Responsibility: Solo maneja UI
  * - Open/Closed: Extensible sin modificar
  * - Liskov Substitution: Implementa contrato consistente
@@ -133,7 +133,7 @@ const UIModule = (() => {
         setupEventListeners();
         setupMenuFlotante();
         setupModal();
-        console.log('✅ UIModule inicializado');
+        console.log(' UIModule inicializado');
     }
 
     /**
@@ -352,11 +352,11 @@ const UIModule = (() => {
         // Usar alertas nativas por ahora
         // TODO: Mejorar con toast notifications
         if (type === 'error') {
-            alert('❌ ' + message);
+            alert(' ' + message);
         } else if (type === 'success') {
-            alert('✅ ' + message);
+            alert(' ' + message);
         } else {
-            alert('ℹ️ ' + message);
+            alert(' ' + message);
         }
     }
 

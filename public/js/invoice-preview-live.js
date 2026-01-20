@@ -31,7 +31,7 @@ window._registrarGalería = function(imagenes, titulo) {
     const id = window._idGaleriaPreview++;
     window._galeríasPreview[id] = { imagenes, titulo };
     
-    console.log(`🖼️ Galería registrada con ID: ${id}, título: "${titulo}", imágenes: ${imagenes.length}`);
+    console.log(` Galería registrada con ID: ${id}, título: "${titulo}", imágenes: ${imagenes.length}`);
     return id;
 };
 
@@ -853,7 +853,7 @@ function capturarEPP() {
  * Crea un modal con la vista previa de la factura
  */
 function crearModalPreviewFactura(datos) {
-    console.log('🖼️  [PREVIEW] Creando modal de vista previa...');
+    console.log('  [PREVIEW] Creando modal de vista previa...');
     
     // Remover modal anterior si existe
     const modalAnterior = document.getElementById('invoice-preview-modal-wrapper');

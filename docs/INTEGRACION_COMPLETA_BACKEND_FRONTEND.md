@@ -63,8 +63,8 @@
                          │
                          ▼
               ┌──────────────────────┐
-              │ Toast ✅ de éxito    │
-              │ o errores ❌         │
+              │ Toast  de éxito    │
+              │ o errores          │
               └──────────────────────┘
 ```
 
@@ -146,7 +146,7 @@ handlers.validatePedido()
      ├─ reporte = PedidoValidator.obtenerReporte(state)
      │
      ├─ Si válido:
-     │   └─ Toast verde ✅
+     │   └─ Toast verde 
      │
      └─ Si inválido:
          ├─ Mostrar modal con errores
@@ -226,13 +226,13 @@ response = await fetch(...)
     │
     ├─ Si response.ok (200):
     │   ├─ result.success === true
-    │   ├─ Mostrar toast ✅
+    │   ├─ Mostrar toast 
     │   ├─ Mostrar resumen del pedido
     │   ├─ Limpiar estado (clear)
     │   └─ Usuario listo para nuevo pedido
     │
     └─ Si response.error:
-        ├─ Toast rojo ❌
+        ├─ Toast rojo 
         └─ Mostrar mensaje de error
 ```
 
@@ -252,14 +252,14 @@ const reporte = PedidoValidator.obtenerReporte(state)
 // { valid, totalErrores, errores: [...], resumen }
 
 // Reglas:
-✅ pedido_produccion_id obligatorio
-✅ ≥1 prenda
-✅ Nombre prenda no vacío
-✅ ≥1 variante por prenda
-✅ Talla obligatoria
-✅ Cantidad > 0 y ≤ 10000
-✅ Si tiene_bolsillos → bolsillos_obs obligatorio
-✅ Tipo de proceso obligatorio si hay procesos
+ pedido_produccion_id obligatorio
+ ≥1 prenda
+ Nombre prenda no vacío
+ ≥1 variante por prenda
+ Talla obligatoria
+ Cantidad > 0 y ≤ 10000
+ Si tiene_bolsillos → bolsillos_obs obligatorio
+ Tipo de proceso obligatorio si hay procesos
 ```
 
 ### Capa 2: Backend (PedidoJSONValidator.php)
@@ -270,12 +270,12 @@ $resultado = PedidoJSONValidator::validar($datos);
 // [valid: bool, errors: [...]]
 
 // Reglas (mismo conjunto + más restrictivas):
-✅ Todas las del frontend
-✅ Validar FKs contra catálogos
-✅ Validar permisos del usuario
-✅ Validar límites de sistema
-✅ Validar integridad referencial
-✅ Prevenir duplicados
+ Todas las del frontend
+ Validar FKs contra catálogos
+ Validar permisos del usuario
+ Validar límites de sistema
+ Validar integridad referencial
+ Prevenir duplicados
 ```
 
 ---
@@ -370,11 +370,11 @@ FormData {
 
 ```
 DB::transaction() {
-    Prenda creada ✅
-    Variante creada ✅
-    Fotos guardadas ✅
-    Procesos creados ✅
-    Commit → Todos los cambios persistidos ✅
+    Prenda creada 
+    Variante creada 
+    Fotos guardadas 
+    Procesos creados 
+    Commit → Todos los cambios persistidos 
 }
 ```
 
@@ -382,9 +382,9 @@ DB::transaction() {
 
 ```
 DB::transaction() {
-    Prenda creada ✅
-    Variante creada ✅
-    Guardar foto... ERROR ❌
+    Prenda creada 
+    Variante creada 
+    Guardar foto... ERROR 
         → Rollback automático
         → Prenda ELIMINADA
         → Variante ELIMINADA
@@ -411,18 +411,18 @@ DB::transaction() {
 ## 🔐 SEGURIDAD INTEGRADA
 
 ### Frontend
-- ✅ CSRF token en request
-- ✅ HTML escapado (XSS protection)
-- ✅ File size validation
-- ✅ File type validation
+-  CSRF token en request
+-  HTML escapado (XSS protection)
+-  File size validation
+-  File type validation
 
 ### Backend
-- ✅ Autorización (role:asesor)
-- ✅ Validación exhaustiva
-- ✅ Sanitización de entrada
-- ✅ Prepared statements (Eloquent)
-- ✅ Transacciones ACID
-- ✅ Logging de acciones
+-  Autorización (role:asesor)
+-  Validación exhaustiva
+-  Sanitización de entrada
+-  Prepared statements (Eloquent)
+-  Transacciones ACID
+-  Logging de acciones
 
 ---
 
@@ -466,7 +466,7 @@ const result = PedidoValidator.validar(fm.getState());
 
 ---
 
-## 📋 CHECKLIST DE INTEGRACIÓN COMPLETA
+##  CHECKLIST DE INTEGRACIÓN COMPLETA
 
 ### Backend
 - [ ] Migración de tablas ejecutada (`php artisan migrate`)
@@ -573,5 +573,5 @@ php artisan tinker
 
 ---
 
-**¡Sistema completo e integrado listo para producción!** ✅
+**¡Sistema completo e integrado listo para producción!** 
 

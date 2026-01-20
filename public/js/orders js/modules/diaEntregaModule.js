@@ -142,7 +142,7 @@ const DiaEntregaModule = {
      */
     _sendUpdate(numeroOrden, days) {
         if (!UpdatesModule) {
-            console.error('❌ UpdatesModule no disponible');
+            console.error(' UpdatesModule no disponible');
             return;
         }
 
@@ -152,7 +152,7 @@ const DiaEntregaModule = {
             select = document.querySelector(`.dia-entrega-dropdown[data-id="${numeroOrden}"]`);
         }
         if (!select) {
-            console.error(`❌ Dropdown no encontrado para orden ${numeroOrden}`);
+            console.error(` Dropdown no encontrado para orden ${numeroOrden}`);
             return;
         }
 

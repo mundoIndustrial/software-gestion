@@ -14,7 +14,7 @@
     window.inicializarGestorSinCotizacion = function() {
         if (!window.gestorPedidoSinCotizacion) {
             window.gestorPedidoSinCotizacion = new GestorPedidoSinCotizacion();
-            logWithEmoji('✅', 'GestorPedidoSinCotizacion inicializado');
+            logWithEmoji('', 'GestorPedidoSinCotizacion inicializado');
         }
     };
 
@@ -232,7 +232,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         logWithEmoji('🚀', 'Inicializando gestor de pedido SIN COTIZACIÓN...');
         window.inicializarGestorSinCotizacion();
-        logWithEmoji('✅', 'Gestor de pedido SIN COTIZACIÓN listo');
+        logWithEmoji('', 'Gestor de pedido SIN COTIZACIÓN listo');
     });
 
 })();

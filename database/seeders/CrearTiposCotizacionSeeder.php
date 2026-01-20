@@ -26,9 +26,9 @@ class CrearTiposCotizacionSeeder extends Seeder
                     'descripcion' => $tipo['descripcion']
                 ]
             );
-            $this->command->info("✅ Tipo de cotización creado: {$tipo['nombre']}");
+            $this->command->info(" Tipo de cotización creado: {$tipo['nombre']}");
         }
 
-        $this->command->info('✅ Todos los tipos de cotización han sido creados');
+        $this->command->info(' Todos los tipos de cotización han sido creados');
     }
 }

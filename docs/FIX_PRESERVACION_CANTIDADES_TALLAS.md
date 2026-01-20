@@ -1,4 +1,4 @@
-# ✅ FIX: Preservación de Cantidades de Tallas
+#  FIX: Preservación de Cantidades de Tallas
 
 ## 🐛 Problema Reportado
 
@@ -14,7 +14,7 @@ Cuando el usuario:
 
 Cuando se regeneraban las tarjetas en `actualizarTarjetasGeneros()`, los elementos DOM se reconstruían completamente, perdiendo los valores que el usuario había ingresado en los inputs.
 
-## ✅ Solución Implementada
+##  Solución Implementada
 
 ### 1. Objeto Global para Almacenar Cantidades
 ```javascript
@@ -73,7 +73,7 @@ Usuario abre otro género
          ↓
 Modal se regenera pero restaura cantidad desde window.cantidadesTallas
          ↓
-LA CANTIDAD PERSISTE ✅
+LA CANTIDAD PERSISTE 
 ```
 
 ## 🎯 Logs Disponibles
@@ -98,7 +98,7 @@ Cuando eliminas:
 
 ## 🔄 Casos de Prueba
 
-### ✅ Prueba 1: Persistencia Básica
+###  Prueba 1: Persistencia Básica
 1. Abre modal
 2. Selecciona DAMA con M, L
 3. Ingresa M=10, L=5
@@ -106,19 +106,19 @@ Cuando eliminas:
 5. Selecciona XL
 6. Ingresa XL=8
 7. Abre DAMA nuevamente
-8. **Verificar**: M=10 y L=5 siguen allí ✅
+8. **Verificar**: M=10 y L=5 siguen allí 
 
-### ✅ Prueba 2: Eliminación y Re-agregación
+###  Prueba 2: Eliminación y Re-agregación
 1. Agrega DAMA con cantidades
 2. Elimina DAMA
 3. Vuelve a agregar DAMA con NUEVAS tallas
-4. **Verificar**: Las cantidades anteriores NO reaparecen (limpieza correcta) ✅
+4. **Verificar**: Las cantidades anteriores NO reaparecen (limpieza correcta) 
 
-### ✅ Prueba 3: Confirmación
+###  Prueba 3: Confirmación
 1. Agrega DAMA y CABALLERO con cantidades
 2. Confirma prenda (Agregar Prenda)
 3. Abre modal nuevamente
-4. **Verificar**: Las cantidades están limpias (0) ✅
+4. **Verificar**: Las cantidades están limpias (0) 
 
 ## 📁 Archivos Modificados
 
@@ -131,8 +131,8 @@ Cuando eliminas:
 
 ## 💡 Ventajas
 
-- ✅ Cantidades persistentes entre aperturas de modal
-- ✅ Sin recarga necesaria
-- ✅ Sin pérdida de datos
-- ✅ Limpieza apropiada cuando se elimina o confirma
-- ✅ Logs completos para debugging
+-  Cantidades persistentes entre aperturas de modal
+-  Sin recarga necesaria
+-  Sin pérdida de datos
+-  Limpieza apropiada cuando se elimina o confirma
+-  Logs completos para debugging

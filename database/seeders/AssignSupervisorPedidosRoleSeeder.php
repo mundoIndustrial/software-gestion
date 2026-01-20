@@ -22,7 +22,7 @@ class AssignSupervisorPedidosRoleSeeder extends Seeder
             ->value('id');
 
         if (!$roleId) {
-            $this->command->error('❌ El rol "supervisor_pedidos" no existe. Ejecuta primero: php artisan db:seed --class=SupervisorPedidosRoleSeeder');
+            $this->command->error(' El rol "supervisor_pedidos" no existe. Ejecuta primero: php artisan db:seed --class=SupervisorPedidosRoleSeeder');
             return;
         }
 
@@ -41,11 +41,11 @@ class AssignSupervisorPedidosRoleSeeder extends Seeder
             $user->roles_ids = $rolesIds;
 
             $user->save();
-            $this->command->info("✅ Rol 'supervisor_pedidos' asignado al usuario: {$user->name} (ID: {$user->id})");
+            $this->command->info(" Rol 'supervisor_pedidos' asignado al usuario: {$user->name} (ID: {$user->id})");
             $this->command->info("   - role_id: {$roleId}");
             $this->command->info("   - roles_ids: " . json_encode($rolesIds));
         } else {
-            $this->command->error('❌ No hay usuarios en la base de datos.');
+            $this->command->error(' No hay usuarios en la base de datos.');
         }
     }
 }

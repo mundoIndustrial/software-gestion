@@ -13,17 +13,17 @@
  * - Usa DiaEntregaModule para día de entrega
  */
 
-console.log('✅ orders-table-v2.js cargado (Versión refactorizada con módulos SOLID)');
+console.log(' orders-table-v2.js cargado (Versión refactorizada con módulos SOLID)');
 
 // Verificar que todos los módulos estén disponibles
 console.log('🔍 Verificando módulos disponibles:');
-console.log('  - FormattingModule:', typeof FormattingModule !== 'undefined' ? '✅' : '❌');
-console.log('  - RowManager:', typeof RowManager !== 'undefined' ? '✅' : '❌');
-console.log('  - StorageModule:', typeof StorageModule !== 'undefined' ? '✅' : '❌');
-console.log('  - NotificationModule:', typeof NotificationModule !== 'undefined' ? '✅' : '❌');
-console.log('  - UpdatesModule:', typeof UpdatesModule !== 'undefined' ? '✅' : '❌');
-console.log('  - OrdersDropdownManager:', typeof OrdersDropdownManager !== 'undefined' ? '✅' : '❌');
-console.log('  - DiaEntregaModule:', typeof DiaEntregaModule !== 'undefined' ? '✅' : '❌');
+console.log('  - FormattingModule:', typeof FormattingModule !== 'undefined' ? '' : '');
+console.log('  - RowManager:', typeof RowManager !== 'undefined' ? '' : '');
+console.log('  - StorageModule:', typeof StorageModule !== 'undefined' ? '' : '');
+console.log('  - NotificationModule:', typeof NotificationModule !== 'undefined' ? '' : '');
+console.log('  - UpdatesModule:', typeof UpdatesModule !== 'undefined' ? '' : '');
+console.log('  - OrdersDropdownManager:', typeof OrdersDropdownManager !== 'undefined' ? '' : '');
+console.log('  - DiaEntregaModule:', typeof DiaEntregaModule !== 'undefined' ? '' : '');
 
 // ============================================================================
 // SECCIÓN 1: INICIALIZACIÓN Y DELEGACIÓN A MÓDULOS
@@ -42,7 +42,7 @@ function initializeStatusDropdowns() {
     if (OrdersDropdownManager && OrdersDropdownManager.initializeStatusDropdowns) {
         OrdersDropdownManager.initializeStatusDropdowns();
     } else {
-        console.error('❌ OrdersDropdownManager no disponible - los módulos no se cargaron correctamente');
+        console.error(' OrdersDropdownManager no disponible - los módulos no se cargaron correctamente');
     }
 }
 
@@ -54,7 +54,7 @@ function initializeAreaDropdowns() {
     if (OrdersDropdownManager && OrdersDropdownManager.initializeAreaDropdowns) {
         OrdersDropdownManager.initializeAreaDropdowns();
     } else {
-        console.error('❌ OrdersDropdownManager no disponible - los módulos no se cargaron correctamente');
+        console.error(' OrdersDropdownManager no disponible - los módulos no se cargaron correctamente');
     }
 }
 
@@ -66,7 +66,7 @@ function initializeDiaEntregaDropdowns() {
     if (DiaEntregaModule && DiaEntregaModule.initialize) {
         DiaEntregaModule.initialize();
     } else {
-        console.error('❌ DiaEntregaModule no disponible');
+        console.error(' DiaEntregaModule no disponible');
     }
 }
 
@@ -213,7 +213,7 @@ function actualizarDiasTabla() {
         }
     });
     
-    console.log(`✅ actualizarDiasTabla completada - ${actualizadas} celdas actualizadas`);
+    console.log(` actualizarDiasTabla completada - ${actualizadas} celdas actualizadas`);
 }
 
 /**
@@ -278,7 +278,7 @@ async function recargarTablaPedidos() {
         initializeAreaDropdowns();
         initializeDiaEntregaDropdowns();
         
-        console.log('✅ Tabla recargada y dropdowns reinicializados (vía módulos)');
+        console.log(' Tabla recargada y dropdowns reinicializados (vía módulos)');
 
     } catch (error) {
         console.error('Error al recargar tabla de pedidos:', error);
@@ -395,11 +395,11 @@ async function viewDetail(pedido) {
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
         
-        console.log('✅ [VIEWDETAIL] Datos de orden obtenidos:', order);        if (typeof loadOrderImages === 'function') {
+        console.log(' [VIEWDETAIL] Datos de orden obtenidos:', order);        if (typeof loadOrderImages === 'function') {
             loadOrderImages(pedido);
         }
 
-        // ✅ LLENAR CAMPOS DEL MODAL
+        //  LLENAR CAMPOS DEL MODAL
         
         // Fecha
         if (order.fecha_de_creacion_de_orden) {
@@ -457,7 +457,7 @@ async function viewDetail(pedido) {
             prendasEntregadasValue.textContent = `${totalEntregado} de ${totalCantidad}`;
         }
         
-        // ✅ LLENAR DESCRIPCIÓN DE PRENDAS CON NAVEGACIÓN
+        //  LLENAR DESCRIPCIÓN DE PRENDAS CON NAVEGACIÓN
         const descripcionText = document.getElementById('descripcion-text');
         const prevArrow = document.getElementById('prev-arrow');
         const nextArrow = document.getElementById('next-arrow');
@@ -591,14 +591,14 @@ async function viewDetail(pedido) {
             if (arrowContainer) arrowContainer.style.display = 'none';
         }
         
-        console.log('%c✅ [VIEWDETAIL] Todos los campos llenados, disparando evento open-modal', 'color: green; font-weight: bold;');
+        console.log('%c [VIEWDETAIL] Todos los campos llenados, disparando evento open-modal', 'color: green; font-weight: bold;');
         console.log('🔍 [VIEWDETAIL] Verificando listeners antes de dispatch:');
         console.log('   - window listeners:', window.getEventListeners ? window.getEventListeners(window)['open-modal'] : 'N/A');
         
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
-        console.log('✅ [VIEWDETAIL] Evento open-modal despachado');
+        console.log(' [VIEWDETAIL] Evento open-modal despachado');
     } catch (error) {
-        console.error('❌ [VIEWDETAIL] Error loading order details:', error);
+        console.error(' [VIEWDETAIL] Error loading order details:', error);
         console.log('🔍 [VIEWDETAIL] Disparando open-modal incluso en caso de error...');
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
     }
@@ -676,7 +676,7 @@ function clearFilters() {
     window.history.pushState({}, '', `${url.pathname}?${params}`);
     recargarTablaPedidos();
     
-    console.log('✅ Filtros limpiados correctamente');
+    console.log(' Filtros limpiados correctamente');
 }
 
 /**
@@ -734,7 +734,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeAreaDropdowns();
     initializeDiaEntregaDropdowns();
     
-    // ✅ Sistema de edición de celdas con doble clic (gestionado por modern-table.js)
+    //  Sistema de edición de celdas con doble clic (gestionado por modern-table.js)
     // No agregar evento de clic simple - solo doble clic para editar
     
     // Actualizar días con delay
@@ -742,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => {
             console.log('⏱️ Iniciando actualización de días en carga inicial...');
             actualizarDiasTabla();
-            console.log('✅ Días actualizados en carga inicial');
+            console.log(' Días actualizados en carga inicial');
         }, 800);
     }
 });
@@ -782,12 +782,12 @@ function showAutoReloadNotification(message, duration) {
 
 // Detectar errores globales
 window.addEventListener('error', function(event) {
-    console.error('❌ Error global detectado:', event.error);
+    console.error(' Error global detectado:', event.error);
     
     window.globalJsErrors = (window.globalJsErrors || 0) + 1;
     
     if (window.globalJsErrors >= 5) {
-        console.error('❌ 5 errores JavaScript detectados. Recargando página...');
+        console.error(' 5 errores JavaScript detectados. Recargando página...');
         showAutoReloadNotification('Múltiples errores detectados. Recargando página...', 3000);
         setTimeout(() => window.location.reload(), 3000);
     }
@@ -800,7 +800,7 @@ if (window.Echo) {
         
         const reconnectTimeout = setTimeout(() => {
             if (window.Echo.connector.pusher.connection.state !== 'connected') {
-                console.error('❌ WebSocket no se reconectó. Recargando página...');
+                console.error(' WebSocket no se reconectó. Recargando página...');
                 showAutoReloadNotification('Conexión perdida. Recargando página...', 2000);
                 setTimeout(() => window.location.reload(), 2000);
             }
@@ -808,10 +808,10 @@ if (window.Echo) {
         
         window.Echo.connector.pusher.connection.bind('connected', function() {
             clearTimeout(reconnectTimeout);
-            console.log('✅ WebSocket reconectado');
+            console.log(' WebSocket reconectado');
         });
     });
 }
 
-console.log('✅ orders-table-v2.js completamente cargado - Usando módulos SOLID');
+console.log(' orders-table-v2.js completamente cargado - Usando módulos SOLID');
 

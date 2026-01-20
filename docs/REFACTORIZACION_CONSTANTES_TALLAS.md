@@ -1,6 +1,6 @@
 # 📦 Refactorización: Constantes de Tallas Extraídas
 
-## ✅ Cambio Realizado
+##  Cambio Realizado
 
 Las constantes de tallas han sido extraídas del archivo `crear-desde-cotizacion-editable.blade.php` a un archivo dedicado:
 
@@ -8,7 +8,7 @@ Las constantes de tallas han sido extraídas del archivo `crear-desde-cotizacion
 public/js/constantes-tallas.js
 ```
 
-## 📋 Constantes Disponibles
+##  Constantes Disponibles
 
 Ahora puedes usar estas constantes en cualquier archivo JavaScript:
 
@@ -40,10 +40,10 @@ El archivo se carga automáticamente en [crear-desde-cotizacion-editable.blade.p
 
 ## 🎯 Ventajas
 
-- ✅ **Mantenibilidad**: Un solo lugar para modificar tallas
-- ✅ **Reutilización**: Disponible en otros archivos sin duplicación
-- ✅ **Limpieza**: Blade template más limpio
-- ✅ **Escalabilidad**: Fácil agregar nuevas categorías de tallas
+-  **Mantenibilidad**: Un solo lugar para modificar tallas
+-  **Reutilización**: Disponible en otros archivos sin duplicación
+-  **Limpieza**: Blade template más limpio
+-  **Escalabilidad**: Fácil agregar nuevas categorías de tallas
 
 ## 📝 Localización
 

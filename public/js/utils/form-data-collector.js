@@ -155,7 +155,7 @@ class FormDataCollector {
         if (tecnicasHiddenField && tecnicasHiddenField.value) {
             try {
                 tecnicas = JSON.parse(tecnicasHiddenField.value);
-                console.log('✅ Técnicas desde hidden:', tecnicas);
+                console.log(' Técnicas desde hidden:', tecnicas);
                 return tecnicas;
             } catch (e) {
                 console.warn('⚠️ Error parseando técnicas:', e);

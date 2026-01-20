@@ -35,16 +35,16 @@ class PedidoProduccionCreatorService
 
         // Validar DTO
         if (!$dto->esValido()) {
-            \Log::error('❌ [PedidoProduccionCreatorService] DTO no válido');
+            \Log::error(' [PedidoProduccionCreatorService] DTO no válido');
             throw new \InvalidArgumentException('Datos inválidos para crear pedido');
         }
 
-        \Log::info('✅ [PedidoProduccionCreatorService] DTO validado correctamente');
+        \Log::info(' [PedidoProduccionCreatorService] DTO validado correctamente');
 
         // Obtener prendas válidas
         $prendas = $dto->prendasValidas();
         if (empty($prendas)) {
-            \Log::error('❌ [PedidoProduccionCreatorService] No hay prendas válidas');
+            \Log::error(' [PedidoProduccionCreatorService] No hay prendas válidas');
             throw new \InvalidArgumentException('No hay prendas con cantidades válidas');
         }
 
@@ -67,7 +67,7 @@ class PedidoProduccionCreatorService
             app(\App\Services\Pedidos\EnriquecerDatosService::class)
         );
 
-        \Log::info('✅ [PedidoProduccionCreatorService] Job ejecutado, pedido retornado', [
+        \Log::info(' [PedidoProduccionCreatorService] Job ejecutado, pedido retornado', [
             'pedido_id' => $pedido?->id,
             'numero_pedido' => $pedido?->numero_pedido,
             'forma_de_pago_guardada' => $pedido?->forma_de_pago,

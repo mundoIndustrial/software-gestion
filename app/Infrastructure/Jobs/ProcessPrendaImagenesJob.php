@@ -58,14 +58,14 @@ class ProcessPrendaImagenesJob implements ShouldQueue
                         'tamaño' => $info['tamaño'] ?? null,
                     ]);
 
-                    \Log::info('✅ Imagen procesada', [
+                    \Log::info(' Imagen procesada', [
                         'prenda_id' => $this->prendaId,
                         'ruta' => $ruta,
                         'orden' => $index + 1,
                     ]);
 
                 } catch (\Exception $e) {
-                    \Log::error('❌ Error procesando imagen individual', [
+                    \Log::error(' Error procesando imagen individual', [
                         'prenda_id' => $this->prendaId,
                         'indice' => $index,
                         'error' => $e->getMessage(),
@@ -74,12 +74,12 @@ class ProcessPrendaImagenesJob implements ShouldQueue
                 }
             }
 
-            \Log::info('✅ Procesamiento de imágenes completado', [
+            \Log::info(' Procesamiento de imágenes completado', [
                 'prenda_id' => $this->prendaId,
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error en ProcessPrendaImagenesJob', [
+            \Log::error(' Error en ProcessPrendaImagenesJob', [
                 'prenda_id' => $this->prendaId,
                 'error' => $e->getMessage(),
             ]);
@@ -92,7 +92,7 @@ class ProcessPrendaImagenesJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        \Log::error('❌ Job ProcessPrendaImagenesJob falló después de ' . $this->tries . ' intentos', [
+        \Log::error(' Job ProcessPrendaImagenesJob falló después de ' . $this->tries . ' intentos', [
             'prenda_id' => $this->prendaId,
             'error' => $exception->getMessage(),
         ]);

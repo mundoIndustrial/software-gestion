@@ -50,7 +50,7 @@ function initializeItemCardInteractions() {
   }
   itemCardListenerInitialized = true;
   
-  console.log('✅ [ITEM-CARD-INTERACTIONS] Inicializando event listeners para item cards');
+  console.log(' [ITEM-CARD-INTERACTIONS] Inicializando event listeners para item cards');
   
   // Delegar eventos para botones de editar/eliminar y menú
   document.addEventListener('click', function(e) {
@@ -66,17 +66,17 @@ function initializeItemCardInteractions() {
       
       // Validar que wrapper existe
       if (!wrapper) {
-        console.warn('❌ [ITEM-CARD-INTERACTIONS] btn-menu-wrapper no encontrado');
+        console.warn(' [ITEM-CARD-INTERACTIONS] btn-menu-wrapper no encontrado');
         console.warn('📍 [ITEM-CARD-INTERACTIONS] Button parents:', button.parentElement?.className);
         return;
       }
       
       const dropdown = wrapper.querySelector('.menu-dropdown');
-      console.log('📋 [ITEM-CARD-INTERACTIONS] Dropdown encontrado?', !!dropdown);
+      console.log(' [ITEM-CARD-INTERACTIONS] Dropdown encontrado?', !!dropdown);
       
       // Validar que dropdown existe
       if (!dropdown) {
-        console.warn('❌ [ITEM-CARD-INTERACTIONS] menu-dropdown no encontrado en wrapper');
+        console.warn(' [ITEM-CARD-INTERACTIONS] menu-dropdown no encontrado en wrapper');
         console.log('📍 [ITEM-CARD-INTERACTIONS] Wrapper HTML:', wrapper.innerHTML.substring(0, 200));
         return;
       }
@@ -85,7 +85,7 @@ function initializeItemCardInteractions() {
       const isOpen = dropdown.style.display !== 'none';
       console.log('🔄 [ITEM-CARD-INTERACTIONS] Dropdown abierto actualmente?', isOpen);
       dropdown.style.display = isOpen ? 'none' : 'block';
-      console.log('✅ [ITEM-CARD-INTERACTIONS] Dropdown display ahora:', dropdown.style.display);
+      console.log(' [ITEM-CARD-INTERACTIONS] Dropdown display ahora:', dropdown.style.display);
       
       // Cerrar otros dropdowns abiertos
       document.querySelectorAll('.menu-dropdown').forEach(menu => {
@@ -158,7 +158,7 @@ function handleEditarItem(itemIndex) {
   
   // Obtener el item del array global
   if (!window.itemsPedido || !window.itemsPedido[itemIndex]) {
-    console.error('❌ [EDITAR] Item no encontrado en itemsPedido para índice:', itemIndex);
+    console.error(' [EDITAR] Item no encontrado en itemsPedido para índice:', itemIndex);
     return;
   }
 
@@ -167,14 +167,14 @@ function handleEditarItem(itemIndex) {
 
   // Cargar datos en el modal
   if (window.cargarItemEnModal && typeof window.cargarItemEnModal === 'function') {
-    console.log('✅ [EDITAR] Usando cargarItemEnModal');
+    console.log(' [EDITAR] Usando cargarItemEnModal');
     window.cargarItemEnModal(item, itemIndex);
   } else if (window.abrirModalPrendaNueva && typeof window.abrirModalPrendaNueva === 'function') {
     // Fallback: solo abrir el modal
-    console.log('ℹ️ [EDITAR] cargarItemEnModal no disponible, abriendo modal vacío');
+    console.log(' [EDITAR] cargarItemEnModal no disponible, abriendo modal vacío');
     window.abrirModalPrendaNueva();
   } else {
-    console.error('❌ [EDITAR] No hay función para abrir modal');
+    console.error(' [EDITAR] No hay función para abrir modal');
   }
 }
 

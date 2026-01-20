@@ -39,7 +39,7 @@
             <span style="font-weight: 600; color: #15803d;">
                 <i class="fas fa-warehouse" style="margin-right: 6px;"></i> Prenda de Bodega:
             </span>
-            <span style="color: #166534; font-weight: 600;">✅ Sí</span>
+            <span style="color: #166534; font-weight: 600;"> Sí</span>
         </div>
     @endif
 

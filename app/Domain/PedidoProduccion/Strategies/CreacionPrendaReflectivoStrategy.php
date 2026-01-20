@@ -68,7 +68,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
                 // NO guardar descripción ni cantidad_talla aquí (van en prendas_reflectivo)
             ]);
 
-            Log::info('✅ [CreacionPrendaReflectivoStrategy] Prenda creada en prendas_pedido', [
+            Log::info(' [CreacionPrendaReflectivoStrategy] Prenda creada en prendas_pedido', [
                 'prenda_pedido_id' => $prendaPedido->id,
             ]);
 
@@ -83,7 +83,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
                 'cantidad_total' => $cantidadTotal,
             ]);
 
-            Log::info('✅ [CreacionPrendaReflectivoStrategy] Información guardada en prendas_reflectivo', [
+            Log::info(' [CreacionPrendaReflectivoStrategy] Información guardada en prendas_reflectivo', [
                 'prenda_reflectivo_id' => $prendaReflectivo->id,
             ]);
 
@@ -99,7 +99,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
 
             DB::commit();
 
-            Log::info('✅ [CreacionPrendaReflectivoStrategy] Prenda reflectivo completamente procesada', [
+            Log::info(' [CreacionPrendaReflectivoStrategy] Prenda reflectivo completamente procesada', [
                 'prenda_id' => $prendaPedido->id,
                 'cantidad_total' => $cantidadTotal,
             ]);
@@ -109,7 +109,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('❌ [CreacionPrendaReflectivoStrategy] Error al procesar prenda reflectivo', [
+            Log::error(' [CreacionPrendaReflectivoStrategy] Error al procesar prenda reflectivo', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

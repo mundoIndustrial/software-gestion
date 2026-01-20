@@ -47,7 +47,7 @@ function seleccionarTipoCotizacion(tipo) {
     const tipoVenta = mapeos[tipo];
     
     if (!tipoVenta) {
-        console.error('❌ Tipo de cotización desconocido:', tipo);
+        console.error(' Tipo de cotización desconocido:', tipo);
         return;
     }
     
@@ -77,13 +77,13 @@ function mostrarNotificacionTipoCotizacion(tipo) {
     const mensaje = info[tipo] || 'Tipo desconocido';
     
     // Mostrar toast
-    console.log(`ℹ️ ${mensaje} seleccionado`);
+    console.log(` ${mensaje} seleccionado`);
 }
 
 // ============ INICIALIZACIÓN ============
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM cargado - Inicializando cotizaciones');
+    console.log(' DOM cargado - Inicializando cotizaciones');
     
     // Ocultar navbar
     const topNav = document.querySelector('.top-nav');
@@ -124,7 +124,7 @@ function convertirArchivoABase64(file) {
             });
         };
         reader.onerror = (error) => {
-            console.error('❌ Error al leer archivo:', file.name, error);
+            console.error(' Error al leer archivo:', file.name, error);
             reject(error);
         };
         reader.readAsDataURL(file);
@@ -145,7 +145,7 @@ async function convertirImagenesProducto(producto) {
             );
             console.log(`✓ ${producto.fotos_base64.length} fotos de prenda convertidas`);
         } catch (error) {
-            console.error('❌ Error al convertir fotos de prenda:', error);
+            console.error(' Error al convertir fotos de prenda:', error);
             producto.fotos_base64 = [];
         }
     } else {
@@ -160,7 +160,7 @@ async function convertirImagenesProducto(producto) {
             );
             console.log(`✓ ${producto.telas_base64.length} telas convertidas`);
         } catch (error) {
-            console.error('❌ Error al convertir telas:', error);
+            console.error(' Error al convertir telas:', error);
             producto.telas_base64 = [];
         }
     } else {
@@ -191,13 +191,13 @@ function irAlPaso(paso) {
         setTimeout(() => {
             const container = document.getElementById('prendas_reflectivo_container');
             if (container && container.children.length === 0) {
-                console.log('📦 Contenedor vacío - Agregando primera prenda reflectivo');
+                console.log(' Contenedor vacío - Agregando primera prenda reflectivo');
                 if (typeof agregarPrendaReflectivoPaso4 === 'function') {
                     agregarPrendaReflectivoPaso4();
-                    console.log('✅ Primera prenda reflectivo agregada');
+                    console.log(' Primera prenda reflectivo agregada');
                 }
             } else {
-                console.log('✅ Ya hay prendas en el contenedor, no se agrega nueva');
+                console.log(' Ya hay prendas en el contenedor, no se agrega nueva');
             }
         }, 100);
     }
@@ -207,7 +207,7 @@ function irAlPaso(paso) {
         console.log('🎯 Navegando al PASO 5: REVISAR COTIZACIÓN');
         setTimeout(() => {
             // Actualizar el resumen dinámico del paso 5
-            console.log('✅ Llamando a actualizarResumenFriendly() para Paso 5');
+            console.log(' Llamando a actualizarResumenFriendly() para Paso 5');
             actualizarResumenFriendly();
         }, 200);
     }
@@ -234,7 +234,7 @@ function mostrarFechaActual() {
 
 function actualizarResumenFriendly() {
     console.log('🔄 actualizarResumenFriendly() INICIADO');
-    console.log('   📦 Prendas DOM encontradas:', document.querySelectorAll('.producto-card').length);
+    console.log('    Prendas DOM encontradas:', document.querySelectorAll('.producto-card').length);
     console.log('   🎨 Técnicas DOM encontradas:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
     console.log('   🎨 Técnicas guardadas:', window.tecnicasGuardadas?.length || 0);
     console.log('🔄 Actualizando resumen del paso 4...');
@@ -244,7 +244,7 @@ function actualizarResumenFriendly() {
     const resumenCliente = document.getElementById('resumen_cliente');
     if (resumenCliente && cliente) {
         resumenCliente.textContent = cliente.value || '-';
-        console.log('✅ Cliente actualizado:', cliente.value);
+        console.log(' Cliente actualizado:', cliente.value);
     }
     
     // 2. FECHA
@@ -266,7 +266,7 @@ function actualizarResumenFriendly() {
         }
         
         resumenFecha.textContent = fechaTexto;
-        console.log('✅ Fecha actualizada:', fechaTexto);
+        console.log(' Fecha actualizada:', fechaTexto);
     }
     
     // 3. TIPO DE COTIZACIÓN (DINÁMICO según contenido)
@@ -289,14 +289,14 @@ function actualizarResumenFriendly() {
         }
         
         resumenTipo.textContent = tipoDetectado;
-        console.log('✅ Tipo actualizado (dinámico):', tipoDetectado);
+        console.log(' Tipo actualizado (dinámico):', tipoDetectado);
     }
     
     // 4. RESUMEN DE PRENDAS (Solo si hay prendas)
     const resumenPrendas = document.getElementById('resumen_prendas');
     if (resumenPrendas) {
         const prendas = document.querySelectorAll('.producto-card');
-        console.log('📦 Prendas encontradas:', prendas.length);
+        console.log(' Prendas encontradas:', prendas.length);
         
         // Buscar el contenedor padre (el div con background #f0f7ff)
         const resumenPrendasContainer = resumenPrendas.parentElement;
@@ -588,7 +588,7 @@ function actualizarResumenFriendly() {
                 div.innerHTML = html;
                 resumenPrendas.appendChild(div);
             });
-            console.log('✅ Prendas mostradas en resumen');
+            console.log(' Prendas mostradas en resumen');
         }
     }
     
@@ -605,7 +605,7 @@ function actualizarResumenFriendly() {
             resumenLogoContainer.style.display = 'block';
             const texto = descLogo?.value || '-';
             resumenLogDesc.textContent = texto;
-            console.log('✅ Descripción logo actualizada');
+            console.log(' Descripción logo actualizada');
         }
     }
     
@@ -659,7 +659,7 @@ function actualizarResumenFriendly() {
             p.innerHTML = tecnicasTexto;
             resumenTecnicas.appendChild(p);
         }
-        console.log('✅ Técnicas actualizado');
+        console.log(' Técnicas actualizado');
     }
     
     // 6B. UBICACIONES EN LOGO
@@ -726,7 +726,7 @@ function actualizarResumenFriendly() {
                 `;
                 resumenLogoUbicaciones.appendChild(divResumen);
             });
-            console.log('✅ Ubicaciones en LOGO actualizadas');
+            console.log(' Ubicaciones en LOGO actualizadas');
         }
     }
     
@@ -750,7 +750,7 @@ function actualizarResumenFriendly() {
                 div.innerHTML = `<strong>${seccion}</strong><br><small style="color: #666;">${ubicaciones}</small>`;
                 resumenUbicaciones.appendChild(div);
             });
-            console.log('✅ Ubicaciones actualizadas');
+            console.log(' Ubicaciones actualizadas');
         }
     }
     
@@ -800,11 +800,11 @@ function actualizarResumenFriendly() {
             `;
             
             resumenEspecificaciones.innerHTML = tableHTML;
-            console.log('✅ Especificaciones en tabla actualizadas');
+            console.log(' Especificaciones en tabla actualizadas');
         }
     }
     
-    console.log('✅ Resumen del paso 4 completamente actualizado');
+    console.log(' Resumen del paso 4 completamente actualizado');
 }
 
 function cargarDatosDelBorrador() {
@@ -814,7 +814,7 @@ function cargarDatosDelBorrador() {
 function recopilarDatos() {
     const cliente = document.getElementById('cliente');
     if (!cliente) {
-        console.error('❌ Campo cliente no encontrado');
+        console.error(' Campo cliente no encontrado');
         return null;
     }
     
@@ -896,7 +896,7 @@ function recopilarDatos() {
                     });
                 }
             }
-            console.log(`✅ Telas desde telasSeleccionadas: ${telas.length} archivos`);
+            console.log(` Telas desde telasSeleccionadas: ${telas.length} archivos`);
         }
         
         // OPCIÓN 2: Fallback - Buscar en window.imagenesEnMemoria.telaConIndice (compatibilidad)
@@ -908,7 +908,7 @@ function recopilarDatos() {
             }
         }
         
-        console.log('📋 Recopilando prenda:', {
+        console.log(' Recopilando prenda:', {
             nombre: nombre,
             tallas: tallasSeleccionadas,
             fotos_desde_fotosSeleccionadas: fotos,
@@ -1025,13 +1025,13 @@ function recopilarDatos() {
             // Guardar el tipo de manga ID (ID del manga seleccionado)
             if (mangaId) {
                 variantes.tipo_manga_id = mangaId;
-                console.log('✅ tipo_manga_id capturado:', mangaId);
+                console.log(' tipo_manga_id capturado:', mangaId);
             }
             
             // Guardar el tipo de manga nombre (nombre del manga seleccionado)
             if (mangaNombre) {
                 variantes.tipo_manga = mangaNombre;
-                console.log('✅ tipo_manga capturado:', mangaNombre);
+                console.log(' tipo_manga capturado:', mangaNombre);
             }
             
             // Capturar observación de manga SOLO SI CHECKBOX ESTÁ CHECKED
@@ -1039,10 +1039,10 @@ function recopilarDatos() {
             if (mangaObs && mangaObs.value) {
                 variantes.obs_manga = mangaObs.value;
                 observacionesVariantes.push(`Manga: ${mangaObs.value}`);
-                console.log('✅ obs_manga capturada:', mangaObs.value);
+                console.log(' obs_manga capturada:', mangaObs.value);
             }
         } else {
-            console.log('ℹ️ Manga NO seleccionado - obs_manga NO se captura');
+            console.log(' Manga NO seleccionado - obs_manga NO se captura');
             variantes.tipo_manga_id = null;
             variantes.tipo_manga = null;
         }
@@ -1056,12 +1056,12 @@ function recopilarDatos() {
             if (bolsillosObs && bolsillosObs.value) {
                 variantes.obs_bolsillos = bolsillosObs.value;
                 observacionesVariantes.push(`Bolsillos: ${bolsillosObs.value}`);
-                console.log('✅ obs_bolsillos capturada:', bolsillosObs.value);
+                console.log(' obs_bolsillos capturada:', bolsillosObs.value);
             }
-            console.log('✅ Bolsillos SELECCIONADO');
+            console.log(' Bolsillos SELECCIONADO');
         } else {
             variantes.tiene_bolsillos = false;
-            console.log('ℹ️ Bolsillos NO seleccionado - obs_bolsillos NO se captura');
+            console.log(' Bolsillos NO seleccionado - obs_bolsillos NO se captura');
         }
         
         // Broche/Botón - SOLO SI ESTÁ CHECKED
@@ -1079,7 +1079,7 @@ function recopilarDatos() {
             // Guardar el tipo_broche_id (1 para Broche, 2 para Botón)
             if (brocheSelect && brocheSelect.value) {
                 variantes.tipo_broche_id = brocheSelect.value;
-                console.log('✅ tipo_broche_id capturado:', brocheSelect.value);
+                console.log(' tipo_broche_id capturado:', brocheSelect.value);
             }
             
             // Capturar observación de broche SOLO SI CHECKBOX ESTÁ CHECKED
@@ -1087,10 +1087,10 @@ function recopilarDatos() {
             if (brocheObs && brocheObs.value) {
                 variantes.obs_broche = brocheObs.value;
                 observacionesVariantes.push(`Broche: ${brocheObs.value}`);
-                console.log('✅ obs_broche capturada:', brocheObs.value);
+                console.log(' obs_broche capturada:', brocheObs.value);
             }
         } else {
-            console.log('ℹ️ Broche NO seleccionado - obs_broche NO se captura');
+            console.log(' Broche NO seleccionado - obs_broche NO se captura');
             variantes.tipo_broche_id = null;
         }
         
@@ -1103,12 +1103,12 @@ function recopilarDatos() {
             if (reflectivoObs && reflectivoObs.value) {
                 variantes.obs_reflectivo = reflectivoObs.value;
                 observacionesVariantes.push(`Reflectivo: ${reflectivoObs.value}`);
-                console.log('✅ obs_reflectivo capturada:', reflectivoObs.value);
+                console.log(' obs_reflectivo capturada:', reflectivoObs.value);
             }
-            console.log('✅ Reflectivo SELECCIONADO');
+            console.log(' Reflectivo SELECCIONADO');
         } else {
             variantes.tiene_reflectivo = false;
-            console.log('ℹ️ Reflectivo NO seleccionado - obs_reflectivo NO se captura');
+            console.log(' Reflectivo NO seleccionado - obs_reflectivo NO se captura');
         }
         
         // Agregar todas las observaciones como descripción_adicional
@@ -1120,32 +1120,32 @@ function recopilarDatos() {
                 descripcion_adicional: variantes.descripcion_adicional
             });
         } else {
-            console.log('ℹ️ Sin observaciones de variantes para agregar a descripcion_adicional');
+            console.log(' Sin observaciones de variantes para agregar a descripcion_adicional');
         }
         
-        // ✅ CAPTURAR TIPO DE JEAN/PANTALÓN
+        //  CAPTURAR TIPO DE JEAN/PANTALÓN
         console.log('🔍 Buscando campos jean/pantalón en producto:', nombre);
         
         // Buscar en formulario estático (productos_prenda)
         let esJeanPantalonInput = item.querySelector('.es-jean-pantalon-hidden');
         let tipoJeanPantalonSelect = item.querySelector('select[name*="tipo_jean_pantalon"]');
         
-        console.log('   🔸 Búsqueda estática - Input hidden:', esJeanPantalonInput ? '✅ ENCONTRADO' : '❌ NO');
-        console.log('   🔸 Búsqueda estática - Select:', tipoJeanPantalonSelect ? '✅ ENCONTRADO' : '❌ NO');
+        console.log('   🔸 Búsqueda estática - Input hidden:', esJeanPantalonInput ? ' ENCONTRADO' : ' NO');
+        console.log('   🔸 Búsqueda estática - Select:', tipoJeanPantalonSelect ? ' ENCONTRADO' : ' NO');
         
         // Si no se encuentran, buscar en formulario dinámico (productos_friendly)
         if (!esJeanPantalonInput) {
             esJeanPantalonInput = item.querySelector('input[name*="[variantes][es_jean_pantalon]"]');
-            console.log('   🔸 Búsqueda dinámica - Input hidden:', esJeanPantalonInput ? '✅ ENCONTRADO' : '❌ NO');
+            console.log('   🔸 Búsqueda dinámica - Input hidden:', esJeanPantalonInput ? ' ENCONTRADO' : ' NO');
         }
         if (!tipoJeanPantalonSelect) {
             tipoJeanPantalonSelect = item.querySelector('select[name*="[variantes][tipo_jean_pantalon]"]');
-            console.log('   🔸 Búsqueda dinámica - Select:', tipoJeanPantalonSelect ? '✅ ENCONTRADO' : '❌ NO');
+            console.log('   🔸 Búsqueda dinámica - Select:', tipoJeanPantalonSelect ? ' ENCONTRADO' : ' NO');
         }
         
         // 🔍 DEBUG ADICIONAL: Verificar si el contenedor existe
         const container = item.querySelector('.tipo-jean-pantalon-inline-container');
-        console.log('   🔸 Contenedor .tipo-jean-pantalon-inline-container:', container ? '✅ EXISTE' : '❌ NO EXISTE');
+        console.log('   🔸 Contenedor .tipo-jean-pantalon-inline-container:', container ? ' EXISTE' : ' NO EXISTE');
         if (container) {
             console.log('   🔸 Contenido COMPLETO del contenedor:', container.innerHTML);
             console.log('   🔸 Elementos hijo en contenedor:', container.children.length);
@@ -1154,8 +1154,8 @@ function recopilarDatos() {
             const hiddenInContainer = container.querySelector('.es-jean-pantalon-hidden');
             const selectInContainer = container.querySelector('select[name*="tipo_jean_pantalon"]');
             console.log('   🔸 Búsqueda DENTRO del contenedor:');
-            console.log('      - Hidden:', hiddenInContainer ? '✅ ENCONTRADO' : '❌ NO');
-            console.log('      - Select:', selectInContainer ? '✅ ENCONTRADO' : '❌ NO');
+            console.log('      - Hidden:', hiddenInContainer ? ' ENCONTRADO' : ' NO');
+            console.log('      - Select:', selectInContainer ? ' ENCONTRADO' : ' NO');
             
             if (selectInContainer) {
                 console.log('      - Select name:', selectInContainer.getAttribute('name'));
@@ -1167,19 +1167,19 @@ function recopilarDatos() {
             // Capturar es_jean_pantalon (0 o 1)
             if (esJeanPantalonInput) {
                 variantes.es_jean_pantalon = esJeanPantalonInput.value;
-                console.log('✅ es_jean_pantalon capturado:', esJeanPantalonInput.value);
+                console.log(' es_jean_pantalon capturado:', esJeanPantalonInput.value);
             }
             
             // Capturar tipo_jean_pantalon (SKINNY, SLIM, RECTO, etc.)
             if (tipoJeanPantalonSelect && tipoJeanPantalonSelect.value) {
                 variantes.tipo_jean_pantalon = tipoJeanPantalonSelect.value;
-                console.log('✅ tipo_jean_pantalon capturado:', tipoJeanPantalonSelect.value);
+                console.log(' tipo_jean_pantalon capturado:', tipoJeanPantalonSelect.value);
             }
         } else {
-            console.log('❌ No es jean/pantalón - campos NO encontrados');
+            console.log(' No es jean/pantalón - campos NO encontrados');
         }
         
-        // ✅ CAPTURAR GENERO_ID desde el input hidden (IMPORTANTE para "ambos")
+        //  CAPTURAR GENERO_ID desde el input hidden (IMPORTANTE para "ambos")
         // NOTA: Solo se captura si tiene un valor definido
         const generoIdInput = item.querySelector('.genero-id-hidden');
         let generoNombre = '';
@@ -1198,27 +1198,27 @@ function recopilarDatos() {
             if (generoNombre) {
                 variantes.genero = generoNombre;
             }
-            console.log('✅ genero_id capturado:', variantes.genero_id, '- genero:', generoNombre);
+            console.log(' genero_id capturado:', variantes.genero_id, '- genero:', generoNombre);
         } else {
             // Si no existe o está vacío, NO incluir la clave en variantes
             // genero_id = null en backend significa "aplica a ambos géneros"
-            console.log('ℹ️ genero_id vacío/no encontrado - no se incluye en variantes (null = ambos)');
+            console.log(' genero_id vacío/no encontrado - no se incluye en variantes (null = ambos)');
         }
 
-        // ✅ CAPTURAR PRENDA DE BODEGA (checkbox)
+        //  CAPTURAR PRENDA DE BODEGA (checkbox)
         const prendaBodegaCheckbox = item.querySelector('input[name*="prenda_bodega"]');
         if (prendaBodegaCheckbox) {
             // Capturar si está checked (true/false)
             variantes.prenda_bodega = prendaBodegaCheckbox.checked;
-            console.log('✅ prenda_bodega capturado:', prendaBodegaCheckbox.checked);
+            console.log(' prenda_bodega capturado:', prendaBodegaCheckbox.checked);
         } else {
-            console.log('ℹ️ prenda_bodega checkbox no encontrado');
+            console.log(' prenda_bodega checkbox no encontrado');
         }
         
         console.log('📝 RESUMEN VARIANTES CAPTURADAS:', {
-            '✅ Color': variantes.color || '(vacío)',
-            '✅ Tela': variantes.tela || '(vacío)',
-            '✅ Referencia': variantes.referencia || '(vacío)',
+            ' Color': variantes.color || '(vacío)',
+            ' Tela': variantes.tela || '(vacío)',
+            ' Referencia': variantes.referencia || '(vacío)',
             '👥 Género ID': variantes.genero_id || '(NO CAPTURADO)',
             '👖 Es Jean/Pantalón': variantes.es_jean_pantalon || '(NO CAPTURADO)',
             '👖 Tipo Jean/Pantalón': variantes.tipo_jean_pantalon || '(NO CAPTURADO)',
@@ -1247,7 +1247,7 @@ function recopilarDatos() {
                 variantes: variantes
             };
             
-            console.log('✅ PRODUCTO AGREGADO:', {
+            console.log(' PRODUCTO AGREGADO:', {
                 nombre: nombre,
                 tallas: tallasSeleccionadas.length,
                 fotos: fotos.length,
@@ -1322,7 +1322,7 @@ function recopilarDatos() {
                 });
             }
         } catch (e) {
-            console.error('❌ Error parsing paso3_secciones_datos:', e);
+            console.error(' Error parsing paso3_secciones_datos:', e);
         }
     }
     
@@ -1461,7 +1461,7 @@ function recopilarDatos() {
  * Retorna una promesa con el data actualizado
  */
 async function procesarImagenesABase64(datos) {
-    console.log('🖼️ Iniciando procesamiento de imágenes a Base64...');
+    console.log(' Iniciando procesamiento de imágenes a Base64...');
     
     if (!datos.productos || datos.productos.length === 0) {
         console.log('✓ Sin productos a procesar');
@@ -1483,7 +1483,7 @@ async function procesarImagenesABase64(datos) {
                         return convertirArchivoABase64(foto);
                     })
                 );
-                console.log(`  ✅ ${producto.fotos_base64.length} foto(s) de prenda procesadas`);
+                console.log(`   ${producto.fotos_base64.length} foto(s) de prenda procesadas`);
             } else {
                 producto.fotos_base64 = [];
             }
@@ -1497,7 +1497,7 @@ async function procesarImagenesABase64(datos) {
                         return convertirArchivoABase64(tela);
                     })
                 );
-                console.log(`  ✅ ${producto.telas_base64.length} tela(s) procesada(s)`);
+                console.log(`   ${producto.telas_base64.length} tela(s) procesada(s)`);
             } else {
                 producto.telas_base64 = [];
             }
@@ -1516,7 +1516,7 @@ async function procesarImagenesABase64(datos) {
                     return convertirArchivoABase64(imagen);
                 })
             );
-            console.log(`  ✅ ${datos.logo.imagenes_base64.length} imagen(es) de logo procesadas`);
+            console.log(`   ${datos.logo.imagenes_base64.length} imagen(es) de logo procesadas`);
             // Eliminar los File objects
             delete datos.logo.imagenes;
         } else {
@@ -1534,7 +1534,7 @@ async function procesarImagenesABase64(datos) {
                     return convertirArchivoABase64(imagen);
                 })
             );
-            console.log(`  ✅ ${datos.reflectivo.imagenes_base64.length} imagen(es) de reflectivo procesadas`);
+            console.log(`   ${datos.reflectivo.imagenes_base64.length} imagen(es) de reflectivo procesadas`);
             // Eliminar los File objects
             delete datos.reflectivo.imagenes;
         } else {
@@ -1543,7 +1543,7 @@ async function procesarImagenesABase64(datos) {
             }
         }
         
-        console.log('✅ TODAS LAS IMÁGENES PROCESADAS', {
+        console.log(' TODAS LAS IMÁGENES PROCESADAS', {
             'productos': datos.productos.length,
             'fotos_procesadas': datos.productos.reduce((sum, p) => sum + (p.fotos_base64?.length || 0), 0),
             'telas_procesadas': datos.productos.reduce((sum, p) => sum + (p.telas_base64?.length || 0), 0),
@@ -1553,7 +1553,7 @@ async function procesarImagenesABase64(datos) {
         
         return datos;
     } catch (error) {
-        console.error('❌ Error al procesar imágenes:', error);
+        console.error(' Error al procesar imágenes:', error);
         throw error;
     }
 }

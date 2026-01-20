@@ -23,7 +23,7 @@ class TestEnviarCotizacion extends Command
         // Obtener un usuario (asesor)
         $usuario = User::first();
         if (!$usuario) {
-            $this->error('❌ No hay usuarios en la BD');
+            $this->error(' No hay usuarios en la BD');
             return;
         }
         
@@ -50,9 +50,9 @@ class TestEnviarCotizacion extends Command
         
         try {
             $result = $handler->handle($comando);
-            $this->info("✅ Borrador guardado: " . $result->toArray()['id']);
+            $this->info(" Borrador guardado: " . $result->toArray()['id']);
         } catch (\Exception $e) {
-            $this->error("❌ Error al guardar borrador: " . $e->getMessage());
+            $this->error(" Error al guardar borrador: " . $e->getMessage());
             return;
         }
         
@@ -96,7 +96,7 @@ class TestEnviarCotizacion extends Command
             $result = $handler->handle($comando);
             $resultArray = $result->toArray();
             
-            $this->info("✅ Cotización enviada:");
+            $this->info(" Cotización enviada:");
             $this->info("   ID: {$resultArray['id']}");
             $this->info("   Estado: {$resultArray['estado']}");
             $this->info("   Número: {$resultArray['numero_cotizacion']}");
@@ -111,7 +111,7 @@ class TestEnviarCotizacion extends Command
             $this->info("   EsBorrador: " . ($cotizacion->es_borrador ? 'sí' : 'no'));
             
         } catch (\Exception $e) {
-            $this->error("❌ Error al enviar: " . $e->getMessage());
+            $this->error(" Error al enviar: " . $e->getMessage());
             Log::error('Error test enviar:', ['error' => $e]);
             return;
         }
@@ -127,6 +127,6 @@ class TestEnviarCotizacion extends Command
             $this->line("   - ID: {$cot->id}, Número: {$cot->numero_cotizacion}, Estado: {$cot->estado}");
         }
         
-        $this->info("\n✅ TEST COMPLETADO");
+        $this->info("\n TEST COMPLETADO");
     }
 }

@@ -48,7 +48,7 @@ class ModernTableV2 {
         this.setupEventListeners();
         this.setupUI();
         
-        console.log('✅ ModernTableV2.init() - Tabla inicializada completamente');
+        console.log(' ModernTableV2.init() - Tabla inicializada completamente');
     }
 
     setupUI() {
@@ -142,9 +142,9 @@ class ModernTableV2 {
                         if (descripcionDiv && descripcionDiv.dataset.fullContent) {
                             try {
                                 content = atob(descripcionDiv.dataset.fullContent);
-                                console.log('✅ Contenido decodificado desde data-full-content:', content.substring(0, 50));
+                                console.log(' Contenido decodificado desde data-full-content:', content.substring(0, 50));
                             } catch (e) {
-                                console.error('❌ Error decodificando base64:', e);
+                                console.error(' Error decodificando base64:', e);
                             }
                         } else {
                             console.warn('⚠️ No se encontró .descripcion-preview o data-full-content');
@@ -152,10 +152,10 @@ class ModernTableV2 {
                     }
                     
                     if (orderId && column) {
-                        console.log('✅ Abriendo modal con orderId:', orderId, 'column:', column);
+                        console.log(' Abriendo modal con orderId:', orderId, 'column:', column);
                         this.openCellModal(content, orderId, column);
                     } else {
-                        console.log('❌ Falta orderId o column - NO se abre modal');
+                        console.log(' Falta orderId o column - NO se abre modal');
                     }
                 }
             }
@@ -201,9 +201,9 @@ class ModernTableV2 {
                     if (descripcionDiv && descripcionDiv.dataset.fullContent) {
                         try {
                             content = atob(descripcionDiv.dataset.fullContent);
-                            console.log('✅ Contenido decodificado desde data-full-content en touch');
+                            console.log(' Contenido decodificado desde data-full-content en touch');
                         } catch (e) {
-                            console.error('❌ Error decodificando base64 en touch:', e);
+                            console.error(' Error decodificando base64 en touch:', e);
                         }
                     }
                 }
@@ -330,7 +330,7 @@ class ModernTableV2 {
                         }
                     }
                 });
-                console.log(`✅ Fila ${ordenData.numero_pedido} actualizada desde tiempo real`);
+                console.log(` Fila ${ordenData.numero_pedido} actualizada desde tiempo real`);
             }
 
             // Actualizar color de fila si el estado cambió
@@ -340,7 +340,7 @@ class ModernTableV2 {
                 }
             }
         } catch (error) {
-            console.error('❌ Error al manejar actualización de orden:', error);
+            console.error(' Error al manejar actualización de orden:', error);
         }
     }
 
@@ -394,10 +394,10 @@ class ModernTableV2 {
         }
         if (cancelBtn) {
             cancelBtn.onclick = () => {
-                console.log('❌ Cancel button clickeado');
+                console.log(' Cancel button clickeado');
                 this.closeCellModal();
             };
-            console.log('❌ Cancel onclick asignado');
+            console.log(' Cancel onclick asignado');
         }
 
         if (input) {
@@ -436,7 +436,7 @@ class ModernTableV2 {
             console.log('🎭 Clase active agregada a modal');
         }
         
-        console.log('✅ openCellModal COMPLETADO');
+        console.log(' openCellModal COMPLETADO');
     }
 
     async saveCellEdit() {
@@ -455,10 +455,10 @@ class ModernTableV2 {
 
             const data = await response.json();
             if (data.success) {
-                NotificationManager.show('✅ Cambio guardado exitosamente', 'success');
+                NotificationManager.show(' Cambio guardado exitosamente', 'success');
                 this.closeCellModal();
             } else {
-                NotificationManager.show('❌ Error al guardar: ' + (data.message || 'Desconocido'), 'error');
+                NotificationManager.show(' Error al guardar: ' + (data.message || 'Desconocido'), 'error');
             }
         } catch (error) {
             console.error('Error:', error);
@@ -483,7 +483,7 @@ class ModernTableV2 {
             console.log('🎭 Clase active removida de overlay');
         }
         
-        console.log('✅ closeCellModal COMPLETADO');
+        console.log(' closeCellModal COMPLETADO');
     }
 
     clearAllFilters() {
@@ -532,8 +532,8 @@ globalThis.initializeModernTable = () => {
     const missingModules = requiredModules.filter(mod => typeof globalThis[mod] === 'undefined');
     
     if (missingModules.length > 0) {
-        console.error('❌ ERROR: Módulos faltantes:', missingModules.join(', '));
-        console.error('❌ Asegúrate de que todos los scripts se cargaron en orden correcto');
+        console.error(' ERROR: Módulos faltantes:', missingModules.join(', '));
+        console.error(' Asegúrate de que todos los scripts se cargaron en orden correcto');
         return null;
     }
 
@@ -544,13 +544,13 @@ globalThis.initializeModernTable = () => {
         return null;
     }
 
-    console.log('%c✅ Todos los módulos disponibles - Creando instancia', 'color: #00aa00; font-weight: bold; font-size: 14px;');
+    console.log('%c Todos los módulos disponibles - Creando instancia', 'color: #00aa00; font-weight: bold; font-size: 14px;');
     
     try {
         globalThis.modernTableInstance = new ModernTableV2();
         // Exponer también como window.modernTable para compatibilidad con realtime-listeners
         window.modernTable = globalThis.modernTableInstance;
-        console.log('%c✅ ModernTableV2 instancia lista', 'color: #00aa00; font-weight: bold; font-size: 14px;');
+        console.log('%c ModernTableV2 instancia lista', 'color: #00aa00; font-weight: bold; font-size: 14px;');
 
         // Agregar botón de limpiar filtros
         const tableActions = document.querySelector('.table-actions');
@@ -562,12 +562,12 @@ globalThis.initializeModernTable = () => {
             clearBtn.style.fontSize = '12px';
             clearBtn.addEventListener('click', () => globalThis.modernTableInstance.clearAllFilters());
             tableActions.appendChild(clearBtn);
-            console.log('✅ Botón "Limpiar Filtros" agregado');
+            console.log(' Botón "Limpiar Filtros" agregado');
         }
 
         return globalThis.modernTableInstance;
     } catch (error) {
-        console.error('❌ Error al inicializar ModernTableV2:', error);
+        console.error(' Error al inicializar ModernTableV2:', error);
         return null;
     }
 };
@@ -576,11 +576,11 @@ globalThis.initializeModernTable = () => {
 if (document.readyState === 'loading') {
     // DOM aún se está cargando
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('📋 DOMContentLoaded disparado');
+        console.log(' DOMContentLoaded disparado');
         setTimeout(() => globalThis.initializeModernTable(), 100);
     });
 } else {
     // DOM ya está listo
-    console.log('📋 DOM ya está listo');
+    console.log(' DOM ya está listo');
     setTimeout(() => globalThis.initializeModernTable(), 100);
 }

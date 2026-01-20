@@ -29,12 +29,12 @@ return function () {
 
         $resultado = $commandBus->execute($command);
 
-        echo "✅ EPP creado exitosamente!\n";
+        echo " EPP creado exitosamente!\n";
         echo "📊 Resultado:\n";
         echo json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 
     } catch (\Exception $e) {
-        echo "❌ Error al crear EPP:\n";
+        echo " Error al crear EPP:\n";
         echo "   " . $e->getMessage() . "\n";
     }
 };

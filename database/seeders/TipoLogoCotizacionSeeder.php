@@ -16,7 +16,7 @@ class TipoLogoCotizacionSeeder extends Seeder
         $count = DB::table('tipo_logo_cotizaciones')->count();
         
         if ($count > 0) {
-            echo "ℹ️ La tabla ya tiene registros. No se insertarán duplicados.\n";
+            echo " La tabla ya tiene registros. No se insertarán duplicados.\n";
             return;
         }
 
@@ -69,6 +69,6 @@ class TipoLogoCotizacionSeeder extends Seeder
             ));
         }
 
-        echo "✅ Tipos de logo cotización creados correctamente\n";
+        echo " Tipos de logo cotización creados correctamente\n";
     }
 }

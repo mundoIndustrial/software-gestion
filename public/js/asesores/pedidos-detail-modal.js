@@ -16,7 +16,7 @@ window.verFactura = async function verFactura(numeroPedido) {
     console.log('🔵 [MODAL] Abriendo modal de factura para pedido:', pedidoLimpio);
     
     try {
-        // ✅ HACER FETCH a la API para obtener datos del pedido
+        //  HACER FETCH a la API para obtener datos del pedido
         // Intentar primero con /registros (para asesores), luego con /orders (para órdenes)
         console.log('🔵 [MODAL] Haciendo fetch a /registros/' + pedidoLimpio);
         let response = await fetch(`/registros/${pedidoLimpio}`);
@@ -28,15 +28,15 @@ window.verFactura = async function verFactura(numeroPedido) {
         }
         
         if (!response.ok) {
-            console.error('❌ [MODAL] Error en respuesta:', response.status, response.statusText);
+            console.error(' [MODAL] Error en respuesta:', response.status, response.statusText);
             throw new Error('Error fetching order: ' + response.status);
         }
         const order = await response.json();
         
-        console.log('✅ [MODAL] Datos del pedido obtenidos:', order);
-        console.log('✅ [MODAL] Campos disponibles:', Object.keys(order));
-        console.log('✅ [MODAL] prendas:', order.prendas);
-        console.log('✅ [MODAL] es_cotizacion:', order.es_cotizacion);
+        console.log(' [MODAL] Datos del pedido obtenidos:', order);
+        console.log(' [MODAL] Campos disponibles:', Object.keys(order));
+        console.log(' [MODAL] prendas:', order.prendas);
+        console.log(' [MODAL] es_cotizacion:', order.es_cotizacion);
         
         // Disparar evento para que order-detail-modal-manager.js maneje la apertura
         console.log('🔵 [MODAL] Disparando evento load-order-detail');
@@ -46,7 +46,7 @@ window.verFactura = async function verFactura(numeroPedido) {
         window.dispatchEvent(loadEvent);
         
     } catch (error) {
-        console.error('❌ Error al cargar datos del pedido:', error);
+        console.error(' Error al cargar datos del pedido:', error);
         alert('Error al cargar los datos del pedido. Intenta nuevamente.');
     }
 }
@@ -61,9 +61,9 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
     // Usar la función simplificada para asesoras
     if (typeof openAsesorasTrackingModal === 'function') {
         openAsesorasTrackingModal(numeroPedido);
-        console.log('✅ [ASESORAS] Modal de seguimiento abierto');
+        console.log(' [ASESORAS] Modal de seguimiento abierto');
     } else {
-        console.error('❌ [ASESORAS] Función openAsesorasTrackingModal no disponible');
+        console.error(' [ASESORAS] Función openAsesorasTrackingModal no disponible');
         alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');
     }
 }
@@ -77,17 +77,17 @@ window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
     console.log('🔴 [MODAL LOGO] Verificando si window.openOrderDetailModalLogo existe:', typeof window.openOrderDetailModalLogo);
     
     try {
-        // ✅ HACER FETCH a la API usando el ID en lugar del número de pedido
+        //  HACER FETCH a la API usando el ID en lugar del número de pedido
         console.log('🔴 [MODAL LOGO] Haciendo fetch a /api/logo-pedidos/' + logoPedidoId);
         let response = await fetch(`/api/logo-pedidos/${logoPedidoId}`);
         
         if (!response.ok) {
-            console.error('❌ [MODAL LOGO] Error en respuesta:', response.status, response.statusText);
+            console.error(' [MODAL LOGO] Error en respuesta:', response.status, response.statusText);
             throw new Error('Error fetching logo pedido: ' + response.status);
         }
         const order = await response.json();
         
-        console.log('✅ [MODAL LOGO] Datos del LogoPedido obtenidos:', order);
+        console.log(' [MODAL LOGO] Datos del LogoPedido obtenidos:', order);
         
         // Disparar evento para que order-detail-modal-manager.js maneje la apertura del logo
         console.log('🔴 [MODAL LOGO] Disparando evento load-order-detail-logo con detail:', order);
@@ -109,7 +109,7 @@ window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
         }, 500);
         
     } catch (error) {
-        console.error('❌ Error al cargar datos del pedido (logo):', error);
+        console.error(' Error al cargar datos del pedido (logo):', error);
         alert('Error al cargar los datos del pedido. Intenta nuevamente.');
     }
 }
@@ -128,13 +128,13 @@ window.closeModalOverlay = function closeModalOverlay() {
         modalWrapper.style.display = 'none';
     }
     
-    // ✅ Recargar filtros desde localStorage al cerrar modal
+    //  Recargar filtros desde localStorage al cerrar modal
     if (typeof loadFiltersFromLocalStorage === 'function') {
         loadFiltersFromLocalStorage();
-        console.log('✅ Filtros recargados después de cerrar modal');
+        console.log(' Filtros recargados después de cerrar modal');
         if (typeof applyTableFilters === 'function') {
             applyTableFilters();
-            console.log('✅ Filtros reaplicados a la tabla');
+            console.log(' Filtros reaplicados a la tabla');
         }
     }
     
@@ -347,7 +347,7 @@ window.eliminarPedidoConfirmado = async function(pedidoId) {
             }
             
             // Mostrar mensaje de éxito
-            showSuccessMessage('✅ ' + (data.message || 'Pedido eliminado exitosamente'));
+            showSuccessMessage(' ' + (data.message || 'Pedido eliminado exitosamente'));
             
             // Recargar la página después de 1.5 segundos
             setTimeout(() => {
@@ -356,11 +356,11 @@ window.eliminarPedidoConfirmado = async function(pedidoId) {
         } else {
             // El servidor devolvió un error (pero fue procesable)
             const errorMsg = data.message || 'Error al eliminar el pedido';
-            console.error('❌ Error del servidor:', errorMsg);
+            console.error(' Error del servidor:', errorMsg);
             throw new Error(errorMsg);
         }
     } catch (error) {
-        console.error('❌ Error al eliminar pedido:', error);
+        console.error(' Error al eliminar pedido:', error);
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar Pedido';
         
@@ -431,7 +431,7 @@ window.eliminarPedidoDirecto = async function(pedidoId) {
         
         if (response.ok && data.success) {
             // Mostrar mensaje de éxito
-            showSuccessMessage('✅ Pedido eliminado correctamente');
+            showSuccessMessage(' Pedido eliminado correctamente');
             
             // Recargar la página después de 1 segundo
             setTimeout(() => {
@@ -439,13 +439,13 @@ window.eliminarPedidoDirecto = async function(pedidoId) {
             }, 1000);
         } else {
             const errorMsg = data.message || 'Error al eliminar el pedido';
-            console.error('❌ Error:', errorMsg);
+            console.error(' Error:', errorMsg);
             // Mostrar error
-            showErrorMessage('❌ ' + errorMsg);
+            showErrorMessage(' ' + errorMsg);
         }
     } catch (error) {
-        console.error('❌ Error al eliminar pedido:', error);
-        showErrorMessage('❌ Error al eliminar el pedido');
+        console.error(' Error al eliminar pedido:', error);
+        showErrorMessage(' Error al eliminar el pedido');
     }
 }
 

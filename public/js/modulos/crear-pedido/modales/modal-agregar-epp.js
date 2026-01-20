@@ -932,12 +932,12 @@ async function agregarEPPAlPedido() {
                 itemAnterior.remove();
             }
             
-            // ✅ REMOVER DEL ARRAY itemsPedido TAMBIÉN
+            //  REMOVER DEL ARRAY itemsPedido TAMBIÉN
             if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
                 const indexToRemove = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === editandoEPPId);
                 if (indexToRemove !== -1) {
                     window.itemsPedido.splice(indexToRemove, 1);
-                    console.log('✅ EPP antiguo removido durante edición. Total items ahora:', window.itemsPedido.length);
+                    console.log(' EPP antiguo removido durante edición. Total items ahora:', window.itemsPedido.length);
                 }
             }
             
@@ -1089,7 +1089,7 @@ function crearItemEPP(id, nombre, codigo, categoria, talla, cantidad, observacio
         }
     });
     
-    // ✅ AGREGAR ITEM A window.itemsPedido PARA QUE SE INCLUYA EN EL FORMULARIO
+    //  AGREGAR ITEM A window.itemsPedido PARA QUE SE INCLUYA EN EL FORMULARIO
     if (!window.itemsPedido) {
         window.itemsPedido = [];
     }
@@ -1108,7 +1108,7 @@ function crearItemEPP(id, nombre, codigo, categoria, talla, cantidad, observacio
         tallas_medidas: talla, // Campo requerido por PedidoEppService
     };
     
-    console.log('✅ Agregando EPP a window.itemsPedido:', itemEPP);
+    console.log(' Agregando EPP a window.itemsPedido:', itemEPP);
     window.itemsPedido.push(itemEPP);
     console.log('📊 Total items en pedido después de EPP:', window.itemsPedido.length);
     
@@ -1130,12 +1130,12 @@ function eliminarItemEPP(eppId) {
         // Limpiar datos del mapa
         delete eppItemsData[eppId];
         
-        // ✅ REMOVER TAMBIÉN DE window.itemsPedido
+        //  REMOVER TAMBIÉN DE window.itemsPedido
         if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
             const indexToRemove = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
             if (indexToRemove !== -1) {
                 window.itemsPedido.splice(indexToRemove, 1);
-                console.log('✅ EPP removido de window.itemsPedido. Total items ahora:', window.itemsPedido.length);
+                console.log(' EPP removido de window.itemsPedido. Total items ahora:', window.itemsPedido.length);
             }
         }
         

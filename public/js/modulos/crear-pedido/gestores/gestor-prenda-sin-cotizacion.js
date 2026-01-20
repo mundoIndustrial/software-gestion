@@ -34,7 +34,7 @@ class GestorPrendaSinCotizacion {
         this.telasFotosNuevas = {};
         this.tipoPedidoActual = null;
         
-        console.log('✅ GestorPrendaSinCotizacion inicializado');
+        console.log(' GestorPrendaSinCotizacion inicializado');
     }
 
     /**
@@ -110,7 +110,7 @@ class GestorPrendaSinCotizacion {
         console.log(`   Prendas eliminadas: ${this.prendasEliminadas.size}`);
         console.log(`   Prendas activas: ${this.obtenerActivas().length}`);
         console.log(`   Prenda agregada:`, nuevaPrenda);
-        console.log(`   ✅ Prenda guardada con imagenes:`, nuevaPrenda.imagenes);
+        console.log(`    Prenda guardada con imagenes:`, nuevaPrenda.imagenes);
         return index;
     }
 
@@ -155,21 +155,21 @@ class GestorPrendaSinCotizacion {
     }
 
     /**
-     * ✅ NUEVO: Actualizar una prenda existente
+     *  NUEVO: Actualizar una prenda existente
      * Reemplaza los datos de una prenda en el gestor
      * @param {number} index - Índice de la prenda a actualizar
      * @param {Object} prendaActualizada - Objeto con los nuevos datos de la prenda
      */
     actualizarPrenda(index, prendaActualizada) {
         if (index < 0 || index >= this.prendas.length) {
-            console.error(`❌ [GESTOR] Índice inválido para actualizar: ${index}`);
+            console.error(` [GESTOR] Índice inválido para actualizar: ${index}`);
             return false;
         }
 
         // Obtener la prenda actual
         const prendaActual = this.prendas[index];
         if (!prendaActual) {
-            console.error(`❌ [GESTOR] Prenda no encontrada en índice: ${index}`);
+            console.error(` [GESTOR] Prenda no encontrada en índice: ${index}`);
             return false;
         }
 
@@ -212,7 +212,7 @@ class GestorPrendaSinCotizacion {
             }
             prenda.cantidadesPorTalla[talla] = 0;
 
-            // ✅ NUEVO: También inicializar en generosConTallas
+            //  NUEVO: También inicializar en generosConTallas
             if (!prenda.generosConTallas) {
                 prenda.generosConTallas = {};
             }
@@ -231,7 +231,7 @@ class GestorPrendaSinCotizacion {
 
             prenda.generosConTallas[genero][tallaPura] = 0;
 
-            console.log(`✅ Talla ${talla} agregada a prenda ${prendaIndex + 1}, generosConTallas:`, prenda.generosConTallas);
+            console.log(` Talla ${talla} agregada a prenda ${prendaIndex + 1}, generosConTallas:`, prenda.generosConTallas);
         }
     }
 
@@ -271,7 +271,7 @@ class GestorPrendaSinCotizacion {
         }
         prenda.cantidadesPorTalla[talla] = parseInt(cantidad) || 0;
 
-        // ✅ NUEVO: También actualizar generosConTallas con estructura {genero: {talla: cantidad}}
+        //  NUEVO: También actualizar generosConTallas con estructura {genero: {talla: cantidad}}
         if (!prenda.generosConTallas) {
             prenda.generosConTallas = {};
         }
@@ -295,7 +295,7 @@ class GestorPrendaSinCotizacion {
 
         prenda.generosConTallas[genero][tallaPura] = parseInt(cantidad) || 0;
 
-        console.log(`✅ [GESTOR] generosConTallas actualizado para prenda ${prendaIndex}:`, prenda.generosConTallas);
+        console.log(` [GESTOR] generosConTallas actualizado para prenda ${prendaIndex}:`, prenda.generosConTallas);
     }
 
     /**

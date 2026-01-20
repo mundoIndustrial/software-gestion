@@ -13,14 +13,14 @@
  * - dropdownManager.js: Gestión de dropdowns
  * 
  * Principios SOLID aplicados:
- * ✅ Single Responsibility: Cada módulo tiene una única responsabilidad
- * ✅ Open/Closed: Fácil de extender sin modificar código existente
- * ✅ Liskov Substitution: Interfaces consistentes
- * ✅ Interface Segregation: Clientes solo conocen lo que necesitan
- * ✅ Dependency Inversion: Dependen de abstracciones, no de implementaciones
+ *  Single Responsibility: Cada módulo tiene una única responsabilidad
+ *  Open/Closed: Fácil de extender sin modificar código existente
+ *  Liskov Substitution: Interfaces consistentes
+ *  Interface Segregation: Clientes solo conocen lo que necesitan
+ *  Dependency Inversion: Dependen de abstracciones, no de implementaciones
  */
 
-console.log('✅ orderTracking-v2.js cargado - Versión SOLID con 9 módulos');
+console.log(' orderTracking-v2.js cargado - Versión SOLID con 9 módulos');
 
 /**
  * Función principal: Abre el modal de seguimiento del pedido
@@ -44,7 +44,7 @@ async function openOrderTracking(orderId) {
         await displayOrderTrackingWithProcesos(procesos);
         
     } catch (error) {
-        console.error('❌ Error al obtener procesos:', error);
+        console.error(' Error al obtener procesos:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -60,7 +60,7 @@ async function openOrderTracking(orderId) {
 async function displayOrderTrackingWithProcesos(orderData) {
     const modal = TrackingUI.getModal();
     if (!modal) {
-        console.error('❌ Modal de seguimiento no encontrado');
+        console.error(' Modal de seguimiento no encontrado');
         return;
     }
     
@@ -90,7 +90,7 @@ async function displayOrderTrackingWithProcesos(orderData) {
     let totalDias = orderData.total_dias_habiles || totalDiasCalculado;
     TrackingUI.updateTotalDays(totalDias);
     
-    console.log(`✅ Total de días mostrado: ${totalDias}`);
+    console.log(` Total de días mostrado: ${totalDias}`);
     
     // Agregar event listeners a los botones de admin
     attachProcessButtonListeners(procesos);
@@ -280,7 +280,7 @@ function initializeOrderTracking() {
         TableManager.updateDaysInTable();
     }, 500);
     
-    console.log('✅ Order Tracking v2 inicializado correctamente');
+    console.log(' Order Tracking v2 inicializado correctamente');
 }
 
 /**
@@ -318,7 +318,7 @@ function initializeTrackingModal() {
  * Inicializar cuando el DOM esté listo
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM listo, inicializando Order Tracking');
+    console.log(' DOM listo, inicializando Order Tracking');
     initializeOrderTracking();
 });
 

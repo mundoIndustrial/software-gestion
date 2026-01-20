@@ -27,11 +27,11 @@ class TestCrearPedidoReflectivo extends Command
         ->first();
 
         if (!$cotizacion) {
-            $this->error('❌ No hay cotizaciones REFLECTIVO aprobadas en la BD');
+            $this->error(' No hay cotizaciones REFLECTIVO aprobadas en la BD');
             return 1;
         }
 
-        $this->info("\n✅ Cotización encontrada:");
+        $this->info("\n Cotización encontrada:");
         $this->line("   ID: {$cotizacion->id}");
         $this->line("   Número: {$cotizacion->numero_cotizacion}");
         $this->line("   Tipo: {$cotizacion->tipoCotizacion->nombre}");
@@ -58,7 +58,7 @@ class TestCrearPedidoReflectivo extends Command
             return 1;
         }
 
-        $this->info("\n📋 Prendas a procesar: " . count($prendas));
+        $this->info("\n Prendas a procesar: " . count($prendas));
 
         // Simular la solicitud
         $this->line("\n▶️ Simulando creación de pedido...");
@@ -77,7 +77,7 @@ class TestCrearPedidoReflectivo extends Command
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 
-            $this->line("✅ Pedido creado: {$pedido->numero_pedido}");
+            $this->line(" Pedido creado: {$pedido->numero_pedido}");
 
             // Crear prendas y guardar sus IDs
             $prendasGuardadas = [];
@@ -91,7 +91,7 @@ class TestCrearPedidoReflectivo extends Command
                 ]);
                 
                 $prendasGuardadas[] = $prendaPedido;
-                $this->line("✅ Prenda creada: {$prenda['nombre_producto']}");
+                $this->line(" Prenda creada: {$prenda['nombre_producto']}");
             }
 
             // Crear proceso inicial para cada prenda
@@ -108,7 +108,7 @@ class TestCrearPedidoReflectivo extends Command
 
             \DB::commit();
             
-            $this->info("\n✅ Pedido guardado en BD");
+            $this->info("\n Pedido guardado en BD");
 
             // Verificar procesos creados
             $this->line("\n🔍 VERIFICANDO PROCESOS CREADOS:");
@@ -118,21 +118,21 @@ class TestCrearPedidoReflectivo extends Command
                 ->get(['proceso', 'encargado', 'estado_proceso']);
 
             if ($procesos->isEmpty()) {
-                $this->error("❌ No hay procesos (¿El listener se ejecutó?)");
+                $this->error(" No hay procesos (¿El listener se ejecutó?)");
             } else {
                 foreach ($procesos as $p) {
                     $encargado = $p->encargado ? " ✓ {$p->encargado}" : " (Sin asignar)";
-                    $this->line("   ✅ {$p->proceso}:{$encargado} [{$p->estado_proceso}]");
+                    $this->line("    {$p->proceso}:{$encargado} [{$p->estado_proceso}]");
                 }
             }
 
         } catch (\Exception $e) {
             \DB::rollBack();
-            $this->error('❌ Error: ' . $e->getMessage());
+            $this->error(' Error: ' . $e->getMessage());
             return 1;
         }
 
-        $this->line("\n✅ Test completado");
+        $this->line("\n Test completado");
         return 0;
     }
 }

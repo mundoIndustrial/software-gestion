@@ -282,7 +282,7 @@
             dropdown.style.zIndex = '9999';
             document.body.appendChild(dropdown);
 
-            console.log('✅ Menú PDF creado exitosamente para cotización:', cotizacionId);
+            console.log(' Menú PDF creado exitosamente para cotización:', cotizacionId);
 
             // Cerrar dropdown al hacer click fuera
             setTimeout(() => {

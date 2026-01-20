@@ -190,13 +190,13 @@
     window.abrirModalRecibo = async function(pedidoId, prendaId, tipoProceso) {
         // ⚠️ VALIDACIÓN DEFENSIVA
         if (typeof tipoProceso !== 'string') {
-            console.error('%c[RECIBO-DINAMICO] ❌ ERROR: tipoProceso DEBE ser STRING', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof tipoProceso, tipoProceso);
+            console.error('%c[RECIBO-DINAMICO]  ERROR: tipoProceso DEBE ser STRING', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof tipoProceso, tipoProceso);
             alert('Error: tipo de recibo debe ser texto (STRING)');
             return;
         }
         
         if (typeof prendaId !== 'number') {
-            console.error('%c[RECIBO-DINAMICO] ❌ ERROR: prendaId DEBE ser NÚMERO', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof prendaId, prendaId);
+            console.error('%c[RECIBO-DINAMICO]  ERROR: prendaId DEBE ser NÚMERO', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof prendaId, prendaId);
             alert('Error: ID de prenda debe ser número');
             return;
         }
@@ -377,7 +377,7 @@
             error.style.display = 'none';
             
         } catch (err) {
-            console.error('❌ [RECIBO-DINAMICO] Error:', err);
+            console.error(' [RECIBO-DINAMICO] Error:', err);
             document.getElementById('recibo-error-message').textContent = err.message;
             
             loading.style.display = 'none';

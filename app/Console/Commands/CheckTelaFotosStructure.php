@@ -68,9 +68,9 @@ class CheckTelaFotosStructure extends Command
 
         $result = DB::select("SELECT COUNT(*) as count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'prenda_tela_fotos_cot' AND COLUMN_NAME = 'prenda_tela_cot_id'");
         if ($result[0]->count > 0) {
-            $this->info("✅ SÍ existe prenda_tela_cot_id");
+            $this->info(" SÍ existe prenda_tela_cot_id");
         } else {
-            $this->error("❌ NO existe prenda_tela_cot_id");
+            $this->error(" NO existe prenda_tela_cot_id");
         }
     }
 }

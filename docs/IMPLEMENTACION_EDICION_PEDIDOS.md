@@ -10,8 +10,8 @@
 **Archivo:** `app/Infrastructure/Http/Controllers/Asesores/AsesoresController.php`
 
 #### Cambios:
-- ✅ Importado modelo `PedidoProduccion`
-- ✅ Actualizado método `edit($pedido)`:
+-  Importado modelo `PedidoProduccion`
+-  Actualizado método `edit($pedido)`:
   - Ahora obtiene el modelo de pedido
   - Retorna vista `editar-pedido.blade.php` en lugar de `edit.blade.php`
   - Pasa tanto el modelo como los datos de edición
@@ -38,8 +38,8 @@ public function edit($pedido)
 **Archivo:** `resources/views/asesores/pedidos/index.blade.php`
 
 #### Cambios:
-- ✅ Actualizada función `editarPedido()` (línea 1808)
-- ✅ Cambió ruta de `/asesores/pedidos-produccion/{id}/edit` a `/asesores/pedidos/{id}/edit`
+-  Actualizada función `editarPedido()` (línea 1808)
+-  Cambió ruta de `/asesores/pedidos-produccion/{id}/edit` a `/asesores/pedidos/{id}/edit`
 
 ```javascript
 function editarPedido(pedidoId) {
@@ -52,10 +52,10 @@ function editarPedido(pedidoId) {
 **Archivo:** `resources/views/asesores/pedidos/editar-pedido.blade.php` (NUEVO)
 
 #### Características:
-- ✅ Reutiliza la misma interfaz que crear pedido
-- ✅ Carga la vista `crear-pedido-desde-cotizacion` en modo edición
-- ✅ Pasa datos del pedido a JavaScript
-- ✅ Carga todos los scripts necesarios
+-  Reutiliza la misma interfaz que crear pedido
+-  Carga la vista `crear-pedido-desde-cotizacion` en modo edición
+-  Pasa datos del pedido a JavaScript
+-  Carga todos los scripts necesarios
 
 ```php
 @php
@@ -76,10 +76,10 @@ function editarPedido(pedidoId) {
 **Archivo:** `public/js/modulos/crear-pedido/edicion/cargar-datos-edicion.js` (NUEVO)
 
 #### Responsabilidades:
-- ✅ Espera a que todos los módulos se carguen
-- ✅ Carga información general del pedido (cliente, forma de pago, etc.)
-- ✅ Renderiza las prendas con sus detalles
-- ✅ Crea tarjetas de prenda editables con:
+-  Espera a que todos los módulos se carguen
+-  Carga información general del pedido (cliente, forma de pago, etc.)
+-  Renderiza las prendas con sus detalles
+-  Crea tarjetas de prenda editables con:
   - Nombre y descripción
   - Tela y color
   - Variantes (talla y cantidad)
@@ -143,13 +143,13 @@ public function update(Request $request, $pedido)
 }
 ```
 
-## ✅ Verificaciones Realizadas
+##  Verificaciones Realizadas
 
-- ✅ Sintaxis PHP correcta
-- ✅ Rutas registradas correctamente
-- ✅ Imports correctos en controlador
-- ✅ Vistas existen o están creadas
-- ✅ Scripts de JavaScript creados
+-  Sintaxis PHP correcta
+-  Rutas registradas correctamente
+-  Imports correctos en controlador
+-  Vistas existen o están creadas
+-  Scripts de JavaScript creados
 
 ## 🚀 Próximos Pasos (Opcional)
 

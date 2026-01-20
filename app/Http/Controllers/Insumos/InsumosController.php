@@ -83,7 +83,7 @@ class InsumosController extends Controller
                 $valores = array_unique($valores);
                 $valores = array_values($valores);
                 
-                \Log::info('✅ Valores únicos encontrados: ' . count($valores));
+                \Log::info(' Valores únicos encontrados: ' . count($valores));
                 
                 return response()->json([
                     'success' => true,
@@ -311,7 +311,7 @@ class InsumosController extends Controller
         \Log::info("⏱️ Render vista: {$viewTime}s");
         
         $totalTime = microtime(true) - $startTime;
-        \Log::info("✅ Total carga: {$totalTime}s");
+        \Log::info(" Total carga: {$totalTime}s");
         
         return $response;
     }
@@ -375,7 +375,7 @@ class InsumosController extends Controller
             $materialesEliminados = 0;
             
             \Log::info('🔵 GUARDANDO MATERIALES - Pedido ID: ' . $orden->id . ', Número: ' . $orden->numero_pedido);
-            \Log::info('📋 Materiales recibidos:', $validated['materiales']);
+            \Log::info(' Materiales recibidos:', $validated['materiales']);
             \Log::info('📊 Total de materiales: ' . count($validated['materiales']));
             
             foreach ($validated['materiales'] as $material) {
@@ -401,7 +401,7 @@ class InsumosController extends Controller
                         ]
                     );
                     $materialesGuardados++;
-                    \Log::info("✅ Material guardado: {$material['nombre']}, ID: {$result->id}, Fecha Pedido: {$material['fecha_pedido']}, Fecha Llegada: {$material['fecha_llegada']}");
+                    \Log::info(" Material guardado: {$material['nombre']}, ID: {$result->id}, Fecha Pedido: {$material['fecha_pedido']}, Fecha Llegada: {$material['fecha_llegada']}");
                 } else {
                     // Eliminar si recibido es false
                     $deleted = MaterialesOrdenInsumos::where([

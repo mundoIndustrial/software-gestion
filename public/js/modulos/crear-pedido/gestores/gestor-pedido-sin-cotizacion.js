@@ -72,7 +72,7 @@ class GestorPedidoSinCotizacion {
             btnSubmit.style.display = 'block';
         }
         
-        logWithEmoji('📋', 'Modo SIN COTIZACIÓN activado');
+        logWithEmoji('', 'Modo SIN COTIZACIÓN activado');
     }
 
     /**
@@ -285,7 +285,7 @@ class GestorPedidoSinCotizacion {
         // Validar
         const validacion = this.validar();
         if (!validacion.valido) {
-            console.error('❌ Validación fallida:', validacion.errores);
+            console.error(' Validación fallida:', validacion.errores);
             window.mostrarErroresValidacion(validacion.errores);
             return Promise.reject('Validación fallida');
         }
@@ -297,7 +297,7 @@ class GestorPedidoSinCotizacion {
                             document.querySelector('meta[name="csrf-token"]')?.content;
 
             if (!csrfToken) {
-                console.error('❌ Token CSRF no encontrado');
+                console.error(' Token CSRF no encontrado');
                 mostrarError('Error', 'Token de seguridad no encontrado');
                 reject(new Error('CSRF token missing'));
                 return;
@@ -321,21 +321,21 @@ class GestorPedidoSinCotizacion {
                 return response.json();
             })
             .then(data => {
-                console.log('✅ [SIN COTIZACIÓN] Respuesta del servidor:', data);
+                console.log(' [SIN COTIZACIÓN] Respuesta del servidor:', data);
 
                 if (data.success) {
                     mostrarExito(
                         '¡Éxito!',
                         `Pedido creado exitosamente${data.numero_pedido ? '\nNúmero: ' + data.numero_pedido : ''}`
                     );
-                    logWithEmoji('✅', `Pedido SIN COTIZACIÓN creado: ${data.numero_pedido}`);
+                    logWithEmoji('', `Pedido SIN COTIZACIÓN creado: ${data.numero_pedido}`);
                     resolve(data);
                 } else {
                     throw new Error(data.message || 'Error desconocido al crear pedido');
                 }
             })
             .catch(error => {
-                console.error('❌ [SIN COTIZACIÓN] Error:', error);
+                console.error(' [SIN COTIZACIÓN] Error:', error);
                 mostrarError(
                     'Error al crear pedido',
                     error.message || 'Ocurrió un error inesperado'

@@ -62,7 +62,7 @@ class CotizacionPrendaController extends Controller
                 if (!$esBorrador) {
                     $usuarioId = Auth::id();
                     $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
-                    Log::info('✅ Número generado sincronicamente', [
+                    Log::info(' Número generado sincronicamente', [
                         'numero' => $numeroCotizacion
                     ]);
                 }
@@ -85,7 +85,7 @@ class CotizacionPrendaController extends Controller
                     'imagenes' => json_encode($request->input('imagenes', [])),
                 ]);
 
-                Log::info('✅ Cotización de Prenda creada', [
+                Log::info(' Cotización de Prenda creada', [
                     'cotizacion_id' => $cotizacion->id,
                     'numero_cotizacion' => $numeroCotizacion,
                     'es_borrador' => $esBorrador,
@@ -97,7 +97,7 @@ class CotizacionPrendaController extends Controller
                 $productos = $request->input('prendas', []);
                 if (!empty($productos)) {
                     $this->cotizacionPrendaService->guardarProductosEnCotizacion($cotizacion, $productos);
-                    Log::info('✅ Productos guardados en tablas normalizadas', [
+                    Log::info(' Productos guardados en tablas normalizadas', [
                         'cotizacion_id' => $cotizacion->id,
                         'productos_count' => count($productos)
                     ]);
@@ -111,7 +111,7 @@ class CotizacionPrendaController extends Controller
                         1 // tipo_cotizacion_id para Combinada (Prenda + Logo)
                     )->onQueue('cotizaciones');
 
-                    Log::info('📋 Job de envío encolado (número ya existe)', [
+                    Log::info(' Job de envío encolado (número ya existe)', [
                         'cotizacion_id' => $cotizacion->id,
                         'numero' => $numeroCotizacion,
                         'queue' => 'cotizaciones'
@@ -149,7 +149,7 @@ class CotizacionPrendaController extends Controller
                 ], 201);
 
             } catch (\Exception $e) {
-                Log::error('❌ Error al guardar cotización de Prenda', [
+                Log::error(' Error al guardar cotización de Prenda', [
                     'error' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
@@ -296,7 +296,7 @@ class CotizacionPrendaController extends Controller
      */
     private function procesarImagenesCotizacion(Request $request, $cotizacionId)
     {
-        Log::info('🖼️ Iniciando procesamiento de imágenes para cotización', ['cotizacion_id' => $cotizacionId]);
+        Log::info(' Iniciando procesamiento de imágenes para cotización', ['cotizacion_id' => $cotizacionId]);
         
         // Obtener cotización
         $cotizacion = Cotizacion::findOrFail($cotizacionId);
@@ -325,13 +325,13 @@ class CotizacionPrendaController extends Controller
             // Intentar acceder de otra forma
             \Log::info('🔍 Intentando acceder a archivos de otra forma...');
             if (isset($allFiles['prendas'])) {
-                \Log::info('✅ Encontrado en allFiles[prendas]', [
+                \Log::info(' Encontrado en allFiles[prendas]', [
                     'tipo' => gettype($allFiles['prendas']),
                     'es_array' => is_array($allFiles['prendas']),
                 ]);
                 $prendasData = $allFiles['prendas'];
             } else {
-                \Log::info('❌ No encontrado en allFiles[prendas]');
+                \Log::info(' No encontrado en allFiles[prendas]');
                 return;
             }
         }
@@ -360,7 +360,7 @@ class CotizacionPrendaController extends Controller
                             $rutaGuardada = $archivoFoto->storeAs('cotizaciones/' . $cotizacionId . '/prendas', $nombreArchivo, 'public');
                             $rutaUrl = '/storage/' . $rutaGuardada;
 
-                            \Log::info('✅ Foto de prenda guardada en storage', [
+                            \Log::info(' Foto de prenda guardada en storage', [
                                 'prenda_index' => $prendaIndex,
                                 'ruta_guardada' => $rutaGuardada,
                                 'nombre_archivo' => $archivoFoto->getClientOriginalName(),
@@ -384,12 +384,12 @@ class CotizacionPrendaController extends Controller
                                     'updated_at' => now(),
                                 ]);
 
-                                \Log::info('✅ Foto de prenda guardada en BD', [
+                                \Log::info(' Foto de prenda guardada en BD', [
                                     'prenda_id' => $prenda->id,
                                 ]);
                             }
                         } catch (\Exception $e) {
-                            \Log::error('❌ Error guardando foto de prenda', [
+                            \Log::error(' Error guardando foto de prenda', [
                                 'error' => $e->getMessage(),
                                 'archivo' => $archivoFoto->getClientOriginalName(),
                             ]);
@@ -444,10 +444,10 @@ class CotizacionPrendaController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
-                            \Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
+                            \Log::info(' Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
                         } else {
                             $colorId = $color->id;
-                            \Log::info('✅ Color encontrado', ['color' => $telaInfo['color'], 'id' => $colorId]);
+                            \Log::info(' Color encontrado', ['color' => $telaInfo['color'], 'id' => $colorId]);
                         }
                     } else {
                         \Log::warning('⚠️ Color vacío en telaInfo', ['telaInfo' => $telaInfo]);
@@ -469,10 +469,10 @@ class CotizacionPrendaController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
-                            \Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
+                            \Log::info(' Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
                         } else {
                             $telaId = $tela->id;
-                            \Log::info('✅ Tela encontrada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
+                            \Log::info(' Tela encontrada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
                         }
                     } else {
                         \Log::warning('⚠️ Tela vacía en telaInfo', ['telaInfo' => $telaInfo]);
@@ -512,7 +512,7 @@ class CotizacionPrendaController extends Controller
                                 $telaCotIds[$telaIndex] = $prendaTelaCotId;
                             }
                             
-                            \Log::info('✅ Registro guardado en prenda_telas_cot (desde telas_multiples)', [
+                            \Log::info(' Registro guardado en prenda_telas_cot (desde telas_multiples)', [
                                 'prenda_telas_cot_id' => $prendaTelaCotId,
                                 'prenda_id' => $prenda->id,
                                 'variante_id' => $variante->id,
@@ -530,7 +530,7 @@ class CotizacionPrendaController extends Controller
                                 $telaCotIds[$telaIndex] = $existente->id;
                             }
                             
-                            \Log::info('ℹ️ Registro ya existe en prenda_telas_cot', [
+                            \Log::info(' Registro ya existe en prenda_telas_cot', [
                                 'prenda_id' => $prenda->id,
                                 'prenda_tela_cot_id' => $existente->id,
                                 'color' => $telaInfo['color'] ?? '',
@@ -539,7 +539,7 @@ class CotizacionPrendaController extends Controller
                             ]);
                         }
                     } else {
-                        \Log::error('❌ NO se puede guardar en prenda_telas_cot - falta algún dato', [
+                        \Log::error(' NO se puede guardar en prenda_telas_cot - falta algún dato', [
                             'colorId' => $colorId,
                             'telaId' => $telaId,
                             'variante_existe' => $variante ? 'SI' : 'NO',
@@ -557,7 +557,7 @@ class CotizacionPrendaController extends Controller
                 
                 foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
                     if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
-                        \Log::info('🖼️ Encontrado grupo de fotos de tela', [
+                        \Log::info(' Encontrado grupo de fotos de tela', [
                             'prenda_index' => $prendaIndex,
                             'tela_index' => $telaIndex,
                             'cantidad_archivos' => count($telaData['fotos']),
@@ -594,7 +594,7 @@ class CotizacionPrendaController extends Controller
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
-                                \Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
+                                \Log::info(' Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
                             } else {
                                 $colorId = $color->id;
                             }
@@ -614,7 +614,7 @@ class CotizacionPrendaController extends Controller
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
-                                \Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
+                                \Log::info(' Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
                             } else {
                                 $telaId = $tela->id;
                             }
@@ -632,7 +632,7 @@ class CotizacionPrendaController extends Controller
                                 'updated_at' => now(),
                             ]);
                             
-                            \Log::info('✅ Registro guardado en prenda_telas_cot', [
+                            \Log::info(' Registro guardado en prenda_telas_cot', [
                                 'prenda_telas_cot_id' => $prendaTelaCotId,
                                 'prenda_id' => $prenda->id,
                                 'variante_id' => $variante->id,
@@ -648,7 +648,7 @@ class CotizacionPrendaController extends Controller
                                     $rutaGuardada = $archivoFoto->store("cotizaciones/{$cotizacionId}/telas", 'public');
                                     $rutaUrl = Storage::url($rutaGuardada);
 
-                                    \Log::info('✅ Foto de tela guardada en storage', [
+                                    \Log::info(' Foto de tela guardada en storage', [
                                         'prenda_index' => $prendaIndex,
                                         'tela_index' => $telaIndex,
                                         'ruta_guardada' => $rutaGuardada,
@@ -681,7 +681,7 @@ class CotizacionPrendaController extends Controller
                                         'updated_at' => now(),
                                     ]);
 
-                                    \Log::info('✅ Foto de tela guardada en prenda_tela_fotos_cot', [
+                                    \Log::info(' Foto de tela guardada en prenda_tela_fotos_cot', [
                                         'prenda_id' => $prenda->id,
                                         'prenda_tela_cot_id' => $prendaTelaCotId,
                                         'color_id' => $colorId ?? 'N/A',
@@ -691,7 +691,7 @@ class CotizacionPrendaController extends Controller
                                         'orden' => $fotoIndex + 1,
                                     ]);
                                 } catch (\Exception $e) {
-                                    \Log::error('❌ Error guardando foto de tela', [
+                                    \Log::error(' Error guardando foto de tela', [
                                         'error' => $e->getMessage(),
                                         'archivo' => $archivoFoto->getClientOriginalName(),
                                     ]);
@@ -703,6 +703,6 @@ class CotizacionPrendaController extends Controller
             }
         }
 
-        Log::info('✅ Procesamiento de imágenes completado', ['cotizacion_id' => $cotizacionId]);
+        Log::info(' Procesamiento de imágenes completado', ['cotizacion_id' => $cotizacionId]);
     }
 }

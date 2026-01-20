@@ -99,7 +99,7 @@ class ProcesoPrendaObserver
                         'fecha_ultimo_proceso' => $proceso->fecha_fin ?? $proceso->created_at
                     ]);
                     
-                    \Log::info('✅ [Observer] Área actualizada (En Progreso)', [
+                    \Log::info(' [Observer] Área actualizada (En Progreso)', [
                         'numero_pedido' => $numeroPedido,
                         'area_nueva' => $proceso->proceso,
                         'estado_proceso' => $proceso->estado_proceso,
@@ -122,7 +122,7 @@ class ProcesoPrendaObserver
                         'fecha_ultimo_proceso' => $proceso->fecha_fin ?? $proceso->created_at
                     ]);
                     
-                    \Log::info('✅ [Observer] Área actualizada (Pendiente)', [
+                    \Log::info(' [Observer] Área actualizada (Pendiente)', [
                         'numero_pedido' => $numeroPedido,
                         'area_nueva' => $proceso->proceso,
                         'estado_proceso' => $proceso->estado_proceso,
@@ -141,14 +141,14 @@ class ProcesoPrendaObserver
                     'fecha_ultimo_proceso' => $ultimoProceso->fecha_fin ?? $ultimoProceso->created_at
                 ]);
                 
-                \Log::info('✅ [Observer] Área actualizada (Último proceso)', [
+                \Log::info(' [Observer] Área actualizada (Último proceso)', [
                     'numero_pedido' => $numeroPedido,
                     'area_nueva' => $ultimoProceso->proceso,
                     'estado_proceso' => $ultimoProceso->estado_proceso,
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error('❌ Error actualizando área del pedido: ' . $e->getMessage(), [
+            \Log::error(' Error actualizando área del pedido: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
         }
@@ -188,7 +188,7 @@ class ProcesoPrendaObserver
                 ->orderBy('id', 'DESC')
                 ->first();
 
-            \Log::info("📋 Procesos disponibles después de eliminar", [
+            \Log::info(" Procesos disponibles después de eliminar", [
                 'numero_pedido' => $numeroPedido,
                 'procesos_totales' => ProcesoPrenda::where('numero_pedido', $numeroPedido)->count(),
                 'ultimo_proceso' => $ultimoProceso ? $ultimoProceso->proceso : 'NINGUNO',
@@ -204,7 +204,7 @@ class ProcesoPrendaObserver
                     'fecha_ultimo_proceso' => $ultimoProceso->fecha_fin ?? $ultimoProceso->fecha_inicio
                 ]);
                 
-                \Log::info("✅ Área actualizada al eliminar proceso", [
+                \Log::info(" Área actualizada al eliminar proceso", [
                     'numero_pedido' => $numeroPedido,
                     'proceso_eliminado' => $procesoEliminado,
                     'area_anterior' => $pedido->area,
@@ -218,7 +218,7 @@ class ProcesoPrendaObserver
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error('❌ Error actualizando área al eliminar proceso: ' . $e->getMessage(), [
+            \Log::error(' Error actualizando área al eliminar proceso: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
         }

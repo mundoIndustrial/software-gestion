@@ -59,7 +59,7 @@ class PedidoLogoAreaManager {
             const data = await response.json();
 
             if (data.success) {
-                console.log('✅ Área cambiada:', data.area);
+                console.log(' Área cambiada:', data.area);
                 
                 // Mostrar notificación
                 this.mostrarNotificacion('success', `Área actualizada: ${nuevaArea}`);
@@ -168,7 +168,7 @@ class PedidoLogoAreaManager {
 
                 <div style="background: #fff7ed; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; border-left: 4px solid #f97316;">
                     <p style="margin: 0; color: #92400e; font-size: 0.875rem;">
-                        <strong>ℹ️ Nota:</strong> Se registrará quién y cuándo hizo el cambio.
+                        <strong> Nota:</strong> Se registrará quién y cuándo hizo el cambio.
                     </p>
                 </div>
 
@@ -271,7 +271,7 @@ class PedidoLogoAreaManager {
      */
     formatearArea(area) {
         const mapa = {
-            'Creacion de orden': '📋 Creación de Orden',
+            'Creacion de orden': ' Creación de Orden',
             'pendiente_confirmar_diseño': '⏳ Pendiente Confirmar Diseño',
             'en_diseño': '✏️ En Diseño',
             'logo': '🎨 Logo (Producción)',

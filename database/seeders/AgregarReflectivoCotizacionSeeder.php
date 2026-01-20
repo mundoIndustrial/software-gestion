@@ -23,6 +23,6 @@ class AgregarReflectivoCotizacionSeeder extends Seeder
             ]
         );
 
-        $this->command->info('✅ Tipo REFLECTIVO (RF) agregado correctamente');
+        $this->command->info(' Tipo REFLECTIVO (RF) agregado correctamente');
     }
 }

@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
         const pedidoId = button.getAttribute('data-pedido-id'); // ID de pedidos_produccion
-        const logoPedidoId = button.getAttribute('data-logo-pedido-id'); // ✅ ID específico para logo_pedidos
+        const logoPedidoId = button.getAttribute('data-logo-pedido-id'); //  ID específico para logo_pedidos
         let tipoCotizacion = button.getAttribute('data-tipo-cotizacion');
         // Detectar si es LOGO explícito (atributo agregado a la vista)
         const esLogoAttr = button.getAttribute('data-es-logo');

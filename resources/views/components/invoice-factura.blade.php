@@ -519,14 +519,14 @@
         <div class="invoice-meta">
             <!-- Cliente -->
             <div class="meta-section">
-                <h3>📋 Información del Cliente</h3>
+                <h3> Información del Cliente</h3>
                 <p><span class="label">CLIENTE:</span><br><span class="value">{{ $cliente }}</span></p>
                 <p style="margin-top: 10px;"><span class="label">ASESOR:</span><br><span class="value">{{ $asesor }}</span></p>
             </div>
 
             <!-- Pedido -->
             <div class="meta-section">
-                <h3>📦 Información del Pedido</h3>
+                <h3> Información del Pedido</h3>
                 <p><span class="label">NÚMERO:</span><br><span class="value">#{{ $numeroPedido }}</span></p>
                 <p style="margin-top: 10px;"><span class="label">FORMA DE PAGO:</span><br><span class="value">{{ $formaPago }}</span></p>
             </div>
@@ -624,7 +624,7 @@
         <!-- Notas -->
         @if($orden)
             <div class="notes-section">
-                <h4>📋 Observaciones</h4>
+                <h4> Observaciones</h4>
                 @if($orden->novedades)
                     <p><strong>Novedades:</strong> {{ $orden->novedades }}</p>
                 @endif

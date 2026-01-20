@@ -67,7 +67,7 @@ class CotizacionDataExtractorService
             // Obtener fotos de prenda
             $fotos = $this->extraerFotos($prenda->id);
             
-            // ✅ Obtener logos de prenda
+            //  Obtener logos de prenda
             $logos = $this->extraerLogos($prenda->id);
 
             $prendasProcesadas[] = [
@@ -183,7 +183,7 @@ class CotizacionDataExtractorService
                 'nombre_tela' => $nombreTela,
                 'referencia' => $telaData['referencia'] ?? '',
                 'color_id' => $color?->id ?? null,
-                'tela_id' => $tela?->id ?? null,  // ✅ BUSCAR POR NOMBRE
+                'tela_id' => $tela?->id ?? null,  //  BUSCAR POR NOMBRE
                 'fotos' => [],  // Las fotos de tela no se usan en pedidos
             ];
         }

@@ -360,7 +360,7 @@ const DataLoader = {
             
             const newsFeed = document.getElementById('news-feed');
             if (!newsFeed) {
-                console.error('❌ Elemento news-feed no encontrado');
+                console.error(' Elemento news-feed no encontrado');
                 return;
             }
             
@@ -383,12 +383,12 @@ const DataLoader = {
             'order_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '📦' },
             'status_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '🔄' },
             'area_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '📍' },
-            'delivery_registered': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '✅' },
-            'order_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '❌' }
+            'delivery_registered': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '' },
+            'order_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '' }
         };
         
             newsFeed.innerHTML = data.map(item => {
-                const config = eventTypeConfig[item.event_type] || { badge: 'EVENTO', badgeClass: 'actualizado', icon: '📋' };
+                const config = eventTypeConfig[item.event_type] || { badge: 'EVENTO', badgeClass: 'actualizado', icon: '' };
                 
                 // Botón de ver detalles si hay metadata
                 const hasDetails = item.metadata && (item.metadata.changes || item.metadata.data);
@@ -420,7 +420,7 @@ const DataLoader = {
             // Guardar datos en memoria para el modal
             window.newsData = data;
         } catch (error) {
-            console.error('❌ Error cargando noticias:', error);
+            console.error(' Error cargando noticias:', error);
             const newsFeed = document.getElementById('news-feed');
             if (newsFeed) {
                 newsFeed.innerHTML = '<div style="padding: 2rem; text-align: center; color: #ef4444;">Error cargando notificaciones. Ver consola.</div>';
@@ -471,10 +471,10 @@ function showModal(title, message, type = 'info') {
     modal.className = 'notification-modal';
     
     const iconMap = {
-        'success': '✅',
-        'error': '❌',
+        'success': '',
+        'error': '',
         'warning': '⚠️',
-        'info': 'ℹ️',
+        'info': '',
         'question': '❓'
     };
     
@@ -549,7 +549,7 @@ function showNotificationDetails(newsId, eventType) {
     
     if (eventType === 'record_deleted' && metadata.data) {
         // Mostrar datos del registro eliminado
-        detailsHTML = '<h3>📋 Datos del registro eliminado:</h3><div class="details-grid">';
+        detailsHTML = '<h3> Datos del registro eliminado:</h3><div class="details-grid">';
         for (const [key, value] of Object.entries(metadata.data)) {
             const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             detailsHTML += `

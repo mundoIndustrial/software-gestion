@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class CotizacionMultiplesTelasTest extends TestCase
 {
-    use DatabaseTransactions; // ✅ No afecta BD real
+    use DatabaseTransactions; //  No afecta BD real
     
     protected CotizacionPrendaService $cotizacionPrendaService;
     protected CotizacionRepository $cotizacionRepository;
@@ -51,7 +51,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             'tipo' => 'P',
             'es_borrador' => false
         ]);
-        echo "✅ Cotización creada: {$cotizacion->numero_cotizacion}\n";
+        echo " Cotización creada: {$cotizacion->numero_cotizacion}\n";
 
         // Datos de prenda con múltiples telas
         $prendaData = [
@@ -114,7 +114,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             ]
         ];
 
-        echo "\n📦 Datos de prenda:\n";
+        echo "\n Datos de prenda:\n";
         echo "   - Nombre: {$prendaData['nombre_producto']}\n";
         echo "   - Telas: " . count($prendaData['telas']) . "\n";
         foreach ($prendaData['telas'] as $idx => $tela) {
@@ -127,7 +127,7 @@ class CotizacionMultiplesTelasTest extends TestCase
                 $cotizacion,
                 $prendaData
             );
-            echo "\n✅ Prenda guardada correctamente\n";
+            echo "\n Prenda guardada correctamente\n";
         } catch (\Exception $e) {
             $this->fail("Error al guardar prenda: " . $e->getMessage());
         }
@@ -144,19 +144,19 @@ class CotizacionMultiplesTelasTest extends TestCase
             ->first();
         
         $this->assertNotNull($prenda, "La prenda debería existir");
-        echo "\n✅ PRENDA GUARDADA\n";
+        echo "\n PRENDA GUARDADA\n";
         echo "   - ID: {$prenda->id}\n";
         echo "   - Nombre: {$prenda->nombre_producto}\n";
 
         // 2. Verificar que la variante se guardó
         $variante = VarianteCot::where('prenda_cot_id', $prenda->id)->first();
         $this->assertNotNull($variante, "La variante debería existir");
-        echo "\n✅ VARIANTE GUARDADA\n";
+        echo "\n VARIANTE GUARDADA\n";
         echo "   - ID: {$variante->id}\n";
 
         // 3. Verificar fotos de telas
         $fotosTelas = PrendaTelaFotoCot::where('prenda_cot_id', $prenda->id)->get();
-        echo "\n✅ FOTOS DE TELAS GUARDADAS: " . count($fotosTelas) . "\n";
+        echo "\n FOTOS DE TELAS GUARDADAS: " . count($fotosTelas) . "\n";
 
         $this->assertCount(4, $fotosTelas, "Debería haber exactamente 4 fotos (1+2+1)");
 
@@ -173,7 +173,7 @@ class CotizacionMultiplesTelasTest extends TestCase
 
         // 4. Verificación de referencias únicas
         $referencias = ['ALG-001', 'POL-002', 'LIN-003'];
-        echo "\n✅ REFERENCIAS POR TELA\n";
+        echo "\n REFERENCIAS POR TELA\n";
         
         foreach ($referencias as $ref) {
             $fotos = PrendaTelaFotoCot::where('prenda_cot_id', $prenda->id)
@@ -185,7 +185,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         }
 
         // 5. Verificación de colores
-        echo "\n✅ COLORES POR TELA\n";
+        echo "\n COLORES POR TELA\n";
         $colores = [10, 15, 20];
         $telaIdx = 0;
         
@@ -198,7 +198,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         }
 
         // 6. Verificación de orden de fotos
-        echo "\n✅ ORDEN DE FOTOS POR TELA\n";
+        echo "\n ORDEN DE FOTOS POR TELA\n";
         
         $fotoPol = PrendaTelaFotoCot::where('prenda_cot_id', $prenda->id)
             ->where('referencia', 'POL-002')
@@ -210,11 +210,11 @@ class CotizacionMultiplesTelasTest extends TestCase
         foreach ($fotoPol as $idx => $foto) {
             $expectedOrden = $idx + 1;
             $this->assertEquals($expectedOrden, $foto->orden, "Orden de foto debe ser $expectedOrden");
-            echo "   POL-002 Foto {$foto->orden}: ✅\n";
+            echo "   POL-002 Foto {$foto->orden}: \n";
         }
 
         // 7. Verificación de timestamps
-        echo "\n✅ TIMESTAMPS\n";
+        echo "\n TIMESTAMPS\n";
         foreach ($fotosTelas as $foto) {
             $this->assertNotNull($foto->created_at);
             echo "   - Foto creada: {$foto->created_at->format('Y-m-d H:i:s')}\n";
@@ -222,7 +222,7 @@ class CotizacionMultiplesTelasTest extends TestCase
 
         echo "\n";
         echo "════════════════════════════════════════════════════════\n";
-        echo "✅ TODOS LOS TESTS PASARON\n";
+        echo " TODOS LOS TESTS PASARON\n";
         echo "════════════════════════════════════════════════════════\n";
         echo "\n";
     }
@@ -267,7 +267,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         $prenda = PrendaCot::where('cotizacion_id', $cotizacion->id)->first();
         $foto = PrendaTelaFotoCot::where('prenda_cot_id', $prenda->id)->first();
 
-        echo "\n✅ ESTRUCTURA DE DATOS EN BD\n";
+        echo "\n ESTRUCTURA DE DATOS EN BD\n";
         echo "   prenda_cot_id: " . $foto->prenda_cot_id . "\n";
         echo "   referencia: " . $foto->referencia . "\n";
         echo "   color_id: " . $foto->color_id . "\n";
@@ -282,7 +282,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         $this->assertEquals(12345, $foto->tamaño);
 
         echo "\n════════════════════════════════════════════════════════\n";
-        echo "✅ ESTRUCTURA CORRECTA\n";
+        echo " ESTRUCTURA CORRECTA\n";
         echo "════════════════════════════════════════════════════════\n";
         echo "\n";
     }

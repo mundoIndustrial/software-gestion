@@ -77,7 +77,7 @@ class EspecificacionesCapturadoTest extends TestCase
         $decodificado = json_decode($json, true);
         $this->assertEquals($especificaciones, $decodificado);
 
-        echo "\n✅ TEST PASADO: JavaScript captura especificaciones correctamente\n";
+        echo "\n TEST PASADO: JavaScript captura especificaciones correctamente\n";
         echo "   Estructura: " . json_encode($especificaciones, JSON_PRETTY_PRINT) . "\n";
         $this->assertTrue(true);
     }
@@ -105,7 +105,7 @@ class EspecificacionesCapturadoTest extends TestCase
         $this->assertEquals('', $decodificado['regimen'][0]['observacion']);
         $this->assertEquals('Solo para pequeños negocios', $decodificado['regimen'][1]['observacion']);
 
-        echo "\n✅ TEST PASADO: Observaciones vacías se manejan correctamente\n";
+        echo "\n TEST PASADO: Observaciones vacías se manejan correctamente\n";
         $this->assertTrue(true);
     }
 
@@ -130,7 +130,7 @@ class EspecificacionesCapturadoTest extends TestCase
             $decodificado['disponibilidad'][0]['observacion']
         );
 
-        echo "\n✅ TEST PASADO: Caracteres especiales en observaciones se preservan\n";
+        echo "\n TEST PASADO: Caracteres especiales en observaciones se preservan\n";
         $this->assertTrue(true);
     }
 
@@ -176,7 +176,7 @@ class EspecificacionesCapturadoTest extends TestCase
         // Verificar que todas las categorías se preservan
         $this->assertEquals($especificaciones, $decodificado);
 
-        echo "\n✅ TEST PASADO: Todas las categorías se capturan correctamente\n";
+        echo "\n TEST PASADO: Todas las categorías se capturan correctamente\n";
         echo "   Total categorías: " . count($decodificado) . "\n";
         $this->assertTrue(true);
     }

@@ -20,9 +20,9 @@ return new class extends Migration
                 Schema::table('prendas_pedido', function (Blueprint $table) {
                     $table->unsignedBigInteger('pedido_produccion_id')->nullable()->after('id');
                 });
-                \Log::info('✅ [Migración] Columna pedido_produccion_id agregada');
+                \Log::info(' [Migración] Columna pedido_produccion_id agregada');
             } else {
-                \Log::info('ℹ️ [Migración] Columna pedido_produccion_id ya existe');
+                \Log::info(' [Migración] Columna pedido_produccion_id ya existe');
             }
 
             // 2. Verificar si número_pedido aún existe (podría estar siendo usado)
@@ -44,26 +44,26 @@ return new class extends Migration
                         )
                         WHERE pp.numero_pedido IS NOT NULL AND pp.pedido_produccion_id IS NULL
                     ');
-                    \Log::info('✅ [Migración] Datos migrados de numero_pedido a pedido_produccion_id');
+                    \Log::info(' [Migración] Datos migrados de numero_pedido a pedido_produccion_id');
                 } else {
-                    \Log::info('ℹ️ [Migración] Datos ya migrados o numero_pedido vacío');
+                    \Log::info(' [Migración] Datos ya migrados o numero_pedido vacío');
                 }
 
                 // Eliminar FK existente que apunta a numero_pedido
                 try {
                     DB::statement('ALTER TABLE prendas_pedido DROP FOREIGN KEY fk_prendas_numero_pedido');
-                    \Log::info('✅ [Migración] FK fk_prendas_numero_pedido eliminada');
+                    \Log::info(' [Migración] FK fk_prendas_numero_pedido eliminada');
                 } catch (\Exception $e) {
-                    \Log::info('ℹ️ [Migración] FK fk_prendas_numero_pedido no existe o ya fue eliminada');
+                    \Log::info(' [Migración] FK fk_prendas_numero_pedido no existe o ya fue eliminada');
                 }
 
                 // Eliminar columna numero_pedido
                 Schema::table('prendas_pedido', function (Blueprint $table) {
                     $table->dropColumn('numero_pedido');
                 });
-                \Log::info('✅ [Migración] Columna numero_pedido eliminada');
+                \Log::info(' [Migración] Columna numero_pedido eliminada');
             } else {
-                \Log::info('ℹ️ [Migración] Columna numero_pedido ya fue eliminada');
+                \Log::info(' [Migración] Columna numero_pedido ya fue eliminada');
             }
 
             // 3. Actualizar pedido_produccion_id a NOT NULL
@@ -84,9 +84,9 @@ return new class extends Migration
                         ->on('pedidos_produccion')
                         ->onDelete('cascade');
                 });
-                \Log::info('✅ [Migración] Nueva FK agregada en pedido_produccion_id');
+                \Log::info(' [Migración] Nueva FK agregada en pedido_produccion_id');
             } else {
-                \Log::info('ℹ️ [Migración] FK en pedido_produccion_id ya existe');
+                \Log::info(' [Migración] FK en pedido_produccion_id ya existe');
             }
 
             // 5. Eliminar FKs de campos de variantes PRIMERO
@@ -129,9 +129,9 @@ return new class extends Migration
                 Schema::table('prendas_pedido', function (Blueprint $table) use ($columnsToDropVariantes) {
                     $table->dropColumn($columnsToDropVariantes);
                 });
-                \Log::info('✅ [Migración] Columnas de variantes eliminadas: ' . implode(', ', $columnsToDropVariantes));
+                \Log::info(' [Migración] Columnas de variantes eliminadas: ' . implode(', ', $columnsToDropVariantes));
             } else {
-                \Log::info('ℹ️ [Migración] Columnas de variantes ya fueron eliminadas');
+                \Log::info(' [Migración] Columnas de variantes ya fueron eliminadas');
             }
 
             // 7. Eliminar campos de reflectivo
@@ -151,9 +151,9 @@ return new class extends Migration
                 Schema::table('prendas_pedido', function (Blueprint $table) use ($columnsToDropReflectivo) {
                     $table->dropColumn($columnsToDropReflectivo);
                 });
-                \Log::info('✅ [Migración] Columnas de reflectivo eliminadas: ' . implode(', ', $columnsToDropReflectivo));
+                \Log::info(' [Migración] Columnas de reflectivo eliminadas: ' . implode(', ', $columnsToDropReflectivo));
             } else {
-                \Log::info('ℹ️ [Migración] Columnas de reflectivo ya fueron eliminadas');
+                \Log::info(' [Migración] Columnas de reflectivo ya fueron eliminadas');
             }
 
             // 8. Eliminar campos redundantes
@@ -173,14 +173,14 @@ return new class extends Migration
                 Schema::table('prendas_pedido', function (Blueprint $table) use ($columnsToDropRedundantes) {
                     $table->dropColumn($columnsToDropRedundantes);
                 });
-                \Log::info('✅ [Migración] Columnas redundantes eliminadas: ' . implode(', ', $columnsToDropRedundantes));
+                \Log::info(' [Migración] Columnas redundantes eliminadas: ' . implode(', ', $columnsToDropRedundantes));
             } else {
-                \Log::info('ℹ️ [Migración] Columnas redundantes ya fueron eliminadas');
+                \Log::info(' [Migración] Columnas redundantes ya fueron eliminadas');
             }
 
-            \Log::info('✅ [Migración] Tabla prendas_pedido normalizada exitosamente');
+            \Log::info(' [Migración] Tabla prendas_pedido normalizada exitosamente');
         } catch (\Exception $e) {
-            \Log::error('❌ [Migración] Error', [
+            \Log::error(' [Migración] Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

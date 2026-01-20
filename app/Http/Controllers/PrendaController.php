@@ -23,7 +23,7 @@ class PrendaController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        \Log::info('📋 Listando prendas');
+        \Log::info(' Listando prendas');
 
         try {
             $pagina = $request->get('page', 1);
@@ -43,7 +43,7 @@ class PrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error listando prendas', ['error' => $e->getMessage()]);
+            \Log::error(' Error listando prendas', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al listar prendas',
@@ -67,7 +67,7 @@ class PrendaController extends Controller
             // Ejecutar acción
             $prenda = $this->crearPrendaAction->ejecutar($dto);
 
-            \Log::info('✅ Prenda creada exitosamente', [
+            \Log::info(' Prenda creada exitosamente', [
                 'prenda_id' => $prenda->id,
             ]);
 
@@ -78,7 +78,7 @@ class PrendaController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error creando prenda', [
+            \Log::error(' Error creando prenda', [
                 'error' => $e->getMessage(),
                 'nombre' => $request->input('nombre_producto'),
             ]);
@@ -106,7 +106,7 @@ class PrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error obteniendo prenda', [
+            \Log::error(' Error obteniendo prenda', [
                 'prenda_id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -129,7 +129,7 @@ class PrendaController extends Controller
             $dto = CrearPrendaDTO::fromRequest($request->validated());
             $prenda = $this->prendaService->actualizar($id, $dto);
 
-            \Log::info('✅ Prenda actualizada', ['prenda_id' => $id]);
+            \Log::info(' Prenda actualizada', ['prenda_id' => $id]);
 
             return response()->json([
                 'success' => true,
@@ -138,7 +138,7 @@ class PrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error actualizando prenda', [
+            \Log::error(' Error actualizando prenda', [
                 'prenda_id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -160,7 +160,7 @@ class PrendaController extends Controller
         try {
             $this->prendaService->eliminar($id);
 
-            \Log::info('✅ Prenda eliminada', ['prenda_id' => $id]);
+            \Log::info(' Prenda eliminada', ['prenda_id' => $id]);
 
             return response()->json([
                 'success' => true,
@@ -168,7 +168,7 @@ class PrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error eliminando prenda', [
+            \Log::error(' Error eliminando prenda', [
                 'prenda_id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -212,7 +212,7 @@ class PrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error buscando prendas', ['error' => $e->getMessage()]);
+            \Log::error(' Error buscando prendas', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,
@@ -237,7 +237,7 @@ class PrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error obteniendo estadísticas', ['error' => $e->getMessage()]);
+            \Log::error(' Error obteniendo estadísticas', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,

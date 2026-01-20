@@ -94,7 +94,7 @@ class LogoPedidoService
             // Copiar prendas técnicas
             $this->copiarPrendasTecnicas($logoCotizacionId, $logoPedidoId);
 
-            \Log::info('✅ Logo pedido creado exitosamente', [
+            \Log::info(' Logo pedido creado exitosamente', [
                 'logo_pedido_id' => $logoPedidoId,
                 'numero_pedido' => $numeroLogoPedido,
                 'cotizacion_id' => $cotizacion->id
@@ -307,7 +307,7 @@ class LogoPedidoService
                     'updated_at' => now()
                 ]);
 
-                Log::info('✅ [LogoPedidoService] Logo pedido CREADO', [
+                Log::info(' [LogoPedidoService] Logo pedido CREADO', [
                     'logo_pedido_id' => $logoPedidoId,
                     'numero_pedido' => $numeroLogoPedido,
                 ]);
@@ -343,7 +343,7 @@ class LogoPedidoService
                     throw new \Exception("No se encontró logo_pedido con ID: $logoPedidoId");
                 }
 
-                Log::info('✅ [LogoPedidoService] Logo pedido ACTUALIZADO', [
+                Log::info(' [LogoPedidoService] Logo pedido ACTUALIZADO', [
                     'logo_pedido_id' => $logoPedidoId,
                 ]);
             }
@@ -361,7 +361,7 @@ class LogoPedidoService
                     ]);
                 }
 
-                Log::info('✅ [LogoPedidoService] Fotos agregadas', [
+                Log::info(' [LogoPedidoService] Fotos agregadas', [
                     'total_fotos' => count($fotos),
                 ]);
             }
@@ -380,7 +380,7 @@ class LogoPedidoService
                     ->first();
             }
 
-            Log::info('✅ [LogoPedidoService::guardarDatos] Completado', [
+            Log::info(' [LogoPedidoService::guardarDatos] Completado', [
                 'logo_pedido_id' => $logoPedidoId,
                 'cantidad' => $cantidad,
             ]);
@@ -394,7 +394,7 @@ class LogoPedidoService
                 cotizacionId: $logoPedido->cotizacion_id,
             );
             $this->eventDispatcher->dispatch($event);
-            Log::info('✅ Evento LogoPedidoCreado emitido', [
+            Log::info(' Evento LogoPedidoCreado emitido', [
                 'evento' => $event->getEventName(),
                 'logo_pedido_id' => $logoPedidoId,
             ]);
@@ -411,7 +411,7 @@ class LogoPedidoService
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('❌ [LogoPedidoService::guardarDatos] Error', [
+            Log::error(' [LogoPedidoService::guardarDatos] Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

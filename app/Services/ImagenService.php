@@ -74,7 +74,7 @@ class ImagenService
             // Retornar la URL relativa para acceso web via storage symlink
             $rutaRelativa = "storage/cotizaciones/{$cotizacionId}/{$tipo}/{$nombreWebP}";
             
-            \Log::info("✅ Imagen guardada", [
+            \Log::info(" Imagen guardada", [
                 'nombre' => $nombreWebP,
                 'tipo' => $tipo,
                 'cotizacion_id' => $cotizacionId,
@@ -86,7 +86,7 @@ class ImagenService
             return $rutaRelativa;
             
         } catch (\Exception $e) {
-            \Log::error("❌ Error al guardar imagen", [
+            \Log::error(" Error al guardar imagen", [
                 'error' => $e->getMessage(),
                 'tipo' => $tipo,
                 'cotizacion_id' => $cotizacionId,
@@ -152,7 +152,7 @@ class ImagenService
             return false;
             
         } catch (\Exception $e) {
-            \Log::error("❌ Error al eliminar imagen", [
+            \Log::error(" Error al eliminar imagen", [
                 'error' => $e->getMessage(),
                 'ruta' => $rutaCompleta ?? 'desconocida'
             ]);
@@ -180,7 +180,7 @@ class ImagenService
             return false;
             
         } catch (\Exception $e) {
-            \Log::error("❌ Error al eliminar carpeta", [
+            \Log::error(" Error al eliminar carpeta", [
                 'error' => $e->getMessage(),
                 'cotizacion_id' => $cotizacionId
             ]);

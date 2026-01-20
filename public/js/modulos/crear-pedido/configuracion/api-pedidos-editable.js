@@ -189,7 +189,7 @@ class PedidosEditableWebClient {
         }
     }
 
-    /**     * ✅ DETECTAR SI PEDIDO CONTIENE ARCHIVOS
+    /**     *  DETECTAR SI PEDIDO CONTIENE ARCHIVOS
      * Revisa si hay procesos con imagenes que sean File objects
      */
     tieneArchivosEnPedido(pedidoData) {
@@ -202,7 +202,7 @@ class PedidosEditableWebClient {
                     if (procesoData?.imagenes && Array.isArray(procesoData.imagenes)) {
                         for (const img of procesoData.imagenes) {
                             if (img instanceof File) {
-                                console.log(`✅ Archivo encontrado en proceso ${tipoProceso}:`, img.name);
+                                console.log(` Archivo encontrado en proceso ${tipoProceso}:`, img.name);
                                 return true;
                             }
                         }
@@ -215,10 +215,10 @@ class PedidosEditableWebClient {
                 for (const imgObj of item.imagenes) {
                     // Las imágenes pueden ser File directo o objeto con propiedad 'file'
                     if (imgObj instanceof File) {
-                        console.log(`✅ Archivo encontrado en imagen de prenda:`, imgObj.name);
+                        console.log(` Archivo encontrado en imagen de prenda:`, imgObj.name);
                         return true;
                     } else if (imgObj.file instanceof File) {
-                        console.log(`✅ Archivo encontrado en imagen de prenda:`, imgObj.file.name);
+                        console.log(` Archivo encontrado en imagen de prenda:`, imgObj.file.name);
                         return true;
                     }
                 }
@@ -230,10 +230,10 @@ class PedidosEditableWebClient {
                     if (tela.imagenes && Array.isArray(tela.imagenes)) {
                         for (const telaImgObj of tela.imagenes) {
                             if (telaImgObj instanceof File) {
-                                console.log(`✅ Archivo encontrado en tela:`, telaImgObj.name);
+                                console.log(` Archivo encontrado en tela:`, telaImgObj.name);
                                 return true;
                             } else if (telaImgObj.file instanceof File) {
-                                console.log(`✅ Archivo encontrado en tela:`, telaImgObj.file.name);
+                                console.log(` Archivo encontrado en tela:`, telaImgObj.file.name);
                                 return true;
                             }
                         }
@@ -246,7 +246,7 @@ class PedidosEditableWebClient {
     }
 
     /**
-     * ✅ CONVERTIR PEDIDO A FormData
+     *  CONVERTIR PEDIDO A FormData
      * Maneja archivos de procesos, imágenes de prendas, etc.
      */
     convertirPedidoAFormData(pedidoData) {
@@ -260,7 +260,7 @@ class PedidosEditableWebClient {
         // Procesar items
         if (pedidoData.items && Array.isArray(pedidoData.items)) {
             pedidoData.items.forEach((item, itemIdx) => {
-                // ✅ SI ES EPP, PROCESARLO DIFERENTE
+                //  SI ES EPP, PROCESARLO DIFERENTE
                 if (item.tipo === 'epp') {
                     console.log(`🛡️ Procesando EPP en FormData: índice ${itemIdx}`);
                     

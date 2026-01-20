@@ -195,7 +195,7 @@ const AsistenciaHorasTrabajadas = (() => {
                 iconoEstado = '✓';
             } else if (calcResult.estado === 'incompleta_excepcion') {
                 colorEstado = '#f39c12';
-                iconoEstado = 'ℹ️';
+                iconoEstado = '';
             } else if (calcResult.estado === 'incompleta') {
                 colorEstado = '#e74c3c';
                 iconoEstado = '✗';

@@ -13,12 +13,12 @@
 **Problema:** Repetición de `document.getElementById()` con validaciones
 
 ```javascript
-// ❌ ACTUAL (Repetido 50+ veces)
+//  ACTUAL (Repetido 50+ veces)
 const element = document.getElementById('id');
 if (!element) return;
 element.value = '';
 
-// ✅ SOLUCIÓN: Crear helpers
+//  SOLUCIÓN: Crear helpers
 // En archivo: public/js/utilidades/dom-utils.js
 function getElement(id) { /* retorna elemento o null */ }
 function setValues(ids, value) { /* limpia múltiples */ }
@@ -34,13 +34,13 @@ function toggleElements(ids, show) { /* show/hide */ }
 **Problema:** 100+ líneas limpiando múltiples storages y elementos
 
 ```javascript
-// ❌ ACTUAL (Repetido patrón)
+//  ACTUAL (Repetido patrón)
 if (window.imagenesPrendaStorage) window.imagenesPrendaStorage.limpiar();
 if (window.telasAgregadas) window.telasAgregadas.length = 0;
 if (window.cantidadesTallas) window.cantidadesTallas = {};
 // ... 20 operaciones más
 
-// ✅ SOLUCIÓN: Clase DOMCleaner
+//  SOLUCIÓN: Clase DOMCleaner
 class ModalCleanup {
     limpiarFormulario() { /* limpia inputs */ }
     limpiarStorages() { /* limpia todos los storages */ }
@@ -59,7 +59,7 @@ class ModalCleanup {
 **Problema:** Método de 1000+ líneas, múltiples responsabilidades
 
 ```javascript
-// ❌ ACTUAL
+//  ACTUAL
 agregarPrendaNueva() {
     // 400 líneas de validación
     // 200 líneas de procesamiento de imágenes
@@ -68,7 +68,7 @@ agregarPrendaNueva() {
     // ...
 }
 
-// ✅ SOLUCIÓN: Dividir en métodos privados
+//  SOLUCIÓN: Dividir en métodos privados
 class GestionItemsUI {
     agregarPrendaNueva() {
         if (!this.#validarFormularioPrenda()) return;
@@ -96,7 +96,7 @@ class GestionItemsUI {
 **Problema:** Lógica de procesar telas repetida 3 veces
 
 ```javascript
-// ❌ ACTUAL (Repetido)
+//  ACTUAL (Repetido)
 if (prenda.tela || prenda.color) {
     window.telasAgregadas.length = 0;
     const telaObj = {
@@ -109,7 +109,7 @@ if (prenda.tela || prenda.color) {
     window.telasAgregadas.push(telaObj);
 }
 
-// ✅ SOLUCIÓN: TelaProcessor
+//  SOLUCIÓN: TelaProcessor
 class TelaProcessor {
     static crearTelaObj(prenda) { /* retorna objeto tela */ }
     static procesarImagenesTelaDesdeArray(imagenes) { /* convierte */ }
@@ -128,7 +128,7 @@ class TelaProcessor {
 **Problema:** Construcción de objetos complejos con loops anidados
 
 ```javascript
-// ❌ ACTUAL (Complejo y difícil seguir)
+//  ACTUAL (Complejo y difícil seguir)
 const generosConTallas = {};
 tallasPorGenero.forEach(tallaData => {
     const generoKey = tallaData.genero;
@@ -143,7 +143,7 @@ tallasPorGenero.forEach(tallaData => {
     }
 });
 
-// ✅ SOLUCIÓN: DataBuilder
+//  SOLUCIÓN: DataBuilder
 class PrendaDataBuilder {
     static construirGenerosConTallas(tallasPorGenero, cantidadesPorTalla) {
         const resultado = {};
@@ -165,13 +165,13 @@ class PrendaDataBuilder {
 **Problema:** Logs dispersos, imposible de activar/desactivar globalmente
 
 ```javascript
-// ❌ ACTUAL
+//  ACTUAL
 console.log('📝 [GestionItemsUI] cargarItemEnModal()');
 console.log('   Prenda recibida:', prenda);
 console.log('   📊 ESTRUCTURA COMPLETA DE PRENDA:');
-console.log('✅ Campos básicos cargados');
+console.log(' Campos básicos cargados');
 
-// ✅ SOLUCIÓN: Logger centralizado
+//  SOLUCIÓN: Logger centralizado
 class Logger {
     static debug(module, message, data = null) { /* configurable */ }
     static info(module, message) { /* importante */ }
@@ -195,11 +195,11 @@ Logger.debug('GestionItemsUI', 'Estructura de prenda:', prenda);
 **Problema:** 60% del código es idéntico
 
 ```javascript
-// ❌ ACTUAL - Dos métodos casi iguales
+//  ACTUAL - Dos métodos casi iguales
 cargarItemEnModal(prenda, prendaIndex) { /* 550 líneas */ }
 actualizarPrendaExistente() { /* 150 líneas */ }
 
-// ✅ SOLUCIÓN: Un método unificado
+//  SOLUCIÓN: Un método unificado
 cargarPrendaEnModal(prenda = null, index = null) {
     const esEdicion = prenda !== null;
     this.prendaEditIndex = esEdicion ? index : null;
@@ -222,7 +222,7 @@ cargarPrendaEnModal(prenda = null, index = null) {
 **Problema:** Validaciones dispersas en el método
 
 ```javascript
-// ❌ ACTUAL
+//  ACTUAL
 if (!nombrePrenda) {
     alert('Por favor ingresa el nombre de la prenda');
     return;
@@ -232,7 +232,7 @@ if (!genero) {
     return;
 }
 
-// ✅ SOLUCIÓN: PrendaValidator
+//  SOLUCIÓN: PrendaValidator
 class PrendaValidator {
     static validarFormulario(formData) {
         const errores = [];
@@ -277,9 +277,9 @@ if (!validacion.valido) {
 ## 🎯 RECOMENDACIÓN
 
 ### FASE 1 (Rápido - 2-3 horas)
-1. ✅ Crear `dom-utils.js` con helpers básicos
-2. ✅ Crear `modal-cleanup.js` para limpieza
-3. ✅ Reemplazar 100+ líneas de limpieza
+1.  Crear `dom-utils.js` con helpers básicos
+2.  Crear `modal-cleanup.js` para limpieza
+3.  Reemplazar 100+ líneas de limpieza
 
 ### FASE 2 (Intermedio - 4-5 horas)
 4. Crear `tela-processor.js`

@@ -36,7 +36,7 @@ class PedidoLogoAreaController extends Controller
                 auth()->id()
             );
 
-            \Log::info('✅ Área de pedido logo cambiada', [
+            \Log::info(' Área de pedido logo cambiada', [
                 'logo_pedido_id' => $logoPedidoId,
                 'numero_pedido' => $logoPedido->numero_pedido,
                 'nueva_area' => $validated['area'],
@@ -50,7 +50,7 @@ class PedidoLogoAreaController extends Controller
                 'fecha' => $proceso->fecha_entrada->format('d/m/Y H:i')
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error al cambiar área del pedido logo', [
+            \Log::error(' Error al cambiar área del pedido logo', [
                 'error' => $e->getMessage(),
                 'logo_pedido_id' => $logoPedidoId
             ]);

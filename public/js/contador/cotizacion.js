@@ -466,7 +466,7 @@ function openCotizacionModal(cotizacionId) {
 
             document.getElementById('cotizacionModal').style.display = 'flex';
 
-            console.log('✅ Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas y logo:', data.tiene_logo);
+            console.log(' Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas y logo:', data.tiene_logo);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -549,7 +549,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                     </ul>
                 </div>
                 <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #ef4444; font-weight: 600;">
-                    ❌ Esta acción NO se puede deshacer. Se eliminarán todos los datos y archivos.
+                     Esta acción NO se puede deshacer. Se eliminarán todos los datos y archivos.
                 </p>
             </div>
         `,
@@ -598,7 +598,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                             title: '✓ Eliminado Completamente',
                             html: `
                             <div style="text-align: left; color: #4b5563;">
-                                <p style="margin: 0 0 0.75rem 0; font-weight: 600;">✅ Se eliminaron:</p>
+                                <p style="margin: 0 0 0.75rem 0; font-weight: 600;"> Se eliminaron:</p>
                                 <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem;">
                                     <li>Cotización de la base de datos</li>
                                     <li>Todas las prendas relacionadas</li>
@@ -665,7 +665,7 @@ function aprobarCotizacionEnLinea(cotizacionId, estadoActual = null) {
                 </p>
                 <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                     <p style="margin: 0; font-size: 0.85rem; color: #1e40af; font-weight: 600;">
-                        ℹ️ ${infoAdicional}
+                         ${infoAdicional}
                     </p>
                 </div>
             </div>
@@ -742,7 +742,7 @@ function aprobarCotizacionEnLinea(cotizacionId, estadoActual = null) {
                             html: `
                             <div style="text-align: left; color: #4b5563;">
                                 <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
-                                    ✅ La cotización ha sido aprobada correctamente.
+                                     La cotización ha sido aprobada correctamente.
                                 </p>
                                 <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                                     <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
@@ -894,7 +894,7 @@ function aprobarAlAprobador(cotizacionId) {
                 </p>
                 <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                     <p style="margin: 0; font-size: 0.85rem; color: #1e40af; font-weight: 600;">
-                        ℹ️ Una vez aprobada, la cotización estará lista para presentarse al cliente
+                         Una vez aprobada, la cotización estará lista para presentarse al cliente
                     </p>
                 </div>
                 <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #666;">
@@ -972,7 +972,7 @@ function aprobarAlAprobador(cotizacionId) {
                             html: `
                             <div style="text-align: left; color: #4b5563;">
                                 <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
-                                    ✅ La cotización ha sido aprobada exitosamente.
+                                     La cotización ha sido aprobada exitosamente.
                                 </p>
                                 <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                                     <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">

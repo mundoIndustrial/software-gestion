@@ -82,20 +82,20 @@ $prendas[0] = [
 
 ---
 
-## ❌ El Problema en el Commit
+##  El Problema en el Commit
 
 **Archivo:** `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionViewController.php`
 
 **Antes del commit (línea ~56):**
 ```php
-$datos = [];  // ✅ Array vacío, pero el JS lo inicializa
+$datos = [];  //  Array vacío, pero el JS lo inicializa
 
 return view('asesores.pedidos.crear-pedido-nuevo', $datos);
 ```
 
 **Después del commit (línea ~56):**
 ```php
-$datos = [];  // ❌ Array COMPLETAMENTE vacío
+$datos = [];  //  Array COMPLETAMENTE vacío
 
 if ($editarId) {
     // Solo si hay $editarId se llena $datos con el servicio
@@ -109,10 +109,10 @@ return view('asesores.pedidos.crear-pedido-nuevo', $datos);
 **Impacto en la Vista:**
 ```blade
 @if($modoEdicion ?? false)
-    <!-- ✅ Esto carga SOLO si viene de $datos -->
+    <!--  Esto carga SOLO si viene de $datos -->
 @endif
 
-<!-- ❌ PERO DESPUÉS, accede a variables que no existen si $datos vacío -->
+<!--  PERO DESPUÉS, accede a variables que no existen si $datos vacío -->
 <input value="{{ $pedido->cliente ?? '' }}">  <!-- $pedido undefined si $datos = [] -->
 ```
 
@@ -129,8 +129,8 @@ $datos = [
     'pedido' => (object)['cliente' => '', 'forma_de_pago' => '', ...],
     'prendas' => [],
     'epps' => [],
-    'estados' => [...],  // ✅ Estados disponibles
-    'areas' => [...]     // ✅ Áreas disponibles
+    'estados' => [...],  //  Estados disponibles
+    'areas' => [...]     //  Áreas disponibles
 ];
 
 // EDITAR (estructura convertida de BD por el servicio)
@@ -212,4 +212,4 @@ La solución fue asegurar que **AMBOS flujos reciban la estructura correcta**:
 - **Crear nuevo** → Estructura vacía pero válida
 - **Editar** → Estructura convertida de BD a Frontend
 
-✅ **Ya implementado** en `PedidosProduccionViewController::crearFormEditableNuevo()`
+ **Ya implementado** en `PedidosProduccionViewController::crearFormEditableNuevo()`

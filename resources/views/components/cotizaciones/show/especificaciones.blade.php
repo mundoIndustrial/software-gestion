@@ -1,7 +1,7 @@
 {{-- Especificaciones Generales --}}
 @php
     $categoriasInfo = [
-        'disponibilidad' => ['emoji' => '📦', 'label' => 'DISPONIBILIDAD'],
+        'disponibilidad' => ['emoji' => '', 'label' => 'DISPONIBILIDAD'],
         'forma_pago' => ['emoji' => '💳', 'label' => 'FORMA DE PAGO'],
         'regimen' => ['emoji' => '🏛️', 'label' => 'RÉGIMEN'],
         'se_ha_vendido' => ['emoji' => '📊', 'label' => 'SE HA VENDIDO'],

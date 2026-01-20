@@ -167,7 +167,7 @@ Se reutilizan completamente los estilos del modal de órdenes existente:
 Abrir consola del navegador (F12) para ver logs:
 
 ```
-📋 [RECEIPT MANAGER] Inicializado
+ [RECEIPT MANAGER] Inicializado
 📊 Total de recibos: 9
 📄 Recibos: Array(9)
 📄 Renderizando recibo 1/9: {...}
@@ -216,12 +216,12 @@ El modal utiliza un overlay de semi-transparencia que se puede cerrar haciendo c
 
 ## Archivos Modificados
 
-- ✅ `app/Domain/PedidoProduccion/Repositories/PedidoProduccionRepository.php` - Agregado método `obtenerDatosRecibos()`
-- ✅ `app/Http/Controllers/AsesoresController.php` - Agregado método `obtenerDatosRecibos()`
-- ✅ `routes/web.php` - Agregada ruta `/pedidos/{id}/recibos-datos`
-- ✅ `public/js/asesores/invoice-from-list.js` - Agregadas funciones de recibos
-- ✅ `public/js/asesores/pedidos-dropdown-simple.js` - Agregado botón en dropdown
-- ✅ `public/js/asesores/receipt-manager.js` - NUEVO archivo con clase ReceiptManager
+-  `app/Domain/PedidoProduccion/Repositories/PedidoProduccionRepository.php` - Agregado método `obtenerDatosRecibos()`
+-  `app/Http/Controllers/AsesoresController.php` - Agregado método `obtenerDatosRecibos()`
+-  `routes/web.php` - Agregada ruta `/pedidos/{id}/recibos-datos`
+-  `public/js/asesores/invoice-from-list.js` - Agregadas funciones de recibos
+-  `public/js/asesores/pedidos-dropdown-simple.js` - Agregado botón en dropdown
+-  `public/js/asesores/receipt-manager.js` - NUEVO archivo con clase ReceiptManager
 
 ## Archivos Existentes (Sin cambios)
 

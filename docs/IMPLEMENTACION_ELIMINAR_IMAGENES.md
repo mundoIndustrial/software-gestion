@@ -61,8 +61,8 @@ Se implementó el consumo del endpoint `DELETE /imagen/{tipo}/{id}` para elimina
    ```
 
 6. **Manejar respuesta**
-   - ✅ Éxito: Eliminar del DOM + mostrar toast
-   - ❌ Error: Mostrar mensaje de error
+   -  Éxito: Eliminar del DOM + mostrar toast
+   -  Error: Mostrar mensaje de error
 
 ### 3. **Event Listener Async para Imágenes de Tela** (Líneas 331-400)
 
@@ -168,9 +168,9 @@ Para probar:
 
 1. ⚠️ El endpoint usa `forceDelete()` → Eliminación permanente
 2. ⚠️ Se eliminan archivos físicos del storage
-3. ✅ Hay logs en `laravel.log` para auditoría
-4. ✅ CSRF token es validado automáticamente
-5. ✅ Compatible con SoftDeletes en la BD
+3.  Hay logs en `laravel.log` para auditoría
+4.  CSRF token es validado automáticamente
+5.  Compatible con SoftDeletes en la BD
 
 ## Próximos Pasos
 

@@ -29,7 +29,7 @@ class SetupSupervisorPedidosSeeder extends Seeder
         $this->call(AssignSupervisorPedidosRoleSeeder::class);
         $this->command->newLine();
 
-        $this->command->info('✅ ¡Configuración completada exitosamente!');
+        $this->command->info(' ¡Configuración completada exitosamente!');
         $this->command->info('🌐 Accede a: http://localhost:8000/supervisor-pedidos/');
     }
 }

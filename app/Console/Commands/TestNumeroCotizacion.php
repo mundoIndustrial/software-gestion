@@ -21,7 +21,7 @@ class TestNumeroCotizacion extends Command
             ->get();
         
         if ($cotizaciones->isEmpty()) {
-            $this->warn('  ❌ No hay cotizaciones enviadas');
+            $this->warn('   No hay cotizaciones enviadas');
         } else {
             foreach ($cotizaciones as $cot) {
                 $this->line("  - ID: {$cot->id}, Número: {$cot->numero_cotizacion}, Estado: {$cot->estado}, EsBorrador: " . ($cot->es_borrador ? 'sí' : 'no'));

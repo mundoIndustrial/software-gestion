@@ -33,7 +33,7 @@ class ObtenerEppDelPedidoHandler implements QueryHandler
 
             $epps = $this->pedidoEppRepository->obtenerEppDelPedido($query->getPedidoId());
 
-            Log::info('✅ [ObtenerEppDelPedidoHandler] EPP obtenidos', [
+            Log::info(' [ObtenerEppDelPedidoHandler] EPP obtenidos', [
                 'pedido_id' => $query->getPedidoId(),
                 'cantidad' => count($epps),
             ]);
@@ -41,7 +41,7 @@ class ObtenerEppDelPedidoHandler implements QueryHandler
             return $epps;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ObtenerEppDelPedidoHandler] Error obteniendo EPP', [
+            Log::error(' [ObtenerEppDelPedidoHandler] Error obteniendo EPP', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $query->getPedidoId(),
             ]);

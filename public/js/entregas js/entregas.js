@@ -248,20 +248,20 @@ function updateStats(costuraData = [], corteData = []) {
 // Configurar listeners de tiempo real
 function setupRealtimeListeners() {
     if (!globalThis.Echo) {
-        console.warn('❌ Laravel Echo no está disponible. Las actualizaciones en tiempo real no funcionarán.');
+        console.warn(' Laravel Echo no está disponible. Las actualizaciones en tiempo real no funcionarán.');
         return;
     }
 
-    console.log('✅ Echo disponible. Suscribiendo al canal "entregas.' + TIPO + '"...');
+    console.log(' Echo disponible. Suscribiendo al canal "entregas.' + TIPO + '"...');
 
     const channel = globalThis.Echo.channel(`entregas.${TIPO}`);
     
     channel.subscribed(() => {
-        console.log('✅ Suscrito al canal "entregas.' + TIPO + '"');
+        console.log(' Suscrito al canal "entregas.' + TIPO + '"');
     });
 
     channel.error((error) => {
-        console.error('❌ Error en canal "entregas.' + TIPO + '":', error);
+        console.error(' Error en canal "entregas.' + TIPO + '":', error);
     });
     
     channel.listen('EntregaRegistrada', (data) => {
@@ -271,7 +271,7 @@ function setupRealtimeListeners() {
         
         // Solo actualizar si la fecha coincide con el filtro actual
         if (data.fecha === fechaActual) {
-            console.log('✅ Fecha coincide, actualizando vista...');
+            console.log(' Fecha coincide, actualizando vista...');
             
             // Recargar datos de forma automática
             window.filtrarDatos();
@@ -279,7 +279,7 @@ function setupRealtimeListeners() {
             // Mostrar notificación visual
             mostrarNotificacion(data);
         } else {
-            console.log('ℹ️ Fecha no coincide. Filtro actual:', fechaActual, 'Entrega:', data.fecha);
+            console.log(' Fecha no coincide. Filtro actual:', fechaActual, 'Entrega:', data.fecha);
         }
     });
 
@@ -293,7 +293,7 @@ function setupRealtimeListeners() {
         mostrarNotificacionEliminada(data);
     });
 
-    console.log('✅ Listener de entregas configurado');
+    console.log(' Listener de entregas configurado');
 }
 
 // Mostrar notificación de nueva entrega

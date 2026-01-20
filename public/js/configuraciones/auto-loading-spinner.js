@@ -180,5 +180,5 @@
     };
 
     // Log de inicialización
-    console.log('✅ Auto Loading Spinner inicializado (delay: ' + CONFIG.DELAY + 'ms)');
+    console.log(' Auto Loading Spinner inicializado (delay: ' + CONFIG.DELAY + 'ms)');
 })();

@@ -11,7 +11,7 @@ try {
     }
     
     $todos = DB::table('numero_secuencias')->get();
-    echo "✅ Contenido actual:\n";
+    echo " Contenido actual:\n";
     foreach ($todos as $row) {
         echo "   Tipo: {$row->tipo}, Siguiente: {$row->siguiente}\n";
     }
@@ -29,11 +29,11 @@ try {
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        echo "✅ Secuencia universal CREADA\n";
+        echo " Secuencia universal CREADA\n";
     } else {
-        echo "✅ Secuencia universal ya existe (siguiente: {$universal->siguiente})\n";
+        echo " Secuencia universal ya existe (siguiente: {$universal->siguiente})\n";
     }
     
 } catch (\Exception $e) {
-    echo "❌ Error: " . $e->getMessage() . "\n";
+    echo " Error: " . $e->getMessage() . "\n";
 }

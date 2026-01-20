@@ -89,7 +89,7 @@ class CommandBus
                 return $handler->handle($command);
             });
 
-            Log::info('✅ [CommandBus] Command ejecutado exitosamente', [
+            Log::info(' [CommandBus] Command ejecutado exitosamente', [
                 'command' => class_basename($command),
                 'resultado_type' => gettype($resultado),
             ]);
@@ -97,7 +97,7 @@ class CommandBus
             return $resultado;
 
         } catch (Exception $e) {
-            Log::error('❌ [CommandBus] Error ejecutando command', [
+            Log::error(' [CommandBus] Error ejecutando command', [
                 'command' => $commandClass,
                 'error' => $e->getMessage(),
             ]);

@@ -36,7 +36,7 @@ class NotificarSupervisoresPedidoCreado implements ShouldQueue
         }
 
         // Log de la acción
-        \Log::info('✅ Notificaciones de pedido enviadas a supervisores', [
+        \Log::info(' Notificaciones de pedido enviadas a supervisores', [
             'pedido_id' => $event->pedido->id,
             'numero_pedido' => $event->pedido->numero_pedido,
             'asesor' => $event->asesor->name,

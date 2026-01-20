@@ -27,7 +27,7 @@ class ModalPrendaDinamico {
                 // El comportamiento real vendría de manejadores-procesos-prenda.js
             };
         } else {
-            console.log('✅ [MODAL-PRENDA-DINAMICO] manejarCheckboxProceso disponible');
+            console.log(' [MODAL-PRENDA-DINAMICO] manejarCheckboxProceso disponible');
         }
 
         //  FALLBACK: window.imagenesTelaStorage si no existe
@@ -86,11 +86,11 @@ class ModalPrendaDinamico {
         
         const modal = document.getElementById(this.modalId);
         if (!modal) {
-            console.error(`❌ [ModalPrendaDinamico] No se pudo encontrar el modal ${this.modalId} en el DOM`);
+            console.error(` [ModalPrendaDinamico] No se pudo encontrar el modal ${this.modalId} en el DOM`);
             return false;
         }
 
-        console.log(`   ✅ Modal encontrado. Propiedades:`)
+        console.log(`    Modal encontrado. Propiedades:`)
         console.log(`     - display actual: ${modal.style.display}`)
         console.log(`     - offsetHeight: ${modal.offsetHeight}`)
         console.log(`     - offsetWidth: ${modal.offsetWidth}`)

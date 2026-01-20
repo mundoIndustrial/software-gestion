@@ -11,22 +11,22 @@ function initializeRegistrosPorOrdenRealtimeListeners() {
     console.log('window.Echo disponible:', !!window.Echo);
 
     if (!window.Echo) {
-        console.error('❌ Echo NO está disponible. Reintentando en 500ms...');
+        console.error(' Echo NO está disponible. Reintentando en 500ms...');
         setTimeout(initializeRegistrosPorOrdenRealtimeListeners, 500);
         return;
     }
 
-    console.log('✅ Echo disponible. Suscribiendo al canal "registros-por-orden"...');
+    console.log(' Echo disponible. Suscribiendo al canal "registros-por-orden"...');
 
     // Canal de Registros Por Orden
     const registrosChannel = window.Echo.channel('registros-por-orden');
 
     registrosChannel.subscribed(() => {
-        console.log('✅ Suscrito al canal "registros-por-orden"');
+        console.log(' Suscrito al canal "registros-por-orden"');
     });
 
     registrosChannel.error((error) => {
-        console.error('❌ Error en canal "registros-por-orden":', error);
+        console.error(' Error en canal "registros-por-orden":', error);
     });
 
     registrosChannel.listen('RegistrosPorOrdenUpdated', (e) => {
@@ -36,7 +36,7 @@ function initializeRegistrosPorOrdenRealtimeListeners() {
         handleRegistrosUpdate(e.pedido, e.registros, e.action);
     });
 
-    console.log('✅ Listener de registros por orden configurado');
+    console.log(' Listener de registros por orden configurado');
 }
 
 /**
@@ -71,7 +71,7 @@ function removeRegistrosFromTable(pedido) {
             row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
             setTimeout(() => {
                 row.remove();
-                console.log(`✅ Registro del pedido ${pedido} eliminado de la tabla`);
+                console.log(` Registro del pedido ${pedido} eliminado de la tabla`);
             }, 500);
         });
     });

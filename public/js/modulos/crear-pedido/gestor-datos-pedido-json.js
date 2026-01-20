@@ -25,7 +25,7 @@ class GestorDatosPedidoJSON {
         this.datosCompletos = {
             prendas: []
         };
-        console.log('✅ GestorDatosPedidoJSON inicializado');
+        console.log(' GestorDatosPedidoJSON inicializado');
     }
 
     /**
@@ -47,7 +47,7 @@ class GestorDatosPedidoJSON {
         };
 
         this.datosCompletos.prendas.push(prenda);
-        console.log('✅ Prenda agregada. Total prendas:', this.datosCompletos.prendas.length);
+        console.log(' Prenda agregada. Total prendas:', this.datosCompletos.prendas.length);
         console.log('📊 Datos actuales:', JSON.parse(JSON.stringify(this.datosCompletos, (k, v) => 
             v instanceof File ? `[File: ${v.name}]` : v
         )));
@@ -63,9 +63,9 @@ class GestorDatosPedidoJSON {
             console.log('🔄 Actualizando prenda en índice:', indice);
             
             Object.assign(this.datosCompletos.prendas[indice], prendaData);
-            console.log('✅ Prenda actualizada');
+            console.log(' Prenda actualizada');
         } else {
-            console.error('❌ Índice de prenda inválido:', indice);
+            console.error(' Índice de prenda inválido:', indice);
         }
     }
 
@@ -83,7 +83,7 @@ class GestorDatosPedidoJSON {
                 imagenes: telaData.imagenes || []
             });
             
-            console.log('✅ Tela agregada. Total telas en prenda:', this.datosCompletos.prendas[indicePrenda].telas.length);
+            console.log(' Tela agregada. Total telas en prenda:', this.datosCompletos.prendas[indicePrenda].telas.length);
         }
     }
 
@@ -99,7 +99,7 @@ class GestorDatosPedidoJSON {
                 ...procesos
             };
             
-            console.log('✅ Procesos agregados. Total tipos:', Object.keys(this.datosCompletos.prendas[indicePrenda].procesos).length);
+            console.log(' Procesos agregados. Total tipos:', Object.keys(this.datosCompletos.prendas[indicePrenda].procesos).length);
         }
     }
 
@@ -115,7 +115,7 @@ class GestorDatosPedidoJSON {
                 ...variaciones
             };
             
-            console.log('✅ Variaciones agregadas');
+            console.log(' Variaciones agregadas');
         }
     }
 
@@ -131,7 +131,7 @@ class GestorDatosPedidoJSON {
                 ...cantidades
             };
             
-            console.log('✅ Cantidades agregadas');
+            console.log(' Cantidades agregadas');
         }
     }
 
@@ -260,7 +260,7 @@ class GestorDatosPedidoJSON {
             }
         });
 
-        console.log('\n📋 RESUMEN DEL FormData:');
+        console.log('\n RESUMEN DEL FormData:');
         console.log('   • Prendas:', contadores.prendas);
         console.log('   • Telas:', contadores.telas);
         console.log('   • Procesos:', contadores.procesos);
@@ -282,4 +282,4 @@ class GestorDatosPedidoJSON {
 // Crear instancia global
 window.gestorDatosPedidoJSON = new GestorDatosPedidoJSON();
 
-console.log('✅ GestorDatosPedidoJSON disponible en window.gestorDatosPedidoJSON');
+console.log(' GestorDatosPedidoJSON disponible en window.gestorDatosPedidoJSON');

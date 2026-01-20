@@ -24,7 +24,7 @@ class PrendaEditor {
 
         // Preparar modal
         if (window.ModalCleanup) {
-            console.log(`   ✅ ModalCleanup disponible`)
+            console.log(`    ModalCleanup disponible`)
             if (esEdicion) {
                 window.ModalCleanup.prepararParaEditar(prendaIndex);
             } else {
@@ -38,7 +38,7 @@ class PrendaEditor {
         console.log(`   🔍 Buscando modal con ID: ${this.modalId}`)
         const modal = document.getElementById(this.modalId);
         if (modal) {
-            console.log(`   ✅ Modal encontrado`)
+            console.log(`    Modal encontrado`)
             console.log(`     - Tabla tbody: ${!!document.getElementById('tbody-telas')}`)
             console.log(`     - Campo tela: ${!!document.getElementById('nueva-prenda-tela')}`)
             console.log(`     - Campo color: ${!!document.getElementById('nueva-prenda-color')}`)
@@ -46,7 +46,7 @@ class PrendaEditor {
             modal.style.display = 'flex';
             this.mostrarNotificacion('Modal abierto y limpiado', 'info');
         } else {
-            console.error(`❌ Modal ${this.modalId} no encontrado en el DOM`)
+            console.error(` Modal ${this.modalId} no encontrado en el DOM`)
         }
     }
 

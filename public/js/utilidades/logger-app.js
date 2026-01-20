@@ -129,7 +129,7 @@ class LoggerApp {
     static error(mensaje, grupo = null, error = null) {
         // Los errores siempre se muestran
         const prefijo = this.obtenerPrefijo(grupo);
-        console.error(`%c${prefijo} ❌ ${mensaje}`, 'color: #cc0000; font-weight: bold; font-size: 14px;');
+        console.error(`%c${prefijo}  ${mensaje}`, 'color: #cc0000; font-weight: bold; font-size: 14px;');
         if (error) {
             console.error('  Error:', error);
             if (error.stack) {
@@ -148,7 +148,7 @@ class LoggerApp {
     static success(mensaje, grupo = null, datos = null) {
         if (this.nivelActivo('info')) {
             const prefijo = this.obtenerPrefijo(grupo);
-            console.log(`%c${prefijo} ✅ ${mensaje}`, 'color: #00aa00; font-weight: bold; font-size: 14px;');
+            console.log(`%c${prefijo}  ${mensaje}`, 'color: #00aa00; font-weight: bold; font-size: 14px;');
             if (datos !== null) {
                 console.log('  └─ Datos:', datos);
             }

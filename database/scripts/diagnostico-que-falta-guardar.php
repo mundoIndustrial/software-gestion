@@ -61,7 +61,7 @@ if (is_dir($pedidosDir)) {
         }
     }
 } else {
-    echo "❌ Carpeta de pedidos no existe\n";
+    echo " Carpeta de pedidos no existe\n";
 }
 
 // ===== 2. REVISAR LOGS ESPECÍFICOS =====
@@ -94,7 +94,7 @@ if (file_exists($logFile)) {
     }
     
     if (!$encontrados) {
-        echo "   ✅ No se encontraron errores típicos de guardado\n";
+        echo "    No se encontraron errores típicos de guardado\n";
     }
 }
 
@@ -163,10 +163,10 @@ window.fetch = async (...args) => {
         console.log('Respuesta:', json);
         
         if (json.success) {
-            console.log('\n✅ GUARDADO EXITOSO');
+            console.log('\n GUARDADO EXITOSO');
             console.log('ID Pedido:', json.pedido_id || json.id);
         } else {
-            console.log('\n❌ GUARDADO FALLIDO');
+            console.log('\n GUARDADO FALLIDO');
             console.log('Error:', json.error || json.message);
         }
     }
@@ -174,7 +174,7 @@ window.fetch = async (...args) => {
     return response;
 };
 
-console.log('✅ DEBUG ACTIVADO - Ahora guarda el pedido');
+console.log(' DEBUG ACTIVADO - Ahora guarda el pedido');
 DEBUG;
 
 echo "\n💻 SCRIPT DE DEBUG:\n";
@@ -231,6 +231,6 @@ SQL;
 
 echo $comandos;
 
-echo "\n\n✅ Diagnóstico completado\n\n";
+echo "\n\n Diagnóstico completado\n\n";
 
 ?>

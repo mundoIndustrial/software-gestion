@@ -127,7 +127,7 @@
         <div id="prendas_reflectivo_container" style="margin-bottom: 20px;"></div>
         
         <!-- BOTÓN AGREGAR PRENDA REFLECTIVO -->
-        <button type="button" id="btnAgregarPrendaReflectivo" onclick="agregarPrendaReflectivoPaso4(); console.log('✅ Botón Agregar Prenda Reflectivo clickeado');" style="width: 100%; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; cursor: pointer; padding: 12px 20px; border-radius: 4px; font-weight: 600; transition: background 0.2s ease; margin-bottom: 20px;">
+        <button type="button" id="btnAgregarPrendaReflectivo" onclick="agregarPrendaReflectivoPaso4(); console.log(' Botón Agregar Prenda Reflectivo clickeado');" style="width: 100%; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; cursor: pointer; padding: 12px 20px; border-radius: 4px; font-weight: 600; transition: background 0.2s ease; margin-bottom: 20px;">
             <i class="fas fa-plus"></i> Agregar Prenda Reflectivo
         </button>
         
@@ -139,7 +139,7 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📦 Paso 4 Reflectivo - Listo para agregar prendas');
+            console.log(' Paso 4 Reflectivo - Listo para agregar prendas');
             // NO agregar automáticamente - esperará a que el usuario navegue al paso 4
             console.log('⏳ Esperando a que el usuario navegue al paso 4...');
         });
@@ -184,7 +184,7 @@ todasLasUbicaciones = [...new Set([
     ...opcionesPrendas.CHAQUETA
 ])];
 
-// console.log('✅ Ubicaciones iniciales cargadas:', todasLasUbicaciones); // DEBUG: Comentado para evitar logs innecesarios
+// console.log(' Ubicaciones iniciales cargadas:', todasLasUbicaciones); // DEBUG: Comentado para evitar logs innecesarios
 
 function agregarTecnica() {
     const selector = document.getElementById('selector_tecnicas');
@@ -280,10 +280,10 @@ function agregarSeccion() {
             opciones: nuevasUbicaciones,
             observaciones: obs
         });
-        console.log('✅ Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
+        console.log(' Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
         opcionesPorUbicacion[ubicacion] = nuevasUbicaciones;
         renderizarSecciones();
-        console.log('✅ renderizarSecciones() ejecutado, campo oculto actualizado');
+        console.log(' renderizarSecciones() ejecutado, campo oculto actualizado');
         cerrarModalUbicacion('modalUbicaciones');
         selector.value = '';
     });
@@ -317,7 +317,7 @@ function cerrarModalUbicacion(modalId) {
 }
 
 function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacionesIniciales = '') {
-    console.log('🎬 PASO-TRES - abrirModalUbicaciones iniciado');
+    console.log(' PASO-TRES - abrirModalUbicaciones iniciado');
     console.log('📌 prenda:', prenda);
     console.log('📌 ubicacionesIniciales:', ubicacionesIniciales);
     console.log('📌 observacionesIniciales:', observacionesIniciales);
@@ -465,7 +465,7 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacion
         console.log('📍 observaciones:', obsTextarea.value);
         // Pasar array vacío para tallas (ya no se manejan por ubicación)
         onSave(ubicacionesSeleccionadasModal, [], obsTextarea.value);
-        console.log('✅ onSave callback ejecutado');
+        console.log(' onSave callback ejecutado');
     });
 
     renderizarUbicacionesSeleccionadas();
@@ -562,11 +562,11 @@ function agregarObservacion() {
 document.addEventListener('DOMContentLoaded', function() {
     // Los selectores de tipo_venta en PASO 2 y PASO 3 son independientes
     // No se sincronizan automáticamente para permitir valores diferentes
-    console.log('✅ Selectores tipo_venta configurados como independientes');
+    console.log(' Selectores tipo_venta configurados como independientes');
     
     // 🔥 SOBRESCRIBIR LA FUNCIÓN agregarSeccion DE especificaciones.js
     // Paso-tres debe usar SU PROPIA FUNCIÓN, no la de especificaciones.js
-    console.log('🎬 PASO-TRES - Inicializando funciones del paso-tres');
+    console.log(' PASO-TRES - Inicializando funciones del paso-tres');
     console.log('📍 PASO-TRES - agregarSeccion será redefinida para usar abrirModalUbicaciones de paso-tres');
     
     // Usar setTimeout para asegurar que especificaciones.js ya se cargó y puede ser sobrescrita
@@ -612,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         };
         
-        console.log('✅ PASO-TRES - agregarSeccion redefinida correctamente');
+        console.log(' PASO-TRES - agregarSeccion redefinida correctamente');
         console.log('🎯 PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
     }, 100);
 });

@@ -27,18 +27,18 @@ class ListarEppActivosHandler implements QueryHandler
         }
 
         try {
-            Log::info('📋 [ListarEppActivosHandler] Listando EPP activos');
+            Log::info(' [ListarEppActivosHandler] Listando EPP activos');
 
             $epps = $this->eppService->obtenerEppActivos();
 
-            Log::info('✅ [ListarEppActivosHandler] EPP listados', [
+            Log::info(' [ListarEppActivosHandler] EPP listados', [
                 'cantidad' => count($epps),
             ]);
 
             return $epps;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ListarEppActivosHandler] Error listando EPP', [
+            Log::error(' [ListarEppActivosHandler] Error listando EPP', [
                 'error' => $e->getMessage(),
             ]);
 

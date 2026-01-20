@@ -194,7 +194,7 @@
                         tipoDesdeRadio.checked = true;
                     }
                     
-                    console.log('❌ Usuario canceló cambio - radio revertido');
+                    console.log(' Usuario canceló cambio - radio revertido');
                 }
             }
         }

@@ -193,7 +193,7 @@ class TallaComponent {
 
         tallasContainer.appendChild(tallaItem);
 
-        console.log(`✅ Talla ${talla} agregada a prenda ${prendaIndex}`);
+        console.log(` Talla ${talla} agregada a prenda ${prendaIndex}`);
 
         Swal.fire({
             icon: 'success',
@@ -514,7 +514,7 @@ class TallaComponent {
             tallasContainer.appendChild(tallaItem);
         });
 
-        console.log(`✅ ${tallas.length} tallas agregadas a ${genero}`);
+        console.log(` ${tallas.length} tallas agregadas a ${genero}`);
 
         Swal.fire({
             icon: 'success',

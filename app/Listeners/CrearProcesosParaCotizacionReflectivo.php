@@ -35,7 +35,7 @@ class CrearProcesosParaCotizacionReflectivo
             $cotizacion = $pedido->cotizacion;
             
             if (!$cotizacion) {
-                Log::info('📋 PedidoCreado sin cotización asociada', [
+                Log::info(' PedidoCreado sin cotización asociada', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido' => $pedido->numero_pedido,
                 ]);
@@ -44,7 +44,7 @@ class CrearProcesosParaCotizacionReflectivo
 
             // Verificar si la cotización es tipo REFLECTIVO
             if (!$this->esCotizacionReflectivo($cotizacion)) {
-                Log::info('📋 Cotización no es tipo REFLECTIVO', [
+                Log::info(' Cotización no es tipo REFLECTIVO', [
                     'cotizacion_id' => $cotizacion->id,
                     'tipo' => $cotizacion->tipoCotizacion?->nombre,
                 ]);
@@ -61,12 +61,12 @@ class CrearProcesosParaCotizacionReflectivo
             // Crear procesos automáticamente
             $this->crearProcesosReflectivo($pedido);
 
-            Log::info('✅ Procesos creados exitosamente para pedido REFLECTIVO', [
+            Log::info(' Procesos creados exitosamente para pedido REFLECTIVO', [
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al crear procesos para cotización reflectivo', [
+            Log::error(' Error al crear procesos para cotización reflectivo', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $event->pedido->id,
                 'trace' => $e->getTraceAsString(),
@@ -104,7 +104,7 @@ class CrearProcesosParaCotizacionReflectivo
         // Obtener prendas del pedido
         $prendas = PrendaPedido::where('numero_pedido', $numeroPedido)->get();
 
-        Log::info('📋 [LISTENER] Prendas encontradas', [
+        Log::info(' [LISTENER] Prendas encontradas', [
             'numero_pedido' => $numeroPedido,
             'cantidad' => $prendas->count(),
         ]);
@@ -123,7 +123,7 @@ class CrearProcesosParaCotizacionReflectivo
                 ->pluck('proceso')
                 ->toArray();
 
-            Log::info('📋 [LISTENER] Procesos validados para prenda', [
+            Log::info(' [LISTENER] Procesos validados para prenda', [
                 'numero_pedido' => $numeroPedido,
                 'nombre_prenda' => $prenda->nombre_prenda,
                 'procesos' => $procesosExistentes,

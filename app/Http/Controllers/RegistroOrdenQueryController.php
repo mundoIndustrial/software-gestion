@@ -272,26 +272,26 @@ class RegistroOrdenQueryController extends Controller
                         // Completar desde el pedido de producción - SIEMPRE si viene vacío
                         if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
                             $logoPedidoArray['cliente'] = $pedidoProd->cliente ?? '-';
-                            \Log::info('✅ [PASO 1] Cliente completado desde PedidoProduccion', ['cliente' => $logoPedidoArray['cliente']]);
+                            \Log::info(' [PASO 1] Cliente completado desde PedidoProduccion', ['cliente' => $logoPedidoArray['cliente']]);
                         }
                         if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
                             $asesoraName = $pedidoProd->asesora?->name ?? $pedidoProd->asesor?->name ?? '-';
                             $logoPedidoArray['asesora'] = $asesoraName;
-                            \Log::info('✅ [PASO 1] Asesora completada desde PedidoProduccion', ['asesora' => $logoPedidoArray['asesora']]);
+                            \Log::info(' [PASO 1] Asesora completada desde PedidoProduccion', ['asesora' => $logoPedidoArray['asesora']]);
                         }
                         if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
                             $logoPedidoArray['fecha_de_creacion_de_orden'] = $pedidoProd->fecha_de_creacion_de_orden;
-                            \Log::info('✅ [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+                            \Log::info(' [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
                         }
                         if (empty($logoPedidoArray['descripcion']) && $pedidoProd->descripcion_prendas) {
                             $logoPedidoArray['descripcion'] = $pedidoProd->descripcion_prendas;
-                            \Log::info('✅ [PASO 1] Descripción completada desde PedidoProduccion');
+                            \Log::info(' [PASO 1] Descripción completada desde PedidoProduccion');
                         }
                     } else {
                         \Log::warning('⚠️ [PASO 1] PedidoProduccion no encontrado', ['pedido_id' => $logoPedido->pedido_id]);
                     }
                 } catch (\Exception $e) {
-                    \Log::error('❌ [PASO 1] Error al buscar PedidoProduccion', ['error' => $e->getMessage()]);
+                    \Log::error(' [PASO 1] Error al buscar PedidoProduccion', ['error' => $e->getMessage()]);
                 }
             }
             
@@ -308,25 +308,25 @@ class RegistroOrdenQueryController extends Controller
                         
                         if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
                             $logoPedidoArray['cliente'] = $logoCot->cotizacion->cliente ?? '-';
-                            \Log::info('✅ [PASO 2] Cliente completado desde LogoCotizacion', ['cliente' => $logoPedidoArray['cliente']]);
+                            \Log::info(' [PASO 2] Cliente completado desde LogoCotizacion', ['cliente' => $logoPedidoArray['cliente']]);
                         }
                         if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
                             $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoCot->cotizacion->fecha_de_creacion;
-                            \Log::info('✅ [PASO 2] Fecha completada desde LogoCotizacion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+                            \Log::info(' [PASO 2] Fecha completada desde LogoCotizacion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
                         }
                         if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
                             $logoPedidoArray['asesora'] = $logoCot->cotizacion->asesor?->name ?? '-';
-                            \Log::info('✅ [PASO 2] Asesora completada desde LogoCotizacion', ['asesora' => $logoPedidoArray['asesora']]);
+                            \Log::info(' [PASO 2] Asesora completada desde LogoCotizacion', ['asesora' => $logoPedidoArray['asesora']]);
                         }
                         if (empty($logoPedidoArray['descripcion']) && $logoCot->descripcion) {
                             $logoPedidoArray['descripcion'] = $logoCot->descripcion;
-                            \Log::info('✅ [PASO 2] Descripción completada desde LogoCotizacion');
+                            \Log::info(' [PASO 2] Descripción completada desde LogoCotizacion');
                         }
                     } else {
                         \Log::warning('⚠️ [PASO 2] LogoCotizacion no encontrado o sin cotización', ['logo_cotizacion_id' => $logoPedido->logo_cotizacion_id]);
                     }
                 } catch (\Exception $e) {
-                    \Log::error('❌ [PASO 2] Error al buscar LogoCotizacion', ['error' => $e->getMessage()]);
+                    \Log::error(' [PASO 2] Error al buscar LogoCotizacion', ['error' => $e->getMessage()]);
                 }
             }
             
@@ -336,10 +336,10 @@ class RegistroOrdenQueryController extends Controller
             $logoPedidoArray['asesora'] = $logoPedidoArray['asesora'] ?: '-';
             $logoPedidoArray['descripcion'] = $logoPedido->descripcion ?? '';
             
-            // ✅ IMPORTANTE: Si no hay fecha_de_creacion_de_orden, usar created_at
+            //  IMPORTANTE: Si no hay fecha_de_creacion_de_orden, usar created_at
             if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
                 $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->created_at ?? now();
-                \Log::info('✅ [PASO 3] Fecha asignada desde created_at', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+                \Log::info(' [PASO 3] Fecha asignada desde created_at', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
             }
             
             $logoPedidoArray['encargado_orden'] = $logoPedido->encargado_orden ?? '-';
@@ -355,7 +355,7 @@ class RegistroOrdenQueryController extends Controller
             $logoPedidoArray['es_cotizacion'] = false;
             $logoPedidoArray['es_logo_pedido'] = true;
             
-            \Log::info('✅ [RegistroOrdenQueryController::show] LogoPedido finalizado COMPLETAMENTE', [
+            \Log::info(' [RegistroOrdenQueryController::show] LogoPedido finalizado COMPLETAMENTE', [
                 'numero_pedido' => $logoPedidoArray['numero_pedido'],
                 'cliente' => $logoPedidoArray['cliente'],
                 'asesora' => $logoPedidoArray['asesora'],
@@ -379,14 +379,14 @@ class RegistroOrdenQueryController extends Controller
         $order->total_cantidad = $stats['total_cantidad'];
         $order->total_entregado = $stats['total_entregado'];
 
-        // ✅ CARGAR prendas CON relaciones ANTES de toArray()
+        //  CARGAR prendas CON relaciones ANTES de toArray()
         // Hacemos un query directo para asegurar que las relaciones se cargan
         $prendasConRelaciones = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
             ->with(['color', 'tela', 'tipoManga', 'tipoBroche', 'fotos', 'fotosLogo', 'fotosTela', 'reflectivo'])
             ->orderBy('id', 'asc')
             ->get();
         
-        \Log::info('✅ [show] Prendas cargadas con relaciones', [
+        \Log::info(' [show] Prendas cargadas con relaciones', [
             'pedido' => $pedido,
             'total' => $prendasConRelaciones->count(),
             'primera_prenda' => $prendasConRelaciones->first() ? [
@@ -399,10 +399,10 @@ class RegistroOrdenQueryController extends Controller
         // Reemplazar prendas en la orden con las que tienen relaciones
         $order->setRelation('prendas', $prendasConRelaciones);
 
-        // ✅ CONSTRUIR DESCRIPCIÓN MIENTRAS AÚN TENEMOS ACCESO A RELACIONES ELOQUENT
+        //  CONSTRUIR DESCRIPCIÓN MIENTRAS AÚN TENEMOS ACCESO A RELACIONES ELOQUENT
         $descripcionPrendas = $this->buildDescripcionConTallas($order);
         
-        \Log::info('✅ [show] Descripción construida', [
+        \Log::info(' [show] Descripción construida', [
             'longitud' => strlen($descripcionPrendas),
             'primeras_200_caracteres' => substr($descripcionPrendas, 0, 200),
             'contiene_font_size_15' => strpos($descripcionPrendas, 'font-size: 15px') !== false,
@@ -480,7 +480,7 @@ class RegistroOrdenQueryController extends Controller
                     $tipoMangaNombre = null;
                     $tipoBrocheNombre = null;
                     
-                    // ✅ Usar las relaciones ya cargadas
+                    //  Usar las relaciones ya cargadas
                     if ($prenda->color) {
                         $colorNombre = $prenda->color->nombre;
                     }
@@ -498,7 +498,7 @@ class RegistroOrdenQueryController extends Controller
                         $tipoBrocheNombre = $prenda->tipoBroche->nombre;
                     }
                     
-                    // ✅ NUEVO: Normalizar fotos de prenda (WebP)
+                    //  NUEVO: Normalizar fotos de prenda (WebP)
                     $fotosNormalizadas = [];
                     if ($prenda->fotos) {
                         foreach ($prenda->fotos as $foto) {
@@ -507,7 +507,7 @@ class RegistroOrdenQueryController extends Controller
                         }
                     }
                     
-                    // ✅ NUEVO: Normalizar fotos de tela (WebP)
+                    //  NUEVO: Normalizar fotos de tela (WebP)
                     $telaFotosNormalizadas = [];
                     if ($prenda->fotosTela) {
                         foreach ($prenda->fotosTela as $fotoTela) {
@@ -530,15 +530,15 @@ class RegistroOrdenQueryController extends Controller
                         'tipo_broche' => $tipoBrocheNombre,
                         'tiene_bolsillos' => $prenda->tiene_bolsillos ?? 0,
                         'tiene_reflectivo' => $prenda->tiene_reflectivo ?? 0,
-                        // ✅ NUEVO: Agregar fotos normalizadas
+                        //  NUEVO: Agregar fotos normalizadas
                         'fotos' => $fotosNormalizadas,
                         'tela_fotos' => $telaFotosNormalizadas,
-                        // ✅ NUEVO: Agregar información de reflectivo si existe
+                        //  NUEVO: Agregar información de reflectivo si existe
                         'reflectivo' => $prenda->reflectivo ? [
                             'id' => $prenda->reflectivo->id,
                             'nombre_producto' => $prenda->reflectivo->nombre_producto,
                             'descripcion' => $prenda->reflectivo->descripcion,
-                            // ✅ CORREGIDO: Forzar decodificación de JSON si están como strings
+                            //  CORREGIDO: Forzar decodificación de JSON si están como strings
                             'generos' => is_string($prenda->reflectivo->generos) 
                                 ? json_decode($prenda->reflectivo->generos, true) 
                                 : $prenda->reflectivo->generos,
@@ -554,7 +554,7 @@ class RegistroOrdenQueryController extends Controller
                     ];
                 }
                 
-                \Log::info('📋 [getOrderDetails] Prendas formateadas', [
+                \Log::info(' [getOrderDetails] Prendas formateadas', [
                     'pedido' => $pedido,
                     'total_prendas' => count($prendasFormato),
                     'primera_prenda' => $prendasFormato[0] ?? null,
@@ -615,7 +615,7 @@ class RegistroOrdenQueryController extends Controller
             $tipo = request()->query('tipo'); // 'logo' o null
             $images = [];
 
-            \Log::info('🖼️ [getOrderImages] Iniciando búsqueda de imágenes', [
+            \Log::info(' [getOrderImages] Iniciando búsqueda de imágenes', [
                 'pedido' => $pedido,
                 'tipo' => $tipo
             ]);
@@ -623,7 +623,7 @@ class RegistroOrdenQueryController extends Controller
             // Obtener desde PedidoProduccion
             $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedido)->first();
             
-            \Log::info('🖼️ [getOrderImages] Pedido encontrado', [
+            \Log::info(' [getOrderImages] Pedido encontrado', [
                 'pedido_id' => $pedidoProduccion?->id,
                 'cotizacion_id' => $pedidoProduccion?->cotizacion_id
             ]);
@@ -679,7 +679,7 @@ class RegistroOrdenQueryController extends Controller
                     ->orderBy('id', 'asc')
                     ->get(['id', 'nombre_prenda']);
 
-                \Log::info('🖼️ [getOrderImages] Prendas encontradas', [
+                \Log::info(' [getOrderImages] Prendas encontradas', [
                     'total_prendas' => $prendas->count()
                 ]);
 
@@ -724,7 +724,7 @@ class RegistroOrdenQueryController extends Controller
                         }
                     }
 
-                    // ✅ SOLO incluir fotos de logo si tipo=logo (ya manejado arriba)
+                    //  SOLO incluir fotos de logo si tipo=logo (ya manejado arriba)
                     // Para el modal de costura, NO incluir fotos de logo
                     // Las fotos de logo se obtienen con tipo=logo en getLogoImages()
                     
@@ -738,7 +738,7 @@ class RegistroOrdenQueryController extends Controller
                     }
                 }
                 
-                \Log::info('🖼️ [getOrderImages] Prendas con imágenes', [
+                \Log::info(' [getOrderImages] Prendas con imágenes', [
                     'total_prendas_con_imagenes' => count($prendasConImagenes)
                 ]);
                 
@@ -746,7 +746,7 @@ class RegistroOrdenQueryController extends Controller
                 \Log::warning('Error al consultar tablas de fotos de prenda: ' . $inner->getMessage(), ['pedido' => $pedido]);
             }
 
-            \Log::info('🖼️ [getOrderImages] Resultado final', [
+            \Log::info(' [getOrderImages] Resultado final', [
                 'total_prendas' => count($prendasConImagenes ?? []),
                 'total_images_cotizacion' => count($images)
             ]);
@@ -976,9 +976,9 @@ class RegistroOrdenQueryController extends Controller
             'HTML_completo' => $descripcionBase,
         ]);
         
-        // ✅ SI YA TIENE SPANS HTML (descripción generada por Helper), DEVOLVERLA TAL CUAL
+        //  SI YA TIENE SPANS HTML (descripción generada por Helper), DEVOLVERLA TAL CUAL
         if (strpos($descripcionBase, '<span') !== false) {
-            \Log::info('✅ [buildDescripcionConTallas] Descripción HTML detectada, devolviendo tal cual');
+            \Log::info(' [buildDescripcionConTallas] Descripción HTML detectada, devolviendo tal cual');
             return $descripcionBase;
         }
         
@@ -988,7 +988,7 @@ class RegistroOrdenQueryController extends Controller
             $esReflectivo = ($order->cotizacion->tipoCotizacion->codigo === 'RF');
         }
         
-        // ✅ FALLBACK: Si descripción_prendas está vacía, generar dinámicamente desde las prendas
+        //  FALLBACK: Si descripción_prendas está vacía, generar dinámicamente desde las prendas
         if (empty($descripcionBase) && $order->prendas && $order->prendas->count() > 0) {
             \Log::info('🔄 [buildDescripcionConTallas] Generando descripción dinámicamente', [
                 'pedido' => $order->numero_pedido,
@@ -1012,7 +1012,7 @@ class RegistroOrdenQueryController extends Controller
             
             $descripcionBase = implode("\n\n", $descripciones);
             
-            \Log::info('✅ [buildDescripcionConTallas] Descripción generada', [
+            \Log::info(' [buildDescripcionConTallas] Descripción generada', [
                 'longitud' => strlen($descripcionBase),
                 'primeras_lineas' => substr($descripcionBase, 0, 200),
             ]);
@@ -1042,7 +1042,7 @@ class RegistroOrdenQueryController extends Controller
                             $descripcionConTallas .= "\n\n";
                         }
                         
-                        // ✅ NUEVO: Si tiene registro en prendas_reflectivo, usar esa información
+                        //  NUEVO: Si tiene registro en prendas_reflectivo, usar esa información
                         if ($prenda->reflectivo) {
                             $reflectivo = $prenda->reflectivo;
                             
@@ -1097,7 +1097,7 @@ class RegistroOrdenQueryController extends Controller
                                 $descripcionConTallas .= "\nOBSERVACIONES: " . $reflectivo->observaciones_generales;
                             }
                             
-                            \Log::info('✅ Información de REFLECTIVO agregada a descripción', [
+                            \Log::info(' Información de REFLECTIVO agregada a descripción', [
                                 'nombre_producto' => $reflectivo->nombre_producto,
                                 'generos' => $reflectivo->generos,
                                 'ubicaciones_count' => count($reflectivo->ubicaciones ?? []),
@@ -1108,7 +1108,7 @@ class RegistroOrdenQueryController extends Controller
                                 $descripcionConTallas .= $prenda->descripcion;
                             }
                             
-                            // ✅ AGREGAR TALLAS SI NO ESTÁN EN LA DESCRIPCIÓN
+                            //  AGREGAR TALLAS SI NO ESTÁN EN LA DESCRIPCIÓN
                             if ($prenda->cantidad_talla) {
                                 try {
                                     $tallas = is_string($prenda->cantidad_talla) 
@@ -1127,7 +1127,7 @@ class RegistroOrdenQueryController extends Controller
                                         }
                                     }
                                 } catch (\Exception $e) {
-                                    \Log::error('    ❌ Error decodificando tallas: ' . $e->getMessage());
+                                    \Log::error('     Error decodificando tallas: ' . $e->getMessage());
                                 }
                             }
                         }
@@ -1328,7 +1328,7 @@ class RegistroOrdenQueryController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ [getLogoImages] Error al obtener imágenes de logo: ' . $e->getMessage(), [
+            \Log::error(' [getLogoImages] Error al obtener imágenes de logo: ' . $e->getMessage(), [
                 'pedido' => $pedido,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -1366,7 +1366,7 @@ class RegistroOrdenQueryController extends Controller
                 'fecha_de_creacion_de_orden' => $logoPedidoArray['fecha_de_creacion_de_orden'] ?? null
             ]);
 
-            // 📋 PASO 1: Completar desde PedidoProduccion si LogoPedido está incompleto
+            //  PASO 1: Completar desde PedidoProduccion si LogoPedido está incompleto
             if ($logoPedido->pedido_id && empty($logoPedidoArray['cliente'])) {
                 try {
                     $pedidoProduccion = PedidoProduccion::find($logoPedido->pedido_id);
@@ -1384,14 +1384,14 @@ class RegistroOrdenQueryController extends Controller
                             $logoPedidoArray['fecha_de_creacion_de_orden'] = $pedidoProduccion->fecha_de_creacion_de_orden;
                         }
                         
-                        \Log::info('✅ [PASO 1 API] Completados datos desde PedidoProduccion #' . $logoPedido->pedido_id);
+                        \Log::info(' [PASO 1 API] Completados datos desde PedidoProduccion #' . $logoPedido->pedido_id);
                     }
                 } catch (\Exception $e) {
                     \Log::warning('⚠️ [PASO 1 API] Error al obtener PedidoProduccion: ' . $e->getMessage());
                 }
             }
 
-            // 📋 PASO 2: Completar desde LogoCotizacion si aún hay campos vacíos
+            //  PASO 2: Completar desde LogoCotizacion si aún hay campos vacíos
             if ($logoPedido->logo_cotizacion_id && empty($logoPedidoArray['descripcion'])) {
                 try {
                     $logoCotizacion = LogoCotizacion::find($logoPedido->logo_cotizacion_id);
@@ -1409,21 +1409,21 @@ class RegistroOrdenQueryController extends Controller
                             $logoPedidoArray['ubicaciones'] = $logoCotizacion->ubicaciones;
                         }
                         
-                        \Log::info('✅ [PASO 2 API] Completados datos desde LogoCotizacion #' . $logoPedido->logo_cotizacion_id);
+                        \Log::info(' [PASO 2 API] Completados datos desde LogoCotizacion #' . $logoPedido->logo_cotizacion_id);
                     }
                 } catch (\Exception $e) {
                     \Log::warning('⚠️ [PASO 2 API] Error al obtener LogoCotizacion: ' . $e->getMessage());
                 }
             }
 
-            // 📋 PASO 3: Garantizar fecha_de_creacion_de_orden usando created_at
+            //  PASO 3: Garantizar fecha_de_creacion_de_orden usando created_at
             if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
                 $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->created_at;
-                \Log::info('✅ [PASO 3 API] Usando created_at como fecha de creación');
+                \Log::info(' [PASO 3 API] Usando created_at como fecha de creación');
             }
 
-            // ✅ Responder con datos completos
-            \Log::info('✅ [API] LogoPedido ID ' . $id . ' respondido correctamente', [
+            //  Responder con datos completos
+            \Log::info(' [API] LogoPedido ID ' . $id . ' respondido correctamente', [
                 'cliente' => $logoPedidoArray['cliente'],
                 'asesora' => $logoPedidoArray['asesora'],
                 'descripcion' => $logoPedidoArray['descripcion'],
@@ -1435,7 +1435,7 @@ class RegistroOrdenQueryController extends Controller
             return response()->json($logoPedidoArray);
             
         } catch (\Exception $e) {
-            \Log::error('❌ [API] Error en showLogoPedidoById: ' . $e->getMessage(), [
+            \Log::error(' [API] Error en showLogoPedidoById: ' . $e->getMessage(), [
                 'id' => $id,
                 'trace' => $e->getTraceAsString()
             ]);

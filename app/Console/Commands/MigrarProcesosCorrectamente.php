@@ -117,7 +117,7 @@ class MigrarProcesosCorrectamente extends Command
             $this->info("🧹 PASO 1: Limpiando procesos_prenda existentes...\n");
             if (!$dryRun) {
                 ProcesoPrenda::truncate();
-                $this->line("   ✅ Tabla procesos_prenda limpiada");
+                $this->line("    Tabla procesos_prenda limpiada");
             } else {
                 $this->line("   [DRY-RUN] Se limpiaría tabla procesos_prenda");
             }
@@ -134,7 +134,7 @@ class MigrarProcesosCorrectamente extends Command
             $this->mostrarResumen($dryRun);
 
         } catch (\Exception $e) {
-            $this->error("\n❌ Error: " . $e->getMessage());
+            $this->error("\n Error: " . $e->getMessage());
             \Log::error('Error en migración de procesos: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return 1;
         }
@@ -228,7 +228,7 @@ class MigrarProcesosCorrectamente extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->line("   ✅ Procesos migrados: {$this->stats['procesos_migrados']}\n");
+        $this->line("    Procesos migrados: {$this->stats['procesos_migrados']}\n");
         if ($procesos_saltados > 0) {
             $this->line("   ⚠️  Procesos saltados (pedido con cotizacion_id): {$procesos_saltados}\n");
         }
@@ -291,7 +291,7 @@ class MigrarProcesosCorrectamente extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->line("   ✅ Áreas actualizadas: {$this->stats['areas_asignadas']}\n");
+        $this->line("    Áreas actualizadas: {$this->stats['areas_asignadas']}\n");
     }
 
     private function normalizarEstado($estado)
@@ -358,7 +358,7 @@ class MigrarProcesosCorrectamente extends Command
         if ($dryRun) {
             $this->warn("\n⚠️  MODO DRY-RUN: Los datos NO fueron guardados");
         } else {
-            $this->info("\n✅ MIGRACIÓN DE PROCESOS COMPLETADA EXITOSAMENTE");
+            $this->info("\n MIGRACIÓN DE PROCESOS COMPLETADA EXITOSAMENTE");
         }
 
         $this->info(str_repeat("=", 140) . "\n");

@@ -124,7 +124,7 @@ SELECT
     ppi.id,
     ppi.proceso_id,
     ppi.ruta_original,
-    ppi.tamaño,  -- ✅ Este campo NO debe ser NULL
+    ppi.tamaño,  --  Este campo NO debe ser NULL
     ppi.ancho,
     ppi.alto,
     ppi.created_at
@@ -318,10 +318,10 @@ GROUP BY p.numero_pedido;
 
 | Campo | Valor Esperado | Si está NULL/vacío | Significa |
 |-------|-----------------|------------------|-----------|
-| `manga_obs` | "con puño" | ❌ NULL o '' | No se guardó la observación |
-| `tipo_manga_id` | 1 (o número) | ❌ NULL | No se creó/guardó el tipo de manga |
-| `cantidad_fotos_prenda` | > 0 | ❌ 0 | Las fotos no se guardaron |
-| `tamaño` (en imagenes) | 12345 | ❌ NULL | El tamaño no se registró |
+| `manga_obs` | "con puño" |  NULL o '' | No se guardó la observación |
+| `tipo_manga_id` | 1 (o número) |  NULL | No se creó/guardó el tipo de manga |
+| `cantidad_fotos_prenda` | > 0 |  0 | Las fotos no se guardaron |
+| `tamaño` (en imagenes) | 12345 |  NULL | El tamaño no se registró |
 
 ---
 

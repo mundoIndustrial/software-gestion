@@ -6,7 +6,7 @@ El controlador `PedidosProduccionController.php` actualmente tiene **MÚLTIPLES 
 
 ---
 
-## ❌ RESPONSABILIDADES QUE NO SON HTTP
+##  RESPONSABILIDADES QUE NO SON HTTP
 
 ### 1. **ACCESO DIRECTO A BASE DE DATOS (Queries Eloquent)**
 
@@ -161,8 +161,8 @@ El controlador tiene logging de lógica de negocio (no solo de HTTP):
 
 ```php
 \Log::info('📦 [SIN COTIZACIÓN] Creando pedido', [...]);
-\Log::info('✅ Pedido creado', [...]);
-\Log::info('📋 Prendas encontradas', [...]);
+\Log::info(' Pedido creado', [...]);
+\Log::info(' Prendas encontradas', [...]);
 \Log::info('🔍 [DESCRIPCION] Construyendo descripción', [...]);
 ```
 
@@ -211,7 +211,7 @@ El controlador tiene métodos marcados como LEGACY que aún no se han eliminado:
 
 ---
 
-## ✅ LO QUE EL CONTROLADOR DEBERÍA HACER (SOLO HTTP)
+##  LO QUE EL CONTROLADOR DEBERÍA HACER (SOLO HTTP)
 
 Un controlador siguiendo DDD debería SOLO:
 
@@ -278,6 +278,6 @@ public function crearDesdeCotizacion($cotizacionId)
 **Controlador Actual:** ~2555 líneas  
 **Código a eliminar (LEGACY):** ~1200 líneas  
 **Código a mover a servicios:** ~1060 líneas  
-**Controlador Final Esperado:** ~300 líneas ✅
+**Controlador Final Esperado:** ~300 líneas 
 
 **Reducción Total:** 88% 🎯

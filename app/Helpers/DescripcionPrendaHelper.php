@@ -53,7 +53,7 @@ class DescripcionPrendaHelper
         $obsManga = mb_strtoupper($prenda['obs_manga'] ?? '', 'UTF-8');
         $tipoBroche = mb_strtoupper($prenda['tipo_broche'] ?? '', 'UTF-8');
         $broche = mb_strtoupper($prenda['broche'] ?? '', 'UTF-8');
-        $descripcionUserInput = mb_strtoupper($prenda['descripcion_usuario'] ?? '', 'UTF-8'); // ✅ Campo para descripción del usuario
+        $descripcionUserInput = mb_strtoupper($prenda['descripcion_usuario'] ?? '', 'UTF-8'); //  Campo para descripción del usuario
         
         // Procesar listas
         $bolsillos = $prenda['bolsillos'] ?? [];
@@ -66,7 +66,7 @@ class DescripcionPrendaHelper
         // Limpiar reflectivos de "SI" si existe como primer item
         $reflectivos = self::limpiarListaItem($reflectivos);
 
-        // 1. Nombre de la prenda - ✅ Si solo hay una prenda, no mostrar "PRENDA 1:"
+        // 1. Nombre de la prenda -  Si solo hay una prenda, no mostrar "PRENDA 1:"
         if ($totalPrendas === 1) {
             $descripcion = "<span style='font-size: 15px !important; font-weight: bold;'>{$tipo}</span>";
         } else {
@@ -138,7 +138,7 @@ class DescripcionPrendaHelper
         }
         
         // 4. Tallas
-        // ✅ MANEJAR AMBAS ESTRUCTURAS:
+        //  MANEJAR AMBAS ESTRUCTURAS:
         // 1. Nueva: {genero: {talla: cantidad}} 
         // 2. Antigua: {talla: cantidad}
         if (!empty($tallas) && is_array($tallas)) {
@@ -195,7 +195,7 @@ class DescripcionPrendaHelper
 
         $descripcionFinal = trim($descripcion);
         
-        \Log::info('📋 [HELPER] Descripción generada:', [
+        \Log::info(' [HELPER] Descripción generada:', [
             'numero' => $numero,
             'tipo' => $tipo,
             'tiene_descripcion_usuario' => !empty($descripcionUserInput),
@@ -265,7 +265,7 @@ class DescripcionPrendaHelper
             }
         }
         
-        // ✅ Leer manga_obs directamente del campo si existe (tiene prioridad)
+        //  Leer manga_obs directamente del campo si existe (tiene prioridad)
         if ($prenda->manga_obs) {
             $datos['obs_manga'] = $prenda->manga_obs;
         }
@@ -387,7 +387,7 @@ class DescripcionPrendaHelper
             }
         }
 
-        // ✅ Extraer descripción personalizada del usuario
+        //  Extraer descripción personalizada del usuario
         // Si el campo descripcion contiene texto simple (sin estructura), usarlo como descripcion_usuario
         if (!empty($prenda->descripcion)) {
             $desc = $prenda->descripcion;

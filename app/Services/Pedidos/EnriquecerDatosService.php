@@ -32,7 +32,7 @@ class EnriquecerDatosService
             
             if ($tela) {
                 $prenda['tela_id'] = $tela->id;
-                Log::info('✅ Tela encontrada', ['nombre' => $prenda['tela'], 'id' => $tela->id]);
+                Log::info(' Tela encontrada', ['nombre' => $prenda['tela'], 'id' => $tela->id]);
             } else {
                 // Crear tela nueva
                 $telaId = DB::table('telas_prenda')->insertGetId([
@@ -43,7 +43,7 @@ class EnriquecerDatosService
                     'updated_at' => now(),
                 ]);
                 $prenda['tela_id'] = $telaId;
-                Log::info('✅ Tela creada', ['nombre' => $prenda['tela'], 'id' => $telaId]);
+                Log::info(' Tela creada', ['nombre' => $prenda['tela'], 'id' => $telaId]);
             }
         }
 
@@ -55,7 +55,7 @@ class EnriquecerDatosService
             
             if ($color) {
                 $prenda['color_id'] = $color->id;
-                Log::info('✅ Color encontrado', ['nombre' => $prenda['color'], 'id' => $color->id]);
+                Log::info(' Color encontrado', ['nombre' => $prenda['color'], 'id' => $color->id]);
             } else {
                 // Crear color nuevo
                 $colorId = DB::table('colores_prenda')->insertGetId([
@@ -65,7 +65,7 @@ class EnriquecerDatosService
                     'updated_at' => now(),
                 ]);
                 $prenda['color_id'] = $colorId;
-                Log::info('✅ Color creado', ['nombre' => $prenda['color'], 'id' => $colorId]);
+                Log::info(' Color creado', ['nombre' => $prenda['color'], 'id' => $colorId]);
             }
         }
 
@@ -77,7 +77,7 @@ class EnriquecerDatosService
             
             if ($manga) {
                 $prenda['tipo_manga_id'] = $manga->id;
-                Log::info('✅ Manga encontrada', ['nombre' => $prenda['manga'], 'id' => $manga->id]);
+                Log::info(' Manga encontrada', ['nombre' => $prenda['manga'], 'id' => $manga->id]);
             } else {
                 // Crear tipo manga nuevo
                 $mangaId = DB::table('tipos_manga')->insertGetId([
@@ -87,7 +87,7 @@ class EnriquecerDatosService
                     'updated_at' => now(),
                 ]);
                 $prenda['tipo_manga_id'] = $mangaId;
-                Log::info('✅ Manga creada', ['nombre' => $prenda['manga'], 'id' => $mangaId]);
+                Log::info(' Manga creada', ['nombre' => $prenda['manga'], 'id' => $mangaId]);
             }
         }
 
@@ -100,7 +100,7 @@ class EnriquecerDatosService
             
             if ($broche) {
                 $prenda['tipo_broche_boton_id'] = $broche->id;
-                Log::info('✅ Broche encontrado', ['nombre' => $prenda['broche'], 'id' => $broche->id]);
+                Log::info(' Broche encontrado', ['nombre' => $prenda['broche'], 'id' => $broche->id]);
             } else {
                 // Crear tipo broche nuevo
                 $broqueId = DB::table('tipos_broche_boton')->insertGetId([
@@ -110,7 +110,7 @@ class EnriquecerDatosService
                     'updated_at' => now(),
                 ]);
                 $prenda['tipo_broche_boton_id'] = $broqueId;
-                Log::info('✅ Broche creado', ['nombre' => $prenda['broche'], 'id' => $broqueId]);
+                Log::info(' Broche creado', ['nombre' => $prenda['broche'], 'id' => $broqueId]);
             }
         }
 

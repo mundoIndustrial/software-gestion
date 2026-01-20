@@ -24,7 +24,7 @@ class OperariosCortadoresSeeder extends Seeder
         $roleCortadorId = DB::table('roles')->where('name', 'cortador')->value('id');
 
         if (!$roleCortadorId) {
-            $this->command->error('❌ No se encontró el rol "cortador". Ejecuta primero RolesSeeder.');
+            $this->command->error(' No se encontró el rol "cortador". Ejecuta primero RolesSeeder.');
             return;
         }
 
@@ -68,7 +68,7 @@ class OperariosCortadoresSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
                 
-                $this->command->info("✅ Operario creado: {$operario['name']} (ID: {$operario['id']})");
+                $this->command->info(" Operario creado: {$operario['name']} (ID: {$operario['id']})");
             } else {
                 $this->command->warn("⚠️ El operario con ID {$operario['id']} ya existe. Se omite.");
             }
@@ -77,6 +77,6 @@ class OperariosCortadoresSeeder extends Seeder
         // Resetear el auto_increment para que el siguiente usuario tenga ID 6
         DB::statement('ALTER TABLE users AUTO_INCREMENT = 6');
         
-        $this->command->info('✅ Seeder de operarios de corte completado.');
+        $this->command->info(' Seeder de operarios de corte completado.');
     }
 }

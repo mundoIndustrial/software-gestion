@@ -33,14 +33,14 @@ class BuscarEppHandler implements QueryHandler
 
             $epps = $this->eppService->buscarEppConImagenes($query->getTermino());
 
-            Log::info('✅ [BuscarEppHandler] EPP encontrados', [
+            Log::info(' [BuscarEppHandler] EPP encontrados', [
                 'cantidad' => count($epps),
             ]);
 
             return $epps;
 
         } catch (\Exception $e) {
-            Log::error('❌ [BuscarEppHandler] Error buscando EPP', [
+            Log::error(' [BuscarEppHandler] Error buscando EPP', [
                 'error' => $e->getMessage(),
                 'termino' => $query->getTermino(),
             ]);

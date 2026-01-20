@@ -38,7 +38,7 @@ async function cargarTiposLogosDisponibles() {
             tiposLogosDisponibles = data.data;
         }
     } catch (error) {
-        console.error('❌ Error cargando tipos de logo:', error);
+        console.error(' Error cargando tipos de logo:', error);
     }
 }
 
@@ -49,7 +49,7 @@ async function cargarTiposLogosDisponibles() {
 function cargarLogoPrendasDesdeCotizacion(prendasTecnicas) {
     
     if (!prendasTecnicas || prendasTecnicas.length === 0) {
-        console.log('ℹ️ No hay prendas técnicas en esta cotización');
+        console.log(' No hay prendas técnicas en esta cotización');
         window.logoPrendasTecnicas = [];
         logoPrendasTecnicas = [];
         return;
@@ -468,7 +468,7 @@ window.abrirModalEditarPrendaTecnica = function(index) {
     const prenda = logoPrendasTecnicas[index];
     
     if (!prenda) {
-        console.error('❌ Prenda no encontrada en índice:', index);
+        console.error(' Prenda no encontrada en índice:', index);
         return;
     }
     

@@ -19,7 +19,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
 
         // ESTRUCTURA DE COTIZACIONES (DDD Normalizado)
         $this->line('═════════════════════════════════════════════════════════');
-        $this->info('📋 ESTRUCTURA PARA COTIZACIONES (DDD - Normalizado)');
+        $this->info(' ESTRUCTURA PARA COTIZACIONES (DDD - Normalizado)');
         $this->line('═════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -34,7 +34,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
 
         // ESTRUCTURA DE PEDIDOS (Legacy)
         $this->line('═════════════════════════════════════════════════════════');
-        $this->info('📋 ESTRUCTURA PARA PEDIDOS (Legacy)');
+        $this->info(' ESTRUCTURA PARA PEDIDOS (Legacy)');
         $this->line('═════════════════════════════════════════════════════════');
         $this->newLine();
 
@@ -54,7 +54,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
         $cotizacion = DB::table('cotizaciones')->where('id', 2)->first();
 
         if ($cotizacion) {
-            $this->info('✅ Cotización 2 ENCONTRADA:');
+            $this->info(' Cotización 2 ENCONTRADA:');
             $this->line("   ID: {$cotizacion->id}");
             $this->line("   Cliente ID: {$cotizacion->cliente_id}");
             $this->line("   Tipo: " . ($cotizacion->tipo ?? 'NULL'));
@@ -90,23 +90,23 @@ class AnalyzeCotizacionesVsPedidos extends Command
             $this->newLine();
 
             if ($prendasCot === 0) {
-                $this->error('❌ NO hay prendas en prendas_cot para esta cotización');
+                $this->error(' NO hay prendas en prendas_cot para esta cotización');
                 $this->newLine();
                 $this->line('📌 CAUSA RAÍZ:');
                 $this->line('   El controlador está usando la estructura INCORRECTA');
                 $this->line('   para guardar COTIZACIONES.');
                 $this->newLine();
-                $this->line('❌ Está usando:');
+                $this->line(' Está usando:');
                 $this->line('   └─ prendas_pedido (estructura para PEDIDOS)');
                 $this->newLine();
-                $this->line('✅ Debería usar:');
+                $this->line(' Debería usar:');
                 $this->line('   └─ prendas_cot (estructura para COTIZACIONES)');
                 $this->newLine();
             } else {
-                $this->info('✅ Prendas guardadas en la estructura correcta');
+                $this->info(' Prendas guardadas en la estructura correcta');
             }
         } else {
-            $this->error('❌ Cotización 2 no encontrada');
+            $this->error(' Cotización 2 no encontrada');
         }
 
         $this->newLine();
@@ -124,12 +124,12 @@ class AnalyzeCotizacionesVsPedidos extends Command
             ", [$tableName]);
 
             if (empty($columns)) {
-                $this->line("❌ Tabla: $tableName (NO EXISTE)");
+                $this->line(" Tabla: $tableName (NO EXISTE)");
                 return;
             }
 
             $count = DB::table($tableName)->count();
-            $this->line("✅ Tabla: $tableName");
+            $this->line(" Tabla: $tableName");
             $this->line("   Columnas:");
 
             foreach ($columns as $col) {
@@ -140,7 +140,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
             $this->newLine();
 
         } catch (\Exception $e) {
-            $this->line("❌ Tabla: $tableName (ERROR)");
+            $this->line(" Tabla: $tableName (ERROR)");
             $this->newLine();
         }
     }

@@ -47,7 +47,7 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
             // Cachear por 1 hora
             cache()->put($cacheKey, $prendas, now()->addHour());
 
-            Log::info('✅ [ObtenerPrendasPorPedidoHandler] Prendas obtenidas', [
+            Log::info(' [ObtenerPrendasPorPedidoHandler] Prendas obtenidas', [
                 'pedido_id' => $query->getPedidoId(),
                 'cantidad' => $prendas->count(),
             ]);
@@ -55,7 +55,7 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
             return $prendas;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ObtenerPrendasPorPedidoHandler] Error obteniendo prendas', [
+            Log::error(' [ObtenerPrendasPorPedidoHandler] Error obteniendo prendas', [
                 'pedido_id' => $query->getPedidoId(),
                 'error' => $e->getMessage(),
             ]);

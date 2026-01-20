@@ -38,7 +38,7 @@ return new class extends Migration
                 );
             });
             
-            \Log::info('✅ Índice UNIQUE corregido en prenda_pedido_variantes');
+            \Log::info(' Índice UNIQUE corregido en prenda_pedido_variantes');
         }
     }
 

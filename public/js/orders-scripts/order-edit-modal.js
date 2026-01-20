@@ -463,7 +463,7 @@ async function saveEditOrder(event) {
         // Actualizar la tabla en tiempo real sin recargar
         if (result.orden && globalThis.modernTableInstance && typeof globalThis.modernTableInstance.actualizarOrdenEnTabla === 'function') {
             globalThis.modernTableInstance.actualizarOrdenEnTabla(result.orden);
-            console.log('✅ Orden actualizada en tiempo real desde el modal');
+            console.log(' Orden actualizada en tiempo real desde el modal');
         }
         
         // Cerrar modal después de 1.5 segundos

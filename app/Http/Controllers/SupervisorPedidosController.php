@@ -1179,18 +1179,18 @@ class SupervisorPedidosController extends Controller
             if (isset($foto->ruta_original) && Storage::disk('public')->exists($foto->ruta_original)) {
                 Storage::disk('public')->delete($foto->ruta_original);
                 $archivosEliminados[] = $foto->ruta_original;
-                \Log::info("✅ Archivo original eliminado: {$foto->ruta_original}");
+                \Log::info(" Archivo original eliminado: {$foto->ruta_original}");
             }
             
             if (isset($foto->ruta_webp) && $foto->ruta_webp !== $foto->ruta_original && Storage::disk('public')->exists($foto->ruta_webp)) {
                 Storage::disk('public')->delete($foto->ruta_webp);
                 $archivosEliminados[] = $foto->ruta_webp;
-                \Log::info("✅ Archivo webp eliminado: {$foto->ruta_webp}");
+                \Log::info(" Archivo webp eliminado: {$foto->ruta_webp}");
             }
 
             // Eliminar registro de la base de datos permanentemente (forceDelete porque usa SoftDeletes)
             $foto->forceDelete();
-            \Log::info("✅ Registro de BD eliminado permanentemente para imagen {$tipo}", [
+            \Log::info(" Registro de BD eliminado permanentemente para imagen {$tipo}", [
                 'id' => $id,
                 'archivos_eliminados' => $archivosEliminados
             ]);
@@ -1269,7 +1269,7 @@ class SupervisorPedidosController extends Controller
             $rutaArchivo = $rutaCompleta . '/' . $nombreUnico;
             $imagen->toWebp(85)->save($rutaArchivo);
             
-            \Log::info('✅ Imagen guardada como webp', [
+            \Log::info(' Imagen guardada como webp', [
                 'nombre' => $nombreUnico,
                 'numero_pedido' => $numeroPedido,
                 'tipo' => $tipo,
@@ -1281,7 +1281,7 @@ class SupervisorPedidosController extends Controller
             return $carpetaRelativa . '/' . $nombreUnico;
             
         } catch (\Exception $e) {
-            \Log::error('❌ Error al convertir imagen a webp: ' . $e->getMessage());
+            \Log::error(' Error al convertir imagen a webp: ' . $e->getMessage());
             // Fallback: guardar sin conversión en carpeta del pedido
             return $file->store("pedidos/{$numeroPedido}/{$tipo}", 'public');
         }

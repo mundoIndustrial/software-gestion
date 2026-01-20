@@ -75,7 +75,7 @@ function applyAllRowConditionalColors() {
     rows.forEach(row => {
         applyRowConditionalColors(row);
     });
-    console.log('✅ Colores condicionales aplicados a todas las filas');
+    console.log(' Colores condicionales aplicados a todas las filas');
 }
 
 /**

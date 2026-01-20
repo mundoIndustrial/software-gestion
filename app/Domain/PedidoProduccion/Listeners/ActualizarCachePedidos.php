@@ -57,13 +57,13 @@ class ActualizarCachePedidos
 
             Cache::put($statsKey, $stats, now()->addHours(24));
 
-            Log::info('✅ Caché de pedidos actualizado', [
+            Log::info(' Caché de pedidos actualizado', [
                 'pedido_id' => $event->getPedidoId(),
                 'estadisticas' => $stats,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error actualizando caché', [
+            Log::error(' Error actualizando caché', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $event->getPedidoId(),
             ]);

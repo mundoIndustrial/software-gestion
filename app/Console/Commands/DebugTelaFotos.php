@@ -26,7 +26,7 @@ class DebugTelaFotos extends Command
             return;
         }
 
-        $this->info("✅ Cotización encontrada: {$cotizacion->numero_cotizacion}\n");
+        $this->info(" Cotización encontrada: {$cotizacion->numero_cotizacion}\n");
 
         // Obtener prendas
         $prendas = PrendaCot::where('cotizacion_id', $cotId)

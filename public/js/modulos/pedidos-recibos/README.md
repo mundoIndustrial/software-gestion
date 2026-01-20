@@ -219,12 +219,12 @@ El módulo requiere estos elementos en el HTML:
 
 ## Ventajas de la refactorización
 
-✅ **Componentes separados**: cada componente tiene una responsabilidad clara  
-✅ **Reutilizable**: componentes pueden usarse independientemente  
-✅ **Testeable**: lógica separada facilita unit tests  
-✅ **Mantenible**: código organizado en carpetas por tipo  
-✅ **Escalable**: fácil agregar nuevos componentes o utilidades  
-✅ **Documentado**: cada componente tiene comentarios claros  
+ **Componentes separados**: cada componente tiene una responsabilidad clara  
+ **Reutilizable**: componentes pueden usarse independientemente  
+ **Testeable**: lógica separada facilita unit tests  
+ **Mantenible**: código organizado en carpetas por tipo  
+ **Escalable**: fácil agregar nuevos componentes o utilidades  
+ **Documentado**: cada componente tiene comentarios claros  
 
 ## Debugging
 

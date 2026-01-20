@@ -821,19 +821,19 @@ class RegistroOrdenController extends Controller
                 'novedades' => 'nullable|string|max:5000'
             ]);
 
-            \Log::info('✅ Validación exitosa');
+            \Log::info(' Validación exitosa');
 
             // Buscar la orden
             $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
             
-            \Log::info('✅ Orden encontrada', ['orden_id' => $orden->id]);
+            \Log::info(' Orden encontrada', ['orden_id' => $orden->id]);
 
             // Actualizar novedades (reemplazo total)
             $orden->update([
                 'novedades' => $request->input('novedades', '')
             ]);
             
-            \Log::info('✅ Novedades actualizadas', ['novedades' => $request->input('novedades', '')]);
+            \Log::info(' Novedades actualizadas', ['novedades' => $request->input('novedades', '')]);
 
             // Registrar en auditoría si existe
             if (class_exists('App\Models\AuditLog')) {
@@ -861,13 +861,13 @@ class RegistroOrdenController extends Controller
                 ]
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::error('❌ Orden no encontrada', ['numeroPedido' => $numeroPedido]);
+            \Log::error(' Orden no encontrada', ['numeroPedido' => $numeroPedido]);
             return response()->json([
                 'success' => false,
                 'message' => 'Orden no encontrada'
             ], 404);
         } catch (\Exception $e) {
-            \Log::error('❌ Error al actualizar novedades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            \Log::error(' Error al actualizar novedades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar las novedades: ' . $e->getMessage()
@@ -916,7 +916,7 @@ class RegistroOrdenController extends Controller
                 'novedades' => $novedadesNuevas
             ]);
             
-            \Log::info('✅ Novedad agregada', [
+            \Log::info(' Novedad agregada', [
                 'usuario' => $usuario,
                 'fecha_hora' => $fechaHora,
                 'novedad' => $request->input('novedad')
@@ -948,13 +948,13 @@ class RegistroOrdenController extends Controller
                 ]
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::error('❌ Orden no encontrada', ['numeroPedido' => $numeroPedido]);
+            \Log::error(' Orden no encontrada', ['numeroPedido' => $numeroPedido]);
             return response()->json([
                 'success' => false,
                 'message' => 'Orden no encontrada'
             ], 404);
         } catch (\Exception $e) {
-            \Log::error('❌ Error al agregar novedad: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            \Log::error(' Error al agregar novedad: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al agregar la novedad: ' . $e->getMessage()

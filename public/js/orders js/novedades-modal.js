@@ -137,7 +137,7 @@ async function saveNewNovedad() {
     }
 
     if (novedad.length > 500) {
-        showNotification('❌ La novedad no puede exceder 500 caracteres', 'error');
+        showNotification(' La novedad no puede exceder 500 caracteres', 'error');
         return;
     }
 
@@ -163,12 +163,12 @@ async function saveNewNovedad() {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('❌ Error:', data);
+            console.error(' Error:', data);
             throw new Error(data.message || `Error ${response.status}`);
         }
 
-        console.log('✅ Novedad guardada exitosamente');
-        showNotification('✅ Novedad agregada correctamente', 'success');
+        console.log(' Novedad guardada exitosamente');
+        showNotification(' Novedad agregada correctamente', 'success');
 
         // Actualizar textarea con las nuevas novedades
         document.getElementById('novedadesTextarea').value = data.data.novedades;
@@ -180,8 +180,8 @@ async function saveNewNovedad() {
         cancelNewNovedad();
 
     } catch (error) {
-        console.error('❌ Error:', error);
-        showNotification(`❌ Error: ${error.message}`, 'error');
+        console.error(' Error:', error);
+        showNotification(` Error: ${error.message}`, 'error');
     } finally {
         btnSaveNew.disabled = false;
         btnSaveNew.classList.remove('loading');
@@ -224,12 +224,12 @@ async function saveEditedNovedades() {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('❌ Error:', data);
+            console.error(' Error:', data);
             throw new Error(data.message || `Error ${response.status}`);
         }
 
-        console.log('✅ Cambios guardados exitosamente');
-        showNotification('✅ Novedades actualizadas correctamente', 'success');
+        console.log(' Cambios guardados exitosamente');
+        showNotification(' Novedades actualizadas correctamente', 'success');
 
         // Actualizar la fila en la tabla
         updateRowNovedades(currentOrderId, novedades);
@@ -240,8 +240,8 @@ async function saveEditedNovedades() {
         }, 500);
 
     } catch (error) {
-        console.error('❌ Error completo:', error);
-        showNotification(`❌ Error: ${error.message}`, 'error');
+        console.error(' Error completo:', error);
+        showNotification(` Error: ${error.message}`, 'error');
     } finally {
         btnSaveEdit.disabled = false;
         btnSaveEdit.classList.remove('loading');

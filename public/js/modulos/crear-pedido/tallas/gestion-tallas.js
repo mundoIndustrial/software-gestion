@@ -62,7 +62,7 @@ window.obtenerCantidadTalla = function(genero, talla) {
  * Mostrar las tallas disponibles según el tipo seleccionado
  */
 window.mostrarTallasDisponibles = function(tipo) {
-    console.log('📋 [TALLAS] Mostrando tallas tipo:', tipo);
+    console.log(' [TALLAS] Mostrando tallas tipo:', tipo);
     
     const container = document.getElementById('container-tallas-disponibles');
     if (!container) return;
@@ -112,14 +112,14 @@ window.mostrarTallasDisponibles = function(tipo) {
                 btn.style.borderColor = '#d1d5db';
                 btn.style.background = 'white';
                 btn.style.color = '#1f2937';
-                console.log('❌ [TALLA] Deseleccionada:', talla);
+                console.log(' [TALLA] Deseleccionada:', talla);
             } else {
                 // Seleccionar
                 window.tallasSeleccionadas[window.generoActualModal].tallas.push(talla);
                 btn.style.borderColor = '#0066cc';
                 btn.style.background = '#0066cc';
                 btn.style.color = 'white';
-                console.log('✅ [TALLA] Seleccionada:', talla);
+                console.log(' [TALLA] Seleccionada:', talla);
             }
         };
         
@@ -173,9 +173,9 @@ window.seleccionarTipoTalla = function(tipo) {
         console.log('⚠️ [TIPO TALLA] Tipo cambió de', tipoAnterior, 'a', tipo, '- Limpiando tallas');
         window.tallasSeleccionadas[window.generoActualModal].tallas = [];
     } else if (!tipoAnterior) {
-        console.log('ℹ️ [TIPO TALLA] Primera selección de tipo, inicializando tallas vacías');
+        console.log(' [TIPO TALLA] Primera selección de tipo, inicializando tallas vacías');
     } else {
-        console.log('✅ [TIPO TALLA] Mismo tipo, preservando tallas seleccionadas:', window.tallasSeleccionadas[window.generoActualModal].tallas);
+        console.log(' [TIPO TALLA] Mismo tipo, preservando tallas seleccionadas:', window.tallasSeleccionadas[window.generoActualModal].tallas);
     }
     
     // Mostrar las tallas disponibles del tipo seleccionado
@@ -271,7 +271,7 @@ window.abrirModalSeleccionarTallas = function(genero) {
         
         const msgEditando = document.createElement('div');
         msgEditando.style.cssText = 'background: #dbeafe; border: 1px solid #93c5fd; border-radius: 6px; padding: 1rem; text-align: center; font-size: 0.9rem; color: #1e40af;';
-        msgEditando.innerHTML = `<strong>ℹ️ Editando:</strong><br>Tallas ya seleccionadas como <strong>${tipoDelGeneroActual === 'letra' ? '📝 LETRA' : '🔢 NÚMERO'}</strong>`;
+        msgEditando.innerHTML = `<strong> Editando:</strong><br>Tallas ya seleccionadas como <strong>${tipoDelGeneroActual === 'letra' ? '📝 LETRA' : '🔢 NÚMERO'}</strong>`;
         selectorTipo.appendChild(msgEditando);
         
         // Seleccionar automáticamente el tipo
@@ -286,7 +286,7 @@ window.abrirModalSeleccionarTallas = function(genero) {
         
         const msgSincro = document.createElement('div');
         msgSincro.style.cssText = 'background: #dbeafe; border: 1px solid #93c5fd; border-radius: 6px; padding: 1rem; text-align: center; font-size: 0.9rem; color: #1e40af;';
-        msgSincro.innerHTML = `<strong>ℹ️ Tipo sincronizado:</strong><br>Se usa el tipo <strong>${tipoDelOtroGenero === 'letra' ? '📝 LETRA' : '🔢 NÚMERO'}</strong> que ya seleccionaste en ${otroGenero}`;
+        msgSincro.innerHTML = `<strong> Tipo sincronizado:</strong><br>Se usa el tipo <strong>${tipoDelOtroGenero === 'letra' ? '📝 LETRA' : '🔢 NÚMERO'}</strong> que ya seleccionaste en ${otroGenero}`;
         selectorTipo.appendChild(msgSincro);
         
         // Seleccionar automáticamente el tipo
@@ -444,7 +444,7 @@ window.cerrarModalTallas = function(genero) {
  * Crear tarjeta de género con tallas y cantidades
  */
 window.crearTarjetaGenero = function(genero) {
-    console.log('📋 [TARJETA] Creando tarjeta para:', genero);
+    console.log(' [TARJETA] Creando tarjeta para:', genero);
     console.log('📊 [TARJETA] Tallas seleccionadas:', JSON.stringify(window.tallasSeleccionadas[genero]));
     
     if (window.tallasSeleccionadas[genero].tallas.length === 0) {
@@ -469,7 +469,7 @@ window.crearTarjetaGenero = function(genero) {
     // Obtener contenedor
     const container = document.getElementById('tarjetas-generos-container');
     if (!container) {
-        console.error('❌ [TARJETA] No se encontró contenedor de tarjetas');
+        console.error(' [TARJETA] No se encontró contenedor de tarjetas');
         return;
     }
     
@@ -575,7 +575,7 @@ window.crearTarjetaGenero = function(genero) {
         
         // Actualizar total
         actualizarTotalPrendas();
-        console.log('✅ [ELIMINAR] Género eliminado correctamente');
+        console.log(' [ELIMINAR] Género eliminado correctamente');
     };
     btnGroupAcciones.appendChild(btnEliminar);
     
@@ -668,7 +668,7 @@ window.validarTallasSeleccionadas = function() {
         return false;
     }
     
-    console.log('✅ [VALIDACIÓN] Tallas válidas');
+    console.log(' [VALIDACIÓN] Tallas válidas');
     return true;
 };
 
@@ -706,5 +706,5 @@ window.limpiarTallasSeleccionadas = function() {
     });
     
     actualizarTotalPrendas();
-    console.log('✅ [LIMPIAR] Limpieza completada');
+    console.log(' [LIMPIAR] Limpieza completada');
 };

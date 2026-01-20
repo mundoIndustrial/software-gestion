@@ -688,7 +688,7 @@ class PedidosProduccionController
             // Guardar cambios
             $prenda->save();
 
-            Log::info('✅ Prenda actualizada correctamente', [
+            Log::info(' Prenda actualizada correctamente', [
                 'pedido_id' => $pedidoId,
                 'prenda_index' => $prendasIndex,
             ]);
@@ -700,7 +700,7 @@ class PedidosProduccionController
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error actualizando prenda', [
+            Log::error(' Error actualizando prenda', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

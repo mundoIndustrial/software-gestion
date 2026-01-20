@@ -33,7 +33,7 @@ if (window.gestorPrendaSinCotizacion) {
         console.log(`\n🔧 Procesando prenda ${prendaIndex}: "${prenda.nombre_producto}"`);
         
         // Simular el código actual (QUE ESTÁ FALLANDO)
-        console.log('\n  ❌ MÉTODO ACTUAL (INCORRECTO):');
+        console.log('\n   MÉTODO ACTUAL (INCORRECTO):');
         const cantidadTallaActual = {};
         
         if (prenda.generosConTallas && typeof prenda.generosConTallas === 'object') {
@@ -47,17 +47,17 @@ if (window.gestorPrendaSinCotizacion) {
                     const cantidad = parseInt(tallaDelGenero[talla]) || 0;
                     console.log(`           ${talla}: ${cantidad}`);
                     if (cantidad > 0) {
-                        cantidadTallaActual[talla] = cantidad;  // ❌ SOLO TALLA
+                        cantidadTallaActual[talla] = cantidad;  //  SOLO TALLA
                     }
                 });
             });
         }
         
         console.log(`     Resultado: cantidadTalla =`, cantidadTallaActual);
-        console.log(`     ❌ PROBLEMA: Faltan los géneros en las claves`);
+        console.log(`      PROBLEMA: Faltan los géneros en las claves`);
         
         // Simular el código CORRECTO
-        console.log('\n  ✅ MÉTODO CORRECTO:');
+        console.log('\n   MÉTODO CORRECTO:');
         const cantidadTallaCorrecta = {};
         
         if (prenda.generosConTallas && typeof prenda.generosConTallas === 'object') {
@@ -66,7 +66,7 @@ if (window.gestorPrendaSinCotizacion) {
                 Object.keys(tallaDelGenero).forEach(talla => {
                     const cantidad = parseInt(tallaDelGenero[talla]) || 0;
                     if (cantidad > 0) {
-                        const key = `${genero}-${talla}`;  // ✅ CON GÉNERO
+                        const key = `${genero}-${talla}`;  //  CON GÉNERO
                         cantidadTallaCorrecta[key] = cantidad;
                         console.log(`        ${key}: ${cantidad}`);
                     }
@@ -75,7 +75,7 @@ if (window.gestorPrendaSinCotizacion) {
         }
         
         console.log(`     Resultado: cantidadTalla =`, cantidadTallaCorrecta);
-        console.log(`     ✅ CORRECTO: Incluye géneros en las claves`);
+        console.log(`      CORRECTO: Incluye géneros en las claves`);
         
         // PASO 3: Comparar arrays
         console.log('\n  📊 COMPARACIÓN:');
@@ -85,8 +85,8 @@ if (window.gestorPrendaSinCotizacion) {
         // PASO 4: Ver qué espera el backend
         console.log('\n  🔄 QUÉ ESPERA EL BACKEND:');
         console.log(`     tallas array (keys de cantidadTalla):`);
-        console.log(`     ❌ Incorrecto: [${Object.keys(cantidadTallaActual).join(', ')}]`);
-        console.log(`     ✅ Correcto:   [${Object.keys(cantidadTallaCorrecta).join(', ')}]`);
+        console.log(`      Incorrecto: [${Object.keys(cantidadTallaActual).join(', ')}]`);
+        console.log(`      Correcto:   [${Object.keys(cantidadTallaCorrecta).join(', ')}]`);
     });
 }
 
@@ -107,7 +107,7 @@ if (window.gestorPrendaSinCotizacion) {
                 Object.keys(tallaDelGenero).forEach(talla => {
                     const cantidad = parseInt(tallaDelGenero[talla]) || 0;
                     if (cantidad > 0) {
-                        cantidadTallaIncorrecto[talla] = cantidad;  // ❌
+                        cantidadTallaIncorrecto[talla] = cantidad;  // 
                     }
                 });
             });
@@ -117,11 +117,11 @@ if (window.gestorPrendaSinCotizacion) {
             tipo: 'prenda_nueva',
             prenda: prenda.nombre_producto,
             cantidad_talla: cantidadTallaIncorrecto,
-            tallas: Object.keys(cantidadTallaIncorrecto)  // ❌ VACÍO O SIN GÉNERO
+            tallas: Object.keys(cantidadTallaIncorrecto)  //  VACÍO O SIN GÉNERO
         };
         
         console.log(JSON.stringify(payloadIncorrecto, null, 2));
-        console.log(`❌ PROBLEMA: tallas = ${JSON.stringify(payloadIncorrecto.tallas)} (VACÍO o SIN GÉNERO)`);
+        console.log(` PROBLEMA: tallas = ${JSON.stringify(payloadIncorrecto.tallas)} (VACÍO o SIN GÉNERO)`);
         
         // Simular el payload correcto
         console.log(`\n📦 Item ${index} (con formato correcto - ARREGLADO):`);
@@ -133,7 +133,7 @@ if (window.gestorPrendaSinCotizacion) {
                 Object.keys(tallaDelGenero).forEach(talla => {
                     const cantidad = parseInt(tallaDelGenero[talla]) || 0;
                     if (cantidad > 0) {
-                        cantidadTallaCorrect[`${genero}-${talla}`] = cantidad;  // ✅
+                        cantidadTallaCorrect[`${genero}-${talla}`] = cantidad;  // 
                     }
                 });
             });
@@ -143,21 +143,21 @@ if (window.gestorPrendaSinCotizacion) {
             tipo: 'prenda_nueva',
             prenda: prenda.nombre_producto,
             cantidad_talla: cantidadTallaCorrect,
-            tallas: Object.keys(cantidadTallaCorrect)  // ✅ CON GÉNERO
+            tallas: Object.keys(cantidadTallaCorrect)  //  CON GÉNERO
         };
         
         console.log(JSON.stringify(payloadCorrecto, null, 2));
-        console.log(`✅ CORRECTO: tallas = ${JSON.stringify(payloadCorrecto.tallas)}`);
+        console.log(` CORRECTO: tallas = ${JSON.stringify(payloadCorrecto.tallas)}`);
     });
 }
 
 // RESUMEN
 console.log('\n%c═══════════════════════════════════════════════════════════', 'color: #FF0000');
-console.log('%c📋 RESUMEN DEL PROBLEMA', 'color: #FF0000; font-weight: bold');
+console.log('%c RESUMEN DEL PROBLEMA', 'color: #FF0000; font-weight: bold');
 console.log('%c═══════════════════════════════════════════════════════════', 'color: #FF0000');
 
 console.log(`
-❌ PROBLEMA ENCONTRADO:
+ PROBLEMA ENCONTRADO:
    En línea 1022 de gestion-items-pedido.js
    
    Código actual (INCORRECTO):
@@ -169,7 +169,7 @@ console.log(`
    Backend espera: tallas != [] ✓ (pasa)
    PERO falta información del género!
 
-✅ SOLUCIÓN:
+ SOLUCIÓN:
    Código corregido:
    ├─ cantidadTalla['dama-S'] = 230
    ├─ cantidadTalla['dama-M'] = 230

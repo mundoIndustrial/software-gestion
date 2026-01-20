@@ -6,7 +6,7 @@
 
 ---
 
-## 📋 ÍNDICE
+##  ÍNDICE
 1. [Concepto Principal](#concepto-principal)
 2. [Regla de Split de Ítems](#regla-de-split-de-ítems)
 3. [Estructura de Datos](#estructura-de-datos)
@@ -567,7 +567,7 @@ console.log('🔍 Tiene prendas técnicas (logo):', data.prendas_tecnicas?.lengt
 
 // Al calcular cantidades
 console.log('🔢 Calculando cantidad total para:', nombrePrenda);
-console.log('  ✅ Usando cantidad directa:', prenda.cantidad);
+console.log('   Usando cantidad directa:', prenda.cantidad);
 
 // Al agregar ítems
 console.log('➕ Agregando prendas seleccionadas. Total checkboxes:', checkboxes.length);
@@ -586,11 +586,11 @@ Para verificar que el sistema funciona correctamente:
 1. **Abrir consola del navegador** (F12)
 2. **Seleccionar una cotización**
 3. **Verificar logs:**
-   - ✅ Datos cargados correctamente
-   - ✅ Prendas renderizadas en modal
-   - ✅ Cantidades calculadas correctamente
-   - ✅ Ítems agregados al array
-   - ✅ Lista renderizada en el DOM
+   -  Datos cargados correctamente
+   -  Prendas renderizadas en modal
+   -  Cantidades calculadas correctamente
+   -  Ítems agregados al array
+   -  Lista renderizada en el DOM
 
 ---
 

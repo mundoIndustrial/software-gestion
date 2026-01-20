@@ -161,7 +161,7 @@ class EppSeeder extends Seeder
             Epp::create($eppData);
         }
 
-        $this->command->info('✅ EPP Seeder ejecutado correctamente. ' . Epp::count() . ' EPPs creados sin imágenes.');
+        $this->command->info(' EPP Seeder ejecutado correctamente. ' . Epp::count() . ' EPPs creados sin imágenes.');
         $this->command->info('💡 Las imágenes deben ser agregadas manualmente a través del formulario de carga.');
     }
 }

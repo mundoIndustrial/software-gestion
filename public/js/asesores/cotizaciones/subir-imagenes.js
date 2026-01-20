@@ -63,7 +63,7 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
         }
 
         if (data.success) {
-            console.log('✅ Imagen subida exitosamente', {
+            console.log(' Imagen subida exitosamente', {
                 ruta: data.data.ruta,
                 tamaño: (archivo.size / 1024).toFixed(2) + ' KB'
             });
@@ -76,7 +76,7 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
             throw new Error(data.message || 'Error desconocido');
         }
     } catch (error) {
-        console.error('❌ Error al subir imagen', {
+        console.error(' Error al subir imagen', {
             error: error.message,
             archivo: archivo.name,
             cotizacion_id: cotizacionId
@@ -119,7 +119,7 @@ async function subirMultiplesImagenes(archivos, cotizacionId, prendaId, tipo) {
                 rutas.push(resultado.ruta);
             }
         } catch (error) {
-            console.error(`❌ Error subiendo imagen ${i + 1}`, error.message);
+            console.error(` Error subiendo imagen ${i + 1}`, error.message);
             errores.push({
                 archivo: archivos[i].name,
                 error: error.message
@@ -127,7 +127,7 @@ async function subirMultiplesImagenes(archivos, cotizacionId, prendaId, tipo) {
         }
     }
 
-    console.log('✅ Subida de múltiples imágenes completada', {
+    console.log(' Subida de múltiples imágenes completada', {
         exitosas: rutas.length,
         fallidas: errores.length,
         rutas: rutas
@@ -169,7 +169,7 @@ function manejarDropImagenes(event, cotizacionId, prendaId, tipo, callback) {
             }
         })
         .catch(error => {
-            console.error('❌ Error en manejador de drop', error);
+            console.error(' Error en manejador de drop', error);
             if (callback) {
                 callback({
                     success: false,
@@ -207,7 +207,7 @@ function manejarInputImagenes(event, cotizacionId, prendaId, tipo, callback) {
             event.target.value = '';
         })
         .catch(error => {
-            console.error('❌ Error en manejador de input', error);
+            console.error(' Error en manejador de input', error);
             if (callback) {
                 callback({
                     success: false,
@@ -261,4 +261,4 @@ window.manejarInputImagenes = manejarInputImagenes;
 window.mostrarProgresoSubida = mostrarProgresoSubida;
 window.ocultarProgresoSubida = ocultarProgresoSubida;
 
-console.log('✅ Sistema de subida de imágenes (FormData) inicializado');
+console.log(' Sistema de subida de imágenes (FormData) inicializado');

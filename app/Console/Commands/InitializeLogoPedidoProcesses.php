@@ -39,7 +39,7 @@ class InitializeLogoPedidoProcesses extends Command
             if (!$tieneProceso) {
                 ProcesosPedidosLogo::crearProcesoInicial($logoPedido->id);
                 $procesosCreados++;
-                $this->line("✅ Proceso creado para: {$logoPedido->numero_pedido}");
+                $this->line(" Proceso creado para: {$logoPedido->numero_pedido}");
             } else {
                 $this->line("⏭️  Ya existe proceso para: {$logoPedido->numero_pedido}");
             }

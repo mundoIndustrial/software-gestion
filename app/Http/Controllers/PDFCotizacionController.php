@@ -13,18 +13,18 @@ class PDFCotizacionController extends Controller
      */
     public function generarPDF($cotizacionId, Request $request)
     {
-        // ✅ Aumentar límite de memoria y tiempo para PDFs
+        //  Aumentar límite de memoria y tiempo para PDFs
         $memoriaOriginal = ini_get('memory_limit');
         $tiempoOriginal = ini_get('max_execution_time');
         
         ini_set('memory_limit', '256M');
         ini_set('max_execution_time', '120'); // 2 minutos para PDFs complejos
         
-        // ✅ Pequeña pausa para permitir que el sistema limpie memoria de requests anteriores
+        //  Pequeña pausa para permitir que el sistema limpie memoria de requests anteriores
         usleep(100000); // 0.1 segundos
         
         try {
-            // ✅ Optimización: Cargar solo campos necesarios y limitar eager loading
+            //  Optimización: Cargar solo campos necesarios y limitar eager loading
             $cotizacion = Cotizacion::with([
                 'usuario:id,name',
                 'cliente:id,nombre',
@@ -57,7 +57,7 @@ class PDFCotizacionController extends Controller
                 $tipoPDF = 'prenda';
             }
             
-            // ✅ VALIDACIÓN DE PERMISOS PARA VISUALIZADOR DE COTIZACIONES LOGO
+            //  VALIDACIÓN DE PERMISOS PARA VISUALIZADOR DE COTIZACIONES LOGO
             $user = auth()->user();
             if ($user && $user->hasRole('visualizador_cotizaciones_logo')) {
                 // El visualizador solo puede ver PDFs de logo
@@ -87,16 +87,16 @@ class PDFCotizacionController extends Controller
             // Nombre del archivo
             $filename = 'Cotizacion_' . $cotizacion->id . '_' . ucfirst($tipoPDF) . '_' . date('Y-m-d') . '.pdf';
             
-            // ✅ Limpiar archivos temporales antiguos antes de generar nuevo PDF
+            //  Limpiar archivos temporales antiguos antes de generar nuevo PDF
             PDFCotizacionHelper::limpiarTemporales();
             
-            // ✅ Usar helper que gestiona memoria automáticamente
+            //  Usar helper que gestiona memoria automáticamente
             $pdfContent = PDFCotizacionHelper::generarPDFConLimpieza($html);
             
-            // ✅ Liberar cotización de memoria
+            //  Liberar cotización de memoria
             unset($cotizacion);
             
-            // ✅ SIEMPRE forzar descarga para reducir memoria del navegador
+            //  SIEMPRE forzar descarga para reducir memoria del navegador
             return response()->streamDownload(
                 function () use ($pdfContent) {
                     echo $pdfContent;
@@ -121,11 +121,11 @@ class PDFCotizacionController extends Controller
                 'message' => 'Error al generar PDF: ' . $e->getMessage()
             ], 500);
         } finally {
-            // ✅ Siempre restaurar límites originales
+            //  Siempre restaurar límites originales
             ini_set('memory_limit', $memoriaOriginal);
             ini_set('max_execution_time', $tiempoOriginal);
             
-            // ✅ Forzar limpieza AGRESIVA de memoria después de cada PDF
+            //  Forzar limpieza AGRESIVA de memoria después de cada PDF
             if (function_exists('gc_collect_cycles')) {
                 gc_collect_cycles();
                 gc_collect_cycles(); // Ejecutar dos veces para asegurar limpieza completa
@@ -135,7 +135,7 @@ class PDFCotizacionController extends Controller
                 gc_mem_caches(); // Limpiar cachés de memoria
             }
             
-            // ✅ Limpiar todas las variables globales grandes
+            //  Limpiar todas las variables globales grandes
             foreach ($GLOBALS as $key => $value) {
                 if (is_object($value) && $key !== 'app') {
                     unset($GLOBALS[$key]);
@@ -760,11 +760,11 @@ class PDFCotizacionController extends Controller
                 $html .= '<div style="font-size: 10px; font-weight: bold; margin-top: 8px; margin-bottom: 12px; color: #e74c3c;">Tallas: ' . $tallasTexto . '</div>';
             }
             
-            // ✅ INFORMACIÓN DE REFLECTIVO POR PRENDA (si existe)
+            //  INFORMACIÓN DE REFLECTIVO POR PRENDA (si existe)
             $reflectivoPrenda = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
             if ($reflectivoPrenda) {
                 $html .= '<div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">';
-                $html .= '<div style="font-size: 10px; font-weight: bold; color: #1976d2; margin-bottom: 6px;">📋 INFORMACIÓN DE REFLECTIVO</div>';
+                $html .= '<div style="font-size: 10px; font-weight: bold; color: #1976d2; margin-bottom: 6px;"> INFORMACIÓN DE REFLECTIVO</div>';
                 
                 // Descripción
                 if ($reflectivoPrenda->descripcion) {
@@ -869,7 +869,7 @@ class PDFCotizacionController extends Controller
                     }
                 }
                 
-                // ✅ Mostrar imágenes de reflectivo
+                //  Mostrar imágenes de reflectivo
                 foreach ($imagenesReflectivo as $idx => $imagen) {
                     $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
                     
@@ -1018,7 +1018,7 @@ class PDFCotizacionController extends Controller
         
         // Título de sección
         $html .= '<div style="page-break-inside: avoid; margin-bottom: 25px; border: 2px solid #3498db; padding: 15px; background: #f8f9fa;">';
-        $html .= '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #3498db; text-transform: uppercase;">📋 INFORMACIÓN DE REFLECTIVO</div>';
+        $html .= '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #3498db; text-transform: uppercase;"> INFORMACIÓN DE REFLECTIVO</div>';
         
         // Tipo de prenda
         if ($reflectivo->tipo_prenda) {

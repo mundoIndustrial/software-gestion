@@ -16,7 +16,7 @@ describe('LoggerApp - Unit Tests (SIN BD)', () => {
     let consoleSpies = {};
     
     beforeEach(() => {
-        // ✅ SOLO mock de console (NO BD)
+        //  SOLO mock de console (NO BD)
         // No se elimina ningún dato real
         consoleSpies.log = jest.spyOn(console, 'log').mockImplementation();
         consoleSpies.warn = jest.spyOn(console, 'warn').mockImplementation();

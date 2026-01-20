@@ -70,7 +70,7 @@
             // Actualizar grid de prendas
             if (prendasGrid) {
                 prendasGrid.innerHTML = data.cards_html;
-                console.log(`✅ Grid actualizado con ${data.pagination.per_page} prendas`);
+                console.log(` Grid actualizado con ${data.pagination.per_page} prendas`);
             }
             
             // Actualizar controles de paginación
@@ -107,14 +107,14 @@
             
             const endTime = performance.now();
             const totalTime = (endTime - startTime).toFixed(2);
-            console.log(`✅ Página ${page} cargada en ${totalTime}ms (${(totalTime/1000).toFixed(2)}s)`);
+            console.log(` Página ${page} cargada en ${totalTime}ms (${(totalTime/1000).toFixed(2)}s)`);
             
             if (totalTime > 1000) {
                 console.warn(`⚠️ Carga lenta: ${totalTime}ms`);
             }
         })
         .catch(error => {
-            console.error('❌ Error al cargar página:', error);
+            console.error(' Error al cargar página:', error);
             if (prendasGrid) {
                 prendasGrid.style.opacity = '1';
                 prendasGrid.style.pointerEvents = 'auto';
@@ -123,6 +123,6 @@
         });
     });
     
-    console.log('✅ Paginación de balanceo inicializada');
+    console.log(' Paginación de balanceo inicializada');
 })();
 

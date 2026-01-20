@@ -3,7 +3,7 @@
  * Responsabilidad: Gestionar la interacción y lógica de las pastillas de tipos de cotización
  */
 
-console.log('✅ Sistema de pastillas de cotizaciones cargado');
+console.log(' Sistema de pastillas de cotizaciones cargado');
 
 // Variables globales
 let tipoCotzacionSeleccionada = null;

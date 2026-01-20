@@ -17,7 +17,7 @@
 function renderOrderDetail_ConFactura(orden) {
     // ... código existente ...
     
-    // ✅ NUEVO: Agregar botón de factura
+    //  NUEVO: Agregar botón de factura
     const facturaBtnContainer = document.createElement('div');
     facturaBtnContainer.style.cssText = `
         margin-top: 20px;
@@ -30,7 +30,7 @@ function renderOrderDetail_ConFactura(orden) {
     facturaBtnContainer.innerHTML = `
         <button onclick="abrirFacturaEnVentana(${orden.numero_pedido})" 
                 style="flex: 1; padding: 10px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-            📋 Ver Factura Completa
+             Ver Factura Completa
         </button>
         <button onclick="abrirFacturaEnIframe(${orden.numero_pedido})" 
                 style="flex: 1; padding: 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
@@ -43,7 +43,7 @@ function renderOrderDetail_ConFactura(orden) {
         modalContent.appendChild(facturaBtnContainer);
     }
     
-    console.log('✅ Botones de factura agregados al modal');
+    console.log(' Botones de factura agregados al modal');
 }
 
 
@@ -99,7 +99,7 @@ window.agregarOpcionFactura = function() {
         }
     });
     
-    console.log('✅ Opciones de factura agregadas a todos los menús');
+    console.log(' Opciones de factura agregadas a todos los menús');
 };
 
 
@@ -122,7 +122,7 @@ window.addEventListener('load', function() {
             if (container) {
                 // Agregar botón flotante de factura
                 const floatingBtn = document.createElement('button');
-                floatingBtn.innerHTML = '📋 Factura';
+                floatingBtn.innerHTML = ' Factura';
                 floatingBtn.style.cssText = `
                     position: absolute;
                     bottom: 20px;
@@ -155,7 +155,7 @@ window.addEventListener('load', function() {
                 container.style.position = 'relative';
                 container.appendChild(floatingBtn);
                 
-                console.log('✅ Botón flotante de factura agregado');
+                console.log(' Botón flotante de factura agregado');
             }
         }, 100);
     }, { once: true });
@@ -268,10 +268,10 @@ window.cargarScriptFactura = function() {
         const script = document.createElement('script');
         script.src = '/js/invoice-modal-integration.js?v=' + Date.now();
         script.onload = function() {
-            console.log('✅ Scripts de factura cargados exitosamente');
+            console.log(' Scripts de factura cargados exitosamente');
         };
         script.onerror = function() {
-            console.error('❌ Error al cargar scripts de factura');
+            console.error(' Error al cargar scripts de factura');
         };
         document.head.appendChild(script);
     }
@@ -304,7 +304,7 @@ window.notificarFactura = function(numeroPedido) {
         animation: slideIn 0.3s ease;
     `;
     notif.innerHTML = `
-        ✅ Factura MI-PEDIDO-2026-${String(numeroPedido).padStart(4, '0')} generada
+         Factura MI-PEDIDO-2026-${String(numeroPedido).padStart(4, '0')} generada
     `;
     
     document.body.appendChild(notif);
@@ -353,7 +353,7 @@ if (!document.querySelector('#factura-animations')) {
 
 console.log(`
 ╔══════════════════════════════════════════╗
-║   SISTEMA DE FACTURACIÓN INTEGRADO ✅    ║
+║   SISTEMA DE FACTURACIÓN INTEGRADO     ║
 ╚══════════════════════════════════════════╝
 
 Comandos disponibles en la consola:
@@ -375,5 +375,5 @@ Comandos disponibles en la consola:
 5. Ver número de pedido actual:
    window.Factura.getNumeroPedidoActual()
 
-📋 Para más información, ver INTEGRACION_FACTURA_MODAL.md
+ Para más información, ver INTEGRACION_FACTURA_MODAL.md
 `);

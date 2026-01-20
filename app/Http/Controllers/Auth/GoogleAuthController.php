@@ -31,7 +31,7 @@ class GoogleAuthController extends Controller
             
             // Si el usuario NO existe, mostrar error
             if (!$user) {
-                return redirect('/login')->with('error', '❌ No puedes ingresar. Por favor, habla con el administrador del sitio para que cree tu cuenta.');
+                return redirect('/login')->with('error', ' No puedes ingresar. Por favor, habla con el administrador del sitio para que cree tu cuenta.');
             }
             
             // Actualizar google_id si no existe

@@ -17,7 +17,7 @@ class CleanupMemoryAfterRequest
     {
         $response = $next($request);
         
-        // ✅ Forzar limpieza de memoria después de cada request
+        //  Forzar limpieza de memoria después de cada request
         if (function_exists('gc_collect_cycles')) {
             gc_collect_cycles();
         }
@@ -30,10 +30,10 @@ class CleanupMemoryAfterRequest
      */
     public function terminate(Request $request, Response $response): void
     {
-        // ✅ Limpieza adicional después de enviar respuesta
+        //  Limpieza adicional después de enviar respuesta
         gc_collect_cycles();
         
-        // ✅ Limpiar variables grandes si existen
+        //  Limpiar variables grandes si existen
         if (isset($GLOBALS['largeData'])) {
             unset($GLOBALS['largeData']);
         }

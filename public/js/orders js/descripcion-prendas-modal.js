@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         if (encodedContent) {
                                             const decodedContent = atob(encodedContent);
                                             input.value = decodedContent;
-                                            console.log('✅ Contenido de descripcion_prendas restaurado en modal');
+                                            console.log(' Contenido de descripcion_prendas restaurado en modal');
                                         }
                                     }
                                 }
@@ -119,5 +119,5 @@ function renderDescripcionPrendasEnModal(content) {
         .replace(/Tallas:/gi, '<strong style="color: #d32f2f;">Tallas:</strong>')
         .replace(/Talla:/gi, '<strong style="color: #d32f2f;">Talla:</strong>');
     
-    console.log('✅ Descripción renderizada en modal');
+    console.log(' Descripción renderizada en modal');
 }

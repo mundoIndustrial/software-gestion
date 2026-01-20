@@ -86,7 +86,7 @@ class ReceiptManager {
         this.recibos = this.generarRecibos(datosFactura);
         this.indexActual = 0;
 
-        console.log('📋 [RECEIPT MANAGER] Inicializado');
+        console.log(' [RECEIPT MANAGER] Inicializado');
         console.log('📊 Total de recibos:', this.recibos.length);
         console.log('📄 Recibos:', this.recibos);
 

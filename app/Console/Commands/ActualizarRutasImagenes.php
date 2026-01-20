@@ -23,7 +23,7 @@ class ActualizarRutasImagenes extends Command
                 'ruta_webp' => DB::raw("REPLACE(ruta_webp, '/storage-serve/', '/storage/')")
             ]);
 
-        $this->info("✅ Fotos de prendas actualizadas: $fotosActualizadas");
+        $this->info(" Fotos de prendas actualizadas: $fotosActualizadas");
 
         // Actualizar prenda_tela_fotos si existe
         if (DB::getSchemaBuilder()->hasTable('prenda_tela_fotos')) {
@@ -35,7 +35,7 @@ class ActualizarRutasImagenes extends Command
                     'ruta_webp' => DB::raw("REPLACE(ruta_webp, '/storage-serve/', '/storage/')")
                 ]);
 
-            $this->info("✅ Fotos de telas actualizadas: $telasActualizadas");
+            $this->info(" Fotos de telas actualizadas: $telasActualizadas");
         } else {
             $this->info("⚠️ Tabla prenda_tela_fotos no existe, omitiendo...");
         }
@@ -50,11 +50,11 @@ class ActualizarRutasImagenes extends Command
                     'ruta_webp' => DB::raw("REPLACE(ruta_webp, '/storage-serve/', '/storage/')")
                 ]);
 
-            $this->info("✅ Fotos de logos actualizadas: $logoActualizadas");
+            $this->info(" Fotos de logos actualizadas: $logoActualizadas");
         } else {
             $this->info("⚠️ Tabla logo_fotos no existe, omitiendo...");
         }
 
-        $this->info("\n✅ Todas las rutas han sido actualizadas correctamente.");
+        $this->info("\n Todas las rutas han sido actualizadas correctamente.");
     }
 }

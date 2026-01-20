@@ -31,7 +31,7 @@ final class CrearReflectivoCotizacionHandler
 
             // Validar que la cotización exista
             $cotizacion = Cotizacion::findOrFail($dto->cotizacionId);
-            Log::info('✅ Cotización encontrada', ['cotizacion_id' => $dto->cotizacionId]);
+            Log::info(' Cotización encontrada', ['cotizacion_id' => $dto->cotizacionId]);
 
             // Crear entity del dominio
             $reflectivo = ReflectivoCotizacion::crear(
@@ -63,7 +63,7 @@ final class CrearReflectivoCotizacionHandler
                 'observaciones_generales' => json_encode($reflectivo->observacionesGenerales()),
             ]);
 
-            Log::info('✅ Reflectivo guardado en BD', [
+            Log::info(' Reflectivo guardado en BD', [
                 'reflectivo_id' => $reflectivoGuardado->id,
                 'cotizacion_id' => $dto->cotizacionId,
             ]);
@@ -76,7 +76,7 @@ final class CrearReflectivoCotizacionHandler
             ];
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al crear reflectivo', [
+            Log::error(' Error al crear reflectivo', [
                 'error' => $e->getMessage(),
                 'cotizacion_id' => $dto->cotizacionId ?? null,
             ]);

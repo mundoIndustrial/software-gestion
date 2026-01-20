@@ -33,7 +33,7 @@ class ObtenerEppPorCategoriaHandler implements QueryHandler
 
             $epps = $this->eppService->obtenerEppPorCategoria($query->getCategoria());
 
-            Log::info('✅ [ObtenerEppPorCategoriaHandler] EPP obtenidos', [
+            Log::info(' [ObtenerEppPorCategoriaHandler] EPP obtenidos', [
                 'categoria' => $query->getCategoria(),
                 'cantidad' => count($epps),
             ]);
@@ -47,7 +47,7 @@ class ObtenerEppPorCategoriaHandler implements QueryHandler
             ]);
             throw $e;
         } catch (\Exception $e) {
-            Log::error('❌ [ObtenerEppPorCategoriaHandler] Error obteniendo EPP', [
+            Log::error(' [ObtenerEppPorCategoriaHandler] Error obteniendo EPP', [
                 'error' => $e->getMessage(),
                 'categoria' => $query->getCategoria(),
             ]);

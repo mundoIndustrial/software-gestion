@@ -60,13 +60,13 @@ class ActualizarEstadosCotizaciones extends Command
 
                 Cotizacion::where('estado', $estadoViejo)->update(['estado' => $estadoNuevo]);
                 
-                $this->info("✅ '{$estadoViejo}' → '{$estadoNuevo}': {$count} cotizaciones");
+                $this->info(" '{$estadoViejo}' → '{$estadoNuevo}': {$count} cotizaciones");
                 $totalActualizadas += $count;
             }
         }
 
         $this->line('');
-        $this->info("✅ Total actualizado: {$totalActualizadas} cotizaciones");
+        $this->info(" Total actualizado: {$totalActualizadas} cotizaciones");
 
         // Verificar estados finales
         $this->line('');

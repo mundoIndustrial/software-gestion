@@ -20,7 +20,7 @@ function _updateTableContent(tableBody, paginationControls, doc, page) {
     if (newTableBody) {
         _cleanupOldDropdowns(tableBody);
         tableBody.innerHTML = newTableBody.innerHTML;
-        console.log(`✅ Tabla actualizada con ${newTableBody.querySelectorAll('tr').length} filas`);
+        console.log(` Tabla actualizada con ${newTableBody.querySelectorAll('tr').length} filas`);
     }
     
     const newPaginationControls = doc.getElementById('paginationControls');
@@ -67,11 +67,11 @@ function _restoreTableState(tableBody, page, btn) {
             block: 'start' 
         });
     }
-    console.log(`✅ Página ${page} cargada completamente`);
+    console.log(` Página ${page} cargada completamente`);
 }
 
 function _handlePaginationResponse(html, url, page, tableBody, paginationControls, btn) {
-    console.log(`✅ HTML recibido para página ${page}`);
+    console.log(` HTML recibido para página ${page}`);
     
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -88,7 +88,7 @@ function _handlePaginationResponse(html, url, page, tableBody, paginationControl
 
 function _handlePaginationError(error, tableBody, btn, timeoutId) {
     clearTimeout(timeoutId);
-    console.error('❌ Error al cargar página:', error);
+    console.error(' Error al cargar página:', error);
     tableBody.style.opacity = '1';
     tableBody.style.pointerEvents = 'auto';
     btn.disabled = false;
@@ -162,7 +162,7 @@ function initializePaginationListeners() {
         
         const page = btn.dataset.page;
         if (!page) {
-            console.log('❌ No se encontró número de página:', btn);
+            console.log(' No se encontró número de página:', btn);
             return;
         }
         
@@ -173,7 +173,7 @@ function initializePaginationListeners() {
         
         const tableBody = document.getElementById('tablaOrdenesBody');
         if (!tableBody) {
-            console.error('❌ tablaOrdenesBody no encontrado');
+            console.error(' tablaOrdenesBody no encontrado');
             paginationState.isLoading = false;
             btn.disabled = false;
             return;

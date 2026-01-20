@@ -31,7 +31,7 @@ class LogoCotizacionTecnicaController extends Controller
             
             $tipos = TipoLogoCotizacion::activos()->get();
             
-            Log::info('✅ Tipos obtenidos', ['count' => $tipos->count()]);
+            Log::info(' Tipos obtenidos', ['count' => $tipos->count()]);
 
             $tiposFormateados = $tipos->map(fn($tipo) => [
                 'id' => $tipo->id,
@@ -47,7 +47,7 @@ class LogoCotizacionTecnicaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al obtener tipos', [
+            Log::error(' Error al obtener tipos', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -97,7 +97,7 @@ class LogoCotizacionTecnicaController extends Controller
                 'es_combinada' => 'nullable|in:true,false,1,0,null',  // Aceptar string o boolean
             ]);
             
-            Log::info('✅ Validación exitosa', [
+            Log::info(' Validación exitosa', [
                 'logo_cotizacion_id' => $validated['logo_cotizacion_id'],
                 'tipo_logo_id' => $validated['tipo_logo_id'],
                 'es_combinada' => $validated['es_combinada'] ?? 'null'
@@ -107,14 +107,14 @@ class LogoCotizacionTecnicaController extends Controller
             Log::info('✓ Decodificando JSON de prendas');
             $prendasData = json_decode($validated['prendas'], true);
             if (!is_array($prendasData)) {
-                Log::error('❌ Error decodificando prendas', [
+                Log::error(' Error decodificando prendas', [
                     'error' => json_last_error_msg(),
                     'raw_prendas' => substr($validated['prendas'], 0, 200)
                 ]);
                 throw new \Exception('Datos de prendas inválidos: ' . json_last_error_msg());
             }
             
-            Log::info('✅ Prendas decodificadas correctamente', [
+            Log::info(' Prendas decodificadas correctamente', [
                 'count' => count($prendasData),
                 'prendas' => array_map(fn($p) => $p['nombre_prenda'] ?? 'sin_nombre', $prendasData)
             ]);
@@ -168,7 +168,7 @@ class LogoCotizacionTecnicaController extends Controller
                     'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
                 ]);
 
-                Log::info('✅ Prenda guardada en prendas_cot', [
+                Log::info(' Prenda guardada en prendas_cot', [
                     'prenda_cot_id' => $prendaCot->id,
                     'cotizacion_id' => $logoCotizacion->cotizacion_id
                 ]);
@@ -185,7 +185,7 @@ class LogoCotizacionTecnicaController extends Controller
                     'grupo_combinado' => $grupoCombinado,
                 ]);
 
-                Log::info('✅ Prenda creada en logo_cotizacion_tecnica_prendas', [
+                Log::info(' Prenda creada en logo_cotizacion_tecnica_prendas', [
                     'prenda_id' => $prenda->id,
                     'prenda_cot_id' => $prenda->prenda_cot_id,
                     'variaciones_guardadas' => $prenda->variaciones_prenda ?? 'NULL'
@@ -198,7 +198,7 @@ class LogoCotizacionTecnicaController extends Controller
                         $imagenIndex = (int)$matches[1];
 
                         try {
-                            Log::info('🖼️ Procesando imagen', [
+                            Log::info(' Procesando imagen', [
                                 'prenda_id' => $prenda->id,
                                 'imagen_index' => $imagenIndex,
                                 'fieldName' => $fieldName
@@ -224,13 +224,13 @@ class LogoCotizacionTecnicaController extends Controller
                                 'tamaño' => $rutasImagen['tamaño'],
                             ]);
 
-                            Log::info('✅ Imagen guardada en BD', [
+                            Log::info(' Imagen guardada en BD', [
                                 'foto_id' => $foto->id,
                                 'ruta_webp' => $rutasImagen['ruta_webp']
                             ]);
 
                         } catch (\Exception $e) {
-                            Log::error('❌ Error procesando imagen', [
+                            Log::error(' Error procesando imagen', [
                                 'error' => $e->getMessage(),
                                 'fieldName' => $fieldName,
                                 'prenda_id' => $prenda->id
@@ -243,7 +243,7 @@ class LogoCotizacionTecnicaController extends Controller
                 $prendas[] = $prenda;
             }
 
-            Log::info('✅ Técnica agregada completamente', [
+            Log::info(' Técnica agregada completamente', [
                 'logo_cotizacion_id' => $logoCotizacionId,
                 'tipo_logo_id' => $tipoLogoId,
                 'grupo_combinado' => $grupoCombinado,
@@ -277,7 +277,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 422);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error('❌ Modelo no encontrado', [
+            Log::error(' Modelo no encontrado', [
                 'error' => $e->getMessage(),
                 'model' => class_basename($e->getModel())
             ]);
@@ -288,7 +288,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al agregar técnica', [
+            Log::error(' Error al agregar técnica', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -349,7 +349,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al obtener técnicas', ['error' => $e->getMessage()]);
+            Log::error(' Error al obtener técnicas', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener técnicas'
@@ -375,7 +375,7 @@ class LogoCotizacionTecnicaController extends Controller
             // Eliminar también de prendas_cot si existe
             if ($prendaCotId) {
                 PrendaCot::destroy($prendaCotId);
-                Log::info('✅ Prenda eliminada de prendas_cot', ['prenda_cot_id' => $prendaCotId]);
+                Log::info(' Prenda eliminada de prendas_cot', ['prenda_cot_id' => $prendaCotId]);
             }
 
             // Si no hay más prendas de este tipo para esta cotización
@@ -383,7 +383,7 @@ class LogoCotizacionTecnicaController extends Controller
                 ->where('tipo_logo_id', $tipoLogoId)
                 ->count();
 
-            Log::info('✅ Prenda eliminada', [
+            Log::info(' Prenda eliminada', [
                 'prenda_id' => $prendeId,
                 'prendas_restantes_tipo' => $prendasRestantes
             ]);
@@ -401,7 +401,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al eliminar prenda', ['error' => $e->getMessage()]);
+            Log::error(' Error al eliminar prenda', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar prenda'
@@ -433,7 +433,7 @@ class LogoCotizacionTecnicaController extends Controller
                 }
             }
 
-            Log::info('✅ Prenda actualizada', ['prenda_id' => $prendeId]);
+            Log::info(' Prenda actualizada', ['prenda_id' => $prendeId]);
 
             return response()->json([
                 'success' => true,
@@ -455,7 +455,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al actualizar prenda', ['error' => $e->getMessage()]);
+            Log::error(' Error al actualizar prenda', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar prenda'
@@ -482,7 +482,7 @@ class LogoCotizacionTecnicaController extends Controller
                 'data' => $prendas
             ]);
         } catch (\Exception $e) {
-            Log::error('❌ Error al obtener prendas', ['error' => $e->getMessage()]);
+            Log::error(' Error al obtener prendas', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener prendas',
@@ -515,7 +515,7 @@ class LogoCotizacionTecnicaController extends Controller
                     'updated_at' => now()
                 ]);
 
-                Log::info('✅ Prenda guardada', ['nombre' => $nombre]);
+                Log::info(' Prenda guardada', ['nombre' => $nombre]);
             }
 
             return response()->json([
@@ -523,7 +523,7 @@ class LogoCotizacionTecnicaController extends Controller
                 'message' => 'Prenda guardada exitosamente'
             ]);
         } catch (\Exception $e) {
-            Log::error('❌ Error al guardar prenda', ['error' => $e->getMessage()]);
+            Log::error(' Error al guardar prenda', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar prenda'

@@ -25,7 +25,7 @@ class AddVisualizadorCotizacionesLogoRoleSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            $this->command->info('✅ Rol visualizador_cotizaciones_logo agregado exitosamente');
+            $this->command->info(' Rol visualizador_cotizaciones_logo agregado exitosamente');
         } else {
             $this->command->warn('⚠️ El rol visualizador_cotizaciones_logo ya existe');
         }

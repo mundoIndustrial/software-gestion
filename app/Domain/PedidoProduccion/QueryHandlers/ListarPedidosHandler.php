@@ -27,7 +27,7 @@ class ListarPedidosHandler implements QueryHandler
         }
 
         try {
-            Log::info('📋 [ListarPedidosHandler] Listando pedidos', [
+            Log::info(' [ListarPedidosHandler] Listando pedidos', [
                 'page' => $query->getPage(),
                 'per_page' => $query->getPerPage(),
             ]);
@@ -37,7 +37,7 @@ class ListarPedidosHandler implements QueryHandler
                 ->orderBy($query->getOrdenar(), $query->getDireccion())
                 ->paginate($query->getPerPage(), ['*'], 'page', $query->getPage());
 
-            Log::info('✅ [ListarPedidosHandler] Pedidos listados', [
+            Log::info(' [ListarPedidosHandler] Pedidos listados', [
                 'total' => $pedidos->total(),
                 'page' => $pedidos->currentPage(),
             ]);
@@ -45,7 +45,7 @@ class ListarPedidosHandler implements QueryHandler
             return $pedidos;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ListarPedidosHandler] Error listando pedidos', [
+            Log::error(' [ListarPedidosHandler] Error listando pedidos', [
                 'error' => $e->getMessage(),
             ]);
 

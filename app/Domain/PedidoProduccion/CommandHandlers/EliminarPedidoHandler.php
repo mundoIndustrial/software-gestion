@@ -47,7 +47,7 @@ class EliminarPedidoHandler implements CommandHandler
             // Realizar soft delete
             $pedido->delete();
 
-            Log::info('✅ [EliminarPedidoHandler] Pedido eliminado', [
+            Log::info(' [EliminarPedidoHandler] Pedido eliminado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'razon' => $command->getRazon(),
@@ -61,7 +61,7 @@ class EliminarPedidoHandler implements CommandHandler
             return $pedido;
 
         } catch (\Exception $e) {
-            Log::error('❌ [EliminarPedidoHandler] Error eliminando pedido', [
+            Log::error(' [EliminarPedidoHandler] Error eliminando pedido', [
                 'pedido_id' => $command->getPedidoId(),
                 'error' => $e->getMessage(),
             ]);

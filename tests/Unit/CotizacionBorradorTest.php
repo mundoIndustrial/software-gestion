@@ -17,7 +17,7 @@ class CotizacionBorradorTest extends TestCase
         // Verificar que numero_cotizacion puede ser null
         $this->assertTrue(true);
         
-        echo "\n✅ Cotizacion permite numero_cotizacion = null\n";
+        echo "\n Cotizacion permite numero_cotizacion = null\n";
     }
 
     /**
@@ -30,7 +30,7 @@ class CotizacionBorradorTest extends TestCase
         // Verificar que prenda_cot_id puede ser cualquier valor
         $this->assertTrue(true);
         
-        echo "\n✅ PrendaCot permite cualquier cotizacion_id\n";
+        echo "\n PrendaCot permite cualquier cotizacion_id\n";
     }
 
     /**
@@ -43,7 +43,7 @@ class CotizacionBorradorTest extends TestCase
         // Verificar que prenda_cot_id puede ser cualquier valor
         $this->assertTrue(true);
         
-        echo "\n✅ PrendaFotoCot permite cualquier prenda_cot_id\n";
+        echo "\n PrendaFotoCot permite cualquier prenda_cot_id\n";
     }
 
     /**
@@ -51,7 +51,7 @@ class CotizacionBorradorTest extends TestCase
      */
     public function test_estructura_guardado_borrador()
     {
-        echo "\n📋 ESTRUCTURA DE GUARDADO EN BORRADOR:\n";
+        echo "\n ESTRUCTURA DE GUARDADO EN BORRADOR:\n";
         echo "   1. Crear Cotizacion con:\n";
         echo "      - numero_cotizacion: NULL\n";
         echo "      - es_borrador: true\n";
@@ -68,7 +68,7 @@ class CotizacionBorradorTest extends TestCase
         echo "   5. Agregar PrendaVarianteCot con:\n";
         echo "      - prenda_cot_id: ID de la prenda\n";
         echo "      - variantes (color, manga, broche, etc)\n";
-        echo "\n✅ Estructura de guardado en borrador verificada\n";
+        echo "\n Estructura de guardado en borrador verificada\n";
         
         $this->assertTrue(true);
     }
@@ -82,19 +82,19 @@ class CotizacionBorradorTest extends TestCase
         echo "╔════════════════════════════════════════════════════════════╗\n";
         echo "║  SINCRONIZACIÓN - COTIZACIONES EN BORRADOR                 ║\n";
         echo "╠════════════════════════════════════════════════════════════╣\n";
-        echo "║  ✅ Cotizacion sin número (borrador)                       ║\n";
+        echo "║   Cotizacion sin número (borrador)                       ║\n";
         echo "║     - numero_cotizacion: NULL                              ║\n";
         echo "║     - es_borrador: true                                    ║\n";
         echo "║     - estado: BORRADOR                                     ║\n";
-        echo "║  ✅ Prendas con todas las relaciones                       ║\n";
+        echo "║   Prendas con todas las relaciones                       ║\n";
         echo "║     - PrendaCot (nombre, descripción, cantidad)            ║\n";
         echo "║     - PrendaFotoCot (fotos con rutas)                      ║\n";
         echo "║     - PrendaTallaCot (tallas y cantidades)                 ║\n";
         echo "║     - PrendaVarianteCot (variantes completas)              ║\n";
-        echo "║  ✅ Imágenes guardadas en ambas ubicaciones                ║\n";
+        echo "║   Imágenes guardadas en ambas ubicaciones                ║\n";
         echo "║     - storage/app/public/cotizaciones/...                  ║\n";
         echo "║     - public/storage/cotizaciones/...                      ║\n";
-        echo "║  ✅ Especificaciones guardadas como JSON                   ║\n";
+        echo "║   Especificaciones guardadas como JSON                   ║\n";
         echo "║     - disponibilidad, forma_pago, régimen, etc             ║\n";
         echo "╚════════════════════════════════════════════════════════════╝\n";
         echo "\n";

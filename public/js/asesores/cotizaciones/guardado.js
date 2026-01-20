@@ -66,7 +66,7 @@ async function guardarCotizacion() {
     if (btnGuardar) btnGuardar.disabled = true;
     if (btnEnviar) btnEnviar.disabled = true;
     
-    console.log('📋 Llamando a recopilarDatos()...');
+    console.log(' Llamando a recopilarDatos()...');
     const datos = recopilarDatos();
     
     console.log('📦 Datos recopilados:', {
@@ -77,7 +77,7 @@ async function guardarCotizacion() {
     });
     
     if (!datos) {
-        console.error('❌ recopilarDatos() retornó null');
+        console.error(' recopilarDatos() retornó null');
         Swal.fire({
             title: 'Error',
             text: 'No se pudieron recopilar los datos del formulario',
@@ -89,7 +89,7 @@ async function guardarCotizacion() {
         return;
     }
     
-    // ✅ NO convertir a Base64 - enviar archivos directamente como File objects
+    //  NO convertir a Base64 - enviar archivos directamente como File objects
     console.log('📁 Preparando archivos para envío directo (sin Base64)...');
     
     // Validar que tipo_venta esté seleccionado
@@ -98,14 +98,14 @@ async function guardarCotizacion() {
     const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
     const tipoVentaPaso3 = tipoVentaPaso3Select ? tipoVentaPaso3Select.value : '';
     
-    console.log('📋 Validación tipo_venta:', {
+    console.log(' Validación tipo_venta:', {
         paso2: tipoVenta,
         paso3: tipoVentaPaso3,
         esValidoPaso2: !!tipoVenta
     });
     
     if (!tipoVenta) {
-        console.error('❌ Tipo de venta no seleccionado');
+        console.error(' Tipo de venta no seleccionado');
         Swal.fire({
             title: 'Tipo de cotización requerido',
             text: 'Por favor selecciona el tipo de cotización (M/D/X)',
@@ -117,7 +117,7 @@ async function guardarCotizacion() {
         return;
     }
     
-    console.log('✅ Todas las validaciones pasadas, mostrando modal de guardado...');
+    console.log(' Todas las validaciones pasadas, mostrando modal de guardado...');
     Swal.fire({
         title: 'Guardando...',
         html: '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite 0.3s;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite 0.6s;"></div></div><style>@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }</style>',
@@ -138,7 +138,7 @@ async function guardarCotizacion() {
     
     try {
         console.log('🔄 Construyendo FormData...');
-        // ✅ USAR FormData PARA ENVIAR ARCHIVOS File
+        //  USAR FormData PARA ENVIAR ARCHIVOS File
         const formData = new FormData();
         
         // Datos básicos
@@ -189,9 +189,9 @@ async function guardarCotizacion() {
         });
         
         formData.append('especificaciones', JSON.stringify(datos.especificaciones || {}));
-        console.log('✅ FormData construido correctamente');
+        console.log(' FormData construido correctamente');
         
-        // ✅ PRENDAS CON ARCHIVOS File
+        //  PRENDAS CON ARCHIVOS File
         if (datos.productos && Array.isArray(datos.productos)) {
             datos.productos.forEach((producto, index) => {
                 // Datos de prenda
@@ -227,7 +227,7 @@ async function guardarCotizacion() {
                                 formData.append(`prendas[${index}][variantes][${key}][${idx}]`, item);
                             }
                         });
-                        console.log(`   ✅ Array enviado para ${key}:`, value);
+                        console.log(`    Array enviado para ${key}:`, value);
                     } else if (typeof value === 'object' && value !== null) {
                         // Si es objeto, convertir a JSON string
                         formData.append(`prendas[${index}][variantes][${key}]`, JSON.stringify(value));
@@ -240,11 +240,11 @@ async function guardarCotizacion() {
                     }
                     
                     if (key === 'tipo_manga_id') {
-                        console.log(`   ✅ AGREGANDO MANGA AL FORMDATA: ${key} = ${value}`);
+                        console.log(`    AGREGANDO MANGA AL FORMDATA: ${key} = ${value}`);
                     }
                 });
                 
-                // ✅ FOTOS DE PRENDA (nuevas y existentes) - AL GUARDAR: enviar nuevas + IDs de existentes
+                //  FOTOS DE PRENDA (nuevas y existentes) - AL GUARDAR: enviar nuevas + IDs de existentes
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
                     const fotosDeEstaPrenda = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
                     const fotosNuevas = [];
@@ -253,10 +253,10 @@ async function guardarCotizacion() {
                     fotosDeEstaPrenda.forEach((item, fotoIndex) => {
                         if (item.file instanceof File) {
                             fotosNuevas.push(item.file);
-                            console.log(`✅ Foto de prenda (nueva) [${index}][${fotoIndex}]: ${item.file.name}`);
+                            console.log(` Foto de prenda (nueva) [${index}][${fotoIndex}]: ${item.file.name}`);
                         } else if (item.fotoId && typeof item.file === 'string') {
                             fotosExistentes.push(item.fotoId);
-                            console.log(`✅ ID de foto existente [${index}][${fotoIndex}]: ${item.fotoId}`);
+                            console.log(` ID de foto existente [${index}][${fotoIndex}]: ${item.fotoId}`);
                         }
                     });
                     
@@ -266,11 +266,11 @@ async function guardarCotizacion() {
                     
                     if (fotosExistentes.length > 0) {
                         formData.append(`prendas[${index}][fotos_existentes]`, JSON.stringify(fotosExistentes));
-                        console.log(`✅ IDs de fotos existentes: [${fotosExistentes.join(',')}]`);
+                        console.log(` IDs de fotos existentes: [${fotosExistentes.join(',')}]`);
                     }
                 }
                 
-                // ✅ TELAS (File objects desde datos.productos, window.telasSeleccionadas, o imagenesEnMemoria)
+                //  TELAS (File objects desde datos.productos, window.telasSeleccionadas, o imagenesEnMemoria)
                 console.log(`🧵 Procesando telas para prenda ${index}...`);
                 console.log(`   DEBUG: datos.productos[${index}].telas =`, datos.productos?.[index]?.telas?.length || 0);
                 
@@ -290,18 +290,18 @@ async function guardarCotizacion() {
                         }
                         if (tela.file instanceof File) {
                             telasPorIndice[telaIdx].push(tela.file);
-                            console.log(`✅ Foto de tela agregada: tela[${telaIdx}] = ${tela.file.name}`);
+                            console.log(` Foto de tela agregada: tela[${telaIdx}] = ${tela.file.name}`);
                         }
                     });
                     
                     Object.keys(telasPorIndice).forEach(telaIdx => {
                         telasPorIndice[telaIdx].forEach((foto, fotoIdx) => {
                             formData.append(`prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`, foto);
-                            console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada desde datos.productos: ${foto.name}`);
+                            console.log(` Tela ${telaIdx} Foto ${fotoIdx} agregada desde datos.productos: ${foto.name}`);
                         });
                     });
                     telasYaProcesadas = true;
-                    console.log('✅ Opción 1 completada para prenda ' + index);
+                    console.log(' Opción 1 completada para prenda ' + index);
                 } else {
                     console.log('⚠️ Opción 1: No hay telas en datos.productos[' + index + '].telas');
                 }
@@ -327,15 +327,15 @@ async function guardarCotizacion() {
                                     fotosDelaTela.forEach((foto, fotoIdx) => {
                                         if (foto instanceof File) {
                                             formData.append(`prendas[${index}][telas][${telaIdx}][fotos][${fotoIdx}]`, foto);
-                                            console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx} agregada a FormData (fallback): ${foto.name}`);
+                                            console.log(` Tela ${telaIdx} Foto ${fotoIdx} agregada a FormData (fallback): ${foto.name}`);
                                         } else {
-                                            console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object (fallback):`, foto);
+                                            console.error(` Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object (fallback):`, foto);
                                         }
                                     });
                                 }
                             }
                             telasYaProcesadas = true;
-                            console.log('✅ Opción 2 (fallback) completada para prenda ' + index);
+                            console.log(' Opción 2 (fallback) completada para prenda ' + index);
                         } else {
                             console.log(`⚠️ Opción 2: No hay telas en window.telasSeleccionadas para ${productoId}`);
                         }
@@ -364,15 +364,15 @@ async function guardarCotizacion() {
                             const telaFotos = telasPorIndice[telaIdx];
                             telaFotos.nuevas.forEach((foto) => {
                                 formData.append(`prendas[${index}][telas][${telaIdx}][fotos][0]`, foto);
-                                console.log(`✅ Tela (nueva) [${index}][${telaIdx}] (fallback): ${foto.name}`);
+                                console.log(` Tela (nueva) [${index}][${telaIdx}] (fallback): ${foto.name}`);
                             });
                             if (telaFotos.existentes.length > 0) {
                                 formData.append(`prendas[${index}][telas][${telaIdx}][fotos_existentes]`, JSON.stringify(telaFotos.existentes));
-                                console.log(`✅ IDs de tela existentes [${telaIdx}] (fallback): [${telaFotos.existentes.join(',')}]`);
+                                console.log(` IDs de tela existentes [${telaIdx}] (fallback): [${telaFotos.existentes.join(',')}]`);
                             }
                         });
                         telasYaProcesadas = true;
-                        console.log('✅ Opción 3 (fallback último) completada para prenda ' + index);
+                        console.log(' Opción 3 (fallback último) completada para prenda ' + index);
                     }
                 }
                 
@@ -398,7 +398,7 @@ async function guardarCotizacion() {
             }
         }
         
-        // ✅ LOGO - IMÁGENES (nuevas y existentes) - AL GUARDAR: enviar nuevas + IDs de existentes
+        //  LOGO - IMÁGENES (nuevas y existentes) - AL GUARDAR: enviar nuevas + IDs de existentes
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
             console.log('📸 Procesando imágenes de logo:', window.imagenesEnMemoria.logo.length);
             
@@ -408,10 +408,10 @@ async function guardarCotizacion() {
             window.imagenesEnMemoria.logo.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
                     logosNuevos.push(imagen);
-                    console.log(`✅ Logo (nuevo) [${imagenIndex}]: ${imagen.name}`);
+                    console.log(` Logo (nuevo) [${imagenIndex}]: ${imagen.name}`);
                 } else if (imagen.fotoId && (typeof imagen.ruta === 'string' || typeof imagen.file === 'string')) {
                     logosExistentes.push(imagen.fotoId);
-                    console.log(`✅ ID de logo existente [${imagenIndex}]: ${imagen.fotoId}`);
+                    console.log(` ID de logo existente [${imagenIndex}]: ${imagen.fotoId}`);
                 }
             });
             
@@ -421,13 +421,13 @@ async function guardarCotizacion() {
             
             if (logosExistentes.length > 0) {
                 formData.append(`logo_fotos_existentes`, JSON.stringify(logosExistentes));
-                console.log(`✅ IDs de logos existentes: [${logosExistentes.join(',')}]`);
+                console.log(` IDs de logos existentes: [${logosExistentes.join(',')}]`);
             }
         } else {
             console.log('⚠️ No hay imágenes de logo en memoria');
         }
         
-        // ✅ LOGO - FOTOS GUARDADAS (Para conservar las existentes al reguardar)
+        //  LOGO - FOTOS GUARDADAS (Para conservar las existentes al reguardar)
         // Buscar imágenes dentro del contenedor galeria_imagenes que tengan data-foto-guardada="true"
         const galeriaImagenes = document.getElementById('galeria_imagenes');
         if (galeriaImagenes) {
@@ -440,7 +440,7 @@ async function guardarCotizacion() {
                     const ruta = img ? (img.getAttribute('data-ruta') || img.src) : null;
                     if (ruta && !ruta.includes('data:image')) {
                         formData.append(`logo_fotos_guardadas[]`, ruta);
-                        console.log(`✅ Ruta de logo guardada agregada [${index}]:`, ruta);
+                        console.log(` Ruta de logo guardada agregada [${index}]:`, ruta);
                     }
                 });
             } else {
@@ -480,7 +480,7 @@ async function guardarCotizacion() {
         });
         
         if (!csrfToken) {
-            console.error('❌ TOKEN CSRF NO ENCONTRADO - La solicitud fallará');
+            console.error(' TOKEN CSRF NO ENCONTRADO - La solicitud fallará');
             Swal.fire({
                 title: 'Error de seguridad',
                 html: '<p>No se encontró el token CSRF.</p><p style="font-size: 0.85rem; color: #999; margin-top: 10px;">Por favor, recarga la página.</p>',
@@ -503,14 +503,14 @@ async function guardarCotizacion() {
             body: formData
         });
         
-        console.log('✅ Solicitud enviada');
+        console.log(' Solicitud enviada');
         console.log('📡 Status de respuesta:', response.status);
         console.log('📡 Content-Type:', response.headers.get('content-type'));
         console.log('📡 OK:', response.ok);
         
         // Verificar errores de sesión/CSRF antes de parsear
         if (response.status === 419) {
-            console.error('❌ ERROR 419: CSRF Token Mismatch - Sesión expirada');
+            console.error(' ERROR 419: CSRF Token Mismatch - Sesión expirada');
             Swal.fire({
                 title: 'Sesión expirada',
                 html: '<p>Tu sesión ha expirado por inactividad.</p>' +
@@ -529,7 +529,7 @@ async function guardarCotizacion() {
         }
         
         if (response.status === 401) {
-            console.error('❌ ERROR 401: No autenticado');
+            console.error(' ERROR 401: No autenticado');
             Swal.fire({
                 title: 'Sesión no válida',
                 html: '<p>Debes iniciar sesión para continuar.</p>',
@@ -554,7 +554,7 @@ async function guardarCotizacion() {
         try {
             data = JSON.parse(responseText);
         } catch (parseError) {
-            console.error('❌ Error al parsear JSON:', parseError);
+            console.error(' Error al parsear JSON:', parseError);
             console.error('📄 Respuesta completa:', responseText.substring(0, 500));
             
             Swal.fire({
@@ -571,15 +571,15 @@ async function guardarCotizacion() {
         
         if (data.success && (data.cotizacion_id !== undefined || (data.data && data.data.id !== undefined))) {
             const cotizacionId = data.cotizacion_id !== undefined ? data.cotizacion_id : (data.data && data.data.id);
-            console.log('✅ Cotización creada con ID:', cotizacionId);
+            console.log(' Cotización creada con ID:', cotizacionId);
             
-            // ✅ GUARDAR EL ID PARA USOS POSTERIORES
+            //  GUARDAR EL ID PARA USOS POSTERIORES
             window.cotizacionIdActual = cotizacionId;
             console.log('💾 Asignado window.cotizacionIdActual:', window.cotizacionIdActual);
             
-            console.log('✅ Imágenes procesadas y guardadas en el servidor');
+            console.log(' Imágenes procesadas y guardadas en el servidor');
             
-            // ✅ LIMPIAR TODO DESPUÉS DEL GUARDADO EXITOSO
+            //  LIMPIAR TODO DESPUÉS DEL GUARDADO EXITOSO
             if (typeof limpiarFormularioCompleto === 'function') {
                 limpiarFormularioCompleto();
             } else if (typeof limpiarStorage === 'function') {
@@ -587,10 +587,10 @@ async function guardarCotizacion() {
                 console.log('✓ localStorage limpiado después del guardado');
             }
             
-            // ❌ CERRAR el modal de "Guardando..." primero
+            //  CERRAR el modal de "Guardando..." primero
             Swal.close();
             
-            // ✅ Mostrar toast de éxito
+            //  Mostrar toast de éxito
             Swal.fire({
                 toast: true,
                 position: 'top-end',
@@ -609,7 +609,7 @@ async function guardarCotizacion() {
             if (btnGuardar) btnGuardar.disabled = false;
             if (btnEnviar) btnEnviar.disabled = false;
             
-            return true;  // ✅ Retornar true para indicar éxito
+            return true;  //  Retornar true para indicar éxito
         } else {
             // Construir mensaje de error detallado
             let mensajeError = data.message || 'Error desconocido';
@@ -628,7 +628,7 @@ async function guardarCotizacion() {
                 htmlError += '</div>';
             }
             
-            console.error('❌ Error en la respuesta:', data);
+            console.error(' Error en la respuesta:', data);
             
             Swal.fire({
                 title: 'Error al guardar',
@@ -641,10 +641,10 @@ async function guardarCotizacion() {
             if (btnGuardar) btnGuardar.disabled = false;
             if (btnEnviar) btnEnviar.disabled = false;
             
-            return false;  // ❌ Retornar false para indicar error
+            return false;  //  Retornar false para indicar error
         }
     } catch (error) {
-        console.error('❌ Error en fetch:', error);
+        console.error(' Error en fetch:', error);
         Swal.fire({
             title: 'Error de conexión',
             html: `<p>No se pudo completar la solicitud:</p>
@@ -654,7 +654,7 @@ async function guardarCotizacion() {
         });
         if (btnGuardar) btnGuardar.disabled = false;
         if (btnEnviar) btnEnviar.disabled = false;
-        return false;  // ❌ Retornar false para indicar error
+        return false;  //  Retornar false para indicar error
     }
 }
 
@@ -701,12 +701,12 @@ async function subirImagenesAlServidor(cotizacionId, archivos, tipo) {
         
         const data = await response.json();
         if (data.success) {
-            console.log(`✅ ${archivos.length} imágenes de tipo "${tipo}" guardadas`);
+            console.log(` ${archivos.length} imágenes de tipo "${tipo}" guardadas`);
         } else {
-            console.error(`❌ Error al guardar imágenes de tipo "${tipo}":`, data.message);
+            console.error(` Error al guardar imágenes de tipo "${tipo}":`, data.message);
         }
     } catch (error) {
-        console.error(`❌ Error al subir imágenes de tipo "${tipo}":`, error);
+        console.error(` Error al subir imágenes de tipo "${tipo}":`, error);
     }
 }
 
@@ -715,7 +715,7 @@ async function subirImagenesAlServidor(cotizacionId, archivos, tipo) {
 async function enviarCotizacion() {
     console.log('🔵 enviarCotizacion() - Mostrar confirmación antes de guardar');
     
-    // ✅ Validar datos ANTES de mostrar el modal
+    //  Validar datos ANTES de mostrar el modal
     const datos = recopilarDatos();
     
     if (!datos) {
@@ -762,7 +762,7 @@ async function enviarCotizacion() {
         return;
     }
     
-    // ✅ VALIDAR ESPECIFICACIONES
+    //  VALIDAR ESPECIFICACIONES
     const especificaciones = window.especificacionesSeleccionadas || {};
     const tieneEspecificaciones = Object.keys(especificaciones).length > 0;
     
@@ -786,7 +786,7 @@ async function enviarCotizacion() {
                     </p>
                     <div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 12px; border-radius: 4px; margin: 15px 0;">
                         <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: #991b1b; font-weight: bold;">
-                            📋 DEBES COMPLETAR AL MENOS UNA:
+                             DEBES COMPLETAR AL MENOS UNA:
                         </p>
                         <p style="margin: 0; font-size: 0.85rem; color: #991b1b;">
                             ✓ Régimen<br>
@@ -821,7 +821,7 @@ async function enviarCotizacion() {
                     toast: true,
                     position: 'top-end',
                     icon: 'info',
-                    title: '📋 Completa las especificaciones y haz clic en GUARDAR',
+                    title: ' Completa las especificaciones y haz clic en GUARDAR',
                     showConfirmButton: false,
                     timer: 5000,
                     timerProgressBar: true
@@ -838,7 +838,7 @@ async function enviarCotizacion() {
         btnEnviar.style.boxShadow = '';
     }
     
-    // ✅ MOSTRAR CONFIRMACIÓN SIN GUARDAR PRIMERO
+    //  MOSTRAR CONFIRMACIÓN SIN GUARDAR PRIMERO
     Swal.fire({
         title: '¿Listo para enviar?',
         html: '<p style="margin: 0; font-size: 0.95rem; color: #4b5563;">Una vez enviada la cotización <span style="color: #ef4444; font-weight: 700;">no podrá editarse</span>.</p>',
@@ -852,11 +852,11 @@ async function enviarCotizacion() {
         allowEscapeKey: false
     }).then((result) => {
         if (result.isConfirmed) {
-            // ✅ SOLO SI CONFIRMA, GUARDAR Y LUEGO ENVIAR
+            //  SOLO SI CONFIRMA, GUARDAR Y LUEGO ENVIAR
             procederEnviarCotizacion();
         } else if (result.isDismissed) {
             // Usuario canceló o cerró el modal - no hacer nada
-            console.log('❌ Usuario canceló el envío');
+            console.log(' Usuario canceló el envío');
         }
     });
 }
@@ -870,11 +870,11 @@ async function procederEnviarCotizacion() {
     
     console.log('🔵 procederEnviarCotizacion() - Primero guardar como borrador antes de enviar');
     
-    // ✅ GUARDAR PRIMERO COMO BORRADOR
+    //  GUARDAR PRIMERO COMO BORRADOR
     const guardadoExitoso = await guardarCotizacion();
     
     if (!guardadoExitoso) {
-        console.error('❌ No se pudo guardar la cotización, abortando envío');
+        console.error(' No se pudo guardar la cotización, abortando envío');
         Swal.fire({
             title: 'Error',
             text: 'No se pudieron guardar los cambios. Por favor intenta de nuevo.',
@@ -886,7 +886,7 @@ async function procederEnviarCotizacion() {
         return;
     }
     
-    console.log('✅ Cotización guardada exitosamente, procediendo con el envío');
+    console.log(' Cotización guardada exitosamente, procediendo con el envío');
     
     if (btnGuardar) btnGuardar.disabled = true;
     if (btnEnviar) btnEnviar.disabled = true;
@@ -899,7 +899,7 @@ async function procederEnviarCotizacion() {
         showConfirmButton: false
     });
     
-    // ✅ Recopilar datos nuevamente para asegurar que están actualizados
+    //  Recopilar datos nuevamente para asegurar que están actualizados
     const datos = recopilarDatos();
     if (!datos) {
         Swal.fire({
@@ -913,7 +913,7 @@ async function procederEnviarCotizacion() {
         return;
     }
     
-    // ✅ NO convertir a Base64 - enviar archivos directamente como File objects
+    //  NO convertir a Base64 - enviar archivos directamente como File objects
     // Base64 es ineficiente (aumenta tamaño 33%) y mala práctica
     console.log('📁 Enviando archivos directamente como File objects (multipart/form-data)');
     
@@ -926,11 +926,11 @@ async function procederEnviarCotizacion() {
     // Obtener especificaciones (puede ser objeto o array)
     const especificaciones = window.especificacionesSeleccionadas || {};
     
-    console.log('📋 Tipo de venta:', tipoVentaValue);
-    console.log('📋 Especificaciones guardadas en window:', window.especificacionesSeleccionadas);
-    console.log('📋 Especificaciones a enviar:', especificaciones);
-    console.log('📋 ¿Especificaciones vacías?', Object.keys(especificaciones).length === 0);
-    console.log('📋 Productos:', datos.productos);
+    console.log(' Tipo de venta:', tipoVentaValue);
+    console.log(' Especificaciones guardadas en window:', window.especificacionesSeleccionadas);
+    console.log(' Especificaciones a enviar:', especificaciones);
+    console.log(' ¿Especificaciones vacías?', Object.keys(especificaciones).length === 0);
+    console.log(' Productos:', datos.productos);
     
     // LOG DETALLADO DE VARIANTES
     if (datos.productos && datos.productos.length > 0) {
@@ -941,18 +941,18 @@ async function procederEnviarCotizacion() {
     }
     
     try {
-        // ✅ USAR FormData PARA ENVIAR ARCHIVOS File
+        //  USAR FormData PARA ENVIAR ARCHIVOS File
         const formData = new FormData();
         
         // Datos básicos
-        formData.append('tipo', 'enviada');           // ✅ Identificar acción ENVIAR
+        formData.append('tipo', 'enviada');           //  Identificar acción ENVIAR
         formData.append('accion', 'enviar');          // ← AGREGAR: Identificar acción ENVIAR
         formData.append('es_borrador', '0');          // ← AGREGAR: Marcar que NO es borrador
         
         // 🔑 CRÍTICO: Incluir el cotizacion_id si existe (para actualizar borrador existente)
         if (window.cotizacionIdActual) {
             formData.append('cotizacion_id', window.cotizacionIdActual);
-            console.log('✅ Cotización ID para actualización:', window.cotizacionIdActual);
+            console.log(' Cotización ID para actualización:', window.cotizacionIdActual);
         } else {
             console.warn('⚠️ No hay cotizacion_id - Se creará una NUEVA cotización');
         }
@@ -984,7 +984,7 @@ async function procederEnviarCotizacion() {
         formData.append('especificaciones', JSON.stringify(especificaciones || {}));
         formData.append('imagenes', JSON.stringify(datos.logo?.imagenes || []));
         
-        // ✅ PRENDAS CON ARCHIVOS File
+        //  PRENDAS CON ARCHIVOS File
         if (datos.productos && Array.isArray(datos.productos)) {
             datos.productos.forEach((producto, index) => {
                 // Datos de prenda
@@ -1022,7 +1022,7 @@ async function procederEnviarCotizacion() {
                     }
                 });
                 
-                // ✅ FOTOS DE PRENDA - EN ENVÍO: SIEMPRE ENVIAR TODAS (no omitir guardadas)
+                //  FOTOS DE PRENDA - EN ENVÍO: SIEMPRE ENVIAR TODAS (no omitir guardadas)
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
                     const fotosDeEstaPrenda = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
                     const fotosNuevas = [];
@@ -1032,11 +1032,11 @@ async function procederEnviarCotizacion() {
                         if (item.file instanceof File) {
                             // 🔑 CRÍTICO: Cuando se ENVÍA, se envían TODAS las fotos nuevas (File objects)
                             fotosNuevas.push(item.file);
-                            console.log(`✅ Foto de prenda (nueva) agregada en ENVÍO [${index}][${fotoIndex}]: ${item.file.name}`);
+                            console.log(` Foto de prenda (nueva) agregada en ENVÍO [${index}][${fotoIndex}]: ${item.file.name}`);
                         } else if (item.fotoId && typeof item.file === 'string') {
                             // ES UNA FOTO YA GUARDADA (con URL string) - GUARDAR SU ID para que backend la copie
                             fotosExistentes.push(item.fotoId);
-                            console.log(`✅ ID de foto de prenda existente registrado [${index}][${fotoIndex}]: ${item.fotoId}`);
+                            console.log(` ID de foto de prenda existente registrado [${index}][${fotoIndex}]: ${item.fotoId}`);
                         }
                     });
                     
@@ -1049,13 +1049,13 @@ async function procederEnviarCotizacion() {
                     // En UPDATE, no enviar IDs porque ya existen en la prenda y crearían duplicados
                     if (fotosExistentes.length > 0 && !window.cotizacionIdActual) {
                         formData.append(`prendas[${index}][fotos_existentes]`, JSON.stringify(fotosExistentes));
-                        console.log(`✅ IDs de fotos existentes de prenda: [${fotosExistentes.join(',')}]`);
+                        console.log(` IDs de fotos existentes de prenda: [${fotosExistentes.join(',')}]`);
                     } else if (fotosExistentes.length > 0 && window.cotizacionIdActual) {
                         console.log(`⏭️ UPDATE detectado - NO enviando IDs de fotos de prenda existentes para evitar duplicados`);
                     }
                 }
                 
-                // ✅ 🔒 TELAS YA FUERON GUARDADAS EN guardarCotizacion()
+                //  🔒 TELAS YA FUERON GUARDADAS EN guardarCotizacion()
                 // Las telas se procesaron y guardaron en la BD durante guardarCotizacion()
                 // NO RE-PROCESAR aquí para evitar DUPLICACIÓN
                 console.log(`🧵 SKIP: Telas para prenda ${index} ya fueron guardadas en guardarCotizacion()`);
@@ -1064,7 +1064,7 @@ async function procederEnviarCotizacion() {
             });
         }
         
-        // ✅ LOGO - IMÁGENES (File objects desde imagenesEnMemoria + rutas guardadas desde DOM)
+        //  LOGO - IMÁGENES (File objects desde imagenesEnMemoria + rutas guardadas desde DOM)
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
             console.log('📸 Procesando imágenes de logo desde memory:', window.imagenesEnMemoria.logo.length);
             
@@ -1072,16 +1072,16 @@ async function procederEnviarCotizacion() {
                 if (imagen instanceof File) {
                     // Es un File object nuevo
                     formData.append(`logo[imagenes][]`, imagen);
-                    console.log(`✅ Imagen de logo (File) agregada a FormData [${imagenIndex}]:`, imagen.name);
+                    console.log(` Imagen de logo (File) agregada a FormData [${imagenIndex}]:`, imagen.name);
                 } else if (imagen.esGuardada && imagen.ruta) {
                     // Es una imagen guardada en BD - enviar la ruta para conservarla
                     formData.append(`logo_fotos_guardadas[]`, imagen.ruta);
-                    console.log(`✅ Ruta de foto de logo existente agregada [${imagenIndex}]:`, imagen.ruta);
+                    console.log(` Ruta de foto de logo existente agregada [${imagenIndex}]:`, imagen.ruta);
                 }
             });
         }
         
-        // ✅ LOGO - FOTOS GUARDADAS EN BD DESDE DOM (por si acaso no estén en memory)
+        //  LOGO - FOTOS GUARDADAS EN BD DESDE DOM (por si acaso no estén en memory)
         // Estas son las imágenes que ya están guardadas en BD y necesitan ser conservadas
         const galeriaImagenes = document.getElementById('galeria_imagenes');
         if (galeriaImagenes) {
@@ -1094,7 +1094,7 @@ async function procederEnviarCotizacion() {
                     if (ruta && !ruta.includes('data:image')) {
                         // Enviar la ruta para que el backend sepa cuál conservar
                         formData.append(`logo_fotos_guardadas[]`, ruta);
-                        console.log(`✅ Ruta de foto existente agregada [${idx}]:`, ruta);
+                        console.log(` Ruta de foto existente agregada [${idx}]:`, ruta);
                     }
                 });
             } else {
@@ -1134,7 +1134,7 @@ async function procederEnviarCotizacion() {
         try {
             data = JSON.parse(responseText);
         } catch (parseError) {
-            console.error('❌ Error al parsear JSON:', parseError);
+            console.error(' Error al parsear JSON:', parseError);
             console.error('📄 Respuesta completa:', responseText.substring(0, 500));
             
             Swal.fire({
@@ -1151,10 +1151,10 @@ async function procederEnviarCotizacion() {
         
         if (data.success && (data.cotizacion_id !== undefined || (data.data && data.data.id !== undefined))) {
             const cotizacionId = data.cotizacion_id !== undefined ? data.cotizacion_id : (data.data && data.data.id);
-            console.log('✅ Cotización enviada con ID:', cotizacionId);
-            console.log('✅ Imágenes procesadas y guardadas en el servidor');
+            console.log(' Cotización enviada con ID:', cotizacionId);
+            console.log(' Imágenes procesadas y guardadas en el servidor');
             
-            // ✅ LIMPIAR TODO DESPUÉS DEL ENVÍO EXITOSO
+            //  LIMPIAR TODO DESPUÉS DEL ENVÍO EXITOSO
             if (typeof limpiarFormularioCompleto === 'function') {
                 limpiarFormularioCompleto();
             } else if (typeof limpiarStorage === 'function') {
@@ -1194,7 +1194,7 @@ async function procederEnviarCotizacion() {
                 htmlError += '</div>';
             }
             
-            console.error('❌ Error en la respuesta:', data);
+            console.error(' Error en la respuesta:', data);
             
             Swal.fire({
                 title: 'Error al enviar',
@@ -1205,7 +1205,7 @@ async function procederEnviarCotizacion() {
             });
         }
     } catch (error) {
-        console.error('❌ Error en fetch:', error);
+        console.error(' Error en fetch:', error);
         Swal.fire({
             title: 'Error de conexión',
             html: `<p>No se pudo completar la solicitud:</p>

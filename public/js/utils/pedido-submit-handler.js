@@ -92,7 +92,7 @@ class PedidoSubmitHandler {
                 'Creando pedido...'
             );
 
-            console.log('✅ Pedido creado:', resultadoPedido);
+            console.log(' Pedido creado:', resultadoPedido);
 
             if (!resultadoPedido.success) {
                 throw new Error(resultadoPedido.message || 'Error al crear pedido');
@@ -116,7 +116,7 @@ class PedidoSubmitHandler {
                     logoFotos: logoFotosSeleccionadas
                 });
 
-                console.log('✅ Logo guardado:', resultadoLogo);
+                console.log(' Logo guardado:', resultadoLogo);
             }
 
             // ============================================================
@@ -130,7 +130,7 @@ class PedidoSubmitHandler {
             });
 
         } catch (error) {
-            console.error('❌ Error al crear pedido:', error);
+            console.error(' Error al crear pedido:', error);
             window.ApiService.handleError(error, 'Crear pedido');
         }
     }

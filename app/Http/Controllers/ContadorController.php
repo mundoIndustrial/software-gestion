@@ -405,7 +405,7 @@ class ContadorController extends Controller
             \Log::info('Eliminando registro de cotización de BD');
             $cotizacion->delete();
             
-            \Log::info('✅ Cotización eliminada completamente', [
+            \Log::info(' Cotización eliminada completamente', [
                 'cotizacion_id' => $id,
                 'cliente' => $cotizacion->cliente
             ]);
@@ -415,7 +415,7 @@ class ContadorController extends Controller
                 'message' => 'Cotización, imágenes y todos sus registros relacionados han sido eliminados correctamente'
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error al eliminar cotización', [
+            \Log::error(' Error al eliminar cotización', [
                 'cotizacion_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()

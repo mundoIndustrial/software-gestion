@@ -32,20 +32,20 @@ class VerificarTablasCotizaciones extends Command
         }
 
         $this->newLine();
-        $this->info('✅ VERIFICACIÓN COMPLETADA');
+        $this->info(' VERIFICACIÓN COMPLETADA');
     }
 
     private function verificarTabla($nombreTabla)
     {
-        $this->line("📋 Tabla: <fg=cyan>{$nombreTabla}</>");
+        $this->line(" Tabla: <fg=cyan>{$nombreTabla}</>");
 
         if (!Schema::hasTable($nombreTabla)) {
-            $this->error("   ❌ NO EXISTE");
+            $this->error("    NO EXISTE");
             $this->newLine();
             return;
         }
 
-        $this->info("   ✅ EXISTE");
+        $this->info("    EXISTE");
 
         // Obtener columnas
         $columnas = Schema::getColumns($nombreTabla);

@@ -174,7 +174,7 @@
                             document.querySelector('meta[name="csrf-token"]')?.content;
 
             if (!csrfToken) {
-                console.error('❌ Token CSRF no encontrado');
+                console.error(' Token CSRF no encontrado');
                 mostrarError('Error', 'Token de seguridad no encontrado');
                 reject(new Error('CSRF token missing'));
                 return;
@@ -198,7 +198,7 @@
                 return response.json();
             })
             .then(data => {
-                console.log('✅ Respuesta del servidor:', data);
+                console.log(' Respuesta del servidor:', data);
 
                 if (data.success) {
                     mostrarExito(
@@ -211,7 +211,7 @@
                 }
             })
             .catch(error => {
-                console.error('❌ Error al enviar datos:', error);
+                console.error(' Error al enviar datos:', error);
                 mostrarError(
                     'Error al crear pedido',
                     error.message || 'Ocurrió un error inesperado'
@@ -276,6 +276,6 @@
     };
 
     // Log de disponibilidad
-    logWithEmoji('✅', 'Funciones de validación y envío FASE 3 cargadas');
+    logWithEmoji('', 'Funciones de validación y envío FASE 3 cargadas');
 
 })();

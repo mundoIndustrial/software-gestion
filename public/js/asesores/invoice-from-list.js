@@ -30,7 +30,7 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         }
         
         const datos = await response.json();
-        console.log('✅ [FACTURA] Datos del pedido obtenidos:', datos);
+        console.log(' [FACTURA] Datos del pedido obtenidos:', datos);
         
         // Ocultar spinner
         ocultarCargando();
@@ -39,7 +39,7 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         crearModalFacturaDesdeListaPedidos(datos);
         
     } catch (error) {
-        console.error('❌ [FACTURA] Error cargando factura:', error);
+        console.error(' [FACTURA] Error cargando factura:', error);
         ocultarCargando();
         
         mostrarErrorNotificacion(
@@ -132,14 +132,14 @@ function crearModalFacturaDesdeListaPedidos(datos) {
             }
         `;
         document.head.appendChild(styleSheet);
-        console.log('✅ [FACTURA] Estilos de impresión agregados');
+        console.log(' [FACTURA] Estilos de impresión agregados');
     }
     
     // Usar la función existente de invoice-preview-live.js
     let htmlFactura;
     if (typeof generarHTMLFactura === 'function') {
         htmlFactura = generarHTMLFactura(datos);
-        console.log('✅ [FACTURA] Usando generarHTMLFactura de invoice-preview-live.js');
+        console.log(' [FACTURA] Usando generarHTMLFactura de invoice-preview-live.js');
     } else {
         console.warn('⚠️  [FACTURA] generarHTMLFactura no encontrada, usando fallback simple');
         htmlFactura = `<div style="padding: 20px;"><p>Pedido #${datos.numero_pedido}</p><p>Cliente: ${datos.cliente}</p></div>`;
@@ -322,7 +322,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
         }
     };
     
-    console.log('✅ [FACTURA] Modal creado exitosamente');
+    console.log(' [FACTURA] Modal creado exitosamente');
 }
 
 /**
@@ -457,7 +457,7 @@ function mostrarErrorNotificacion(titulo, mensaje) {
  * Abre la vista de recibos dinámicos para un pedido
  */
 window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex = null) {
-    console.log('📋 [RECIBOS] Abriendo recibos para pedido:', numeroPedido, 'prenda:', prendasIndex);
+    console.log(' [RECIBOS] Abriendo recibos para pedido:', numeroPedido, 'prenda:', prendasIndex);
     
     try {
         // Mostrar spinner de carga
@@ -477,7 +477,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         }
         
         const datos = await response.json();
-        console.log('✅ [RECIBOS] Datos del pedido obtenidos:', datos);
+        console.log(' [RECIBOS] Datos del pedido obtenidos:', datos);
         
         // Ocultar spinner
         ocultarCargando();
@@ -486,7 +486,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         crearModalRecibosDesdeListaPedidos(datos, prendasIndex);
         
     } catch (error) {
-        console.error('❌ [RECIBOS] Error cargando recibos:', error);
+        console.error(' [RECIBOS] Error cargando recibos:', error);
         ocultarCargando();
         
         mostrarErrorNotificacion(
@@ -673,7 +673,7 @@ function cargarReceiptManager(callback) {
     script.src = '/js/asesores/receipt-manager.js';
     script.onload = callback;
     script.onerror = () => {
-        console.error('❌ [RECIBOS] Error cargando ReceiptManager');
+        console.error(' [RECIBOS] Error cargando ReceiptManager');
         mostrarErrorNotificacion('Error', 'No se pudo cargar el gestor de recibos');
     };
     document.head.appendChild(script);
@@ -689,4 +689,4 @@ function cerrarModalRecibos() {
     }
 }
 
-console.log('✅ [INVOICE LIST] invoice-from-list.js cargado correctamente');
+console.log(' [INVOICE LIST] invoice-from-list.js cargado correctamente');

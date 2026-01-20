@@ -130,15 +130,15 @@ $epp->pedidos()           // Todos los pedidos que contienen este EPP
 
 ## Ventajas de Esta Estructura
 
-✅ **Flexibilidad:** Un pedido puede tener múltiples EPP, cada uno con diferentes cantidades, tallas y observaciones.
+ **Flexibilidad:** Un pedido puede tener múltiples EPP, cada uno con diferentes cantidades, tallas y observaciones.
 
-✅ **Independencia:** Las imágenes están asociadas al EPP del pedido específico, no al EPP genérico. Permite versionar imágenes por pedido.
+ **Independencia:** Las imágenes están asociadas al EPP del pedido específico, no al EPP genérico. Permite versionar imágenes por pedido.
 
-✅ **Rastreabilidad:** Se mantiene registro de qué EPP se agregó a qué pedido y cuándo.
+ **Rastreabilidad:** Se mantiene registro de qué EPP se agregó a qué pedido y cuándo.
 
-✅ **Escalabilidad:** Soporta múltiples imágenes por EPP con orden definido.
+ **Escalabilidad:** Soporta múltiples imágenes por EPP con orden definido.
 
-✅ **Integridad:** Constraints previenen eliminación de EPPs si están en uso, pero permite eliminar pedidos (cascade).
+ **Integridad:** Constraints previenen eliminación de EPPs si están en uso, pero permite eliminar pedidos (cascade).
 
 ## Próximos Pasos
 

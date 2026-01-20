@@ -218,12 +218,12 @@ function aprobarCotizacion(cotizacionId) {
             // Recargar la página para actualizar la lista
             window.location.reload();
         } else {
-            alert('❌ Error: ' + (data.message || 'No se pudo aprobar la cotización'));
+            alert(' Error: ' + (data.message || 'No se pudo aprobar la cotización'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('❌ Error al aprobar la cotización: ' + error.message);
+        alert(' Error al aprobar la cotización: ' + error.message);
     });
 }
 </script>

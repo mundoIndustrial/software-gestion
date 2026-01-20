@@ -46,7 +46,7 @@ class GuardarPedidoProduccionService
                 'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
             ]);
 
-            Log::info('✅ [PRODUCCION] Pedido base creado', ['pedido_id' => $pedido->id]);
+            Log::info(' [PRODUCCION] Pedido base creado', ['pedido_id' => $pedido->id]);
 
             // Guardar prendas COMPLETAS
             $this->guardarPrendas($pedido, $productos);
@@ -56,13 +56,13 @@ class GuardarPedidoProduccionService
 
             DB::commit();
 
-            Log::info('✅ [PRODUCCION] Pedido guardado completamente', ['pedido_id' => $pedido->id]);
+            Log::info(' [PRODUCCION] Pedido guardado completamente', ['pedido_id' => $pedido->id]);
 
             return $pedido;
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('❌ [PRODUCCION] Error al guardar', [
+            Log::error(' [PRODUCCION] Error al guardar', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -81,9 +81,9 @@ class GuardarPedidoProduccionService
             $pedidoPrendaService = new PedidoPrendaService();
             $pedidoPrendaService->guardarPrendasEnPedido($pedido, $productos);
             
-            Log::info('✅ [PRENDAS] Guardadas exitosamente');
+            Log::info(' [PRENDAS] Guardadas exitosamente');
         } catch (\Exception $e) {
-            Log::error('❌ [PRENDAS] Error al guardar', [
+            Log::error(' [PRENDAS] Error al guardar', [
                 'error' => $e->getMessage()
             ]);
             throw $e;
@@ -102,7 +102,7 @@ class GuardarPedidoProduccionService
             || !empty($validated['logo.observaciones_generales'] ?? null);
 
         if (!$tieneDataLogo) {
-            Log::info('ℹ️ [LOGO] No hay datos de logo para este pedido');
+            Log::info(' [LOGO] No hay datos de logo para este pedido');
             return;
         }
 
@@ -130,9 +130,9 @@ class GuardarPedidoProduccionService
             // Guardar logo en el pedido
             $logoService->guardarLogoEnPedido($pedido, $logoData);
             
-            Log::info('✅ [LOGO] Guardado exitosamente');
+            Log::info(' [LOGO] Guardado exitosamente');
         } catch (\Exception $e) {
-            Log::error('❌ [LOGO] Error al guardar', [
+            Log::error(' [LOGO] Error al guardar', [
                 'error' => $e->getMessage()
             ]);
             throw $e;

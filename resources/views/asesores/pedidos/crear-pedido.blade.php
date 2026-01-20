@@ -37,10 +37,10 @@
     <!-- IMPORTANTE: Cargar helpers ANTES de los módulos que los usan -->
     <script src="{{ asset('js/modulos/crear-pedido/utilidades/helpers-pedido-editable.js') }}"></script>
     
-    <!-- ✅ GESTOR CENTRALIZADO JSON - Debe cargarse PRIMERO -->
+    <!--  GESTOR CENTRALIZADO JSON - Debe cargarse PRIMERO -->
     <script src="{{ asset('js/modulos/crear-pedido/gestor-datos-pedido-json.js') }}"></script>
     
-    <!-- ✅ SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+    <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>

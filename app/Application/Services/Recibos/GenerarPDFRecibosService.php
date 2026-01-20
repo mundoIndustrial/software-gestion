@@ -35,7 +35,7 @@ class GenerarPDFRecibosService
                 'fecha_generacion' => now()->format('d/m/Y H:i'),
             ]);
 
-            Log::info('✅ [PDF] PDF generado correctamente', [
+            Log::info(' [PDF] PDF generado correctamente', [
                 'pedido_id' => $pedidoId,
                 'tamaño' => strlen($pdf->output())
             ]);
@@ -43,7 +43,7 @@ class GenerarPDFRecibosService
             return $pdf->download('recibo_' . $pedidoId . '.pdf');
 
         } catch (\Exception $e) {
-            Log::error('❌ [PDF] Error generando PDF', [
+            Log::error(' [PDF] Error generando PDF', [
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage()
             ]);
@@ -71,7 +71,7 @@ class GenerarPDFRecibosService
             ]
         ];
 
-        Log::info('✅ [PDF-DATOS] Datos preparados correctamente');
+        Log::info(' [PDF-DATOS] Datos preparados correctamente');
 
         return $datos;
     }
@@ -102,7 +102,7 @@ class GenerarPDFRecibosService
 
             Storage::disk($disco)->put($nombreArchivo, $pdf->output());
 
-            Log::info('✅ [PDF-GUARDAR] PDF guardado correctamente', [
+            Log::info(' [PDF-GUARDAR] PDF guardado correctamente', [
                 'ruta' => $nombreArchivo,
                 'tamaño' => strlen($pdf->output())
             ]);
@@ -110,7 +110,7 @@ class GenerarPDFRecibosService
             return $nombreArchivo;
 
         } catch (\Exception $e) {
-            Log::error('❌ [PDF-GUARDAR] Error guardando PDF', [
+            Log::error(' [PDF-GUARDAR] Error guardando PDF', [
                 'error' => $e->getMessage()
             ]);
             throw $e;
@@ -129,12 +129,12 @@ class GenerarPDFRecibosService
                 throw new \Exception('Archivo PDF no encontrado', 404);
             }
 
-            Log::info('✅ [PDF-OBTENER] PDF encontrado');
+            Log::info(' [PDF-OBTENER] PDF encontrado');
 
             return Storage::disk($disco)->download($rutaArchivo);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PDF-OBTENER] Error obteniendo PDF', [
+            Log::error(' [PDF-OBTENER] Error obteniendo PDF', [
                 'error' => $e->getMessage()
             ]);
             throw $e;
@@ -155,12 +155,12 @@ class GenerarPDFRecibosService
                 'fecha_generacion' => now()->format('d/m/Y H:i'),
             ])->render();
 
-            Log::info('✅ [VISTA-PREVIA] HTML generado', ['tamaño' => strlen($html)]);
+            Log::info(' [VISTA-PREVIA] HTML generado', ['tamaño' => strlen($html)]);
 
             return $html;
 
         } catch (\Exception $e) {
-            Log::error('❌ [VISTA-PREVIA] Error generando HTML', [
+            Log::error(' [VISTA-PREVIA] Error generando HTML', [
                 'error' => $e->getMessage()
             ]);
             throw $e;
@@ -186,7 +186,7 @@ class GenerarPDFRecibosService
             return false;
 
         } catch (\Exception $e) {
-            Log::error('❌ [EMAIL] Error enviando email', [
+            Log::error(' [EMAIL] Error enviando email', [
                 'error' => $e->getMessage()
             ]);
             return false;

@@ -46,7 +46,7 @@ class ApiService {
             return data;
 
         } catch (error) {
-            console.error('❌ Error en petición API:', error);
+            console.error(' Error en petición API:', error);
             throw error;
         }
     }
@@ -241,7 +241,7 @@ class ApiService {
      * @param {string} context - Contexto del error
      */
     handleError(error, context = 'Operación') {
-        console.error(`❌ Error en ${context}:`, error);
+        console.error(` Error en ${context}:`, error);
         
         let message = error.message || 'Error desconocido';
         

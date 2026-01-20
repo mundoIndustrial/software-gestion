@@ -34,7 +34,7 @@ function esperarElementosYCargar(intentos = 0) {
                              document.querySelector('[data-prendas-container]');
 
     if ((clienteInput || intentos > 20) && datosEditacionCargados === false) {
-        console.log('[EDICIÓN] ✅ Elementos listos, cargando datos...');
+        console.log('[EDICIÓN]  Elementos listos, cargando datos...');
         cargarDatosEdicion();
         datosEditacionCargados = true;
     } else if (intentos < 30) {
@@ -85,10 +85,10 @@ function cargarDatosEdicion() {
         }
         document.title = titulo;
 
-        console.log('[EDICIÓN] ✅ Datos cargados correctamente');
+        console.log('[EDICIÓN]  Datos cargados correctamente');
 
     } catch (error) {
-        console.error('[EDICIÓN] ❌ Error cargando datos:', error);
+        console.error('[EDICIÓN]  Error cargando datos:', error);
     }
 }
 
@@ -113,7 +113,7 @@ function cargarInformacionGeneral(pedido) {
         });
 
     } catch (error) {
-        console.error('[EDICIÓN] ❌ Error cargando información general:', error);
+        console.error('[EDICIÓN]  Error cargando información general:', error);
     }
 }
 
@@ -184,7 +184,7 @@ function cargarPrendas(prendas) {
                 genero
             });
             
-            // ✅ Extraer tallas de generosConTallas
+            //  Extraer tallas de generosConTallas
             const tallas = [];
             if (generosConTallas && typeof generosConTallas === 'object') {
                 for (const genero in generosConTallas) {
@@ -205,13 +205,13 @@ function cargarPrendas(prendas) {
                 descripcion: prenda.descripcion || '',
                 genero: genero,
                 generosConTallas: generosConTallas,
-                tallas: tallas,  // ✅ Pasar tallas extraídas
+                tallas: tallas,  //  Pasar tallas extraídas
                 cantidadesPorTalla: prenda.cantidadesPorTalla || {},
                 telas: prenda.telas || [],
                 telasAgregadas: prenda.telasAgregadas || [],
                 fotos: prenda.fotos || [],
                 telaFotos: prenda.telaFotos || [],
-                imagenes: prenda.imagenes || prenda.fotos || [],  // ✅ Asegurar imagenes
+                imagenes: prenda.imagenes || prenda.fotos || [],  //  Asegurar imagenes
                 origen: prenda.origen || 'bodega',
                 de_bodega: prenda.de_bodega || 1,
                 procesos: procesos,
@@ -227,10 +227,10 @@ function cargarPrendas(prendas) {
             });
 
             console.log(`[EDICIÓN] ✓ Prenda ${index + 1} agregada al gestor`);
-            console.log(`[EDICIÓN] 📸 Fotos: ${(prenda.fotos || []).length}, 📋 Telas: ${(prenda.telas || []).length}, ⚙️  Procesos: ${Object.keys(procesos || {}).length}`);
+            console.log(`[EDICIÓN] 📸 Fotos: ${(prenda.fotos || []).length},  Telas: ${(prenda.telas || []).length}, ⚙️  Procesos: ${Object.keys(procesos || {}).length}`);
 
         } catch (error) {
-            console.error(`[EDICIÓN] ❌ Error procesando prenda ${index + 1}:`, error);
+            console.error(`[EDICIÓN]  Error procesando prenda ${index + 1}:`, error);
         }
     });
 
@@ -246,7 +246,7 @@ function cargarPrendas(prendas) {
         if (typeof window.renderizarPrendasSinCotizacion === 'function') {
             console.log('[EDICIÓN] 🎨 Renderizando prendas (window.renderizarPrendasSinCotizacion)...');
             window.renderizarPrendasSinCotizacion();
-            console.log('[EDICIÓN] ✅ Prendas renderizadas');
+            console.log('[EDICIÓN]  Prendas renderizadas');
             return;
         }
         
@@ -277,7 +277,7 @@ function cargarPrendas(prendas) {
                         }
                     }
                 });
-                console.log('[EDICIÓN] ✅ Prendas renderizadas (alternativa)');
+                console.log('[EDICIÓN]  Prendas renderizadas (alternativa)');
                 return;
             }
         }
@@ -310,7 +310,7 @@ function cargarPrendas(prendas) {
                             }
                         }
                     });
-                    console.log('[EDICIÓN] ✅ Prendas renderizadas después de evento');
+                    console.log('[EDICIÓN]  Prendas renderizadas después de evento');
                     return true;
                 }
             }
@@ -329,18 +329,18 @@ function cargarPrendas(prendas) {
         // Timeout como fallback (en caso que el evento no se dispare)
         setTimeout(() => {
             if (typeof window.generarTarjetaPrendaReadOnly !== 'function') {
-                console.error('[EDICIÓN] ❌ generarTarjetaPrendaReadOnly aún no disponible después de 3 segundos');
+                console.error('[EDICIÓN]  generarTarjetaPrendaReadOnly aún no disponible después de 3 segundos');
             } else {
                 intentarRenderizarPrendas();
             }
         }, 3000);
         
     } catch (error) {
-        console.error('[EDICIÓN] ❌ Error renderizando prendas:', error);
+        console.error('[EDICIÓN]  Error renderizando prendas:', error);
     }
 }
 
-console.log('✅ [EDICIÓN] Módulo cargar-datos-edicion-nuevo.js cargado');
+console.log(' [EDICIÓN] Módulo cargar-datos-edicion-nuevo.js cargado');
 
 /**
  * Cargar EPPs al pedido
@@ -364,7 +364,7 @@ function cargarEPPs(epps) {
                 eppContainer.className = 'epps-items-container';
                 form.appendChild(eppContainer);
             } else {
-                console.error('[EDICIÓN] ❌ No se puede encontrar contenedor de EPPs ni formulario');
+                console.error('[EDICIÓN]  No se puede encontrar contenedor de EPPs ni formulario');
                 return;
             }
         }
@@ -376,17 +376,17 @@ function cargarEPPs(epps) {
                     window.gestorPrendaSinCotizacion.agregarEpp(epp);
                     console.log(`[EDICIÓN] ✓ EPP ${index + 1} agregado: ${epp.nombre}`);
                 } catch (error) {
-                    console.error(`[EDICIÓN] ❌ Error agregando EPP ${index + 1}:`, error);
+                    console.error(`[EDICIÓN]  Error agregando EPP ${index + 1}:`, error);
                 }
             });
             
             // Intentar renderizar EPPs si existe función
             if (typeof window.renderizarEppsSinCotizacion === 'function') {
                 window.renderizarEppsSinCotizacion();
-                console.log('[EDICIÓN] ✅ EPPs renderizados');
+                console.log('[EDICIÓN]  EPPs renderizados');
             }
         } else {
-            console.log('[EDICIÓN] ℹ️ Gestor no tiene método agregarEpp, renderizando EPPs directamente...');
+            console.log('[EDICIÓN]  Gestor no tiene método agregarEpp, renderizando EPPs directamente...');
             
             // Renderizar EPPs directamente
             eppContainer.innerHTML = '';
@@ -394,11 +394,11 @@ function cargarEPPs(epps) {
                 const eppCard = generarTarjetaEpp(epp, index);
                 eppContainer.appendChild(eppCard);
             });
-            console.log('[EDICIÓN] ✅ EPPs renderizados (forma directa)');
+            console.log('[EDICIÓN]  EPPs renderizados (forma directa)');
         }
         
     } catch (error) {
-        console.error('[EDICIÓN] ❌ Error cargando EPPs:', error);
+        console.error('[EDICIÓN]  Error cargando EPPs:', error);
     }
 }
 

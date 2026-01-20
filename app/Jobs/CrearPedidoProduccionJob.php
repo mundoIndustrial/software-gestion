@@ -49,13 +49,13 @@ class CrearPedidoProduccionJob
                 'prendas_recibidas' => count($this->prendas),
             ]);
 
-            // ✅ CONVERTIR DTOS A ARRAYS ANTES DE ENRIQUECER
+            //  CONVERTIR DTOS A ARRAYS ANTES DE ENRIQUECER
             $prendasArray = array_map(
                 fn($prenda) => $prenda->toArray(),
                 $this->prendas
             );
             
-            // ✅ ENRIQUECER PRENDAS DEL FRONTEND CON IDs FALTANTES
+            //  ENRIQUECER PRENDAS DEL FRONTEND CON IDs FALTANTES
             $prendasEnriquecidas = $enriquecerService->enriquecerPrendas($prendasArray);
             
             \Log::info('🔍 [CrearPedidoProduccionJob] Prendas enriquecidas - DETALLE COMPLETO', [
@@ -93,7 +93,7 @@ class CrearPedidoProduccionJob
                     'es_int' => is_int($numeroPedido),
                 ]);
                 
-                // ✅ CRÍTICO: Asegurar que sea un entero, no string con prefijo
+                //  CRÍTICO: Asegurar que sea un entero, no string con prefijo
                 if (is_string($numeroPedido) && str_contains($numeroPedido, 'PEP-')) {
                     // Si viene con prefijo, extraer solo el número
                     $numeroPedido = (int) str_replace('PEP-', '', $numeroPedido);
@@ -110,7 +110,7 @@ class CrearPedidoProduccionJob
                     ->where('tipo', 'pedido_produccion')
                     ->increment('siguiente');
             } else {
-                \Log::info('ℹ️  [CrearPedidoProduccionJob] Es pedido LOGO, NO se asigna número en pedidos_produccion');
+                \Log::info('  [CrearPedidoProduccionJob] Es pedido LOGO, NO se asigna número en pedidos_produccion');
             }
 
             // Procesar prendas
@@ -145,13 +145,13 @@ class CrearPedidoProduccionJob
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 
-            \Log::info('✅ [CrearPedidoProduccionJob] Pedido creado exitosamente', [
+            \Log::info(' [CrearPedidoProduccionJob] Pedido creado exitosamente', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'forma_de_pago_guardada' => $pedido->forma_de_pago,
             ]);
 
-            // ✅ USAR PRENDAS ENRIQUECIDAS CON IDs CORRECTOS
+            //  USAR PRENDAS ENRIQUECIDAS CON IDs CORRECTOS
             // Guardar prendas en tablas normalizadas (DDD)
             if (!empty($prendasEnriquecidas)) {
                 \Log::info('🟢 [CrearPedidoProduccionJob] Guardando prendas en pedido - ANÁLISIS ANTES DE GUARDAR', [
@@ -163,7 +163,7 @@ class CrearPedidoProduccionJob
                     'primera_prenda_cantidad_telas' => isset($prendasEnriquecidas[0]['telas']) ? count($prendasEnriquecidas[0]['telas']) : 0,
                 ]);
                 $prendaService->guardarPrendasEnPedido($pedido, $prendasEnriquecidas);
-                \Log::info('✅ [CrearPedidoProduccionJob] Prendas guardadas exitosamente');
+                \Log::info(' [CrearPedidoProduccionJob] Prendas guardadas exitosamente');
             }
 
         // ⏭️ NO COPIAR IMÁGENES DE COTIZACIÓN AUTOMÁTICAMENTE

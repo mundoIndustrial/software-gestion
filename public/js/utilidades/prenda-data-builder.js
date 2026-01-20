@@ -114,7 +114,7 @@ class PrendaDataBuilder {
      * @returns {Object} {nombrePrenda, origen, descripcion}
      */
     static extraerDatosFormularioBasico() {
-        console.log('📋 PrendaDataBuilder: Extrayendo datos básicos del formulario');
+        console.log(' PrendaDataBuilder: Extrayendo datos básicos del formulario');
 
         const nombrePrenda = document.getElementById('nueva-prenda-nombre')?.value?.trim();
         const origen = document.getElementById('nueva-prenda-origen-select')?.value;

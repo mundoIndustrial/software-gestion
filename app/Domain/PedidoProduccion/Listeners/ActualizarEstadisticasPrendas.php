@@ -57,7 +57,7 @@ class ActualizarEstadisticasPrendas
             $currentQty = (int) cache()->get($tipoKey, 0);
             cache()->put($tipoKey, $currentQty + $event->getCantidad(), now()->addDay());
 
-            Log::info('✅ Estadísticas actualizadas', [
+            Log::info(' Estadísticas actualizadas', [
                 'prenda_id' => $event->getPrendaId(),
                 'contador_hoy' => cache()->get($dateKey),
             ]);

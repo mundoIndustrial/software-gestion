@@ -47,13 +47,13 @@
         }
 
         if (todosDisponibles) {
-            console.log('✅ Todos los módulos están disponibles');
+            console.log(' Todos los módulos están disponibles');
             inicializarFormulario();
         } else if (maxIntentos < maxIntentosPermitidos) {
             // Reintentar después de 100ms
             setTimeout(verificarModulos, 100);
         } else {
-            console.error('❌ Error: Algunos módulos no se cargaron después de 5 segundos');
+            console.error(' Error: Algunos módulos no se cargaron después de 5 segundos');
             console.error('Módulos requeridos:', requiredModules);
         }
     }
@@ -119,7 +119,7 @@
         }
 
         // Aquí puedes agregar más inicializaciones específicas
-        console.log('✅ Formulario inicializado correctamente');
+        console.log(' Formulario inicializado correctamente');
     }
 
     // Iniciar verificación cuando el DOM esté listo

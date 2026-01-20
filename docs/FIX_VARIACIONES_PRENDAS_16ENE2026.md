@@ -5,7 +5,7 @@
 
 ---
 
-## 📋 RESUMEN DEL PROBLEMA
+##  RESUMEN DEL PROBLEMA
 
 ### Síntomas
 1. El usuario selecciona valores en el frontend (ej: `manga = "ret"`, `tipo_broche = "boton"`)
@@ -17,7 +17,7 @@
 ### Causa Raíz
 En la función `recolectarDatosPedido()` (línea ~1145-1154), se intentaba leer las variaciones desde:
 ```javascript
-// ❌ INCORRECTO - estas propiedades NO existen
+//  INCORRECTO - estas propiedades NO existen
 prenda.tipo_manga
 prenda.obs_manga
 prenda.tipo_broche
@@ -26,7 +26,7 @@ prenda.obs_broche
 
 Pero las variaciones estaban guardadas en:
 ```javascript
-// ✅ CORRECTO - estructura real
+//  CORRECTO - estructura real
 prenda.variantes = {
     tipo_manga: "ret",
     obs_manga: "reter",
@@ -41,7 +41,7 @@ prenda.variantes = {
 
 ---
 
-## ✅ SOLUCIONES IMPLEMENTADAS
+##  SOLUCIONES IMPLEMENTADAS
 
 ### 1. FRONTEND: Captura de Variaciones (Líneas ~708-832)
 
@@ -58,7 +58,7 @@ if (plicaManga?.checked) {
     
     variacionesConfiguradas.tipo_manga = tipoMangaRaw || 'No aplica';
     
-    console.log('   ✅ MANGA CAPTURADA:', {
+    console.log('    MANGA CAPTURADA:', {
         tipo: variacionesConfiguradas.tipo_manga,
         obs: variacionesConfiguradas.obs_manga
     });
@@ -66,9 +66,9 @@ if (plicaManga?.checked) {
 ```
 
 **Beneficios:**
-- ✅ Logs detallados de cada campo capturado
-- ✅ Validación para MANGA, BOLSILLOS, BROCHE, REFLECTIVO
-- ✅ Debugging fácil desde DevTools
+-  Logs detallados de cada campo capturado
+-  Validación para MANGA, BOLSILLOS, BROCHE, REFLECTIVO
+-  Debugging fácil desde DevTools
 
 ### 2. FRONTEND: Guardar en Gestor JSON (Línea ~870)
 
@@ -96,10 +96,10 @@ window.gestorDatosPedidoJSON.agregarPrenda({
 **Cambio Crítico:** Usar operador `??` (nullish coalescing) en lugar de `||` para valores falsy
 
 ```javascript
-// ❌ INCORRECTO - || sobrescribe false/0/''
+//  INCORRECTO - || sobrescribe false/0/''
 tiene_bolsillos: prenda.variantes?.tiene_bolsillos || false  // siempre false si undefined
 
-// ✅ CORRECTO - ?? solo sobrescribe null/undefined
+//  CORRECTO - ?? solo sobrescribe null/undefined
 tiene_bolsillos: prenda.variantes?.tiene_bolsillos ?? false  // preserva false si existe
 ```
 
@@ -108,7 +108,7 @@ tiene_bolsillos: prenda.variantes?.tiene_bolsillos ?? false  // preserva false s
 **Cambio Principal:** Extraer desde `prenda.variantes` correctamente
 
 ```javascript
-// ✅ CONSTRUIR VARIACIONES DESDE LA FUENTE CORRECTA (prenda.variantes)
+//  CONSTRUIR VARIACIONES DESDE LA FUENTE CORRECTA (prenda.variantes)
 console.log(`🔍 [VARIACIONES] Procesando prenda ${prendaIndex}:`, {
     tieneVariantes: !!prenda.variantes,
     varianteKeys: Object.keys(prenda.variantes || {}),
@@ -127,12 +127,12 @@ const obsReflectivoRaw = prenda.variantes?.obs_reflectivo ?? '';
 
 // 🔹 VALIDAR: No permitir sobrescritura con valores por defecto
 const tipoManga = tipoMangaRaw === 'No aplica' ? 'No aplica' : (tipoMangaRaw || 'No aplica');
-const tieneBolsillos = tieneBolsillosRaw === true; // ✅ Validar que es exactamente true
+const tieneBolsillos = tieneBolsillosRaw === true; //  Validar que es exactamente true
 ```
 
 **Logs Agregados:**
 ```javascript
-console.log(`✅ [VARIACIONES DEBUG] Valores extraídos:`, {
+console.log(` [VARIACIONES DEBUG] Valores extraídos:`, {
     tipo_manga: tipoMangaRaw,
     obs_manga: obsMangaRaw,
     tipo_broche: tipoBrocheRaw,
@@ -178,7 +178,7 @@ itemsFormato.forEach((item, idx) => {
 if (!empty($prendaData['broche']) && empty($prendaData['tipo_broche_boton_id'])) {
     $broche = $this->colorGeneroService->obtenerOCrearBroche($prendaData['broche']);
     if ($broche) {
-        $prendaData['tipo_broche_boton_id'] = $broche->id; // ✅ CAMBIO
+        $prendaData['tipo_broche_boton_id'] = $broche->id; //  CAMBIO
     }
 }
 
@@ -209,13 +209,13 @@ Busca estos logs en orden:
 🔍 [VARIACIONES CAPTURA] ===== MANGA =====
    - aplica-manga checkbox encontrado: true
    - manga-input VALUE: "ret"
-   ✅ MANGA CAPTURADA: {tipo: "ret", obs: "reter"}
+    MANGA CAPTURADA: {tipo: "ret", obs: "reter"}
 ```
 
 **Qué buscar:**
-- ✅ Si dice `"encontrado: true"` = checkbox está marcado
-- ✅ Si dice `VALUE: "ret"` = el input tiene el valor correcto
-- ❌ Si dice `VALUE: ""` o `VALUE: undefined` = problema en el input
+-  Si dice `"encontrado: true"` = checkbox está marcado
+-  Si dice `VALUE: "ret"` = el input tiene el valor correcto
+-  Si dice `VALUE: ""` o `VALUE: undefined` = problema en el input
 
 #### B. GUARDADO EN GESTOR JSON
 ```
@@ -229,9 +229,9 @@ Busca estos logs en orden:
 ```
 
 **Qué buscar:**
-- ✅ `tipo_manga: "ret"` (NO `"No aplica"`)
-- ✅ `tipo_broche: "boton"` (NO `"No aplica"`)
-- ✅ `tiene_bolsillos: true` (NO `false`)
+-  `tipo_manga: "ret"` (NO `"No aplica"`)
+-  `tipo_broche: "boton"` (NO `"No aplica"`)
+-  `tiene_bolsillos: true` (NO `false`)
 
 #### C. RECUPERACIÓN EN recolectarDatosPedido()
 ```
@@ -242,7 +242,7 @@ Busca estos logs en orden:
     variantes: {...}
 }
 
-✅ [VARIACIONES DEBUG] Valores extraídos:
+ [VARIACIONES DEBUG] Valores extraídos:
 {
     tipo_manga: "ret",
     obs_manga: "reter",
@@ -259,9 +259,9 @@ Busca estos logs en orden:
 ```
 
 **Qué buscar:**
-- ✅ `variantes: {...}` (objeto con datos reales)
-- ✅ `manga: {tipo: "ret", ...}` (NO `"No aplica"`)
-- ✅ `bolsillos: {tiene: true, ...}` (NO `false`)
+-  `variantes: {...}` (objeto con datos reales)
+-  `manga: {tipo: "ret", ...}` (NO `"No aplica"`)
+-  `bolsillos: {tiene: true, ...}` (NO `false`)
 
 #### D. VALIDACIÓN FINAL (Antes de envío)
 ```
@@ -272,13 +272,13 @@ Busca estos logs en orden:
     - Broche: tipo="boton" (esDefault=false)
     - Reflectivo: tiene=false obs="" (esDefault=true)
 
-✅ [VARIACIONES] Validación exitosa: contienen valores del usuario
+ [VARIACIONES] Validación exitosa: contienen valores del usuario
 ```
 
 **Qué buscar:**
-- ✅ `esDefault=false` (significa que tiene valores reales)
-- ✅ `Validación exitosa` (confirmación final)
-- ❌ Si ve `Validación exitosa` pero todos son `esDefault=true` = advertencia normal (sin variaciones)
+-  `esDefault=false` (significa que tiene valores reales)
+-  `Validación exitosa` (confirmación final)
+-  Si ve `Validación exitosa` pero todos son `esDefault=true` = advertencia normal (sin variaciones)
 
 ### Paso 3: Revisar Red (Network)
 1. En DevTools → Tab "Network"
@@ -303,9 +303,9 @@ Busca estos logs en orden:
 ```
 
 **Qué verificar:**
-- ✅ `"tipo": "ret"` (NO `"No aplica"`)
-- ✅ `"tiene": true` (NO `false`)
-- ✅ `"observacion": "tert"` (NO vacío si el usuario escribió algo)
+-  `"tipo": "ret"` (NO `"No aplica"`)
+-  `"tiene": true` (NO `false`)
+-  `"observacion": "tert"` (NO vacío si el usuario escribió algo)
 
 ---
 
@@ -450,17 +450,17 @@ Log esperado:
 
 Después de estos cambios:
 
-✅ Las variaciones seleccionadas por el usuario se preservan  
-✅ No hay valores por defecto sobrescribiendo datos reales  
-✅ Los logs permiten debugging rápido en DevTools  
-✅ El backend recibe variaciones correctas con `tipo_broche_boton_id`  
-✅ Las observaciones de variaciones se guardan correctamente  
+ Las variaciones seleccionadas por el usuario se preservan  
+ No hay valores por defecto sobrescribiendo datos reales  
+ Los logs permiten debugging rápido en DevTools  
+ El backend recibe variaciones correctas con `tipo_broche_boton_id`  
+ Las observaciones de variaciones se guardan correctamente  
 
 ---
 
 ## 📞 SOPORTE
 
-Si los logs muestran `⚠️` pero esperas `✅`:
+Si los logs muestran `⚠️` pero esperas ``:
 
 1. Verifica que los checkboxes están marcados en el modal
 2. Verifica que los inputs tienen valores (no vacíos)

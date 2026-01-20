@@ -23,7 +23,7 @@ window.fetch = function(...args) {
         console.log('📤 Método:', config?.method || 'GET');
         
         if (config?.body instanceof FormData) {
-            console.log('\n📦 FormData CAPTURADO:\n');
+            console.log('\n FormData CAPTURADO:\n');
             
             let formDataAnalisis = {
                 campos: {},
@@ -56,7 +56,7 @@ window.fetch = function(...args) {
             console.log('   • Imágenes/Archivos: ' + formDataAnalisis.imagenesContadas);
             console.log('   • Tamaño total: ' + (formDataAnalisis.tamaño / 1024 / 1024).toFixed(2) + ' MB');
             
-            console.log('\n📋 CAMPOS DE TEXTO:');
+            console.log('\n CAMPOS DE TEXTO:');
             Object.entries(formDataAnalisis.campos).forEach(([key, value]) => {
                 console.log('   ✓ ' + key + ': ' + (typeof value === 'object' ? JSON.stringify(value).substring(0, 50) : value));
             });
@@ -92,24 +92,24 @@ window.fetch = function(...args) {
             console.log('📝 Body (no es FormData):', config.body.substring(0, 200));
         }
         
-        console.log('\n✅ Diagnóstico completado. El servidor recibirá esta información.\n');
+        console.log('\n Diagnóstico completado. El servidor recibirá esta información.\n');
     }
     
     // Llamar al fetch original
     return originalFetch.apply(this, args);
 };
 
-console.log('✅ Diagnóstico activado. Ahora haz clic en "Guardar Pedido"');
+console.log(' Diagnóstico activado. Ahora haz clic en "Guardar Pedido"');
 console.log('📊 Se mostrará el análisis del FormData que se envía\n');
 
 // Función auxiliar para monitorear errores de red
 window.addEventListener('error', function(event) {
     if (event.message.includes('fetch') || event.message.includes('Network')) {
-        console.error('❌ Error de red detectado:', event.message);
+        console.error(' Error de red detectado:', event.message);
     }
 });
 
 // Monitorear respuestas fallidas
 document.addEventListener('error', function(event) {
-    console.error('❌ Error en documento:', event);
+    console.error(' Error en documento:', event);
 }, true);

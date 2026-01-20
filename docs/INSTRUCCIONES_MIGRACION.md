@@ -4,7 +4,7 @@
 
 ---
 
-## 📋 PRE-REQUISITOS
+##  PRE-REQUISITOS
 
 - [ ] Base de datos actual funcionando
 - [ ] Laravel 10+
@@ -117,21 +117,21 @@ $datosJSON = [
 
 // 3. Validar
 $validator = \App\Domain\PedidoProduccion\Validators\PedidoJSONValidator::validar($datosJSON);
-echo $validator['valid'] ? "✅ Válido\n" : "❌ Inválido\n";
+echo $validator['valid'] ? " Válido\n" : " Inválido\n";
 
 // 4. Guardar
 $servicio = app(\App\Domain\PedidoProduccion\Services\GuardarPedidoDesdeJSONService::class);
 $resultado = $servicio->guardar($pedido->id, $datosJSON['prendas']);
 
 // 5. Verificar
-echo "✅ Resultado:\n";
+echo " Resultado:\n";
 dump($resultado);
 ```
 
 **Salida esperada:**
 ```
-✅ Válido
-✅ Resultado:
+ Válido
+ Resultado:
 {
   "success": true,
   "message": "Pedido guardado correctamente",
@@ -171,9 +171,9 @@ fetch('/api/pedidos/guardar-desde-json', {
 .then(res => res.json())
 .then(data => {
     if (data.success) {
-        console.log('✅ Pedido guardado:', data.numero_pedido);
+        console.log(' Pedido guardado:', data.numero_pedido);
     } else {
-        console.error('❌ Error:', data.message);
+        console.error(' Error:', data.message);
     }
 })
 .catch(err => console.error('Error:', err));
@@ -199,13 +199,13 @@ await cliente.ejemplo1_PrendaSimple();
 
 ### Antiguo flujo (DESCARTAR):
 ```php
-// ❌ NO USAR
+//  NO USAR
 $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $prendas);
 ```
 
 ### Nuevo flujo (USAR):
 ```php
-// ✅ USAR
+//  USAR
 $guardarService = app(GuardarPedidoDesdeJSONService::class);
 $resultado = $guardarService->guardar($pedidoId, $prendas);
 ```
@@ -265,7 +265,7 @@ php artisan storage:link
 
 ---
 
-## ✅ VERIFICACIÓN FINAL
+##  VERIFICACIÓN FINAL
 
 ```bash
 # 1. Migraciones ejecutadas
@@ -293,13 +293,13 @@ php artisan test --filter GuardarPedidoTest
 
 | Aspecto | Antiguo | Nuevo |
 |---------|---------|-------|
-| Transacciones | ❌ No garantizadas | ✅ Automáticas |
-| Validación | ❌ Básica | ✅ Exhaustiva |
-| Logging | ❌ Mínimo | ✅ Detallado |
-| Imágenes | ❌ Sin conversión | ✅ WebP automático |
-| Rollback | ❌ Manual | ✅ Automático |
-| Documentación | ❌ Mínima | ✅ Completa |
-| Testing | ❌ Difícil | ✅ Fácil |
+| Transacciones |  No garantizadas |  Automáticas |
+| Validación |  Básica |  Exhaustiva |
+| Logging |  Mínimo |  Detallado |
+| Imágenes |  Sin conversión |  WebP automático |
+| Rollback |  Manual |  Automático |
+| Documentación |  Mínima |  Completa |
+| Testing |  Difícil |  Fácil |
 
 ---
 
@@ -307,12 +307,12 @@ php artisan test --filter GuardarPedidoTest
 
 **Antes:**
 ```
-Frontend → Controller → Service (sin transacción) → BD ❌
+Frontend → Controller → Service (sin transacción) → BD 
 ```
 
 **Después:**
 ```
-Frontend → Controller → Validador ✅ → Servicio (transacción) → BD ✅
+Frontend → Controller → Validador  → Servicio (transacción) → BD 
 ```
 
 ---
@@ -328,5 +328,5 @@ Si encuentra problemas:
 
 ---
 
-**¡Migración completada!** ✅
+**¡Migración completada!** 
 

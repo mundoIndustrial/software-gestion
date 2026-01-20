@@ -15,7 +15,7 @@ function simulateOrdenUpdate(numeroPedido, cambios) {
     // Obtener la orden actual
     const row = document.querySelector(`.table-row[data-orden-id="${numeroPedido}"]`);
     if (!row) {
-        console.error(`❌ Fila no encontrada para pedido ${numeroPedido}`);
+        console.error(` Fila no encontrada para pedido ${numeroPedido}`);
         return;
     }
     
@@ -32,9 +32,9 @@ function simulateOrdenUpdate(numeroPedido, cambios) {
     
     if (typeof RealtimeOrderHandler !== 'undefined') {
         RealtimeOrderHandler.updateOrderRow(ordenData, changedFields);
-        console.log('✅ Actualización simulada completada');
+        console.log(' Actualización simulada completada');
     } else {
-        console.error('❌ RealtimeOrderHandler no disponible');
+        console.error(' RealtimeOrderHandler no disponible');
     }
 }
 
@@ -53,4 +53,4 @@ function simulateOrdenUpdate(numeroPedido, cambios) {
 
 // Exponer globalmente para testing
 window.simulateOrdenUpdate = simulateOrdenUpdate;
-console.log('✅ Función simulateOrdenUpdate disponible en consola');
+console.log(' Función simulateOrdenUpdate disponible en consola');

@@ -28,7 +28,7 @@
             handleEstadoCambiado(event);
         })
         .listen('.cotizacion.aprobada', (event) => {
-            console.log('✅ Cotización aprobada:', event);
+            console.log(' Cotización aprobada:', event);
             handleCotizacionAprobada(event);
         });
 
@@ -45,7 +45,7 @@
                 mostrarNotificacion('Estado Actualizado', `Tu cotización ha cambiado a: ${event.nuevo_estado}`);
             })
             .listen('.cotizacion.aprobada', (event) => {
-                console.log('✅ Tu cotización fue aprobada:', event);
+                console.log(' Tu cotización fue aprobada:', event);
                 handleCotizacionAprobada(event);
                 mostrarNotificacion('Cotización Aprobada', 'Tu cotización ha sido aprobada');
             });
@@ -344,5 +344,5 @@
         return window.location.pathname.includes('/contador');
     }
 
-    console.log('✅ Real-time cotizaciones listener initialized');
+    console.log(' Real-time cotizaciones listener initialized');
 })();

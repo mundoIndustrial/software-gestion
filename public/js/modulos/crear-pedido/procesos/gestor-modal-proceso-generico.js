@@ -51,7 +51,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
     // Verificar que el modal existe
     const modal = document.getElementById('modal-proceso-generico');
     if (!modal) {
-        console.error('❌ ERROR: Modal #modal-proceso-generico no encontrado en el DOM');
+        console.error(' ERROR: Modal #modal-proceso-generico no encontrado en el DOM');
         return;
     }
     
@@ -59,7 +59,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
     const config = procesosConfig[tipoProceso];
     
     if (!config) {
-        console.error(`❌ ERROR: Configuración no encontrada para proceso: ${tipoProceso}`);
+        console.error(` ERROR: Configuración no encontrada para proceso: ${tipoProceso}`);
         return;
     }
     
@@ -98,9 +98,9 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
         // Mostrar modal
         modal.style.display = 'flex';
         
-        console.log(`✅ Modal abierto para proceso: ${tipoProceso}`);
+        console.log(` Modal abierto para proceso: ${tipoProceso}`);
     } catch (error) {
-        console.error(`❌ ERROR al abrir modal para ${tipoProceso}:`, error);
+        console.error(` ERROR al abrir modal para ${tipoProceso}:`, error);
     }
 };
 
@@ -116,7 +116,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     if (procesoActual && !procesoGuardado) {
         console.log(`🔴 Cerrando modal SIN guardar para: ${procesoActual}`);
         
-        // ✅ PASO 1: Deseleccionar el checkbox visualmente en el HTML
+        //  PASO 1: Deseleccionar el checkbox visualmente en el HTML
         // IMPORTANTE: Hacemos esto ANTES de llamar a manejarCheckboxProceso
         // para que el .onclick no se dispare automáticamente
         const checkbox = document.getElementById(`checkbox-${procesoActual}`);
@@ -124,10 +124,10 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
             // Usar una bandera temporal para evitar que onclick se dispare
             checkbox._ignorarOnclick = true;
             checkbox.checked = false;
-            console.log(`✅ Checkbox ${procesoActual} deseleccionado`);
+            console.log(` Checkbox ${procesoActual} deseleccionado`);
         }
         
-        // ✅ PASO 2: Actualizar el estado del gestor (procesos seleccionados)
+        //  PASO 2: Actualizar el estado del gestor (procesos seleccionados)
         if (window.manejarCheckboxProceso) {
             window.manejarCheckboxProceso(procesoActual, false);
         }
@@ -137,9 +137,9 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
             checkbox._ignorarOnclick = false;
         }
         
-        console.log(`❌ Modal cerrado y proceso ${procesoActual} deseleccionado`);
+        console.log(` Modal cerrado y proceso ${procesoActual} deseleccionado`);
     } else if (procesoActual && procesoGuardado) {
-        console.log(`✅ Modal cerrado CON proceso guardado: ${procesoActual} - checkbox mantiene selección`);
+        console.log(` Modal cerrado CON proceso guardado: ${procesoActual} - checkbox mantiene selección`);
     }
     
     procesoActual = null;
@@ -154,7 +154,7 @@ window.manejarImagenProceso = function(input, indice) {
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
         
-        // ✅ CAMBIO: Guardar el File object directamente, NO convertir a base64
+        //  CAMBIO: Guardar el File object directamente, NO convertir a base64
         imagenesProcesoActual[indice - 1] = file;
         
         // Mostrar preview usando URL.createObjectURL (más eficiente que base64)
@@ -254,7 +254,7 @@ window.agregarUbicacionProceso = function() {
     
     // Agregar a la lista
     ubicacionesProcesoSeleccionadas.push(ubicacion);
-    console.log(`✅ Ubicación agregada: ${ubicacion}`);
+    console.log(` Ubicación agregada: ${ubicacion}`);
     
     // Limpiar input
     input.value = '';
@@ -266,7 +266,7 @@ window.agregarUbicacionProceso = function() {
 // Remover ubicación de la lista
 window.removerUbicacionProceso = function(ubicacion) {
     ubicacionesProcesoSeleccionadas = ubicacionesProcesoSeleccionadas.filter(u => u !== ubicacion);
-    console.log(`❌ Ubicación removida: ${ubicacion}`);
+    console.log(` Ubicación removida: ${ubicacion}`);
     renderizarListaUbicaciones();
 };
 
@@ -297,7 +297,7 @@ function renderizarListaUbicaciones() {
 
 // Aplicar proceso para TODAS las tallas (de la prenda)
 window.aplicarProcesoParaTodasTallas = function() {
-    console.log('✅ Intentando aplicar proceso para todas las tallas de la prenda');
+    console.log(' Intentando aplicar proceso para todas las tallas de la prenda');
     
     // Obtener las tallas registradas de la prenda actual (con cantidades)
     const tallasPrendaConCantidades = obtenerTallasDeLaPrenda();
@@ -323,14 +323,14 @@ window.aplicarProcesoParaTodasTallas = function() {
     // Guardar cantidades en variable global para acceso posterior
     window._tallasCantidadesProceso = tallasPrendaConCantidades;
     
-    console.log('✅ Tallas aplicadas:', tallasSeleccionadasProceso);
+    console.log(' Tallas aplicadas:', tallasSeleccionadasProceso);
     console.log('📊 Cantidades guardadas:', window._tallasCantidadesProceso);
     actualizarResumenTallasProceso();
 };
 
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
-    // ✅ Leer directamente de window.tallasSeleccionadas (fuente de verdad)
+    //  Leer directamente de window.tallasSeleccionadas (fuente de verdad)
     const tallasGlobales = window.tallasSeleccionadas || {};
     const tallas = { dama: {}, caballero: {} };
     
@@ -350,7 +350,7 @@ function obtenerTallasDeLaPrenda() {
                 tallas.dama[talla] = cantidad;
             }
         });
-        console.log(`✅ Tallas dama encontradas con cantidades:`, tallas.dama);
+        console.log(` Tallas dama encontradas con cantidades:`, tallas.dama);
     }
     
     // Obtener tallas de caballero CON CANTIDADES
@@ -363,7 +363,7 @@ function obtenerTallasDeLaPrenda() {
                 tallas.caballero[talla] = cantidad;
             }
         });
-        console.log(`✅ Tallas caballero encontradas con cantidades:`, tallas.caballero);
+        console.log(` Tallas caballero encontradas con cantidades:`, tallas.caballero);
     }
     
     console.log('📊 [obtenerTallasDeLaPrenda] Tallas finales:', tallas);
@@ -424,11 +424,11 @@ window.cerrarModalAdvertencia = function() {
 
 // Abrir editor de tallas específicas
 window.abrirEditorTallasEspecificas = function() {
-    console.log('📋 Abriendo editor de tallas específicas de la prenda');
+    console.log(' Abriendo editor de tallas específicas de la prenda');
     
     const modalEditor = document.getElementById('modal-editor-tallas');
     if (!modalEditor) {
-        console.error('❌ ERROR: Modal editor de tallas no encontrado');
+        console.error(' ERROR: Modal editor de tallas no encontrado');
         return;
     }
     
@@ -509,7 +509,7 @@ window.abrirEditorTallasEspecificas = function() {
     
     // Mostrar modal editor
     modalEditor.style.display = 'flex';
-    console.log('✅ Editor de tallas abierto');
+    console.log(' Editor de tallas abierto');
 };
 
 // Actualizar cantidad de talla en el modal de proceso
@@ -534,7 +534,7 @@ window.cerrarEditorTallas = function() {
     if (modal) {
         modal.style.display = 'none';
     }
-    console.log('❌ Editor de tallas cerrado');
+    console.log(' Editor de tallas cerrado');
 };
 
 // Guardar tallas seleccionadas desde el editor
@@ -549,7 +549,7 @@ window.guardarTallasSeleccionadas = function() {
     const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
     tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
     
-    console.log('✅ Tallas seleccionadas:', tallasSeleccionadasProceso);
+    console.log(' Tallas seleccionadas:', tallasSeleccionadasProceso);
     
     // Cerrar editor y actualizar resumen
     cerrarEditorTallas();
@@ -639,7 +639,7 @@ window.agregarProcesoAlPedido = function() {
         
         console.log(`💾 Guardando proceso con ${imagenesValidas.length} imágenes:`, datos);
         
-        // ✅ CRÍTICO: Guardar en procesosSeleccionados CON SINCRONIZACIÓN
+        //  CRÍTICO: Guardar en procesosSeleccionados CON SINCRONIZACIÓN
         if (!window.procesosSeleccionados) {
             window.procesosSeleccionados = {};
             console.warn('⚠️ window.procesosSeleccionados no existía, creado ahora');
@@ -656,9 +656,9 @@ window.agregarProcesoAlPedido = function() {
         
         // Asignar los datos capturados
         window.procesosSeleccionados[procesoActual].datos = datos;
-        console.log(`✅ Datos asignados a ${procesoActual}:`, datos);
+        console.log(` Datos asignados a ${procesoActual}:`, datos);
         
-        // ✅ NUEVO: Renderizar tarjetas de procesos en el modal de prenda
+        //  NUEVO: Renderizar tarjetas de procesos en el modal de prenda
         if (window.renderizarTarjetasProcesos) {
             window.renderizarTarjetasProcesos();
             console.log('🎨 Tarjetas de procesos renderizadas');
@@ -672,11 +672,11 @@ window.agregarProcesoAlPedido = function() {
             window.actualizarResumenProcesos();
         }
         
-        console.log(`✅ Proceso ${procesoActual} agregado`);
+        console.log(` Proceso ${procesoActual} agregado`);
     } catch (error) {
-        console.error(`❌ ERROR al agregar proceso:`, error);
+        console.error(` ERROR al agregar proceso:`, error);
     }
 };
 
 // Confirmar que el módulo se cargó correctamente
-console.log('✅ Módulo gestor-modal-proceso-generico.js cargado correctamente');
+console.log(' Módulo gestor-modal-proceso-generico.js cargado correctamente');

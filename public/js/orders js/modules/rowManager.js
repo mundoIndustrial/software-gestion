@@ -87,7 +87,7 @@ const RowManager = {
         });
 
         table.insertBefore(row, table.firstChild);
-        console.log(`✅ Fila ${orden.pedido} creada`);
+        console.log(` Fila ${orden.pedido} creada`);
     },
 
     /**
@@ -98,7 +98,7 @@ const RowManager = {
         if (row) {
             row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
             setTimeout(() => row.remove(), 500);
-            console.log(`✅ Fila ${pedido} eliminada`);
+            console.log(` Fila ${pedido} eliminada`);
         }
     },
 
@@ -109,7 +109,7 @@ const RowManager = {
         console.log(`🔄 executeRowUpdate iniciado para orden ${orderId}, valorAEnviar: ${valorAEnviar}`);
         
         if (!row) {
-            console.warn(`❌ Row es nula para orden ${orderId}`);
+            console.warn(` Row es nula para orden ${orderId}`);
             return;
         }
 
@@ -143,12 +143,12 @@ const RowManager = {
                         const fechaFormateada = FormattingModule.formatearFecha(data.order.fecha_estimada_de_entrega);
                         spanFecha.textContent = fechaFormateada;
                         fechaCell.setAttribute('data-fecha-estimada', fechaFormateada);
-                        console.log(`✅ Fecha estimada actualizada: ${fechaFormateada}`);
+                        console.log(` Fecha estimada actualizada: ${fechaFormateada}`);
                     } else {
                         // Si es null, limpiar la fecha
                         spanFecha.textContent = '-';
                         fechaCell.setAttribute('data-fecha-estimada', '-');
-                        console.log(`✅ Fecha estimada limpiada (valor null)`);
+                        console.log(` Fecha estimada limpiada (valor null)`);
                     }
                 } else {
                     console.warn(`⚠️ No se encontró span dentro de fechaCell`);

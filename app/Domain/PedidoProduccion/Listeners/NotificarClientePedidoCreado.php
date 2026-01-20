@@ -45,7 +45,7 @@ class NotificarClientePedidoCreado
 
             // Aquí irían las notificaciones via email/SMS
             // Por ahora, solo logging
-            Log::info('✅ Notificación de pedido enviada', [
+            Log::info(' Notificación de pedido enviada', [
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
                 'cliente' => $event->getCliente(),
@@ -54,7 +54,7 @@ class NotificarClientePedidoCreado
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error notificando cliente', [
+            Log::error(' Error notificando cliente', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $event->getPedidoId(),
             ]);

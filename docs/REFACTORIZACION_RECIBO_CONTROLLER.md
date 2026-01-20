@@ -88,7 +88,7 @@ Ubicación: `app/Application/Services/Recibos/`
 
 ---
 
-## ✅ Refactorización del ReciboController
+##  Refactorización del ReciboController
 
 ### ANTES (Monolítico)
 ```php
@@ -310,7 +310,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
 
 ---
 
-## ✅ Checklist
+##  Checklist
 
 - [x] Crear ObtenerRecibosService con 6 métodos
 - [x] Crear GenerarPDFRecibosService con 5 métodos
@@ -334,7 +334,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
 
 ---
 
-**Estado:** ✅ **COMPLETADO** - ReciboController refactorizado con patrón DDD
+**Estado:**  **COMPLETADO** - ReciboController refactorizado con patrón DDD
 **Servicios creados:** 2 (ObtenerRecibosService, GenerarPDFRecibosService)
 **Métodos totales:** 6 en controller + 11 en servicios
 **Fecha:** 19 de Enero de 2026

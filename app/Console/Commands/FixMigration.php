@@ -16,6 +16,6 @@ class FixMigration extends Command
             ->where('migration', '2025_12_12_create_reflectivo_cotizacion_table')
             ->delete();
 
-        $this->info('✅ Registro de migración eliminado');
+        $this->info(' Registro de migración eliminado');
     }
 }

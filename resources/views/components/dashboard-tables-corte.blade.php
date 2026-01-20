@@ -161,7 +161,7 @@ function obtenerFiltrosDashboard() {
             if (specificDates) dashboardFilterParams['specific_dates'] = specificDates;
         }
         
-        console.log('✅ Filtros desde URL:', dashboardFilterParams);
+        console.log(' Filtros desde URL:', dashboardFilterParams);
     }
     
     // Si no hay filtros en URL, mostrar mensaje de "sin filtros"
@@ -193,7 +193,7 @@ function actualizarFiltrosDashboard(filterType, specificDate, startDate, endDate
         }
     }
     
-    console.log('✅ dashboardFilterParams actualizado:', Object.keys(dashboardFilterParams).length > 0 ? dashboardFilterParams : 'VACÍO - Mostrando TODOS');
+    console.log(' dashboardFilterParams actualizado:', Object.keys(dashboardFilterParams).length > 0 ? dashboardFilterParams : 'VACÍO - Mostrando TODOS');
 }
 
 // Función para recargar las tablas del dashboard
@@ -221,7 +221,7 @@ function recargarDashboardCorte() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('✅ Datos del dashboard recibidos:', data);
+        console.log(' Datos del dashboard recibidos:', data);
         
         // Actualizar tabla de horas
         if (data.horas) {
@@ -234,7 +234,7 @@ function recargarDashboardCorte() {
         }
     })
     .catch(error => {
-        console.error('❌ Error al recargar dashboard:', error);
+        console.error(' Error al recargar dashboard:', error);
     });
 }
 
@@ -291,7 +291,7 @@ function actualizarTablaHorasCompleta(horas) {
     `;
     tbody.appendChild(totalRow);
     
-    console.log('✅ Tabla de horas actualizada');
+    console.log(' Tabla de horas actualizada');
 }
 
 // Función para actualizar la tabla de operarios completa
@@ -347,7 +347,7 @@ function actualizarTablaOperariosCompleta(operarios) {
     `;
     tbody.appendChild(totalRow);
     
-    console.log('✅ Tabla de operarios actualizada');
+    console.log(' Tabla de operarios actualizada');
 }
 
 // Listen for real-time updates with detailed debugging
@@ -368,11 +368,11 @@ function initializeCorteChannel() {
         const channel = window.Echo.channel('corte');
         
         channel.subscribed(() => {
-            console.log('✅ Suscrito exitosamente al canal "corte"');
+            console.log(' Suscrito exitosamente al canal "corte"');
         });
         
         channel.error((error) => {
-            console.error('❌ Error en el canal "corte":', error);
+            console.error(' Error en el canal "corte":', error);
         });
         
         channel.listen('CorteRecordCreated', (e) => {
@@ -395,7 +395,7 @@ function initializeCorteChannel() {
         
         console.log('Listeners configurados. Esperando eventos...');
     } else {
-        console.error('❌ Echo NO está disponible todavía. Reintentando en 500ms...');
+        console.error(' Echo NO está disponible todavía. Reintentando en 500ms...');
         setTimeout(initializeCorteChannel, 500);
     }
 }

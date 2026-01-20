@@ -39,7 +39,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Prenda/Logo', $resultado);
-        echo "\n✅ Test Prenda/Logo PASÓ\n";
+        echo "\n Test Prenda/Logo PASÓ\n";
     }
 
     /**
@@ -63,7 +63,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Solo Logo', $resultado);
-        echo "\n✅ Test Solo Logo PASÓ\n";
+        echo "\n Test Solo Logo PASÓ\n";
     }
 
     /**
@@ -89,7 +89,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('General', $resultado);
-        echo "\n✅ Test General PASÓ\n";
+        echo "\n Test General PASÓ\n";
     }
 
     /**
@@ -113,7 +113,7 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Solo Logo', $resultado);
-        echo "\n✅ Test Con Imágenes PASÓ\n";
+        echo "\n Test Con Imágenes PASÓ\n";
     }
 
     /**
@@ -140,6 +140,6 @@ class CotizacionServiceTest extends TestCase
 
         // Con observaciones generales pero sin prendas, debería ser General
         $this->assertEquals('General', $resultado);
-        echo "\n✅ Test Con Observaciones PASÓ\n";
+        echo "\n Test Con Observaciones PASÓ\n";
     }
 }

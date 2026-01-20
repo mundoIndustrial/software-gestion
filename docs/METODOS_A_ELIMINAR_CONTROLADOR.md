@@ -1,14 +1,14 @@
 # Métodos a Eliminar del Controlador
 
-## ✅ Ya Migrados a Servicios - ELIMINAR DEL CONTROLADOR
+##  Ya Migrados a Servicios - ELIMINAR DEL CONTROLADOR
 
 ### NumeracionService
 - `generarNumeroPedido()` - Línea ~1277
 - `generarNumeroLogoPedido()` - Línea ~1276
 
 ### DescripcionService  
-- `construirDescripcionPrenda()` - ELIMINADO ✅
-- `construirDescripcionPrendaCompleta()` - ELIMINADO ✅
+- `construirDescripcionPrenda()` - ELIMINADO 
+- `construirDescripcionPrendaCompleta()` - ELIMINADO 
 - `construirDescripcionPrendaSinCotizacion()` - Línea ~2355 (renombrado a _ELIMINADO)
 - `armarDescripcionVariacionesPrendaSinCotizacion()` - Línea ~2517
 - `construirDescripcionReflectivoSinCotizacion()` - Línea ~2809

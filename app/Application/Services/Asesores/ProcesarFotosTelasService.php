@@ -41,7 +41,7 @@ class ProcesarFotosTelasService
                     $archivos = $this->obtenerArchivos($request, $allFiles, $fotosKey);
                     
                     if (!empty($archivos)) {
-                        Log::info('✅ [FOTOS-TELAS] Procesando fotos', [
+                        Log::info(' [FOTOS-TELAS] Procesando fotos', [
                             'producto' => $productoIndex,
                             'tela' => $telaIndex,
                             'cantidad' => count($archivos)
@@ -61,7 +61,7 @@ class ProcesarFotosTelasService
             }
         }
 
-        Log::info('✅ [FOTOS-TELAS] Procesamiento completado');
+        Log::info(' [FOTOS-TELAS] Procesamiento completado');
 
         return $productosProcessados;
     }
@@ -97,7 +97,7 @@ class ProcesarFotosTelasService
                 try {
                     $rutaGuardada = $archivoFoto->store('telas/pedidos', 'public');
                     
-                    Log::info('✅ [FOTOS-TELAS] Foto guardada', [
+                    Log::info(' [FOTOS-TELAS] Foto guardada', [
                         'nombre' => $archivoFoto->getClientOriginalName(),
                         'ruta' => $rutaGuardada,
                         'tamaño' => $archivoFoto->getSize(),
@@ -112,7 +112,7 @@ class ProcesarFotosTelasService
                         'tamaño' => $archivoFoto->getSize(),
                     ];
                 } catch (\Exception $e) {
-                    Log::error('❌ [FOTOS-TELAS] Error al guardar', [
+                    Log::error(' [FOTOS-TELAS] Error al guardar', [
                         'error' => $e->getMessage(),
                         'archivo' => $archivoFoto->getClientOriginalName(),
                     ]);
@@ -148,12 +148,12 @@ class ProcesarFotosTelasService
                             'orden' => 0
                         ];
 
-                        Log::info('✅ [LOGO-IMAGENES] Imagen guardada', [
+                        Log::info(' [LOGO-IMAGENES] Imagen guardada', [
                             'nombre' => $imagen->getClientOriginalName(),
                             'ruta' => $rutaGuardada,
                         ]);
                     } catch (\Exception $e) {
-                        Log::error('❌ [LOGO-IMAGENES] Error al guardar', [
+                        Log::error(' [LOGO-IMAGENES] Error al guardar', [
                             'error' => $e->getMessage(),
                         ]);
                     }
@@ -161,7 +161,7 @@ class ProcesarFotosTelasService
             }
         }
 
-        Log::info('✅ [LOGO-IMAGENES] Procesamiento completado', ['total' => count($imagenesProcesadas)]);
+        Log::info(' [LOGO-IMAGENES] Procesamiento completado', ['total' => count($imagenesProcesadas)]);
 
         return $imagenesProcesadas;
     }

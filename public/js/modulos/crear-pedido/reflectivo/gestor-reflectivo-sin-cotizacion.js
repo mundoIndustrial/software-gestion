@@ -29,7 +29,7 @@ class GestorReflectivoSinCotizacion {
         this.fotosNuevas = {};
         this.tipoPedidoActual = 'R'; // Tipo REFLECTIVO
         
-        logWithEmoji('✅', 'GestorReflectivoSinCotizacion inicializado');
+        logWithEmoji('', 'GestorReflectivoSinCotizacion inicializado');
     }
 
     /**
@@ -41,10 +41,10 @@ class GestorReflectivoSinCotizacion {
             nombre_producto: '', // Tipo de prenda (Camiseta, Pantalón, etc.)
             descripcion: '', // Descripción del reflectivo
             genero: '', // Dama o Caballero (vacío por defecto)
-            generosSeleccionados: [], // ✅ NUEVO: Array de géneros seleccionados
+            generosSeleccionados: [], //  NUEVO: Array de géneros seleccionados
             tallas: [],
             cantidadesPorTalla: {},
-            generosConTallas: {}, // ✅ NUEVO: Estructura género => talla => cantidad
+            generosConTallas: {}, //  NUEVO: Estructura género => talla => cantidad
             fotos: [],
             ubicaciones: [] // Ubicaciones del reflectivo
         };
@@ -271,7 +271,7 @@ class GestorReflectivoSinCotizacion {
         prendaCards.forEach((card, index) => {
             if (this.prendasEliminadas.has(index)) return;
 
-            // ✅ CORREGIDO: Obtener los géneros seleccionados
+            //  CORREGIDO: Obtener los géneros seleccionados
             const generosSeleccionados = [];
             const checkDama = card.querySelector('input[name*="genero_reflectivo_dama"]');
             const checkCaballero = card.querySelector('input[name*="genero_reflectivo_caballero"]');
@@ -288,12 +288,12 @@ class GestorReflectivoSinCotizacion {
                 nombre_producto: card.querySelector('[name*="tipo_prenda"]')?.value || '',
                 descripcion: card.querySelector('[name*="descripcion"]')?.value || '',
                 genero: card.querySelector('.genero-radio-reflectivo:checked')?.value || '',
-                generosSeleccionados: generosSeleccionados, // ✅ NUEVO: Incluir géneros seleccionados
+                generosSeleccionados: generosSeleccionados, //  NUEVO: Incluir géneros seleccionados
                 cantidadesPorTalla: {},
-                generosConTallas: {} // ✅ NUEVO: Estructura con géneros
+                generosConTallas: {} //  NUEVO: Estructura con géneros
             };
 
-            // ✅ NUEVO: Recopilar tallas con géneros desde los inputs ocultos
+            //  NUEVO: Recopilar tallas con géneros desde los inputs ocultos
             card.querySelectorAll('.talla-cantidad-genero-editable').forEach(input => {
                 const talla = input.getAttribute('data-talla');
                 const genero = input.getAttribute('data-genero');
@@ -346,7 +346,7 @@ class GestorReflectivoSinCotizacion {
                 errores.push(`Prenda ${index + 1}: Tipo de prenda es requerido`);
             }
 
-            // ✅ CORREGIDO: Validar generosConTallas en lugar de cantidadesPorTalla
+            //  CORREGIDO: Validar generosConTallas en lugar de cantidadesPorTalla
             let tieneCantidadesEnPrenda = false;
             if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
                 Object.values(prenda.generosConTallas).forEach(tallas => {
@@ -364,7 +364,7 @@ class GestorReflectivoSinCotizacion {
                 tieneCantidades = true;
             }
 
-            // ✅ CORREGIDO: Validar generosSeleccionados en lugar de genero
+            //  CORREGIDO: Validar generosSeleccionados en lugar de genero
             if (!prenda.generosSeleccionados || prenda.generosSeleccionados.length === 0) {
                 errores.push(`Prenda ${index + 1}: Género es requerido`);
             }

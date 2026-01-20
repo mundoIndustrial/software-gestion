@@ -62,7 +62,7 @@ function openCellEditModal(column, value, pedido) {
     const modal = document.getElementById('bodegaCellEditModal');
     if (modal) {
         modal.style.display = 'flex';
-        console.log('✅ Modal de edición de celda abierto');
+        console.log(' Modal de edición de celda abierto');
     }
 }
 
@@ -70,7 +70,7 @@ function openCellEditModal(column, value, pedido) {
  * Cerrar modal de edición de celda
  */
 function closeCellEditModal() {
-    console.log('❌ Cerrando modal de edición de celda');
+    console.log(' Cerrando modal de edición de celda');
     const modal = document.getElementById('bodegaCellEditModal');
     if (modal) {
         modal.style.display = 'none';
@@ -90,7 +90,7 @@ async function saveCellEdit() {
     const newValue = document.getElementById('cellModalInput').value;
     
     if (!currentCellData.pedido || !currentCellData.column) {
-        console.error('❌ Datos incompletos');
+        console.error(' Datos incompletos');
         return;
     }
 
@@ -120,12 +120,12 @@ async function saveCellEdit() {
         }
 
         const result = await response.json();
-        console.log('✅ Cambio guardado:', result);
+        console.log(' Cambio guardado:', result);
 
         // Actualizar celda en la tabla
         if (currentCellData.element) {
             currentCellData.element.textContent = newValue;
-            console.log('✅ Celda actualizada en la tabla');
+            console.log(' Celda actualizada en la tabla');
         }
 
         // Mostrar notificación
@@ -140,7 +140,7 @@ async function saveCellEdit() {
         }, 1000);
 
     } catch (error) {
-        console.error('❌ Error al guardar:', error);
+        console.error(' Error al guardar:', error);
         showCellEditNotification('Error al guardar el cambio: ' + error.message, 'error');
     }
 }
@@ -211,4 +211,4 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-console.log('✅ Bodega Cell Edit Script Loaded');
+console.log(' Bodega Cell Edit Script Loaded');

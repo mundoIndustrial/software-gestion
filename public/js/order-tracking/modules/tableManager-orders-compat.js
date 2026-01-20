@@ -83,12 +83,12 @@ const TableManager = (() => {
             } else {
                 // Para estructura flexbox (divs)
                 // Los días se actualizan a través de otros mecanismos
-                console.log(`✅ Fila ${numeroPedido} procesada (flexbox)`);
+                console.log(` Fila ${numeroPedido} procesada (flexbox)`);
             }
         });
         
         if (actualizadas > 0) {
-            console.log(`✅ ${actualizadas} celdas de días actualizadas`);
+            console.log(` ${actualizadas} celdas de días actualizadas`);
         }
     }
     
@@ -109,4 +109,4 @@ const TableManager = (() => {
     };
 })();
 
-console.log('✅ TableManager (compatibilidad flexbox) cargado');
+console.log(' TableManager (compatibilidad flexbox) cargado');

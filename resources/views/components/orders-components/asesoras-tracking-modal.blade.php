@@ -360,7 +360,7 @@ window.openAsesorasTrackingModal = async function(pedido) {
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
         
-        console.log('✅ [ASESORAS TRACKING] Datos obtenidos:', order);
+        console.log(' [ASESORAS TRACKING] Datos obtenidos:', order);
         
         // Llenar información básica del modal
         document.getElementById('asesorasTrackingOrderNumber').textContent = pedido || '-';
@@ -396,10 +396,10 @@ window.openAsesorasTrackingModal = async function(pedido) {
         const modal = document.getElementById('asesorasTrackingModal');
         if (modal) {
             modal.style.display = 'flex';
-            console.log('✅ [ASESORAS TRACKING] Modal mostrado');
+            console.log(' [ASESORAS TRACKING] Modal mostrado');
         }
     } catch (error) {
-        console.error('❌ [ASESORAS TRACKING] Error:', error);
+        console.error(' [ASESORAS TRACKING] Error:', error);
     }
 };
 
@@ -428,7 +428,7 @@ async function fillAsesorasTimeline(pedido) {
             
             if (response.ok) {
                 responseData = await response.json();
-                console.log('✅ [ASESORAS TIMELINE] Datos obtenidos de /api/ordenes:', responseData);
+                console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/ordenes:', responseData);
             }
         } catch (error) {
             console.log('⚠️ [ASESORAS TIMELINE] Error en /api/ordenes, intentando /api/tabla-original');
@@ -446,7 +446,7 @@ async function fillAsesorasTimeline(pedido) {
                 
                 if (response.ok) {
                     responseData = await response.json();
-                    console.log('✅ [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original:', responseData);
+                    console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original:', responseData);
                 }
             } catch (error) {
                 console.log('⚠️ [ASESORAS TIMELINE] Error en /api/tabla-original');
@@ -465,7 +465,7 @@ async function fillAsesorasTimeline(pedido) {
                 
                 if (response.ok) {
                     responseData = await response.json();
-                    console.log('✅ [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original-bodega:', responseData);
+                    console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original-bodega:', responseData);
                 }
             } catch (error) {
                 console.log('⚠️ [ASESORAS TIMELINE] Error en /api/tabla-original-bodega');
@@ -552,7 +552,7 @@ async function fillAsesorasTimeline(pedido) {
         });
         
     } catch (error) {
-        console.error('❌ [ASESORAS TIMELINE] Error al llenar timeline:', error);
+        console.error(' [ASESORAS TIMELINE] Error al llenar timeline:', error);
         const container = document.getElementById('asesorasTimelineContainer');
         if (container) {
             container.innerHTML = '<p style="text-align: center; color: #d32f2f; font-size: 0.9rem;">Error al cargar procesos</p>';

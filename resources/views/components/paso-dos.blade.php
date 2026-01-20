@@ -27,7 +27,7 @@
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
                         const productos = {!! json_encode($cotizacion->productos) !!};
-                        console.log('📦 Productos a cargar:', productos);
+                        console.log(' Productos a cargar:', productos);
                         
                         productos.forEach((producto, idx) => {
                             agregarProductoFriendly();
@@ -62,7 +62,7 @@
                                         }
                                     }
                                     
-                                    console.log('✅ Producto cargado:', producto.nombre_producto);
+                                    console.log(' Producto cargado:', producto.nombre_producto);
                                 }
                             }, 500);
                         });
@@ -72,7 +72,7 @@
                 <!-- Agregar prenda 1 por defecto cuando no es edición -->
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                        console.log('📦 Agregando prenda 1 por defecto');
+                        console.log(' Agregando prenda 1 por defecto');
                         agregarProductoFriendly();
                     });
                 </script>

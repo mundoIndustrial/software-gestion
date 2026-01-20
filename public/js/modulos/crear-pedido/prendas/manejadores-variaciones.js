@@ -26,9 +26,9 @@ window.manejarCheckVariacion = function(checkbox) {
         if (input) {
             input.disabled = !checkbox.checked;
             input.style.opacity = checkbox.checked ? '1' : '0.5';
-            console.log(`✅ [VARIACIONES] Campo ${inputId} - disabled: ${input.disabled}, opacity: ${input.style.opacity}`);
+            console.log(` [VARIACIONES] Campo ${inputId} - disabled: ${input.disabled}, opacity: ${input.style.opacity}`);
         }
     });
 };
 
-console.log('✅ Módulo manejadores-variaciones.js cargado correctamente');
+console.log(' Módulo manejadores-variaciones.js cargado correctamente');

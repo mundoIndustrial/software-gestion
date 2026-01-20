@@ -1,6 +1,6 @@
 # PLAN DE MIGRACIÓN AL BACKEND - INDEX PEDIDOS
 
-## 📋 CONTENIDO ACTUAL EN index.blade.php (2329 líneas)
+##  CONTENIDO ACTUAL EN index.blade.php (2329 líneas)
 
 ### 1. CSS Inline (250+ líneas)
 **Ubicación:** Líneas 8-380  
@@ -406,7 +406,7 @@ class FilterModule {
 
 ## 📊 RESUMEN: QUÉ MIGRAR
 
-### ✅ AL BACKEND:
+###  AL BACKEND:
 
 | Qué | Archivo | Método |
 |-----|---------|--------|

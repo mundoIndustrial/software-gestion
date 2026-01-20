@@ -7,7 +7,7 @@ class FiltroEmbudo {
         this.tablaActual = 'todas';
         this.valoresFiltro = {};
         this.init();
-        console.log('✅ FiltroEmbudo inicializado');
+        console.log(' FiltroEmbudo inicializado');
         this.cargarValoresFiltro();
     }
 
@@ -47,7 +47,7 @@ class FiltroEmbudo {
             .then(text => {
                 console.log('📝 Respuesta raw:', text);
                 const data = JSON.parse(text);
-                console.log('✅ Valores de filtro cargados:', data);
+                console.log(' Valores de filtro cargados:', data);
                 console.log('📊 Tipo de datos:', typeof data);
                 console.log('📊 Es array:', Array.isArray(data));
                 console.log('📊 Fechas:', data.fechas?.length ?? 0);
@@ -59,7 +59,7 @@ class FiltroEmbudo {
                 this.poblarSelectores();
             })
             .catch(error => {
-                console.error('❌ Error al cargar valores de filtro:', error);
+                console.error(' Error al cargar valores de filtro:', error);
             });
     }
 
@@ -170,7 +170,7 @@ class FiltroEmbudo {
         const modal = document.getElementById(modalId);
         console.log('📍 Modal encontrado:', !!modal, 'ID:', modalId);
         if (modal) {
-            console.log('✅ Agregando clase active al modal');
+            console.log(' Agregando clase active al modal');
             modal.classList.add('active');
             // Enfocar el primer input
             const input = modal.querySelector('input, select');
@@ -179,7 +179,7 @@ class FiltroEmbudo {
                 setTimeout(() => input.focus(), 100);
             }
         } else {
-            console.error('❌ Modal no encontrado para:', modalId);
+            console.error(' Modal no encontrado para:', modalId);
         }
     }
 
@@ -395,10 +395,10 @@ function abrirFiltro(columna) {
     console.log('🎯 abrirFiltro() llamado con columna:', columna);
     console.log('📦 filtroEmbudo existe:', !!filtroEmbudo);
     if (filtroEmbudo) {
-        console.log('✅ Llamando a abrirModal()');
+        console.log(' Llamando a abrirModal()');
         filtroEmbudo.abrirModal(columna);
     } else {
-        console.error('❌ filtroEmbudo no está inicializado');
+        console.error(' filtroEmbudo no está inicializado');
     }
 }
 

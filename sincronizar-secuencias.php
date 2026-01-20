@@ -34,7 +34,7 @@ if ($secuenciaActual->siguiente != $siguientePedido) {
         ->where('tipo', 'pedido_produccion')
         ->update(['siguiente' => $siguientePedido]);
     
-    echo "✅ Actualizado numero_secuencias a: {$siguientePedido}\n";
+    echo " Actualizado numero_secuencias a: {$siguientePedido}\n";
 } else {
     echo "✓ Ya estaba sincronizado\n";
 }
@@ -46,4 +46,4 @@ $secuenciaActualizada = DB::table('numero_secuencias')
 
 echo "\nEstado final:\n";
 echo "  Siguiente en BD: {$secuenciaActualizada->siguiente}\n";
-echo "  ✅ Sistema listo para crear nuevos pedidos\n";
+echo "   Sistema listo para crear nuevos pedidos\n";

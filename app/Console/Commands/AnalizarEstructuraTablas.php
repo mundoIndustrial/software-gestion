@@ -44,16 +44,16 @@ class AnalizarEstructuraTablas extends Command
             ]);
 
             if (empty($existe)) {
-                $this->error("❌ La tabla '{$tabla}' NO EXISTE en la BD");
+                $this->error(" La tabla '{$tabla}' NO EXISTE en la BD");
                 return;
             }
 
-            $this->info("✅ La tabla '{$tabla}' EXISTE");
+            $this->info(" La tabla '{$tabla}' EXISTE");
 
             // Obtener estructura de columnas
             $columnas = DB::select("DESCRIBE {$tabla}");
 
-            $this->info("\n📋 COLUMNAS:");
+            $this->info("\n COLUMNAS:");
             $this->info(str_repeat('-', 80));
 
             foreach ($columnas as $columna) {
@@ -125,7 +125,7 @@ class AnalizarEstructuraTablas extends Command
             }
 
         } catch (\Exception $e) {
-            $this->error("❌ Error al analizar tabla '{$tabla}': " . $e->getMessage());
+            $this->error(" Error al analizar tabla '{$tabla}': " . $e->getMessage());
         }
     }
 }

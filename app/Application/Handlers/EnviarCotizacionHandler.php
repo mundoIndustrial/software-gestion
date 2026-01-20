@@ -67,7 +67,7 @@ class EnviarCotizacionHandler
                 'fecha_envio' => Carbon::now('America/Bogota')
             ]);
 
-            Log::info('✅ Cotización enviada exitosamente', [
+            Log::info(' Cotización enviada exitosamente', [
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => $numeroCotizacion,
                 'tipo_cotizacion_id' => $command->tipoCotizacionId

@@ -1040,7 +1040,7 @@ function marcarEsJeanPantalon(select) {
     // Si tiene un valor seleccionado (no vacío), marcar como 1
     hiddenInput.value = select.value && select.value !== '' ? '1' : '0';
     
-    console.log('✅ es_jean_pantalon actualizado:', {
+    console.log(' es_jean_pantalon actualizado:', {
         tipo_jean_seleccionado: select.value,
         es_jean_pantalon: hiddenInput.value
     });
@@ -1170,7 +1170,7 @@ function seleccionarManga(valor, element) {
     input.value = valor;
     if (idInput) {
         idInput.value = mangaId;
-        console.log(`✅ Manga seleccionada: ${valor} (ID: ${mangaId})`);
+        console.log(` Manga seleccionada: ${valor} (ID: ${mangaId})`);
     }
     suggestionsDiv.style.display = 'none';
 }
@@ -1195,7 +1195,7 @@ document.addEventListener('click', function(e) {
     @if(isset($cotizacion))
     // Datos de cotización para edición
     window.cotizacionParaEditar = {!! json_encode($cotizacion->toArray()) !!};
-    console.log('📋 Cotización cargada para editar:', window.cotizacionParaEditar);
+    console.log(' Cotización cargada para editar:', window.cotizacionParaEditar);
     @endif
 </script>
 
@@ -1243,9 +1243,9 @@ document.addEventListener('click', function(e) {
             setTimeout(() => {
                 if (typeof cargarBorrador === 'function') {
                     cargarBorrador(window.cotizacionParaEditar);
-                    console.log('✅ Datos de cotización cargados en el formulario');
+                    console.log(' Datos de cotización cargados en el formulario');
                 } else {
-                    console.error('❌ Función cargarBorrador no disponible');
+                    console.error(' Función cargarBorrador no disponible');
                 }
             }, 500);
         }

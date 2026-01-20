@@ -14,7 +14,7 @@ class ReceiptManager {
         this.recibos = prendasIndex !== null ? this.filtrarRecibosDePrend(todosRecibos, prendasIndex) : todosRecibos;
         this.indexActual = 0;
 
-        console.log('📋 [RECEIPT MANAGER] Inicializado');
+        console.log(' [RECEIPT MANAGER] Inicializado');
         console.log('📊 Total de recibos:', this.recibos.length);
         if (prendasIndex !== null) {
             console.log('🔍 Filtrado para prenda:', prendasIndex);
@@ -166,7 +166,7 @@ class ReceiptManager {
         // Opción "Todas las prendas"
         const optionTodas = document.createElement('option');
         optionTodas.value = '';
-        optionTodas.text = '📋 Todas las prendas';
+        optionTodas.text = ' Todas las prendas';
         optionTodas.selected = true;
         selector.appendChild(optionTodas);
 
@@ -468,7 +468,7 @@ class ReceiptManager {
         
         // Procesar tallas - pueden venir ANIDADAS: {"dama": {"L": 30, "S": 20}}
         Object.entries(prenda.tallas).forEach(([key, value]) => {
-            // ✅ Si value es un OBJETO (anidado: {"L": 30, "S": 20})
+            //  Si value es un OBJETO (anidado: {"L": 30, "S": 20})
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                 // Desanidar: {"dama": {"L": 30}} → tallasDama["L"] = 30
                 const genero = key.toLowerCase();
@@ -481,7 +481,7 @@ class ReceiptManager {
                 });
                 console.log(`[RECEIPT] 📦 Tallas desanidadas para ${genero}:`, value);
             } 
-            // ✅ Si value es un NÚMERO (aplanado: "dama-L" → 30)
+            //  Si value es un NÚMERO (aplanado: "dama-L" → 30)
             else if (typeof value === 'number' || typeof value === 'string') {
                 // Aplanado: "dama-L" → 30
                 if (key.includes('-')) {
@@ -629,4 +629,4 @@ class ReceiptManager {
 // Exportar para uso externo
 window.ReceiptManager = ReceiptManager;
 
-console.log('✅ [RECEIPT MANAGER] receipt-manager.js cargado correctamente');
+console.log(' [RECEIPT MANAGER] receipt-manager.js cargado correctamente');

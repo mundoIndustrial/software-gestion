@@ -263,7 +263,7 @@ window.eliminarFotoReflectivoPedido = window.eliminarFotoReflectivoPedido || fun
                     const img = contenedor.querySelector('img');
                     const fotoUrl = img?.getAttribute('src');
                     
-                    console.log(`✅ Eliminando foto del reflectivo ID ${fotoId}, URL:`, fotoUrl);
+                    console.log(` Eliminando foto del reflectivo ID ${fotoId}, URL:`, fotoUrl);
                     
                     // Marcar esta foto como eliminada
                     if (fotoUrl) {
@@ -297,7 +297,7 @@ window.eliminarTallaReflectivo = window.eliminarTallaReflectivo || function(pren
             if (result.isConfirmed) {
                 const tallaElement = document.querySelector(`.talla-item-reflectivo[data-talla="${talla}"][data-prenda="${prendaIndex}"]`);
                 if (tallaElement) {
-                    console.log(`✅ Eliminando talla ${talla} de la prenda ${prendaIndex + 1}`);
+                    console.log(` Eliminando talla ${talla} de la prenda ${prendaIndex + 1}`);
                     
                     // GUARDAR CANTIDADES ANTES DE RE-RENDERIZAR
                     if (typeof guardarCantidadesActuales === 'function') {
@@ -401,7 +401,7 @@ window.manejarArchivosReflectivo = function(files) {
                 if (renderTimeout) clearTimeout(renderTimeout);
                 
                 if (fotosAgregadas === fotosADeProcesar) {
-                    console.log(`✅ Todas las fotos han sido procesadas. Renderizando...`);
+                    console.log(` Todas las fotos han sido procesadas. Renderizando...`);
                     renderTimeout = setTimeout(() => {
                         if (typeof renderizarPrendas === 'function') {
                             renderizarPrendas();

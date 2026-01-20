@@ -36,7 +36,7 @@ class VerificarTipoCotizacionGuardado extends Command
             return;
         }
 
-        $this->line('📋 COTIZACIONES Y SUS TIPOS:');
+        $this->line(' COTIZACIONES Y SUS TIPOS:');
         $this->newLine();
 
         $conTipo = 0;
@@ -50,10 +50,10 @@ class VerificarTipoCotizacionGuardado extends Command
 
             if ($cot->tipo_cotizacion_id) {
                 $conTipo++;
-                $this->line("   Tipo: <fg=green>✅ {$cot->codigo} ({$cot->nombre})</> - ID: {$cot->tipo_cotizacion_id}");
+                $this->line("   Tipo: <fg=green> {$cot->codigo} ({$cot->nombre})</> - ID: {$cot->tipo_cotizacion_id}");
             } else {
                 $sinTipo++;
-                $this->line("   Tipo: <fg=red>❌ NO ASIGNADO</>");
+                $this->line("   Tipo: <fg=red> NO ASIGNADO</>");
             }
 
             $estado = $cot->es_borrador ? 'BORRADOR' : $cot->estado;
@@ -64,8 +64,8 @@ class VerificarTipoCotizacionGuardado extends Command
         // Resumen
         $this->line('📊 RESUMEN:');
         $this->line("   Total de cotizaciones: {$cotizaciones->count()}");
-        $this->line("   ✅ Con tipo asignado: {$conTipo}");
-        $this->line("   ❌ Sin tipo asignado: {$sinTipo}");
+        $this->line("    Con tipo asignado: {$conTipo}");
+        $this->line("    Sin tipo asignado: {$sinTipo}");
         $this->newLine();
 
         // Estadísticas por tipo
@@ -100,10 +100,10 @@ class VerificarTipoCotizacionGuardado extends Command
         if ($cotizacionesSinTipoValido > 0) {
             $this->warn("   ⚠️ {$cotizacionesSinTipoValido} cotización(es) con tipo_cotizacion_id inválido");
         } else {
-            $this->line('   ✅ Todos los tipo_cotizacion_id son válidos');
+            $this->line('    Todos los tipo_cotizacion_id son válidos');
         }
 
         $this->newLine();
-        $this->info('✅ VERIFICACIÓN COMPLETADA');
+        $this->info(' VERIFICACIÓN COMPLETADA');
     }
 }

@@ -43,7 +43,7 @@ class CategoriaEpp
             throw new \InvalidArgumentException("Categoría no puede estar vacía");
         }
 
-        // ✅ SIMPLIFICADO: Aceptar cualquier categoría que venga de la BD
+        //  SIMPLIFICADO: Aceptar cualquier categoría que venga de la BD
         // Sin validación estricta de lista fija (permite categorías nuevas)
         $this->valor = $categoria;
     }

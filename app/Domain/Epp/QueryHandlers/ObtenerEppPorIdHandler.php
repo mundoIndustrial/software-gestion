@@ -40,7 +40,7 @@ class ObtenerEppPorIdHandler implements QueryHandler
                 return null;
             }
 
-            Log::info('✅ [ObtenerEppPorIdHandler] EPP obtenido', [
+            Log::info(' [ObtenerEppPorIdHandler] EPP obtenido', [
                 'id' => $query->getId(),
                 'nombre' => $epp['nombre'],
             ]);
@@ -48,7 +48,7 @@ class ObtenerEppPorIdHandler implements QueryHandler
             return $epp;
 
         } catch (\Exception $e) {
-            Log::error('❌ [ObtenerEppPorIdHandler] Error obteniendo EPP', [
+            Log::error(' [ObtenerEppPorIdHandler] Error obteniendo EPP', [
                 'error' => $e->getMessage(),
                 'id' => $query->getId(),
             ]);

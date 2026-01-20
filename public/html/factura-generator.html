@@ -146,7 +146,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>📋 Generador de Facturas</h1>
+        <h1> Generador de Facturas</h1>
         <p class="subtitle">MundoIndustrial - Sistema de Gestión</p>
 
         <form id="invoiceForm">
@@ -186,7 +186,7 @@
         </form>
 
         <div class="info-box">
-            <strong>ℹ️ Información:</strong><br>
+            <strong> Información:</strong><br>
             • Ingresa el número de pedido que deseas ver<br>
             • El número se formatea automáticamente a: MI-PEDIDO-2026-0001<br>
             • La factura incluye prendas, procesos y EPP<br>
@@ -228,7 +228,7 @@
         function abrirFacturaEnVentana(numeroPedido) {
             const url = `/facturas/${numeroPedido}/preview`;
             window.open(url, `factura-${numeroPedido}`, 'width=1000,height=800,scrollbars=yes');
-            console.log('✅ Factura abierta en nueva ventana');
+            console.log(' Factura abierta en nueva ventana');
         }
 
         // Abrir en iframe modal
@@ -255,7 +255,7 @@
                 modal.innerHTML = `
                     <div style="background: white; border-radius: 8px; width: 100%; max-width: 1000px; height: 90vh; display: flex; flex-direction: column; box-shadow: 0 5px 40px rgba(0,0,0,0.3);">
                         <div style="padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
-                            <h3 style="margin: 0; color: #2c3e50;">📋 Factura - Pedido #${numeroPedido}</h3>
+                            <h3 style="margin: 0; color: #2c3e50;"> Factura - Pedido #${numeroPedido}</h3>
                             <button onclick="document.getElementById('invoice-modal-wrapper').remove();" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999; padding: 0;">×</button>
                         </div>
                         <div style="flex: 1; overflow: auto;">
@@ -276,7 +276,7 @@
                 });
             }
             
-            console.log('✅ Factura abierta en modal iframe');
+            console.log(' Factura abierta en modal iframe');
         }
 
         // Descargar PDF
@@ -300,7 +300,7 @@
                 setTimeout(() => {
                     const url = `/facturas/${pedido}/preview`;
                     window.open(url, `factura-${pedido}`, 'width=900,height=700,scrollbars=yes');
-                    console.log(`✅ Factura ${pedido} abierta (${index + 1}/${pedidos.length})`);
+                    console.log(` Factura ${pedido} abierta (${index + 1}/${pedidos.length})`);
                 }, index * 300); // Espaciar las aperturas
             });
         }

@@ -5,8 +5,8 @@ window.isAdmin = @json(auth()->check() && auth()->user()->role && auth()->user()
 
 // Mapeo de procesos a iconos emoji
 const processoIconMap = {
-    'Pedido Recibido': '📋',
-    'Creación Orden': '📋',
+    'Pedido Recibido': '',
+    'Creación Orden': '',
     'Insumos': '🧵',
     'Insumos y Telas': '🧵',
     'Corte': '✂️',
@@ -18,8 +18,8 @@ const processoIconMap = {
     'Lavandería': '🧺',
     'Lavanderia': '🧺',
     'Arreglos': '🪡',
-    'Control de Calidad': '✅',
-    'Control-Calidad': '✅',
+    'Control de Calidad': '',
+    'Control-Calidad': '',
     'Entrega': '📦',
     'Despacho': '🚚',
     'Despachos': '🚚',

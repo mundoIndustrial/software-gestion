@@ -116,7 +116,7 @@ class AnalyzeCotizacion2Details extends Command
             $this->line('2. El servidor rechazó las telas adicionales');
             $this->line('3. Solo se guardó la primera tela');
         } else {
-            $this->info('✅ Se guardaron todas las telas correctamente');
+            $this->info(' Se guardaron todas las telas correctamente');
         }
 
         $this->newLine();

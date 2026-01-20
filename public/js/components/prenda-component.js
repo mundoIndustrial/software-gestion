@@ -43,7 +43,7 @@ class PrendaComponent {
         });
 
         container.innerHTML = html;
-        console.log(`✅ ${prendas.length} prendas renderizadas`);
+        console.log(` ${prendas.length} prendas renderizadas`);
     }
 
     /**

@@ -63,7 +63,7 @@ class PedidosProduccionViewController
     {
         $editarId = $request->query('editar');
         
-        // ✅ ESTRUCTURA POR DEFECTO para "crear nuevo" (frontend JSON)
+        //  ESTRUCTURA POR DEFECTO para "crear nuevo" (frontend JSON)
         $datos = [
             'modoEdicion' => false,
             'pedido' => (object)[
@@ -101,7 +101,7 @@ class PedidosProduccionViewController
             ]
         ];
 
-        // ✅ Si es modo edición: cargar datos de BD y convertir a estructura del frontend
+        //  Si es modo edición: cargar datos de BD y convertir a estructura del frontend
         if ($editarId) {
             try {
                 $service = app(ObtenerPedidoDetalleService::class);
@@ -372,7 +372,7 @@ class PedidosProduccionViewController
                 $nombreArchivo
             );
 
-            \Log::info('✅ Imagen guardada', [
+            \Log::info(' Imagen guardada', [
                 'ruta' => $ruta,
                 'nombre_original' => $archivo->getClientOriginalName()
             ]);

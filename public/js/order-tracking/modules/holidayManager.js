@@ -29,7 +29,7 @@ const HolidayManager = (() => {
             if (response.ok) {
                 const data = await response.json();
                 festivosCache = data.map(h => h.date);
-                console.log(`✅ Festivos obtenidos de API para ${year}`);
+                console.log(` Festivos obtenidos de API para ${year}`);
                 return festivosCache;
             }
         } catch (error) {

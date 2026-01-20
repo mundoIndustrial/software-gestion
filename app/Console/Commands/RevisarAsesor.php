@@ -43,7 +43,7 @@ class RevisarAsesor extends Command
             $this->info("\nCotizaciones APROBADAS de {$asesor->name}: " . $aprobadas->count());
             foreach ($aprobadas as $cot) {
                 $cliente = $cot->cliente ? $cot->cliente->nombre : 'SIN CLIENTE';
-                $this->line("  ✅ ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | CLIENTE: $cliente");
+                $this->line("   ID: {$cot->id} | NUM: {$cot->numero_cotizacion} | CLIENTE: $cliente");
             }
         }
 

@@ -6,7 +6,7 @@
 
 ---
 
-## 📋 TESTS DISPONIBLES
+##  TESTS DISPONIBLES
 
 ### 1. Tests de Serialización
 
@@ -509,18 +509,18 @@ describe('Flujo Completo: submitPedido', () => {
 // Test 1: Verificar JSON serializable
 const state = handlers.fm.getState();
 const transformed = handlers.transformStateForSubmit(state);
-JSON.stringify(transformed);  // Debe no lanzar error ✅
+JSON.stringify(transformed);  // Debe no lanzar error 
 
 // Test 2: Verificar sin File objects
 const json = JSON.stringify(transformed);
-console.log('Tiene File objects:', json.includes('[object Object]'));  // Debe ser false ✅
+console.log('Tiene File objects:', json.includes('[object Object]'));  // Debe ser false 
 
 // Test 3: Validación completa
 const validation = handlers.validateTransformation();
-console.log('Validación:', validation);  // valid debe ser true ✅
+console.log('Validación:', validation);  // valid debe ser true 
 
 // Test 4: Diagnóstico
-handlers.printDiagnostics();  // Debe mostrar en consola ✅
+handlers.printDiagnostics();  // Debe mostrar en consola 
 ```
 
 ### Con Jest
@@ -558,14 +558,14 @@ npx jasmine
 
 | Área | Tests | Status |
 |------|-------|--------|
-| Serialización | 3 | ✅ |
-| Eliminación de File | 3 | ✅ |
-| Preservación de Metadatos | 3 | ✅ |
-| Validación | 4 | ✅ |
-| Índices | 3 | ✅ |
-| Correlación | 2 | ✅ |
-| Integración | 2 | ✅ |
-| **Total** | **20+** | **✅** |
+| Serialización | 3 |  |
+| Eliminación de File | 3 |  |
+| Preservación de Metadatos | 3 |  |
+| Validación | 4 |  |
+| Índices | 3 |  |
+| Correlación | 2 |  |
+| Integración | 2 |  |
+| **Total** | **20+** | **** |
 
 ---
 

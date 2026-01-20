@@ -36,7 +36,7 @@ class CrearUsuarioCosturaReflectivoSeeder extends Seeder
             'roles_ids' => [$role->id]
         ]);
 
-        $this->command->info("✅ Usuario creado exitosamente:");
+        $this->command->info(" Usuario creado exitosamente:");
         $this->command->info("   Nombre: {$user->name}");
         $this->command->info("   Email: {$user->email}");
         $this->command->info("   ID: {$user->id}");

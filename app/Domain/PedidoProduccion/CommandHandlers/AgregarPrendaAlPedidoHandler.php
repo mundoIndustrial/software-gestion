@@ -55,7 +55,7 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
                 $command->getTipo()
             );
 
-            Log::info('✅ [AgregarPrendaAlPedidoHandler] Validaciones pasadas', []);
+            Log::info(' [AgregarPrendaAlPedidoHandler] Validaciones pasadas', []);
 
             // Enriquecer datos de la prenda con el ID del pedido
             $prendaData = array_merge($command->getPrendaData(), [
@@ -78,7 +78,7 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
             // Actualizar cantidad total del pedido
             $pedido->increment('cantidad_total', $prendaData['cantidad_inicial'] ?? 1);
 
-            Log::info('✅ [AgregarPrendaAlPedidoHandler] Prenda agregada', [
+            Log::info(' [AgregarPrendaAlPedidoHandler] Prenda agregada', [
                 'pedido_id' => $pedido->id,
                 'prenda_id' => $prenda->id,
                 'tipo' => $command->getTipo(),
@@ -91,7 +91,7 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
             return $prenda;
 
         } catch (\Exception $e) {
-            Log::error('❌ [AgregarPrendaAlPedidoHandler] Error agregando prenda', [
+            Log::error(' [AgregarPrendaAlPedidoHandler] Error agregando prenda', [
                 'pedido_id' => $command->getPedidoId(),
                 'error' => $e->getMessage(),
             ]);

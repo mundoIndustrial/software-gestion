@@ -18,18 +18,18 @@ echo str_repeat("─", 70) . "\n";
 $logFile = BASE_PATH . '/storage/logs/laravel.log';
 if (file_exists($logFile)) {
     $size = filesize($logFile);
-    echo "✅ Log encontrado: " . number_format($size / 1024 / 1024, 2) . " MB\n\n";
+    echo " Log encontrado: " . number_format($size / 1024 / 1024, 2) . " MB\n\n";
     
     $lines = file($logFile);
     $ultimasLineas = array_slice($lines, -20);
     
-    echo "📋 ÚLTIMAS 20 LÍNEAS:\n";
+    echo " ÚLTIMAS 20 LÍNEAS:\n";
     foreach ($ultimasLineas as $line) {
         $trimmed = trim($line);
         if (empty($trimmed)) continue;
         
         if (strpos($line, 'error') !== false || strpos($line, 'Error') !== false) {
-            echo "❌ " . substr($trimmed, 0, 100) . "\n";
+            echo " " . substr($trimmed, 0, 100) . "\n";
         } elseif (strpos($line, 'exception') !== false) {
             echo "⚠️  " . substr($trimmed, 0, 100) . "\n";
         } else {
@@ -37,7 +37,7 @@ if (file_exists($logFile)) {
         }
     }
 } else {
-    echo "❌ Log no encontrado\n";
+    echo " Log no encontrado\n";
 }
 
 echo "\n";
@@ -59,9 +59,9 @@ foreach ($carpetas as $rel => $desc) {
     $full = BASE_PATH . '/' . $rel;
     if (is_dir($full)) {
         $permisos = decoct(fileperms($full) & 0777);
-        echo "✅ $desc (permisos: $permisos)\n";
+        echo " $desc (permisos: $permisos)\n";
     } else {
-        echo "❌ $desc - NO EXISTE\n";
+        echo " $desc - NO EXISTE\n";
     }
 }
 
@@ -119,7 +119,7 @@ if (is_dir($pedidosDir)) {
         }
     }
 } else {
-    echo "❌ Carpeta de pedidos no existe: $pedidosDir\n";
+    echo " Carpeta de pedidos no existe: $pedidosDir\n";
 }
 
 echo "\n";
@@ -143,10 +143,10 @@ foreach ($archivos as $rel => $desc) {
     if (file_exists($full)) {
         $size = filesize($full);
         $lines = count(file($full));
-        echo "✅ $desc\n";
+        echo " $desc\n";
         echo "   • Líneas: $lines, Tamaño: " . number_format($size / 1024, 2) . " KB\n";
     } else {
-        echo "❌ $desc - NO EXISTE ($rel)\n";
+        echo " $desc - NO EXISTE ($rel)\n";
     }
 }
 
@@ -164,9 +164,9 @@ $pathsToCheck = [
 foreach ($pathsToCheck as $rel => $desc) {
     $full = BASE_PATH . '/' . $rel;
     if (is_writable($full)) {
-        echo "✅ $desc es escribible\n";
+        echo " $desc es escribible\n";
     } else {
-        echo "❌ $desc NO es escribible - Ejecuta: chmod -R 755 $rel\n";
+        echo " $desc NO es escribible - Ejecuta: chmod -R 755 $rel\n";
     }
 }
 
@@ -194,7 +194,7 @@ if (file_exists($logFile)) {
     }
     
     if (strpos($content, 'error') === false && strpos($content, 'Error') === false) {
-        echo "✅ No se encontraron errores en logs\n";
+        echo " No se encontraron errores en logs\n";
     }
 }
 
@@ -219,5 +219,5 @@ Para profundizar en logs de Laravel:
 
 PASOS;
 
-echo "\n✅ Diagnóstico completado\n\n";
+echo "\n Diagnóstico completado\n\n";
 ?>

@@ -37,7 +37,7 @@ class TipoBroche extends Model
 // app/Models/TipoManga.php
 class TipoManga extends Model
 {
-    protected $table = 'tipos_manga';  // ✅ Sin cambios
+    protected $table = 'tipos_manga';  //  Sin cambios
     protected $fillable = ['nombre', 'activo'];
     protected $casts = ['activo' => 'boolean'];
 }
@@ -51,7 +51,7 @@ class TipoManga extends Model
 // app/Models/TelaPrenda.php
 class TelaPrenda extends Model
 {
-    protected $table = 'telas_prenda';  // ✅ Sin cambios
+    protected $table = 'telas_prenda';  //  Sin cambios
     protected $fillable = ['nombre', 'referencia', 'descripcion', 'activo'];
     protected $casts = ['activo' => 'boolean'];
 }

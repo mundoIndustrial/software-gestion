@@ -81,14 +81,14 @@ class PrendaCreationService
                     tipoBrocheId: $prenda->tipo_broche_id,
                 );
                 $this->eventDispatcher->dispatch($event);
-                Log::info('✅ Evento PrendaPedidoAgregada emitido', [
+                Log::info(' Evento PrendaPedidoAgregada emitido', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prenda->id,
                     'nombre' => $prenda->nombre_prendas,
                 ]);
             }
 
-            Log::info('✅ [PrendaCreationService::crearPrendaSinCotizacion] Prenda creada exitosamente', [
+            Log::info(' [PrendaCreationService::crearPrendaSinCotizacion] Prenda creada exitosamente', [
                 'prenda_id' => $prenda->id,
                 'estrategia' => $strategy->getNombre(),
             ]);
@@ -96,7 +96,7 @@ class PrendaCreationService
             return $prenda;
 
         } catch (\Exception $e) {
-            Log::error('❌ [PrendaCreationService::crearPrendaSinCotizacion] Error', [
+            Log::error(' [PrendaCreationService::crearPrendaSinCotizacion] Error', [
                 'error' => $e->getMessage(),
                 'estrategia' => $strategy->getNombre(),
             ]);
@@ -151,14 +151,14 @@ class PrendaCreationService
                     tipoBrocheId: $prenda->tipo_broche_id,
                 );
                 $this->eventDispatcher->dispatch($event);
-                Log::info('✅ Evento PrendaPedidoAgregada emitido (reflectivo)', [
+                Log::info(' Evento PrendaPedidoAgregada emitido (reflectivo)', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prenda->id,
                     'nombre' => $prenda->nombre_prendas,
                 ]);
             }
 
-            Log::info('✅ [PrendaCreationService::crearPrendaReflectivo] Prenda creada exitosamente', [
+            Log::info(' [PrendaCreationService::crearPrendaReflectivo] Prenda creada exitosamente', [
                 'prenda_id' => $prenda->id,
                 'estrategia' => $strategy->getNombre(),
             ]);
@@ -166,7 +166,7 @@ class PrendaCreationService
             return $prenda;
 
         } catch (\Exception $e) {
-            Log::error('❌ [PrendaCreationService::crearPrendaReflectivo] Error', [
+            Log::error(' [PrendaCreationService::crearPrendaReflectivo] Error', [
                 'error' => $e->getMessage(),
                 'estrategia' => $strategy->getNombre(),
             ]);

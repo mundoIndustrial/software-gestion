@@ -54,7 +54,7 @@ class ProductoModule {
         // Configurar listeners del nuevo producto
         this.setupProductoListeners(productoId);
 
-        console.log(`✅ Producto agregado: ${productoId}`);
+        console.log(` Producto agregado: ${productoId}`);
         return productoId;
     }
 
@@ -169,20 +169,20 @@ class ProductoModule {
         delete window.telasSeleccionadas[productoId];
 
         card.remove();
-        console.log(`✅ Card removida del DOM`);
+        console.log(` Card removida del DOM`);
         console.log(`🔍 Contenedor ahora tiene ${this.contenedor.querySelectorAll('.producto-card').length} productos`);
         
         this.renumerarProductos();
-        console.log(`✅ Productos renumerados`);
+        console.log(` Productos renumerados`);
 
-        console.log(`✅ Producto eliminado: ${productoId}`);
+        console.log(` Producto eliminado: ${productoId}`);
         
         // Mostrar toast de éxito
         if (window.mostrarToast) {
-            window.mostrarToast('✅ Prenda eliminada de la cotización exitosamente', 'success');
+            window.mostrarToast(' Prenda eliminada de la cotización exitosamente', 'success');
         } else {
             // Fallback: crear un toast simple
-            this.mostrarToastSimple('✅ Prenda eliminada de la cotización exitosamente');
+            this.mostrarToastSimple(' Prenda eliminada de la cotización exitosamente');
         }
     }
 

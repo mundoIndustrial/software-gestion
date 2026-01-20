@@ -294,7 +294,7 @@ class ModalCleanup {
         const telaPreview = document.getElementById('nueva-prenda-tela-preview');
         const tbody = document.getElementById('tbody-telas');
         
-        console.log('   📋 DEBUG - Verificando campos ANTES de limpiar:');
+        console.log('    DEBUG - Verificando campos ANTES de limpiar:');
         console.log(`     - nueva-prenda-tela existe: ${!!telaField} ${telaField ? `| display: ${window.getComputedStyle(telaField).display} | offsetHeight: ${telaField.offsetHeight}` : ''}`)
         console.log(`     - nueva-prenda-color existe: ${!!colorField} ${colorField ? `| display: ${window.getComputedStyle(colorField).display} | offsetHeight: ${colorField.offsetHeight}` : ''}`)
         console.log(`     - nueva-prenda-referencia existe: ${!!refField} ${refField ? `| display: ${window.getComputedStyle(refField).display} | offsetHeight: ${refField.offsetHeight}` : ''}`)
@@ -309,7 +309,7 @@ class ModalCleanup {
         // Resetear estado de edición
         window.prendaEditIndex = null;
         
-        console.log('✅ [ModalCleanup] Modal listo para crear nueva prenda');
+        console.log(' [ModalCleanup] Modal listo para crear nueva prenda');
     }
 
     /**
@@ -330,7 +330,7 @@ class ModalCleanup {
         // Establecer índice de edición
         window.prendaEditIndex = prendaIndex;
         
-        console.log(`✅ [ModalCleanup] Modal listo para editar prenda (índice: ${prendaIndex})`);
+        console.log(` [ModalCleanup] Modal listo para editar prenda (índice: ${prendaIndex})`);
     }
 
     /**
@@ -356,7 +356,7 @@ class ModalCleanup {
             modal.style.display = 'none';
         }
         
-        console.log('✅ [ModalCleanup] Modal limpiado completamente');
+        console.log(' [ModalCleanup] Modal limpiado completamente');
     }
 }
 

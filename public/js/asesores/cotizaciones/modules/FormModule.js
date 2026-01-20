@@ -204,7 +204,7 @@ class FormModule {
         const tipoVenta = document.getElementById('header-tipo-cotizacion')?.value || '';
         const token = document.querySelector('input[name="_token"]')?.value || '';
 
-        console.log('📋 FormData Debug:', {
+        console.log(' FormData Debug:', {
             cliente,
             asesora,
             fecha,
@@ -215,11 +215,11 @@ class FormModule {
 
         // Validar campos requeridos
         if (!cliente) {
-            console.error('❌ CLIENTE VACÍO - No se puede enviar');
+            console.error(' CLIENTE VACÍO - No se puede enviar');
             throw new Error('El nombre del cliente es requerido');
         }
         if (!tipoVenta) {
-            console.error('❌ TIPO VENTA VACÍO - No se puede enviar');
+            console.error(' TIPO VENTA VACÍO - No se puede enviar');
             throw new Error('El tipo de venta (M/D/X) es requerido');
         }
 
@@ -245,13 +245,13 @@ class FormModule {
             try {
                 await this.addProductToFormData(formData, productCards[index], index);
             } catch (error) {
-                console.error(`❌ Error procesando producto ${index}:`, error);
+                console.error(` Error procesando producto ${index}:`, error);
                 throw error;
             }
         }
 
-        console.log('✅ FormData construido correctamente');
-        console.log('✅ FormData es instancia de FormData:', formData instanceof FormData);
+        console.log(' FormData construido correctamente');
+        console.log(' FormData es instancia de FormData:', formData instanceof FormData);
         return formData;
     }
 
@@ -292,7 +292,7 @@ class FormModule {
             fotos.forEach((foto, fotoIdx) => {
                 if (foto instanceof File) {
                     formData.append(`productos[${index}][fotos][${fotoIdx}]`, foto, foto.name);
-                    console.log(`✅ Foto ${fotoIdx + 1} agregada: ${foto.name}`);
+                    console.log(` Foto ${fotoIdx + 1} agregada: ${foto.name}`);
                 }
             });
         } else {
@@ -334,7 +334,7 @@ class FormModule {
                 fotosDelaTela.forEach((foto, fotoIdx) => {
                     if (foto instanceof File) {
                         formData.append(`productos[${index}][telas][${telaIndex}][fotos][${fotoIdx}]`, foto, foto.name);
-                        console.log(`✅ Foto ${fotoIdx + 1} de tela ${telaIndex} agregada: ${foto.name}`);
+                        console.log(` Foto ${fotoIdx + 1} de tela ${telaIndex} agregada: ${foto.name}`);
                     }
                 });
             }
@@ -383,11 +383,11 @@ class FormModule {
         
         // Verificar que formData es válido
         if (!(formData instanceof FormData)) {
-            console.error('❌ formData no es un FormData válido:', typeof formData, formData);
+            console.error(' formData no es un FormData válido:', typeof formData, formData);
             throw new Error('FormData inválido');
         }
         
-        console.log('✅ FormData válido, enviando...');
+        console.log(' FormData válido, enviando...');
         
         try {
             const response = await fetch(url, {
@@ -409,7 +409,7 @@ class FormModule {
      * Maneja respuesta exitosa
      */
     handleSuccess(data) {
-        console.log('✅ Cotización guardada exitosamente');
+        console.log(' Cotización guardada exitosamente');
         alert(data.message || 'Cotización guardada correctamente');
         if (data.redirect) {
             window.location.href = data.redirect;
@@ -420,7 +420,7 @@ class FormModule {
      * Maneja errores en la respuesta
      */
     handleError(data) {
-        console.error('❌ Error al guardar:', data);
+        console.error(' Error al guardar:', data);
         let mensaje = data.message || 'Error desconocido';
 
         if (data.errors && Object.keys(data.errors).length > 0) {
@@ -433,7 +433,7 @@ class FormModule {
             mensaje += '\n\nDetalles:\n' + errorList;
         }
 
-        alert('❌ Error: ' + mensaje);
+        alert(' Error: ' + mensaje);
     }
 
     /**

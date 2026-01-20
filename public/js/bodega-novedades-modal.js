@@ -77,7 +77,7 @@ window.saveNewNovedad = async function() {
     }
 
     if (novedad.length > 500) {
-        showNotification('❌ La novedad no puede exceder 500 caracteres', 'error');
+        showNotification(' La novedad no puede exceder 500 caracteres', 'error');
         return;
     }
 
@@ -103,12 +103,12 @@ window.saveNewNovedad = async function() {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('❌ Error:', data);
+            console.error(' Error:', data);
             throw new Error(data.message || `Error ${response.status}`);
         }
 
-        console.log('✅ Novedad guardada exitosamente en bodega');
-        showNotification('✅ Novedad agregada correctamente', 'success');
+        console.log(' Novedad guardada exitosamente en bodega');
+        showNotification(' Novedad agregada correctamente', 'success');
 
         // Actualizar textarea con las nuevas novedades
         document.getElementById('novedadesTextarea').value = data.data.novedades;
@@ -120,8 +120,8 @@ window.saveNewNovedad = async function() {
         cancelNewNovedad();
 
     } catch (error) {
-        console.error('❌ Error:', error);
-        showNotification(`❌ Error: ${error.message}`, 'error');
+        console.error(' Error:', error);
+        showNotification(` Error: ${error.message}`, 'error');
     } finally {
         btnSaveNew.disabled = false;
         btnSaveNew.classList.remove('loading');
@@ -165,12 +165,12 @@ window.saveEditedNovedades = async function() {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('❌ Error:', data);
+            console.error(' Error:', data);
             throw new Error(data.message || `Error ${response.status}`);
         }
 
-        console.log('✅ Cambios guardados exitosamente en bodega');
-        showNotification('✅ Novedades actualizadas correctamente', 'success');
+        console.log(' Cambios guardados exitosamente en bodega');
+        showNotification(' Novedades actualizadas correctamente', 'success');
 
         // Actualizar la fila en la tabla
         updateRowNovedadesBodega(currentBodegaPedido, novedades);
@@ -181,8 +181,8 @@ window.saveEditedNovedades = async function() {
         }, 500);
 
     } catch (error) {
-        console.error('❌ Error completo:', error);
-        showNotification(`❌ Error: ${error.message}`, 'error');
+        console.error(' Error completo:', error);
+        showNotification(` Error: ${error.message}`, 'error');
     } finally {
         btnSaveEdit.disabled = false;
         btnSaveEdit.classList.remove('loading');

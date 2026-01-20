@@ -13,7 +13,7 @@ DESPUÉS:
 
 ---
 
-## 📋 PRE-REQUISITOS (5 min)
+##  PRE-REQUISITOS (5 min)
 
 ### 1️⃣ Backup de Seguridad
 
@@ -63,7 +63,7 @@ Schema::hasTable('prenda_variantes')  # Debe retornar false
 php artisan migrate
 ```
 
-✅ Verifica que ALL 3 migraciones se ejecuten en orden:
+ Verifica que ALL 3 migraciones se ejecuten en orden:
 ```
 2026_01_16_normalize_prendas_pedido ........... [OK]
 2026_01_16_create_prenda_variantes_table ..... [OK]
@@ -79,16 +79,16 @@ tail -f storage/logs/laravel.log | grep -i "migration\|variante\|error"
 
 Deberías ver:
 ```
-✅ [Migración] Tabla prendas_pedido normalizada exitosamente
-✅ [Migración] Tabla prenda_variantes creada exitosamente
+ [Migración] Tabla prendas_pedido normalizada exitosamente
+ [Migración] Tabla prenda_variantes creada exitosamente
 🔄 [Migración de Datos] Iniciando migración de variantes a tabla hija...
-📋 Procesando prenda: CAMISA POLO (ID: 1)
-✅ [Migración de Datos] Completada
+ Procesando prenda: CAMISA POLO (ID: 1)
+ [Migración de Datos] Completada
 ```
 
 ---
 
-## ✅ VALIDACIÓN POST-MIGRACIÓN (10 min)
+##  VALIDACIÓN POST-MIGRACIÓN (10 min)
 
 ### 1️⃣ Verificar Estructura
 
@@ -120,11 +120,11 @@ use App\Models\PedidoProduccion;
 
 # Test relación
 $prenda = PrendaPedido::first();
-$prenda->variantes()->count()        # ✅ Debe retornar N
-$prenda->pedidoProduccion->numero_pedido  # ✅ Debe retornar número
+$prenda->variantes()->count()        #  Debe retornar N
+$prenda->pedidoProduccion->numero_pedido  #  Debe retornar número
 
 $pedido = PedidoProduccion::first();
-$pedido->prendasPed()->count()       # ✅ Debe retornar M
+$pedido->prendasPed()->count()       #  Debe retornar M
 ```
 
 ### 3️⃣ Verificar Datos Migrados
@@ -278,7 +278,7 @@ $cantidadesPorTalla = $prenda->obtenerCantidadesPorTalla();
 
 ## 📞 TROUBLESHOOTING
 
-### ❌ Error: "Referential integrity constraint violated"
+###  Error: "Referential integrity constraint violated"
 
 **Causa**: Hay registros en `prendas_pedido` con `numero_pedido` que no existen en `pedidos_produccion`
 
@@ -295,7 +295,7 @@ DB::table('prendas_pedido')
 # Eliminar o asignar a pedido válido
 ```
 
-### ❌ Error: "Table doesn't exist: prenda_variantes"
+###  Error: "Table doesn't exist: prenda_variantes"
 
 **Causa**: La migración 2 no se ejecutó
 
@@ -305,7 +305,7 @@ php artisan migrate:status  # Ver qué migraciones faltaron
 php artisan migrate          # Ejecutar todas
 ```
 
-### ❌ Variantes no se crearon
+###  Variantes no se crearon
 
 **Causa**: Probablemente `cantidad_talla` estaba vacío
 
@@ -349,7 +349,7 @@ Ver archivos:
 
 ---
 
-## ✅ CHECKLISTS FINALES
+##  CHECKLISTS FINALES
 
 ### Antes de Ejecutar
 

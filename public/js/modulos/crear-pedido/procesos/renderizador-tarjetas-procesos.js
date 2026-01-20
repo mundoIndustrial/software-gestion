@@ -58,7 +58,7 @@ window.renderizarTarjetasProcesos = function() {
     container.innerHTML = html;
     container.style.display = 'block';
     
-    console.log('✅ [TARJETAS-PROCESOS] Tarjetas renderizadas');
+    console.log(' [TARJETAS-PROCESOS] Tarjetas renderizadas');
 };
 
 /**
@@ -68,7 +68,7 @@ function generarTarjetaProceso(tipo, datos) {
     const icono = iconosProcesos[tipo] || 'settings';
     const nombre = nombresProcesos[tipo] || tipo.toUpperCase();
     
-    // ✅ CORREGIDO: Calcular totalTallas como suma de cantidades en objetos, no length
+    //  CORREGIDO: Calcular totalTallas como suma de cantidades en objetos, no length
     const damaObj = datos.tallas?.dama || {};
     const caballeroObj = datos.tallas?.caballero || {};
     const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
@@ -195,7 +195,7 @@ window.eliminarTarjetaProceso = function(tipo) {
         window.actualizarResumenProcesos();
     }
     
-    console.log(`✅ [TARJETAS-PROCESOS] Proceso ${tipo} eliminado`);
+    console.log(` [TARJETAS-PROCESOS] Proceso ${tipo} eliminado`);
 };
 
 /**
@@ -532,5 +532,5 @@ window.cerrarGaleriaImagenesProceso = function() {
     window.imagenesGaleriaProceso = null;
 };
 
-console.log('✅ [TARJETAS-PROCESOS] Módulo renderizador-tarjetas-procesos.js cargado');
+console.log(' [TARJETAS-PROCESOS] Módulo renderizador-tarjetas-procesos.js cargado');
 

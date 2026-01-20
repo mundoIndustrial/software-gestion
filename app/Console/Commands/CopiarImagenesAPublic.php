@@ -18,7 +18,7 @@ class CopiarImagenesAPublic extends Command
         $rutaPublic = public_path('storage/cotizaciones');
 
         if (!is_dir($rutaStorage)) {
-            $this->error('❌ Directorio storage/app/public/cotizaciones no existe');
+            $this->error(' Directorio storage/app/public/cotizaciones no existe');
             return;
         }
 
@@ -30,7 +30,7 @@ class CopiarImagenesAPublic extends Command
         // Copiar recursivamente
         $this->copiarDirectorio($rutaStorage, $rutaPublic);
 
-        $this->info('✅ Imágenes copiadas correctamente a public/storage');
+        $this->info(' Imágenes copiadas correctamente a public/storage');
         
         // Actualizar rutas en BD para que apunten a /storage/
         $this->actualizarRutasEnBD();
@@ -50,7 +50,7 @@ class CopiarImagenesAPublic extends Command
             ]);
         
         if ($fotosActualizadas > 0) {
-            $this->info("✅ Fotos de prendas actualizadas: $fotosActualizadas");
+            $this->info(" Fotos de prendas actualizadas: $fotosActualizadas");
         }
         
         // Actualizar prenda_tela_fotos_cot
@@ -63,7 +63,7 @@ class CopiarImagenesAPublic extends Command
             ]);
         
         if ($telasActualizadas > 0) {
-            $this->info("✅ Fotos de telas actualizadas: $telasActualizadas");
+            $this->info(" Fotos de telas actualizadas: $telasActualizadas");
         }
     }
 

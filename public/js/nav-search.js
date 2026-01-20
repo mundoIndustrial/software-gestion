@@ -32,7 +32,7 @@ const NavSearch = {
         const searchResults = document.getElementById('navSearchResults');
 
         if (!searchInput) {
-            console.log('ℹ️ NavSearch no disponible en esta página');
+            console.log(' NavSearch no disponible en esta página');
             return;
         }
 
@@ -72,7 +72,7 @@ const NavSearch = {
             }
         });
 
-        console.log('✅ NavSearch inicializado');
+        console.log(' NavSearch inicializado');
     },
 
     /**
@@ -162,7 +162,7 @@ const NavSearch = {
             if (searchResponse.ok) {
                 const searchData = await searchResponse.json();
                 const ordenes = searchData.data || searchData.ordenes || [];
-                console.log('✅ Resultados recibidos:', ordenes.length, 'órdenes');
+                console.log(' Resultados recibidos:', ordenes.length, 'órdenes');
                 console.log('📊 Paginación:', searchData.pagination);
 
                 // Guardar estado de búsqueda
@@ -187,7 +187,7 @@ const NavSearch = {
                 throw new Error(`HTTP error! status: ${searchResponse.status}`);
             }
         } catch (error) {
-            console.error('❌ Error en búsqueda:', error);
+            console.error(' Error en búsqueda:', error);
             this.showError('Error al buscar');
         } finally {
             this.state.isLoading = false;
@@ -236,7 +236,7 @@ const NavSearch = {
             this.updatePaginationControls(pagination);
         }
 
-        console.log('✅ Tabla actualizada');
+        console.log(' Tabla actualizada');
     },
 
     /**
@@ -512,7 +512,7 @@ const NavSearch = {
             });
         });
 
-        console.log('✅ Paginación actualizada');
+        console.log(' Paginación actualizada');
     },
 
     /**
@@ -578,7 +578,7 @@ const NavSearch = {
      * Seleccionar un resultado
      */
     selectResult(numeroPedido) {
-        console.log(`✅ Seleccionado pedido: ${numeroPedido}`);
+        console.log(` Seleccionado pedido: ${numeroPedido}`);
 
         // Navegar a la vista del pedido
         window.location.href = `/registros/${numeroPedido}`;
@@ -756,9 +756,9 @@ const NavSearch = {
                 }
             }
 
-            console.log('✅ Tabla original restaurada');
+            console.log(' Tabla original restaurada');
         } catch (error) {
-            console.error('❌ Error al restaurar tabla:', error);
+            console.error(' Error al restaurar tabla:', error);
         }
     }
 };

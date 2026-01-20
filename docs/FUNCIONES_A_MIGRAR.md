@@ -378,7 +378,7 @@ function getDataAttributeFromColumn() { }  // No existe en nueva arquitectura
 
 ---
 
-## ✅ CHECKLIST DE MIGRACIÓN
+##  CHECKLIST DE MIGRACIÓN
 
 ### Backend
 - [ ] `PedidoFilterService` con `applyFilters()`, `applySearch()`

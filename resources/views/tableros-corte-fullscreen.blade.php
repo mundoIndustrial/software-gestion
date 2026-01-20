@@ -680,7 +680,7 @@
             </tr>`;
             
             horasTable.innerHTML = html;
-            console.log('✅ Tabla de horas actualizada');
+            console.log(' Tabla de horas actualizada');
         }
         
         // Actualizar tabla de operarios
@@ -724,7 +724,7 @@
             </tr>`;
             
             operariosTable.innerHTML = html;
-            console.log('✅ Tabla de operarios actualizada');
+            console.log(' Tabla de operarios actualizada');
         }
     }
     
@@ -753,11 +753,11 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log('✅ Datos obtenidos del API:', data);
+            console.log(' Datos obtenidos del API:', data);
             updateCorteTablas(data.horas, data.operarios);
         })
         .catch(error => {
-            console.error('❌ Error al obtener datos del API:', error);
+            console.error(' Error al obtener datos del API:', error);
         });
     }
     
@@ -771,7 +771,7 @@
             return;
         }
 
-        console.log('✅ Echo disponible, suscribiendo al canal de corte...');
+        console.log(' Echo disponible, suscribiendo al canal de corte...');
 
         // Canal de Corte
         window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
@@ -782,7 +782,7 @@
             fetchCorteData();
         });
 
-        console.log('✅ Listener configurado en fullscreen de corte');
+        console.log(' Listener configurado en fullscreen de corte');
     }
 
     // Inicializar cuando el DOM esté listo

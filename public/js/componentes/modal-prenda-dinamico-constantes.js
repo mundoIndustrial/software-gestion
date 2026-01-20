@@ -14,4 +14,4 @@ const MODAL_PRENDA_DINAMICO_HTML = `<!-- MODAL: Viene del Blade template -->
 <!-- No inyectar dinámicamente para evitar conflictos con el modal Blade -->
 `;
 
-console.log('✅ [ModalPrendaDinamico] Constantes cargadas - Modal viene del Blade template');
+console.log(' [ModalPrendaDinamico] Constantes cargadas - Modal viene del Blade template');

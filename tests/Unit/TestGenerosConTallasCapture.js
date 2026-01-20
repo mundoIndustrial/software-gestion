@@ -55,7 +55,7 @@ class TestGenerosConTallasCapture {
         console.log('  tallasPorGenero:', JSON.stringify(tallasPorGenero, null, 2));
         console.log('  cantidadesPorTalla:', cantidadesPorTalla);
 
-        console.log('\n📦 Salida (generosConTallas):');
+        console.log('\n Salida (generosConTallas):');
         console.log(JSON.stringify(generosConTallas, null, 2));
 
         // Validaciones
@@ -110,7 +110,7 @@ class TestGenerosConTallasCapture {
         console.log('📊 Entrada (generosConTallas):');
         console.log(JSON.stringify(generosConTallas, null, 2));
 
-        console.log('\n📦 Salida (cantidadTalla para API):');
+        console.log('\n Salida (cantidadTalla para API):');
         console.log(cantidadTalla);
 
         // Validaciones
@@ -162,7 +162,7 @@ class TestGenerosConTallasCapture {
         console.log('📊 Entrada (cantidadTalla):');
         console.log(cantidadTalla);
 
-        console.log('\n📦 Salida (array tallas):');
+        console.log('\n Salida (array tallas):');
         console.log(JSON.stringify(tallas, null, 2));
 
         // Validaciones
@@ -234,7 +234,7 @@ class TestGenerosConTallasCapture {
             }
         });
 
-        console.log('✅ Paso 1 - generosConTallas:');
+        console.log(' Paso 1 - generosConTallas:');
         console.log(JSON.stringify(generosConTallas, null, 2));
 
         // Paso 2: Construir cantidadTalla
@@ -247,7 +247,7 @@ class TestGenerosConTallasCapture {
             });
         });
 
-        console.log('\n✅ Paso 2 - cantidadTalla:');
+        console.log('\n Paso 2 - cantidadTalla:');
         console.log(cantidadTalla);
 
         // Paso 3: Construir array tallas
@@ -260,7 +260,7 @@ class TestGenerosConTallasCapture {
             };
         });
 
-        console.log('\n✅ Paso 3 - Array tallas (para backend):');
+        console.log('\n Paso 3 - Array tallas (para backend):');
         console.log(JSON.stringify(tallas, null, 2));
 
         // Paso 4: Construir prenda para API
@@ -271,7 +271,7 @@ class TestGenerosConTallasCapture {
             tallas: tallas
         };
 
-        console.log('\n✅ Paso 4 - Prenda para API:');
+        console.log('\n Paso 4 - Prenda para API:');
         console.log(JSON.stringify(prendaParaAPI, null, 2));
 
         // Validaciones finales
@@ -330,7 +330,7 @@ class TestGenerosConTallasCapture {
         ];
 
         casos.forEach((caso, index) => {
-            console.log(`\n📋 Caso ${index + 1}: ${caso.nombre}`);
+            console.log(`\n Caso ${index + 1}: ${caso.nombre}`);
             
             const generosConTallas = {};
             caso.tallasPorGenero.forEach(tallaData => {
@@ -359,7 +359,7 @@ class TestGenerosConTallasCapture {
             const resultado = Object.keys(cantidadTalla).length === caso.expectedLength &&
                             Object.keys(cantidadTalla).length > 0;
 
-            console.log(`  Resultado: ${resultado ? '✅ PASS' : '❌ FAIL'}`);
+            console.log(`  Resultado: ${resultado ? ' PASS' : ' FAIL'}`);
             console.log(`  Tallas generadas: ${Object.keys(cantidadTalla).length} (esperadas: ${caso.expectedLength})`);
             console.log(`  Estructura:`, cantidadTalla);
 
@@ -374,7 +374,7 @@ class TestGenerosConTallasCapture {
         let passCount = 0;
         
         validaciones.forEach((val, index) => {
-            const estado = val.resultado ? '✅ PASS' : '❌ FAIL';
+            const estado = val.resultado ? ' PASS' : ' FAIL';
             console.log(`${index + 1}. ${val.nombre}: ${estado}`);
             if (val.resultado) {
                 passCount++;
@@ -404,8 +404,8 @@ class TestGenerosConTallasCapture {
         console.log('║                       RESUMEN FINAL                              ║');
         console.log('╚════════════════════════════════════════════════════════════════╝');
         console.log(`\n📊 Tests ejecutados: ${this.totalTests}`);
-        console.log(`✅ Tests pasados: ${this.passedTests}`);
-        console.log(`❌ Tests fallados: ${this.totalTests - this.passedTests}`);
+        console.log(` Tests pasados: ${this.passedTests}`);
+        console.log(` Tests fallados: ${this.totalTests - this.passedTests}`);
         
         const porcentaje = ((this.passedTests / this.totalTests) * 100).toFixed(2);
         console.log(`\n📈 Porcentaje de éxito: ${porcentaje}%\n`);

@@ -57,7 +57,7 @@ const TableManager = (() => {
                         spanDias.textContent = String(diasDelHTML);
                         
                         if (textoAnterior !== String(diasDelHTML)) {
-                            console.log(`✅ Pedido ${numeroPedido}: "${textoAnterior}" → "${diasDelHTML}"`);
+                            console.log(` Pedido ${numeroPedido}: "${textoAnterior}" → "${diasDelHTML}"`);
                             actualizadas++;
                         }
                     }
@@ -65,7 +65,7 @@ const TableManager = (() => {
             }
         });
         
-        console.log(`✅ ${actualizadas} celdas actualizadas desde HTML`);
+        console.log(` ${actualizadas} celdas actualizadas desde HTML`);
     }
     
     /**

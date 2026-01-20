@@ -263,7 +263,7 @@ function guardarPedidoModal() {
     // NO incluir el ID de pedido - se asignará después
     formData.delete('pedido');
     
-    // ✅ AGREGAR DATOS DEL LOGO (PASO 3)
+    //  AGREGAR DATOS DEL LOGO (PASO 3)
     const datosLogo = recopilarDatosLogo();
     
     // Agregar descripción del logo

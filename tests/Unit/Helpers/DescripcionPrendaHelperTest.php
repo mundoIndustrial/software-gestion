@@ -58,7 +58,7 @@ class DescripcionPrendaHelperTest extends TestCase
         // Verificar que NO contiene "SI" como item
         $this->assertStringNotContainsString('• SI', $descripcion);
 
-        echo "\n✅ Descripción generada correctamente:\n";
+        echo "\n Descripción generada correctamente:\n";
         echo $descripcion;
     }
 
@@ -92,7 +92,7 @@ class DescripcionPrendaHelperTest extends TestCase
         $this->assertStringContainsString('• Bolsillo delantero izquierdo', $descripcion);
         $this->assertStringContainsString('• Reflectivo gris 2"', $descripcion);
 
-        echo "\n✅ Limpieza de 'SI' funcionando correctamente:\n";
+        echo "\n Limpieza de 'SI' funcionando correctamente:\n";
         echo $descripcion;
     }
 
@@ -123,7 +123,7 @@ class DescripcionPrendaHelperTest extends TestCase
         $this->assertStringContainsString('VELCRO:', $descripcion);
         $this->assertStringNotContainsString('BROCHE:', $descripcion);
 
-        echo "\n✅ Subtítulos dinámicos funcionando:\n";
+        echo "\n Subtítulos dinámicos funcionando:\n";
         echo $descripcion;
     }
 
@@ -172,7 +172,7 @@ class DescripcionPrendaHelperTest extends TestCase
         $this->assertStringContainsString('BOTÓN:', $desc1);
         $this->assertStringContainsString('CREMALLERA:', $desc2);
 
-        echo "\n✅ Múltiples prendas con formato correcto:\n";
+        echo "\n Múltiples prendas con formato correcto:\n";
         echo $desc1;
         echo "\n\n";
         echo $desc2;

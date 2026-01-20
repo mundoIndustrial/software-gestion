@@ -18,10 +18,10 @@ function obtenerContenidoDescripcionPrendas(cell, column) {
     if (descripcionDiv && descripcionDiv.dataset.fullContent) {
         try {
             const decodedContent = atob(descripcionDiv.dataset.fullContent);
-            console.log('✅ Contenido decodificado:', decodedContent.substring(0, 100));
+            console.log(' Contenido decodificado:', decodedContent.substring(0, 100));
             return decodedContent;
         } catch (e) {
-            console.error('❌ Error decodificando base64:', e);
+            console.error(' Error decodificando base64:', e);
         }
     }
     
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             cellText.dataset.fullDescripcion = decodedContent;
                             console.log('💾 Contenido guardado en cell-text para:', cellText.dataset.pedido);
                         } catch (e) {
-                            console.error('❌ Error:', e);
+                            console.error(' Error:', e);
                         }
                     }
                 }
@@ -110,7 +110,7 @@ function obtenerDatosPrendasParaModal(numeroPedido) {
         window.lastOrderData = data;
     })
     .catch(error => {
-        console.error('❌ Error obteniendo datos de orden:', error);
+        console.error(' Error obteniendo datos de orden:', error);
     });
 }
 
@@ -128,7 +128,7 @@ function inyectarContenidoEnModal() {
     setTimeout(function() {
         if (input.value.trim() === '' && window.lastDescripcionPrendasContent) {
             // NO poner el contenido en el input, solo mostrar formateado
-            console.log('✅ Contenido de descripcion_prendas detectado');
+            console.log(' Contenido de descripcion_prendas detectado');
             
             // Ocultar el input para descripcion_prendas
             input.style.display = 'none';
@@ -186,7 +186,7 @@ function renderizarContenidoFormateado(content) {
     const input = document.getElementById('cell-input');
     if (input && input.parentElement) {
         input.parentElement.appendChild(display);
-        console.log('✅ Contenido formateado renderizado');
+        console.log(' Contenido formateado renderizado');
     }
 }
 
@@ -212,4 +212,4 @@ setTimeout(function() {
     }
 }, 500);
 
-console.log('✅ descripcion-prendas-fix.js inicializado');
+console.log(' descripcion-prendas-fix.js inicializado');

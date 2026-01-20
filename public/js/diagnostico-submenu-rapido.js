@@ -4,14 +4,14 @@ console.log('🔍 === DIAGNÓSTICO SUBMENU INICIADO ===');
 // Esperar a que el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
-    console.log('\n📋 INFORMACIÓN DEL SUBMENU:');
+    console.log('\n INFORMACIÓN DEL SUBMENU:');
     
     // 1. Verificar si existen los elementos
     const submenus = document.querySelectorAll('.submenu');
     console.log(`✓ Total de submenus encontrados: ${submenus.length}`);
     
     if(submenus.length === 0) {
-      console.error('❌ NO HAY SUBMENUS EN EL DOM');
+      console.error(' NO HAY SUBMENUS EN EL DOM');
       return;
     }
     

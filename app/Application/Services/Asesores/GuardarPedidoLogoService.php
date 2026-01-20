@@ -48,7 +48,7 @@ class GuardarPedidoLogoService
                 'updated_at' => now()
             ]);
             
-            Log::info('✅ [LOGO] Pedido creado', [
+            Log::info(' [LOGO] Pedido creado', [
                 'numero_pedido' => $numeroPedido,
                 'logo_pedido_id' => $logoPedidoId,
                 'cliente' => $validated['cliente'],
@@ -61,13 +61,13 @@ class GuardarPedidoLogoService
 
             DB::commit();
 
-            Log::info('✅ [LOGO] Pedido guardado exitosamente', ['id' => $logoPedidoId]);
+            Log::info(' [LOGO] Pedido guardado exitosamente', ['id' => $logoPedidoId]);
 
             return $logoPedidoId;
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('❌ [LOGO] Error al guardar', [
+            Log::error(' [LOGO] Error al guardar', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -95,7 +95,7 @@ class GuardarPedidoLogoService
             ]);
         }
 
-        Log::info('✅ [LOGO-IMAGENES] Guardadas en BD', [
+        Log::info(' [LOGO-IMAGENES] Guardadas en BD', [
             'logo_pedido_id' => $logoPedidoId,
             'total_imagenes' => count($imagenesProcesadas)
         ]);

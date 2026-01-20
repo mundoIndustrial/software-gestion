@@ -30,6 +30,6 @@ class CrearRolesOperariosSeeder extends Seeder
             ]
         );
 
-        $this->command->info('✅ Roles de operarios creados exitosamente');
+        $this->command->info(' Roles de operarios creados exitosamente');
     }
 }

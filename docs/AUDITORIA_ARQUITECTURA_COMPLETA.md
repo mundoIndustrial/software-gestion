@@ -12,9 +12,9 @@ Garantizar la integridad completa del flujo JSON + FormData desde frontend hasta
 
 ---
 
-## ✅ PROBLEMAS DETECTADOS Y CORREGIDOS
+##  PROBLEMAS DETECTADOS Y CORREGIDOS
 
-### PROBLEMA 1: Serialización de File objects (❌ CRÍTICO)
+### PROBLEMA 1: Serialización de File objects ( CRÍTICO)
 
 **Síntoma:**
 - JSON.stringify() intenta serializar objetos File
@@ -39,7 +39,7 @@ handlers.validateTransformation().valid === true
 
 ---
 
-### PROBLEMA 2: Índices reutilizados en bucles anidados (❌ ALTO)
+### PROBLEMA 2: Índices reutilizados en bucles anidados ( ALTO)
 
 **Síntoma:**
 - Variable `pIdx` se declara en dos forEach anidados
@@ -49,9 +49,9 @@ handlers.validateTransformation().valid === true
 **Ubicación original:**
 ```javascript
 state.prendas.forEach((prenda, pIdx) => {           // pIdx = índice de prenda
-    (prenda.procesos || []).forEach((proceso, pIdx) => { // ❌ SOBRESCRITO
+    (prenda.procesos || []).forEach((proceso, pIdx) => { //  SOBRESCRITO
         formData.append(`prenda_${pIdx}_proceso_${pIdx}_img_${iIdx}`, img.file);
-        // ❌ Resultado: prenda_0_proceso_0, prenda_0_proceso_0 (COLISIÓN)
+        //  Resultado: prenda_0_proceso_0, prenda_0_proceso_0 (COLISIÓN)
     });
 });
 ```
@@ -59,7 +59,7 @@ state.prendas.forEach((prenda, pIdx) => {           // pIdx = índice de prenda
 **Solución implementada:**
 ```javascript
 state.prendas.forEach((prenda, prendaIdx) => {
-    (prenda.procesos || []).forEach((proceso, procesoIdx) => { // ✅ NUEVA VARIABLE
+    (prenda.procesos || []).forEach((proceso, procesoIdx) => { //  NUEVA VARIABLE
         formData.append(
             `prenda_${prendaIdx}_proceso_${procesoIdx}_img_${imgIdx}`, 
             img.file
@@ -74,7 +74,7 @@ state.prendas.forEach((prenda, prendaIdx) => {
 
 ---
 
-### PROBLEMA 3: JSON con datos no procesables (❌ CRÍTICO)
+### PROBLEMA 3: JSON con datos no procesables ( CRÍTICO)
 
 **Síntoma:**
 - JSON enviado incluye campos que no debería (File objects)
@@ -86,7 +86,7 @@ state.prendas.forEach((prenda, prendaIdx) => {
 {
   "fotos_prenda": [
     {
-      "file": {},              // ❌ NO DEBE ESTAR
+      "file": {},              //  NO DEBE ESTAR
       "nombre": "foto.jpg",
       "_id": "...",
       "observaciones": ""
@@ -100,9 +100,9 @@ state.prendas.forEach((prenda, prendaIdx) => {
 {
   "fotos_prenda": [
     {
-      "nombre": "foto.jpg",         // ✅ Metadato
-      "observaciones": ""           // ✅ Metadato
-      // ❌ SIN file (va en FormData separado)
+      "nombre": "foto.jpg",         //  Metadato
+      "observaciones": ""           //  Metadato
+      //  SIN file (va en FormData separado)
     }
   ]
 }
@@ -117,7 +117,7 @@ state.prendas.forEach((prenda, prendaIdx) => {
 
 ## 🔄 FLUJO CORRECTO: ANTES vs DESPUÉS
 
-### ❌ ANTES (INCORRECTO)
+###  ANTES (INCORRECTO)
 
 ```
 ┌─────────────────────────────┐
@@ -125,7 +125,7 @@ state.prendas.forEach((prenda, prendaIdx) => {
 │ {                           │
 │   prendas: [{               │
 │     fotos: [{               │
-│       file: File {},  ❌     │
+│       file: File {},       │
 │       nombre: 'x.jpg'       │
 │     }]                      │
 │   }]                        │
@@ -137,16 +137,16 @@ state.prendas.forEach((prenda, prendaIdx) => {
 │ submitPedido()                  │
 │                                 │
 │ prendas = JSON.stringify(state) │
-│ // ❌ Intenta serializar File   │
+│ //  Intenta serializar File   │
 └────────────┬────────────────────┘
              │
              ▼
 ┌──────────────────────────────┐
 │ FormData                     │
 │ {                            │
-│   prendas: "{...undefined...}" ❌ Malformado
+│   prendas: "{...undefined...}"  Malformado
 │   prenda_0_proceso_0_img_0   │
-│   prenda_0_proceso_0_img_0 ❌ Colisión
+│   prenda_0_proceso_0_img_0  Colisión
 │ }                            │
 └────────────┬─────────────────┘
              │
@@ -154,13 +154,13 @@ state.prendas.forEach((prenda, prendaIdx) => {
 ┌──────────────────────────────┐
 │ Backend /api/pedidos/...     │
 │                              │
-│ ❌ JSON inválido             │
-│ ❌ Archivos con índices      │
+│  JSON inválido             │
+│  Archivos con índices      │
 │    incorrectos               │
 └──────────────────────────────┘
 ```
 
-### ✅ DESPUÉS (CORRECTO)
+###  DESPUÉS (CORRECTO)
 
 ```
 ┌─────────────────────────────┐
@@ -177,7 +177,7 @@ state.prendas.forEach((prenda, prendaIdx) => {
              │
              ▼
 ┌──────────────────────────────────┐
-│ transformStateForSubmit()  ✅     │
+│ transformStateForSubmit()       │
 │                                  │
 │ Elimina: file, _id, etc.         │
 │ Preserva: nombre, cantidad, etc. │
@@ -185,7 +185,7 @@ state.prendas.forEach((prenda, prendaIdx) => {
 │ stateToSend = {                  │
 │   prendas: [{                    │
 │     fotos: [{                    │
-│       nombre: 'x.jpg' ✅         │
+│       nombre: 'x.jpg'          │
 │     }]                           │
 │   }]                             │
 │ }                                │
@@ -196,13 +196,13 @@ state.prendas.forEach((prenda, prendaIdx) => {
 │ submitPedido()                   │
 │                                  │
 │ prendas = JSON.stringify(        │
-│   stateToSend.prendas   ✅       │
+│   stateToSend.prendas          │
 │ )                                │
 │                                  │
 │ Adjuntar archivos:               │
 │ prenda_0_foto_0                  │
-│ prenda_0_proceso_0_img_0 ✅      │
-│ prenda_0_proceso_1_img_0 ✅      │
+│ prenda_0_proceso_0_img_0       │
+│ prenda_0_proceso_1_img_0       │
 └────────────┬─────────────────────┘
              │
              ▼
@@ -213,17 +213,17 @@ state.prendas.forEach((prenda, prendaIdx) => {
 │   prenda_0_foto_0: File      │
 │   prenda_0_proceso_0_img_0   │
 │   prenda_0_proceso_1_img_0   │
-│ }  ✅ Correcto               │
+│ }   Correcto               │
 └────────────┬─────────────────┘
              │
              ▼
 ┌──────────────────────────────┐
 │ Backend /api/pedidos/...     │
 │                              │
-│ ✅ JSON válido               │
-│ ✅ Archivos con índices      │
+│  JSON válido               │
+│  Archivos con índices      │
 │    correctos                 │
-│ ✅ Pedido guardado           │
+│  Pedido guardado           │
 └──────────────────────────────┘
 ```
 
@@ -257,7 +257,7 @@ state = {
             fotos_prenda: [
                 {
                     _id: "uuid...",
-                    file: File {},         // ❌ Será eliminado
+                    file: File {},         //  Será eliminado
                     nombre: "frente.jpg",
                     observaciones: ""
                 }
@@ -265,7 +265,7 @@ state = {
             
             fotos_tela: [
                 {
-                    file: File {},         // ❌ Será eliminado
+                    file: File {},         //  Será eliminado
                     nombre: "tela.jpg",
                     color: "Azul",
                     observaciones: ""
@@ -279,7 +279,7 @@ state = {
                     observaciones: "Bordado",
                     imagenes: [
                         {
-                            file: File {},  // ❌ Será eliminado (va en FormData)
+                            file: File {},  //  Será eliminado (va en FormData)
                             nombre: "bordado.jpg"
                         }
                     ]
@@ -313,14 +313,14 @@ stateToSend = {
                 }
             ],
             
-            fotos_prenda: [          // ✅ Sin file
+            fotos_prenda: [          //  Sin file
                 {
                     nombre: "frente.jpg",
                     observaciones: ""
                 }
             ],
             
-            fotos_tela: [            // ✅ Sin file
+            fotos_tela: [            //  Sin file
                 {
                     nombre: "tela.jpg",
                     color: "Azul",
@@ -328,7 +328,7 @@ stateToSend = {
                 }
             ],
             
-            procesos: [              // ✅ Sin imagenes
+            procesos: [              //  Sin imagenes
                 {
                     tipo_proceso_id: 1,
                     ubicaciones: ["pecho"],
@@ -345,12 +345,12 @@ stateToSend = {
 ```
 FormData {
     pedido_produccion_id: "1",
-    prendas: '{"prendas":[{"nombre_prenda":"Polo",...}]}',  ✅ JSON válido
+    prendas: '{"prendas":[{"nombre_prenda":"Polo",...}]}',   JSON válido
     
-    prenda_0_foto_0: File(frente.jpg),                       ✅ Indexado
-    prenda_0_tela_0: File(tela.jpg),                         ✅ Indexado
+    prenda_0_foto_0: File(frente.jpg),                        Indexado
+    prenda_0_tela_0: File(tela.jpg),                          Indexado
     
-    prenda_0_proceso_0_img_0: File(bordado.jpg),            ✅ Indexado único
+    prenda_0_proceso_0_img_0: File(bordado.jpg),             Indexado único
 }
 ```
 
@@ -378,10 +378,10 @@ describe('transformStateForSubmit', () => {
         
         const transformed = handlers.transformStateForSubmit(state);
         
-        // ✅ No debe lanzar error
+        //  No debe lanzar error
         expect(() => JSON.stringify(transformed)).not.toThrow();
         
-        // ✅ Resultado debe ser string válido
+        //  Resultado debe ser string válido
         const json = JSON.stringify(transformed);
         expect(JSON.parse(json)).toBeTruthy();
     });
@@ -421,7 +421,7 @@ describe('transformStateForSubmit', () => {
         const transformed = handlers.transformStateForSubmit(state);
         const json = JSON.stringify(transformed);
         
-        // ✅ [object Object] indica File (no debe existir)
+        //  [object Object] indica File (no debe existir)
         expect(json).not.toContain('[object Object]');
     });
 });
@@ -471,7 +471,7 @@ describe('submitPedido FormData keys', () => {
             });
         });
         
-        // ✅ Debe haber 4 keys únicos (2 fotos + 2 procesos)
+        //  Debe haber 4 keys únicos (2 fotos + 2 procesos)
         expect(keys.size).toBe(4);
         expect(keys).toEqual(new Set([
             'prenda_0_foto_0',
@@ -514,7 +514,7 @@ describe('submitPedido FormData keys', () => {
 
 ---
 
-## 📋 CHECKLIST DE AUDITORÍA
+##  CHECKLIST DE AUDITORÍA
 
 ### Serialización
 - [x] JSON.stringify() no falla
@@ -545,21 +545,21 @@ describe('submitPedido FormData keys', () => {
 
 ## 🎓 CONCLUSIONES
 
-### ✅ Problemas Resueltos
+###  Problemas Resueltos
 
 1. **Serialización:** JSON 100% serializable
 2. **Índices:** Únicos y sin colisiones
 3. **Estructura:** Predecible y validable
 
-### ✅ Garantías
+###  Garantías
 
-- ✅ Función pura
-- ✅ JSON válido
-- ✅ Índices únicos
-- ✅ Metadatos preservados
-- ✅ Backend recibe estructura esperada
+-  Función pura
+-  JSON válido
+-  Índices únicos
+-  Metadatos preservados
+-  Backend recibe estructura esperada
 
-### ✅ Production-Ready
+###  Production-Ready
 
 El sistema está listo para procesar pedidos con:
 - Cero pérdida de datos

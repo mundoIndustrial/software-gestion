@@ -35,9 +35,9 @@ class FixMigrations extends Command
             }
         }
 
-        $this->info("✅ {$contador} migraciones marcadas como ejecutadas\n");
+        $this->info(" {$contador} migraciones marcadas como ejecutadas\n");
         
-        $this->info('✅ Todas las migraciones están sincronizadas');
+        $this->info(' Todas las migraciones están sincronizadas');
 
         return 0;
     }

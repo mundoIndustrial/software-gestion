@@ -51,7 +51,7 @@ function editarTallas(element, prendaId, tallasBase) {
         element.style.borderRadius = '4px';
         element.style.transition = 'all 0.2s';
 
-        console.log('✅ Tallas guardadas para prenda ' + prendaId + ':', nuevoTexto);
+        console.log(' Tallas guardadas para prenda ' + prendaId + ':', nuevoTexto);
 
         // Guardar en la base de datos
         guardarEnBD(prendaId, nuevoTexto);
@@ -72,7 +72,7 @@ function editarTallas(element, prendaId, tallasBase) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log('✅ Guardado en BD:', data.message);
+                console.log(' Guardado en BD:', data.message);
                 // Mostrar notificación de éxito
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -84,7 +84,7 @@ function editarTallas(element, prendaId, tallasBase) {
                     });
                 }
             } else {
-                console.error('❌ Error al guardar:', data.message);
+                console.error(' Error al guardar:', data.message);
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'error',
@@ -95,7 +95,7 @@ function editarTallas(element, prendaId, tallasBase) {
             }
         })
         .catch(error => {
-            console.error('❌ Error de red:', error);
+            console.error(' Error de red:', error);
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'error',
@@ -126,7 +126,7 @@ function editarTallas(element, prendaId, tallasBase) {
 
 // Mostrar notas guardadas en consola
 function mostrarTallasGuardadas() {
-    console.log('📋 Notas de Tallas Guardadas:', window.tallasNotas);
+    console.log(' Notas de Tallas Guardadas:', window.tallasNotas);
     return window.tallasNotas;
 }
 

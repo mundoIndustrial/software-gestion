@@ -32,7 +32,7 @@ El proyecto tiene **4 capas de duplicación**:
 #### 🎯 Funciones duplicadas:
 
 ```javascript
-// ❌ PATRÓN DUPLICADO 1: Abrir/Cerrar Modal Genérico
+//  PATRÓN DUPLICADO 1: Abrir/Cerrar Modal Genérico
 function abrirModal[X]() {
     const modal = document.getElementById('modal[X]');
     modal.style.display = 'flex';
@@ -46,7 +46,7 @@ function cerrarModal[X]() {
 // Encontrado en: pedidos-modal.js, cotizaciones-show.js, clientes/index, users.js
 ```
 
-#### 📋 Duplicados específicos:
+####  Duplicados específicos:
 
 | Función | Ubicaciones | Variantes |
 |---------|-----------|----------|
@@ -72,7 +72,7 @@ function cerrarModal[X]() {
 #### 🎯 Funciones duplicadas:
 
 ```javascript
-// ✅ CONSOLIDAR EN: public/js/utilidades/modal-helpers.js
+//  CONSOLIDAR EN: public/js/utilidades/modal-helpers.js
 
 // Confirmación de eliminación
 function confirmarEliminacion(titulo, mensaje, callback) { ... }
@@ -148,7 +148,7 @@ function eliminarTela(telaId, telaNombre) { ... }
 #### 🎯 Problema: God Object Pattern en AsesoresController
 
 ```php
-// ❌ AsesoresController inyecta 16 servicios:
+//  AsesoresController inyecta 16 servicios:
 class AsesoresController extends Controller {
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -247,11 +247,11 @@ window.UI = UIModalService;
 ```
 
 **Archivos a refactorizar:**
-- ✅ `helpers-pedido-editable.js` → Usar `UIModalService`
-- ✅ `inventario.js` → Usar `UIModalService`
-- ✅ `dashboard.js` → Usar `UIModalService`
-- ✅ `pedidos-modal.js` → Usar `UIModalService`
-- ✅ `index.blade.php` → Usar `UIModalService`
+-  `helpers-pedido-editable.js` → Usar `UIModalService`
+-  `inventario.js` → Usar `UIModalService`
+-  `dashboard.js` → Usar `UIModalService`
+-  `pedidos-modal.js` → Usar `UIModalService`
+-  `index.blade.php` → Usar `UIModalService`
 
 ---
 
@@ -357,7 +357,7 @@ class PedidosController extends Controller
     // =============== LISTAR Y OBTENER ===============
     public function index() { ... }
     public function show(int $pedidoId) { ... }
-    public function datosEdicion(int $pedidoId) { ... } // ✅ UN SOLO ENDPOINT
+    public function datosEdicion(int $pedidoId) { ... } //  UN SOLO ENDPOINT
     public function datosFactura(int $pedidoId) { ... }
     public function datosRecibos(int $pedidoId) { ... }
     
@@ -378,9 +378,9 @@ class PedidosController extends Controller
 ```
 
 **Cambios:**
-- ✅ Unifica `AsesoresController` + `CrearPedidoEditableController`
-- ✅ Elimina duplicación de endpoints
-- ✅ Mejora Single Responsibility
+-  Unifica `AsesoresController` + `CrearPedidoEditableController`
+-  Elimina duplicación de endpoints
+-  Mejora Single Responsibility
 
 ---
 
@@ -463,7 +463,7 @@ const result = await GenericModals.confirmar({
 
 ---
 
-## 📋 CHECKLIST DE IMPLEMENTACIÓN
+##  CHECKLIST DE IMPLEMENTACIÓN
 
 ### Etapa 1: Preparación
 - [ ] Crear `public/js/utilidades/ui-modal-service.js`

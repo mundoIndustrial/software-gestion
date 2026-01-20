@@ -22,6 +22,6 @@ class SupervisorAdminRoleSeeder extends Seeder
             ]
         );
 
-        echo "✅ Rol 'supervisor-admin' creado exitosamente.\n";
+        echo " Rol 'supervisor-admin' creado exitosamente.\n";
     }
 }

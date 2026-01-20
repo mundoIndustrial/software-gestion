@@ -1,10 +1,10 @@
-# ✅ Refactorización: Extracción de Modales a Componentes
+#  Refactorización: Extracción de Modales a Componentes
 
-## 📋 Estado Actual
+##  Estado Actual
 
 Los modales ya están parcialmente organizados:
 
-### ✅ Modales Ya Como Componentes Blade
+###  Modales Ya Como Componentes Blade
 - `modal-seleccionar-prendas.blade.php`
 - `modal-seleccionar-tallas.blade.php`
 - `modal-agregar-prenda-nueva.blade.php`
@@ -17,17 +17,17 @@ Están en `crear-desde-cotizacion-editable.blade.php` líneas inline:
 3. **mostrarGaleriaImagenes()** - Galería genérica de imágenes
 4. **Modal de confirmación de eliminación** - Múltiples confirmaciones
 
-## ✅ Cambios Realizados
+##  Cambios Realizados
 
 ### Nuevo Archivo Creado
 **`public/js/modulos/crear-pedido/modales-dinamicos.js`**
-- ✅ `mostrarGaleriaPrenda()` - Extraída
-- ✅ `mostrarConfirmacionEliminarImagen()` - Extraída
-- ✅ `mostrarGaleriaReflectivo()` - Extraída
+-  `mostrarGaleriaPrenda()` - Extraída
+-  `mostrarConfirmacionEliminarImagen()` - Extraída
+-  `mostrarGaleriaReflectivo()` - Extraída
 
 ### Actualización del Blade
-- ✅ Agregado script `modales-dinamicos.js` al push de scripts
-- ✅ Orden correcto: constantes → modales-dinamicos → otros módulos
+-  Agregado script `modales-dinamicos.js` al push de scripts
+-  Orden correcto: constantes → modales-dinamicos → otros módulos
 
 ## 🎯 Próximos Pasos (Opcionales)
 
@@ -56,11 +56,11 @@ resources/views/asesores/pedidos/
 
 ## ✨ Ventajas
 
-- ✅ Blade más limpio (sin código JavaScript inline)
-- ✅ Modales reutilizables
-- ✅ Fácil mantenimiento
-- ✅ Separación de responsabilidades
-- ✅ Mejor performance (código modular)
+-  Blade más limpio (sin código JavaScript inline)
+-  Modales reutilizables
+-  Fácil mantenimiento
+-  Separación de responsabilidades
+-  Mejor performance (código modular)
 
 ## 🔗 Referencias
 

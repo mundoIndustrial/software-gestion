@@ -13,7 +13,7 @@ const PaginationManager = (() => {
             if (info) {
                 const newText = `Mostrando ${pagination.from}-${pagination.to} de ${pagination.total} registros`;
                 info.textContent = newText;
-                console.log(`✅ Paginación actualizada: ${newText}`);
+                console.log(` Paginación actualizada: ${newText}`);
             }
         },
 
@@ -35,7 +35,7 @@ const PaginationManager = (() => {
 
             if (html && html.trim().length > 0) {
                 controls.innerHTML = html;
-                console.log(`✅ Paginación del backend utilizada`);
+                console.log(` Paginación del backend utilizada`);
             } else {
                 let paginationHtml = '';
 
@@ -73,7 +73,7 @@ const PaginationManager = (() => {
                 }
 
                 controls.innerHTML = paginationHtml;
-                console.log(`✅ Paginación simple generada: ${lastPage} página(s)`);
+                console.log(` Paginación simple generada: ${lastPage} página(s)`);
             }
         },
 

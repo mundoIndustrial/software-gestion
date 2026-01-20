@@ -25,7 +25,7 @@ window.validarPrendasTipoPrendaSinCotizacion = function() {
     let todasValidas = true;
     const errores = [];
 
-    // ✅ CRÍTICO: Obtener el índice REAL de cada prenda en el gestor, no el del array filtrado
+    //  CRÍTICO: Obtener el índice REAL de cada prenda en el gestor, no el del array filtrado
     prendas.forEach((prenda) => {
         // Buscar el índice real de esta prenda
         const allPrendas = window.gestorPrendaSinCotizacion.prendas;
@@ -51,13 +51,13 @@ window.validarPrendasTipoPrendaSinCotizacion = function() {
         return false;
     }
 
-    logWithEmoji('✅', 'Validación de prendas PRENDA completada correctamente');
+    logWithEmoji('', 'Validación de prendas PRENDA completada correctamente');
     return true;
 };
 
 /**
  * Sincronizar datos de cantidades del DOM con el gestor
- * ✅ Intenta leer del DOM, pero los datos ya deberían estar en el gestor
+ *  Intenta leer del DOM, pero los datos ya deberían estar en el gestor
  */
 window.sincronizarCantidadesDelDOM = function() {
     try {
@@ -80,7 +80,7 @@ window.sincronizarCantidadesDelDOM = function() {
             const encontrados = document.querySelectorAll(selector);
             if (encontrados.length > 0) {
                 displayInputs = encontrados;
-                console.log(`✅ Selector encontrado: "${selector}" → ${encontrados.length} inputs`);
+                console.log(` Selector encontrado: "${selector}" → ${encontrados.length} inputs`);
                 break;
             }
         }
@@ -132,23 +132,23 @@ window.sincronizarCantidadesDelDOM = function() {
                         });
                     });
                     
-                    console.log(`✅ Prenda ${prendaIndex} actualizada:`, prenda.generosConTallas);
+                    console.log(` Prenda ${prendaIndex} actualizada:`, prenda.generosConTallas);
                 } catch (e) {
-                    console.error(`❌ Error sincronizando prenda ${prendaIndex}:`, e);
+                    console.error(` Error sincronizando prenda ${prendaIndex}:`, e);
                 }
             });
         } else {
             // Sin inputs de display
-            console.log(`ℹ️ Sin inputs de display en DOM. Los datos ya deberían estar en el gestor.`);
+            console.log(` Sin inputs de display en DOM. Los datos ya deberían estar en el gestor.`);
             console.log(`🔍 Estado actual del gestor:`);
             const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
             prendas.forEach((prenda, idx) => {
                 console.log(`   Prenda ${idx} (${prenda.nombre_producto}):`, prenda.generosConTallas);
             });
         }
-        console.log(`✅ SINCRONIZACIÓN COMPLETADA\n`);
+        console.log(` SINCRONIZACIÓN COMPLETADA\n`);
     } catch (e) {
-        console.error(`❌ Error en sincronizarCantidadesDelDOM:`, e);
+        console.error(` Error en sincronizarCantidadesDelDOM:`, e);
         throw new Error('Error al sincronizar datos: ' + e.message);
     }
 };
@@ -169,7 +169,7 @@ window.obtenerDatosPrendasTipoPrendaSinCotizacion = function() {
 
     console.log(`📊 ANTES DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
 
-    // ✅ CRÍTICO: Sincronizar datos del DOM antes de obtenerlos
+    //  CRÍTICO: Sincronizar datos del DOM antes de obtenerlos
     window.sincronizarCantidadesDelDOM();
 
     console.log(`📊 DESPUÉS DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
@@ -280,27 +280,27 @@ window.enviarPrendaSinCotizacion = function() {
             // Validar datos
             console.log(`🔍 [1] Validando prendas...`);
             if (!window.validarPrendasTipoPrendaSinCotizacion()) {
-                console.error(`❌ Validación fallida`);
+                console.error(` Validación fallida`);
                 reject(new Error('Validación fallida'));
                 return;
             }
-            console.log(`✅ [1] Validación OK`);
+            console.log(` [1] Validación OK`);
 
             // Obtener cliente
             const cliente = document.getElementById('cliente_editable')?.value;
             const formaPago = document.getElementById('forma_de_pago_editable')?.value || '';
 
-            console.log(`📋 Cliente: ${cliente}, Forma Pago: ${formaPago}`);
+            console.log(` Cliente: ${cliente}, Forma Pago: ${formaPago}`);
 
             if (!cliente) {
-                console.error(`❌ Cliente no especificado`);
+                console.error(` Cliente no especificado`);
                 reject(new Error('Cliente no especificado'));
                 return;
             }
 
-            // ✅ USAR GESTOR CENTRALIZADO JSON
+            //  USAR GESTOR CENTRALIZADO JSON
             if (!window.gestorDatosPedidoJSON) {
-                console.error(`❌ GestorDatosPedidoJSON no disponible`);
+                console.error(` GestorDatosPedidoJSON no disponible`);
                 reject(new Error('GestorDatosPedidoJSON no inicializado'));
                 return;
             }
@@ -314,7 +314,7 @@ window.enviarPrendaSinCotizacion = function() {
             formData.append('forma_de_pago', formaPago);
             formData.append('tipo_pedido', 'P'); // PRENDA sin cotización
 
-            console.log(`✅ [2] FormData preparado`);
+            console.log(` [2] FormData preparado`);
 
             // Enviar al servidor
             console.log(`🔍 [3] Enviando FormData al servidor...`);
@@ -327,23 +327,23 @@ window.enviarPrendaSinCotizacion = function() {
                 }
             });
 
-            console.log(`✅ [3] Respuesta recibida del servidor: ${response.status} ${response.statusText}`);
+            console.log(` [3] Respuesta recibida del servidor: ${response.status} ${response.statusText}`);
 
             const result = await response.json();
             
-            console.log(`✅ [4] Resultado JSON:`, result);
+            console.log(` [4] Resultado JSON:`, result);
 
             if (!response.ok) {
-                console.error(`❌ Error en respuesta: ${result.message}`);
+                console.error(` Error en respuesta: ${result.message}`);
                 throw new Error(result.message || 'Error al crear el pedido');
             }
 
-            logWithEmoji('✅', 'Pedido PRENDA creado exitosamente', result);
-            console.log(`✅ ============ ENVÍO COMPLETADO CON ÉXITO ============\n`);
+            logWithEmoji('', 'Pedido PRENDA creado exitosamente', result);
+            console.log(` ============ ENVÍO COMPLETADO CON ÉXITO ============\n`);
 
             // Mostrar éxito
             Swal.fire({
-                title: '✅ Pedido creado',
+                title: ' Pedido creado',
                 html: `
                     <div style="text-align: left;">
                         <p><strong>Número de Pedido:</strong> ${result.numero_pedido}</p>
@@ -362,7 +362,7 @@ window.enviarPrendaSinCotizacion = function() {
             resolve(result);
             
         } catch (error) {
-            console.error(`❌ Error al enviar pedido PRENDA:`, error);
+            console.error(` Error al enviar pedido PRENDA:`, error);
             Swal.fire('Error', error.message || 'Error al crear el pedido', 'error');
             reject(error);
         }
@@ -375,7 +375,7 @@ window.enviarPrendaSinCotizacion = function() {
 
             logWithEmoji('📤', 'Enviando pedido PRENDA sin cotización', datosPrenda);
 
-            // ✅ SINCRONIZAR de_bodega DESDE DOM ANTES DE ENVIAR
+            //  SINCRONIZAR de_bodega DESDE DOM ANTES DE ENVIAR
             datosPrenda.prendas.forEach((prenda, index) => {
                 const container = document.querySelector(`[data-prenda-index="${index}"]`);
                 if (container) {
@@ -401,14 +401,14 @@ window.enviarPrendaSinCotizacion = function() {
                 formData.append(`prendas[${index}][nombre_producto]`, prenda.nombre_producto || '');
                 formData.append(`prendas[${index}][descripcion]`, prenda.descripcion || '');
                 
-                // ✅ GENERO: Puede ser single string o array de múltiples géneros
+                //  GENERO: Puede ser single string o array de múltiples géneros
                 const generos = Array.isArray(prenda.genero) 
                     ? prenda.genero 
                     : (prenda.genero ? [prenda.genero] : []);
                 console.log(`   📌 Géneros: ${JSON.stringify(generos)}`);
                 formData.append(`prendas[${index}][genero]`, JSON.stringify(generos));
 
-                // ✅ ESTRUCTURA DE TALLAS POR GÉNERO: {genero: {talla: cantidad}}
+                //  ESTRUCTURA DE TALLAS POR GÉNERO: {genero: {talla: cantidad}}
                 let cantidadPorGeneroTalla = {};
                 
                 console.log(`   📊 generosConTallas en prenda:`, prenda.generosConTallas);
@@ -417,18 +417,18 @@ window.enviarPrendaSinCotizacion = function() {
                 if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
                     // Usar la estructura optimizada
                     cantidadPorGeneroTalla = prenda.generosConTallas;
-                    console.log(`   ✅ Usando generosConTallas optimizado:`, cantidadPorGeneroTalla);
+                    console.log(`    Usando generosConTallas optimizado:`, cantidadPorGeneroTalla);
                 } else if (prenda.cantidadesPorTalla && Object.keys(prenda.cantidadesPorTalla).length > 0) {
                     // Convertir estructura antigua a nueva
                     generos.forEach(genero => {
                         cantidadPorGeneroTalla[genero] = { ...prenda.cantidadesPorTalla };
                     });
-                    console.log(`   ✅ Convertida estructura antigua a:`, cantidadPorGeneroTalla);
+                    console.log(`    Convertida estructura antigua a:`, cantidadPorGeneroTalla);
                 } else {
                     console.warn(`   ⚠️ NO HAY CANTIDADES DE TALLAS PARA ESTA PRENDA`);
                 }
                 
-                // ✅ ENVIAR cantidad_talla COMO JSON ÚNICO
+                //  ENVIAR cantidad_talla COMO JSON ÚNICO
                 console.log(`   📤 Enviando cantidad_talla como JSON:`, JSON.stringify(cantidadPorGeneroTalla));
                 if (Object.keys(cantidadPorGeneroTalla).length > 0) {
                     formData.append(`prendas[${index}][cantidad_talla]`, JSON.stringify(cantidadPorGeneroTalla));
@@ -446,7 +446,7 @@ window.enviarPrendaSinCotizacion = function() {
                     });
                 }
 
-                // ✅ AGREGAR OBSERVACIONES
+                //  AGREGAR OBSERVACIONES
                 const obs_manga = prenda.variantes?.tipo_manga_obs || prenda.obs_manga || '';
                 const obs_broche = prenda.variantes?.tipo_broche_obs || prenda.obs_broche || '';
                 const obs_bolsillos = prenda.variantes?.tiene_bolsillos_obs || prenda.obs_bolsillos || '';
@@ -459,13 +459,13 @@ window.enviarPrendaSinCotizacion = function() {
                 formData.append(`prendas[${index}][obs_bolsillos]`, obs_bolsillos);
                 formData.append(`prendas[${index}][obs_reflectivo]`, obs_reflectivo);
 
-                // ✅ CAMPOS BOOLEANOS Y VARIACIONES
+                //  CAMPOS BOOLEANOS Y VARIACIONES
                 formData.append(`prendas[${index}][tipo_manga]`, prenda.variantes?.tipo_manga || prenda.tipo_manga || 'No aplica');
                 formData.append(`prendas[${index}][tipo_broche]`, prenda.variantes?.tipo_broche || prenda.tipo_broche || 'No aplica');
                 formData.append(`prendas[${index}][tiene_bolsillos]`, (prenda.variantes?.tiene_bolsillos || prenda.tiene_bolsillos) ? '1' : '0');
                 formData.append(`prendas[${index}][tiene_reflectivo]`, (prenda.variantes?.tiene_reflectivo || prenda.tiene_reflectivo) ? '1' : '0');
                 
-                // ✅ CAMPO DE BODEGA
+                //  CAMPO DE BODEGA
                 formData.append(`prendas[${index}][de_bodega]`, prenda.de_bodega ? '1' : '0');
 
                 // Tallas seleccionadas
@@ -500,7 +500,7 @@ window.enviarPrendaSinCotizacion = function() {
                         
                         if (archivo) {
                             formData.append(`prendas[${prendaIndex}][fotos][]`, archivo);
-                            logWithEmoji('✅', `Imagen de prenda ${prendaIndex + 1} agregada: ${archivo.name}`);
+                            logWithEmoji('', `Imagen de prenda ${prendaIndex + 1} agregada: ${archivo.name}`);
                         } else if (typeof foto === 'string') {
                             // Si es una URL existente, guardarla igual
                             formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
@@ -520,7 +520,7 @@ window.enviarPrendaSinCotizacion = function() {
                             
                             if (archivo) {
                                 formData.append(`prendas[${prendaIndex}][telas][${telaIndex}][fotos][]`, archivo);
-                                logWithEmoji('✅', `Imagen de tela de prenda ${prendaIndex + 1} agregada: ${archivo.name}`);
+                                logWithEmoji('', `Imagen de tela de prenda ${prendaIndex + 1} agregada: ${archivo.name}`);
                             } else if (typeof foto === 'string') {
                                 // Si es una URL existente
                                 formData.append(`prendas[${prendaIndex}][telas][${telaIndex}][fotos_existentes][]`, foto);
@@ -554,7 +554,7 @@ window.enviarPrendaSinCotizacion = function() {
                         JSON.stringify(datosProcesoSinImagenes)
                     );
                     
-                    logWithEmoji('✅', `Proceso "${tipoProceso}" agregado para prenda ${prendaIndex + 1}`);
+                    logWithEmoji('', `Proceso "${tipoProceso}" agregado para prenda ${prendaIndex + 1}`);
                     
                     // Agregar imágenes del proceso como archivos reales
                     imagenes.forEach((imagen, imagenIndex) => {
@@ -578,7 +578,7 @@ window.enviarPrendaSinCotizacion = function() {
             });
             // Enviar al servidor
             console.log(`🔍 [4] Enviando FormData al servidor...`);
-            console.log(`✅ FormData contiene:`, {
+            console.log(` FormData contiene:`, {
                 cliente: cliente,
                 forma_de_pago: formaPago,
                 prendas_count: datosPrenda.prendas.length
@@ -592,23 +592,23 @@ window.enviarPrendaSinCotizacion = function() {
                 }
             });
 
-            console.log(`✅ [4] Respuesta recibida del servidor: ${response.status} ${response.statusText}`);
+            console.log(` [4] Respuesta recibida del servidor: ${response.status} ${response.statusText}`);
 
             const result = await response.json();
             
-            console.log(`✅ [5] Resultado JSON:`, result);
+            console.log(` [5] Resultado JSON:`, result);
 
             if (!response.ok) {
-                console.error(`❌ Error en respuesta: ${result.message}`);
+                console.error(` Error en respuesta: ${result.message}`);
                 throw new Error(result.message || 'Error al crear el pedido');
             }
 
-            logWithEmoji('✅', 'Pedido PRENDA creado exitosamente', result);
-            console.log(`✅ ============ ENVÍO COMPLETADO CON ÉXITO ============\n`);
+            logWithEmoji('', 'Pedido PRENDA creado exitosamente', result);
+            console.log(` ============ ENVÍO COMPLETADO CON ÉXITO ============\n`);
 
             // Mostrar éxito
             Swal.fire({
-                title: '✅ Pedido creado',
+                title: ' Pedido creado',
                 html: `
                     <div style="text-align: left;">
                         <p><strong>Número de Pedido:</strong> ${result.numero_pedido}</p>
@@ -632,10 +632,10 @@ window.enviarPrendaSinCotizacion = function() {
             resolve(result);
 
         } catch (error) {
-            logWithEmoji('❌', 'Error al enviar pedido PRENDA', error.message);
+            logWithEmoji('', 'Error al enviar pedido PRENDA', error.message);
             console.error('Error completo:', error);
             
-            // ✅ NO RECARGAR LA PÁGINA - Mantener el formulario intacto
+            //  NO RECARGAR LA PÁGINA - Mantener el formulario intacto
             // Hacer scroll al error para que el usuario lo vea
             Swal.fire({
                 title: '⚠️ Error al enviar',
@@ -670,9 +670,9 @@ window.hookPostEnvioPrendaSinCotizacion = function(response) {
     const tipoPrendaSelect = document.getElementById('tipo_pedido_nuevo')?.value;
     
     if (tipoNuevo && tipoPrendaSelect === 'P') {
-        console.log('✅ Post-envío: Limpiando módulo PRENDA sin cotización');
+        console.log(' Post-envío: Limpiando módulo PRENDA sin cotización');
         window.limpiarPrendasTipoPrendaSinCotizacion();
     }
 };
 
-logWithEmoji('✅', 'Integración de validación y envío para PRENDA sin cotización cargada');
+logWithEmoji('', 'Integración de validación y envío para PRENDA sin cotización cargada');

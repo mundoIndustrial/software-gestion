@@ -35,7 +35,7 @@ class TestPrendaCotizacionTemplate extends Command
 
         // Validar que sea un número
         if (!is_numeric($numeroPedido)) {
-            $this->error('❌ El número de pedido debe ser numérico');
+            $this->error(' El número de pedido debe ser numérico');
             return 1;
         }
 
@@ -57,7 +57,7 @@ class TestPrendaCotizacionTemplate extends Command
             }
 
             // Mostrar resultados
-            $this->info("✅ Se encontraron " . count($prendas) . " prenda(s)");
+            $this->info(" Se encontraron " . count($prendas) . " prenda(s)");
             $this->newLine();
 
             foreach ($prendas as $prenda) {
@@ -88,12 +88,12 @@ class TestPrendaCotizacionTemplate extends Command
             $this->newLine();
 
             // Mostrar JSON para referencia
-            $this->info('📋 Datos en formato JSON:');
+            $this->info(' Datos en formato JSON:');
             $this->line(json_encode($prendas, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             return 0;
         } catch (\Exception $e) {
-            $this->error('❌ Error: ' . $e->getMessage());
+            $this->error(' Error: ' . $e->getMessage());
             $this->line($e->getTraceAsString());
             return 1;
         }

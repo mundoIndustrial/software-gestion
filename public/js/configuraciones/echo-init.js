@@ -49,17 +49,17 @@
 
         // Connection event handlers
         window.Echo.connector.pusher.connection.bind('connected', () => {
-            console.log('✅ Conectado al servidor WebSocket');
+            console.log(' Conectado al servidor WebSocket');
             updateConnectionStatus(true);
         });
 
         window.Echo.connector.pusher.connection.bind('disconnected', () => {
-            console.log('❌ Desconectado del servidor WebSocket');
+            console.log(' Desconectado del servidor WebSocket');
             updateConnectionStatus(false);
         });
 
         window.Echo.connector.pusher.connection.bind('error', (error) => {
-            console.error('❌ Error de conexión WebSocket:', error);
+            console.error(' Error de conexión WebSocket:', error);
             updateConnectionStatus(false);
         });
 
@@ -71,10 +71,10 @@
         // Add connection status indicator to page
         addConnectionIndicator();
 
-        console.log('✅ Laravel Echo inicializado correctamente');
+        console.log(' Laravel Echo inicializado correctamente');
 
     } catch (error) {
-        console.error('❌ Error al inicializar Laravel Echo:', error);
+        console.error(' Error al inicializar Laravel Echo:', error);
     }
 
     /**

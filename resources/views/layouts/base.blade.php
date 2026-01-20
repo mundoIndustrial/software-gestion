@@ -76,7 +76,7 @@
             enabledTransports: ['ws', 'wss'],
             disableStats: true,
         });
-        console.log('✅ Laravel Echo configurado');
+        console.log(' Laravel Echo configurado');
     </script>
     @endauth
     

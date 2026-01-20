@@ -270,7 +270,7 @@ async function cargarTiposDisponiblesPaso3() {
             renderizarSelectTecnicasPaso3();
         }
     } catch (error) {
-        console.error('❌ Error cargando tipos paso3:', error);
+        console.error(' Error cargando tipos paso3:', error);
     }
 }
 
@@ -282,7 +282,7 @@ function renderizarSelectTecnicasPaso3() {
     const container = document.getElementById('tecnicas-checkboxes-paso3');
     
     if (!container) {
-        console.error('❌ Elemento tecnicas-checkboxes-paso3 no encontrado');
+        console.error(' Elemento tecnicas-checkboxes-paso3 no encontrado');
         return;
     }
     
@@ -1114,7 +1114,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
         }
     });
     
-    console.log('✅ Técnicas combinadas guardadas en PASO 3:', window.tecnicasAgregadasPaso3);
+    console.log(' Técnicas combinadas guardadas en PASO 3:', window.tecnicasAgregadasPaso3);
     
     renderizarTecnicasAgregadasPaso3();
     cerrarModalAgregarTecnicaPaso3();
@@ -1129,7 +1129,7 @@ function renderizarTecnicasAgregadasPaso3() {
     const sinTecnicas = document.getElementById('sin_tecnicas_paso3');
     
     if (!container) {
-        console.error('❌ Elemento tecnicas_agregadas_paso3 no encontrado');
+        console.error(' Elemento tecnicas_agregadas_paso3 no encontrado');
         return;
     }
     
@@ -1306,7 +1306,7 @@ function renderizarTecnicasAgregadasPaso3() {
         bodyHTML += `
             <div class="imagenes-section" style="margin-bottom: 1rem; ${!tieneImagenes ? 'display: none;' : ''}">
                 <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                    🖼️ Imágenes:
+                     Imágenes:
                 </span>
                 <div class="imagenes-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem;">
                     ${datosPrenda.imagenes.map((img, imgIdx) => `
@@ -1374,7 +1374,7 @@ function renderizarTecnicasAgregadasPaso3() {
             bodyHTML += `
                 <div style="margin-bottom: 1rem;">
                     <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                        📋 Variaciones:
+                         Variaciones:
                     </span>
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
                         <tr style="background: #f1f5f9;">
@@ -1966,7 +1966,7 @@ function guardarEdiciónPaso3(datosEditados) {
         }
     });
     
-    console.log('✅ Prenda editada en PASO 3:', nombrePrenda);
+    console.log(' Prenda editada en PASO 3:', nombrePrenda);
     renderizarTecnicasAgregadasPaso3();
 }
 
@@ -2007,7 +2007,7 @@ function agregarFilaPrendaPaso3() {
     const container = document.getElementById('listaPrendasPaso3');
     
     if (!container) {
-        console.error('❌ Elemento listaPrendasPaso3 no encontrado');
+        console.error(' Elemento listaPrendasPaso3 no encontrado');
         return;
     }
     
@@ -2603,7 +2603,7 @@ function agregarPrendaReflectivoPaso4() {
     
     const container = document.getElementById('prendas_reflectivo_container');
     if (!container) {
-        console.error('❌ Container prendas_reflectivo_container no encontrado');
+        console.error(' Container prendas_reflectivo_container no encontrado');
         return;
     }
     
@@ -2613,9 +2613,9 @@ function agregarPrendaReflectivoPaso4() {
     // Obtener prendas del PASO 2 - EXACTAMENTE COMO EN PASO 3
     console.log('📥 Llamando obtenerPrendasDelPaso2()...');
     const prendasPaso2 = obtenerPrendasDelPaso2();
-    console.log(`✅ Prendas obtenidas: ${prendasPaso2.length}`);
+    console.log(` Prendas obtenidas: ${prendasPaso2.length}`);
     if (prendasPaso2.length > 0) {
-        console.log('📋 Prendas del Paso 2:', prendasPaso2);
+        console.log(' Prendas del Paso 2:', prendasPaso2);
     }
     
     const fila = document.createElement('div');
@@ -2665,7 +2665,7 @@ function agregarPrendaReflectivoPaso4() {
             <div>
                 <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📸 IMÁGENES (MÁXIMO 3)</label>
                 <div class="imagenes-dropzone-reflectivo-${prendasIndex}" style="border: 2px dashed #3498db; border-radius: 6px; padding: 20px; text-align: center; background: #f0f7ff; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dbeafe'; this.style.borderColor='#3498db';" onmouseout="this.style.background='#f0f7ff'; this.style.borderColor='#3498db';">
-                    <div style="margin-bottom: 8px; font-size: 1.5rem;">🖼️</div>
+                    <div style="margin-bottom: 8px; font-size: 1.5rem;"></div>
                     <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
                     <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
                     <input type="file" class="imagen-reflectivo-input-${prendasIndex}" accept="image/*" multiple style="display: none;" />
@@ -2759,7 +2759,7 @@ function agregarPrendaReflectivoPaso4() {
     // LOG DE VALIDACIÓN
     const selectCreado = fila.querySelector('.select-prenda-paso2-reflectivo');
     const opcionesCreadas = selectCreado ? selectCreado.querySelectorAll('option').length : 0;
-    console.log(`✅ Prenda Reflectivo ${numeroPrenda} agregada. Select con ${opcionesCreadas} opciones (${opcionesCreadas - 1} prendas + 1 opción vacía)`);
+    console.log(` Prenda Reflectivo ${numeroPrenda} agregada. Select con ${opcionesCreadas} opciones (${opcionesCreadas - 1} prendas + 1 opción vacía)`);
     
     prendas_reflectivo_paso4.push({
         index: prendasIndex,
@@ -2813,7 +2813,7 @@ function agregarPrendaReflectivoPaso4() {
                     });
                 }
             } catch (err) {
-                console.error('❌ Error al parsear tallas:', err);
+                console.error(' Error al parsear tallas:', err);
             }
         } else {
             console.warn('⚠️ No hay tallasJson en el atributo data-tallas');
@@ -2826,7 +2826,7 @@ function agregarPrendaReflectivoPaso4() {
                 variacionesPaso2 = JSON.parse(variacionesJson);
             }
         } catch (err) {
-            console.error('❌ Error al parsear variaciones:', err);
+            console.error(' Error al parsear variaciones:', err);
             variacionesPaso2 = {};
         }
         
@@ -2908,7 +2908,7 @@ function agregarPrendaReflectivoPaso4() {
                     }
                 }
             } catch (err) {
-                console.error('❌ Error al parsear imágenes:', err);
+                console.error(' Error al parsear imágenes:', err);
             }
         } else {
             console.warn('⚠️ No hay imagenesJson en el atributo data-imagenes');
@@ -3471,5 +3471,5 @@ function agregarObservacionReflectivoPaso4(prendasIndex, fila) {
 
 document.addEventListener('DOMContentLoaded', function() {
     cargarTiposDisponiblesPaso3();
-    console.log('✅ PASO 3 COTIZACIÓN COMBINADA - Inicializado');
+    console.log(' PASO 3 COTIZACIÓN COMBINADA - Inicializado');
 });

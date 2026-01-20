@@ -1,4 +1,4 @@
-# 📋 Script de Análisis: ¿Por qué NO se guardan variaciones y observaciones?
+#  Script de Análisis: ¿Por qué NO se guardan variaciones y observaciones?
 
 ## 🔍 Resumen Ejecutivo
 
@@ -36,7 +36,7 @@ const item = {
 }
 ```
 
-**✅ VERIFICACIÓN:**
+** VERIFICACIÓN:**
 ```javascript
 // En consola del navegador, después de preparar item:
 console.log("Variaciones enviadas:", item.variaciones);
@@ -72,7 +72,7 @@ fetch(`/asesores/pedidos-editable/crear`, {
 })
 ```
 
-**✅ VERIFICACIÓN:**
+** VERIFICACIÓN:**
 Abrir DevTools → Network → Buscar `/asesores/pedidos-editable/crear` → Ver request body en `Request` tab:
 
 ```json
@@ -106,20 +106,20 @@ Abrir DevTools → Network → Buscar `/asesores/pedidos-editable/crear` → Ver
 ```php
 // En CrearPedidoEditableController::crearPedido()
 foreach ($validated['items'] as $item) {
-    // ✅ EXTRACCIÓN 1: Observaciones a nivel superior
+    //  EXTRACCIÓN 1: Observaciones a nivel superior
     $prendaData = [
         'nombre_producto' => $item['prenda'],
         'descripcion' => $item['descripcion'] ?? '',
         'variaciones' => $item['variaciones'] ?? [],
         
-        // ✅ EXTRAER observaciones del nivel superior
+        //  EXTRAER observaciones del nivel superior
         'obs_manga' => $item['obs_manga'] ?? '',
         'obs_bolsillos' => $item['obs_bolsillos'] ?? '',
         'obs_broche' => $item['obs_broche'] ?? '',
         'obs_reflectivo' => $item['obs_reflectivo'] ?? '',
     ];
     
-    // ✅ EXTRACCIÓN 2: Si vienen anidadas en variaciones, también extraer
+    //  EXTRACCIÓN 2: Si vienen anidadas en variaciones, también extraer
     if (isset($item['variaciones']) && is_array($item['variaciones'])) {
         foreach ($item['variaciones'] as $varTipo => $variacion) {
             if (is_array($variacion)) {
@@ -140,12 +140,12 @@ foreach ($validated['items'] as $item) {
 }
 ```
 
-**✅ VERIFICACIÓN (en logs):**
+** VERIFICACIÓN (en logs):**
 
 Busca en `storage/logs/laravel.log`:
 
 ```
-[2024-XX-XX] local.INFO: ✅ [CrearPedidoEditableController] Procesando item 1
+[2024-XX-XX] local.INFO:  [CrearPedidoEditableController] Procesando item 1
 {
     "prenda": "...",
     "obs_manga": "con puño",
@@ -169,8 +169,8 @@ public function guardarPrendasEnPedido(
     ?User $usuario = null
 ): void {
     foreach ($prendasData as $index => $prendaData) {
-        // ✅ VERIFICAR que recibe los datos correctos
-        Log::info('✅ [PedidoPrendaService] Recibida prenda', [
+        //  VERIFICAR que recibe los datos correctos
+        Log::info(' [PedidoPrendaService] Recibida prenda', [
             'index' => $index,
             'obs_manga_recibido' => $prendaData['obs_manga'] ?? 'NO RECIBIDO',
             'obs_bolsillos_recibido' => $prendaData['obs_bolsillos'] ?? 'NO RECIBIDO',
@@ -178,7 +178,7 @@ public function guardarPrendasEnPedido(
             'obs_reflectivo_recibido' => $prendaData['obs_reflectivo'] ?? 'NO RECIBIDO',
         ]);
         
-        // ✅ EXTRACCIÓN adicional de datos anidados en variaciones
+        //  EXTRACCIÓN adicional de datos anidados en variaciones
         if (isset($prendaData['variaciones']) && is_array($prendaData['variaciones'])) {
             foreach ($prendaData['variaciones'] as $key => $value) {
                 if (!isset($prendaData[$key])) {
@@ -192,12 +192,12 @@ public function guardarPrendasEnPedido(
 }
 ```
 
-**✅ VERIFICACIÓN (en logs):**
+** VERIFICACIÓN (en logs):**
 
 Busca en `storage/logs/laravel.log`:
 
 ```
-[2024-XX-XX] local.INFO: ✅ [PedidoPrendaService] Recibida prenda
+[2024-XX-XX] local.INFO:  [PedidoPrendaService] Recibida prenda
 {
     "obs_manga_recibido": "con puño",
     "obs_bolsillos_recibido": "bolsillos de pecho",
@@ -222,21 +222,21 @@ $prenda = PrendaPedido::create([
     'cantidad_talla' => json_encode($cantidadTallaFinal),
     'descripcion_variaciones' => $this->armarDescripcionVariaciones($prendaData),
     
-    // ✅ VARIACIONES: Tipos
+    //  VARIACIONES: Tipos
     'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
     'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
     'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
     'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
     
-    // ✅ OBSERVACIONES: Guardadas con ambos prefijos para compatibilidad
+    //  OBSERVACIONES: Guardadas con ambos prefijos para compatibilidad
     'manga_obs' => $prendaData['obs_manga'] ?? $prendaData['manga_obs'] ?? '',
     'bolsillos_obs' => $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '',
     'broche_obs' => $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '',
     'reflectivo_obs' => $prendaData['obs_reflectivo'] ?? $prendaData['reflectivo_obs'] ?? '',
 ]);
 
-// ✅ LOG de verificación
-Log::info('✅ [PedidoPrendaService] Prenda guardada', [
+//  LOG de verificación
+Log::info(' [PedidoPrendaService] Prenda guardada', [
     'manga_obs_guardado' => $prenda->manga_obs,
     'bolsillos_obs_guardado' => $prenda->bolsillos_obs,
     'broche_obs_guardado' => $prenda->broche_obs,
@@ -244,12 +244,12 @@ Log::info('✅ [PedidoPrendaService] Prenda guardada', [
 ]);
 ```
 
-**✅ VERIFICACIÓN (en logs):**
+** VERIFICACIÓN (en logs):**
 
 Busca en `storage/logs/laravel.log`:
 
 ```
-[2024-XX-XX] local.INFO: ✅ [PedidoPrendaService] Prenda guardada
+[2024-XX-XX] local.INFO:  [PedidoPrendaService] Prenda guardada
 {
     "manga_obs_guardado": "con puño",
     "bolsillos_obs_guardado": "bolsillos de pecho",
@@ -312,7 +312,7 @@ dd([
 
 ---
 
-## ✅ Checklist de Verificación
+##  Checklist de Verificación
 
 - [ ] **Frontend**: Verificar que `gestion-items-pedido.js` prepara `variaciones` correctamente
 - [ ] **Network**: En DevTools, ver que el JSON enviado tiene todos los campos
@@ -397,7 +397,7 @@ protected $fillable = [
             │
             ▼
    ┌──────────────────────────────────┐
-   │ MySQL: prendas_pedido table      │ ✅ GUARDADO
+   │ MySQL: prendas_pedido table      │  GUARDADO
    │ manga_obs: "con puño"            │
    └──────────────────────────────────┘
 ```

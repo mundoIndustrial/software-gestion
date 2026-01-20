@@ -9,7 +9,7 @@ use App\Domain\PedidoProduccion\Services\GestionItemsPedidoService;
 use App\Domain\PedidoProduccion\Services\TransformadorCotizacionService;
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
-use App\Services\PedidoEppService; // ✅ IMPORTAR SERVICIO EPP
+use App\Services\PedidoEppService; //  IMPORTAR SERVICIO EPP
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,7 +21,7 @@ class CrearPedidoEditableController extends Controller
         private TransformadorCotizacionService $transformador,
         private PedidoPrendaService $pedidoPrendaService,
         private ColorGeneroMangaBrocheService $colorGeneroService,
-        private PedidoEppService $eppService, // ✅ INYECTAR SERVICIO EPP
+        private PedidoEppService $eppService, //  INYECTAR SERVICIO EPP
     ) {}
 
     public function index(?string $tipoInicial = null): View
@@ -108,7 +108,7 @@ class CrearPedidoEditableController extends Controller
                 'tieneItems' => $this->gestionItems->tieneItems(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error en obtenerItems:', [
+            \Log::error(' Error en obtenerItems:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -142,7 +142,7 @@ class CrearPedidoEditableController extends Controller
             $itemNum = $index + 1;
             $tipo = $item['tipo'] ?? 'prenda';
 
-            // ✅ Validaciones diferentes según el tipo
+            //  Validaciones diferentes según el tipo
             if ($tipo === 'epp') {
                 // Para EPP: validar solo campos específicos del EPP
                 if (empty($item['epp_id'])) {
@@ -183,7 +183,7 @@ class CrearPedidoEditableController extends Controller
     {
         try {
             // Obtener items del request
-            // ✅ Leer desde ambas fuentes: 'items' (para EPP) y 'prendas' (para prendas en FormData)
+            //  Leer desde ambas fuentes: 'items' (para EPP) y 'prendas' (para prendas en FormData)
             $itemsDesdeItems = $request->input('items', []);
             $itemsDesdePrendas = $request->input('prendas', []);
             
@@ -236,7 +236,7 @@ class CrearPedidoEditableController extends Controller
                     }
                 }
                 
-                // ✅ Validar tallas dependiendo del tipo de item
+                //  Validar tallas dependiendo del tipo de item
                 
                 if ($tipo === 'epp') {
                     // EPP no necesita validación adicional aquí
@@ -280,7 +280,7 @@ class CrearPedidoEditableController extends Controller
                 ], 422);
             }
 
-            // ✅ Validar datos básicos (no pedimos 'items' en la validación porque puede venir como 'prendas')
+            //  Validar datos básicos (no pedimos 'items' en la validación porque puede venir como 'prendas')
             $validated = $request->validate([
                 'cliente' => 'required|string',
                 'asesora' => 'required|string',
@@ -337,7 +337,7 @@ class CrearPedidoEditableController extends Controller
             // Usar PedidoPrendaService para crear las prendas
             // Preparar prendas para guardar
             $prendasParaGuardar = [];
-            $eppsParaGuardar = []; // ✅ AGREGAR ARRAY PARA EPPs
+            $eppsParaGuardar = []; //  AGREGAR ARRAY PARA EPPs
             $cantidadTotal = 0;
             
             foreach ($validated['items'] as $itemIndex => $item) {
@@ -346,7 +346,7 @@ class CrearPedidoEditableController extends Controller
                 // Determinar el tipo de item
                 $tipo = $item['tipo'] ?? 'cotizacion';
                 
-                // ✅ SI ES EPP, PROCESARLO SEPARADAMENTE
+                //  SI ES EPP, PROCESARLO SEPARADAMENTE
                 if ($tipo === 'epp') {
                     \Log::info('🛡️ [CrearPedidoEditableController] Procesando EPP:', $item);
                     
@@ -363,7 +363,7 @@ class CrearPedidoEditableController extends Controller
                         'tallas_medidas' => $item['tallas_medidas'] ?? $item['talla'],
                     ];
                     
-                    // ✅ PROCESAR IMÁGENES DEL EPP
+                    //  PROCESAR IMÁGENES DEL EPP
                     // Las imágenes vienen en FormData como archivos
                     $imagenKey = "items.{$itemIndex}.imagenes";
                     $imagenesDelEpp = $request->file($imagenKey) ?? [];
@@ -421,7 +421,7 @@ class CrearPedidoEditableController extends Controller
                     'keys_del_item' => array_keys($item)
                 ]);
                 
-                // ✅ OBTENER DATOS DE PROCESOS DESDE input() (no desde file())
+                //  OBTENER DATOS DE PROCESOS DESDE input() (no desde file())
                 $prendas = $request->input('prendas');
                 
                 // 🔍 DEBUG: Log procesos structure
@@ -453,7 +453,7 @@ class CrearPedidoEditableController extends Controller
                             $datosProceso['observaciones'] = $procesoData['observaciones'];
                         }
                         
-                        // ✅ PROCESAR TALLAS (pueden venir como JSON string)
+                        //  PROCESAR TALLAS (pueden venir como JSON string)
                         $datosProceso['tallas'] = [];
                         if (isset($procesoData['tallas_dama'])) {
                             $tallasDama = is_string($procesoData['tallas_dama']) 
@@ -468,7 +468,7 @@ class CrearPedidoEditableController extends Controller
                             $datosProceso['tallas']['caballero'] = $tallasCapallero ?? [];
                         }
                         
-                        // ✅ OBTENER IMÁGENES DEL FormData
+                        //  OBTENER IMÁGENES DEL FormData
                         $imagenesFormDataKey = "prendas.{$itemIndex}.procesos.{$tipoProceso}.imagenes";
                         $imagenesUploadedFiles = $request->file($imagenesFormDataKey) ?? [];
                         
@@ -483,7 +483,7 @@ class CrearPedidoEditableController extends Controller
                         
                         $procesosReconstruidos[$tipoProceso] = $datosProceso;
                         
-                        \Log::info("✅ Proceso reconstruido: {$tipoProceso}", [
+                        \Log::info(" Proceso reconstruido: {$tipoProceso}", [
                             'cantidad_imagenes' => count($datosProceso['imagenes']),
                             'ubicaciones' => $datosProceso['ubicaciones'] ?? [],
                             'tallas_dama' => $datosProceso['tallas']['dama'] ?? [],
@@ -492,7 +492,7 @@ class CrearPedidoEditableController extends Controller
                     }
                 }
                 
-                // ✅ FIX: COPIAR TALLAS DESDE cantidad_talla DEL ITEM A CADA PROCESO
+                //  FIX: COPIAR TALLAS DESDE cantidad_talla DEL ITEM A CADA PROCESO
                 if (isset($item['cantidad_talla']) && !empty($item['cantidad_talla'])) {
                     $cantidad_talla = $item['cantidad_talla'];
                     
@@ -540,7 +540,7 @@ class CrearPedidoEditableController extends Controller
                         }
                     }
                     
-                    \Log::info('✅ Tallas copiadas a procesos', [
+                    \Log::info(' Tallas copiadas a procesos', [
                         'tallas_dama' => $tallas_dama,
                         'tallas_caballero' => $tallas_caballero,
                         'procesos_actualizado_count' => count($procesosReconstruidos)
@@ -552,7 +552,7 @@ class CrearPedidoEditableController extends Controller
                     ]);
                 }
                 
-                // ✅ FIX: EXTRAER OBSERVACIONES DESDE variaciones JSON SI EXISTEN
+                //  FIX: EXTRAER OBSERVACIONES DESDE variaciones JSON SI EXISTEN
                 $obs_manga = $item['obs_manga'] ?? '';
                 $obs_bolsillos = $item['obs_bolsillos'] ?? '';
                 $obs_broche = $item['obs_broche'] ?? '';
@@ -582,21 +582,21 @@ class CrearPedidoEditableController extends Controller
                     if (is_array($variaciones_parsed)) {
                         if (empty($obs_manga) && isset($variaciones_parsed['manga']['observacion'])) {
                             $obs_manga = $variaciones_parsed['manga']['observacion'];
-                            \Log::info('✅ manga.observacion encontrada y extraída');
+                            \Log::info(' manga.observacion encontrada y extraída');
                         }
                         if (empty($obs_bolsillos) && isset($variaciones_parsed['bolsillos']['observacion'])) {
                             $obs_bolsillos = $variaciones_parsed['bolsillos']['observacion'];
-                            \Log::info('✅ bolsillos.observacion encontrada y extraída');
+                            \Log::info(' bolsillos.observacion encontrada y extraída');
                         }
                         if (empty($obs_broche) && isset($variaciones_parsed['broche']['observacion'])) {
                             $obs_broche = $variaciones_parsed['broche']['observacion'];
-                            \Log::info('✅ broche.observacion encontrada y extraída');
+                            \Log::info(' broche.observacion encontrada y extraída');
                         }
                         if (empty($obs_reflectivo) && isset($variaciones_parsed['reflectivo']['observacion'])) {
                             $obs_reflectivo = $variaciones_parsed['reflectivo']['observacion'];
-                            \Log::info('✅ reflectivo.observacion encontrada y extraída');
+                            \Log::info(' reflectivo.observacion encontrada y extraída');
                         }
-                        \Log::info('✅ Observaciones extraídas de variaciones', [
+                        \Log::info(' Observaciones extraídas de variaciones', [
                             'obs_manga' => $obs_manga,
                             'obs_bolsillos' => $obs_bolsillos,
                             'obs_broche' => $obs_broche,
@@ -609,7 +609,7 @@ class CrearPedidoEditableController extends Controller
                     ]);
                 }
                 
-                // ✅ FIX: OBTENER/CREAR IDs DE TIPOS DE MANGA Y BROCHE
+                //  FIX: OBTENER/CREAR IDs DE TIPOS DE MANGA Y BROCHE
                 $tipo_manga_id = null;
                 $tipo_broche_boton_id = null;
                 
@@ -622,7 +622,7 @@ class CrearPedidoEditableController extends Controller
                         try {
                             $tipoManga = $this->colorGeneroService->buscarOCrearManga($tipoMangaNombre);
                             $tipo_manga_id = $tipoManga->id;
-                            \Log::info('✅ Tipo manga obtenido/creado', [
+                            \Log::info(' Tipo manga obtenido/creado', [
                                 'nombre' => $tipoMangaNombre,
                                 'id' => $tipo_manga_id
                             ]);
@@ -640,7 +640,7 @@ class CrearPedidoEditableController extends Controller
                         try {
                             $tipoBroche = $this->colorGeneroService->buscarOCrearBroche($tipoBrocheNombre);
                             $tipo_broche_boton_id = $tipoBroche->id;
-                            \Log::info('✅ Tipo broche obtenido/creado', [
+                            \Log::info(' Tipo broche obtenido/creado', [
                                 'nombre' => $tipoBrocheNombre,
                                 'id' => $tipo_broche_boton_id
                             ]);
@@ -653,7 +653,7 @@ class CrearPedidoEditableController extends Controller
                     }
                 }
                 
-                // ✅ OBTENER IMÁGENES DE PRENDA DESDE FormData
+                //  OBTENER IMÁGENES DE PRENDA DESDE FormData
                 $fotosFormDataKey = "prendas.{$itemIndex}.imagenes";
                 $fotosUploadedFiles = $request->file($fotosFormDataKey) ?? [];
                 
@@ -672,7 +672,7 @@ class CrearPedidoEditableController extends Controller
                     'formDataKey' => $fotosFormDataKey,
                 ]);
                 
-                // ✅ OBTENER IMÁGENES DE TELAS DESDE FormData y FUSIONAR con datos existentes
+                //  OBTENER IMÁGENES DE TELAS DESDE FormData y FUSIONAR con datos existentes
                 $telasFormDataKey = "prendas.{$itemIndex}.telas";
                 $telasConImagenes = [];
                 
@@ -726,23 +726,23 @@ class CrearPedidoEditableController extends Controller
                     'nombre_producto' => $item['prenda'],
                     'descripcion' => $item['descripcion'] ?? '',
                     'variaciones' => $variaciones_data,
-                    'fotos' => $fotosFiltered, // ✅ Fotos de prenda como UploadedFile
-                    'procesos' => $procesosReconstruidos, // ✅ Procesos con imágenes UploadedFile
-                    'origen' => $item['origen'] ?? 'bodega', // ✅ Origen de la prenda
-                    'de_bodega' => $deBodega, // ✅ CAMPO FINAL CALCULADO
-                    // ✅ OBSERVACIONES EXTRAÍDAS
+                    'fotos' => $fotosFiltered, //  Fotos de prenda como UploadedFile
+                    'procesos' => $procesosReconstruidos, //  Procesos con imágenes UploadedFile
+                    'origen' => $item['origen'] ?? 'bodega', //  Origen de la prenda
+                    'de_bodega' => $deBodega, //  CAMPO FINAL CALCULADO
+                    //  OBSERVACIONES EXTRAÍDAS
                     'obs_manga' => $obs_manga,
                     'obs_bolsillos' => $obs_bolsillos,
                     'obs_broche' => $obs_broche,
                     'obs_reflectivo' => $obs_reflectivo,
-                    // ✅ IDs DE TIPOS DE VARIACIÓN
+                    //  IDs DE TIPOS DE VARIACIÓN
                     'tipo_manga_id' => $tipo_manga_id,
                     'tipo_broche_boton_id' => $tipo_broche_boton_id,
-                    // ✅ TELAS CON IMÁGENES
+                    //  TELAS CON IMÁGENES
                     'telas' => $telasConImagenes,
                 ];
                 
-                // ✅ Procesar tallas según el tipo de item
+                //  Procesar tallas según el tipo de item
                 if ($tipo === 'nuevo' || $tipo === 'prenda_nueva') {
                     // Para prendas nuevas, procesar cantidad_talla (objeto {genero-talla: cantidad})
                     $prendaData['cantidad_talla'] = $this->procesarCantidadTallaParaServicio($item['cantidad_talla'] ?? []);
@@ -774,7 +774,7 @@ class CrearPedidoEditableController extends Controller
                     }
                 }
 
-                // ✅ PROCESAR IDs DE RELACIONES: Color, Tela, TipoManga, TipoBroche
+                //  PROCESAR IDs DE RELACIONES: Color, Tela, TipoManga, TipoBroche
                 // Si vienen IDs, usarlos directamente
                 // Si vienen nombres, buscar o crear y obtener IDs
                 
@@ -785,7 +785,7 @@ class CrearPedidoEditableController extends Controller
                     try {
                         $color = $this->colorGeneroService->buscarOCrearColor($item['color']);
                         $prendaData['color_id'] = $color->id;
-                        \Log::info('✅ Color creado/obtenido', ['nombre' => $item['color'], 'id' => $color->id]);
+                        \Log::info(' Color creado/obtenido', ['nombre' => $item['color'], 'id' => $color->id]);
                     } catch (\Exception $e) {
                         \Log::warning('⚠️ Error procesando color', ['nombre' => $item['color'], 'error' => $e->getMessage()]);
                     }
@@ -798,7 +798,7 @@ class CrearPedidoEditableController extends Controller
                     try {
                         $tela = $this->colorGeneroService->obtenerOCrearTela($item['tela']);
                         $prendaData['tela_id'] = $tela->id;
-                        \Log::info('✅ Tela creada/obtenida', ['nombre' => $item['tela'], 'id' => $tela->id]);
+                        \Log::info(' Tela creada/obtenida', ['nombre' => $item['tela'], 'id' => $tela->id]);
                     } catch (\Exception $e) {
                         \Log::warning('⚠️ Error procesando tela', ['nombre' => $item['tela'], 'error' => $e->getMessage()]);
                     }
@@ -811,7 +811,7 @@ class CrearPedidoEditableController extends Controller
                     try {
                         $manga = $this->colorGeneroService->buscarOCrearManga($item['manga']);
                         $prendaData['tipo_manga_id'] = $manga->id;
-                        \Log::info('✅ Tipo Manga creado/obtenido', ['nombre' => $item['manga'], 'id' => $manga->id]);
+                        \Log::info(' Tipo Manga creado/obtenido', ['nombre' => $item['manga'], 'id' => $manga->id]);
                     } catch (\Exception $e) {
                         \Log::warning('⚠️ Error procesando manga', ['nombre' => $item['manga'], 'error' => $e->getMessage()]);
                     }
@@ -824,7 +824,7 @@ class CrearPedidoEditableController extends Controller
                     try {
                         $broche = $this->colorGeneroService->buscarOCrearBroche($item['broche']);
                         $prendaData['tipo_broche_boton_id'] = $broche->id;
-                        \Log::info('✅ Tipo Broche/Botón creado/obtenido', ['nombre' => $item['broche'], 'id' => $broche->id]);
+                        \Log::info(' Tipo Broche/Botón creado/obtenido', ['nombre' => $item['broche'], 'id' => $broche->id]);
                     } catch (\Exception $e) {
                         \Log::warning('⚠️ Error procesando broche', ['nombre' => $item['broche'], 'error' => $e->getMessage()]);
                     }
@@ -837,7 +837,7 @@ class CrearPedidoEditableController extends Controller
                 $prendasParaGuardar[] = $prendaData;
             }
             
-            // ✅ LOG DE VERIFICACIÓN ANTES DE GUARDAR
+            //  LOG DE VERIFICACIÓN ANTES DE GUARDAR
             \Log::info('📦 [CrearPedidoEditableController] Prendas listas para guardar', [
                 'cantidad_prendas' => count($prendasParaGuardar),
                 'prendas_estructura' => array_map(function($p) {
@@ -853,7 +853,7 @@ class CrearPedidoEditableController extends Controller
             // Guardar todas las prendas usando el servicio
             $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $prendasParaGuardar);
             
-            // ✅ GUARDAR EPPS SI LOS HAY
+            //  GUARDAR EPPS SI LOS HAY
             if (!empty($eppsParaGuardar)) {
                 \Log::info('🛡️ Guardando EPPs del pedido:', [
                     'cantidad_epps' => count($eppsParaGuardar),
@@ -868,9 +868,9 @@ class CrearPedidoEditableController extends Controller
                 
                 try {
                     $this->eppService->guardarEppsDelPedido($pedido, $eppsParaGuardar);
-                    \Log::info('✅ EPPs guardados exitosamente para pedido:', ['pedido_id' => $pedido->id]);
+                    \Log::info(' EPPs guardados exitosamente para pedido:', ['pedido_id' => $pedido->id]);
                 } catch (\Exception $e) {
-                    \Log::error('❌ Error guardando EPPs:', [
+                    \Log::error(' Error guardando EPPs:', [
                         'error' => $e->getMessage(),
                         'pedido_id' => $pedido->id,
                     ]);
@@ -888,7 +888,7 @@ class CrearPedidoEditableController extends Controller
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error en crearPedido:', [
+            \Log::error(' Error en crearPedido:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -919,7 +919,7 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
-     * ✅ Procesar cantidad_talla desde el frontend
+     *  Procesar cantidad_talla desde el frontend
      * Transforma {genero-talla: cantidad} a estructura de variantes
      * Ejemplo: {"dama-S": 20, "dama-M": 30} → [
      *   {genero: dama, talla: S, cantidad: 20},
@@ -928,7 +928,7 @@ class CrearPedidoEditableController extends Controller
      */
     private function procesarCantidadTallaParaServicio(array $cantidadTalla): array
     {
-        // ✅ Devolver estructura: {genero: {talla: cantidad}}
+        //  Devolver estructura: {genero: {talla: cantidad}}
         $resultado = [];
         
         \Log::info('🔍 [procesarCantidadTallaParaServicio] Procesando cantidad_talla', [
@@ -957,7 +957,7 @@ class CrearPedidoEditableController extends Controller
             $resultado[$genero][$talla] = $cantidad;
         }
         
-        \Log::info('✅ [procesarCantidadTallaParaServicio] Resultado transformado', [
+        \Log::info(' [procesarCantidadTallaParaServicio] Resultado transformado', [
             'resultado' => $resultado,
             'estructura' => 'genero.talla.cantidad',
         ]);
@@ -966,7 +966,7 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
-     * ✅ Calcular cantidad total desde cantidad_talla
+     *  Calcular cantidad total desde cantidad_talla
      */
     private function calcularCantidadDeCantidadTalla(array $cantidadTalla): int
     {
@@ -992,7 +992,7 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
-     * ✅ Calcular cantidad total desde un objeto cantidad_talla
+     *  Calcular cantidad total desde un objeto cantidad_talla
      * @param array $cantidadTalla - Objeto con forma {talla: cantidad}
      */
     private function calcularCantidadDeTallasFromObject(array $cantidadTalla): int
@@ -1035,7 +1035,7 @@ class CrearPedidoEditableController extends Controller
                         $rutasGuardadas[] = $ruta;
                     }
                 } catch (\Exception $e) {
-                    \Log::error('❌ Error procesando imagen', [
+                    \Log::error(' Error procesando imagen', [
                         'numero_pedido' => $numeroPedido,
                         'index' => $index,
                         'error' => $e->getMessage(),
@@ -1049,7 +1049,7 @@ class CrearPedidoEditableController extends Controller
                 'rutas' => $rutasGuardadas,
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error en subirImagenesPrenda', [
+            \Log::error(' Error en subirImagenesPrenda', [
                 'error' => $e->getMessage(),
             ]);
             return response()->json([
@@ -1092,7 +1092,7 @@ class CrearPedidoEditableController extends Controller
             $thumbPath = "{$dirPath}/{$baseFilename}_thumb.webp";
             \Storage::disk('public')->put($thumbPath, $thumbnail->encode('webp', 80)->toString());
 
-            \Log::info('✅ Imagen procesada', [
+            \Log::info(' Imagen procesada', [
                 'numero_pedido' => $numeroPedido,
                 'original' => $originalPath,
                 'webp' => $webpPath,
@@ -1107,7 +1107,7 @@ class CrearPedidoEditableController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ Error procesando imagen', [
+            \Log::error(' Error procesando imagen', [
                 'numero_pedido' => $numeroPedido,
                 'error' => $e->getMessage(),
             ]);

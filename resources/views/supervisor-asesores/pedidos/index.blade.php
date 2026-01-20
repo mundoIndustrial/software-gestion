@@ -1169,7 +1169,7 @@
         if (window.setSpinnerConfig) {
             window.setSpinnerConfig({ enabled: false });
         }
-        console.log('✅ Spinner desactivado en página de pedidos');
+        console.log(' Spinner desactivado en página de pedidos');
     });
 
     // Asegurar que el spinner esté oculto al cargar
@@ -1183,7 +1183,7 @@
             spinner.style.display = 'none';
             spinner.style.visibility = 'hidden';
         }
-        console.log('✅ Spinner oculto al cargar la página');
+        console.log(' Spinner oculto al cargar la página');
     });
 
 

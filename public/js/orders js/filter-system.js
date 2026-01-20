@@ -483,7 +483,7 @@ async function filterSearchOptions(e) {
 function closeFilterModal() {
     document.getElementById('filterModalOverlay').classList.remove('active');
     currentFilterColumn = null;
-    console.log('❌ Modal de filtro cerrado');
+    console.log(' Modal de filtro cerrado');
 }
 
 /**
@@ -495,7 +495,7 @@ async function applyFilters() {
     
     if (selectedValues.length > 0) {
         activeFilters[currentFilterColumn] = selectedValues;
-        console.log(`✅ Filtro aplicado para ${currentFilterColumn}:`, selectedValues);
+        console.log(` Filtro aplicado para ${currentFilterColumn}:`, selectedValues);
     } else {
         delete activeFilters[currentFilterColumn];
     }
@@ -552,7 +552,7 @@ async function applyFiltersToBackend(page = 1) {
             // Actualizar URL con filtros
             updateUrlWithFilters(page);
             
-            console.log('✅ Tabla actualizada con filtros:', result.data.length, 'registros');
+            console.log(' Tabla actualizada con filtros:', result.data.length, 'registros');
         } else {
             console.error('Error al aplicar filtros:', result.message);
         }
@@ -885,7 +885,7 @@ function updatePaginationButtons(pagination) {
             applyFiltersToBackend(pagination.last_page);
         };
         paginationContainer.appendChild(lastBtn);
-        console.log(`✅ Botón >> agregado - Última página disponible: ${pagination.last_page}`);
+        console.log(` Botón >> agregado - Última página disponible: ${pagination.last_page}`);
     }
 }
 
@@ -1048,10 +1048,10 @@ function updateClearButtonVisibility() {
     
     if (hasFilters) {
         clearBtn.classList.add('visible');
-        console.log('✅ Botón flotante mostrado');
+        console.log(' Botón flotante mostrado');
     } else {
         clearBtn.classList.remove('visible');
-        console.log('❌ Botón flotante ocultado');
+        console.log(' Botón flotante ocultado');
     }
 }
 
@@ -1092,7 +1092,7 @@ async function clearAllFilters() {
     // Forzar actualización de URL para limpiar parámetros de filtro
     window.history.replaceState({}, '', '/registros');
     
-    console.log('✅ Todos los filtros han sido limpiados');
+    console.log(' Todos los filtros han sido limpiados');
     console.log('Estado DESPUÉS de limpiar:', {
         activeFilters: activeFilters,
         currentPagination: window.currentPagination
@@ -1113,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        console.log('✅ Sistema de filtros inicializado');
+        console.log(' Sistema de filtros inicializado');
     }
     
     // Cargar filtros desde localStorage

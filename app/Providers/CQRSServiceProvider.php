@@ -119,7 +119,7 @@ class CQRSServiceProvider extends ServiceProvider
         // Registrar Commands
         $this->registerCommands($commandBus);
 
-        \Illuminate\Support\Facades\Log::info('✅ [CQRSServiceProvider] CQRS providers registrados');
+        \Illuminate\Support\Facades\Log::info(' [CQRSServiceProvider] CQRS providers registrados');
     }
 
     /**

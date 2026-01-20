@@ -162,7 +162,7 @@ class EliminarPedidoService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('❌ Error al eliminar pedido: ' . $e->getMessage(), [
+            \Log::error(' Error al eliminar pedido: ' . $e->getMessage(), [
                 'numero_pedido' => $numeroPedido,
                 'usuario' => $userId,
                 'exception' => $e

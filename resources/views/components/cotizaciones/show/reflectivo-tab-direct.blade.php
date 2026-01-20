@@ -118,7 +118,7 @@
                             $fotosPrenda = $reflectivoPrenda && $reflectivoPrenda->fotos ? $reflectivoPrenda->fotos : collect();
                             // Debug: Log foto data
                             if ($fotosPrenda->count() > 0) {
-                                \Log::info('🖼️ Fotos de reflectivo en vista', [
+                                \Log::info(' Fotos de reflectivo en vista', [
                                     'prenda_id' => $prenda->id,
                                     'reflectivo_id' => $reflectivoPrenda ? $reflectivoPrenda->id : null,
                                     'fotos_count' => $fotosPrenda->count(),
@@ -147,7 +147,7 @@
                                             <img src="{{ $foto->url }}" 
                                                  alt="Foto reflectivo" 
                                                  style="width: 100%; height: 200px; object-fit: cover;"
-                                                 onerror="this.parentElement.innerHTML='<div style=\'padding:1rem;text-align:center;color:#ef4444;\'><p>❌ Error cargando imagen</p></div>';">
+                                                 onerror="this.parentElement.innerHTML='<div style=\'padding:1rem;text-align:center;color:#ef4444;\'><p> Error cargando imagen</p></div>';">
                                             <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.2s;" 
                                                  onmouseover="this.style.background='rgba(0,0,0,0.3)'" 
                                                  onmouseout="this.style.background='rgba(0,0,0,0)'">
@@ -184,7 +184,7 @@
                                 <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; overflow-x: auto;">
                                     @php
                                         $categoriasInfo = [
-                                            'disponibilidad' => ['emoji' => '📦', 'label' => 'DISPONIBILIDAD'],
+                                            'disponibilidad' => ['emoji' => '', 'label' => 'DISPONIBILIDAD'],
                                             'forma_pago' => ['emoji' => '💳', 'label' => 'FORMA DE PAGO'],
                                             'regimen' => ['emoji' => '🏛️', 'label' => 'RÉGIMEN'],
                                             'se_ha_vendido' => ['emoji' => '📊', 'label' => 'SE HA VENDIDO'],

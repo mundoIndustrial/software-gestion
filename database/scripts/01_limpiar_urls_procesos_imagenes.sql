@@ -28,8 +28,8 @@ SELECT
     id,
     ruta_webp,
     CASE 
-        WHEN ruta_webp LIKE 'http%' THEN '❌ URL Completa'
-        WHEN ruta_webp LIKE 'storage/%' THEN '✅ Ruta Relativa'
+        WHEN ruta_webp LIKE 'http%' THEN ' URL Completa'
+        WHEN ruta_webp LIKE 'storage/%' THEN ' Ruta Relativa'
         WHEN ruta_webp LIKE '/storage/%' THEN '⚠️ Ruta con /'
         ELSE '❓ Otro formato'
     END as tipo_ruta
@@ -39,8 +39,8 @@ ORDER BY tipo_ruta;
 -- 5. Resumen de cambios
 SELECT 
     CASE 
-        WHEN ruta_webp LIKE 'http%' THEN '❌ URL Completa'
-        WHEN ruta_webp LIKE 'storage/%' THEN '✅ Ruta Relativa'
+        WHEN ruta_webp LIKE 'http%' THEN ' URL Completa'
+        WHEN ruta_webp LIKE 'storage/%' THEN ' Ruta Relativa'
         WHEN ruta_webp LIKE '/storage/%' THEN '⚠️ Ruta con /'
         ELSE '❓ Otro formato'
     END as tipo_ruta,

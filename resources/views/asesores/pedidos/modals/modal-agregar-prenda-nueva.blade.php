@@ -277,7 +277,7 @@
                         </label>
                     </div>
                     
-                    <!-- ✅ CONTENEDOR PARA TARJETAS DE PROCESOS CONFIGURADOS -->
+                    <!--  CONTENEDOR PARA TARJETAS DE PROCESOS CONFIGURADOS -->
                     <div id="contenedor-tarjetas-procesos" style="margin-top: 1rem; display: none;"></div>
                 </div>
             </form>

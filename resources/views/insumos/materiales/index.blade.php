@@ -745,7 +745,7 @@
             const fechaLlegadaCambio = (fechaLlegada || null) !== (originalFechaLlegada || null);
             const hayChangios = checkboxCambio || fechaPedidoCambio || fechaLlegadaCambio;
             
-            console.log(`📦 Material ${index}: ${nombreMaterial}`, { 
+            console.log(` Material ${index}: ${nombreMaterial}`, { 
                 recibido, 
                 originalCheckbox,
                 checkboxCambio,
@@ -769,7 +769,7 @@
             }
         });
         
-        console.log('📋 Materiales a guardar:', materiales);
+        console.log(' Materiales a guardar:', materiales);
         
         fetch(`/insumos/materiales/${ordenPedido}/guardar`, {
             method: 'POST',
@@ -789,7 +789,7 @@
             return response.json();
         })
         .then(data => {
-            console.log('✅ Respuesta servidor:', data);
+            console.log(' Respuesta servidor:', data);
             if (data.success) {
                 showToast('Guardado exitoso', 'success');
             } else {
@@ -1845,7 +1845,7 @@
             const inputObservaciones = fila.querySelector(`input[type="hidden"][id^="observaciones_"]`);
             const observaciones = inputObservaciones ? inputObservaciones.value : '';
             
-            console.log(`📦 Material: ${nombreMaterial}, Fecha Pedido: ${fechaPedido}, Fecha Llegada: ${fechaLlegada}, Recibido: ${recibido}, Observaciones: ${observaciones}`);
+            console.log(` Material: ${nombreMaterial}, Fecha Pedido: ${fechaPedido}, Fecha Llegada: ${fechaLlegada}, Recibido: ${recibido}, Observaciones: ${observaciones}`);
             
             // Agregar si está marcado o tiene fechas
             if (recibido || fechaOrden || fechaPedido || fechaPago || fechaLlegada || fechaDespacho || observaciones) {
@@ -1862,7 +1862,7 @@
             }
         });
         
-        console.log('📋 Materiales del modal a guardar:', materiales);
+        console.log(' Materiales del modal a guardar:', materiales);
         
         // Enviar al servidor
         fetch(`/insumos/materiales/${pedido}/guardar`, {
@@ -1875,7 +1875,7 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log('✅ Respuesta servidor:', data);
+            console.log(' Respuesta servidor:', data);
             if (data.success) {
                 showToast('Materiales guardados correctamente', 'success');
             } else {
@@ -2113,7 +2113,7 @@
                 if (data.success) {
                     allValues = data.valores;
                     allValuesLoaded = true;
-                    console.log(`✅ Valores cargados para ${column}:`, allValues.length);
+                    console.log(` Valores cargados para ${column}:`, allValues.length);
                     
                     // Renderizar primeros 15 valores
                     renderFilterValues(allValues, '', column);
@@ -2122,7 +2122,7 @@
                 }
             })
             .catch(error => {
-                console.error('❌ Error:', error);
+                console.error(' Error:', error);
                 filterList.innerHTML = '<p style="text-align: center; color: #f00; padding: 20px;">Error al cargar valores</p>';
             });
         
@@ -2226,7 +2226,7 @@
             const filterColumns = urlParams.getAll('filter_columns[]') || [];
             const filterValuesArray = urlParams.getAll('filter_values[]') || [];
             
-            console.log('📋 Filtros existentes:', { filterColumns, filterValuesArray });
+            console.log(' Filtros existentes:', { filterColumns, filterValuesArray });
             
             // Reconstruir objeto de filtros existentes
             filterColumns.forEach((col, idx) => {
@@ -2241,7 +2241,7 @@
             // Agregar o actualizar el filtro actual
             existingFilters[currentFilterColumn] = selected;
             
-            console.log('✅ Filtros combinados:', existingFilters);
+            console.log(' Filtros combinados:', existingFilters);
             
             // Construir URL con todos los filtros
             const filterParams = new URLSearchParams();
@@ -2371,8 +2371,8 @@
     }
     
     console.timeEnd('RENDER_TOTAL');
-    console.log('✅ Vista materiales: Carga completada');
-    console.log(`📦 Total de órdenes: {{ $ordenes->total() }}`);
+    console.log(' Vista materiales: Carga completada');
+    console.log(` Total de órdenes: {{ $ordenes->total() }}`);
     
     // Mostrar indicador de carga cuando se hace clic en paginación
     document.querySelectorAll('.pagination-btn').forEach(btn => {

@@ -72,14 +72,14 @@ class TestImageController extends Controller
                     throw new \Exception('El archivo no se guardó correctamente');
                 }
             } catch (\Exception $e) {
-                Log::error('❌ Error procesando imagen', [
+                Log::error(' Error procesando imagen', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
                 throw $e;
             }
         } catch (\Exception $e) {
-            Log::error('❌ Error en test de imagen', [
+            Log::error(' Error en test de imagen', [
                 'error' => $e->getMessage(),
             ]);
 

@@ -157,7 +157,7 @@ class GestorCotizacion {
             this.callbackSeleccionar(id);
         }
 
-        logWithEmoji('✅', `Cotización seleccionada: ${numero}`);
+        logWithEmoji('', `Cotización seleccionada: ${numero}`);
     }
 
     /**
@@ -268,11 +268,11 @@ class CargadorCotizacion {
                 throw new Error(data.error);
             }
 
-            logWithEmoji('✅', `Datos cargados correctamente`);
+            logWithEmoji('', `Datos cargados correctamente`);
             return data;
 
         } catch (error) {
-            logWithEmoji('❌', `Error al cargar cotización: ${error.message}`);
+            logWithEmoji('', `Error al cargar cotización: ${error.message}`);
             throw error;
         }
     }

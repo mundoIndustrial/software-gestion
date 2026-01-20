@@ -28,7 +28,7 @@ function mostrarTipo(tipo) {
         if (btn.getAttribute('data-tipo') === tipo) {
             // Activar botón
             btn.classList.add('active');
-            console.log('✅ Botón activado:', tipo);
+            console.log(' Botón activado:', tipo);
         } else {
             // Desactivar botón
             btn.classList.remove('active');
@@ -54,8 +54,8 @@ function mostrarTipo(tipo) {
     const esCotizacionesActivo = tabCotizaciones && window.getComputedStyle(tabCotizaciones).display === 'block';
     const esBorradoresActivo = tabBorradores && window.getComputedStyle(tabBorradores).display === 'block';
     
-    console.log('✅ Cotizaciones activo:', esCotizacionesActivo);
-    console.log('✅ Borradores activo:', esBorradoresActivo);
+    console.log(' Cotizaciones activo:', esCotizacionesActivo);
+    console.log(' Borradores activo:', esBorradoresActivo);
     
     // Si ninguno está activo, mostrar cotizaciones por defecto
     if (!esCotizacionesActivo && !esBorradoresActivo) {
@@ -83,16 +83,16 @@ function mostrarTipo(tipo) {
     console.log('🔎 Tipo solicitado existe en mapeo:', !!secciones[tipo]);
     
     if (secciones[tipo]) {
-        console.log('✅ Mostrando sección para tipo:', tipo);
+        console.log(' Mostrando sección para tipo:', tipo);
         // Muestra solo la sección correspondiente al tab activo
         if (esCotizacionesActivo) {
             const cotElement = document.getElementById(secciones[tipo].cot);
             console.log('🔍 Elemento cotizaciones encontrado:', !!cotElement, 'ID:', secciones[tipo].cot);
             if (cotElement) {
                 cotElement.style.display = 'block';
-                console.log('✅ Mostrando cotizaciones:', secciones[tipo].cot);
+                console.log(' Mostrando cotizaciones:', secciones[tipo].cot);
             } else {
-                console.error('❌ Elemento cotizaciones NO encontrado:', secciones[tipo].cot);
+                console.error(' Elemento cotizaciones NO encontrado:', secciones[tipo].cot);
             }
         }
         if (esBorradoresActivo) {
@@ -100,13 +100,13 @@ function mostrarTipo(tipo) {
             console.log('🔍 Elemento borradores encontrado:', !!borElement, 'ID:', secciones[tipo].bor);
             if (borElement) {
                 borElement.style.display = 'block';
-                console.log('✅ Mostrando borradores:', secciones[tipo].bor);
+                console.log(' Mostrando borradores:', secciones[tipo].bor);
             } else {
-                console.error('❌ Elemento borradores NO encontrado:', secciones[tipo].bor);
+                console.error(' Elemento borradores NO encontrado:', secciones[tipo].bor);
             }
         }
     } else {
-        console.error('❌ Tipo no encontrado en mapeo:', tipo);
+        console.error(' Tipo no encontrado en mapeo:', tipo);
     }
 }
 
@@ -225,7 +225,7 @@ function eliminarCotizacion(id) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            console.log('✅ Usuario confirmó eliminación, enviando DELETE a /asesores/cotizaciones/' + id);
+            console.log(' Usuario confirmó eliminación, enviando DELETE a /asesores/cotizaciones/' + id);
             fetch(`/asesores/cotizaciones/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -237,9 +237,9 @@ function eliminarCotizacion(id) {
                 return response.json();
             })
             .then(data => {
-                console.log('📦 Datos de respuesta:', data);
+                console.log(' Datos de respuesta:', data);
                 if (data.success) {
-                    console.log('✅ Eliminación exitosa, removiendo fila de la tabla');
+                    console.log(' Eliminación exitosa, removiendo fila de la tabla');
                     // Animación de eliminación
                     const rows = document.querySelectorAll('table tbody tr');
                     console.log('🔍 Total de filas encontradas:', rows.length);
@@ -253,7 +253,7 @@ function eliminarCotizacion(id) {
                                 row.style.opacity = '0';
                                 setTimeout(() => {
                                     row.remove();
-                                    console.log('✅ Fila removida del DOM');
+                                    console.log(' Fila removida del DOM');
                                 }, 300);
                                 rowRemoved = true;
                             }
@@ -279,7 +279,7 @@ function eliminarCotizacion(id) {
                         }
                     });
                 } else {
-                    console.error('❌ Error en respuesta:', data.message);
+                    console.error(' Error en respuesta:', data.message);
                     Swal.fire({
                         title: 'Error',
                         text: data.message || 'No se pudo eliminar la cotización',
@@ -294,7 +294,7 @@ function eliminarCotizacion(id) {
                 }
             })
             .catch(error => {
-                console.error('❌ Error en fetch:', error);
+                console.error(' Error en fetch:', error);
                 Swal.fire({
                     title: 'Error',
                     text: 'Ocurrió un error al eliminar la cotización',

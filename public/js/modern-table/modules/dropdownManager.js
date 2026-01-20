@@ -42,7 +42,7 @@ const ModernTableDropdownManager = (() => {
 
                 const data = await response.json();
                 if (data.success) {
-                    console.log(`✅ Estado actualizado: ${newStatus}`);
+                    console.log(` Estado actualizado: ${newStatus}`);
                     dropdown.dataset.value = newStatus;
                 } else {
                     console.error('Error en respuesta:', data);
@@ -59,4 +59,4 @@ const ModernTableDropdownManager = (() => {
 
 // NO exponer como DropdownManager global para evitar conflictos
 globalThis.ModernTableDropdownManager = ModernTableDropdownManager;
-console.log('✅ ModernTableDropdownManager cargado (sin manejar área)');
+console.log(' ModernTableDropdownManager cargado (sin manejar área)');

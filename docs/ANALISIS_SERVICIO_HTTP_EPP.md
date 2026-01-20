@@ -7,7 +7,7 @@ El `EppHttpService` es una clase que encapsula todas las llamadas HTTP a la API 
 ### Ventajas de este patrón:
 
 ```javascript
-// ❌ SIN SERVICIO (Código repetido, difícil de mantener)
+//  SIN SERVICIO (Código repetido, difícil de mantener)
 async function agregarEPP() {
     const response = await fetch('/api/pedidos/123/epp/agregar', {
         method: 'POST',
@@ -40,7 +40,7 @@ async function eliminarEPP() {
     });
 }
 
-// ✅ CON SERVICIO (Código limpio, reutilizable, mantenible)
+//  CON SERVICIO (Código limpio, reutilizable, mantenible)
 const eppService = new EppHttpService('/api');
 await eppService.agregarAlPedido(123, 456, 'M', 10);
 await eppService.buscar();
@@ -334,7 +334,7 @@ headers: {
 try {
     const response = await fetch(url, { /* ... */ });
     
-    // ❌ Status error (400, 404, 500, etc.)
+    //  Status error (400, 404, 500, etc.)
     if (!response.ok) {
         if (response.status === 404) {
             return null;  // Caso especial
@@ -342,7 +342,7 @@ try {
         throw new Error('Descripción del error');
     }
     
-    // ✅ Parsear JSON
+    //  Parsear JSON
     const data = await response.json();
     return data.data || [];
     
@@ -422,7 +422,7 @@ try {
 
 ## 7. Comparación: Antes vs Después del Servicio
 
-### ❌ Antes (Hardcoded data - Primera versión)
+###  Antes (Hardcoded data - Primera versión)
 
 ```javascript
 // modal-agregar-epp.js - PRIMERA VERSION
@@ -438,14 +438,14 @@ function filtrarEPPBuscador(valor) {
     // Mostrar resultados
 }
 
-// ❌ Problemas:
+//  Problemas:
 // - Datos estáticos no se actualizan
 // - Sin comunicación con backend
 // - Cambios en datos requieren cambiar JS
 // - No escalable
 ```
 
-### ✅ Después (Con Servicio - Versión actual)
+###  Después (Con Servicio - Versión actual)
 
 ```javascript
 // modal-agregar-epp.js - VERSIÓN ACTUAL
@@ -456,7 +456,7 @@ async function filtrarEPPBuscador(valor) {
     // Mostrar resultados dinámicos
 }
 
-// ✅ Ventajas:
+//  Ventajas:
 // - Datos del backend en tiempo real
 // - Frontend agnóstico de la BD
 // - Cambios en BD se reflejan automáticamente
