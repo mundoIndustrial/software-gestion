@@ -3,1004 +3,19 @@
 @section('title', 'Mis Pedidos')
 @section('page-title', 'Mis Pedidos')
 
+@section('extra_styles')
+    <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
+@endsection
+
 @section('content')
 
-<style>
-    .top-nav {
-        display: none !important;
-    }
+    @include('asesores.pedidos.components.header')
 
-    /* ====================== BOTONES FILTRO EMBUDO ====================== */
-    .th-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-    }
+    @include('asesores.pedidos.components.quick-filters')
 
-    .btn-filter-column {
-        background: none;
-        border: none;
-        color: white;
-        cursor: pointer;
-        padding: 0.25rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-        opacity: 0.7;
-    }
+    @include('asesores.pedidos.components.table')
 
-    .btn-filter-column:hover {
-        opacity: 1;
-        transform: scale(1.15);
-    }
-
-    .btn-filter-column .material-symbols-rounded {
-        font-size: 1.2rem;
-    }
-
-    /* ====================== INDICADOR DE FILTRO ACTIVO ====================== */
-    .btn-filter-column {
-        position: relative;
-    }
-
-    .filter-badge {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background: #ef4444;
-        color: white;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.7rem;
-        font-weight: 700;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.3s ease;
-    }
-
-    .btn-filter-column.has-filter .filter-badge {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    /* ====================== BOTÓN FLOTANTE LIMPIAR FILTROS ====================== */
-    .floating-clear-filters {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 56px;
-        height: 56px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        transition: all 0.3s ease;
-        font-size: 1.5rem;
-        z-index: 999;
-        opacity: 0;
-        visibility: hidden;
-        transform: scale(0) translateY(20px);
-    }
-
-    .floating-clear-filters.visible {
-        opacity: 1;
-        visibility: visible;
-        transform: scale(1) translateY(0);
-    }
-
-    .floating-clear-filters:hover {
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
-        transform: scale(1.1) translateY(0);
-    }
-
-    .floating-clear-filters:active {
-        transform: scale(0.95) translateY(0);
-    }
-
-    .floating-clear-filters-tooltip {
-        position: absolute;
-        bottom: 70px;
-        right: 0;
-        background: #1f2937;
-        color: white;
-        padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .floating-clear-filters:hover .floating-clear-filters-tooltip {
-        opacity: 1;
-    }
-
-    /* ====================== MODAL FILTROS ====================== */
-    .filter-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-    }
-
-    .filter-modal-overlay.active {
-        display: flex;
-    }
-
-    .filter-modal {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        max-height: 90vh;
-        overflow-y: auto;
-        animation: slideUp 0.3s ease;
-        width: 90%;
-        max-width: 450px;
-    }
-
-    @keyframes slideUp {
-        from {
-            transform: translateY(50px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    /* Animaciones para notificaciones y modales */
-    @keyframes slideInRight {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-    }
-
-    .filter-modal-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 10;
-    }
-
-    .filter-modal-header h3 {
-        margin: 0;
-        font-size: 1.125rem;
-        color: #1e40af;
-        font-weight: 700;
-    }
-
-    .filter-modal-close {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #6b7280;
-        transition: color 0.3s ease;
-    }
-
-    .filter-modal-close:hover {
-        color: #1e40af;
-    }
-
-    .filter-modal-body {
-        padding: 1.5rem;
-    }
-
-    .filter-search {
-        width: 100%;
-        padding: 0.75rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        margin-bottom: 1rem;
-        transition: border-color 0.3s ease;
-    }
-
-    .filter-search:focus {
-        outline: none;
-        border-color: #1e40af;
-        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-    }
-
-    .filter-options {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .filter-option {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem;
-        border-radius: 6px;
-        transition: background 0.2s ease;
-    }
-
-    .filter-option:hover {
-        background: #f3f4f6;
-    }
-
-    .filter-option input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: #1e40af;
-    }
-
-    .filter-option label {
-        flex: 1;
-        cursor: pointer;
-        font-size: 0.95rem;
-        color: #374151;
-    }
-
-    .filter-modal-footer {
-        padding: 1rem 1.5rem;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        gap: 0.75rem;
-        justify-content: flex-end;
-        position: sticky;
-        bottom: 0;
-        background: white;
-    }
-
-    .btn-filter-apply,
-    .btn-filter-reset {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 0.875rem;
-    }
-
-    .btn-filter-apply {
-        background: #1e40af;
-        color: white;
-    }
-
-    .btn-filter-apply:hover {
-        background: #1e3a8a;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(30, 64, 175, 0.2);
-    }
-
-    .btn-filter-reset {
-        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-        color: white;
-        border: none;
-        box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
-    }
-
-    .btn-filter-reset:hover {
-        background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
-    }
-
-    /* ====================== FILTROS RÁPIDOS ASESORES ====================== */
-    .filtros-rapidos-asesores {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 15px;
-        margin: 20px 0 25px 0;
-        flex-wrap: wrap;
-        background: #f9fafb;
-        padding: 15px 20px;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-    }
-
-    .filtros-rapidos-asesores-label {
-        margin: 0;
-        color: #4b5563;
-        font-weight: 600;
-        font-size: 0.9rem;
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .btn-filtro-rapido-asesores {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 0.625rem 1.25rem;
-        background: #ffffff;
-        border: 2px solid #e5e7eb;
-        border-radius: 6px;
-        color: #6b7280;
-        font-weight: 500;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .btn-filtro-rapido-asesores:hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
-        color: #374151;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-filtro-rapido-asesores.active {
-        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-        border-color: #1e40af;
-        color: #ffffff;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
-
-    .btn-filtro-rapido-asesores.active:hover {
-        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
-        transform: translateY(-2px);
-    }
-
-    .btn-filtro-rapido-asesores .material-symbols-rounded {
-        font-size: 1.2rem;
-        font-weight: 400;
-    }
-
-    /* ====================== ESTILOS SCROLLBAR ====================== */
-    .table-scroll-container::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-    }
-
-    .table-scroll-container::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 6px;
-    }
-
-    .table-scroll-container::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 6px;
-        border: 2px solid #f1f5f9;
-    }
-
-    .table-scroll-container::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-</style>
-
-<div style="padding: 0 0.5rem 0 0; max-width: 100%; margin: 0 auto;">
-    <!-- HEADER PROFESIONAL -->
-    <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-radius: 12px; padding: 20px 30px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 30px;">
-            <!-- TÍTULO CON ICONO -->
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="background: rgba(255,255,255,0.15); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-list" style="color: white; font-size: 24px;"></i>
-                </div>
-                <div>
-                    <h1 style="margin: 0; font-size: 1.5rem; color: white; font-weight: 700;">Lista de Pedidos</h1>
-                    <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 0.85rem;">Gestiona tus pedidos de producción</p>
-                </div>
-            </div>
-
-            <!-- BUSCADOR -->
-            <div style="flex: 1; max-width: 500px; position: relative;">
-                <input 
-                    type="text" 
-                    id="mainSearchInput" 
-                    placeholder="Buscar por número de pedido o cliente..." 
-                    style="width: 100%; padding: 10px 40px 10px 40px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.95); font-size: 0.9rem; transition: all 0.3s; color: #1e40af; font-weight: 500;"
-                    onfocus="this.style.background='white'; this.style.borderColor='white'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
-                    onblur="this.style.background='rgba(255,255,255,0.95)'; this.style.borderColor='rgba(255,255,255,0.3)'; this.style.boxShadow='none'"
-                >
-                <span class="material-symbols-rounded" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #1e40af; pointer-events: none;">search</span>
-                <button type="button" id="clearMainSearch" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #6b7280; cursor: pointer; padding: 4px; display: none; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#1e40af'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">
-                    <span class="material-symbols-rounded" style="font-size: 20px;">close</span>
-                </button>
-            </div>
-
-            <!-- BOTÓN REGISTRAR -->
-            <a href="{{ route('asesores.pedidos-produccion.crear') }}" style="background: white; color: #1e40af; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Registrar
-            </a>
-        </div>
-    </div>
-
-    <!-- Filtros Rápidos -->
-    <div class="filtros-rapidos-asesores">
-        <span class="filtros-rapidos-asesores-label">Filtrar por tipo:</span>
-        <a href="{{ route('asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('tipo') ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">shopping_cart</span>
-            Todos
-        </a>
-        <a href="{{ route('asesores.pedidos.index', ['tipo' => 'logo']) }}" class="btn-filtro-rapido-asesores {{ request('tipo') === 'logo' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">palette</span>
-            Logo
-        </a>
-    </div>
-
-    <!-- Botón Flotante para Limpiar Todos los Filtros -->
-    <button id="btnClearAllFilters" class="floating-clear-filters" onclick="clearAllFilters()">
-        <span class="material-symbols-rounded" style="font-size: 24px;">filter_alt_off</span>
-        <div class="floating-clear-filters-tooltip">Limpiar todos los filtros</div>
-    </button>
-
-    <!-- Tabla con Scroll Horizontal -->
-    <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
-        <!-- Contenedor con Scroll -->
-        <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: {{ request('tipo') === 'logo' ? '400px' : 'none' }}; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
-            <!-- Header Azul -->
-            <div style="
-                background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-                color: white;
-                padding: 0.75rem 1rem;
-                display: grid;
-                grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
-                gap: 1.2rem;
-                font-weight: 600;
-                font-size: 0.8rem;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                min-width: min-content;
-                border-radius: 6px;
-            ">
-                <div class="th-wrapper">
-                    <span>Acciones</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Acciones">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper">
-                    <span>Estado</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Estado">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper">
-                    <span>Área</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Área">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper">
-                    <span>Pedido</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Pedido">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper">
-                    <span>Cliente</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Cliente">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper">
-                    <span>Descripción</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Descripción">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                @if(request('tipo') !== 'logo')
-                <div class="th-wrapper">
-                    <span>Cantidad</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Cantidad">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                @endif
-                <div class="th-wrapper">
-                    <span>Forma Pago</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Forma Pago">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper">
-                    <span>Fecha Creación</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Fecha Creación">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                @if(request('tipo') !== 'logo')
-                <div class="th-wrapper">
-                    <span>Fecha Estimada</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Fecha">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                @endif
-            </div>
-
-            <!-- Filas -->
-            @if($pedidos->isEmpty())
-                <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
-                    <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
-                    <p style="font-size: 1rem; margin: 0;">No hay pedidos registrados</p>
-                </div>
-            @else
-                @foreach($pedidos as $pedido)
-                    @php
-                        // Calcular número de pedido para búsqueda
-                        $numeroPedidoBusqueda = '';
-                        if (request('tipo') === 'logo') {
-                            if (get_class($pedido) === 'App\\Models\\LogoPedido') {
-                                $numeroPedidoBusqueda = $pedido->numero_pedido;
-                            } else {
-                                $numeroPedidoBusqueda = '#' . ($pedido->numero_pedido_mostrable ?? ($pedido->numero_pedido ?? '-'));
-                            }
-                        } else {
-                            if (get_class($pedido) === 'App\\Models\\LogoPedido') {
-                                $prod = $pedido->pedidoProduccion ?? null;
-                                if ($prod && isset($prod->numero_pedido)) {
-                                    $numeroPedidoBusqueda = '#' . $prod->numero_pedido;
-                                } elseif (!empty($pedido->numero_pedido_cost)) {
-                                    $numeroPedidoBusqueda = '#' . ltrim($pedido->numero_pedido_cost, '#');
-                                } else {
-                                    $numeroPedidoBusqueda = $pedido->numero_pedido ?? '-';
-                                }
-                            } else {
-                                $numeroPedidoBusqueda = isset($pedido->numero_pedido) ? ('#' . $pedido->numero_pedido) : ('#' . ($pedido->numero_pedido_mostrable ?? '-'));
-                            }
-                        }
-                        $clienteBusqueda = $pedido->cliente ?? '-';
-                        
-                        // Preparar información de prendas para búsqueda inteligente
-                        $prendasInfo = [];
-                        $procesosInfo = [];
-                        if ($pedido->prendas && $pedido->prendas->count() > 0) {
-                            foreach ($pedido->prendas as $prenda) {
-                                $prendasInfo[] = [
-                                    'nombre_prenda' => $prenda->nombre_prenda ?? '',
-                                    'tela' => $prenda->tela ?? '',
-                                    'color' => $prenda->color ?? '',
-                                    'descripcion' => $prenda->descripcion ?? ''
-                                ];
-                                // Recopilar procesos
-                                if ($prenda->procesos && $prenda->procesos->count() > 0) {
-                                    foreach ($prenda->procesos as $proceso) {
-                                        $procesosInfo[] = $proceso->descripcion ?? '';
-                                    }
-                                }
-                            }
-                        }
-                        $prendasJson = json_encode($prendasInfo);
-                        $procesosJson = json_encode($procesosInfo);
-                    @endphp
-                    <div data-pedido-row 
-                         data-numero-pedido="{{ $numeroPedidoBusqueda }}" 
-                         data-cliente="{{ $clienteBusqueda }}"
-                         data-prenda-info="{{ $prendasJson }}"
-                         data-procesos-info="{{ $procesosJson }}"
-                         style="
-                        display: grid;
-                        grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
-                        gap: 1.2rem;
-                        padding: 0.75rem 1rem;
-                        align-items: center;
-                        transition: all 0.3s ease;
-                        min-width: min-content;
-                        background: white;
-                        border-radius: 6px;
-                        margin-bottom: 0.75rem;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                        position: relative;
-                        z-index: 1;
-                    " onmouseover="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.05)'; this.style.transform='translateY(0)'">
-                    
-                    <!-- Acciones -->
-                    <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                        <!-- Botón Ver (con dropdown) -->
-                        @php
-                            $numeroPedido = get_class($pedido) === 'App\Models\LogoPedido' ? $pedido->numero_pedido : $pedido->numero_pedido;
-                            $pedidoId = $pedido->id;
-                            $tipoDocumento = get_class($pedido) === 'App\Models\LogoPedido' ? 'L' : ($pedido->cotizacion?->tipoCotizacion?->codigo ?? '');
-                            $esLogo = get_class($pedido) === 'App\Models\LogoPedido' ? '1' : '0';
-                            // Para pedidos combinados (PL), obtener el ID del logo_pedido asociado
-                            $logoPedidoId = get_class($pedido) === 'App\Models\LogoPedido' ? $pedido->id : ($pedido->logoPedidos->first()?->id ?? '');
-                        @endphp
-                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" data-logo-pedido-id="{{ $logoPedidoId }}" data-tipo-cotizacion="{{ $tipoDocumento }}" data-es-logo="{{ $esLogo }}" title="Ver Opciones" style="
-                            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-                            color: white;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 1rem;
-                            transition: all 0.3s ease;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            width: 36px;
-                            height: 36px;
-                            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
-                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(37, 99, 235, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.3)'">
-                            <i class="fas fa-eye"></i>
-                        </button>
-
-                        <!-- Botón Anular (solo si no está anulado) -->
-                        @php
-                            $estado = get_class($pedido) === 'App\Models\LogoPedido' ? ($pedido->estado ?? 'pendiente') : ($pedido->estado ?? 'Pendiente');
-                        @endphp
-                        @if($estado !== 'Anulada' && $estado !== 'anulada')
-                        <button onclick="confirmarAnularPedido({{ $numeroPedido }})" title="Anular Pedido" style="
-                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                            color: white;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 1rem;
-                            transition: all 0.3s ease;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            width: 36px;
-                            height: 36px;
-                            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
-                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
-                            <i class="fas fa-ban"></i>
-                        </button>
-                        @endif
-
-                        <!-- Botón Editar -->
-                        <button onclick="editarPedido({{ $pedido->id }})" title="Editar Pedido" style="
-                            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                            color: white;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 1rem;
-                            transition: all 0.3s ease;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            width: 36px;
-                            height: 36px;
-                            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
-                            <i class="fas fa-edit"></i>
-                        </button>
-
-                        <!-- Botón Eliminar -->
-                        <button onclick="eliminarPedido({{ $pedido->id }})" title="Eliminar Pedido" style="
-
-                            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                            color: white;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 1rem;
-                            transition: all 0.3s ease;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            width: 36px;
-                            height: 36px;
-                            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
-                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)'">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-
-                    <!-- Estado -->
-                    <div style="display: flex; align-items: center;">
-                        <span style="
-                            background: #fef3c7;
-                            color: #92400e;
-                            padding: 0.25rem 0.5rem;
-                            border-radius: 12px;
-                            font-size: 0.7rem;
-                            font-weight: 600;
-                            display: inline-block;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            max-width: 90px;
-                            white-space: nowrap;
-                        ">
-                            @php
-                                if (get_class($pedido) === 'App\Models\LogoPedido') {
-                                    echo ucfirst($pedido->estado ?? 'pendiente');
-                                } else {
-                                    echo $pedido->estado ?? 'Pendiente';
-                                }
-                            @endphp
-                        </span>
-                    </div>
-
-                    <!-- Área -->
-                    <div style="display: flex; align-items: center;">
-                        @php
-                            $area = '-';
-                            
-                            // Verificar si es LogoPedido (tiene campo 'numero_pedido' pero no 'prendas')
-                            if (get_class($pedido) === 'App\Models\LogoPedido') {
-                                // Es un LogoPedido
-                                $area = $pedido->area ?? 'Creación de Orden';
-                            } elseif ($pedido->logoPedidos && $pedido->logoPedidos->count() > 0) {
-                                // Es un PedidoProduccion con logo
-                                $logoPedido = $pedido->logoPedidos->first();
-                                $area = $logoPedido->area ?? 'Creación de Orden';
-                            } else {
-                                // Es un PedidoProduccion normal
-                                $area = $pedido->area ?? '-';
-                            }
-                        @endphp
-                        <span style="
-                            background: #dbeafe;
-                            color: #1e40af;
-                            padding: 0.25rem 0.5rem;
-                            border-radius: 12px;
-                            font-size: 0.7rem;
-                            font-weight: 600;
-                            display: inline-block;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            max-width: 100px;
-                            white-space: nowrap;
-                        ">
-                            {{ $area }}
-
-                        </span>
-                    </div>
-
-                    <!-- Pedido -->
-                    <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @php
-                            // Si estamos en la pestaña de logo, mostramos el identificador de logo (#LOGO-...)
-                            if (request('tipo') === 'logo') {
-                                if (get_class($pedido) === 'App\\Models\\LogoPedido') {
-                                    echo $pedido->numero_pedido; // #LOGO-xxxxx
-                                } else {
-                                    // En lista 'logo' si hay un PedidoProduccion mostramos su numero_pedido_mostrable
-                                    echo '#' . ($pedido->numero_pedido_mostrable ?? ($pedido->numero_pedido ?? '-'));
-                                }
-                            } else {
-                                // En la vista principal (Todos) y otras pestañas, mostrar el numero_pedido de pedidos_produccion
-                                if (get_class($pedido) === 'App\\Models\\LogoPedido') {
-                                    // Intentar obtener el pedido de producción relacionado
-                                    $prod = $pedido->pedidoProduccion ?? null;
-                                    if ($prod && isset($prod->numero_pedido)) {
-                                        echo '#' . $prod->numero_pedido;
-                                    } elseif (!empty($pedido->numero_pedido_cost)) {
-                                        // Fallback al campo numero_pedido_cost si existe
-                                        echo '#' . ltrim($pedido->numero_pedido_cost, '#');
-                                    } else {
-                                        echo $pedido->numero_pedido ?? '-';
-                                    }
-                                } else {
-                                    // Es un PedidoProduccion
-                                    echo isset($pedido->numero_pedido) ? ('#' . $pedido->numero_pedido) : ('#' . ($pedido->numero_pedido_mostrable ?? '-'));
-                                }
-                            }
-                        @endphp
-                    </div>
-
-                    <!-- Cliente -->
-                    <div style="display: flex; align-items: center; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
-                        @php
-                            echo $pedido->cliente ?? '-';
-                        @endphp
-                    </div>
-
-                    <!-- Descripción -->
-                    @php
-                        $descripcionConTallas = '';
-                        
-                        // Verificar si es LogoPedido
-                        if (get_class($pedido) === 'App\Models\LogoPedido') {
-                            // Para LogoPedido, mostrar el campo descripción directamente
-                            $descripcionConTallas = $pedido->descripcion ?? 'Logo personalizado';
-                        } else {
-                            // Para PedidoProduccion, usar descripcion_prendas tal como viene del backend
-                            // Ya incluye formatos correctos (con o sin "PRENDA X:" según el total de prendas)
-                            $descripcionConTallas = $pedido->descripcion_prendas ?? '';
-                        }
-                        
-                        if (empty($descripcionConTallas)) {
-                            $descripcionConTallas = get_class($pedido) === 'App\Models\LogoPedido' ? 'Logo personalizado' : '-';
-                        }
-                    @endphp
-                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.8rem; cursor: pointer; max-width: {{ request('tipo') === 'logo' ? '220px' : '130px' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalDescripcion({{ $pedido->id }}, '{{ get_class($pedido) === 'App\\Models\\LogoPedido' ? 'logo' : 'prenda' }}')" title="Click para ver completo">
-                        @php
-                            if (get_class($pedido) === 'App\Models\LogoPedido') {
-                                echo 'Logo personalizado <span style="color: #3b82f6; font-weight: 600;">...</span>';
-                            } elseif ($pedido->prendas && $pedido->prendas->count() > 0) {
-                                $prendasInfo = $pedido->prendas->map(function($prenda) {
-                                    return $prenda->nombre_prenda ?? 'Prenda sin nombre';
-                                })->unique()->toArray();
-                                $descripcion = !empty($prendasInfo) ? implode(', ', $prendasInfo) : '-';
-                                echo $descripcion . ' <span style="color: #3b82f6; font-weight: 600;">...</span>';
-                            } else {
-                                echo '-';
-                            }
-                        @endphp
-                    </div>
-
-                    <!-- Cantidad (solo si no es logo) -->
-                    @if(request('tipo') !== 'logo')
-                    <div style="color: #374151; font-weight: 600; font-size: 0.8rem; text-align: center; white-space: nowrap;">
-                        @php
-                            if (get_class($pedido) === 'App\Models\LogoPedido') {
-                                echo '<span style="color: #3b82f6;">LOGO</span>';
-                            } elseif ($pedido->prendas->count() > 0) {
-                                // Calcular cantidad real desde cantidad_talla de prendas
-                                $cantidadReal = 0;
-                                foreach ($pedido->prendas as $prenda) {
-                                    $cantidadReal += $prenda->cantidad_total;
-                                }
-                                
-                                // Si la cantidad real difiere de cantidad_total, mostrar la real
-                                $cantidadMostrada = $cantidadReal;
-                                
-                                // Agregar indicador visual si hay discrepancia
-                                $indicador = '';
-                                if ($cantidadMostrada !== $pedido->cantidad_total && $pedido->cantidad_total > 0) {
-                                    $indicador = ' <span style="color: #ef4444; font-weight: bold; cursor: help;" title="Ajustada de ' . $pedido->cantidad_total . '">*</span>';
-                                }
-                                
-                                echo '<span>' . $cantidadMostrada . ' und' . $indicador . '</span>';
-                            } else {
-                                echo '<span style="color: #d1d5db;">-</span>';
-                            }
-                        @endphp
-                    </div>
-                    @endif
-
-                    <!-- Forma Pago -->
-                    <div style="display: flex; align-items: center; color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
-                        {{ $pedido->forma_de_pago ?? '-' }}
-                    </div>
-
-                    <!-- Fecha Creación -->
-                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
-                        @php
-                            if (get_class($pedido) === 'App\Models\LogoPedido') {
-                                echo $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '-';
-                            } else {
-                                echo $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-';
-                            }
-                        @endphp
-                    </div>
-
-                    <!-- Fecha Estimada de Entrega (solo si no es logo) -->
-                    @if(request('tipo') !== 'logo')
-                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
-                        @php
-                            if (get_class($pedido) === 'App\Models\LogoPedido') {
-                                echo '-'; // LogoPedido no tiene fecha estimada
-                            } else {
-                                if ($pedido->fecha_estimada_de_entrega) {
-                                    try {
-                                        $fecha = \Carbon\Carbon::parse($pedido->fecha_estimada_de_entrega);
-                                        echo $fecha->format('d/m/Y');
-                                    } catch (\Exception $e) {
-                                        echo $pedido->fecha_estimada_de_entrega;
-                                    }
-                                } else {
-                                    echo '-';
-                                }
-                            }
-                        @endphp
-                    </div>
-                    @endif
-                </div>
-                @endforeach
-            @endif
-        </div>
-    </div>
-</div>
-
-<!-- Contenedor para Dropdowns (Fuera de la tabla) -->
-<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
-
-<!-- Modal de Filtros (necesario para pedidos-table-filters.js) -->
-<div id="filterModal" class="filter-modal-overlay" onclick="closeFilterModal(event)">
-    <div class="filter-modal" onclick="event.stopPropagation()" style="width: 420px; max-width: 90%;">
-        <div class="filter-modal-header" style="display:flex; justify-content:space-between; align-items:center; padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-            <h3 id="filterModalTitle" style="margin: 0; font-size: 1.125rem; color: #1e40af; font-weight: 700;">Filtrar</h3>
-            <button class="filter-modal-close" onclick="closeFilterModal()" style="background:none; border:none; font-size:24px; cursor:pointer; color: #6b7280;">&times;</button>
-        </div>
-        <div class="filter-modal-body" style="padding: 1.5rem;">
-            <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar..." style="width:100%; padding:0.75rem; margin-bottom:1rem; border:2px solid #e5e7eb; border-radius:8px; font-size:0.95rem;">
-            <div class="filter-options" id="filterOptions" style="display:flex; flex-direction:column; gap:0.5rem; max-height:300px; overflow-y:auto;"></div>
-        </div>
-        <div class="filter-modal-footer" style="display:flex; gap:8px; justify-content:flex-end; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
-            <button class="btn-filter-reset" onclick="resetFilters()" style="background:white; border:2px solid #e5e7eb; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; color:#374151;">Limpiar</button>
-            <button class="btn-filter-apply" onclick="applyFilters()" style="background:linear-gradient(135deg,#1e40af,#0ea5e9); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600;">Aplicar</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Descripción de Prendas (reutilizado de órdenes) -->
-<x-orders-components.order-description-modal />
-
-<!-- Modal de Imagen -->
-@include('components.modal-imagen')
-
-<!-- Modal de Detalle de Orden -->
-<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
-
-<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
-    <x-orders-components.order-detail-modal />
-</div>
-
-<!-- Modal de Detalle de Orden - LOGO -->
-<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 672px; height: auto; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; pointer-events: auto; display: none;">
-    <x-orders-components.order-detail-modal-logo />
-</div>
-
-<!-- Modal de Seguimiento del Pedido (Tracking Simplificado para Asesoras) -->
-<x-orders-components.asesoras-tracking-modal />
-
-<!-- ========================================
-     NUEVOS MODALES DE RECIBOS DE PRODUCCIÓN
-     ======================================== -->
-<!-- Selector de Prendas y Procesos (abre primero) -->
-@include('components.modals.recibos-process-selector')
-
-<!-- Modal Intermedio de Recibos (lista de prendas y procesos) -->
-@include('components.modals.recibos-intermediate-modal')
-
-<!-- Modal Dinámico de Recibo (detalle de proceso específico) -->
-@include('components.modals.recibo-dinamico-modal')
-
-<!-- Contenedor para Dropdowns (Fuera de la tabla) -->
-<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
+    @include('asesores.pedidos.components.modals')
 
 @endsection
 
@@ -1009,655 +24,194 @@
 @endpush
 
 @push('scripts')
+<!-- ✅ SERVICIOS CENTRALIZADOS - Cargar PRIMERO -->
+<script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
+<script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
+<script src="{{ asset('js/utilidades/deletion-service.js') }}"></script>
+
 <script>
-    // Configurar variables globales para los modales
+    // ✅ Configurar variables globales
     window.fetchUrl = '/registros';
     window.modalContext = 'pedidos';
 
-    // Función para mostrar modal de motivo de anulación
+    // ✅ REFACTORIZADO: verMotivoanulacion() - Usar UIModalService
     function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
-        // Crear modal dinámicamente
-        const modalHTML = `
-            <div id="motivoAnulacionModal" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 100000;
-                backdrop-filter: blur(4px);
-                animation: fadeIn 0.2s ease;
-            " onclick="if(event.target.id === 'motivoAnulacionModal') cerrarModalMotivo()">
-                <div style="
-                    background: white;
-                    border-radius: 12px;
-                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-                    max-width: 500px;
-                    width: 90%;
-                    overflow: hidden;
-                    animation: slideIn 0.3s ease;
-                ">
-                    <!-- Header -->
-                    <div style="
-                        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                        color: white;
-                        padding: 1.5rem;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                    ">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <i class="fas fa-ban" style="font-size: 1.25rem;"></i>
-                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Motivo de Anulación</h3>
-                        </div>
-                        <button onclick="cerrarModalMotivo()" style="
-                            background: rgba(255, 255, 255, 0.2);
-                            border: none;
-                            color: white;
-                            cursor: pointer;
-                            font-size: 1.25rem;
-                            width: 32px;
-                            height: 32px;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            transition: background 0.2s ease;
-                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
-                            ✕
-                        </button>
-                    </div>
-
-                    <!-- Content -->
-                    <div style="padding: 1.5rem;">
-                        <!-- Número de Pedido -->
-                        <div style="margin-bottom: 1.25rem;">
-                            <label style="
-                                display: block;
-                                font-size: 0.75rem;
-                                font-weight: 700;
-                                color: #6b7280;
-                                text-transform: uppercase;
-                                letter-spacing: 0.05em;
-                                margin-bottom: 0.375rem;
-                            ">Número de Pedido</label>
-                            <div style="
-                                font-size: 1rem;
-                                font-weight: 600;
-                                color: #1f2937;
-                                background: #f3f4f6;
-                                padding: 0.75rem;
-                                border-radius: 6px;
-                            ">#${numeroPedido}</div>
-                        </div>
-
-                        <!-- Motivo -->
-                        <div style="margin-bottom: 1.25rem;">
-                            <label style="
-                                display: block;
-                                font-size: 0.75rem;
-                                font-weight: 700;
-                                color: #6b7280;
-                                text-transform: uppercase;
-                                letter-spacing: 0.05em;
-                                margin-bottom: 0.375rem;
-                            ">Motivo</label>
-                            <div style="
-                                font-size: 0.95rem;
-                                color: #374151;
-                                background: #fef2f2;
-                                padding: 0.875rem;
-                                border-radius: 6px;
-                                border-left: 3px solid #ef4444;
-                                line-height: 1.5;
-                            ">${motivo || 'No especificado'}</div>
-                        </div>
-
-                        <!-- Usuario -->
-                        <div style="margin-bottom: 1.25rem;">
-                            <label style="
-                                display: block;
-                                font-size: 0.75rem;
-                                font-weight: 700;
-                                color: #6b7280;
-                                text-transform: uppercase;
-                                letter-spacing: 0.05em;
-                                margin-bottom: 0.375rem;
-                            ">Anulado por</label>
-                            <div style="
-                                font-size: 0.95rem;
-                                color: #374151;
-                                background: #f3f4f6;
-                                padding: 0.75rem;
-                                border-radius: 6px;
-                                display: flex;
-                                align-items: center;
-                                gap: 0.5rem;
-                            ">
-                                <i class="fas fa-user" style="color: #6b7280;"></i>
-                                ${usuario || 'Sistema'}
-                            </div>
-                        </div>
-
-                        <!-- Fecha -->
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="
-                                display: block;
-                                font-size: 0.75rem;
-                                font-weight: 700;
-                                color: #6b7280;
-                                text-transform: uppercase;
-                                letter-spacing: 0.05em;
-                                margin-bottom: 0.375rem;
-                            ">Fecha y Hora</label>
-                            <div style="
-                                font-size: 0.95rem;
-                                color: #374151;
-                                background: #f3f4f6;
-                                padding: 0.75rem;
-                                border-radius: 6px;
-                                display: flex;
-                                align-items: center;
-                                gap: 0.5rem;
-                            ">
-                                <i class="fas fa-calendar" style="color: #6b7280;"></i>
-                                ${fecha || 'No disponible'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div style="
-                        background: #f9fafb;
-                        padding: 1rem 1.5rem;
-                        border-top: 1px solid #e5e7eb;
-                        display: flex;
-                        justify-content: flex-end;
-                        gap: 0.75rem;
-                    ">
-                        <button onclick="cerrarModalMotivo()" style="
-                            background: white;
-                            border: 1px solid #d1d5db;
-                            color: #374151;
-                            padding: 0.625rem 1.25rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-weight: 500;
-                            font-size: 0.875rem;
-                            transition: all 0.2s ease;
-                        " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
-                            Cerrar
-                        </button>
+        const html = `
+            <div style="text-align: left;">
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Motivo</label>
+                    <div style="font-size: 0.95rem; color: #374151; background: #fef2f2; padding: 0.875rem; border-radius: 6px; border-left: 3px solid #ef4444;">
+                        ${motivo || 'No especificado'}
                     </div>
                 </div>
-
-                <style>
-                    @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
-                    }
-                    @keyframes slideIn {
-                        from { 
-                            transform: scale(0.95) translateY(-20px);
-                            opacity: 0;
-                        }
-                        to { 
-                            transform: scale(1) translateY(0);
-                            opacity: 1;
-                        }
-                    }
-                </style>
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Anulado por</label>
+                    <div style="font-size: 0.95rem; color: #374151; background: #f3f4f6; padding: 0.75rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-user" style="color: #6b7280;"></i>
+                        ${usuario || 'Sistema'}
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.375rem; display: block;">Fecha y Hora</label>
+                    <div style="font-size: 0.95rem; color: #374151; background: #f3f4f6; padding: 0.75rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-calendar" style="color: #6b7280;"></i>
+                        ${fecha || 'No disponible'}
+                    </div>
+                </div>
             </div>
         `;
-
-        // Insertar modal en el DOM
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        // Enfocar en el modal para mejorar accesibilidad
-        document.getElementById('motivoAnulacionModal').focus();
+        UI.contenido({
+            titulo: `📋 Motivo de anulación - Pedido #${numeroPedido}`,
+            html: html,
+            ancho: '500px'
+        });
     }
 
-    // Función para cerrar el modal de motivo de anulación
-    function cerrarModalMotivo() {
-        const modal = document.getElementById('motivoAnulacionModal');
-        if (modal) {
-            modal.style.animation = 'fadeIn 0.2s ease reverse';
-            setTimeout(() => modal.remove(), 200);
-        }
-    }
 
-    // Cerrar modal con tecla ESC
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            const modal = document.getElementById('motivoAnulacionModal');
-            if (modal) {
-                cerrarModalMotivo();
-            }
-        }
-    });
-
-    // ==================== MODAL DE CELDA ====================
-    /**
-     * Abre modal mejorado de descripción con prendas y procesos
-     * Formatea usando la misma lógica que Formatters.js
-     */
+    // ✅ REFACTORIZADO: abrirModalDescripcion() - Usar UIModalService
     async function abrirModalDescripcion(pedidoId, tipo) {
         try {
-            // Mostrar loading
-            const loadingModal = document.createElement('div');
-            loadingModal.id = 'loadingDescripcionModal';
-            loadingModal.style.cssText = `
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-                z-index: 9999;
-            `;
-            loadingModal.innerHTML = '<div style="background: white; padding: 2rem; border-radius: 12px; text-align: center;"><p>Cargando información...</p></div>';
-            document.body.appendChild(loadingModal);
-
-            // Cargar datos del pedido
+            UI.cargando('Cargando información...', 'Por favor espera');
+            
             const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`);
             const data = await response.json();
             
-            document.getElementById('loadingDescripcionModal')?.remove();
-
-            // Construir HTML del modal mejorado
+            Swal.close();
+            
             let htmlContenido = '';
-
-            // Mostrar prendas con descripciones
             if (data.prendas && Array.isArray(data.prendas)) {
                 htmlContenido += '<div style="margin-bottom: 2rem;">';
-                
                 data.prendas.forEach((prenda, idx) => {
-                    // Construir descripción usando la misma lógica que Formatters
                     const descripcionPrenda = construirDescripcionComoPrenda(prenda, idx);
+                    htmlContenido += `<div style="margin-bottom: 1.5rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">${descripcionPrenda}`;
                     
-                    htmlContenido += `
-                        <div style="margin-bottom: 1.5rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                            ${descripcionPrenda}
-                    `;
-                    
-                    // Mostrar procesos de esta prenda
                     if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
-                        htmlContenido += `
-                            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">
-                                <div style="font-weight: 600; color: #374151; margin-bottom: 1rem; font-size: 1.1rem;">Procesos de Producción</div>
-                        `;
-                        
+                        htmlContenido += `<div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;"><div style="font-weight: 600; color: #374151; margin-bottom: 1rem; font-size: 1.1rem;">Procesos de Producción</div>`;
                         prenda.procesos.forEach((proceso) => {
                             const descripcionProceso = construirDescripcionComoProceso(prenda, proceso);
-                            
-                            htmlContenido += `
-                                <div style="background: white; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
-                                    ${descripcionProceso}
-                                </div>
-                            `;
+                            htmlContenido += `<div style="background: white; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">${descripcionProceso}</div>`;
                         });
-                        
                         htmlContenido += '</div>';
                     }
-                    
                     htmlContenido += '</div>';
                 });
-                
                 htmlContenido += '</div>';
             }
-
-            // Mostrar modal mejorado
-            abrirModalCelda('Prendas y Procesos', htmlContenido, true);
+            
+            UI.contenido({
+                titulo: '📦 Prendas y Procesos',
+                html: htmlContenido,
+                ancho: '800px'
+            });
         } catch (error) {
-            console.error('Error al cargar descripción:', error);
-            document.getElementById('loadingDescripcionModal')?.remove();
-            alert('Error al cargar la información');
+            Swal.close();
+            UI.error('Error', 'No se pudo cargar la información');
+            console.error('Error:', error);
         }
     }
 
-    /**
-     * Construye descripción de prenda igual que Formatters.construirDescripcionCostura
-     */
+
+    // Helper: Construir descripción de prenda
     function construirDescripcionComoPrenda(prenda, numero) {
         const lineas = [];
-
-        // 1. Nombre de la prenda
         if (prenda.nombre_prenda || prenda.nombre) {
             lineas.push(`<div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem; color: #1f2937;">PRENDA ${numero + 1}: ${(prenda.nombre_prenda || prenda.nombre).toUpperCase()}</div>`);
         }
-
-        // 2. Línea técnica
         const partes = [];
         if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
         if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
         if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
-        
-        // Manga desde variantes
-        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            const primerVariante = prenda.variantes[0];
-            if (primerVariante.manga) {
-                let mangaTexto = primerVariante.manga.toUpperCase();
-                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
-                    mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
+        if (prenda.variantes?.length > 0) {
+            const manga = prenda.variantes[0].manga;
+            if (manga) {
+                let mangaTexto = manga.toUpperCase();
+                if (prenda.variantes[0].manga_obs?.trim()) {
+                    mangaTexto += ` (${prenda.variantes[0].manga_obs.toUpperCase()})`;
                 }
                 partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
             }
         }
+        if (partes.length > 0) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
+        if (prenda.descripcion?.trim()) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${prenda.descripcion.toUpperCase()}</div>`);
         
-        if (partes.length > 0) {
-            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
-        }
-
-        // 3. Descripción base
-        if (prenda.descripcion && prenda.descripcion.trim()) {
-            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${prenda.descripcion.toUpperCase()}</div>`);
-        }
-
-        // 4. Detalles técnicos
         const detalles = [];
-        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            const primerVariante = prenda.variantes[0];
-            
-            if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
-                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}</div>`);
-            }
-            
-            if (primerVariante.broche_obs && primerVariante.broche_obs.trim()) {
-                let etiqueta = 'BROCHE/BOTÓN';
-                if (primerVariante.broche) {
-                    etiqueta = primerVariante.broche.toUpperCase();
-                }
-                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>${etiqueta}:</strong> ${primerVariante.broche_obs.toUpperCase()}</div>`);
+        if (prenda.variantes?.length > 0) {
+            const v = prenda.variantes[0];
+            if (v.bolsillos_obs?.trim()) detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>BOLSILLOS:</strong> ${v.bolsillos_obs.toUpperCase()}</div>`);
+            if (v.broche_obs?.trim()) {
+                const etiqueta = v.broche?.toUpperCase() || 'BROCHE/BOTÓN';
+                detalles.push(`<div style="margin-bottom: 0.5rem; color: #374151;">• <strong>${etiqueta}:</strong> ${v.broche_obs.toUpperCase()}</div>`);
             }
         }
-        
-        if (detalles.length > 0) {
-            lineas.push(...detalles);
-        }
-
-        // 5. Tallas
+        if (detalles.length > 0) lineas.push(...detalles);
         if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
             lineas.push(`<div style="margin-top: 0.75rem; margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">TALLAS</div>`);
             lineas.push(construirTallasFormato(prenda.tallas, prenda.genero));
         }
-
         return lineas.join('');
     }
 
-    /**
-     * Construye descripción de proceso igual que Formatters.construirDescripcionProceso
-     */
+    // Helper: Construir descripción de proceso
     function construirDescripcionComoProceso(prenda, proceso) {
         const lineas = [];
-
-        // 1. Tipo de proceso
         if (proceso.tipo_proceso || proceso.nombre_proceso) {
             lineas.push(`<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem; color: #1f2937;">${(proceso.tipo_proceso || proceso.nombre_proceso).toUpperCase()}</div>`);
         }
-
-        // 2. Línea técnica
         const partes = [];
         if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
         if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
         if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
-        
-        // Manga desde variantes
-        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            const primerVariante = prenda.variantes[0];
-            if (primerVariante.manga) {
-                let mangaTexto = primerVariante.manga.toUpperCase();
-                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
-                    mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
-                }
-                partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
-            }
-        }
-        
-        if (partes.length > 0) {
-            lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
-        }
-
-        // 3. Ubicaciones
-        if (proceso.ubicaciones && Array.isArray(proceso.ubicaciones) && proceso.ubicaciones.length > 0) {
+        if (partes.length > 0) lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${partes.join(' | ')}</div>`);
+        if (proceso.ubicaciones?.length > 0) {
             lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">UBICACIONES:</div>`);
-            proceso.ubicaciones.forEach((ubicacion) => {
-                lineas.push(`<div style="margin-bottom: 0.25rem; color: #374151;">• ${ubicacion.toUpperCase()}</div>`);
-            });
+            proceso.ubicaciones.forEach(u => lineas.push(`<div style="margin-bottom: 0.25rem; color: #374151;">• ${u.toUpperCase()}</div>`));
             lineas.push(`<div style="margin-bottom: 0.75rem;"></div>`);
         }
-
-        // 4. Observaciones
-        if (proceso.observaciones && proceso.observaciones.trim()) {
+        if (proceso.observaciones?.trim()) {
             lineas.push(`<div style="margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">OBSERVACIONES:</div>`);
             lineas.push(`<div style="margin-bottom: 0.75rem; color: #374151;">${proceso.observaciones.toUpperCase()}</div>`);
         }
-
-        // 5. Tallas
         if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
             lineas.push(`<div style="margin-top: 0.75rem; margin-bottom: 0.5rem; font-weight: 600; color: #1f2937;">TALLAS</div>`);
             lineas.push(construirTallasFormato(prenda.tallas, prenda.genero));
         }
-
         return lineas.join('');
     }
 
-    /**
-     * Construye formato de tallas igual que Formatters
-     */
+    // Helper: Construir formato de tallas
     function construirTallasFormato(tallas, generoDefault = 'dama') {
-        const tallasDama = {};
-        const tallasCalballero = {};
-        
-        // Procesar tallas - pueden venir ANIDADAS: {"dama": {"L": 30, "S": 20}}
+        const tallasDama = {}, tallasCalballero = {};
         Object.entries(tallas).forEach(([key, value]) => {
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                 const genero = key.toLowerCase();
                 Object.entries(value).forEach(([talla, cantidad]) => {
-                    if (genero === 'dama') {
-                        tallasDama[talla] = cantidad;
-                    } else if (genero === 'caballero' || genero === 'caballero') {
-                        tallasCalballero[talla] = cantidad;
-                    }
+                    if (genero === 'dama') tallasDama[talla] = cantidad;
+                    else if (genero === 'caballero') tallasCalballero[talla] = cantidad;
                 });
-            } 
-            else if (typeof value === 'number' || typeof value === 'string') {
+            } else if (typeof value === 'number' || typeof value === 'string') {
                 if (key.includes('-')) {
                     const [genero, talla] = key.split('-');
-                    if (genero.toLowerCase() === 'dama') {
-                        tallasDama[talla] = value;
-                    } else if (genero.toLowerCase() === 'caballero') {
-                        tallasCalballero[talla] = value;
-                    }
+                    if (genero.toLowerCase() === 'dama') tallasDama[talla] = value;
+                    else if (genero.toLowerCase() === 'caballero') tallasCalballero[talla] = value;
                 } else {
                     const genero = generoDefault || 'dama';
-                    if (genero.toLowerCase() === 'dama') {
-                        tallasDama[key] = value;
-                    } else if (genero.toLowerCase() === 'caballero') {
-                        tallasCalballero[key] = value;
-                    }
+                    if (genero.toLowerCase() === 'dama') tallasDama[key] = value;
+                    else if (genero.toLowerCase() === 'caballero') tallasCalballero[key] = value;
                 }
             }
         });
         
         let resultado = '';
-        
-        // Renderizar DAMA
         if (Object.keys(tallasDama).length > 0) {
-            const tallasStr = Object.entries(tallasDama)
-                .map(([talla, cant]) => `<span style="color: #dc2626;"><strong>${talla}: ${cant}</strong></span>`)
-                .join(', ');
+            const tallasStr = Object.entries(tallasDama).map(([t, c]) => `<span style="color: #dc2626;"><strong>${t}: ${c}</strong></span>`).join(', ');
             resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">DAMA: ${tallasStr}</div>`;
         }
-        
-        // Renderizar CABALLERO
         if (Object.keys(tallasCalballero).length > 0) {
-            const tallasStr = Object.entries(tallasCalballero)
-                .map(([talla, cant]) => `<span style="color: #dc2626;"><strong>${talla}: ${cant}</strong></span>`)
-                .join(', ');
+            const tallasStr = Object.entries(tallasCalballero).map(([t, c]) => `<span style="color: #dc2626;"><strong>${t}: ${c}</strong></span>`).join(', ');
             resultado += `<div style="margin-bottom: 0.5rem; color: #374151;">CABALLERO: ${tallasStr}</div>`;
         }
-        
         return resultado;
-    }
-    
-    function abrirModalCelda(titulo, contenido, isHtml = false) {
-        // Si contenido ya es HTML, usarlo directamente
-        let htmlContenido = contenido || '-';
-        
-        if (!isHtml && contenido && !contenido.includes('<div')) {
-            // Si es texto plano, formatearlo
-            let contenidoLimpio = contenido || '-';
-            
-            // Remover asteriscos de formato
-            contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
-            
-            // Remover etiquetas de formato como "*** DESCRIPCIÓN: ***"
-            contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
-            
-            // Dividir por prendas (separadas por \n\n)
-            let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
-            
-            htmlContenido = '';
-            
-            prendas.forEach((prenda, index) => {
-                let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
-                
-                htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
-                
-                lineas.forEach((linea, i) => {
-                    // Nombre de prenda
-                    if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i)) {
-                        htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
-                    }
-                    // Atributos (Color, Tela, Manga)
-                    else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
-                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
-                    }
-                    // Descripción
-                    else if (linea.match(/^DESCRIPCIÓN:/i)) {
-                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
-                    }
-                    // Detalles (Reflectivo, Bolsillos, etc)
-                    else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal):/i)) {
-                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
-                    }
-                    // Viñetas
-                    else if (linea.startsWith('•') || linea.startsWith('-')) {
-                        htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
-                    }
-                    // Tallas
-                    else if (linea.match(/^Tallas:/i)) {
-                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
-                    }
-                    // Otras líneas
-                    else if (linea) {
-                        htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
-                    }
-                });
-                
-                htmlContenido += '</div>';
-            });
-        }
-        
-        // Crear modal
-        const modalHTML = `
-            <div id="celdaModal" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                animation: fadeIn 0.3s ease;
-            " onclick="if(event.target.id === 'celdaModal') cerrarModalCelda()">
-                <div style="
-                    background: white;
-                    border-radius: 12px;
-                    padding: 2rem;
-                    max-width: 600px;
-                    width: 90%;
-                    max-height: 80vh;
-                    overflow-y: auto;
-                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                    animation: slideIn 0.3s ease;
-                ">
-                    <!-- Header -->
-                    <div style="
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        margin-bottom: 1.5rem;
-                        border-bottom: 2px solid #e5e7eb;
-                        padding-bottom: 1rem;
-                    ">
-                        <h2 style="
-                            margin: 0;
-                            font-size: 1.25rem;
-                            font-weight: 700;
-                            color: #1f2937;
-                        ">${titulo}</h2>
-                        <button onclick="cerrarModalCelda()" style="
-                            background: none;
-                            border: none;
-                            font-size: 1.5rem;
-                            cursor: pointer;
-                            color: #6b7280;
-                            padding: 0;
-                            width: 32px;
-                            height: 32px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            border-radius: 6px;
-                            transition: all 0.2s ease;
-                        " onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">
-                            ✕
-                        </button>
-                    </div>
-
-                    <!-- Contenido -->
-                    <div style="
-                        color: #374151;
-                        font-size: 0.95rem;
-                        line-height: 1.8;
-                    ">
-                        ${htmlContenido}
-                    </div>
-
-                    <!-- Footer -->
-                    <div style="
-                        margin-top: 1.5rem;
-                        display: flex;
-                        justify-content: flex-end;
-                        gap: 0.75rem;
-                    ">
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Insertar modal en el DOM
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
-        // Cerrar con ESC
-        document.addEventListener('keydown', function cerrarConEsc(event) {
-            if (event.key === 'Escape') {
-                cerrarModalCelda();
-                document.removeEventListener('keydown', cerrarConEsc);
-            }
-        });
-    }
-
-    function cerrarModalCelda() {
-        const modal = document.getElementById('celdaModal');
-        if (modal) {
-            modal.style.animation = 'fadeIn 0.3s ease reverse';
-            setTimeout(() => modal.remove(), 300);
-        }
     }
 
     /**
@@ -1694,135 +248,27 @@
 
 
 
-    /**
-     * Confirmar eliminación de pedido
-     */
+    // ✅ REFACTORIZADO: confirmarEliminarPedido - Usar DeletionService
     function confirmarEliminarPedido(pedidoId, numeroPedido) {
-        // Crear un modal de confirmación
-        const confirmHTML = `
-            <div id="confirmDeleteModal" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 100000;
-                backdrop-filter: blur(4px);
-                animation: fadeIn 0.2s ease;
-            " onclick="if(event.target.id === 'confirmDeleteModal') cerrarConfirmModal()">
-                <div style="
-                    background: white;
-                    border-radius: 12px;
-                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-                    max-width: 400px;
-                    width: 90%;
-                    padding: 2rem;
-                    animation: slideUp 0.3s ease;
-                ">
-                    <div style="text-align: center; margin-bottom: 1.5rem;">
-                        <div style="
-                            width: 56px;
-                            height: 56px;
-                            background: #fee2e2;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            margin: 0 auto 1rem;
-                            font-size: 1.5rem;
-                        ">
-                            🗑️
-                        </div>
-                        <h3 style="
-                            margin: 0 0 0.5rem 0;
-                            font-size: 1.25rem;
-                            font-weight: 700;
-                            color: #1f2937;
-                        ">Eliminar Pedido</h3>
-                        <p style="
-                            margin: 0;
-                            color: #6b7280;
-                            font-size: 0.95rem;
-                        ">
-                            ¿Estás seguro de que deseas eliminar el pedido <strong>#${numeroPedido}</strong>? 
-                            Esta acción no se puede deshacer.
-                        </p>
-                    </div>
-
-                    <div style="
-                        display: flex;
-                        gap: 0.75rem;
-                        justify-content: flex-end;
-                    ">
-                        <button onclick="cerrarConfirmModal()" style="
-                            background: white;
-                            border: 2px solid #d1d5db;
-                            color: #374151;
-                            padding: 0.625rem 1.25rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-weight: 600;
-                            font-size: 0.875rem;
-                            transition: all 0.2s ease;
-                        " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
-                            Cancelar
-                        </button>
-                        <button onclick="eliminarPedido(${pedidoId})" style="
-                            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                            color: white;
-                            border: none;
-                            padding: 0.625rem 1.25rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-weight: 600;
-                            font-size: 0.875rem;
-                            transition: all 0.2s ease;
-                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                            Eliminar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', confirmHTML);
-    }
-
-    function cerrarConfirmModal() {
-        const modal = document.getElementById('confirmDeleteModal');
-        if (modal) {
-            modal.style.animation = 'fadeIn 0.3s ease reverse';
-            setTimeout(() => modal.remove(), 300);
-        }
+        Deletion.eliminarPedido(pedidoId, numeroPedido);
     }
 
     /**
-     * Editar pedido - abre modal de edición de prendas/EPP
+     * Editar pedido - carga datos y abre modal de edición
      */
     function editarPedido(pedidoId) {
-        console.log('🖊️  Abriendo edición de pedido:', pedidoId);
+        UI.cargando('Cargando datos del pedido...', 'Por favor espera');
         
-        // Cargar datos del pedido
         fetch(`/asesores/pedidos-produccion/${pedidoId}/datos-edicion`)
             .then(res => res.json())
             .then(respuesta => {
-                console.log('📦 Datos del pedido cargados:', respuesta);
-                
-                if (!respuesta.success) {
-                    throw new Error(respuesta.message || 'Error al cargar datos');
-                }
-                
-                // El servicio retorna datos en respuesta.datos
-                // datos.prendas es el array de prendas con toda la info
+                Swal.close();
+                if (!respuesta.success) throw new Error(respuesta.message || 'Error al cargar datos');
                 abrirModalEditarPedido(pedidoId, respuesta.datos);
             })
             .catch(err => {
-                console.error(' Error al cargar datos:', err);
-                Swal.fire('Error', 'No se pudo cargar el pedido: ' + err.message, 'error');
+                Swal.close();
+                UI.error('Error', 'No se pudo cargar el pedido: ' + err.message);
             });
     }
     
@@ -1830,69 +276,25 @@
      * Abrir modal de edición de pedido (factura interactiva)
      */
     function abrirModalEditarPedido(pedidoId, datosCompletos) {
-        console.log(' Abriendo modal de edición con factura:', pedidoId);
-        console.log(' Datos completos:', datosCompletos);
+        // Guardar datos en variable global
+        window.datosEdicionPedido = datosCompletos;
         
         // Generar factura
-        let htmlFactura = '';
-        if (window.generarHTMLFactura) {
-            htmlFactura = window.generarHTMLFactura(datosCompletos);
-            console.log(' Factura generada, largo:', htmlFactura.length);
-        } else {
-            console.warn(' generarHTMLFactura no disponible');
-            htmlFactura = '<p>Error: No se pudo generar la factura</p>';
-        }
+        let htmlFactura = window.generarHTMLFactura ? window.generarHTMLFactura(datosCompletos) : '<p>Error: No se pudo generar la factura</p>';
         
-        // Guardar datos en variable global para todas las funciones de edición
-        window.datosEdicionPedido = datosCompletos;
-        console.log(' Datos guardados en window.datosEdicionPedido');
+        const htmlBotones = `
+            <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; border-left: 4px solid #6b7280; margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button onclick="abrirEditarDatos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'">✏️ Editar Datos</button>
+                <button onclick="abrirEditarPrendas()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'">👕 Editar Prendas</button>
+                <button onclick="abrirEditarEPP()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'">💊 Editar EPP</button>
+            </div>
+        `;
         
-        // Mostrar modal
-        Swal.fire({
-            title: ` Editar Pedido #${datosCompletos.numero_pedido}`,
-            html: `<div id="edicionFacturaContainer" style="width: 100%; text-align: left;"></div>`,
-            width: '900px',
-            showConfirmButton: true,
-            confirmButtonText: ' Listo',
-            confirmButtonColor: '#10b981',
-            allowOutsideClick: false,
-            didOpen: () => {
-                try {
-                    // Obtener el contenedor
-                    const container = document.getElementById('edicionFacturaContainer');
-                    if (!container) {
-                        console.error(' No se encontró contenedor');
-                        return;
-                    }
-                    
-                    // Agregar botones de edición
-                    const htmlBotones = `
-                        <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; border-left: 4px solid #6b7280; margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                            <button onclick="abrirEditarDatos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;"> Editar Datos</button>
-                            <button onclick="abrirEditarPrendas()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;"> Editar Prendas</button>
-                            <button onclick="abrirEditarEPP()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;"> Editar EPP</button>
-                        </div>
-                    `;
-                    
-                    // Inyectar botones + factura
-                    container.innerHTML = htmlBotones + `
-                        <div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">
-                            ${htmlFactura}
-                        </div>
-                    `;
-                    
-                    console.log(' Modal de edición inyectado en el DOM');
-                    document.querySelector('body').dataset.pedidoIdEdicion = pedidoId;
-                    
-                } catch (err) {
-                    console.error(' Error al inyectar modal:', err);
-                    document.getElementById('edicionFacturaContainer').innerHTML = '<p style="color: red;">Error al cargar la factura</p>';
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                console.log(' Edición de pedido cerrada');
-            }
+        UI.contenido({
+            titulo: `✏️ Editar Pedido #${datosCompletos.numero_pedido}`,
+            html: htmlBotones + `<div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">${htmlFactura}</div>`,
+            ancho: '900px',
+            confirmButtonText: '✅ Listo'
         });
     }
     
@@ -1900,12 +302,8 @@
      * Abrir formulario para editar datos generales del pedido
      */
     function abrirEditarDatos() {
-        if (!window.datosEdicionPedido) {
-            Swal.fire('Error', 'No hay datos del pedido disponibles', 'error');
-            return;
-        }
-        const datos = window.datosEdicionPedido;
-        console.log(' Abriendo edición de datos generales');
+        Validator.requireEdicionPedido(() => {
+            const datos = window.datosEdicionPedido;
         
         const html = `
             <div style="text-align: left;">
@@ -1924,14 +322,12 @@
             </div>
         `;
         
-        Swal.fire({
-            title: ' Editar Datos Generales',
+        UI.contenido({
+            titulo: '✏️ Editar Datos Generales',
             html: html,
-            showConfirmButton: true,
-            showCancelButton: true,
-            confirmButtonText: ' Guardar',
+            confirmButtonText: '💾 Guardar',
             confirmButtonColor: '#10b981',
-            cancelButtonText: 'Cancelar'
+            showCancelButton: true
         }).then((result) => {
             if (result.isConfirmed) {
                 const datosActualizados = {
@@ -1939,78 +335,58 @@
                     forma_de_pago: document.getElementById('editFormaPago').value,
                     observaciones: document.getElementById('editObservaciones').value
                 };
-                console.log(' Guardando datos:', datosActualizados);
-                Swal.fire('', 'Datos guardados correctamente', 'success');
+                UI.exito('Datos guardados correctamente');
             }
+        });
         });
     }
     
 
-    
     /**
      * Abrir formulario para editar EPP del pedido (lista seleccionable)
      */
     function abrirEditarEPP() {
-        if (!window.datosEdicionPedido) {
-            Swal.fire('Error', 'No hay datos del pedido disponibles', 'error');
-            return;
-        }
-        const datos = window.datosEdicionPedido;
-        const epp = datos.epp || [];
-        console.log(' Abriendo lista de EPP:', epp.length);
-        
-        if (epp.length === 0) {
-            Swal.fire('', 'No hay EPP agregado en este pedido', 'info');
-            return;
-        }
-        
-        // Guardar EPP en variable global para acceso desde onclick
-        window.eppEdicion = {
-            pedidoId: datos.numero_pedido || datos.id,
-            epp: epp
-        };
-        
-        let htmlListaEPP = `
-            <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
-        `;
-        
-        epp.forEach((item, idx) => {
-            const nombre = item.nombre || item.descripcion || 'EPP sin nombre';
+        Validator.requireEdicionPedido(() => {
+            const datos = window.datosEdicionPedido;
+            const epp = datos.epp || [];
             
-            htmlListaEPP += `
-                <button onclick="abrirEditarEPPEspecifico(${idx})" 
-                    style="
-                        background: white; 
-                        border: 2px solid #ec4899; 
-                        border-radius: 8px; 
-                        padding: 1rem; 
-                        text-align: left; 
-                        cursor: pointer; 
-                        transition: all 0.3s ease;
-                    "
-                    onmouseover="this.style.background='#fce7f3'; this.style.borderColor='#be185d';"
-                    onmouseout="this.style.background='white'; this.style.borderColor='#ec4899';">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;"> ${nombre.toUpperCase()}</h4>
-                            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
+            if (epp.length === 0) {
+                UI.info('Sin EPP', 'No hay EPP agregado en este pedido');
+                return;
+            }
+            
+            window.eppEdicion = {
+                pedidoId: datos.numero_pedido || datos.id,
+                epp: epp
+            };
+            
+            let htmlListaEPP = `<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">`;
+            
+            epp.forEach((item, idx) => {
+                const nombre = item.nombre || item.descripcion || 'EPP sin nombre';
+                htmlListaEPP += `
+                    <button onclick="abrirEditarEPPEspecifico(${idx})" 
+                        style="background: white; border: 2px solid #ec4899; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
+                        onmouseover="this.style.background='#fce7f3'; this.style.borderColor='#be185d';"
+                        onmouseout="this.style.background='white'; this.style.borderColor='#ec4899';">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">💊 ${nombre.toUpperCase()}</h4>
+                                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
+                            </div>
+                            <span style="background: #ec4899; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">✏️ Editar</span>
                         </div>
-                        <span style="background: #ec4899; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
-                    </div>
-                </button>
-            `;
-        });
-        
-        htmlListaEPP += '</div>';
-        
-        Swal.fire({
-            title: ' Selecciona un EPP para Editar',
-            html: htmlListaEPP,
-            width: '600px',
-            showConfirmButton: false,
-            confirmButtonText: 'Cerrar',
-            showCancelButton: true,
-            cancelButtonText: 'Volver'
+                    </button>
+                `;
+            });
+            htmlListaEPP += '</div>';
+            
+            UI.contenido({
+                titulo: '💊 Selecciona un EPP para Editar',
+                html: htmlListaEPP,
+                ancho: '600px',
+                confirmButtonText: 'Cerrar'
+            });
         });
     }
     
@@ -2018,155 +394,50 @@
      * Abrir modal de edición para un EPP específico
      */
     function abrirEditarEPPEspecifico(eppIndex) {
-        if (!window.eppEdicion) {
-            Swal.fire('Error', 'No hay datos de EPP disponibles', 'error');
-            return;
-        }
-        
-        const epp = window.eppEdicion.epp[eppIndex];
-        const pedidoId = window.eppEdicion.pedidoId;
-        
-        if (!epp) {
-            Swal.fire('Error', 'EPP no encontrado', 'error');
-            return;
-        }
-        
-        console.log(' Editando EPP:', epp);
-        
-        const html = `
-            <div style="text-align: left;">
-                <div style="background: #fce7f3; border-left: 4px solid #ec4899; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <h3 style="margin: 0; color: #1f2937; font-size: 1.1rem;">${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}</h3>
+        Validator.requireEppItem(eppIndex, (epp) => {
+            const html = `
+                <div style="text-align: left;">
+                    <div style="background: #fce7f3; border-left: 4px solid #ec4899; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; color: #1f2937; font-size: 1.1rem;">💊 ${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}</h3>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cantidad</label>
+                        <input type="number" id="eppCantidad" value="${epp.cantidad || 0}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-weight: 600;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Descripción</label>
+                        <input type="text" id="eppDescripcion" value="${epp.descripcion || epp.nombre || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Observaciones</label>
+                        <textarea id="eppObservaciones" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px;">${epp.observaciones || ''}</textarea>
+                    </div>
                 </div>
-                
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cantidad</label>
-                    <input type="number" id="eppCantidad" value="${epp.cantidad || 0}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-weight: 600;">
-                </div>
-                
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Descripción</label>
-                    <input type="text" id="eppDescripcion" value="${epp.descripcion || epp.nombre || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
-                </div>
-                
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Observaciones</label>
-                    <textarea id="eppObservaciones" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px;">${epp.observaciones || ''}</textarea>
-                </div>
-            </div>
-        `;
-        
-        Swal.fire({
-            title: ` Editar EPP - ${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}`,
-            html: html,
-            width: '600px',
-            showConfirmButton: true,
-            showCancelButton: true,
-            confirmButtonText: ' Guardar Cambios',
-            confirmButtonColor: '#ec4899',
-            cancelButtonText: 'Volver'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const cambios = {
-                    pedidoId: pedidoId,
-                    eppIndex: eppIndex,
-                    cantidad: parseInt(document.getElementById('eppCantidad').value) || 0,
-                    descripcion: document.getElementById('eppDescripcion').value,
-                    observaciones: document.getElementById('eppObservaciones').value
-                };
-                
-                console.log(' Guardando cambios de EPP:', cambios);
-                Swal.fire('', 'EPP actualizado correctamente', 'success');
-                
-                // Aquí podrías hacer un fetch para guardar en BD
-                // fetch(`/api/pedidos/${pedidoId}/epp/${eppIndex}`, {
-                //     method: 'PUT',
-                //     headers: {'Content-Type': 'application/json'},
-                //     body: JSON.stringify(cambios)
-                // })
-            }
+            `;
+            
+            UI.contenido({
+                titulo: `💊 Editar EPP - ${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}`,
+                html: html,
+                ancho: '600px',
+                confirmButtonText: '💾 Guardar Cambios',
+                confirmButtonColor: '#ec4899',
+                showCancelButton: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const cambios = {
+                        cantidad: parseInt(document.getElementById('eppCantidad').value) || 0,
+                        descripcion: document.getElementById('eppDescripcion').value,
+                        observaciones: document.getElementById('eppObservaciones').value
+                    };
+                    UI.exito('EPP actualizado correctamente');
+                }
+            });
         });
     }
 
-    /**
-     * Eliminar pedido (hacer llamada DELETE al servidor)
-     */
-    let isDeleting = false; // Flag para prevenir eliminaciones concurrentes
-    
-    function eliminarPedido(pedidoId) {
-        // Prevenir eliminaciones concurrentes
-        if (isDeleting) {
-            console.warn(' Ya hay una eliminación en proceso');
-            return;
-        }
-        
-        isDeleting = true;
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
-        fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Mostrar mensaje de éxito
-                mostrarNotificacion(' Pedido eliminado correctamente', 'success');
-                
-                // Recargar la página después de 1 segundo
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                isDeleting = false;
-                mostrarNotificacion(' ' + (data.message || 'Error al eliminar el pedido'), 'error');
-            }
-        })
-        .catch(error => {
-            isDeleting = false;
-            console.error('Error:', error);
-            mostrarNotificacion(' Error al eliminar el pedido', 'error');
-        });
-    }
+    // ✅ REFACTORIZADO: eliminarPedido - DeletionService maneja todo (confirmación, fetch, notificaciones)
 
-    /**
-     * Mostrar notificación (toast)
-     */
-    function mostrarNotificacion(mensaje, tipo = 'info') {
-        const toastHTML = `
-            <div style="
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                background: ${tipo === 'success' ? '#10b981' : tipo === 'error' ? '#ef4444' : '#3b82f6'};
-                color: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                z-index: 999999;
-                animation: slideIn 0.3s ease;
-                max-width: 400px;
-                font-weight: 500;
-            " id="toast">
-                ${mensaje}
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', toastHTML);
-
-        // Auto-remove después de 3 segundos
-        setTimeout(() => {
-            const toast = document.getElementById('toast');
-            if (toast) {
-                toast.style.animation = 'fadeIn 0.3s ease reverse';
-                setTimeout(() => toast.remove(), 300);
-            }
-        }, 3000);
-    }
+    // ✅ REFACTORIZADO: mostrarNotificacion - Usar UIModalService.toastExito()/toastError() en su lugar
 
     /**
      * Buscador principal: buscar por número de pedido o cliente
