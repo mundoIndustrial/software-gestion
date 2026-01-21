@@ -19,20 +19,16 @@ class FormDataProcessorService
      */
     public function extraerImagenesPrenda(Request $request, int $itemIndex): array
     {
-        $allFiles = $request->allFiles();
-        $fotosFiltered = [];
+        $patronBuscado = "items_" . $itemIndex . "_imagenes_files";
+        $imagenesDelPrenda = $request->file($patronBuscado) ?? [];
 
-        foreach ($allFiles as $key => $files) {
-            if (preg_match("/^items\.{$itemIndex}\.imagenes/", $key)) {
-                $fotosUploadedFiles = (array)$files;
-                
-                $fotosFiltered = array_merge($fotosFiltered, array_filter($fotosUploadedFiles, function($foto) {
-                    return $foto instanceof UploadedFile;
-                }));
-            }
+        if (!is_array($imagenesDelPrenda)) {
+            $imagenesDelPrenda = [$imagenesDelPrenda];
         }
 
-        return $fotosFiltered;
+        return array_filter($imagenesDelPrenda, function($img) {
+            return $img instanceof UploadedFile;
+        });
     }
 
     /**
@@ -44,8 +40,12 @@ class FormDataProcessorService
      */
     public function extraerImagenesTelas(Request $request, int $itemIndex, array $telas): array
     {
-        $allFiles = $request->allFiles();
         $telasConImagenes = [];
+
+        \Log::info('[FormDataProcessorService] Extrayendo imágenes de telas', [
+            'itemIndex' => $itemIndex,
+            'cantidad_telas' => count($telas),
+        ]);
 
         // Primero, copiar datos de telas existentes
         foreach ($telas as $telaIdx => $telaDatos) {
@@ -55,24 +55,33 @@ class FormDataProcessorService
             }
         }
 
-        // Buscar imágenes en FormData
-        foreach ($allFiles as $key => $files) {
-            if (preg_match("/^items\.{$itemIndex}\.telas\.(\d+)\.imagenes/", $key, $matches)) {
-                $telaIdx = (int)$matches[1];
+        // Buscar imágenes en FormData con patrón items_index_telas_telaIdx_imagenes_files
+        foreach ($telas as $telaIdx => $telaDatos) {
+            $patronTela = "items_" . $itemIndex . "_telas_" . $telaIdx . "_imagenes_files";
+            $fotosUploadedFiles = $request->file($patronTela) ?? [];
+            
+            if (!is_array($fotosUploadedFiles)) {
+                $fotosUploadedFiles = [$fotosUploadedFiles];
+            }
+            
+            $imagenesFiltered = array_filter($fotosUploadedFiles, function($img) {
+                return $img instanceof UploadedFile;
+            });
 
-                if (!isset($telasConImagenes[$telaIdx])) {
-                    $telasConImagenes[$telaIdx] = ['fotos' => []];
-                }
-
-                $imagenesFiltered = array_filter((array)$files, function($img) {
-                    return $img instanceof UploadedFile;
-                });
-
-                if (!empty($imagenesFiltered)) {
-                    $telasConImagenes[$telaIdx]['fotos'] = array_values($imagenesFiltered);
-                }
+            if (!empty($imagenesFiltered)) {
+                \Log::info('[FormDataProcessorService] ✅ Encontrada clave de imágenes de tela', [
+                    'patron' => $patronTela,
+                    'telaIdx' => $telaIdx,
+                    'cantidad_archivos' => count($imagenesFiltered),
+                ]);
+                $telasConImagenes[$telaIdx]['fotos'] = array_values($imagenesFiltered);
             }
         }
+
+        \Log::info('[FormDataProcessorService] Imágenes de telas extraídas', [
+            'itemIndex' => $itemIndex,
+            'telas_con_imagenes' => count(array_filter($telasConImagenes, fn($t) => !empty($t['fotos']))),
+        ]);
 
         return $telasConImagenes;
     }
@@ -86,24 +95,31 @@ class FormDataProcessorService
      */
     public function extraerImagenesProcesos(Request $request, int $itemIndex, array $procesos): array
     {
-        $allFiles = $request->allFiles();
         $procesosConImagenes = [];
 
         foreach ($procesos as $tipoProceso => $procesoData) {
             $procesosConImagenes[$tipoProceso] = $procesoData;
             $procesosConImagenes[$tipoProceso]['imagenes'] = [];
 
-            // Buscar imágenes en FormData
-            foreach ($allFiles as $key => $files) {
-                if (preg_match("/^items\.{$itemIndex}\.procesos\.{$tipoProceso}\.imagenes/", $key)) {
-                    $imagenesFiltered = array_filter((array)$files, function($img) {
-                        return $img instanceof UploadedFile;
-                    });
+            // Buscar imágenes en FormData con patrón items_index_procesos_tipoProceso_imagenes_files
+            $patronProceso = "items_" . $itemIndex . "_procesos_" . $tipoProceso . "_imagenes_files";
+            $fotosUploadedFiles = $request->file($patronProceso) ?? [];
+            
+            if (!is_array($fotosUploadedFiles)) {
+                $fotosUploadedFiles = [$fotosUploadedFiles];
+            }
+            
+            $imagenesFiltered = array_filter($fotosUploadedFiles, function($img) {
+                return $img instanceof UploadedFile;
+            });
 
-                    if (!empty($imagenesFiltered)) {
-                        $procesosConImagenes[$tipoProceso]['imagenes'] = array_values($imagenesFiltered);
-                    }
-                }
+            if (!empty($imagenesFiltered)) {
+                \Log::info('[FormDataProcessorService] ✅ Encontrada clave de imágenes de proceso', [
+                    'patron' => $patronProceso,
+                    'tipoProceso' => $tipoProceso,
+                    'cantidad_archivos' => count($imagenesFiltered),
+                ]);
+                $procesosConImagenes[$tipoProceso]['imagenes'] = array_values($imagenesFiltered);
             }
         }
 
@@ -118,16 +134,26 @@ class FormDataProcessorService
      */
     public function extraerImagenesEpp(Request $request, int $itemIndex): array
     {
-        $imagenKey = "items.{$itemIndex}.epp_imagenes";
-        $imagenesDelEpp = $request->file($imagenKey) ?? [];
+        $allFiles = $request->allFiles();
+        $imagenesDelEpp = [];
 
-        if (!is_array($imagenesDelEpp)) {
-            $imagenesDelEpp = [$imagenesDelEpp];
+        // Buscar con patrón items_index_imagenes_files (clave plana)
+        $patronBuscado = "items_{$itemIndex}_imagenes_files";
+
+        foreach ($allFiles as $key => $files) {
+            if ($key === $patronBuscado) {
+                // Si $files es un array, usarlo directamente; si es un objeto, envolverlo en array
+                $fotosUploadedFiles = is_array($files) ? $files : [$files];
+                
+                $imagenesFiltered = array_filter($fotosUploadedFiles, function($foto) {
+                    return $foto instanceof UploadedFile;
+                });
+                
+                $imagenesDelEpp = array_merge($imagenesDelEpp, $imagenesFiltered);
+            }
         }
 
-        return array_filter($imagenesDelEpp, function($img) {
-            return $img instanceof UploadedFile;
-        });
+        return $imagenesDelEpp;
     }
 
     /**

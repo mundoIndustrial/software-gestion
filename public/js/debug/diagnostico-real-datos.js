@@ -7,7 +7,7 @@ console.log('\n%c DIAGNÓSTICO REAL DE DATOS EN TIEMPO REAL', 'color: #FF0000; f
 console.log('%c═══════════════════════════════════════════════════════════', 'color: #FF0000');
 
 // PASO 1: Ver qué hay en el gestor
-console.log('\n%c1️⃣  DATOS EN GESTOR (antes de enviar)', 'color: #FF6600; font-weight: bold');
+console.log('\n%c  DATOS EN GESTOR (antes de enviar)', 'color: #FF6600; font-weight: bold');
 
 if (window.gestorPrendaSinCotizacion) {
     const prendasActivas = window.gestorPrendaSinCotizacion.obtenerActivas();
@@ -24,7 +24,7 @@ if (window.gestorPrendaSinCotizacion) {
 }
 
 // PASO 2: Simular el proceso de derivación de cantidadTalla
-console.log('\n%c2️⃣  SIMULANDO DERIVACIÓN DE cantidadTalla', 'color: #FF6600; font-weight: bold');
+console.log('\n%c  SIMULANDO DERIVACIÓN DE cantidadTalla', 'color: #FF6600; font-weight: bold');
 
 if (window.gestorPrendaSinCotizacion) {
     const prendasActivas = window.gestorPrendaSinCotizacion.obtenerActivas();
@@ -91,7 +91,7 @@ if (window.gestorPrendaSinCotizacion) {
 }
 
 // PASO 5: Ver el payload que se enviaría
-console.log('\n%c3️⃣  PAYLOAD QUE SE ENVIARÍA AL BACKEND', 'color: #FF6600; font-weight: bold');
+console.log('\n%c  PAYLOAD QUE SE ENVIARÍA AL BACKEND', 'color: #FF6600; font-weight: bold');
 
 if (window.gestorPrendaSinCotizacion) {
     const prendasActivas = window.gestorPrendaSinCotizacion.obtenerActivas();

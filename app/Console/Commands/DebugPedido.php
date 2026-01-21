@@ -19,7 +19,7 @@ class DebugPedido extends Command
 
         // 1. Query directa a la BD
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        $this->info('1️⃣  QUERY DIRECTA A BD:');
+        $this->info('  QUERY DIRECTA A BD:');
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         $raw = DB::table('pedidos_produccion')->where('id', $id)->first();
         if ($raw) {
@@ -32,7 +32,7 @@ class DebugPedido extends Command
         // 2. Con SoftDeletes incluidos
         $this->newLine();
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        $this->info('2️⃣  CON SOFT DELETES INCLUIDOS:');
+        $this->info('  CON SOFT DELETES INCLUIDOS:');
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         $withTrashed = PedidoProduccion::withTrashed()->find($id);
         if ($withTrashed) {
@@ -49,7 +49,7 @@ class DebugPedido extends Command
         // 3. Sin soft deletes (query normal)
         $this->newLine();
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        $this->info('3️⃣  SIN SOFT DELETES (NORMAL):');
+        $this->info('  SIN SOFT DELETES (NORMAL):');
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         $normal = PedidoProduccion::find($id);
         if ($normal) {

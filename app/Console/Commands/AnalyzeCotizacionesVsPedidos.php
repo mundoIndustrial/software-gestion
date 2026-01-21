@@ -63,7 +63,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
 
             // Buscar en prendas_cot
             $prendasCot = DB::table('prendas_cot')->where('cotizacion_id', 2)->count();
-            $this->line("📍 En tabla `prendas_cot` (Estructura de COTIZACIONES):");
+            $this->line(" En tabla `prendas_cot` (Estructura de COTIZACIONES):");
             $this->line("   ├─ prendas_cot con cotizacion_id=2: $prendasCot");
 
             if ($prendasCot > 0) {
@@ -77,7 +77,7 @@ class AnalyzeCotizacionesVsPedidos extends Command
 
             // Buscar en prendas_pedido
             $prendasPedido = DB::table('prendas_pedido')->count();
-            $this->line("📍 En tabla `prendas_pedido` (Estructura de PEDIDOS):");
+            $this->line(" En tabla `prendas_pedido` (Estructura de PEDIDOS):");
             $this->line("   ├─ TOTAL prendas_pedido: $prendasPedido");
             $this->line("   └─   NO tiene cotizacion_id, solo numero_pedido");
 

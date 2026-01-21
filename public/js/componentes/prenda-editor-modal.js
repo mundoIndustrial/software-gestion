@@ -92,6 +92,10 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     }
     
     console.log('✏️  Editando prenda:', prenda);
+    console.log('✏️  Estructura de prenda - claves disponibles:', Object.keys(prenda));
+    console.log('✏️  prenda.telas:', prenda.telas);
+    console.log('✏️  prenda.fotosTelas:', prenda.fotosTelas);
+    console.log('✏️  prenda.variantes:', prenda.variantes);
     
     //  USAR MODAL DINÁMICO (sin conflictos CSS)
     if (window.modalPrendaDinamico) {
@@ -104,12 +108,16 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     }
     
     // Preparar datos en formato compatible con el modal
+    // IMPORTANTE: Las telas pueden venir como prenda.telas o prenda.fotosTelas
+    const telasAgregadas = prenda.telas || prenda.fotosTelas || prenda.variantes || [];
+    console.log('✏️  Telas agregadas finales:', telasAgregadas);
+    
     const prendaParaEditar = {
         nombre_producto: prenda.nombre_prenda || prenda.nombre || '',
         descripcion: prenda.descripcion || '',
         origen: prenda.origen || 'bodega',
         imagenes: prenda.imagenes || [],
-        telasAgregadas: prenda.variantes || [],
+        telasAgregadas: telasAgregadas,
         tallas: prenda.tallas || prenda.tallas_estructura || {},  //  ARREGLADO: prenda.tallas primero (tiene datos)
         procesos: prenda.procesos || [],
         //  NUEVOS: Agregar datos de tela (estructura de BD)
@@ -123,6 +131,8 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
         variantes: prenda.variantes || [],
         tallas_estructura: prenda.tallas || prenda.tallas_estructura || null
     };
+    
+    console.log('✏️  prendaParaEditar preparada:', prendaParaEditar);
     
     // Guardar datos de edición en global
     window.prendaEnEdicion = {

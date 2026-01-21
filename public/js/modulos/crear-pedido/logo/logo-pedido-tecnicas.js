@@ -323,7 +323,7 @@ function renderizarLogoPrendasTecnicas() {
         } else {
             // Prenda individual
             const { prenda, index } = items[0];
-            console.log(`   📍 Prenda individual: ${prenda.tipo_logo_nombre}`);
+            console.log(`    Prenda individual: ${prenda.tipo_logo_nombre}`);
             html += `
                 <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
                     <td style="padding: 1rem; vertical-align: top; color: #1e293b; font-weight: 600; font-size: 0.95rem;">

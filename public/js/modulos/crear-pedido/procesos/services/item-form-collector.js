@@ -53,8 +53,10 @@ class ItemFormCollector {
                     tallas_medidas: item.tallas_medidas,
                 };
                 
-                if (item.imagenes && item.imagenes.length > 0) {
+                // Incluir imágenes de EPP para que se envíen en FormData
+                if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
                     epp.imagenes = item.imagenes;
+                    console.log(` [Item ${itemIndex}] EPP con ${item.imagenes.length} imágenes`);
                 }
                 
                 console.log(` [Item ${itemIndex}] EPP procesado:`, epp);
@@ -68,7 +70,7 @@ class ItemFormCollector {
                 origen: item.origen || 'bodega',
                 procesos: item.procesos || {},
                 cantidad_talla: item.cantidad_talla || {},
-                variaciones: item.variaciones || {},
+                variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
             };
             

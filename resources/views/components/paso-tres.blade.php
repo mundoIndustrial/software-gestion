@@ -461,8 +461,8 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacion
 
     saveButton.addEventListener('click', () => {
         console.log('🔵 BOTÓN GUARDAR PRESIONADO - Modal');
-        console.log('📍 ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
-        console.log('📍 observaciones:', obsTextarea.value);
+        console.log(' ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
+        console.log(' observaciones:', obsTextarea.value);
         // Pasar array vacío para tallas (ya no se manejan por ubicación)
         onSave(ubicacionesSeleccionadasModal, [], obsTextarea.value);
         console.log(' onSave callback ejecutado');
@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 🔥 SOBRESCRIBIR LA FUNCIÓN agregarSeccion DE especificaciones.js
     // Paso-tres debe usar SU PROPIA FUNCIÓN, no la de especificaciones.js
     console.log(' PASO-TRES - Inicializando funciones del paso-tres');
-    console.log('📍 PASO-TRES - agregarSeccion será redefinida para usar abrirModalUbicaciones de paso-tres');
+    console.log(' PASO-TRES - agregarSeccion será redefinida para usar abrirModalUbicaciones de paso-tres');
     
     // Usar setTimeout para asegurar que especificaciones.js ya se cargó y puede ser sobrescrita
     setTimeout(() => {

@@ -701,7 +701,7 @@
         const checkboxes = document.querySelectorAll(`input[type="checkbox"][id^="checkbox_"]`);
         
         console.log('🔵 Guardando materiales para pedido:', ordenPedido);
-        console.log('📍 Checkboxes encontrados:', checkboxes.length);
+        console.log(' Checkboxes encontrados:', checkboxes.length);
         console.log(' Buscando en:', `input[type="checkbox"][id^="checkbox_"]`);
         
         // Debug: mostrar todos los checkboxes de la página

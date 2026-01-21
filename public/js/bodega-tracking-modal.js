@@ -17,7 +17,7 @@ async function loadBodegaFestivos() {
     
     // Intentar con API local primero
     try {
-        console.log('  1️⃣  Intentando: GET /api/festivos');
+        console.log('    Intentando: GET /api/festivos');
         const response = await fetch('/api/festivos', {
             headers: {
                 'Accept': 'application/json',
@@ -62,9 +62,9 @@ async function loadBodegaFestivos() {
         console.log('   API local no disponible: ' + error.message);
     }
     
-    // 2️⃣ Intentar con API pública de zolv.co
+    //  Intentar con API pública de zolv.co
     try {
-        console.log('  2️⃣  Intentando: https://api.zolv.co/api/holidays');
+        console.log('    Intentando: https://api.zolv.co/api/holidays');
         const response = await fetch('https://api.zolv.co/api/holidays', {
             headers: {
                 'Accept': 'application/json'
@@ -88,9 +88,9 @@ async function loadBodegaFestivos() {
         console.log('   zolv.co no disponible: ' + error.message);
     }
     
-    // 3️⃣ Intentar con API Calendarific
+    //  Intentar con API Calendarific
     try {
-        console.log('  3️⃣  Intentando: https://api.calendarific.com/v2/holidays');
+        console.log('    Intentando: https://api.calendarific.com/v2/holidays');
         const year = new Date().getFullYear();
         const response = await fetch(`https://api.calendarific.com/v2/holidays?country=CO&year=${year}&api_key=public`, {
             headers: {

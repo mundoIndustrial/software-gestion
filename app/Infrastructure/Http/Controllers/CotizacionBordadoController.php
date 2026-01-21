@@ -787,7 +787,7 @@ class CotizacionBordadoController extends Controller
             $tecnicaController = new LogoCotizacionTecnicaController();
 
             foreach ($tecnicas as $tecnicaIdx => $tecnica) {
-                Log::info("📍 Procesando técnica [{$tecnicaIdx}]", [
+                Log::info(" Procesando técnica [{$tecnicaIdx}]", [
                     'tipo_logo' => $tecnica['tipo_logo']['nombre'] ?? 'desconocido',
                     'prendas_count' => count($tecnica['prendas'] ?? []),
                     'es_combinada' => $tecnica['es_combinada'] ?? false

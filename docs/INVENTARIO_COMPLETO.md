@@ -33,7 +33,7 @@
 ### PHP Archivos Creados
 
 #### 1. **GuardarPedidoDesdeJSONService.php** 
-- 📍 `app/Domain/PedidoProduccion/Services/`
+-  `app/Domain/PedidoProduccion/Services/`
 - 📏 150+ líneas
 -  Servicio transaccional central
 - ✨ Descomposición de JSON a tablas normalizadas
@@ -52,7 +52,7 @@ guardarImagenesProceso(Proceso $proceso, array $imagenes): void
 ```
 
 #### 2. **PedidoJSONValidator.php**
-- 📍 `app/Domain/PedidoProduccion/Validators/`
+-  `app/Domain/PedidoProduccion/Validators/`
 - 📏 80+ líneas
 -  Validador exhaustivo con 50+ reglas
 - ✨ Validación completa del JSON
@@ -65,7 +65,7 @@ static mensajes(): array
 ```
 
 #### 3. **GuardarPedidoJSONController.php**
-- 📍 `app/Http/Controllers/Asesores/`
+-  `app/Http/Controllers/Asesores/`
 - 📏 100+ líneas
 -  Endpoints HTTP
 - ✨ 2 rutas: guardar-desde-json, validar-json
@@ -77,7 +77,7 @@ validar(Request $request): JsonResponse
 ```
 
 #### 4. **PedidosProcesosPrendaDetalle.php**
-- 📍 `app/Models/`
+-  `app/Models/`
 - 📏 85+ líneas
 -  Modelo Eloquent para procesos
 - ✨ Relaciones completas, scopes útiles
@@ -92,18 +92,18 @@ imagenes(): HasMany
 ```
 
 #### 5. **PedidosProcessImagenes.php**
-- 📍 `app/Models/`
+-  `app/Models/`
 - 📏 35+ líneas
 -  Modelo para imágenes de procesos
 - ✨ Relación con proceso
 
 #### 6. **PrendaPedido.php (MODIFICADO)**
-- 📍 `app/Models/`
+-  `app/Models/`
 - 📏 Agregadas 3 relaciones
 - ✨ `fotos()`, `fotosTelas()`, `procesos()`
 
 #### 7. **routes/web.php (MODIFICADO)**
-- 📍 `routes/`
+-  `routes/`
 - 📏 Agregadas 2 rutas API
 - ✨ Autenticación incluida (role:asesor)
 
@@ -113,7 +113,7 @@ POST /api/pedidos/validar-json
 ```
 
 #### 8. **Migraciones (Database)**
-- 📍 `database/migrations/`
+-  `database/migrations/`
 -  Crear tablas para procesos
 - ✨ Relaciones FK correctas, timestamps
 
@@ -124,7 +124,7 @@ POST /api/pedidos/validar-json
 ### JavaScript Archivos
 
 #### 1. **PedidoFormManager.js**
-- 📍 `public/js/pedidos-produccion/`
+-  `public/js/pedidos-produccion/`
 - 📏 350+ líneas
 -  Gestor de estado central
 - ✨ localStorage auto-save, event emitters
@@ -150,7 +150,7 @@ class PedidoFormManager {
 ```
 
 #### 2. **PedidoValidator.js**
-- 📍 `public/js/pedidos-produccion/`
+-  `public/js/pedidos-produccion/`
 - 📏 150+ líneas
 -  Validación exhaustiva en cliente
 - ✨ 20+ reglas implementadas
@@ -166,7 +166,7 @@ class PedidoValidator {
 ```
 
 #### 3. **ui-components.js**
-- 📍 `public/js/pedidos-produccion/`
+-  `public/js/pedidos-produccion/`
 - 📏 250+ líneas
 -  Componentes sin estado
 - ✨ Funciones puras de renderizado
@@ -189,7 +189,7 @@ const UIComponents = {
 ```
 
 #### 4. **form-handlers.js**
-- 📍 `public/js/pedidos-produccion/`
+-  `public/js/pedidos-produccion/`
 - 📏 500+ líneas
 -  Orquestación de eventos
 - ✨ Coordina Manager + Validator + UI
@@ -219,7 +219,7 @@ class PedidoFormHandlers {
 ### Blade Template
 
 #### 5. **crear-pedido-completo.blade.php**
-- 📍 `resources/views/asesores/pedidos/`
+-  `resources/views/asesores/pedidos/`
 - 📏 350+ líneas
 -  Vista Blade completa
 - ✨ Estilos responsivos, inicialización JS

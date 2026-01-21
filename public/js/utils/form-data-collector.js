@@ -195,7 +195,7 @@ class FormDataCollector {
                         cantidad: cantidadTotal
                     };
                 });
-                console.log('📍 Secciones desde hidden:', secciones);
+                console.log(' Secciones desde hidden:', secciones);
                 return secciones;
             } catch (e) {
                 console.warn(' Error parseando secciones:', e);
@@ -239,7 +239,7 @@ class FormDataCollector {
             }
         });
         
-        console.log('📍 Secciones desde cards:', secciones);
+        console.log(' Secciones desde cards:', secciones);
         return secciones;
     }
 

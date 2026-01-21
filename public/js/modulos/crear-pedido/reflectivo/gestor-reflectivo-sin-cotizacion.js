@@ -226,7 +226,7 @@ class GestorReflectivoSinCotizacion {
                 observaciones: observaciones,
                 id: Date.now() // ID único para poder eliminar después
             });
-            logWithEmoji('📍', `Ubicación "${ubicacion}" agregada a prenda ${prendaIndex + 1}`);
+            logWithEmoji('', `Ubicación "${ubicacion}" agregada a prenda ${prendaIndex + 1}`);
         }
     }
 

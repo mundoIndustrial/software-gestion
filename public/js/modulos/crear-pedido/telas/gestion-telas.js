@@ -87,8 +87,9 @@ window.agregarTelaNueva = function() {
     document.getElementById('nueva-prenda-tela').value = '';
     document.getElementById('nueva-prenda-referencia').value = '';
     
-    // Limpiar storage de imágenes (revoca blob URLs viejas)
-    window.imagenesTelaStorage.limpiar();
+    // NO LIMPIAR window.imagenesTelaStorage aquí - se necesita para enviar las imágenes
+    // Se limpiará después de que se envíe el pedido
+    // window.imagenesTelaStorage.limpiar();
     
     // Limpiar preview temporal (el que se mostró mientras se agregaban imágenes - ahora dentro de la celda)
     const previewTemporal = document.getElementById('nueva-prenda-tela-preview');

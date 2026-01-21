@@ -547,7 +547,7 @@ async function fillAsesorasTimeline(pedido) {
                 </div>
             `;
             
-            console.log(`📍 [ASESORAS TIMELINE] Proceso ${index + 1}: ${nombreArea} - ${fechaFormato}`);
+            console.log(` [ASESORAS TIMELINE] Proceso ${index + 1}: ${nombreArea} - ${fechaFormato}`);
             container.appendChild(timelineItem);
         });
         

@@ -37,12 +37,12 @@ function obtenerPedidoId() {
 function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     console.log('🖊️  [EDITAR-MODAL] Abriendo prenda para editar');
     console.log(' Prenda:', prenda);
-    console.log('📍 Pedido ID:', pedidoId);
+    console.log(' Pedido ID:', pedidoId);
     
     // Si no viene pedidoId, intentar obtenerlo
     if (!pedidoId) {
         pedidoId = obtenerPedidoId();
-        console.log('   📍 Pedido ID obtenido del contexto:', pedidoId);
+        console.log('    Pedido ID obtenido del contexto:', pedidoId);
     }
     
     // Hacer copia de trabajo

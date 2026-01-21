@@ -1860,7 +1860,7 @@ async function guardarTecnicasEnBD() {
     
     try {
         for (const tecnica of tecnicasAgregadas) {
-            console.log('📍 Procesando técnica:', tecnica.tipo_logo.nombre);
+            console.log(' Procesando técnica:', tecnica.tipo_logo.nombre);
             
             // Validar que tenga tipo_logo
             if (!tecnica.tipo_logo || !tecnica.tipo_logo.id) {
@@ -2233,7 +2233,7 @@ function renderizarTecnicasAgregadas() {
             bodyHTML += `
                 <div style="margin-bottom: 1.2rem;">
                     <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
-                        📍 Ubicaciones:
+                         Ubicaciones:
                     </h6>
             `;
             
@@ -2626,7 +2626,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
         if (prenda.tecnicas && prenda.tecnicas.length > 0) {
             ubicacionesHTML = `
                 <div style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;">📍 Ubicaciones por Técnica</label>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;"> Ubicaciones por Técnica</label>
                     <div style="display: grid; gap: 8px;">
             `;
             
@@ -2878,7 +2878,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     // Actualizar la ubicación en tecnicasData
                     if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
                         todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].ubicaciones = [ubicacion];
-                        console.log(`📍 Ubicación actualizada para técnica ${tecnicaIdx}:`, ubicacion);
+                        console.log(` Ubicación actualizada para técnica ${tecnicaIdx}:`, ubicacion);
                     }
                 });
                 

@@ -40,8 +40,8 @@ function mostrarTipo(tipo) {
     const tabCotizaciones = document.getElementById('tab-cotizaciones');
     const tabBorradores = document.getElementById('tab-borradores');
     
-    console.log('📍 Tab Cotizaciones encontrado:', !!tabCotizaciones);
-    console.log('📍 Tab Borradores encontrado:', !!tabBorradores);
+    console.log(' Tab Cotizaciones encontrado:', !!tabCotizaciones);
+    console.log(' Tab Borradores encontrado:', !!tabBorradores);
     
     // Verificar el display actual
     if (tabCotizaciones) {

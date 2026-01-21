@@ -48,3 +48,8 @@
 
 <!-- Modal Dinámico de Recibo (detalle de proceso específico) -->
 @include('components.modals.recibo-dinamico-modal')
+
+<!-- Modal para Agregar/Editar Prendas (necesario para edición desde listado) -->
+@include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
+@include('asesores.pedidos.modals.modal-seleccionar-tallas')
+@include('asesores.pedidos.modals.modal-proceso-generico')

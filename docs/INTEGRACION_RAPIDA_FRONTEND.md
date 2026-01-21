@@ -92,7 +92,7 @@ Asegurar que incluya:
 
 ---
 
-## 📍 PASO 4: Incluir scripts en vista
+##  PASO 4: Incluir scripts en vista
 
 **Ya está hecho en:** `crear-pedido-completo.blade.php`
 

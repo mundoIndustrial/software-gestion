@@ -671,7 +671,7 @@ function actualizarResumenFriendly() {
         // Usar variable global si está disponible (desde cargar-borrador.js)
         let ubicacionesArray = window.ubicacionesGuardadas || [];
         
-        console.log('📍 DEBUG Ubicaciones desde global:', {
+        console.log(' DEBUG Ubicaciones desde global:', {
             ubicacionesGuardadas: window.ubicacionesGuardadas,
             cantidad: ubicacionesArray.length
         });
@@ -1340,9 +1340,9 @@ function recopilarDatos() {
         });
     }
     
-    console.log('📍 Ubicaciones recopiladas:', ubicaciones);
-    console.log('📍 paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');
-    console.log('📍 seccionesSeleccionadasFriendly:', typeof window.seccionesSeleccionadasFriendly !== 'undefined' ? window.seccionesSeleccionadasFriendly : 'NO DEFINIDO');
+    console.log(' Ubicaciones recopiladas:', ubicaciones);
+    console.log(' paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');
+    console.log(' seccionesSeleccionadasFriendly:', typeof window.seccionesSeleccionadasFriendly !== 'undefined' ? window.seccionesSeleccionadasFriendly : 'NO DEFINIDO');
     
     // Recopilar observaciones generales CON TIPO Y VALOR como objetos
     const observaciones_generales = [];

@@ -2,7 +2,7 @@
 
 ## Índice de Módulos
 
-### 1️⃣ ValidationModule
+###  ValidationModule
 **Archivo:** `ValidationModule.js`  
 **Responsabilidad:** Validación de datos  
 **Patrón:** Strategy
@@ -34,7 +34,7 @@ validationModule.addRule('telefono', (value) => {
 
 ---
 
-### 2️⃣ TallasModule
+###  TallasModule
 **Archivo:** `TallasModule.js`  
 **Responsabilidad:** Gestión de tallas  
 **Patrón:** Factory
@@ -74,7 +74,7 @@ tallasModule.agregarTallasSeleccionadas(btn);
 
 ---
 
-### 3️⃣ EspecificacionesModule
+###  EspecificacionesModule
 **Archivo:** `EspecificacionesModule.js`  
 **Responsabilidad:** Especificaciones de cotización  
 **Patrón:** Observer

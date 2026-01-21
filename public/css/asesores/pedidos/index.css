@@ -408,3 +408,196 @@
 .table-scroll-container::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+/* ====================== MODAL AGREGAR PRENDA NUEVA ====================== */
+/* Asegurar que el modal se renderice correctamente desde la página de listado */
+#modal-agregar-prenda-nueva {
+    display: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    z-index: 99999 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    padding: 2rem 0 !important;
+}
+
+#modal-agregar-prenda-nueva[style*="display: flex"] {
+    display: flex !important;
+}
+
+#modal-agregar-prenda-nueva .modal-container {
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+    margin: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+    max-width: 900px !important;
+    width: 95% !important;
+}
+
+/* Asegurar que todos los elementos dentro del modal hereden los estilos correctos */
+#modal-agregar-prenda-nueva .modal-header {
+    padding: 1.5rem !important;
+    border-bottom: 2px solid #e5e7eb !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: #0066cc !important;
+}
+
+#modal-agregar-prenda-nueva .modal-title {
+    margin: 0 !important;
+    color: white !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+#modal-agregar-prenda-nueva .modal-close-btn {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 1.5rem !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    width: 30px !important;
+    height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 4px !important;
+    transition: background 0.2s !important;
+}
+
+#modal-agregar-prenda-nueva .modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+#modal-agregar-prenda-nueva .modal-body {
+    padding: 1.5rem !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+}
+
+#modal-agregar-prenda-nueva .modal-footer {
+    padding: 1rem 1.5rem !important;
+    border-top: 1px solid #e5e7eb !important;
+    display: flex !important;
+    gap: 0.75rem !important;
+    justify-content: flex-end !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    background: white !important;
+}
+
+/* Asegurar que los formularios se vean bien */
+#modal-agregar-prenda-nueva .form-prenda-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+#modal-agregar-prenda-nueva .form-section {
+    margin-bottom: 1.5rem !important;
+}
+
+#modal-agregar-prenda-nueva .form-group {
+    margin-bottom: 1rem !important;
+}
+
+#modal-agregar-prenda-nueva .form-label-primary {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-weight: 600 !important;
+    color: #0066cc !important;
+    margin-bottom: 0.5rem !important;
+}
+
+#modal-agregar-prenda-nueva .form-input,
+#modal-agregar-prenda-nueva .form-textarea,
+#modal-agregar-prenda-nueva select {
+    width: 100% !important;
+    padding: 0.75rem !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 6px !important;
+    font-size: 0.95rem !important;
+    transition: border-color 0.3s !important;
+}
+
+#modal-agregar-prenda-nueva .form-input:focus,
+#modal-agregar-prenda-nueva .form-textarea:focus,
+#modal-agregar-prenda-nueva select:focus {
+    outline: none !important;
+    border-color: #0066cc !important;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1) !important;
+}
+
+/* Tablas */
+#modal-agregar-prenda-nueva table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 1rem !important;
+}
+
+#modal-agregar-prenda-nueva table thead {
+    background: #0066cc !important;
+}
+
+#modal-agregar-prenda-nueva table th {
+    padding: 0.75rem !important;
+    text-align: left !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: white !important;
+}
+
+#modal-agregar-prenda-nueva table td {
+    padding: 0.5rem !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* Botones de género */
+#modal-agregar-prenda-nueva .genero-buttons {
+    display: flex !important;
+    gap: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+
+#modal-agregar-prenda-nueva .btn-genero {
+    flex: 1 !important;
+    padding: 1rem !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    background: white !important;
+    cursor: pointer !important;
+    transition: all 0.3s !important;
+}
+
+#modal-agregar-prenda-nueva .btn-genero:hover {
+    border-color: #0066cc !important;
+    background: #f0f7ff !important;
+}
+
+/* Procesos */
+#modal-agregar-prenda-nueva .procesos-container {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 1rem !important;
+}

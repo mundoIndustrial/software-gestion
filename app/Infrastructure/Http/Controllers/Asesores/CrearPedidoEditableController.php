@@ -14,6 +14,7 @@ use App\Domain\PedidoProduccion\Services\VariacionesProcessorService;
 use App\Domain\PedidoProduccion\Services\ImagenProcessorService;
 use App\Domain\PedidoProduccion\Services\EppProcessorService;
 use App\Domain\PedidoProduccion\Services\PedidoCreationService;
+use App\Domain\PedidoProduccion\Services\ImagenMapperService;
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
 use App\Services\PedidoEppService;
@@ -35,6 +36,7 @@ class CrearPedidoEditableController extends Controller
         private ImagenProcessorService $imagenProcessor,
         private EppProcessorService $eppProcessor,
         private PedidoCreationService $pedidoCreationService,
+        private ImagenMapperService $imagenMapper,
     ) {}
 
     public function index(?string $tipoInicial = null): View
@@ -137,7 +139,7 @@ class CrearPedidoEditableController extends Controller
 
     public function validarPedido(Request $request): JsonResponse
     {
-        \Log::info('✅ [validarPedido] Método llamado');
+        \Log::info(' [validarPedido] Método llamado');
         
         return response()->json([
             'valid' => true,
@@ -214,7 +216,7 @@ class CrearPedidoEditableController extends Controller
                 
                 // Procesar EPP
                 if ($tipo === 'epp') {
-                    $eppData = $this->eppProcessor->construirEppConImagenes($request, $itemIndex, $item);
+                    $eppData = $this->eppProcessor->construirEppConImagenes($request, $itemIndex, $item, $pedido->id);
                     $eppsParaGuardar[] = $eppData;
                     $cantidadTotal += (int)($item['cantidad'] ?? 0);
                     continue;
@@ -224,11 +226,24 @@ class CrearPedidoEditableController extends Controller
                 // Reconstruir procesos usando servicio DDD
                 $procesosReconstruidos = $this->formDataProcessor->reconstruirProcesos($request, $itemIndex);
                 
-                // Extraer imágenes de prenda usando servicio DDD
+                // Extraer imágenes de procesos usando servicio DDD (desde FormData)
+                $procesosReconstruidos = $this->formDataProcessor->extraerImagenesProcesos($request, $itemIndex, $procesosReconstruidos);
+                
+                // Extraer imágenes de prenda usando servicio DDD (desde FormData)
                 $fotosFiltered = $this->formDataProcessor->extraerImagenesPrenda($request, $itemIndex);
                 
-                // Extraer imágenes de telas usando servicio DDD
+                // Si no hay imágenes en FormData, mapear desde JSON del item
+                if (empty($fotosFiltered)) {
+                    $fotosFiltered = $this->imagenMapper->mapearImagenesPrenda($item);
+                }
+                
+                // Extraer imágenes de telas usando servicio DDD (desde FormData)
                 $telasConImagenes = $this->formDataProcessor->extraerImagenesTelas($request, $itemIndex, $item['telas'] ?? []);
+                
+                // Si no hay imágenes en FormData, mapear desde JSON del item
+                if (empty($telasConImagenes) || !$this->tieneImagenesEnTelas($telasConImagenes)) {
+                    $telasConImagenes = $this->imagenMapper->mapearImagenesTelas($item['telas'] ?? []);
+                }
                 
                 // Procesar cantidad_talla usando servicio DDD (parsea JSON si es necesario)
                 $cantidadTallaProcessada = $this->itemTransformer->procesarCantidadTalla($item['cantidad_talla'] ?? []);
@@ -242,16 +257,30 @@ class CrearPedidoEditableController extends Controller
                 // Procesar variaciones (manga, broche, color, tela) usando servicio DDD
                 $variacionesIds = $this->variacionesProcessor->procesarVariaciones($item);
                 
-                // Extraer observaciones de variaciones desde el request o del item
-                $mangaObs = $request->input("items.{$itemIndex}.obs_manga") ?? $item['obs_manga'] ?? '';
-                $brocheObs = $request->input("items.{$itemIndex}.obs_broche") ?? $item['obs_broche'] ?? '';
-                $bolsillosObs = $request->input("items.{$itemIndex}.obs_bolsillos") ?? $item['obs_bolsillos'] ?? '';
-                $reflectivoObs = $request->input("items.{$itemIndex}.obs_reflectivo") ?? $item['obs_reflectivo'] ?? '';
-                $tieneBolsillos = $request->input("items.{$itemIndex}.tiene_bolsillos") ?? $item['tiene_bolsillos'] ?? false;
-                $tieneReflectivo = $request->input("items.{$itemIndex}.tiene_reflectivo") ?? $item['tiene_reflectivo'] ?? false;
+                // Extraer variaciones desde JSON si existen
+                $variacionesJSON = [];
+                if (!empty($item['variaciones'])) {
+                    if (is_string($item['variaciones'])) {
+                        $variacionesJSON = json_decode($item['variaciones'], true) ?? [];
+                    } else {
+                        $variacionesJSON = $item['variaciones'];
+                    }
+                }
                 
-                // Pasar observaciones al item para que se incluyan en prendaData
+                // Extraer manga, broche y observaciones desde variaciones JSON
+                $manga = $variacionesJSON['manga'] ?? '';
+                $mangaObs = $variacionesJSON['obs_manga'] ?? $request->input("items.{$itemIndex}.obs_manga") ?? $item['obs_manga'] ?? '';
+                $broche = $variacionesJSON['broche'] ?? '';
+                $brocheObs = $variacionesJSON['obs_broche'] ?? $request->input("items.{$itemIndex}.obs_broche") ?? $item['obs_broche'] ?? '';
+                $bolsillosObs = $variacionesJSON['obs_bolsillos'] ?? $request->input("items.{$itemIndex}.obs_bolsillos") ?? $item['obs_bolsillos'] ?? '';
+                $reflectivoObs = $variacionesJSON['obs_reflectivo'] ?? $request->input("items.{$itemIndex}.obs_reflectivo") ?? $item['obs_reflectivo'] ?? '';
+                $tieneBolsillos = $variacionesJSON['tiene_bolsillos'] ?? $request->input("items.{$itemIndex}.tiene_bolsillos") ?? $item['tiene_bolsillos'] ?? false;
+                $tieneReflectivo = $variacionesJSON['tiene_reflectivo'] ?? $request->input("items.{$itemIndex}.tiene_reflectivo") ?? $item['tiene_reflectivo'] ?? false;
+                
+                // Pasar variaciones al item para que se incluyan en prendaData
+                $item['manga'] = $manga;
                 $item['obs_manga'] = $mangaObs;
+                $item['broche'] = $broche;
                 $item['obs_broche'] = $brocheObs;
                 $item['obs_bolsillos'] = $bolsillosObs;
                 $item['obs_reflectivo'] = $reflectivoObs;
@@ -416,5 +445,18 @@ class CrearPedidoEditableController extends Controller
                 'message' => 'Error al subir imágenes: ' . $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * Verificar si hay imágenes en las telas
+     */
+    private function tieneImagenesEnTelas(array $telasConImagenes): bool
+    {
+        foreach ($telasConImagenes as $tela) {
+            if (!empty($tela['fotos'])) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -97,7 +97,7 @@ let currentPedidoNumberLogo = null; // Variable global para guardar el número d
 
 function toggleFacturaLogo() {
     console.log(' [TOGGLE FACTURA LOGO] Iniciando cambio a factura...');
-    console.trace('📍 [TOGGLE FACTURA LOGO] Stack trace de quién llamó esta función');
+    console.trace(' [TOGGLE FACTURA LOGO] Stack trace de quién llamó esta función');
     
     //  IMPORTANTE: Buscar SOLO dentro del modal de logo
     const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');

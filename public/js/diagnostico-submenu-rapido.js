@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 2. Verificar el primer submenu
     const firstSubmenu = submenus[0];
-    console.log('\n📍 Primer submenu:');
+    console.log('\n Primer submenu:');
     console.log('  - Clase HTML:', firstSubmenu.className);
     console.log('  - Tiene .open?', firstSubmenu.classList.contains('open'));
     console.log('  - Items dentro:', firstSubmenu.querySelectorAll('.submenu-item').length);

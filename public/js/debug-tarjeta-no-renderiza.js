@@ -9,9 +9,9 @@
 console.log(' ========== DEBUG CRÍTICO: TARJETA NO RENDERIZA ==========\n');
 
 // ============================================
-// 1️⃣ VERIFICAR COMPONENTES BÁSICOS
+//  VERIFICAR COMPONENTES BÁSICOS
 // ============================================
-console.log('1️⃣ Verificando componentes básicos...\n');
+console.log(' Verificando componentes básicos...\n');
 
 const componentes = {
     gestionItemsUI: typeof window.gestionItemsUI !== 'undefined',
@@ -25,9 +25,9 @@ Object.entries(componentes).forEach(([nombre, existe]) => {
 });
 
 // ============================================
-// 2️⃣ VERIFICAR ESTADO DEL GESTOR
+//  VERIFICAR ESTADO DEL GESTOR
 // ============================================
-console.log('\n2️⃣ Estado del Gestor:\n');
+console.log('\n Estado del Gestor:\n');
 
 if (window.gestorPrendaSinCotizacion) {
     const gestor = window.gestorPrendaSinCotizacion;
@@ -48,9 +48,9 @@ if (window.gestorPrendaSinCotizacion) {
 }
 
 // ============================================
-// 3️⃣ VERIFICAR CONTAINER EN DOM
+//  VERIFICAR CONTAINER EN DOM
 // ============================================
-console.log('\n3️⃣ Verificar Container en DOM:\n');
+console.log('\n Verificar Container en DOM:\n');
 
 const containerID = 'prendas-container-editable';
 const container = document.getElementById(containerID);

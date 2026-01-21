@@ -206,12 +206,12 @@ PRENDA: Polo con Bordado
    │ ☑ Polo                          │
    │    50 unidades                │
    │    Procesos: Bordado          │
-   │   📍 Origen: ○ Bodega ○ Confec. │
+   │    Origen: ○ Bodega ○ Confec. │
    │                                 │
    │ ☑ Camisa Drill                  │
    │    30 unidades                │
    │    Procesos: Estampado        │
-   │   📍 Origen: ○ Bodega ○ Confec. │
+   │    Origen: ○ Bodega ○ Confec. │
    │                                 │
    │ [Agregar Prendas Seleccionadas] │
    └─────────────────────────────────┘

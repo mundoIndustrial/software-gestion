@@ -104,7 +104,7 @@ class PedidoSubmitHandler {
             let resultadoLogo = null;
 
             if (tipoInfo.esCombinada && datosLogo && this.tieneDataLogo(datosLogo)) {
-                console.log('📍 [COMBINADA] Enviando datos de logo...');
+                console.log(' [COMBINADA] Enviando datos de logo...');
                 
                 resultadoLogo = await this.enviarDatosLogo({
                     pedidoId: resultadoPedido.logo_pedido_id,

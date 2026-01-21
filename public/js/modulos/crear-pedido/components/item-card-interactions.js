@@ -67,7 +67,7 @@ function initializeItemCardInteractions() {
       // Validar que wrapper existe
       if (!wrapper) {
         console.warn(' [ITEM-CARD-INTERACTIONS] btn-menu-wrapper no encontrado');
-        console.warn('📍 [ITEM-CARD-INTERACTIONS] Button parents:', button.parentElement?.className);
+        console.warn(' [ITEM-CARD-INTERACTIONS] Button parents:', button.parentElement?.className);
         return;
       }
       
@@ -77,7 +77,7 @@ function initializeItemCardInteractions() {
       // Validar que dropdown existe
       if (!dropdown) {
         console.warn(' [ITEM-CARD-INTERACTIONS] menu-dropdown no encontrado en wrapper');
-        console.log('📍 [ITEM-CARD-INTERACTIONS] Wrapper HTML:', wrapper.innerHTML.substring(0, 200));
+        console.log(' [ITEM-CARD-INTERACTIONS] Wrapper HTML:', wrapper.innerHTML.substring(0, 200));
         return;
       }
       

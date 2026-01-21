@@ -124,7 +124,7 @@ function cargarBorrador(cotizacion) {
                                 if (!fila && filas.length > 0) {
                                     // Para estas categorías, siempre usar la primera fila disponible
                                     fila = filas[index] || filas[0];
-                                    console.log(`📍 Usando fila por índice [${index || 0}] para: ${key}`);
+                                    console.log(` Usando fila por índice [${index || 0}] para: ${key}`);
                                 }
                             }
                             
@@ -991,7 +991,7 @@ function cargarBorrador(cotizacion) {
         cotizacion.ubicaciones.forEach(ubicacion => {
             if (ubicacion.seccion) {
                 // Aquí se puede implementar lógica para cargar secciones
-                console.log('📍 Ubicación encontrada:', ubicacion.seccion);
+                console.log(' Ubicación encontrada:', ubicacion.seccion);
             }
         });
     }
@@ -1298,7 +1298,7 @@ function cargarBorrador(cotizacion) {
                 console.log('💾 Ubicaciones guardadas en window:', window.ubicacionesGuardadas);
                 
                 setTimeout(() => {
-                    console.log('📍 DEBUG Ubicaciones:', { ubicaciones: ubicaciones });
+                    console.log(' DEBUG Ubicaciones:', { ubicaciones: ubicaciones });
                     // Cargar en seccionesSeleccionadasFriendly para que renderizarSeccionesFriendly() las dibuje
                     if (typeof window.seccionesSeleccionadasFriendly !== 'undefined') {
                         window.seccionesSeleccionadasFriendly = [];

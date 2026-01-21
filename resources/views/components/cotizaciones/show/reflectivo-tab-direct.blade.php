@@ -93,7 +93,7 @@
                                         @if(isset($ubi['ubicacion']))
                                             <div style="background: white; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem;">
                                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                                    <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
+                                                    <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;"></span>
                                                     <span style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">{{ $ubi['ubicacion'] }}</span>
                                                 </div>
                                                 @if(!empty($ubi['descripcion']))

@@ -14,7 +14,7 @@ Se ha completado exitosamente la **refactorización del archivo monolítico `fun
 
 ## Estructura de Componentes Creados
 
-### 1️⃣ `prenda-sin-cotizacion-core.js` (77 líneas)
+###  `prenda-sin-cotizacion-core.js` (77 líneas)
 **Responsabilidad:** Inicialización y gestión base
 
 ```javascript
@@ -32,7 +32,7 @@ Se ha completado exitosamente la **refactorización del archivo monolítico `fun
 
 ---
 
-### 2️⃣ `prenda-sin-cotizacion-tallas.js` (59 líneas)
+###  `prenda-sin-cotizacion-tallas.js` (59 líneas)
 **Responsabilidad:** Gestión de tallas
 
 ```javascript
@@ -48,7 +48,7 @@ Se ha completado exitosamente la **refactorización del archivo monolítico `fun
 
 ---
 
-### 3️⃣ `prenda-sin-cotizacion-telas.js` (220 líneas)
+###  `prenda-sin-cotizacion-telas.js` (220 líneas)
 **Responsabilidad:** Gestión de telas e imágenes de telas
 
 ```javascript

@@ -6,7 +6,8 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\PrendaVariante;
 use App\Models\PrendaFotoPedido;
-use App\Models\PrendaFotoTelasPedido;
+use App\Models\PrendaFotoTelaPedido;
+use App\Models\PrendaPedidoColorTela;
 use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\PedidosProcessImagenes;
 use App\Models\TipoProceso;
@@ -174,6 +175,7 @@ class GuardarPedidoDesdeJSONService
 
     /**
      * Guardar fotos de telas especificadas
+     * Ahora crea registros en prenda_pedido_colores_telas primero, luego las fotos
      */
     private function guardarFotosTelas(PrendaPedido $prendaPedido, array $fotosTelas): int
     {
@@ -187,6 +189,18 @@ class GuardarPedidoDesdeJSONService
             }
 
             try {
+                // Obtener o crear la combinación color-tela
+                $colorTelaId = $fotoData['color_tela_id'] ?? null;
+                
+                if (!$colorTelaId) {
+                    // Si no viene el ID, crear la combinación
+                    $colorTela = $prendaPedido->coloresTelas()->firstOrCreate([
+                        'color_id' => $fotoData['color_id'] ?? null,
+                        'tela_id' => $fotoData['tela_id'] ?? null,
+                    ]);
+                    $colorTelaId = $colorTela->id;
+                }
+
                 $rutasGuardadas = $this->imagenService->guardarImagenComoWebp(
                     $archivo,
                     "telas/{$prendaPedido->id}",
@@ -194,17 +208,14 @@ class GuardarPedidoDesdeJSONService
                 );
 
                 if ($rutasGuardadas) {
-                    $prendaPedido->fotosTelas()->create([
-                        'tela_id' => $fotoData['tela_id'] ?? null,
-                        'color_id' => $fotoData['color_id'] ?? null,
+                    // Crear foto asociada a la combinación color-tela
+                    \DB::table('prenda_fotos_tela_pedido')->insert([
+                        'prenda_pedido_colores_telas_id' => $colorTelaId,
                         'ruta_original' => $rutasGuardadas['original'] ?? null,
                         'ruta_webp' => $rutasGuardadas['webp'],
-                        'ruta_miniatura' => $rutasGuardadas['miniatura'] ?? null,
-                        'ancho' => $fotoData['ancho'] ?? null,
-                        'alto' => $fotoData['alto'] ?? null,
-                        'tamaño' => $fotoData['tamaño'] ?? null,
                         'orden' => $fotoData['orden'] ?? $contador + 1,
-                        'observaciones' => $fotoData['observaciones'] ?? '',
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                     $contador++;
                 }

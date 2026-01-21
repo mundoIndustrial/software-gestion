@@ -22,11 +22,11 @@ class PrendaFotoTelaPedido extends Model
     protected $appends = ['url'];
 
     /**
-     * Relación: Pertenece a una prenda
+     * Relación: Pertenece a una combinación de color-tela
      */
-    public function prenda(): BelongsTo
+    public function colorTela(): BelongsTo
     {
-        return $this->belongsTo(PrendaPedido::class, 'prenda_pedido_id');
+        return $this->belongsTo(PrendaPedidoColorTela::class, 'prenda_pedido_colores_telas_id');
     }
 
     /**

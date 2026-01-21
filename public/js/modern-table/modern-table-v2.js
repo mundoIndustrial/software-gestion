@@ -109,27 +109,27 @@ class ModernTableV2 {
         document.addEventListener('dblclick', e => {
             console.log('🖱️ DBLCLICK DETECTADO en:', e.target);
             const cell = e.target.closest('.cell-content');
-            console.log('📍 Cell encontrada:', cell ? 'SÍ' : 'NO');
+            console.log(' Cell encontrada:', cell ? 'SÍ' : 'NO');
             
             if (cell) {
                 const hasSelect = cell.querySelector('select');
-                console.log('📍 Tiene select:', hasSelect ? 'SÍ' : 'NO');
+                console.log(' Tiene select:', hasSelect ? 'SÍ' : 'NO');
                 
                 if (!hasSelect) {
                     const row = cell.closest('tr');
-                    console.log('📍 Row encontrada:', row ? 'SÍ' : 'NO');
+                    console.log(' Row encontrada:', row ? 'SÍ' : 'NO');
                     
                     const orderId = row?.dataset.orderId;
-                    console.log('📍 OrderId:', orderId);
+                    console.log(' OrderId:', orderId);
                     
                     //  Obtener column desde la celda td más cercana
                     const td = cell.closest('.table-cell');
                     const column = td?.dataset.column;
-                    console.log('📍 TD encontrado:', td ? 'SÍ' : 'NO');
-                    console.log('📍 Column:', column);
+                    console.log(' TD encontrado:', td ? 'SÍ' : 'NO');
+                    console.log(' Column:', column);
                     
                     let content = cell.textContent;
-                    console.log('📍 Content inicial:', content.substring(0, 50));
+                    console.log(' Content inicial:', content.substring(0, 50));
                     
                     //  CORREGIR: Para descripcion_prendas, obtener contenido desde data-full-content del div .descripcion-preview
                     if (column === 'descripcion_prendas') {

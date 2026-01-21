@@ -18,8 +18,8 @@ class TestVariantesGenero extends Command
         $this->info("========================================\n");
 
         try {
-            // 1️⃣ BUSCAR PRENDAS CON MÚLTIPLES GÉNEROS
-            $this->info("1️⃣ Buscando prendas con múltiples géneros...");
+            //  BUSCAR PRENDAS CON MÚLTIPLES GÉNEROS
+            $this->info(" Buscando prendas con múltiples géneros...");
             
             $prendas = PrendaPedido::all();
             
@@ -75,8 +75,8 @@ class TestVariantesGenero extends Command
             
             $this->info(" Encontradas " . count($prendasMultiplesGeneros) . " prenda(s) con múltiples géneros\n");
 
-            // 2️⃣ VERIFICAR VARIANTES
-            $this->info("2️⃣ Verificando variantes guardadas...\n");
+            //  VERIFICAR VARIANTES
+            $this->info(" Verificando variantes guardadas...\n");
             
             $todasOk = true;
             
@@ -142,7 +142,7 @@ class TestVariantesGenero extends Command
                 $this->line("");
             }
 
-            // 3️⃣ RESULTADO FINAL
+            //  RESULTADO FINAL
             $this->info("========================================");
             if ($todasOk) {
                 $this->info(" TEST EXITOSO: Variantes con genero-talla funcionan correctamente");

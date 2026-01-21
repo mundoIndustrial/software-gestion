@@ -37,7 +37,7 @@ CREATE TABLE pedido_epp_imagenes (
 
 ## 🔄 Flujo Completo de Guardado
 
-### 1️⃣ **Frontend: Captura de Imágenes (JavaScript)**
+###  **Frontend: Captura de Imágenes (JavaScript)**
 
 **Archivo:** `public/js/modulos/crear-pedido/configuracion/api-pedidos-editable.js`
 
@@ -71,7 +71,7 @@ items[1][imagenes][0] → File object (siguiente EPP)
 
 ---
 
-### 2️⃣ **Backend: Recepción en Controlador**
+###  **Backend: Recepción en Controlador**
 
 **Archivo:** `app/Http/Controllers/Asesores/CrearPedidoEditableController.php` (líneas 340-385)
 
@@ -122,7 +122,7 @@ if ($tipo === 'epp') {
 
 ---
 
-### 3️⃣ **Servicio: Guardado en Base de Datos**
+###  **Servicio: Guardado en Base de Datos**
 
 **Archivo:** `app/Services/PedidoEppService.php`
 
@@ -347,11 +347,11 @@ $imagenes = DB::table('pedido_epp_imagenes')
 ##  Resumen del Flujo
 
 ```
-1️⃣ Usuario selecciona imágenes en frontend
+ Usuario selecciona imágenes en frontend
    ↓
-2️⃣ FormData agrupa: items[idx][imagenes][0] = File
+ FormData agrupa: items[idx][imagenes][0] = File
    ↓
-3️⃣ POST /crear-pedido-editable (FormData)
+ POST /crear-pedido-editable (FormData)
    ↓
 4️⃣ CrearPedidoEditableController recibe y procesa
    ↓

@@ -287,19 +287,22 @@ class CopiarImagenesCotizacionAPedidoService
                 return 0;
             }
 
-            // Copiar las fotos de tela directamente a prenda_fotos_tela_pedido
+            // Copiar las fotos de tela a través de prenda_pedido_colores_telas
             foreach ($fotosTela as $foto) {
-                \App\Models\PrendaFotoTelaPedido::create([
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'tela_id' => null,
+                // Crear o obtener la combinación color-tela
+                $colorTela = $prendaPedido->coloresTelas()->firstOrCreate([
                     'color_id' => null,
+                    'tela_id' => null,
+                ]);
+                
+                // Crear la foto asociada a la combinación color-tela
+                \DB::table('prenda_fotos_tela_pedido')->insert([
+                    'prenda_pedido_colores_telas_id' => $colorTela->id,
                     'ruta_original' => $foto->ruta_original,
                     'ruta_webp' => $foto->ruta_webp,
-                    'ruta_miniatura' => $foto->ruta_miniatura,
                     'orden' => $foto->orden,
-                    'ancho' => $foto->ancho,
-                    'alto' => $foto->alto,
-                    'tamaño' => $foto->tamaño,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 

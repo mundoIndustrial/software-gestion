@@ -66,7 +66,7 @@ const OrdersDropdownManager = {
             return;
         }
         
-        console.log(`📍 Área seleccionada (visualización): ${newValue}`);
+        console.log(` Área seleccionada (visualización): ${newValue}`);
         console.log(` Datos: orderId=${orderId}, oldValue=${oldValue}, newValue=${newValue}`);
         
         if (!orderId) {
@@ -74,7 +74,7 @@ const OrdersDropdownManager = {
             return;
         }
         
-        console.log(`📍 Preparando actualización - Pedido: ${orderId}, Anterior: ${oldValue}, Nueva: ${newValue}`);
+        console.log(` Preparando actualización - Pedido: ${orderId}, Anterior: ${oldValue}, Nueva: ${newValue}`);
         
         dropdown.setAttribute('data-value', newValue);
         

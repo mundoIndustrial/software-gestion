@@ -6,28 +6,28 @@
  */
 
 // ============================================
-// 1️⃣ VERIFICAR ESTADO ACTUAL
+//  VERIFICAR ESTADO ACTUAL
 // ============================================
 console.log(' ========== DEBUG RENDERIZADO PRENDAS ==========');
 
-console.log('1️⃣ Verificando componentes globales...');
+console.log(' Verificando componentes globales...');
 console.log('   ✓ GestionItemsUI:', typeof window.gestionItemsUI !== 'undefined' ? '' : '');
 console.log('   ✓ GestorPrendaSinCotizacion:', typeof window.gestorPrendaSinCotizacion !== 'undefined' ? '' : '');
 console.log('   ✓ obtenerProcesosConfigurables:', typeof window.obtenerProcesosConfigurables === 'function' ? '' : '');
 console.log('   ✓ renderizarPrendasTipoPrendaSinCotizacion:', typeof window.renderizarPrendasTipoPrendaSinCotizacion === 'function' ? '' : '');
 
 // ============================================
-// 2️⃣ REVISAR PROCESOS SELECCIONADOS
+//  REVISAR PROCESOS SELECCIONADOS
 // ============================================
-console.log('\n2️⃣ Procesos seleccionados actualmente:');
+console.log('\n Procesos seleccionados actualmente:');
 const procesos = window.procesosSeleccionados || {};
 console.log('   Procesos:', Object.keys(procesos).length === 0 ? '[vacío]' : Object.keys(procesos));
 console.log('   Estructura completa:', procesos);
 
 // ============================================
-// 3️⃣ REVISAR PRENDAS EN GESTOR
+//  REVISAR PRENDAS EN GESTOR
 // ============================================
-console.log('\n3️⃣ Prendas en el gestor:');
+console.log('\n Prendas en el gestor:');
 if (window.gestorPrendaSinCotizacion) {
     const todasLasPrendas = window.gestorPrendaSinCotizacion.prendas;
     const prendasActivas = window.gestorPrendaSinCotizacion.obtenerActivas();

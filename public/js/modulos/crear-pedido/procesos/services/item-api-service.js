@@ -165,33 +165,47 @@ class ItemAPIService {
                         Object.keys(item.procesos).forEach(tipoProceso => {
                             const proceso = item.procesos[tipoProceso];
                             
+                            // Extraer datos - pueden estar en .datos o directamente
+                            const datosProc = proceso.datos || proceso;
+                            
                             // Agregar campos individuales del proceso
-                            formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tipo]`, proceso.tipo || tipoProceso);
+                            formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tipo]`, datosProc.tipo || tipoProceso);
                             
                             // Agregar ubicaciones como JSON
-                            if (proceso.ubicaciones) {
+                            if (datosProc.ubicaciones) {
                                 formData.append(`items[${itemIndex}][procesos][${tipoProceso}][ubicaciones]`, 
-                                    typeof proceso.ubicaciones === 'string' ? proceso.ubicaciones : JSON.stringify(proceso.ubicaciones));
+                                    typeof datosProc.ubicaciones === 'string' ? datosProc.ubicaciones : JSON.stringify(datosProc.ubicaciones));
                             }
                             
                             // Agregar observaciones
-                            if (proceso.observaciones) {
-                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][observaciones]`, proceso.observaciones);
+                            if (datosProc.observaciones) {
+                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][observaciones]`, datosProc.observaciones);
                             }
                             
                             // Agregar tallas como JSON
-                            if (proceso.tallas) {
+                            if (datosProc.tallas) {
                                 formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tallas_dama]`, 
-                                    JSON.stringify(proceso.tallas.dama || {}));
+                                    JSON.stringify(datosProc.tallas.dama || {}));
                                 formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tallas_caballero]`, 
-                                    JSON.stringify(proceso.tallas.caballero || {}));
+                                    JSON.stringify(datosProc.tallas.caballero || {}));
                             }
                             
                             // Agregar imágenes del proceso
-                            if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
-                                proceso.imagenes.forEach((img, imgIdx) => {
+                            if (datosProc.imagenes && Array.isArray(datosProc.imagenes)) {
+                                datosProc.imagenes.forEach((img, imgIdx) => {
+                                    let archivo = null;
+                                    
+                                    // Caso 1: img es File directo
                                     if (img instanceof File) {
-                                        formData.append(`items[${itemIndex}][procesos][${tipoProceso}][imagenes][]`, img);
+                                        archivo = img;
+                                    }
+                                    // Caso 2: img es {file: File, nombre: string}
+                                    else if (img && img.file instanceof File) {
+                                        archivo = img.file;
+                                    }
+                                    
+                                    if (archivo) {
+                                        formData.append(`items_${itemIndex}_procesos_${tipoProceso}_imagenes_files`, archivo);
                                     }
                                 });
                             }
@@ -199,12 +213,43 @@ class ItemAPIService {
                     }
                     
                     // Agregar imágenes de prenda
-                    if (item.imagenes && Array.isArray(item.imagenes)) {
+                    console.log(`📸 [ItemAPIService] Item ${itemIndex} tipo:`, item.tipo);
+                    console.log(`📸 [ItemAPIService] Item ${itemIndex} imagenes:`, item.imagenes);
+                    console.log(`📸 [ItemAPIService] Item ${itemIndex} imagenes es array:`, Array.isArray(item.imagenes));
+                    console.log(`📸 [ItemAPIService] Item ${itemIndex} imagenes length:`, item.imagenes?.length);
+                    
+                    if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
+                        console.log(`📸 [ItemAPIService] ✅ Agregando ${item.imagenes.length} imágenes de prenda para item ${itemIndex}`);
                         item.imagenes.forEach((img, imgIdx) => {
+                            let archivo = null;
+                            
+                            console.log(`📸 [ItemAPIService] Imagen ${imgIdx}:`, img instanceof File ? 'File' : typeof img);
+                            
+                            // Caso 1: img es File directo
                             if (img instanceof File) {
-                                formData.append(`items[${itemIndex}][imagenes][]`, img);
+                                archivo = img;
+                                console.log(`✅ [ItemAPIService] Imagen ${imgIdx} es File directo: ${img.name}`);
+                            }
+                            // Caso 2: img es {file: File, nombre: string, tamaño: number}
+                            else if (img && img.file instanceof File) {
+                                archivo = img.file;
+                                console.log(`✅ [ItemAPIService] Imagen ${imgIdx} tiene propiedad file: ${img.file.name}`);
+                            }
+                            // Caso 3: img es {archivo: File, nombre: string, ...} (EPP)
+                            else if (img && img.archivo instanceof File) {
+                                archivo = img.archivo;
+                                console.log(`✅ [ItemAPIService] Imagen ${imgIdx} tiene propiedad archivo: ${img.archivo.name}`);
+                            }
+                            
+                            if (archivo) {
+                                console.log(`✅ [ItemAPIService] Agregando archivo a FormData: ${archivo.name}`);
+                                formData.append(`items_${itemIndex}_imagenes_files`, archivo);
+                            } else {
+                                console.warn(`⚠️ [ItemAPIService] Imagen ${imgIdx} no es File object`, img);
                             }
                         });
+                    } else {
+                        console.log(`⚠️ [ItemAPIService] Item ${itemIndex} NO tiene imagenes válidas`);
                     }
                     
                     // Agregar telas con sus imágenes
@@ -215,10 +260,22 @@ class ItemAPIService {
                             formData.append(`items[${itemIndex}][telas][${telaIdx}][referencia]`, tela.referencia || '');
                             
                             // Agregar imágenes de tela
+                            // Las imágenes vienen como {file: File, nombre: string, tamaño: number}
                             if (tela.imagenes && Array.isArray(tela.imagenes)) {
                                 tela.imagenes.forEach((img, imgIdx) => {
+                                    let archivo = null;
+                                    
+                                    // Caso 1: img es File directo
                                     if (img instanceof File) {
-                                        formData.append(`items[${itemIndex}][telas][${telaIdx}][imagenes][]`, img);
+                                        archivo = img;
+                                    }
+                                    // Caso 2: img es {file: File, nombre: string, tamaño: number}
+                                    else if (img && img.file instanceof File) {
+                                        archivo = img.file;
+                                    }
+                                    
+                                    if (archivo) {
+                                        formData.append(`items_${itemIndex}_telas_${telaIdx}_imagenes_files`, archivo);
                                     }
                                 });
                             }
@@ -236,11 +293,22 @@ class ItemAPIService {
                         formData.append(`items[${itemIndex}][observaciones]`, item.observaciones || '');
                         formData.append(`items[${itemIndex}][tallas_medidas]`, item.tallas_medidas || '');
                         
-                        // Agregar imágenes de EPP en ruta específica para EPPs
+                        // Agregar imágenes de EPP con clave plana consistente
                         if (item.imagenes && Array.isArray(item.imagenes)) {
                             item.imagenes.forEach((img, imgIdx) => {
+                                let archivo = null;
+                                
+                                // Caso 1: img es File directo
                                 if (img instanceof File) {
-                                    formData.append(`items[${itemIndex}][epp_imagenes][]`, img);
+                                    archivo = img;
+                                }
+                                // Caso 2: img es {archivo: File, nombre: string, url: string}
+                                else if (img && img.archivo instanceof File) {
+                                    archivo = img.archivo;
+                                }
+                                
+                                if (archivo) {
+                                    formData.append(`items_${itemIndex}_imagenes_files`, archivo);
                                 }
                             });
                         }
@@ -249,6 +317,16 @@ class ItemAPIService {
             }
             
             console.log('📤 [ItemAPIService] FormData construido, enviando...');
+            
+            // Loguear claves de FormData para debugging
+            console.log('📤 [ItemAPIService] Claves en FormData:');
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    console.log(`  - ${key}: File(${value.name})`);
+                } else {
+                    console.log(`  - ${key}: ${typeof value}`);
+                }
+            }
             
             // Realizar petición sin Content-Type (FormData lo establece automáticamente)
             const respuesta = await fetch(`${this.baseUrl}/crear`, {

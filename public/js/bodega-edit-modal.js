@@ -120,7 +120,7 @@ async function loadBodegaOrderData(pedido) {
         
         const orden = await response.json();
         console.log(' Orden completa recibida:', orden);
-        console.log('📍 Área recibida:', orden.area);
+        console.log(' Área recibida:', orden.area);
         
         // Llenar información general
         document.getElementById('bodega_edit_pedido').value = orden.pedido || '';

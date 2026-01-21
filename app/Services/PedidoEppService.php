@@ -54,18 +54,13 @@ class PedidoEppService
     private function guardarImagenesDelEpp(PedidoEpp $pedidoEpp, array $imagenes): void
     {
         foreach ($imagenes as $index => $imagen) {
-            // $imagen puede ser:
-            // 1. Un string (path) si viene del controlador
-            // 2. Un array con 'archivo', 'principal', 'orden' si viene del controlador
-            // 3. Un array con 'file' (UploadedFile) si viene de otra fuente
-            
             $archivo = null;
             $principal = false;
             $orden = $index;
             
             if (is_array($imagen)) {
                 // Es un array con datos de imagen
-                $archivo = $imagen['archivo'] ?? $imagen['file'] ?? null;
+                $archivo = $imagen['archivo'] ?? $imagen['ruta_original'] ?? $imagen['file'] ?? null;
                 $principal = $imagen['principal'] ?? ($index === 0);
                 $orden = $imagen['orden'] ?? $index;
             } else if (is_string($imagen)) {
@@ -76,9 +71,59 @@ class PedidoEppService
             }
             
             if ($archivo) {
+                // Si es UploadedFile, guardar en disco y transformar a webp
+                if ($archivo instanceof \Illuminate\Http\UploadedFile) {
+                    $pedidoId = $pedidoEpp->pedido_produccion_id;
+                    $directorio = storage_path("app/public/pedidos/{$pedidoId}/epp");
+                    
+                    // Crear directorio si no existe
+                    if (!is_dir($directorio)) {
+                        mkdir($directorio, 0755, true);
+                    }
+                    
+                    // Convertir a WebP usando ImageManager
+                    try {
+                        $imagen_obj = \Intervention\Image\ImageManager::gd()->read($archivo->getRealPath());
+                    } catch (\Exception $e) {
+                        try {
+                            $imagen_obj = \Intervention\Image\ImageManager::imagick()->read($archivo->getRealPath());
+                        } catch (\Exception $e2) {
+                            \Log::error('Error transformando imagen EPP', ['error' => $e2->getMessage()]);
+                            continue;
+                        }
+                    }
+                    
+                    // Redimensionar si es necesario
+                    if ($imagen_obj->width() > 2000 || $imagen_obj->height() > 2000) {
+                        $imagen_obj->scaleDown(width: 2000, height: 2000);
+                    }
+                    
+                    // Convertir a WebP con calidad 80
+                    $webp = $imagen_obj->toWebp(quality: 80);
+                    $contenidoWebP = $webp->toString();
+                    
+                    // Generar nombre único
+                    $timestamp = now()->format('YmdHis');
+                    $random = substr(uniqid(), -6);
+                    $nombreArchivo = "img_epp_{$index}_{$timestamp}_{$random}.webp";
+                    $rutaCompleta = $directorio . '/' . $nombreArchivo;
+                    
+                    // Guardar archivo
+                    file_put_contents($rutaCompleta, $contenidoWebP);
+                    
+                    // Rutas
+                    $rutaOriginal = "pedidos/{$pedidoId}/epp/{$nombreArchivo}";
+                    $rutaWeb = "/storage/pedidos/{$pedidoId}/epp/{$nombreArchivo}";
+                } else {
+                    // Es una ruta string
+                    $rutaOriginal = $archivo;
+                    $rutaWeb = str_starts_with($archivo, '/storage/') ? $archivo : '/storage/' . $archivo;
+                }
+                
                 PedidoEppImagen::create([
                     'pedido_epp_id' => $pedidoEpp->id,
-                    'archivo' => $archivo,
+                    'ruta_original' => $rutaOriginal,
+                    'ruta_web' => $rutaWeb,
                     'principal' => $principal,
                     'orden' => $orden,
                 ]);

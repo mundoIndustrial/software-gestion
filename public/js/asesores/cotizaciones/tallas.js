@@ -294,8 +294,8 @@ function actualizarModoTallas(select) {
         
         const botones = botonesDiv.querySelectorAll('.talla-btn');
         const tallasMostradas = Array.from(botones).map(btn => btn.textContent);
-        console.log('📍 TALLAS MOSTRADAS EN MANUAL:', tallasMostradas);
-        console.log('📍 Total de botones:', botones.length);
+        console.log(' TALLAS MOSTRADAS EN MANUAL:', tallasMostradas);
+        console.log(' Total de botones:', botones.length);
         
     } else if (modo === 'rango') {
         console.log(' Mostrando RANGO');
@@ -309,8 +309,8 @@ function actualizarModoTallas(select) {
         const hastaSelect = container.querySelector('.talla-hasta');
         const optionsDesde = Array.from(desdeSelect.querySelectorAll('option')).map(opt => opt.value).filter(v => v);
         const optionsHasta = Array.from(hastaSelect.querySelectorAll('option')).map(opt => opt.value).filter(v => v);
-        console.log('📍 TALLAS EN RANGO DESDE:', optionsDesde);
-        console.log('📍 TALLAS EN RANGO HASTA:', optionsHasta);
+        console.log(' TALLAS EN RANGO DESDE:', optionsDesde);
+        console.log(' TALLAS EN RANGO HASTA:', optionsHasta);
         
     } else {
         console.log(' Modo no reconocido, ocultando todo');

@@ -142,7 +142,7 @@ const NavSearch = {
             const isBodega = window.location.pathname.startsWith('/bodega');
             const searchEndpoint = isBodega ? '/bodega/search' : '/registros/search';
             
-            console.log(`📍 Usando endpoint: ${searchEndpoint}`);
+            console.log(` Usando endpoint: ${searchEndpoint}`);
 
             // Hacer búsqueda con paginación
             const searchResponse = await fetch(searchEndpoint, {
@@ -525,7 +525,7 @@ const NavSearch = {
         
         // Usar history.replaceState para actualizar URL sin recargar
         window.history.replaceState({ search: query, page: page }, '', url.toString());
-        console.log('📍 URL actualizada:', url.toString());
+        console.log(' URL actualizada:', url.toString());
     },
 
     /**

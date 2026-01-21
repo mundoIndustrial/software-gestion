@@ -759,7 +759,7 @@ window.mostrarResumenReflectivo = function() {
     
     // Ubicaciones
     if (window.datosReflectivo.ubicaciones.length > 0) {
-        html += `<p style="margin: 0.5rem 0;"><strong>📍 Ubicaciones:</strong> ${window.datosReflectivo.ubicaciones.join(', ')}</p>`;
+        html += `<p style="margin: 0.5rem 0;"><strong> Ubicaciones:</strong> ${window.datosReflectivo.ubicaciones.join(', ')}</p>`;
     }
     
     // Tallas

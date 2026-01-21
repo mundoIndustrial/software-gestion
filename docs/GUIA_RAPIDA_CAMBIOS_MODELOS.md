@@ -15,7 +15,7 @@ tipo_broche_id  →  tipo_broche_boton_id
 
 ## MODELOS ACTUALIZADOS
 
-### 1️⃣ TipoBroche
+###  TipoBroche
 
 ```php
 // app/Models/TipoBroche.php
@@ -31,7 +31,7 @@ class TipoBroche extends Model
 
 ---
 
-### 2️⃣ TipoManga
+###  TipoManga
 
 ```php
 // app/Models/TipoManga.php
@@ -45,7 +45,7 @@ class TipoManga extends Model
 
 ---
 
-### 3️⃣ TelaPrenda
+###  TelaPrenda
 
 ```php
 // app/Models/TelaPrenda.php

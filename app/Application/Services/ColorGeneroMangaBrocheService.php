@@ -91,12 +91,27 @@ class ColorGeneroMangaBrocheService
             }
         }
 
-        // Buscar case-insensitive primero
+        // Buscar case-insensitive primero (búsqueda exacta)
         $nombreTrim = trim($idONombre);
         $manga = TipoManga::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
         
         if ($manga) {
             return $manga;
+        }
+
+        // Si no encuentra exacta, buscar parcial (contiene)
+        $manga = TipoManga::whereRaw('LOWER(nombre) LIKE LOWER(?)', ["%{$nombreTrim}%"])->first();
+        
+        if ($manga) {
+            return $manga;
+        }
+
+        // Si tampoco encuentra parcial, buscar entre los existentes por similitud
+        $allMangas = TipoManga::where('activo', true)->get();
+        foreach ($allMangas as $m) {
+            if (strtolower($m->nombre) === strtolower($nombreTrim)) {
+                return $m;
+            }
         }
 
         // Si no existe, crear con normalización
@@ -124,12 +139,28 @@ class ColorGeneroMangaBrocheService
             }
         }
 
-        // Buscar case-insensitive primero
+        // Buscar case-insensitive primero (búsqueda exacta)
         $nombreTrim = trim($idONombre);
         $broche = TipoBroche::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
         
         if ($broche) {
             return $broche;
+        }
+
+        // Si no encuentra exacta, buscar parcial (contiene)
+        $broche = TipoBroche::whereRaw('LOWER(nombre) LIKE LOWER(?)', ["%{$nombreTrim}%"])->first();
+        
+        if ($broche) {
+            return $broche;
+        }
+
+        // Si tampoco encuentra parcial, buscar entre los existentes por similitud
+        // Esto es útil para "boton" vs "Botón"
+        $allBroches = TipoBroche::where('activo', true)->get();
+        foreach ($allBroches as $b) {
+            if (strtolower($b->nombre) === strtolower($nombreTrim)) {
+                return $b;
+            }
         }
 
         // Si no existe, crear con normalización

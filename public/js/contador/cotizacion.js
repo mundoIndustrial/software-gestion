@@ -343,7 +343,7 @@ function openCotizacionModal(cotizacionId) {
                         htmlLogo += `
                             <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
                                 <p style="margin: 0 0 0.5rem 0; color: #333; font-weight: 700; font-size: 0.9rem;">
-                                    📍 ${seccion.ubicacion || seccion.seccion || 'Sin ubicación'}
+                                     ${seccion.ubicacion || seccion.seccion || 'Sin ubicación'}
                                 </p>
                         `;
                         

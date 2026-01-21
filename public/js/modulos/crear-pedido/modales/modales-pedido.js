@@ -334,7 +334,7 @@ window.cerrarModalUbicacionLogo = function() {
  */
 window.abrirModalSeccionEditarTab = function(ubicacion, opcionesDisponibles, seccionData) {
     // Función para renderizar modal - incluida en este archivo
-    console.log('📍 Abriendo modal de edición para:', ubicacion);
+    console.log(' Abriendo modal de edición para:', ubicacion);
     Swal.fire({
         title: seccionData ? 'Editar Sección' : 'Configurar Sección',
         html: `<div style="text-align: left; max-height: 60vh; overflow-y: auto;">

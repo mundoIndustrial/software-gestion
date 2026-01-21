@@ -1,6 +1,6 @@
 # MAPEO EXACTO DE FUNCIONES A MIGRAR
 
-## 📍 FUNCIONES EN index.blade.php QUE VAN AL BACKEND
+##  FUNCIONES EN index.blade.php QUE VAN AL BACKEND
 
 ### 1. FUNCIONES DE FORMATEO
 
@@ -231,7 +231,7 @@ public function changeStatus(Request $request, $id) {
 
 ---
 
-## 📍 FUNCIONES EN index.blade.php QUE VAN AL FRONTEND (Modules)
+##  FUNCIONES EN index.blade.php QUE VAN AL FRONTEND (Modules)
 
 ### 1. BÚSQUEDA
 

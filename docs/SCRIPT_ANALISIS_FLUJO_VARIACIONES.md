@@ -14,7 +14,7 @@ Cuando envías un pedido con prendas que tienen **variaciones** (manga, broche, 
 
 ## 🚀 PASO 1: Verificar que el FRONTEND envía las variaciones
 
-### 📍 Archivo: `resources/js/components/gestion-items-pedido.js` (líneas 1049-1164)
+###  Archivo: `resources/js/components/gestion-items-pedido.js` (líneas 1049-1164)
 
 ```javascript
 // El objeto que se prepara tiene esta estructura:
@@ -52,7 +52,7 @@ console.log("Observaciones nivel superior:", {
 
 ## 🚀 PASO 2: Verificar que se ENVÍA al backend correctamente
 
-### 📍 Archivo: `resources/js/components/api-pedidos-editable.js` (línea ~132)
+###  Archivo: `resources/js/components/api-pedidos-editable.js` (línea ~132)
 
 ```javascript
 fetch(`/asesores/pedidos-editable/crear`, {
@@ -99,7 +99,7 @@ Abrir DevTools → Network → Buscar `/asesores/pedidos-editable/crear` → Ver
 
 ## 🚀 PASO 3: Verificar que el BACKEND RECIBE las variaciones
 
-### 📍 Archivo: `app/Http/Controllers/Asesores/CrearPedidoEditableController.php` (línea 302+)
+###  Archivo: `app/Http/Controllers/Asesores/CrearPedidoEditableController.php` (línea 302+)
 
 **El controlador debe extraer así:**
 
@@ -160,7 +160,7 @@ Busca en `storage/logs/laravel.log`:
 
 ## 🚀 PASO 4: Verificar que el SERVICIO recibe las variaciones
 
-### 📍 Archivo: `app/Application/Services/PedidoPrendaService.php` (línea ~175)
+###  Archivo: `app/Application/Services/PedidoPrendaService.php` (línea ~175)
 
 ```php
 public function guardarPrendasEnPedido(
@@ -212,7 +212,7 @@ Si ves `"NO RECIBIDO"` → **El controlador NO está pasando los datos**
 
 ## 🚀 PASO 5: Verificar que se GUARDAN en la BD
 
-### 📍 Archivo: `app/Application/Services/PedidoPrendaService.php` (línea ~250)
+###  Archivo: `app/Application/Services/PedidoPrendaService.php` (línea ~250)
 
 ```php
 $prenda = PrendaPedido::create([

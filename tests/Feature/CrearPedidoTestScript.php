@@ -27,23 +27,23 @@ class CrearPedidoTestScript extends TestCase
 
         try {
             // 1. Crear usuario (asesora)
-            echo "1️⃣  Creando usuario (asesora)...\n";
+            echo "  Creando usuario (asesora)...\n";
             $asesora = User::factory()->create([
                 'name' => 'Asesora Test',
                 'email' => 'asesora@test.com',
             ]);
-            echo "   ✅ Usuario creado: {$asesora->name} (ID: {$asesora->id})\n\n";
+            echo "  Usuario creado: {$asesora->name} (ID: {$asesora->id})\n\n";
 
             // 2. Crear cliente
-            echo "2️⃣  Creando cliente...\n";
+            echo "  Creando cliente...\n";
             $cliente = Cliente::create([
                 'nombre' => 'Cliente Test',
                 'estado' => 'activo',
             ]);
-            echo "   ✅ Cliente creado: {$cliente->nombre} (ID: {$cliente->id})\n\n";
+            echo "  Cliente creado: {$cliente->nombre} (ID: {$cliente->id})\n\n";
 
             // 3. Crear pedido
-            echo "3️⃣  Creando pedido...\n";
+            echo "  Creando pedido...\n";
             $pedido = PedidoProduccion::create([
                 'numero_pedido' => 45709,
                 'cliente' => $cliente->nombre,
@@ -54,7 +54,7 @@ class CrearPedidoTestScript extends TestCase
                 'fecha_de_creacion_de_orden' => now(),
                 'cantidad_total' => 100,
             ]);
-            echo "   ✅ Pedido creado: #{$pedido->numero_pedido} (ID: {$pedido->id})\n\n";
+            echo "  Pedido creado: #{$pedido->numero_pedido} (ID: {$pedido->id})\n\n";
 
             // 4. Verificar datos del pedido
             echo "4️⃣  Verificando datos del pedido...\n";
@@ -66,13 +66,13 @@ class CrearPedidoTestScript extends TestCase
 
             // 6. Resumen final
             echo "\n========================================\n";
-            echo "✅ PRUEBA COMPLETADA EXITOSAMENTE\n";
+            echo " PRUEBA COMPLETADA EXITOSAMENTE\n";
             echo "========================================\n";
             echo "Pedido guardado correctamente en la base de datos\n";
             echo "Todas las relaciones están configuradas correctamente\n\n";
 
         } catch (\Exception $e) {
-            echo "\n❌ ERROR EN LA PRUEBA:\n";
+            echo "\n ERROR EN LA PRUEBA:\n";
             echo "   {$e->getMessage()}\n";
             echo "   Archivo: {$e->getFile()}\n";
             echo "   Línea: {$e->getLine()}\n\n";
@@ -94,7 +94,7 @@ class CrearPedidoTestScript extends TestCase
         ];
 
         foreach ($datos as $campo => $valor) {
-            $estado = $valor ? '✅' : '❌';
+            $estado = $valor ? '' : '';
             echo "   {$estado} {$campo}: {$valor}\n";
         }
     }
@@ -104,33 +104,33 @@ class CrearPedidoTestScript extends TestCase
         // Verificar relación con cliente
         $cliente = $pedido->cliente()->first();
         if ($cliente) {
-            echo "   ✅ Relación con Cliente: {$cliente->nombre}\n";
+            echo "  Relación con Cliente: {$cliente->nombre}\n";
         } else {
-            echo "   ❌ No se encontró relación con Cliente\n";
+            echo "    No se encontró relación con Cliente\n";
         }
 
         // Verificar relación con asesor
         $asesor = $pedido->asesor()->first();
         if ($asesor) {
-            echo "   ✅ Relación con Asesor: {$asesor->name}\n";
+            echo "  Relación con Asesor: {$asesor->name}\n";
         } else {
-            echo "   ❌ No se encontró relación con Asesor\n";
+            echo "    No se encontró relación con Asesor\n";
         }
 
         // Verificar que el pedido existe en BD
         $pedidoEnBD = PedidoProduccion::find($pedido->id);
         if ($pedidoEnBD) {
-            echo "   ✅ Pedido existe en base de datos\n";
+            echo "  Pedido existe en base de datos\n";
         } else {
-            echo "   ❌ Pedido NO existe en base de datos\n";
+            echo "    Pedido NO existe en base de datos\n";
         }
 
         // Verificar búsqueda por número de pedido
         $pedidoPorNumero = PedidoProduccion::where('numero_pedido', $pedido->numero_pedido)->first();
         if ($pedidoPorNumero) {
-            echo "   ✅ Búsqueda por número de pedido funciona\n";
+            echo "  Búsqueda por número de pedido funciona\n";
         } else {
-            echo "   ❌ Búsqueda por número de pedido NO funciona\n";
+            echo "    Búsqueda por número de pedido NO funciona\n";
         }
     }
 }

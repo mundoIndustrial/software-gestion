@@ -338,19 +338,19 @@ class ReceiptManager {
     construirDescripcionCostura(prenda) {
         const lineas = [];
 
-        // 1️⃣ Nombre de la prenda (título)
+        //  Nombre de la prenda (título)
         if (prenda.nombre) {
             const numeroPrenda = prenda.numero || 1;
             lineas.push(`<strong style="font-size: 12px;">PRENDA ${numeroPrenda}: ${prenda.nombre.toUpperCase()}</strong>`);
         }
 
-        // 2️⃣ Línea técnica (una sola línea)
+        //  Línea técnica (una sola línea)
         const lineaTecnica = this.armarLineaTecnica(prenda);
         if (lineaTecnica) {
             lineas.push(lineaTecnica);
         }
 
-        // 3️⃣ Descripción base de la prenda (si existe) - SIN ETIQUETA
+        //  Descripción base de la prenda (si existe) - SIN ETIQUETA
         if (prenda.descripcion && prenda.descripcion.trim()) {
             lineas.push(prenda.descripcion.toUpperCase());
         }

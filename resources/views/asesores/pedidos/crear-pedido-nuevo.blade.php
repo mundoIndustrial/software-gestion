@@ -221,7 +221,7 @@
     <!-- Modal EPP (refactorizado) - Carga DESPUÉS de los servicios -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
     
     <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
     <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
@@ -242,15 +242,15 @@
     <script src="{{ asset('js/utilidades/validador-prenda.js') }}"></script>
     
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
     
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
     
     <!-- Wrappers delegadores para prendas -->

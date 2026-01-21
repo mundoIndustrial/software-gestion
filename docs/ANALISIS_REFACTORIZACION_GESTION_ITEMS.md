@@ -8,7 +8,7 @@
 
 ##  OPORTUNIDADES DE REFACTORIZACIÓN
 
-### 1️⃣ HELPERS PARA DOM MANIPULATION
+###  HELPERS PARA DOM MANIPULATION
 **Ubicación:** Disperso en todo el archivo  
 **Problema:** Repetición de `document.getElementById()` con validaciones
 
@@ -29,7 +29,7 @@ function toggleElements(ids, show) { /* show/hide */ }
 
 ---
 
-### 2️⃣ EXTRAER LÓGICA DE LIMPIEZA A CLASE DOMCleaner
+###  EXTRAER LÓGICA DE LIMPIEZA A CLASE DOMCleaner
 **Ubicación:** Líneas 197-390 en `abrirModalAgregarPrendaNueva()`  
 **Problema:** 100+ líneas limpiando múltiples storages y elementos
 
@@ -54,7 +54,7 @@ class ModalCleanup {
 
 ---
 
-### 3️⃣ REFACTORIZAR `agregarPrendaNueva()` - DEMASIADO GRANDE
+###  REFACTORIZAR `agregarPrendaNueva()` - DEMASIADO GRANDE
 **Ubicación:** Líneas 410-1420  
 **Problema:** Método de 1000+ líneas, múltiples responsabilidades
 

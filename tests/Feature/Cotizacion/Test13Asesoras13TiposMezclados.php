@@ -146,7 +146,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "─────────────────────────────────────────────\n";
 
         // VERIFICACIÓN 1: Cantidad correcta
-        echo "\n1️⃣  CANTIDAD DE COTIZACIONES\n";
+        echo "\n  CANTIDAD DE COTIZACIONES\n";
         $cantidad = count($resultados);
         echo "   Esperado: 13\n";
         echo "   Obtenido: $cantidad\n";
@@ -154,7 +154,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "    CORRECTO\n";
 
         // VERIFICACIÓN 2: Sin duplicados
-        echo "\n2️⃣  VERIFICACIÓN DE DUPLICADOS\n";
+        echo "\n  VERIFICACIÓN DE DUPLICADOS\n";
         $numeros = array_column($resultados, 'numero_cotizacion');
         $numeros_unicos = array_unique($numeros);
         echo "   Total: " . count($numeros) . "\n";
@@ -163,7 +163,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "    SIN DUPLICADOS\n";
 
         // VERIFICACIÓN 3: Consecutividad
-        echo "\n3️⃣  VERIFICACIÓN DE CONSECUTIVIDAD\n";
+        echo "\n  VERIFICACIÓN DE CONSECUTIVIDAD\n";
         $numeros_int = array_column($resultados, 'numero_int');
         echo "   Secuencia obtenida: " . implode(", ", $numeros_int) . "\n";
         
@@ -278,17 +278,17 @@ class Test13Asesoras13TiposMezclados extends TestCase
 
         // Crear un número
         $numero1 = $this->generarNumeroCotizacionComoDBC();
-        echo "1️⃣  Número generado: $numero1\n";
+        echo "  Número generado: $numero1\n";
         $num1_int = (int)substr($numero1, 5);
 
         // Crear otro número
         $numero2 = $this->generarNumeroCotizacionComoDBC();
-        echo "2️⃣  Número generado: $numero2\n";
+        echo "  Número generado: $numero2\n";
         $num2_int = (int)substr($numero2, 5);
 
         // Crear otro número
         $numero3 = $this->generarNumeroCotizacionComoDBC();
-        echo "3️⃣  Número generado: $numero3\n";
+        echo "  Número generado: $numero3\n";
         $num3_int = (int)substr($numero3, 5);
 
         // Verificar que los números son consecutivos

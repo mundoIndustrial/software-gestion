@@ -367,17 +367,17 @@ try {
 ## 6. Flujo Completo: Agregar EPP a Pedido
 
 ```
-1️⃣ Usuario hace click en "Agregar EPP"
+ Usuario hace click en "Agregar EPP"
    └─ abrirModalAgregarEPP()
 
-2️⃣ Modal se abre y carga EPPs disponibles
+ Modal se abre y carga EPPs disponibles
    └─ cargarEPPBuscador()
       └─ eppService.buscar()
          └─ GET /api/epp
             └─ Backend: QueryDispatcher → ListarEppActivosQuery → EppRepository
                └─ Retorna: [{id: 1, nombre: "Casco", ...}, ...]
 
-3️⃣ Usuario busca "Casco"
+ Usuario busca "Casco"
    └─ filtrarEPPBuscador("CASCO")
       └─ eppService.buscar("CASCO")
          └─ GET /api/epp?q=CASCO

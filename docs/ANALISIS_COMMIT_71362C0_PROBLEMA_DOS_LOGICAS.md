@@ -12,7 +12,7 @@ El commit que añadió funcionalidad de **editar pedidos** rompió la funcionali
 
 ### **Dos Lógicas Diferentes**
 
-#### **1️⃣ FRONTEND (JSON) - Crear Nuevo Pedido**
+#### ** FRONTEND (JSON) - Crear Nuevo Pedido**
 ```javascript
 // Lo que existe mientras se crea en el navegador
 {
@@ -32,7 +32,7 @@ El commit que añadió funcionalidad de **editar pedidos** rompió la funcionali
 
 ---
 
-#### **2️⃣ BACKEND (Base de Datos) - Editar Pedido Existente**
+#### ** BACKEND (Base de Datos) - Editar Pedido Existente**
 ```php
 // Lo que viene de la BD
 $pedido = PedidoProduccion {

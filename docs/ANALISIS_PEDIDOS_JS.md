@@ -6,7 +6,7 @@ TAMAÑO: ~600 líneas
 ESTADO:  Alto Acoplamiento + Duplicación Masiva
 
 ================================================================================
-1️⃣ DUPLICACIÓN CRÍTICA - RECOLECCIÓN DE PRODUCTOS
+ DUPLICACIÓN CRÍTICA - RECOLECCIÓN DE PRODUCTOS
 ================================================================================
 
 LÍNEAS: guardarPedido() (40 líneas) + actualizarPedido() (40 líneas)
@@ -44,7 +44,7 @@ ProductCollector.recolectar();
 IMPACTO: ⭐⭐⭐⭐⭐ Muy Alto - Reduce 40 líneas
 
 ================================================================================
-2️⃣ DUPLICACIÓN - PATTERN FETCH (guardarPedido + actualizarPedido)
+ DUPLICACIÓN - PATTERN FETCH (guardarPedido + actualizarPedido)
 ================================================================================
 
 LÍNEAS: guardarPedido() + actualizarPedido()
@@ -90,7 +90,7 @@ class PedidoAPIService {
 IMPACTO: ⭐⭐⭐⭐ Alto - Reduce 50 líneas
 
 ================================================================================
-3️⃣ DUPLICACIÓN - EVENT LISTENERS
+ DUPLICACIÓN - EVENT LISTENERS
 ================================================================================
 
 LÍNEAS: agregarProducto() (~30 líneas) + agregarEventListenersProductos() (~50 líneas)

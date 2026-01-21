@@ -297,14 +297,43 @@ class GestionItemsUI {
                 return null;
             }
 
+            // Obtener imágenes de prenda desde storage
+            const imagenesTemporales = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+            
+            console.log('[GestionItemsUI] Imágenes temporales del storage:', imagenesTemporales);
+            
+            // Copiar SOLO los File objects (NO blobs ni previewUrl)
+            const imagenesCopia = imagenesTemporales.map(img => {
+                console.log('[GestionItemsUI] Procesando imagen:', img instanceof File ? 'File' : typeof img, img);
+                
+                // Si img es directamente un File object, usarlo
+                if (img instanceof File) {
+                    console.log('[GestionItemsUI]  Imagen es File object');
+                    return img;
+                }
+                // Si img tiene propiedad file que es File object, usar eso
+                if (img && img.file instanceof File) {
+                    console.log('[GestionItemsUI]  Imagen tiene propiedad file');
+                    return img.file;
+                }
+                // Si es un objeto con previewUrl (desde BD), ignorar - no es un File nuevo
+                if (img && img.previewUrl && !img.file) {
+                    console.log('[GestionItemsUI] ⚠️ Imagen es desde BD, ignorando');
+                    return null;
+                }
+                // Fallback: retornar img tal cual si es File
+                console.log('[GestionItemsUI] ⚠️ Imagen no reconocida');
+                return img;
+            }).filter(img => img !== null && img instanceof File);
+            
             // Construir objeto de prenda
             const prendaData = {
                 tipo: 'prenda_nueva',
                 nombre_producto: nombre,
                 descripcion: descripcion || '',
                 origen: origen,
-                // Imágenes de prenda desde storage
-                imagenes: window.imagenesPrendaStorage?.images || [],
+                // Imágenes de prenda copiadas del storage
+                imagenes: imagenesCopia,
                 telasAgregadas: [],
                 procesos: window.procesosSeleccionados || {},
                 // Formato único: cantidad_talla (JSON plano)
@@ -314,13 +343,36 @@ class GestionItemsUI {
 
             // Recolectar telas desde window.telasAgregadas (gestionadas por gestion-telas.js)
             if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
-                prendaData.telasAgregadas = window.telasAgregadas.map(tela => ({
-                    tela: tela.tela || '',
-                    color: tela.color || '',
-                    referencia: tela.referencia || '',
-                    // Imágenes de tela
-                    imagenes: tela.imagenes || []
-                }));
+                prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
+                    // Copiar imágenes de tela: SOLO File objects (NO blobs ni previewUrl)
+                    const imagenesCopia = (tela.imagenes || []).map(img => {
+                        // Si img es directamente un File object, usarlo
+                        if (img instanceof File) {
+                            console.log(`[GestionItemsUI] Tela ${telaIdx} imagen es File object`);
+                            return img;
+                        }
+                        // Si img tiene propiedad file que es File object, usar eso
+                        if (img && img.file instanceof File) {
+                            console.log(`[GestionItemsUI] Tela ${telaIdx} imagen tiene propiedad file`);
+                            return img.file;
+                        }
+                        // Si es un objeto con previewUrl (desde BD), ignorar
+                        if (img && img.previewUrl && !img.file) {
+                            console.log(`[GestionItemsUI] Tela ${telaIdx} imagen es desde BD, ignorando`);
+                            return null;
+                        }
+                        console.log(`[GestionItemsUI] Tela ${telaIdx} imagen no reconocida`);
+                        return img;
+                    }).filter(img => img !== null && img instanceof File);
+                    
+                    return {
+                        tela: tela.tela || '',
+                        color: tela.color || '',
+                        referencia: tela.referencia || '',
+                        // Imágenes de tela copiadas
+                        imagenes: imagenesCopia
+                    };
+                });
             }
             // Si estamos en modo edición y no hay telas en window.telasAgregadas, 
             // obtener telas de la prenda anterior
@@ -345,10 +397,10 @@ class GestionItemsUI {
             if (checkManga && checkManga.checked) {
                 const mangaInput = document.getElementById('manga-input');
                 const mangaObs = document.getElementById('manga-obs');
-                variantes.tipo_manga = mangaInput?.value || 'No aplica';
+                variantes.manga = mangaInput?.value || '';
                 variantes.obs_manga = mangaObs?.value || '';
             } else {
-                variantes.tipo_manga = 'No aplica';
+                variantes.manga = '';
                 variantes.obs_manga = '';
             }
             
@@ -368,10 +420,10 @@ class GestionItemsUI {
             if (checkBroche && checkBroche.checked) {
                 const broqueInput = document.getElementById('broche-input');
                 const broqueObs = document.getElementById('broche-obs');
-                variantes.tipo_broche = broqueInput?.value || 'No aplica';
+                variantes.broche = broqueInput?.value || '';
                 variantes.obs_broche = broqueObs?.value || '';
             } else {
-                variantes.tipo_broche = 'No aplica';
+                variantes.broche = '';
                 variantes.obs_broche = '';
             }
             
@@ -430,12 +482,17 @@ class GestionItemsUI {
                 return;
             }
 
+            // Mostrar indicador de carga
+            this.mostrarCargando('Validando pedido...');
+
             const validacion = await this.apiService.validarPedido(pedidoData);
             if (!validacion.valid) {
+                this.ocultarCargando();
                 alert('Errores en el pedido:\n' + validacion.errores.join('\n'));
                 return;
             }
 
+            this.mostrarCargando('Creando pedido...');
             const resultado = await this.apiService.crearPedido(pedidoData);
 
             if (resultado.success) {
@@ -443,14 +500,146 @@ class GestionItemsUI {
                     pedido_id: resultado.pedido_id,
                     numero_pedido: resultado.numero_pedido
                 };
-                setTimeout(() => this.mostrarModalExito(), 500);
+                
+                // Ocultar loader y mostrar modal de éxito existente
+                this.ocultarCargando();
+                setTimeout(() => this.mostrarModalExito(), 300);
             }
         } catch (error) {
             console.error('[manejarSubmitFormulario] ERROR:', error);
+            this.ocultarCargando();
             if (this.notificationService) {
                 this.notificationService.error('Error: ' + error.message);
             }
         }
+    }
+
+    mostrarCargando(mensaje = 'Cargando...') {
+        // Remover loader anterior si existe
+        this.ocultarCargando();
+        
+        const loader = document.createElement('div');
+        loader.id = 'pedido-loader';
+        loader.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        
+        const contenido = document.createElement('div');
+        contenido.style.cssText = `
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        `;
+        
+        const spinner = document.createElement('div');
+        spinner.style.cssText = `
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        `;
+        
+        const texto = document.createElement('p');
+        texto.textContent = mensaje;
+        texto.style.cssText = `
+            margin: 0;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+        `;
+        
+        // Agregar animación CSS
+        if (!document.getElementById('pedido-loader-style')) {
+            const style = document.createElement('style');
+            style.id = 'pedido-loader-style';
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        contenido.appendChild(spinner);
+        contenido.appendChild(texto);
+        loader.appendChild(contenido);
+        document.body.appendChild(loader);
+    }
+
+    ocultarCargando() {
+        const loader = document.getElementById('pedido-loader');
+        if (loader) {
+            loader.remove();
+        }
+    }
+
+    mostrarExito(mensaje) {
+        const exito = document.createElement('div');
+        exito.id = 'pedido-exito';
+        exito.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        const texto = document.createElement('p');
+        texto.textContent = mensaje;
+        texto.style.cssText = `
+            margin: 0;
+            color: #27ae60;
+            font-size: 18px;
+            font-weight: 600;
+        `;
+        
+        // Agregar animación CSS si no existe
+        if (!document.getElementById('pedido-exito-style')) {
+            const style = document.createElement('style');
+            style.id = 'pedido-exito-style';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translate(-50%, -60%);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translate(-50%, -50%);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        exito.appendChild(texto);
+        document.body.appendChild(exito);
+        
+        // Remover después de 2 segundos
+        setTimeout(() => {
+            exito.remove();
+        }, 2000);
     }
 
     recolectarDatosPedido() {

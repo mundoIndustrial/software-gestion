@@ -110,7 +110,7 @@ function loadGaleriaMobile(container) {
                         const fotosPrendaTela = prenda.imagenes.filter(img => img.type !== 'logo');
                         const fotosLogoPrend = prenda.imagenes.filter(img => img.type === 'logo');
                         
-                        console.log(`📍 [GALERIA MOBILE] PRENDA ${idx + 1}:`, {
+                        console.log(` [GALERIA MOBILE] PRENDA ${idx + 1}:`, {
                             nombre: prenda.nombre,
                             total_imagenes: prenda.imagenes.length,
                             fotos_prenda_tela: fotosPrendaTela.length,

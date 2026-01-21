@@ -30,7 +30,7 @@ window.renderizarReflectivo = function(prendas, datosReflectivo = null) {
             ubicacionesReflectivo = typeof datosReflectivo.ubicacion === 'string' 
                 ? JSON.parse(datosReflectivo.ubicacion) 
                 : datosReflectivo.ubicacion;
-            console.log('📍 Ubicaciones parseadas:', ubicacionesReflectivo);
+            console.log(' Ubicaciones parseadas:', ubicacionesReflectivo);
         } catch (e) {
             console.error('Error parseando ubicaciones:', e);
             ubicacionesReflectivo = [];

@@ -21,7 +21,7 @@
 
 ##  Phase 3.1 - Servicios Centralizados 
 
-### 1️⃣ ValidadorPrenda Service (850 líneas) 
+###  ValidadorPrenda Service (850 líneas) 
 
 **Ubicación:** `public/js/utilidades/validador-prenda.js`
 
@@ -58,7 +58,7 @@ ValidadorPrenda.obtenerValidacionesPendientes(prenda)
 
 ---
 
-### 2️⃣ LoggerApp Service (350 líneas) 
+###  LoggerApp Service (350 líneas) 
 
 **Ubicación:** `public/js/utilidades/logger-app.js`
 

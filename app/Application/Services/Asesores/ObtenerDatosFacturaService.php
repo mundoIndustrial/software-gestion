@@ -50,8 +50,8 @@ class ObtenerDatosFacturaService
     {
         Log::info('[FACTURA] Procesando PedidoProduccion', ['id' => $pedido->id]);
 
-        // Usar el repository si está disponible
-        $repository = resolve(\App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository::class);
+        // Crear instancia del repository directamente
+        $repository = new \App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository();
         $datos = $repository->obtenerDatosFactura($pedido->id);
         
         // Agregar el ID del pedido para poder usarlo en el frontend

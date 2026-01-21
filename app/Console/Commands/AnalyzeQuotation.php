@@ -58,10 +58,10 @@ class AnalyzeQuotation extends Command
                 foreach ($telas as $idx => $tela) {
                     $this->line("      Tela " . ($idx + 1) . ": Color={$tela->color_id}, Tela={$tela->tela_id}, Ref={$tela->referencia}");
 
-                    // Fotos de tela
+                    // Fotos de tela (a través de prenda_pedido_colores_telas)
                     $fotos = DB::table('prenda_fotos_tela_pedido')
-                        ->where('prenda_pedido_id', $prenda->id)
-                        ->where('prenda_tela_id', $tela->id)
+                        ->join('prenda_pedido_colores_telas', 'prenda_fotos_tela_pedido.prenda_pedido_colores_telas_id', '=', 'prenda_pedido_colores_telas.id')
+                        ->where('prenda_pedido_colores_telas.prenda_pedido_id', $prenda->id)
                         ->count();
 
                     $this->line("         📸 Fotos: $fotos");
@@ -90,7 +90,8 @@ class AnalyzeQuotation extends Command
         $this->line("Total telas guardadas en BD: $totalTelas");
 
         $totalFotosTelas = DB::table('prenda_fotos_tela_pedido')
-            ->whereIn('prenda_pedido_id', function($q) use ($cotizacionId) {
+            ->join('prenda_pedido_colores_telas', 'prenda_fotos_tela_pedido.prenda_pedido_colores_telas_id', '=', 'prenda_pedido_colores_telas.id')
+            ->whereIn('prenda_pedido_colores_telas.prenda_pedido_id', function($q) use ($cotizacionId) {
                 $q->select('id')->from('prendas_pedido')->where('cotizacion_id', $cotizacionId);
             })
             ->count();

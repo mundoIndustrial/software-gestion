@@ -15,8 +15,9 @@ class EppProcessorService
 
     /**
      * Construir objeto EPP con imágenes desde FormData
+     * Retorna los UploadedFile sin guardarlos (se guardarán en PedidoEppService)
      */
-    public function construirEppConImagenes(Request $request, int $itemIndex, array $item): array
+    public function construirEppConImagenes(Request $request, int $itemIndex, array $item, int $pedidoId): array
     {
         $eppData = [
             'epp_id' => $item['epp_id'] ?? null,
@@ -28,14 +29,16 @@ class EppProcessorService
             'observaciones' => $item['observaciones'] ?? null,
             'imagenes' => [],
             'tallas_medidas' => $item['tallas_medidas'] ?? $item['talla'],
+            'pedido_id' => $pedidoId,
         ];
 
-        // Extraer imágenes de EPP desde FormData
+        // Extraer imágenes de EPP desde FormData (sin guardarlas aún)
         $imagenesEpp = $this->formDataProcessor->extraerImagenesEpp($request, $itemIndex);
+        
         foreach ($imagenesEpp as $imagenIdx => $archivo) {
-            $path = $archivo->store('epp/temp', 'local');
+            // Pasar el UploadedFile directamente (se guardará en PedidoEppService)
             $eppData['imagenes'][] = [
-                'archivo' => $path,
+                'archivo' => $archivo,
                 'principal' => $imagenIdx === 0,
                 'orden' => $imagenIdx,
             ];

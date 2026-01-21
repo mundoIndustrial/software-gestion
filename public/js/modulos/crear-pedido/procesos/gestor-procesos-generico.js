@@ -6,7 +6,11 @@
  */
 
 // Variables globales para controlar el tipo de proceso activo
-let procesoActual = null;
+// Nota: procesoActual también se declara en gestor-modal-proceso-generico.js
+// Usamos var aquí para evitar conflicto de redeclaración con let
+if (typeof procesoActual === 'undefined') {
+    var procesoActual = null;
+}
 const procesosConfig = {
     reflectivo: {
         titulo: 'Agregar Reflectivo',

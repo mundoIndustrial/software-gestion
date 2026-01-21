@@ -168,7 +168,7 @@ class FiltroEmbudo {
         console.log('🔓 Abriendo modal para columna:', columna);
         const modalId = `filter-modal-${columna}`;
         const modal = document.getElementById(modalId);
-        console.log('📍 Modal encontrado:', !!modal, 'ID:', modalId);
+        console.log(' Modal encontrado:', !!modal, 'ID:', modalId);
         if (modal) {
             console.log(' Agregando clase active al modal');
             modal.classList.add('active');

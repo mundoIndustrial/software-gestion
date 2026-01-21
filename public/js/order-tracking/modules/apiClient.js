@@ -26,7 +26,7 @@ const ApiClient = (() => {
             }
             
             // Si falla, intentar con tabla_original (RegistroOrden)
-            console.log('📍 Ruta /api/ordenes falló, intentando /api/tabla-original');
+            console.log(' Ruta /api/ordenes falló, intentando /api/tabla-original');
             const responseTablaOriginal = await fetch(`/api/tabla-original/${orderId}/procesos`, {
                 headers: {
                     'Accept': 'application/json',
@@ -39,7 +39,7 @@ const ApiClient = (() => {
             }
             
             // Si falla, intentar con tabla_original_bodega
-            console.log('📍 Ruta /api/tabla-original falló, intentando /api/tabla-original-bodega');
+            console.log(' Ruta /api/tabla-original falló, intentando /api/tabla-original-bodega');
             const responseTablaOriginalBodega = await fetch(`/api/tabla-original-bodega/${orderId}/procesos`, {
                 headers: {
                     'Accept': 'application/json',
@@ -77,7 +77,7 @@ const ApiClient = (() => {
             }
             
             // Si falla, intentar con ruta de bodega
-            console.log('📍 Ruta /api/registros falló, intentando /api/bodega');
+            console.log(' Ruta /api/registros falló, intentando /api/bodega');
             const responseBodega = await fetch(`/api/bodega/${orderId}/dias`, {
                 headers: {
                     'Accept': 'application/json',

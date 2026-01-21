@@ -1,0 +1,31 @@
+CÓDIGO ORIGINAL QUE DEBERÍA ESTAR EN PrendaVarianteService
+=========================================================
+
+El método crearVariantesDesdeCantidadTalla originalmente en PedidoPrendaService hacía:
+
+1. Recibía cantidad_talla como {"genero": {"talla": cantidad}}
+2. Creaba UNA SOLA variante por prenda (NO una por talla)
+3. Guardaba en prenda_pedido_variantes:
+   - prenda_pedido_id
+   - tipo_manga_id
+   - tipo_broche_boton_id
+   - manga_obs
+   - broche_boton_obs
+   - tiene_bolsillos
+   - bolsillos_obs
+
+4. Guardaba color y tela en tabla separada prenda_pedido_colores_telas
+
+IMPORTANTE: 
+- NO insertaba genero, talla, cantidad como columnas separadas
+- Las tallas/cantidades ya estaban en prendas_pedido.cantidad_talla (JSON)
+- Solo creaba UNA variante con las características (manga, broche, bolsillos)
+
+EL ERROR QUE COMETÍ:
+- Intenté insertar genero, talla, cantidad como columnas
+- Eso causó el error: "Unknown column 'genero' in 'field list'"
+
+LO QUE NECESITO HACER:
+- Restaurar PrendaVarianteService a su lógica original
+- Que reciba los parámetros de características (tipo_manga_id, tipo_broche_boton_id, etc)
+- NO que intente parsear cantidad_talla

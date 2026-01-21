@@ -4,6 +4,13 @@ namespace App\Application\Services;
 
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
+use App\Domain\PedidoProduccion\Services\ColorTelaService;
+use App\Domain\PedidoProduccion\Services\CaracteristicasPrendaService;
+use App\Domain\PedidoProduccion\Services\PrendaImagenService;
+use App\Domain\PedidoProduccion\Services\TelaImagenService;
+use App\Domain\PedidoProduccion\Services\PrendaTallaService;
+use App\Domain\PedidoProduccion\Services\PrendaVarianteService;
+use App\Domain\PedidoProduccion\Services\PrendaProcesoService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,10 +29,33 @@ use Illuminate\Support\Facades\Log;
 class PedidoPrendaService
 {
     private ColorGeneroMangaBrocheService $colorGeneroService;
+    private ColorTelaService $colorTelaService;
+    private CaracteristicasPrendaService $caracteristicasService;
+    private PrendaImagenService $prendaImagenService;
+    private TelaImagenService $telaImagenService;
+    private PrendaTallaService $prendaTallaService;
+    private PrendaVarianteService $prendaVarianteService;
+    private PrendaProcesoService $prendaProcesoService;
 
-    public function __construct(ColorGeneroMangaBrocheService $colorGeneroService)
+    public function __construct(
+        ColorGeneroMangaBrocheService $colorGeneroService,
+        ColorTelaService $colorTelaService = null,
+        CaracteristicasPrendaService $caracteristicasService = null,
+        PrendaImagenService $prendaImagenService = null,
+        TelaImagenService $telaImagenService = null,
+        PrendaTallaService $prendaTallaService = null,
+        PrendaVarianteService $prendaVarianteService = null,
+        PrendaProcesoService $prendaProcesoService = null
+    )
     {
         $this->colorGeneroService = $colorGeneroService;
+        $this->colorTelaService = $colorTelaService ?? app(ColorTelaService::class);
+        $this->caracteristicasService = $caracteristicasService ?? app(CaracteristicasPrendaService::class);
+        $this->prendaImagenService = $prendaImagenService ?? app(PrendaImagenService::class);
+        $this->telaImagenService = $telaImagenService ?? app(TelaImagenService::class);
+        $this->prendaTallaService = $prendaTallaService ?? app(PrendaTallaService::class);
+        $this->prendaVarianteService = $prendaVarianteService ?? app(PrendaVarianteService::class);
+        $this->prendaProcesoService = $prendaProcesoService ?? app(PrendaProcesoService::class);
     }
 
     /**
@@ -390,22 +420,28 @@ class PedidoPrendaService
                 $variacionesParsed = json_decode($variacionesParsed, true) ?? [];
             }
             
+            // Obtener/crear manga y broche desde nombres si es necesario
+            $tipoMangaId = $prendaData['tipo_manga_id'] ?? null;
+            if (empty($tipoMangaId) && !empty($prendaData['manga'])) {
+                $tipoMangaId = $this->caracteristicasService->obtenerOCrearManga($prendaData['manga']);
+            }
+            
+            $tipoBrocheBotonId = $prendaData['tipo_broche_boton_id'] ?? null;
+            if (empty($tipoBrocheBotonId) && !empty($prendaData['broche'])) {
+                $tipoBrocheBotonId = $this->caracteristicasService->obtenerOCrearBroche($prendaData['broche']);
+            }
+            
             $this->crearVariantesDesdeCantidadTalla(
-                $prenda, 
+                $prenda->id, 
                 $prendaData['cantidad_talla'] ?? [],
-                // Pasar los IDs procesados para que se asignen a cada variante
                 $prendaData['color_id'] ?? null,
                 $prendaData['tela_id'] ?? null,
-                $prendaData['tipo_manga_id'] ?? null,
-                $prendaData['tipo_broche_boton_id'] ?? null,
-                //  Pasar las observaciones para guardarlas en variantes
+                $tipoMangaId,
+                $tipoBrocheBotonId,
                 $prendaData['obs_manga'] ?? $prendaData['manga_obs'] ?? '',
-                $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '',
                 $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '',
-                $prendaData['obs_reflectivo'] ?? $prendaData['reflectivo_obs'] ?? '',
-                //  Pasar los booleanos de variaciones
-                $variacionesParsed['bolsillos']['tiene'] ?? $prendaData['tiene_bolsillos'] ?? false,
-                $variacionesParsed['reflectivo']['tiene'] ?? $prendaData['tiene_reflectivo'] ?? false
+                (bool)($prendaData['tiene_bolsillos'] ?? false),
+                $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? ''
             );
         }
 
@@ -482,60 +518,6 @@ class PedidoPrendaService
         ];
     }
 
-    /**
-     * Construir array de datos formateado para el DescripcionPrendaLegacyFormatter
-    {
-        // Obtener relaciones si están disponibles, sino buscar en BD
-        $color = '';
-        if ($prendaData['color_id'] ?? null) {
-            $colorObj = ColorPrenda::find($prendaData['color_id']);
-            $color = $colorObj?->nombre ?? '';
-        }
-        
-        $tela = '';
-        $ref = '';
-        if ($prendaData['tela_id'] ?? null) {
-            $telaObj = TelaPrenda::find($prendaData['tela_id']);
-            if ($telaObj) {
-                $tela = $telaObj->nombre ?? '';
-                $ref = $telaObj->referencia ? $telaObj->referencia : '';
-            }
-        }
-        
-        $manga = '';
-        if ($prendaData['tipo_manga_id'] ?? null) {
-            $mangaObj = TipoManga::find($prendaData['tipo_manga_id']);
-            $manga = $mangaObj?->nombre ?? '';
-        }
-        
-        // Parsear tallas desde cantidades
-        $tallas = [];
-        if (is_array($prendaData['cantidades'] ?? null)) {
-            $tallas = $prendaData['cantidades'];
-        } elseif (is_string($prendaData['cantidades'] ?? null)) {
-            try {
-                $tallas = json_decode($prendaData['cantidades'], true) ?? [];
-            } catch (\Exception $e) {
-                $tallas = [];
-            }
-        }
-        
-        return [
-            'numero' => $index,
-            'tipo' => $prendaData['nombre_producto'] ?? '',
-            'descripcion' => $prendaData['descripcion'] ?? '', // La descripción es el logo/detalles
-            'tela' => $tela,
-            'ref' => $ref,
-            'color' => $color,
-            'manga' => $manga,
-            'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
-            'bolsillos_obs' => $prendaData['bolsillos_obs'] ?? '',
-            'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
-            'reflectivo_obs' => $prendaData['reflectivo_obs'] ?? '',
-            'broche_obs' => $prendaData['broche_obs'] ?? '',
-            'tallas' => $tallas,
-        ];
-    }
 
     /**
      * Armar descripción de variaciones a partir de los datos
@@ -560,36 +542,99 @@ class PedidoPrendaService
             $partes[] = "Reflectivo: " . $prendaData['reflectivo_obs'];
         }
         
-        return !empty($partes) ? implode(" | ", $partes) : null;
+        return implode(' | ', $partes);
     }
 
     /**
-     *  Guardar fotos de la prenda en web
-     * Estructura: storage/app/public/pedidos/{pedido_id}/prendas/
-     * 
-     * SOLO ACEPTA UploadedFile - NO base64, NO archivos en disco
+     * Guardar fotos de prenda
+     * Delegado a PrendaImagenService
      */
     private function guardarFotosPrenda(PrendaPedido $prenda, array $fotos): void
     {
+        $this->prendaImagenService->guardarFotosPrenda(
+            $prenda->id,
+            $prenda->pedido_produccion_id,
+            $fotos
+        );
+    }
+
+    /**
+     * Guardar fotos de telas
+     * Delegado a TelaImagenService
+     */
+    private function guardarFotosTelas(PrendaPedido $prenda, array $telas): void
+    {
+        $this->telaImagenService->guardarFotosTelas(
+            $prenda->id,
+            $prenda->pedido_produccion_id,
+            $telas
+        );
+    }
+
+    /**
+     * Guardar procesos de prenda
+     * Delegado a PrendaProcesoService
+     */
+    private function guardarProcesosPrenda(PrendaPedido $prenda, array $procesos): void
+    {
+        $this->prendaProcesoService->guardarProcesosPrenda(
+            $prenda->id,
+            $prenda->pedido_produccion_id,
+            $procesos
+        );
+    }
+
+    /**
+     * Guardar tallas de prenda
+     * Delegado a PrendaTallaService
+     */
+    private function guardarTallasPrenda(PrendaPedido $prenda, mixed $cantidades): void
+    {
+        $this->prendaTallaService->guardarTallasPrenda(
+            $prenda->id,
+            $cantidades
+        );
+    }
+
+    /**
+     * Crear variantes desde cantidad_talla
+     * Delegado a PrendaVarianteService
+     */
+    private function crearVariantesDesdeCantidadTalla(
+        int $prendaId,
+        mixed $cantidadTalla,
+        ?int $colorId = null,
+        ?int $telaId = null,
+        ?int $tipoMangaId = null,
+        ?int $tipoBrocheBotonId = null,
+        string $mangaObs = '',
+        string $brocheObs = '',
+        bool $tieneBolsillos = false,
+        string $bolsillosObs = ''
+    ): void {
+        $this->prendaVarianteService->crearVariantesDesdeCantidadTalla(
+            $prendaId,
+            $cantidadTalla,
+            $colorId,
+            $telaId,
+            $tipoMangaId,
+            $tipoBrocheBotonId,
+            $mangaObs,
+            $brocheObs,
+            $tieneBolsillos,
+            $bolsillosObs
+        );
+    }
+
+    /**
+     * LEGACY: Métodos privados originales mantenidos para compatibilidad
+     * Estos métodos ya no se usan, la lógica está en los servicios especializados
+     */
+    private function guardarFotosPrendaLegacy(PrendaPedido $prenda, array $fotos): void
+    {
         Log::info(' [PedidoPrendaService::guardarFotosPrenda] Guardando fotos de prenda', [
             'prenda_id' => $prenda->id,
-            'cantidad' => count($fotos),
-            'fotos_estructura' => array_map(function($f, $i) {
-                if ($f instanceof UploadedFile) {
-                    return [
-                        'index' => $i,
-                        'es_UploadedFile' => true,
-                        'nombre' => $f->getClientOriginalName(),
-                        'mime_type' => $f->getMimeType(),
-                    ];
-                } else {
-                    return [
-                        'index' => $i,
-                        'tipo' => gettype($f),
-                        'valor' => is_array($f) ? implode(',', array_keys($f)) : substr((string)$f, 0, 50),
-                    ];
-                }
-            }, $fotos, array_keys($fotos)),
+            'cantidad_fotos' => count($fotos),
         ]);
 
         // Obtener color y tela de variantes si existen (para asociar imágenes)
@@ -600,8 +645,8 @@ class PedidoPrendaService
             ->first();
         
         if ($variante) {
-            $colorId = $variante->color_id;
-            $telaId = $variante->tela_id;
+            $colorId = $variante->color_id ?? null;
+            $telaId = $variante->tela_id ?? null;
         }
 
         foreach ($fotos as $index => $foto) {
@@ -631,10 +676,13 @@ class PedidoPrendaService
                         'ruta_relativa' => $rutaRelativa,
                     ]);
                     
+                    // Asegurar que la ruta sea absoluta (comience con /)
+                    $rutaAbsoluta = $rutaRelativa && !str_starts_with($rutaRelativa, '/') ? '/' . $rutaRelativa : $rutaRelativa;
+                    
                     DB::table('prenda_fotos_pedido')->insert([
                         'prenda_pedido_id' => $prenda->id,
                         'ruta_original' => $foto->getClientOriginalName(),
-                        'ruta_webp' => $rutaRelativa,
+                        'ruta_webp' => $rutaAbsoluta,
                         'orden' => $index + 1,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -643,7 +691,7 @@ class PedidoPrendaService
                     Log::info(" Foto de prenda guardada (UploadedFile)", [
                         'prenda_id' => $prenda->id,
                         'index' => $index,
-                        'ruta_relativa' => $rutaRelativa,
+                        'ruta_absoluta' => $rutaAbsoluta,
                     ]);
                 }
                 // CASO 2: Array con UploadedFile
@@ -673,9 +721,9 @@ class PedidoPrendaService
                         'ruta_relativa' => $rutaRelativa,
                     ]);
                 }
-                // CASO 3: URL directa (string)
-                elseif (is_string($foto) && filter_var($foto, FILTER_VALIDATE_URL)) {
-                    // Solo guardar la URL directamente, sin procesamiento
+                // CASO 3: URL directa o ruta (string)
+                elseif (is_string($foto) && !empty($foto)) {
+                    // Aceptar URLs completas o rutas relativas (/storage/...)
                     DB::table('prenda_fotos_pedido')->insert([
                         'prenda_pedido_id' => $prenda->id,
                         'ruta_original' => $foto,
@@ -685,39 +733,35 @@ class PedidoPrendaService
                         'updated_at' => now(),
                     ]);
                     
-                    Log::info(" Foto de prenda guardada (URL directa)", [
+                    Log::info(" Foto de prenda guardada (string/ruta)", [
                         'prenda_id' => $prenda->id,
                         'index' => $index,
-                        'url' => $foto,
+                        'ruta' => $foto,
                     ]);
                 }
-                // CASO 4: Array con URL (tipo, nombre, url)
-                elseif (is_array($foto) && isset($foto['url']) && filter_var($foto['url'], FILTER_VALIDATE_URL)) {
-                    DB::table('prenda_fotos_pedido')->insert([
-                        'prenda_pedido_id' => $prenda->id,
-                        'ruta_original' => $foto['url'],
-                        'ruta_webp' => $foto['url'],
-                        'orden' => $index + 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    
-                    Log::info(" Foto de prenda guardada (Array con URL)", [
-                        'prenda_id' => $prenda->id,
-                        'index' => $index,
-                        'url' => $foto['url'],
-                        'tipo' => $foto['tipo'] ?? null,
-                    ]);
-                }
-                else {
-                    Log::warning(' Formato de foto NO soportado', [
-                        'prenda_id' => $prenda->id,
-                        'tipo' => gettype($foto),
-                        'contenido' => is_array($foto) ? array_keys($foto) : substr($foto, 0, 100),
-                    ]);
+                // CASO 4: Array con URL o ruta
+                elseif (is_array($foto) && (isset($foto['url']) || isset($foto['ruta_original']) || isset($foto['ruta_webp']))) {
+                    $ruta = $foto['url'] ?? $foto['ruta_original'] ?? $foto['ruta_webp'] ?? null;
+                    if ($ruta) {
+                        DB::table('prenda_fotos_pedido')->insert([
+                            'prenda_pedido_id' => $prenda->id,
+                            'ruta_original' => $ruta,
+                            'ruta_webp' => $ruta,
+                            'orden' => $index + 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        Log::info(" Foto de prenda guardada (array con ruta)", [
+                            'prenda_id' => $prenda->id,
+                            'index' => $index,
+                            'ruta' => $ruta,
+                            'tipo' => $foto['tipo'] ?? null,
+                        ]);
+                    }
                 }
             } catch (\Exception $e) {
-                Log::warning(' Error guardando foto de prenda', [
+                Log::error(' Error guardando foto de prenda', [
                     'prenda_id' => $prenda->id,
                     'index' => $index,
                     'error' => $e->getMessage(),
@@ -745,844 +789,6 @@ class PedidoPrendaService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-        }
-    }
-
-    /**
-     *  Guardar fotos de telas en web
-     * Estructura: storage/app/public/pedidos/{pedido_id}/telas/
-     * 
-     * SOLO ACEPTA UploadedFile - NO base64, NO archivos en disco
-     * Preserva el campo 'observaciones'
-     */
-    private function guardarFotosTelas(PrendaPedido $prenda, array $telas): void
-    {
-        Log::info(' [PedidoPrendaService::guardarFotosTelas] Guardando fotos de telas', [
-            'prenda_id' => $prenda->id,
-            'cantidad_telas' => count($telas),
-            'telas_estructura' => array_map(function($t, $idx) {
-                return [
-                    'tela_index' => $idx,
-                    'tiene_fotos' => !empty($t['fotos']) ? count($t['fotos']) : 0,
-                    'fotos_tipos' => !empty($t['fotos']) ? array_map(function($f) {
-                        return $f instanceof \Illuminate\Http\UploadedFile ? 'UploadedFile' : gettype($f);
-                    }, $t['fotos']) : [],
-                    'otras_claves' => array_diff(array_keys($t), ['fotos']),
-                ];
-            }, $telas, array_keys($telas)),
-        ]);
-
-        foreach ($telas as $telaIndex => $tela) {
-            if (empty($tela['fotos'])) {
-                continue;
-            }
-
-            foreach ($tela['fotos'] as $index => $foto) {
-                try {
-                    // SOLO UploadedFile - NO strings, NO base64
-                    if ($foto instanceof UploadedFile) {
-                        //  NO REQUIERE procesoDetalle - fotos de tela son independientes
-                        $resultado = $this->guardarArchivoImagenEnWeb(
-                            $foto,
-                            null,  // sin procesoDetalleId
-                            $index,
-                            'tela',
-                            $prenda->pedido_produccion_id  // pasar pedidoId directo
-                        );
-                        $rutaRelativa = $resultado['ruta_relativa'];
-                        $tamaño = $resultado['tamaño'];
-                        
-                        // Guardar en BD (solo con columnas existentes)
-                        DB::table('prenda_fotos_tela_pedido')->insert([
-                            'prenda_pedido_id' => $prenda->id,
-                            'ruta_original' => $foto->getClientOriginalName(),
-                            'ruta_webp' => $rutaRelativa,
-                            'orden' => $index + 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        
-                        Log::info(" Foto de tela guardada", [
-                            'prenda_id' => $prenda->id,
-                            'index' => $index,
-                            'ruta_original' => $foto->getClientOriginalName(),
-                            'ruta_relativa' => $rutaRelativa,
-                            'tamaño_bytes' => $tamaño,
-                        ]);
-                    } elseif (is_array($foto) && isset($foto['archivo']) && $foto['archivo'] instanceof UploadedFile) {
-                        //  NO REQUIERE procesoDetalle - fotos de tela son independientes
-                        $resultado = $this->guardarArchivoImagenEnWeb(
-                            $foto['archivo'],
-                            null,  // sin procesoDetalleId
-                            $index,
-                            'tela',
-                            $prenda->pedido_produccion_id  // pasar pedidoId directo
-                        );
-                        $rutaRelativa = $resultado['ruta_relativa'];
-                        $tamaño = $resultado['tamaño'];
-                        
-                        DB::table('prenda_fotos_tela_pedido')->insert([
-                            'prenda_pedido_id' => $prenda->id,
-                            'ruta_original' => $foto['archivo']->getClientOriginalName(),
-                            'ruta_webp' => $rutaRelativa,
-                            'orden' => $index + 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        
-                        Log::info(" Foto de tela guardada (desde array)", [
-                            'prenda_id' => $prenda->id,
-                            'index' => $index,
-                            'ruta_original' => $foto['archivo']->getClientOriginalName(),
-                            'ruta_relativa' => $rutaRelativa,
-                        ]);
-                    } else {
-                        Log::warning(' Formato de foto NO soportado - SOLO UploadedFile permitido', [
-                            'prenda_id' => $prenda->id,
-                            'tela_index' => $telaIndex,
-                            'tipo' => gettype($foto),
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    Log::warning(' Error guardando foto de tela', [
-                        'prenda_id' => $prenda->id,
-                        'tela_index' => $telaIndex,
-                        'foto_index' => $index,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
-        }
-    }
-
-    /**
-     * Copiar imágenes de la cotización al pedido
-     * 
-     * Cuando se convierte una cotización a pedido, copia las URLs de las imágenes
-     * sin duplicar archivos en storage (solo copia las rutas)
-     */
-    public function copiarImagenesDeCotizacion(PedidoProduccion $pedido, int $cotizacionId): void
-    {
-        try {
-            // Obtener prendas de la cotización
-            $prendasCot = DB::table('prendas_cot')
-                ->where('cotizacion_id', $cotizacionId)
-                ->get();
-
-            if ($prendasCot->isEmpty()) {
-                Log::warning('PedidoPrendaService: No hay prendas en cotización para copiar', [
-                    'cotizacion_id' => $cotizacionId,
-                    'pedido_id' => $pedido->id,
-                ]);
-                return;
-            }
-
-            DB::beginTransaction();
-            try {
-                foreach ($prendasCot as $prendaCot) {
-                    // Obtener la prenda correspondiente en el pedido
-                    $prendaPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
-                        ->orderBy('id')
-                        ->first();
-
-                    if (!$prendaPedido) {
-                        continue; // Saltar si no hay prenda correspondiente
-                    }
-
-                    // 1. Copiar fotos de prendas
-                    $this->copiarFotosPrendaDeCotizacion($prendaPedido, $prendaCot->id);
-
-                    // 2. Copiar fotos de telas
-                    $this->copiarFotosTelasDeCotizacion($prendaPedido, $prendaCot->id);
-
-                    // 3. Copiar logos (si existen)
-                    $this->copiarLogosDePrenadaDeCotizacion($prendaPedido, $prendaCot->id);
-                }
-
-                DB::commit();
-                Log::info('PedidoPrendaService: Imágenes copiadas de cotización a pedido', [
-                    'cotizacion_id' => $cotizacionId,
-                    'pedido_id' => $pedido->id,
-                ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
-            }
-        } catch (\Exception $e) {
-            Log::error('PedidoPrendaService: Error copiando imágenes de cotización', [
-                'cotizacion_id' => $cotizacionId,
-                'pedido_id' => $pedido->id,
-                'error' => $e->getMessage(),
-            ]);
-            // No lanzar excepción, solo registrar el error
-        }
-    }
-
-    /**
-     * Copiar fotos de prenda desde cotización al pedido
-     */
-    private function copiarFotosPrendaDeCotizacion(PrendaPedido $prendaPedido, int $prendaCotId): void
-    {
-        $fotosCot = DB::table('prenda_fotos_cot')
-            ->where('prenda_cot_id', $prendaCotId)
-            ->orderBy('orden')
-            ->get();
-
-        foreach ($fotosCot as $foto) {
-            DB::table('prenda_fotos_pedido')->insert([
-                'prenda_pedido_id' => $prendaPedido->id,
-                'ruta_original' => $foto->ruta_original,
-                'ruta_webp' => $foto->ruta_webp,
-                'ruta_miniatura' => $foto->ruta_miniatura,
-                'orden' => $foto->orden,
-                'ancho' => $foto->ancho,
-                'alto' => $foto->alto,
-                'tamaño' => $foto->tamaño,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        Log::info('PedidoPrendaService: Fotos de prenda copiadas', [
-            'prenda_pedido_id' => $prendaPedido->id,
-            'prenda_cot_id' => $prendaCotId,
-            'cantidad' => $fotosCot->count(),
-        ]);
-    }
-
-    /**
-     * Copiar fotos de telas desde cotización al pedido
-     */
-    private function copiarFotosTelasDeCotizacion(PrendaPedido $prendaPedido, int $prendaCotId): void
-    {
-        $fotosTelaCot = DB::table('prenda_tela_fotos_cot')
-            ->where('prenda_cot_id', $prendaCotId)
-            ->orderBy('orden')
-            ->get();
-
-        foreach ($fotosTelaCot as $foto) {
-            DB::table('prenda_fotos_tela_pedido')->insert([
-                'prenda_pedido_id' => $prendaPedido->id,
-                'tela_id' => null, // No se copia tela_id, solo las fotos
-                'color_id' => null,
-                'ruta_original' => $foto->ruta_original,
-                'ruta_webp' => $foto->ruta_webp,
-                'ruta_miniatura' => $foto->ruta_miniatura,
-                'orden' => $foto->orden,
-                'ancho' => $foto->ancho,
-                'alto' => $foto->alto,
-                'tamaño' => $foto->tamaño,
-                'observaciones' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        Log::info('PedidoPrendaService: Fotos de telas copiadas', [
-            'prenda_pedido_id' => $prendaPedido->id,
-            'prenda_cot_id' => $prendaCotId,
-            'cantidad' => $fotosTelaCot->count(),
-        ]);
-    }
-
-    /**
-     * Copiar logos de prenda desde cotización al pedido
-     */
-    private function copiarLogosDePrenadaDeCotizacion(PrendaPedido $prendaPedido, int $prendaCotId): void
-    {
-        // Buscar logo cotización asociado a la prenda
-        $logosCot = DB::table('logo_fotos_cot')
-            ->join('logo_cotizacion', 'logo_fotos_cot.logo_cotizacion_id', '=', 'logo_cotizacion.id')
-            ->where('logo_cotizacion.prenda_cot_id', $prendaCotId)
-            ->select('logo_fotos_cot.*')
-            ->orderBy('logo_fotos_cot.orden')
-            ->get();
-
-        foreach ($logosCot as $logo) {
-            DB::table('prenda_fotos_logo_pedido')->insert([
-                'prenda_pedido_id' => $prendaPedido->id,
-                'ruta_original' => $logo->ruta_original,
-                'ruta_webp' => $logo->ruta_webp,
-                'ruta_miniatura' => $logo->ruta_miniatura,
-                'orden' => $logo->orden,
-                'ubicacion' => null, // Se puede llenar después si es necesario
-                'ancho' => $logo->ancho,
-                'alto' => $logo->alto,
-                'tamaño' => $logo->tamaño,
-                'observaciones' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        if ($logosCot->isNotEmpty()) {
-            Log::info('PedidoPrendaService: Logos de prenda copiados', [
-                'prenda_pedido_id' => $prendaPedido->id,
-                'prenda_cot_id' => $prendaCotId,
-                'cantidad' => $logosCot->count(),
-            ]);
-        }
-    }
-
-    /**
-     * Guardar tallas con cantidades en prenda_tallas_ped
-     * Puede recibir:
-     * - Array asociativo: ['S' => 10, 'M' => 20, 'L' => 15]
-     * - String JSON: '{"S":10,"M":20,"L":15}'
-     * - String simple: 'S, M, L'
-     */
-    private function guardarTallasPrenda(PrendaPedido $prenda, mixed $cantidades): void
-    {
-        try {
-            $tallasCantidades = [];
-
-            // Parsear según el tipo de dato recibido
-            if (is_array($cantidades)) {
-                $tallasCantidades = $cantidades;
-            } elseif (is_string($cantidades)) {
-                // Intentar parsear como JSON
-                if (str_starts_with(trim($cantidades), '{') || str_starts_with(trim($cantidades), '[')) {
-                    $tallasCantidades = json_decode($cantidades, true) ?? [];
-                } else {
-                    // Si es una lista separada por comas, crear array con cantidad 1
-                    $tallas = array_map('trim', explode(',', $cantidades));
-                    $tallasCantidades = array_fill_keys($tallas, 1);
-                }
-            }
-
-            if (empty($tallasCantidades)) {
-                Log::info(' [PedidoPrendaService::guardarTallasPrenda] No hay tallas para guardar', [
-                    'prenda_ped_id' => $prenda->id,
-                ]);
-                return;
-            }
-
-            // Guardar cada talla con su cantidad
-            $registros = [];
-            foreach ($tallasCantidades as $talla => $cantidad) {
-                if ($talla && $cantidad > 0) {
-                    $registros[] = [
-                        'prenda_ped_id' => $prenda->id,
-                        'talla' => (string)$talla,
-                        'cantidad' => (int)$cantidad,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                }
-            }
-
-            if (!empty($registros)) {
-                \App\Models\PrendaTalaPed::insert($registros);
-                
-                Log::info(' [PedidoPrendaService::guardarTallasPrenda] Tallas guardadas correctamente', [
-                    'prenda_ped_id' => $prenda->id,
-                    'total_tallas' => count($registros),
-                    'tallas' => array_keys($tallasCantidades),
-                ]);
-            }
-        } catch (\Exception $e) {
-            Log::error(' [PedidoPrendaService::guardarTallasPrenda] Error al guardar tallas', [
-                'prenda_ped_id' => $prenda->id,
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     *  NUEVO: Crear variantes en prenda_pedido_variantes desde cantidad_talla
-     * Transforma {"genero": {"talla": cantidad}} o array de {genero, talla, cantidad}
-     * en registros en la tabla prenda_pedido_variantes
-     */
-    private function crearVariantesDesdeCantidadTalla(
-        PrendaPedido $prenda, 
-        mixed $cantidadTalla,
-        ?int $colorId = null,
-        ?int $telaId = null,
-        ?int $tipoMangaId = null,
-        ?int $tipoBrocheBotonId = null,
-        //  NUEVOS PARÁMETROS: Observaciones y variaciones booleanas
-        string $mangaObs = '',
-        string $bolsillosObs = '',
-        string $brocheObs = '',
-        string $reflectivoObs = '',
-        bool $tieneBolsillos = false,
-        bool $tieneReflectivo = false
-    ): void
-    {
-        try {
-            //  CAMBIO CRÍTICO [19/01/2026]:
-            // Después de eliminar talla/cantidad de prenda_pedido_variantes:
-            // - Las tallas/cantidades ahora viven en prendas_pedido.cantidad_talla (JSON)
-            // - Las variantes son CARACTERÍSTICAS (color, tela, manga, broche, bolsillos)
-            // - Crear UNA SOLA variante por combinación de características, NO una por talla
-            
-            // Verificar que cantidad_talla tiene datos (validar que la prenda tiene tallas asignadas)
-            $tieneTallas = false;
-            if (is_array($cantidadTalla)) {
-                $tieneTallas = !empty($cantidadTalla);
-            } elseif (is_string($cantidadTalla)) {
-                $decoded = json_decode($cantidadTalla, true);
-                $tieneTallas = !empty($decoded);
-            }
-
-            // Si no hay tallas, no crear variante
-            if (!$tieneTallas) {
-                \Log::warning('  [crearVariantesDesdeCantidadTalla] cantidad_talla está vacío, no se crea variante', [
-                    'prenda_id' => $prenda->id,
-                ]);
-                return;
-            }
-
-            // Si hay tallas, SIEMPRE crear variante (incluso si todas las características son NULL)
-            // La variante registra las características de la prenda para esas tallas
-
-            \Log::info(' [crearVariantesDesdeCantidadTalla] Creando UNA SOLA variante con características', [
-                'prenda_id' => $prenda->id,
-                'color_id' => $colorId,
-                'tela_id' => $telaId,
-                'tipo_manga_id' => $tipoMangaId,
-                'tipo_broche_boton_id' => $tipoBrocheBotonId,
-            ]);
-
-            //  CREAR UNA ÚNICA VARIANTE CON TODAS LAS CARACTERÍSTICAS
-            // Las tallas y cantidades ya están guardadas en prendas_pedido.cantidad_talla JSON
-            $variante = $prenda->variantes()->create([
-                'tipo_manga_id' => $tipoMangaId,
-                'tipo_broche_boton_id' => $tipoBrocheBotonId,
-                'manga_obs' => $mangaObs,
-                'broche_boton_obs' => $brocheObs,
-                'tiene_bolsillos' => $tieneBolsillos,
-                'bolsillos_obs' => $bolsillosObs,
-                'tiene_reflectivo' => $tieneReflectivo,
-                'reflectivo_obs' => $reflectivoObs,
-            ]);
-
-            // Guardar color y tela en tabla separada prenda_pedido_colores_telas
-            if ($colorId || $telaId) {
-                \App\Models\PrendaPedidoColorTela::create([
-                    'prenda_pedido_id' => $prenda->id,
-                    'color_id' => $colorId,
-                    'tela_id' => $telaId,
-                ]);
-                
-                \Log::info(' [crearVariantesDesdeCantidadTalla] Color y tela guardados en tabla separada', [
-                    'prenda_id' => $prenda->id,
-                    'color_id' => $colorId,
-                    'tela_id' => $telaId,
-                ]);
-            }
-
-            \Log::info(' [crearVariantesDesdeCantidadTalla] Variante creada exitosamente', [
-                'prenda_id' => $prenda->id,
-                'variante_guardada' => true,
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error(' [crearVariantesDesdeCantidadTalla] Error', [
-                'prenda_id' => $prenda->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Guardar procesos de la prenda con sus tallas y ubicaciones
-     * Estructura esperada: 
-     * {
-     *   'reflectivo': {
-     *     'tipo': 'reflectivo',
-     *     'ubicaciones': ['frente', 'espalda'],
-     *     'observaciones': 'Aplicar en tiras de 5cm',
-     *     'tallas': {
-     *       'dama': {'S': 40, 'M': 30, 'L': 30},
-     *       'caballero': {'M': 20}
-     *     }
-     *   }
-     * }
-     */
-    private function guardarProcesosPrenda(PrendaPedido $prenda, array $procesos): void
-    {
-        Log::info(' [PedidoPrendaService::guardarProcesosPrenda] INICIO - Guardando procesos', [
-            'prenda_id' => $prenda->id,
-            'numero_pedido' => $prenda->numero_pedido,
-            'cantidad_procesos' => count($procesos),
-            'procesos_tipos' => array_keys($procesos),
-        ]);
-
-        try {
-            foreach ($procesos as $tipoProceso => $procesoData) {
-                Log::info(" [PedidoPrendaService] Procesando tipo: {$tipoProceso}", [
-                    'prenda_id' => $prenda->id,
-                    'tipo_proceso' => $tipoProceso,
-                    'proceso_data_keys' => array_keys($procesoData),
-                    'tiene_tipo' => isset($procesoData['tipo']),
-                    'tiene_datos' => isset($procesoData['datos']),
-                ]);
-
-                // Extraer datos - pueden venir en .datos o directamente
-                $datosProc = $procesoData;
-                if (isset($procesoData['datos']) && is_array($procesoData['datos'])) {
-                    $datosProc = $procesoData['datos'];
-                    Log::info(" [PedidoPrendaService] Datos encontrados en .datos", ['tipo_proceso' => $tipoProceso]);
-                }
-
-                // Validar que tenga los campos requeridos
-                if (empty($datosProc['tipo'])) {
-                    Log::warning(" [PedidoPrendaService] Proceso sin tipo, saltando", [
-                        'prenda_id' => $prenda->id,
-                        'tipo_proceso' => $tipoProceso,
-                    ]);
-                    continue;
-                }
-
-                // Buscar el tipo_proceso_id en la base de datos
-                $tipoProcesoId = DB::table('tipos_procesos')
-                    ->where('nombre', 'like', "%{$datosProc['tipo']}%")
-                    ->value('id');
-
-                if (!$tipoProcesoId) {
-                    Log::warning(" [PedidoPrendaService] No encontró tipo_proceso_id para: {$datosProc['tipo']}", [
-                        'prenda_id' => $prenda->id,
-                        'tipo_buscado' => $datosProc['tipo'],
-                    ]);
-                    // Crear el tipo de proceso si no existe
-                    $tipoProcesoId = DB::table('tipos_procesos')->insertGetId([
-                        'nombre' => $datosProc['tipo'],
-                        'descripcion' => "Proceso: {$datosProc['tipo']}",
-                        'activo' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    Log::info(" [PedidoPrendaService] Tipo de proceso creado automáticamente", [
-                        'tipo_proceso_id' => $tipoProcesoId,
-                        'nombre' => $datosProc['tipo'],
-                    ]);
-                }
-
-                // Preparar datos para insertar
-                $tallasDama = $datosProc['tallas']['dama'] ?? [];
-                $tallasCapallero = $datosProc['tallas']['caballero'] ?? [];
-                $ubicaciones = $datosProc['ubicaciones'] ?? [];
-                $observaciones = $datosProc['observaciones'] ?? '';
-                $imagenes = $datosProc['imagenes'] ?? [];
-
-                Log::info("📍 [PedidoPrendaService] Datos del proceso antes de guardar", [
-                    'prenda_id' => $prenda->id,
-                    'tipo_proceso_id' => $tipoProcesoId,
-                    'tallas_dama' => $tallasDama,
-                    'tallas_caballero' => $tallasCapallero,
-                    'ubicaciones' => $ubicaciones,
-                    'observaciones' => $observaciones,
-                    'cantidad_imagenes' => count($imagenes),
-                ]);
-
-                // Insertar en la tabla pedidos_procesos_prenda_detalles
-                $procesoDetalleId = DB::table('pedidos_procesos_prenda_detalles')->insertGetId([
-                    'prenda_pedido_id' => $prenda->id,
-                    'tipo_proceso_id' => $tipoProcesoId,
-                    'ubicaciones' => json_encode($ubicaciones),
-                    'observaciones' => $observaciones,
-                    'tallas_dama' => json_encode($tallasDama),
-                    'tallas_caballero' => json_encode($tallasCapallero),
-                    'estado' => 'PENDIENTE',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                Log::info(" [PedidoPrendaService] Proceso guardado en BD", [
-                    'prenda_id' => $prenda->id,
-                    'tipo_proceso_id' => $tipoProcesoId,
-                    'tipo_proceso' => $datosProc['tipo'],
-                    'proceso_detalle_id' => $procesoDetalleId,
-                ]);
-
-                // Guardar imágenes si existen
-                if (!empty($imagenes) && is_array($imagenes)) {
-                    $this->guardarProcesosImagenes($procesoDetalleId, $imagenes);
-                }
-            }
-
-            Log::info(' [PedidoPrendaService::guardarProcesosPrenda] Todos los procesos guardados', [
-                'prenda_id' => $prenda->id,
-                'cantidad_procesos' => count($procesos),
-            ]);
-        } catch (\Exception $e) {
-            Log::error(' [PedidoPrendaService::guardarProcesosPrenda] Error guardando procesos', [
-                'prenda_id' => $prenda->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Guardar imágenes de procesos como WebP
-     * Ahora recibe File objects o arrays con información de archivo, NO base64
-     */
-    private function guardarProcesosImagenes(int $procesoDetalleId, array $imagenes): void
-    {
-        Log::info(' [PedidoPrendaService::guardarProcesosImagenes] Guardando imágenes de procesos', [
-            'proceso_detalle_id' => $procesoDetalleId,
-            'cantidad' => count($imagenes),
-        ]);
-
-        foreach ($imagenes as $index => $imagenData) {
-            try {
-                // CASO 1: UploadedFile (archivo real subido)
-                if ($imagenData instanceof UploadedFile) {
-                    $resultado = $this->guardarArchivoImagenEnWeb($imagenData, $procesoDetalleId, $index, 'proceso', null);
-                    $rutaRelativa = $resultado['ruta_relativa'];
-                    
-                    DB::table('pedidos_procesos_imagenes')->insert([
-                        'proceso_prenda_detalle_id' => $procesoDetalleId,
-                        'ruta_original' => $imagenData->getClientOriginalName(),
-                        'ruta_webp' => $rutaRelativa,
-                        'orden' => $index,
-                        'es_principal' => $index === 0 ? 1 : 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    Log::info(" Imagen de proceso guardada (UploadedFile)", [
-                        'proceso_detalle_id' => $procesoDetalleId,
-                        'index' => $index,
-                        'ruta_relativa' => $rutaRelativa,
-                    ]);
-                }
-                // CASO 2: Array con UploadedFile
-                elseif (is_array($imagenData) && isset($imagenData['archivo']) && $imagenData['archivo'] instanceof UploadedFile) {
-                    $resultado = $this->guardarArchivoImagenEnWeb($imagenData['archivo'], $procesoDetalleId, $index, 'proceso', null);
-                    $rutaRelativa = $resultado['ruta_relativa'];
-                    
-                    DB::table('pedidos_procesos_imagenes')->insert([
-                        'proceso_prenda_detalle_id' => $procesoDetalleId,
-                        'ruta_original' => $imagenData['archivo']->getClientOriginalName(),
-                        'ruta_webp' => $rutaRelativa,
-                        'orden' => $index,
-                        'es_principal' => $index === 0 ? 1 : 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    Log::info(" Imagen de proceso guardada (Array con UploadedFile)", [
-                        'proceso_detalle_id' => $procesoDetalleId,
-                        'index' => $index,
-                        'ruta_relativa' => $rutaRelativa,
-                    ]);
-                }
-                // CASO 3: URL directa (string)
-                elseif (is_string($imagenData) && filter_var($imagenData, FILTER_VALIDATE_URL)) {
-                    DB::table('pedidos_procesos_imagenes')->insert([
-                        'proceso_prenda_detalle_id' => $procesoDetalleId,
-                        'ruta_original' => $imagenData,
-                        'ruta_webp' => $imagenData,
-                        'orden' => $index,
-                        'es_principal' => $index === 0 ? 1 : 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    Log::info(" Imagen de proceso guardada (URL directa)", [
-                        'proceso_detalle_id' => $procesoDetalleId,
-                        'index' => $index,
-                        'url' => $imagenData,
-                    ]);
-                }
-                // CASO 4: Array con URL (tipo, nombre, url)
-                elseif (is_array($imagenData) && isset($imagenData['url']) && filter_var($imagenData['url'], FILTER_VALIDATE_URL)) {
-                    DB::table('pedidos_procesos_imagenes')->insert([
-                        'proceso_prenda_detalle_id' => $procesoDetalleId,
-                        'ruta_original' => $imagenData['nombre'] ?? $imagenData['url'],
-                        'ruta_webp' => $imagenData['url'],
-                        'orden' => $index,
-                        'es_principal' => $index === 0 ? 1 : 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    Log::info(" Imagen de proceso guardada (Array con URL)", [
-                        'proceso_detalle_id' => $procesoDetalleId,
-                        'index' => $index,
-                        'url' => $imagenData['url'],
-                        'tipo' => $imagenData['tipo'] ?? null,
-                    ]);
-                }
-                else {
-                    Log::warning(' Formato de imagen NO soportado', [
-                        'tipo' => gettype($imagenData),
-                        'contenido' => is_array($imagenData) ? array_keys($imagenData) : substr($imagenData, 0, 100),
-                    ]);
-                }
-            } catch (\Exception $e) {
-                Log::warning(" Error guardando imagen de proceso", [
-                    'proceso_detalle_id' => $procesoDetalleId,
-                    'index' => $index,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-    }
-
-    /**
-     *  MÉTODO UNIFICADO - Guardar archivo imagen como WebP en storage público
-     * Estructura: storage/app/public/pedidos/{pedido_id}/{tipo}/{subtipo}/
-     * 
-     * REFACTORIZADO: Ahora acepta pedidoId o procesoDetalleId
-     * - Si $procesoDetalleId es null: usa $pedidoId directamente (para prendas/telas)
-     * - Si $procesoDetalleId existe: obtiene pedidoId desde el proceso (para procesos)
-     * 
-     * Tipos:
-     * - prenda: storage/app/public/pedidos/{ID}/prendas/
-     * - tela: storage/app/public/pedidos/{ID}/telas/
-     * - proceso: storage/app/public/pedidos/{ID}/procesos/{reflectivo|bordado|etc}/
-     * 
-     *  SOLO ACEPTA UploadedFile - NO base64, NO archivos en disco
-     * 
-     * @param UploadedFile $archivo - Archivo a guardar
-     * @param int|null $procesoDetalleId - ID del proceso (opcional, solo para procesos)
-     * @param int $index - Índice del archivo en la colección
-     * @param string $tipo - Tipo: 'prenda', 'tela', 'proceso'
-     * @param int|null $pedidoId - ID del pedido (opcional, requerido si procesoDetalleId es null)
-     * @return array ['ruta_web' => URL accesible, 'tamaño' => bytes]
-     */
-    private function guardarArchivoImagenEnWeb(
-        UploadedFile $archivo,
-        ?int $procesoDetalleId,
-        int $index,
-        string $tipo,
-        ?int $pedidoId = null
-    ): array {
-        try {
-            // Obtener pedidoId
-            if ($procesoDetalleId !== null) {
-                // Caso PROCESOS: obtener pedidoId desde procesoDetalle
-                $procesoDetalle = DB::table('pedidos_procesos_prenda_detalles')
-                    ->where('id', $procesoDetalleId)
-                    ->first();
-                
-                if (!$procesoDetalle) {
-                    throw new \Exception("Proceso detalle {$procesoDetalleId} no encontrado");
-                }
-                
-                $prendaPedido = DB::table('prendas_pedido')
-                    ->where('id', $procesoDetalle->prenda_pedido_id)
-                    ->first();
-                
-                if (!$prendaPedido) {
-                    throw new \Exception("Prenda pedido no encontrada");
-                }
-                
-                //  FIX #3: Usar pedido_produccion_id, no pedido_id
-                $pedidoId = $prendaPedido->pedido_produccion_id;
-                
-                if (!$pedidoId) {
-                    throw new \Exception("Pedido ID no encontrado en prenda {$procesoDetalle->prenda_pedido_id}");
-                }
-            } else {
-                // Caso PRENDAS/TELAS: usar pedidoId directo
-                if (!$pedidoId) {
-                    throw new \Exception("Debe proporcionar pedidoId para fotos de prenda/tela");
-                }
-            }
-            
-            // Definir ruta según tipo
-            if ($tipo === 'proceso' && $procesoDetalleId !== null) {
-                // storage/app/public/pedidos/{ID}/procesos/{tipo_proceso}/
-                $tipoProcesoId = $procesoDetalle->tipo_proceso_id;
-                $tipoProcesoNombre = DB::table('tipos_procesos')
-                    ->where('id', $tipoProcesoId)
-                    ->value('slug') ?? 'proceso';
-                
-                $directorio = storage_path("app/public/pedidos/{$pedidoId}/procesos/{$tipoProcesoNombre}");
-            } elseif ($tipo === 'tela') {
-                // storage/app/public/pedidos/{ID}/telas/
-                $directorio = storage_path("app/public/pedidos/{$pedidoId}/telas");
-            } else {
-                // storage/app/public/pedidos/{ID}/prendas/ (por defecto)
-                $directorio = storage_path("app/public/pedidos/{$pedidoId}/prendas");
-            }
-            
-            // Crear directorio
-            if (!is_dir($directorio)) {
-                mkdir($directorio, 0755, true);
-            }
-            
-            //  FIX: Convertir a WebP usando ImageManager con sintaxis correcta
-            try {
-                $imagen = \Intervention\Image\ImageManager::gd()->read($archivo->getRealPath());
-            } catch (\Exception $e) {
-                \Log::warning(' Error con GD, intentando ImageMagick', ['error' => $e->getMessage()]);
-                try {
-                    $imagen = \Intervention\Image\ImageManager::imagick()->read($archivo->getRealPath());
-                } catch (\Exception $e2) {
-                    throw new \Exception("No se pudo procesar imagen: " . $e2->getMessage());
-                }
-            }
-            
-            // Redimensionar si es necesario
-            if ($imagen->width() > 2000 || $imagen->height() > 2000) {
-                $imagen->scaleDown(width: 2000, height: 2000);
-            }
-            
-            // Convertir a WebP con calidad 80
-            $webp = $imagen->toWebp(quality: 80);
-            $contenidoWebP = $webp->toString();
-            $tamaño = strlen($contenidoWebP);
-            
-            // Generar nombre único
-            $timestamp = now()->format('YmdHis');
-            $random = substr(uniqid(), -6);
-            $nombreArchivo = "img_{$tipo}_{$index}_{$timestamp}_{$random}.webp";
-            $rutaCompleta = $directorio . '/' . $nombreArchivo;
-            
-            // Guardar archivo
-            file_put_contents($rutaCompleta, $contenidoWebP);
-            
-            // Generar URL accesible en web
-            $rutaRelativa = "pedidos/{$pedidoId}";
-            if ($tipo === 'proceso' && $procesoDetalleId !== null) {
-                $tipoProcesoNombre = DB::table('tipos_procesos')
-                    ->where('id', $procesoDetalle->tipo_proceso_id)
-                    ->value('slug') ?? 'proceso';
-                $rutaRelativa .= "/procesos/{$tipoProcesoNombre}/{$nombreArchivo}";
-            } else {
-                $tipoPlural = $tipo === 'tela' ? 'telas' : 'prendas';
-                $rutaRelativa .= "/{$tipoPlural}/{$nombreArchivo}";
-            }
-            
-            $rutaWeb = asset("storage/{$rutaRelativa}");
-            
-            //  IMPORTANTE: Guardar también la ruta relativa (sin dominio) para portabilidad entre servidores
-            $rutaRelativaSimple = "storage/{$rutaRelativa}";
-            
-            Log::info(" Archivo guardado como WebP", [
-                'tipo' => $tipo,
-                'archivo_original' => $archivo->getClientOriginalName(),
-                'pedido_id' => $pedidoId,
-                'tamaño_original' => $archivo->getSize(),
-                'tamaño_webp' => $tamaño,
-                'ruta_web' => $rutaWeb,
-                'ruta_relativa' => $rutaRelativaSimple,
-            ]);
-            
-            return [
-                'ruta_web' => $rutaWeb,
-                'ruta_relativa' => $rutaRelativaSimple,  //  Nueva: ruta sin dominio
-                'tamaño' => $tamaño,
-            ];
-        } catch (\Exception $e) {
-            Log::error(' Error guardando archivo imagen', [
-                'archivo' => $archivo->getClientOriginalName(),
-                'tipo' => $tipo,
-                'proceso_detalle_id' => $procesoDetalleId,
-                'pedido_id' => $pedidoId,
-                'error' => $e->getMessage(),
-            ]);
-            throw new \Exception('No se pudo procesar imagen: ' . $e->getMessage());
         }
     }
 }

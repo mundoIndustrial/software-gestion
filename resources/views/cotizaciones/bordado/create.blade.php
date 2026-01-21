@@ -552,7 +552,7 @@ const originalTecnicas = tecnicasSeleccionadas;
 tecnicasSeleccionadas = new Proxy(originalTecnicas, {
     set(target, property, value) {
         console.log(`🔔 tecnicasSeleccionadas.${property} = ${value}`);
-        console.trace('📍 Stack trace:');
+        console.trace(' Stack trace:');
         target[property] = value;
         return true;
     }

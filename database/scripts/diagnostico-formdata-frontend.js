@@ -19,7 +19,7 @@ window.fetch = function(...args) {
         console.log('║                INTERCEPTADA SOLICITUD AL SERVIDOR              ║');
         console.log('╚════════════════════════════════════════════════════════════════╝\n');
         
-        console.log('📍 URL:', resource);
+        console.log(' URL:', resource);
         console.log('📤 Método:', config?.method || 'GET');
         
         if (config?.body instanceof FormData) {

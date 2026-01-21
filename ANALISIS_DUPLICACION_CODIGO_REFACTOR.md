@@ -20,7 +20,7 @@ El proyecto tiene **4 capas de duplicación**:
 
 ### 1. **FUNCIONES MODALES (Frontend)**
 
-#### 📍 Archivos afectados:
+####  Archivos afectados:
 - `resources/views/asesores/pedidos/index.blade.php` (líneas 70-200)
 - `public/js/asesores/pedidos-modal.js` (líneas 60-102)
 - `public/js/asesores/cotizaciones-show.js` (líneas 52-397)
@@ -61,7 +61,7 @@ function cerrarModal[X]() {
 
 ### 2. **HELPERS DE NOTIFICACIONES (Frontend)**
 
-#### 📍 Archivos afectados:
+####  Archivos afectados:
 - `public/js/modulos/crear-pedido/utilidades/helpers-pedido-editable.js` (87 líneas de helpers)
 - `public/js/inventario-telas/inventario.js` (líneas 400+)
 - `public/js/dashboard/dashboard.js` (líneas 494+)
@@ -98,7 +98,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') { ... }
 
 ### 3. **LÓGICA DE ELIMINACIÓN (Frontend)**
 
-#### 📍 Ubicaciones:
+####  Ubicaciones:
 
 ```javascript
 // VARIANTE 1: index.blade.php (líneas 515-567)
@@ -140,7 +140,7 @@ function eliminarTela(telaId, telaNombre) { ... }
 
 ### 4. **SERVICIOS BACKEND (PHP)**
 
-#### 📍 Archivos afectados:
+####  Archivos afectados:
 - `app/Http/Controllers/AsesoresController.php` (16 servicios inyectados)
 - `app/Http/Controllers/Asesores/CrearPedidoEditableController.php`
 - `app/Http/Controllers/SupervisorPedidosController.php`

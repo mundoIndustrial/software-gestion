@@ -255,7 +255,7 @@ function renderizarUbicacionesReflectivo() {
         contenedor.appendChild(div);
     });
 
-    console.log('📍 Total ubicaciones reflectivo:', ubicacionesReflectivo.length);
+    console.log(' Total ubicaciones reflectivo:', ubicacionesReflectivo.length);
 }
 
 /**

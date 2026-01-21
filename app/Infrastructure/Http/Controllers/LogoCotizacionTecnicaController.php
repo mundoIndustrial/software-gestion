@@ -151,7 +151,7 @@ class LogoCotizacionTecnicaController extends Controller
             // Crear prendas con imágenes
             $prendas = [];
             foreach ($prendasData as $prendasIndex => $prendaData) {
-                Log::info('📍 Creando prenda de catálogo', [
+                Log::info(' Creando prenda de catálogo', [
                     'nombre_producto' => $prendaData['nombre_prenda'],
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],

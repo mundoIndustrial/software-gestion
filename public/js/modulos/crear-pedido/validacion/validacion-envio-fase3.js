@@ -168,7 +168,7 @@
      * @param {string} endpoint - URL del servidor
      * @returns {Promise} Promesa del fetch
      */
-    window.enviarDatosAlServidor = function(datos, endpoint = '/asesores/pedidos-produccion') {
+    window.enviarDatosAlServidor = function(datos, endpoint = '/api/pedidos') {
         return new Promise((resolve, reject) => {
             const csrfToken = document.querySelector('input[name="_token"]')?.value ||
                             document.querySelector('meta[name="csrf-token"]')?.content;
@@ -182,14 +182,104 @@
 
             console.log('📤 Enviando datos al servidor:', datos);
 
+            // Usar FormData para enviar archivos correctamente
+            const formData = new FormData();
+            
+            // Agregar datos principales
+            formData.append('cliente', datos.cliente || '');
+            formData.append('asesora', datos.asesora || '');
+            formData.append('forma_de_pago', datos.forma_de_pago || '');
+            
+            // Agregar items con sus imágenes
+            if (datos.items && Array.isArray(datos.items)) {
+                datos.items.forEach((item, itemIndex) => {
+                    // Datos básicos del item
+                    formData.append(`items[${itemIndex}][tipo]`, item.tipo || '');
+                    formData.append(`items[${itemIndex}][nombre_producto]`, item.nombre_producto || '');
+                    formData.append(`items[${itemIndex}][descripcion]`, item.descripcion || '');
+                    formData.append(`items[${itemIndex}][origen]`, item.origen || 'bodega');
+                    
+                    // Cantidad talla como JSON
+                    if (item.cantidad_talla) {
+                        formData.append(`items[${itemIndex}][cantidad_talla]`, JSON.stringify(item.cantidad_talla));
+                    }
+                    
+                    // Variaciones como JSON
+                    if (item.variaciones) {
+                        const variacionesStr = typeof item.variaciones === 'string' 
+                            ? item.variaciones 
+                            : JSON.stringify(item.variaciones);
+                        formData.append(`items[${itemIndex}][variaciones]`, variacionesStr);
+                    }
+                    
+                    // Procesos como JSON
+                    if (item.procesos) {
+                        formData.append(`items[${itemIndex}][procesos]`, JSON.stringify(item.procesos));
+                    }
+                    
+                    // Imágenes de prenda
+                    if (item.imagenes && Array.isArray(item.imagenes)) {
+                        item.imagenes.forEach((img) => {
+                            if (img instanceof File) {
+                                formData.append(`items[${itemIndex}][imagenes][]`, img);
+                            } else if (img && img.file instanceof File) {
+                                formData.append(`items[${itemIndex}][imagenes][]`, img.file);
+                            }
+                        });
+                    }
+                    
+                    // Telas con imágenes
+                    if (item.telas && Array.isArray(item.telas)) {
+                        item.telas.forEach((tela, telaIdx) => {
+                            formData.append(`items[${itemIndex}][telas][${telaIdx}][tela]`, tela.tela || '');
+                            formData.append(`items[${itemIndex}][telas][${telaIdx}][color]`, tela.color || '');
+                            formData.append(`items[${itemIndex}][telas][${telaIdx}][referencia]`, tela.referencia || '');
+                            
+                            // Imágenes de tela
+                            if (tela.imagenes && Array.isArray(tela.imagenes)) {
+                                tela.imagenes.forEach((img) => {
+                                    if (img instanceof File) {
+                                        formData.append(`items[${itemIndex}][telas][${telaIdx}][imagenes][]`, img);
+                                    } else if (img && img.file instanceof File) {
+                                        formData.append(`items[${itemIndex}][telas][${telaIdx}][imagenes][]`, img.file);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // EPP específico
+                    if (item.tipo === 'epp') {
+                        formData.append(`items[${itemIndex}][epp_id]`, item.epp_id || '');
+                        formData.append(`items[${itemIndex}][nombre]`, item.nombre || '');
+                        formData.append(`items[${itemIndex}][codigo]`, item.codigo || '');
+                        formData.append(`items[${itemIndex}][categoria]`, item.categoria || '');
+                        formData.append(`items[${itemIndex}][talla]`, item.talla || '');
+                        formData.append(`items[${itemIndex}][cantidad]`, item.cantidad || 0);
+                        formData.append(`items[${itemIndex}][observaciones]`, item.observaciones || '');
+                        
+                        // Imágenes de EPP
+                        if (item.imagenes && Array.isArray(item.imagenes)) {
+                            item.imagenes.forEach((img) => {
+                                if (img instanceof File) {
+                                    formData.append(`items[${itemIndex}][epp_imagenes][]`, img);
+                                } else if (img && img.file instanceof File) {
+                                    formData.append(`items[${itemIndex}][epp_imagenes][]`, img.file);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
             fetch(endpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json'
+                    // NO incluir Content-Type - el navegador lo establece automáticamente con FormData
                 },
-                body: JSON.stringify(datos)
+                body: formData
             })
             .then(response => {
                 if (!response.ok) {

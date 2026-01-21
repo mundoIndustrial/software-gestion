@@ -200,6 +200,8 @@ class ItemTransformerService
             'procesos' => $procesosReconstruidos,
             'origen' => $item['origen'] ?? 'bodega',
             'de_bodega' => $deBodega,
+            'manga' => $item['manga'] ?? '',
+            'broche' => $item['broche'] ?? '',
             'obs_manga' => $observaciones['obs_manga'],
             'obs_bolsillos' => $observaciones['obs_bolsillos'],
             'obs_broche' => $observaciones['obs_broche'],

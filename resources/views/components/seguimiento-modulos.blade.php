@@ -595,7 +595,7 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
     // Si se especifica una sección, buscar en su contenedor específico
     if (section) {
         const containerId = `seguimiento-container-${section}`;
-        console.log(`📍 Buscando en contenedor específico: ${containerId}`);
+        console.log(` Buscando en contenedor específico: ${containerId}`);
         
         const container = document.getElementById(containerId);
         if (container) {
@@ -622,7 +622,7 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
             const container = document.getElementById(id);
             if (container) {
                 const tabla = container.querySelector('.seguimiento-table');
-                console.log(`📍 Contenedor ${id}: tabla encontrada=${!!tabla}, visible=${container.offsetParent !== null}`);
+                console.log(` Contenedor ${id}: tabla encontrada=${!!tabla}, visible=${container.offsetParent !== null}`);
             }
         });
         

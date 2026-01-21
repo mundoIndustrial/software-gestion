@@ -27,7 +27,7 @@ console.log(' orderTracking-v2.js cargado - Versión SOLID con 9 módulos');
  */
 async function openOrderTracking(orderId) {
     try {
-        console.log('📍 Abriendo tracking para orden:', orderId);
+        console.log(' Abriendo tracking para orden:', orderId);
         
         // Obtener datos del API
         const procesos = await ApiClient.getOrderProcesos(orderId);

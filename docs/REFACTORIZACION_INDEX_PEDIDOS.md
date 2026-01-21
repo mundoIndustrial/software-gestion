@@ -177,7 +177,7 @@ resources/views/asesores/pedidos/
 
 ##  RESPONSABILIDADES POR CAPA (SÓLIDA SEPARACIÓN)
 
-### 1️⃣ BACKEND - PedidosController (LÓGICA PRINCIPAL)
+###  BACKEND - PedidosController (LÓGICA PRINCIPAL)
 
 **Responsabilidades:**
 -  Aplicar filtros en BD (no en frontend)
@@ -231,7 +231,7 @@ class PedidosController {
 }
 ```
 
-### 2️⃣ BACKEND - Services (LÓGICA DE NEGOCIO)
+###  BACKEND - Services (LÓGICA DE NEGOCIO)
 
 **PedidoFilterService:**
 ```php
@@ -263,7 +263,7 @@ class PedidoFormatService {
 }
 ```
 
-### 3️⃣ FRONTEND - API Client (COMUNICACIÓN)
+###  FRONTEND - API Client (COMUNICACIÓN)
 
 **Responsabilidades:**
 -  Llamadas HTTP al servidor

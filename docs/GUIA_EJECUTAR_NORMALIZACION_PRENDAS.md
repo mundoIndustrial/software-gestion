@@ -15,7 +15,7 @@ DESPUÉS:
 
 ##  PRE-REQUISITOS (5 min)
 
-### 1️⃣ Backup de Seguridad
+###  Backup de Seguridad
 
 ```bash
 # En terminal/PowerShell
@@ -28,7 +28,7 @@ mysqldump -u root mundoindustrial > backup_2026_01_16.sql
 ls -la backup_2026_01_16.sql
 ```
 
-### 2️⃣ Verificar Estructura Actual
+###  Verificar Estructura Actual
 
 ```bash
 # En terminal
@@ -44,7 +44,7 @@ Debería retornar registros con campos como:
 - `cantidad_talla` (JSON)
 - `color_id`, `tela_id`, `tipo_manga_id`, etc.
 
-### 3️⃣ Verificar que NO existe tabla prenda_variantes
+###  Verificar que NO existe tabla prenda_variantes
 
 ```bash
 php artisan tinker
@@ -90,7 +90,7 @@ Deberías ver:
 
 ##  VALIDACIÓN POST-MIGRACIÓN (10 min)
 
-### 1️⃣ Verificar Estructura
+###  Verificar Estructura
 
 ```bash
 php artisan tinker
@@ -109,7 +109,7 @@ DB::table('prendas_pedido')->count()     # N prendas
 DB::table('prenda_variantes')->count()   # M variantes (usualmente M > N)
 ```
 
-### 2️⃣ Verificar Relaciones
+###  Verificar Relaciones
 
 ```bash
 php artisan tinker
@@ -127,7 +127,7 @@ $pedido = PedidoProduccion::first();
 $pedido->prendasPed()->count()       #  Debe retornar M
 ```
 
-### 3️⃣ Verificar Datos Migrados
+###  Verificar Datos Migrados
 
 ```bash
 php artisan tinker

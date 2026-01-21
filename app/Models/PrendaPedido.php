@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -92,13 +93,28 @@ class PrendaPedido extends Model
     }
 
     /**
-     * Relación: Una prenda tiene muchas fotos de telas
+     * Relación: Una prenda tiene muchas combinaciones de color-tela
      * 
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function fotosTelas(): HasMany
+    public function coloresTelas(): HasMany
     {
-        return $this->hasMany(PrendaFotoTelaPedido::class, 'prenda_pedido_id');
+        return $this->hasMany(PrendaPedidoColorTela::class, 'prenda_pedido_id');
+    }
+
+    /**
+     * Relación: Una prenda tiene muchas fotos de telas (a través de coloresTelas)
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function fotosTelas(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            PrendaFotoTelaPedido::class,
+            PrendaPedidoColorTela::class,
+            'prenda_pedido_id',
+            'prenda_pedido_colores_telas_id'
+        );
     }
 
     /**

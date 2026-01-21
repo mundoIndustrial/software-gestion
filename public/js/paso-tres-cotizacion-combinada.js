@@ -1343,7 +1343,7 @@ function renderizarTecnicasAgregadasPaso3() {
             bodyHTML += `
                 <div style="margin-bottom: 1rem;">
                     <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                        📍 Ubicaciones:
+                         Ubicaciones:
                     </span>
             `;
             
@@ -2725,7 +2725,7 @@ function agregarPrendaReflectivoPaso4() {
             
             <!-- UBICACIÓN CON MODAL -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.95rem;">📍 UBICACIONES</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.95rem;"> UBICACIONES</label>
                 <div style="margin-bottom: 12px; display: flex; gap: 6px;">
                     <input type="text" class="seccion-ubicacion-reflectivo-input" list="opciones_seccion_reflectivo" placeholder="PECHO, ESPALDA, MANGA..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; text-transform: uppercase;">
                     <button type="button" class="btn-agregar-ubicacion-modal-reflectivo" style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem; white-space: nowrap;">
@@ -3400,7 +3400,7 @@ function renderizarUbicacionesReflectivoPaso4(prendasIndex) {
         contenedor.appendChild(div);
     });
     
-    console.log(`📍 Ubicaciones para prenda ${prendasIndex}: ${prenda.ubicaciones.length}`);
+    console.log(` Ubicaciones para prenda ${prendasIndex}: ${prenda.ubicaciones.length}`);
 }
 
 /**

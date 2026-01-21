@@ -1770,7 +1770,7 @@ function guardarUbicacionReflectivo() {
     header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
     header.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
+            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;"></span>
             <span class="ubicacion-nombre-reflectivo" style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubicacion}</span>
         </div>
         <span style="color: #0ea5e9; font-size: 1.2rem; transition: transform 0.3s ease;" class="ubicacion-toggle">▼</span>
@@ -1913,7 +1913,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             });
             
             console.log(` Prenda ${index + 1}: ${tipo}`);
-            console.log(`   📍 Ubicaciones: ${ubicacionesDePrenda.length}`);
+            console.log(`    Ubicaciones: ${ubicacionesDePrenda.length}`);
             console.log(`   👤 Género: ${genero || 'No especificado'}`);
             console.log(`   📏 Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'Ninguna'}`);
         }
@@ -2426,7 +2426,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     //  CARGAR UBICACIONES DE ESTA PRENDA (después de agregar al DOM)
                     if (prenda.reflectivo && prenda.reflectivo.ubicacion) {
-                        console.log('📍 Cargando ubicaciones para prenda', index + 1);
+                        console.log(' Cargando ubicaciones para prenda', index + 1);
                         const prendaCard = contenedor.lastElementChild;
                         const ubicacionesContainer = prendaCard.querySelector('.ubicaciones-agregadas-reflectivo');
                         
@@ -2446,7 +2446,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
                                     header.innerHTML = `
                                         <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-                                            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
+                                            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;"></span>
                                             <span class="ubicacion-nombre-reflectivo" style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubi.ubicacion}</span>
                                         </div>
                                         <span style="color: #0ea5e9; font-size: 1.2rem; transition: transform 0.3s ease;" class="ubicacion-toggle">▼</span>
@@ -2902,7 +2902,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const indexDesde = tallas.indexOf(tallaDesde);
         const indexHasta = tallas.indexOf(tallaHasta);
         
-        console.log('📍 Índices encontrados - Desde:', indexDesde, 'Hasta:', indexHasta);
+        console.log(' Índices encontrados - Desde:', indexDesde, 'Hasta:', indexHasta);
         
         if (indexDesde === -1 || indexHasta === -1) {
             console.error(' Tallas no encontradas en el array');

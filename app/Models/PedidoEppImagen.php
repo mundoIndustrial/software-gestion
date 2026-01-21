@@ -10,7 +10,8 @@ class PedidoEppImagen extends Model
 
     protected $fillable = [
         'pedido_epp_id',
-        'archivo',
+        'ruta_original',
+        'ruta_web',
         'principal',
         'orden',
     ];

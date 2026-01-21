@@ -13,7 +13,7 @@ const UpdatesModule = {
      * Actualizar estado de una orden
      */
     updateOrderStatus(orderId, newStatus, oldStatus, dropdown) {
-        console.log(`📍 Actualizando estado: Pedido ${orderId}, Estado: ${newStatus}`);
+        console.log(` Actualizando estado: Pedido ${orderId}, Estado: ${newStatus}`);
         
         this._sendUpdate(`${this.baseUrl}/${orderId}`, { estado: newStatus }, (data) => {
             if (data.success) {
@@ -51,7 +51,7 @@ const UpdatesModule = {
      * Actualizar área de una orden
      */
     async updateOrderArea(orderId, newArea, oldArea, dropdown) {
-        console.log(`📍 Actualizando área: Pedido ${orderId}, Área: ${newArea}`);
+        console.log(` Actualizando área: Pedido ${orderId}, Área: ${newArea}`);
         console.log(`   - Area anterior: ${oldArea}`);
         console.log(`   - Dropdown encontrado: ${!!dropdown}`);
         
@@ -94,7 +94,7 @@ const UpdatesModule = {
                 // 🔴 COMENTADO: La actualización de estados de procesos está causando problemas
                 // NO vamos a actualizar automáticamente procesos cuando se cambia el área
                 // El usuario es responsable de marcar los procesos como completados cuando corresponda
-                // console.log('📍 Actualizando estados de procesos...');
+                // console.log(' Actualizando estados de procesos...');
                 // await this._updateProcessStates(orderId, oldArea, newArea);
                 
                 // 🆕 Actualizar color de fila con colores condicionales

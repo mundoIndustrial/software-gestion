@@ -113,6 +113,30 @@ class PedidoProduccionRepository
             $referencias = [];
             $especificaciones = [];  // Nuevas especificaciones
 
+            // Obtener telas desde prenda_pedido_colores_telas (nueva tabla)
+            try {
+                $telasColorData = \DB::table('prenda_pedido_colores_telas')
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->join('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
+                    ->join('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
+                    ->select('telas_prenda.nombre as tela_nombre', 'telas_prenda.referencia', 'colores_prenda.nombre as color_nombre')
+                    ->get();
+                
+                foreach ($telasColorData as $tc) {
+                    if ($tc->tela_nombre && !in_array($tc->tela_nombre, $telas)) {
+                        $telas[] = $tc->tela_nombre;
+                    }
+                    if ($tc->referencia && !in_array($tc->referencia, $referencias)) {
+                        $referencias[] = $tc->referencia;
+                    }
+                    if ($tc->color_nombre && !in_array($tc->color_nombre, $colores)) {
+                        $colores[] = $tc->color_nombre;
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::debug('[FACTURA] Error obteniendo telas desde prenda_pedido_colores_telas: ' . $e->getMessage());
+            }
+
             // Contar cantidad total desde variantes y extraer especificaciones
             foreach ($prenda->variantes as $variante) {
                 $cantidadTotal += $variante->cantidad ?? 0;
@@ -194,16 +218,27 @@ class PedidoProduccionRepository
             // Obtener foto principal
             $foto = $prenda->fotos->first();
             
-            // Obtener fotos de telas (con verificación)
+            // Obtener fotos de telas desde prenda_fotos_tela_pedido (nueva relación)
             $fotoTelas = [];
-            if ($prenda->fotosTelas && $prenda->fotosTelas->count() > 0) {
-                $fotoTelas = $prenda->fotosTelas->map(fn($f) => [
+            try {
+                $fotosTelasData = \DB::table('prenda_fotos_tela_pedido')
+                    ->whereIn('prenda_pedido_colores_telas_id', 
+                        \DB::table('prenda_pedido_colores_telas')
+                            ->where('prenda_pedido_id', $prenda->id)
+                            ->pluck('id')
+                    )
+                    ->orderBy('orden', 'asc')
+                    ->get();
+                
+                $fotoTelas = $fotosTelasData->map(fn($f) => [
                     'id' => $f->id,
-                    'url' => $f->url,
-                    'ruta' => $f->url,
-                    'ruta_original' => $f->ruta_original ?? $f->url,
-                    'ruta_webp' => $f->ruta_webp ?? $f->url,
+                    'url' => $f->ruta_webp ?? $f->ruta_original,
+                    'ruta' => $f->ruta_webp ?? $f->ruta_original,
+                    'ruta_original' => $f->ruta_original,
+                    'ruta_webp' => $f->ruta_webp,
                 ])->toArray();
+            } catch (\Exception $e) {
+                \Log::debug('[FACTURA] Error obteniendo fotos de telas desde prenda_fotos_tela_pedido: ' . $e->getMessage());
             }
             
             // Obtener todas las fotos de prenda
@@ -325,7 +360,7 @@ class PedidoProduccionRepository
                 $imagenes = \DB::table('pedido_epp_imagenes')
                     ->where('pedido_epp_id', $pedidoEpp->id)
                     ->orderBy('orden', 'asc')
-                    ->pluck('archivo')
+                    ->pluck('ruta_web')
                     ->toArray();
                 
                 if (!empty($imagenes)) {

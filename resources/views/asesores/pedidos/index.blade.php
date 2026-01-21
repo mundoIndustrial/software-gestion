@@ -5,6 +5,12 @@
 
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
+    <!-- CSS necesarios para el modal de crear/editar prendas -->
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
 @endsection
 
 @section('content')
@@ -563,20 +569,36 @@
 <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
 
-<!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+<!-- Manejadores de variaciones (manga, bolsillos, broche) -->
+<script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
 
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+<!-- Wrappers de prendas -->
+<script src="{{ asset('js/componentes/prendas-wrappers.js') }}"></script>
+
+<!-- Utilidades DOM - Necesario para modal-cleanup.js -->
+<script src="{{ asset('js/utilidades/dom-utils.js') }}"></script>
+
+<!-- Constantes de items pedido - Necesario para modal-cleanup.js -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}"></script>
+
+<!-- Modal Cleanup - CRÍTICO para limpiar y preparar el modal correctamente -->
+<script src="{{ asset('js/utilidades/modal-cleanup.js') }}"></script>
+
+<!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
+
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
 
 <!-- Dependencias para Modal Dinámico -->
 <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
 
 <!-- Modal Dinámico: Constantes HTML (DEBE cargarse ANTES del modal principal) -->
 <script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>

@@ -1,6 +1,6 @@
 #  EJEMPLOS DE REFACTORIZACIÓN ANTES/DESPUÉS
 
-## 1️⃣ EJEMPLO: Eliminar Pedido
+##  EJEMPLO: Eliminar Pedido
 
 ###  ANTES (Duplicado en 3 lugares)
 
@@ -156,7 +156,7 @@ function eliminarCotizacion(id, numero) {
 
 ---
 
-## 2️⃣ EJEMPLO: Notificaciones (Toast/Swal)
+##  EJEMPLO: Notificaciones (Toast/Swal)
 
 ###  ANTES (Duplicado en 7 archivos)
 
@@ -285,7 +285,7 @@ if (result.isConfirmed) {
 
 ---
 
-## 3️⃣ EJEMPLO: Modales Genéricos
+##  EJEMPLO: Modales Genéricos
 
 ###  ANTES (Modales inline en HTML en 5+ lugares)
 
