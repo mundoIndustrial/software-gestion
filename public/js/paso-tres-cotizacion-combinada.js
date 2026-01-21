@@ -1,8 +1,3 @@
-/**
- * PASO 3: COTIZACIÓN COMBINADA - GESTIÓN DE TÉCNICAS Y PRENDAS
- * Integración completa de técnicas, prendas y observaciones para paso 3
- */
-
 // =========================================================
 // 1. VARIABLES GLOBALES
 // =========================================================
@@ -33,19 +28,17 @@ function obtenerPrendasDelPaso2() {
             productosCards = document.querySelectorAll('.producto-card');
         }
         
+<<<<<<< HEAD
         console.log(' Buscando prendas en PASO 2 - Encontradas:', productosCards.length);
         
+=======
+>>>>>>> a816e29 (actulizacion cotizaciones)
         productosCards.forEach((card, idx) => {
-            console.log(`🔸 Analizando prenda ${idx + 1}...`);
-            
             // Obtener nombre de la prenda
             const inputNombre = card.querySelector('input[name*="nombre_producto"]');
             const nombre = inputNombre ? inputNombre.value.trim() : '';
             
-            console.log(`  - Nombre: ${nombre || '(vacío)'}`);
-            
             if (!nombre) {
-                console.log('  - Saltando porque no tiene nombre');
                 return; // Saltar si no hay nombre
             }
             
@@ -84,7 +77,6 @@ function obtenerPrendasDelPaso2() {
                             }
                         }
                     });
-                    console.log(`  - Buscando en .tallas-agregadas: encontrados ${tallaElements.length} elementos, tallas: ${JSON.stringify(tallas)}`);
                 }
             }
             
@@ -97,10 +89,7 @@ function obtenerPrendasDelPaso2() {
                         tallas.push(talla);
                     }
                 });
-                console.log(`  - Buscando en botones/elementos: encontrados ${tallaButtons.length} elementos`);
             }
-            
-            console.log(`  - Tallas finales: ${JSON.stringify(tallas)}`);
             
             // Obtener género
             let genero = '';
@@ -108,14 +97,12 @@ function obtenerPrendasDelPaso2() {
             if (selectGenero) {
                 genero = selectGenero.value.trim();
             }
-            console.log(`  - Selector .talla-genero-select encontrado: ${selectGenero ? 'Sí' : 'No'}, valor: "${genero}"`);
             
             // Obtener colores (pueden ser múltiples) - Buscar en las filas de telas
             let colores = [];
             
             // MÉTODO 1: Buscar en filas de tabla de telas con class color-input
             let colorInputs = card.querySelectorAll('input.color-input');
-            console.log(`  - Inputs con class color-input encontrados: ${colorInputs.length}`);
             
             colorInputs.forEach((input) => {
                 const color = input.value.trim();
@@ -135,8 +122,6 @@ function obtenerPrendasDelPaso2() {
                     if (colorInput) {
                         const color = colorInput.value.trim();
                         if (color && !colores.includes(color)) {
-                            colores.push(color);
-                            console.log(`    - Color encontrado en fila: "${color}"`);
                         }
                     }
                 });
@@ -145,25 +130,20 @@ function obtenerPrendasDelPaso2() {
             // MÉTODO 3: Buscar en cualquier input que tenga name variantes[color]
             if (colores.length === 0) {
                 const colorInputsVariantes = card.querySelectorAll('input[name*="[color]"]');
-                console.log(`  - Inputs con name [color] encontrados: ${colorInputsVariantes.length}`);
                 
                 colorInputsVariantes.forEach((input) => {
                     const color = input.value.trim();
                     if (color && !colores.includes(color)) {
                         colores.push(color);
-                        console.log(`    - Color encontrado en variante: "${color}"`);
                     }
                 });
             }
-            
-            console.log(`  - Colores finales: ${JSON.stringify(colores)}`);
             
             // Obtener imágenes de la prenda
             let imagenes = [];
             const fotosPreview = card.querySelector('.fotos-preview');
             if (fotosPreview) {
                 const fotosElements = fotosPreview.querySelectorAll('img, [data-foto] img');
-                console.log(`  - Imágenes encontradas: ${fotosElements.length}`);
                 fotosElements.forEach(img => {
                     if (img.src) {
                         imagenes.push(img.src);
@@ -350,27 +330,8 @@ function abrirModalSimpleTecnicaPaso3(tipo) {
     window.tecnicaSeleccionadaPaso3 = tipo;
     window.modoTecnicasCombinadas = 'simple';
     
-    const nombreElement = document.getElementById('tecnicaSeleccionadaNombrePaso3');
-    if (nombreElement) {
-        nombreElement.textContent = tipo.nombre;
-    }
-    
-    const listaPrendas = document.getElementById('listaPrendasPaso3');
-    if (listaPrendas) {
-        listaPrendas.innerHTML = '';
-    }
-    
-    agregarFilaPrendaPaso3();
-    
-    const noPrendasMsg = document.getElementById('noPrendasMsgPaso3');
-    if (noPrendasMsg) {
-        noPrendasMsg.style.display = 'none';
-    }
-    
-    const modal = document.getElementById('modalAgregarTecnicaPaso3');
-    if (modal) {
-        modal.style.display = 'flex';
-    }
+    // Usar directamente el modal de SweetAlert con la técnica seleccionada
+    abrirModalTecnicaCombinada([tipo]);
 }
 
 // =========================================================
@@ -378,6 +339,7 @@ function abrirModalSimpleTecnicaPaso3(tipo) {
 // =========================================================
 
 function abrirModalTecnicaCombinada(tecnicas) {
+<<<<<<< HEAD
     const nombresT = tecnicas.map(t => t.nombre).join(' + ');
     
     Swal.fire({
@@ -420,6 +382,10 @@ function abrirModalTecnicaCombinada(tecnicas) {
             }
         }
     });
+=======
+    // Abrir directamente el modal de "Datos iguales" sin mostrar el selector
+    abrirModalDatosIgualesPaso3(tecnicas);
+>>>>>>> a816e29 (actulizacion cotizaciones)
 }
 
 function abrirModalDatosIgualesPaso3(tecnicas) {
@@ -456,8 +422,9 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
     Swal.fire({
         title: 'Datos Iguales para Todas las Técnicas',
         width: '650px',
+        maxHeight: '70vh',
         html: `
-            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 60vh; overflow-y: auto;">
                 
                 <!-- PRENDA ÚNICA - DROPDOWN -->
                 <div style="margin-bottom: 25px;">
@@ -612,8 +579,11 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                                         });
                                         
                                         previewContainer.appendChild(divPreview);
-                                        // Almacenar como una "imagen" ficticia para contar
-                                        imagenesAgregadasPorTecnica[idx].push({type: 'image'});
+                                        // Almacenar la URL de la imagen para que se pueda renderizar luego
+                                        imagenesAgregadasPorTecnica[idx].push({
+                                            src: imagenSrc,
+                                            type: 'url'  // Indicar que es una URL, no un File
+                                        });
                                     });
                                 }
                             });
@@ -733,30 +703,40 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     previewContainer.innerHTML = '';
                     
                     imagenesAgregadasPorTecnica[idx].forEach((archivo, imgIdx) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            const preview = document.createElement('div');
-                            preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
-                            
-                            const btnEliminar = document.createElement('button');
-                            btnEliminar.type = 'button';
-                            btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
-                            btnEliminar.textContent = '×';
-                            btnEliminar.addEventListener('click', (e) => {
-                                e.preventDefault();
-                                imagenesAgregadasPorTecnica[idx].splice(imgIdx, 1);
-                                actualizarPrevisualizaciones();
-                            });
-                            
-                            const img = document.createElement('img');
-                            img.src = e.target.result;
-                            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-                            
+                        const preview = document.createElement('div');
+                        preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+                        
+                        const btnEliminar = document.createElement('button');
+                        btnEliminar.type = 'button';
+                        btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
+                        btnEliminar.textContent = '×';
+                        btnEliminar.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            imagenesAgregadasPorTecnica[idx].splice(imgIdx, 1);
+                            actualizarPrevisualizaciones();
+                        });
+                        
+                        const img = document.createElement('img');
+                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                        
+                        // Manejar tanto URLs como Blobs
+                        if (typeof archivo === 'object' && archivo.src && archivo.type === 'url') {
+                            // Es una URL del Paso 2
+                            img.src = archivo.src;
                             preview.appendChild(img);
                             preview.appendChild(btnEliminar);
                             previewContainer.appendChild(preview);
-                        };
-                        reader.readAsDataURL(archivo);
+                        } else if (archivo instanceof Blob) {
+                            // Es un Blob (archivo nuevo)
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                img.src = e.target.result;
+                                preview.appendChild(img);
+                                preview.appendChild(btnEliminar);
+                                previewContainer.appendChild(preview);
+                            };
+                            reader.readAsDataURL(archivo);
+                        }
                     });
                 }
                 
@@ -873,11 +853,16 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
         },
         preConfirm: () => {
             const selectPrenda = document.getElementById('dNombrePrendaP3');
+            if (!selectPrenda) {
+                Swal.showValidationMessage('Error: elemento de prenda no encontrado');
+                return false;
+            }
+            
             const selectedOption = selectPrenda.options[selectPrenda.selectedIndex];
             const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
             
-            if (!nombrePrendaBase) {
-                Swal.showValidationMessage('Selecciona una prenda');
+            if (!nombrePrendaBase || nombrePrendaBase === '' || selectPrenda.selectedIndex === 0) {
+                Swal.showValidationMessage('⚠️ Debes seleccionar una prenda del dropdown (Paso 2)');
                 return false;
             }
             
@@ -1087,9 +1072,24 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
 }
 
 function guardarTecnicaCombinada(datosForm, tecnicas) {
+    // Validar y limpiar duplicados de técnicas
+    const tecnicasUnicas = [];
+    const tecnicasYaProcesadas = new Set();
+    
+    tecnicas.forEach((tecnica) => {
+        const key = `${tecnica.id}-${tecnica.nombre}`;
+        if (!tecnicasYaProcesadas.has(key)) {
+            tecnicasUnicas.push(tecnica);
+            tecnicasYaProcesadas.add(key);
+        }
+    });
+    
+    console.log(' Técnicas únicas a procesar:', tecnicasUnicas.length);
+    
     // Guardar una prenda por técnica con sus imágenes y variaciones
-    tecnicas.forEach((tecnica, idx) => {
+    tecnicasUnicas.forEach((tecnica, idx) => {
         const nuevaTecnica = {
+            tipo: tecnica.nombre,
             tipo_logo: {
                 id: tecnica.id,
                 nombre: tecnica.nombre
@@ -1100,7 +1100,8 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
                 talla_cantidad: datosForm.tallas.map(t => ({ talla: t.talla, cantidad: t.cantidad })),
                 observaciones: datosForm.observaciones,
                 variaciones_prenda: datosForm.variaciones_prenda || {},
-                imagenes_files: datosForm.imagenesAgregadas[idx] || []
+                imagenes_files: datosForm.imagenesAgregadas[idx] || [],
+                cantidad: 1
             }],
             observacionesGenerales: ''
         };
@@ -1111,9 +1112,16 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
         
         const tecnicaExistente = window.tecnicasAgregadasPaso3.find(t => t.tipo_logo.nombre === tecnica.nombre);
         if (tecnicaExistente) {
-            tecnicaExistente.prendas = nuevaTecnica.prendas;
+            // Agregar las nuevas prendas al array existente, no reemplazar
+            if (Array.isArray(tecnicaExistente.prendas)) {
+                tecnicaExistente.prendas = [...tecnicaExistente.prendas, ...nuevaTecnica.prendas];
+            } else {
+                tecnicaExistente.prendas = nuevaTecnica.prendas;
+            }
+            console.log(` Prendas agregadas a técnica existente "${tecnica.nombre}". Total prendas: ${tecnicaExistente.prendas.length}`);
         } else {
             window.tecnicasAgregadasPaso3.push(nuevaTecnica);
+            console.log(` Nueva técnica agregada: "${tecnica.nombre}"`);
         }
     });
     
@@ -1155,13 +1163,13 @@ function renderizarTecnicasAgregadasPaso3() {
         if (!tecnicaData.prendas) return;
         
         tecnicaData.prendas.forEach(prenda => {
-            const nombrePrenda = prenda.nombre || 'SIN NOMBRE';
+            const nombrePrenda = prenda.nombre_prenda || 'SIN NOMBRE';
             
             if (!prendasMap[nombrePrenda]) {
                 prendasMap[nombrePrenda] = {
                     nombre_prenda: nombrePrenda,
                     observaciones: prenda.observaciones,
-                    tallasCantidad: prenda.tallasCantidad || [],
+                    talla_cantidad: prenda.talla_cantidad || [],
                     tecnicas: [],
                     imagenes: [],
                     variaciones_prenda: prenda.variaciones_prenda || {}
@@ -1218,13 +1226,20 @@ function renderizarTecnicasAgregadasPaso3() {
             this.style.transform = 'translateY(0)';
         };
         
-        // HEADER CON TÉCNICAS Y BOTONES
+        // HEADER CON NOMBRE, TÉCNICAS Y BOTONES
         let headerHTML = '<div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1rem; border-bottom: 1px solid #ddd;">';
+        
+        // Nombre de prenda en el header
+        headerHTML += '<div style="margin-bottom: 0.8rem;">';
+        headerHTML += `<h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: white;">${nombrePrenda}</h3>`;
+        headerHTML += '</div>';
+        
+        // Contenedor para técnicas y botones
         headerHTML += '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
         
         // Sección de técnicas
         headerHTML += '<div style="flex: 1;">';
-        headerHTML += '<h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem;">Técnica(s)</h4>';
+        headerHTML += '<h4 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; opacity: 0.9;">Técnica(s)</h4>';
         headerHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.2rem;">';
         
         datosPrenda.tecnicas.forEach(t => {
@@ -1256,7 +1271,7 @@ function renderizarTecnicasAgregadasPaso3() {
         // Botones de acción
         headerHTML += '<div style="display: flex; gap: 0.6rem;">';
         headerHTML += `
-            <button class="btn-editar-prenda" onclick="abrirModalEditarTecnicaPaso3('${nombrePrenda}')" style="
+            <button type="button" class="btn-editar-prenda" onclick="abrirModalEditarTecnicaPaso3('${nombrePrenda}')" style="
                 background: rgba(255,255,255,0.2);
                 color: white;
                 border: 1px solid rgba(255,255,255,0.3);
@@ -1272,7 +1287,7 @@ function renderizarTecnicasAgregadasPaso3() {
             " onmouseover="this.style.background='rgba(255,255,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.2)';">
                 ✏️
             </button>
-            <button class="btn-eliminar-prenda" onclick="eliminarTecnicaPaso3('${nombrePrenda}')" style="
+            <button type="button" class="btn-eliminar-prenda" onclick="eliminarTecnicaPaso3('${nombrePrenda}')" style="
                 background: rgba(255,255,255,0.2);
                 color: white;
                 border: 1px solid rgba(255,255,255,0.3);
@@ -1295,15 +1310,6 @@ function renderizarTecnicasAgregadasPaso3() {
         
         // CUERPO
         let bodyHTML = '<div style="padding: 1rem;">';
-        
-        // Nombre de prenda
-        bodyHTML += `
-            <div style="margin-bottom: 1rem;">
-                <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
-                    ${nombrePrenda}
-                </h5>
-            </div>
-        `;
         
         // SECCIÓN DE IMÁGENES
         const tieneImagenes = datosPrenda.imagenes.length > 0;
@@ -1410,7 +1416,7 @@ function renderizarTecnicasAgregadasPaso3() {
         }
         
         // TALLAS Y CANTIDADES
-        if (datosPrenda.tallasCantidad && datosPrenda.tallasCantidad.length > 0) {
+        if (datosPrenda.talla_cantidad && datosPrenda.talla_cantidad.length > 0) {
             bodyHTML += `
                 <div style="margin-bottom: 1rem;">
                     <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
@@ -1419,7 +1425,7 @@ function renderizarTecnicasAgregadasPaso3() {
                     <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
             `;
             
-            datosPrenda.tallasCantidad.forEach(t => {
+            datosPrenda.talla_cantidad.forEach(t => {
                 bodyHTML += `
                     <span style="background: #e8f0ff; color: #1e40af; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
                         ${t.talla} (${t.cantidad})
@@ -1456,11 +1462,21 @@ function renderizarTecnicasAgregadasPaso3() {
         if (tarjeta) {
             const imagenesMaps = prendasMap[imgData.nombrePrenda].imagenes;
             
-            // Verificar si es una URL (string) o un File object
+            // Verificar si es una URL (string) o un objeto con URL o un File object
+            let urlImagen = null;
+            
             if (typeof imgData.archivo === 'string') {
-                // Es una URL del PASO 2
+                // Es una URL del PASO 2 (antiguo formato)
+                urlImagen = imgData.archivo;
+            } else if (typeof imgData.archivo === 'object' && imgData.archivo.src && imgData.archivo.type === 'url') {
+                // Es un objeto con URL {src: url, type: 'url'} (nuevo formato)
+                urlImagen = imgData.archivo.src;
+            }
+            
+            if (urlImagen) {
+                // Es una URL - procesarla directamente
                 imagenesMaps.push({
-                    data: imgData.archivo,
+                    data: urlImagen,
                     tecnica: imgData.tecnica
                 });
                 
@@ -1497,8 +1513,8 @@ function renderizarTecnicasAgregadasPaso3() {
                         `).join('');
                     }
                 }
-            } else {
-                // Es un File object (imagen nueva agregada)
+            } else if (imgData.archivo instanceof Blob) {
+                // Es un File object (imagen nueva agregada en Paso 3)
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     imagenesMaps.push({
@@ -1547,15 +1563,26 @@ function renderizarTecnicasAgregadasPaso3() {
 
 function abrirModalEditarTecnicaPaso3(nombrePrenda) {
     // Encontrar los datos de la prenda a editar
-    if (!window.tecnicasAgregadasPaso3) return;
+    console.log('🔍 Buscando prenda:', nombrePrenda);
+    console.log('📦 tecnicasAgregadasPaso3:', window.tecnicasAgregadasPaso3);
+    
+    if (!window.tecnicasAgregadasPaso3) {
+        console.error('❌ No hay tecnicas agregadas');
+        return;
+    }
     
     let datosPrendaActual = null;
     let tecnicasConPrenda = [];
     
     window.tecnicasAgregadasPaso3.forEach(tecnicaData => {
+        console.log('🔎 Revisando tecnica:', tecnicaData);
         if (tecnicaData.prendas) {
+            tecnicaData.prendas.forEach(p => {
+                console.log('  Prenda encontrada:', p.nombre, '- Buscando:', nombrePrenda);
+            });
             const prenda = tecnicaData.prendas.find(p => p.nombre === nombrePrenda);
             if (prenda) {
+                console.log('✅ Prenda encontrada!', prenda);
                 if (!datosPrendaActual) {
                     datosPrendaActual = prenda;
                 }
@@ -1568,15 +1595,18 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
     });
     
     if (!datosPrendaActual || tecnicasConPrenda.length === 0) {
-        console.error('No se encontraron datos de la prenda');
+        console.error('❌ No se encontraron datos de la prenda');
+        console.log('datosPrendaActual:', datosPrendaActual);
+        console.log('tecnicasConPrenda:', tecnicasConPrenda);
         return;
     }
     
     Swal.fire({
         title: 'Editar Prenda',
         width: '750px',
+        maxHeight: '70vh',
         html: `
-            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 60vh; overflow-y: auto;">
                 
                 <!-- NOMBRE DE PRENDA (SOLO LECTURA) -->
                 <div style="margin-bottom: 25px;">
@@ -1699,8 +1729,8 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                             // Es una URL
                             imagenSrc = archivo;
                             mostrarPreview(imagenSrc, imgIdx);
-                        } else {
-                            // Es un File object
+                        } else if (archivo instanceof Blob) {
+                            // Es un File object válido
                             const reader = new FileReader();
                             reader.onload = (e) => {
                                 imagenSrc = e.target.result;
@@ -1828,8 +1858,8 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
             });
             
             // TALLAS - Cargar tallas existentes
-            if (datosPrendaActual.tallasCantidad && datosPrendaActual.tallasCantidad.length > 0) {
-                datosPrendaActual.tallasCantidad.forEach(t => {
+            if (datosPrendaActual.talla_cantidad && datosPrendaActual.talla_cantidad.length > 0) {
+                datosPrendaActual.talla_cantidad.forEach(t => {
                     const idTalla = 'talla-editar-p3-' + (contadorTallas++);
                     const fila = document.createElement('div');
                     fila.setAttribute('data-talla-id', idTalla);
@@ -1953,7 +1983,7 @@ function guardarEdiciónPaso3(datosEditados) {
     window.tecnicasAgregadasPaso3.forEach((tecnicaData, tecnicaIndex) => {
         if (tecnicaData.prendas) {
             tecnicaData.prendas = tecnicaData.prendas.map(prenda => {
-                if (prenda.nombre_prenda === nombrePrenda) {
+                if (prenda.nombre === nombrePrenda) {
                     // Buscar índice de esta técnica en los datos editados
                     const tecnicaNombreBuscar = tecnicaData.tipo_logo ? tecnicaData.tipo_logo.nombre : tecnicaData.tipo;
                     const tecnicaIdx = window.tecnicasConPrendaActual.findIndex(t => {
@@ -2012,6 +2042,7 @@ function cerrarModalValidacionTecnicaPaso3() {
     }
 }
 
+<<<<<<< HEAD
 function agregarFilaPrendaPaso3() {
     const container = document.getElementById('listaPrendasPaso3');
     
@@ -2594,6 +2625,13 @@ function guardarTecnicaPaso3() {
         renderizarTecnicasAgregadasPaso3();
         cerrarModalAgregarTecnicaPaso3();
     }
+=======
+
+function agregarFilaPrendaPaso3_DEPRECATED() {
+    // FUNCIÓN DEPRECADA - NO USAR
+    console.warn('agregarFilaPrendaPaso3_DEPRECATED: Esta función ha sido eliminada');
+    return; 
+>>>>>>> a816e29 (actulizacion cotizaciones)
 }
 
 function agregarObservacionPaso3() {
@@ -2608,6 +2646,7 @@ function agregarObservacionPaso3() {
 }
 
 // =========================================================
+<<<<<<< HEAD
 // 9. PASO 4: REFLECTIVO - GESTIÓN DE PRENDAS
 // =========================================================
 
@@ -3481,6 +3520,8 @@ function agregarObservacionReflectivoPaso4(prendasIndex, fila) {
 }
 
 // =========================================================
+=======
+>>>>>>> a816e29 (actulizacion cotizaciones)
 // 8. INICIALIZACIÓN
 // =========================================================
 

@@ -1736,13 +1736,48 @@ final class CotizacionController extends Controller
                         
                         // Procesar prendas de esta técnica
                         if (!empty($tecnicaData['prendas']) && is_array($tecnicaData['prendas'])) {
+                            // Deduplicar prendas por nombre + ubicaciones + talla_cantidad
+                            $prendasProcessadas = [];
+                            $prendasKeys = [];
+                            
                             foreach ($tecnicaData['prendas'] as $prendaIndex => $prendaData) {
+                                // ✅ VALIDAR: nombre_prenda no puede estar vacío
+                                $nombrePrendaCompleto = $prendaData['nombre_prenda'] ?? '';
+                                if (empty($nombrePrendaCompleto) || trim($nombrePrendaCompleto) === '') {
+                                    Log::warning('⚠️ Prenda ignorada: nombre_prenda vacío', [
+                                        'tecnica_index' => $tecnicaIndex,
+                                        'prendaIndex' => $prendaIndex,
+                                        'nombre_raw' => $prendaData['nombre_prenda'] ?? 'NULL'
+                                    ]);
+                                    continue; // Saltar esta prenda
+                                }
+                                
+                                // Crear clave única para detectar duplicados
+                                $prendaKey = md5(
+                                    json_encode([
+                                        'nombre' => $nombrePrendaCompleto,
+                                        'ubicaciones' => $prendaData['ubicaciones'] ?? [],
+                                        'talla_cantidad' => $prendaData['talla_cantidad'] ?? []
+                                    ])
+                                );
+                                
+                                // Si ya procesamos esta prenda exacta, saltar
+                                if (in_array($prendaKey, $prendasKeys)) {
+                                    Log::warning('⚠️ Prenda duplicada detectada y saltada', [
+                                        'nombre' => $nombrePrendaCompleto,
+                                        'prendaKey' => $prendaKey,
+                                        'tecnica_index' => $tecnicaIndex
+                                    ]);
+                                    continue;
+                                }
+                                
+                                $prendasKeys[] = $prendaKey;
+                                
                                 Log::info("🎨   Procesando prenda {$prendaIndex} de técnica {$tecnicaIndex}");
                                 
                                 // Buscar si la prenda ya existe en prendas_cot (del PASO 2)
                                 // El nombre viene con formato: "PRENDA - genero - Color: color"
                                 // Necesitamos extraer solo el nombre base (antes del primer " - ")
-                                $nombrePrendaCompleto = $prendaData['nombre_prenda'] ?? 'Prenda';
                                 $nombrePrenda = explode(' - ', $nombrePrendaCompleto)[0]; // Extraer nombre base
                                 
                                 Log::info("🔍 Buscando prenda en PASO 2", [
@@ -1777,23 +1812,41 @@ final class CotizacionController extends Controller
                                     ]);
                                 }
                                 
-                                // Crear técnica de logo con prenda
-                                $logoCotizacionTecnicaPrenda = \App\Models\LogoCotizacionTecnicaPrenda::create([
-                                    'logo_cotizacion_id' => $logoCotizacion->id,
-                                    'tipo_logo_id' => $tipoLogoId,
-                                    'prenda_cot_id' => $prendaCot->id,
-                                    'observaciones' => $prendaData['observaciones'] ?? '',
-                                    'ubicaciones' => json_encode($prendaData['ubicaciones'] ?? []),
-                                    'talla_cantidad' => json_encode($prendaData['talla_cantidad'] ?? []),
-                                    'variaciones_prenda' => json_encode($prendaData['variaciones_prenda'] ?? []),
-                                    'grupo_combinado' => $prendaIndex,  // Usar índice como grupo
-                                ]);
+                                // Verificar si ya existe un registro con la misma técnica, prenda y ubicaciones
+                                $ubicacionesJson = json_encode($prendaData['ubicaciones'] ?? []);
+                                $tallaCantidadJson = json_encode($prendaData['talla_cantidad'] ?? []);
                                 
-                                Log::info('✅ Técnica guardada en logo_cotizacion_tecnica_prendas', [
-                                    'tecnica_id' => $logoCotizacionTecnicaPrenda->id,
-                                    'prenda_cot_id' => $prendaCot->id,
-                                    'ubicaciones' => $prendaData['ubicaciones'] ?? []
-                                ]);
+                                $logoCotizacionTecnicaPrendaExistente = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
+                                    ->where('tipo_logo_id', $tipoLogoId)
+                                    ->where('prenda_cot_id', $prendaCot->id)
+                                    ->where('ubicaciones', $ubicacionesJson)
+                                    ->where('talla_cantidad', $tallaCantidadJson)
+                                    ->first();
+                                
+                                if ($logoCotizacionTecnicaPrendaExistente) {
+                                    Log::info('⚠️ Registro duplicado detectado en logo_cotizacion_tecnica_prendas, no se crea nuevo', [
+                                        'tecnica_id' => $logoCotizacionTecnicaPrendaExistente->id,
+                                        'prenda_cot_id' => $prendaCot->id
+                                    ]);
+                                } else {
+                                    // Crear técnica de logo con prenda
+                                    $logoCotizacionTecnicaPrenda = \App\Models\LogoCotizacionTecnicaPrenda::create([
+                                        'logo_cotizacion_id' => $logoCotizacion->id,
+                                        'tipo_logo_id' => $tipoLogoId,
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'observaciones' => $prendaData['observaciones'] ?? '',
+                                        'ubicaciones' => $ubicacionesJson,
+                                        'talla_cantidad' => $tallaCantidadJson,
+                                        'variaciones_prenda' => json_encode($prendaData['variaciones_prenda'] ?? []),
+                                        'grupo_combinado' => $prendaIndex,  // Usar índice como grupo
+                                    ]);
+                                    
+                                    Log::info('✅ Técnica guardada en logo_cotizacion_tecnica_prendas', [
+                                        'tecnica_id' => $logoCotizacionTecnicaPrenda->id,
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'ubicaciones' => $prendaData['ubicaciones'] ?? []
+                                    ]);
+                                }
                             }
                         } else {
                             Log::info('⚠️ Técnica sin prendas', ['tecnica_index' => $tecnicaIndex]);
