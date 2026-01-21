@@ -410,6 +410,61 @@ class PedidoProduccionRepository
             $telas = [];
             $referencias = [];
             $especificaciones = [];
+            $imagenesPrenda = [];
+            $imagenesTela = [];
+
+            // Obtener imágenes de prenda desde prenda_fotos_pedido
+            try {
+                $fotosPrenda = \DB::table('prenda_fotos_pedido')
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->where('deleted_at', null)
+                    ->orderBy('orden')
+                    ->select('ruta_webp')
+                    ->get();
+                
+                $imagenesPrenda = $fotosPrenda->map(fn($foto) => '/storage' . str_replace('\\', '/', $foto->ruta_webp))->toArray();
+            } catch (\Exception $e) {
+                \Log::debug('[RECIBOS] Error obteniendo imágenes de prenda: ' . $e->getMessage());
+            }
+
+            // Obtener tela, color, referencia e imágenes desde prenda_pedido_colores_telas
+            try {
+                $colorTelaData = \DB::table('prenda_pedido_colores_telas')
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->join('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
+                    ->join('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
+                    ->select(
+                        'prenda_pedido_colores_telas.id as color_tela_id',
+                        'colores_prenda.nombre as color_nombre',
+                        'telas_prenda.nombre as tela_nombre',
+                        'telas_prenda.referencia'
+                    )
+                    ->first();
+                
+                if ($colorTelaData) {
+                    if ($colorTelaData->color_nombre && !in_array($colorTelaData->color_nombre, $colores)) {
+                        $colores[] = $colorTelaData->color_nombre;
+                    }
+                    if ($colorTelaData->tela_nombre && !in_array($colorTelaData->tela_nombre, $telas)) {
+                        $telas[] = $colorTelaData->tela_nombre;
+                    }
+                    if ($colorTelaData->referencia && !in_array($colorTelaData->referencia, $referencias)) {
+                        $referencias[] = $colorTelaData->referencia;
+                    }
+                    
+                    // Obtener imágenes de tela desde prenda_fotos_tela_pedido
+                    $fotos = \DB::table('prenda_fotos_tela_pedido')
+                        ->where('prenda_pedido_colores_telas_id', $colorTelaData->color_tela_id)
+                        ->where('deleted_at', null)
+                        ->orderBy('orden')
+                        ->select('ruta_webp')
+                        ->get();
+                    
+                    $imagenesTela = $fotos->map(fn($foto) => '/storage' . str_replace('\\', '/', $foto->ruta_webp))->toArray();
+                }
+            } catch (\Exception $e) {
+                \Log::debug('[RECIBOS] Error obteniendo tela/color/imágenes desde nueva tabla: ' . $e->getMessage());
+            }
 
             // Procesar variantes
             foreach ($prenda->variantes as $variante) {
@@ -451,41 +506,6 @@ class PedidoProduccionRepository
                 }
                 
                 $especificaciones[] = $spec;
-                
-                // Obtener tela y referencia
-                if ($variante->tela_id) {
-                    try {
-                        $telaData = \DB::table('telas_prenda')
-                            ->where('id', $variante->tela_id)
-                            ->select('nombre', 'referencia')
-                            ->first();
-                        
-                        if ($telaData) {
-                            if ($telaData->nombre && !in_array($telaData->nombre, $telas)) {
-                                $telas[] = $telaData->nombre;
-                            }
-                            if ($telaData->referencia && !in_array($telaData->referencia, $referencias)) {
-                                $referencias[] = $telaData->referencia;
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        \Log::debug('[RECIBOS] Error obteniendo tela: ' . $e->getMessage());
-                    }
-                }
-                
-                // Obtener color
-                if ($variante->color_id) {
-                    try {
-                        $color = \DB::table('colores_prenda')
-                            ->where('id', $variante->color_id)
-                            ->value('nombre');
-                        if ($color && !in_array($color, $colores)) {
-                            $colores[] = $color;
-                        }
-                    } catch (\Exception $e) {
-                        \Log::debug('[RECIBOS] Error obteniendo color: ' . $e->getMessage());
-                    }
-                }
             }
 
             // Tallas desde JSON
@@ -550,6 +570,8 @@ class PedidoProduccionRepository
                 'variantes' => $especificaciones,
                 'de_bodega' => $prenda->de_bodega ?? 0,
                 'procesos' => $procesos,
+                'imagenes' => $imagenesPrenda,
+                'imagenes_tela' => $imagenesTela,
             ];
 
             $datos['prendas'][] = $prendasFormato;

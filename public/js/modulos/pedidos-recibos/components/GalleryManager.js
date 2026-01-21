@@ -9,11 +9,86 @@ export class GalleryManager {
      */
     static async abrirGaleria(modalManager) {
         const state = modalManager.getState();
-        const { imagenesActuales, prendaPedidoId } = state;
+        const { imagenesActuales, prendaPedidoId, prendaData } = state;
         
         console.log('[GalleryManager] Abriendo galería...');
         
-        if (imagenesActuales.length === 0 && !prendaPedidoId) {
+        // Combinar imágenes de tela + imágenes del recibo/prenda
+        let fotosParaMostrar = [];
+        
+        // 1. Agregar imágenes de prenda (desde prendaData.imagenes)
+        if (prendaData && prendaData.imagenes && Array.isArray(prendaData.imagenes)) {
+            const imagenesPrendaLimpias = prendaData.imagenes
+                .map(img => {
+                    let url = img.url || img.ruta || img;
+                    // Limpiar rutas duplicadas /storage/storage
+                    if (url && url.includes('/storage/storage/')) {
+                        return url.replace('/storage/storage/', '/storage/');
+                    }
+                    return url;
+                })
+                .filter(url => url);
+            
+            fotosParaMostrar = [...imagenesPrendaLimpias];
+            console.log('[GalleryManager] Imágenes de prenda obtenidas desde prendaData:', fotosParaMostrar.length);
+        }
+        
+        // 2. Agregar imágenes de tela (desde prendaData.imagenes_tela)
+        if (prendaData && prendaData.imagenes_tela && Array.isArray(prendaData.imagenes_tela)) {
+            const imagenesTelaLimpias = prendaData.imagenes_tela
+                .map(url => {
+                    // Limpiar rutas duplicadas /storage/storage
+                    if (url && url.includes('/storage/storage/')) {
+                        return url.replace('/storage/storage/', '/storage/');
+                    }
+                    return url;
+                })
+                .filter(url => url);
+            
+            fotosParaMostrar = [...fotosParaMostrar, ...imagenesTelaLimpias];
+            console.log('[GalleryManager] Imágenes de tela obtenidas desde prendaData:', imagenesTelaLimpias.length);
+        }
+        
+        // 3. Agregar imágenes del recibo/proceso (si existen)
+        if (imagenesActuales && Array.isArray(imagenesActuales) && imagenesActuales.length > 0) {
+            const imagenesRecibosLimpias = imagenesActuales
+                .map(url => {
+                    // Limpiar rutas duplicadas /storage/storage
+                    if (url && url.includes('/storage/storage/')) {
+                        return url.replace('/storage/storage/', '/storage/');
+                    }
+                    return url;
+                })
+                .filter(url => url);
+            
+            fotosParaMostrar = [...fotosParaMostrar, ...imagenesRecibosLimpias];
+            console.log('[GalleryManager] Imágenes del recibo agregadas:', imagenesRecibosLimpias.length);
+        }
+        
+        // 4. Si aún no hay imágenes, intentar obtener desde el endpoint
+        if (fotosParaMostrar.length === 0 && prendaPedidoId) {
+            try {
+                const response = await fetch(`/asesores/prendas-pedido/${prendaPedidoId}/fotos`);
+                const data = await response.json();
+                if (data.success && data.fotos) {
+                    const fotosLimpias = data.fotos
+                        .map(f => {
+                            if (f.url && f.url.includes('/storage/storage/')) {
+                                return f.url.replace('/storage/storage/', '/storage/');
+                            }
+                            return f.url;
+                        })
+                        .filter(f => f);
+                    
+                    fotosParaMostrar = [...fotosParaMostrar, ...fotosLimpias];
+                    console.log('[GalleryManager] Fotos de prenda obtenidas desde endpoint:', fotosLimpias.length);
+                }
+            } catch (error) {
+                console.error('[GalleryManager] Error obteniendo fotos:', error);
+            }
+        }
+        
+        if (fotosParaMostrar.length === 0) {
             console.log('[GalleryManager] Sin imágenes, usando galería original');
             return false; // Usar galería original
         }
@@ -51,21 +126,6 @@ export class GalleryManager {
 
         if (galeria) {
             galeria.style.display = 'flex';
-            
-            // Obtener fotos
-            let fotosParaMostrar = [...imagenesActuales];
-            if (fotosParaMostrar.length === 0 && prendaPedidoId) {
-                try {
-                    const response = await fetch(`/asesores/prendas-pedido/${prendaPedidoId}/fotos`);
-                    const data = await response.json();
-                    if (data.success && data.fotos) {
-                        fotosParaMostrar = data.fotos.map(f => f.url).filter(f => f);
-                        console.log('[GalleryManager] Fotos obtenidas:', fotosParaMostrar.length);
-                    }
-                } catch (error) {
-                    console.error('[GalleryManager] Error obteniendo fotos:', error);
-                }
-            }
             
             // Renderizar galería
             this._renderizarGaleria(galeria, fotosParaMostrar);

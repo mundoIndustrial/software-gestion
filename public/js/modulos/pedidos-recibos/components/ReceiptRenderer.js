@@ -31,7 +31,8 @@ export class ReceiptRenderer {
         // Guardar datos en estado
         modalManager.setState({
             prendaPedidoId: prendaData.prenda_pedido_id || prendaData.id,
-            imagenesActuales: recibo.imagenes && Array.isArray(recibo.imagenes) ? recibo.imagenes : []
+            imagenesActuales: recibo.imagenes && Array.isArray(recibo.imagenes) ? recibo.imagenes : [],
+            prendaData: prendaData
         });
 
         console.log('[ReceiptRenderer] Recibo renderizado correctamente');
