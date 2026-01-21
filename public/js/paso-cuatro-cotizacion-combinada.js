@@ -6,7 +6,7 @@
 // en el flujo de cotización combinada
 // =========================================================
 
-let prendas_reflectivo_paso4 = [];
+window.prendas_reflectivo_paso4 = [];
 
 function agregarPrendaReflectivoPaso4() {
     console.log('🔸 agregarPrendaReflectivoPaso4() - Iniciando...');
@@ -17,7 +17,7 @@ function agregarPrendaReflectivoPaso4() {
         return;
     }
     
-    const numeroPrenda = prendas_reflectivo_paso4.length + 1;
+    const numeroPrenda = window.prendas_reflectivo_paso4.length + 1;
     const prendasIndex = numeroPrenda - 1;
     
     // Obtener prendas del PASO 2 - EXACTAMENTE COMO EN PASO 3
@@ -171,7 +171,7 @@ function agregarPrendaReflectivoPaso4() {
     const opcionesCreadas = selectCreado ? selectCreado.querySelectorAll('option').length : 0;
     console.log(` Prenda Reflectivo ${numeroPrenda} agregada. Select con ${opcionesCreadas} opciones (${opcionesCreadas - 1} prendas + 1 opción vacía)`);
     
-    prendas_reflectivo_paso4.push({
+    window.prendas_reflectivo_paso4.push({
         index: prendasIndex,
         tipo_prenda: '',
         descripcion: '',
@@ -202,7 +202,7 @@ function agregarPrendaReflectivoPaso4() {
         console.log(`  - Variaciones JSON: ${variacionesJson}`);
         
         // Actualizar nombre en el objeto prenda
-        const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+        const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
         if (prenda) {
             prenda.tipo_prenda = nombrePrenda;
         }
@@ -423,7 +423,7 @@ function agregarFilaTallaCantidadReflectivo(tablaTallasBody, prendasIndex, talla
 }
 
 function procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContainer) {
-    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
     if (!prenda) return;
     
     const maxImagenes = 3;
@@ -447,7 +447,7 @@ function procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContain
 }
 
 function renderizarImagenesReflectivo(prendasIndex, fila) {
-    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
     if (!prenda) return;
     
     const previewContainer = fila.querySelector(`.imagenes-preview-reflectivo-${prendasIndex}`);
@@ -479,7 +479,7 @@ function renderizarImagenesReflectivo(prendasIndex, fila) {
 }
 
 function eliminarImagenReflectivo(prendasIndex, imgIndex) {
-    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
     if (prenda) {
         prenda.imagenes.splice(imgIndex, 1);
         
@@ -491,7 +491,7 @@ function eliminarImagenReflectivo(prendasIndex, imgIndex) {
 }
 
 function eliminarPrendaReflectivoPaso4(prendasIndex) {
-    prendas_reflectivo_paso4 = prendas_reflectivo_paso4.filter(p => p.index !== prendasIndex);
+    window.prendas_reflectivo_paso4 = window.prendas_reflectivo_paso4.filter(p => p.index !== prendasIndex);
     
     const fila = document.querySelector(`[data-prenda-index="${prendasIndex}"]`);
     if (fila) fila.remove();
@@ -523,7 +523,7 @@ function capturePrendasReflectivoPaso4() {
         const descripcion = fila.querySelector('.descripcion-reflectivo')?.value.trim() || '';
         
         // OBTENER DEL OBJETO PRENDA (no del DOM) - porque están en prendas_reflectivo_paso4
-        const prendasData = prendas_reflectivo_paso4[idx];
+        const prendasData = window.prendas_reflectivo_paso4[idx];
         const ubicaciones = prendasData ? (prendasData.ubicaciones || []) : [];
         const observacionesGenerales = [];
         
@@ -595,7 +595,32 @@ function capturePrendasReflectivoPaso4() {
             }
         };
         
-        const prenda = prendas_reflectivo_paso4.find(p => p.index === idx);
+        const prenda = window.prendas_reflectivo_paso4.find(p => p.index === idx);
+        
+        // CAPTURAR IMÁGENES (tanto del PASO 2 como nuevas del PASO 4)
+        const imagenesCapturadas = [];
+        
+        // 1. Agregar imágenes del PASO 2 (si existen)
+        if (fila.imagenesPaso2 && Array.isArray(fila.imagenesPaso2) && fila.imagenesPaso2.length > 0) {
+            fila.imagenesPaso2.forEach(imgSrc => {
+                imagenesCapturadas.push({
+                    ruta: imgSrc,
+                    tipo: 'paso2',  // Indica que viene del PASO 2
+                    preview: imgSrc
+                });
+            });
+        }
+        
+        // 2. Agregar imágenes nuevas del PASO 4
+        if (prenda && prenda.imagenes && prenda.imagenes.length > 0) {
+            prenda.imagenes.forEach(img => {
+                imagenesCapturadas.push({
+                    file: img.file,
+                    tipo: 'paso4',  // Indica que fue agregada en PASO 4
+                    preview: img.preview
+                });
+            });
+        }
         
         prendas.push({
             tipo_prenda: tipoPrenda,
@@ -607,7 +632,7 @@ function capturePrendasReflectivoPaso4() {
             tallas: tallas,
             variaciones: variaciones,
             observaciones_generales: observacionesGenerales,
-            imagenes: prenda ? prenda.imagenes : []
+            imagenes: imagenesCapturadas
         });
     });
     
@@ -733,7 +758,7 @@ function abrirModalUbicacionReflectivoPaso4(prendasIndex, fila) {
  * Guarda la ubicación y la descripción
  */
 function guardarUbicacionReflectivoPaso4(prendasIndex) {
-    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
     if (!prenda) return;
     
     // Encontrar el fila (elemento DOM)
@@ -780,7 +805,7 @@ function guardarUbicacionReflectivoPaso4(prendasIndex) {
  * Renderiza las ubicaciones agregadas
  */
 function renderizarUbicacionesReflectivoPaso4(prendasIndex) {
-    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
     if (!prenda || !prenda.ubicaciones) return;
     
     const filaElement = document.querySelector(`[data-prenda-index="${prendasIndex}"]`);
@@ -817,7 +842,7 @@ function renderizarUbicacionesReflectivoPaso4(prendasIndex) {
  * Elimina una ubicación
  */
 function eliminarUbicacionReflectivoPaso4(prendasIndex, index) {
-    const prenda = prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
+    const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
     if (!prenda || !prenda.ubicaciones) return;
     
     prenda.ubicaciones.splice(index, 1);

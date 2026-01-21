@@ -1534,41 +1534,80 @@ final class CotizacionController extends Controller
                 $logoObservacionesGenerales = json_decode($logoObservacionesGenerales, true) ?? [];
             }
             
-            // Crear o actualizar logo_cotizaciones con TODOS los datos del PASO 3
-            // IMPORTANTE: Usar updateOrCreate para EVITAR crear duplicados
-            // Siempre actualizar el registro existente si ya existe para esta cotización
-            
-            // PRIMERO: Verificar si ya existe un LogoCotizacion para esta cotización
-            $logoExistente = \App\Models\LogoCotizacion::where('cotizacion_id', $cotizacionId)->first();
-            
-            if ($logoExistente) {
-                // Si existe, SOLO actualizar (no crear nuevo)
-                // IMPORTANTE: Merge con datos existentes para NO SOBRESCRIBIR si viene vacío
-                $datosActualizar = [
-                    'observaciones_generales' => is_array($logoObservacionesGenerales) && !empty($logoObservacionesGenerales)
-                        ? json_encode($logoObservacionesGenerales)
-                        : $logoExistente->observaciones_generales,
-                    'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? $logoExistente->tipo_venta,
-                ];
-                
-                $logoExistente->update($datosActualizar);
-                $logoCotizacion = $logoExistente;
-                Log::info(' LogoCotizacion ACTUALIZADO (ya existía)', [
-                    'cotizacion_id' => $cotizacionId,
-                    'logo_id' => $logoCotizacion->id,
-                    'descripcion_guardada' => $logoDescripcion,
-                    'datos_actualizados' => $datosActualizar,
-                ]);
+            // ✅ VALIDAR si logo (PASO 3) tiene información escrita válida
+            // Para incluir logo necesita: técnicas agregadas (en window.tecnicasAgregadasPaso3)
+            $logoTecnicasAgregadas = $request->input('logo.tecnicas_agregadas');
+            if (is_string($logoTecnicasAgregadas)) {
+                $logoTecnicasAgregadas = json_decode($logoTecnicasAgregadas, true) ?? [];
             } else {
-                // Si NO existe, crear nuevo
-                $logoCotizacion = \App\Models\LogoCotizacion::create([
+                $logoTecnicasAgregadas = (array)$logoTecnicasAgregadas;
+            }
+            
+            // El logo tiene información válida si hay técnicas agregadas con prendas
+            $logoTieneInformacionValida = false;
+            if (!empty($logoTecnicasAgregadas) && is_array($logoTecnicasAgregadas)) {
+                foreach ($logoTecnicasAgregadas as $tecnica) {
+                    if (!empty($tecnica['prendas']) && is_array($tecnica['prendas'])) {
+                        // Verificar que al menos una prenda tenga ubicaciones O (tallas Y imágenes)
+                        foreach ($tecnica['prendas'] as $prenda) {
+                            $tieneUbicaciones = !empty($prenda['ubicaciones']);
+                            $tieneTallas = !empty($prenda['talla_cantidad']);
+                            $tieneImagenes = !empty($prenda['imagenes_files']);
+                            
+                            if ($tieneUbicaciones && ($tieneTallas || $tieneImagenes)) {
+                                $logoTieneInformacionValida = true;
+                                break 2; // Salir de ambos loops
+                            }
+                        }
+                    }
+                }
+            }
+            
+            \Log::info('📸 Validación LOGO (PASO 3)', [
+                'logoTecnicasAgregadas_count' => count($logoTecnicasAgregadas),
+                'logoTieneInformacionValida' => $logoTieneInformacionValida,
+            ]);
+            
+            // Crear o actualizar logo_cotizaciones SOLO si hay información válida
+            $logoCotizacion = null;
+            
+            if ($logoTieneInformacionValida) {
+                // PRIMERO: Verificar si ya existe un LogoCotizacion para esta cotización
+                $logoExistente = \App\Models\LogoCotizacion::where('cotizacion_id', $cotizacionId)->first();
+                
+                if ($logoExistente) {
+                    // Si existe, SOLO actualizar (no crear nuevo)
+                    // IMPORTANTE: Merge con datos existentes para NO SOBRESCRIBIR si viene vacío
+                    $datosActualizar = [
+                        'observaciones_generales' => is_array($logoObservacionesGenerales) && !empty($logoObservacionesGenerales)
+                            ? json_encode($logoObservacionesGenerales)
+                            : $logoExistente->observaciones_generales,
+                        'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? $logoExistente->tipo_venta,
+                    ];
+                    
+                    $logoExistente->update($datosActualizar);
+                    $logoCotizacion = $logoExistente;
+                    Log::info(' LogoCotizacion ACTUALIZADO (ya existía)', [
+                        'cotizacion_id' => $cotizacionId,
+                        'logo_id' => $logoCotizacion->id,
+                        'descripcion_guardada' => $logoDescripcion,
+                        'datos_actualizados' => $datosActualizar,
+                    ]);
+                } else {
+                    // Si NO existe, crear nuevo
+                    $logoCotizacion = \App\Models\LogoCotizacion::create([
+                        'cotizacion_id' => $cotizacionId,
+                        'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
+                        'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
+                    ]);
+                    Log::info(' LogoCotizacion CREADO (nuevo)', [
+                        'cotizacion_id' => $cotizacionId,
+                        'logo_id' => $logoCotizacion->id,
+                    ]);
+                }
+            } else {
+                Log::warning('⚠️ Logo (PASO 3) sin información válida - No se creará logo_cotizacion', [
                     'cotizacion_id' => $cotizacionId,
-                    'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
-                    'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
-                ]);
-                Log::info(' LogoCotizacion CREADO (nuevo)', [
-                    'cotizacion_id' => $cotizacionId,
-                    'logo_id' => $logoCotizacion->id,
                 ]);
             }
             
@@ -1590,149 +1629,159 @@ final class CotizacionController extends Controller
                 'logoArchivos_count' => count($logoArchivos)
             ]);
             
-            if (!empty($logoArchivos)) {
-                $orden = 1;
-                foreach ($logoArchivos as $foto) {
-                    if ($foto instanceof \Illuminate\Http\UploadedFile) {
-                        $ruta = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
-                        
-                        Log::info('DEBUG - Guardando foto de logo:', [
-                            'logoCotizacion_id' => $logoCotizacion->id,
-                            'ruta' => $ruta,
-                            'orden' => $orden,
-                            'modelo_relacion' => get_class($logoCotizacion->fotos()->getRelated())
-                        ]);
-                        
-                        // Guardar en logo_fotos_cot (múltiples fotos con orden incremental)
-                        try {
-                            $fotoCreada = $logoCotizacion->fotos()->create([
-                                'ruta_original' => $ruta,
-                                'ruta_webp' => $ruta,
+            if ($logoCotizacion) {
+                // Solo guardar fotos si la cotización de logo fue creada
+                if (!empty($logoArchivos)) {
+                    $orden = 1;
+                    foreach ($logoArchivos as $foto) {
+                        if ($foto instanceof \Illuminate\Http\UploadedFile) {
+                            $ruta = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
+                            
+                            Log::info('DEBUG - Guardando foto de logo:', [
+                                'logoCotizacion_id' => $logoCotizacion->id,
+                                'ruta' => $ruta,
                                 'orden' => $orden,
+                                'modelo_relacion' => get_class($logoCotizacion->fotos()->getRelated())
                             ]);
                             
-                            Log::info(' Logo foto CREADA EN BD', [
-                                'cotizacion_id' => $cotizacionId,
-                                'foto_id' => $fotoCreada->id ?? 'NULL',
-                                'logo_cotizacion_id' => $logoCotizacion->id,
-                                'ruta' => $ruta,
-                                'orden' => $orden
-                            ]);
-                        } catch (\Exception $e) {
-                            Log::error(' ERROR al crear foto de logo', [
-                                'cotizacion_id' => $cotizacionId,
-                                'logo_cotizacion_id' => $logoCotizacion->id,
-                                'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString()
-                            ]);
+                            // Guardar en logo_fotos_cot (múltiples fotos con orden incremental)
+                            try {
+                                $fotoCreada = $logoCotizacion->fotos()->create([
+                                    'ruta_original' => $ruta,
+                                    'ruta_webp' => $ruta,
+                                    'orden' => $orden,
+                                ]);
+                                
+                                Log::info(' Logo foto CREADA EN BD', [
+                                    'cotizacion_id' => $cotizacionId,
+                                    'foto_id' => $fotoCreada->id ?? 'NULL',
+                                    'logo_cotizacion_id' => $logoCotizacion->id,
+                                    'ruta' => $ruta,
+                                    'orden' => $orden
+                                ]);
+                            } catch (\Exception $e) {
+                                Log::error(' ERROR al crear foto de logo', [
+                                    'cotizacion_id' => $cotizacionId,
+                                    'logo_cotizacion_id' => $logoCotizacion->id,
+                                    'error' => $e->getMessage(),
+                                    'trace' => $e->getTraceAsString()
+                                ]);
+                            }
+                            $orden++;
+                            
+                            Log::info('Logo foto guardada', ['cotizacion_id' => $cotizacionId, 'ruta' => $ruta, 'orden' => $orden - 1]);
                         }
-                        $orden++;
-                        
-                        Log::info('Logo foto guardada', ['cotizacion_id' => $cotizacionId, 'ruta' => $ruta, 'orden' => $orden - 1]);
                     }
+                } else {
+                    Log::info('DEBUG - No hay archivos de logo para guardar');
+                }
+                
+                // Procesar IDs de fotos de logo existentes (logo_fotos_existentes[])
+                // Estas son las fotos que ya están en BD y que el usuario quiere conservar/copiar
+                $fotoLogosExistentes = $request->input('logo_fotos_existentes', []);
+                if (!is_array($fotoLogosExistentes)) {
+                    $fotoLogosExistentes = [];
+                }
+                
+                if (!empty($fotoLogosExistentes)) {
+                    // Deduplicar IDs
+                    $fotoLogosExistentes = array_unique($fotoLogosExistentes);
+                    $orden = 1;
+                    
+                    foreach ($fotoLogosExistentes as $fotoIdExistente) {
+                        if ($fotoIdExistente && is_string($fotoIdExistente)) {
+                            // Buscar la foto existente - usar find() para no lanzar error si no existe
+                            $fotoExistente = \App\Models\LogoFotoCot::find($fotoIdExistente);
+                            
+                            // Si la foto no existe, simplemente continuar (puede haber sido eliminada)
+                            if (!$fotoExistente) {
+                                Log::warning(' Foto de logo no encontrada, ignorando', ['foto_id' => $fotoIdExistente]);
+                                continue;
+                            }
+                            
+                            // Limpiar rutas: remover /storage/ del principio si existe
+                            $rutaOriginal = $fotoExistente->ruta_original;
+                            if (strpos($rutaOriginal, '/storage/') === 0) {
+                                $rutaOriginal = substr($rutaOriginal, 9); // Remover "/storage/" (9 caracteres)
+                            }
+                            
+                            $rutaWebp = $fotoExistente->ruta_webp;
+                            if (strpos($rutaWebp, '/storage/') === 0) {
+                                $rutaWebp = substr($rutaWebp, 9); // Remover "/storage/" (9 caracteres)
+                            }
+                            
+                            // Crear nuevo registro con la misma ruta en la nueva cotización
+                            try {
+                                $fotoCopiadaCreada = $logoCotizacion->fotos()->create([
+                                    'ruta_original' => $rutaOriginal,
+                                    'ruta_webp' => $rutaWebp,
+                                    'orden' => $orden,
+                                ]);
+                                
+                                Log::info(' Foto de logo reutilizada (copiada)', [
+                                    'nuevo_foto_id' => $fotoCopiadaCreada->id,
+                                    'foto_original_id' => $fotoIdExistente,
+                                    'logo_cotizacion_id' => $logoCotizacion->id,
+                                    'ruta' => $fotoExistente->ruta_webp,
+                                    'orden' => $orden
+                                ]);
+                                
+                                $orden++;
+                            } catch (\Exception $e) {
+                                Log::warning(' Error al reutilizar foto de logo', [
+                                    'foto_id' => $fotoIdExistente,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
+                        }
+                    }
+                    
+                    Log::info('Fotos de logo existentes reutilizadas:', [
+                        'count' => count($fotoLogosExistentes),
+                        'ids' => $fotoLogosExistentes,
+                        'fotos_creadas' => $orden - 1
+                    ]);
                 }
             } else {
-                Log::info('DEBUG - No hay archivos de logo para guardar');
-            }
-            
-            // Procesar IDs de fotos de logo existentes (logo_fotos_existentes[])
-            // Estas son las fotos que ya están en BD y que el usuario quiere conservar/copiar
-            $fotoLogosExistentes = $request->input('logo_fotos_existentes', []);
-            if (!is_array($fotoLogosExistentes)) {
-                $fotoLogosExistentes = [];
-            }
-            
-            if (!empty($fotoLogosExistentes)) {
-                // Deduplicar IDs
-                $fotoLogosExistentes = array_unique($fotoLogosExistentes);
-                $orden = 1;
-                
-                foreach ($fotoLogosExistentes as $fotoIdExistente) {
-                    if ($fotoIdExistente && is_string($fotoIdExistente)) {
-                        // Buscar la foto existente - usar find() para no lanzar error si no existe
-                        $fotoExistente = \App\Models\LogoFotoCot::find($fotoIdExistente);
-                        
-                        // Si la foto no existe, simplemente continuar (puede haber sido eliminada)
-                        if (!$fotoExistente) {
-                            Log::warning(' Foto de logo no encontrada, ignorando', ['foto_id' => $fotoIdExistente]);
-                            continue;
-                        }
-                        
-                        // Limpiar rutas: remover /storage/ del principio si existe
-                        $rutaOriginal = $fotoExistente->ruta_original;
-                        if (strpos($rutaOriginal, '/storage/') === 0) {
-                            $rutaOriginal = substr($rutaOriginal, 9); // Remover "/storage/" (9 caracteres)
-                        }
-                        
-                        $rutaWebp = $fotoExistente->ruta_webp;
-                        if (strpos($rutaWebp, '/storage/') === 0) {
-                            $rutaWebp = substr($rutaWebp, 9); // Remover "/storage/" (9 caracteres)
-                        }
-                        
-                        // Crear nuevo registro con la misma ruta en la nueva cotización
-                        try {
-                            $fotoCopiadaCreada = $logoCotizacion->fotos()->create([
-                                'ruta_original' => $rutaOriginal,
-                                'ruta_webp' => $rutaWebp,
-                                'orden' => $orden,
-                            ]);
-                            
-                            Log::info(' Foto de logo reutilizada (copiada)', [
-                                'nuevo_foto_id' => $fotoCopiadaCreada->id,
-                                'foto_original_id' => $fotoIdExistente,
-                                'logo_cotizacion_id' => $logoCotizacion->id,
-                                'ruta' => $fotoExistente->ruta_webp,
-                                'orden' => $orden
-                            ]);
-                            
-                            $orden++;
-                        } catch (\Exception $e) {
-                            Log::warning(' Error al reutilizar foto de logo', [
-                                'foto_id' => $fotoIdExistente,
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    }
-                }
-                
-                Log::info('Fotos de logo existentes reutilizadas:', [
-                    'count' => count($fotoLogosExistentes),
-                    'ids' => $fotoLogosExistentes,
-                    'fotos_creadas' => $orden - 1
+                Log::info('⚠️ Logo_cotizacion no fue creado - No se guardarán fotos de logo', [
+                    'cotizacion_id' => $cotizacionId,
                 ]);
             }
 
             // ✅ PROCESAR PASO 3: TÉCNICAS DE LOGO (Para cotizaciones combinadas)
             // Las técnicas vienen en logo[tecnicas_agregadas] como JSON string
-            $tecnicasAgregadasJson = $request->input('logo.tecnicas_agregadas', '[]');
-            if (is_string($tecnicasAgregadasJson)) {
-                $tecnicasAgregadas = json_decode($tecnicasAgregadasJson, true) ?? [];
-            } else {
-                $tecnicasAgregadas = (array)$tecnicasAgregadasJson;
-            }
+            // Solo procesar si logo_cotizacion fue creado (tiene información válida)
             
-            Log::info('🎨 Procesando técnicas agregadas para cotización combinada', [
-                'cotizacion_id' => $cotizacionId,
-                'logo_cotizacion_id' => $logoCotizacion->id ?? null,
-                'tecnicas_count' => count($tecnicasAgregadas),
-                'tecnicas_first' => count($tecnicasAgregadas) > 0 ? array_keys($tecnicasAgregadas[0] ?? []) : []
-            ]);
-            
-            if (!empty($tecnicasAgregadas)) {
-                try {
-                    foreach ($tecnicasAgregadas as $tecnicaIndex => $tecnicaData) {
-                        Log::info("🎨 Procesando técnica {$tecnicaIndex}", [
-                            'tipo_logo_id' => $tecnicaData['tipo_logo']['id'] ?? null,
-                            'prendas_count' => count($tecnicaData['prendas'] ?? [])
-                        ]);
-                        
-                        // Obtener tipo_logo_id de los datos
-                        $tipoLogoId = $tecnicaData['tipo_logo']['id'] ?? null;
-                        
-                        if (!$tipoLogoId) {
-                            Log::warning('⚠️ tipo_logo_id no encontrado en técnica', ['tecnica_index' => $tecnicaIndex]);
-                            continue;
-                        }
+            if ($logoCotizacion) {
+                $tecnicasAgregadasJson = $request->input('logo.tecnicas_agregadas', '[]');
+                if (is_string($tecnicasAgregadasJson)) {
+                    $tecnicasAgregadas = json_decode($tecnicasAgregadasJson, true) ?? [];
+                } else {
+                    $tecnicasAgregadas = (array)$tecnicasAgregadasJson;
+                }
+                
+                Log::info('🎨 Procesando técnicas agregadas para cotización combinada', [
+                    'cotizacion_id' => $cotizacionId,
+                    'logo_cotizacion_id' => $logoCotizacion->id ?? null,
+                    'tecnicas_count' => count($tecnicasAgregadas),
+                    'tecnicas_first' => count($tecnicasAgregadas) > 0 ? array_keys($tecnicasAgregadas[0] ?? []) : []
+                ]);
+                
+                if (!empty($tecnicasAgregadas)) {
+                    try {
+                        foreach ($tecnicasAgregadas as $tecnicaIndex => $tecnicaData) {
+                            Log::info("🎨 Procesando técnica {$tecnicaIndex}", [
+                                'tipo_logo_id' => $tecnicaData['tipo_logo']['id'] ?? null,
+                                'prendas_count' => count($tecnicaData['prendas'] ?? [])
+                            ]);
+                            
+                            // Obtener tipo_logo_id de los datos
+                            $tipoLogoId = $tecnicaData['tipo_logo']['id'] ?? null;
+                            
+                            if (!$tipoLogoId) {
+                                Log::warning('⚠️ tipo_logo_id no encontrado en técnica', ['tecnica_index' => $tecnicaIndex]);
+                                continue;
+                            }
                         
                         // Procesar prendas de esta técnica
                         if (!empty($tecnicaData['prendas']) && is_array($tecnicaData['prendas'])) {
@@ -1846,10 +1895,66 @@ final class CotizacionController extends Controller
                                         'prenda_cot_id' => $prendaCot->id,
                                         'ubicaciones' => $prendaData['ubicaciones'] ?? []
                                     ]);
+                                    
+                                    // 📸 GUARDAR IMÁGENES DE LA TÉCNICA
+                                    // Procesar imágenes desde prendaData['imagenes']
+                                    if (isset($prendaData['imagenes']) && is_array($prendaData['imagenes']) && !empty($prendaData['imagenes'])) {
+                                        $ordenFoto = 1;
+                                        $maxImagenes = 5;
+                                        
+                                        foreach ($prendaData['imagenes'] as $imagen) {
+                                            if ($ordenFoto > $maxImagenes) {
+                                                break;
+                                            }
+                                            
+                                            $rutaGuardar = null;
+                                            
+                                            // Si es imagen del PASO 2, usar la ruta directamente
+                                            if (isset($imagen['tipo']) && $imagen['tipo'] === 'paso2' && isset($imagen['ruta'])) {
+                                                $rutaGuardar = $imagen['ruta'];
+                                                \Log::info('📸 Logo: Imagen del PASO 2 detectada', [
+                                                    'tecnica' => $nombreTecnica,
+                                                    'prenda' => $prendaData['nombre_prenda'],
+                                                    'ruta' => $rutaGuardar,
+                                                ]);
+                                            }
+                                            // Si es imagen nueva del PASO 3, crear ruta
+                                            elseif (isset($imagen['tipo']) && $imagen['tipo'] === 'paso3') {
+                                                \Log::info('📸 Logo: Imagen del PASO 3 detectada', [
+                                                    'tecnica' => $nombreTecnica,
+                                                    'prenda' => $prendaData['nombre_prenda'],
+                                                    'tipo' => 'archivo'
+                                                ]);
+                                            }
+                                            
+                                            // Guardar ruta en logo_cotizacion_tecnica_prendas_fotos
+                                            if ($rutaGuardar) {
+                                                try {
+                                                    $logoCotizacionTecnicaPrenda->fotos()->create([
+                                                        'ruta_original' => $rutaGuardar,
+                                                        'ruta_webp' => $rutaGuardar,
+                                                        'ruta_miniatura' => $rutaGuardar,
+                                                        'orden' => $ordenFoto,
+                                                    ]);
+                                                    
+                                                    \Log::info('✅ Logo foto guardada en BD', [
+                                                        'tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
+                                                        'ruta' => $rutaGuardar,
+                                                        'orden' => $ordenFoto,
+                                                    ]);
+                                                    
+                                                    $ordenFoto++;
+                                                } catch (\Exception $e) {
+                                                    \Log::error('❌ Error al guardar foto de técnica', [
+                                                        'tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
+                                                        'error' => $e->getMessage()
+                                                    ]);
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        } else {
-                            Log::info('⚠️ Técnica sin prendas', ['tecnica_index' => $tecnicaIndex]);
                         }
                     }
                     
@@ -1859,14 +1964,19 @@ final class CotizacionController extends Controller
                     ]);
                     
                 } catch (\Exception $e) {
-                    Log::error('❌ Error procesando técnicas', [
-                        'cotizacion_id' => $cotizacionId,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+                        Log::error('❌ Error procesando técnicas', [
+                            'cotizacion_id' => $cotizacionId,
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                    }
+                } else {
+                    Log::info('⚠️ No hay técnicas agregadas para procesar');
                 }
             } else {
-                Log::info('⚠️ No hay técnicas agregadas para procesar');
+                Log::info('⚠️ Logo_cotizacion no existe - No se procesarán técnicas de logo', [
+                    'cotizacion_id' => $cotizacionId
+                ]);
             }
 
             // Procesar PASO 4: REFLECTIVO
@@ -1942,17 +2052,43 @@ final class CotizacionController extends Controller
                 $reflectivoArchivos = [];
             }
             
-            // Guardar reflectivo si hay prendas (incluso si descripción está vacía)
+            // Guardar reflectivo SI Y SOLO SI hay información válida (ubicaciones O descripción+imágenes)
             // El backend intenta guardar reflectivo para CADA prenda del PASO 2
             $prendas = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)->get();
             
-            \Log::info(' Prendas encontradas PARA REFLECTIVO', [
-                'prendas_count' => $prendas->count(),
-                'prendas_ids' => $prendas->pluck('id')->toArray(),
-                'tiene_descripcion' => !empty($reflectivoDescripcion),
+            // 📦 Obtener datos de prendas del PASO 4 (reflectivo)
+            // Estos contienen ubicaciones específicas para cada prenda
+            $prendasReflectivoPaso4 = $request->input('prendas_reflectivo_paso4', []);
+            if (is_string($prendasReflectivoPaso4)) {
+                $prendasReflectivoPaso4 = json_decode($prendasReflectivoPaso4, true) ?? [];
+            }
+            
+            \Log::info('📦 Prendas reflectivo PASO 4 recibidas:', [
+                'count' => count($prendasReflectivoPaso4),
+                'prendasReflectivoPaso4' => json_encode($prendasReflectivoPaso4),
             ]);
             
-            if ($prendas->count() > 0) {
+            // ✅ VALIDAR si reflectivo tiene información escrita válida
+            // Prioridad: Si hay prendas_reflectivo_paso4, usar eso para validar
+            $tieneInfoValidaDesdeP4 = !empty($prendasReflectivoPaso4) && count($prendasReflectivoPaso4) > 0;
+            
+            // Si no hay datos en P4, validar usando los datos unificados (fallback)
+            $tieneUbicacionesReflectivo = !empty($reflectivoUbicacion) && $reflectivoUbicacion !== '[]' && $reflectivoUbicacion !== '{}';
+            $tieneDescripcionReflectivo = !empty($reflectivoDescripcion);
+            $tieneImagenesReflectivo = !empty($reflectivoArchivos) && count($reflectivoArchivos) > 0;
+            
+            $reflectivoTieneInfoValida = $tieneInfoValidaDesdeP4 || $tieneUbicacionesReflectivo || ($tieneDescripcionReflectivo && $tieneImagenesReflectivo);
+            
+            \Log::info('📦 Prendas encontradas PARA REFLECTIVO - VALIDACIÓN', [
+                'prendas_count' => $prendas->count(),
+                'tieneInfoValidaDesdeP4' => $tieneInfoValidaDesdeP4,
+                'tieneUbicacionesReflectivo' => $tieneUbicacionesReflectivo,
+                'tieneDescripcionReflectivo' => $tieneDescripcionReflectivo,
+                'tieneImagenesReflectivo' => $tieneImagenesReflectivo,
+                'reflectivoTieneInfoValida' => $reflectivoTieneInfoValida,
+            ]);
+            
+            if ($prendas->count() > 0 && $reflectivoTieneInfoValida) {
                 try {
                     foreach ($prendas as $prenda) {
                         \Log::info('✨ Guardando reflectivo para prenda', [
@@ -2015,11 +2151,30 @@ final class CotizacionController extends Controller
                             'cotizacion_id' => $cotizacionId,
                         ]);
                         
-                        // 📍 Asegurar que ubicaciones sea JSON válido
-                        $ubicacionesFinal = $reflectivoUbicacion;
-                        if (empty($ubicacionesFinal) || $ubicacionesFinal === '[]') {
-                            $ubicacionesFinal = json_encode([]); // Garantizar JSON válido
+                        // 📍 BUSCAR UBICACIONES ESPECÍFICAS DE ESTA PRENDA desde prendas_reflectivo_paso4
+                        // Cada prenda puede tener sus propias ubicaciones
+                        $ubicacionesEspecificasPrenda = [];
+                        
+                        foreach ($prendasReflectivoPaso4 as $prendaReflectivo) {
+                            // Comparar por nombre de prenda - usar 'tipo_prenda' (clave en el PASO 4)
+                            if (isset($prendaReflectivo['tipo_prenda']) && 
+                                $prendaReflectivo['tipo_prenda'] === $prenda->nombre_producto &&
+                                !empty($prendaReflectivo['ubicaciones'])) {
+                                $ubicacionesEspecificasPrenda = $prendaReflectivo['ubicaciones'];
+                                break;
+                            }
                         }
+                        
+                        // 📍 Asegurar que ubicaciones sea JSON válido
+                        $ubicacionesFinal = !empty($ubicacionesEspecificasPrenda) 
+                            ? json_encode($ubicacionesEspecificasPrenda)
+                            : json_encode([]);
+                        
+                        \Log::info('📍 Ubicaciones específicas para prenda:', [
+                            'prenda_nombre' => $prenda->nombre_producto,
+                            'ubicaciones_encontradas' => $ubicacionesEspecificasPrenda,
+                            'ubicaciones_json' => $ubicacionesFinal,
+                        ]);
                         
                         // Guardar en prenda_cot_reflectivo con variaciones y ubicaciones
                         $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::updateOrCreate(
@@ -2029,7 +2184,7 @@ final class CotizacionController extends Controller
                             ],
                             [
                                 'variaciones' => $variacionesJson,  // Variaciones traídas del PASO 2
-                                'ubicaciones' => $ubicacionesFinal,  // Ubicaciones del reflectivo
+                                'ubicaciones' => $ubicacionesFinal,  // Ubicaciones específicas del reflectivo para esta prenda
                             ]
                         );
                         
@@ -2043,20 +2198,89 @@ final class CotizacionController extends Controller
                     }
                     
                     // Guardar imágenes del reflectivo (máximo 3)
+                    // Procesar imágenes desde prendas_reflectivo_paso4
+                    $ordenFoto = 1;
+                    $maxImagenes = 3;
+                    
+                    foreach ($prendas as $prenda) {
+                        $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
+                            ->where('prenda_cot_id', $prenda->id)
+                            ->first();
+                        
+                        if (!$reflectivoCotizacion) {
+                            continue;
+                        }
+                        
+                        // Buscar imágenes específicas de esta prenda desde prendas_reflectivo_paso4
+                        foreach ($prendasReflectivoPaso4 as $prendaReflectivo) {
+                            if (isset($prendaReflectivo['tipo_prenda']) && 
+                                $prendaReflectivo['tipo_prenda'] === $prenda->nombre_producto &&
+                                !empty($prendaReflectivo['imagenes'])) {
+                                
+                                $ordenFoto = 1;
+                                
+                                foreach ($prendaReflectivo['imagenes'] as $imagen) {
+                                    if ($ordenFoto > $maxImagenes) {
+                                        break;
+                                    }
+                                    
+                                    $rutaGuardar = null;
+                                    
+                                    // Si es imagen del PASO 2, usar la ruta directamente
+                                    if (isset($imagen['tipo']) && $imagen['tipo'] === 'paso2' && isset($imagen['ruta'])) {
+                                        $rutaGuardar = $imagen['ruta'];
+                                        \Log::info('📸 Reflectivo: Imagen del PASO 2 detectada', [
+                                            'prenda' => $prenda->nombre_producto,
+                                            'ruta' => $rutaGuardar,
+                                        ]);
+                                    }
+                                    // Si es imagen nueva del PASO 4, procesar el archivo
+                                    elseif (isset($imagen['tipo']) && $imagen['tipo'] === 'paso4' && isset($imagen['file'])) {
+                                        // La imagen ya fue procesada en FormData como archivo
+                                        // Aquí procesamos las rutas que se reciben
+                                        \Log::info('📸 Reflectivo: Imagen del PASO 4 detectada', [
+                                            'prenda' => $prenda->nombre_producto,
+                                            'tipo' => isset($imagen['file']) ? 'archivo' : 'ruta',
+                                        ]);
+                                    }
+                                    
+                                    // Guardar la ruta en reflectivo_fotos_cotizacion
+                                    if ($rutaGuardar) {
+                                        $reflectivoCotizacion->fotos()->create([
+                                            'ruta_original' => $rutaGuardar,
+                                            'ruta_webp' => $rutaGuardar,
+                                            'orden' => $ordenFoto,
+                                        ]);
+                                        
+                                        \Log::info('✅ Reflectivo foto guardada en BD', [
+                                            'reflectivo_id' => $reflectivoCotizacion->id,
+                                            'ruta' => $rutaGuardar,
+                                            'orden' => $ordenFoto,
+                                        ]);
+                                        
+                                        $ordenFoto++;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // FALLBACK: Guardar imágenes del reflectivo en FormData (para imágenes nuevas del PASO 4)
                     if (!empty($reflectivoArchivos)) {
-                        $orden = 1;
-                        $maxImagenes = 3;
+                        $ordenFoto = 1;
                         
                         foreach ($reflectivoArchivos as $foto) {
-                            if ($orden > $maxImagenes) {
-                                Log::warning(' Se alcanzó el límite de 3 imágenes para reflectivo', [
+                            if ($ordenFoto > $maxImagenes) {
+                                \Log::warning('⚠️ Se alcanzó el límite de 3 imágenes para reflectivo', [
                                     'cotizacion_id' => $cotizacionId,
                                 ]);
                                 break;
                             }
                             
                             if ($foto instanceof \Illuminate\Http\UploadedFile) {
-                                $ruta = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
+                                // Procesar la imagen usando el servicio existente
+                                $rutaWebP = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
                                 
                                 // Guardar en reflectivo_fotos_cotizacion para cada prenda
                                 foreach ($prendas as $prenda) {
@@ -2066,21 +2290,20 @@ final class CotizacionController extends Controller
                                     
                                     if ($reflectivoCotizacion) {
                                         $reflectivoCotizacion->fotos()->create([
-                                            'ruta_original' => $ruta,
-                                            'ruta_webp' => $ruta,
-                                            'orden' => $orden,
+                                            'ruta_original' => $rutaWebP,
+                                            'ruta_webp' => $rutaWebP,
+                                            'orden' => $ordenFoto,
+                                        ]);
+                                        
+                                        \Log::info('✅ Reflectivo foto (PASO 4) guardada', [
+                                            'reflectivo_id' => $reflectivoCotizacion->id,
+                                            'ruta' => $rutaWebP,
+                                            'orden' => $ordenFoto,
                                         ]);
                                     }
                                 }
                                 
-                                $orden++;
-                                
-                                Log::info('📸 Reflectivo foto guardada', [
-                                    'cotizacion_id' => $cotizacionId,
-                                    'ruta' => $ruta,
-                                    'orden' => $orden - 1,
-                                    'prendas_count' => count($prendas),
-                                ]);
+                                $ordenFoto++;
                             }
                         }
                     }
@@ -2092,8 +2315,15 @@ final class CotizacionController extends Controller
                     ]);
                 }
             } else {
-                \Log::info('⚠️ No hay prendas para guardar reflectivo', [
+                \Log::warning('⚠️ Reflectivo NO será guardado - Validación falló', [
                     'cotizacion_id' => $cotizacionId,
+                    'prendas_count' => $prendas->count(),
+                    'reflectivoTieneInfoValida' => $reflectivoTieneInfoValida,
+                    'tieneInfoValidaDesdeP4' => $tieneInfoValidaDesdeP4,
+                    'prendasReflectivoPaso4' => $prendasReflectivoPaso4,
+                    'reflectivoDescripcion' => $reflectivoDescripcion,
+                    'reflectivoUbicacion' => $reflectivoUbicacion,
+                    'reflectivoArchivos_count' => count($reflectivoArchivos),
                 ]);
             }
 

@@ -31,6 +31,41 @@ function procesarGenero(genero) {
     return null;
 }
 
+/**
+ * Validar si una técnica tiene información escrita válida
+ * @param {Object} tecnica - Técnica con prendas
+ * @returns {boolean} - true si tiene información válida
+ */
+function tienenInformacionValida(tecnicas) {
+    if (!tecnicas || !Array.isArray(tecnicas) || tecnicas.length === 0) {
+        return false;
+    }
+    
+    return tecnicas.every(tecnica => {
+        if (!tecnica.prendas || !Array.isArray(tecnica.prendas)) {
+            return false;
+        }
+        
+        // Validar que cada prenda tenga al menos una ubicación
+        return tecnica.prendas.some(prenda => {
+            const tieneUbicaciones = prenda.ubicaciones && 
+                                    Array.isArray(prenda.ubicaciones) && 
+                                    prenda.ubicaciones.some(u => u && u.trim());
+            
+            const tieneTallas = prenda.talla_cantidad && 
+                               Array.isArray(prenda.talla_cantidad) && 
+                               prenda.talla_cantidad.length > 0;
+            
+            const tieneImagenes = prenda.imagenes_files && 
+                                 Array.isArray(prenda.imagenes_files) && 
+                                 prenda.imagenes_files.length > 0;
+            
+            // Requiere ubicación Y (tallas O imágenes)
+            return tieneUbicaciones && (tieneTallas || tieneImagenes);
+        });
+    });
+}
+
 // ============ GUARDAR COTIZACIÓN ============
 
 async function guardarCotizacion() {
@@ -456,27 +491,52 @@ async function guardarCotizacion() {
         console.log('   tecnicasAgregadasPaso3:', window.tecnicasAgregadasPaso3);
         
         if (window.tecnicasAgregadasPaso3 && Array.isArray(window.tecnicasAgregadasPaso3) && window.tecnicasAgregadasPaso3.length > 0) {
-            console.log(' Procesando técnicas para cotización combinada...', window.tecnicasAgregadasPaso3.length);
+            // ✅ VALIDAR que las técnicas tengan información válida (ubicaciones + tallas/imágenes)
+            const tieneInfoValida = tienenInformacionValida(window.tecnicasAgregadasPaso3);
             
-            // Enviar técnicas con toda su información (prendas, ubicaciones, tallas, etc)
-            formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
-            
-            console.log('✅ Técnicas agregadas al FormData:', {
-                count: window.tecnicasAgregadasPaso3.length,
-                tecnicas_json: JSON.stringify(window.tecnicasAgregadasPaso3).substring(0, 200) + '...'
-            });
+            if (!tieneInfoValida) {
+                console.warn('⚠️ Técnicas encontradas pero sin información válida - No se guardarán');
+            } else {
+                console.log('📦 Procesando técnicas para cotización combinada...', window.tecnicasAgregadasPaso3.length);
+                
+                // Enviar técnicas con toda su información (prendas, ubicaciones, tallas, etc)
+                formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
+                
+                console.log('✅ Técnicas agregadas al FormData:', {
+                    count: window.tecnicasAgregadasPaso3.length,
+                    tecnicas_json: JSON.stringify(window.tecnicasAgregadasPaso3).substring(0, 200) + '...'
+                });
+            }
         } else {
             console.log('⚠️ No hay técnicas agregadas (window.tecnicasAgregadasPaso3 vacío o no definido)');
         }
         
         // ✅ REFLECTIVO (PASO 4) - Para cotizaciones combinadas (PL)
-        // Solo procesar si el tipo de cotización incluye reflectivo
+        // Solo procesar si el tipo de cotización incluye reflectivo Y hay información válida
         console.log('🔍 DEBUG - Verificando si incluye reflectivo...');
         console.log('   tipo_cotizacion_global:', window.tipoCotizacionGlobal);
         
         // Tipo PL/PB significa que PUEDE tener reflectivo
         if (window.tipoCotizacionGlobal === 'PL' || window.tipoCotizacionGlobal === 'PB' || window.tipoCotizacionGlobal === 'RF') {
-            console.log(' Procesando datos del reflectivo para cotización combinada...');
+            console.log('📦 Procesando datos del reflectivo para cotización combinada...');
+            
+            // ✅ ACTUALIZAR window.prendas_reflectivo_paso4 DESDE EL DOM
+            // Esta función captura los datos actuales de la UI en el PASO 4
+            if (typeof capturePrendasReflectivoPaso4 === 'function') {
+                const prendasCapturadas = capturePrendasReflectivoPaso4();
+                // Reconstruir window.prendas_reflectivo_paso4 con los datos capturados
+                window.prendas_reflectivo_paso4 = prendasCapturadas.map((prenda, idx) => ({
+                    index: idx,
+                    tipo_prenda: prenda.tipo_prenda,
+                    descripcion: prenda.descripcion,
+                    ubicaciones: prenda.ubicaciones || [],
+                    tallas: prenda.tallas || [],
+                    variaciones: prenda.variaciones || {},
+                    observaciones_generales: prenda.observaciones_generales || [],
+                    imagenes: prenda.imagenes || []
+                }));
+                console.log('✅ window.prendas_reflectivo_paso4 actualizado desde DOM:', window.prendas_reflectivo_paso4.length, 'prendas');
+            }
             
             // Obtener descripción del reflectivo (PASO 4) - garantizar que sea string, no null
             const reflectivoElement = document.getElementById('descripcion_reflectivo');
@@ -507,6 +567,20 @@ async function guardarCotizacion() {
             // Obtener observaciones generales del reflectivo (si existen)
             const observacionesReflectivo = window.observacionesReflectivo || [];
             
+            // ✅ VALIDAR que reflectivo tenga información escrita válida
+            // Solo incluir si hay ubicaciones O descripción + imágenes
+            const tieneUbicacionesReflectivo = ubicacionesReflectivo && ubicacionesReflectivo.length > 0;
+            const tieneDescripcionReflectivo = reflectivoDescripcion && reflectivoDescripcion.length > 0;
+            const tieneImagenesReflectivo = window.imagenesReflectivo && window.imagenesReflectivo.length > 0;
+            
+            // ✅ IMPORTANTE: También verificar directamente prendas_reflectivo_paso4
+            const tienePrendasP4ConDatos = typeof window.prendas_reflectivo_paso4 !== 'undefined' && 
+                                            window.prendas_reflectivo_paso4.length > 0;
+            
+            const refletivoTieneInfoValida = tieneUbicacionesReflectivo || 
+                                            (tieneDescripcionReflectivo && tieneImagenesReflectivo) ||
+                                            tienePrendasP4ConDatos;  // ✅ Agregar esta condición
+            
             console.log('✨ Reflectivo capturado (PASO GUARDADO):', {
                 elemento_existe: !!reflectivoElement,
                 valor_raw: reflectivoElement?.value,
@@ -514,35 +588,50 @@ async function guardarCotizacion() {
                 ubicaciones_raw: ubicacionesReflectivo,
                 ubicaciones_count: ubicacionesReflectivo.length,
                 observaciones_count: observacionesReflectivo.length,
+                tienePrendasP4ConDatos,
+                tieneUbicacionesReflectivo,
+                tieneDescripcionReflectivo,
+                tieneImagenesReflectivo,
+                tieneInfoValida: refletivoTieneInfoValida,
                 ubicaciones_stringified: JSON.stringify(ubicacionesReflectivo)
             });
             
-            // SIEMPRE agregar reflectivo a FormData (incluso si está vacío)
-            // Si hay prendas del PASO 2, se intentará guardar en backend
-            formData.append('reflectivo[descripcion]', reflectivoDescripcion);
-            formData.append('reflectivo[ubicacion]', JSON.stringify(ubicacionesReflectivo));
-            formData.append('reflectivo[observaciones_generales]', JSON.stringify(observacionesReflectivo));
-            formData.append('ubicaciones_reflectivo', JSON.stringify(ubicacionesReflectivo));
-            
-            console.log('✅ Datos del reflectivo agregados al FormData:', {
-                descripcion: reflectivoDescripcion,
-                ubicaciones_count: ubicacionesReflectivo.length,
-                ubicaciones: ubicacionesReflectivo,
-                observaciones_count: observacionesReflectivo.length
-            });
-            
-            // ✅ IMÁGENES DEL REFLECTIVO
-            if (window.imagenesReflectivo && Array.isArray(window.imagenesReflectivo)) {
-                console.log('📸 Procesando imágenes del reflectivo:', window.imagenesReflectivo.length);
+            // SOLO agregar reflectivo a FormData si tiene información válida
+            if (refletivoTieneInfoValida) {
+                formData.append('reflectivo[descripcion]', reflectivoDescripcion);
+                formData.append('reflectivo[ubicacion]', JSON.stringify(ubicacionesReflectivo));
+                formData.append('reflectivo[observaciones_generales]', JSON.stringify(observacionesReflectivo));
+                formData.append('ubicaciones_reflectivo', JSON.stringify(ubicacionesReflectivo));
                 
-                window.imagenesReflectivo.forEach((imagen, index) => {
-                    if (imagen.archivo && imagen.archivo instanceof File) {
-                        formData.append(`reflectivo[imagenes][]`, imagen.archivo);
-                        console.log(`✅ Imagen reflectivo ${index + 1} agregada: ${imagen.nombre}`);
-                    }
+                // ✅ AGREGAR DATOS COMPLETOS DE PRENDAS DEL PASO 4
+                // Esto permite al backend guardar ubicaciones específicas para cada prenda
+                if (typeof window.prendas_reflectivo_paso4 !== 'undefined' && window.prendas_reflectivo_paso4.length > 0) {
+                    formData.append('prendas_reflectivo_paso4', JSON.stringify(window.prendas_reflectivo_paso4));
+                    console.log('✅ Datos completos de prendas_reflectivo_paso4 agregados al FormData (GUARDADO)');
+                }
+                
+                console.log('✅ Datos del reflectivo agregados al FormData:', {
+                    descripcion: reflectivoDescripcion,
+                    ubicaciones_count: ubicacionesReflectivo.length,
+                    ubicaciones: ubicacionesReflectivo,
+                    observaciones_count: observacionesReflectivo.length
                 });
+                
+                // ✅ IMÁGENES DEL REFLECTIVO - solo si hay información válida
+                if (window.imagenesReflectivo && Array.isArray(window.imagenesReflectivo)) {
+                    console.log('📸 Procesando imágenes del reflectivo:', window.imagenesReflectivo.length);
+                    
+                    window.imagenesReflectivo.forEach((imagen, index) => {
+                        if (imagen.archivo && imagen.archivo instanceof File) {
+                            formData.append(`reflectivo[imagenes][]`, imagen.archivo);
+                            console.log(`✅ Imagen reflectivo ${index + 1} agregada: ${imagen.nombre}`);
+                        }
+                    });
+                } else {
+                    console.log('⚠️ No hay imágenes de reflectivo');
+                }
             } else {
-                console.log('⚠️ No hay imágenes de reflectivo');
+                console.warn('⚠️ Reflectivo sin información válida - No se incluirá en el guardado');
             }
         } else {
             console.log('⚠️ Tipo de cotización no incluye reflectivo:', window.tipoCotizacionGlobal);
@@ -1208,27 +1297,52 @@ async function procederEnviarCotizacion() {
         console.log('   tecnicasAgregadasPaso3:', window.tecnicasAgregadasPaso3);
         
         if (window.tecnicasAgregadasPaso3 && Array.isArray(window.tecnicasAgregadasPaso3) && window.tecnicasAgregadasPaso3.length > 0) {
-            console.log(' Procesando técnicas para envío de cotización combinada...', window.tecnicasAgregadasPaso3.length);
+            // ✅ VALIDAR que las técnicas tengan información válida (ubicaciones + tallas/imágenes)
+            const tieneInfoValida = tienenInformacionValida(window.tecnicasAgregadasPaso3);
             
-            // Enviar técnicas con toda su información (prendas, ubicaciones, tallas, etc)
-            formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
-            
-            console.log('✅ Técnicas agregadas al FormData en envío:', {
-                count: window.tecnicasAgregadasPaso3.length,
-                tecnicas_json: JSON.stringify(window.tecnicasAgregadasPaso3).substring(0, 200) + '...'
-            });
+            if (!tieneInfoValida) {
+                console.warn('⚠️ Técnicas encontradas pero sin información válida - No se enviarán');
+            } else {
+                console.log('📦 Procesando técnicas para envío de cotización combinada...', window.tecnicasAgregadasPaso3.length);
+                
+                // Enviar técnicas con toda su información (prendas, ubicaciones, tallas, etc)
+                formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
+                
+                console.log('✅ Técnicas agregadas al FormData en envío:', {
+                    count: window.tecnicasAgregadasPaso3.length,
+                    tecnicas_json: JSON.stringify(window.tecnicasAgregadasPaso3).substring(0, 200) + '...'
+                });
+            }
         } else {
             console.log('⚠️ No hay técnicas agregadas en envío (window.tecnicasAgregadasPaso3 vacío o no definido)');
         }
         
         // ✅ REFLECTIVO (PASO 4) - Para cotizaciones combinadas (PL)
-        // Solo procesar si el tipo de cotización incluye reflectivo
+        // Solo procesar si el tipo de cotización incluye reflectivo Y hay información válida
         console.log('🔍 DEBUG - Verificando si incluye reflectivo en envío...');
         console.log('   tipo_cotizacion_global:', window.tipoCotizacionGlobal);
         
         // Tipo PL/PB significa que PUEDE tener reflectivo
         if (window.tipoCotizacionGlobal === 'PL' || window.tipoCotizacionGlobal === 'PB' || window.tipoCotizacionGlobal === 'RF') {
-            console.log(' Procesando datos del reflectivo para envío de cotización combinada...');
+            console.log('📦 Procesando datos del reflectivo para envío de cotización combinada...');
+            
+            // ✅ ACTUALIZAR window.prendas_reflectivo_paso4 DESDE EL DOM
+            // Esta función captura los datos actuales de la UI en el PASO 4
+            if (typeof capturePrendasReflectivoPaso4 === 'function') {
+                const prendasCapturadas = capturePrendasReflectivoPaso4();
+                // Reconstruir window.prendas_reflectivo_paso4 con los datos capturados
+                window.prendas_reflectivo_paso4 = prendasCapturadas.map((prenda, idx) => ({
+                    index: idx,
+                    tipo_prenda: prenda.tipo_prenda,
+                    descripcion: prenda.descripcion,
+                    ubicaciones: prenda.ubicaciones || [],
+                    tallas: prenda.tallas || [],
+                    variaciones: prenda.variaciones || {},
+                    observaciones_generales: prenda.observaciones_generales || [],
+                    imagenes: prenda.imagenes || []
+                }));
+                console.log('✅ window.prendas_reflectivo_paso4 actualizado desde DOM (ENVÍO):', window.prendas_reflectivo_paso4.length, 'prendas');
+            }
             
             // Obtener descripción del reflectivo (PASO 4) - garantizar que sea string, no null
             const reflectivoElement = document.getElementById('descripcion_reflectivo');
@@ -1259,6 +1373,20 @@ async function procederEnviarCotizacion() {
             // Obtener observaciones generales del reflectivo (si existen)
             const observacionesReflectivo = window.observacionesReflectivo || [];
             
+            // ✅ VALIDAR que reflectivo tenga información escrita válida
+            // Solo incluir si hay ubicaciones O descripción + tallas/imágenes
+            const tieneUbicacionesReflectivo = ubicacionesReflectivo && ubicacionesReflectivo.length > 0;
+            const tieneDescripcionReflectivo = reflectivoDescripcion && reflectivoDescripcion.length > 0;
+            const tieneImagenesReflectivo = window.imagenesReflectivo && window.imagenesReflectivo.length > 0;
+            
+            // ✅ IMPORTANTE: También verificar directamente prendas_reflectivo_paso4
+            const tienePrendasP4ConDatos = typeof window.prendas_reflectivo_paso4 !== 'undefined' && 
+                                            window.prendas_reflectivo_paso4.length > 0;
+            
+            const refletivoTieneInfoValida = tieneUbicacionesReflectivo || 
+                                            (tieneDescripcionReflectivo && tieneImagenesReflectivo) ||
+                                            tienePrendasP4ConDatos;  // ✅ Agregar esta condición
+            
             console.log('✨ Reflectivo capturado en ENVÍO (PASO SEND):', {
                 elemento_existe: !!reflectivoElement,
                 valor_raw: reflectivoElement?.value,
@@ -1266,22 +1394,51 @@ async function procederEnviarCotizacion() {
                 ubicaciones_raw: ubicacionesReflectivo,
                 ubicaciones_count: ubicacionesReflectivo.length,
                 observaciones_count: observacionesReflectivo.length,
+                tienePrendasP4ConDatos,
+                tieneUbicacionesReflectivo,
+                tieneDescripcionReflectivo,
+                tieneImagenesReflectivo,
+                tieneInfoValida: refletivoTieneInfoValida,
                 ubicaciones_stringified: JSON.stringify(ubicacionesReflectivo)
             });
             
-            // SIEMPRE agregar reflectivo a FormData en envío (incluso si está vacío)
-            // Si hay prendas del PASO 2, se intentará guardar en backend
-            formData.append('reflectivo[descripcion]', reflectivoDescripcion);
-            formData.append('reflectivo[ubicacion]', JSON.stringify(ubicacionesReflectivo));
-            formData.append('reflectivo[observaciones_generales]', JSON.stringify(observacionesReflectivo));
-            formData.append('ubicaciones_reflectivo', JSON.stringify(ubicacionesReflectivo));
-            
-            console.log('✅ Datos del reflectivo agregados en ENVÍO:', {
-                descripcion: reflectivoDescripcion,
-                ubicaciones_count: ubicacionesReflectivo.length,
-                ubicaciones: ubicacionesReflectivo,
-                observaciones_count: observacionesReflectivo.length
-            });
+            // SOLO agregar reflectivo a FormData si tiene información válida
+            if (refletivoTieneInfoValida) {
+                formData.append('reflectivo[descripcion]', reflectivoDescripcion);
+                formData.append('reflectivo[ubicacion]', JSON.stringify(ubicacionesReflectivo));
+                formData.append('reflectivo[observaciones_generales]', JSON.stringify(observacionesReflectivo));
+                formData.append('ubicaciones_reflectivo', JSON.stringify(ubicacionesReflectivo));
+                
+                // ✅ AGREGAR DATOS COMPLETOS DE PRENDAS DEL PASO 4
+                // Esto permite al backend guardar ubicaciones específicas para cada prenda
+                if (typeof window.prendas_reflectivo_paso4 !== 'undefined' && window.prendas_reflectivo_paso4.length > 0) {
+                    formData.append('prendas_reflectivo_paso4', JSON.stringify(window.prendas_reflectivo_paso4));
+                    console.log('✅ Datos completos de prendas_reflectivo_paso4 agregados al FormData (ENVÍO)');
+                }
+                
+                console.log('✅ Datos del reflectivo agregados en ENVÍO:', {
+                    descripcion: reflectivoDescripcion,
+                    ubicaciones_count: ubicacionesReflectivo.length,
+                    ubicaciones: ubicacionesReflectivo,
+                    observaciones_count: observacionesReflectivo.length
+                });
+                
+                // ✅ IMÁGENES DEL REFLECTIVO - solo si hay información válida
+                if (window.imagenesReflectivo && Array.isArray(window.imagenesReflectivo)) {
+                    console.log('📸 Procesando imágenes del reflectivo (envío):', window.imagenesReflectivo.length);
+                    
+                    window.imagenesReflectivo.forEach((imagen, index) => {
+                        if (imagen.archivo && imagen.archivo instanceof File) {
+                            formData.append(`reflectivo[imagenes][]`, imagen.archivo);
+                            console.log(`✅ Imagen reflectivo ${index + 1} agregada (envío): ${imagen.nombre}`);
+                        }
+                    });
+                } else {
+                    console.log('⚠️ No hay imágenes de reflectivo (envío)');
+                }
+            } else {
+                console.warn('⚠️ Reflectivo sin información válida - No se incluirá en el envío');
+            }
             
             // ✅ IMÁGENES DEL REFLECTIVO
             if (window.imagenesReflectivo && Array.isArray(window.imagenesReflectivo)) {
