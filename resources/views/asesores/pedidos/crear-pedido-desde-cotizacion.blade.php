@@ -137,6 +137,11 @@
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
     <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
     
+    <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
+    
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
@@ -171,9 +176,6 @@
     
     <!-- Manejadores de variaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
-    
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
     
     <!-- Componente: Editor de Prendas (para editar desde listado de pedidos) -->
     <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}"></script>

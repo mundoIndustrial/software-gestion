@@ -25,20 +25,20 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
         if (itemsOrdenados && itemsOrdenados[window.gestionItemsUI.prendaEditIndex]) {
             prenda = itemsOrdenados[window.gestionItemsUI.prendaEditIndex];
-            console.log('✏️ [GALERÍA PRENDA] Prenda obtenida desde GestionItemsUI');
+            console.log(' [GALERÍA PRENDA] Prenda obtenida desde GestionItemsUI');
         }
     }
     
     //  Si no se encontró en GestionItemsUI, intentar desde gestorPrendaSinCotizacion
     if (!prenda && estamoEditando) {
         prenda = window.gestorPrendaSinCotizacion?.obtenerPorIndice(window.gestionItemsUI.prendaEditIndex);
-        console.log('✏️ [GALERÍA PRENDA] Prenda obtenida desde gestorPrendaSinCotizacion');
+        console.log(' [GALERÍA PRENDA] Prenda obtenida desde gestorPrendaSinCotizacion');
     }
     
     //  Si estamos EDITANDO, obtener imágenes guardadas
     if (estamoEditando && prenda) {
         imagenesActuales = prenda.imagenes || [];
-        console.log('✏️ [GALERÍA PRENDA] Modo EDICIÓN - Imágenes guardadas:', imagenesActuales.length);
+        console.log(' [GALERÍA PRENDA] Modo EDICIÓN - Imágenes guardadas:', imagenesActuales.length);
     }
     
     //  Siempre sincronizar con imágenes temporales del storage

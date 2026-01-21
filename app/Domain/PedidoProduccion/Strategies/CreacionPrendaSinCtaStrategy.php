@@ -348,12 +348,12 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
         // TIPO BROCHE
         $tipoBrocheId = $variantes['tipo_broche_id'] ?? null;
         if (!$tipoBrocheId && !empty($variantes['tipo_broche'])) {
-            $broche = DB::table('tipos_broche')
+            $broche = DB::table('tipos_broche_boton')
                 ->where('nombre', 'LIKE', '%' . $variantes['tipo_broche'] . '%')
                 ->first();
 
             if (!$broche) {
-                $tipoBrocheId = DB::table('tipos_broche')->insertGetId([
+                $tipoBrocheId = DB::table('tipos_broche_boton')->insertGetId([
                     'nombre' => $variantes['tipo_broche'],
                     'activo' => 1,
                     'created_at' => now(),

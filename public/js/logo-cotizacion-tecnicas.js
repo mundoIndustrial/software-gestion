@@ -2188,7 +2188,7 @@ function renderizarTecnicasAgregadas() {
             justify-content: center;
             transition: background 0.2s;
         " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" data-prenda-nombre="${nombrePrenda}" title="Editar">
-            ✏️
+            
         </button>`;
         headerHTML += `<button type="button" class="btn-eliminar-prenda" style="
             background: rgba(255,255,255,0.2);
@@ -2959,7 +2959,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 console.log(`Verificando prenda ${prendaIdx}:`, result.value[prendaIdx]);
                 
                 if (result.value[prendaIdx]) {
-                    console.log(`✏️ Actualizando prenda ${prendaIdx}`);
+                    console.log(` Actualizando prenda ${prendaIdx}`);
                     prenda.nombre_prenda = result.value[prendaIdx].nombre_prenda;
                     prenda.observaciones = result.value[prendaIdx].observaciones;
                     prenda.talla_cantidad = result.value[prendaIdx].talla_cantidad;

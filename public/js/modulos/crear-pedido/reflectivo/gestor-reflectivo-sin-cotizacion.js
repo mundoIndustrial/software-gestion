@@ -201,7 +201,7 @@ class GestorReflectivoSinCotizacion {
         const prenda = this.obtenerPorIndice(prendaIndex);
         if (prenda) {
             prenda.genero = genero;
-            logWithEmoji('✏️', `Género actualizado a ${genero} para prenda ${prendaIndex + 1}`);
+            logWithEmoji('', `Género actualizado a ${genero} para prenda ${prendaIndex + 1}`);
         }
     }
 

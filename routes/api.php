@@ -131,6 +131,30 @@ Route::middleware('api')->group(function () {
     // Búsqueda y listado de EPP
     Route::get('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'index'])
         ->name('epp.index');
+    
+    // Debug: Prueba simple de EPP
+    Route::get('epp-debug', function() {
+        try {
+            $epps = \App\Models\Epp::where('activo', true)->limit(5)->get();
+            return response()->json([
+                'success' => true,
+                'count' => $epps->count(),
+                'data' => $epps->map(fn($e) => [
+                    'id' => $e->id,
+                    'codigo' => $e->codigo,
+                    'nombre_completo' => $e->nombre_completo,
+                    'activo' => $e->activo,
+                ])->toArray(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], 500);
+        }
+    })->name('epp.debug');
 
     Route::get('epp/categorias/all', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'categorias'])
         ->name('epp.categorias');
@@ -239,6 +263,16 @@ Route::prefix('asistencias')->name('asistencias.')->middleware(['api'])->group(f
     Route::post('mes', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerMes'])
         ->name('mes');
 });
+
+/**
+ * Rutas para importación de artículos/EPP
+ */
+Route::prefix('articulos')->group(function () {
+    Route::post('guardar', [\App\Http\Controllers\Api\ArticulosImportController::class, 'guardarArticulos']);
+    Route::get('/', [\App\Http\Controllers\Api\ArticulosImportController::class, 'listar']);
+    Route::get('{id}', [\App\Http\Controllers\Api\ArticulosImportController::class, 'obtener']);
+});
+
 // Test endpoint para procesamiento de imágenes (sin autenticación por ahora)
 Route::post('test-image', [\App\Http\Controllers\TestImageController::class, 'processImage'])
     ->middleware('web');

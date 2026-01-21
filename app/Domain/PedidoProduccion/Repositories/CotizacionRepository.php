@@ -25,7 +25,7 @@ class CotizacionRepository
                 'prendasCotizaciones.variantes.color',
                 'prendasCotizaciones.variantes.tela',
                 'prendasCotizaciones.variantes.tipoManga',
-                'prendasCotizaciones.variantes.tipoBroche'
+                'prendasCotizaciones.variantes.tipoBrocheBoton'
             ])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -46,7 +46,7 @@ class CotizacionRepository
                     'variantes.color',
                     'variantes.tela',
                     'variantes.tipoManga',
-                    'variantes.tipoBroche',
+                    'variantes.tipoBrocheBoton',
                     'variantes.tipoPuno',
                     'tallas',
                     'procesos'

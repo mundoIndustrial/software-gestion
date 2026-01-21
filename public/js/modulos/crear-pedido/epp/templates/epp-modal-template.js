@@ -133,30 +133,17 @@ class EppModalTemplate {
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                        <div>
-                            <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Medida / Talla</label>
-                            <input 
-                                type="text"
-                                id="medidaTallaEPP"
-                                oninput="this.value = this.value.toUpperCase(); actualizarEstilosBotonEPP();"
-                                placeholder="S, M, L, XL, 40..."
-                                disabled
-                                style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: #f3f4f6; color: #9ca3af; cursor: not-allowed; text-transform: uppercase;"
-                            >
-                        </div>
-                        <div>
-                            <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Cantidad</label>
-                            <input 
-                                type="number"
-                                id="cantidadEPP"
-                                min="1"
-                                value="1"
-                                oninput="actualizarEstilosBotonEPP();"
-                                disabled
-                                style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: #f3f4f6; color: #9ca3af; cursor: not-allowed;"
-                            >
-                        </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Cantidad</label>
+                        <input 
+                            type="number"
+                            id="cantidadEPP"
+                            min="1"
+                            value="1"
+                            oninput="actualizarEstilosBotonEPP();"
+                            disabled
+                            style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: #f3f4f6; color: #9ca3af; cursor: not-allowed;"
+                        >
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">

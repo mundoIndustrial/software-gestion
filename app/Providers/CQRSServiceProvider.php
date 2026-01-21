@@ -113,11 +113,19 @@ class CQRSServiceProvider extends ServiceProvider
      */
     public function boot(QueryBus $queryBus, CommandBus $commandBus): void
     {
+        // ARREGLO: Guard para evitar que boot() se ejecute múltiples veces
+        if ($this->app->has('cqrs.booted') && $this->app->get('cqrs.booted')) {
+            return;
+        }
+
         // Registrar Queries
         $this->registerQueries($queryBus);
 
         // Registrar Commands
         $this->registerCommands($commandBus);
+
+        // Marcar como booted para evitar ejecución múltiple
+        $this->app->instance('cqrs.booted', true);
 
         \Illuminate\Support\Facades\Log::info(' [CQRSServiceProvider] CQRS providers registrados');
     }

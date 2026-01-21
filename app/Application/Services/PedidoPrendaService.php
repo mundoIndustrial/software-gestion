@@ -4,6 +4,7 @@ namespace App\Application\Services;
 
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
+use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Domain\PedidoProduccion\Services\ColorTelaService;
 use App\Domain\PedidoProduccion\Services\CaracteristicasPrendaService;
 use App\Domain\PedidoProduccion\Services\PrendaImagenService;
@@ -11,6 +12,9 @@ use App\Domain\PedidoProduccion\Services\TelaImagenService;
 use App\Domain\PedidoProduccion\Services\PrendaTallaService;
 use App\Domain\PedidoProduccion\Services\PrendaVarianteService;
 use App\Domain\PedidoProduccion\Services\PrendaProcesoService;
+use App\Domain\PedidoProduccion\Services\PrendaDataNormalizerService;
+use App\Domain\PedidoProduccion\Services\VariacionesPrendaProcessorService;
+use App\Domain\PedidoProduccion\Services\PrendaBaseCreatorService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +40,9 @@ class PedidoPrendaService
     private PrendaTallaService $prendaTallaService;
     private PrendaVarianteService $prendaVarianteService;
     private PrendaProcesoService $prendaProcesoService;
+    private PrendaDataNormalizerService $dataNormalizer;
+    private VariacionesPrendaProcessorService $variacionesProcessor;
+    private PrendaBaseCreatorService $prendaBaseCreator;
 
     public function __construct(
         ColorGeneroMangaBrocheService $colorGeneroService,
@@ -45,7 +52,10 @@ class PedidoPrendaService
         TelaImagenService $telaImagenService = null,
         PrendaTallaService $prendaTallaService = null,
         PrendaVarianteService $prendaVarianteService = null,
-        PrendaProcesoService $prendaProcesoService = null
+        PrendaProcesoService $prendaProcesoService = null,
+        PrendaDataNormalizerService $dataNormalizer = null,
+        VariacionesPrendaProcessorService $variacionesProcessor = null,
+        PrendaBaseCreatorService $prendaBaseCreator = null
     )
     {
         $this->colorGeneroService = $colorGeneroService;
@@ -56,6 +66,9 @@ class PedidoPrendaService
         $this->prendaTallaService = $prendaTallaService ?? app(PrendaTallaService::class);
         $this->prendaVarianteService = $prendaVarianteService ?? app(PrendaVarianteService::class);
         $this->prendaProcesoService = $prendaProcesoService ?? app(PrendaProcesoService::class);
+        $this->dataNormalizer = $dataNormalizer ?? app(PrendaDataNormalizerService::class);
+        $this->variacionesProcessor = $variacionesProcessor ?? app(VariacionesPrendaProcessorService::class);
+        $this->prendaBaseCreator = $prendaBaseCreator ?? app(PrendaBaseCreatorService::class);
     }
 
     /**
@@ -141,20 +154,8 @@ class PedidoPrendaService
      */
     private function guardarPrenda(PedidoProduccion $pedido, mixed $prendaData, int $index = 1): void
     {
-        // DEFENSA: Convertir DTO a array si llega un objeto
-        if (is_object($prendaData) && method_exists($prendaData, 'toArray')) {
-            $prendaData = $prendaData->toArray();
-        } elseif (is_object($prendaData)) {
-            // Conversión forzada de objeto a array como último recurso
-            $prendaData = (array)$prendaData;
-        }
-        
-        // Validar que sea array después de conversión
-        if (!is_array($prendaData)) {
-            throw new \InvalidArgumentException(
-                'guardarPrenda: prendaData debe ser un array o DTO con toArray(). Recibido: ' . gettype($prendaData)
-            );
-        }
+        // Normalizar datos de prenda (DTO → array)
+        $prendaData = $this->dataNormalizer->normalizarPrendaData($prendaData);
 
         //  LOG: Ver qué datos llegan
         \Log::info(' [PedidoPrendaService] Datos recibidos para guardar prenda', [
@@ -167,24 +168,8 @@ class PedidoPrendaService
             'broche' => $prendaData['broche'] ?? null,
         ]);
 
-        //  EXTRAER DATOS DE VARIACIONES ANIDADAS SI EXISTEN
-        // Cuando vienen desde frontend, algunas veces vienen anidadas en 'variaciones'
-        if (isset($prendaData['variaciones']) && is_array($prendaData['variaciones'])) {
-            foreach ($prendaData['variaciones'] as $key => $value) {
-                // Solo agregar al nivel superior si no existe ya
-                if (!isset($prendaData[$key])) {
-                    $prendaData[$key] = $value;
-                }
-            }
-            
-            Log::info(' [PedidoPrendaService] Datos extraídos de variaciones anidadas', [
-                'claves_extraidas' => array_keys($prendaData['variaciones']),
-            ]);
-        }
-
         //  PROCESAR VARIACIONES: Crear si no existen
         // Si recibimos nombres (strings) en lugar de IDs, crear o buscar
-        
         \Log::info(' [PedidoPrendaService::guardarPrenda] INICIO - Procesando variaciones', [
             'color_recibido' => $prendaData['color'] ?? 'NO ESPECIFICADO',
             'color_id_recibido' => $prendaData['color_id'] ?? 'NO ESPECIFICADO',
@@ -196,96 +181,7 @@ class PedidoPrendaService
             'tipo_broche_boton_id_recibido' => $prendaData['tipo_broche_boton_id'] ?? 'NO ESPECIFICADO',
         ]);
         
-        // COLOR: Si viene nombre, crear/obtener; si viene ID, usar directamente
-        if (!empty($prendaData['color']) && empty($prendaData['color_id'])) {
-            \Log::info(' [PedidoPrendaService::guardarPrenda] Procesando COLOR', [
-                'color_nombre' => $prendaData['color'],
-                'color_id_actual' => $prendaData['color_id'] ?? 'NULL',
-            ]);
-            
-            $color = $this->colorGeneroService->obtenerOCrearColor($prendaData['color']);
-            
-            if ($color) {
-                $prendaData['color_id'] = $color->id;
-                \Log::info(' [PedidoPrendaService] Color creado/obtenido', [
-                    'nombre' => $prendaData['color'],
-                    'id' => $color->id,
-                    'color_object' => $color,
-                ]);
-            } else {
-                \Log::error(' [PedidoPrendaService] Error: color es NULL', [
-                    'color_nombre' => $prendaData['color'],
-                ]);
-            }
-        } else {
-            \Log::info('[PedidoPrendaService] Color SALTADO', [
-                'color_nombre_vacio' => empty($prendaData['color']),
-                'color_id_existe' => !empty($prendaData['color_id']),
-                'color_nombre' => $prendaData['color'] ?? 'NULL',
-                'color_id' => $prendaData['color_id'] ?? 'NULL',
-            ]);
-        }
-        
-        // TELA: Si viene nombre, crear/obtener; si viene ID, usar directamente
-        if (!empty($prendaData['tela']) && empty($prendaData['tela_id'])) {
-            \Log::info(' [PedidoPrendaService::guardarPrenda] Procesando TELA', [
-                'tela_nombre' => $prendaData['tela'],
-                'tela_id_actual' => $prendaData['tela_id'] ?? 'NULL',
-            ]);
-            
-            $tela = $this->colorGeneroService->obtenerOCrearTela($prendaData['tela']);
-            
-            if ($tela) {
-                $prendaData['tela_id'] = $tela->id;
-                \Log::info(' [PedidoPrendaService] Tela creada/obtenida', [
-                    'nombre' => $prendaData['tela'],
-                    'id' => $tela->id,
-                    'tela_object' => $tela,
-                ]);
-            } else {
-                \Log::error(' [PedidoPrendaService] Error: tela es NULL', [
-                    'tela_nombre' => $prendaData['tela'],
-                ]);
-            }
-        } else {
-            \Log::info('[PedidoPrendaService] Tela SALTADA', [
-                'tela_nombre_vacia' => empty($prendaData['tela']),
-                'tela_id_existe' => !empty($prendaData['tela_id']),
-                'tela_nombre' => $prendaData['tela'] ?? 'NULL',
-                'tela_id' => $prendaData['tela_id'] ?? 'NULL',
-            ]);
-        }
-        
-        // MANGA: Si viene nombre, crear/obtener; si viene ID, usar directamente
-        if (!empty($prendaData['manga']) && empty($prendaData['tipo_manga_id'])) {
-            $manga = $this->colorGeneroService->obtenerOCrearManga($prendaData['manga']);
-            if ($manga) {
-                $prendaData['tipo_manga_id'] = $manga->id;
-                Log::info(' [PedidoPrendaService] Manga creada/obtenida', [
-                    'nombre' => $prendaData['manga'],
-                    'id' => $manga->id,
-                ]);
-            }
-        }
-        
-        // BROCHE: Si viene nombre, crear/obtener; si viene ID, usar directamente
-        if (!empty($prendaData['broche']) && empty($prendaData['tipo_broche_boton_id'])) {
-            $broche = $this->colorGeneroService->obtenerOCrearBroche($prendaData['broche']);
-            if ($broche) {
-                $prendaData['tipo_broche_boton_id'] = $broche->id;
-                Log::info(' [PedidoPrendaService] Broche/Botón creado/obtenido', [
-                    'nombre' => $prendaData['broche'],
-                    'id' => $broche->id,
-                ]);
-            }
-        }
-        
-        \Log::info(' [PedidoPrendaService::guardarPrenda] DESPUÉS - Variaciones procesadas', [
-            'color_id_final' => $prendaData['color_id'] ?? 'NULL',
-            'tela_id_final' => $prendaData['tela_id'] ?? 'NULL',
-            'tipo_manga_id_final' => $prendaData['tipo_manga_id'] ?? 'NULL',
-            'tipo_broche_boton_id_final' => $prendaData['tipo_broche_boton_id'] ?? 'NULL',
-        ]);
+        $this->variacionesProcessor->procesarVariaciones($prendaData);
 
         //  SOLO GUARDAR LA DESCRIPCIÓN QUE ESCRIBIÓ EL USUARIO
         // NO formatear ni armar descripciones automáticas
@@ -313,24 +209,9 @@ class PedidoPrendaService
         ]);
         
         //  PROCESAR GÉNEROS (puede ser single string o array de múltiples géneros)
-        $generoProcesado = [];
-        $generoInput = $prendaData['genero'] ?? '';
-        
-        if (is_array($generoInput)) {
-            // Si ya es array, filtrar vacíos
-            $generoProcesado = array_filter($generoInput, fn($g) => !empty($g));
-        } elseif (is_string($generoInput)) {
-            // Si es string, intentar decodificar JSON o usar directamente
-            if (str_starts_with($generoInput, '[')) {
-                $decoded = json_decode($generoInput, true);
-                $generoProcesado = is_array($decoded) ? array_filter($decoded) : (!empty($generoInput) ? [$generoInput] : []);
-            } else {
-                $generoProcesado = !empty($generoInput) ? [$generoInput] : [];
-            }
-        }
+        $generoProcesado = $this->dataNormalizer->procesarGenero($prendaData['genero'] ?? '');
         
         //  PROCESAR CANTIDADES: Soportar múltiples géneros
-        $cantidadTallaFinal = [];
         // IMPORTANTE: cantidad_talla ya viene procesada desde el controlador/transformador
         $cantidadesInput = $prendaData['cantidad_talla'] ?? $prendaData['cantidades'] ?? null;
         
@@ -342,31 +223,7 @@ class PedidoPrendaService
             'cantidad_talla_values' => $cantidadesInput,
         ]);
         
-        if ($cantidadesInput) {
-            if (is_string($cantidadesInput)) {
-                $cantidadesInput = json_decode($cantidadesInput, true) ?? [];
-                \Log::info('🔄 JSON decodificado');
-            }
-            
-            if (is_array($cantidadesInput)) {
-                // Verificar si es estructura por género: {genero: {talla: cantidad}}
-                $esEstructuraGenero = false;
-                foreach ($cantidadesInput as $key => $valor) {
-                    if (is_array($valor)) {
-                        // Es probablemente {genero: {talla: cantidad}}
-                        $esEstructuraGenero = true;
-                        break;
-                    }
-                }
-                
-                \Log::info(' [PedidoPrendaService::guardarPrenda] Estructura de cantidades validada', [
-                    'es_estructura_genero' => $esEstructuraGenero,
-                    'cantidades_estructura' => $cantidadesInput,
-                ]);
-                
-                $cantidadTallaFinal = $cantidadesInput;
-            }
-        }
+        $cantidadTallaFinal = $this->dataNormalizer->procesarCantidadTalla($cantidadesInput);
         
         \Log::info(' [PedidoPrendaService::guardarPrenda] CANTIDAD_TALLA_FINAL ANTES DE GUARDAR', [
             'cantidad_talla_final' => $cantidadTallaFinal,
@@ -375,40 +232,13 @@ class PedidoPrendaService
         
         // Crear prenda principal usando PrendaPedido (tabla correcta)
         // ACTUALIZACIÓN [16/01/2026]: Usar pedido_produccion_id en lugar de numero_pedido
-        \Log::info("🔵 [PRENDA #{$index}] ANTES DE CREATE - Creando nueva prenda", [
-            'pedido_id' => $pedido->id,
-            'nombre_producto' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-            'indice_prenda' => $index,
-            'cantidad_prendas_actuales' => PrendaPedido::where('pedido_produccion_id', $pedido->id)->count(),
-        ]);
-
-        $prenda = PrendaPedido::create([
-            'pedido_produccion_id' => $pedido->id,
-            'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-            'descripcion' => $descripcionFinal,
-            'cantidad_talla' => !empty($cantidadTallaFinal) ? json_encode($cantidadTallaFinal) : '{}',
-            'genero' => json_encode($generoProcesado),
-            'de_bodega' => (int)($prendaData['de_bodega'] ?? 1),
-        ]);
-
-        //  LOG: Después de guardar - VERIFICAR QUE EL ID SEA ÚNICO
-        \Log::info(" [PRENDA #{$index}] DESPUÉS DE CREATE - Prenda creada", [
-            'prenda_id_nueva' => $prenda->id,
-            'nombre_prenda' => $prenda->nombre_prenda,
-            'pedido_id' => $prenda->pedido_produccion_id,
-            'cantidad_prendas_ahora' => PrendaPedido::where('pedido_produccion_id', $pedido->id)->count(),
-        ]);
-
-        //  VERIFICAR QUE LA PRENDA SE GUARDÓ EN LA BD
-        $prendaVerificacion = PrendaPedido::find($prenda->id);
-        \Log::info(' VERIFICACIÓN POST-GUARDADO DE PRENDA (prenda #' . $index . '):', [
-            'prenda_id_creada' => $prenda->id,
-            'prenda_existe_en_bd' => $prendaVerificacion ? true : false,
-            'prenda_id_verificado' => $prendaVerificacion->id ?? 'NO ENCONTRADA',
-            'nombre_guardado' => $prendaVerificacion->nombre_prenda ?? 'NO ENCONTRADA',
-            'cantidad_talla_guardado' => $prendaVerificacion->cantidad_talla ?? 'NO ENCONTRADA',
-            'pedido_id_referencia' => $prendaVerificacion->pedido_produccion_id ?? 'NO ENCONTRADA',
-        ]);
+        $prenda = $this->prendaBaseCreator->crearPrendaBase(
+            $pedido->id,
+            $prendaData,
+            $cantidadTallaFinal,
+            $generoProcesado,
+            $index
+        );
 
         // 2.  CREAR VARIANTES en prenda_pedido_variantes desde cantidad_talla
         // IMPORTANTE: Crear variante incluso si cantidad_talla está vacío

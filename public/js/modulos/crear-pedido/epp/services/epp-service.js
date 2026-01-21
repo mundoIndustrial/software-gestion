@@ -51,10 +51,10 @@ class EppService {
     editarEPPFormulario(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes) {
         this.stateManager.iniciarEdicion(id, false);
         this.stateManager.setProductoSeleccionado({ id, nombre, codigo, categoria });
-        this.stateManager.guardarDatosItem(id, { id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes });
+        this.stateManager.guardarDatosItem(id, { id, nombre, codigo, categoria, cantidad, observaciones, imagenes });
 
         this.modalManager.mostrarProductoSeleccionado({ nombre, codigo, categoria });
-        this.modalManager.cargarValoresFormulario(talla, cantidad, observaciones);
+        this.modalManager.cargarValoresFormulario(null, cantidad, observaciones);
         this.modalManager.mostrarImagenes(imagenes);
         this.modalManager.habilitarCampos();
         this.modalManager.abrirModal();
@@ -84,7 +84,7 @@ class EppService {
                 codigo: epp.codigo,
                 categoria: epp.categoria
             });
-            this.modalManager.cargarValoresFormulario(epp.talla, epp.cantidad, epp.observaciones);
+            this.modalManager.cargarValoresFormulario(null, epp.cantidad, epp.observaciones);
             this.modalManager.mostrarImagenes(epp.imagenes || []);
             this.modalManager.habilitarCampos();
             this.modalManager.abrirModal();
@@ -124,7 +124,6 @@ class EppService {
             console.log('[EppService] Guardando EPP en BD:', eppId);
 
             await this.apiService.actualizarEPP(eppId, {
-                talla: valores.talla,
                 cantidad: valores.cantidad,
                 observaciones: valores.observaciones
             });
@@ -167,7 +166,7 @@ class EppService {
                 producto.nombre,
                 producto.codigo,
                 producto.categoria,
-                valores.talla,
+                null,
                 valores.cantidad,
                 valores.observaciones,
                 imagenes
@@ -185,7 +184,6 @@ class EppService {
                 nombre: producto.nombre,
                 codigo: producto.codigo,
                 categoria: producto.categoria,
-                talla: valores.talla,
                 cantidad: valores.cantidad,
                 observaciones: valores.observaciones,
                 imagenes: imagenes
@@ -259,47 +257,47 @@ class EppService {
             return;
         }
 
-        // Usar búsqueda local directamente (más rápido y confiable)
-        const epps = this._buscarEPPLocal(valor);
+        try {
+            // Buscar EPP desde la base de datos
+            const epps = await this._buscarEPPDesdeDB(valor);
 
-        if (epps.length === 0) {
-            container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
-        } else {
-            container.innerHTML = epps.map(epp => `
-                <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre}', codigo: '${epp.codigo}', categoria: '${epp.categoria}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
-                     style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
-                     onmouseover="this.style.background = '#f3f4f6';"
-                     onmouseout="this.style.background = 'white';">
-                    <div style="font-weight: 500; color: #1f2937;">${epp.nombre}</div>
-                    <div style="font-size: 0.8rem; color: #6b7280;">${epp.codigo} - ${epp.categoria}</div>
-                </div>
-            `).join('');
+            if (epps.length === 0) {
+                container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
+            } else {
+                container.innerHTML = epps.map(epp => `
+                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre}', codigo: '${epp.codigo}', categoria: '${epp.categoria}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
+                         style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
+                         onmouseover="this.style.background = '#f3f4f6';"
+                         onmouseout="this.style.background = 'white';">
+                        <div style="font-weight: 500; color: #1f2937;">${epp.nombre}</div>
+                        <div style="font-size: 0.8rem; color: #6b7280;">${epp.codigo} - ${epp.categoria}</div>
+                    </div>
+                `).join('');
+            }
+
+            container.style.display = 'block';
+        } catch (error) {
+            console.error('[EppService] Error filtrando EPP:', error);
+            container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626;">Error al buscar EPP</div>`;
+            container.style.display = 'block';
         }
-
-        container.style.display = 'block';
     }
 
     /**
-     * Búsqueda local de EPP (fallback si API no disponible)
+     * Búsqueda de EPP desde la base de datos
      */
-    _buscarEPPLocal(valor) {
-        // EPPs de ejemplo para demostración
-        const eppsPredeterminados = [
-            { id: 1, nombre: 'Casco de Seguridad', codigo: 'CASCO-001', categoria: 'Cabeza' },
-            { id: 2, nombre: 'Guantes Nitrilo', codigo: 'GUANTES-001', categoria: 'Manos' },
-            { id: 3, nombre: 'Botas de Seguridad', codigo: 'BOTAS-001', categoria: 'Pies' },
-            { id: 4, nombre: 'Chaleco Reflectivo', codigo: 'CHALECO-001', categoria: 'Cuerpo' },
-            { id: 5, nombre: 'Protectores Auditivos', codigo: 'AUDIO-001', categoria: 'Oidos' },
-            { id: 6, nombre: 'Gafas de Seguridad', codigo: 'GAFAS-001', categoria: 'Ojos' },
-            { id: 7, nombre: 'Respirador N95', codigo: 'RESP-001', categoria: 'Respiratorio' }
-        ];
-
-        const valorBusqueda = valor.toUpperCase();
-        return eppsPredeterminados.filter(epp => 
-            epp.nombre.toUpperCase().includes(valorBusqueda) ||
-            epp.codigo.toUpperCase().includes(valorBusqueda) ||
-            epp.categoria.toUpperCase().includes(valorBusqueda)
-        );
+    async _buscarEPPDesdeDB(valor) {
+        try {
+            const response = await fetch(`/api/epp?q=${encodeURIComponent(valor)}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const result = await response.json();
+            return result.data && Array.isArray(result.data) ? result.data : [];
+        } catch (error) {
+            console.error('[EppService] Error en búsqueda desde BD:', error);
+            return [];
+        }
     }
 
     /**

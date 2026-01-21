@@ -18,11 +18,18 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerPorId(int $id): ?EppAggregate
     {
-        $modelo = EppModel::with('imagenes')
-            ->find($id);
+        $modelo = EppModel::find($id);
 
         if (!$modelo) {
             return null;
+        }
+
+        try {
+            $modelo->load('imagenes');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return $this->mapearModeloAAgregado($modelo);
@@ -33,12 +40,18 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerPorCodigo(string $codigo): ?EppAggregate
     {
-        $modelo = EppModel::with('imagenes')
-            ->where('codigo', $codigo)
-            ->first();
+        $modelo = EppModel::where('codigo', $codigo)->first();
 
         if (!$modelo) {
             return null;
+        }
+
+        try {
+            $modelo->load('imagenes');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return $this->mapearModeloAAgregado($modelo);
@@ -49,12 +62,21 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerActivos(): Collection
     {
-        return EppModel::where('activo', true)
-            ->with('imagenes', 'categoria')
+        $epps = EppModel::where('activo', true)
             ->orderBy('categoria_id')
-            ->orderBy('nombre')
-            ->get()
-            ->map(fn($modelo) => $this->mapearModeloAAgregado($modelo));
+            ->orderBy('nombre_completo')
+            ->get();
+
+        return $epps->map(function($modelo) {
+            try {
+                $modelo->load('imagenes');
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+            return $this->mapearModeloAAgregado($modelo);
+        });
     }
 
     /**
@@ -62,12 +84,21 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerPorCategoria(string $categoria): Collection
     {
-        return EppModel::where('activo', true)
+        $epps = EppModel::where('activo', true)
             ->whereHas('categoria', fn($q) => $q->where('codigo', $categoria))
-            ->with('imagenes', 'categoria')
-            ->orderBy('nombre')
-            ->get()
-            ->map(fn($modelo) => $this->mapearModeloAAgregado($modelo));
+            ->orderBy('nombre_completo')
+            ->get();
+
+        return $epps->map(function($modelo) {
+            try {
+                $modelo->load('imagenes');
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+            return $this->mapearModeloAAgregado($modelo);
+        });
     }
 
     /**
@@ -75,15 +106,27 @@ class EppRepository implements EppRepositoryInterface
      */
     public function buscar(string $termino): Collection
     {
-        return EppModel::where('activo', true)
+        $epps = EppModel::where('activo', true)
             ->where(function ($query) use ($termino) {
-                $query->where('nombre', 'like', "%{$termino}%")
-                    ->orWhere('codigo', 'like', "%{$termino}%");
+                $query->where('nombre_completo', 'like', "%{$termino}%")
+                    ->orWhere('codigo', 'like', "%{$termino}%")
+                    ->orWhere('marca', 'like', "%{$termino}%");
             })
-            ->with('imagenes', 'categoria')
-            ->orderBy('nombre')
-            ->get()
-            ->map(fn($modelo) => $this->mapearModeloAAgregado($modelo));
+            ->orderBy('nombre_completo')
+            ->get();
+
+        return $epps->map(function($modelo) {
+            // Cargar imágenes manualmente si la tabla existe
+            try {
+                $modelo->load('imagenes');
+            } catch (\Exception $e) {
+                // Si la tabla no existe, continuar sin imágenes
+                \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+            return $this->mapearModeloAAgregado($modelo);
+        });
     }
 
     /**
@@ -132,11 +175,14 @@ class EppRepository implements EppRepositoryInterface
     {
         // Obtener código de categoría
         $codigoCategoria = $modelo->categoria?->codigo ?? 'OTRA';
+        
+        // Usar nombre_completo si existe, sino nombre
+        $nombre = $modelo->nombre_completo ?? $modelo->nombre ?? '';
 
         $agregado = EppAggregate::reconstruir(
             $modelo->id,
             $modelo->codigo,
-            $modelo->nombre,
+            $nombre,
             $codigoCategoria,
             $modelo->descripcion,
             $modelo->activo,

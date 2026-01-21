@@ -20,7 +20,8 @@ class PedidoProduccionRepository
         return PedidoProduccion::with([
             'cotizacion.cliente',
             'cotizacion.tipoCotizacion',
-            'prendas.variantes',
+            'prendas.variantes.tipoManga',
+            'prendas.variantes.tipoBroche',
             'prendas.fotos',
             'prendas.fotosTelas',
             'prendas.procesos',
@@ -384,6 +385,8 @@ class PedidoProduccionRepository
      */
     public function obtenerDatosRecibos(int $pedidoId): array
     {
+        \Log::info('📄 [RECIBOS-REPO] obtenerDatosRecibos() llamado con pedidoId: ' . $pedidoId);
+        
         $pedido = $this->obtenerPorId($pedidoId);
         
         if (!$pedido) {
@@ -422,7 +425,22 @@ class PedidoProduccionRepository
                     ->select('ruta_webp')
                     ->get();
                 
-                $imagenesPrenda = $fotosPrenda->map(fn($foto) => '/storage' . str_replace('\\', '/', $foto->ruta_webp))->toArray();
+                $imagenesPrenda = $fotosPrenda->map(function($foto) {
+                    $ruta = str_replace('\\', '/', $foto->ruta_webp);
+                    // Si ya comienza con /storage/, devolverla tal cual
+                    if (strpos($ruta, '/storage/') === 0) {
+                        return $ruta;
+                    }
+                    // Si comienza con storage/ (sin /), agregar / al inicio
+                    if (strpos($ruta, 'storage/') === 0) {
+                        return '/' . $ruta;
+                    }
+                    // Si no comienza con /, agregar /storage/
+                    if (strpos($ruta, '/') !== 0) {
+                        return '/storage/' . $ruta;
+                    }
+                    return $ruta;
+                })->toArray();
             } catch (\Exception $e) {
                 \Log::debug('[RECIBOS] Error obteniendo imágenes de prenda: ' . $e->getMessage());
             }
@@ -460,7 +478,22 @@ class PedidoProduccionRepository
                         ->select('ruta_webp')
                         ->get();
                     
-                    $imagenesTela = $fotos->map(fn($foto) => '/storage' . str_replace('\\', '/', $foto->ruta_webp))->toArray();
+                    $imagenesTela = $fotos->map(function($foto) {
+                        $ruta = str_replace('\\', '/', $foto->ruta_webp);
+                        // Si ya comienza con /storage/, devolverla tal cual
+                        if (strpos($ruta, '/storage/') === 0) {
+                            return $ruta;
+                        }
+                        // Si comienza con storage/ (sin /), agregar / al inicio
+                        if (strpos($ruta, 'storage/') === 0) {
+                            return '/' . $ruta;
+                        }
+                        // Si no comienza con /, agregar /storage/
+                        if (strpos($ruta, '/') !== 0) {
+                            return '/storage/' . $ruta;
+                        }
+                        return $ruta;
+                    })->toArray();
                 }
             } catch (\Exception $e) {
                 \Log::debug('[RECIBOS] Error obteniendo tela/color/imágenes desde nueva tabla: ' . $e->getMessage());
@@ -517,11 +550,34 @@ class PedidoProduccionRepository
                     $tallas = json_decode($prenda->cantidad_talla, true) ?? [];
                 }
             }
+            \Log::info('[RECIBOS] Tallas cargadas para prenda ' . $prendaIndex, ['tallas' => $tallas, 'cantidad_talla_raw' => $prenda->cantidad_talla]);
 
             // Procesar procesos
             $procesos = [];
             foreach ($prenda->procesos as $proc) {
-                $procTallas = is_array($proc->cantidad_talla) ? $proc->cantidad_talla : [];
+                // Cargar tallas desde tallas_dama y tallas_caballero
+                $procTallas = [
+                    'dama' => [],
+                    'caballero' => []
+                ];
+                
+                // Procesar tallas_dama
+                if ($proc->tallas_dama) {
+                    if (is_array($proc->tallas_dama)) {
+                        $procTallas['dama'] = $proc->tallas_dama;
+                    } else if (is_string($proc->tallas_dama)) {
+                        $procTallas['dama'] = json_decode($proc->tallas_dama, true) ?? [];
+                    }
+                }
+                
+                // Procesar tallas_caballero
+                if ($proc->tallas_caballero) {
+                    if (is_array($proc->tallas_caballero)) {
+                        $procTallas['caballero'] = $proc->tallas_caballero;
+                    } else if (is_string($proc->tallas_caballero)) {
+                        $procTallas['caballero'] = json_decode($proc->tallas_caballero, true) ?? [];
+                    }
+                }
                 
                 // Ubicaciones
                 $ubicaciones = [];
@@ -555,27 +611,173 @@ class PedidoProduccionRepository
                 $procesos[] = $proc_item;
             }
 
+            // Preparar telas agregadas (estructura para edición)
+            $telasAgregadas = [];
+            try {
+                $colorTelaData = \DB::table('prenda_pedido_colores_telas')
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->join('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
+                    ->join('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
+                    ->select(
+                        'prenda_pedido_colores_telas.id as color_tela_id',
+                        'colores_prenda.nombre as color_nombre',
+                        'telas_prenda.nombre as tela_nombre',
+                        'telas_prenda.referencia'
+                    )
+                    ->first();
+                
+                if ($colorTelaData) {
+                    // Obtener imágenes de tela desde prenda_fotos_tela_pedido
+                    $fotosTelaDB = \DB::table('prenda_fotos_tela_pedido')
+                        ->where('prenda_pedido_colores_telas_id', $colorTelaData->color_tela_id)
+                        ->where('deleted_at', null)
+                        ->orderBy('orden')
+                        ->select('ruta_webp', 'ruta_original')
+                        ->get();
+                    
+                    $imagenesTelaFormato = $fotosTelaDB->map(function($foto) {
+                        $ruta = str_replace('\\', '/', $foto->ruta_webp ?? $foto->ruta_original);
+                        // Si ya comienza con /storage/, devolverla tal cual
+                        if (strpos($ruta, '/storage/') === 0) {
+                            return $ruta;
+                        }
+                        // Si comienza con storage/ (sin /), agregar / al inicio
+                        if (strpos($ruta, 'storage/') === 0) {
+                            return '/' . $ruta;
+                        }
+                        // Si no comienza con /, agregar /storage/
+                        if (strpos($ruta, '/') !== 0) {
+                            return '/storage/' . $ruta;
+                        }
+                        return $ruta;
+                    })->toArray();
+                    
+                    $telasAgregadas[] = [
+                        'tela' => $colorTelaData->tela_nombre,
+                        'color' => $colorTelaData->color_nombre,
+                        'referencia' => $colorTelaData->referencia ?? '',
+                        'imagenes' => $imagenesTelaFormato
+                    ];
+                }
+            } catch (\Exception $e) {
+                \Log::debug('[RECIBOS] Error preparando telas agregadas: ' . $e->getMessage());
+            }
+
+            // Preparar generosConTallas desde tallas (estructura: {dama: {L: 20, M: 20, S: 20}})
+            $generosConTallas = [];
+            if (!empty($tallas) && is_array($tallas)) {
+                foreach ($tallas as $genero => $tallasCant) {
+                    if (is_array($tallasCant)) {
+                        // Detectar tipo de talla (letra o número)
+                        $tipo = null;
+                        $primerasTallas = array_keys($tallasCant);
+                        if (!empty($primerasTallas)) {
+                            $primeraTalla = $primerasTallas[0];
+                            // Si es letra (S, M, L, XL, etc.)
+                            if (strlen($primeraTalla) <= 3 && !is_numeric($primeraTalla)) {
+                                $tipo = 'letra';
+                            }
+                            // Si es número (34, 36, 38, etc.)
+                            else if (is_numeric($primeraTalla)) {
+                                $tipo = 'numero';
+                            }
+                        }
+                        
+                        $generosConTallas[$genero] = [
+                            'tallas' => array_keys($tallasCant),
+                            'tipo' => $tipo,
+                            'cantidades' => $tallasCant  // Incluir cantidades: {L: 20, M: 20, S: 20}
+                        ];
+                    }
+                }
+            }
+
+            // Preparar datos de variaciones desde primera variante
+            $obsVariaciones = [
+                'obs_manga' => '',
+                'obs_bolsillos' => '',
+                'obs_broche' => '',
+                'obs_reflectivo' => '',
+                'tipo_manga' => '',
+                'tipo_broche' => ''
+            ];
+            
+            // Extraer desde la primera variante (siempre tiene los datos)
+            if (!empty($prenda->variantes) && count($prenda->variantes) > 0) {
+                $primerVariante = $prenda->variantes[0];
+                $obsVariaciones['obs_manga'] = $primerVariante->manga_obs ?? '';
+                $obsVariaciones['obs_bolsillos'] = $primerVariante->bolsillos_obs ?? '';
+                $obsVariaciones['obs_broche'] = $primerVariante->broche_boton_obs ?? '';
+                // reflectivo_obs no existe en el modelo, usar tiene_reflectivo como indicador
+                $obsVariaciones['obs_reflectivo'] = $prenda->tiene_reflectivo ? 'Sí' : '';
+                
+                // Obtener nombre del tipo de manga
+                if ($primerVariante->tipoManga && $primerVariante->tipoManga->nombre) {
+                    $obsVariaciones['tipo_manga'] = $primerVariante->tipoManga->nombre;
+                }
+                
+                // Obtener nombre del tipo de broche/botón - siempre cargar desde BD usando tipo_broche_boton_id
+                if ($primerVariante->tipo_broche_boton_id) {
+                    $tipoBroche = \DB::table('tipos_broche_boton')
+                        ->where('id', $primerVariante->tipo_broche_boton_id)
+                        ->value('nombre');
+                    if ($tipoBroche) {
+                        $obsVariaciones['tipo_broche'] = $tipoBroche;
+                    }
+                }
+            }
+            
+            \Log::info('[RECIBOS] Variaciones extraídas para prenda ' . $prendaIndex, ['obsVariaciones' => $obsVariaciones, 'tiene_variantes' => !empty($prenda->variantes)]);
+
             // Construir prenda para recibos
+            // Determinar origen desde de_bodega: 1 = bodega, 0 = confección
+            $origen = ($prenda->de_bodega == 1) ? 'bodega' : 'confección';
+            
+            // Obtener tipo_broche_boton_id desde la primera variante
+            $tipo_broche_boton_id = null;
+            if (!empty($prenda->variantes) && count($prenda->variantes) > 0) {
+                $tipo_broche_boton_id = $prenda->variantes[0]->tipo_broche_boton_id ?? null;
+            }
+            \Log::info('[RECIBOS] tipo_broche_boton_id desde variantes', ['prenda_id' => $prenda->id, 'tipo_broche_boton_id' => $tipo_broche_boton_id, 'variantes_count' => count($prenda->variantes ?? [])]);
+            
             $prendasFormato = [
                 'id' => $prenda->id,
-                'prenda_pedido_id' => $prenda->id,  //  ID para consultar fotos
+                'prenda_pedido_id' => $prenda->id,
                 'numero' => $prendaIndex + 1,
+                'nombre_prenda' => $prenda->nombre_prenda,
                 'nombre' => $prenda->nombre_prenda,
-                'origen' => $prenda->origen ?? 'confección',
+                'origen' => $origen,
                 'descripcion' => $prenda->descripcion,
                 'tela' => !empty($telas) ? implode(', ', $telas) : null,
                 'color' => !empty($colores) ? implode(', ', $colores) : null,
                 'ref' => !empty($referencias) ? implode(', ', $referencias) : null,
                 'tallas' => $tallas,
+                'generosConTallas' => $generosConTallas,
+                'telasAgregadas' => $telasAgregadas,
                 'variantes' => $especificaciones,
                 'de_bodega' => $prenda->de_bodega ?? 0,
                 'procesos' => $procesos,
                 'imagenes' => $imagenesPrenda,
                 'imagenes_tela' => $imagenesTela,
+                'fotos_tela' => $imagenesTela,
+                'obs_manga' => $obsVariaciones['obs_manga'],
+                'obs_bolsillos' => $obsVariaciones['obs_bolsillos'],
+                'obs_broche' => $obsVariaciones['obs_broche'],
+                'obs_reflectivo' => $obsVariaciones['obs_reflectivo'],
+                'tipo_manga' => $obsVariaciones['tipo_manga'],
+                'tipo_broche' => $obsVariaciones['tipo_broche'],
+                'tipo_broche_boton_id' => $tipo_broche_boton_id,
+                'tiene_bolsillos' => $prenda->tiene_bolsillos ?? false,
+                'tiene_reflectivo' => $prenda->tiene_reflectivo ?? false,
             ];
 
             $datos['prendas'][] = $prendasFormato;
         }
+
+        \Log::info('📄 [RECIBOS-REPO] Datos retornados', [
+            'prendas_count' => count($datos['prendas'] ?? []),
+            'primera_prenda_keys' => count($datos['prendas'] ?? []) > 0 ? array_keys($datos['prendas'][0]) : []
+        ]);
 
         return $datos;
     }

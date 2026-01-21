@@ -47,7 +47,7 @@ function initializeBodegaEditModal() {
  * Abrir el modal de edición y cargar los datos de la orden
  */
 async function openBodegaEditModal(pedido) {
-    console.log(`✏️ Abriendo edición de bodega ${pedido}`);
+    console.log(` Abriendo edición de bodega ${pedido}`);
     currentBodegaOrderId = pedido;
     
     try {

@@ -17,9 +17,75 @@ window._idGaleriaPreview = 0;
  * Helper para extraer URL de una imagen (que puede ser string u objeto)
  */
 window._extraerURLImagen = function(img) {
-    if (!img) return '';
-    if (typeof img === 'string') return img;
-    return img.url || img.ruta || img.path || img.src || '';
+    if (!img) {
+        console.log('[EXTRAER-URL-IMAGEN] Imagen nula o vacía');
+        return '';
+    }
+    
+    let url = '';
+    let origen = '';
+    
+    if (typeof img === 'string') {
+        url = img;
+        origen = 'string directo';
+    } else {
+        // Loguear todas las propiedades disponibles
+        console.log('[EXTRAER-URL-IMAGEN] Objeto imagen recibido:', {
+            tipo: typeof img,
+            propiedades: Object.keys(img),
+            url: img.url,
+            ruta: img.ruta,
+            path: img.path,
+            src: img.src,
+            blobUrl: img.blobUrl,
+            previewUrl: img.previewUrl
+        });
+        
+        if (img.url) {
+            url = img.url;
+            origen = 'img.url';
+        } else if (img.ruta) {
+            url = img.ruta;
+            origen = 'img.ruta';
+        } else if (img.path) {
+            url = img.path;
+            origen = 'img.path';
+        } else if (img.src) {
+            url = img.src;
+            origen = 'img.src';
+        }
+    }
+    
+    console.log('[EXTRAER-URL-IMAGEN] URL extraída:', {
+        origen: origen,
+        url_original: url,
+        comienza_con_storage: url.startsWith('/storage/'),
+        comienza_con_storage_sin_slash: url.startsWith('storage/'),
+        comienza_con_slash: url.startsWith('/')
+    });
+    
+    // Procesar la URL para evitar duplicación de /storage/
+    if (url) {
+        // Si comienza con /storage/, devolverla tal cual
+        if (url.startsWith('/storage/')) {
+            console.log('[EXTRAER-URL-IMAGEN] URL ya tiene /storage/, devolviéndola tal cual');
+            return url;
+        }
+        // Si comienza con storage/ (sin /), agregar / al inicio
+        else if (url.startsWith('storage/') && !url.startsWith('/storage/')) {
+            url = '/' + url;
+            console.log('[EXTRAER-URL-IMAGEN] Agregando / al inicio de storage/');
+        }
+        // Si no comienza con / ni con storage/, agregar /storage/
+        else if (!url.startsWith('/') && !url.startsWith('storage/')) {
+            url = '/storage/' + url;
+            console.log('[EXTRAER-URL-IMAGEN] Agregando /storage/ al inicio');
+        }
+    }
+    
+    console.log('[EXTRAER-URL-IMAGEN] URL final:', url);
+    
+    return url;
 };
 
 /**
@@ -708,22 +774,61 @@ function capturarPrendas() {
                 ref: refCapturada,
                 imagen: imagenCapturada,
                 imagenes: prenda.imagenes && Array.isArray(prenda.imagenes) ? prenda.imagenes.map(img => {
+                    console.log('[INVOICE-PREVIEW] Procesando imagen de prenda:', {
+                        tipo: typeof img,
+                        esFile: img instanceof File,
+                        propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
+                        url: img?.url,
+                        ruta: img?.ruta,
+                        blobUrl: img?.blobUrl,
+                        previewUrl: img?.previewUrl,
+                        src: img?.src,
+                        stringValue: typeof img === 'string' ? img : 'N/A'
+                    });
                     if (img instanceof File) {
                         return URL.createObjectURL(img);
                     }
-                    return img.blobUrl || img.previewUrl || img.src || img;
+                    const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
+                    console.log('[INVOICE-PREVIEW] Ruta final para imagen de prenda:', rutaFinal);
+                    return rutaFinal;
                 }) : (imagenCapturada ? [imagenCapturada] : []),
                 imagen_tela: imagenTelaCapturada,
                 imagenes_tela: prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela) ? prenda.imagenes_tela.map(img => {
+                    console.log('[INVOICE-PREVIEW] Procesando imagen de tela:', {
+                        tipo: typeof img,
+                        esFile: img instanceof File,
+                        propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
+                        url: img?.url,
+                        ruta: img?.ruta,
+                        blobUrl: img?.blobUrl,
+                        previewUrl: img?.previewUrl,
+                        src: img?.src,
+                        stringValue: typeof img === 'string' ? img : 'N/A'
+                    });
                     if (img instanceof File) {
                         return URL.createObjectURL(img);
                     }
-                    return img.blobUrl || img.previewUrl || img.src || img;
+                    const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
+                    console.log('[INVOICE-PREVIEW] Ruta final para imagen de tela:', rutaFinal);
+                    return rutaFinal;
                 }) : (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas.filter(t => t.imagenes && t.imagenes.length > 0).flatMap(t => t.imagenes.map(img => {
+                    console.log('[INVOICE-PREVIEW] Procesando imagen de tela agregada:', {
+                        tipo: typeof img,
+                        esFile: img instanceof File,
+                        propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
+                        url: img?.url,
+                        ruta: img?.ruta,
+                        blobUrl: img?.blobUrl,
+                        previewUrl: img?.previewUrl,
+                        src: img?.src,
+                        stringValue: typeof img === 'string' ? img : 'N/A'
+                    });
                     if (img instanceof File) {
                         return URL.createObjectURL(img);
                     }
-                    return img.blobUrl || img.previewUrl || img.src || img;
+                    const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
+                    console.log('[INVOICE-PREVIEW] Ruta final para imagen de tela agregada:', rutaFinal);
+                    return rutaFinal;
                 })) : (imagenTelaCapturada ? [imagenTelaCapturada] : [])),
                 manga: tipoManga && tipoManga !== 'No aplica' ? tipoManga : '',
                 obs_manga: obsManga,
@@ -942,7 +1047,7 @@ function crearModalPreviewFactura(datos) {
  * Genera el HTML de la factura con los datos en tiempo real
  */
 function generarHTMLFactura(datos) {
-    console.log('✏️  [PREVIEW] Generando HTML de factura...');
+    console.log('  [PREVIEW] Generando HTML de factura...');
     
     // Generar las tarjetas de prendas con todos los detalles
     const prendasHTML = datos.prendas.map((prenda, idx) => {

@@ -35,7 +35,7 @@ const UIComponents = {
                         <button type="button" class="btn btn-light" 
                                 data-action="edit-prenda" data-prenda-id="${prenda._id}"
                                 title="Editar prenda">
-                            ✏️ Editar
+                             Editar
                         </button>
                         <button type="button" class="btn btn-danger" 
                                 data-action="delete-prenda" data-prenda-id="${prenda._id}"
@@ -170,7 +170,7 @@ const UIComponents = {
                             data-action="edit-variante" 
                             data-prenda-id="${prendaId}" 
                             data-variante-id="${variante._id}">
-                        ✏️
+                        
                     </button>
                     <button class="btn btn-xs btn-danger" 
                             data-action="delete-variante" 
@@ -228,7 +228,7 @@ const UIComponents = {
                                     data-action="edit-proceso" 
                                     data-prenda-id="${prendaId}" 
                                     data-proceso-id="${proceso._id}">
-                                ✏️
+                                
                             </button>
                             <button class="btn btn-danger" 
                                     data-action="delete-proceso" 

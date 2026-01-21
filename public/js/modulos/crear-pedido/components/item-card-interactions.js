@@ -154,7 +154,7 @@ function handleEliminarItem(itemIndex) {
  * @param {number} itemIndex - Índice del item a editar
  */
 function handleEditarItem(itemIndex) {
-  console.log('✏️ [ITEM-CARD-INTERACTIONS] Editando item:', itemIndex);
+  console.log(' [ITEM-CARD-INTERACTIONS] Editando item:', itemIndex);
   
   // Obtener el item del array global
   if (!window.itemsPedido || !window.itemsPedido[itemIndex]) {

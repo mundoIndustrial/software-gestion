@@ -23,21 +23,31 @@ const nombresProcesos = {
  * Renderizar todas las tarjetas de procesos en el modal de prenda
  */
 window.renderizarTarjetasProcesos = function() {
-    console.log(' [TARJETAS-PROCESOS] Renderizando tarjetas de procesos');
+    console.log('🎨 [TARJETAS-PROCESOS] ===== INICIANDO RENDERIZADO =====');
+    console.log('🎨 [TARJETAS-PROCESOS] window.procesosSeleccionados:', window.procesosSeleccionados);
     
     const container = document.getElementById('contenedor-tarjetas-procesos');
+    console.log('🎨 [TARJETAS-PROCESOS] Buscando contenedor #contenedor-tarjetas-procesos');
+    
     if (!container) {
-        console.warn(' [TARJETAS-PROCESOS] Contenedor no encontrado');
+        console.error('❌ [TARJETAS-PROCESOS] CONTENEDOR NO ENCONTRADO en el DOM');
+        console.log('🎨 [TARJETAS-PROCESOS] Elementos con "contenedor" en el ID:', document.querySelectorAll('[id*="contenedor"]'));
         return;
     }
+    
+    console.log('✅ [TARJETAS-PROCESOS] Contenedor encontrado:', container);
+    console.log('🎨 [TARJETAS-PROCESOS] Display actual:', container.style.display);
+    console.log('🎨 [TARJETAS-PROCESOS] Parent:', container.parentElement);
     
     // Obtener procesos configurados
     const procesos = window.procesosSeleccionados || {};
     const procesosConDatos = Object.keys(procesos).filter(tipo => procesos[tipo]?.datos);
     
-    console.log(' [TARJETAS-PROCESOS] Procesos con datos:', procesosConDatos.length);
+    console.log('🎨 [TARJETAS-PROCESOS] Procesos con datos:', procesosConDatos);
+    console.log('🎨 [TARJETAS-PROCESOS] Cantidad de procesos:', procesosConDatos.length);
     
     if (procesosConDatos.length === 0) {
+        console.log('⚠️  [TARJETAS-PROCESOS] Sin procesos, mostrando mensaje vacío');
         container.innerHTML = `
             <div style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;">add_circle</span>
@@ -45,6 +55,7 @@ window.renderizarTarjetasProcesos = function() {
             </div>
         `;
         container.style.display = 'block';
+        console.log('🎨 [TARJETAS-PROCESOS] Contenedor mostrado (display: block)');
         return;
     }
     
@@ -52,13 +63,17 @@ window.renderizarTarjetasProcesos = function() {
     let html = '';
     procesosConDatos.forEach(tipo => {
         const proceso = procesos[tipo];
+        console.log(`🎨 [TARJETAS-PROCESOS] Generando tarjeta para: ${tipo}`, proceso.datos);
         html += generarTarjetaProceso(tipo, proceso.datos);
     });
+    
+    console.log('🎨 [TARJETAS-PROCESOS] HTML generado (primeros 300 chars):', html.substring(0, 300));
     
     container.innerHTML = html;
     container.style.display = 'block';
     
-    console.log(' [TARJETAS-PROCESOS] Tarjetas renderizadas');
+    console.log('✅ [TARJETAS-PROCESOS] ===== RENDERIZADO COMPLETADO =====');
+    console.log('🎨 [TARJETAS-PROCESOS] Contenedor ahora contiene:', container.innerHTML.substring(0, 200));
 };
 
 /**
@@ -74,7 +89,7 @@ function generarTarjetaProceso(tipo, datos) {
     const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
     
     const ubicacionesTexto = datos.ubicaciones?.length > 0 
-        ? datos.ubicaciones.join(', ') 
+        ? datos.ubicaciones.map(ub => typeof ub === 'string' ? ub : (ub.nombre || ub.descripcion || ub)).join(', ') 
         : 'Sin ubicaciones';
     
     return `
@@ -93,7 +108,7 @@ function generarTarjetaProceso(tipo, datos) {
                     <strong style="color: #111827; font-size: 1rem;">${nombre}</strong>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <button type="button" onclick="editarProceso('${tipo}')" 
+                    <button type="button" onclick="editarProcesoDesdeModal('${tipo}')" 
                         style="background: #f3f4f6; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center;" 
                         title="Editar proceso">
                         <i class="fas fa-edit" style="font-size: 1rem; color: #6b7280;"></i>
@@ -112,7 +127,11 @@ function generarTarjetaProceso(tipo, datos) {
                     <div>
                         <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">IMÁGENES</div>
                         <div style="position: relative; display: inline-block;" onclick="abrirGaleriaImagenesProceso('${tipo}')">
-                            <img src="${datos.imagenes[0] instanceof File ? URL.createObjectURL(datos.imagenes[0]) : datos.imagenes[0]}" 
+                            <img src="${
+                                datos.imagenes[0] instanceof File 
+                                    ? URL.createObjectURL(datos.imagenes[0]) 
+                                    : (datos.imagenes[0].url || datos.imagenes[0].ruta || datos.imagenes[0])
+                            }" 
                                 style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 2px solid #e5e7eb;" 
                                 alt="Imagen del proceso">
                             ${datos.imagenes.length > 1 ? `
@@ -199,10 +218,36 @@ window.eliminarTarjetaProceso = function(tipo) {
 };
 
 /**
+ * Editar un proceso existente (desde modal de edición de prenda)
+ */
+window.editarProcesoDesdeModal = function(tipo) {
+    console.log(` [TARJETAS-PROCESOS] Editando proceso desde modal: ${tipo}`);
+    
+    // Obtener datos del proceso ANTES de abrir el modal
+    const proceso = window.procesosSeleccionados[tipo];
+    console.log(` [TARJETAS-PROCESOS] Proceso encontrado:`, proceso);
+    
+    if (!proceso?.datos) {
+        console.error(` [TARJETAS-PROCESOS] ERROR: No hay datos para el proceso ${tipo}`);
+        return;
+    }
+    
+    // IMPORTANTE: Cargar datos ANTES de abrir el modal (que limpia las variables)
+    console.log(` [TARJETAS-PROCESOS] Cargando datos ANTES de abrir modal...`);
+    cargarDatosProcesoEnModal(tipo, proceso.datos);
+    
+    // AHORA abrir el modal en modo EDICIÓN (preservará los datos cargados)
+    if (window.abrirModalProcesoGenerico) {
+        console.log(` [TARJETAS-PROCESOS] Abriendo modal en modo EDICIÓN...`);
+        window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
+    }
+};
+
+/**
  * Editar un proceso existente
  */
 window.editarProceso = function(tipo) {
-    console.log(`✏️ [TARJETAS-PROCESOS] Editando proceso: ${tipo}`);
+    console.log(` [TARJETAS-PROCESOS] Editando proceso: ${tipo}`);
     
     // Abrir modal del proceso
     if (window.abrirModalProcesoGenerico) {
@@ -221,6 +266,8 @@ window.editarProceso = function(tipo) {
  */
 function cargarDatosProcesoEnModal(tipo, datos) {
     console.log(` [TARJETAS-PROCESOS] Cargando datos en modal:`, datos);
+    console.log(` [TARJETAS-PROCESOS] window.ubicacionesProcesoSeleccionadas antes:`, window.ubicacionesProcesoSeleccionadas);
+    console.log(` [TARJETAS-PROCESOS] window.tallasSeleccionadasProceso antes:`, window.tallasSeleccionadasProceso);
     
     // Limpiar imágenes anteriores
     if (window.imagenesProcesoActual) {
@@ -253,11 +300,18 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     
     // Cargar ubicaciones
     if (datos.ubicaciones && window.ubicacionesProcesoSeleccionadas) {
+        console.log(` [TARJETAS-PROCESOS] Ubicaciones a cargar:`, datos.ubicaciones);
         window.ubicacionesProcesoSeleccionadas.length = 0;
         window.ubicacionesProcesoSeleccionadas.push(...datos.ubicaciones);
+        console.log(` [TARJETAS-PROCESOS] Ubicaciones cargadas en window:`, window.ubicacionesProcesoSeleccionadas);
         if (window.renderizarListaUbicaciones) {
+            console.log(` [TARJETAS-PROCESOS] Llamando a renderizarListaUbicaciones()`);
             window.renderizarListaUbicaciones();
+        } else {
+            console.error(` [TARJETAS-PROCESOS] ERROR: window.renderizarListaUbicaciones NO existe`);
         }
+    } else {
+        console.warn(` [TARJETAS-PROCESOS] No se pueden cargar ubicaciones - datos.ubicaciones:`, datos.ubicaciones, 'window.ubicacionesProcesoSeleccionadas:', window.ubicacionesProcesoSeleccionadas);
     }
     
     // Cargar observaciones
@@ -268,12 +322,41 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     
     // Cargar tallas
     if (datos.tallas && window.tallasSeleccionadasProceso) {
-        window.tallasSeleccionadasProceso.dama = datos.tallas.dama || [];
-        window.tallasSeleccionadasProceso.caballero = datos.tallas.caballero || [];
+        console.log(` [TARJETAS-PROCESOS] Tallas a cargar:`, datos.tallas);
+        // Convertir objetos de tallas a arrays de strings
+        const damaTallas = datos.tallas.dama || {};
+        const caballeroTallas = datos.tallas.caballero || {};
+        
+        // Extraer solo las claves (tallas) del objeto
+        window.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
+        window.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
+        
+        console.log(` [TARJETAS-PROCESOS] Tallas cargadas en window:`, window.tallasSeleccionadasProceso);
+        
+        // Guardar las cantidades para mostrar en el resumen
+        window.cantidadesTallas = {};
+        Object.entries(damaTallas).forEach(([talla, cantidad]) => {
+            window.cantidadesTallas[`dama-${talla}`] = cantidad;
+        });
+        Object.entries(caballeroTallas).forEach(([talla, cantidad]) => {
+            window.cantidadesTallas[`caballero-${talla}`] = cantidad;
+        });
+        
+        console.log(` [TARJETAS-PROCESOS] Cantidades guardadas:`, window.cantidadesTallas);
+        
         if (window.actualizarResumenTallasProceso) {
+            console.log(` [TARJETAS-PROCESOS] Llamando a actualizarResumenTallasProceso()`);
             window.actualizarResumenTallasProceso();
+        } else {
+            console.error(` [TARJETAS-PROCESOS] ERROR: window.actualizarResumenTallasProceso NO existe`);
         }
+    } else {
+        console.warn(` [TARJETAS-PROCESOS] No se pueden cargar tallas - datos.tallas:`, datos.tallas, 'window.tallasSeleccionadasProceso:', window.tallasSeleccionadasProceso);
     }
+    
+    console.log(` [TARJETAS-PROCESOS] ===== CARGA DE DATOS COMPLETADA =====`);
+    console.log(` [TARJETAS-PROCESOS] Estado final - ubicaciones:`, window.ubicacionesProcesoSeleccionadas);
+    console.log(` [TARJETAS-PROCESOS] Estado final - tallas:`, window.tallasSeleccionadasProceso);
 }
 
 /**

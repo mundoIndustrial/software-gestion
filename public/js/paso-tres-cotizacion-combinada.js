@@ -1270,7 +1270,7 @@ function renderizarTecnicasAgregadasPaso3() {
                 align-items: center;
                 gap: 0.4rem;
             " onmouseover="this.style.background='rgba(255,255,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.2)';">
-                ✏️
+                
             </button>
             <button class="btn-eliminar-prenda" onclick="eliminarTecnicaPaso3('${nombrePrenda}')" style="
                 background: rgba(255,255,255,0.2);

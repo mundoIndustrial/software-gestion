@@ -3,7 +3,7 @@
 namespace App\Domain\PedidoProduccion\Services;
 
 use App\Models\TipoManga;
-use App\Models\TipoBroche;
+use App\Models\TipoBrocheBoton;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -68,7 +68,7 @@ class CaracteristicasPrendaService
 
         try {
             // Buscar por nombre exacto
-            $broche = TipoBroche::where('nombre', $nombreBroche)
+            $broche = TipoBrocheBoton::where('nombre', $nombreBroche)
                 ->where('activo', true)
                 ->first();
 
@@ -81,7 +81,7 @@ class CaracteristicasPrendaService
             }
 
             // Si no existe, crear
-            $brocheNuevo = TipoBroche::create([
+            $brocheNuevo = TipoBrocheBoton::create([
                 'nombre' => $nombreBroche,
                 'activo' => true,
             ]);

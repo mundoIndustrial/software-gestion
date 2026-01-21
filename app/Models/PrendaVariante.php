@@ -101,7 +101,7 @@ class PrendaVariante extends Model
      * ACTUALIZACIÓN [16/01/2026]:
      * - Campo FK: tipo_broche_boton_id (antes tipo_broche_id)
      * - Tabla: tipos_broche_boton (antes tipos_broche)
-     * - Modelo: Sigue siendo TipoBroche por compatibilidad
+     * - Modelo: TipoBrocheBoton
      * 
      * Nota: El nombre es "tipo_broche_boton" porque puede ser broche O botón
      * 
@@ -109,7 +109,7 @@ class PrendaVariante extends Model
      */
     public function tipoBrocheBoton(): BelongsTo
     {
-        return $this->belongsTo(TipoBroche::class, 'tipo_broche_boton_id');
+        return $this->belongsTo(TipoBrocheBoton::class, 'tipo_broche_boton_id');
     }
 
     // ============================================================

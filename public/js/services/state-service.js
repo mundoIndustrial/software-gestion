@@ -160,7 +160,7 @@ class PedidoStateManager {
         if (this.prendas[index]) {
             this.prendas[index] = { ...this.prendas[index], ...data };
             this.notifyObservers('prendaUpdated', { index, data });
-            console.log(`✏️ Prenda ${index} actualizada`);
+            console.log(` Prenda ${index} actualizada`);
         }
     }
 

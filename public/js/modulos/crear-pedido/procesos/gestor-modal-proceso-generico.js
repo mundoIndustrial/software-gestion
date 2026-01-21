@@ -45,8 +45,8 @@ const tallasEstandar = {
 };
 
 // Abrir modal para un tipo específico de proceso
-window.abrirModalProcesoGenerico = function(tipoProceso) {
-    console.log(`🔓 Intentando abrir modal para: ${tipoProceso}`);
+window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
+    console.log(`🔓 Intentando abrir modal para: ${tipoProceso}, esEdicion: ${esEdicion}`);
     
     // Verificar que el modal existe
     const modal = document.getElementById('modal-proceso-generico');
@@ -77,22 +77,35 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
         const form = document.getElementById('form-proceso-generico');
         if (form) form.reset();
         
-        tallasSeleccionadasProceso = { dama: [], caballero: [] };
-        
-        // Limpiar resumen
-        const resumenTallas = document.getElementById('proceso-tallas-resumen');
-        if (resumenTallas) resumenTallas.innerHTML = '';
-        
-        // Limpiar ubicaciones
-        ubicacionesProcesoSeleccionadas = [];
-        const listaUbicaciones = document.getElementById('lista-ubicaciones-proceso');
-        if (listaUbicaciones) listaUbicaciones.innerHTML = '';
-        const inputUbicacion = document.getElementById('input-ubicacion-nueva');
-        if (inputUbicacion) inputUbicacion.value = '';
-        
-        // Limpiar imágenes
-        if (typeof limpiarImagenesProceso === 'function') {
-            limpiarImagenesProceso();
+        // SOLO limpiar variables si NO es edición
+        if (!esEdicion) {
+            console.log(` [MODAL] Modo CREAR - limpiando variables`);
+            tallasSeleccionadasProceso = { dama: [], caballero: [] };
+            
+            // Limpiar resumen
+            const resumenTallas = document.getElementById('proceso-tallas-resumen');
+            if (resumenTallas) resumenTallas.innerHTML = '';
+            
+            // Limpiar ubicaciones
+            ubicacionesProcesoSeleccionadas = [];
+            const listaUbicaciones = document.getElementById('lista-ubicaciones-proceso');
+            if (listaUbicaciones) listaUbicaciones.innerHTML = '';
+            const inputUbicacion = document.getElementById('input-ubicacion-nueva');
+            if (inputUbicacion) inputUbicacion.value = '';
+            
+            // Limpiar imágenes
+            if (typeof limpiarImagenesProceso === 'function') {
+                limpiarImagenesProceso();
+            }
+        } else {
+            console.log(` [MODAL] Modo EDITAR - preservando datos cargados`);
+            // En modo edición, renderizar lo que ya está cargado
+            if (window.renderizarListaUbicaciones) {
+                window.renderizarListaUbicaciones();
+            }
+            if (window.actualizarResumenTallasProceso) {
+                window.actualizarResumenTallasProceso();
+            }
         }
         
         // Mostrar modal
@@ -260,18 +273,18 @@ window.agregarUbicacionProceso = function() {
     input.value = '';
     
     // Renderizar lista
-    renderizarListaUbicaciones();
+    window.renderizarListaUbicaciones();
 };
 
 // Remover ubicación de la lista
 window.removerUbicacionProceso = function(ubicacion) {
     ubicacionesProcesoSeleccionadas = ubicacionesProcesoSeleccionadas.filter(u => u !== ubicacion);
     console.log(` Ubicación removida: ${ubicacion}`);
-    renderizarListaUbicaciones();
+    window.renderizarListaUbicaciones();
 };
 
 // Renderizar la lista de ubicaciones
-function renderizarListaUbicaciones() {
+window.renderizarListaUbicaciones = function() {
     const container = document.getElementById('lista-ubicaciones-proceso');
     if (!container) return;
     
@@ -293,7 +306,7 @@ function renderizarListaUbicaciones() {
         `;
         container.appendChild(tag);
     });
-}
+};
 
 // Aplicar proceso para TODAS las tallas (de la prenda)
 window.aplicarProcesoParaTodasTallas = function() {

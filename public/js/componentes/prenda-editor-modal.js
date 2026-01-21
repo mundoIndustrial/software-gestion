@@ -91,11 +91,10 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
         return;
     }
     
-    console.log('✏️  Editando prenda:', prenda);
-    console.log('✏️  Estructura de prenda - claves disponibles:', Object.keys(prenda));
-    console.log('✏️  prenda.telas:', prenda.telas);
-    console.log('✏️  prenda.fotosTelas:', prenda.fotosTelas);
-    console.log('✏️  prenda.variantes:', prenda.variantes);
+    console.log('  Editando prenda:', prenda);
+    console.log('  Estructura de prenda - claves disponibles:', Object.keys(prenda));
+    console.log('  prenda.telasAgregadas:', prenda.telasAgregadas);
+    console.log('  prenda.variantes:', prenda.variantes);
     
     //  USAR MODAL DINÁMICO (sin conflictos CSS)
     if (window.modalPrendaDinamico) {
@@ -108,9 +107,29 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     }
     
     // Preparar datos en formato compatible con el modal
-    // IMPORTANTE: Las telas pueden venir como prenda.telas o prenda.fotosTelas
-    const telasAgregadas = prenda.telas || prenda.fotosTelas || prenda.variantes || [];
-    console.log('✏️  Telas agregadas finales:', telasAgregadas);
+    // IMPORTANTE: Usar telasAgregadas que viene del backend con estructura correcta
+    const telasAgregadas = prenda.telasAgregadas || [];
+    console.log('  Telas agregadas finales:', telasAgregadas);
+    
+    // Mapear variantes del nuevo endpoint a formato esperado por el frontend
+    const variantesFormateadas = prenda.variantes ? prenda.variantes.map(v => ({
+        id: v.id,
+        talla: v.talla || '',
+        cantidad: v.cantidad || 0,
+        genero: v.genero || '',
+        color_id: v.color_id,
+        color_nombre: v.color_nombre,
+        tela_id: v.tela_id,
+        tela_nombre: v.tela_nombre,
+        tipo_manga_id: v.tipo_manga_id,
+        tipo_manga_nombre: v.tipo_manga_nombre,
+        tipo_broche_id: v.tipo_broche_id,
+        tipo_broche_nombre: v.tipo_broche_nombre,
+        manga_obs: v.manga_obs || '',
+        broche_boton_obs: v.broche_boton_obs || '',
+        bolsillos_obs: v.bolsillos_obs || '',
+        tiene_bolsillos: v.tiene_bolsillos || false
+    })) : [];
     
     const prendaParaEditar = {
         nombre_producto: prenda.nombre_prenda || prenda.nombre || '',
@@ -118,21 +137,27 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
         origen: prenda.origen || 'bodega',
         imagenes: prenda.imagenes || [],
         telasAgregadas: telasAgregadas,
-        tallas: prenda.tallas || prenda.tallas_estructura || {},  //  ARREGLADO: prenda.tallas primero (tiene datos)
+        tallas: prenda.generosConTallas || prenda.tallas || prenda.tallas_estructura || {},
         procesos: prenda.procesos || [],
-        //  NUEVOS: Agregar datos de tela (estructura de BD)
+        //  Datos de tela
         tela: prenda.tela || '',
         color: prenda.color || '',
         ref: prenda.ref || '',
         referencia: prenda.referencia || '',
         imagen_tela: prenda.imagen_tela || null,
         imagenes_tela: prenda.imagenes_tela || [],
-        //  Preservar datos adicionales
-        variantes: prenda.variantes || [],
-        tallas_estructura: prenda.tallas || prenda.tallas_estructura || null
+        //  Variantes formateadas
+        variantes: variantesFormateadas,
+        tallas_estructura: prenda.tallas || prenda.tallas_estructura || null,
+        //  Datos de variaciones
+        obs_manga: prenda.obs_manga || '',
+        obs_bolsillos: prenda.obs_bolsillos || '',
+        obs_broche: prenda.obs_broche || '',
+        obs_reflectivo: prenda.obs_reflectivo || '',
+        tiene_reflectivo: prenda.tiene_reflectivo || false
     };
     
-    console.log('✏️  prendaParaEditar preparada:', prendaParaEditar);
+    console.log('  prendaParaEditar preparada:', prendaParaEditar);
     
     // Guardar datos de edición en global
     window.prendaEnEdicion = {

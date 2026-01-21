@@ -11,7 +11,7 @@ let currentCellData = {
  * Abrir modal para editar una celda
  */
 function openCellEditModal(column, value, pedido) {
-    console.log(`✏️ Abriendo edición de celda: ${column} = ${value}`);
+    console.log(` Abriendo edición de celda: ${column} = ${value}`);
     
     currentCellData = {
         pedido: pedido,

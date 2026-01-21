@@ -132,6 +132,7 @@ class EppDomainService
             'id' => $epp->id(),
             'codigo' => $codigo,
             'nombre' => $epp->nombre(),
+            'nombre_completo' => $epp->nombre(),
             'categoria' => (string)$epp->categoria(),
             'descripcion' => $epp->descripcion(),
             'activo' => $epp->estaActivo(),

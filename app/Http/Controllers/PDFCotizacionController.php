@@ -809,7 +809,7 @@ class PDFCotizacionController extends Controller
                 
                 // Mostrar imágenes de prenda
                 foreach ($imagenesPrenda as $idx => $imagen) {
-                    $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
+                    $rutaImagen = $imagen->url ?? null;
                     
                     if ($rutaImagen) {
                         // Verificar si es una URL completa (http/https)
@@ -840,7 +840,7 @@ class PDFCotizacionController extends Controller
                 
                 // Mostrar imágenes de tela
                 foreach ($imagenesTela as $idx => $imagen) {
-                    $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
+                    $rutaImagen = $imagen->url ?? null;
                     
                     if ($rutaImagen) {
                         // Verificar si es una URL completa (http/https)

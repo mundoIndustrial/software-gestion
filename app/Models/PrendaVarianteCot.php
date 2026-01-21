@@ -84,7 +84,7 @@ class PrendaVarianteCot extends Model
      */
     public function broche(): BelongsTo
     {
-        return $this->belongsTo(TipoBroche::class, 'tipo_broche_id');
+        return $this->belongsTo(TipoBrocheBoton::class, 'tipo_broche_id');
     }
 
     /**

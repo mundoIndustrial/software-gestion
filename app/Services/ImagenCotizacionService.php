@@ -148,12 +148,12 @@ class ImagenCotizacionService
                 }
             }
 
-            // Retornar ruta relativa (sin URL base)
-            // Formato: storage/cotizaciones/37/prenda/37_prenda_20251119174859_197.webp
-            $rutaRelativa = 'storage/' . $ruta;
-            \Log::info('Ruta relativa generada', ['ruta_relativa' => $rutaRelativa]);
+            // Retornar ruta relativa (sin URL base, sin prefijo storage/)
+            // Los accessors en los modelos agregarán /storage/ automáticamente
+            // Formato: cotizaciones/37/prenda/37_prenda_20251119174859_197.webp
+            \Log::info('Ruta relativa generada', ['ruta_relativa' => $ruta]);
 
-            return $rutaRelativa;
+            return $ruta;
         } catch (\Exception $e) {
             \Log::error('Error al guardar imagen de cotización', [
                 'cotizacion_id' => $cotizacionId,

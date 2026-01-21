@@ -330,7 +330,8 @@ class ModalCleanup {
         this.limpiarFormulario();
         // NO llamar a limpiarStorages() - preservar telas e imágenes
         this.limpiarCheckboxes(true); // Preservar procesos
-        this.limpiarContenedores();
+        // NO limpiar contenedores en modo edición - se cargarán los datos de la prenda
+        // this.limpiarContenedores();
         
         // Establecer índice de edición
         window.prendaEditIndex = prendaIndex;

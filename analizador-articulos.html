@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Artículos - Detección de Duplicaciones</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .upload-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .upload-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .upload-box {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-box:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-box input {
+            display: none;
+        }
+
+        .upload-box label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .upload-box label strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+
+        .upload-box label small {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .paste-box {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #999;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab.active {
+            color: #667eea;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .table-wrapper table tr:nth-child(2) input,
+        .table-wrapper table tr:nth-child(2) select {
+            font-size: 12px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            width: 100%;
+        }
+
+        .table-wrapper table tr:nth-child(2) input:focus,
+        .table-wrapper table tr:nth-child(2) select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .duplicate-group {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .duplicate-group h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .duplicate-criteria {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .criteria-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .criteria-label {
+            font-weight: 600;
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .criteria-value {
+            color: #333;
+            word-break: break-word;
+        }
+
+        .duplicate-items {
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .duplicate-items table {
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .duplicate-items th {
+            background: #e8ecff;
+            color: #333;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f5f7fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .upload-options {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .duplicate-criteria {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Analizador de Artículos</h1>
+            <p>Detecta duplicaciones y agrupa por color, marca, material, talla y medidas</p>
+        </div>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2>📤 Cargar Datos</h2>
+                <div class="upload-options">
+                    <div class="upload-box">
+                        <label for="pdfFile">
+                            <strong>📄 Cargar PDF</strong>
+                            <small>Extrae automáticamente los datos</small>
+                            <input type="file" id="pdfFile" accept=".pdf">
+                        </label>
+                    </div>
+                    <div class="upload-box">
+                        <label for="csvFile">
+                            <strong>📊 Cargar CSV/Excel</strong>
+                            <small>Soporta .csv, .xlsx, .xls</small>
+                            <input type="file" id="csvFile" accept=".csv,.xlsx,.xls">
+                        </label>
+                    </div>
+                    <div class="upload-box">
+                        <label for="jsonFile">
+                            <strong>📋 Cargar JSON</strong>
+                            <small>Formato JSON válido</small>
+                            <input type="file" id="jsonFile" accept=".json">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="paste-box">
+                    <strong> O pega los datos directamente (CSV o JSON):</strong>
+                    <textarea id="dataInput" placeholder="Pega tus datos aquí (CSV o JSON o listado desordenado)..."></textarea>
+                    
+                    <div style="margin-top: 15px;">
+                        <label>
+                            <input type="checkbox" id="autoDetect" checked> 
+                            <strong style="color: #667eea;">🔍 Detectar automáticamente formato</strong>
+                        </label>
+                    </div>
+                    
+                    <div style="margin-top: 10px; padding: 10px; background: #f0f4ff; border-radius: 6px;">
+                        <strong style="font-size: 12px; color: #667eea;">💡 Sugerencias:</strong>
+                        <small style="display: block; color: #666; margin-top: 5px;">
+                            • Pega directamente del PDF (aunque esté desordenado)<br>
+                            • CSV con comas separadas<br>
+                            • Un artículo por línea<br>
+                            • El sistema detectará automáticamente el formato
+                        </small>
+                    </div>
+                    
+                    <div class="button-group" style="margin-top: 15px;">
+                        <button class="btn-primary" onclick="processData()">📊 Procesar Datos</button>
+                        <button class="btn-secondary" onclick="mostrarPreview()">👁️ Vista Previa</button>
+                        <button class="btn-secondary" onclick="cargarExcelLocal()">📁 Cargar Excel del Servidor</button>
+                        <button class="btn-secondary" onclick="clearAll()">🗑️ Limpiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" style="display: none;">
+                <!-- Statistics -->
+                <div id="statsContainer" class="stats"></div>
+
+                <!-- Action Buttons -->
+                <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="clearFilters()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Limpiar Filtros</button>
+                    <button onclick="guardarEnBD()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">💾 Guardar en BD</button>
+                    <span id="filterStats" style="margin-left: auto; font-size: 13px; color: #666; font-weight: 500; align-self: center;">Mostrando 0 de 0 artículos</span>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('tabla')">📊 Tabla de Datos</button>
+                    <button class="tab" onclick="switchTab('duplicados')">⚠️ Análisis de Duplicaciones</button>
+                </div>
+
+                <!-- Table Tab -->
+                <div id="tabla" class="tab-content active">
+                    <div style="margin-bottom: 15px;">
+                        <button onclick="clearFilters()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Limpiar Filtros</button>
+                        <span id="filterStats" style="margin-left: 20px; font-size: 13px; color: #666; font-weight: 500;">Mostrando 0 de 0 artículos</span>
+                    </div>
+                    <div id="tableContainer" class="table-wrapper"></div>
+                </div>
+
+                <!-- Modal de Filtros -->
+                <div id="filterModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+                    <div style="background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 0;">
+                        <div style="padding: 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white;">
+                            <h2 id="modalTitle" style="margin: 0; font-size: 18px; color: #333;">Filtrar por</h2>
+                            <button onclick="closeFilterModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">✕</button>
+                        </div>
+                        
+                        <div style="padding: 20px;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                <input type="text" id="searchModal" placeholder="🔍 Buscar valor..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;" onkeyup="filterModalValues()">
+                                <button onclick="toggleSelectAll()" style="background: #667eea; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; white-space: nowrap;">✓ Sel. Todo</button>
+                            </div>
+                            
+                            <div id="modalContent" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px;"></div>
+                        </div>
+                        
+                        <div style="padding: 15px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: white;">
+                            <button onclick="closeFilterModal()" style="background: #e0e0e0; color: #333; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancelar</button>
+                            <button onclick="applyModalFilters()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">Aplicar Filtros</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duplicates Tab -->
+                <div id="duplicados" class="tab-content">
+                    <div id="duplicatesContainer"></div>
+                </div>
+
+                <!-- Errors Tab -->
+                <div id="errores" class="tab-content" style="display: none;">
+                    <div id="erroresContainer"></div>
+                </div>
+            </div>
+
+            <!-- Modal de Errores -->
+            <div id="erroresModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; overflow-y: auto;">
+                <div style="background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 0; margin: 20px;">
+                    <div style="padding: 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white;">
+                        <h2 style="margin: 0; font-size: 18px; color: #d32f2f;">Errores al Guardar</h2>
+                        <button onclick="closeErrorsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
+                    </div>
+                    
+                    <div style="padding: 20px;">
+                        <div id="erroresListado" style="max-height: 500px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <div style="padding: 15px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: white;">
+                        <button onclick="closeErrorsModal()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configurar PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <script>
+        let allData = [];
+        const API_URL = 'http://localhost:5000';
+
+        // Verificar conexión al servidor
+        document.addEventListener('DOMContentLoaded', () => {
+            checkServerConnection();
+        });
+
+        function checkServerConnection() {
+            fetch(`${API_URL}/health`)
+                .then(r => r.json())
+                .then(data => {
+                    showMessage('✅ Conectado al servidor Python', 'success');
+                    console.log('Servidor conectado:', data);
+                })
+                .catch(err => {
+                    showMessage('⚠️ Servidor Python no disponible. Iniciando en modo local...', 'error');
+                    console.error('No se puede conectar:', err);
+                });
+        }
+
+        // File upload handlers
+        document.getElementById('pdfFile').addEventListener('change', handlePDFFile);
+        document.getElementById('csvFile').addEventListener('change', handleCSVFile);
+        document.getElementById('jsonFile').addEventListener('change', handleJSONFile);
+
+        function handlePDFFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showMessage('📖 Extrayendo texto del PDF...', 'info');
+            const reader = new FileReader();
+            
+            reader.onload = async (event) => {
+                try {
+                    const pdf = await pdfjsLib.getDocument(event.target.result).promise;
+                    let texto = '';
+
+                    for (let i = 0; i < pdf.numPages; i++) {
+                        const page = await pdf.getPage(i + 1);
+                        const content = await page.getTextContent();
+                        texto += content.items.map(item => item.str).join(' ') + '\n';
+                    }
+
+                    if (!texto.trim()) {
+                        showMessage('Error: El PDF no contiene texto extraíble', 'error');
+                        return;
+                    }
+
+                    showMessage('⏳ Enviando al servidor Python...', 'info');
+                    
+                    // Enviar texto extraído al servidor
+                    fetch(`${API_URL}/api/procesar`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            texto: texto
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) {
+                            showMessage(`Error: ${data.error}`, 'error');
+                            return;
+                        }
+                        
+                        allData = data.articulos || [];
+                        document.getElementById('resultsSection').style.display = 'block';
+                        displayResults();
+                        showMessage(`✓ PDF procesado: ${allData.length} artículos detectados`, 'success');
+                    })
+                    .catch(err => {
+                        showMessage(`Error: ${err.message}`, 'error');
+                        console.error(err);
+                    });
+
+                } catch (error) {
+                    showMessage(`Error leyendo PDF: ${error.message}`, 'error');
+                    console.error(error);
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function procesarListadoDesordenado(texto) {
+            const lineas = texto.split('\n')
+                .map(l => l.trim())
+                .filter(l => l && l !== '""')
+                .map(l => l.replace(/^"|"$/g, ''));
+
+            const articulos = [];
+            let actual = {nombre: '', detalles: []};
+
+            lineas.forEach((linea, index) => {
+                if (linea.length === 0) return;
+
+                // Detectar si es continuación
+                const esContinuacion = /STEELPRO|ARMADURA|MARCA|REF|RFC|C\/P|S\/P|M\/L|CAB|DAM|TALLA|T:|DAMA|CABALLERO|^\d+/.test(linea) ||
+                                     (linea.length < 50 && /\d/.test(linea));
+
+                if (esContinuacion && actual.nombre) {
+                    actual.detalles.push(linea);
+                } else if (linea.length > 0) {
+                    if (actual.nombre) {
+                        articulos.push(estructurarArticulo(actual));
+                    }
+                    actual = {nombre: linea, detalles: []};
+                }
+            });
+
+            if (actual.nombre) {
+                articulos.push(estructurarArticulo(actual));
+            }
+
+            // Convertir a formato de tabla
+            if (articulos.length > 0) {
+                const datosTabla = articulos.map(art => ({
+                    'Nombre': art.nombre,
+                    'Marca': art.marca,
+                    'Color': art.color,
+                    'Material': art.material,
+                    'Talla': art.talla,
+                    'Medida': art.medida,
+                    'Referencia': art.referencia
+                }));
+
+                allData = datosTabla;
+                displayResults();
+                showMessage(`✓ Se extrajeron y procesaron ${articulos.length} artículos del PDF`, 'success');
+            }
+        }
+
+        function estructurarArticulo(item) {
+            const texto = (item.nombre + ' ' + item.detalles.join(' ')).toUpperCase();
+
+            return {
+                nombre: item.nombre,
+                marca: extraerMarca(texto),
+                color: extraerColor(texto),
+                material: extraerMaterial(texto),
+                talla: extraerTalla(texto),
+                medida: extraerMedida(item.nombre),
+                referencia: extraerReferencia(texto)
+            };
+        }
+
+        function extraerColor(texto) {
+            const colores = ['NEGRO', 'BLANCO', 'ROJO', 'AZUL', 'AMARILLO', 'VERDE', 'GRIS', 'NARANJA', 'CAFE', 'MARRÓN', 'ROSA', 'VINOTINTO', 'TURQUEZA', 'ORO', 'CHOCOLATE', 'MARINO'];
+            for (let color of colores) {
+                if (texto.includes(color)) return color;
+            }
+            return '';
+        }
+
+        function extraerMarca(texto) {
+            const marcas = ['STEELPRO', 'NIKE', 'SAGA', 'KONDOR', 'GRULLA', 'WARRIOR', 'ARMADURA', 'BRAHMA', 'WELDER', 'NORSEG', 'INDIANA', 'ROGER', 'ROBUSTA', 'TROOPER', 'TOLEDO'];
+            for (let marca of marcas) {
+                if (texto.includes(marca)) return marca;
+            }
+            return '';
+        }
+
+        function extraerMaterial(texto) {
+            const materiales = ['ALGODÓN', 'VAQUETA', 'CUERO', 'CAUCHO', 'LATEX', 'NITRILO', 'NEOPRENO', 'POLIURETANO', 'DRIL', 'LONA', 'CARNAZA', 'ACERO', 'POLYCARBONATO'];
+            for (let material of materiales) {
+                if (texto.includes(material)) return material;
+            }
+            return '';
+        }
+
+        function extraerTalla(texto) {
+            const match = texto.match(/T[:\s]*(\d+|S|M|L|XL|XXL|XXXL)/);
+            return match ? match[1] : '';
+        }
+
+        function extraerMedida(texto) {
+            const match = texto.match(/(\d+[\*x]\d+)|(\d+")|(\d+\s*cm)/i);
+            return match ? match[0] : '';
+        }
+
+        function extraerReferencia(texto) {
+            const match = texto.match(/REF[:\.\s]+([A-Z0-9\-\.]+)/);
+            return match ? match[1].trim() : '';
+        }
+
+        function handleCSVFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showMessage('📊 Enviando archivo al servidor...', 'info');
+            
+            const formData = new FormData();
+            formData.append('archivo', file);
+            
+            fetch(`${API_URL}/api/cargar-archivo`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage(`Error: ${data.error}`, 'error');
+                    return;
+                }
+                
+                allData = data.articulos || [];
+                document.getElementById('resultsSection').style.display = 'block';
+                displayResults();
+                showMessage(`✓ Archivo procesado: ${allData.length} artículos detectados`, 'success');
+            })
+            .catch(err => {
+                showMessage(`Error: ${err.message}`, 'error');
+                console.error(err);
+            });
+        }
+
+        function handleJSONFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                document.getElementById('dataInput').value = event.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        function processData() {
+            const input = document.getElementById('dataInput').value.trim();
+            if (!input) {
+                showMessage('Por favor ingresa datos', 'error');
+                return;
+            }
+
+            showMessage('⏳ Procesando datos en el servidor...', 'info');
+
+            fetch(`${API_URL}/api/procesar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    texto: input
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage(`Error: ${data.error}`, 'error');
+                    return;
+                }
+                
+                allData = data.articulos || [];
+                document.getElementById('resultsSection').style.display = 'block';
+                displayResults();
+                showMessage(`✓ Se procesaron ${allData.length} artículos correctamente`, 'success');
+            })
+            .catch(err => {
+                showMessage(`Error: ${err.message}`, 'error');
+                console.error(err);
+            });
+        }
+
+        function parsearListadoDesordenado(texto) {
+            const lineas = texto.split('\n')
+                .map(l => l.trim())
+                .filter(l => l && l !== '""' && l !== '"')
+                .map(l => l.replace(/^"|"$/g, ''));
+
+            const articulos = [];
+            let actual = { nombre: '', detalles: [] };
+
+            lineas.forEach(linea => {
+                if (!linea) return;
+
+                // Detectar patrones de continuación más estrictos
+                const esNombreArticulo = 
+                    linea.length > 15 && 
+                    !(/^[A-Z\s]{5,}$/.test(linea) && linea.length < 30) && // No solo letras cortas
+                    !/^(T:|TALLA|REF|RFC|C\/P|S\/P)/.test(linea) &&
+                    !/^\d+$/.test(linea);
+
+                const esMarcaODetalles = 
+                    /^(STEELPRO|NIKE|SAGA|KONDOR|GRULLA|WARRIOR|ARMADURA|BRAHMA|WELDER|NORSEG|INDIANA|ROGER|ROBUSTA|TROOPER)$/.test(linea) ||
+                    /^(REF[:\.\s]|RFC|C\/P|S\/P|M\/L)/.test(linea) ||
+                    /^T:?\d+/.test(linea) ||
+                    (linea.length < 30 && /^\d+/.test(linea));
+
+                if (esMarcaODetalles && actual.nombre) {
+                    actual.detalles.push(linea);
+                } else if (esNombreArticulo) {
+                    if (actual.nombre && actual.nombre.length > 5) {
+                        articulos.push(estructurarArticulo(actual));
+                    }
+                    actual = { nombre: linea, detalles: [] };
+                }
+            });
+
+            if (actual.nombre && actual.nombre.length > 5) {
+                articulos.push(estructurarArticulo(actual));
+            }
+
+            return articulos;
+        }
+
+        function normalizarDatos(datos) {
+            return datos.map(item => {
+                const keys = Object.keys(item);
+                const obj = {};
+
+                keys.forEach(key => {
+                    const lowerKey = key.toLowerCase().trim();
+                    const valor = (item[key] || '').toString().trim();
+
+                    if (lowerKey.includes('nombre') || lowerKey.includes('articulo') || lowerKey.includes('producto') || lowerKey === 'descripción') {
+                        obj['Nombre'] = valor;
+                    } else if (lowerKey.includes('marca')) {
+                        obj['Marca'] = valor;
+                    } else if (lowerKey.includes('color')) {
+                        obj['Color'] = valor;
+                    } else if (lowerKey.includes('material')) {
+                        obj['Material'] = valor;
+                    } else if (lowerKey.includes('talla') || lowerKey.includes('tamaño') || lowerKey.includes('size')) {
+                        obj['Talla'] = valor;
+                    } else if (lowerKey.includes('medida') || lowerKey.includes('dimensión')) {
+                        obj['Medida'] = valor;
+                    } else if (lowerKey.includes('referencia') || lowerKey.includes('ref') || lowerKey.includes('sku')) {
+                        obj['Referencia'] = valor;
+                    }
+                });
+
+                // Asegurar que tiene al menos nombre
+                if (!obj['Nombre'] && keys.length > 0) {
+                    obj['Nombre'] = (item[keys[0]] || '').toString().trim();
+                }
+
+                return obj;
+            });
+        }
+
+        function mostrarPreview() {
+            const input = document.getElementById('dataInput').value.trim();
+            if (!input) {
+                showMessage('Pega datos primero', 'error');
+                return;
+            }
+
+            const lineas = input.split('\n')
+                .map(l => l.trim())
+                .filter(l => l && l !== '""')
+                .slice(0, 20);
+
+            let html = '<div style="background: #f5f5f5; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto;">';
+            html += '<strong>📋 Primeras 20 líneas detectadas:</strong><br><br>';
+            
+            lineas.forEach((linea, i) => {
+                const esContinuacion = /STEELPRO|ARMADURA|MARCA|REF|T:|TALLA/.test(linea.toUpperCase());
+                const color = esContinuacion ? '#ddd' : '#fff';
+                const icon = esContinuacion ? '↳' : '→';
+                
+                html += `<div style="background: ${color}; padding: 8px; margin: 5px 0; border-radius: 3px; font-size: 12px;">
+                    <strong>${icon}</strong> ${escapeHtml(linea.substring(0, 80))}
+                </div>`;
+            });
+
+            html += '</div>';
+
+            const container = document.createElement('div');
+            container.innerHTML = html;
+            document.querySelector('.content').insertBefore(container, document.querySelector('.upload-section'));
+
+            setTimeout(() => container.remove(), 10000);
+        }
+
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            if (lines.length < 2) return [];
+
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                const obj = {};
+
+                headers.forEach((header, index) => {
+                    obj[header] = values[index] || '';
+                });
+
+                if (Object.values(obj).some(v => v)) {
+                    data.push(obj);
+                }
+            }
+
+            return data;
+        }
+
+        // Variables para filtrado
+        let filteredData = [];
+        let currentFilters = {
+            'nombre_completo': [],
+            'marca': [],
+            'categoria': [],
+            'tipo': [],
+            'talla': [],
+            'color': []
+        };
+        let currentFilterColumn = '';
+        let modalValues = {};
+
+        function getUniqueValues(columnName) {
+            const values = new Set();
+            allData.forEach(row => {
+                const val = row[columnName];
+                if (val !== null && val !== undefined && val !== '') {
+                    values.add(String(val));
+                }
+            });
+            return Array.from(values).sort();
+        }
+
+        function openFilterModal(columnName) {
+            currentFilterColumn = columnName;
+            const uniqueValues = getUniqueValues(columnName);
+            const currentSelected = currentFilters[columnName] || [];
+
+            // Actualizar título del modal
+            const headerDisplay = columnName.replace(/_/g, ' ').toUpperCase();
+            document.getElementById('modalTitle').textContent = `Filtrar por ${headerDisplay}`;
+
+            // Limpiar búsqueda del modal
+            document.getElementById('searchModal').value = '';
+
+            // Crear checkboxes
+            let html = '';
+            uniqueValues.forEach(value => {
+                const isChecked = currentSelected.includes(value);
+                const checkId = `check-${value}`;
+                html += `<div style="padding: 10px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center;">
+                    <input type="checkbox" id="${checkId}" ${isChecked ? 'checked' : ''} style="margin-right: 10px; cursor: pointer;">
+                    <label for="${checkId}" style="cursor: pointer; flex: 1; margin: 0;">${escapeHtml(String(value))}</label>
+                </div>`;
+            });
+
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('filterModal').style.display = 'flex';
+            modalValues[columnName] = uniqueValues;
+        }
+
+        function filterModalValues() {
+            const searchTerm = document.getElementById('searchModal').value.toLowerCase();
+            const columnName = currentFilterColumn;
+            const uniqueValues = modalValues[columnName] || [];
+            const currentSelected = currentFilters[columnName] || [];
+
+            let html = '';
+            uniqueValues.forEach(value => {
+                if (value.toLowerCase().includes(searchTerm)) {
+                    const isChecked = currentSelected.includes(value);
+                    const checkId = `check-${value}`;
+                    html += `<div style="padding: 10px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center;">
+                        <input type="checkbox" id="${checkId}" ${isChecked ? 'checked' : ''} style="margin-right: 10px; cursor: pointer;">
+                        <label for="${checkId}" style="cursor: pointer; flex: 1; margin: 0;">${escapeHtml(String(value))}</label>
+                    </div>`;
+                }
+            });
+
+            document.getElementById('modalContent').innerHTML = html;
+        }
+
+        function toggleSelectAll() {
+            const searchTerm = document.getElementById('searchModal').value.toLowerCase();
+            const columnName = currentFilterColumn;
+            const uniqueValues = modalValues[columnName] || [];
+            const checkboxes = document.querySelectorAll('#modalContent input[type="checkbox"]');
+            
+            // Determinar si debemos seleccionar o deseleccionar
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            // Toggle: Si todos están marcados, desmarcar; si no, marcar
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = !allChecked;
+            });
+        }
+
+        function closeFilterModal() {
+            document.getElementById('filterModal').style.display = 'none';
+            currentFilterColumn = '';
+        }
+
+        function applyModalFilters() {
+            const columnName = currentFilterColumn;
+            const checkboxes = document.querySelectorAll('#modalContent input[type="checkbox"]');
+            const selectedValues = [];
+
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const label = checkbox.parentElement.querySelector('label').textContent;
+                    selectedValues.push(label);
+                }
+            });
+
+            currentFilters[columnName] = selectedValues;
+            closeFilterModal();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            // Aplicar todos los filtros activos
+            filteredData = allData.filter(row => {
+                for (const [column, selectedValues] of Object.entries(currentFilters)) {
+                    if (selectedValues.length > 0) {
+                        const rowValue = String(row[column] || '');
+                        if (!selectedValues.includes(rowValue)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            });
+
+            // Actualizar tabla
+            displayFilteredTable();
+            updateFilterStats();
+        }
+
+        function displayFilteredTable() {
+            if (filteredData.length === 0) {
+                document.getElementById('tableContainer').innerHTML = '<div class="message warning">⚠️ No hay resultados que coincidan con los filtros</div>';
+                return;
+            }
+
+            const headers = ['nombre_completo', 'marca', 'categoria', 'tipo', 'talla', 'color'];
+            let html = '<table><thead><tr>';
+
+            // Fila de encabezados con embudos clickeables
+            headers.forEach(h => {
+                const headerDisplay = h.replace(/_/g, ' ').toUpperCase();
+                const isFiltered = currentFilters[h] && currentFilters[h].length > 0;
+                const filterColor = isFiltered ? '#667eea' : '#999';
+                html += `<th style="cursor: pointer; user-select: none;" onclick="openFilterModal('${h}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>${escapeHtml(headerDisplay)}</span>
+                        <span style="font-size: 16px; color: ${filterColor};">⏳</span>
+                    </div>
+                </th>`;
+            });
+
+            html += '</tr></thead><tbody>';
+
+            // Filas de datos
+            filteredData.forEach((row, idx) => {
+                html += `<tr>`;
+                headers.forEach(h => {
+                    const valor = row[h] || '';
+                    const displayValor = valor === null ? '<em style="color: #999;">null</em>' : escapeHtml(String(valor));
+                    html += `<td>${displayValor}</td>`;
+                });
+                html += `</tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        function updateFilterStats() {
+            const stats = `Mostrando <strong>${filteredData.length}</strong> de <strong>${allData.length}</strong> artículos`;
+            document.getElementById('filterStats').innerHTML = stats;
+        }
+
+        function guardarEnBD() {
+            if (allData.length === 0) {
+                showMessage('No hay artículos para guardar', 'error');
+                return;
+            }
+
+            showMessage('💾 Guardando artículos en BD...', 'info');
+
+            fetch(`${API_URL}/api/guardar-articulos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    articulos: allData
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const msg = `✓ ${data.guardados} artículos guardados exitosamente en BD`;
+                    showMessage(msg, 'success');
+                    console.log('Respuesta servidor:', data);
+                    
+                    // Si hay errores, mostrar modal
+                    if (data.errores && data.errores.length > 0) {
+                        mostrarErroresModal(data.errores, data.guardados, data.total);
+                    }
+                } else {
+                    showMessage(`Error: ${data.error || 'No se pudieron guardar los artículos'}`, 'error');
+                }
+            })
+            .catch(err => {
+                showMessage(`Error: ${err.message}`, 'error');
+                console.error(err);
+            });
+        }
+
+        function clearFilters() {
+            // Limpiar todos los filtros
+            currentFilters = {
+                'nombre_completo': [],
+                'marca': [],
+                'categoria': [],
+                'tipo': [],
+                'talla': [],
+                'color': []
+            };
+            
+            filteredData = [...allData];
+            displayFilteredTable();
+            updateFilterStats();
+        }
+
+        function mostrarErroresModal(errores, guardados, total) {
+            let html = `<div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <strong style="color: #856404;">⚠️ Resumen:</strong>
+                <br>
+                <span style="color: #856404;">
+                    ✓ Guardados: <strong>${guardados}</strong> artículos
+                    <br>
+                    ✗ Con errores: <strong>${errores.length}</strong> artículos
+                    <br>
+                    Total procesados: <strong>${total}</strong>
+                </span>
+            </div>`;
+
+            html += '<div style="font-size: 12px;">';
+            errores.forEach((error, idx) => {
+                html += `<div style="background: #f5f5f5; padding: 12px; margin-bottom: 8px; border-left: 3px solid #d32f2f; border-radius: 3px;">
+                    <strong style="color: #d32f2f;">❌ ${escapeHtml(error.articulo)}</strong>
+                    <br>
+                    <span style="color: #666;">Error: ${escapeHtml(error.error)}</span>
+                </div>`;
+            });
+            html += '</div>';
+
+            document.getElementById('erroresListado').innerHTML = html;
+            document.getElementById('erroresModal').style.display = 'flex';
+        }
+
+        function closeErrorsModal() {
+            document.getElementById('erroresModal').style.display = 'none';
+        }
+
+        function displayResults() {
+            // Mostrar sección de tabla
+            document.getElementById('tabla').style.display = 'block';
+            
+            // Inicializar datos filtrados
+            filteredData = [...allData];
+            
+            displayStats();
+            displayTable();
+            updateFilterStats();
+            analyzeDuplicates();
+
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function displayStats() {
+            const statsHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total de Artículos</div>
+                    <div class="stat-value">${allData.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Campos Detectados</div>
+                    <div class="stat-value">${allData.length > 0 ? Object.keys(allData[0]).length : 0}</div>
+                </div>
+            `;
+            document.getElementById('statsContainer').innerHTML = statsHTML;
+            
+            console.log('Stats - Total:', allData.length, 'Datos:', allData);
+        }
+
+        function displayTable() {
+            if (allData.length === 0) return;
+
+            const headers = ['nombre_completo', 'marca', 'categoria', 'tipo', 'talla', 'color'];
+            let html = '<table><thead><tr>';
+
+            // Fila de encabezados con embudos clickeables
+            headers.forEach(h => {
+                const headerDisplay = h.replace(/_/g, ' ').toUpperCase();
+                const isFiltered = currentFilters[h] && currentFilters[h].length > 0;
+                const filterColor = isFiltered ? '#667eea' : '#999';
+                html += `<th style="cursor: pointer; user-select: none;" onclick="openFilterModal('${h}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>${escapeHtml(headerDisplay)}</span>
+                        <span style="font-size: 16px; color: ${filterColor};">⏳</span>
+                    </div>
+                </th>`;
+            });
+
+            html += '</tr></thead><tbody>';
+
+            allData.forEach((row, idx) => {
+                html += `<tr>`;
+                headers.forEach(h => {
+                    const valor = row[h] || '';
+                    const displayValor = valor === null ? '<em style="color: #999;">null</em>' : escapeHtml(String(valor));
+                    html += `<td>${displayValor}</td>`;
+                });
+                html += `</tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        function analyzeDuplicates() {
+            if (allData.length === 0) return;
+
+            showMessage('🔍 Analizando duplicaciones...', 'info');
+
+            fetch(`${API_URL}/api/procesar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    datos: allData
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage(`Error: ${data.error}`, 'error');
+                    return;
+                }
+
+                const duplicateGroups = data.duplicaciones || [];
+
+                let html = '';
+
+                if (duplicateGroups.length === 0) {
+                    html = '<div class="message success">✓ No se encontraron duplicaciones</div>';
+                } else {
+                    html += `<div class="message warning">⚠️ Se encontraron ${duplicateGroups.length} grupos de artículos duplicados</div>`;
+
+                    duplicateGroups.forEach((group, idx) => {
+                        const criterios = group.criterios;
+                        const articulos = group.articulos;
+                        const cantidad = group.cantidad;
+                        const headers = ['nombre_completo', 'marca', 'categoria', 'tipo', 'talla', 'color'];
+
+                        html += `
+                            <div class="duplicate-group">
+                                <h3>Duplicación #${idx + 1} - ${cantidad} artículos repetidos</h3>
+                                <div class="duplicate-criteria">
+                                    ${criterios.marca ? `<div class="criteria-item"><span class="criteria-label">Marca:</span> <span class="criteria-value">${escapeHtml(criterios.marca)}</span></div>` : ''}
+                                    ${criterios.color ? `<div class="criteria-item"><span class="criteria-label">Color:</span> <span class="criteria-value">${escapeHtml(criterios.color)}</span></div>` : ''}
+                                    ${criterios.talla ? `<div class="criteria-item"><span class="criteria-label">Talla:</span> <span class="criteria-value">${escapeHtml(criterios.talla)}</span></div>` : ''}
+                                </div>
+                                <div class="duplicate-items">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                ${headers.map(h => `<th>${escapeHtml(h.replace(/_/g, ' ').toUpperCase())}</th>`).join('')}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${articulos.map((item, i) => `
+                                                <tr>
+                                                    <td><strong>${i + 1}</strong></td>
+                                                    ${headers.map(h => {
+                                                        const val = item[h];
+                                                        const display = val === null ? '<em style="color: #999;">null</em>' : escapeHtml(String(val || ''));
+                                                        return `<td>${display}</td>`;
+                                                    }).join('')}
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                document.getElementById('duplicatesContainer').innerHTML = html;
+                showMessage(`✓ Análisis completado: ${duplicateGroups.length} duplicaciones encontradas`, 'success');
+            })
+            .catch(err => {
+                showMessage(`Error: ${err.message}`, 'error');
+                console.error(err);
+            });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function clearAll() {
+            document.getElementById('dataInput').value = '';
+            document.getElementById('csvFile').value = '';
+            document.getElementById('jsonFile').value = '';
+            document.getElementById('pdfFile').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            allData = [];
+        }
+
+        function cargarExcelLocal() {
+            showMessage('📁 Cargando Excel del servidor...', 'info');
+            
+            fetch(`${API_URL}/api/cargar-excel-local`)
+                .then(r => {
+                    console.log('Response status:', r.status);
+                    return r.json();
+                })
+                .then(data => {
+                    console.log('Datos recibidos:', data);
+                    
+                    if (data.error) {
+                        showMessage(`Error: ${data.error}`, 'error');
+                        return;
+                    }
+                    
+                    allData = data.articulos || [];
+                    console.log('AllData asignado:', allData.length, 'artículos');
+                    
+                    if (allData.length === 0) {
+                        showMessage('⚠️ No se extrajeron artículos del Excel', 'error');
+                        return;
+                    }
+                    
+                    document.getElementById('resultsSection').style.display = 'block';
+                    displayResults();
+                    showMessage(`✓ Excel procesado: ${allData.length} artículos detectados`, 'success');
+                })
+                .catch(err => {
+                    console.error('Error completo:', err);
+                    showMessage(`Error: ${err.message}`, 'error');
+                });
+        }
+
+        function showMessage(text, type) {
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            msg.textContent = text;
+            document.querySelector('.content').insertBefore(msg, document.querySelector('.upload-section'));
+            setTimeout(() => msg.remove(), type === 'info' ? 3000 : 5000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

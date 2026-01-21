@@ -456,7 +456,7 @@ async function guardarCotizacion() {
         console.log('   tecnicasAgregadasPaso3:', window.tecnicasAgregadasPaso3);
         
         if (window.tecnicasAgregadasPaso3 && Array.isArray(window.tecnicasAgregadasPaso3) && window.tecnicasAgregadasPaso3.length > 0) {
-            console.log('📦 Procesando técnicas para cotización combinada...', window.tecnicasAgregadasPaso3.length);
+            console.log(' Procesando técnicas para cotización combinada...', window.tecnicasAgregadasPaso3.length);
             
             // Enviar técnicas con toda su información (prendas, ubicaciones, tallas, etc)
             formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
@@ -476,7 +476,7 @@ async function guardarCotizacion() {
         
         // Tipo PL/PB significa que PUEDE tener reflectivo
         if (window.tipoCotizacionGlobal === 'PL' || window.tipoCotizacionGlobal === 'PB' || window.tipoCotizacionGlobal === 'RF') {
-            console.log('📦 Procesando datos del reflectivo para cotización combinada...');
+            console.log(' Procesando datos del reflectivo para cotización combinada...');
             
             // Obtener descripción del reflectivo (PASO 4) - garantizar que sea string, no null
             const reflectivoElement = document.getElementById('descripcion_reflectivo');
@@ -1208,7 +1208,7 @@ async function procederEnviarCotizacion() {
         console.log('   tecnicasAgregadasPaso3:', window.tecnicasAgregadasPaso3);
         
         if (window.tecnicasAgregadasPaso3 && Array.isArray(window.tecnicasAgregadasPaso3) && window.tecnicasAgregadasPaso3.length > 0) {
-            console.log('📦 Procesando técnicas para envío de cotización combinada...', window.tecnicasAgregadasPaso3.length);
+            console.log(' Procesando técnicas para envío de cotización combinada...', window.tecnicasAgregadasPaso3.length);
             
             // Enviar técnicas con toda su información (prendas, ubicaciones, tallas, etc)
             formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
@@ -1228,7 +1228,7 @@ async function procederEnviarCotizacion() {
         
         // Tipo PL/PB significa que PUEDE tener reflectivo
         if (window.tipoCotizacionGlobal === 'PL' || window.tipoCotizacionGlobal === 'PB' || window.tipoCotizacionGlobal === 'RF') {
-            console.log('📦 Procesando datos del reflectivo para envío de cotización combinada...');
+            console.log(' Procesando datos del reflectivo para envío de cotización combinada...');
             
             // Obtener descripción del reflectivo (PASO 4) - garantizar que sea string, no null
             const reflectivoElement = document.getElementById('descripcion_reflectivo');

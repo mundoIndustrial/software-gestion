@@ -1893,7 +1893,7 @@ final class CotizacionController extends Controller
             // El backend intenta guardar reflectivo para CADA prenda del PASO 2
             $prendas = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)->get();
             
-            \Log::info('📦 Prendas encontradas PARA REFLECTIVO', [
+            \Log::info(' Prendas encontradas PARA REFLECTIVO', [
                 'prendas_count' => $prendas->count(),
                 'prendas_ids' => $prendas->pluck('id')->toArray(),
                 'tiene_descripcion' => !empty($reflectivoDescripcion),
@@ -1908,7 +1908,7 @@ final class CotizacionController extends Controller
                             'descripcion' => $reflectivoDescripcion,
                         ]);
                         
-                        // 📦 Cargar variaciones de la prenda desde la BD
+                        //  Cargar variaciones de la prenda desde la BD
                         $variacionesPrenda = [];
                         if ($prenda->variantes && $prenda->variantes->count() > 0) {
                             foreach ($prenda->variantes as $variante) {
@@ -1938,7 +1938,7 @@ final class CotizacionController extends Controller
                         
                         $variacionesJson = !empty($variacionesPrenda) ? json_encode($variacionesPrenda) : null;
                         
-                        \Log::info('📦 Variaciones cargadas para prenda', [
+                        \Log::info(' Variaciones cargadas para prenda', [
                             'prenda_id' => $prenda->id,
                             'variaciones_count' => count($variacionesPrenda),
                             'variaciones_json' => $variacionesJson,

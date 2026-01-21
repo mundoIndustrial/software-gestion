@@ -382,7 +382,7 @@ class RegistroOrdenQueryController extends Controller
         //  CARGAR prendas CON relaciones ANTES de toArray()
         // Hacemos un query directo para asegurar que las relaciones se cargan
         $prendasConRelaciones = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
-            ->with(['color', 'tela', 'tipoManga', 'tipoBroche', 'fotos', 'fotosLogo', 'fotosTela', 'reflectivo'])
+            ->with(['color', 'tela', 'tipoManga', 'tipoBrocheBoton', 'fotos', 'fotosLogo', 'fotosTela', 'reflectivo'])
             ->orderBy('id', 'asc')
             ->get();
         
@@ -494,8 +494,8 @@ class RegistroOrdenQueryController extends Controller
                         $tipoMangaNombre = $prenda->tipoManga->nombre;
                     }
                     
-                    if ($prenda->tipoBroche) {
-                        $tipoBrocheNombre = $prenda->tipoBroche->nombre;
+                    if ($prenda->tipoBrocheBoton) {
+                        $tipoBrocheNombre = $prenda->tipoBrocheBoton->nombre;
                     }
                     
                     //  NUEVO: Normalizar fotos de prenda (WebP)
@@ -631,12 +631,23 @@ class RegistroOrdenQueryController extends Controller
             // Helper para normalizar rutas a URL públicas
             $normalize = function ($ruta) {
                 if (empty($ruta)) return null;
+                
+                // Si ya es una URL completa, devolverla tal cual
                 if (str_starts_with($ruta, 'http')) {
                     return $ruta;
                 }
+                
+                // Si ya comienza con /storage/, devolverla tal cual (ya está correcta)
                 if (str_starts_with($ruta, '/storage/')) {
                     return $ruta;
                 }
+                
+                // Si comienza con storage/ (sin /), agregar / al inicio
+                if (str_starts_with($ruta, 'storage/')) {
+                    return '/' . $ruta;
+                }
+                
+                // Si es una ruta relativa (ej: pedidos/2695/prendas/...), agregar /storage/
                 return '/storage/' . ltrim($ruta, '/');
             };
 
@@ -694,8 +705,19 @@ class RegistroOrdenQueryController extends Controller
                         ->orderBy('orden', 'asc')
                         ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'orden']);
 
+                    \Log::info('[getOrderImages] Fotos de prenda encontradas', [
+                        'prenda_id' => $prenda->id,
+                        'cantidad' => $fotosPrenda->count()
+                    ]);
+
                     foreach ($fotosPrenda as $fp) {
                         $ruta = $fp->ruta_webp ?? $fp->ruta_original ?? $fp->ruta_miniatura ?? null;
+                        \Log::info('[getOrderImages] Foto de prenda - Datos en BD', [
+                            'ruta_webp' => $fp->ruta_webp,
+                            'ruta_original' => $fp->ruta_original,
+                            'ruta_miniatura' => $fp->ruta_miniatura,
+                            'ruta_seleccionada' => $ruta
+                        ]);
                         $url = $normalize($ruta);
                         if ($url) {
                             $imagenesPrend[] = [
@@ -712,8 +734,19 @@ class RegistroOrdenQueryController extends Controller
                         ->orderBy('orden', 'asc')
                         ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'orden']);
 
+                    \Log::info('[getOrderImages] Fotos de tela encontradas', [
+                        'prenda_id' => $prenda->id,
+                        'cantidad' => $fotosTela->count()
+                    ]);
+
                     foreach ($fotosTela as $ft) {
                         $ruta = $ft->ruta_webp ?? $ft->ruta_original ?? $ft->ruta_miniatura ?? null;
+                        \Log::info('[getOrderImages] Foto de tela - Datos en BD', [
+                            'ruta_webp' => $ft->ruta_webp,
+                            'ruta_original' => $ft->ruta_original,
+                            'ruta_miniatura' => $ft->ruta_miniatura,
+                            'ruta_seleccionada' => $ruta
+                        ]);
                         $url = $normalize($ruta);
                         if ($url) {
                             $imagenesPrend[] = [

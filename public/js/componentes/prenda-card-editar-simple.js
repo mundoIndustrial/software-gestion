@@ -69,7 +69,7 @@ function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     // Mostrar modal
     Swal.fire({
-        title: `✏️ Editar: ${prenda.nombre_producto || 'Prenda'}`,
+        title: ` Editar: ${prenda.nombre_producto || 'Prenda'}`,
         html: `<div style="text-align: left; max-height: 600px; overflow-y: auto; background: white; padding: 1rem; border-radius: 8px;">${htmlFactura}</div>`,
         width: '900px',
         showConfirmButton: true,

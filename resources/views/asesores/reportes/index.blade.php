@@ -163,7 +163,7 @@
                     
                     <div class="reporte-acciones">
                         <button type="button" class="btn-editar" onclick="editarReporte({{ $reporte->id }}, '{{ $reporte->titulo }}', '{{ $reporte->descripcion }}', '{{ $reporte->tipo }}', '{{ $reporte->fecha_inicio }}', '{{ $reporte->fecha_fin }}')">
-                            ✏️ Editar
+                             Editar
                         </button>
                         <button type="button" class="btn-eliminar" onclick="eliminarReporte({{ $reporte->id }})">
                             🗑️ Eliminar

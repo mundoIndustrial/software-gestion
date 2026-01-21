@@ -719,7 +719,7 @@ function actualizarResumenFriendly() {
                 }
                 
                 divResumen.innerHTML = `
-                    <div style="font-weight: 600; margin-bottom: 4px; color: #0066cc; font-size: 1rem;">📦 ${seccionNombre}</div>
+                    <div style="font-weight: 600; margin-bottom: 4px; color: #0066cc; font-size: 1rem;"> ${seccionNombre}</div>
                     ${opcionesTexto ? `<div style="margin-bottom: 4px; margin-left: 12px; color: #555;"><strong style="font-size: 0.85rem;">Ubicaciones:</strong> ${opcionesTexto}</div>` : ''}
                     ${tallasHTML}
                     ${obsHTML}
@@ -821,10 +821,10 @@ function recopilarDatos() {
     const clienteValue = cliente.value;
     const productos = [];
     
-    console.log('📦 Total de prendas encontradas:', document.querySelectorAll('.producto-card').length);
+    console.log(' Total de prendas encontradas:', document.querySelectorAll('.producto-card').length);
     
     document.querySelectorAll('.producto-card').forEach((item, index) => {
-        console.log(`📦 Procesando prenda ${index + 1}...`);
+        console.log(` Procesando prenda ${index + 1}...`);
         const nombre = item.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = item.querySelector('textarea[name*="descripcion"]')?.value || '';
         const cantidad = item.querySelector('input[name*="cantidad"]')?.value || 1;
@@ -1232,7 +1232,7 @@ function recopilarDatos() {
             '⭐ Tiene Reflectivo': variantes.tiene_reflectivo || false,
             '⭐ Obs Reflectivo': variantes.obs_reflectivo || '(vacío)',
             '📝 Descripción Adicional': variantes.descripcion_adicional || '(vacío)',
-            '📦 Prenda de Bodega': variantes.prenda_bodega || false,
+            ' Prenda de Bodega': variantes.prenda_bodega || false,
             'Todas las keys': Object.keys(variantes)
         });
         
@@ -1259,7 +1259,7 @@ function recopilarDatos() {
         }
     });
     
-    console.log('📦 RESUMEN PRODUCTOS RECOPILADOS:');
+    console.log(' RESUMEN PRODUCTOS RECOPILADOS:');
     productos.forEach((prod, idx) => {
         console.log(`  [${idx + 1}] ${prod.nombre_producto}:`, {
             '📸 Fotos': prod.fotos.length,
@@ -1496,7 +1496,7 @@ async function procesarImagenesABase64(datos) {
         // Procesar cada producto
         for (let i = 0; i < datos.productos.length; i++) {
             const producto = datos.productos[i];
-            console.log(`📦 Procesando producto ${i + 1}/${datos.productos.length}: ${producto.nombre_producto}`);
+            console.log(` Procesando producto ${i + 1}/${datos.productos.length}: ${producto.nombre_producto}`);
             
             // Procesar fotos de prenda
             if (producto.fotos && producto.fotos.length > 0) {

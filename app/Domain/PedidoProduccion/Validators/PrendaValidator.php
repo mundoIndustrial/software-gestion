@@ -36,7 +36,7 @@ class PrendaValidator implements Validator
         $this->validateCantidad($data['cantidad'] ?? null);
         $this->validateTipo($data['tipo'] ?? null);
         $this->validateTipoManga($data['tipo_manga'] ?? null);
-        $this->validateTipoBroche($data['tipo_broche'] ?? null);
+        $this->validateTipoBrocheBoton($data['tipo_broche'] ?? null);
         $this->validateColor($data['color_id'] ?? null);
         $this->validateTela($data['tela_id'] ?? null);
     }
@@ -56,7 +56,7 @@ class PrendaValidator implements Validator
             'cantidad' => $this->validateCantidad($value),
             'tipo' => $this->validateTipo($value),
             'tipo_manga' => $this->validateTipoManga($value),
-            'tipo_broche' => $this->validateTipoBroche($value),
+            'tipo_broche' => $this->validateTipoBrocheBoton($value),
             'color_id' => $this->validateColor($value),
             'tela_id' => $this->validateTela($value),
             default => throw new InvalidArgumentException("Campo no reconocido: {$field}")
@@ -143,21 +143,21 @@ class PrendaValidator implements Validator
     }
 
     /**
-     * Validar tipo de broche
+     * Validar tipo de broche/botón
      * 
      * - No vacío
      * - Máximo 100 caracteres
      * 
      * @throws InvalidArgumentException
      */
-    private function validateTipoBroche(?string $tipoBroche): void
+    private function validateTipoBrocheBoton(?string $tipoBrocheBoton): void
     {
-        if (empty($tipoBroche)) {
-            throw new InvalidArgumentException('El tipo de broche es requerido');
+        if (empty($tipoBrocheBoton)) {
+            throw new InvalidArgumentException('El tipo de broche/botón es requerido');
         }
 
-        if (strlen($tipoBroche) > 100) {
-            throw new InvalidArgumentException('El tipo de broche no puede exceder 100 caracteres');
+        if (strlen($tipoBrocheBoton) > 100) {
+            throw new InvalidArgumentException('El tipo de broche/botón no puede exceder 100 caracteres');
         }
     }
 
@@ -225,7 +225,7 @@ class PrendaValidator implements Validator
         $this->validateNombrePrenda($prendaData['nombre_prenda'] ?? null);
         $this->validateCantidad($prendaData['cantidad'] ?? null);
         $this->validateTipoManga($prendaData['tipo_manga'] ?? null);
-        $this->validateTipoBroche($prendaData['tipo_broche'] ?? null);
+        $this->validateTipoBrocheBoton($prendaData['tipo_broche'] ?? null);
         $this->validateColor($prendaData['color_id'] ?? null);
         $this->validateTela($prendaData['tela_id'] ?? null);
     }

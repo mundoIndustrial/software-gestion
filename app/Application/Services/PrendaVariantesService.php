@@ -141,7 +141,7 @@ class PrendaVariantesService
     {
         $variante = PrendaVariante::with([
             'tipoManga',
-            'tipoBroche',
+            'tipoBrocheBoton',
             'telas.color',
             'telas.tela',
         ])->findOrFail($varianteId);
@@ -149,7 +149,7 @@ class PrendaVariantesService
         return [
             'id' => $variante->id,
             'tipo_manga' => $variante->tipoManga?->nombre,
-            'tipo_broche' => $variante->tipoBroche?->nombre,
+            'tipo_broche' => $variante->tipoBrocheBoton?->nombre,
             'tiene_bolsillos' => $variante->tiene_bolsillos,
             'tiene_reflectivo' => $variante->tiene_reflectivo,
             'descripcion_adicional' => $variante->descripcion_adicional,

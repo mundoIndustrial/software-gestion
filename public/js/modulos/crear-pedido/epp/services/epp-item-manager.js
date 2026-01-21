@@ -32,11 +32,7 @@ class EppItemManager {
                 </div>
 
                 <!-- Detalles -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Talla</p>
-                        <p style="margin: 0; font-size: 1rem; font-weight: 500; color: #1f2937;">${talla}</p>
-                    </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Cantidad</p>
                         <p style="margin: 0; font-size: 1rem; font-weight: 500; color: #1f2937;">${cantidad}</p>
@@ -109,9 +105,8 @@ class EppItemManager {
 
         // Actualizar valores en el DOM
         const detalles = item.querySelectorAll('div > p');
-        if (detalles[1]) detalles[1].textContent = datos.talla;
-        if (detalles[3]) detalles[3].textContent = datos.cantidad;
-        if (detalles[5]) detalles[5].textContent = datos.observaciones || 'N/A';
+        if (detalles[1]) detalles[1].textContent = datos.cantidad;
+        if (detalles[3]) detalles[3].textContent = datos.observaciones || 'N/A';
 
         console.log('[EppItemManager] Item actualizado:', id);
     }

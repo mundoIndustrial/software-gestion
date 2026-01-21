@@ -86,9 +86,46 @@ class PrendaEditor {
         const descripcionField = document.getElementById('nueva-prenda-descripcion');
         const origenField = document.getElementById('nueva-prenda-origen-select');
 
+        console.log('[PrendaEditor] llenarCamposBasicos() - origen recibido:', prenda.origen);
+        
         if (nombreField) nombreField.value = prenda.nombre_producto || '';
         if (descripcionField) descripcionField.value = prenda.descripcion || '';
-        if (origenField) origenField.value = prenda.origen || 'bodega';
+        if (origenField) {
+            console.log('[PrendaEditor] origenField encontrado');
+            console.log('[PrendaEditor] Opciones disponibles:', Array.from(origenField.options).map(o => ({ value: o.value, text: o.text })));
+            
+            // Función para normalizar texto (remover acentos)
+            const normalizarTexto = (texto) => {
+                return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            };
+            
+            // Buscar la opción que coincida con el origen (ignorando acentos)
+            const origen = prenda.origen || 'bodega';
+            const origenNormalizado = normalizarTexto(origen);
+            let encontrado = false;
+            
+            for (let opt of origenField.options) {
+                const optTextNormalizado = normalizarTexto(opt.textContent);
+                const optValueNormalizado = normalizarTexto(opt.value);
+                
+                if (optValueNormalizado === origenNormalizado || optTextNormalizado === origenNormalizado) {
+                    origenField.value = opt.value;
+                    encontrado = true;
+                    console.log('[PrendaEditor] Origen seleccionado:', opt.value, '(original:', opt.textContent, ')');
+                    break;
+                }
+            }
+            
+            if (!encontrado) {
+                console.log('[PrendaEditor] Origen no encontrado, usando valor directo:', origen);
+                origenField.value = origen;
+            }
+            
+            // Disparar evento de cambio para que se actualice la UI
+            origenField.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+            console.log('[PrendaEditor] origenField NO encontrado');
+        }
     }
 
     /**
@@ -176,7 +213,9 @@ class PrendaEditor {
      * @private
      */
     cargarTelas(prenda) {
-        // Intentar cargar desde telasAgregadas (prendas nuevas)
+        console.log('[PrendaEditor] cargarTelas() - Prenda recibida:', prenda);
+        
+        // Intentar cargar desde telasAgregadas (prendas nuevas Y prendas de BD editadas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
             console.log('[PrendaEditor] Cargando telas desde telasAgregadas:', prenda.telasAgregadas);
             
@@ -205,25 +244,36 @@ class PrendaEditor {
             
             // Cargar cada tela
             prenda.telasAgregadas.forEach((tela, idx) => {
+                console.log(`[PrendaEditor] Procesando tela ${idx}:`, tela);
+                
                 // Cargar imágenes de tela
                 if (tela.imagenes && tela.imagenes.length > 0 && window.imagenesTelaStorage) {
-                    tela.imagenes.forEach((img) => {
+                    console.log(`[PrendaEditor] Tela ${idx} tiene ${tela.imagenes.length} imágenes`);
+                    
+                    tela.imagenes.forEach((img, imgIdx) => {
+                        console.log(`[PrendaEditor]   Imagen ${imgIdx}:`, img);
+                        
                         if (img.file instanceof File) {
+                            console.log(`[PrendaEditor]   Imagen ${imgIdx} es File object`);
                             window.imagenesTelaStorage.agregarImagen(img.file);
-                        } else if (img.previewUrl || img.url) {
-                            const urlImg = img.previewUrl || img.url;
+                        } else if (img.previewUrl || img.url || img.ruta) {
+                            const urlImg = img.previewUrl || img.url || img.ruta;
+                            console.log(`[PrendaEditor]   Imagen ${imgIdx} es URL desde BD:`, urlImg);
+                            
                             if (!window.imagenesTelaStorage.images) {
                                 window.imagenesTelaStorage.images = [];
                             }
                             window.imagenesTelaStorage.images.push({
                                 previewUrl: urlImg,
-                                nombre: `tela_${idx}.webp`,
+                                nombre: `tela_${idx}_${imgIdx}.webp`,
                                 tamaño: 0,
                                 file: null,
                                 urlDesdeDB: true
                             });
                         }
                     });
+                } else {
+                    console.log(`[PrendaEditor] Tela ${idx} NO tiene imágenes`);
                 }
             });
             
@@ -245,17 +295,7 @@ class PrendaEditor {
             return;
         }
 
-        // Intentar cargar desde telas (prendas de BD)
-        if (!prenda.telas || prenda.telas.length === 0) {
-            return;
-        }
-
-        if (window.TelaProcessor) {
-            const telaResult = window.TelaProcessor.cargarTelaDesdeBaseDatos(prenda);
-            if (telaResult.procesada && telaResult.telaObj) {
-                window.TelaProcessor.agregarTelaAlStorage(telaResult.telaObj);
-            }
-        }
+        console.log('[PrendaEditor] No hay telasAgregadas para cargar');
     }
 
     /**
@@ -266,22 +306,66 @@ class PrendaEditor {
         window.tallasSeleccionadas = {};
         window.cantidadesTallas = {};
 
-        // Intentar cargar desde generosConTallas (prendas nuevas)
+        console.log('[PrendaEditor] cargarTallasYCantidades() - Prenda recibida:', prenda);
+        console.log('[PrendaEditor] generosConTallas:', prenda.generosConTallas);
+        console.log('[PrendaEditor] tallas:', prenda.tallas);
+
+        // Intentar cargar desde generosConTallas (prendas de BD - NUEVA ESTRUCTURA)
         if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
+            console.log('[PrendaEditor] Usando generosConTallas');
             window.tallasSeleccionadas = { ...prenda.generosConTallas };
-            console.log('[PrendaEditor] Tallas cargadas desde generosConTallas');
+            console.log('[PrendaEditor] Tallas cargadas desde generosConTallas (BD nueva):', window.tallasSeleccionadas);
+            
+            // Extraer cantidades desde generosConTallas.cantidades
+            Object.entries(prenda.generosConTallas).forEach(([genero, generoData]) => {
+                if (generoData.tallas && Array.isArray(generoData.tallas)) {
+                    generoData.tallas.forEach(talla => {
+                        const clave = `${genero}-${talla}`;
+                        // Buscar cantidad en generosConTallas.cantidades primero
+                        if (generoData.cantidades && generoData.cantidades[talla]) {
+                            window.cantidadesTallas[clave] = generoData.cantidades[talla];
+                        }
+                        // Si no, buscar en prenda.tallas (estructura antigua)
+                        else if (prenda.tallas && prenda.tallas[genero] && prenda.tallas[genero][talla]) {
+                            window.cantidadesTallas[clave] = prenda.tallas[genero][talla];
+                        }
+                    });
+                }
+            });
+            console.log('[PrendaEditor] Cantidades extraídas:', window.cantidadesTallas);
         }
         // Intentar cargar desde tallas (prendas de BD - estructura antigua)
-        else if (prenda.tallas && Array.isArray(prenda.tallas)) {
-            prenda.tallas.forEach(tallaData => {
-                window.tallasSeleccionadas[tallaData.genero] = {
-                    tallas: tallaData.tallas,
-                    tipo: tallaData.tipo
-                };
+        else if (prenda.tallas && typeof prenda.tallas === 'object' && !Array.isArray(prenda.tallas)) {
+            console.log('[PrendaEditor] Usando tallas (estructura antigua)');
+            window.tallasSeleccionadas = { ...prenda.tallas };
+            console.log('[PrendaEditor] Tallas cargadas desde tallas (BD antigua):', window.tallasSeleccionadas);
+            
+            // Extraer cantidades desde prenda.tallas
+            // Estructura puede ser: {dama: {L: 20, M: 20, S: 20}} O {dama: {tallas: [...], tipo: "letra", cantidades: {...}}}
+            Object.entries(prenda.tallas).forEach(([genero, generoData]) => {
+                if (generoData && typeof generoData === 'object') {
+                    // Si tiene estructura nueva {tallas: [...], tipo: "...", cantidades: {...}}
+                    if (generoData.cantidades && typeof generoData.cantidades === 'object') {
+                        Object.entries(generoData.cantidades).forEach(([talla, cantidad]) => {
+                            const clave = `${genero}-${talla}`;
+                            window.cantidadesTallas[clave] = cantidad;
+                        });
+                    }
+                    // Si tiene estructura antigua {L: 20, M: 20, S: 20}
+                    else {
+                        Object.entries(generoData).forEach(([talla, cantidad]) => {
+                            // Solo si es número (cantidad), no si es string/array (tallas, tipo, etc.)
+                            if (typeof cantidad === 'number') {
+                                const clave = `${genero}-${talla}`;
+                                window.cantidadesTallas[clave] = cantidad;
+                            }
+                        });
+                    }
+                }
             });
-            console.log('[PrendaEditor] Tallas cargadas desde tallas (BD antigua)');
+            console.log('[PrendaEditor] Cantidades extraídas desde tallas:', window.cantidadesTallas);
         }
-        // Intentar cargar desde cantidad_talla (prendas de BD - estructura nueva JSON)
+        // Intentar cargar desde cantidad_talla (prendas de BD - estructura JSON)
         else if (prenda.cantidad_talla) {
             let cantidadTalla = prenda.cantidad_talla;
             
@@ -301,15 +385,26 @@ class PrendaEditor {
             if (cantidadTalla && typeof cantidadTalla === 'object') {
                 const generosMap = {};
                 
-                // Iterar cada entrada: "dama-S": 10, "dama-L": 20, etc.
+                // Iterar cada entrada: "dama-S": 10, "dama-L": 20, etc. O "S": 10, "L": 20
                 Object.entries(cantidadTalla).forEach(([clave, cantidad]) => {
-                    const [genero, talla] = clave.split('-');
-                    
-                    if (genero && talla) {
-                        // Agregar a cantidades
-                        window.cantidadesTallas[clave] = cantidad;
-                        
-                        // Agregar a tallas por género
+                    if (clave.includes('-')) {
+                        // Formato: "dama-S": 10
+                        const [genero, talla] = clave.split('-');
+                        if (genero && talla) {
+                            window.cantidadesTallas[clave] = cantidad;
+                            if (!generosMap[genero]) {
+                                generosMap[genero] = [];
+                            }
+                            if (!generosMap[genero].includes(talla)) {
+                                generosMap[genero].push(talla);
+                            }
+                        }
+                    } else {
+                        // Formato simple: "S": 10 (asumir dama)
+                        const genero = 'dama';
+                        const talla = clave;
+                        const claveFinal = `${genero}-${talla}`;
+                        window.cantidadesTallas[claveFinal] = cantidad;
                         if (!generosMap[genero]) {
                             generosMap[genero] = [];
                         }
@@ -414,39 +509,112 @@ class PrendaEditor {
      * @private
      */
     cargarVariaciones(prenda) {
-        if (!prenda.variantes) {
-            return;
-        }
-
-        const plicaManga = document.getElementById('aplica-manga');
+        const aplicaManga = document.getElementById('aplica-manga');
         const aplicaBolsillos = document.getElementById('aplica-bolsillos');
         const aplicaBroche = document.getElementById('aplica-broche');
         const aplicaReflectivo = document.getElementById('aplica-reflectivo');
 
-        if (plicaManga && prenda.variantes.tipo_manga !== 'No aplica') {
-            plicaManga.checked = true;
-            plicaManga.dispatchEvent(new Event('change', { bubbles: true }));
-            document.getElementById('manga-input').value = prenda.variantes.tipo_manga;
-            document.getElementById('manga-obs').value = prenda.variantes.obs_manga;
+        console.log('[PrendaEditor] Cargando variaciones desde prenda:', prenda);
+        console.log('[PrendaEditor] obs_manga:', prenda.obs_manga);
+        console.log('[PrendaEditor] obs_bolsillos:', prenda.obs_bolsillos);
+        console.log('[PrendaEditor] obs_broche:', prenda.obs_broche);
+        console.log('[PrendaEditor] obs_reflectivo:', prenda.obs_reflectivo);
+        console.log('[PrendaEditor] tiene_bolsillos:', prenda.tiene_bolsillos);
+        console.log('[PrendaEditor] tiene_reflectivo:', prenda.tiene_reflectivo);
+
+        // Cargar manga desde obs_manga o variantes.obs_manga
+        if (aplicaManga && (prenda.obs_manga || (prenda.variantes && prenda.variantes.obs_manga))) {
+            aplicaManga.checked = true;
+            aplicaManga.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Cargar valor en manga-input
+            const mangaInput = document.getElementById('manga-input');
+            if (mangaInput) {
+                mangaInput.value = prenda.obs_manga || prenda.variantes?.obs_manga || '';
+                mangaInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            
+            // Cargar observaciones en manga-obs
+            const mangaObs = document.getElementById('manga-obs');
+            if (mangaObs) {
+                mangaObs.value = prenda.obs_manga || prenda.variantes?.obs_manga || '';
+                mangaObs.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
-        if (aplicaBolsillos && prenda.variantes.tiene_bolsillos) {
+        // Cargar bolsillos desde obs_bolsillos o variantes.obs_bolsillos
+        if (aplicaBolsillos && (prenda.obs_bolsillos || (prenda.variantes && prenda.variantes.obs_bolsillos) || prenda.tiene_bolsillos)) {
             aplicaBolsillos.checked = true;
             aplicaBolsillos.dispatchEvent(new Event('change', { bubbles: true }));
-            document.getElementById('bolsillos-obs').value = prenda.variantes.obs_bolsillos;
+            
+            // Cargar observaciones en bolsillos-obs
+            const bolsillosObs = document.getElementById('bolsillos-obs');
+            if (bolsillosObs) {
+                bolsillosObs.value = prenda.obs_bolsillos || prenda.variantes?.obs_bolsillos || '';
+                bolsillosObs.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
-        if (aplicaBroche && prenda.variantes.tipo_broche !== 'No aplica') {
+        // Cargar broche desde obs_broche o variantes.obs_broche
+        if (aplicaBroche && (prenda.obs_broche || (prenda.variantes && prenda.variantes.obs_broche))) {
             aplicaBroche.checked = true;
             aplicaBroche.dispatchEvent(new Event('change', { bubbles: true }));
-            document.getElementById('broche-input').value = prenda.variantes.tipo_broche;
-            document.getElementById('broche-obs').value = prenda.variantes.obs_broche;
+            
+            // Cargar tipo de broche en dropdown (broche-input)
+            const brocheInput = document.getElementById('broche-input');
+            console.log('[PrendaEditor] tipo_broche_boton_id recibido:', prenda.tipo_broche_boton_id);
+            console.log('[PrendaEditor] brocheInput encontrado:', !!brocheInput);
+            
+            if (brocheInput && prenda.tipo_broche_boton_id) {
+                // Mapear ID a valor del dropdown
+                // 1 = Botón, 2 = Broche
+                let valorSeleccionar = '';
+                if (prenda.tipo_broche_boton_id === 1) {
+                    valorSeleccionar = 'boton';
+                } else if (prenda.tipo_broche_boton_id === 2) {
+                    valorSeleccionar = 'broche';
+                }
+                
+                console.log('[PrendaEditor] Intentando seleccionar broche con valor:', valorSeleccionar);
+                console.log('[PrendaEditor] Opciones disponibles:', Array.from(brocheInput.options).map(o => ({ value: o.value, text: o.text })));
+                
+                // Buscar la opción que coincida
+                let encontrado = false;
+                for (let opt of brocheInput.options) {
+                    if (opt.value.toLowerCase() === valorSeleccionar.toLowerCase()) {
+                        brocheInput.value = opt.value;
+                        encontrado = true;
+                        console.log('[PrendaEditor] Tipo de broche seleccionado:', opt.value, '(original:', opt.textContent, ')');
+                        break;
+                    }
+                }
+                
+                if (!encontrado) {
+                    console.log('[PrendaEditor] Tipo de broche no encontrado con valor:', valorSeleccionar);
+                }
+                
+                brocheInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            
+            // Cargar observaciones en broche-obs
+            const brocheObs = document.getElementById('broche-obs');
+            if (brocheObs) {
+                brocheObs.value = prenda.obs_broche || prenda.variantes?.obs_broche || '';
+                brocheObs.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
-        if (aplicaReflectivo && prenda.variantes.tiene_reflectivo) {
+        // Cargar reflectivo desde obs_reflectivo o variantes.obs_reflectivo
+        if (aplicaReflectivo && (prenda.obs_reflectivo || (prenda.variantes && prenda.variantes.obs_reflectivo) || prenda.tiene_reflectivo)) {
             aplicaReflectivo.checked = true;
             aplicaReflectivo.dispatchEvent(new Event('change', { bubbles: true }));
-            document.getElementById('reflectivo-obs').value = prenda.variantes.obs_reflectivo;
+            
+            // Cargar observaciones en reflectivo-obs
+            const reflectivoObs = document.getElementById('reflectivo-obs');
+            if (reflectivoObs) {
+                reflectivoObs.value = prenda.obs_reflectivo || prenda.variantes?.obs_reflectivo || '';
+                reflectivoObs.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
     }
 
@@ -455,7 +623,8 @@ class PrendaEditor {
      * @private
      */
     cargarProcesos(prenda) {
-        if (!prenda.procesos || Object.keys(prenda.procesos).length === 0) {
+        if (!prenda.procesos || prenda.procesos.length === 0) {
+            console.log('[PrendaEditor] Sin procesos para cargar');
             return;
         }
 
@@ -464,36 +633,64 @@ class PrendaEditor {
         // Copiar procesos completos con todos sus datos
         window.procesosSeleccionados = {};
         
-        Object.entries(prenda.procesos).forEach(([tipoProceso, procesoData]) => {
-            if (procesoData && procesoData.datos) {
-                console.log(`[PrendaEditor] Cargando proceso ${tipoProceso}:`, procesoData.datos);
+        // Los procesos vienen como array desde el backend
+        prenda.procesos.forEach(proceso => {
+            if (proceso) {
+                // Obtener tipo de proceso desde nombre_proceso o tipo_proceso
+                const tipoProceso = (proceso.nombre_proceso || proceso.tipo_proceso || 'proceso').toLowerCase();
+                console.log(`[PrendaEditor] Cargando proceso ${tipoProceso}:`, proceso);
                 
                 // Copiar datos completos del proceso
+                console.log(`[PrendaEditor] Estructura de tallas recibida para ${tipoProceso}:`, proceso.tallas);
+                console.log(`[PrendaEditor] Tipo de tallas:`, typeof proceso.tallas);
+                console.log(`[PrendaEditor] Es array:`, Array.isArray(proceso.tallas));
+                
+                // Convertir tallas si es necesario
+                let tallasFormato = proceso.tallas || { dama: {}, caballero: {} };
+                if (Array.isArray(tallasFormato) && tallasFormato.length === 0) {
+                    console.log(`[PrendaEditor] Tallas es array vacío, usando estructura vacía`);
+                    tallasFormato = { dama: {}, caballero: {} };
+                }
+                
                 window.procesosSeleccionados[tipoProceso] = {
                     datos: {
-                        tipo: procesoData.datos.tipo || tipoProceso,
-                        ubicaciones: procesoData.datos.ubicaciones || [],
-                        observaciones: procesoData.datos.observaciones || '',
-                        tallas: procesoData.datos.tallas || { dama: {}, caballero: {} },
-                        imagenes: procesoData.datos.imagenes || []
+                        tipo: tipoProceso,
+                        nombre: proceso.nombre_proceso || proceso.tipo_proceso || tipoProceso,
+                        ubicaciones: proceso.ubicaciones || [],
+                        observaciones: proceso.observaciones || '',
+                        tallas: tallasFormato,
+                        imagenes: proceso.imagenes || []
                     }
                 };
                 
+                console.log(`[PrendaEditor] Proceso ${tipoProceso} guardado en window.procesosSeleccionados`);
+                console.log(`[PrendaEditor] Tallas guardadas:`, window.procesosSeleccionados[tipoProceso].datos.tallas);
+                
                 // Marcar checkbox del proceso
-                const checkboxProceso = document.getElementById(`aplica-${tipoProceso}`);
+                const checkboxProceso = document.getElementById(`checkbox-${tipoProceso}`);
                 if (checkboxProceso) {
                     checkboxProceso.checked = true;
+                    // Evitar que el onclick se dispare automáticamente
+                    checkboxProceso._ignorarOnclick = true;
                     checkboxProceso.dispatchEvent(new Event('change', { bubbles: true }));
+                    checkboxProceso._ignorarOnclick = false;
                     console.log(`[PrendaEditor] Checkbox ${tipoProceso} marcado`);
+                } else {
+                    console.warn(`[PrendaEditor] Checkbox #checkbox-${tipoProceso} NO encontrado`);
                 }
             }
         });
         
-        console.log('[PrendaEditor] Procesos cargados:', window.procesosSeleccionados);
+        console.log('[PrendaEditor] Procesos cargados en window:', window.procesosSeleccionados);
+        console.log('[PrendaEditor] Función renderizarTarjetasProcesos existe:', typeof window.renderizarTarjetasProcesos);
         
         // Renderizar tarjetas de procesos
         if (window.renderizarTarjetasProcesos) {
+            console.log('[PrendaEditor] Llamando a renderizarTarjetasProcesos()...');
             window.renderizarTarjetasProcesos();
+            console.log('[PrendaEditor] renderizarTarjetasProcesos() completado');
+        } else {
+            console.error('[PrendaEditor] ERROR: window.renderizarTarjetasProcesos NO existe');
         }
     }
 

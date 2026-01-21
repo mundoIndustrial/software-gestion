@@ -273,7 +273,7 @@ class PedidoLogoAreaManager {
         const mapa = {
             'Creacion de orden': ' Creación de Orden',
             'pendiente_confirmar_diseño': '⏳ Pendiente Confirmar Diseño',
-            'en_diseño': '✏️ En Diseño',
+            'en_diseño': ' En Diseño',
             'logo': ' Logo (Producción)',
             'estampado': '🖨️ Estampado'
         };

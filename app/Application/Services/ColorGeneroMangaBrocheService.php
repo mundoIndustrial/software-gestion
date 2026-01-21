@@ -5,7 +5,7 @@ namespace App\Application\Services;
 use App\Models\ColorPrenda;
 use App\Models\GeneroPrenda;
 use App\Models\TipoManga;
-use App\Models\TipoBroche;
+use App\Models\TipoBrocheBoton;
 use App\Models\TelaPrenda;
 
 class ColorGeneroMangaBrocheService
@@ -125,7 +125,7 @@ class ColorGeneroMangaBrocheService
     /**
      * Obtener o crear broche por ID o nombre (case-insensitive)
      */
-    public function obtenerOCrearBroche($idONombre): TipoBroche
+    public function obtenerOCrearBroche($idONombre): TipoBrocheBoton
     {
         if (empty($idONombre)) {
             return null;
@@ -133,7 +133,7 @@ class ColorGeneroMangaBrocheService
 
         // Si es numérico, buscar por ID
         if (is_numeric($idONombre)) {
-            $broche = TipoBroche::find($idONombre);
+            $broche = TipoBrocheBoton::find($idONombre);
             if ($broche) {
                 return $broche;
             }
@@ -141,14 +141,14 @@ class ColorGeneroMangaBrocheService
 
         // Buscar case-insensitive primero (búsqueda exacta)
         $nombreTrim = trim($idONombre);
-        $broche = TipoBroche::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
+        $broche = TipoBrocheBoton::whereRaw('LOWER(nombre) = LOWER(?)', [$nombreTrim])->first();
         
         if ($broche) {
             return $broche;
         }
 
         // Si no encuentra exacta, buscar parcial (contiene)
-        $broche = TipoBroche::whereRaw('LOWER(nombre) LIKE LOWER(?)', ["%{$nombreTrim}%"])->first();
+        $broche = TipoBrocheBoton::whereRaw('LOWER(nombre) LIKE LOWER(?)', ["%{$nombreTrim}%"])->first();
         
         if ($broche) {
             return $broche;
@@ -156,7 +156,7 @@ class ColorGeneroMangaBrocheService
 
         // Si tampoco encuentra parcial, buscar entre los existentes por similitud
         // Esto es útil para "boton" vs "Botón"
-        $allBroches = TipoBroche::where('activo', true)->get();
+        $allBroches = TipoBrocheBoton::where('activo', true)->get();
         foreach ($allBroches as $b) {
             if (strtolower($b->nombre) === strtolower($nombreTrim)) {
                 return $b;
@@ -165,7 +165,7 @@ class ColorGeneroMangaBrocheService
 
         // Si no existe, crear con normalización
         $nombreNormalizado = ucfirst(strtolower($nombreTrim));
-        return TipoBroche::create([
+        return TipoBrocheBoton::create([
             'nombre' => $nombreNormalizado,
             'activo' => true,
         ]);
@@ -209,7 +209,7 @@ class ColorGeneroMangaBrocheService
      */
     public function obtenerBroches(): array
     {
-        return TipoBroche::where('activo', true)
+        return TipoBrocheBoton::where('activo', true)
             ->orderBy('nombre')
             ->get()
             ->toArray();
@@ -267,7 +267,7 @@ class ColorGeneroMangaBrocheService
     /**
      * Buscar o crear broche (alias de obtenerOCrearBroche)
      */
-    public function buscarOCrearBroche($nombre): TipoBroche
+    public function buscarOCrearBroche($nombre): TipoBrocheBoton
     {
         return $this->obtenerOCrearBroche($nombre);
     }

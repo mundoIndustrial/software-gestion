@@ -105,7 +105,7 @@ let coloresDisponibles = [];
 let telasDisponibles = [];
 
 function cargarDatosPedido(ordenId) {
-    fetch(`/supervisor-pedidos/${ordenId}/editar`)
+    fetch(`/ordenes/${ordenId}/editar-pedido`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -138,7 +138,21 @@ function cargarPrendas(prendas) {
     `;
     
     prendas.forEach((prenda, index) => {
-        const prendaHtml = crearPrendaHTML(prenda, index);
+        // Mapear estructura del nuevo endpoint a la estructura esperada
+        const prendaMapeada = {
+            ...prenda,
+            fotos: prenda.imagenes || [],
+            fotos_logo: prenda.fotos_logo || [],
+            fotos_tela: prenda.fotos_tela || prenda.imagenes_tela || [],
+            obs_manga: prenda.obs_manga || '',
+            obs_bolsillos: prenda.obs_bolsillos || '',
+            obs_broche: prenda.obs_broche || '',
+            obs_reflectivo: prenda.obs_reflectivo || '',
+            tiene_bolsillos: prenda.tiene_bolsillos || false,
+            tiene_reflectivo: prenda.tiene_reflectivo || false
+        };
+        
+        const prendaHtml = crearPrendaHTML(prendaMapeada, index);
         container.insertAdjacentHTML('beforeend', prendaHtml);
     });
 }
@@ -163,29 +177,68 @@ function crearPrendaHTML(prenda, index) {
         </div>
     `).join('') : '';
 
-    const fotosHtml = prenda.fotos ? prenda.fotos.map(foto => `
+    const fotosHtml = prenda.fotos ? prenda.fotos.map(foto => {
+        let rutaFoto = foto.url || '';
+        
+        // Construir ruta final: agregar /storage/ solo si no comienza con storage/ o /storage/
+        let rutaFinal = rutaFoto;
+        if (!rutaFoto.startsWith('storage/') && !rutaFoto.startsWith('/storage/') && !rutaFoto.startsWith('/')) {
+            rutaFinal = '/storage/' + rutaFoto;
+        } else if (rutaFoto.startsWith('storage/') && !rutaFoto.startsWith('/storage/')) {
+            // Si comienza con storage/ (sin /), agregar / al inicio
+            rutaFinal = '/' + rutaFoto;
+        }
+        
+        return `
         <div class="foto-item">
-            <img src="${foto.url}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
+            <img src="${rutaFinal}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
             <button type="button" onclick="eliminarImagen('prenda', ${foto.id}, this)" 
                     style="position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">×</button>
         </div>
-    `).join('') : '';
+    `;
+    }).join('') : '';
 
-    const fotosLogoHtml = prenda.fotos_logo ? prenda.fotos_logo.map(foto => `
+    const fotosLogoHtml = prenda.fotos_logo ? prenda.fotos_logo.map(foto => {
+        let rutaFoto = foto.url || '';
+        
+        // Construir ruta final: agregar /storage/ solo si no comienza con storage/ o /storage/
+        let rutaFinal = rutaFoto;
+        if (!rutaFoto.startsWith('storage/') && !rutaFoto.startsWith('/storage/') && !rutaFoto.startsWith('/')) {
+            rutaFinal = '/storage/' + rutaFoto;
+        } else if (rutaFoto.startsWith('storage/') && !rutaFoto.startsWith('/storage/')) {
+            // Si comienza con storage/ (sin /), agregar / al inicio
+            rutaFinal = '/' + rutaFoto;
+        }
+        
+        return `
         <div class="foto-item">
-            <img src="${foto.url}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
+            <img src="${rutaFinal}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
             <button type="button" onclick="eliminarImagen('logo', ${foto.id}, this)" 
                     style="position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">×</button>
         </div>
-    `).join('') : '';
+    `;
+    }).join('') : '';
 
-    const fotosTelaHtml = prenda.fotos_tela ? prenda.fotos_tela.map(foto => `
+    const fotosTelaHtml = prenda.fotos_tela ? prenda.fotos_tela.map(foto => {
+        let rutaFoto = foto.url || '';
+        
+        // Construir ruta final: agregar /storage/ solo si no comienza con storage/ o /storage/
+        let rutaFinal = rutaFoto;
+        if (!rutaFoto.startsWith('storage/') && !rutaFoto.startsWith('/storage/') && !rutaFoto.startsWith('/')) {
+            rutaFinal = '/storage/' + rutaFoto;
+        } else if (rutaFoto.startsWith('storage/') && !rutaFoto.startsWith('/storage/')) {
+            // Si comienza con storage/ (sin /), agregar / al inicio
+            rutaFinal = '/' + rutaFoto;
+        }
+        
+        return `
         <div class="foto-item">
-            <img src="${foto.url}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
+            <img src="${rutaFinal}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
             <button type="button" onclick="eliminarImagen('tela', ${foto.id}, this)" 
                     style="position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">×</button>
         </div>
-    `).join('') : '';
+    `;
+    }).join('') : '';
 
     return `
         <div class="prenda-card">

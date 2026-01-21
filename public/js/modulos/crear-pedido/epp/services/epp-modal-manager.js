@@ -38,7 +38,6 @@ class EppModalManager {
      */
     limpiarFormulario() {
         const campos = [
-            'medidaTallaEPP',
             'cantidadEPP',
             'observacionesEPP'
         ];
@@ -78,7 +77,6 @@ class EppModalManager {
      * Cargar valores en formulario
      */
     cargarValoresFormulario(talla, cantidad, observaciones) {
-        document.getElementById('medidaTallaEPP').value = talla || '';
         document.getElementById('cantidadEPP').value = cantidad || 0;
         document.getElementById('observacionesEPP').value = observaciones || '';
         console.log('[EppModalManager] Valores cargados en formulario');
@@ -89,7 +87,6 @@ class EppModalManager {
      */
     habilitarCampos() {
         const campos = [
-            'medidaTallaEPP',
             'cantidadEPP',
             'observacionesEPP'
         ];
@@ -196,7 +193,6 @@ class EppModalManager {
      */
     obtenerValoresFormulario() {
         return {
-            talla: document.getElementById('medidaTallaEPP').value.trim(),
             cantidad: parseInt(document.getElementById('cantidadEPP').value) || 0,
             observaciones: document.getElementById('observacionesEPP').value.trim() || null
         };
@@ -207,11 +203,6 @@ class EppModalManager {
      */
     validarFormulario() {
         const valores = this.obtenerValoresFormulario();
-
-        if (!valores.talla) {
-            alert('Especifica la talla');
-            return false;
-        }
 
         if (valores.cantidad <= 0) {
             alert('Cantidad debe ser mayor a 0');
@@ -229,7 +220,7 @@ class EppModalManager {
         if (!btnAgregar) return;
 
         const valores = this.obtenerValoresFormulario();
-        const puedeGuardar = valores.talla && valores.cantidad > 0;
+        const puedeGuardar = valores.cantidad > 0;
 
         if (puedeGuardar) {
             btnAgregar.disabled = false;

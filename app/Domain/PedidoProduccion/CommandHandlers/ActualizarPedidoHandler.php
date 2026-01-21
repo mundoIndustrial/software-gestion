@@ -29,7 +29,7 @@ class ActualizarPedidoHandler implements CommandHandler
         }
 
         try {
-            Log::info('✏️ [ActualizarPedidoHandler] Actualizando pedido', [
+            Log::info(' [ActualizarPedidoHandler] Actualizando pedido', [
                 'pedido_id' => $command->getPedidoId(),
             ]);
 

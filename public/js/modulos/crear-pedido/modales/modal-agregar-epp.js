@@ -68,7 +68,7 @@ function agregarEPPAlPedido() {
 }
 
 function editarItemEPP(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes) {
-    window.EppModalInterface?.editarEPP(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes);
+    window.EppModalInterface?.editarEPP(id, nombre, codigo, categoria, null, cantidad, observaciones, imagenes);
 }
 
 async function editarEPPDesdeDB(eppId) {
@@ -275,13 +275,9 @@ async function crearEPPNuevoYAgregar() {
         // Limpiar y ocultar formulario
         ocultarFormularioCrearEPP();
 
-        // Habilitar campos de talla, cantidad
-        document.getElementById('medidaTallaEPP').disabled = false;
+        // Habilitar campos de cantidad y observaciones
         document.getElementById('cantidadEPP').disabled = false;
         document.getElementById('observacionesEPP').disabled = false;
-        document.getElementById('medidaTallaEPP').style.background = 'white';
-        document.getElementById('medidaTallaEPP').style.color = '#1f2937';
-        document.getElementById('medidaTallaEPP').style.cursor = 'text';
         document.getElementById('cantidadEPP').style.background = 'white';
         document.getElementById('cantidadEPP').style.color = '#1f2937';
         document.getElementById('cantidadEPP').style.cursor = 'text';

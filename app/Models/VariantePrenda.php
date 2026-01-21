@@ -63,6 +63,6 @@ class VariantePrenda extends Model
 
     public function tipoBroche(): BelongsTo
     {
-        return $this->belongsTo(TipoBroche::class, 'tipo_broche_id');
+        return $this->belongsTo(TipoBrocheBoton::class, 'tipo_broche_id');
     }
 }

@@ -354,7 +354,7 @@ function agregarObservacionReflectivo() {
  * Recopilar datos del reflectivo
  */
 function recopilarDatosReflectivo() {
-    console.log('📦 Recopilando datos del reflectivo...');
+    console.log(' Recopilando datos del reflectivo...');
 
     const descripcion = document.getElementById('descripcion_reflectivo')?.value || '';
 

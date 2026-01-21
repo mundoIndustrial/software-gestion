@@ -776,7 +776,7 @@
         // Canal de Corte
         window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
             console.log('🎉 Evento CorteRecordCreated recibido en fullscreen', e);
-            console.log('✏️ Actualizando tablas con nuevo registro...');
+            console.log(' Actualizando tablas con nuevo registro...');
             
             // Recargar datos del API
             fetchCorteData();

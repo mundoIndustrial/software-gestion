@@ -44,7 +44,7 @@ class VistasController extends Controller
                     'color',
                     'tela',
                     'tipoManga',
-                    'tipoBroche'
+                    'tipoBrocheBoton'
                 ])
                 ->whereHas('pedido', function($q) {
                     // Solo prendas de pedidos que existen
@@ -105,7 +105,7 @@ class VistasController extends Controller
                 'color',
                 'tela',
                 'tipoManga',
-                'tipoBroche'
+                'tipoBrocheBoton'
             ]);
         }
 

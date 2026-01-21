@@ -14,7 +14,7 @@ use App\Models\TipoProceso;
 use App\Models\CatalogoTela;
 use App\Models\CatalogoColor;
 use App\Models\TipoManga;
-use App\Models\TipoBroche;
+use App\Models\TipoBrocheBoton;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic as Image;

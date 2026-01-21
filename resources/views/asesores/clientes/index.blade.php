@@ -35,7 +35,7 @@
                             <td style="padding: 15px;">{{ $cliente->ciudad ?? '-' }}</td>
                             <td style="padding: 15px; text-align: center;">
                                 <button onclick="editarCliente({{ $cliente->id }}, '{{ $cliente->nombre }}', '{{ $cliente->email }}', '{{ $cliente->telefono }}', '{{ $cliente->ciudad }}', '{{ $cliente->notas }}')" class="btn" style="background: #f39c12; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; margin-right: 5px;">
-                                    ✏️ Editar
+                                     Editar
                                 </button>
                                 <button onclick="eliminarCliente({{ $cliente->id }})" class="btn" style="background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
                                     🗑️ Eliminar

@@ -47,6 +47,12 @@ class EppController extends Controller
             $termino = $request->query('q');
             $categoria = $request->query('categoria');
 
+            // Debug: Log de entrada
+            \Log::info('[EppController] Búsqueda iniciada', [
+                'termino' => $termino,
+                'categoria' => $categoria,
+            ]);
+
             if ($termino) {
                 $query = new BuscarEppQuery($termino);
             } elseif ($categoria) {
@@ -56,6 +62,10 @@ class EppController extends Controller
             }
 
             $epps = $this->queryBus->execute($query);
+
+            \Log::info('[EppController] Búsqueda completada', [
+                'total' => count($epps),
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -77,6 +87,8 @@ class EppController extends Controller
                 'message' => $e->getMessage(),
                 'termino' => $termino ?? null,
                 'categoria' => $categoria ?? null,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
             return response()->json([

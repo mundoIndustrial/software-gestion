@@ -24,13 +24,19 @@ class Epp extends Model
     protected $fillable = [
         'codigo',
         'nombre',
+        'nombre_completo',
+        'marca',
         'categoria_id',
+        'tipo',
+        'talla',
+        'color',
         'descripcion',
         'activo',
     ];
 
     protected $casts = [
         'activo' => 'boolean',
+        'tipo' => 'string',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -97,8 +103,9 @@ class Epp extends Model
     public function scopeBuscar($query, string $termino)
     {
         return $query->where(function ($q) use ($termino) {
-            $q->where('nombre', 'like', "%{$termino}%")
-              ->orWhere('codigo', 'like', "%{$termino}%");
+            $q->where('nombre_completo', 'like', "%{$termino}%")
+              ->orWhere('codigo', 'like', "%{$termino}%")
+              ->orWhere('marca', 'like', "%{$termino}%");
         });
     }
 
@@ -107,6 +114,6 @@ class Epp extends Model
      */
     public function scopePorCategoria($query, string $categoria)
     {
-        return $query->where('categoria', $categoria);
+        return $query->whereHas('categoria', fn($q) => $q->where('codigo', $categoria));
     }
 }

@@ -32,7 +32,7 @@ class AnalizarPedido45729Seeder extends Seeder
 
             // Prendas
             $prendas = PrendaPedido::where('pedido_produccion_id', $pedido->id)->get();
-            echo "📦 PRENDAS: {$prendas->count()}\n";
+            echo " PRENDAS: {$prendas->count()}\n";
             
             foreach ($prendas as $prenda) {
                 echo "\n   Prenda: {$prenda->nombre_prenda} (ID: {$prenda->id})\n";

@@ -108,7 +108,7 @@ class ObtenerPedidoDetalleService
      */
     public function obtenerParaEdicion($pedidoIdentifier): array
     {
-        Log::info('✏️ [EDICION] Obteniendo datos para edición');
+        Log::info(' [EDICION] Obteniendo datos para edición');
 
         $pedido = $this->obtenerCompleto($pedidoIdentifier);
 
@@ -371,6 +371,10 @@ class ObtenerPedidoDetalleService
             //  Filtrar solo las fotos que sean de telas (contienen '/telas/' en la ruta)
             foreach ($fotosTelas as $foto) {
                 if (isset($foto['url']) && strpos($foto['url'], '/telas/') !== false) {
+                    // Procesar la URL para remover /storage/ duplicado
+                    if (strpos($foto['url'], '/storage/') === 0) {
+                        $foto['url'] = ltrim($foto['url'], '/');
+                    }
                     $fotos[] = $foto;
                 }
             }
@@ -385,7 +389,37 @@ class ObtenerPedidoDetalleService
     {
         $fotos = [];
         if (isset($prenda->fotos) && $prenda->fotos) {
-            $fotos = $prenda->fotos->toArray();
+            foreach ($prenda->fotos as $foto) {
+                Log::info('[OBTENER-FOTOS-PRENDA] Foto de prenda en BD:', [
+                    'foto_id' => $foto->id,
+                    'ruta_webp_bd' => $foto->ruta_webp,
+                    'ruta_original_bd' => $foto->ruta_original
+                ]);
+                
+                $fotoArray = $foto->toArray();
+                
+                Log::info('[OBTENER-FOTOS-PRENDA] Después de toArray():', [
+                    'foto_id' => $foto->id,
+                    'url_en_array' => $fotoArray['url'] ?? 'NO EXISTE',
+                    'ruta_en_array' => $fotoArray['ruta'] ?? 'NO EXISTE',
+                    'ruta_webp_en_array' => $fotoArray['ruta_webp'] ?? 'NO EXISTE'
+                ]);
+                
+                // Procesar la URL para remover /storage/ duplicado
+                if (isset($fotoArray['url'])) {
+                    $urlOriginal = $fotoArray['url'];
+                    // Si comienza con /storage/, remover /storage/ para que el frontend lo agregue
+                    if (strpos($fotoArray['url'], '/storage/') === 0) {
+                        $fotoArray['url'] = ltrim($fotoArray['url'], '/');
+                        Log::info('[OBTENER-FOTOS-PRENDA] URL procesada:', [
+                            'foto_id' => $foto->id,
+                            'url_original' => $urlOriginal,
+                            'url_procesada' => $fotoArray['url']
+                        ]);
+                    }
+                }
+                $fotos[] = $fotoArray;
+            }
         }
         return $fotos;
     }

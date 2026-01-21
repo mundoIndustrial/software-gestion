@@ -40,6 +40,11 @@
     <!--  GESTOR CENTRALIZADO JSON - Debe cargarse PRIMERO -->
     <script src="{{ asset('js/modulos/crear-pedido/gestor-datos-pedido-json.js') }}"></script>
     
+    <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
+    
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
@@ -55,8 +60,6 @@
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
     <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-pedido.js') }}"></script>

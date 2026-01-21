@@ -172,7 +172,7 @@ class GestorLogo {
                 ...this.ubicaciones[index],
                 ...datos
             };
-            logWithEmoji('✏️', `Ubicación actualizada`);
+            logWithEmoji('', `Ubicación actualizada`);
         }
     }
 

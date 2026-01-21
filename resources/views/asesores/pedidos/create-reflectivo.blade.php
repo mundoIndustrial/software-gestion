@@ -1993,7 +1993,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             // EDICIÓN: Usar POST con _method=PUT para compatibilidad con FormData
             url = '/asesores/cotizaciones/reflectivo/' + window.cotizacionIdActual;
             metodo = 'POST'; //  Cambiar a POST
-            console.log('✏️ EDICIÓN - Enviando a:', url);
+            console.log(' EDICIÓN - Enviando a:', url);
             
             // Limpiar FormData anterior y reconstruir con datos de edición
             const editFormData = new FormData();

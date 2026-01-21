@@ -818,4 +818,359 @@ class OrdenController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener datos completos del pedido confirmado para edición
+     * GET /ordenes/{id}/editar-pedido
+     */
+    public function editarPedido($id)
+    {
+        try {
+            $orden = PedidoProduccion::with([
+                'prendas' => function($query) {
+                    $query->with([
+                        'fotos',
+                        'coloresTelas' => function($q) {
+                            $q->with(['color', 'tela', 'fotos']);
+                        },
+                        'fotosTelas',
+                        'variantes' => function($q) {
+                            $q->with(['tipoManga', 'tipoBroche']);
+                        },
+                        'procesos' => function($q) {
+                            $q->with(['imagenes']);
+                        }
+                    ]);
+                },
+                'epp' => function($query) {
+                    $query->with('imagenes');
+                },
+                'asesora'
+            ])->findOrFail($id);
+
+            // Preparar datos de prendas con todas las relaciones
+            $prendasData = $orden->prendas->map(function($prenda) {
+                // Convertir IDs de tallas a nombres de tallas
+                $cantidadTallaConNombres = [];
+                
+                // Asegurar que cantidad_talla sea un array
+                $cantidadTalla = $prenda->cantidad_talla;
+                if (is_string($cantidadTalla)) {
+                    $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
+                }
+                
+                if ($cantidadTalla && is_array($cantidadTalla)) {
+                    foreach ($cantidadTalla as $tallaId => $cantidad) {
+                        if ($cantidad > 0) {
+                            // Buscar el nombre de la talla por ID
+                            $talla = \App\Models\Talla::find($tallaId);
+                            $nombreTalla = $talla ? $talla->nombre : $tallaId;
+                            $cantidadTallaConNombres[$nombreTalla] = $cantidad;
+                        }
+                    }
+                }
+                
+                // Parsear descripcion_variaciones en campos individuales
+                $variaciones = [
+                    'obs_manga' => '',
+                    'obs_bolsillos' => '',
+                    'obs_broche' => '',
+                    'obs_reflectivo' => ''
+                ];
+                
+                if ($prenda->descripcion_variaciones) {
+                    $texto = $prenda->descripcion_variaciones;
+                    
+                    if (preg_match('/Manga:\s*([^|]+)/', $texto, $matches)) {
+                        $variaciones['obs_manga'] = trim($matches[1]);
+                    }
+                    
+                    if (preg_match('/Bolsillos:\s*([^|]+)/', $texto, $matches)) {
+                        $variaciones['obs_bolsillos'] = trim($matches[1]);
+                    }
+                    
+                    if (preg_match('/Broche:\s*([^|]+)/', $texto, $matches)) {
+                        $variaciones['obs_broche'] = trim($matches[1]);
+                    }
+                    
+                    if (preg_match('/Reflectivo:\s*(.+)$/', $texto, $matches)) {
+                        $variaciones['obs_reflectivo'] = trim($matches[1]);
+                    }
+                }
+                
+                // Preparar tallas por género desde cantidad_talla JSON
+                $tallasGenero = [];
+                $cantidadTalla = $prenda->cantidad_talla;
+                if (is_string($cantidadTalla)) {
+                    $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
+                }
+                
+                if ($cantidadTalla && is_array($cantidadTalla)) {
+                    foreach ($cantidadTalla as $genero => $tallas) {
+                        if (is_array($tallas)) {
+                            $tallasGenero[$genero] = [
+                                'tallas' => array_keys($tallas),
+                                'tipo' => null
+                            ];
+                        }
+                    }
+                }
+
+                // Obtener color y tela desde coloresTelas
+                $colorNombre = null;
+                $telaNombre = null;
+                if ($prenda->coloresTelas && count($prenda->coloresTelas) > 0) {
+                    $colorTela = $prenda->coloresTelas->first();
+                    if ($colorTela) {
+                        $colorNombre = $colorTela->color?->nombre;
+                        $telaNombre = $colorTela->tela?->nombre;
+                    }
+                }
+                
+                // Preparar variantes
+                $variantes = [];
+                if ($prenda->variantes && count($prenda->variantes) > 0) {
+                    foreach ($prenda->variantes as $variante) {
+                        $variantes[] = [
+                            'id' => $variante->id,
+                            'talla' => '',
+                            'cantidad' => '',
+                            'genero' => '',
+                            'color_id' => null,
+                            'color_nombre' => $colorNombre,
+                            'tela_id' => null,
+                            'tela_nombre' => $telaNombre,
+                            'tipo_manga_id' => $variante->tipo_manga_id,
+                            'tipo_manga_nombre' => $variante->tipoManga?->nombre,
+                            'tipo_broche_id' => $variante->tipo_broche_boton_id,
+                            'tipo_broche_nombre' => $variante->tipoBroche?->nombre,
+                            'manga_obs' => $variante->manga_obs,
+                            'broche_boton_obs' => $variante->broche_boton_obs,
+                            'bolsillos_obs' => $variante->bolsillos_obs,
+                            'tiene_bolsillos' => $variante->tiene_bolsillos
+                        ];
+                    }
+                }
+
+                // Preparar procesos
+                $procesos = [];
+                if ($prenda->procesos && count($prenda->procesos) > 0) {
+                    foreach ($prenda->procesos as $proceso) {
+                        // Procesar ubicaciones
+                        $ubicacionesData = [];
+                        if ($proceso->ubicaciones) {
+                            if (is_string($proceso->ubicaciones)) {
+                                $ubicacionesData = json_decode($proceso->ubicaciones, true) ?? [];
+                            } else if (is_array($proceso->ubicaciones)) {
+                                $ubicacionesData = $proceso->ubicaciones;
+                            }
+                        }
+                        
+                        // Obtener nombre del tipo de proceso
+                        $tipoProceso = 'Proceso';
+                        if ($proceso->tipo_proceso_id) {
+                            $tipoProcesoDB = \App\Models\TipoProceso::find($proceso->tipo_proceso_id);
+                            if ($tipoProcesoDB) {
+                                $tipoProceso = $tipoProcesoDB->nombre;
+                            }
+                        }
+                        
+                        $procesos[] = [
+                            'id' => $proceso->id,
+                            'tipo' => $tipoProceso,
+                            'nombre' => $tipoProceso,
+                            'observaciones' => $proceso->observaciones,
+                            'ubicaciones' => is_array($ubicacionesData) ? $ubicacionesData : [],
+                            'imagenes' => $proceso->imagenes ? $proceso->imagenes->map(function($img) {
+                                return [
+                                    'id' => $img->id,
+                                    'url' => $img->url,
+                                    'ruta' => $img->ruta_webp ?? $img->ruta_original
+                                ];
+                            })->toArray() : []
+                        ];
+                    }
+                }
+
+                // Preparar telas agregadas
+                $telasAgregadas = [];
+                if ($prenda->coloresTelas && count($prenda->coloresTelas) > 0) {
+                    $telasUnicas = [];
+                    foreach ($prenda->coloresTelas as $colorTela) {
+                        $telaKey = $colorTela->tela_id . '_' . $colorTela->color_id;
+                        if (!isset($telasUnicas[$telaKey])) {
+                            $telasUnicas[$telaKey] = [
+                                'tela' => $colorTela->tela?->nombre,
+                                'color' => $colorTela->color?->nombre,
+                                'referencia' => $colorTela->tela?->referencia ?? '',
+                                'imagenes' => []
+                            ];
+                        }
+                    }
+                    $telasAgregadas = array_values($telasUnicas);
+                }
+
+                return [
+                    'id' => $prenda->id,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'nombre_producto' => $prenda->nombre_prenda,
+                    'cantidad' => $prenda->cantidad,
+                    'descripcion' => $prenda->descripcion,
+                    'obs_manga' => $variaciones['obs_manga'],
+                    'obs_bolsillos' => $variaciones['obs_bolsillos'],
+                    'obs_broche' => $variaciones['obs_broche'],
+                    'obs_reflectivo' => $variaciones['obs_reflectivo'],
+                    'cantidad_talla' => $cantidadTallaConNombres,
+                    'color_id' => $prenda->color_id,
+                    'color_nombre' => $prenda->color?->nombre ?? null,
+                    'tela_id' => $prenda->tela_id,
+                    'tela_nombre' => $prenda->tela?->nombre ?? null,
+                    'tipo_manga_id' => $prenda->tipo_manga_id,
+                    'tipo_manga_nombre' => $prenda->tipoManga?->nombre ?? null,
+                    'tipo_broche_id' => $prenda->tipo_broche_id,
+                    'tipo_broche_nombre' => $prenda->tipoBrocheBoton?->nombre ?? null,
+                    'tiene_bolsillos' => $prenda->tiene_bolsillos,
+                    'tiene_reflectivo' => $prenda->tiene_reflectivo,
+                    'fotos' => $prenda->fotos->map(function($foto) {
+                        $urlFoto = $foto->url;
+                        \Log::info('[ORDEN-CONTROLLER] Foto de prenda - Datos en BD y accessor', [
+                            'foto_id' => $foto->id,
+                            'ruta_webp_bd' => $foto->ruta_webp,
+                            'ruta_original_bd' => $foto->ruta_original,
+                            'url_accessor' => $urlFoto,
+                            'metodo' => 'fotos'
+                        ]);
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $urlFoto,
+                            'url' => $urlFoto
+                        ];
+                    }),
+                    'imagenes' => $prenda->fotos->map(function($foto) {
+                        $urlFoto = $foto->url;
+                        \Log::info('[ORDEN-CONTROLLER] Foto de prenda (imagenes) - Datos en BD y accessor', [
+                            'foto_id' => $foto->id,
+                            'ruta_webp_bd' => $foto->ruta_webp,
+                            'ruta_original_bd' => $foto->ruta_original,
+                            'url_accessor' => $urlFoto,
+                            'metodo' => 'imagenes'
+                        ]);
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $urlFoto,
+                            'url' => $urlFoto
+                        ];
+                    }),
+                    'fotos_logo' => $prenda->fotosLogo->map(function($foto) {
+                        $urlFoto = $foto->url;
+                        \Log::info('[ORDEN-CONTROLLER] Foto de logo - Datos en BD y accessor', [
+                            'foto_id' => $foto->id,
+                            'ruta_foto_bd' => $foto->ruta_foto,
+                            'url_accessor' => $urlFoto,
+                            'metodo' => 'fotos_logo'
+                        ]);
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $foto->ruta_foto,
+                            'url' => $urlFoto
+                        ];
+                    }),
+                    'fotos_tela' => $prenda->fotosTelas->map(function($foto) {
+                        $urlFoto = $foto->url;
+                        \Log::info('[ORDEN-CONTROLLER] Foto de tela - Datos en BD y accessor', [
+                            'foto_id' => $foto->id,
+                            'ruta_webp_bd' => $foto->ruta_webp,
+                            'ruta_original_bd' => $foto->ruta_original,
+                            'url_accessor' => $urlFoto,
+                            'metodo' => 'fotos_tela'
+                        ]);
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $urlFoto,
+                            'url' => $urlFoto
+                        ];
+                    }),
+                    'imagenes_tela' => $prenda->fotosTelas->map(function($foto) {
+                        $urlFoto = $foto->url;
+                        \Log::info('[ORDEN-CONTROLLER] Foto de tela (imagenes_tela) - Datos en BD y accessor', [
+                            'foto_id' => $foto->id,
+                            'ruta_webp_bd' => $foto->ruta_webp,
+                            'ruta_original_bd' => $foto->ruta_original,
+                            'url_accessor' => $urlFoto,
+                            'metodo' => 'imagenes_tela'
+                        ]);
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $urlFoto,
+                            'url' => $urlFoto
+                        ];
+                    }),
+                    'variantes' => $variantes,
+                    'tallas' => $tallasGenero,
+                    'generosConTallas' => $tallasGenero,
+                    'telasAgregadas' => $telasAgregadas,
+                    'procesos' => $procesos,
+                    'origen' => $prenda->de_bodega ? 'bodega' : 'cliente'
+                ];
+            });
+
+            // Preparar datos del EPP
+            $eppData = [];
+            if ($orden->epp && count($orden->epp) > 0) {
+                foreach ($orden->epp as $epp) {
+                    $eppData[] = [
+                        'id' => $epp->id,
+                        'epp_id' => $epp->epp_id,
+                        'cantidad' => $epp->cantidad,
+                        'tallas_medidas' => $epp->tallas_medidas ? json_decode($epp->tallas_medidas, true) : [],
+                        'observaciones' => $epp->observaciones,
+                        'imagenes' => $epp->imagenes ? $epp->imagenes->map(function($img) {
+                            return [
+                                'id' => $img->id,
+                                'ruta' => $img->ruta_web ?? $img->ruta_original,
+                                'url' => $img->ruta_web ?? $img->ruta_original,
+                                'principal' => $img->principal
+                            ];
+                        })->toArray() : []
+                    ];
+                }
+            }
+
+            // Obtener listas de colores y telas disponibles
+            $colores = \App\Models\ColorPrenda::orderBy('nombre')->get(['id', 'nombre']);
+            $telas = \App\Models\TelaPrenda::orderBy('nombre')->get(['id', 'nombre']);
+
+            return response()->json([
+                'success' => true,
+                'orden' => [
+                    'id' => $orden->id,
+                    'numero_pedido' => $orden->numero_pedido,
+                    'cliente' => $orden->cliente,
+                    'cliente_id' => $orden->cliente_id,
+                    'asesor_id' => $orden->asesor_id,
+                    'asesora_nombre' => $orden->asesora?->name ?? 'N/A',
+                    'forma_de_pago' => $orden->forma_de_pago,
+                    'estado' => $orden->estado,
+                    'novedades' => $orden->novedades,
+                    'dia_de_entrega' => $orden->dia_de_entrega,
+                    'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden?->format('Y-m-d'),
+                    'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega?->format('Y-m-d'),
+                    'prendas' => $prendasData,
+                    'epp' => $eppData
+                ],
+                'colores' => $colores,
+                'telas' => $telas
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener datos para edición', [
+                'error' => $e->getMessage(),
+                'orden_id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos del pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

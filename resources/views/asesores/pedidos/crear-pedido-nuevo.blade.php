@@ -241,6 +241,11 @@
     <script src="{{ asset('js/utilidades/logger-app.js') }}"></script>
     <script src="{{ asset('js/utilidades/validador-prenda.js') }}"></script>
     
+    <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
+    
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
@@ -281,9 +286,6 @@
     <!-- Componente tarjeta readonly (completo - funcional) -->
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
     
-    <!--  CRÍTICO: Cargar manejadores-procesos-prenda ANTES de modal-prenda-dinamico.js -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
-    
     <!-- Modal de prendas - Constantes HTML (DEBE cargarse ANTES del modal principal) -->
     <script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>
     
@@ -292,9 +294,6 @@
     
     <!-- Edición simple de prendas (reutiliza factura) -->
     <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
-    
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
 
 <script>
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';

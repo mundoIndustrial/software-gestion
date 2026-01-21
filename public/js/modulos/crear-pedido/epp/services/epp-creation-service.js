@@ -84,9 +84,8 @@ class EppCreationService {
             document.getElementById('codigoProductoEPP').textContent = producto.codigo;
             document.getElementById('productoCardEPP').style.display = 'flex';
 
-            // Habilitar campos de talla, cantidad, observaciones
+            // Habilitar campos de cantidad y observaciones
             this._habilitarCampos([
-                'medidaTallaEPP',
                 'cantidadEPP',
                 'observacionesEPP'
             ]);

@@ -42,10 +42,6 @@ class ItemValidationService
             $errores[] = "Ítem {$itemNum} (EPP): Cantidad debe ser mayor a 0";
         }
 
-        if (empty($item['talla'])) {
-            $errores[] = "Ítem {$itemNum} (EPP): Talla/medida no especificada";
-        }
-
         return $errores;
     }
 

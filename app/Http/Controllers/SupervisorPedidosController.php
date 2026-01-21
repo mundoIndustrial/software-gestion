@@ -227,7 +227,7 @@ class SupervisorPedidosController extends Controller
     {
         $orden = PedidoProduccion::with([
             'prendas' => function($q) {
-                $q->with(['color', 'tela', 'tipoManga', 'tipoBroche']);
+                $q->with(['color', 'tela', 'tipoManga', 'tipoBrocheBoton']);
             },
             'prendas.procesos'
         ])->findOrFail($id);
@@ -472,7 +472,7 @@ class SupervisorPedidosController extends Controller
                 
                 try {
                     if ($prenda->tipo_broche_id) {
-                        $tipoBroche = \App\Models\TipoBroche::find($prenda->tipo_broche_id);
+                        $tipoBroche = \App\Models\TipoBrocheBoton::find($prenda->tipo_broche_id);
                         $tipoBrocheNombre = $tipoBroche ? $tipoBroche->nombre : null;
                     }
                 } catch (\Exception $e) {
@@ -812,163 +812,6 @@ class SupervisorPedidosController extends Controller
         }
     }
 
-    /**
-     * Obtener datos completos del pedido para edición
-     * GET /supervisor-pedidos/{id}/editar
-     */
-    public function edit($id)
-    {
-        try {
-            $orden = PedidoProduccion::with([
-                'prendas' => function($query) {
-                    $query->with([
-                        'color',
-                        'tela',
-                        'tipoManga',
-                        'tipoBroche',
-                        'fotos',
-                        'fotosLogo',
-                        'fotosTela'
-                    ]);
-                },
-                'asesora'
-            ])->findOrFail($id);
-
-            // Preparar datos de prendas con todas las relaciones
-            $prendasData = $orden->prendas->map(function($prenda) {
-                // Convertir IDs de tallas a nombres de tallas
-                $cantidadTallaConNombres = [];
-                
-                // Asegurar que cantidad_talla sea un array
-                $cantidadTalla = $prenda->cantidad_talla;
-                if (is_string($cantidadTalla)) {
-                    $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
-                }
-                
-                if ($cantidadTalla && is_array($cantidadTalla)) {
-                    foreach ($cantidadTalla as $tallaId => $cantidad) {
-                        if ($cantidad > 0) {
-                            // Buscar el nombre de la talla por ID
-                            $talla = \App\Models\Talla::find($tallaId);
-                            $nombreTalla = $talla ? $talla->nombre : $tallaId;
-                            $cantidadTallaConNombres[$nombreTalla] = $cantidad;
-                        }
-                    }
-                }
-                
-                // Parsear descripcion_variaciones en campos individuales
-                $variaciones = [
-                    'obs_manga' => '',
-                    'obs_bolsillos' => '',
-                    'obs_broche' => '',
-                    'obs_reflectivo' => ''
-                ];
-                
-                if ($prenda->descripcion_variaciones) {
-                    // Parsear el texto de variaciones
-                    $texto = $prenda->descripcion_variaciones;
-                    
-                    // Extraer Manga
-                    if (preg_match('/Manga:\s*([^|]+)/', $texto, $matches)) {
-                        $variaciones['obs_manga'] = trim($matches[1]);
-                    }
-                    
-                    // Extraer Bolsillos
-                    if (preg_match('/Bolsillos:\s*([^|]+)/', $texto, $matches)) {
-                        $variaciones['obs_bolsillos'] = trim($matches[1]);
-                    }
-                    
-                    // Extraer Broche
-                    if (preg_match('/Broche:\s*([^|]+)/', $texto, $matches)) {
-                        $variaciones['obs_broche'] = trim($matches[1]);
-                    }
-                    
-                    // Extraer Reflectivo
-                    if (preg_match('/Reflectivo:\s*(.+)$/', $texto, $matches)) {
-                        $variaciones['obs_reflectivo'] = trim($matches[1]);
-                    }
-                }
-                
-                return [
-                    'id' => $prenda->id,
-                    'nombre_prenda' => $prenda->nombre_prenda,
-                    'cantidad' => $prenda->cantidad,
-                    'descripcion' => $prenda->descripcion,
-                    'obs_manga' => $variaciones['obs_manga'],
-                    'obs_bolsillos' => $variaciones['obs_bolsillos'],
-                    'obs_broche' => $variaciones['obs_broche'],
-                    'obs_reflectivo' => $variaciones['obs_reflectivo'],
-                    'cantidad_talla' => $cantidadTallaConNombres,
-                    'color_id' => $prenda->color_id,
-                    'color_nombre' => $prenda->color?->nombre ?? null,
-                    'tela_id' => $prenda->tela_id,
-                    'tela_nombre' => $prenda->tela?->nombre ?? null,
-                    'tipo_manga_id' => $prenda->tipo_manga_id,
-                    'tipo_manga_nombre' => $prenda->tipoManga?->nombre ?? null,
-                    'tipo_broche_id' => $prenda->tipo_broche_id,
-                    'tipo_broche_nombre' => $prenda->tipoBroche?->nombre ?? null,
-                    'tiene_bolsillos' => $prenda->tiene_bolsillos,
-                    'tiene_reflectivo' => $prenda->tiene_reflectivo,
-                    'fotos' => $prenda->fotos->map(function($foto) {
-                        return [
-                            'id' => $foto->id,
-                            'ruta' => $foto->ruta_foto,
-                            'url' => $foto->url // Usar el accessor del modelo
-                        ];
-                    }),
-                    'fotos_logo' => $prenda->fotosLogo->map(function($foto) {
-                        return [
-                            'id' => $foto->id,
-                            'ruta' => $foto->ruta_foto,
-                            'url' => $foto->url // Usar el accessor del modelo
-                        ];
-                    }),
-                    'fotos_tela' => $prenda->fotosTela->map(function($foto) {
-                        return [
-                            'id' => $foto->id,
-                            'ruta' => $foto->ruta_foto,
-                            'url' => $foto->url // Usar el accessor del modelo
-                        ];
-                    })
-                ];
-            });
-
-            // Obtener listas de colores y telas disponibles
-            $colores = \App\Models\ColorPrenda::orderBy('nombre')->get(['id', 'nombre']);
-            $telas = \App\Models\TelaPrenda::orderBy('nombre')->get(['id', 'nombre']);
-
-            return response()->json([
-                'success' => true,
-                'orden' => [
-                    'id' => $orden->id,
-                    'numero_pedido' => $orden->numero_pedido,
-                    'cliente' => $orden->cliente,
-                    'cliente_id' => $orden->cliente_id,
-                    'asesor_id' => $orden->asesor_id,
-                    'asesora_nombre' => $orden->asesora?->name ?? 'N/A',
-                    'forma_de_pago' => $orden->forma_de_pago,
-                    'estado' => $orden->estado,
-                    'novedades' => $orden->novedades,
-                    'dia_de_entrega' => $orden->dia_de_entrega,
-                    'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden?->format('Y-m-d'),
-                    'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega?->format('Y-m-d'),
-                    'prendas' => $prendasData
-                ],
-                'colores' => $colores,
-                'telas' => $telas
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error al obtener datos para edición', [
-                'error' => $e->getMessage(),
-                'orden_id' => $id
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos del pedido: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Actualizar pedido completo

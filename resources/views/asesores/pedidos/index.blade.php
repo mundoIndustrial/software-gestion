@@ -291,14 +291,14 @@
         
         const htmlBotones = `
             <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; border-left: 4px solid #6b7280; margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                <button onclick="abrirEditarDatos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'">✏️ Editar Datos</button>
+                <button onclick="abrirEditarDatos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'"> Editar Datos</button>
                 <button onclick="abrirEditarPrendas()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'"> Editar Prendas</button>
                 <button onclick="abrirEditarEPP()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'">💊 Editar EPP</button>
             </div>
         `;
         
         UI.contenido({
-            titulo: `✏️ Editar Pedido #${datosCompletos.numero_pedido}`,
+            titulo: ` Editar Pedido #${datosCompletos.numero_pedido}`,
             html: htmlBotones + `<div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">${htmlFactura}</div>`,
             ancho: '900px',
             confirmButtonText: ' Listo'
@@ -330,7 +330,7 @@
         `;
         
         UI.contenido({
-            titulo: '✏️ Editar Datos Generales',
+            titulo: ' Editar Datos Generales',
             html: html,
             confirmButtonText: '💾 Guardar',
             confirmButtonColor: '#10b981',
@@ -381,7 +381,7 @@
                                 <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">💊 ${nombre.toUpperCase()}</h4>
                                 <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
                             </div>
-                            <span style="background: #ec4899; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">✏️ Editar</span>
+                            <span style="background: #ec4899; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
                         </div>
                     </button>
                 `;
@@ -599,6 +599,7 @@
 <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
 
 <!-- Modal Dinámico: Constantes HTML (DEBE cargarse ANTES del modal principal) -->
 <script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>

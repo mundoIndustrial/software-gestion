@@ -283,7 +283,7 @@ class DescripcionPrendaHelper
         if ($prenda->relationLoaded('tipoBroche') && $prenda->tipoBroche) {
             $datos['tipo_broche'] = $prenda->tipoBroche->nombre;
         } elseif ($prenda->tipo_broche_id) {
-            $tipoBroche = \App\Models\TipoBroche::find($prenda->tipo_broche_id);
+            $tipoBroche = \App\Models\TipoBrocheBoton::find($prenda->tipo_broche_id);
             if ($tipoBroche) {
                 $datos['tipo_broche'] = $tipoBroche->nombre;
             }

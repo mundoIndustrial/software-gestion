@@ -382,7 +382,7 @@ function actualizarGeneroReflectivo(prendaIndex, genero) {
         seccionCaballero.style.display = checkCaballero && checkCaballero.checked ? 'block' : 'none';
     }
     
-    logWithEmoji('✏️', `Géneros seleccionados: ${generosSeleccionados.join(', ') || 'ninguno'}`);
+    logWithEmoji('', `Géneros seleccionados: ${generosSeleccionados.join(', ') || 'ninguno'}`);
 }
 
 /**

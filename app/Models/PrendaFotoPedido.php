@@ -31,6 +31,7 @@ class PrendaFotoPedido extends Model
 
     /**
      * Accessor: Obtener URL de la imagen (usa WebP si existe, sino original)
+     * Retorna rutas SIN /storage/ al inicio para evitar duplicación
      */
     public function getUrlAttribute(): string
     {
@@ -38,19 +39,25 @@ class PrendaFotoPedido extends Model
         if (!$ruta) {
             return '';
         }
+        
         // Si ya es una URL completa, devolverla tal cual
         if (str_starts_with($ruta, 'http')) {
             return $ruta;
         }
-        // Si comienza con /storage/, es accesible
-        if (str_starts_with($ruta, '/storage/')) {
-            return $ruta;
+        
+        // SIEMPRE remover /storage/ del inicio si existe
+        // Esto asegura que nunca retornamos /storage/storage/...
+        while (str_starts_with($ruta, '/storage/')) {
+            $ruta = ltrim($ruta, '/');
         }
-        // Si comienza con storage/ (sin /), agregar /
-        if (str_starts_with($ruta, 'storage/')) {
-            return '/' . $ruta;
+        
+        // Si comienza con /, remover el / inicial
+        if (str_starts_with($ruta, '/')) {
+            $ruta = ltrim($ruta, '/');
         }
-        // Si es una ruta relativa, agregar /storage/
-        return '/storage/' . ltrim($ruta, '/');
+        
+        // Retornar sin /storage/ al inicio
+        // El frontend o el servidor agregará /storage/ según sea necesario
+        return $ruta;
     }
 }

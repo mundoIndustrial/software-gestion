@@ -259,6 +259,11 @@
 <!--  ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
 <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
 
+<!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
+
 <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
@@ -275,11 +280,6 @@
 
 <!-- Componente tarjeta readonly (completo - funcional) -->
 <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
-
-<!-- Manejadores de procesos -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
 
 <!-- Inicializar storages INMEDIATAMENTE (antes de que se cargue gestion-telas.js) -->
 <script>

@@ -185,7 +185,7 @@ class GestorPrendaSinCotizacion {
             this.prendasEliminadas.delete(index);
         }
 
-        console.log(`✏️  [GESTOR] Prenda actualizada en índice ${index}`);
+        console.log(`  [GESTOR] Prenda actualizada en índice ${index}`);
         console.log(`   Prenda actualizada:`, this.prendas[index]);
 
         return true;

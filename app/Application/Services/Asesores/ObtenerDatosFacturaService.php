@@ -6,6 +6,7 @@ use App\Models\PedidoProduccion;
 use App\Models\LogoPedido;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 
 class ObtenerDatosFacturaService
 {
@@ -52,7 +53,8 @@ class ObtenerDatosFacturaService
 
         // Crear instancia del repository directamente
         $repository = new \App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository();
-        $datos = $repository->obtenerDatosFactura($pedido->id);
+        // Usar obtenerDatosRecibos() que retorna la estructura completa con telasAgregadas, generosConTallas, etc.
+        $datos = $repository->obtenerDatosRecibos($pedido->id);
         
         // Agregar el ID del pedido para poder usarlo en el frontend
         $datos['id'] = $pedido->id;
@@ -60,7 +62,7 @@ class ObtenerDatosFacturaService
         Log::info('[FACTURA] Datos extraídos', [
             'numero_pedido' => $datos['numero_pedido'],
             'prendas_count' => count($datos['prendas']),
-            'total_items' => $datos['total_items'],
+            'total_items' => $datos['total_items'] ?? 0,
         ]);
 
         return $datos;
