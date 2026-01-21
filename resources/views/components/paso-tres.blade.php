@@ -1,4 +1,152 @@
 <!-- PASO 3: LOGO -->
+<style>
+    /* Estilos para Técnicas */
+    .tecnicas-box {
+        background: #f9f9f9;
+        border: 2px solid #3498db;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 1rem;
+    }
+
+    .tecnicas-box h3 {
+        margin-bottom: 20px;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .tecnicas-box label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .tecnicas-box button {
+        background: #1e40af;
+        color: white;
+        border: none;
+        cursor: pointer;
+        padding: 10px 20px;
+        border-radius: 4px;
+        font-weight: 600;
+        transition: background 0.2s ease;
+    }
+
+    .tecnicas-box button:hover {
+        background: #182e7d;
+    }
+
+    #tecnicas_agregadas {
+        margin-top: 15px;
+    }
+
+    #sin_tecnicas {
+        padding: 20px;
+        text-align: center;
+        background: #f5f5f5;
+        border-radius: 8px;
+        color: #999;
+        display: block;
+    }
+
+    /* Estilos para Observaciones */
+    .obs-box {
+        background: #f9f9f9;
+        border: 2px solid #3498db;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 1rem;
+    }
+
+    .obs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .obs-header label {
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin: 0;
+        color: #1e40af;
+    }
+
+    .btn-add {
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        font-size: 1.5rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        transition: background 0.2s ease;
+    }
+
+    .btn-add:hover {
+        background: #2980b9;
+    }
+
+    .obs-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .obs-lista > div {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+    }
+
+    .obs-lista input[type="text"] {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .obs-lista button {
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: bold;
+        border: none;
+        flex-shrink: 0;
+    }
+
+    .obs-toggle-btn {
+        background: #3498db;
+        color: white;
+    }
+
+    .obs-toggle-btn:hover {
+        background: #2980b9;
+    }
+
+    .obs-remove-btn {
+        background: #f44336;
+        color: white;
+    }
+
+    .obs-remove-btn:hover {
+        background: #da190b;
+    }
+</style>
+
 <div class="form-step" data-step="3">
     <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
@@ -21,85 +169,43 @@
     </div>
 
     <div class="form-section">
-        <!-- DESCRIPCIÓN DEL LOGO/BORDADO -->
-        <div class="form-group-large">
-            <label for="descripcion_logo"><i class="fas fa-pen"></i> DESCRIPCIÓN DEL LOGO/BORDADO</label>
-            <textarea id="descripcion_logo" name="descripcion_logo" class="input-large" rows="3" placeholder="Describe el logo, bordado o estampado que deseas..." style="width: 100%; padding: 12px; border: 2px solid #3498db; border-radius: 6px; font-size: 0.9rem; font-family: inherit;"></textarea>
-            <small class="help-text">Incluye detalles sobre colores, tamaño, posición, etc.</small>
+        <!-- TÉCNICAS - Igual al formulario de logo individual -->
+        <div class="tecnicas-box">
+            <h3 style="margin-bottom: 20px; color: #1e40af; font-weight: 600;">Técnicas</h3>
+            
+            <!-- Selector de Técnicas (Checkboxes) -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">Selecciona las técnicas a aplicar:</label>
+                <div id="tecnicas-checkboxes-paso3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 15px;">
+                    <!-- Se llenan dinámicamente con renderizarCheckboxesTecnicas() -->
+                </div>
+                <button type="button" id="btnAgregarPrendas" onclick="abrirModalAgregarTecnicaPaso3()" style="background: #1e40af; color: white; border: none; cursor: pointer; padding: 10px 20px; border-radius: 4px; font-weight: 600; transition: background 0.2s ease;" title="Agregar prendas para las técnicas seleccionadas">
+                    <i class="fas fa-plus"></i> Agregar Prendas
+                </button>
+            </div>
+            
+            <!-- Lista de Técnicas Agregadas por Prenda -->
+            <div id="tecnicas_agregadas_paso3" style="margin-top: 15px;"></div>
+            
+            <!-- Sin Técnicas -->
+            <div id="sin_tecnicas_paso3" style="padding: 20px; text-align: center; background: #f5f5f5; border-radius: 8px; color: #999; display: block;">
+                <p>Selecciona técnicas y agrega prendas</p>
+            </div>
         </div>
+        
+        <!-- Campo oculto para enviar técnicas al backend -->
+        <input type="hidden" id="paso3_tecnicas_datos" name="paso3_tecnicas_datos" value="[]">
+    </div>
 
-        <!-- IMÁGENES -->
-        <div class="form-group-large">
-            <label for="imagenes_bordado"><i class="fas fa-images"></i> IMÁGENES (MÁXIMO 5)</label>
-            <div id="drop_zone_imagenes" style="border: 2px dashed #3498db; border-radius: 8px; padding: 30px; text-align: center; background: #f0f7ff; cursor: pointer; margin-bottom: 10px;">
-                <i class="fas fa-cloud-upload-alt" style="font-size: 2.5rem; color: #3498db; margin-bottom: 10px; display: block;"></i>
-                <p style="margin: 10px 0; color: #3498db; font-weight: 600;">ARRASTRA IMÁGENES AQUÍ O HAZ CLIC</p>
-                <p style="margin: 5px 0; color: #666; font-size: 0.9rem;">Máximo 5 imágenes</p>
-                <input type="file" id="imagenes_bordado" name="imagenes_bordado[]" accept="image/*" multiple style="display: none;">
-            </div>
-            <div id="galeria_imagenes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;"></div>
-        </div>
-
-        <!-- TÉCNICAS -->
-        <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <label style="font-weight: bold; font-size: 1.1rem; margin: 0;">Técnicas disponibles</label>
-                <button type="button" onclick="agregarTecnica()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+    <div class="form-section">
+        <!-- OBSERVACIONES GENERALES - Igual al formulario de logo individual -->
+        <div class="obs-box">
+            <div class="obs-header">
+                <label>Observaciones Generales</label>
+                <button type="button" class="btn-add" onclick="agregarObservacion()">+</button>
             </div>
             
-            <select id="selector_tecnicas" class="input-large" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" onchange="if(this.value) { agregarTecnica(); }">
-                <option value="">-- SELECCIONA UNA TÉCNICA --</option>
-                <option value="BORDADO">BORDADO</option>
-                <option value="DTF">DTF</option>
-                <option value="ESTAMPADO">ESTAMPADO</option>
-                <option value="SUBLIMADO">SUBLIMADO</option>
-            </select>
-            
-            <div id="tecnicas_seleccionadas" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 30px;"></div>
-            
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Observaciones</label>
-            <textarea id="observaciones_tecnicas" name="observaciones_tecnicas" class="input-large" rows="2" placeholder="Observaciones..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;"></textarea>
-            
-            <!-- Campo oculto para enviar técnicas al backend -->
-            <input type="hidden" id="paso3_tecnicas_datos" name="paso3_tecnicas_datos" value="[]">
-        </div>
-
-        <!-- UBICACIÓN / SECCIONES (Exactamente igual al logo) -->
-        <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <label style="font-weight: bold; font-size: 1.1rem; margin: 0;">Ubicación</label>
-                <button type="button" class="btn-add" onclick="agregarSeccion()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
-            </div>
-            
-            <label for="seccion_prenda" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Escribe la prenda para agregarle las ubicaciones:</label>
-            <input type="text" id="seccion_prenda" list="secciones_list" class="input-large" placeholder="Escribe o selecciona una sección" style="width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase()">
-            <datalist id="secciones_list">
-                <option value="CAMISA">
-                <option value="PANTALON">
-                <option value="JEAN">
-                <option value="SUDADERA">
-                <option value="GORRA">
-                <option value="POLO">
-                <option value="CHAQUETA">
-            </datalist>
-            <div id="errorSeccionPrenda" style="display: none; color: #ef4444; font-size: 0.85rem; font-weight: 600; padding: 0.5rem; background: #fee2e2; border-radius: 4px; margin-bottom: 10px;">
-                 Debes seleccionar una ubicación
-            </div>
-            
-            <div id="secciones_agregadas" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;"></div>
-            
-            <!-- Campo oculto para enviar datos al backend -->
-            <input type="hidden" id="paso3_secciones_datos" name="paso3_secciones_datos" value="[]">
-        </div>
-
-        <!-- OBSERVACIONES GENERALES -->
-        <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <label style="font-weight: bold; font-size: 1.1rem; margin: 0;">Observaciones Generales</label>
-                <button type="button" onclick="agregarObservacion()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
-            </div>
-            
-            <div id="observaciones_lista" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            <div class="obs-lista" id="observaciones_lista"></div>
         </div>
     </div>
 
@@ -184,7 +290,7 @@ todasLasUbicaciones = [...new Set([
     ...opcionesPrendas.CHAQUETA
 ])];
 
-// console.log(' Ubicaciones iniciales cargadas:', todasLasUbicaciones); // DEBUG: Comentado para evitar logs innecesarios
+// console.log('✅ Ubicaciones iniciales cargadas:', todasLasUbicaciones); // DEBUG: Comentado para evitar logs innecesarios
 
 function agregarTecnica() {
     const selector = document.getElementById('selector_tecnicas');
@@ -274,16 +380,16 @@ function agregarSeccion() {
     errorDiv.style.display = 'none';
 
     abrirModalUbicaciones(ubicacion, [], (nuevasUbicaciones, obs) => {
-        console.log(' CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
+        console.log('🎯 CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
         seccionesSeleccionadas.push({
             ubicacion: ubicacion,
             opciones: nuevasUbicaciones,
             observaciones: obs
         });
-        console.log(' Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
+        console.log('✅ Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
         opcionesPorUbicacion[ubicacion] = nuevasUbicaciones;
         renderizarSecciones();
-        console.log(' renderizarSecciones() ejecutado, campo oculto actualizado');
+        console.log('✅ renderizarSecciones() ejecutado, campo oculto actualizado');
         cerrarModalUbicacion('modalUbicaciones');
         selector.value = '';
     });
@@ -317,7 +423,7 @@ function cerrarModalUbicacion(modalId) {
 }
 
 function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacionesIniciales = '') {
-    console.log(' PASO-TRES - abrirModalUbicaciones iniciado');
+    console.log('🎬 PASO-TRES - abrirModalUbicaciones iniciado');
     console.log('📌 prenda:', prenda);
     console.log('📌 ubicacionesIniciales:', ubicacionesIniciales);
     console.log('📌 observacionesIniciales:', observacionesIniciales);
@@ -461,11 +567,11 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacion
 
     saveButton.addEventListener('click', () => {
         console.log('🔵 BOTÓN GUARDAR PRESIONADO - Modal');
-        console.log(' ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
-        console.log(' observaciones:', obsTextarea.value);
+        console.log('📍 ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
+        console.log('📍 observaciones:', obsTextarea.value);
         // Pasar array vacío para tallas (ya no se manejan por ubicación)
         onSave(ubicacionesSeleccionadasModal, [], obsTextarea.value);
-        console.log(' onSave callback ejecutado');
+        console.log('✅ onSave callback ejecutado');
     });
 
     renderizarUbicacionesSeleccionadas();
@@ -526,7 +632,7 @@ function agregarObservacion() {
     const fila = document.createElement('div');
     fila.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
     fila.innerHTML = `
-        <input type="text" name="observaciones_generales[]" class="input-large" placeholder="Escribe una observación..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+        <input type="text" name="observaciones_generales[]" placeholder="Escribe una observación..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
         <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
             <div class="obs-checkbox-mode" style="display: flex; align-items: center; gap: 5px;">
                 <input type="checkbox" name="observaciones_check[]" style="width: 20px; height: 20px; cursor: pointer;">
@@ -562,12 +668,12 @@ function agregarObservacion() {
 document.addEventListener('DOMContentLoaded', function() {
     // Los selectores de tipo_venta en PASO 2 y PASO 3 son independientes
     // No se sincronizan automáticamente para permitir valores diferentes
-    console.log(' Selectores tipo_venta configurados como independientes');
+    console.log('✅ Selectores tipo_venta configurados como independientes');
     
     // 🔥 SOBRESCRIBIR LA FUNCIÓN agregarSeccion DE especificaciones.js
     // Paso-tres debe usar SU PROPIA FUNCIÓN, no la de especificaciones.js
-    console.log(' PASO-TRES - Inicializando funciones del paso-tres');
-    console.log(' PASO-TRES - agregarSeccion será redefinida para usar abrirModalUbicaciones de paso-tres');
+    console.log('🎬 PASO-TRES - Inicializando funciones del paso-tres');
+    console.log('📍 PASO-TRES - agregarSeccion será redefinida para usar abrirModalUbicaciones de paso-tres');
     
     // Usar setTimeout para asegurar que especificaciones.js ya se cargó y puede ser sobrescrita
     setTimeout(() => {
@@ -612,8 +718,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         };
         
-        console.log(' PASO-TRES - agregarSeccion redefinida correctamente');
-        console.log(' PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
+        console.log('✅ PASO-TRES - agregarSeccion redefinida correctamente');
+        console.log('🎯 PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
     }, 100);
 });
 </script>

@@ -1702,8 +1702,142 @@ final class CotizacionController extends Controller
                 ]);
             }
 
+            // ✅ PROCESAR PASO 3: TÉCNICAS DE LOGO (Para cotizaciones combinadas)
+            // Las técnicas vienen en logo[tecnicas_agregadas] como JSON string
+            $tecnicasAgregadasJson = $request->input('logo.tecnicas_agregadas', '[]');
+            if (is_string($tecnicasAgregadasJson)) {
+                $tecnicasAgregadas = json_decode($tecnicasAgregadasJson, true) ?? [];
+            } else {
+                $tecnicasAgregadas = (array)$tecnicasAgregadasJson;
+            }
+            
+            Log::info('🎨 Procesando técnicas agregadas para cotización combinada', [
+                'cotizacion_id' => $cotizacionId,
+                'logo_cotizacion_id' => $logoCotizacion->id ?? null,
+                'tecnicas_count' => count($tecnicasAgregadas),
+                'tecnicas_first' => count($tecnicasAgregadas) > 0 ? array_keys($tecnicasAgregadas[0] ?? []) : []
+            ]);
+            
+            if (!empty($tecnicasAgregadas)) {
+                try {
+                    foreach ($tecnicasAgregadas as $tecnicaIndex => $tecnicaData) {
+                        Log::info("🎨 Procesando técnica {$tecnicaIndex}", [
+                            'tipo_logo_id' => $tecnicaData['tipo_logo']['id'] ?? null,
+                            'prendas_count' => count($tecnicaData['prendas'] ?? [])
+                        ]);
+                        
+                        // Obtener tipo_logo_id de los datos
+                        $tipoLogoId = $tecnicaData['tipo_logo']['id'] ?? null;
+                        
+                        if (!$tipoLogoId) {
+                            Log::warning('⚠️ tipo_logo_id no encontrado en técnica', ['tecnica_index' => $tecnicaIndex]);
+                            continue;
+                        }
+                        
+                        // Procesar prendas de esta técnica
+                        if (!empty($tecnicaData['prendas']) && is_array($tecnicaData['prendas'])) {
+                            foreach ($tecnicaData['prendas'] as $prendaIndex => $prendaData) {
+                                Log::info("🎨   Procesando prenda {$prendaIndex} de técnica {$tecnicaIndex}");
+                                
+                                // Buscar si la prenda ya existe en prendas_cot (del PASO 2)
+                                // El nombre viene con formato: "PRENDA - genero - Color: color"
+                                // Necesitamos extraer solo el nombre base (antes del primer " - ")
+                                $nombrePrendaCompleto = $prendaData['nombre_prenda'] ?? 'Prenda';
+                                $nombrePrenda = explode(' - ', $nombrePrendaCompleto)[0]; // Extraer nombre base
+                                
+                                Log::info("🔍 Buscando prenda en PASO 2", [
+                                    'nombre_completo' => $nombrePrendaCompleto,
+                                    'nombre_base' => $nombrePrenda,
+                                    'cotizacion_id' => $cotizacionId
+                                ]);
+                                
+                                $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                                    ->where('nombre_producto', $nombrePrenda)
+                                    ->first();
+                                
+                                // Si no existe, crearla
+                                if (!$prendaCot) {
+                                    $prendaCot = \App\Models\PrendaCot::create([
+                                        'cotizacion_id' => $cotizacionId,
+                                        'nombre_producto' => $nombrePrenda, // Usar nombre base
+                                        'descripcion' => $prendaData['descripcion'] ?? '',
+                                        'cantidad' => $prendaData['cantidad'] ?? 1,
+                                    ]);
+                                    
+                                    Log::info('✅ Nueva prenda creada en prendas_cot', [
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'nombre_base' => $nombrePrenda,
+                                        'nombre_completo' => $nombrePrendaCompleto
+                                    ]);
+                                } else {
+                                    Log::info('✅ Prenda existente encontrada (del PASO 2)', [
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'nombre_base' => $nombrePrenda,
+                                        'nombre_completo' => $nombrePrendaCompleto
+                                    ]);
+                                }
+                                
+                                // Crear técnica de logo con prenda
+                                $logoCotizacionTecnicaPrenda = \App\Models\LogoCotizacionTecnicaPrenda::create([
+                                    'logo_cotizacion_id' => $logoCotizacion->id,
+                                    'tipo_logo_id' => $tipoLogoId,
+                                    'prenda_cot_id' => $prendaCot->id,
+                                    'observaciones' => $prendaData['observaciones'] ?? '',
+                                    'ubicaciones' => json_encode($prendaData['ubicaciones'] ?? []),
+                                    'talla_cantidad' => json_encode($prendaData['talla_cantidad'] ?? []),
+                                    'variaciones_prenda' => json_encode($prendaData['variaciones_prenda'] ?? []),
+                                    'grupo_combinado' => $prendaIndex,  // Usar índice como grupo
+                                ]);
+                                
+                                Log::info('✅ Técnica guardada en logo_cotizacion_tecnica_prendas', [
+                                    'tecnica_id' => $logoCotizacionTecnicaPrenda->id,
+                                    'prenda_cot_id' => $prendaCot->id,
+                                    'ubicaciones' => $prendaData['ubicaciones'] ?? []
+                                ]);
+                            }
+                        } else {
+                            Log::info('⚠️ Técnica sin prendas', ['tecnica_index' => $tecnicaIndex]);
+                        }
+                    }
+                    
+                    Log::info('✅ Técnicas procesadas completamente', [
+                        'cotizacion_id' => $cotizacionId,
+                        'tecnicas_totales' => count($tecnicasAgregadas)
+                    ]);
+                    
+                } catch (\Exception $e) {
+                    Log::error('❌ Error procesando técnicas', [
+                        'cotizacion_id' => $cotizacionId,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            } else {
+                Log::info('⚠️ No hay técnicas agregadas para procesar');
+            }
+
             // Procesar PASO 4: REFLECTIVO
-            $reflectivoDescripcion = $request->input('reflectivo.descripcion', '');
+            \Log::info('🔍 DEBUG PASO 4 - ALL REQUEST INPUTS', [
+                'keys' => array_keys($request->all())
+            ]);
+            \Log::info('🔍 DEBUG PASO 4 - REFLECTIVO REQUEST', [
+                'reflectivo_data' => $request->input('reflectivo', [])
+            ]);
+            
+            // Obtener descripción y garantizar que es string (no null)
+            $reflectivoDescripcionRaw = $request->input('reflectivo.descripcion');
+            $reflectivoDescripcion = (string)($reflectivoDescripcionRaw ?? '');  // Convertir null a string vacía
+            
+            \Log::info('🔍 DEBUG PASO 4 REFLECTIVO - Inicio', [
+                'cotizacion_id' => $cotizacionId,
+                'reflectivo_descripcion_raw' => $reflectivoDescripcionRaw,
+                'reflectivo_descripcion' => $reflectivoDescripcion,
+                'reflectivo_descripcion_empty' => empty($reflectivoDescripcion),
+                'reflectivo_descripcion_type' => gettype($reflectivoDescripcion),
+                'reflectivo_descripcion_length' => strlen($reflectivoDescripcion ?? ''),
+                'reflectivo_input' => $request->input('reflectivo', ''),
+                'all_keys' => array_keys($request->all()),
+            ]);
             
             // Obtener ubicación desde 'ubicaciones_reflectivo' (array JSON) o 'reflectivo.ubicacion' (string legacy)
             $ubicacionesData = $request->input('ubicaciones_reflectivo', '[]');
@@ -1755,27 +1889,105 @@ final class CotizacionController extends Controller
                 $reflectivoArchivos = [];
             }
             
-            // Guardar reflectivo si tiene descripción
-            if (!empty($reflectivoDescripcion)) {
+            // Guardar reflectivo si hay prendas (incluso si descripción está vacía)
+            // El backend intenta guardar reflectivo para CADA prenda del PASO 2
+            $prendas = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)->get();
+            
+            \Log::info('📦 Prendas encontradas PARA REFLECTIVO', [
+                'prendas_count' => $prendas->count(),
+                'prendas_ids' => $prendas->pluck('id')->toArray(),
+                'tiene_descripcion' => !empty($reflectivoDescripcion),
+            ]);
+            
+            if ($prendas->count() > 0) {
                 try {
-                    // Crear o actualizar reflectivo_cotizaciones
-                    $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::updateOrCreate(
-                        ['cotizacion_id' => $cotizacionId],
-                        [
+                    foreach ($prendas as $prenda) {
+                        \Log::info('✨ Guardando reflectivo para prenda', [
+                            'prenda_id' => $prenda->id,
+                            'cotizacion_id' => $cotizacionId,
                             'descripcion' => $reflectivoDescripcion,
-                            'ubicacion' => $reflectivoUbicacion,
-                            'observaciones_generales' => is_array($reflectivoObservacionesGenerales) ? json_encode($reflectivoObservacionesGenerales) : $reflectivoObservacionesGenerales,
-                        ]
-                    );
-                    
-                    Log::info('✨ Reflectivo guardado correctamente', [
-                        'cotizacion_id' => $cotizacionId,
-                        'reflectivo_id' => $reflectivoCotizacion->id,
-                        'descripcion' => $reflectivoDescripcion,
-                        'ubicacion' => $reflectivoUbicacion,
-                        'imagenes_count' => count($reflectivoArchivos),
-                        'observaciones_count' => count($reflectivoObservacionesGenerales),
-                    ]);
+                        ]);
+                        
+                        // 📦 Cargar variaciones de la prenda desde la BD
+                        $variacionesPrenda = [];
+                        if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                            foreach ($prenda->variantes as $variante) {
+                                // Decodificar telas_multiples si es string, si no usar directamente
+                                $telasMultiples = $variante->telas_multiples;
+                                if (is_string($telasMultiples)) {
+                                    $telasMultiples = json_decode($telasMultiples, true) ?? [];
+                                } elseif (!is_array($telasMultiples)) {
+                                    $telasMultiples = [];
+                                }
+                                
+                                $variacionesPrenda[] = [
+                                    'id' => $variante->id,
+                                    'tipo_manga_id' => $variante->tipo_manga_id,
+                                    'tipo_broche_id' => $variante->tipo_broche_id,
+                                    'genero_id' => $variante->genero_id,
+                                    'color' => $variante->color,
+                                    'tiene_bolsillos' => $variante->tiene_bolsillos,
+                                    'obs_bolsillos' => $variante->obs_bolsillos,
+                                    'obs_broche' => $variante->obs_broche,
+                                    'tiene_reflectivo' => $variante->tiene_reflectivo,
+                                    'descripcion_adicional' => $variante->descripcion_adicional,
+                                    'telas_multiples' => $telasMultiples,
+                                ];
+                            }
+                        }
+                        
+                        $variacionesJson = !empty($variacionesPrenda) ? json_encode($variacionesPrenda) : null;
+                        
+                        \Log::info('📦 Variaciones cargadas para prenda', [
+                            'prenda_id' => $prenda->id,
+                            'variaciones_count' => count($variacionesPrenda),
+                            'variaciones_json' => $variacionesJson,
+                        ]);
+                        
+                        // Crear o actualizar reflectivo_cotizaciones para esta prenda
+                        $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::updateOrCreate(
+                            [
+                                'cotizacion_id' => $cotizacionId,
+                                'prenda_cot_id' => $prenda->id,
+                            ],
+                            [
+                                'descripcion' => $reflectivoDescripcion,
+                                'observaciones_generales' => is_array($reflectivoObservacionesGenerales) ? json_encode($reflectivoObservacionesGenerales) : $reflectivoObservacionesGenerales,
+                            ]
+                        );
+                        
+                        \Log::info('✅ Reflectivo guardado en reflectivo_cotizacion', [
+                            'reflectivo_id' => $reflectivoCotizacion->id,
+                            'prenda_cot_id' => $prenda->id,
+                            'cotizacion_id' => $cotizacionId,
+                        ]);
+                        
+                        // 📍 Asegurar que ubicaciones sea JSON válido
+                        $ubicacionesFinal = $reflectivoUbicacion;
+                        if (empty($ubicacionesFinal) || $ubicacionesFinal === '[]') {
+                            $ubicacionesFinal = json_encode([]); // Garantizar JSON válido
+                        }
+                        
+                        // Guardar en prenda_cot_reflectivo con variaciones y ubicaciones
+                        $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::updateOrCreate(
+                            [
+                                'cotizacion_id' => $cotizacionId,
+                                'prenda_cot_id' => $prenda->id,
+                            ],
+                            [
+                                'variaciones' => $variacionesJson,  // Variaciones traídas del PASO 2
+                                'ubicaciones' => $ubicacionesFinal,  // Ubicaciones del reflectivo
+                            ]
+                        );
+                        
+                        \Log::info('✅ Reflectivo guardado en prenda_cot_reflectivo', [
+                            'prenda_cot_reflectivo_id' => $prendaCotReflectivo->id,
+                            'cotizacion_id' => $cotizacionId,
+                            'prenda_cot_id' => $prenda->id,
+                            'variaciones_guardadas' => $variacionesJson ? 'SÍ' : 'NO',
+                            'ubicaciones' => $ubicacionesFinal,
+                        ]);
+                    }
                     
                     // Guardar imágenes del reflectivo (máximo 3)
                     if (!empty($reflectivoArchivos)) {
@@ -1786,7 +1998,6 @@ final class CotizacionController extends Controller
                             if ($orden > $maxImagenes) {
                                 Log::warning(' Se alcanzó el límite de 3 imágenes para reflectivo', [
                                     'cotizacion_id' => $cotizacionId,
-                                    'reflectivo_id' => $reflectivoCotizacion->id,
                                 ]);
                                 break;
                             }
@@ -1794,19 +2005,28 @@ final class CotizacionController extends Controller
                             if ($foto instanceof \Illuminate\Http\UploadedFile) {
                                 $ruta = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
                                 
-                                // Guardar en reflectivo_fotos_cotizacion (máximo 3 fotos con orden incremental)
-                                $reflectivoCotizacion->fotos()->create([
-                                    'ruta_original' => $ruta,
-                                    'ruta_webp' => $ruta,
-                                    'orden' => $orden,
-                                ]);
+                                // Guardar en reflectivo_fotos_cotizacion para cada prenda
+                                foreach ($prendas as $prenda) {
+                                    $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
+                                        ->where('prenda_cot_id', $prenda->id)
+                                        ->first();
+                                    
+                                    if ($reflectivoCotizacion) {
+                                        $reflectivoCotizacion->fotos()->create([
+                                            'ruta_original' => $ruta,
+                                            'ruta_webp' => $ruta,
+                                            'orden' => $orden,
+                                        ]);
+                                    }
+                                }
+                                
                                 $orden++;
                                 
                                 Log::info('📸 Reflectivo foto guardada', [
                                     'cotizacion_id' => $cotizacionId,
-                                    'reflectivo_id' => $reflectivoCotizacion->id,
                                     'ruta' => $ruta,
-                                    'orden' => $orden - 1
+                                    'orden' => $orden - 1,
+                                    'prendas_count' => count($prendas),
                                 ]);
                             }
                         }
@@ -1818,6 +2038,10 @@ final class CotizacionController extends Controller
                         'trace' => $e->getTraceAsString(),
                     ]);
                 }
+            } else {
+                \Log::info('⚠️ No hay prendas para guardar reflectivo', [
+                    'cotizacion_id' => $cotizacionId,
+                ]);
             }
 
             Log::info('Imágenes procesadas correctamente', ['cotizacion_id' => $cotizacionId]);

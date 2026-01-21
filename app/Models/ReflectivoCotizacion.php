@@ -17,13 +17,11 @@ class ReflectivoCotizacion extends Model
         'tipo_prenda',
         'descripcion',
         'tipo_venta',
-        'ubicacion',
         'imagenes',
         'observaciones_generales',
     ];
 
     protected $casts = [
-        'ubicacion' => 'array',
         'imagenes' => 'array',
         'observaciones_generales' => 'array',
         'created_at' => 'datetime',

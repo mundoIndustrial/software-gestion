@@ -140,7 +140,7 @@
                 if (!isset($prendasMap[$nombrePrenda])) {
                     $prendasMap[$nombrePrenda] = [];
                 }
-                $prendasMap[$logoPrendaCotId][] = $prenda;
+                $prendasMap[$nombrePrenda][] = $prenda;
             }
         @endphp
         @if($prendasConTecnicas->count() > 0)
@@ -365,8 +365,11 @@
                                                             </td>
                                                             <td style="padding: 0.75rem; font-size: 0.9rem; color: #6b7280;">
                                                                 @if(!empty($valor) && $valor !== 'null')
+                                                                    @php
+                                                                        $valorStr = is_array($valor) ? json_encode($valor) : (string)$valor;
+                                                                    @endphp
                                                                     <span style="background: #fef3c7; color: #92400e; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">
-                                                                        {{ $valor }}
+                                                                        {{ $valorStr }}
                                                                     </span>
                                                                 @else
                                                                     <span style="color: #d1d5db;">—</span>

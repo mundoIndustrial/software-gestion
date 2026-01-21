@@ -145,26 +145,35 @@ function renderizarGaleriaReflectivo() {
         galeria.appendChild(div);
     });
 
-    console.log(' Total imágenes reflectivo:', imagenesReflectivo.length);
+    console.log('📊 Total imágenes reflectivo:', imagenesReflectivo.length);
 }
 
 // ============================================================================
 // UBICACIONES DEL REFLECTIVO
 // ============================================================================
 
-let ubicacionesReflectivo = [];
+// Inicializar ubicaciones del reflectivo en window para que sea accesible en guardado.js
+if (typeof window.ubicacionesReflectivo === 'undefined') {
+    window.ubicacionesReflectivo = [];
+}
 
 /**
  * Agregar ubicación del reflectivo - Abre modal
  */
 function agregarUbicacionReflectivo() {
-    console.log('➕ Agregando ubicación reflectivo');
-
     const seccionSelect = document.getElementById('seccion_reflectivo');
     const seccion = seccionSelect.value;
+    
+    console.log('➕ Agregando ubicación reflectivo', {
+        seccion_field: seccion,
+        seccion_valor_length: (seccion || '').length,
+        window_ubicacionesReflectivo: window.ubicacionesReflectivo,
+        current_count: window.ubicacionesReflectivo.length
+    });
 
     if (!seccion) {
-        alert('Por favor selecciona una sección');
+        alert('Por favor selecciona o escribe una SECCIÓN (PECHO, ESPALDA, etc.)');
+        seccionSelect.focus();
         return;
     }
 
@@ -210,14 +219,29 @@ function cerrarModalUbicacionReflectivo() {
 function guardarUbicacionReflectivo(ubicacion) {
     const desc = document.getElementById('descUbicacionReflectivo').value.trim();
     
+    console.log('💾 Guardando ubicación:', {
+        ubicacion: ubicacion,
+        descripcion: desc,
+        descripcion_vacia: !desc,
+        window_ubicaciones_antes: [...window.ubicacionesReflectivo]
+    });
+    
     if (!desc) {
         alert('Por favor escribe una descripción');
         return;
     }
     
-    ubicacionesReflectivo.push({
+    // Guardar en window.ubicacionesReflectivo para que sea accesible en guardado.js
+    window.ubicacionesReflectivo.push({
         ubicacion: ubicacion,
         descripcion: desc
+    });
+    
+    console.log('✅ Ubicación agregada correctamente', {
+        ubicacion: ubicacion,
+        descripcion: desc,
+        total_ubicaciones: window.ubicacionesReflectivo.length,
+        window_ubicaciones_despues: [...window.ubicacionesReflectivo]
     });
     
     cerrarModalUbicacionReflectivo();
@@ -232,9 +256,14 @@ function renderizarUbicacionesReflectivo() {
     const contenedor = document.getElementById('ubicaciones_reflectivo_agregadas');
     if (!contenedor) return;
 
+    console.log('🎨 Renderizando ubicaciones reflectivo', {
+        total: window.ubicacionesReflectivo.length,
+        datos: window.ubicacionesReflectivo
+    });
+
     contenedor.innerHTML = '';
 
-    ubicacionesReflectivo.forEach((item, index) => {
+    window.ubicacionesReflectivo.forEach((item, index) => {
         const div = document.createElement('div');
         div.style.cssText = 'background: white; border: 2px solid #3498db; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;';
         
@@ -255,14 +284,14 @@ function renderizarUbicacionesReflectivo() {
         contenedor.appendChild(div);
     });
 
-    console.log(' Total ubicaciones reflectivo:', ubicacionesReflectivo.length);
+    console.log('📍 Total ubicaciones reflectivo:', window.ubicacionesReflectivo.length);
 }
 
 /**
  * Eliminar ubicación del reflectivo
  */
 function eliminarUbicacionReflectivo(index) {
-    ubicacionesReflectivo.splice(index, 1);
+    window.ubicacionesReflectivo.splice(index, 1);
     renderizarUbicacionesReflectivo();
 }
 
@@ -270,7 +299,10 @@ function eliminarUbicacionReflectivo(index) {
 // OBSERVACIONES GENERALES DEL REFLECTIVO
 // ============================================================================
 
-let observacionesReflectivo = [];
+// Inicializar observaciones del reflectivo en window para que sea accesible en guardado.js
+if (typeof window.observacionesReflectivo === 'undefined') {
+    window.observacionesReflectivo = [];
+}
 
 /**
  * Agregar observación general del reflectivo
@@ -322,7 +354,7 @@ function agregarObservacionReflectivo() {
  * Recopilar datos del reflectivo
  */
 function recopilarDatosReflectivo() {
-    console.log(' Recopilando datos del reflectivo...');
+    console.log('📦 Recopilando datos del reflectivo...');
 
     const descripcion = document.getElementById('descripcion_reflectivo')?.value || '';
 
@@ -375,7 +407,7 @@ function limpiarReflectivo() {
  * Inicializar módulo de reflectivo
  */
 function inicializarReflectivo() {
-    console.log(' Inicializando módulo de reflectivo');
+    console.log('🔧 Inicializando módulo de reflectivo');
     inicializarDragDropReflectivo();
 }
 

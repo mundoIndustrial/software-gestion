@@ -35,7 +35,7 @@ console.log('📸 fotosEliminadasServidor inicializado:', window.fotosEliminadas
  * Seleccionar tipo de cotización desde las pastillas
  */
 function seleccionarTipoCotizacion(tipo) {
-    console.log(' Seleccionando tipo de cotización:', tipo);
+    console.log('🎯 Seleccionando tipo de cotización:', tipo);
     
     // Mapear tipo de pastilla a tipo_venta
     const mapeos = {
@@ -69,8 +69,8 @@ function seleccionarTipoCotizacion(tipo) {
  */
 function mostrarNotificacionTipoCotizacion(tipo) {
     const info = {
-        'prenda': ' Prendas Sin Logo',
-        'logo': ' Solo Logos',
+        'prenda': '👕 Prendas Sin Logo',
+        'logo': '🎨 Solo Logos',
         'prenda-bordado': '✨ Prendas Con Bordado/Logo'
     };
     
@@ -187,7 +187,7 @@ function irAlPaso(paso) {
     
     // Si es el paso 4 (REFLECTIVO), agregar la primera prenda vacía si no existe ninguna
     if (paso === 4) {
-        console.log(' Navegando al PASO 4: REFLECTIVO');
+        console.log('🎯 Navegando al PASO 4: REFLECTIVO');
         setTimeout(() => {
             const container = document.getElementById('prendas_reflectivo_container');
             if (container && container.children.length === 0) {
@@ -204,7 +204,7 @@ function irAlPaso(paso) {
     
     // Si es el paso 5 (REVISAR COTIZACIÓN), actualizar resumen completo
     if (paso === 5) {
-        console.log(' Navegando al PASO 5: REVISAR COTIZACIÓN');
+        console.log('🎯 Navegando al PASO 5: REVISAR COTIZACIÓN');
         setTimeout(() => {
             // Actualizar el resumen dinámico del paso 5
             console.log(' Llamando a actualizarResumenFriendly() para Paso 5');
@@ -235,8 +235,8 @@ function mostrarFechaActual() {
 function actualizarResumenFriendly() {
     console.log('🔄 actualizarResumenFriendly() INICIADO');
     console.log('    Prendas DOM encontradas:', document.querySelectorAll('.producto-card').length);
-    console.log('    Técnicas DOM encontradas:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
-    console.log('    Técnicas guardadas:', window.tecnicasGuardadas?.length || 0);
+    console.log('   🎨 Técnicas DOM encontradas:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
+    console.log('   🎨 Técnicas guardadas:', window.tecnicasGuardadas?.length || 0);
     console.log('🔄 Actualizando resumen del paso 4...');
     
     // 1. INFORMACIÓN DEL CLIENTE
@@ -279,11 +279,11 @@ function actualizarResumenFriendly() {
         
         let tipoDetectado = '';
         if (tienePrendas && (tieneLogo || tieneTecnicas)) {
-            tipoDetectado = ' Combinada';
+            tipoDetectado = '🎯 Combinada';
         } else if (tienePrendas) {
-            tipoDetectado = ' Solo Prendas';
+            tipoDetectado = '👕 Solo Prendas';
         } else if (tieneLogo || tieneTecnicas) {
-            tipoDetectado = ' Solo Logo/Bordado';
+            tipoDetectado = '🎨 Solo Logo/Bordado';
         } else {
             tipoDetectado = '-';
         }
@@ -361,7 +361,7 @@ function actualizarResumenFriendly() {
                 
                 if (window.variacionesGuardadas && window.variacionesGuardadas[index]) {
                     const varGuardadas = window.variacionesGuardadas[index];
-                    console.log(' Variaciones desde guardadas:', varGuardadas);
+                    console.log('🎨 Variaciones desde guardadas:', varGuardadas);
                     
                     // ====== SECCIÓN DE TELAS (Agrupadas) ======
                     let telas = [];
@@ -374,7 +374,7 @@ function actualizarResumenFriendly() {
                     }
                     
                     if (telas.length > 0) {
-                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong> Telas:</strong></small><div style="margin-top: 6px;">';
+                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong>🧵 Telas:</strong></small><div style="margin-top: 6px;">';
                         telas.forEach(t => {
                             telasHTML += `<div style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #0066cc;">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
@@ -451,7 +451,7 @@ function actualizarResumenFriendly() {
                     });
                     
                     if (telasDesdeDOM.length > 0) {
-                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong> Telas:</strong></small><div style="margin-top: 6px;">';
+                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong>🧵 Telas:</strong></small><div style="margin-top: 6px;">';
                         telasDesdeDOM.forEach(t => {
                             telasHTML += `<div style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #0066cc;">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
@@ -550,7 +550,7 @@ function actualizarResumenFriendly() {
                 div.style.cssText = 'padding: 15px; background: #fff; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 10px;';
                 
                 let html = `<div style="margin-bottom: 12px;">
-                    <strong style="font-size: 1.05rem; color: #0066cc;"> Prenda ${index + 1}: ${nombre}</strong>
+                    <strong style="font-size: 1.05rem; color: #0066cc;">👕 Prenda ${index + 1}: ${nombre}</strong>
                 </div>`;
                 
                 if (descripcion) {
@@ -624,10 +624,10 @@ function actualizarResumenFriendly() {
                     tecnicasArray.push(input.value);
                 }
             });
-            console.log(' Técnicas desde DOM:', tecnicasArray);
+            console.log('🎨 Técnicas desde DOM:', tecnicasArray);
         }
         
-        console.log(' DEBUG Técnicas desde global:', {
+        console.log('🎨 DEBUG Técnicas desde global:', {
             tecnicasGuardadas: window.tecnicasGuardadas,
             cantidad: tecnicasArray.length
         });
@@ -671,7 +671,7 @@ function actualizarResumenFriendly() {
         // Usar variable global si está disponible (desde cargar-borrador.js)
         let ubicacionesArray = window.ubicacionesGuardadas || [];
         
-        console.log(' DEBUG Ubicaciones desde global:', {
+        console.log('📍 DEBUG Ubicaciones desde global:', {
             ubicacionesGuardadas: window.ubicacionesGuardadas,
             cantidad: ubicacionesArray.length
         });
@@ -719,7 +719,7 @@ function actualizarResumenFriendly() {
                 }
                 
                 divResumen.innerHTML = `
-                    <div style="font-weight: 600; margin-bottom: 4px; color: #0066cc; font-size: 1rem;"> ${seccionNombre}</div>
+                    <div style="font-weight: 600; margin-bottom: 4px; color: #0066cc; font-size: 1rem;">📦 ${seccionNombre}</div>
                     ${opcionesTexto ? `<div style="margin-bottom: 4px; margin-left: 12px; color: #555;"><strong style="font-size: 0.85rem;">Ubicaciones:</strong> ${opcionesTexto}</div>` : ''}
                     ${tallasHTML}
                     ${obsHTML}
@@ -821,10 +821,10 @@ function recopilarDatos() {
     const clienteValue = cliente.value;
     const productos = [];
     
-    console.log(' Total de prendas encontradas:', document.querySelectorAll('.producto-card').length);
+    console.log('📦 Total de prendas encontradas:', document.querySelectorAll('.producto-card').length);
     
     document.querySelectorAll('.producto-card').forEach((item, index) => {
-        console.log(` Procesando prenda ${index + 1}...`);
+        console.log(`📦 Procesando prenda ${index + 1}...`);
         const nombre = item.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = item.querySelector('textarea[name*="descripcion"]')?.value || '';
         const cantidad = item.querySelector('input[name*="cantidad"]')?.value || 1;
@@ -876,13 +876,13 @@ function recopilarDatos() {
         // OPCIÓN 1: Buscar en window.telasSeleccionadas (la estructura correcta)
         if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
             const telasObj = window.telasSeleccionadas[productoId];
-            console.log(' DEBUG - telasSeleccionadas encontrado:', telasObj);
+            console.log('🧵 DEBUG - telasSeleccionadas encontrado:', telasObj);
             
             // telasObj es un objeto con índices como claves: {'0': [files], '1': [files]}
             for (let telaIdx in telasObj) {
                 if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
                     const fotosDelaTela = telasObj[telaIdx];
-                    console.log(` Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
+                    console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
                     
                     // Agregar cada foto con información de su índice de tela
                     fotosDelaTela.forEach((foto, fotoIdx) => {
@@ -904,7 +904,7 @@ function recopilarDatos() {
             const telasEncontradas = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
             if (telasEncontradas.length > 0) {
                 telas = telasEncontradas.map(t => t.file);
-                console.log(` Telas desde telaConIndice (fallback): ${telas.length} archivos`);
+                console.log(`🧵 Telas desde telaConIndice (fallback): ${telas.length} archivos`);
             }
         }
         
@@ -939,7 +939,7 @@ function recopilarDatos() {
                 const tela = telaInput?.value || '';
                 const referencia = referenciaInput?.value || '';
                 
-                console.log(` DEBUG Tela ${telaIndex}:`, {
+                console.log(`🔍 DEBUG Tela ${telaIndex}:`, {
                     colorInput_encontrado: !!colorInput,
                     telaInput_encontrado: !!telaInput,
                     referenciaInput_encontrado: !!referenciaInput,
@@ -956,7 +956,7 @@ function recopilarDatos() {
                         tela: tela,
                         referencia: referencia
                     });
-                    console.log(` Tela ${telaIndex + 1} capturada:`, { color, tela, referencia });
+                    console.log(`🧵 Tela ${telaIndex + 1} capturada:`, { color, tela, referencia });
                 }
             });
         }
@@ -964,7 +964,7 @@ function recopilarDatos() {
         // Guardar las telas en variantes
         if (telasFila.length > 0) {
             variantes.telas_multiples = telasFila;
-            console.log(` Total de telas capturadas: ${telasFila.length}`);
+            console.log(`📝 Total de telas capturadas: ${telasFila.length}`);
         } else {
             // Si no hay múltiples telas, capturar la primera (compatibilidad)
             const colorInput = item.querySelector('.color-input');
@@ -1013,7 +1013,7 @@ function recopilarDatos() {
                 }
             }
             
-            console.log(' Buscando manga:', {
+            console.log('🔍 Buscando manga:', {
                 checkbox_checked: mangaCheckbox.checked,
                 tipo: mangaIdInput?.tagName,
                 mangaId_encontrado: !!mangaId,
@@ -1069,7 +1069,7 @@ function recopilarDatos() {
         if (brocheCheckbox && brocheCheckbox.checked) {
             const brocheSelect = item.querySelector('select[name*="tipo_broche_id"]');
             
-            console.log(' Buscando broche:', {
+            console.log('🔍 Buscando broche:', {
                 checkbox_checked: brocheCheckbox.checked,
                 brocheSelect_encontrado: !!brocheSelect,
                 brocheSelect_value: brocheSelect?.value,
@@ -1114,7 +1114,7 @@ function recopilarDatos() {
         // Agregar todas las observaciones como descripción_adicional
         if (observacionesVariantes.length > 0) {
             variantes.descripcion_adicional = observacionesVariantes.join(' | ');
-            console.log(' descripcion_adicional construida:', {
+            console.log('📝 descripcion_adicional construida:', {
                 observacionesCount: observacionesVariantes.length,
                 observaciones: observacionesVariantes,
                 descripcion_adicional: variantes.descripcion_adicional
@@ -1124,7 +1124,7 @@ function recopilarDatos() {
         }
         
         //  CAPTURAR TIPO DE JEAN/PANTALÓN
-        console.log(' Buscando campos jean/pantalón en producto:', nombre);
+        console.log('🔍 Buscando campos jean/pantalón en producto:', nombre);
         
         // Buscar en formulario estático (productos_prenda)
         let esJeanPantalonInput = item.querySelector('.es-jean-pantalon-hidden');
@@ -1143,7 +1143,7 @@ function recopilarDatos() {
             console.log('   🔸 Búsqueda dinámica - Select:', tipoJeanPantalonSelect ? ' ENCONTRADO' : ' NO');
         }
         
-        //  DEBUG ADICIONAL: Verificar si el contenedor existe
+        // 🔍 DEBUG ADICIONAL: Verificar si el contenedor existe
         const container = item.querySelector('.tipo-jean-pantalon-inline-container');
         console.log('   🔸 Contenedor .tipo-jean-pantalon-inline-container:', container ? ' EXISTE' : ' NO EXISTE');
         if (container) {
@@ -1215,7 +1215,7 @@ function recopilarDatos() {
             console.log(' prenda_bodega checkbox no encontrado');
         }
         
-        console.log(' RESUMEN VARIANTES CAPTURADAS:', {
+        console.log('📝 RESUMEN VARIANTES CAPTURADAS:', {
             ' Color': variantes.color || '(vacío)',
             ' Tela': variantes.tela || '(vacío)',
             ' Referencia': variantes.referencia || '(vacío)',
@@ -1231,8 +1231,8 @@ function recopilarDatos() {
             '🔗 Obs Broche': variantes.obs_broche || '(vacío)',
             '⭐ Tiene Reflectivo': variantes.tiene_reflectivo || false,
             '⭐ Obs Reflectivo': variantes.obs_reflectivo || '(vacío)',
-            ' Descripción Adicional': variantes.descripcion_adicional || '(vacío)',
-            ' Prenda de Bodega': variantes.prenda_bodega || false,
+            '📝 Descripción Adicional': variantes.descripcion_adicional || '(vacío)',
+            '📦 Prenda de Bodega': variantes.prenda_bodega || false,
             'Todas las keys': Object.keys(variantes)
         });
         
@@ -1259,13 +1259,13 @@ function recopilarDatos() {
         }
     });
     
-    console.log(' RESUMEN PRODUCTOS RECOPILADOS:');
+    console.log('📦 RESUMEN PRODUCTOS RECOPILADOS:');
     productos.forEach((prod, idx) => {
         console.log(`  [${idx + 1}] ${prod.nombre_producto}:`, {
             '📸 Fotos': prod.fotos.length,
-            ' Telas': prod.telas.length,
+            '🧵 Telas': prod.telas.length,
             '📏 Tallas': prod.tallas.length,
-            ' Variantes': Object.keys(prod.variantes).length
+            '🎨 Variantes': Object.keys(prod.variantes).length
         });
     });
     
@@ -1280,29 +1280,51 @@ function recopilarDatos() {
     
     // Recopilar técnicas
     const contenedorTecnicas = document.getElementById('tecnicas_seleccionadas');
-    console.log(' Contenedor técnicas encontrado:', !!contenedorTecnicas);
+    console.log('🎨 Contenedor técnicas encontrado:', !!contenedorTecnicas);
     if (contenedorTecnicas) {
-        console.log(' innerHTML del contenedor:', contenedorTecnicas.innerHTML);
-        console.log(' Número de children:', contenedorTecnicas.children.length);
+        console.log('🎨 innerHTML del contenedor:', contenedorTecnicas.innerHTML);
+        console.log('🎨 Número de children:', contenedorTecnicas.children.length);
     }
     
     const tecnicas = [];
     document.querySelectorAll('#tecnicas_seleccionadas > div').forEach(tag => {
         const input = tag.querySelector('input[name="tecnicas[]"]');
         if (input) {
-            console.log(' Input encontrado:', input.value);
+            console.log('🎨 Input encontrado:', input.value);
             tecnicas.push(input.value);
         }
     });
-    console.log(' Técnicas recopiladas:', tecnicas);
-    console.log(' Elementos encontrados:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
+    console.log('🎨 Técnicas recopiladas:', tecnicas);
+    console.log('🎨 Elementos encontrados:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
     
     // Recopilar observaciones técnicas
     const observaciones_tecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
-    console.log(' Observaciones técnicas:', observaciones_tecnicas);
+    console.log('📝 Observaciones técnicas:', observaciones_tecnicas);
     
     // Recopilar ubicaciones desde paso3_secciones_datos o seccionesSeleccionadasFriendly
     const ubicaciones = [];
+    
+    // Obtener el tipo de cotización desde el input oculto
+    const tipoCotizacionInput = document.getElementById('tipo_cotizacion');
+    const tipoCotizacion = tipoCotizacionInput?.value || '';
+    
+    console.log('🔍 BUSCANDO UBICACIONES - Cotización tipo:', tipoCotizacion);
+    console.log('🔍 window.ubicacionesReflectivo existe?', !!window.ubicacionesReflectivo);
+    console.log('🔍 window.ubicacionesReflectivo:', window.ubicacionesReflectivo);
+    
+    // SI ES COTIZACIÓN COMBINADA (PL), BUSCAR EN PASO 4 (REFLECTIVO)
+    if (tipoCotizacion === 'PL' && Array.isArray(window.ubicacionesReflectivo) && window.ubicacionesReflectivo.length > 0) {
+        console.log('✅ ES COTIZACIÓN COMBINADA - Usando ubicaciones del PASO 4 (Reflectivo)');
+        window.ubicacionesReflectivo.forEach(ubic => {
+            ubicaciones.push({
+                ubicacion: ubic.ubicacion,
+                descripcion: ubic.descripcion
+            });
+        });
+    } 
+    // SI NO, BUSCAR EN PASO 3 (LOGO)
+    else {
+        console.log('ℹ️ NO ES COTIZACIÓN COMBINADA O NO HAY UBICACIONES REFLECTIVO - Buscando en PASO 3 (Logo)');
     
     // Primero intentar desde el campo oculto paso3_secciones_datos (paso-tres.blade.php)
     const paso3_secciones_campo = document.getElementById('paso3_secciones_datos');
@@ -1322,7 +1344,7 @@ function recopilarDatos() {
                 });
             }
         } catch (e) {
-            console.error(' Error parsing paso3_secciones_datos:', e);
+            console.error('❌ Error parsing paso3_secciones_datos:', e);
         }
     }
     
@@ -1340,9 +1362,11 @@ function recopilarDatos() {
         });
     }
     
-    console.log(' Ubicaciones recopiladas:', ubicaciones);
-    console.log(' paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');
-    console.log(' seccionesSeleccionadasFriendly:', typeof window.seccionesSeleccionadasFriendly !== 'undefined' ? window.seccionesSeleccionadasFriendly : 'NO DEFINIDO');
+    const paso3_secciones_campo = document.getElementById('paso3_secciones_datos');
+    
+    console.log('📍 Ubicaciones recopiladas:', ubicaciones);
+    console.log('📍 paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');
+    console.log('📍 seccionesSeleccionadasFriendly:', typeof window.seccionesSeleccionadasFriendly !== 'undefined' ? window.seccionesSeleccionadasFriendly : 'NO DEFINIDO');
     
     // Recopilar observaciones generales CON TIPO Y VALOR como objetos
     const observaciones_generales = [];
@@ -1368,7 +1392,7 @@ function recopilarDatos() {
                     texto: texto,
                     valor: valorInput?.value || ''
                 });
-                console.log(' Modo TEXTO:', texto, '=', valorInput?.value);
+                console.log('📝 Modo TEXTO:', texto, '=', valorInput?.value);
             } else if (esModoCheckbox) {
                 // Modo checkbox: guardar objeto con tipo, texto y valor
                 observaciones_generales.push({
@@ -1402,7 +1426,7 @@ function recopilarDatos() {
     
     // Obtener descripción del logo
     const descripcionLogo = document.getElementById('descripcion_logo')?.value || '';
-    console.log(' Descripción del logo capturada:', {
+    console.log('📝 Descripción del logo capturada:', {
         elemento_encontrado: !!document.getElementById('descripcion_logo'),
         valor: descripcionLogo,
         longitud: descripcionLogo.length
@@ -1472,7 +1496,7 @@ async function procesarImagenesABase64(datos) {
         // Procesar cada producto
         for (let i = 0; i < datos.productos.length; i++) {
             const producto = datos.productos[i];
-            console.log(` Procesando producto ${i + 1}/${datos.productos.length}: ${producto.nombre_producto}`);
+            console.log(`📦 Procesando producto ${i + 1}/${datos.productos.length}: ${producto.nombre_producto}`);
             
             // Procesar fotos de prenda
             if (producto.fotos && producto.fotos.length > 0) {
@@ -1490,7 +1514,7 @@ async function procesarImagenesABase64(datos) {
             
             // Procesar telas
             if (producto.telas && producto.telas.length > 0) {
-                console.log(`   Convirtiendo ${producto.telas.length} tela(s)...`);
+                console.log(`  🧵 Convirtiendo ${producto.telas.length} tela(s)...`);
                 producto.telas_base64 = await Promise.all(
                     producto.telas.map((tela, idx) => {
                         console.log(`    [${idx + 1}/${producto.telas.length}] Procesando tela...`);

@@ -1090,11 +1090,14 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
     // Guardar una prenda por técnica con sus imágenes y variaciones
     tecnicas.forEach((tecnica, idx) => {
         const nuevaTecnica = {
-            tipo: tecnica.nombre,
+            tipo_logo: {
+                id: tecnica.id,
+                nombre: tecnica.nombre
+            },
             prendas: [{
-                nombre: datosForm.nombre_prenda,
+                nombre_prenda: datosForm.nombre_prenda,
                 ubicaciones: datosForm.ubicacionesPorTecnica[idx] || [],
-                tallasCantidad: datosForm.tallas.map(t => ({ talla: t.talla, cantidad: t.cantidad })),
+                talla_cantidad: datosForm.tallas.map(t => ({ talla: t.talla, cantidad: t.cantidad })),
                 observaciones: datosForm.observaciones,
                 variaciones_prenda: datosForm.variaciones_prenda || {},
                 imagenes_files: datosForm.imagenesAgregadas[idx] || []
@@ -1106,7 +1109,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
             window.tecnicasAgregadasPaso3 = [];
         }
         
-        const tecnicaExistente = window.tecnicasAgregadasPaso3.find(t => t.tipo === tecnica.nombre);
+        const tecnicaExistente = window.tecnicasAgregadasPaso3.find(t => t.tipo_logo.nombre === tecnica.nombre);
         if (tecnicaExistente) {
             tecnicaExistente.prendas = nuevaTecnica.prendas;
         } else {
@@ -1231,7 +1234,8 @@ function renderizarTecnicasAgregadasPaso3() {
                 'ESTAMPADO': '#f97316',
                 'SUBLIMADO': '#06b6d4'
             };
-            const color = colorsTec[t.tipo] || '#3b82f6';
+            const tecnicaNombre = t.tipo_logo ? t.tipo_logo.nombre : t.tipo;
+            const color = colorsTec[tecnicaNombre] || '#3b82f6';
             
             headerHTML += `
                 <span style="
@@ -1242,7 +1246,7 @@ function renderizarTecnicasAgregadasPaso3() {
                     font-weight: 600;
                     font-size: 0.85rem;
                 ">
-                    ${t.tipo}
+                    ${tecnicaNombre}
                 </span>
             `;
         });
@@ -1644,7 +1648,8 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                 
                 const labelUbicacion = document.createElement('label');
                 labelUbicacion.style.cssText = 'font-weight: 600; min-width: 100px; font-size: 0.9rem; color: #333; flex-shrink: 0;';
-                labelUbicacion.textContent = tecnicaInfo.tipo + ':';
+                const tecnicaNombreInfo = tecnicaInfo.tipo_logo ? tecnicaInfo.tipo_logo.nombre : tecnicaInfo.tipo;
+                labelUbicacion.textContent = tecnicaNombreInfo + ':';
                 
                 const inputUbicacion = document.createElement('input');
                 inputUbicacion.type = 'text';
@@ -1948,16 +1953,20 @@ function guardarEdiciónPaso3(datosEditados) {
     window.tecnicasAgregadasPaso3.forEach((tecnicaData, tecnicaIndex) => {
         if (tecnicaData.prendas) {
             tecnicaData.prendas = tecnicaData.prendas.map(prenda => {
-                if (prenda.nombre === nombrePrenda) {
+                if (prenda.nombre_prenda === nombrePrenda) {
                     // Buscar índice de esta técnica en los datos editados
-                    const tecnicaIdx = window.tecnicasConPrendaActual.findIndex(t => t.tipo === tecnicaData.tipo);
+                    const tecnicaNombreBuscar = tecnicaData.tipo_logo ? tecnicaData.tipo_logo.nombre : tecnicaData.tipo;
+                    const tecnicaIdx = window.tecnicasConPrendaActual.findIndex(t => {
+                        const tNombre = t.tipo_logo ? t.tipo_logo.nombre : t.tipo;
+                        return tNombre === tecnicaNombreBuscar;
+                    });
                     
                     return {
                         ...prenda,
                         observaciones: observaciones,
-                        ubicaciones: ubicacionesActualizadas[tecnicaData.tipo] || prenda.ubicaciones,
+                        ubicaciones: ubicacionesActualizadas[tecnicaNombreBuscar] || prenda.ubicaciones,
                         variaciones_prenda: variacionesActualizadas,
-                        tallasCantidad: tallas,
+                        talla_cantidad: tallas,
                         imagenes_files: (tecnicaIdx >= 0 && imagenesAgregadas[tecnicaIdx]) ? imagenesAgregadas[tecnicaIdx] : prenda.imagenes_files
                     };
                 }
@@ -2549,10 +2558,10 @@ function guardarTecnicaPaso3() {
         }
         
         prendas.push({
-            nombre,
+            nombre_prenda: nombre,
             ubicaciones,
             observaciones,
-            tallasCantidad,
+            talla_cantidad: tallasCantidad,
             variaciones_prenda,
             imagenes_files: imagenesFiles,
             tecnica: tecnicaSeleccionada
@@ -2565,12 +2574,18 @@ function guardarTecnicaPaso3() {
             window.tecnicasAgregadasPaso3 = [];
         }
         
-        const tecnicaExistente = window.tecnicasAgregadasPaso3.find(t => t.tipo === tecnicaSeleccionada.nombre);
+        const tecnicaExistente = window.tecnicasAgregadasPaso3.find(t => {
+            const tNombre = t.tipo_logo ? t.tipo_logo.nombre : t.tipo;
+            return tNombre === tecnicaSeleccionada.nombre;
+        });
         if (tecnicaExistente) {
             tecnicaExistente.prendas = prendas;
         } else {
             window.tecnicasAgregadasPaso3.push({
-                tipo: tecnicaSeleccionada.nombre,
+                tipo_logo: {
+                    id: tecnicaSeleccionada.id,
+                    nombre: tecnicaSeleccionada.nombre
+                },
                 prendas: prendas,
                 observacionesGenerales: ''
             });
