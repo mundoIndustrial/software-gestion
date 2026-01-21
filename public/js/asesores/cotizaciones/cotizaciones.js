@@ -1362,11 +1362,10 @@ function recopilarDatos() {
         });
     }
     
-    const paso3_secciones_campo = document.getElementById('paso3_secciones_datos');
-    
     console.log('📍 Ubicaciones recopiladas:', ubicaciones);
     console.log('📍 paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');
     console.log('📍 seccionesSeleccionadasFriendly:', typeof window.seccionesSeleccionadasFriendly !== 'undefined' ? window.seccionesSeleccionadasFriendly : 'NO DEFINIDO');
+    } // Cierre del bloque else
     
     // Recopilar observaciones generales CON TIPO Y VALOR como objetos
     const observaciones_generales = [];

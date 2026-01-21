@@ -92,8 +92,8 @@
             $tecnicas = [];
             foreach ($prendas_tecnicas as $prenda_tecnica) {
                 if ($prenda_tecnica->tipo_logo) {
-                    $nombreProducto = $prenda_tecnica->logoPrendaCot 
-                        ? $prenda_tecnica->logoPrendaCot->nombre_producto 
+                    $nombreProducto = $prenda_tecnica->prendaCot 
+                        ? $prenda_tecnica->prendaCot->nombre_producto 
                         : 'Producto desconocido';
                     $tecnicas[] = [
                         'tipo' => $prenda_tecnica->tipo_logo->nombre ?? 'Desconocido',
@@ -152,8 +152,8 @@
                         @php
                             $esCombinada = count($prendas) > 1;
                             $prenda1 = $prendas[0];
-                            $nombrePrenda = $prenda1->logoPrendaCot 
-                                ? $prenda1->logoPrendaCot->nombre_producto 
+                            $nombrePrenda = $prenda1->prendaCot 
+                                ? $prenda1->prendaCot->nombre_producto 
                                 : 'Producto desconocido';
                         @endphp
                         {{-- TARJETA DE PRENDA --}}
@@ -226,7 +226,18 @@
                                         @endphp
                                         @if($todasLasFotos->count() > 0)
                                             @foreach($todasLasFotos as $foto)
-                                                <img src="{{ asset('storage/' . $foto->ruta_webp) }}" 
+                                                @php
+                                                    // Construir URL de imagen correctamente
+                                                    $rutaImagen = $foto->ruta_webp ?? $foto->ruta_original;
+                                                    if (strpos($rutaImagen, 'http') === 0) {
+                                                        $urlImagen = $rutaImagen;
+                                                    } elseif (strpos($rutaImagen, '/storage/') === 0) {
+                                                        $urlImagen = asset($rutaImagen);
+                                                    } else {
+                                                        $urlImagen = asset('storage/' . $rutaImagen);
+                                                    }
+                                                @endphp
+                                                <img src="{{ $urlImagen }}" 
                                                      alt="Imagen técnica"
                                                      style="
                                                          width: 65px;
@@ -236,9 +247,10 @@
                                                          border: 1px solid #e2e8f0;
                                                          cursor: pointer;
                                                          transition: all 0.3s ease;
+                                                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                                                      "
-                                                     onmouseover="this.style.borderColor='#0ea5e9'; this.style.transform='scale(1.1)';"
-                                                     onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='scale(1)';"
+                                                     onmouseover="this.style.borderColor='#0ea5e9'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
+                                                     onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';"
                                                      ondblclick="mostrarImagenFullscreen(this.src);">
                                             @endforeach
                                         @else
@@ -328,65 +340,100 @@
                                                 if (!isset($variacionesCombinadas[$clave])) {
                                                     $variacionesCombinadas[$clave] = [];
                                                 }
-                                                // Extraer el valor de 'opcion' si es un array
-                                                $valorFinal = is_array($valor) ? ($valor['opcion'] ?? $valor) : $valor;
-                                                if (!in_array($valorFinal, $variacionesCombinadas[$clave])) {
-                                                    $variacionesCombinadas[$clave][] = $valorFinal;
+                                                
+                                                // Convertir arrays a string de forma segura
+                                                $valorString = '';
+                                                if (is_array($valor)) {
+                                                    if (isset($valor['opcion'])) {
+                                                        $valorString = (string)$valor['opcion'];
+                                                    } elseif (isset($valor[0])) {
+                                                        $valorString = (string)$valor[0];
+                                                    } else {
+                                                        $valorString = implode(', ', array_map(function($v) { 
+                                                            return is_array($v) ? implode(', ', $v) : (string)$v; 
+                                                        }, $valor));
+                                                    }
+                                                } else {
+                                                    $valorString = (string)$valor;
+                                                }
+                                                
+                                                // Evitar duplicados y valores vacíos
+                                                if (!empty($valorString) && $valorString !== 'null' && !in_array($valorString, $variacionesCombinadas[$clave])) {
+                                                    $variacionesCombinadas[$clave][] = $valorString;
                                                 }
                                             }
                                         }
                                     }
                                 @endphp
-                                @if(!empty($variacionesCombinadas))
+                                {{-- VARIACIONES --}}
+                                @php
+                                    $variacionesFormateadas = [];
+                                    foreach ($prendas as $p) {
+                                        $variaciones = is_string($p->variaciones_prenda) ? json_decode($p->variaciones_prenda, true) ?? [] : $p->variaciones_prenda;
+                                        if (!empty($variaciones) && is_array($variaciones)) {
+                                            // Iterar sobre técnicas (BORDADO, ESTAMPADO, etc.)
+                                            foreach ($variaciones as $tecnica => $opciones) {
+                                                if (is_array($opciones)) {
+                                                    // Iterar sobre opciones (manga, bolsillos, broche_boton, etc.)
+                                                    foreach ($opciones as $opcionNombre => $detalles) {
+                                                        if (is_array($detalles) && isset($detalles['valor'])) {
+                                                            $nombreFormato = ucfirst(str_replace('_', ' ', $opcionNombre));
+                                                            $variacionesFormateadas[$nombreFormato] = [
+                                                                'valor' => $detalles['valor'],
+                                                                'observacion' => $detalles['observacion'] ?? ''
+                                                            ];
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                @if(!empty($variacionesFormateadas))
                                     <div style="margin-bottom: 1.5rem;">
                                         <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
                                             <i class="fas fa-palette"></i> Variaciones:
                                         </h5>
-                                        <table style="
-                                            width: 100%;
-                                            border-collapse: collapse;
-                                            background: white;
-                                            border: 1px solid #e5e7eb;
-                                            border-radius: 6px;
-                                            overflow: hidden;
-                                        ">
-                                            <thead style="background: #f3e8ff; border-bottom: 2px solid #d8b4fe;">
-                                                <tr>
-                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 700; color: #6b21a8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.4px;">Opción</th>
-                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 700; color: #6b21a8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.4px;">Observación</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($variacionesCombinadas as $opcion => $valores)
-                                                    @foreach($valores as $valor)
-                                                        <tr style="border-bottom: 1px solid #e5e7eb;" onmouseover="this.style.background='#faf5ff'" onmouseout="this.style.background=''">
-                                                            <td style="padding: 0.75rem; font-size: 0.9rem; color: #374151; font-weight: 600;">
-                                                                {{ ucfirst($opcion) }}:
+                                        <div style="overflow-x: auto;">
+                                            <table style="
+                                                width: 100%;
+                                                border-collapse: collapse;
+                                                background: white;
+                                                border: 1px solid #e5e7eb;
+                                                border-radius: 6px;
+                                                overflow: hidden;
+                                            ">
+                                                <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 2px solid #1e3a8a;">
+                                                    <tr>
+                                                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: white; font-size: 0.8rem; text-transform: capitalize; letter-spacing: 0.3px;">Tipo</th>
+                                                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: white; font-size: 0.8rem; text-transform: capitalize; letter-spacing: 0.3px;">Valor</th>
+                                                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: white; font-size: 0.8rem; text-transform: capitalize; letter-spacing: 0.3px;">Observación</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($variacionesFormateadas as $tipo => $datos)
+                                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                            <td style="padding: 0.75rem 1rem; font-size: 0.9rem; color: #374151; font-weight: 600;">
+                                                                {{ $tipo }}
                                                             </td>
-                                                            <td style="padding: 0.75rem; font-size: 0.9rem; color: #6b7280;">
-                                                                @if(!empty($valor) && $valor !== 'null')
-                                                                    @php
-                                                                        $valorStr = is_array($valor) ? json_encode($valor) : (string)$valor;
-                                                                    @endphp
-                                                                    <span style="background: #fef3c7; color: #92400e; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">
-                                                                        {{ $valorStr }}
-                                                                    </span>
-                                                                @else
-                                                                    <span style="color: #d1d5db;">—</span>
-                                                                @endif
+                                                            <td style="padding: 0.75rem 1rem; font-size: 0.9rem; color: #0369a1; font-weight: 500;">
+                                                                {{ $datos['valor'] }}
+                                                            </td>
+                                                            <td style="padding: 0.75rem 1rem; font-size: 0.9rem; color: #6b7280;">
+                                                                {{ !empty($datos['observacion']) ? $datos['observacion'] : '-' }}
                                                             </td>
                                                         </tr>
                                                     @endforeach
-                                                @endforeach
-                                            </tbody>
-                                        </table>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 @endif
 
                                 {{-- TALLAS --}}
                                 <div>
                                     <h5 style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">
-                                        <i class="fas fa-ruler"></i> Tallas:
+                                        <i class="fas fa-ruler"></i> Tallas y Cantidades:
                                     </h5>
                                     @php
                                         $tallasCombinadas = [];
@@ -401,22 +448,15 @@
                                         }
                                     @endphp
                                     @if(!empty($tallasCombinadas))
-                                        <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+                                        <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
                                             @foreach($tallasCombinadas as $tallaNombre => $cantidad)
-                                                <span style="
-                                                    background: #dbeafe;
-                                                    color: #0369a1;
-                                                    padding: 0.5rem 0.8rem;
-                                                    border-radius: 6px;
-                                                    font-size: 0.9rem;
-                                                    font-weight: 600;
-                                                ">
-                                                    {{ $tallaNombre }}: {{ $cantidad }}
+                                                <span style="font-size: 0.9rem; color: #374151; font-weight: 500;">
+                                                    {{ $tallaNombre }}: <strong style="color: #0369a1;">{{ $cantidad }}</strong>
                                                 </span>
                                             @endforeach
                                         </div>
                                     @else
-                                        <span style="color: #94a3b8; font-size: 0.9rem;">—</span>
+                                        <span style="color: #94a3b8; font-size: 0.9rem;"><i class="fas fa-info-circle" style="margin-right: 0.4rem;"></i>Sin tallas agregadas</span>
                                     @endif
                                 </div>
                             </div>

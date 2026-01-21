@@ -26,7 +26,7 @@
                             <li style="padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
                                 <span style="color: #64748b; font-weight: 500;">{{ is_array($valor) ? ($valor['texto'] ?? $key) : $key }}</span>
                                 @if(is_array($valor))
-                                    <span style="color: #1e40af; font-weight: 600;">{{ $valor['valor'] ?? $valor }}</span>
+                                    <span style="color: #1e40af; font-weight: 600;">{{ $valor['valor'] ?? json_encode($valor) }}</span>
                                 @else
                                     <span style="color: #1e40af; font-weight: 600;">{{ $valor }}</span>
                                 @endif
