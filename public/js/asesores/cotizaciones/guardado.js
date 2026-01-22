@@ -564,20 +564,12 @@ async function guardarCotizacion() {
             console.log('⚠️ No hay técnicas agregadas (window.tecnicasAgregadasPaso3 vacío o no definido)');
         }
         
-        //  REFLECTIVO (PASO 4) - Para cotizaciones combinadas (PL)
-        // Solo procesar si el tipo de cotización incluye reflectivo Y hay información válida
-        console.log('🔍 DEBUG - Verificando si incluye reflectivo...');
-        console.log('   tipo_cotizacion_global:', window.tipoCotizacionGlobal);
-        
-        // Tipo PL/PB significa que PUEDE tener reflectivo
+        // ✅ REFLECTIVO (PASO 4) - Para cotizaciones combinadas (PL)
         if (window.tipoCotizacionGlobal === 'PL' || window.tipoCotizacionGlobal === 'PB' || window.tipoCotizacionGlobal === 'RF') {
-            console.log('📦 Procesando datos del reflectivo para cotización combinada...');
             
-            //  ACTUALIZAR window.prendas_reflectivo_paso4 DESDE EL DOM
-            // Esta función captura los datos actuales de la UI en el PASO 4
+            // ✅ ACTUALIZAR window.prendas_reflectivo_paso4 DESDE EL DOM
             if (typeof capturePrendasReflectivoPaso4 === 'function') {
                 const prendasCapturadas = capturePrendasReflectivoPaso4();
-                // Reconstruir window.prendas_reflectivo_paso4 con los datos capturados
                 window.prendas_reflectivo_paso4 = prendasCapturadas.map((prenda, idx) => ({
                     index: idx,
                     tipo_prenda: prenda.tipo_prenda,
@@ -588,117 +580,73 @@ async function guardarCotizacion() {
                     observaciones_generales: prenda.observaciones_generales || [],
                     imagenes: prenda.imagenes || []
                 }));
-                console.log(' window.prendas_reflectivo_paso4 actualizado desde DOM:', window.prendas_reflectivo_paso4.length, 'prendas');
             }
             
-            // Obtener descripción del reflectivo (PASO 4) - garantizar que sea string, no null
             const reflectivoElement = document.getElementById('descripcion_reflectivo');
             const reflectivoDescripcion = (reflectivoElement?.value || '').trim();
             
-            //  IMPORTANTE: Obtener ubicaciones desde prendas_reflectivo_paso4 (nuevo modelo)
-            // Si NO existe esa variable, fallback a window.ubicacionesReflectivo (compatibilidad)
             let ubicacionesReflectivo = [];
-            
             if (typeof window.prendas_reflectivo_paso4 !== 'undefined' && window.prendas_reflectivo_paso4.length > 0) {
-                // Reunir TODAS las ubicaciones de TODAS las prendas
-                console.log('📍 Leyendo ubicaciones desde prendas_reflectivo_paso4:', window.prendas_reflectivo_paso4.length, 'prendas');
-                
-                window.prendas_reflectivo_paso4.forEach((prenda, idx) => {
+                window.prendas_reflectivo_paso4.forEach((prenda) => {
                     if (prenda.ubicaciones && prenda.ubicaciones.length > 0) {
-                        console.log(`   Prenda ${idx}: ${prenda.ubicaciones.length} ubicaciones`);
                         ubicacionesReflectivo.push(...prenda.ubicaciones);
                     }
                 });
-                
-                console.log(' Total ubicaciones recopiladas:', ubicacionesReflectivo.length);
             } else if (typeof window.ubicacionesReflectivo !== 'undefined') {
-                // Fallback: usar la versión antigua
-                console.log('ℹ️ prendas_reflectivo_paso4 no existe, usando window.ubicacionesReflectivo (fallback)');
                 ubicacionesReflectivo = window.ubicacionesReflectivo || [];
             }
             
-            // Obtener observaciones generales del reflectivo (si existen)
             const observacionesReflectivo = window.observacionesReflectivo || [];
             
-            //  VALIDAR que reflectivo tenga información escrita válida
-            // Solo incluir si hay ubicaciones O descripción + imágenes
             const tieneUbicacionesReflectivo = ubicacionesReflectivo && ubicacionesReflectivo.length > 0;
             const tieneDescripcionReflectivo = reflectivoDescripcion && reflectivoDescripcion.length > 0;
             const tieneImagenesReflectivo = window.imagenesReflectivo && window.imagenesReflectivo.length > 0;
-            
-            //  IMPORTANTE: También verificar directamente prendas_reflectivo_paso4
             const tienePrendasP4ConDatos = typeof window.prendas_reflectivo_paso4 !== 'undefined' && 
                                             window.prendas_reflectivo_paso4.length > 0;
             
             const refletivoTieneInfoValida = tieneUbicacionesReflectivo || 
                                             (tieneDescripcionReflectivo && tieneImagenesReflectivo) ||
-                                            tienePrendasP4ConDatos;  //  Agregar esta condición
+                                            tienePrendasP4ConDatos;
             
-            console.log('✨ Reflectivo capturado (PASO GUARDADO):', {
-                elemento_existe: !!reflectivoElement,
-                valor_raw: reflectivoElement?.value,
-                valor_final: reflectivoDescripcion,
-                ubicaciones_raw: ubicacionesReflectivo,
-                ubicaciones_count: ubicacionesReflectivo.length,
-                observaciones_count: observacionesReflectivo.length,
-                tienePrendasP4ConDatos,
-                tieneUbicacionesReflectivo,
-                tieneDescripcionReflectivo,
-                tieneImagenesReflectivo,
-                tieneInfoValida: refletivoTieneInfoValida,
-                ubicaciones_stringified: JSON.stringify(ubicacionesReflectivo)
-            });
-            
-            // SOLO agregar reflectivo a FormData si tiene información válida
             if (refletivoTieneInfoValida) {
                 formData.append('reflectivo[descripcion]', reflectivoDescripcion);
                 formData.append('reflectivo[ubicacion]', JSON.stringify(ubicacionesReflectivo));
                 formData.append('reflectivo[observaciones_generales]', JSON.stringify(observacionesReflectivo));
                 formData.append('ubicaciones_reflectivo', JSON.stringify(ubicacionesReflectivo));
                 
-                //  AGREGAR DATOS COMPLETOS DE PRENDAS DEL PASO 4
-                // Esto permite al backend guardar ubicaciones específicas para cada prenda
                 if (typeof window.prendas_reflectivo_paso4 !== 'undefined' && window.prendas_reflectivo_paso4.length > 0) {
                     formData.append('prendas_reflectivo_paso4', JSON.stringify(window.prendas_reflectivo_paso4));
-                    console.log(' Datos completos de prendas_reflectivo_paso4 agregados al FormData (GUARDADO)');
                 }
                 
-                console.log(' Datos del reflectivo agregados al FormData:', {
-                    descripcion: reflectivoDescripcion,
-                    ubicaciones_count: ubicacionesReflectivo.length,
-                    ubicaciones: ubicacionesReflectivo,
-                    observaciones_count: observacionesReflectivo.length
-                });
-                
-                //  IMÁGENES DEL REFLECTIVO - solo si hay información válida
-                if (window.imagenesReflectivo && Array.isArray(window.imagenesReflectivo)) {
-                    console.log('📸 Procesando imágenes del reflectivo:', window.imagenesReflectivo.length);
+                // ✅ IMÁGENES DEL REFLECTIVO - PASO 4
+                if (window.prendas_reflectivo_paso4 && Array.isArray(window.prendas_reflectivo_paso4)) {
+                    console.log('🔍 DEBUG PASO 4 - window.prendas_reflectivo_paso4:', window.prendas_reflectivo_paso4);
+                    let totalImagenesP4Reflectivo = 0;
                     
-                    window.imagenesReflectivo.forEach((imagen, index) => {
-                        if (imagen.archivo && imagen.archivo instanceof File) {
-                            formData.append(`reflectivo[imagenes][]`, imagen.archivo);
-                            console.log(` Imagen reflectivo ${index + 1} agregada: ${imagen.nombre}`);
+                    window.prendas_reflectivo_paso4.forEach((prenda, prendaIndex) => {
+                        if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                            prenda.imagenes.forEach((imagen, imagenIndex) => {
+                                if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso4') {
+                                    const fieldName = `reflectivo[imagenes_paso4][${prendaIndex}][${imagenIndex}]`;
+                                    console.log(`✅ APPENDING IMAGE TO FORMDATA - Prenda ${prendaIndex}, Imagen ${imagenIndex}: ${imagen.file.name}`);
+                                    formData.append(fieldName, imagen.file);
+                                    totalImagenesP4Reflectivo++;
+                                }
+                            });
                         }
                     });
-                } else {
-                    console.log('⚠️ No hay imágenes de reflectivo');
+                    console.log(`✅ TOTAL IMÁGENES PASO 4 AGREGADAS AL FORMDATA: ${totalImagenesP4Reflectivo}`);
                 }
-            } else {
-                console.warn('⚠️ Reflectivo sin información válida - No se incluirá en el guardado');
+                
+                if (window.imagenesReflectivo && Array.isArray(window.imagenesReflectivo)) {
+                    window.imagenesReflectivo.forEach((imagen) => {
+                        if (imagen.archivo && imagen.archivo instanceof File) {
+                            formData.append(`reflectivo[imagenes][]`, imagen.archivo);
+                        }
+                    });
+                }
             }
-        } else {
-            console.log('⚠️ Tipo de cotización no incluye reflectivo:', window.tipoCotizacionGlobal);
         }
-        
-        console.log('📤 FORMDATA A ENVIAR:', {
-            tipo: 'borrador',
-            cliente: datos.cliente,
-            tipo_venta: tipoVenta,
-            productos_count: datos.productos?.length || 0,
-            tecnicas: datos.tecnicas?.length || 0,
-            especificaciones_keys: Object.keys(datos.especificaciones || {}),
-            ruta: window.routes.guardarCotizacion
-        });
         
         // Debug: Mostrar contenido del FormData
         console.log(' DEBUG - Contenido completo del FormData:');
@@ -711,13 +659,6 @@ async function guardarCotizacion() {
         // Verificar y obtener el token CSRF
         const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
         const csrfToken = csrfTokenMeta?.getAttribute('content') || '';
-        
-        console.log('🔐 DEBUG - Token CSRF:', {
-            meta_encontrado: !!csrfTokenMeta,
-            token_existe: !!csrfToken,
-            token_length: csrfToken.length,
-            token_preview: csrfToken ? csrfToken.substring(0, 10) + '...' : 'VACÍO'
-        });
         
         if (!csrfToken) {
             console.error(' TOKEN CSRF NO ENCONTRADO - La solicitud fallará');

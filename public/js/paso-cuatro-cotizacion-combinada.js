@@ -437,8 +437,26 @@ function procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContain
         reader.onload = (e) => {
             prenda.imagenes.push({
                 file: archivo,
-                preview: e.target.result
+                preview: e.target.result,
+                tipo: 'paso4'
             });
+            
+            // ✅ LOG DETALLADO - Solo cuando se adjunta correctamente
+            console.log(`
+╔════════════════════════════════════════════════════════════════╗
+║         ✅ IMAGEN ADJUNTADA CORRECTAMENTE - PASO 4             ║
+╠════════════════════════════════════════════════════════════════╣
+║ Prenda: ${prenda.tipo_prenda || 'Sin seleccionar'}
+║ Nombre: ${archivo.name}
+║ Tamaño: ${(archivo.size / 1024).toFixed(2)} KB
+║ Tipo: ${archivo.type}
+║ Total en prenda: ${prenda.imagenes.length}/${maxImagenes}
+║
+║ ✅ SERÁ ENVIADA AL GUARDAR LA COTIZACIÓN
+║ Ruta en servidor: cotizaciones/{id}/reflectivo/img_reflectivo_*.webp
+║ Tabla: reflectivo_fotos_cotizacion
+╚════════════════════════════════════════════════════════════════╝
+            `);
             
             renderizarImagenesReflectivo(prendasIndex, fila);
         };

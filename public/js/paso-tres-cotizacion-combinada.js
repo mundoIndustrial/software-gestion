@@ -141,45 +141,10 @@ function obtenerPrendasDelPaso2() {
                 const fotosElements = fotosPreview.querySelectorAll('img, [data-foto] img');
                 fotosElements.forEach(img => {
                     if (img.src) {
-                        // Verificar si la imagen viene de la BD (cotizaciones/...) o es base64
-                        if (img.src.includes('cotizaciones/') && img.src.includes('.')) {
-                            // Es una ruta de la BD - guardarla como paso2
-                            imagenes.push({
-                                ruta: img.src,
-                                tipo: 'paso2'
-                            });
-                        } else if (img.src.startsWith('data:')) {
-                            // Es base64 - podría ser preview de archivo nuevo
-                            imagenes.push({
-                                ruta: img.src,
-                                tipo: 'paso2'
-                            });
-                        }
+                        imagenes.push(img.src);
                     }
                 });
             }
-            
-            // ALTERNATIVA: Si no hay fotos en preview, buscar en window.cotizacionData (si está cargada)
-            if (imagenes.length === 0 && window.cotizacionData && window.cotizacionData.prendas) {
-                const prendaBD = window.cotizacionData.prendas.find(p => {
-                    const nombreP2 = nombre.split(' -')[0].toLowerCase();
-                    const nombreBD = p.nombre_producto?.toLowerCase() || '';
-                    return nombreBD.includes(nombreP2) || nombreP2.includes(nombreBD);
-                });
-                
-                if (prendaBD && prendaBD.fotos && Array.isArray(prendaBD.fotos)) {
-                    prendaBD.fotos.forEach(foto => {
-                        if (foto.url || foto.ruta_original) {
-                            imagenes.push({
-                                ruta: foto.url || foto.ruta_original,
-                                tipo: 'paso2'
-                            });
-                        }
-                    });
-                    console.log(`  ✅ Imágenes de prenda desde BD: ${imagenes.length}`);
-                }
-            }
-            
             console.log(`  - Imágenes finales: ${imagenes.length}`);
             
             // ============================================

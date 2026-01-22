@@ -2409,7 +2409,101 @@ final class CotizacionController extends Controller
                         }
                     }
                     
-                    // FALLBACK: Guardar imágenes del reflectivo en FormData (para imágenes nuevas del PASO 4)
+                    // ✅ PROCESAR IMÁGENES DEL PASO 4 (Reflectivo) - Guardar archivos en disco
+                    // Las imágenes vienen en: reflectivo[imagenes_paso4][prendaIndex][imagenIndex]
+                    
+                    // 🔍 DEBUG: Check all files in request
+                    $allFilesInRequest = $request->allFiles();
+                    \Log::debug('DEBUG - Todos los archivos en request:', $allFilesInRequest);
+                    
+                    $imagenesP4ReflectivoFiles = $request->file('reflectivo.imagenes_paso4');
+                    \Log::debug('DEBUG - imagenesP4ReflectivoFiles:', [$imagenesP4ReflectivoFiles]);
+                    
+                    $imagenesP4ReflectivoArchivos = [];
+                    if ($imagenesP4ReflectivoFiles && is_array($imagenesP4ReflectivoFiles)) {
+                        \Log::debug('DEBUG - Entrando a flatearArchivos con imagenesP4ReflectivoFiles');
+                        $this->flatearArchivos($imagenesP4ReflectivoFiles, $imagenesP4ReflectivoArchivos, 'reflectivo[imagenes_paso4]');
+                    } else {
+                        \Log::debug('DEBUG - imagenesP4ReflectivoFiles es null o no es array', ['imagenesP4ReflectivoFiles' => $imagenesP4ReflectivoFiles]);
+                    }
+                    
+                    if (count($imagenesP4ReflectivoArchivos) > 0) {
+                        
+                        foreach ($imagenesP4ReflectivoArchivos as $fieldName => $archivo) {
+                            // Coincide con patrón: reflectivo[imagenes_paso4][{prendaIndex}][{imagenIndex}]
+                            if (preg_match('/^reflectivo\[imagenes_paso4\]\[(\d+)\]\[(\d+)\]$/', $fieldName, $matches)) {
+                                $prendaIndex = (int)$matches[1];
+                                $imagenIndex = (int)$matches[2];
+                                
+                                try {
+                                    if (isset($prendasReflectivoPaso4[$prendaIndex])) {
+                                        $prendaReflectivoData = $prendasReflectivoPaso4[$prendaIndex];
+                                        $nombrePrendaBase = $prendaReflectivoData['tipo_prenda'];
+                                        
+                                        $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                                            ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
+                                            ->first();
+                                        
+                                        if ($prendaCot) {
+                                            $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
+                                                ->where('prenda_cot_id', $prendaCot->id)
+                                                ->first();
+                                            
+                                            if ($reflectivoCotizacion) {
+                                                $ordenFoto = $reflectivoCotizacion->fotos()->count() + 1;
+                                                
+                                                if ($ordenFoto > 3) {
+                                                    continue;
+                                                }
+                                                
+                                                $rutaDirectorio = "cotizaciones/{$cotizacionId}/reflectivo";
+                                                $nombreArchivo = uniqid('img_reflectivo_') . '.' . $archivo->getClientOriginalExtension();
+                                                $rutaCompleta = $rutaDirectorio . '/' . $nombreArchivo;
+                                                
+                                                // Guardar archivo en disco (public/storage)
+                                                $path = $archivo->store($rutaDirectorio, 'public');
+                                                
+                                                // Registrar en BD (reflectivo_fotos_cotizacion)
+                                                $reflectivoCotizacion->fotos()->create([
+                                                    'ruta_original' => $path,
+                                                    'ruta_webp' => $path,
+                                                    'orden' => $ordenFoto,
+                                                ]);
+                                                
+                                                // ✅ LOG DETALLADO - Solo cuando se guarda correctamente
+                                                Log::info('
+╔════════════════════════════════════════════════════════════════╗
+║     ✅ IMAGEN REFLECTIVO GUARDADA CORRECTAMENTE - PASO 4       ║
+╠════════════════════════════════════════════════════════════════╣
+║ Cotización ID: ' . $cotizacionId . '
+║ Prenda: ' . $nombrePrendaBase . '
+║ Archivo: ' . $archivo->getClientOriginalName() . '
+║ Tamaño: ' . round($archivo->getSize() / 1024, 2) . ' KB
+║ Tipo: ' . $archivo->getClientMimeType() . '
+║ 
+║ ALMACENADO EN:
+║ Directorio: ' . $rutaDirectorio . '
+║ Ruta BD: ' . $path . '
+║ Orden: ' . $ordenFoto . '/3
+║ 
+║ TABLA: reflectivo_fotos_cotizacion
+║ ID Reflectivo: ' . $reflectivoCotizacion->id . '
+╚════════════════════════════════════════════════════════════════╝
+                                                ');
+                                            } else {
+                                                Log::warning('⚠️ No se encontró reflectivo_cotizacion', ['prenda' => $nombrePrendaBase]);
+                                            }
+                                        } else {
+                                            Log::warning('⚠️ No se encontró prenda en BD', ['nombre_prenda' => $nombrePrendaBase]);
+                                        }
+                                    }
+                                } catch (\Exception $e) {
+                                    Log::error('❌ Error procesando imagen reflectivo PASO 4', ['error' => $e->getMessage()]);
+                                }
+                            }
+                        }
+                    }
+
                     if (!empty($reflectivoArchivos)) {
                         $ordenFoto = 1;
                         
