@@ -3,7 +3,6 @@
 namespace App\Domain\PedidoProduccion\Services;
 
 use App\Models\PedidoProduccion;
-use App\Models\LogoPedido;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\Paginator;
 
@@ -25,8 +24,7 @@ class ListaPedidosService
                 },
                 'prendas' => function ($q) {
                     $q->with(['color', 'tela', 'tipoManga', 'procesos']);
-                },
-                'logoPedidos'
+                }
             ]);
 
         // Filtrar por asesor

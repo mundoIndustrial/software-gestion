@@ -158,22 +158,22 @@ function cargarPrendas(prendas) {
 }
 
 function crearPrendaHTML(prenda, index) {
-    const tallasHtml = prenda.cantidad_talla ? Object.entries(prenda.cantidad_talla)
-        .filter(([talla, cantidad]) => cantidad > 0) // Solo mostrar tallas con cantidad mayor a 0
-        .sort((a, b) => {
-            // Ordenar tallas: XS, S, M, L, XL, XXL, XXXL, luego numéricas
-            const orden = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
-            const indexA = orden.indexOf(a[0]);
-            const indexB = orden.indexOf(b[0]);
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
-            return a[0].localeCompare(b[0], undefined, {numeric: true});
-        })
-        .map(([talla, cantidad]) => `
+    const tallasHtml = prenda.tallas && Array.isArray(prenda.tallas)
+        ? prenda.tallas
+            .filter(tallaRecord => tallaRecord.cantidad > 0)
+            .sort((a, b) => {
+                const orden = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+                const indexA = orden.indexOf(a.talla);
+                const indexB = orden.indexOf(b.talla);
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+                return a.talla.localeCompare(b.talla, undefined, {numeric: true});
+            })
+            .map(tallaRecord => `
         <div class="talla-item">
-            <label>${talla}:</label>
-            <input type="number" name="prendas[${index}][cantidad_talla][${talla}]" value="${cantidad}" min="1" required>
+            <label>${tallaRecord.genero} ${tallaRecord.talla}:</label>
+            <input type="number" name="prendas[${index}][tallas][${tallaRecord.genero}][${tallaRecord.talla}]" value="${tallaRecord.cantidad}" min="1" required>
         </div>
     `).join('') : '';
 

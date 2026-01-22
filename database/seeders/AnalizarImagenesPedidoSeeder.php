@@ -78,7 +78,7 @@ class AnalizarImagenesPedidoSeeder extends Seeder
 
             // 5. Resumen
             echo "\n========================================\n";
-            echo "📊 RESUMEN DE IMÁGENES\n";
+            echo " RESUMEN DE IMÁGENES\n";
             echo "========================================\n";
             
             $totalFotosPrenda = PrendaFotoPedido::whereIn('prenda_pedido_id', $prendas->pluck('id'))->count();

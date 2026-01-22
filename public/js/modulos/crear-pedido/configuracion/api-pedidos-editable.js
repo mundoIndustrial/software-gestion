@@ -352,16 +352,11 @@ class PedidosEditableWebClient {
                                     procesoData.observaciones
                                 );
                             }
-                            if (procesoData.tallas_dama) {
+                            // Estructura relacional: { DAMA: {S: 5}, CABALLERO: {M: 3} }
+                            if (procesoData.tallas) {
                                 formData.append(
-                                    `prendas[${itemIdx}][procesos][${tipoProceso}][tallas_dama]`,
-                                    JSON.stringify(procesoData.tallas_dama)
-                                );
-                            }
-                            if (procesoData.tallas_caballero) {
-                                formData.append(
-                                    `prendas[${itemIdx}][procesos][${tipoProceso}][tallas_caballero]`,
-                                    JSON.stringify(procesoData.tallas_caballero)
+                                    `prendas[${itemIdx}][procesos][${tipoProceso}][tallas]`,
+                                    JSON.stringify(procesoData.tallas)
                                 );
                             }
                             

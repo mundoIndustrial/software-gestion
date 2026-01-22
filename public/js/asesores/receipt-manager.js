@@ -19,7 +19,7 @@ class ReceiptManager {
         if (prendasIndex !== null) {
             console.log(' Filtrado para prenda:', prendasIndex);
         }
-        console.log('📄 Recibos:', this.recibos);
+        console.log(' Recibos:', this.recibos);
 
         this.inicializarEventos();
         this.crearSelectorPrendas();
@@ -235,7 +235,7 @@ class ReceiptManager {
     renderizar() {
         const recibo = this.recibos[this.indexActual];
 
-        console.log(`📄 Renderizando recibo ${recibo.numero}/${recibo.total}:`, recibo);
+        console.log(` Renderizando recibo ${recibo.numero}/${recibo.total}:`, recibo);
 
         // Actualizar contador
         document.getElementById('receipt-number').textContent = recibo.numero;

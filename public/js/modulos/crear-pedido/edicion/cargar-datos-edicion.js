@@ -10,6 +10,23 @@
 
 let datosEdicionCargados = false;
 
+// Helper: Convertir array de tallas {genero, talla, cantidad} a JSON {GENERO: {talla: cantidad}}
+function convertirTallasArrayAJson(tallas) {
+    if (!Array.isArray(tallas)) return {};
+    
+    const resultado = {};
+    tallas.forEach(tallaObj => {
+        if (tallaObj.genero && tallaObj.talla && tallaObj.cantidad) {
+            const genero = tallaObj.genero.toUpperCase();
+            if (!resultado[genero]) {
+                resultado[genero] = {};
+            }
+            resultado[genero][tallaObj.talla] = tallaObj.cantidad;
+        }
+    });
+    return resultado;
+}
+
 // Esperar a que el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCargaEdicion);
@@ -165,7 +182,7 @@ function cargarPrendas(prendas) {
                 nombre_producto: prenda.nombre_prenda || '',
                 descripcion: prenda.descripcion || '',
                 genero: prenda.genero || [],
-                generosConTallas: prenda.generosConTallas || prenda.cantidad_talla || {},
+                generosConTallas: prenda.generosConTallas || convertirTallasArrayAJson(prenda.tallas) || {},
                 tipo_manga: prenda.tipo_manga || 'No aplica',
                 obs_manga: prenda.obs_manga || '',
                 tipo_broche: prenda.tipo_broche || 'No aplica',

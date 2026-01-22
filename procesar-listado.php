@@ -190,7 +190,7 @@ $csv = $procesador->aCSV($articulos);
 $archivo = 'C:\\Users\\Usuario\\Documents\\mundoindustrial\\articulos_procesados.csv';
 file_put_contents($archivo, $csv);
 
-echo "<h1>✅ Datos procesados exitosamente</h1>";
+echo "<h1> Datos procesados exitosamente</h1>";
 echo "<p><strong>Total de artículos:</strong> " . count($articulos) . "</p>";
 echo "<p><strong>Archivo guardado:</strong> articulos_procesados.csv</p>";
 echo "<hr>";

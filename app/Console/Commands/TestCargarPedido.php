@@ -23,7 +23,7 @@ class TestCargarPedido extends Command
             $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
             
             if (!$orden) {
-                $this->error("❌ Pedido no encontrado con número: $numeroPedido");
+                $this->error(" Pedido no encontrado con número: $numeroPedido");
                 return;
             }
             
@@ -45,7 +45,7 @@ class TestCargarPedido extends Command
                 'asesora'
             ]);
 
-            $this->line('✅ Pedido cargado correctamente');
+            $this->line(' Pedido cargado correctamente');
             $this->line("Número de pedido: " . $orden->numero_pedido);
             $this->line("Cliente: " . $orden->cliente);
             $this->line("Prendas: " . $orden->prendas->count() . "\n");
@@ -57,7 +57,7 @@ class TestCargarPedido extends Command
                 $this->line("Descripción: " . $prenda->descripcion);
                 
                 // Variantes
-                $this->line("\n📋 VARIANTES: " . $prenda->variantes->count());
+                $this->line("\n VARIANTES: " . $prenda->variantes->count());
                 if ($prenda->variantes->count() > 0) {
                     foreach ($prenda->variantes as $var) {
                         $this->line("  ✓ Variante ID: " . $var->id);
@@ -145,11 +145,11 @@ class TestCargarPedido extends Command
             }
             
             $this->info("\n=== RESUMEN ===");
-            $this->line("✅ Todas las relaciones se cargaron correctamente");
-            $this->line("✅ Datos listos para enviar al frontend");
+            $this->line(" Todas las relaciones se cargaron correctamente");
+            $this->line(" Datos listos para enviar al frontend");
             
         } catch (\Exception $e) {
-            $this->error("❌ ERROR: " . $e->getMessage());
+            $this->error(" ERROR: " . $e->getMessage());
             $this->error("Stack trace:");
             $this->error($e->getTraceAsString());
         }

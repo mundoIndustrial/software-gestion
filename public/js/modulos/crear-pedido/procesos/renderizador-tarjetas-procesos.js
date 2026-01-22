@@ -30,12 +30,12 @@ window.renderizarTarjetasProcesos = function() {
     console.log('🎨 [TARJETAS-PROCESOS] Buscando contenedor #contenedor-tarjetas-procesos');
     
     if (!container) {
-        console.error('❌ [TARJETAS-PROCESOS] CONTENEDOR NO ENCONTRADO en el DOM');
+        console.error(' [TARJETAS-PROCESOS] CONTENEDOR NO ENCONTRADO en el DOM');
         console.log('🎨 [TARJETAS-PROCESOS] Elementos con "contenedor" en el ID:', document.querySelectorAll('[id*="contenedor"]'));
         return;
     }
     
-    console.log('✅ [TARJETAS-PROCESOS] Contenedor encontrado:', container);
+    console.log(' [TARJETAS-PROCESOS] Contenedor encontrado:', container);
     console.log('🎨 [TARJETAS-PROCESOS] Display actual:', container.style.display);
     console.log('🎨 [TARJETAS-PROCESOS] Parent:', container.parentElement);
     
@@ -72,7 +72,7 @@ window.renderizarTarjetasProcesos = function() {
     container.innerHTML = html;
     container.style.display = 'block';
     
-    console.log('✅ [TARJETAS-PROCESOS] ===== RENDERIZADO COMPLETADO =====');
+    console.log(' [TARJETAS-PROCESOS] ===== RENDERIZADO COMPLETADO =====');
     console.log('🎨 [TARJETAS-PROCESOS] Contenedor ahora contiene:', container.innerHTML.substring(0, 200));
 };
 
@@ -333,16 +333,16 @@ function cargarDatosProcesoEnModal(tipo, datos) {
         
         console.log(` [TARJETAS-PROCESOS] Tallas cargadas en window:`, window.tallasSeleccionadasProceso);
         
-        // Guardar las cantidades para mostrar en el resumen
-        window.cantidadesTallas = {};
-        Object.entries(damaTallas).forEach(([talla, cantidad]) => {
-            window.cantidadesTallas[`dama-${talla}`] = cantidad;
-        });
-        Object.entries(caballeroTallas).forEach(([talla, cantidad]) => {
-            window.cantidadesTallas[`caballero-${talla}`] = cantidad;
-        });
+        // Guardar las cantidades en estructura relacional
+        if (!window.tallasRelacionales) {
+            window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {} };
+        }
         
-        console.log(` [TARJETAS-PROCESOS] Cantidades guardadas:`, window.cantidadesTallas);
+        // Poblar con datos del proceso (estructura relacional)
+        window.tallasRelacionales.DAMA = { ...damaTallas };
+        window.tallasRelacionales.CABALLERO = { ...caballeroTallas };
+        
+        console.log(` [TARJETAS-PROCESOS] Tallas guardadas (relacional):`, window.tallasRelacionales);
         
         if (window.actualizarResumenTallasProceso) {
             console.log(` [TARJETAS-PROCESOS] Llamando a actualizarResumenTallasProceso()`);

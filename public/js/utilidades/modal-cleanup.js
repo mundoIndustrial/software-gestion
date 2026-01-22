@@ -21,8 +21,11 @@ class ModalCleanup {
 
     /**
      * Limpiar todos los inputs y textareas del modal de prenda
+     * PROTECCIÓN: No limpiar si el usuario está escribiendo en un input
      */
     static limpiarFormulario() {
+        // PROTECCIÓN: Verificar si hay un elemento con focus
+        const elementoEnFoco = document.activeElement;
         const idsInputs = [
             'nueva-prenda-nombre',
             'nueva-prenda-descripcion',
@@ -37,6 +40,12 @@ class ModalCleanup {
             'nueva-prenda-referencia',
             'nueva-prenda-foto-contador'
         ];
+
+        // Si el usuario está escribiendo en algún input, no limpiar
+        if (elementoEnFoco && idsInputs.includes(elementoEnFoco.id)) {
+            console.log(`⚠️ [ModalCleanup] PROTECCIÓN: Usuario escribiendo en #${elementoEnFoco.id} - NO limpiar`);
+            return;
+        }
 
         idsInputs.forEach(id => {
             const element = DOMUtils.getElement(id);
@@ -74,19 +83,17 @@ class ModalCleanup {
             console.log('🧹 [ModalCleanup] Telas agregadas limpiadas');
         }
 
-        // Limpiar cantidades por talla
-        if (window.cantidadesTallas) {
-            Object.keys(window.cantidadesTallas).forEach(key => {
-                delete window.cantidadesTallas[key];
-            });
-            console.log('🧹 [ModalCleanup] Cantidades de tallas limpiadas');
+        // Limpiar tallas relacionales (modelo nuevo: {GENERO: {TALLA: CANTIDAD}})
+        if (window.tallasRelacionales) {
+            window.tallasRelacionales.DAMA = {};
+            window.tallasRelacionales.CABALLERO = {};
+            window.tallasRelacionales.UNISEX = {};
+            console.log('🧹 [ModalCleanup] Tallas relacionales limpiadas');
         }
 
-        // Limpiar tallas seleccionadas
+        // Limpieza de variables
         if (window.tallasSeleccionadas) {
-            window.tallasSeleccionadas.dama = { tallas: [], tipo: null };
-            window.tallasSeleccionadas.caballero = { tallas: [], tipo: null };
-            console.log('🧹 [ModalCleanup] Tallas seleccionadas limpias');
+            window.tallasSeleccionadas = { dama: { tallas: [], tipo: null }, caballero: { tallas: [], tipo: null } };
         }
     }
 
@@ -231,15 +238,16 @@ class ModalCleanup {
      * Limpiar solo géneros y tallas
      */
     static limpiarGenerosYTallas() {
-        if (window.tallasSeleccionadas) {
-            window.tallasSeleccionadas.dama = { tallas: [], tipo: null };
-            window.tallasSeleccionadas.caballero = { tallas: [], tipo: null };
+        // Limpiar estructura relacional
+        if (window.tallasRelacionales) {
+            window.tallasRelacionales.DAMA = {};
+            window.tallasRelacionales.CABALLERO = {};
+            window.tallasRelacionales.UNISEX = {};
         }
 
-        if (window.cantidadesTallas) {
-            Object.keys(window.cantidadesTallas).forEach(key => {
-                delete window.cantidadesTallas[key];
-            });
+        // Limpiar variables
+        if (window.tallasSeleccionadas) {
+            window.tallasSeleccionadas = { dama: { tallas: [], tipo: null }, caballero: { tallas: [], tipo: null } };
         }
 
         const tarjetasGenerosContainer = DOMUtils.getElement('tarjetas-generos-container');

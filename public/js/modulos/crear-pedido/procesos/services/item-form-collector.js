@@ -65,11 +65,11 @@ class ItemFormCollector {
             
             const baseItem = {
                 tipo: item.tipo,
-                nombre_producto: item.nombre_producto || item.prenda?.nombre || item.nombre || '',
+                nombre_prenda: item.nombre_prenda || item.nombre_producto || item.prenda?.nombre || item.nombre || '',
                 descripcion: item.descripcion || '',
                 origen: item.origen || 'bodega',
                 procesos: item.procesos || {},
-                cantidad_talla: item.cantidad_talla || {},
+                tallas: item.tallas || [],
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
             };
@@ -112,8 +112,13 @@ class ItemFormCollector {
                             });
                         }
                     });
-                } else if (window.cantidadesTallas) {
-                    Object.assign(cantidadTalla, window.cantidadesTallas);
+                } else if (window.tallasRelacionales) {
+                    // Usar estructura relacional: { DAMA: {T: 10}, CABALLERO: {32: 5} }
+                    Object.values(window.tallasRelacionales).forEach(generoTallas => {
+                        if (generoTallas && typeof generoTallas === 'object') {
+                            Object.assign(cantidadTalla, generoTallas);
+                        }
+                    });
                 }
                 
                 const tipoMangaRaw = prenda.variantes?.tipo_manga ?? 'No aplica';
@@ -162,10 +167,9 @@ class ItemFormCollector {
                 
                 const itemSinCot = {
                     tipo: 'prenda_nueva',
-                    prenda: prenda.nombre_producto || '',
+                    nombre_prenda: prenda.nombre_prenda || prenda.nombre_producto || '',
                     descripcion: prenda.descripcion || '',
                     genero: prenda.genero || [],
-                    cantidad_talla: cantidadTalla,
                     tallas: tallas,
                     variaciones: variaciones,
                     origen: prenda.origen || 'bodega',
@@ -252,11 +256,10 @@ class ItemFormCollector {
 
         return {
             tipo: 'prenda_nueva',
-            prenda: prenda.nombre_producto || '',
-            nombre_producto: prenda.nombre_producto || '',
+            prenda: prenda.nombre_prenda || prenda.nombre_producto || '',
+            nombre_prenda: prenda.nombre_prenda || prenda.nombre_producto || '',
             descripcion: prenda.descripcion || '',
             genero: prenda.genero || [],
-            cantidad_talla: cantidadTalla,
             tallas: Object.keys(cantidadTalla),
             variaciones: variaciones,
             origen: prenda.origen || 'bodega',

@@ -57,7 +57,7 @@ class ObtenerPedidoHandler implements QueryHandler
             // Obtener de la base de datos con relaciones
             $pedido = $this->pedidoModel
                 ->where('id', $query->getPedidoId())
-                ->with(['prendas', 'logos', 'asesor', 'cliente'])
+                ->with(['prendas', 'asesor', 'cliente'])
                 ->first();
 
             if (!$pedido) {
@@ -74,7 +74,6 @@ class ObtenerPedidoHandler implements QueryHandler
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'prendas_count' => $pedido->prendas?->count() ?? 0,
-                'logos_count' => $pedido->logos?->count() ?? 0,
             ]);
 
             return $pedido;

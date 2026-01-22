@@ -86,7 +86,7 @@ class VisualizadorLogoController extends Controller
         
         // Log detallado de cada cotización
         foreach ($cotizaciones->items() as $index => $cot) {
-            \Log::info("📄 Cotización #{$index}:", [
+            \Log::info(" Cotización #{$index}:", [
                 'id' => $cot->id,
                 'numero_cotizacion' => $cot->numero_cotizacion,
                 'cliente_campo_texto' => $cot->cliente,

@@ -849,23 +849,23 @@ class OrdenController extends Controller
             ])->findOrFail($id);
 
             // Preparar datos de prendas con todas las relaciones
-            $prendasData = $orden->prendas->map(function($prenda) {
-                // Convertir IDs de tallas a nombres de tallas
+            $prendasData = $orden->prendas()->with('tallas')->get()->map(function($prenda) {
+                // Convertir tallas desde tabla relacional a estructura de géneros
                 $cantidadTallaConNombres = [];
+                $tallasGenero = [];
                 
-                // Asegurar que cantidad_talla sea un array
-                $cantidadTalla = $prenda->cantidad_talla;
-                if (is_string($cantidadTalla)) {
-                    $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
-                }
-                
-                if ($cantidadTalla && is_array($cantidadTalla)) {
-                    foreach ($cantidadTalla as $tallaId => $cantidad) {
-                        if ($cantidad > 0) {
-                            // Buscar el nombre de la talla por ID
-                            $talla = \App\Models\Talla::find($tallaId);
-                            $nombreTalla = $talla ? $talla->nombre : $tallaId;
-                            $cantidadTallaConNombres[$nombreTalla] = $cantidad;
+                // Obtener tallas desde la relación
+                if ($prenda->tallas && count($prenda->tallas) > 0) {
+                    foreach ($prenda->tallas as $tallaRecord) {
+                        // Agregar a estructura genero -> {talla: cantidad}
+                        if (!isset($tallasGenero[$tallaRecord->genero])) {
+                            $tallasGenero[$tallaRecord->genero] = [];
+                        }
+                        $tallasGenero[$tallaRecord->genero][$tallaRecord->talla] = $tallaRecord->cantidad;
+                        
+                        // Agregar a lista simple de tallas
+                        if ($tallaRecord->cantidad > 0) {
+                            $cantidadTallaConNombres[$tallaRecord->talla] = $tallaRecord->cantidad;
                         }
                     }
                 }
@@ -898,22 +898,13 @@ class OrdenController extends Controller
                     }
                 }
                 
-                // Preparar tallas por género desde cantidad_talla JSON
-                $tallasGenero = [];
-                $cantidadTalla = $prenda->cantidad_talla;
-                if (is_string($cantidadTalla)) {
-                    $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
-                }
-                
-                if ($cantidadTalla && is_array($cantidadTalla)) {
-                    foreach ($cantidadTalla as $genero => $tallas) {
-                        if (is_array($tallas)) {
-                            $tallasGenero[$genero] = [
-                                'tallas' => array_keys($tallas),
-                                'tipo' => null
-                            ];
-                        }
-                    }
+                // Preparar tallas por género desde estructura convertida
+                $tallasGeneroFormato = [];
+                foreach ($tallasGenero as $genero => $tallas) {
+                    $tallasGeneroFormato[$genero] = [
+                        'tallas' => array_keys($tallas),
+                        'tipo' => null
+                    ];
                 }
 
                 // Obtener color y tela desde coloresTelas

@@ -43,8 +43,8 @@ class RegistroOrdenQueryService
             ->with([
                 'asesora:id,name',
                 'prendas' => function($q) {
-                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'descripcion_variaciones', 'cantidad_talla', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo')
-                      ->with('color:id,nombre', 'tela:id,nombre,referencia', 'tipoManga:id,nombre');
+                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'descripcion_variaciones', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo')
+                      ->with('color:id,nombre', 'tela:id,nombre,referencia', 'tipoManga:id,nombre', 'tallas:prenda_pedido_id,genero,talla,cantidad');
                 }
             ])
             ->where(function($q) {

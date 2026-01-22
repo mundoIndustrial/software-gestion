@@ -68,6 +68,17 @@ class PedidosProcesosPrendaDetalle extends Model
         return $this->hasMany(PedidosProcessImagenes::class, 'proceso_prenda_detalle_id');
     }
 
+    /**
+     * Tallas relacional del proceso (DAMA, CABALLERO, UNISEX)
+     * 
+     * @deprecated tallas_dama y tallas_caballero (legacy JSON)
+     * @see PedidosProcesosPrendaTalla para la fuente canónica de tallas
+     */
+    public function tallas(): HasMany
+    {
+        return $this->hasMany(PedidosProcesosPrendaTalla::class, 'proceso_prenda_detalle_id');
+    }
+
     // ============================================================
     // SCOPES
     // ============================================================

@@ -88,7 +88,7 @@ class ReceiptManager {
 
         console.log(' [RECEIPT MANAGER] Inicializado');
         console.log(' Total de recibos:', this.recibos.length);
-        console.log('📄 Recibos:', this.recibos);
+        console.log(' Recibos:', this.recibos);
 
         this.inicializarEventos();
         this.renderizar();
@@ -182,7 +182,7 @@ class ReceiptManager {
     renderizar() {
         const recibo = this.recibos[this.indexActual];
 
-        console.log(`📄 Renderizando recibo ${recibo.numero}/${recibo.total}:`, recibo);
+        console.log(` Renderizando recibo ${recibo.numero}/${recibo.total}:`, recibo);
 
         // Actualizar contador
         document.getElementById('receipt-number').textContent = recibo.numero;
@@ -280,13 +280,17 @@ class ReceiptManager {
             html += `<strong>Origen:</strong> ${origenTexto}<br>`;
         }
 
-        if (prenda.cantidad_talla) {
+        if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
             html += `<br><strong>TALLAS:</strong><br>`;
             const tallasArr = [];
-            Object.entries(prenda.cantidad_talla).forEach(([talla, cant]) => {
-                tallasArr.push(`${talla}: ${cant}`);
+            prenda.tallas.forEach((tallaObj) => {
+                if (tallaObj.genero && tallaObj.talla && tallaObj.cantidad) {
+                    tallasArr.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
+                }
             });
-            html += tallasArr.join(' | ');
+            if (tallasArr.length > 0) {
+                html += tallasArr.join(' | ');
+            }
         }
 
         return html || '<em>Sin información</em>';

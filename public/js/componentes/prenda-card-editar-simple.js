@@ -34,7 +34,7 @@ function obtenerPedidoId() {
  * @param {number} prendaIndex - Índice en gestor local
  * @param {number} pedidoId - ID del pedido en BD (para guardar)
  */
-function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
+async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     console.log('🖊️  [EDITAR-MODAL] Abriendo prenda para editar');
     console.log(' Prenda:', prenda);
     console.log(' Pedido ID:', pedidoId);
@@ -44,9 +44,31 @@ function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         pedidoId = obtenerPedidoId();
         console.log('    Pedido ID obtenido del contexto:', pedidoId);
     }
-    
-    // Hacer copia de trabajo
-    const prendaEditable = JSON.parse(JSON.stringify(prenda));
+
+    //  NUEVO: Si tenemos pedidoId y prenda.id, obtener datos frescos de la BD
+    let prendaEditable = JSON.parse(JSON.stringify(prenda));
+    if (pedidoId && prenda.id) {
+        try {
+            console.log(`   Obteniendo datos frescos de la BD para prenda ${prenda.id}...`);
+            const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prenda/${prenda.id}/datos`);
+            if (response.ok) {
+                const resultado = await response.json();
+                if (resultado.success && resultado.prenda) {
+                    console.log('    Datos obtenidos desde BD:', resultado.prenda);
+                    prendaEditable = resultado.prenda;
+                } else {
+                    console.warn('   ⚠️  Respuesta sin datos válidos, usando prenda de memoria');
+                }
+            } else {
+                console.warn('   ⚠️  Error en request (' + response.status + '), usando prenda de memoria');
+            }
+        } catch (error) {
+            console.error('    Error obteniendo datos frescos:', error);
+            console.log('   Continuando con prenda de memoria...');
+        }
+    } else {
+        console.log('   No hay pedidoId o prenda.id, usando prenda de memoria');
+    }
     
     // Preparar datos para generarHTMLFactura
     const datosParaFactura = {
@@ -73,13 +95,13 @@ function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         html: `<div style="text-align: left; max-height: 600px; overflow-y: auto; background: white; padding: 1rem; border-radius: 8px;">${htmlFactura}</div>`,
         width: '900px',
         showConfirmButton: true,
-        confirmButtonText: '💾 Guardar Cambios',
+        confirmButtonText: ' Guardar Cambios',
         confirmButtonColor: '#10b981',
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
         cancelButtonColor: '#ef4444',
         preConfirm: async () => {
-            console.log('💾 Pre-guardando: validando datos...');
+            console.log('Pre-guardando: validando datos...');
             
             // Extraer datos editados
             const datosModificados = extraerDatosModalEdicion(prendaEditable);

@@ -3,7 +3,6 @@
 namespace App\Application\Services\Asesores;
 
 use App\Models\PedidoProduccion;
-use App\Models\LogoPedido;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -39,39 +38,16 @@ class ObtenerPedidosService
     }
 
     /**
+     * @deprecated La tabla logo_pedidos ha sido eliminada
      * Obtener LogoPedidos del asesor
      */
     private function obtenerLogoPedidos(string $userName, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        \Log::info('[LOGO] Filtrando logo_pedidos para usuario: ' . $userName);
-
-        $query = LogoPedido::query()
-            ->where(function ($q) use ($userName) {
-                $q->where('asesora', $userName)
-                    ->orWhereNull('asesora'); // Incluir pedidos sin asesora asignada
-            })
-            ->with('procesos');
-
-        // Aplicar filtro de estado si existe
-        if (!empty($filtros['estado'])) {
-            $query->where('estado', $filtros['estado']);
-        }
-
-        // Aplicar búsqueda
-        if (!empty($filtros['search'])) {
-            $search = $filtros['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('numero_pedido', 'LIKE', "%{$search}%")
-                    ->orWhere('cliente', 'LIKE', "%{$search}%");
-            });
-        }
-
-        \Log::info('[LOGO] Filtros aplicados', [
-            'estado' => $filtros['estado'] ?? 'ninguno',
-            'search' => $filtros['search'] ?? 'ninguno'
-        ]);
-
-        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginación vacía');
+        
+        // Retornar paginación vacía
+        return PedidoProduccion::where('id', '=', null)
+            ->paginate($perPage);
     }
 
     /**
@@ -86,14 +62,13 @@ class ObtenerPedidosService
                         $q2->orderBy('created_at', 'desc');
                     }]);
                 },
-                'asesora',
-                'logoPedidos'
+                'asesora'
             ]);
 
-        // Si es solo PRENDAS, excluir los que tienen logo
-        if ($tipo === 'prendas') {
-            $query->whereDoesntHave('logoPedidos');
-        }
+        // Si es solo PRENDAS, no hace falta filtrar por logoPedidos ya que la tabla no existe
+        // if ($tipo === 'prendas') {
+        //     $query->whereDoesntHave('logoPedidos');
+        // }
 
         // Aplicar filtros
         $this->aplicarFiltros($query, $filtros);

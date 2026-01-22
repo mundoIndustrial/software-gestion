@@ -1,4 +1,4 @@
-# 📊 Análisis: Modal de Novedad no aparecía encima de Modal de Lista
+#  Análisis: Modal de Novedad no aparecía encima de Modal de Lista
 
 ## Problema Identificado
 
@@ -90,7 +90,7 @@ if (container) {
 
 ## Resultado
 
-✅ **Modal de novedad aparece ENCIMA de TODO**
+ **Modal de novedad aparece ENCIMA de TODO**
 - Encima del modal de lista
 - Encima de cualquier otro modal
 - Encima de cualquier elemento de la página
@@ -118,7 +118,7 @@ Para verificar que funciona:
 1. Abrir un pedido existente
 2. Editar Prendas (se abre modal de lista)
 3. Hacer clic en "Agregar Prenda"
-4. El modal de novedad debe aparecer **ENCIMA** del modal de lista ✅
+4. El modal de novedad debe aparecer **ENCIMA** del modal de lista 
 5. Los campos deben ser interactuables
 6. El fondo debe oscurecer todo excepto el modal de novedad
 

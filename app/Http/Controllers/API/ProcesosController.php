@@ -89,10 +89,7 @@ class ProcesosController extends Controller
                 'ubicaciones' => 'required|array|min:1',
                 'ubicaciones.*' => 'string|min:1|max:100',
                 'observaciones' => 'nullable|string|max:1000',
-                'tallas_dama' => 'nullable|array',
-                'tallas_dama.*' => 'string',
-                'tallas_caballero' => 'nullable|array',
-                'tallas_caballero.*' => 'string',
+                'tallas' => 'nullable|json', // Estructura relacional: {DAMA: {S: 10}, CABALLERO: {32: 5}}
                 'imagen' => 'nullable|string', // base64
                 'datos_adicionales' => 'nullable|array',
             ]);
@@ -154,10 +151,7 @@ class ProcesosController extends Controller
                 'ubicaciones' => 'nullable|array|min:1',
                 'ubicaciones.*' => 'string|min:1|max:100',
                 'observaciones' => 'nullable|string|max:1000',
-                'tallas_dama' => 'nullable|array',
-                'tallas_dama.*' => 'string',
-                'tallas_caballero' => 'nullable|array',
-                'tallas_caballero.*' => 'string',
+                'tallas' => 'nullable|json', // Estructura relacional: {DAMA: {S: 10}, CABALLERO: {32: 5}}
                 'datos_adicionales' => 'nullable|array',
             ]);
 
@@ -168,11 +162,8 @@ class ProcesosController extends Controller
             if (isset($validated['observaciones'])) {
                 $proceso->setObservaciones($validated['observaciones']);
             }
-            if (isset($validated['tallas_dama'])) {
-                $proceso->setTallasDama($validated['tallas_dama']);
-            }
-            if (isset($validated['tallas_caballero'])) {
-                $proceso->setTallasCalabrero($validated['tallas_caballero']);
+            if (isset($validated['tallas'])) {
+                $proceso->setTallasRelacional(json_decode($validated['tallas'], true));
             }
             if (isset($validated['datos_adicionales'])) {
                 $proceso->setDatosAdicionales($validated['datos_adicionales']);
@@ -180,6 +171,14 @@ class ProcesosController extends Controller
 
             // Guardar
             $procesoActualizado = $this->procesoRepository->actualizar($proceso);
+
+            // Guardar tallas en tabla relacional (NUEVO MODELO)
+            if (isset($validated['tallas'])) {
+                $tallasRelacional = json_decode($validated['tallas'], true);
+                
+                // Usar el método del repositorio para guardar en tabla relacional
+                $this->procesoRepository->guardarTallasRelacional($procesoActualizado->getId(), $tallasRelacional);
+            }
 
             return response()->json([
                 'success' => true,

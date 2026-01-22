@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(' Total de registros:', cotizaciones.data.length);
         
         if (cotizaciones.data.length > 0) {
-            console.log('📄 Primer registro completo:', cotizaciones.data[0]);
+            console.log(' Primer registro completo:', cotizaciones.data[0]);
             console.log('👤 Campo cliente:', cotizaciones.data[0].cliente);
             console.log('🆔 Campo cliente_id:', cotizaciones.data[0].cliente_id);
             console.log('👨 Objeto asesor:', cotizaciones.data[0].asesor);

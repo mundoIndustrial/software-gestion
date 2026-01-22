@@ -71,8 +71,12 @@ class ClientePedidosJSON {
                             tipo_proceso_id: 3,  // Bordado
                             ubicaciones: ['Frente', 'Espalda'],
                             observaciones: 'Bordado en punto de cruz con hilo negro',
-                            tallas_dama: ['S', 'M', 'L'],
-                            tallas_caballero: null,
+                            // Estructura relacional: { DAMA: {S: 1, M: 1, L: 1}, CABALLERO: {...} }
+                            tallas: {
+                                DAMA: { S: 1, M: 1, L: 1 },
+                                CABALLERO: {},
+                                UNISEX: {}
+                            },
                             imagenes: [] // Serán agregadas vía FormData
                         }
                     ]
@@ -115,7 +119,12 @@ class ClientePedidosJSON {
                             tipo_proceso_id: 3,
                             ubicaciones: ['Frente'],
                             observaciones: 'Bordado logo empresa',
-                            tallas_dama: ['S', 'M', 'L'],
+                            // Estructura relacional
+                            tallas: {
+                                DAMA: { S: 1, M: 1, L: 1 },
+                                CABALLERO: {},
+                                UNISEX: {}
+                            },
                             imagenes: []
                         }
                     ]
@@ -137,7 +146,12 @@ class ClientePedidosJSON {
                             tipo_proceso_id: 4,  // Estampado
                             ubicaciones: ['Pecho'],
                             observaciones: 'Estampado digital full color',
-                            tallas_caballero: ['M', 'L'],
+                            // Estructura relacional
+                            tallas: {
+                                DAMA: {},
+                                CABALLERO: { M: 1, L: 1 },
+                                UNISEX: {}
+                            },
                             imagenes: []
                         }
                     ]

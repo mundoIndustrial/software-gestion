@@ -345,7 +345,7 @@
             
             // Mostrar modal de confirmación para continuar editando
             Swal.fire({
-                title: '✅ Guardado Exitosamente',
+                title: ' Guardado Exitosamente',
                 text: '¿Deseas continuar editando este pedido?',
                 icon: 'success',
                 showCancelButton: true,
@@ -531,6 +531,7 @@
 
 <!-- Componentes de Modales - Deben cargarse ANTES de GestionItemsUI -->
 <script src="{{ asset('js/componentes/modal-novedad-prenda.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/componentes/modal-novedad-edicion.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/componentes/prenda-form-collector.js') }}?v={{ time() }}"></script>
 
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>

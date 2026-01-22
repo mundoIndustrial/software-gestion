@@ -161,6 +161,7 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     }
     
     const prendaParaEditar = {
+        nombre_prenda: prenda.nombre_prenda || prenda.nombre_producto || prenda.nombre || '',
         nombre_producto: prenda.nombre_prenda || prenda.nombre_producto || prenda.nombre || '',
         descripcion: prenda.descripcion || '',
         origen: prenda.origen || 'bodega',
@@ -187,6 +188,9 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     };
     
     console.log('  prendaParaEditar preparada:', prendaParaEditar);
+    console.log('  prendaParaEditar.nombre_prenda:', prendaParaEditar.nombre_prenda);
+    console.log('  prendaParaEditar.imagenes:', prendaParaEditar.imagenes);
+    console.log('  prendaParaEditar.telasAgregadas:', prendaParaEditar.telasAgregadas);
     
     // Guardar datos de edición en global
     window.prendaEnEdicion = {

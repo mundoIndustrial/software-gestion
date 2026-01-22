@@ -14,7 +14,9 @@ use App\Domain\PedidoProduccion\Commands\ActualizarPedidoCommand;
 use App\Domain\PedidoProduccion\Commands\CambiarEstadoPedidoCommand;
 use App\Domain\PedidoProduccion\Commands\AgregarPrendaAlPedidoCommand;
 use App\Domain\PedidoProduccion\Commands\EliminarPedidoCommand;
+use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +45,7 @@ class PedidosProduccionController
     public function __construct(
         private QueryBus $queryBus,
         private CommandBus $commandBus,
+        private PedidoProduccionRepository $prendaPedidoRepository,
     ) {}
 
     /**
@@ -723,7 +726,7 @@ class PedidosProduccionController
 
             // Validar datos básicos
             $validated = $request->validate([
-                'nombre_producto' => 'required|string|max:255',
+                'nombre_prenda' => 'required|string|max:255',
                 'descripcion' => 'nullable|string',
                 'origen' => 'required|string|in:bodega,confeccion',
                 'cantidad_talla' => 'nullable|json',
@@ -773,16 +776,13 @@ class PedidosProduccionController
 
             // Construir datos de la prenda para el comando
             $prendaData = [
-                // Mapear nombre_producto a nombre_prenda (que es lo que espera el validador)
-                'nombre_prenda' => $validated['nombre_producto'],
+                'nombre_prenda' => $validated['nombre_prenda'],
                 'descripcion' => $validated['descripcion'] ?? '',
                 'origen' => $validated['origen'],
                 'imagenes' => $imagenesGuardadas,
                 'telas' => $telasGuardadas,
-                'cantidad_talla' => $validated['cantidad_talla'] ? json_decode($validated['cantidad_talla'], true) : [],
                 'procesos' => $validated['procesos'] ? json_decode($validated['procesos'], true) : [],
-                'novedad' => $validated['novedad'],  // AGREGAR NOVEDAD
-                // Campos requeridos por el validador (valores por defecto para prenda nueva)
+                'novedad' => $validated['novedad'],
                 'cantidad' => 1,
                 'tipo_manga' => null,
                 'tipo_broche' => null,
@@ -822,6 +822,39 @@ class PedidosProduccionController
                 'prenda_data' => $prendaData,
             ]);
 
+            // Guardar tallas SOLO en tabla relacional prenda_pedido_tallas
+            if ($prendaGuardada && !empty($validated['cantidad_talla'])) {
+                $this->prendaPedidoRepository->guardarTallasDesdeJson(
+                    $prendaGuardada->id,
+                    $validated['cantidad_talla']
+                );
+                Log::info(' Tallas guardadas en prenda_pedido_tallas', ['prenda_id' => $prendaGuardada->id]);
+            }
+
+            // Guardar imágenes en prenda_fotos_pedido
+            if ($prendaGuardada) {
+                Log::info(' Guardando imágenes en prenda_fotos_pedido para prenda ' . $prendaGuardada->id);
+                try {
+                    foreach ($imagenesGuardadas as $orden => $rutaImagen) {
+                        if (!empty($rutaImagen)) {
+                            \DB::table('prenda_fotos_pedido')->insert([
+                                'prenda_pedido_id' => $prendaGuardada->id,
+                                'ruta_webp' => $rutaImagen,
+                                'ruta_original' => $rutaImagen,
+                                'orden' => $orden + 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            Log::debug('   Foto insertada: ' . $rutaImagen);
+                        }
+                    }
+                    
+                    Log::info('  Total de fotos guardadas: ' . count($imagenesGuardadas));
+                } catch (\Exception $e) {
+                    Log::error('Error guardando fotos en prenda_fotos_pedido: ' . $e->getMessage());
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Prenda agregada correctamente a la base de datos',
@@ -851,5 +884,185 @@ class PedidosProduccionController
             ], 500);
         }
     }
-}
 
+    /**
+     * POST /asesores/pedidos/{id}/actualizar-prenda
+     * Actualizar una prenda existente en un pedido
+     * 
+     * Similar a agregarPrendaCompleta pero para actualizar
+     */
+    public function actualizarPrendaCompleta(Request $request, int|string $id): JsonResponse
+    {
+        try {
+            Log::info(' [PedidosController] POST /asesores/pedidos/{id}/actualizar-prenda', ['id' => $id]);
+
+            // Validar datos básicos
+            $validated = $request->validate([
+                'prenda_id' => 'required|numeric|min:1',  // ID de la prenda a actualizar
+                'nombre_prenda' => 'required|string|max:255',
+                'descripcion' => 'nullable|string',
+                'origen' => 'required|string|in:bodega,confeccion',
+                'cantidad_talla' => 'nullable|json',
+                'procesos' => 'nullable|json',
+                'novedad' => 'required|string|max:500',  // NOVEDAD OBLIGATORIA
+                'imagenes' => 'nullable|array',
+                'imagenes.*' => 'nullable|image|max:5120',
+                'telas' => 'nullable|array',
+            ]);
+            
+            // Convertir prenda_id a integer
+            $validated['prenda_id'] = (int) $validated['prenda_id'];
+
+            Log::info(' [PedidosController] Datos validados para actualización', $validated);
+
+            // Obtener la prenda existente
+            $prenda = PrendaPedido::find($validated['prenda_id']);
+            if (!$prenda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada',
+                ], 404);
+            }
+
+            // Procesar imágenes de prenda
+            $imagenesGuardadas = [];
+            if ($request->hasFile('imagenes')) {
+                foreach ($request->file('imagenes') as $imagen) {
+                    $path = $imagen->store('prendas', 'public');
+                    $imagenesGuardadas[] = $path;
+                    Log::info(' Imagen de prenda guardada', ['path' => $path]);
+                }
+            }
+
+            // Actualizar SOLO campos reales de prendas_pedido
+            // NO incluir cantidad_talla aquí - se maneja SOLO en prenda_pedido_tallas
+            $prenda->nombre_prenda = $validated['nombre_prenda'];
+            $prenda->descripcion = $validated['descripcion'] ?? '';
+            $prenda->save();
+
+            // Guardar tallas SOLO en tabla relacional prenda_pedido_tallas
+            if (!empty($validated['cantidad_talla'])) {
+                $this->prendaPedidoRepository->guardarTallasDesdeJson(
+                    $validated['prenda_id'],
+                    $validated['cantidad_talla']
+                );
+                Log::info(' Tallas actualizadas en prenda_pedido_tallas', ['prenda_id' => $validated['prenda_id']]);
+            }
+
+            // Guardar imágenes en prenda_fotos_pedido
+            Log::info(' Guardando imágenes en prenda_fotos_pedido para prenda ' . $validated['prenda_id']);
+            try {
+                // Primero, eliminar las fotos antiguas
+                \DB::table('prenda_fotos_pedido')
+                    ->where('prenda_pedido_id', $validated['prenda_id'])
+                    ->delete();
+                
+                Log::info('  Fotos antiguas eliminadas');
+                
+                // Luego, insertar las nuevas
+                foreach ($imagenesGuardadas as $orden => $rutaImagen) {
+                    if (!empty($rutaImagen)) {
+                        \DB::table('prenda_fotos_pedido')->insert([
+                            'prenda_pedido_id' => $validated['prenda_id'],
+                            'ruta_webp' => $rutaImagen,
+                            'ruta_original' => $rutaImagen,
+                            'orden' => $orden + 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        Log::debug('   Foto insertada: ' . $rutaImagen);
+                    }
+                }
+                
+                Log::info('  Total de fotos guardadas: ' . count($imagenesGuardadas));
+            } catch (\Exception $e) {
+                Log::error('Error guardando fotos en prenda_fotos_pedido: ' . $e->getMessage());
+            }
+
+            Log::info(' Prenda actualizada en BD', [
+                'prenda_id' => $validated['prenda_id'],
+                'pedido_id' => $id,
+            ]);
+
+            // Guardar novedad en el pedido
+            if (!empty($validated['novedad'])) {
+                $pedido = PedidoProduccion::find($id);
+                if ($pedido) {
+                    // Agregar nueva novedad a las existentes
+                    $novedadesActuales = !empty($pedido->novedades) ? $pedido->novedades . "\n" : '';
+                    $timestamp = now()->format('Y-m-d H:i:s');
+                    $usuario = auth()->user()->name ?? 'Sistema';
+                    $novedadesNuevas = $novedadesActuales . "[{$timestamp}] {$usuario}: {$validated['novedad']}";
+                    
+                    $pedido->update(['novedades' => $novedadesNuevas]);
+                    Log::info(' Novedad de actualización guardada en pedido', [
+                        'pedido_id' => $id,
+                        'novedad' => $validated['novedad']
+                    ]);
+                }
+            }
+
+            // Recargar la prenda desde BD con todas las imágenes y datos relacionados
+            $prendaActualizada = PrendaPedido::find($validated['prenda_id']);
+            
+            // Obtener imágenes de la BD
+            $fotosGuardadas = [];
+            try {
+                $fotos = \DB::table('prenda_fotos_pedido')
+                    ->where('prenda_pedido_id', $validated['prenda_id'])
+                    ->where('deleted_at', null)
+                    ->orderBy('orden')
+                    ->select('ruta_webp')
+                    ->get();
+                
+                $fotosGuardadas = $fotos->map(function($foto) {
+                    $ruta = str_replace('\\', '/', $foto->ruta_webp);
+                    if (strpos($ruta, '/storage/') === 0) {
+                        return $ruta;
+                    }
+                    if (strpos($ruta, 'storage/') === 0) {
+                        return '/' . $ruta;
+                    }
+                    if (strpos($ruta, '/') !== 0) {
+                        return '/storage/' . $ruta;
+                    }
+                    return $ruta;
+                })->toArray();
+            } catch (\Exception $e) {
+                Log::debug('Error obteniendo imágenes de prenda actualizada: ' . $e->getMessage());
+                $fotosGuardadas = [];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Prenda actualizada correctamente en la base de datos',
+                'prenda' => array_merge($prendaActualizada->toArray(), [
+                    'imagenes' => $fotosGuardadas,
+                    'telasAgregadas' => []  // Se recargará desde la vista cuando el frontend recarga /datos-edicion
+                ]),
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning(' Validación fallida en actualización', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error(' Error actualizando prenda completa', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar prenda: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+}

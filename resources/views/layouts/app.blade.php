@@ -205,7 +205,7 @@
             
             // Intentar múltiples veces para asegurar que el DOM esté listo
             document.addEventListener('DOMContentLoaded', function() {
-                console.log('📄 DOMContentLoaded disparado');
+                console.log(' DOMContentLoaded disparado');
                 if (!initSearchBar()) {
                     // Si falla, intentar después de un pequeño delay
                     setTimeout(function() {

@@ -72,7 +72,6 @@ class GestorLogo {
             });
         }
 
-        logWithEmoji('', `Logo inicializado con ${this.tecnicas.length} técnicas y ${this.ubicaciones.length} ubicaciones`);
     }
 
     /**
@@ -108,7 +107,6 @@ class GestorLogo {
         }
 
         this.tecnicas.push(tecnica);
-        logWithEmoji('➕', `Técnica ${tecnica} agregada`);
         return true;
     }
 
@@ -119,7 +117,6 @@ class GestorLogo {
     eliminarTecnica(index) {
         if (index >= 0 && index < this.tecnicas.length) {
             const eliminada = this.tecnicas.splice(index, 1)[0];
-            logWithEmoji('🗑️', `Técnica ${eliminada} eliminada`);
         }
     }
 
@@ -156,7 +153,6 @@ class GestorLogo {
         };
 
         this.ubicaciones.push(nueva);
-        logWithEmoji('➕', `Ubicación ${nueva.ubicacion} agregada`);
         return true;
     }
 
@@ -172,7 +168,6 @@ class GestorLogo {
                 ...this.ubicaciones[index],
                 ...datos
             };
-            logWithEmoji('', `Ubicación actualizada`);
         }
     }
 
@@ -184,7 +179,6 @@ class GestorLogo {
         const index = this.ubicaciones.findIndex(u => u.id === id);
         if (index !== -1) {
             const eliminada = this.ubicaciones.splice(index, 1)[0];
-            logWithEmoji('🗑️', `Ubicación ${eliminada.ubicacion} eliminada`);
         }
     }
 
@@ -223,7 +217,6 @@ class GestorLogo {
             existing: false
         });
 
-        logWithEmoji('📸', `Foto agregada (${this.fotos.length}/${CONFIG.MAX_FOTOS_LOGO})`);
         return true;
     }
 
@@ -234,7 +227,6 @@ class GestorLogo {
     eliminarFoto(index) {
         if (index >= 0 && index < this.fotos.length) {
             this.fotos.splice(index, 1);
-            logWithEmoji('🗑️', `Foto eliminada`);
         }
     }
 
@@ -346,7 +338,6 @@ class GestorLogo {
         this.fotos = [];
         this.observacionesTecnicas = '';
         this.observacionesGenerales = [];
-        logWithEmoji('🗑️', 'Logo limpiado completamente');
     }
 }
 

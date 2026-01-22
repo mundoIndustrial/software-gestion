@@ -38,7 +38,13 @@
                     const nombre = item.nombre_prenda || 'Prenda sin nombre';
                     const cantidad = item.cantidad || 0;
                     htmlListaPrendas += `
-                        <button onclick="abrirEditarPrendaEspecifica(${idx})" 
+                        <button onclick="(function() { 
+                            console.log('[MODAL-PRENDAS-LISTA] Editando prenda en índice:', ${idx});
+                            Swal.close();
+                            setTimeout(() => {
+                                abrirEditarPrendaEspecifica(${idx});
+                            }, 100);
+                        })()" 
                             style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
                             onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#1e40af';"
                             onmouseout="this.style.background='white'; this.style.borderColor='#1e40af';">
@@ -52,6 +58,18 @@
                         </button>
                     `;
                 });
+                
+                // Agregar botón para agregar más prendas
+                htmlListaPrendas += `
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb; text-align: center;">
+                        <button onclick="abrirAgregarPrenda()" 
+                            style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s;"
+                            onmouseover="this.style.backgroundColor='#059669'"
+                            onmouseout="this.style.backgroundColor='#10b981'">
+                            ➕ Agregar Más Prendas
+                        </button>
+                    </div>
+                `;
             }
             
             htmlListaPrendas += '</div>';

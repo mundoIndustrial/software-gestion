@@ -17,7 +17,7 @@ class GenerarPDFRecibosService
      */
     public function generarPDF(array $datosRecibo, int $pedidoId)
     {
-        Log::info('📄 [PDF] Generando PDF para recibo: ' . $pedidoId);
+        Log::info(' [PDF] Generando PDF para recibo: ' . $pedidoId);
 
         try {
             // Importar dependencia (barryvdh/laravel-dompdf o similar)

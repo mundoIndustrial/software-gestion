@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class VerificarSecuenciaCommand extends Command
 {
@@ -12,17 +13,26 @@ class VerificarSecuenciaCommand extends Command
 
     public function handle()
     {
-        $this->info('Verificando tabla numero_secuencias...');
+        // Solo mostrar output en modo interactivo (no en seeds/jobs)
+        $verbose = $this->getOutput()->isVerbose();
+        
+        if ($verbose) {
+            $this->info('Verificando tabla numero_secuencias...');
+        }
 
         try {
             $todos = DB::table('numero_secuencias')->get();
             
             if ($todos->isEmpty()) {
-                $this->warn('  Tabla numero_secuencias está vacía');
+                if ($verbose) {
+                    $this->warn('  Tabla numero_secuencias está vacía');
+                }
             } else {
-                $this->info(' Contenido actual:');
-                foreach ($todos as $row) {
-                    $this->line("   Tipo: {$row->tipo}, Siguiente: {$row->siguiente}");
+                if ($verbose) {
+                    $this->info(' Contenido actual:');
+                    foreach ($todos as $row) {
+                        $this->line("   Tipo: {$row->tipo}, Siguiente: {$row->siguiente}");
+                    }
                 }
             }
             
@@ -32,16 +42,24 @@ class VerificarSecuenciaCommand extends Command
                 ->first();
             
             if (!$universal) {
-                $this->warn('  Secuencia universal NO EXISTE, creando...');
+                if ($verbose) {
+                    $this->warn('  Secuencia universal NO EXISTE, creando...');
+                }
                 DB::table('numero_secuencias')->insert([
                     'tipo' => 'cotizaciones_universal',
                     'siguiente' => 1,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $this->info(' Secuencia universal CREADA con valor inicial 1');
+                if ($verbose) {
+                    $this->info(' Secuencia universal CREADA con valor inicial 1');
+                }
             } else {
-                $this->info(" Secuencia universal ya existe (siguiente: {$universal->siguiente})");
+                if ($verbose) {
+                    $this->info(" Secuencia universal ya existe (siguiente: {$universal->siguiente})");
+                }
+                // Log silenciosamente que la secuencia existe
+                Log::debug("Secuencia universal verificada: siguiente = {$universal->siguiente}");
             }
             
         } catch (\Exception $e) {

@@ -4,7 +4,7 @@
  * sin necesidad de guardar en la base de datos
  */
 
-console.log('📄 [INVOICE PREVIEW] Cargando invoice-preview-live.js');
+console.log(' [INVOICE PREVIEW] Cargando invoice-preview-live.js');
 
 /**
  * Almacenamiento global de galerías de imágenes para el preview
@@ -297,12 +297,6 @@ window.abrirPreviewFacturaEnVivo = function() {
 function capturarDatosFormulario() {
     console.log(' [PREVIEW] Capturando datos del formulario...');
     
-    // PRIMERO: Asegurar que las tallas estén en la variable de backup permanente
-    if (window.cantidadesTallas && Object.keys(window.cantidadesTallas).length > 0) {
-        window._TALLAS_BACKUP_PERMANENTE = JSON.parse(JSON.stringify(window.cantidadesTallas));
-        console.log('💾 [PREVIEW] Tallas capturadas en window._TALLAS_BACKUP_PERMANENTE:',  window._TALLAS_BACKUP_PERMANENTE);
-    }
-    
     // Información básica
     const cliente = document.getElementById('cliente_editable')?.value || 'Cliente Nuevo';
     const asesora = document.getElementById('asesora_editable')?.value || 'Sin asignar';
@@ -385,97 +379,26 @@ function capturarPrendas() {
         console.log(` [PREVIEW] Prendas en gestor: ${prendasDelGestor.length}`);
         
         prendasDelGestor.forEach((prenda, index) => {
-            // Extraer tallas del prenda preservando géneros CON CANTIDADES REALES
-            const tallasConGenero = {};
-            
-            // Caso 1: generosConTallas es un objeto { "Masculino": {S:2, M:5}, "Femenino": {XS:1} }
-            if (prenda.generosConTallas && typeof prenda.generosConTallas === 'object' && !Array.isArray(prenda.generosConTallas)) {
-                Object.assign(tallasConGenero, prenda.generosConTallas);
-            }
-            // Caso 2: generosConTallas es un array [{ genero: "Masculino", cantidades: {S:2} }, ...]
-            else if (prenda.generosConTallas && Array.isArray(prenda.generosConTallas)) {
-                prenda.generosConTallas.forEach(item => {
-                    if (item.genero && item.cantidades) {
-                        tallasConGenero[item.genero] = item.cantidades;
-                    }
-                });
-            }
-            
-            // Caso 3: Tallas es array de objetos [{ genero, tallas[], tipo }] - necesitamos las CANTIDADES
-            let tallas = {};
-            if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-                // Estructura: [{genero: "dama", tallas: ["M", "L"], tipo: "letra"}]
-                prenda.tallas.forEach(tallaObj => {
-                    if (tallaObj.genero && tallaObj.tallas && Array.isArray(tallaObj.tallas)) {
-                        const generoKey = tallaObj.genero.charAt(0).toUpperCase() + tallaObj.genero.slice(1);
-                        tallas[generoKey] = {};
-                        
-                        tallaObj.tallas.forEach(talla => {
-                            const cantidadKey = `${tallaObj.genero}-${talla}`;
-                            const cantidad = window.cantidadesTallasPorGenero?.[cantidadKey] || 0;
-                            if (cantidad > 0) {
-                                tallas[generoKey][talla] = cantidad;
-                            }
-                        });
-                    }
-                });
-            }
-            
-            // Fallback a otros formatos
-            if (Object.keys(tallas).length === 0) {
-                if (Object.keys(tallasConGenero).length > 0) {
-                    tallas = tallasConGenero;
-                } else if (prenda.tallas && typeof prenda.tallas === 'object' && !Array.isArray(prenda.tallas)) {
-                    tallas = prenda.tallas;
-                }
-            }
+            // Extracción será hecha posteriormente desde prenda.tallas (estructura relacional única)
             
             // Extraer procesos con todos sus detalles
             const procesos = [];
-            console.log(`      DEBUG Procesos para prenda ${index + 1}:`, prenda.procesos);
             if (prenda.procesos && typeof prenda.procesos === 'object') {
                 Object.entries(prenda.procesos).forEach(([key, proc]) => {
-                    console.log(`        - Proceso "${key}":`, proc);
-                    console.log(`          Propiedades disponibles:`, Object.keys(proc || {}));
-                    console.log(`          - tipo: ${proc?.tipo}`);
-                    console.log(`          - datos: ${JSON.stringify(proc?.datos)}`);
-                    
                     // Obtener los datos del proceso (pueden estar en proc.datos o directamente en proc)
                     const procDatos = proc?.datos || proc;
                     const procTipo = proc?.tipo || procDatos?.tipo;
                     
-                    console.log(`           procTipo: ${procTipo}`);
-                    console.log(`           procDatos:`, procDatos);
-                    
                     if (procTipo && procDatos) {
-                        // Extraer tallas por género para este proceso
+                        // Extraer tallas por género (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
                         const tallasProceso = {};
-                        if (procDatos.generosConTallas && typeof procDatos.generosConTallas === 'object') {
-                            if (!Array.isArray(procDatos.generosConTallas)) {
-                                // Es un objeto: { "Masculino": {S:2}, "Femenino": {XS:1} }
-                                Object.assign(tallasProceso, procDatos.generosConTallas);
-                            } else {
-                                // Es un array: [{ genero: "Masculino", cantidades: {S:2} }, ...]
-                                procDatos.generosConTallas.forEach(item => {
-                                    if (item.genero && item.cantidades) {
-                                        tallasProceso[item.genero] = item.cantidades;
-                                    }
-                                });
-                            }
-                        } else if (procDatos.tallas && typeof procDatos.tallas === 'object') {
-                            // Usar tallas directas si existen
-                            if (Array.isArray(procDatos.tallas)) {
-                                // Si son arrays separados por género: {dama: ["M", "L"], caballero: []}
-                                // O si es un array plano: ["M", "L"]
-                                // En este caso, buscar la estructura de generosConTallas como fallback
-                                console.log(`          procDatos.tallas es array:`, procDatos.tallas);
-                            } else {
-                                // Es un objeto: puede ser {dama: {M: 20, L: 20}} o similar
-                                Object.assign(tallasProceso, procDatos.tallas);
-                            }
+                        if (procDatos.tallas && typeof procDatos.tallas === 'object' && !Array.isArray(procDatos.tallas)) {
+                            Object.entries(procDatos.tallas).forEach(([genero, tallasObj]) => {
+                                if (typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0) {
+                                    tallasProceso[genero] = tallasObj;
+                                }
+                            });
                         }
-                        
-                        console.log(`         tallasProceso final:`, tallasProceso);
                         
                         // Extraer ubicaciones como array si viene como string
                         let ubicaciones = procDatos.ubicaciones || [];
@@ -533,12 +456,10 @@ function capturarPrendas() {
                             imagenes: imagenes,
                             tallas: tallasProceso
                         };
-                        console.log(`            Proceso capturado:`, procObj);
                         procesos.push(procObj);
                     }
                 });
             }
-            console.log(`      Total de procesos para prenda ${index + 1}:`, procesos);
             
             // Extraer datos de variantes si existen
             const variantes = prenda.variantes || {};
@@ -550,38 +471,20 @@ function capturarPrendas() {
             const obsBolsillos = variantes.obs_bolsillos || prenda.obs_bolsillos || '';
             const tienereflectivo = variantes.tiene_reflectivo !== undefined ? variantes.tiene_reflectivo : (prenda.tiene_reflectivo || false);
             
-            // Calcular cantidad total de tallas
-            const cantidadTotal = Object.keys(tallas).reduce((sum, genero) => {
-                if (typeof tallas[genero] === 'object') {
-                    return sum + Object.values(tallas[genero]).reduce((s, v) => s + (parseInt(v) || 0), 0);
-                }
-                return sum + (parseInt(tallas[genero]) || 0);
-            }, 0);
+            // Calcular cantidad total desde tallasReconstruidas (estructura relacional)
+            // Esto se hará DESPUÉS de reconstruir las tallas
+            let cantidadTotal = 0;
             
             // Detectar imagen con múltiples fallbacks - EXTRAER src si es objeto
             let imagenCapturada = '';
             
-            // Log detallado de debugging
-            console.log(`      DEBUG Imagen para prenda ${index + 1}:`);
-            console.log(`        - prenda.imagen: ${prenda.imagen}`);
-            console.log(`        - prenda.imagen_prenda: ${prenda.imagen_prenda}`);
-            console.log(`        - prenda.fotos: ${prenda.fotos}`);
-            console.log(`        - prenda.imagenes: ${prenda.imagenes}`);
-            if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
-                console.log(`        - prenda.imagenes[0]: `, prenda.imagenes[0]);
-                console.log(`        - Propiedades: ${Object.keys(prenda.imagenes[0]).join(', ')}`);
-            }
-            
             if (prenda.imagen) {
                 imagenCapturada = typeof prenda.imagen === 'string' ? prenda.imagen : (prenda.imagen?.url || prenda.imagen?.ruta || prenda.imagen?.src || '');
-                console.log(`         Usando prenda.imagen: ${imagenCapturada}`);
             } else if (prenda.imagen_prenda) {
                 imagenCapturada = typeof prenda.imagen_prenda === 'string' ? prenda.imagen_prenda : (prenda.imagen_prenda?.url || prenda.imagen_prenda?.ruta || prenda.imagen_prenda?.src || '');
-                console.log(`         Usando prenda.imagen_prenda: ${imagenCapturada}`);
             } else if (prenda.fotos && Array.isArray(prenda.fotos) && prenda.fotos.length > 0) {
                 const firstFoto = prenda.fotos[0];
                 imagenCapturada = typeof firstFoto === 'string' ? firstFoto : (firstFoto?.blobUrl || firstFoto?.src || firstFoto?.url || '');
-                console.log(`         Usando prenda.fotos[0]: ${imagenCapturada}`);
             } else if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
                 const firstImagen = prenda.imagenes[0];
                 console.log(`         DEBUG firstImagen:`, firstImagen);
@@ -594,71 +497,36 @@ function capturarPrendas() {
                 // Generar blob URL on-demand si existe File object
                 if (firstImagen?.file instanceof File) {
                     imagenCapturada = URL.createObjectURL(firstImagen.file);
-                    console.log(`         Blob URL generado on-demand desde File object: ${imagenCapturada}`);
                 } else {
                     // Fallback a otras propiedades - incluir url y ruta
                     imagenCapturada = firstImagen?.previewUrl || firstImagen?.blobUrl || firstImagen?.src || firstImagen?.url || firstImagen?.ruta || firstImagen?.path || firstImagen?.data || (typeof firstImagen === 'string' ? firstImagen : '');
-                    console.log(`         Usando fallback: ${imagenCapturada}`);
                 }
-                
-                console.log(`         DEBUG - propiedades encontradas en firstImagen:`);
-                console.log(`           - file instanceof File: ${firstImagen?.file instanceof File}`);
-                console.log(`           - previewUrl: ${firstImagen?.previewUrl}`);
-                console.log(`           - nombre: ${firstImagen?.nombre}`);
-                console.log(`           - tamaño: ${firstImagen?.tamaño}`);
-                
-                // Si aún no hay imagen
-                if (!imagenCapturada) {
-                    console.log(`         No se pudo generar imagen:`, firstImagen);
-                }
-            } else {
-                console.log(`         No se encontró imagen en ninguna propiedad`);
             }
             
             // Detectar imagen de tela con múltiples fallbacks - EXTRAER src si es objeto
             let imagenTelaCapturada = '';
             
-            console.log(`     DEBUG Imagen Tela para prenda ${index + 1}:`);
-            console.log(`        - prenda.imagen_tela: ${prenda.imagen_tela}`);
-            console.log(`        - prenda.muestra_tela: ${prenda.muestra_tela}`);
-            console.log(`        - prenda.imagenes_tela: ${prenda.imagenes_tela}`);
-            console.log(`        - prenda.telaFotos: ${prenda.telaFotos}`);
-            if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
-                console.log(`        - prenda.telasAgregadas[0].imagenes: `, prenda.telasAgregadas[0].imagenes);
-            }
-            
             if (prenda.imagen_tela) {
                 imagenTelaCapturada = typeof prenda.imagen_tela === 'string' ? prenda.imagen_tela : (prenda.imagen_tela?.url || prenda.imagen_tela?.ruta || prenda.imagen_tela?.src || '');
-                console.log(`         Usando prenda.imagen_tela: ${imagenTelaCapturada}`);
             } else if (prenda.muestra_tela) {
                 imagenTelaCapturada = typeof prenda.muestra_tela === 'string' ? prenda.muestra_tela : (prenda.muestra_tela?.url || prenda.muestra_tela?.ruta || prenda.muestra_tela?.src || '');
-                console.log(`         Usando prenda.muestra_tela: ${imagenTelaCapturada}`);
             } else if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela) && prenda.imagenes_tela.length > 0) {
                 const firstTela = prenda.imagenes_tela[0];
                 imagenTelaCapturada = typeof firstTela === 'string' ? firstTela : (firstTela?.url || firstTela?.ruta || firstTela?.blobUrl || firstTela?.src || firstTela?.path || firstTela?.data || '');
-                console.log(`         Usando prenda.imagenes_tela[0]: ${imagenTelaCapturada}`);
             } else if (prenda.telaFotos && Array.isArray(prenda.telaFotos) && prenda.telaFotos.length > 0) {
                 const firstTelaFoto = prenda.telaFotos[0];
                 imagenTelaCapturada = typeof firstTelaFoto === 'string' ? firstTelaFoto : (firstTelaFoto?.url || firstTelaFoto?.ruta || firstTelaFoto?.blobUrl || firstTelaFoto?.src || firstTelaFoto?.path || firstTelaFoto?.data || '');
-                console.log(`         Usando prenda.telaFotos[0]: ${imagenTelaCapturada}`);
             } else if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0 && 
                        prenda.telasAgregadas[0].imagenes && Array.isArray(prenda.telasAgregadas[0].imagenes)) {
                 const firstTelaAg = prenda.telasAgregadas[0].imagenes[0];
-                console.log(`         DEBUG firstTelaAg:`, firstTelaAg);
-                console.log(`         DEBUG firstTelaAg type:`, typeof firstTelaAg);
-                console.log(`         DEBUG firstTelaAg constructor:`, firstTelaAg?.constructor?.name);
                 
                 // Generar blob URL on-demand si es File object
                 if (firstTelaAg instanceof File) {
                     imagenTelaCapturada = URL.createObjectURL(firstTelaAg);
-                    console.log(`         Blob URL generado on-demand desde File (tela): ${imagenTelaCapturada}`);
                 } else {
                     // Fallback si es objeto con propiedades
                     imagenTelaCapturada = typeof firstTelaAg === 'string' ? firstTelaAg : (firstTelaAg?.blobUrl || firstTelaAg?.previewUrl || firstTelaAg?.src || firstTelaAg?.url || firstTelaAg?.data || '');
-                    console.log(`         Fallback (tela): ${imagenTelaCapturada}`);
                 }
-            } else {
-                console.log(`         No se encontró imagen de tela en ninguna propiedad`);
             }
             
             // Detectar tela y color desde telasAgregadas (array de telas)
@@ -689,69 +557,12 @@ function capturarPrendas() {
                 }
             }
             
-            // RECONSTRUIR tallas con cantidades reales desde window.cantidadesTallasPorGenero
+            // EXTRAER TALLAS - ÚNICA FUENTE VÁLIDA: prenda.tallas
+            // Estructura relacional esperada: { GENERO: { TALLA: CANTIDAD } }
             let tallasReconstruidas = {};
             
-            // Estrategia PRINCIPAL: Usar window._TALLAS_BACKUP_PERMANENTE (guardadas siempre)
-            // Esto tiene los datos reales: {dama-S: 20, dama-M: 20, ...}
-            const tallasCapturadasDisponibles = window._TALLAS_BACKUP_PERMANENTE || window.cantidadesTallas || window._TALLAS_CAPTURADAS_PREVIEW || window.cantidadesTallasPorGenero;
-            console.log(`      DEBUG TALLAS - tallasCapturadasDisponibles:`, tallasCapturadasDisponibles);
-            
-            if (tallasCapturadasDisponibles && typeof tallasCapturadasDisponibles === 'object' && Object.keys(tallasCapturadasDisponibles).length > 0) {
-                console.log(`      Encontradas tallas, agrupando por género...`);
-                // Agrupar por género
-                Object.entries(tallasCapturadasDisponibles).forEach(([clave, cantidad]) => {
-                    // clave es formato "dama-S", "dama-M", etc
-                    const partes = clave.split('-');
-                    if (partes.length === 2) {
-                        const genero = partes[0];
-                        const talla = partes[1];
-                        const generoKey = genero.charAt(0).toUpperCase() + genero.slice(1);
-                        
-                        if (!tallasReconstruidas[generoKey]) {
-                            tallasReconstruidas[generoKey] = {};
-                        }
-                        
-                        if (cantidad > 0) {
-                            tallasReconstruidas[generoKey][talla] = cantidad;
-                            console.log(`        - ${generoKey}: ${talla} = ${cantidad}`);
-                        }
-                    }
-                });
-            } else {
-                console.log(`      Tallas no disponibles, intentando fallbacks...`);
-            }
-            
-            // Fallback: Si aún no tenemos tallas, intentar desde generosConTallas
-            if (Object.keys(tallasReconstruidas).length === 0 && prenda.generosConTallas && typeof prenda.generosConTallas === 'object' && !Array.isArray(prenda.generosConTallas)) {
-                Object.entries(prenda.generosConTallas).forEach(([genero, generoData]) => {
-                    if (generoData && generoData.cantidades && typeof generoData.cantidades === 'object') {
-                        const generoKey = genero.charAt(0).toUpperCase() + genero.slice(1);
-                        tallasReconstruidas[generoKey] = generoData.cantidades;
-                    }
-                });
-            }
-            
-            // Fallback 2: Si prenda.tallas es array [{genero, tallas: [], tipo}]
-            if (Object.keys(tallasReconstruidas).length === 0 && prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-                prenda.tallas.forEach(item => {
-                    if (item && item.genero && Array.isArray(item.tallas) && item.tallas.length > 0) {
-                        const generoKey = item.genero.charAt(0).toUpperCase() + item.genero.slice(1);
-                        tallasReconstruidas[generoKey] = {};
-                        
-                        item.tallas.forEach(talla => {
-                            const cantidadKey = `${item.genero}-${talla}`;
-                            const cantidad = window.cantidadesTallasPorGenero?.[cantidadKey] || 0;
-                            if (cantidad > 0) {
-                                tallasReconstruidas[generoKey][talla] = cantidad;
-                            }
-                        });
-                    }
-                });
-            }
-            
-            // Fallback 3: Si prenda.tallas es objeto {Genero: {talla: cantidad}}
-            if (Object.keys(tallasReconstruidas).length === 0 && prenda.tallas && typeof prenda.tallas === 'object' && !Array.isArray(prenda.tallas)) {
+            if (prenda.tallas && typeof prenda.tallas === 'object' && !Array.isArray(prenda.tallas) && Object.keys(prenda.tallas).length > 0) {
+                // Copiar directamente - es la estructura correcta
                 Object.entries(prenda.tallas).forEach(([genero, tallasObj]) => {
                     if (typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0) {
                         tallasReconstruidas[genero] = tallasObj;
@@ -759,13 +570,15 @@ function capturarPrendas() {
                 });
             }
             
-            // Fallback final: usar variable local tallas
-            if (Object.keys(tallasReconstruidas).length === 0) {
-                console.log(`      Fallback final: Usando variable local tallas`);
-                tallasReconstruidas = tallas;
-            }
-            
             console.log(`      Tallas finales reconstruidas:`, tallasReconstruidas);
+            
+            // Calcular cantidad total desde tallasReconstruidas (estructura relacional: {GENERO: {TALLA: CANTIDAD}})
+            cantidadTotal = Object.values(tallasReconstruidas).reduce((sum, generoTallas) => {
+                if (typeof generoTallas === 'object' && !Array.isArray(generoTallas)) {
+                    return sum + Object.values(generoTallas).reduce((s, cant) => s + (parseInt(cant) || 0), 0);
+                }
+                return sum;
+            }, 0);
             
             prendas.push({
                 numero: index + 1,
@@ -846,16 +659,6 @@ function capturarPrendas() {
                 tiene_reflectivo: tienereflectivo,
                 procesos: procesos
             });
-            
-            console.log(`   Prenda ${index + 1}: ${prenda.nombre_producto}`);
-            console.log(`      prenda.imagenes:`, prenda.imagenes);
-            console.log(`      imagenCapturada type:`, typeof imagenCapturada);
-            console.log(`      imagenCapturada value:`, imagenCapturada);
-            console.log(`      Imagen CAPTURADA: ${imagenCapturada || ' no'}`);
-            console.log(`      Tela CAPTURADA: ${telaCapturada || ' no'} | Color CAPTURADO: ${colorCapturado || ' no'}`);
-            console.log(`      Ref CAPTURADA: ${refCapturada || ' no'}`);
-            console.log(`      Tallas: ${JSON.stringify(tallasReconstruidas)}`);
-            console.log(`      Procesos: ${procesos.length}`);
         });
     } catch (error) {
         console.error(' [PREVIEW] Error capturando prendas:', error);
@@ -863,28 +666,6 @@ function capturarPrendas() {
     
     console.log(` [PREVIEW] ${prendas.length} prenda(s) capturada(s) del gestor`);
     return prendas;
-}
-
-/**
- * Extrae tallas de un contenedor
- */
-function extraerTallas(container) {
-    const tallas = {};
-    
-    // Buscar inputs de talla
-    const tallasInputs = container.querySelectorAll('input[name*="talla"], input[name*="size"], [data-talla]');
-    
-    tallasInputs.forEach(input => {
-        const valor = input.value || input.textContent;
-        if (valor) {
-            const match = valor.match(/([A-Z]+)\s*[:=]?\s*(\d+)/i);
-            if (match) {
-                tallas[match[1]] = match[2];
-            }
-        }
-    });
-    
-    return Object.keys(tallas).length > 0 ? tallas : { 'S': '1', 'M': '1', 'L': '1', 'XL': '1' };
 }
 
 /**
@@ -1049,7 +830,6 @@ function generarHTMLFactura(datos) {
     const prendasHTML = datos.prendas.map((prenda, idx) => {
         // Tabla de Variantes (Tallas con especificaciones)
         let variantesHTML = '';
-        console.log(`      DEBUG VARIANTES PARA PRENDA ${idx + 1}:`, prenda.variantes);
         
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             // Agrupar variantes por talla para crear tabla
@@ -1160,104 +940,58 @@ function generarHTMLFactura(datos) {
             <div style="height: 1px; background: #e0e0e0; margin-bottom: 15px;"></div>
         ` : '';
         
-        // Tallas por género (mejorado)
+        // Tallas por género (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
         let generosTallasHTML = '';
-        console.log(`      DEBUG TALLAS PARA PRENDA ${idx + 1}:`, prenda.tallas);
+        let totalItems = 0;
+        
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // prenda.tallas debería ser {dama: {S: 20, M: 20}, caballero: {}} o {Dama: {S: 20, M: 20}, Caballero: {}}
-            console.log(`      Tallas encontradas, estructura:`, JSON.stringify(prenda.tallas));
-            const primeraClave = Object.keys(prenda.tallas)[0];
-            console.log(`      Primera clave: ${primeraClave}`);
-            const generosValidos = ['Masculino', 'Femenino', 'Unisex', 'Dama', 'Caballero', 'Niño', 'Niña', 'masculino', 'femenino', 'unisex', 'dama', 'caballero', 'niño', 'niña'];
-            const esGenero = generosValidos.includes(primeraClave);
-            const tieneSubobjetos = typeof prenda.tallas[primeraClave] === 'object' && !Array.isArray(prenda.tallas[primeraClave]);
-            const esOrganizadaPorGenero = esGenero && tieneSubobjetos;
+            // Iterar por géneros y filtrar aquellos con tallas
+            const generosConTallas = Object.entries(prenda.tallas).filter(([gen, tallasObj]) => 
+                typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0
+            );
             
-            console.log(`      esGenero: ${esGenero}, tieneSubobjetos: ${tieneSubobjetos}, esOrganizadaPorGenero: ${esOrganizadaPorGenero}`);
-            
-            if (esOrganizadaPorGenero) {
-                // Tallas por género { Dama: {S: 20, M: 20}, Caballero: {} }
-                const generosConTallas = Object.entries(prenda.tallas).filter(([gen, tallasObj]) => 
-                    typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0
-                );
+            if (generosConTallas.length > 0) {
+                // Calcular total_items sumando todas las cantidades
+                totalItems = generosConTallas.reduce((sum, [gen, tallasObj]) => {
+                    return sum + Object.values(tallasObj).reduce((s, cant) => s + (parseInt(cant) || 0), 0);
+                }, 0);
                 
-                console.log(`      Géneros con tallas después de filtrar:`, generosConTallas);
-                
-                if (generosConTallas.length > 0) {
-                    generosTallasHTML = `
-                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
-                            <tbody>
-                                ${generosConTallas.map(([genero, tallasObj]) => `
-                                    <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; word-break: break-word; font-size: 11px; overflow: hidden;">${genero}</td>
-                                        <td style="padding: 4px 4px; color: #374151; word-break: break-word; overflow: hidden; font-size: 11px; font-weight: 600;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                } else {
-                    generosTallasHTML = '<span style="color: #999; font-size: 9px;">Sin tallas</span>';
-                }
-            } else {
-                // Tallas planas { S: 20, M: 20 }
                 generosTallasHTML = `
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                         <tbody>
-                            ${Object.entries(prenda.tallas).map(([talla, cant]) => `
+                            ${generosConTallas.map(([genero, tallasObj]) => `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; font-size: 11px; overflow: hidden;">${talla}</td>
-                                    <td style="padding: 4px 4px; color: #374151; word-break: break-word; font-size: 11px; font-weight: 600; overflow: hidden;">${cant}</td>
+                                    <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; word-break: break-word; font-size: 11px; overflow: hidden;">${genero}</td>
+                                    <td style="padding: 4px 4px; color: #374151; word-break: break-word; overflow: hidden; font-size: 11px; font-weight: 600;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                 `;
+            } else {
+                generosTallasHTML = '<span style="color: #999; font-size: 9px;">Sin tallas</span>';
             }
         } else {
             generosTallasHTML = '<span style="color: #999; font-size: 9px;">Sin tallas</span>';
         }
         
         // Procesos
-        console.log(`      Renderizando procesos para prenda ${idx + 1}:`, prenda.procesos);
         const procesosListaHTML = prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0
             ? prenda.procesos.map(proc => {
-                console.log(`        - Renderizando proceso: `, proc);
-                // Renderizar tallas del proceso (también pueden ser por género)
+                // Renderizar tallas del proceso (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
                 let tallasProcHTML = '';
-                console.log(`         DEBUG proc.tallas:`, proc.tallas);
                 if (proc.tallas && Object.keys(proc.tallas).length > 0) {
-                    const procPrimeraClave = Object.keys(proc.tallas)[0];
-                    console.log(`         procPrimeraClave: ${procPrimeraClave}, tipo:`, typeof proc.tallas[procPrimeraClave]);
-                    const procEsGenero = typeof proc.tallas[procPrimeraClave] === 'object' && 
-                                         !Array.isArray(proc.tallas[procPrimeraClave]);
+                    // Por género - FILTRAR géneros vacíos
+                    const generosConTallasProc = Object.entries(proc.tallas).filter(([gen, tallasObj]) => 
+                        typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0
+                    );
                     
-                    console.log(`         procEsGenero: ${procEsGenero}`);
-                    
-                    if (procEsGenero) {
-                        // Por género - FILTRAR géneros vacíos
-                        const generosConTallasProc = Object.entries(proc.tallas).filter(([gen, tallasObj]) => 
-                            typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0
-                        );
-                        
-                        console.log(`         generosConTallasProc:`, generosConTallasProc);
-                        
-                        if (generosConTallasProc.length > 0) {
-                            tallasProcHTML = `
-                                <div style="margin: 2px 0; padding: 4px; background: white; border-radius: 2px; font-size: 10px;">
-                                    ${generosConTallasProc.map(([gen, tallasObj]) => {
-                                        return `<div><strong>${gen}:</strong> ${Object.entries(tallasObj).map(([t, c]) => `${t}:${c}`).join(', ')}</div>`;
-                                    }).join('')}
-                                </div>
-                            `;
-                        }
-                    } else {
-                        // Planas
+                    if (generosConTallasProc.length > 0) {
                         tallasProcHTML = `
                             <div style="margin: 2px 0; padding: 4px; background: white; border-radius: 2px; font-size: 10px;">
-                                ${Object.entries(proc.tallas).map(([talla, cant]) => 
-                                  `${talla}:${cant}`
-                                ).join(' | ')}
+                                ${generosConTallasProc.map(([gen, tallasObj]) => {
+                                    return `<div><strong>${gen}:</strong> ${Object.entries(tallasObj).map(([t, c]) => `${t}:${c}`).join(', ')}</div>`;
+                                }).join('')}
                             </div>
                         `;
                     }

@@ -34,7 +34,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
      */
     public function procesar(
         array $prendaData,
-        string $numeroPedido,
+        int $pedidoProduccionId,
         array $servicios
     ): PrendaPedido {
         $this->imagenService = $servicios['imagenService'] ?? throw new \RuntimeException('ImagenService requerido');
@@ -46,8 +46,16 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
         try {
             DB::beginTransaction();
 
+            // Obtener número de pedido desde el ID para auditoría
+            $pedido = \App\Models\PedidoProduccion::find($pedidoProduccionId);
+            if (!$pedido) {
+                throw new \Exception("Pedido no encontrado con ID: {$pedidoProduccionId}");
+            }
+            $numeroPedido = $pedido->numero_pedido;
+
             Log::info(' [CreacionPrendaReflectivoStrategy] Procesando prenda reflectivo', [
                 'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+                'pedido_produccion_id' => $pedidoProduccionId,
                 'numero_pedido' => $numeroPedido,
             ]);
 
@@ -62,7 +70,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
 
             // ===== PASO 2: CREAR PRENDA EN prendas_pedido (ANTES LÍNEA 1600-1615) =====
             $prendaPedido = PrendaPedido::create([
-                'numero_pedido' => $numeroPedido,
+                'pedido_produccion_id' => $pedidoProduccionId,
                 'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
                 'cantidad' => $cantidadTotal,
                 // NO guardar descripción ni cantidad_talla aquí (van en prendas_reflectivo)

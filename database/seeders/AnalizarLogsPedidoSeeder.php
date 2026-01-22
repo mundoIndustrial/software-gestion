@@ -85,7 +85,7 @@ class AnalizarLogsPedidoSeeder extends Seeder
 
             // 5. Resumen
             echo "\n========================================\n";
-            echo "📊 RESUMEN DEL PEDIDO #45725\n";
+            echo " RESUMEN DEL PEDIDO #45725\n";
             echo "========================================\n";
             echo "Prendas: {$prendas->count()}\n";
             

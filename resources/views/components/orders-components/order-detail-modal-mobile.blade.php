@@ -658,24 +658,16 @@ window.llenarReciboCosturaMobile = function(data) {
             }
             
             // 4. Tallas
-            if (prenda.cantidad_talla && prenda.cantidad_talla !== '-') {
-                try {
-                    const tallas = typeof prenda.cantidad_talla === 'string' 
-                        ? JSON.parse(prenda.cantidad_talla) 
-                        : prenda.cantidad_talla;
-                    
-                    const tallasFormateadas = [];
-                    for (const [talla, cantidad] of Object.entries(tallas)) {
-                        if (cantidad > 0) {
-                            tallasFormateadas.push(`${talla}: ${cantidad}`);
-                        }
+            if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+                const tallasFormateadas = [];
+                prenda.tallas.forEach((tallaObj) => {
+                    if (tallaObj.cantidad > 0) {
+                        tallasFormateadas.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
                     }
-                    
-                    if (tallasFormateadas.length > 0) {
-                        html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
-                    }
-                } catch (e) {
-                    html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${prenda.cantidad_talla}</span>`;
+                });
+                
+                if (tallasFormateadas.length > 0) {
+                    html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
                 }
             }
             

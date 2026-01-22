@@ -169,7 +169,7 @@ function initializePaginationListeners() {
         paginationState.isLoading = true;
         btn.disabled = true;
         
-        console.log(`📄 Cargando página ${page}...`);
+        console.log(` Cargando página ${page}...`);
         
         const tableBody = document.getElementById('tablaOrdenesBody');
         if (!tableBody) {

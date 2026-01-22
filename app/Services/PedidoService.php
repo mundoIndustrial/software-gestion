@@ -238,16 +238,20 @@ class PedidoService
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
                 'descripcion' => $descripcion,
-                'cantidad_talla' => json_encode($cantidadesPorTalla)
+                'cantidad_total' => $cantidadTotal
             ]);
             
             $prenda = PrendaPedido::create([
-                'numero_pedido' => $pedido->numero_pedido,
+                'pedido_produccion_id' => $pedido->id,
                 'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
-                'cantidad' => $cantidadTotal,
                 'descripcion' => $descripcion,
-                'cantidad_talla' => json_encode($cantidadesPorTalla)
             ]);
+            
+            // Guardar tallas en la tabla relacional prenda_pedido_tallas
+            if (!empty($cantidadesPorTalla)) {
+                $prendaTallaRepository = new \App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository();
+                $prendaTallaRepository->guardarTallas($prenda->id, $cantidadesPorTalla);
+            }
 
             \Log::info('Prenda del pedido creada', [
                 'prenda_id' => $prenda->id,

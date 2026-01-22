@@ -21,7 +21,7 @@ class AnalizarImagenesEppSeeder extends Seeder
             $pedido = PedidoProduccion::where('numero_pedido', 45725)->first();
             
             if (!$pedido) {
-                echo "   ❌ Pedido NO encontrado\n\n";
+                echo "    Pedido NO encontrado\n\n";
                 return;
             }
             
@@ -33,7 +33,7 @@ class AnalizarImagenesEppSeeder extends Seeder
             echo "   EPPs: {$epps->count()}\n\n";
 
             if ($epps->isEmpty()) {
-                echo "   ❌ NO HAY EPPs EN ESTE PEDIDO\n\n";
+                echo "    NO HAY EPPs EN ESTE PEDIDO\n\n";
                 return;
             }
 
@@ -46,7 +46,7 @@ class AnalizarImagenesEppSeeder extends Seeder
                 echo "          Encontradas: {$fotosEpp->count()}\n";
                 
                 if ($fotosEpp->isEmpty()) {
-                    echo "          ❌ NO HAY FOTOS DE EPP\n";
+                    echo "           NO HAY FOTOS DE EPP\n";
                     echo "          ⚠️  PROBLEMA: Las imágenes de EPP NO se guardaron\n";
                 } else {
                     foreach ($fotosEpp as $foto) {
@@ -60,7 +60,7 @@ class AnalizarImagenesEppSeeder extends Seeder
             echo "\n";
 
         } catch (\Exception $e) {
-            echo "\n❌ ERROR:\n";
+            echo "\n ERROR:\n";
             echo "   {$e->getMessage()}\n";
             echo "   Archivo: {$e->getFile()}\n";
             echo "   Línea: {$e->getLine()}\n\n";

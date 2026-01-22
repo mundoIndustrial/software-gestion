@@ -2,6 +2,7 @@
 
 namespace App\Domain\PedidoProduccion\Repositories;
 
+use App\Domain\PedidoProduccion\Traits\GestionaTallasRelacional;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -12,6 +13,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 class PedidoProduccionRepository
 {
+    use GestionaTallasRelacional;
     /**
      * Obtener pedido por ID con relaciones
      */
@@ -24,6 +26,7 @@ class PedidoProduccionRepository
             'prendas.variantes.tipoBroche',
             'prendas.fotos',
             'prendas.fotosTelas',
+            'prendas.tallas',  // NUEVA: Cargar tallas relacionales
             'prendas.procesos',
             'prendas.procesos.tipoProceso',  //  NUEVO: Cargar el nombre del tipo de proceso
             'prendas.procesos.imagenes',
@@ -258,26 +261,25 @@ class PedidoProduccionRepository
                 'fotos_telas' => $fotoTelas,
             ]));
 
-            // Tallas desde JSON (cantidad_talla es string JSON en la BD)
-            $tallas = [];
-            if ($prenda->cantidad_talla) {
-                if (is_array($prenda->cantidad_talla)) {
-                    $tallas = $prenda->cantidad_talla;
-                } else if (is_string($prenda->cantidad_talla)) {
-                    $tallas = json_decode($prenda->cantidad_talla, true) ?? [];
-                }
-            }
+            // Tallas desde tabla relacional (prenda_pedido_tallas)
+            $tallas = $this->obtenerTallas($prenda->id);
             
             \Log::info('[FACTURA] Tallas de prenda: ' . json_encode([
                 'nombre_prenda' => $prenda->nombre_prenda,
-                'cantidad_talla_raw' => $prenda->cantidad_talla,
                 'tallas_final' => $tallas,
             ]));
 
             // Obtener procesos
             $procesos = [];
             foreach ($prenda->procesos as $proc) {
-                $procTallas = is_array($proc->cantidad_talla) ? $proc->cantidad_talla : [];
+                // Construir tallas desde tallas_dama y tallas_caballero (campos reales)
+                $procTallas = [];
+                if (is_array($proc->tallas_dama)) {
+                    $procTallas['dama'] = $proc->tallas_dama;
+                }
+                if (is_array($proc->tallas_caballero)) {
+                    $procTallas['caballero'] = $proc->tallas_caballero;
+                }
                 
                 // Ubicaciones puede ser array o string JSON
                 $ubicaciones = [];
@@ -412,7 +414,7 @@ class PedidoProduccionRepository
      */
     public function obtenerDatosRecibos(int $pedidoId): array
     {
-        \Log::info('📄 [RECIBOS-REPO] obtenerDatosRecibos() llamado con pedidoId: ' . $pedidoId);
+        \Log::info(' [RECIBOS-REPO] obtenerDatosRecibos() llamado con pedidoId: ' . $pedidoId);
         
         $pedido = $this->obtenerPorId($pedidoId);
         
@@ -458,12 +460,20 @@ class PedidoProduccionRepository
 
             // Obtener imágenes de prenda desde prenda_fotos_pedido
             try {
+                \Log::info('[RECIBOS] Buscando imágenes para prenda_pedido_id: ' . $prenda->id);
+                
                 $fotosPrenda = \DB::table('prenda_fotos_pedido')
                     ->where('prenda_pedido_id', $prenda->id)
                     ->where('deleted_at', null)
                     ->orderBy('orden')
                     ->select('ruta_webp')
                     ->get();
+                
+                \Log::info('[RECIBOS] Fotos encontradas para prenda ' . $prenda->id . ': ' . $fotosPrenda->count());
+                
+                if ($fotosPrenda->count() > 0) {
+                    \Log::debug('[RECIBOS] Rutas de fotos (raw): ' . json_encode($fotosPrenda->pluck('ruta_webp')->toArray()));
+                }
                 
                 $imagenesPrenda = $fotosPrenda->map(function($foto) {
                     $ruta = str_replace('\\', '/', $foto->ruta_webp);
@@ -481,6 +491,11 @@ class PedidoProduccionRepository
                     }
                     return $ruta;
                 })->toArray();
+                
+                \Log::info('[RECIBOS] Imágenes procesadas para prenda ' . $prenda->id . ': ' . count($imagenesPrenda) . ' total');
+                if (count($imagenesPrenda) > 0) {
+                    \Log::debug('[RECIBOS] Rutas procesadas: ' . json_encode($imagenesPrenda));
+                }
             } catch (\Exception $e) {
                 \Log::debug('[RECIBOS] Error obteniendo imágenes de prenda: ' . $e->getMessage());
             }
@@ -581,16 +596,10 @@ class PedidoProduccionRepository
                 $especificaciones[] = $spec;
             }
 
-            // Tallas desde JSON
-            $tallas = [];
-            if ($prenda->cantidad_talla) {
-                if (is_array($prenda->cantidad_talla)) {
-                    $tallas = $prenda->cantidad_talla;
-                } else if (is_string($prenda->cantidad_talla)) {
-                    $tallas = json_decode($prenda->cantidad_talla, true) ?? [];
-                }
-            }
-            \Log::info('[RECIBOS] Tallas cargadas para prenda ' . $prendaIndex, ['tallas' => $tallas, 'cantidad_talla_raw' => $prenda->cantidad_talla]);
+            // Tallas desde tabla relacional (prenda_pedido_tallas)
+            $tallas = $this->obtenerTallas($prenda->id);
+            
+            \Log::info('[RECIBOS] Tallas cargadas para prenda ' . $prendaIndex, ['tallas' => $tallas]);
 
             // Procesar procesos
             $procesos = [];
@@ -598,24 +607,20 @@ class PedidoProduccionRepository
                 // Cargar tallas desde tallas_dama y tallas_caballero
                 $procTallas = [
                     'dama' => [],
-                    'caballero' => []
+                    'caballero' => [],
+                    'unisex' => []
                 ];
                 
-                // Procesar tallas_dama
-                if ($proc->tallas_dama) {
-                    if (is_array($proc->tallas_dama)) {
-                        $procTallas['dama'] = $proc->tallas_dama;
-                    } else if (is_string($proc->tallas_dama)) {
-                        $procTallas['dama'] = json_decode($proc->tallas_dama, true) ?? [];
-                    }
-                }
+                // Procesar tallas DESDE LA TABLA RELACIONAL
+                $tallasRelacionales = \App\Models\PedidosProcesosPrendaTalla::where(
+                    'proceso_prenda_detalle_id', 
+                    $proc->id
+                )->get();
                 
-                // Procesar tallas_caballero
-                if ($proc->tallas_caballero) {
-                    if (is_array($proc->tallas_caballero)) {
-                        $procTallas['caballero'] = $proc->tallas_caballero;
-                    } else if (is_string($proc->tallas_caballero)) {
-                        $procTallas['caballero'] = json_decode($proc->tallas_caballero, true) ?? [];
+                foreach ($tallasRelacionales as $tallaRecord) {
+                    $genero = strtolower($tallaRecord->genero);
+                    if ($tallaRecord->cantidad > 0) {
+                        $procTallas[$genero][$tallaRecord->talla] = $tallaRecord->cantidad;
                     }
                 }
                 
@@ -874,14 +879,14 @@ class PedidoProduccionRepository
                 
                 $datos['epps'][] = $eppFormato;
             }
-            \Log::info('📄 [RECIBOS-REPO] EPP cargados exitosamente', ['count' => count($datos['epps'])]);
+            \Log::info(' [RECIBOS-REPO] EPP cargados exitosamente', ['count' => count($datos['epps'])]);
         } catch (\Exception $e) {
             \Log::error('[RECIBOS-REPO] Error cargando EPP: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
         }
 
-        \Log::info('📄 [RECIBOS-REPO] Datos retornados', [
+        \Log::info(' [RECIBOS-REPO] Datos retornados', [
             'prendas_count' => count($datos['prendas'] ?? []),
             'epps_count' => count($datos['epps'] ?? []),
             'primera_prenda_keys' => count($datos['prendas'] ?? []) > 0 ? array_keys($datos['prendas'][0]) : []

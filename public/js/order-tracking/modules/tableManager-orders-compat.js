@@ -96,7 +96,7 @@ const TableManager = (() => {
      * Actualiza los días cuando cambia de página
      */
     function updateDaysOnPageChange() {
-        console.log('📄 Actualizando días al cambiar de página');
+        console.log(' Actualizando días al cambiar de página');
         updateDaysInTable();
     }
     

@@ -75,8 +75,8 @@
         $pedidoId = $pedido->id;
         $tipoDocumento = get_class($pedido) === 'App\Models\LogoPedido' ? 'L' : ($pedido->cotizacion?->tipoCotizacion?->codigo ?? '');
         $esLogo = get_class($pedido) === 'App\Models\LogoPedido' ? '1' : '0';
-        // Para pedidos combinados (PL), obtener el ID del logo_pedido asociado
-        $logoPedidoId = get_class($pedido) === 'App\Models\LogoPedido' ? $pedido->id : ($pedido->logoPedidos->first()?->id ?? '');
+        // logoPedidos está deprecado - no se usa
+        $logoPedidoId = get_class($pedido) === 'App\Models\LogoPedido' ? $pedido->id : '';
     @endphp
     <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" data-logo-pedido-id="{{ $logoPedidoId }}" data-tipo-cotizacion="{{ $tipoDocumento }}" data-es-logo="{{ $esLogo }}" title="Ver Opciones" style="
         background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
@@ -197,12 +197,8 @@
         if (get_class($pedido) === 'App\Models\LogoPedido') {
             // Es un LogoPedido
             $area = $pedido->area ?? 'Creación de Orden';
-        } elseif ($pedido->logoPedidos && $pedido->logoPedidos->count() > 0) {
-            // Es un PedidoProduccion con logo
-            $logoPedido = $pedido->logoPedidos->first();
-            $area = $logoPedido->area ?? 'Creación de Orden';
         } else {
-            // Es un PedidoProduccion normal
+            // Es un PedidoProduccion
             $area = $pedido->area ?? '-';
         }
     @endphp

@@ -255,6 +255,9 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
     
+    <!-- Componentes de Modales -->
+    <script src="{{ asset('js/componentes/prenda-form-collector.js') }}?v={{ time() }}"></script>
+    
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
     

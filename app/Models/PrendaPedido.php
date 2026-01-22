@@ -30,21 +30,18 @@ class PrendaPedido extends Model
         'pedido_produccion_id', //  REQUIRED: Foreign Key a pedidos_produccion
         'nombre_prenda',
         'descripcion',
-        'genero',
         'de_bodega',
-        'cantidad_talla', //  NUEVO: Guardará {genero: {talla: cantidad}}
         //  REMOVIDOS: color_id, tela_id, tipo_manga_id, tipo_broche_boton_id
         //  Estos van en prenda_pedido_variantes, no en prendas_pedido
         // 'numero_pedido', //  COMENTADO [16/01/2026]: Se usa pedido_produccion_id en su lugar
+        // 'cantidad_talla' - ELIMINADO: Las tallas se guardan en prenda_pedido_tallas (relacional)
+        // 'genero' - ELIMINADO: Se obtiene desde prenda_pedido_tallas
     ];
 
     protected $casts = [
         'de_bodega' => 'boolean',
         'tiene_bolsillos' => 'boolean',
         'tiene_reflectivo' => 'boolean',
-        //  NO USAR array cast para cantidad_talla, causará doble-encoding
-        // Se guardará como JSON string y se decodificará manualmente cuando sea necesario
-        'genero' => 'array', // Cast genero para que Laravel lo maneje automáticamente
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -129,6 +126,18 @@ class PrendaPedido extends Model
         return $this->hasMany(PedidosProcesosPrendaDetalle::class, 'prenda_pedido_id');
     }
 
+    /**
+     * Relación: Una prenda tiene muchas tallas (nueva tabla relacional)
+     * 
+     * Reemplaza el JSON cantidad_talla con datos normalizados
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function tallas(): HasMany
+    {
+        return $this->hasMany(PrendaPedidoTalla::class, 'prenda_pedido_id');
+    }
+
     // ============================================================
     // SCOPES
     // ============================================================
@@ -158,7 +167,8 @@ class PrendaPedido extends Model
     }
 
     /**
-     * Scope: Filtrar por género
+     * Scope: Filtrar prendas por género
+     * ACTUALIZADO: Usa tabla relacional prenda_pedido_tallas
      * 
      * @param $query
      * @param $genero
@@ -166,7 +176,9 @@ class PrendaPedido extends Model
      */
     public function scopePorGenero($query, $genero)
     {
-        return $query->where('genero', $genero);
+        return $query->whereHas('tallas', function($q) use ($genero) {
+            $q->where('genero', strtoupper($genero));
+        });
     }
 
     // ============================================================
@@ -180,28 +192,17 @@ class PrendaPedido extends Model
      */
     public function getCantidadTotalAttribute(): int
     {
-        // Usar cantidad_talla JSON que es la fuente de verdad
-        if ($this->cantidad_talla) {
+        // Usar la relación de tallas (prenda_pedido_tallas) como fuente de verdad
+        if ($this->relationLoaded('tallas') && $this->tallas) {
             $total = 0;
-            $tallas = is_string($this->cantidad_talla) ? json_decode($this->cantidad_talla, true) : $this->cantidad_talla;
-            
-            if (is_array($tallas)) {
-                foreach ($tallas as $genero => $tallasCantidad) {
-                    if (is_array($tallasCantidad)) {
-                        // Formato anidado: {"dama": {"L": 30, "S": 20}}
-                        foreach ($tallasCantidad as $talla => $cantidad) {
-                            $total += (int)$cantidad;
-                        }
-                    } else {
-                        // Formato plano
-                        $total += (int)$tallasCantidad;
-                    }
-                }
+            foreach ($this->tallas as $tallaRecord) {
+                $total += $tallaRecord->cantidad;
             }
             return $total;
         }
-
-        return 0;
+        
+        // Fallback: Si tallas no está cargada, usar suma desde la BD
+        return \App\Models\PrendaPedidoTalla::where('prenda_pedido_id', $this->id)->sum('cantidad');
     }
 
     /**

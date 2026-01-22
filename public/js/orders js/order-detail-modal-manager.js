@@ -224,8 +224,8 @@ function renderOrderDetail(orden) {
                 if (typeof prenda.reflectivo.generos === 'string') {
                     prenda.reflectivo.generos = JSON.parse(prenda.reflectivo.generos);
                 }
-                if (typeof prenda.reflectivo.cantidad_talla === 'string') {
-                    prenda.reflectivo.cantidad_talla = JSON.parse(prenda.reflectivo.cantidad_talla);
+                if (typeof prenda.reflectivo.tallas === 'string') {
+                    prenda.reflectivo.tallas = JSON.parse(prenda.reflectivo.tallas);
                 }
                 if (typeof prenda.reflectivo.ubicaciones === 'string') {
                     prenda.reflectivo.ubicaciones = JSON.parse(prenda.reflectivo.ubicaciones);
@@ -504,22 +504,15 @@ function renderPrendasPage() {
                     });
                 }
                 
-                // 3. Tallas por género (el género ya está incluido en la etiqueta)
-                if (reflectivo.cantidad_talla && typeof reflectivo.cantidad_talla === 'object') {
+                // 3. Tallas (array de objetos {genero, talla, cantidad})
+                if (reflectivo.tallas && Array.isArray(reflectivo.tallas)) {
                     reflectivoContent += '<br>';
-                    Object.entries(reflectivo.cantidad_talla).forEach(([genero, tallas]) => {
-                        if (typeof tallas === 'object') {
-                            const tallasStr = Object.entries(tallas)
-                                .filter(([_, cantidad]) => cantidad > 0)
-                                .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
-                                .join(', ');
-                            
-                            if (tallasStr) {
-                                const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
-                                reflectivoContent += `<strong>TALLAS ${generoLabel}:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasStr}</span><br>`;
-                            }
-                        }
-                    });
+                    reflectivo.tallas
+                        .filter(tallaRecord => tallaRecord.cantidad > 0)
+                        .forEach(tallaRecord => {
+                            const generoLabel = tallaRecord.genero.charAt(0).toUpperCase() + tallaRecord.genero.slice(1);
+                            reflectivoContent += `<strong>${generoLabel} ${tallaRecord.talla}:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallaRecord.cantidad}</span><br>`;
+                        });
                 }
                 
                 // 4. Observaciones generales
@@ -628,19 +621,25 @@ function renderPrendasPage() {
                     });
                 }
                 
-                // 3. Tallas por género (el género ya está incluido en la etiqueta)
-                if (reflectivo.cantidad_talla && typeof reflectivo.cantidad_talla === 'object') {
-                    Object.entries(reflectivo.cantidad_talla).forEach(([genero, tallas]) => {
-                        if (typeof tallas === 'object') {
-                            const tallasStr = Object.entries(tallas)
-                                .filter(([_, cantidad]) => cantidad > 0)
-                                .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
-                                .join(', ');
-                            
-                            if (tallasStr) {
-                                const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
-                                html += `<strong>TALLAS ${generoLabel}:</strong> ${tallasStr}<br>`;
+                // 3. Tallas por género desde array {genero, talla, cantidad}
+                if (reflectivo.tallas && Array.isArray(reflectivo.tallas)) {
+                    // Agrupar tallas por género
+                    const tallasPorGenero = {};
+                    reflectivo.tallas.forEach(tallaObj => {
+                        if (tallaObj.cantidad > 0) {
+                            const genero = tallaObj.genero || 'DESCONOCIDO';
+                            if (!tallasPorGenero[genero]) {
+                                tallasPorGenero[genero] = [];
                             }
+                            tallasPorGenero[genero].push(`${tallaObj.talla}: ${tallaObj.cantidad}`);
+                        }
+                    });
+                    
+                    // Mostrar tallas agrupadas por género
+                    Object.entries(tallasPorGenero).forEach(([genero, tallasArr]) => {
+                        if (tallasArr.length > 0) {
+                            const generoLabel = genero.charAt(0).toUpperCase() + genero.slice(1);
+                            html += `<strong>TALLAS ${generoLabel}:</strong> ${tallasArr.join(', ')}<br>`;
                         }
                     });
                 }
@@ -693,24 +692,16 @@ function renderPrendasPage() {
             }
             
             // 4. Tallas
-            if (prenda.cantidad_talla && prenda.cantidad_talla !== '-') {
-                try {
-                    const tallas = typeof prenda.cantidad_talla === 'string' 
-                        ? JSON.parse(prenda.cantidad_talla) 
-                        : prenda.cantidad_talla;
-                    
-                    const tallasFormateadas = [];
-                    for (const [talla, cantidad] of Object.entries(tallas)) {
-                        if (cantidad > 0) {
-                            tallasFormateadas.push(`${talla}: ${cantidad}`);
-                        }
+            if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+                const tallasFormateadas = [];
+                prenda.tallas.forEach((tallaObj) => {
+                    if (tallaObj.cantidad > 0) {
+                        tallasFormateadas.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
                     }
-                    
-                    if (tallasFormateadas.length > 0) {
-                        html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
-                    }
-                } catch (e) {
-                    html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${prenda.cantidad_talla}</span>`;
+                });
+                
+                if (tallasFormateadas.length > 0) {
+                    html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
                 }
             }
             

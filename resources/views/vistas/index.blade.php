@@ -155,19 +155,17 @@
                                         <tbody>
                                             @foreach($groupRegistros as $registro)
                                                 @if($tipo === 'pedidos')
-                                                    {{-- Para prendas_pedido: expandir por tallas y traer info de entrega_prenda_pedido --}}
+                                                    {{-- Para prendas_pedido: cargar tallas desde prenda_pedido_tallas --}}
                                                     @php
-                                                        $cantidadTalla = is_string($registro->cantidad_talla) 
-                                                            ? json_decode($registro->cantidad_talla, true) 
-                                                            : $registro->cantidad_talla;
+                                                        $tallaRecords = $registro->tallas ?? [];
                                                     @endphp
-                                                    @if(is_array($cantidadTalla) && !empty($cantidadTalla))
-                                                        @foreach($cantidadTalla as $talla => $cantidad)
+                                                    @if($tallaRecords && count($tallaRecords) > 0)
+                                                        @foreach($tallaRecords as $tallaRecord)
                                                             @php
                                                                 // Buscar entrega_prenda_pedido relacionada
                                                                 $entrega = \App\Models\EntregaPrendaPedido::where('numero_pedido', $registro->pedido->numero_pedido)
                                                                     ->where('nombre_prenda', $registro->nombre_prenda)
-                                                                    ->where('talla', $talla)
+                                                                    ->where('talla', $tallaRecord->talla)
                                                                     ->first();
                                                                 
                                                                 $costurero = $entrega ? ($entrega->costurero ?: '-') : '-';

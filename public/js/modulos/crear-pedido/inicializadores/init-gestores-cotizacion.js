@@ -60,7 +60,6 @@
                         window.currentDatosReflectivo = data.reflectivo || null;
                         window.currentEspecificaciones = data.especificaciones || null;
 
-                        logWithEmoji('', 'Gestores inicializados con datos de cotización');
                     })
                     .catch(error => {
                         console.error(' Error cargando cotización:', error);
@@ -69,7 +68,6 @@
             }
         );
 
-        logWithEmoji('', 'GestorCotizacion inicializado');
     };
 
     // =====================================================================
@@ -81,7 +79,6 @@
             'prendas-container-editable'
         );
 
-        logWithEmoji('', `GestorPrendas inicializado con ${window.gestorPrendas.obtenerTodas().length} prendas`);
     };
 
     // =====================================================================
@@ -90,7 +87,6 @@
     window.inicializarGestorLogo = function(logoCotizacion = {}) {
         window.gestorLogo = new GestorLogo(logoCotizacion);
         
-        logWithEmoji('', 'GestorLogo inicializado');
     };
 
     // =====================================================================
@@ -117,7 +113,6 @@
         }
 
         window.gestorPrendas.agregar(nuevaPrenda);
-        logWithEmoji('➕', 'Nueva prenda agregada');
         
         // Notificar a la UI para renderizar
         if (window.renderizarPrendasConGestor) {
@@ -131,7 +126,6 @@
     window.eliminarPrendaConGestor = function(index) {
         if (window.gestorPrendas) {
             window.gestorPrendas.eliminar(index);
-            logWithEmoji('🗑️', `Prenda ${index + 1} eliminada`);
             
             if (window.renderizarPrendasConGestor) {
                 window.renderizarPrendasConGestor();
@@ -210,7 +204,6 @@
     // EJECUTAR INICIALIZACIÓN AL CARGAR EL DOM
     // =====================================================================
     document.addEventListener('DOMContentLoaded', function() {
-        logWithEmoji('🚀', 'Inicializando gestores de FASE 2...');
         
         // Inicializar gestor de cotización
         window.inicializarGestorCotizacion();
@@ -221,7 +214,6 @@
         // Inicializar gestor de logo vacío
         window.inicializarGestorLogo();
 
-        logWithEmoji('', 'Gestores FASE 2 listos para usar');
     });
 
 })();

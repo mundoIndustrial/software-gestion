@@ -71,6 +71,9 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     
     // Agregar prenda completa (con telas y procesos) al pedido en edición
     Route::post('/pedidos/{id}/agregar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'agregarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.agregar-prenda-completa');
+    
+    // Actualizar prenda completa (con novedades) en un pedido existente
+    Route::post('/pedidos/{id}/actualizar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
 
     // ========================================
     // RECIBOS - NUEVO MÓDULO

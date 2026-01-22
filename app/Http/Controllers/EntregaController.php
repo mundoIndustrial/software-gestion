@@ -153,19 +153,26 @@ class EntregaController extends Controller
                     return response()->json(['error' => 'Prenda no encontrada en el pedido'], 404);
                 }
                 
-                // Extraer tallas desde cantidad_talla (JSON)
-                $cantidadTalla = is_string($prendaPedido->cantidad_talla) 
-                    ? json_decode($prendaPedido->cantidad_talla, true) 
-                    : $prendaPedido->cantidad_talla;
+                // Obtener prenda con tallas relacionales
+                $prendaPedido = $pedidoProduccion->prendas()
+                    ->where('nombre_prenda', $prenda)
+                    ->with('tallas')
+                    ->first();
                 
+                if (!$prendaPedido) {
+                    return response()->json(['error' => 'Prenda no encontrada en el pedido'], 404);
+                }
+                
+                // Extraer tallas desde la relación prenda_pedido_tallas
                 $result = [];
-                if (is_array($cantidadTalla)) {
-                    foreach ($cantidadTalla as $talla => $cantidad) {
+                if ($prendaPedido->tallas) {
+                    foreach ($prendaPedido->tallas as $tallaRecord) {
                         $result[] = [
-                            'talla' => $talla,
+                            'talla' => $tallaRecord->talla,
+                            'genero' => $tallaRecord->genero,
                             'total_producido_por_talla' => 0,
-                            'total_pendiente_por_talla' => $cantidad,
-                            'cantidad' => $cantidad,
+                            'total_pendiente_por_talla' => $tallaRecord->cantidad,
+                            'cantidad' => $tallaRecord->cantidad,
                         ];
                     }
                 }
@@ -275,16 +282,26 @@ class EntregaController extends Controller
                             return response()->json(['success' => false, 'message' => 'Prenda no encontrada en el pedido'], 404);
                         }
 
-                        // Obtener cantidad_original de la talla desde cantidad_talla JSON
-                        $cantidadTalla = is_string($prendaPedido->cantidad_talla) 
-                            ? json_decode($prendaPedido->cantidad_talla, true) 
-                            : $prendaPedido->cantidad_talla;
+                        // Obtener la prenda_pedido con tallas relacionales
+                        $prendaPedido = $pedidoProduccion->prendas()
+                            ->where('nombre_prenda', $entrega['prenda'])
+                            ->with('tallas')
+                            ->first();
 
-                        if (!isset($cantidadTalla[$entrega['talla']])) {
+                        if (!$prendaPedido) {
+                            return response()->json(['success' => false, 'message' => 'Prenda no encontrada en el pedido'], 404);
+                        }
+
+                        // Obtener cantidad_original de la talla desde prenda_pedido_tallas
+                        $tallaRecord = $prendaPedido->tallas()
+                            ->where('talla', $entrega['talla'])
+                            ->first();
+
+                        if (!$tallaRecord) {
                             return response()->json(['success' => false, 'message' => 'Talla no encontrada para esta prenda'], 404);
                         }
 
-                        $cantidadOriginal = $cantidadTalla[$entrega['talla']];
+                        $cantidadOriginal = $tallaRecord->cantidad;
 
                         // Buscar o crear la entrega_prenda_pedido para esta talla
                         $entregaPrendaPedido = EntregaPrendaPedido::where('numero_pedido', $entrega['pedido'])

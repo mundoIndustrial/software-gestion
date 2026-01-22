@@ -29,7 +29,8 @@ class DebugRegistrosController extends Controller
             // Ejecutar la misma lógica del index original pero con métricas
             $query = PedidoProduccion::query()
                 ->with(['asesora', 'prendas' => function($q) {
-                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'color_id', 'tela_id', 'tipo_manga_id', 'tipo_broche_id', 'tiene_bolsillos', 'tiene_reflectivo', 'descripcion_variaciones');
+                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'color_id', 'tela_id', 'tipo_manga_id', 'tipo_broche_id', 'tiene_bolsillos', 'tiene_reflectivo', 'descripcion_variaciones')
+                      ->with('tallas:prenda_pedido_id,genero,talla,cantidad');
                 }]);
 
             // Obtener totales

@@ -23,11 +23,11 @@ class DiagnosticoPedido extends Command
             $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
             
             if (!$orden) {
-                $this->error("❌ Pedido no encontrado");
+                $this->error(" Pedido no encontrado");
                 return;
             }
             
-            $this->line("✅ Pedido encontrado (ID: " . $orden->id . ")\n");
+            $this->line(" Pedido encontrado (ID: " . $orden->id . ")\n");
             
             // Revisar prendas
             $this->line("--- PRENDAS ---");
@@ -124,7 +124,7 @@ class DiagnosticoPedido extends Command
             }
             
         } catch (\Exception $e) {
-            $this->error("❌ ERROR: " . $e->getMessage());
+            $this->error(" ERROR: " . $e->getMessage());
             $this->error($e->getTraceAsString());
         }
 

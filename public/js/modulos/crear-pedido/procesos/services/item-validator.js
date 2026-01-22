@@ -44,8 +44,7 @@ class ItemValidator {
             }
         } else {
             // Para prendas
-            const tieneTallas = (item.tallas && item.tallas.length > 0) || 
-                               (item.cantidad_talla && Object.keys(item.cantidad_talla).length > 0);
+            const tieneTallas = (item.tallas && item.tallas.length > 0);
             
             if (!tieneTallas) {
                 errores.push('Debe especificar al menos una talla');
@@ -134,7 +133,7 @@ class ItemValidator {
             return { válido: false, errores };
         }
 
-        if (!prenda.nombre_producto || prenda.nombre_producto.trim() === '') {
+        if (!prenda.nombre_prenda && !prenda.nombre_producto || (prenda.nombre_prenda || prenda.nombre_producto || '').trim() === '') {
             errores.push('El nombre de la prenda es requerido');
         }
 

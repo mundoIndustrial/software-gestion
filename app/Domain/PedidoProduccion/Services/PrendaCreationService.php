@@ -47,11 +47,11 @@ class PrendaCreationService
      */
     public function crearPrendaSinCotizacion(
         array $prendaData,
-        string $numeroPedido
+        int $pedidoProduccionId
     ): PrendaPedido {
         Log::info(' [PrendaCreationService::crearPrendaSinCotizacion] Iniciando con estrategia', [
             'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-            'numero_pedido' => $numeroPedido,
+            'pedido_produccion_id' => $pedidoProduccionId,
         ]);
 
         // Usar estrategia para sin cotización
@@ -64,17 +64,27 @@ class PrendaCreationService
         ];
 
         try {
-            $prenda = $strategy->procesar($prendaData, $numeroPedido, $servicios);
+            $prenda = $strategy->procesar($prendaData, $pedidoProduccionId, $servicios);
 
             // Emitir evento de prenda agregada
             $pedidoId = $prendaData['pedido_id'] ?? null;
             if ($pedidoId) {
+                // Calcular cantidad total desde cantidad_talla si está disponible
+                $cantidadTotal = 1;
+                if (isset($prendaData['cantidad_talla']) && is_array($prendaData['cantidad_talla'])) {
+                    $cantidadTotal = array_sum($prendaData['cantidad_talla']);
+                } elseif (isset($prendaData['cantidad_inicial'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad_inicial'];
+                } elseif (isset($prendaData['cantidad'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad'];
+                }
+
                 $event = new PrendaPedidoAgregada(
                     pedidoId: (int) $pedidoId,
                     prendaId: $prenda->id,
-                    nombrePrenda: $prenda->nombre_prendas,
-                    cantidad: (int) $prendaData['cantidad_inicial'] ?? 1,
-                    genero: $prenda->genero,
+                    nombrePrenda: $prenda->nombre_prenda ?? 'Sin nombre',
+                    cantidad: $cantidadTotal,
+                    genero: $prenda->genero ?? 'No especificado',
                     colorId: $prenda->color_id,
                     telaId: $prenda->tela_id,
                     tipoMangaId: $prenda->tipo_manga_id,
@@ -84,7 +94,8 @@ class PrendaCreationService
                 Log::info(' Evento PrendaPedidoAgregada emitido', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prenda->id,
-                    'nombre' => $prenda->nombre_prendas,
+                    'nombre' => $prenda->nombre_prenda,
+                    'cantidad_total' => $cantidadTotal,
                 ]);
             }
 
@@ -111,17 +122,17 @@ class PrendaCreationService
      * Encapsula la lógica de controller::crearReflectivoSinCotizacion() (~300 líneas)
      * 
      * @param array $prendaData Datos de la prenda del request
-     * @param string $numeroPedido Número del pedido
+     * @param int $pedidoProduccionId ID del pedido
      * @return PrendaPedido Prenda creada
      * @throws \Exception
      */
     public function crearPrendaReflectivo(
         array $prendaData,
-        string $numeroPedido
+        int $pedidoProduccionId
     ): PrendaPedido {
         Log::info(' [PrendaCreationService::crearPrendaReflectivo] Iniciando con estrategia', [
             'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-            'numero_pedido' => $numeroPedido,
+            'pedido_produccion_id' => $pedidoProduccionId,
         ]);
 
         // Usar estrategia para reflectivo
@@ -134,17 +145,27 @@ class PrendaCreationService
         ];
 
         try {
-            $prenda = $strategy->procesar($prendaData, $numeroPedido, $servicios);
+            $prenda = $strategy->procesar($prendaData, $pedidoProduccionId, $servicios);
 
             // Emitir evento de prenda agregada
             $pedidoId = $prendaData['pedido_id'] ?? null;
             if ($pedidoId) {
+                // Calcular cantidad total desde cantidad_talla si está disponible
+                $cantidadTotal = 1;
+                if (isset($prendaData['cantidad_talla']) && is_array($prendaData['cantidad_talla'])) {
+                    $cantidadTotal = array_sum($prendaData['cantidad_talla']);
+                } elseif (isset($prendaData['cantidad_inicial'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad_inicial'];
+                } elseif (isset($prendaData['cantidad'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad'];
+                }
+
                 $event = new PrendaPedidoAgregada(
                     pedidoId: (int) $pedidoId,
                     prendaId: $prenda->id,
-                    nombrePrenda: $prenda->nombre_prendas,
-                    cantidad: (int) $prendaData['cantidad_inicial'] ?? 1,
-                    genero: $prenda->genero,
+                    nombrePrenda: $prenda->nombre_prenda ?? 'Sin nombre',
+                    cantidad: $cantidadTotal,
+                    genero: $prenda->genero ?? 'No especificado',
                     colorId: $prenda->color_id,
                     telaId: $prenda->tela_id,
                     tipoMangaId: $prenda->tipo_manga_id,
@@ -154,7 +175,8 @@ class PrendaCreationService
                 Log::info(' Evento PrendaPedidoAgregada emitido (reflectivo)', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prenda->id,
-                    'nombre' => $prenda->nombre_prendas,
+                    'nombre' => $prenda->nombre_prenda,
+                    'cantidad_total' => $cantidadTotal,
                 ]);
             }
 

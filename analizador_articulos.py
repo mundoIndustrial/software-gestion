@@ -17,7 +17,7 @@ from typing import List, Dict, Tuple
 try:
     import pandas as pd
 except ImportError:
-    print("❌ Instalando pandas...")
+    print(" Instalando pandas...")
     import subprocess
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pandas", "-q"])
     import pandas as pd
@@ -25,7 +25,7 @@ except ImportError:
 try:
     import pdfplumber
 except ImportError:
-    print("❌ Instalando pdfplumber...")
+    print(" Instalando pdfplumber...")
     import subprocess
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pdfplumber", "-q"])
     import pdfplumber
@@ -58,7 +58,7 @@ class AnalizadorArticulos:
         texto_completo = ""
         try:
             with pdfplumber.open(ruta_pdf) as pdf:
-                print(f"📄 Total de páginas: {len(pdf.pages)}")
+                print(f" Total de páginas: {len(pdf.pages)}")
                 
                 for num_pagina, page in enumerate(pdf.pages, 1):
                     print(f"  Página {num_pagina}...", end='\r')
@@ -67,33 +67,33 @@ class AnalizadorArticulos:
             
             print(f"✓ Texto extraído: {len(texto_completo)} caracteres")
         except Exception as e:
-            print(f"❌ Error leyendo PDF: {e}")
+            print(f" Error leyendo PDF: {e}")
             return []
         
         return self.procesar_listado_desordenado(texto_completo)
     
     def procesar_csv(self, ruta_csv: str) -> List[Dict]:
         """Lee archivo CSV"""
-        print(f"📊 Leyendo CSV: {ruta_csv}")
+        print(f" Leyendo CSV: {ruta_csv}")
         
         try:
             df = pd.read_csv(ruta_csv)
             print(f"✓ Leído: {len(df)} filas, {len(df.columns)} columnas")
             return df.to_dict('records')
         except Exception as e:
-            print(f"❌ Error leyendo CSV: {e}")
+            print(f" Error leyendo CSV: {e}")
             return []
     
     def procesar_excel(self, ruta_excel: str) -> List[Dict]:
         """Lee archivo Excel"""
-        print(f"📊 Leyendo Excel: {ruta_excel}")
+        print(f" Leyendo Excel: {ruta_excel}")
         
         try:
             df = pd.read_excel(ruta_excel)
             print(f"✓ Leído: {len(df)} filas, {len(df.columns)} columnas")
             return df.to_dict('records')
         except Exception as e:
-            print(f"❌ Error leyendo Excel: {e}")
+            print(f" Error leyendo Excel: {e}")
             return []
     
     def procesar_listado_desordenado(self, texto: str) -> List[Dict]:
@@ -255,7 +255,7 @@ class AnalizadorArticulos:
     def mostrar_resumen(self, datos: List[Dict]):
         """Muestra resumen en consola"""
         print("\n" + "="*80)
-        print("📊 RESUMEN")
+        print(" RESUMEN")
         print("="*80)
         print(f"Total de artículos: {len(datos)}")
         print(f"Campos detectados: {len(datos[0]) if datos else 0}")
@@ -289,7 +289,7 @@ class AnalizadorArticulos:
     def exportar_csv(self, ruta_salida: str):
         """Exporta a CSV"""
         if not self.articulos:
-            print("❌ No hay datos para exportar")
+            print(" No hay datos para exportar")
             return
         
         df = pd.DataFrame(self.articulos)
@@ -299,7 +299,7 @@ class AnalizadorArticulos:
     def exportar_excel(self, ruta_salida: str):
         """Exporta a Excel"""
         if not self.articulos:
-            print("❌ No hay datos para exportar")
+            print(" No hay datos para exportar")
             return
         
         df = pd.DataFrame(self.articulos)
@@ -308,7 +308,7 @@ class AnalizadorArticulos:
     
     def exportar_reporte_html(self, ruta_salida: str):
         """Genera reporte HTML interactivo"""
-        print(f"\n📄 Generando reporte HTML...")
+        print(f"\n Generando reporte HTML...")
         
         html = f"""
 <!DOCTYPE html>
@@ -341,7 +341,7 @@ class AnalizadorArticulos:
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Reporte de Análisis de Artículos</h1>
+            <h1> Reporte de Análisis de Artículos</h1>
             <p>Análisis automático de duplicaciones y atributos</p>
         </div>
         
@@ -360,7 +360,7 @@ class AnalizadorArticulos:
             </div>
         </div>
         
-        <h2>📋 Tabla de Todos los Artículos</h2>
+        <h2> Tabla de Todos los Artículos</h2>
         <table>
             <thead>
                 <tr>
@@ -461,11 +461,11 @@ def main():
     if ruta_pdf.exists():
         articulos = analizador.procesar_pdf(str(ruta_pdf))
     else:
-        print(f"❌ No se encontró: {ruta_pdf}")
+        print(f" No se encontró: {ruta_pdf}")
         return
     
     if not articulos:
-        print("❌ No se pudieron extraer artículos")
+        print(" No se pudieron extraer artículos")
         return
     
     # Mostrar resumen
@@ -482,7 +482,7 @@ def main():
     analizador.exportar_reporte_html(str(ruta_html_salida))
     
     print("\n" + "="*80)
-    print("✅ ANÁLISIS COMPLETADO")
+    print(" ANÁLISIS COMPLETADO")
     print("="*80)
     print(f"📁 Archivos generados en: {carpeta_trabajo}")
     print(f"  • articulos_analizados.csv")

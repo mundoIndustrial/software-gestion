@@ -145,7 +145,7 @@ function renderizarGaleriaReflectivo() {
         galeria.appendChild(div);
     });
 
-    console.log('📊 Total imágenes reflectivo:', imagenesReflectivo.length);
+    console.log(' Total imágenes reflectivo:', imagenesReflectivo.length);
 }
 
 // ============================================================================
@@ -237,7 +237,7 @@ function guardarUbicacionReflectivo(ubicacion) {
         descripcion: desc
     });
     
-    console.log('✅ Ubicación agregada correctamente', {
+    console.log(' Ubicación agregada correctamente', {
         ubicacion: ubicacion,
         descripcion: desc,
         total_ubicaciones: window.ubicacionesReflectivo.length,

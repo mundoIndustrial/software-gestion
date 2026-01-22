@@ -90,7 +90,7 @@
             if (overlay) {
                 console.log(' Overlay encontrado');
                 overlay.style.pointerEvents = 'none';
-                console.log('🚫 pointer-events: none aplicado');
+                console.log(' pointer-events: none aplicado');
                 overlay.classList.add('hidden');
                 console.log('👻 Clase hidden agregada');
             } else {
@@ -99,7 +99,7 @@
         });
         
         // También ocultar inmediatamente si el documento ya está completamente cargado
-        console.log('📄 readyState:', document.readyState);
+        console.log(' readyState:', document.readyState);
         if (document.readyState === 'complete') {
             console.log('⚡ Documento ya está en readyState complete');
             const overlay = document.getElementById('loading-overlay');

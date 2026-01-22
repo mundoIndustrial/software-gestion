@@ -571,20 +571,15 @@
                     </div>
 
                     <!-- Tallas -->
-                    @if($prenda->cantidad_talla)
-                        @php
-                            $tallas = is_string($prenda->cantidad_talla) ? json_decode($prenda->cantidad_talla, true) : $prenda->cantidad_talla;
-                        @endphp
-                        @if(is_array($tallas) && !empty($tallas))
-                            <div class="prenda-tallas">
-                                <strong style="color: #dc2626; font-size: 11px;">Tallas:</strong>
-                                @foreach($tallas as $talla => $cantidad)
-                                    @if($cantidad > 0)
-                                        <span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; margin: 2px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: 600; border: 2px solid #dc2626;">{{ $talla }}: {{ $cantidad }}</span>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @endif
+                    @if($prenda->tallas && $prenda->tallas->count() > 0)
+                        <div class="prenda-tallas">
+                            <strong style="color: #dc2626; font-size: 11px;">Tallas:</strong>
+                            @foreach($prenda->tallas as $tallaRecord)
+                                @if($tallaRecord->cantidad > 0)
+                                    <span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; margin: 2px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: 600; border: 2px solid #dc2626;">{{ $tallaRecord->genero }}-{{ $tallaRecord->talla }}: {{ $tallaRecord->cantidad }}</span>
+                                @endif
+                            @endforeach
+                        </div>
                     @endif
 
                     <!-- Procesos -->

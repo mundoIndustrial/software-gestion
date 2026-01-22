@@ -35,7 +35,7 @@ console.log('📸 fotosEliminadasServidor inicializado:', window.fotosEliminadas
  * Seleccionar tipo de cotización desde las pastillas
  */
 function seleccionarTipoCotizacion(tipo) {
-    console.log('🎯 Seleccionando tipo de cotización:', tipo);
+    console.log(' Seleccionando tipo de cotización:', tipo);
     
     // Mapear tipo de pastilla a tipo_venta
     const mapeos = {
@@ -187,7 +187,7 @@ function irAlPaso(paso) {
     
     // Si es el paso 4 (REFLECTIVO), agregar la primera prenda vacía si no existe ninguna
     if (paso === 4) {
-        console.log('🎯 Navegando al PASO 4: REFLECTIVO');
+        console.log(' Navegando al PASO 4: REFLECTIVO');
         setTimeout(() => {
             const container = document.getElementById('prendas_reflectivo_container');
             if (container && container.children.length === 0) {
@@ -204,7 +204,7 @@ function irAlPaso(paso) {
     
     // Si es el paso 5 (REVISAR COTIZACIÓN), actualizar resumen completo
     if (paso === 5) {
-        console.log('🎯 Navegando al PASO 5: REVISAR COTIZACIÓN');
+        console.log(' Navegando al PASO 5: REVISAR COTIZACIÓN');
         setTimeout(() => {
             // Actualizar el resumen dinámico del paso 5
             console.log(' Llamando a actualizarResumenFriendly() para Paso 5');
@@ -279,7 +279,7 @@ function actualizarResumenFriendly() {
         
         let tipoDetectado = '';
         if (tienePrendas && (tieneLogo || tieneTecnicas)) {
-            tipoDetectado = '🎯 Combinada';
+            tipoDetectado = ' Combinada';
         } else if (tienePrendas) {
             tipoDetectado = '👕 Solo Prendas';
         } else if (tieneLogo || tieneTecnicas) {
@@ -1314,7 +1314,7 @@ function recopilarDatos() {
     
     // SI ES COTIZACIÓN COMBINADA (PL), BUSCAR EN PASO 4 (REFLECTIVO)
     if (tipoCotizacion === 'PL' && Array.isArray(window.ubicacionesReflectivo) && window.ubicacionesReflectivo.length > 0) {
-        console.log('✅ ES COTIZACIÓN COMBINADA - Usando ubicaciones del PASO 4 (Reflectivo)');
+        console.log(' ES COTIZACIÓN COMBINADA - Usando ubicaciones del PASO 4 (Reflectivo)');
         window.ubicacionesReflectivo.forEach(ubic => {
             ubicaciones.push({
                 ubicacion: ubic.ubicacion,
@@ -1344,7 +1344,7 @@ function recopilarDatos() {
                 });
             }
         } catch (e) {
-            console.error('❌ Error parsing paso3_secciones_datos:', e);
+            console.error(' Error parsing paso3_secciones_datos:', e);
         }
     }
     

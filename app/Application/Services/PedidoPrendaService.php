@@ -275,8 +275,12 @@ class PedidoPrendaService
             );
         }
 
-        // 2b.  GUARDAR TALLAS CON CANTIDADES en prenda_tallas_ped (LEGACY)
-        if (!empty($prendaData['cantidades'])) {
+        // 2b.  GUARDAR TALLAS en prenda_pedido_tallas DESDE cantidad_talla (estructura relacional)
+        // IMPORTANTE: cantidad_talla es la fuente correcta: {GENERO: {TALLA: CANTIDAD}}
+        if (!empty($prendaData['cantidad_talla'])) {
+            $this->guardarTallasPrenda($prenda, $prendaData['cantidad_talla']);
+        } elseif (!empty($prendaData['cantidades'])) {
+            // Fallback LEGACY: si no hay cantidad_talla, usar cantidades
             $this->guardarTallasPrenda($prenda, $prendaData['cantidades']);
         }
 

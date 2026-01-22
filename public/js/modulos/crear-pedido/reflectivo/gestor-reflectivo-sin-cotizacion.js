@@ -29,7 +29,6 @@ class GestorReflectivoSinCotizacion {
         this.fotosNuevas = {};
         this.tipoPedidoActual = 'R'; // Tipo REFLECTIVO
         
-        logWithEmoji('', 'GestorReflectivoSinCotizacion inicializado');
     }
 
     /**
@@ -58,7 +57,6 @@ class GestorReflectivoSinCotizacion {
         const nuevaPrenda = this.crearPrendaBase();
         this.prendas.push(nuevaPrenda);
         const index = this.prendas.length - 1;
-        logWithEmoji('➕', `Prenda REFLECTIVO agregada (índice: ${index})`);
         return index;
     }
 
@@ -85,7 +83,6 @@ class GestorReflectivoSinCotizacion {
      */
     eliminar(index) {
         this.prendasEliminadas.add(index);
-        logWithEmoji('🗑️', `Prenda ${index + 1} marcada para eliminación`);
     }
 
     /**
@@ -107,7 +104,6 @@ class GestorReflectivoSinCotizacion {
                 prenda.cantidadesPorTalla = {};
             }
             prenda.cantidadesPorTalla[talla] = 0;
-            logWithEmoji('➕', `Talla ${talla} agregada a prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -127,7 +123,6 @@ class GestorReflectivoSinCotizacion {
                 if (prenda.cantidadesPorTalla) {
                     delete prenda.cantidadesPorTalla[talla];
                 }
-                logWithEmoji('🗑️', `Talla ${talla} eliminada de prenda ${prendaIndex + 1}`);
             }
         }
     }
@@ -162,13 +157,11 @@ class GestorReflectivoSinCotizacion {
         const espacioDisponible = Math.max(0, 3 - fotosActuales);
 
         if (espacioDisponible <= 0) {
-            logWithEmoji('', `Máximo 3 fotos permitidas para prenda ${prendaIndex + 1}`);
             return;
         }
 
         const fotosAgregar = fotos.slice(0, espacioDisponible);
         this.fotosNuevas[prendaIndex] = [...this.fotosNuevas[prendaIndex], ...fotosAgregar];
-        logWithEmoji('📸', `${fotosAgregar.length} foto(s) agregada(s) a prenda ${prendaIndex + 1}`);
     }
 
     /**
@@ -179,7 +172,6 @@ class GestorReflectivoSinCotizacion {
     eliminarFoto(prendaIndex, fotoIndex) {
         if (this.fotosNuevas[prendaIndex]) {
             this.fotosNuevas[prendaIndex].splice(fotoIndex, 1);
-            logWithEmoji('🗑️', `Foto eliminada de prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -201,7 +193,6 @@ class GestorReflectivoSinCotizacion {
         const prenda = this.obtenerPorIndice(prendaIndex);
         if (prenda) {
             prenda.genero = genero;
-            logWithEmoji('', `Género actualizado a ${genero} para prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -226,7 +217,6 @@ class GestorReflectivoSinCotizacion {
                 observaciones: observaciones,
                 id: Date.now() // ID único para poder eliminar después
             });
-            logWithEmoji('', `Ubicación "${ubicacion}" agregada a prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -243,7 +233,6 @@ class GestorReflectivoSinCotizacion {
         if (idx >= 0) {
             const ubicacionEliminada = prenda.ubicaciones[idx].nombre;
             prenda.ubicaciones.splice(idx, 1);
-            logWithEmoji('🗑️', `Ubicación "${ubicacionEliminada}" eliminada de prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -395,7 +384,6 @@ class GestorReflectivoSinCotizacion {
         this.prendas = [];
         this.prendasEliminadas.clear();
         this.fotosNuevas = {};
-        logWithEmoji('🧹', 'Gestor de reflectivo limpiado');
     }
 }
 

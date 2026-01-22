@@ -143,7 +143,7 @@ class ItemAPIService {
                 pedidoData.items.forEach((item, itemIndex) => {
                     // Agregar datos básicos del item
                     formData.append(`items[${itemIndex}][tipo]`, item.tipo || '');
-                    formData.append(`items[${itemIndex}][nombre_producto]`, item.nombre_producto || '');
+                    formData.append(`items[${itemIndex}][nombre_prenda]`, item.nombre_prenda || item.nombre_producto || '');
                     formData.append(`items[${itemIndex}][descripcion]`, item.descripcion || '');
                     formData.append(`items[${itemIndex}][origen]`, item.origen || 'bodega');
                     
@@ -182,12 +182,10 @@ class ItemAPIService {
                                 formData.append(`items[${itemIndex}][procesos][${tipoProceso}][observaciones]`, datosProc.observaciones);
                             }
                             
-                            // Agregar tallas como JSON
+                            // Agregar tallas en formato relacional
                             if (datosProc.tallas) {
-                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tallas_dama]`, 
-                                    JSON.stringify(datosProc.tallas.dama || {}));
-                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tallas_caballero]`, 
-                                    JSON.stringify(datosProc.tallas.caballero || {}));
+                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tallas]`, 
+                                    JSON.stringify(datosProc.tallas));
                             }
                             
                             // Agregar imágenes del proceso
@@ -219,7 +217,7 @@ class ItemAPIService {
                     console.log(`📸 [ItemAPIService] Item ${itemIndex} imagenes length:`, item.imagenes?.length);
                     
                     if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
-                        console.log(`📸 [ItemAPIService] ✅ Agregando ${item.imagenes.length} imágenes de prenda para item ${itemIndex}`);
+                        console.log(`📸 [ItemAPIService]  Agregando ${item.imagenes.length} imágenes de prenda para item ${itemIndex}`);
                         item.imagenes.forEach((img, imgIdx) => {
                             let archivo = null;
                             
@@ -228,21 +226,21 @@ class ItemAPIService {
                             // Caso 1: img es File directo
                             if (img instanceof File) {
                                 archivo = img;
-                                console.log(`✅ [ItemAPIService] Imagen ${imgIdx} es File directo: ${img.name}`);
+                                console.log(` [ItemAPIService] Imagen ${imgIdx} es File directo: ${img.name}`);
                             }
                             // Caso 2: img es {file: File, nombre: string, tamaño: number}
                             else if (img && img.file instanceof File) {
                                 archivo = img.file;
-                                console.log(`✅ [ItemAPIService] Imagen ${imgIdx} tiene propiedad file: ${img.file.name}`);
+                                console.log(` [ItemAPIService] Imagen ${imgIdx} tiene propiedad file: ${img.file.name}`);
                             }
                             // Caso 3: img es {archivo: File, nombre: string, ...} (EPP)
                             else if (img && img.archivo instanceof File) {
                                 archivo = img.archivo;
-                                console.log(`✅ [ItemAPIService] Imagen ${imgIdx} tiene propiedad archivo: ${img.archivo.name}`);
+                                console.log(` [ItemAPIService] Imagen ${imgIdx} tiene propiedad archivo: ${img.archivo.name}`);
                             }
                             
                             if (archivo) {
-                                console.log(`✅ [ItemAPIService] Agregando archivo a FormData: ${archivo.name}`);
+                                console.log(` [ItemAPIService] Agregando archivo a FormData: ${archivo.name}`);
                                 formData.append(`items_${itemIndex}_imagenes_files`, archivo);
                             } else {
                                 console.warn(`⚠️ [ItemAPIService] Imagen ${imgIdx} no es File object`, img);

@@ -548,25 +548,15 @@
                                                 $prendaActual = $pedido->prendas[$prendasCount];
                                             }
                                             
-                                            if ($prendaActual && $prendaActual->cantidad_talla) {
-                                                try {
-                                                    $tallas = is_string($prendaActual->cantidad_talla) 
-                                                        ? json_decode($prendaActual->cantidad_talla, true) 
-                                                        : $prendaActual->cantidad_talla;
-                                                    
-                                                    if (is_array($tallas) && !empty($tallas)) {
-                                                        $tallasTexto = [];
-                                                        foreach ($tallas as $talla => $cantidad) {
-                                                            if ($cantidad > 0) {
-                                                                $tallasTexto[] = "$talla: $cantidad";
-                                                            }
-                                                        }
-                                                        if (!empty($tallasTexto)) {
-                                                            $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
-                                                        }
+                                            if ($prendaActual && $prendaActual->tallas && $prendaActual->tallas->count() > 0) {
+                                                $tallasTexto = [];
+                                                foreach ($prendaActual->tallas as $tallaRecord) {
+                                                    if ($tallaRecord->cantidad > 0) {
+                                                        $tallasTexto[] = "{$tallaRecord->genero}-{$tallaRecord->talla}: {$tallaRecord->cantidad}";
                                                     }
-                                                } catch (\Exception $e) {
-                                                    // Continuar sin tallas
+                                                }
+                                                if (!empty($tallasTexto)) {
+                                                    $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
                                                 }
                                             }
                                         }
@@ -583,25 +573,15 @@
                                     if ($pedido->prendas && $pedido->prendas->count() > 0) {
                                         $prendaActual = $pedido->prendas->first();
                                         
-                                        if ($prendaActual && $prendaActual->cantidad_talla) {
-                                            try {
-                                                $tallas = is_string($prendaActual->cantidad_talla) 
-                                                    ? json_decode($prendaActual->cantidad_talla, true) 
-                                                    : $prendaActual->cantidad_talla;
-                                                
-                                                if (is_array($tallas) && !empty($tallas)) {
-                                                    $tallasTexto = [];
-                                                    foreach ($tallas as $talla => $cantidad) {
-                                                        if ($cantidad > 0) {
-                                                            $tallasTexto[] = "$talla: $cantidad";
-                                                        }
-                                                    }
-                                                    if (!empty($tallasTexto)) {
-                                                        $descripcionConTallas .= "\n\nTallas: " . implode(', ', $tallasTexto);
-                                                    }
+                                        if ($prendaActual && $prendaActual->tallas && $prendaActual->tallas->count() > 0) {
+                                            $tallasTexto = [];
+                                            foreach ($prendaActual->tallas as $tallaRecord) {
+                                                if ($tallaRecord->cantidad > 0) {
+                                                    $tallasTexto[] = "{$tallaRecord->genero}-{$tallaRecord->talla}: {$tallaRecord->cantidad}";
                                                 }
-                                            } catch (\Exception $e) {
-                                                // Continuar sin tallas
+                                            }
+                                            if (!empty($tallasTexto)) {
+                                                $descripcionConTallas .= "\n\nTallas: " . implode(', ', $tallasTexto);
                                             }
                                         }
                                     }

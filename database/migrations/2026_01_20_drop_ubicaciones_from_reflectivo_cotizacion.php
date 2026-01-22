@@ -14,7 +14,7 @@ return new class extends Migration
                 $table->dropColumn('ubicaciones');
             });
             
-            \Log::info('✅ [Migración] Campo ubicaciones eliminado de reflectivo_cotizacion');
+            \Log::info(' [Migración] Campo ubicaciones eliminado de reflectivo_cotizacion');
         }
     }
 

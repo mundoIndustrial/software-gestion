@@ -67,11 +67,11 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
             $prenda = match ($command->getTipo()) {
                 'sin_cotizacion' => $this->prendaService->crearPrendaSinCotizacion(
                     $prendaData,
-                    $pedido->numero_pedido
+                    $command->getPedidoId()
                 ),
                 'reflectivo' => $this->prendaService->crearPrendaReflectivo(
                     $prendaData,
-                    $pedido->numero_pedido
+                    $command->getPedidoId()
                 ),
                 default => throw new \Exception("Tipo de prenda no soportado: {$command->getTipo()}"),
             };

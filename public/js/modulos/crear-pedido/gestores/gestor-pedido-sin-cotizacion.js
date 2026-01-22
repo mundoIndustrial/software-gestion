@@ -26,7 +26,6 @@ class GestorPedidoSinCotizacion {
      * Inicializar gestor
      */
     inicializar() {
-        logWithEmoji('🚀', 'GestorPedidoSinCotizacion inicializado');
     }
 
     /**
@@ -72,7 +71,6 @@ class GestorPedidoSinCotizacion {
             btnSubmit.style.display = 'block';
         }
         
-        logWithEmoji('', 'Modo SIN COTIZACIÓN activado');
     }
 
     /**
@@ -94,7 +92,6 @@ class GestorPedidoSinCotizacion {
             numeroCotizacionGroup.style.display = 'block';
         }
         
-        logWithEmoji('🔄', 'Modo SIN COTIZACIÓN desactivado');
     }
 
     /**
@@ -114,7 +111,6 @@ class GestorPedidoSinCotizacion {
         };
         
         this.prendas.push(prenda);
-        logWithEmoji('➕', `Prenda ${index + 1} agregada (SIN COTIZACIÓN)`);
         
         return index;
     }
@@ -126,7 +122,6 @@ class GestorPedidoSinCotizacion {
     eliminarPrenda(index) {
         if (index >= 0 && index < this.prendas.length) {
             const eliminada = this.prendas.splice(index, 1)[0];
-            logWithEmoji('🗑️', `Prenda "${eliminada.nombre_producto || 'Sin nombre'}" eliminada`);
         }
     }
 
@@ -328,7 +323,6 @@ class GestorPedidoSinCotizacion {
                         '¡Éxito!',
                         `Pedido creado exitosamente${data.numero_pedido ? '\nNúmero: ' + data.numero_pedido : ''}`
                     );
-                    logWithEmoji('', `Pedido SIN COTIZACIÓN creado: ${data.numero_pedido}`);
                     resolve(data);
                 } else {
                     throw new Error(data.message || 'Error desconocido al crear pedido');
@@ -354,7 +348,6 @@ class GestorPedidoSinCotizacion {
         this.asesora = '';
         this.formaPago = '';
         this.esActivo = false;
-        logWithEmoji('🗑️', 'GestorPedidoSinCotizacion limpiado');
     }
 }
 

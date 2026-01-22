@@ -1,6 +1,6 @@
 # 🚀 GUÍA: Cómo Agregar Ubicaciones de Reflectivo en PASO 4
 
-## ❌ EL PROBLEMA IDENTIFICADO
+##  EL PROBLEMA IDENTIFICADO
 
 Los logs de Laravel muestran:
 ```
@@ -13,7 +13,7 @@ Los logs de Laravel muestran:
 
 ---
 
-## ✅ SOLUCIÓN: Sigue EXACTAMENTE estos pasos:
+##  SOLUCIÓN: Sigue EXACTAMENTE estos pasos:
 
 ### **PASO 1: Llena PASO 2 (Prendas)**
 1. Agrega una prenda (ejemplo: CAMISA DRILL)
@@ -86,7 +86,7 @@ Los logs de Laravel muestran:
 Busca estos logs:
 
 ```
-✅ Ubicación agregada correctamente
+ Ubicación agregada correctamente
 {
   ubicacion: "PECHO"
   descripcion: "Lado izquierdo"
@@ -113,17 +113,17 @@ ubicaciones: [{"ubicacion":"PECHO","descripcion":"Lado izquierdo"}]
 
 ---
 
-## 📋 CHECKLIST ANTES DE ENVIAR
+##  CHECKLIST ANTES DE ENVIAR
 
-- [ ] PASO 2: Prenda agregada con tallas ✅
-- [ ] PASO 3: Logo techniques (opcional) ✅
-- [ ] PASO 4: Ubicación reflectivo AGREGADA ✅
+- [ ] PASO 2: Prenda agregada con tallas 
+- [ ] PASO 3: Logo techniques (opcional) 
+- [ ] PASO 4: Ubicación reflectivo AGREGADA 
   - [ ] Campo sección completado
   - [ ] Descripción completada  
   - [ ] Ubicación visible en la lista
-- [ ] Consola del navegador: SIN ERRORES ✅
-- [ ] Click en REVISAR → PASO 5 ✅
-- [ ] Click en GUARDAR/ENVIAR ✅
+- [ ] Consola del navegador: SIN ERRORES 
+- [ ] Click en REVISAR → PASO 5 
+- [ ] Click en GUARDAR/ENVIAR 
 
 ---
 

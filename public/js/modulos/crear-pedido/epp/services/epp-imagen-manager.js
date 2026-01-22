@@ -131,7 +131,7 @@ class EppImagenManager {
             
             // Mostrar error
             Swal.fire({
-                title: '❌ Error',
+                title: ' Error',
                 text: 'No se pudo eliminar la imagen: ' + error.message,
                 icon: 'error',
                 confirmButtonColor: '#ef4444',

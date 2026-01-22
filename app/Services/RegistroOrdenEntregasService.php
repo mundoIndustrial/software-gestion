@@ -19,7 +19,7 @@ class RegistroOrdenEntregasService
 {
     /**
      * Obtener entregas de una orden en formato normalizado
-     * Convierte prendas con tallas JSON a array plano de entregas
+     * Convierte prendas con tallas desde relación a array plano de entregas
      * 
      * @param int $pedido - Número de pedido
      * @return array - Array de entregas con estructura: [prenda, talla, cantidad, entregado, pendiente]
@@ -27,14 +27,14 @@ class RegistroOrdenEntregasService
      */
     public function getEntregas(int $pedido): array
     {
-        // Obtener la orden con relación de prendas
+        // Obtener la orden con relación de prendas y tallas
         $orden = PedidoProduccion::where('numero_pedido', $pedido)
-            ->with('prendas')
+            ->with('prendas.tallas')  // Cargar prendas y sus tallas relacionales
             ->firstOrFail();
 
         // Transformar prendas a entregas
         return $orden->prendas()
-            ->select('nombre_prenda', 'cantidad_talla')
+            ->with('tallas')  // Asegurar que tallas estén cargadas
             ->get()
             ->flatMap(function($prenda) {
                 return $this->transformPrendaToEntregas($prenda);
@@ -51,41 +51,22 @@ class RegistroOrdenEntregasService
      */
     private function transformPrendaToEntregas(object $prenda): array
     {
-        // Decodificar JSON de cantidad_talla
-        $cantidadTalla = $this->decodeTallasJson($prenda->cantidad_talla);
+        // Obtener tallas desde la relación (prenda_pedido_tallas)
+        $tallasDb = $prenda->tallas ?? [];
 
         $resultado = [];
-        if (is_array($cantidadTalla)) {
-            foreach ($cantidadTalla as $talla => $cantidad) {
-                $resultado[] = [
-                    'prenda' => $prenda->nombre_prenda,
-                    'talla' => $talla,
-                    'cantidad' => $cantidad,
-                    'total_producido_por_talla' => 0,
-                    'total_pendiente_por_talla' => $cantidad
-                ];
-            }
+        foreach ($tallasDb as $tallaRecord) {
+            $resultado[] = [
+                'prenda' => $prenda->nombre_prenda,
+                'talla' => $tallaRecord->talla,
+                'cantidad' => $tallaRecord->cantidad,
+                'genero' => $tallaRecord->genero,
+                'total_producido_por_talla' => 0,
+                'total_pendiente_por_talla' => $tallaRecord->cantidad
+            ];
         }
 
         return $resultado;
     }
 
-    /**
-     * Decodificar JSON de tallas manteniendo compatibilidad
-     * 
-     * @param mixed $cantidadTalla - String JSON o array
-     * @return array|null
-     */
-    private function decodeTallasJson($cantidadTalla): ?array
-    {
-        if (is_array($cantidadTalla)) {
-            return $cantidadTalla;
-        }
-
-        if (is_string($cantidadTalla)) {
-            return json_decode($cantidadTalla, true);
-        }
-
-        return null;
-    }
 }

@@ -74,7 +74,6 @@ function crearPedidoTipoReflectivoSinCotizacion() {
     `;
     container.insertBefore(mensajeUI, container.firstChild);
 
-    logWithEmoji('', 'Formulario de reflectivo creado');
 }
 
 /**
@@ -115,7 +114,6 @@ function agregarPrendaReflectivoSinCotizacion() {
     // Mostrar botón de agregar más prendas
     mostrarBotonAgregarMasPrendas();
 
-    logWithEmoji('', `Prenda reflectivo ${index + 1} renderizada`);
     return index;
 }
 
@@ -132,7 +130,6 @@ function eliminarPrendaReflectivoSinCotizacion(index) {
             if (card) {
                 card.remove();
                 window.gestorReflectivoSinCotizacion.eliminar(index);
-                logWithEmoji('', `Prenda reflectivo ${index + 1} eliminada`);
             }
         }
     } else {
@@ -142,7 +139,6 @@ function eliminarPrendaReflectivoSinCotizacion(index) {
                 if (card) {
                     card.remove();
                     window.gestorReflectivoSinCotizacion.eliminar(index);
-                    logWithEmoji('', `Prenda reflectivo ${index + 1} eliminada`);
                 }
             }
         });
@@ -173,7 +169,6 @@ function eliminarImagenReflectivo(prendaIndex, imagenIndex) {
     gestor.eliminarFoto(prendaIndex, imagenIndex);
     renderizarImagenesReflectivo(prendaIndex, gestor.obtenerFotosNuevas(prendaIndex));
 
-    logWithEmoji('', `Imagen eliminada`);
 }
 
 /**
@@ -292,7 +287,6 @@ window.confirmarAgregarTallaReflectivo = function(prendaIndex) {
         Swal.close();
     }
 
-    logWithEmoji('', `Talla ${talla} agregada a prenda ${prendaIndex + 1}`);
 };
 
 /**
@@ -316,7 +310,6 @@ function eliminarTallaReflectivo(prendaIndex, talla) {
     gestor.eliminarTalla(prendaIndex, talla);
     renderizarTallasReflectivo(prendaIndex, gestor.obtenerPorIndice(prendaIndex).tallas);
 
-    logWithEmoji('', `Talla ${talla} eliminada`);
 }
 
 /**
@@ -382,7 +375,6 @@ function actualizarGeneroReflectivo(prendaIndex, genero) {
         seccionCaballero.style.display = checkCaballero && checkCaballero.checked ? 'block' : 'none';
     }
     
-    logWithEmoji('', `Géneros seleccionados: ${generosSeleccionados.join(', ') || 'ninguno'}`);
 }
 
 /**
@@ -614,7 +606,6 @@ window.agregarTallasSeleccionadasReflectivo = function(boton) {
         btn.style.color = '#1e40af';
     });
     
-    logWithEmoji('', `${tallasParaAgregar.length} talla(s) agregada(s)`);
 };
 
 /**
@@ -677,7 +668,6 @@ window.agregarTallasRangoReflectivo = function(boton) {
     fila.querySelector('.talla-desde-reflectivo').value = '';
     fila.querySelector('.talla-hasta-reflectivo').value = '';
     
-    logWithEmoji('', `${tallasAgregar.length} talla(s) agregada(s) por rango`);
 };
 
 /**
@@ -692,7 +682,6 @@ window.actualizarCantidadTallaReflectivo = function(prendaIndex, talla, cantidad
     }
     
     prenda.cantidadesPorTalla[talla] = parseInt(cantidad) || 0;
-    logWithEmoji('', `Cantidad de ${talla} actualizada a ${cantidad}`);
 };
 
 // Agregar listener para sincronizar cantidades de tallas
@@ -763,7 +752,6 @@ window.guardarUbicacionReflectivo = function(prendaIndex) {
     // Cerrar modal
     window.cerrarModalAgregarUbicacionReflectivo();
 
-    logWithEmoji('', `Ubicación "${ubicacion}" guardada para prenda ${prendaIndex + 1}`);
 };
 
 /**
@@ -777,7 +765,6 @@ window.eliminarUbicacionReflectivo = function(prendaIndex, ubicacionId) {
     const ubicaciones = gestor.obtenerUbicaciones(prendaIndex);
     renderizarUbicacionesReflectivo(prendaIndex, ubicaciones);
 
-    logWithEmoji('🗑️', `Ubicación eliminada de prenda ${prendaIndex + 1}`);
 };
 
 /**
@@ -816,12 +803,6 @@ window.enviarReflectivoSinCotizacion = function() {
                 return;
             }
 
-            logWithEmoji('📤', 'Enviando pedido REFLECTIVO sin cotización', {
-                cliente,
-                formaPago,
-                asesora,
-                prendas: prendas
-            });
 
             // Usar FormData para enviar archivos
             const formData = new FormData();
@@ -840,20 +821,11 @@ window.enviarReflectivoSinCotizacion = function() {
                     : '';
                 formData.append(`prendas[${index}][genero]`, generosStr);
 
-                //  NUEVO: Usar generosConTallas en lugar de cantidadesPorTalla
-                if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
-                    Object.entries(prenda.generosConTallas).forEach(([genero, tallas]) => {
-                        Object.entries(tallas).forEach(([talla, cantidad]) => {
-                            if (cantidad > 0) {
-                                formData.append(`prendas[${index}][cantidad_talla][${genero}][${talla}]`, cantidad);
-                            }
-                        });
-                    });
-                } else if (prenda.cantidadesPorTalla) {
-                    // Fallback: si no hay generosConTallas, usar el antiguo cantidadesPorTalla
-                    Object.entries(prenda.cantidadesPorTalla).forEach(([talla, cantidad]) => {
-                        if (cantidad > 0) {
-                            formData.append(`prendas[${index}][cantidades][${talla}]`, cantidad);
+                //  Usar tallas (array de objetos {genero, talla, cantidad})
+                if (prenda.tallas && Array.isArray(prenda.tallas)) {
+                    prenda.tallas.forEach(tallaRecord => {
+                        if (tallaRecord.cantidad > 0) {
+                            formData.append(`prendas[${index}][tallas][]`, JSON.stringify(tallaRecord));
                         }
                     });
                 }
@@ -869,7 +841,6 @@ window.enviarReflectivoSinCotizacion = function() {
             });
 
             // Agregar imágenes
-            logWithEmoji('📸', 'Procesando imágenes de reflectivos...');
             
             // Obtener fotos del gestor
             prendas.forEach((prenda, prendaIndex) => {
@@ -880,7 +851,6 @@ window.enviarReflectivoSinCotizacion = function() {
                         
                         if (archivo) {
                             formData.append(`prendas[${prendaIndex}][fotos][]`, archivo);
-                            logWithEmoji('', `Imagen de reflectivo ${prendaIndex + 1} agregada: ${archivo.name}`);
                         } else if (typeof foto === 'string') {
                             formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
                         }
@@ -897,7 +867,6 @@ window.enviarReflectivoSinCotizacion = function() {
                             
                             if (archivo) {
                                 formData.append(`prendas[${prendaIndex}][fotos][]`, archivo);
-                                logWithEmoji('', `Imagen de reflectivo ${prendaIndex + 1} agregada: ${archivo.name}`);
                             } else if (typeof foto === 'string') {
                                 formData.append(`prendas[${prendaIndex}][fotos_existentes][]`, foto);
                             }
@@ -922,7 +891,6 @@ window.enviarReflectivoSinCotizacion = function() {
             const data = await response.json();
 
             if (data.success) {
-                logWithEmoji('', 'Pedido REFLECTIVO creado exitosamente', data);
                 
                 Swal.fire({
                     icon: 'success',
@@ -1404,4 +1372,3 @@ window.eliminarTallaDelGeneroReflectivo = function(prendaIndex, genero, talla) {
     });
 };
 
-logWithEmoji('', 'Funciones de reflectivo sin cotización cargadas');

@@ -382,7 +382,7 @@ class RegistroOrdenQueryController extends Controller
         //  CARGAR prendas CON relaciones ANTES de toArray()
         // Hacemos un query directo para asegurar que las relaciones se cargan
         $prendasConRelaciones = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
-            ->with(['color', 'tela', 'tipoManga', 'tipoBrocheBoton', 'fotos', 'fotosLogo', 'fotosTela', 'reflectivo'])
+            ->with(['color', 'tela', 'tipoManga', 'tipoBrocheBoton', 'fotos', 'fotosLogo', 'fotosTela', 'reflectivo', 'tallas'])
             ->orderBy('id', 'asc')
             ->get();
         
@@ -521,7 +521,9 @@ class RegistroOrdenQueryController extends Controller
                         'nombre' => $prenda->nombre_prenda ?? '-',
                         'descripcion' => $prenda->descripcion ?? '-',
                         'descripcion_variaciones' => $prenda->descripcion_variaciones ?? '',
-                        'cantidad_talla' => $prenda->cantidad_talla ?? '-',
+                        'tallas' => $prenda->tallas ? $prenda->tallas->map(function($t) { 
+                            return "{$t->talla}:{$t->cantidad}"; 
+                        })->implode(', ') : '-',
                         // Agregar datos de relaciones para generar descripción dinámica
                         'color' => $colorNombre,
                         'tela' => $telaNombre,

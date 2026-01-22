@@ -355,21 +355,32 @@ ${prenda.atributos}<br>
                     html += `<br><hr style="border: none; border-top: 2px solid #ccc; margin: 16px 0;">`;
                 }
             });
-        } else {
             // Usar formato simple para pedidos sin cotización
             prendasActuales.forEach(prenda => {
-                // Parsear y formatear tallas
+                // Parsear y formatear tallas desde estructura relacional
                 let tallasFormato = '-';
                 try {
                     if (typeof prenda.cantidad_talla === 'string') {
                         const tallasObj = JSON.parse(prenda.cantidad_talla);
-                        tallasFormato = Object.entries(tallasObj)
-                            .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
-                            .join(', ');
+                        // Manejo de estructura relacional { DAMA: {S: 5}, CABALLERO: {M: 3} }
+                        const tallasArray = [];
+                        Object.entries(tallasObj).forEach(([genero, tallas]) => {
+                            if (genero !== 'DAMA' && genero !== 'CABALLERO' && genero !== 'UNISEX') return;
+                            Object.entries(tallas || {}).forEach(([talla, cantidad]) => {
+                                if (cantidad > 0) tallasArray.push(`${talla}(${genero[0]}): ${cantidad}`);
+                            });
+                        });
+                        tallasFormato = tallasArray.length > 0 ? tallasArray.join(', ') : '-';
                     } else if (typeof prenda.cantidad_talla === 'object' && prenda.cantidad_talla !== null) {
-                        tallasFormato = Object.entries(prenda.cantidad_talla)
-                            .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
-                            .join(', ');
+                        // Manejo de estructura relacional como objeto
+                        const tallasArray = [];
+                        Object.entries(prenda.cantidad_talla).forEach(([genero, tallas]) => {
+                            if (genero !== 'DAMA' && genero !== 'CABALLERO' && genero !== 'UNISEX') return;
+                            Object.entries(tallas || {}).forEach(([talla, cantidad]) => {
+                                if (cantidad > 0) tallasArray.push(`${talla}(${genero[0]}): ${cantidad}`);
+                            });
+                        });
+                        tallasFormato = tallasArray.length > 0 ? tallasArray.join(', ') : '-';
                     } else {
                         tallasFormato = prenda.cantidad_talla || '-';
                     }
@@ -408,7 +419,7 @@ ${prenda.atributos}<br>
         
         // Aquí podrías agregar lógica para mostrar/ocultar botones si los tienes
         // Por ahora solo registramos el estado
-        console.log(`📄 Página ${currentPage + 1} de ${totalPages}`);
+        console.log(` Página ${currentPage + 1} de ${totalPages}`);
     },
 
     /**

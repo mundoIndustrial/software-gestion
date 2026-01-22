@@ -69,11 +69,11 @@ class FixDuplicateStoragePaths extends Command
                 ->count();
 
             if ($duplicadosPrenda === 0 && $duplicadosTela === 0) {
-                $this->info('✅ Todas las rutas duplicadas han sido corregidas exitosamente');
+                $this->info(' Todas las rutas duplicadas han sido corregidas exitosamente');
                 $this->info("Total de registros corregidos: " . ($count1 + $count2 + $count3 + $count4 + $count5 + $count6));
                 return 0;
             } else {
-                $this->error("❌ Aún hay rutas duplicadas: prenda_fotos_pedido=$duplicadosPrenda, prenda_fotos_tela_pedido=$duplicadosTela");
+                $this->error(" Aún hay rutas duplicadas: prenda_fotos_pedido=$duplicadosPrenda, prenda_fotos_tela_pedido=$duplicadosTela");
                 return 1;
             }
 

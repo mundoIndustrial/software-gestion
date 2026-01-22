@@ -96,11 +96,15 @@ window.cerrarModalPrendaNueva = function() {
             console.log(' [WRAPPER] Imágenes de prenda limpiadas');
         }
         
-        // Limpiar cantidades de tallas
-        if (window.cantidadesTallas) {
-            window.cantidadesTallas = {};
-            console.log(' [WRAPPER] Cantidades de tallas limpiadas');
+        // Limpiar cantidades de tallas (relacional primaria)
+        if (window.tallasRelacionales) {
+            window.tallasRelacionales.DAMA = {};
+            window.tallasRelacionales.CABALLERO = {};
+            window.tallasRelacionales.UNISEX = {};
+            console.log(' [WRAPPER] Tallas relacionales limpiadas');
         }
+        
+        // Limpieza completada
         
         // Limpiar tallas seleccionadas
         if (window.tallasSeleccionadas) {

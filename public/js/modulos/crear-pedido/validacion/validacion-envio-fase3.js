@@ -199,9 +199,9 @@
                     formData.append(`items[${itemIndex}][descripcion]`, item.descripcion || '');
                     formData.append(`items[${itemIndex}][origen]`, item.origen || 'bodega');
                     
-                    // Cantidad talla como JSON
-                    if (item.cantidad_talla) {
-                        formData.append(`items[${itemIndex}][cantidad_talla]`, JSON.stringify(item.cantidad_talla));
+                    // Tallas (array de objetos {genero, talla, cantidad})
+                    if (item.tallas && Array.isArray(item.tallas)) {
+                        formData.append(`items[${itemIndex}][tallas]`, JSON.stringify(item.tallas));
                     }
                     
                     // Variaciones como JSON
@@ -365,6 +365,5 @@
     };
 
     // Log de disponibilidad
-    logWithEmoji('', 'Funciones de validación y envío FASE 3 cargadas');
 
 })();

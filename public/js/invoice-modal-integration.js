@@ -8,7 +8,7 @@
  * - Llama a window.descargarFactura(numeroPedido)
  */
 
-console.log('📄 [INVOICE] Cargando invoice-modal-integration.js');
+console.log(' [INVOICE] Cargando invoice-modal-integration.js');
 
 /**
  * Abre la factura en una nueva ventana/pestaña

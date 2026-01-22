@@ -290,7 +290,7 @@ todasLasUbicaciones = [...new Set([
     ...opcionesPrendas.CHAQUETA
 ])];
 
-// console.log('✅ Ubicaciones iniciales cargadas:', todasLasUbicaciones); // DEBUG: Comentado para evitar logs innecesarios
+// console.log(' Ubicaciones iniciales cargadas:', todasLasUbicaciones); // DEBUG: Comentado para evitar logs innecesarios
 
 function agregarTecnica() {
     const selector = document.getElementById('selector_tecnicas');
@@ -380,16 +380,16 @@ function agregarSeccion() {
     errorDiv.style.display = 'none';
 
     abrirModalUbicaciones(ubicacion, [], (nuevasUbicaciones, obs) => {
-        console.log('🎯 CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
+        console.log(' CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
         seccionesSeleccionadas.push({
             ubicacion: ubicacion,
             opciones: nuevasUbicaciones,
             observaciones: obs
         });
-        console.log('✅ Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
+        console.log(' Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
         opcionesPorUbicacion[ubicacion] = nuevasUbicaciones;
         renderizarSecciones();
-        console.log('✅ renderizarSecciones() ejecutado, campo oculto actualizado');
+        console.log(' renderizarSecciones() ejecutado, campo oculto actualizado');
         cerrarModalUbicacion('modalUbicaciones');
         selector.value = '';
     });
@@ -571,7 +571,7 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacion
         console.log('📍 observaciones:', obsTextarea.value);
         // Pasar array vacío para tallas (ya no se manejan por ubicación)
         onSave(ubicacionesSeleccionadasModal, [], obsTextarea.value);
-        console.log('✅ onSave callback ejecutado');
+        console.log(' onSave callback ejecutado');
     });
 
     renderizarUbicacionesSeleccionadas();
@@ -668,7 +668,7 @@ function agregarObservacion() {
 document.addEventListener('DOMContentLoaded', function() {
     // Los selectores de tipo_venta en PASO 2 y PASO 3 son independientes
     // No se sincronizan automáticamente para permitir valores diferentes
-    console.log('✅ Selectores tipo_venta configurados como independientes');
+    console.log(' Selectores tipo_venta configurados como independientes');
     
     // 🔥 SOBRESCRIBIR LA FUNCIÓN agregarSeccion DE especificaciones.js
     // Paso-tres debe usar SU PROPIA FUNCIÓN, no la de especificaciones.js
@@ -718,8 +718,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         };
         
-        console.log('✅ PASO-TRES - agregarSeccion redefinida correctamente');
-        console.log('🎯 PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
+        console.log(' PASO-TRES - agregarSeccion redefinida correctamente');
+        console.log(' PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
     }, 100);
 });
 </script>

@@ -51,7 +51,7 @@ function setupEchoListener() {
             
             // No mostrar notificaciones del usuario actual
             if (data.exclude_user_id && currentUserId && data.exclude_user_id === currentUserId) {
-                console.log('🚫 Notificación del usuario actual, ignorando');
+                console.log(' Notificación del usuario actual, ignorando');
                 return;
             }
             
@@ -347,7 +347,7 @@ function addNotificationToUI(data) {
     const user = (data.user || '').toLowerCase();
     
     if (description.includes('token') || user.includes('token')) {
-        console.log('🚫 Notificación filtrada (contiene token)');
+        console.log(' Notificación filtrada (contiene token)');
         return;
     }
     
@@ -458,7 +458,7 @@ function showNotificationToast(data) {
     const user = (data.user || '').toLowerCase();
     
     if (description.includes('token') || user.includes('token')) {
-        console.log('🚫 Toast filtrado (contiene token)');
+        console.log(' Toast filtrado (contiene token)');
         return;
     }
     

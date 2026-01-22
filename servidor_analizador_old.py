@@ -471,7 +471,7 @@ def cargar_excel_local():
         # Convertir a lista de textos
         lineas = [str(val).strip() for val in primera_columna.values if pd.notna(val) and str(val).strip()]
         
-        print(f"📊 Cargado Excel con {len(lineas)} artículos")
+        print(f" Cargado Excel con {len(lineas)} artículos")
         
         # Procesar con el analizador
         analizador = AnalizadorArticulos()

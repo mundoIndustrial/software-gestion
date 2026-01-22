@@ -212,7 +212,7 @@
         error.style.display = 'none';
         content.style.display = 'none';
         
-        console.log('📄 [RECIBO-DINAMICO] Abriendo recibo:', {
+        console.log(' [RECIBO-DINAMICO] Abriendo recibo:', {
             pedidoId,
             prendaId,
             tipoProceso

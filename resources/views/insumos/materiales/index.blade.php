@@ -193,7 +193,7 @@
 
 @if(app()->isLocal())
 <script>
-    console.log('📄 Vista materiales: Inicio carga');
+    console.log(' Vista materiales: Inicio carga');
     console.time('RENDER_TOTAL');
 </script>
 @endif

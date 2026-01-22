@@ -157,7 +157,6 @@ class GestorCotizacion {
             this.callbackSeleccionar(id);
         }
 
-        logWithEmoji('', `Cotización seleccionada: ${numero}`);
     }
 
     /**
@@ -200,7 +199,6 @@ class GestorCotizacion {
      */
     actualizar(nuevasCotizaciones) {
         this.cotizaciones = nuevasCotizaciones;
-        logWithEmoji('🔄', `Cotizaciones actualizadas: ${nuevasCotizaciones.length}`);
     }
 
     /**
@@ -215,7 +213,6 @@ class GestorCotizacion {
         if (this.seleccionadoDiv) {
             this.seleccionadoDiv.style.display = 'none';
         }
-        logWithEmoji('🗑️', 'Selección de cotización limpiada');
     }
 }
 
@@ -254,7 +251,6 @@ class CargadorCotizacion {
         }
 
         try {
-            logWithEmoji('📥', `Cargando datos de cotización: ${cotizacionId}`);
 
             const response = await fetch(`${this.urlEndpoint}/${cotizacionId}`);
             
@@ -268,11 +264,9 @@ class CargadorCotizacion {
                 throw new Error(data.error);
             }
 
-            logWithEmoji('', `Datos cargados correctamente`);
             return data;
 
         } catch (error) {
-            logWithEmoji('', `Error al cargar cotización: ${error.message}`);
             throw error;
         }
     }

@@ -41,7 +41,7 @@ class BuscarPedidoPorNumeroHandler implements QueryHandler
 
             $pedido = $this->pedidoModel
                 ->where('numero_pedido', $query->getNumeroPedido())
-                ->with(['prendas', 'logos', 'asesor', 'cliente'])
+                ->with(['prendas', 'asesor', 'cliente'])
                 ->first();
 
             if (!$pedido) {

@@ -80,6 +80,7 @@ class PrendaProcesoService
                     'tipo_proceso_id' => $tipoProcesoId,
                     'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : null,
                     'observaciones' => $proceso['observaciones'] ?? null,
+                    // LEGACY: Mantener campos JSON marcados como deprecated
                     'tallas_dama' => !empty($proceso['tallas']['dama']) ? json_encode($proceso['tallas']['dama']) : null,
                     'tallas_caballero' => !empty($proceso['tallas']['caballero']) ? json_encode($proceso['tallas']['caballero']) : null,
                     'estado' => 'PENDIENTE',
@@ -92,6 +93,9 @@ class PrendaProcesoService
                     'proceso_detalle_id' => $procesoDetalleId,
                     'tipo_proceso_id' => $tipoProcesoId,
                 ]);
+
+                // Guardar tallas en la tabla relacional
+                $this->guardarTallasProceso($procesoDetalleId, $proceso);
 
                 // Guardar imágenes del proceso
                 $imagenes = $proceso['imagenes'] ?? [];
@@ -115,5 +119,80 @@ class PrendaProcesoService
             'prenda_id' => $prendaId,
             'cantidad_procesos' => count($procesos),
         ]);
+    }
+
+    /**
+     * Guardar tallas del proceso en la tabla relacional pedidos_procesos_prenda_tallas
+     * 
+     * Estructura de proceso['tallas']:
+     * {
+     *   "dama": { "S": 10, "M": 20 },
+     *   "caballero": { "L": 15, "XL": 5 },
+     *   "unisex": { "M": 8 }
+     * }
+     */
+    private function guardarTallasProceso(int $procesoDetalleId, array $proceso): void
+    {
+        try {
+            $tallas = $proceso['tallas'] ?? [];
+            
+            if (empty($tallas)) {
+                Log::debug(' [guardarTallasProceso] Sin tallas para guardar', [
+                    'proceso_detalle_id' => $procesoDetalleId,
+                ]);
+                return;
+            }
+            
+            // Mapeo de género: dama → DAMA, caballero → CABALLERO, unisex → UNISEX
+            $generoMap = [
+                'dama' => 'DAMA',
+                'caballero' => 'CABALLERO',
+                'unisex' => 'UNISEX',
+            ];
+            
+            foreach ($tallas as $generoBD => $tallasCantidades) {
+                if (!is_array($tallasCantidades) || empty($tallasCantidades)) {
+                    continue;
+                }
+                
+                $generoEnum = $generoMap[$generoBD] ?? null;
+                if (!$generoEnum) {
+                    Log::warning(' [guardarTallasProceso] Género desconocido', [
+                        'proceso_detalle_id' => $procesoDetalleId,
+                        'genero' => $generoBD,
+                    ]);
+                    continue;
+                }
+                
+                foreach ($tallasCantidades as $talla => $cantidad) {
+                    $cantidad = (int)$cantidad;
+                    
+                    if ($cantidad > 0) {
+                        DB::table('pedidos_procesos_prenda_tallas')->updateOrCreate(
+                            [
+                                'proceso_prenda_detalle_id' => $procesoDetalleId,
+                                'genero' => $generoEnum,
+                                'talla' => $talla,
+                            ],
+                            [
+                                'cantidad' => $cantidad,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]
+                        );
+                    }
+                }
+            }
+            
+            Log::debug(' [guardarTallasProceso] Tallas guardadas en tabla relacional', [
+                'proceso_detalle_id' => $procesoDetalleId,
+                'cantidad_registros' => array_sum(array_map(fn($arr) => count($arr), $tallas)),
+            ]);
+        } catch (\Exception $e) {
+            Log::error(' [guardarTallasProceso] Error guardando tallas', [
+                'proceso_detalle_id' => $procesoDetalleId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

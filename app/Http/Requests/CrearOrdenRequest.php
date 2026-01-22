@@ -26,8 +26,8 @@ class CrearOrdenRequest extends FormRequest
             'prendas' => 'array|min:1',
             'prendas.*.nombre_prenda' => 'required|string|max:255',
             'prendas.*.cantidad_total' => 'required|integer|min:1',
-            'prendas.*.cantidad_talla' => 'array',
-            'prendas.*.cantidad_talla.*' => 'integer|min:0',
+            // Validación de tallas: ahora viene en estructura {genero: {talla: cantidad}}
+            'prendas.*.tallas' => 'array',
             'prendas.*.descripcion' => 'nullable|string',
             'prendas.*.color_id' => 'nullable|integer|exists:colores_prenda,id',
             'prendas.*.tela_id' => 'nullable|integer|exists:telas_prenda,id',

@@ -317,7 +317,7 @@ class GuardarEppPedidoTest extends TestCase
      */
     public function test_serializar_epps_a_json()
     {
-        $this->info("\n📄 Test: Serializar EPP a JSON\n");
+        $this->info("\n Test: Serializar EPP a JSON\n");
 
         $epp = Epp::first();
         if (!$epp) {

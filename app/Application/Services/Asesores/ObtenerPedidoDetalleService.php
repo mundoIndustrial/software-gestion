@@ -465,21 +465,8 @@ class ObtenerPedidoDetalleService
                     }
                 }
                 
-                //  Construir estructura de tallas
-                $tallas = [];
-                $tallasDama = is_string($proceso->tallas_dama) 
-                    ? (json_decode($proceso->tallas_dama, true) ?? []) 
-                    : ($proceso->tallas_dama ?? []);
-                $tallasCalballero = is_string($proceso->tallas_caballero) 
-                    ? (json_decode($proceso->tallas_caballero, true) ?? []) 
-                    : ($proceso->tallas_caballero ?? []);
-                
-                if (!empty($tallasDama)) {
-                    $tallas['dama'] = $tallasDama;
-                }
-                if (!empty($tallasCalballero)) {
-                    $tallas['caballero'] = $tallasCalballero;
-                }
+                //  Construir estructura de tallas DESDE LA TABLA RELACIONAL
+                $tallas = $this->construirTallasProcesoRelacional($proceso->id);
                 
                 //  Usar el SLUG como clave para agrupar (reflectivo, bordado, estampado, dtf, sublimado)
                 if (!isset($procesos[$slugTipoProceso])) {
@@ -609,6 +596,40 @@ class ObtenerPedidoDetalleService
     {
         $pedido = $this->obtenerPedido($pedidoIdentifier);
         return $pedido->prendas()->count();
+    }
+
+    /**
+     * Construir tallas de proceso DESDE LA TABLA RELACIONAL
+     * 
+     * Lee de pedidos_procesos_prenda_tallas (estructura: {genero: {talla: cantidad}})
+     * Soporta DAMA, CABALLERO, UNISEX como géneros.
+     */
+    private function construirTallasProcesoRelacional($procesoPrendaDetalleId)
+    {
+        $tallas = [];
+        
+        $tallasRelacionales = \App\Models\PedidosProcesosPrendaTalla::where(
+            'proceso_prenda_detalle_id', 
+            $procesoPrendaDetalleId
+        )->get();
+        
+        if ($tallasRelacionales->count() > 0) {
+            // Agrupar por género
+            foreach ($tallasRelacionales as $tallaRecord) {
+                $genero = strtolower($tallaRecord->genero); // 'dama', 'caballero', 'unisex'
+                
+                if (!isset($tallas[$genero])) {
+                    $tallas[$genero] = [];
+                }
+                
+                // Agregar talla con su cantidad
+                if ($tallaRecord->cantidad > 0) {
+                    $tallas[$genero][$tallaRecord->talla] = $tallaRecord->cantidad;
+                }
+            }
+        }
+        
+        return $tallas;
     }
 
     /**

@@ -782,7 +782,7 @@ function updatePaginationInfo(pagination) {
     
     // Guardar información de paginación actual para referencia
     window.currentPagination = pagination;
-    console.log('📄 Información de paginación actualizada:', {
+    console.log(' Información de paginación actualizada:', {
         current_page: pagination.current_page,
         last_page: pagination.last_page,
         total: pagination.total,

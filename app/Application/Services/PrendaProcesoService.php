@@ -80,8 +80,8 @@ class PrendaProcesoService
                     'tipo_proceso_id' => $tipoProcesoId,
                     'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : null,
                     'observaciones' => $proceso['observaciones'] ?? null,
-                    'tallas_dama' => !empty($proceso['tallas']['dama']) ? json_encode($proceso['tallas']['dama']) : null,
-                    'tallas_caballero' => !empty($proceso['tallas']['caballero']) ? json_encode($proceso['tallas']['caballero']) : null,
+                    'tallas_dama' => null,  // LEGACY - usar tabla relacional
+                    'tallas_caballero' => null,  // LEGACY - usar tabla relacional
                     'estado' => 'PENDIENTE',
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -92,6 +92,29 @@ class PrendaProcesoService
                     'proceso_detalle_id' => $procesoDetalleId,
                     'tipo_proceso_id' => $tipoProcesoId,
                 ]);
+
+                // Guardar TALLAS en tabla relacional (NUEVO MODELO)
+                if (!empty($proceso['tallas']) && is_array($proceso['tallas'])) {
+                    foreach ($proceso['tallas'] as $genero => $tallasArray) {
+                        if (is_array($tallasArray)) {
+                            foreach ($tallasArray as $talla => $cantidad) {
+                                // Mapear género a mayúscula y validar
+                                $generoNormalizado = strtoupper($genero); // 'dama' -> 'DAMA', etc.
+                                
+                                if (in_array($generoNormalizado, ['DAMA', 'CABALLERO', 'UNISEX'])) {
+                                    DB::table('pedidos_procesos_prenda_tallas')->insert([
+                                        'proceso_prenda_detalle_id' => $procesoDetalleId,
+                                        'genero' => $generoNormalizado,
+                                        'talla' => (string)$talla,
+                                        'cantidad' => (int)$cantidad,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Guardar imágenes del proceso
                 $imagenes = $proceso['imagenes'] ?? [];

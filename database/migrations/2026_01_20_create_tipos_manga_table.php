@@ -26,7 +26,7 @@ return new class extends Migration
                 ['nombre' => 'Raglan', 'activo' => true, 'created_at' => now(), 'updated_at' => now()],
             ]);
             
-            \Log::info('✅ [Migración] Tabla tipos_manga creada exitosamente');
+            \Log::info(' [Migración] Tabla tipos_manga creada exitosamente');
         }
     }
 

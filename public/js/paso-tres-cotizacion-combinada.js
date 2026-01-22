@@ -1022,7 +1022,7 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
 }
 
 function guardarTecnicaCombinada(datosForm, tecnicas) {
-    // ✅ VALIDACIÓN: Verificar que hay información escrita en ubicaciones, tallas y/o imágenes
+    //  VALIDACIÓN: Verificar que hay información escrita en ubicaciones, tallas y/o imágenes
     let tieneInformacionValida = false;
     
     // Validar ubicaciones
@@ -1603,7 +1603,7 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
     console.log('📦 tecnicasAgregadasPaso3:', window.tecnicasAgregadasPaso3);
     
     if (!window.tecnicasAgregadasPaso3) {
-        console.error('❌ No hay tecnicas agregadas');
+        console.error(' No hay tecnicas agregadas');
         return;
     }
     
@@ -1618,7 +1618,7 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
             });
             const prenda = tecnicaData.prendas.find(p => p.nombre_prenda === nombrePrenda);
             if (prenda) {
-                console.log('✅ Prenda encontrada!', prenda);
+                console.log(' Prenda encontrada!', prenda);
                 if (!datosPrendaActual) {
                     datosPrendaActual = prenda;
                 }
@@ -1631,7 +1631,7 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
     });
     
     if (!datosPrendaActual || tecnicasConPrenda.length === 0) {
-        console.error('❌ No se encontraron datos de la prenda');
+        console.error(' No se encontraron datos de la prenda');
         console.log('datosPrendaActual:', datosPrendaActual);
         console.log('tecnicasConPrenda:', tecnicasConPrenda);
         Swal.fire({
@@ -2066,7 +2066,7 @@ function eliminarTecnicaPaso3(nombrePrenda) {
         return true;
     });
     
-    console.log('✅ Prenda eliminada. Técnicas restantes:', window.tecnicasAgregadasPaso3.length);
+    console.log(' Prenda eliminada. Técnicas restantes:', window.tecnicasAgregadasPaso3.length);
     renderizarTecnicasAgregadasPaso3();
 }
 

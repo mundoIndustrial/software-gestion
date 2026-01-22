@@ -56,7 +56,7 @@ El método `boot()` en `CQRSServiceProvider.php` no tenía guard contra ejecucio
 
 ---
 
-## ✅ Soluciones Implementadas
+##  Soluciones Implementadas
 
 ### Solución #1: ArticulosImportController - Búsqueda por Nombre O Código
 
@@ -121,7 +121,7 @@ public function boot(QueryBus $queryBus, CommandBus $commandBus): void
 
 ---
 
-## 📋 Checklist de Verificación
+##  Checklist de Verificación
 
 - [x] ArticulosImportController busca por nombre Y código
 - [x] CQRSServiceProvider tiene guard de ejecución única

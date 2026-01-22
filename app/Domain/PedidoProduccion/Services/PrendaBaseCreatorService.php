@@ -38,14 +38,33 @@ class PrendaBaseCreatorService
             'cantidad_prendas_actuales' => PrendaPedido::where('pedido_produccion_id', $pedidoId)->count(),
         ]);
 
+        // Crear prenda SIN cantidad_talla y genero (se guardarán en tabla relacional)
         $prenda = PrendaPedido::create([
             'pedido_produccion_id' => $pedidoId,
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
             'descripcion' => $descripcionFinal,
-            'cantidad_talla' => !empty($cantidadTallaFinal) ? json_encode($cantidadTallaFinal) : '{}',
-            'genero' => json_encode($generoProcesado),
             'de_bodega' => (int)($prendaData['de_bodega'] ?? 1),
         ]);
+
+        // Guardar tallas en tabla relacional prenda_pedido_tallas
+        if (!empty($cantidadTallaFinal)) {
+            try {
+                $tallaRepository = new \App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository();
+                $tallaRepository->guardarTallas($prenda->id, $cantidadTallaFinal);
+                
+                \Log::info("✅ [PRENDA #{$index}] Tallas guardadas en tabla relacional", [
+                    'prenda_id' => $prenda->id,
+                    'cantidad_tallas' => count($cantidadTallaFinal),
+                    'generos' => array_keys($cantidadTallaFinal),
+                ]);
+            } catch (\Exception $e) {
+                \Log::error("❌ [PRENDA #{$index}] Error guardando tallas relacionales", [
+                    'prenda_id' => $prenda->id,
+                    'error' => $e->getMessage(),
+                ]);
+                throw $e;
+            }
+        }
 
         \Log::info(" [PRENDA #{$index}] DESPUÉS DE CREATE - Prenda creada", [
             'prenda_id_nueva' => $prenda->id,
@@ -54,13 +73,13 @@ class PrendaBaseCreatorService
             'cantidad_prendas_ahora' => PrendaPedido::where('pedido_produccion_id', $pedidoId)->count(),
         ]);
 
-        $prendaVerificacion = PrendaPedido::find($prenda->id);
+        $prendaVerificacion = PrendaPedido::with('tallas')->find($prenda->id);
         \Log::info(' VERIFICACIÓN POST-GUARDADO DE PRENDA (prenda #' . $index . '):', [
             'prenda_id_creada' => $prenda->id,
             'prenda_existe_en_bd' => $prendaVerificacion ? true : false,
             'prenda_id_verificado' => $prendaVerificacion->id ?? 'NO ENCONTRADA',
             'nombre_guardado' => $prendaVerificacion->nombre_prenda ?? 'NO ENCONTRADA',
-            'cantidad_talla_guardado' => $prendaVerificacion->cantidad_talla ?? 'NO ENCONTRADA',
+            'tallas_guardadas' => $prendaVerificacion->tallas ? $prendaVerificacion->tallas->count() : 0,
             'pedido_id_referencia' => $prendaVerificacion->pedido_produccion_id ?? 'NO ENCONTRADA',
         ]);
 

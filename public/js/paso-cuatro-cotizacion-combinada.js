@@ -188,7 +188,7 @@ function agregarPrendaReflectivoPaso4() {
     // LISTENER: Cuando se selecciona una prenda, cargar sus tallas, imágenes y variaciones
     const selectPrenda = fila.querySelector('.select-prenda-paso2-reflectivo');
     selectPrenda.addEventListener('change', (e) => {
-        console.log(`🎯 SELECT PRENDA CAMBIÓ - Prenda ${prendasIndex}:`, e.target.value);
+        console.log(` SELECT PRENDA CAMBIÓ - Prenda ${prendasIndex}:`, e.target.value);
         
         const selectedOption = e.target.options[e.target.selectedIndex];
         const tallasJson = selectedOption.getAttribute('data-tallas');
@@ -826,7 +826,7 @@ function renderizarUbicacionesReflectivoPaso4(prendasIndex) {
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
-                    <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem; font-weight: 700;">🎯 ${ubicacionText}</h4>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem; font-weight: 700;"> ${ubicacionText}</h4>
                     <p style="margin: 0; color: #666; font-size: 0.85rem; line-height: 1.4;">${descText}</p>
                 </div>
                 <button type="button" onclick="eliminarUbicacionReflectivoPaso4(${prendasIndex}, ${index})" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 10px;">×</button>
@@ -904,4 +904,4 @@ function agregarObservacionReflectivoPaso4(prendasIndex, fila) {
 // INICIALIZACIÓN
 // =========================================================
 
-console.log('✅ PASO 4 (Reflectivo) - Módulo cargado correctamente');
+console.log(' PASO 4 (Reflectivo) - Módulo cargado correctamente');

@@ -61,7 +61,7 @@ class RegistrosOptimizationService
     {
         return DB::table('prendas_pedido')
             ->where('numero_pedido', $numeroPedido)
-            ->select('id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla')
+            ->select('id', 'nombre_prenda', 'cantidad', 'descripcion')
             ->get();
     }
 

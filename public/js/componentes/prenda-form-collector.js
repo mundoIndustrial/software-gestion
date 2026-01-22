@@ -80,15 +80,15 @@ class PrendaFormCollector {
             // ============================================
             const prendaData = {
                 tipo: 'prenda_nueva',
-                nombre_producto: nombre,
+                nombre_prenda: nombre,
                 descripcion: descripcion || '',
                 origen: origen,
                 // Imágenes de prenda copiadas del storage
                 imagenes: imagenesCopia,
                 telasAgregadas: [],
                 procesos: window.procesosSeleccionados || {},
-                // Formato único: cantidad_talla (JSON plano)
-                cantidad_talla: window.cantidadesTallas || {},
+                // Estructura relacional: { DAMA: {S: 5}, CABALLERO: {M: 3} }
+                cantidad_talla: window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {} },
                 variantes: {}
             };
 

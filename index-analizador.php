@@ -285,7 +285,7 @@
                     <strong>Pega aquí en formato CSV o JSON:</strong>
                     <textarea id="dataInput" placeholder="nombre,codigo,color,marca,material,talla&#10;Remera,REM001,Rojo,Nike,Algodón,M&#10;..."></textarea>
                     <div class="button-group">
-                        <button class="btn-primary" id="btnProcesar" onclick="procesarDatos()">📊 Procesar Datos</button>
+                        <button class="btn-primary" id="btnProcesar" onclick="procesarDatos()"> Procesar Datos</button>
                         <button class="btn-secondary" onclick="limpiarTodo()">🗑️ Limpiar</button>
                     </div>
                 </div>
@@ -295,7 +295,7 @@
                 <div id="statsContainer" class="stats"></div>
 
                 <div class="tabs">
-                    <button class="tab active" onclick="cambiarTab('tabla')">📊 Tabla de Datos</button>
+                    <button class="tab active" onclick="cambiarTab('tabla')"> Tabla de Datos</button>
                     <button class="tab" onclick="cambiarTab('duplicados')">⚠️ Análisis de Duplicaciones</button>
                 </div>
 
@@ -351,7 +351,7 @@
                 mostrarMensaje('Error: ' + error.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '📊 Procesar Datos';
+                btn.innerHTML = ' Procesar Datos';
             }
         }
 

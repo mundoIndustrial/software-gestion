@@ -247,26 +247,59 @@ class GestionItemsUI {
 
             console.log('[GestionItemsUI.agregarPrendaNueva] Datos recolectados:', prendaData);
 
+            // Verificar si estamos en un pedido existente
+            const enPedidoExistente = window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido);
+            // IMPORTANTE: Usar SIEMPRE el .id de la BD, nunca numero_pedido
+            // El numero_pedido es solo para mostrar en UI, no para rutas de API
+            const pedidoId = enPedidoExistente ? window.datosEdicionPedido.id : null;
+            
+            if (!pedidoId && enPedidoExistente) {
+                console.warn('[GestionItemsUI.agregarPrendaNueva] ADVERTENCIA: No hay pedido.id disponible, usando numero_pedido como fallback');
+                // Solo si realmente no hay id, usar numero_pedido (pero esto NO debería pasar en producción)
+            }
+
             // Si es edición (prendaEditIndex !== null), actualizar; si no, agregar nueva
             if (this.prendaEditIndex !== null && this.prendaEditIndex !== undefined) {
                 console.log('[GestionItemsUI.agregarPrendaNueva] Modo EDICIÓN - índice:', this.prendaEditIndex);
                 
-                // Actualizar prenda existente en el array de prendas
-                if (this.prendas[this.prendaEditIndex]) {
-                    this.prendas[this.prendaEditIndex] = prendaData;
-                    console.log('[GestionItemsUI.agregarPrendaNueva] Prenda actualizada en índice:', this.prendaEditIndex);
-                    this.notificationService?.exito('Prenda actualizada correctamente');
+                // SI ESTAMOS EDITANDO EN UN PEDIDO EXISTENTE, MOSTRAR MODAL DE NOVEDADES
+                if (enPedidoExistente) {
+                    console.log('[GestionItemsUI.agregarPrendaNueva] Mostrando modal de novedades para registrar cambios...');
+                    
+                    // Obtener la prenda original desde window.prendaEnEdicion (guardada por prenda-editor-modal.js)
+                    const prendaOriginal = window.prendaEnEdicion?.prendaOriginal;
+                    console.log('[GestionItemsUI.agregarPrendaNueva] Prenda original desde window.prendaEnEdicion:', prendaOriginal);
+                    console.log('[GestionItemsUI.agregarPrendaNueva] ID de prenda original:', prendaOriginal?.id || prendaOriginal?.prenda_pedido_id);
+                    
+                    // Agregar el ID de la prenda original a prendaData
+                    prendaData.prenda_pedido_id = prendaOriginal?.prenda_pedido_id || prendaOriginal?.id;
+                    console.log('[GestionItemsUI.agregarPrendaNueva] prendaData.prenda_pedido_id asignado:', prendaData.prenda_pedido_id);
+                    
+                    await window.modalNovedadEditacion.mostrarModalYActualizar(pedidoId, prendaData, this.prendaEditIndex);
+                    // El modal de novedades maneja todo: actualización, cierre, etc.
+                    // NO continuamos aquí
+                    return;
+                } else {
+                    // Solo en memoria - sin novedades
+                    console.log('[GestionItemsUI.agregarPrendaNueva] Actualizando prenda en memoria...');
+                    if (this.prendas[this.prendaEditIndex]) {
+                        this.prendas[this.prendaEditIndex] = prendaData;
+                        console.log('[GestionItemsUI.agregarPrendaNueva] Prenda actualizada en índice:', this.prendaEditIndex);
+                        this.notificationService?.exito('Prenda actualizada correctamente');
+                    }
                 }
             } else {
                 console.log('[GestionItemsUI.agregarPrendaNueva] Modo AGREGAR NUEVA');
                 
                 // GUARDAR EN LA BASE DE DATOS SI ESTAMOS EN EDICIÓN DE PEDIDO EXISTENTE
-                if (window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)) {
-                    const pedidoId = window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido;
+                if (enPedidoExistente) {
                     console.log('[GestionItemsUI.agregarPrendaNueva] Guardando prenda en pedido:', pedidoId);
                     
                     // PASO 1: MOSTRAR MODAL DE NOVEDAD USANDO COMPONENTE EXTRAÍDO
-                    return await window.modalNovedadPrenda.mostrarModalYGuardar(pedidoId, prendaData);
+                    await window.modalNovedadPrenda.mostrarModalYGuardar(pedidoId, prendaData);
+                    // El modal de novedades maneja todo: guardado, cierre, etc.
+                    // NO continuamos aquí
+                    return;
                     
                 } else {
                     console.log('[GestionItemsUI.agregarPrendaNueva] No hay pedido activo, agregando solo en memoria');

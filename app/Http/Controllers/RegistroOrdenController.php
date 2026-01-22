@@ -420,16 +420,27 @@ class RegistroOrdenController extends Controller
                     $prendas = DB::table('prendas_pedido')
                         ->where('numero_pedido', $numeroPedido)
                         ->orderBy('id', 'asc')
-                        ->get(['nombre_prenda', 'descripcion', 'cantidad_talla']);
+                        ->get(['id', 'nombre_prenda', 'descripcion']);
 
-                    // Formatear prendas con enumeración
+                    // Formatear prendas con tallas desde tabla relacional
                     $prendasFormato = [];
                     foreach ($prendas as $index => $prenda) {
+                        // Obtener tallas desde tabla relacional
+                        $tallasDb = DB::table('prenda_pedido_tallas')
+                            ->where('prenda_pedido_id', $prenda->id)
+                            ->select('genero', 'talla', 'cantidad')
+                            ->get();
+                        
+                        // Construir string de tallas para display
+                        $tallasStr = $tallasDb->map(function($t) {
+                            return "{$t->talla}:{$t->cantidad}";
+                        })->implode(', ');
+                        
                         $prendasFormato[] = [
                             'numero' => $index + 1,
                             'nombre' => $prenda->nombre_prenda ?? '-',
                             'descripcion' => $prenda->descripcion ?? '-',
-                            'cantidad_talla' => $prenda->cantidad_talla ?? '-'
+                            'tallas' => $tallasStr
                         ];
                     }
                     $orderData['prendas'] = $prendasFormato;

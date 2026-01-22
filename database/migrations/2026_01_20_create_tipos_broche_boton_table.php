@@ -26,7 +26,7 @@ return new class extends Migration
                 ['nombre' => 'Velcro', 'activo' => true, 'created_at' => now(), 'updated_at' => now()],
             ]);
             
-            \Log::info('✅ [Migración] Tabla tipos_broche_boton creada exitosamente');
+            \Log::info(' [Migración] Tabla tipos_broche_boton creada exitosamente');
         }
     }
 

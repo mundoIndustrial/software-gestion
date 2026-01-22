@@ -1534,7 +1534,7 @@ final class CotizacionController extends Controller
                 $logoObservacionesGenerales = json_decode($logoObservacionesGenerales, true) ?? [];
             }
             
-            // ✅ VALIDAR si logo (PASO 3) tiene información escrita válida
+            //  VALIDAR si logo (PASO 3) tiene información escrita válida
             // Para incluir logo necesita: técnicas agregadas (en window.tecnicasAgregadasPaso3)
             $logoTecnicasAgregadas = $request->input('logo.tecnicas_agregadas');
             if (is_string($logoTecnicasAgregadas)) {
@@ -1748,7 +1748,7 @@ final class CotizacionController extends Controller
                 ]);
             }
 
-            // ✅ PROCESAR PASO 3: TÉCNICAS DE LOGO (Para cotizaciones combinadas)
+            //  PROCESAR PASO 3: TÉCNICAS DE LOGO (Para cotizaciones combinadas)
             // Las técnicas vienen en logo[tecnicas_agregadas] como JSON string
             // Solo procesar si logo_cotizacion fue creado (tiene información válida)
             
@@ -1790,7 +1790,7 @@ final class CotizacionController extends Controller
                             $prendasKeys = [];
                             
                             foreach ($tecnicaData['prendas'] as $prendaIndex => $prendaData) {
-                                // ✅ VALIDAR: nombre_prenda no puede estar vacío
+                                //  VALIDAR: nombre_prenda no puede estar vacío
                                 $nombrePrendaCompleto = $prendaData['nombre_prenda'] ?? '';
                                 if (empty($nombrePrendaCompleto) || trim($nombrePrendaCompleto) === '') {
                                     Log::warning('⚠️ Prenda ignorada: nombre_prenda vacío', [
@@ -1848,13 +1848,13 @@ final class CotizacionController extends Controller
                                         'cantidad' => $prendaData['cantidad'] ?? 1,
                                     ]);
                                     
-                                    Log::info('✅ Nueva prenda creada en prendas_cot', [
+                                    Log::info(' Nueva prenda creada en prendas_cot', [
                                         'prenda_cot_id' => $prendaCot->id,
                                         'nombre_base' => $nombrePrenda,
                                         'nombre_completo' => $nombrePrendaCompleto
                                     ]);
                                 } else {
-                                    Log::info('✅ Prenda existente encontrada (del PASO 2)', [
+                                    Log::info(' Prenda existente encontrada (del PASO 2)', [
                                         'prenda_cot_id' => $prendaCot->id,
                                         'nombre_base' => $nombrePrenda,
                                         'nombre_completo' => $nombrePrendaCompleto
@@ -1890,7 +1890,7 @@ final class CotizacionController extends Controller
                                         'grupo_combinado' => $prendaIndex,  // Usar índice como grupo
                                     ]);
                                     
-                                    Log::info('✅ Técnica guardada en logo_cotizacion_tecnica_prendas', [
+                                    Log::info(' Técnica guardada en logo_cotizacion_tecnica_prendas', [
                                         'tecnica_id' => $logoCotizacionTecnicaPrenda->id,
                                         'prenda_cot_id' => $prendaCot->id,
                                         'ubicaciones' => $prendaData['ubicaciones'] ?? []
@@ -1937,7 +1937,7 @@ final class CotizacionController extends Controller
                                                         'orden' => $ordenFoto,
                                                     ]);
                                                     
-                                                    \Log::info('✅ Logo foto guardada en BD', [
+                                                    \Log::info(' Logo foto guardada en BD', [
                                                         'tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
                                                         'ruta' => $rutaGuardar,
                                                         'orden' => $ordenFoto,
@@ -1945,7 +1945,7 @@ final class CotizacionController extends Controller
                                                     
                                                     $ordenFoto++;
                                                 } catch (\Exception $e) {
-                                                    \Log::error('❌ Error al guardar foto de técnica', [
+                                                    \Log::error(' Error al guardar foto de técnica', [
                                                         'tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
                                                         'error' => $e->getMessage()
                                                     ]);
@@ -1958,13 +1958,13 @@ final class CotizacionController extends Controller
                         }
                     }
                     
-                    Log::info('✅ Técnicas procesadas completamente', [
+                    Log::info(' Técnicas procesadas completamente', [
                         'cotizacion_id' => $cotizacionId,
                         'tecnicas_totales' => count($tecnicasAgregadas)
                     ]);
                     
                 } catch (\Exception $e) {
-                        Log::error('❌ Error procesando técnicas', [
+                        Log::error(' Error procesando técnicas', [
                             'cotizacion_id' => $cotizacionId,
                             'error' => $e->getMessage(),
                             'trace' => $e->getTraceAsString()
@@ -2068,7 +2068,7 @@ final class CotizacionController extends Controller
                 'prendasReflectivoPaso4' => json_encode($prendasReflectivoPaso4),
             ]);
             
-            // ✅ VALIDAR si reflectivo tiene información escrita válida
+            //  VALIDAR si reflectivo tiene información escrita válida
             // Prioridad: Si hay prendas_reflectivo_paso4, usar eso para validar
             $tieneInfoValidaDesdeP4 = !empty($prendasReflectivoPaso4) && count($prendasReflectivoPaso4) > 0;
             
@@ -2145,7 +2145,7 @@ final class CotizacionController extends Controller
                             ]
                         );
                         
-                        \Log::info('✅ Reflectivo guardado en reflectivo_cotizacion', [
+                        \Log::info(' Reflectivo guardado en reflectivo_cotizacion', [
                             'reflectivo_id' => $reflectivoCotizacion->id,
                             'prenda_cot_id' => $prenda->id,
                             'cotizacion_id' => $cotizacionId,
@@ -2188,7 +2188,7 @@ final class CotizacionController extends Controller
                             ]
                         );
                         
-                        \Log::info('✅ Reflectivo guardado en prenda_cot_reflectivo', [
+                        \Log::info(' Reflectivo guardado en prenda_cot_reflectivo', [
                             'prenda_cot_reflectivo_id' => $prendaCotReflectivo->id,
                             'cotizacion_id' => $cotizacionId,
                             'prenda_cot_id' => $prenda->id,
@@ -2252,7 +2252,7 @@ final class CotizacionController extends Controller
                                             'orden' => $ordenFoto,
                                         ]);
                                         
-                                        \Log::info('✅ Reflectivo foto guardada en BD', [
+                                        \Log::info(' Reflectivo foto guardada en BD', [
                                             'reflectivo_id' => $reflectivoCotizacion->id,
                                             'ruta' => $rutaGuardar,
                                             'orden' => $ordenFoto,
@@ -2295,7 +2295,7 @@ final class CotizacionController extends Controller
                                             'orden' => $ordenFoto,
                                         ]);
                                         
-                                        \Log::info('✅ Reflectivo foto (PASO 4) guardada', [
+                                        \Log::info(' Reflectivo foto (PASO 4) guardada', [
                                             'reflectivo_id' => $reflectivoCotizacion->id,
                                             'ruta' => $rutaWebP,
                                             'orden' => $ordenFoto,

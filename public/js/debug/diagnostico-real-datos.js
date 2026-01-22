@@ -116,24 +116,26 @@ if (window.gestorPrendaSinCotizacion) {
         const payloadIncorrecto = {
             tipo: 'prenda_nueva',
             prenda: prenda.nombre_producto,
-            cantidad_talla: cantidadTallaIncorrecto,
-            tallas: Object.keys(cantidadTallaIncorrecto)  //  VACÍO O SIN GÉNERO
+            cantidad_talla: cantidadTallaIncorrecto,  // FORMATO LEGACY - EVITAR
+            tallas: Object.keys(cantidadTallaIncorrecto)
         };
         
         console.log(JSON.stringify(payloadIncorrecto, null, 2));
-        console.log(` PROBLEMA: tallas = ${JSON.stringify(payloadIncorrecto.tallas)} (VACÍO o SIN GÉNERO)`);
+        console.log(` ❌ FORMATO LEGACY: cantidad_talla = ${JSON.stringify(payloadIncorrecto.cantidad_talla)}`);
         
-        // Simular el payload correcto
-        console.log(`\n Item ${index} (con formato correcto - ARREGLADO):`);
+        // Mostrar el payload correcto (formato relacional)
+        console.log(`\n Item ${index} (FORMATO RELACIONAL - CORRECTO):`);
         
         const cantidadTallaCorrect = {};
         if (prenda.generosConTallas) {
             Object.keys(prenda.generosConTallas).forEach(genero => {
+                const generoMayus = genero.toUpperCase();
+                cantidadTallaCorrect[generoMayus] = {};
                 const tallaDelGenero = prenda.generosConTallas[genero];
                 Object.keys(tallaDelGenero).forEach(talla => {
                     const cantidad = parseInt(tallaDelGenero[talla]) || 0;
                     if (cantidad > 0) {
-                        cantidadTallaCorrect[`${genero}-${talla}`] = cantidad;  // 
+                        cantidadTallaCorrect[generoMayus][talla] = cantidad;
                     }
                 });
             });
@@ -142,12 +144,12 @@ if (window.gestorPrendaSinCotizacion) {
         const payloadCorrecto = {
             tipo: 'prenda_nueva',
             prenda: prenda.nombre_producto,
-            cantidad_talla: cantidadTallaCorrect,
-            tallas: Object.keys(cantidadTallaCorrect)  //  CON GÉNERO
+            cantidad_talla: cantidadTallaCorrect,  // FORMATO RELACIONAL - CORRECTO
+            tallas: cantidadTallaCorrect  // Misma estructura relacional
         };
         
         console.log(JSON.stringify(payloadCorrecto, null, 2));
-        console.log(` CORRECTO: tallas = ${JSON.stringify(payloadCorrecto.tallas)}`);
+        console.log(` ✅ CORRECTO: cantidad_talla = ${JSON.stringify(payloadCorrecto.cantidad_talla)}`);
     });
 }
 

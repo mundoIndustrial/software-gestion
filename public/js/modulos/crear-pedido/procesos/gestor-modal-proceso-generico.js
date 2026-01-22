@@ -347,8 +347,9 @@ function obtenerTallasDeLaPrenda() {
     const tallasGlobales = window.tallasSeleccionadas || {};
     const tallas = { dama: {}, caballero: {} };
     
-    // Obtener cantidades desde backup permanente o global
-    const cantidadesDisponibles = window._TALLAS_BACKUP_PERMANENTE || window.cantidadesTallas || {};
+    // Obtener cantidades desde relacional
+    const cantidadesRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
+    const cantidadesDisponibles = { ...cantidadesRelacionales.DAMA, ...cantidadesRelacionales.CABALLERO };
     
     console.log(' [obtenerTallasDeLaPrenda] window.tallasSeleccionadas:', tallasGlobales);
     console.log(' [obtenerTallasDeLaPrenda] Cantidades disponibles:', cantidadesDisponibles);
@@ -531,12 +532,16 @@ window.actualizarCantidadTallaProceso = function(input) {
     const talla = input.dataset.talla;
     const cantidad = parseInt(input.value) || 0;
     
-    // Actualizar en cantidadesTallas global
-    if (!window.cantidadesTallas) {
-        window.cantidadesTallas = {};
+// Actualizar en relacional y legacy para compatibilidad
+    if (!window.tallasRelacionales) {
+        window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {} };
     }
     
-    window.cantidadesTallas[`${genero}-${talla}`] = cantidad;
+    const generoMayuscula = genero.toUpperCase();
+    if (!window.tallasRelacionales[generoMayuscula]) {
+        window.tallasRelacionales[generoMayuscula] = {};
+    }
+    window.tallasRelacionales[generoMayuscula][talla] = cantidad;
     
     console.log(` Cantidad actualizada: ${genero}-${talla} = ${cantidad}`);
 };
@@ -583,7 +588,9 @@ window.actualizarResumenTallasProceso = function() {
     
     let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
     
-    const cantidades = window.cantidadesTallas || {};
+    // Obtener cantidades desde relacional
+    const tallasRel = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
+    const cantidades = { ...tallasRel.DAMA, ...tallasRel.CABALLERO };
     
     if (tallasSeleccionadasProceso.dama.length > 0) {
         const tallasDamaHTML = tallasSeleccionadasProceso.dama.map(t => {

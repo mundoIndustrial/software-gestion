@@ -138,4 +138,90 @@ class EloquentProcesoPrendaDetalleRepository implements ProcesoPrendaDetalleRepo
             datosAdicionales: $model->datos_adicionales
         );
     }
+
+    /**
+     * Sincronizar tallas en la tabla relacional desde los campos legacy JSON
+     * 
+     * Útil para migrar datos existentes desde tallas_dama/tallas_caballero
+     * a la nueva tabla pedidos_procesos_prenda_tallas
+     * 
+     * @deprecated Este método es solo para sincronización de datos legacy
+     */
+    public function sincronizarTallasRelacional(int $procesoPrendaDetalleId): void
+    {
+        $modelo = ProcesoPrendaDetalleModel::findOrFail($procesoPrendaDetalleId);
+        
+        // Obtener tallas del JSON legacy
+        $tallasDama = $modelo->tallas_dama ? (is_string($modelo->tallas_dama) ? json_decode($modelo->tallas_dama, true) : $modelo->tallas_dama) : [];
+        $tallasCalballero = $modelo->tallas_caballero ? (is_string($modelo->tallas_caballero) ? json_decode($modelo->tallas_caballero, true) : $modelo->tallas_caballero) : [];
+        
+        // Limpiar registros previos
+        \App\Models\PedidosProcesosPrendaTalla::where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)->delete();
+        
+        // Guardar DAMA
+        foreach ($tallasDama as $talla => $cantidad) {
+            if ((int)$cantidad > 0) {
+                \App\Models\PedidosProcesosPrendaTalla::create([
+                    'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
+                    'genero' => 'DAMA',
+                    'talla' => $talla,
+                    'cantidad' => (int)$cantidad,
+                ]);
+            }
+        }
+        
+        // Guardar CABALLERO
+        foreach ($tallasCalballero as $talla => $cantidad) {
+            if ((int)$cantidad > 0) {
+                \App\Models\PedidosProcesosPrendaTalla::create([
+                    'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
+                    'genero' => 'CABALLERO',
+                    'talla' => $talla,
+                    'cantidad' => (int)$cantidad,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Guardar tallas en la tabla relacional (para actualizar procesos)
+     * 
+     * @param int $procesoPrendaDetalleId
+     * @param array $tallas Estructura: {'dama': {'S': 10}, 'caballero': {'M': 20}, 'unisex': {'M': 5}}
+     */
+    public function guardarTallasRelacional(int $procesoPrendaDetalleId, array $tallas): void
+    {
+        // Mapeo de géneros
+        $generoMap = [
+            'dama' => 'DAMA',
+            'caballero' => 'CABALLERO',
+            'unisex' => 'UNISEX',
+        ];
+        
+        // Limpiar registros previos
+        \App\Models\PedidosProcesosPrendaTalla::where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)->delete();
+        
+        foreach ($tallas as $generoBD => $tallasCantidades) {
+            if (!is_array($tallasCantidades) || empty($tallasCantidades)) {
+                continue;
+            }
+            
+            $generoEnum = $generoMap[$generoBD] ?? null;
+            if (!$generoEnum) {
+                continue;
+            }
+            
+            foreach ($tallasCantidades as $talla => $cantidad) {
+                $cantidad = (int)$cantidad;
+                if ($cantidad > 0) {
+                    \App\Models\PedidosProcesosPrendaTalla::create([
+                        'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
+                        'genero' => $generoEnum,
+                        'talla' => $talla,
+                        'cantidad' => $cantidad,
+                    ]);
+                }
+            }
+        }
+    }
 }

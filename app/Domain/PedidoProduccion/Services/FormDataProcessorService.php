@@ -69,7 +69,7 @@ class FormDataProcessorService
             });
 
             if (!empty($imagenesFiltered)) {
-                \Log::info('[FormDataProcessorService] ✅ Encontrada clave de imágenes de tela', [
+                \Log::info('[FormDataProcessorService]  Encontrada clave de imágenes de tela', [
                     'patron' => $patronTela,
                     'telaIdx' => $telaIdx,
                     'cantidad_archivos' => count($imagenesFiltered),
@@ -114,7 +114,7 @@ class FormDataProcessorService
             });
 
             if (!empty($imagenesFiltered)) {
-                \Log::info('[FormDataProcessorService] ✅ Encontrada clave de imágenes de proceso', [
+                \Log::info('[FormDataProcessorService]  Encontrada clave de imágenes de proceso', [
                     'patron' => $patronProceso,
                     'tipoProceso' => $tipoProceso,
                     'cantidad_archivos' => count($imagenesFiltered),
@@ -198,6 +198,8 @@ class FormDataProcessorService
             }
 
             // Procesar tallas
+            // NOTA: En el nuevo modelo, las tallas se guardan directamente en pedidos_procesos_prenda_tallas
+            // Este código mantiene compatibilidad con datos del formulario (legacy JSON)
             $datosProceso['tallas'] = [];
             if (isset($procesoData['tallas_dama'])) {
                 $tallasDama = is_string($procesoData['tallas_dama']) 

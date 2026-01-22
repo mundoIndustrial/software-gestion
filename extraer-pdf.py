@@ -13,14 +13,14 @@ from pathlib import Path
 try:
     import pdfplumber
 except ImportError:
-    print("❌ Instalando librería requerida: pdfplumber")
+    print(" Instalando librería requerida: pdfplumber")
     os.system(f"{sys.executable} -m pip install pdfplumber -q")
     import pdfplumber
 
 try:
     import pandas as pd
 except ImportError:
-    print("❌ Instalando librería requerida: pandas")
+    print(" Instalando librería requerida: pandas")
     os.system(f"{sys.executable} -m pip install pandas -q")
     import pandas as pd
 
@@ -33,10 +33,10 @@ def extraer_del_pdf(ruta_pdf):
     
     try:
         with pdfplumber.open(ruta_pdf) as pdf:
-            print(f"📄 Total de páginas: {len(pdf.pages)}")
+            print(f" Total de páginas: {len(pdf.pages)}")
             
             for num_pagina, page in enumerate(pdf.pages, 1):
-                print(f"📄 Procesando página {num_pagina}...")
+                print(f" Procesando página {num_pagina}...")
                 
                 # Intentar extraer tablas
                 tablas = page.extract_tables()
@@ -57,7 +57,7 @@ def extraer_del_pdf(ruta_pdf):
                                 datos.append([linea])
     
     except Exception as e:
-        print(f"❌ Error leyendo PDF: {e}")
+        print(f" Error leyendo PDF: {e}")
         return None
     
     return datos
@@ -98,10 +98,10 @@ def guardar_csv(ruta_salida, encabezados, datos):
             writer = csv.writer(f)
             writer.writerow(encabezados)
             writer.writerows(datos)
-        print(f"✅ Archivo CSV guardado: {ruta_salida}")
+        print(f" Archivo CSV guardado: {ruta_salida}")
         return True
     except Exception as e:
-        print(f"❌ Error guardando CSV: {e}")
+        print(f" Error guardando CSV: {e}")
         return False
 
 
@@ -117,10 +117,10 @@ def guardar_json(ruta_salida, encabezados, datos):
         
         with open(ruta_salida, 'w', encoding='utf-8') as f:
             json.dump(datos_json, f, ensure_ascii=False, indent=2)
-        print(f"✅ Archivo JSON guardado: {ruta_salida}")
+        print(f" Archivo JSON guardado: {ruta_salida}")
         return True
     except Exception as e:
-        print(f"❌ Error guardando JSON: {e}")
+        print(f" Error guardando JSON: {e}")
         return False
 
 
@@ -134,27 +134,27 @@ def main():
     
     # Verificar que el PDF existe
     if not os.path.exists(ruta_pdf):
-        print(f"❌ No se encontró el archivo: {ruta_pdf}")
+        print(f" No se encontró el archivo: {ruta_pdf}")
         print("📌 Verifica la ubicación del PDF descargado")
         return
     
     # Extraer datos
     datos = extraer_del_pdf(ruta_pdf)
     if not datos:
-        print("❌ No se pudieron extraer datos del PDF")
+        print(" No se pudieron extraer datos del PDF")
         return
     
-    print(f"📊 Se extrajeron {len(datos)} filas")
+    print(f" Se extrajeron {len(datos)} filas")
     
     # Procesar datos
     encabezados, datos_procesados = procesar_datos(datos)
     
     if not encabezados:
-        print("❌ No se pudieron procesar los datos")
+        print(" No se pudieron procesar los datos")
         return
     
-    print(f"📋 Encabezados detectados: {', '.join(encabezados)}")
-    print(f"📊 Total de registros: {len(datos_procesados)}")
+    print(f" Encabezados detectados: {', '.join(encabezados)}")
+    print(f" Total de registros: {len(datos_procesados)}")
     
     # Crear directorio de salida
     dir_salida = Path(r"C:\Users\Usuario\Documents\mundoindustrial\datos_extraidos")
@@ -171,7 +171,7 @@ def main():
         print(f"📂 Ruta completa: {ruta_json}")
     
     print("\n" + "=" * 60)
-    print("✅ ¡EXTRACCIÓN COMPLETADA!")
+    print(" ¡EXTRACCIÓN COMPLETADA!")
     print("=" * 60)
     print("\n📌 Próximos pasos:")
     print(f"1. Abre el archivo CSV/JSON generado")

@@ -46,7 +46,6 @@ class GestorPrendas {
      */
     agregar(prenda) {
         this.prendas.push(prenda);
-        logWithEmoji('➕', `Prenda agregada: ${prenda.nombre_producto}`);
     }
 
     /**
@@ -56,7 +55,6 @@ class GestorPrendas {
     eliminar(index) {
         if (index >= 0 && index < this.prendas.length) {
             this.prendasEliminadas.add(index);
-            logWithEmoji('🗑️', `Prenda ${index + 1} marcada para eliminación`);
         }
     }
 
@@ -66,7 +64,6 @@ class GestorPrendas {
      */
     restaurar(index) {
         this.prendasEliminadas.delete(index);
-        logWithEmoji('↩️', `Prenda ${index + 1} restaurada`);
     }
 
     /**
@@ -101,7 +98,6 @@ class GestorPrendas {
         this.prendasEliminadas.clear();
         this.fotosNuevas = {};
         this.telasFotosNuevas = {};
-        logWithEmoji('🗑️', 'Todas las prendas han sido limpiadas');
     }
 
     /**
@@ -114,7 +110,6 @@ class GestorPrendas {
             this.fotosNuevas[prendaIndex] = [];
         }
         this.fotosNuevas[prendaIndex] = [...this.fotosNuevas[prendaIndex], ...fotos];
-        logWithEmoji('📸', `${fotos.length} foto(s) agregada(s) a prenda ${prendaIndex + 1}`);
     }
 
     /**
@@ -134,7 +129,6 @@ class GestorPrendas {
     eliminarFoto(prendaIndex, fotoIndex) {
         if (this.fotosNuevas[prendaIndex]) {
             this.fotosNuevas[prendaIndex].splice(fotoIndex, 1);
-            logWithEmoji('🗑️', `Foto eliminada de prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -155,7 +149,6 @@ class GestorPrendas {
             ...this.telasFotosNuevas[prendaIndex][telaIndex],
             ...fotos
         ];
-        logWithEmoji('📸', `${fotos.length} foto(s) de tela agregada(s)`);
     }
 
     /**
@@ -198,7 +191,6 @@ class GestorPrendas {
             referencia: tela.referencia || ''
         });
 
-        logWithEmoji('➕', `Tela agregada a prenda ${prendaIndex + 1}`);
     }
 
     /**
@@ -220,7 +212,6 @@ class GestorPrendas {
             delete this.telasFotosNuevas[prendaIndex][telaIndex];
         }
 
-        logWithEmoji('🗑️', `Tela ${telaIndex + 1} eliminada de prenda ${prendaIndex + 1}`);
     }
 
     /**
@@ -238,7 +229,6 @@ class GestorPrendas {
 
         if (!prenda.tallas.includes(talla)) {
             prenda.tallas.push(talla);
-            logWithEmoji('➕', `Talla ${talla} agregada a prenda ${prendaIndex + 1}`);
         }
     }
 
@@ -253,7 +243,6 @@ class GestorPrendas {
 
         if (Array.isArray(prenda.tallas)) {
             prenda.tallas = prenda.tallas.filter(t => t !== talla);
-            logWithEmoji('🗑️', `Talla ${talla} eliminada de prenda ${prendaIndex + 1}`);
         }
     }
 

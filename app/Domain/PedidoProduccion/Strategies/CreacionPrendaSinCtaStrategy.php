@@ -36,7 +36,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     public function procesar(
         array $prendaData,
-        string $numeroPedido,
+        int $pedidoProduccionId,
         array $servicios
     ): PrendaPedido {
         $this->descripcionService = $servicios['descripcionService'] ?? throw new \RuntimeException('DescripcionService requerido');
@@ -48,8 +48,16 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
         try {
             DB::beginTransaction();
 
+            // Obtener número de pedido desde el ID para auditoría
+            $pedido = \App\Models\PedidoProduccion::find($pedidoProduccionId);
+            if (!$pedido) {
+                throw new \Exception("Pedido no encontrado con ID: {$pedidoProduccionId}");
+            }
+            $numeroPedido = $pedido->numero_pedido;
+
             Log::info(' [CreacionPrendaSinCtaStrategy] Procesando prenda', [
-                'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+                'nombre' => $prendaData['nombre_prenda'] ?? $prendaData['nombre_producto'] ?? 'Sin nombre',
+                'pedido_produccion_id' => $pedidoProduccionId,
                 'numero_pedido' => $numeroPedido,
             ]);
 
@@ -80,8 +88,8 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
 
             // ===== PASO 4: CREAR PRENDA (ANTES LÍNEA 1380-1410) =====
             $prendaPedido = PrendaPedido::create([
-                'numero_pedido' => $numeroPedido,
-                'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+                'pedido_produccion_id' => $pedidoProduccionId,
+                'nombre_prenda' => $prendaData['nombre_prenda'] ?? $prendaData['nombre_producto'] ?? 'Sin nombre',
                 'cantidad' => $cantidadTotal,
                 'descripcion' => $prendaData['descripcion'] ?? '',
                 'descripcion_variaciones' => $this->armarDescripcionVariaciones($variantes),
@@ -105,7 +113,56 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
                 'nombre' => $prendaPedido->nombre_prenda,
             ]);
 
-            // ===== PASO 5: CREAR PROCESO INICIAL (ANTES LÍNEA 1415-1425) =====
+            // ===== PASO 5A: GUARDAR TALLAS EN TABLA RELACIONAL =====
+            // CRÍTICO: Guardar tallas desde cantidadesPorTalla que tiene estructura {GENERO: {TALLA: CANTIDAD}}
+            if (!empty($cantidadesPorTalla)) {
+                // Usar el trait GestionaTallasRelacional para guardar correctamente
+                $repository = app(\App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository::class);
+                $repository->guardarTallas($prendaPedido->id, $cantidadesPorTalla);
+                
+                Log::info(' [CreacionPrendaSinCtaStrategy] Tallas guardadas en tabla relacional', [
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'tallas_structure' => $cantidadesPorTalla,
+                ]);
+            }
+
+            // ===== PASO 5: CREAR VARIANTES Y RELACIÓN COLOR-TELA =====
+            // Crear registro en prenda_pedido_colores_telas si hay color o tela
+            if ($variantes['color_id'] || $variantes['tela_id']) {
+                \App\Models\PrendaPedidoColorTela::create([
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'color_id' => $variantes['color_id'],
+                    'tela_id' => $variantes['tela_id'],
+                ]);
+
+                Log::info(' [CreacionPrendaSinCtaStrategy] Relación color-tela creada', [
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'color_id' => $variantes['color_id'],
+                    'tela_id' => $variantes['tela_id'],
+                ]);
+            }
+
+            // Crear registro en prenda_pedido_variantes si hay tipo_manga, tipo_broche o bolsillos
+            if ($variantes['tipo_manga_id'] || $variantes['tipo_broche_id'] || $variantes['tiene_bolsillos']) {
+                \App\Models\PrendaVariante::create([
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'tipo_manga_id' => $variantes['tipo_manga_id'],
+                    'tipo_broche_boton_id' => $variantes['tipo_broche_id'],
+                    'manga_obs' => $prendaData['obs_manga'] ?? $prendaData['manga_obs'] ?? '',
+                    'broche_boton_obs' => $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '',
+                    'tiene_bolsillos' => $variantes['tiene_bolsillos'],
+                    'bolsillos_obs' => $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '',
+                ]);
+
+                Log::info(' [CreacionPrendaSinCtaStrategy] Variante de prenda creada', [
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'tipo_manga_id' => $variantes['tipo_manga_id'],
+                    'tipo_broche_id' => $variantes['tipo_broche_id'],
+                    'tiene_bolsillos' => $variantes['tiene_bolsillos'],
+                ]);
+            }
+
+            // ===== PASO 6: CREAR PROCESO INICIAL (ANTES LÍNEA 1415-1425) =====
             ProcesoPrenda::create([
                 'numero_pedido' => $numeroPedido,
                 'prenda_pedido_id' => $prendaPedido->id,
@@ -141,8 +198,9 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     public function validar(array $prendaData): bool
     {
-        if (empty($prendaData['nombre_producto'])) {
-            throw new \InvalidArgumentException('nombre_producto es requerido');
+        // Aceptar tanto nombre_prenda como nombre_producto (para compatibilidad)
+        if (empty($prendaData['nombre_prenda']) && empty($prendaData['nombre_producto'])) {
+            throw new \InvalidArgumentException('nombre_prenda es requerido');
         }
 
         // Validar que haya al menos una forma de cantidad
@@ -194,6 +252,12 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
             if (is_string($cantidad)) {
                 $cantidad = json_decode($cantidad, true);
             }
+            
+            // Si viene en formato plano {dama-S: 20, dama-M: 20}, transformar a jerárquico
+            if (is_array($cantidad) && !empty($cantidad)) {
+                $cantidad = $this->normalizarCantidades($cantidad);
+            }
+            
             return is_array($cantidad) ? $cantidad : [];
         }
 
@@ -203,6 +267,12 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
             if (is_string($cantidad)) {
                 $cantidad = json_decode($cantidad, true);
             }
+            
+            // Si viene en formato plano, transformar a jerárquico
+            if (is_array($cantidad) && !empty($cantidad)) {
+                $cantidad = $this->normalizarCantidades($cantidad);
+            }
+            
             return is_array($cantidad) ? $cantidad : [];
         }
 
@@ -213,14 +283,44 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
         }
 
         if (is_array($cantidad) && !empty($cantidad)) {
-            $cantidadesTemp = [];
-            foreach ($cantidad as $talla => $valor) {
-                $cantidadesTemp[$talla] = (int)$valor;
-            }
-            return $cantidadesTemp;
+            // Si viene en formato plano, transformar
+            $cantidad = $this->normalizarCantidades($cantidad);
         }
 
-        return [];
+        return $cantidad ?? [];
+    }
+
+    /**
+     * Normalizar cantidades a formato jerárquico
+     * Transforma {"dama-S": 20, "dama-M": 20} a {"dama": {"S": 20, "M": 20}}
+     */
+    private function normalizarCantidades(array $cantidades): array
+    {
+        $resultado = [];
+        
+        foreach ($cantidades as $key => $valor) {
+            // Si es array, ya está en formato correcto
+            if (is_array($valor)) {
+                $resultado[$key] = $valor;
+            } 
+            // Si es string con guión, dividir en genero-talla
+            elseif (is_string($key) && strpos($key, '-') !== false) {
+                [$genero, $talla] = explode('-', $key, 2);
+                if (!isset($resultado[$genero])) {
+                    $resultado[$genero] = [];
+                }
+                $resultado[$genero][$talla] = (int)$valor;
+            }
+            // Si no tiene guión, asumir que es talla sin género
+            else {
+                if (!isset($resultado['sin_genero'])) {
+                    $resultado['sin_genero'] = [];
+                }
+                $resultado['sin_genero'][$key] = (int)$valor;
+            }
+        }
+        
+        return $resultado;
     }
 
     /**

@@ -301,14 +301,7 @@ function scrollSuave(selector, block = 'start') {
  * @param {string} mensaje - Mensaje a mostrar
  * @param {any} datos - Datos adicionales (opcional)
  */
-function logWithEmoji(emoji, mensaje, datos = null) {
-    // Logs desactivados para optimización de rendimiento
-    // if (datos) {
-    //     console.log(`${emoji} ${mensaje}:`, datos);
-    // } else {
-    //     console.log(`${emoji} ${mensaje}`);
-    // }
-}
+
 
 // Exportar para uso en otros módulos (si usas ES6 modules)
 if (typeof module !== 'undefined' && module.exports) {
@@ -343,6 +336,5 @@ if (typeof module !== 'undefined' && module.exports) {
         setAtributoMultiple,
         scrollSuave,
         // Logging
-        logWithEmoji
     };
 }

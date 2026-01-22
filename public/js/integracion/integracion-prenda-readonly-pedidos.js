@@ -130,7 +130,7 @@ SOLUCIÓN:
   * interacciones.js
   * index.js
 - Verificar en DevTools > Console si hay errores de sintaxis
-- Ver console.log con prefijo , 📄, 📷, , , ✨ para ver el proceso de carga
+- Ver console.log con prefijo , , 📷, , , ✨ para ver el proceso de carga
     `);
 }
 

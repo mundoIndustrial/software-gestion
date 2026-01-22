@@ -30,7 +30,7 @@ class ObtenerRecibosService
      */
     public function obtenerRecibo(int $pedidoId): array
     {
-        Log::info('📄 [RECIBO] Obteniendo recibo para pedido: ' . $pedidoId);
+        Log::info(' [RECIBO] Obteniendo recibo para pedido: ' . $pedidoId);
 
         // Verificar permisos
         if (!$this->esDelAsesor($pedidoId)) {

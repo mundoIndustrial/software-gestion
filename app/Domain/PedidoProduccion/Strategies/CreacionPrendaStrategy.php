@@ -21,7 +21,7 @@ interface CreacionPrendaStrategy
      * Procesar y crear prenda según la estrategia específica
      * 
      * @param array $prendaData Datos de la prenda del request
-     * @param string $numeroPedido Número del pedido a vincular
+     * @param int $pedidoProduccionId ID del pedido a vincular
      * @param array $servicios Array con servicios inyectados: [
      *     'descripcionService' => DescripcionService,
      *     'imagenService' => ImagenService,
@@ -31,7 +31,7 @@ interface CreacionPrendaStrategy
      */
     public function procesar(
         array $prendaData,
-        string $numeroPedido,
+        int $pedidoProduccionId,
         array $servicios
     ): PrendaPedido;
 

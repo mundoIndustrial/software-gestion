@@ -265,7 +265,7 @@
         dropdown.dataset.cotId = cotizacionId;
         dropdown.innerHTML = `
             <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, 'prenda'); return false;" class="pdf-menu-option">
-                📄 PDF Prenda
+                 PDF Prenda
             </a>
             <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, 'logo'); return false;" class="pdf-menu-option">
                  PDF Logo

@@ -149,7 +149,7 @@ class ModalNovedadPrenda {
         try {
             // Crear FormData para enviar archivos
             const formData = new FormData();
-            formData.append('nombre_producto', this.prendaData.nombre_producto);
+            formData.append('nombre_prenda', this.prendaData.nombre_prenda);
             formData.append('descripcion', this.prendaData.descripcion);
             formData.append('origen', this.prendaData.origen);
             formData.append('cantidad_talla', JSON.stringify(this.prendaData.cantidad_talla || {}));
@@ -238,7 +238,7 @@ class ModalNovedadPrenda {
      */
     mostrarExito() {
         Swal.fire({
-            title: '✅ ¡Éxito!',
+            title: ' ¡Éxito!',
             html: '<div style="text-align: left;"><p style="margin: 0 0 1rem 0; font-size: 1rem; color: #374151;"><strong>Prenda agregada correctamente</strong></p><p style="margin: 0; font-size: 0.875rem; color: #6b7280;">La prenda se ha guardado en la base de datos y asociado al pedido.</p></div>',
             icon: 'success',
             confirmButtonText: ' Ver lista de prendas',
@@ -258,8 +258,15 @@ class ModalNovedadPrenda {
             }
         }).then((result) => {
             if (result.isConfirmed) {
+                // Cerrar el modal de edición de prendas
+                if (typeof window.cerrarModalPrendaNueva === 'function') {
+                    console.log('[ModalNovedadPrenda] Cerrando modal de edición de prendas...');
+                    window.cerrarModalPrendaNueva();
+                }
+                
                 // Ir a la lista de prendas
                 if (typeof window.abrirEditarPrendas === 'function') {
+                    console.log('[ModalNovedadPrenda] Abriendo lista de prendas...');
                     window.abrirEditarPrendas();
                 }
             }
@@ -271,7 +278,7 @@ class ModalNovedadPrenda {
      */
     mostrarError(mensaje) {
         Swal.fire({
-            title: '❌ Error',
+            title: ' Error',
             html: `<div style="text-align: left;"><p style="margin: 0 0 1rem 0; font-size: 1rem; color: #374151;"><strong>No se pudo guardar la prenda</strong></p><p style="margin: 0; font-size: 0.875rem; color: #6b7280;">${mensaje}</p></div>`,
             icon: 'error',
             confirmButtonText: 'Cerrar',

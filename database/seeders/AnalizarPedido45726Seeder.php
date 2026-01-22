@@ -24,7 +24,7 @@ class AnalizarPedido45726Seeder extends Seeder
             $pedido = PedidoProduccion::where('numero_pedido', 45726)->first();
             
             if (!$pedido) {
-                echo "❌ Pedido NO encontrado\n\n";
+                echo " Pedido NO encontrado\n\n";
                 return;
             }
             
@@ -88,7 +88,7 @@ class AnalizarPedido45726Seeder extends Seeder
             echo "\n";
 
         } catch (\Exception $e) {
-            echo "\n❌ ERROR:\n";
+            echo "\n ERROR:\n";
             echo "   {$e->getMessage()}\n";
             throw $e;
         }

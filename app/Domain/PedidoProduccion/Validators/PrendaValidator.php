@@ -133,8 +133,9 @@ class PrendaValidator implements Validator
      */
     private function validateTipoManga(?string $tipoManga): void
     {
-        if (empty($tipoManga)) {
-            throw new InvalidArgumentException('El tipo de manga es requerido');
+        // Allow null for new prendas - can be specified later
+        if ($tipoManga === null || $tipoManga === '') {
+            return;
         }
 
         if (strlen($tipoManga) > 100) {
@@ -145,15 +146,16 @@ class PrendaValidator implements Validator
     /**
      * Validar tipo de broche/botón
      * 
-     * - No vacío
-     * - Máximo 100 caracteres
+     * - Opcional (puede ser null)
+     * - Máximo 100 caracteres si se especifica
      * 
      * @throws InvalidArgumentException
      */
     private function validateTipoBrocheBoton(?string $tipoBrocheBoton): void
     {
-        if (empty($tipoBrocheBoton)) {
-            throw new InvalidArgumentException('El tipo de broche/botón es requerido');
+        // Allow null for new prendas - can be specified later
+        if ($tipoBrocheBoton === null || $tipoBrocheBoton === '') {
+            return;
         }
 
         if (strlen($tipoBrocheBoton) > 100) {
@@ -164,15 +166,16 @@ class PrendaValidator implements Validator
     /**
      * Validar ID de color
      * 
-     * - Debe ser numérico
-     * - Debe ser positivo
+     * - Opcional (puede ser null para nuevas prendas)
+     * - Debe ser positivo si se especifica
      * 
      * @throws InvalidArgumentException
      */
     private function validateColor(?int $colorId): void
     {
+        // Allow null for new prendas - can be specified later
         if ($colorId === null) {
-            throw new InvalidArgumentException('El color es requerido');
+            return;
         }
 
         if ($colorId <= 0) {
@@ -183,15 +186,16 @@ class PrendaValidator implements Validator
     /**
      * Validar ID de tela
      * 
-     * - Debe ser numérico
-     * - Debe ser positivo
+     * - Opcional (puede ser null para nuevas prendas)
+     * - Debe ser positivo si se especifica
      * 
      * @throws InvalidArgumentException
      */
     private function validateTela(?int $telaId): void
     {
+        // Allow null for new prendas - can be specified later
         if ($telaId === null) {
-            throw new InvalidArgumentException('La tela es requerida');
+            return;
         }
 
         if ($telaId <= 0) {

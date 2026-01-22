@@ -112,7 +112,7 @@
                                             'id' => $p->id,
                                             'nombre' => $p->nombre_prenda,
                                             'cantidad_atributo' => $p->cantidad,
-                                            'cantidad_talla' => $p->cantidad_talla
+                                            'tallas' => $p->tallas ? $p->tallas->mapToGroups(fn($t) => [$t->genero => [$t->talla => $t->cantidad]])->toArray() : []
                                         ];
                                     })->all()) !!}
                                 });

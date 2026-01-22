@@ -3,14 +3,14 @@
  * Reutiliza la función generarHTMLFactura de invoice-preview-live.js
  */
 
-console.log('📄 [INVOICE LIST] Cargando invoice-from-list.js');
+console.log(' [INVOICE LIST] Cargando invoice-from-list.js');
 
 /**
  * Abre la vista previa de factura para un pedido guardado
  * Obtiene los datos del servidor y los muestra
  */
 window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
-    console.log('📄 [FACTURA] Abriendo factura para pedido:', numeroPedido);
+    console.log(' [FACTURA] Abriendo factura para pedido:', numeroPedido);
     
     try {
         // Mostrar spinner de carga
@@ -239,7 +239,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     `;
     
     const titulo = document.createElement('h2');
-    titulo.textContent = '📄 Recibo del Pedido';
+    titulo.textContent = ' Recibo del Pedido';
     titulo.style.cssText = 'margin: 0; font-size: 1.1rem; font-weight: 600;';
     header.appendChild(titulo);
     

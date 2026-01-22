@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 
+/**
+ * @deprecated La tabla logo_pedidos ha sido eliminada de la base de datos (22/01/2026)
+ * Este modelo se mantiene solo por compatibilidad.
+ */
 class LogoPedido extends Model
 {
     protected $table = 'logo_pedidos';

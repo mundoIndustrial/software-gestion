@@ -34,7 +34,7 @@ return new class extends Migration
                 $table->index('prenda_cot_id');
             });
             
-            \Log::info('✅ [Migración] Tabla prenda_cot_reflectivo creada exitosamente');
+            \Log::info(' [Migración] Tabla prenda_cot_reflectivo creada exitosamente');
         }
     }
 

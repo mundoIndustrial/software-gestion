@@ -77,7 +77,7 @@ const StorageModule = {
             }
         }
 
-        console.log(`📄 Actualización procesada desde otra pestaña: ${field} = ${newValue}`);
+        console.log(` Actualización procesada desde otra pestaña: ${field} = ${newValue}`);
     }
 };
 

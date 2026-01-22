@@ -333,21 +333,26 @@ class AsesoresAPIController extends Controller
                             }
                         }
                         
-                        $tallasDama = [];
-                        if ($proceso->tallas_dama) {
-                            if (is_string($proceso->tallas_dama)) {
-                                $tallasDama = json_decode($proceso->tallas_dama, true) ?? [];
-                            } else if (is_array($proceso->tallas_dama)) {
-                                $tallasDama = $proceso->tallas_dama;
-                            }
-                        }
+                        // Leer tallas DESDE LA TABLA RELACIONAL
+                        $tallasRelacionales = \App\Models\PedidosProcesosPrendaTalla::where(
+                            'proceso_prenda_detalle_id',
+                            $proceso->id
+                        )->get();
                         
+                        $tallasDama = [];
                         $tallasCalballero = [];
-                        if ($proceso->tallas_caballero) {
-                            if (is_string($proceso->tallas_caballero)) {
-                                $tallasCalballero = json_decode($proceso->tallas_caballero, true) ?? [];
-                            } else if (is_array($proceso->tallas_caballero)) {
-                                $tallasCalballero = $proceso->tallas_caballero;
+                        $tallasUnisex = [];
+                        
+                        foreach ($tallasRelacionales as $tallaRec) {
+                            $genero = strtolower($tallaRec->genero);
+                            if ($tallaRec->cantidad > 0) {
+                                if ($genero === 'dama') {
+                                    $tallasDama[$tallaRec->talla] = $tallaRec->cantidad;
+                                } elseif ($genero === 'caballero') {
+                                    $tallasCalballero[$tallaRec->talla] = $tallaRec->cantidad;
+                                } elseif ($genero === 'unisex') {
+                                    $tallasUnisex[$tallaRec->talla] = $tallaRec->cantidad;
+                                }
                             }
                         }
                         
@@ -368,6 +373,7 @@ class AsesoresAPIController extends Controller
                             'ubicaciones' => is_array($ubicacionesData) ? $ubicacionesData : [],
                             'tallas_dama' => $tallasDama,
                             'tallas_caballero' => $tallasCalballero,
+                            'tallas_unisex' => $tallasUnisex,
                             'estado' => $proceso->estado,
                             'imagenes' => $proceso->imagenes ? $proceso->imagenes->map(function($img) {
                                 return [
