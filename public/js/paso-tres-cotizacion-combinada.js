@@ -141,10 +141,45 @@ function obtenerPrendasDelPaso2() {
                 const fotosElements = fotosPreview.querySelectorAll('img, [data-foto] img');
                 fotosElements.forEach(img => {
                     if (img.src) {
-                        imagenes.push(img.src);
+                        // Verificar si la imagen viene de la BD (cotizaciones/...) o es base64
+                        if (img.src.includes('cotizaciones/') && img.src.includes('.')) {
+                            // Es una ruta de la BD - guardarla como paso2
+                            imagenes.push({
+                                ruta: img.src,
+                                tipo: 'paso2'
+                            });
+                        } else if (img.src.startsWith('data:')) {
+                            // Es base64 - podría ser preview de archivo nuevo
+                            imagenes.push({
+                                ruta: img.src,
+                                tipo: 'paso2'
+                            });
+                        }
                     }
                 });
             }
+            
+            // ALTERNATIVA: Si no hay fotos en preview, buscar en window.cotizacionData (si está cargada)
+            if (imagenes.length === 0 && window.cotizacionData && window.cotizacionData.prendas) {
+                const prendaBD = window.cotizacionData.prendas.find(p => {
+                    const nombreP2 = nombre.split(' -')[0].toLowerCase();
+                    const nombreBD = p.nombre_producto?.toLowerCase() || '';
+                    return nombreBD.includes(nombreP2) || nombreP2.includes(nombreBD);
+                });
+                
+                if (prendaBD && prendaBD.fotos && Array.isArray(prendaBD.fotos)) {
+                    prendaBD.fotos.forEach(foto => {
+                        if (foto.url || foto.ruta_original) {
+                            imagenes.push({
+                                ruta: foto.url || foto.ruta_original,
+                                tipo: 'paso2'
+                            });
+                        }
+                    });
+                    console.log(`  ✅ Imágenes de prenda desde BD: ${imagenes.length}`);
+                }
+            }
+            
             console.log(`  - Imágenes finales: ${imagenes.length}`);
             
             // ============================================
@@ -1225,11 +1260,22 @@ function renderizarTecnicasAgregadasPaso3() {
                 prendasMap[nombrePrenda].ubicaciones[tecnicaData.tipo] = prenda.ubicaciones;
             }
             
-            // Procesar imágenes
+            // Procesar imágenes (pueden venir en dos formatos: antiguo imagenes_files o nuevo imagenes)
+            let imagenesAoProcesar = [];
+            
+            // Formato antiguo (imagenes_files)
             if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
-                prenda.imagenes_files.forEach(archivo => {
+                imagenesAoProcesar = prenda.imagenes_files;
+            }
+            // Formato nuevo (imagenes con {ruta, tipo} o {file, tipo})
+            else if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
+                imagenesAoProcesar = prenda.imagenes;
+            }
+            
+            if (imagenesAoProcesar.length > 0) {
+                imagenesAoProcesar.forEach(imagen => {
                     imagenesParaCargar.push({
-                        archivo: archivo,
+                        imagen: imagen,
                         nombrePrenda: nombrePrenda,
                         tecnica: tecnicaData.tipo
                     });
@@ -1495,106 +1541,92 @@ function renderizarTecnicasAgregadasPaso3() {
     // Procesar imágenes de forma asíncrona
     imagenesParaCargar.forEach(imgData => {
         const tarjeta = document.querySelector(`[data-prenda-nombre="${imgData.nombrePrenda}"]`);
-        if (tarjeta) {
-            const imagenesMaps = prendasMap[imgData.nombrePrenda].imagenes;
+        if (!tarjeta) return;
+        
+        const imagenesMaps = prendasMap[imgData.nombrePrenda].imagenes;
+        const imagen = imgData.imagen;
+        
+        // CASO 1: URL del PASO 2 (antiguo formato - string directo)
+        if (typeof imagen === 'string') {
+            imagenesMaps.push({
+                data: imagen,
+                tecnica: imgData.tecnica
+            });
             
-            // Verificar si es una URL (string) o un objeto con URL o un File object
-            let urlImagen = null;
+            actualizarGridImagenes(tarjeta, imagenesMaps);
+        }
+        // CASO 2: Objeto con {ruta, tipo} - URL del PASO 2 (nuevo formato)
+        else if (typeof imagen === 'object' && imagen.ruta && imagen.tipo === 'paso2') {
+            imagenesMaps.push({
+                data: imagen.ruta,
+                tecnica: imgData.tecnica
+            });
             
-            if (typeof imgData.archivo === 'string') {
-                // Es una URL del PASO 2 (antiguo formato)
-                urlImagen = imgData.archivo;
-            } else if (typeof imgData.archivo === 'object' && imgData.archivo.src && imgData.archivo.type === 'url') {
-                // Es un objeto con URL {src: url, type: 'url'} (nuevo formato)
-                urlImagen = imgData.archivo.src;
-            }
-            
-            if (urlImagen) {
-                // Es una URL - procesarla directamente
+            actualizarGridImagenes(tarjeta, imagenesMaps);
+        }
+        // CASO 3: Objeto con {file, tipo} - File del PASO 3 (nuevo formato)
+        else if (typeof imagen === 'object' && imagen.file && imagen.tipo === 'paso3' && (imagen.file instanceof Blob || imagen.file instanceof File)) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
                 imagenesMaps.push({
-                    data: urlImagen,
+                    data: e.target.result,
                     tecnica: imgData.tecnica
                 });
                 
-                // Actualizar el grid inmediatamente
-                const imgSection = tarjeta.querySelector('.imagenes-section');
-                if (imgSection) {
-                    imgSection.style.display = 'block';
-                    const grid = imgSection.querySelector('.imagenes-grid');
-                    if (grid) {
-                        grid.innerHTML = imagenesMaps.map((img, idx) => `
-                            <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af;">
-                                <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
-                                <div style="
-                                    position: absolute;
-                                    bottom: 0;
-                                    left: 0;
-                                    right: 0;
-                                    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-                                    padding: 0.4rem;
-                                ">
-                                    <span style="
-                                        color: white;
-                                        font-size: 0.7rem;
-                                        font-weight: 600;
-                                        background: #1e40af;
-                                        padding: 0.2rem 0.4rem;
-                                        border-radius: 2px;
-                                        display: inline-block;
-                                    ">
-                                        ${img.tecnica}
-                                    </span>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } else if (imgData.archivo instanceof Blob) {
-                // Es un File object (imagen nueva agregada en Paso 3)
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagenesMaps.push({
-                        data: e.target.result,
-                        tecnica: imgData.tecnica
-                    });
-                    
-                    const imgSection = tarjeta.querySelector('.imagenes-section');
-                    if (imgSection) {
-                        imgSection.style.display = 'block';
-                        const grid = imgSection.querySelector('.imagenes-grid');
-                        if (grid) {
-                            grid.innerHTML = imagenesMaps.map((img, idx) => `
-                                <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af; cursor: pointer;" ondblclick="abrirModalImagenPrendaConIndice('${img.data}', ${idx})">
-                                    <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
-                                    <div style="
-                                        position: absolute;
-                                        bottom: 0;
-                                        left: 0;
-                                        right: 0;
-                                        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-                                        padding: 0.4rem;
-                                    ">
-                                        <span style="
-                                            color: white;
-                                            font-size: 0.7rem;
-                                            font-weight: 600;
-                                            background: #1e40af;
-                                            padding: 0.2rem 0.4rem;
-                                            border-radius: 2px;
-                                            display: inline-block;
-                                        ">
-                                            ${img.tecnica}
-                                        </span>
-                                    </div>
-                                </div>
-                            `).join('');
-                        }
-                    }
-                };
-                reader.readAsDataURL(imgData.archivo);
-            }
+                actualizarGridImagenes(tarjeta, imagenesMaps);
+            };
+            reader.readAsDataURL(imagen.file);
+        }
+        // CASO 4: Blob/File directo (Backward compatibility)
+        else if (imagen instanceof Blob || imagen instanceof File) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagenesMaps.push({
+                    data: e.target.result,
+                    tecnica: imgData.tecnica
+                });
+                
+                actualizarGridImagenes(tarjeta, imagenesMaps);
+            };
+            reader.readAsDataURL(imagen);
         }
     });
+    
+    // Función auxiliar para actualizar el grid de imágenes
+    function actualizarGridImagenes(tarjeta, imagenesMaps) {
+        const imgSection = tarjeta.querySelector('.imagenes-section');
+        if (imgSection) {
+            imgSection.style.display = 'block';
+            const grid = imgSection.querySelector('.imagenes-grid');
+            if (grid) {
+                grid.innerHTML = imagenesMaps.map((img, idx) => `
+                    <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af; cursor: pointer;" ondblclick="abrirModalImagenPrendaConIndice('${img.data}', ${idx})">
+                        <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
+                        <div style="
+                            position: absolute;
+                            bottom: 0;
+                            left: 0;
+                            right: 0;
+                            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                            padding: 0.4rem;
+                        ">
+                            <span style="
+                                color: white;
+                                font-size: 0.7rem;
+                                font-weight: 600;
+                                background: #1e40af;
+                                padding: 0.2rem 0.4rem;
+                                border-radius: 2px;
+                                display: inline-block;
+                            ">
+                                ${img.tecnica}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+    }
 }
 
 function abrirModalEditarTecnicaPaso3(nombrePrenda) {
@@ -1734,8 +1766,17 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                 divUbicacion.appendChild(inputUbicacion);
                 ubicacionesDiv.appendChild(divUbicacion);
                 
-                // IMÁGENES
-                imagenesAgregadasPorTecnicaEditar[idx] = tecnicaInfo.prenda.imagenes_files ? [...tecnicaInfo.prenda.imagenes_files] : [];
+                // IMÁGENES - Inicializar con archivos File reales (NO convertidos a base64)
+                // Solo guardamos los File objects, no las URL de paso2
+                imagenesAgregadasPorTecnicaEditar[idx] = [];
+                if (tecnicaInfo.prenda.imagenes && Array.isArray(tecnicaInfo.prenda.imagenes)) {
+                    tecnicaInfo.prenda.imagenes.forEach(img => {
+                        // Solo agregar los archivos del PASO 3 (tienen .file como File object)
+                        if (img.tipo === 'paso3' && img.file instanceof File) {
+                            imagenesAgregadasPorTecnicaEditar[idx].push(img.file);
+                        }
+                    });
+                }
                 
                 const divImagen = document.createElement('div');
                 divImagen.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
@@ -1768,11 +1809,11 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                         let imagenSrc;
                         
                         if (typeof archivo === 'string') {
-                            // Es una URL
+                            // Es una URL - mostrar directamente (es de paso2)
                             imagenSrc = archivo;
                             mostrarPreview(imagenSrc, imgIdx);
-                        } else if (archivo instanceof Blob) {
-                            // Es un File object válido
+                        } else if (archivo instanceof Blob || archivo instanceof File) {
+                            // Es un File object válido - convertir a data URL SOLO para preview
                             const reader = new FileReader();
                             reader.onload = (e) => {
                                 imagenSrc = e.target.result;
@@ -2025,7 +2066,7 @@ function guardarEdiciónPaso3(datosEditados) {
     window.tecnicasAgregadasPaso3.forEach((tecnicaData, tecnicaIndex) => {
         if (tecnicaData.prendas) {
             tecnicaData.prendas = tecnicaData.prendas.map(prenda => {
-                if (prenda.nombre === nombrePrenda) {
+                if (prenda.nombre_prenda === nombrePrenda) {
                     // Buscar índice de esta técnica en los datos editados
                     const tecnicaNombreBuscar = tecnicaData.tipo_logo ? tecnicaData.tipo_logo.nombre : tecnicaData.tipo;
                     const tecnicaIdx = window.tecnicasConPrendaActual.findIndex(t => {
@@ -2033,13 +2074,25 @@ function guardarEdiciónPaso3(datosEditados) {
                         return tNombre === tecnicaNombreBuscar;
                     });
                     
+                    // Procesar imágenes: mantener del paso2 + agregar nuevas del paso3
+                    let imagenesActualizadas = (prenda.imagenes || []).filter(img => img.tipo !== 'paso3');
+                    
+                    // Agregar imágenes nuevas del PASO 3 (que están en imagenesAgregadas como File objects)
+                    if (tecnicaIdx >= 0 && imagenesAgregadas[tecnicaIdx] && imagenesAgregadas[tecnicaIdx].length > 0) {
+                        const nuevasImagenes = imagenesAgregadas[tecnicaIdx].map(archivo => ({
+                            file: archivo,  // Aquí está el File object
+                            tipo: 'paso3'
+                        }));
+                        imagenesActualizadas = [...imagenesActualizadas, ...nuevasImagenes];
+                    }
+                    
                     return {
                         ...prenda,
                         observaciones: observaciones,
                         ubicaciones: ubicacionesActualizadas[tecnicaNombreBuscar] || prenda.ubicaciones,
                         variaciones_prenda: variacionesActualizadas,
                         talla_cantidad: tallas,
-                        imagenes_files: (tecnicaIdx >= 0 && imagenesAgregadas[tecnicaIdx]) ? imagenesAgregadas[tecnicaIdx] : prenda.imagenes_files
+                        imagenes: imagenesActualizadas  // Array con {file, tipo} para paso3 + paso2 URLs
                     };
                 }
                 return prenda;
@@ -2047,7 +2100,7 @@ function guardarEdiciónPaso3(datosEditados) {
         }
     });
     
-    console.log(' Prenda editada en PASO 3:', nombrePrenda);
+    console.log('✅ Prenda editada en PASO 3:', nombrePrenda);
     renderizarTecnicasAgregadasPaso3();
 }
 

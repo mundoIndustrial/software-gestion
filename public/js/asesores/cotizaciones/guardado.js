@@ -506,6 +506,59 @@ async function guardarCotizacion() {
                     count: window.tecnicasAgregadasPaso3.length,
                     tecnicas_json: JSON.stringify(window.tecnicasAgregadasPaso3).substring(0, 200) + '...'
                 });
+                
+                // ✅ PROCESAR IMÁGENES DEL PASO 3 - Enviar archivos nuevos
+                console.log('📸 Procesando imágenes del PASO 3...');
+                console.log('🔍 DEBUG: window.tecnicasAgregadasPaso3 structure:', JSON.parse(JSON.stringify(window.tecnicasAgregadasPaso3.map(t => ({
+                    tipo: t.tipo,
+                    prendas_count: t.prendas ? t.prendas.length : 0,
+                    prendas: t.prendas ? t.prendas.map(p => ({
+                        nombre: p.nombre_prenda,
+                        imagenes_count: p.imagenes ? p.imagenes.length : 0,
+                        imagenes: p.imagenes ? p.imagenes.map(img => ({
+                            tipo: img.tipo,
+                            has_file: !!img.file,
+                            has_ruta: !!img.ruta,
+                            file_type: img.file ? img.file.constructor.name : 'N/A',
+                            file_size: img.file ? img.file.size : 'N/A'
+                        })) : []
+                    })) : []
+                }))), 
+                null, 2));
+                
+                let totalImagenesP3 = 0;
+                const archivosAgregados = [];
+                
+                window.tecnicasAgregadasPaso3.forEach((tecnica, tecnicaIndex) => {
+                    if (tecnica.prendas && Array.isArray(tecnica.prendas)) {
+                        tecnica.prendas.forEach((prenda, prendaIndex) => {
+                            if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                                prenda.imagenes.forEach((imagen, imagenIndex) => {
+                                    // Debug cada imagen
+                                    console.log(`  [${tecnicaIndex}][${prendaIndex}][${imagenIndex}] tipo=${imagen.tipo}, has_file=${!!imagen.file}, is_blob=${imagen.file instanceof Blob}, is_file=${imagen.file instanceof File}, constructor=${imagen.file?.constructor?.name}`);
+                                    
+                                    // Solo procesar imágenes nuevas del PASO 3 (que son archivos Blob/File)
+                                    if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso3') {
+                                        const fieldName = `logo[imagenes_paso3][${tecnicaIndex}][${prendaIndex}][${imagenIndex}]`;
+                                        formData.append(fieldName, imagen.file);
+                                        archivosAgregados.push({
+                                            fieldName: fieldName,
+                                            size: imagen.file.size,
+                                            type: imagen.file.type
+                                        });
+                                        totalImagenesP3++;
+                                        console.log(`✅ Imagen Paso3 agregada: ${fieldName} (${(imagen.file.size / 1024).toFixed(2)}KB)`);
+                                    } else if (imagen.tipo === 'paso3' && !imagen.file) {
+                                        console.warn(`⚠️ Imagen PASO 3 sin File object: [${tecnicaIndex}][${prendaIndex}][${imagenIndex}]`);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                console.log(`✅ Total imágenes del PASO 3 agregadas al FormData: ${totalImagenesP3}`);
+                console.log('📋 Detalle de archivos agregados:', archivosAgregados);
             }
         } else {
             console.log('⚠️ No hay técnicas agregadas (window.tecnicasAgregadasPaso3 vacío o no definido)');

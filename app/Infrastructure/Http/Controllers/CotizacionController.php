@@ -1913,15 +1913,15 @@ final class CotizacionController extends Controller
                                             if (isset($imagen['tipo']) && $imagen['tipo'] === 'paso2' && isset($imagen['ruta'])) {
                                                 $rutaGuardar = $imagen['ruta'];
                                                 \Log::info('📸 Logo: Imagen del PASO 2 detectada', [
-                                                    'tecnica' => $nombreTecnica,
+                                                    'tecnica' => $nombreTecnica ?? 'N/A',
                                                     'prenda' => $prendaData['nombre_prenda'],
                                                     'ruta' => $rutaGuardar,
                                                 ]);
                                             }
                                             // Si es imagen nueva del PASO 3, crear ruta
                                             elseif (isset($imagen['tipo']) && $imagen['tipo'] === 'paso3') {
-                                                \Log::info('📸 Logo: Imagen del PASO 3 detectada', [
-                                                    'tecnica' => $nombreTecnica,
+                                                \Log::info('📸 Logo: Imagen del PASO 3 detectada (será procesada después)', [
+                                                    'tecnica' => $nombreTecnica ?? 'N/A',
                                                     'prenda' => $prendaData['nombre_prenda'],
                                                     'tipo' => 'archivo'
                                                 ]);
@@ -1962,6 +1962,149 @@ final class CotizacionController extends Controller
                         'cotizacion_id' => $cotizacionId,
                         'tecnicas_totales' => count($tecnicasAgregadas)
                     ]);
+                    
+                    // ✅ PROCESAR IMÁGENES DEL PASO 3 - Guardar archivos en disco
+                    // Las imágenes vienen en: logo[imagenes_paso3][tecnicaIndex][prendaIndex][imagenIndex]
+                    
+                    // Procesar FILES enviados por FormData - acceder directamente a logo.imagenes_paso3
+                    $imagenesP3Files = $request->file('logo.imagenes_paso3');
+                    
+                    Log::info('📦 DEBUG: Archivos paso3 recibidos', [
+                        'imagenesP3Files' => $imagenesP3Files,
+                        'tipo' => gettype($imagenesP3Files),
+                        'es_array' => is_array($imagenesP3Files) ? 'SÍ' : 'NO'
+                    ]);
+                    
+                    $imagenesP3Archivos = [];
+                    if ($imagenesP3Files && is_array($imagenesP3Files)) {
+                        // Flatear recursivamente para obtener todos los archivos
+                        $this->flatearArchivos($imagenesP3Files, $imagenesP3Archivos, 'logo[imagenes_paso3]');
+                    }
+                    
+                    Log::info('📸 DEBUG - Archivos paso3 flaetados', [
+                        'total' => count($imagenesP3Archivos),
+                        'keys' => array_keys($imagenesP3Archivos)
+                    ]);
+                    
+                    if (count($imagenesP3Archivos) > 0) {
+                        Log::info('📸 Procesando imágenes del PASO 3', [
+                            'cotizacion_id' => $cotizacionId,
+                            'total_imagenes' => count($imagenesP3Archivos)
+                        ]);
+                        
+                        foreach ($imagenesP3Archivos as $fieldName => $archivo) {
+                            // Coincide con patrón: logo[imagenes_paso3][{tecnicaIndex}][{prendaIndex}][{imagenIndex}]
+                            if (preg_match('/^logo\[imagenes_paso3\]\[(\d+)\]\[(\d+)\]\[(\d+)\]$/', $fieldName, $matches)) {
+                                $tecnicaIndex = (int)$matches[1];
+                                $prendaIndex = (int)$matches[2];
+                                $imagenIndex = (int)$matches[3];
+                                
+                                try {
+                                    Log::info('📸 Procesando imagen del PASO 3', [
+                                        'fieldName' => $fieldName,
+                                        'tecnica_index' => $tecnicaIndex,
+                                        'prenda_index' => $prendaIndex,
+                                        'imagen_index' => $imagenIndex,
+                                        'archivo_size' => $archivo->getSize()
+                                    ]);
+                                    
+                                    // Obtener la técnica y prenda del array ya procesado
+                                    if (isset($tecnicasAgregadas[$tecnicaIndex]) && isset($tecnicasAgregadas[$tecnicaIndex]['prendas'][$prendaIndex])) {
+                                        $prendaData = $tecnicasAgregadas[$tecnicaIndex]['prendas'][$prendaIndex];
+                                        
+                                        // Buscar el registro de LogoCotizacionTecnicaPrenda correspondiente
+                                        $nombrePrendaBase = explode(' - ', $prendaData['nombre_prenda'])[0];
+                                        Log::info('🔍 Buscando prenda en BD', [
+                                            'nombre_prenda_raw' => $prendaData['nombre_prenda'],
+                                            'nombre_prenda_base' => $nombrePrendaBase
+                                        ]);
+                                        
+                                        $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                                            ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
+                                            ->first();
+                                        
+                                        if ($prendaCot) {
+                                            $tipoLogoId = $tecnicasAgregadas[$tecnicaIndex]['tipo_logo']['id'];
+                                            $logoCotizacionTecnicaPrenda = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
+                                                ->where('tipo_logo_id', $tipoLogoId)
+                                                ->where('prenda_cot_id', $prendaCot->id)
+                                                ->first();
+                                            
+                                            if ($logoCotizacionTecnicaPrenda) {
+                                                // Determinar orden de la foto
+                                                $ordenFoto = $logoCotizacionTecnicaPrenda->fotos()->count() + 1;
+                                                
+                                                if ($ordenFoto > 5) {
+                                                    Log::warning('⚠️ Máximo de imágenes alcanzado (5)', [
+                                                        'prenda_id' => $logoCotizacionTecnicaPrenda->id
+                                                    ]);
+                                                    continue;
+                                                }
+                                                
+                                                // Generar ruta de almacenamiento
+                                                $rutaDirectorio = "cotizaciones/{$cotizacionId}/logo";
+                                                $nombreArchivo = uniqid('img_paso3_') . '.' . $archivo->getClientOriginalExtension();
+                                                $rutaCompleta = $rutaDirectorio . '/' . $nombreArchivo;
+                                                
+                                                // Guardar archivo en disco (public/storage)
+                                                $path = $archivo->store($rutaDirectorio, 'public');
+                                                
+                                                Log::info('✅ Archivo de imagen guardado en disco', [
+                                                    'path' => $path,
+                                                    'ruta_completa' => $rutaCompleta
+                                                ]);
+                                                
+                                                // Registrar en BD
+                                                $logoCotizacionTecnicaPrenda->fotos()->create([
+                                                    'ruta_original' => $path,
+                                                    'ruta_webp' => $path,
+                                                    'ruta_miniatura' => $path,
+                                                    'orden' => $ordenFoto,
+                                                ]);
+                                                
+                                                Log::info('✅ Imagen del PASO 3 guardada en BD', [
+                                                    'tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
+                                                    'ruta' => $path,
+                                                    'orden' => $ordenFoto
+                                                ]);
+                                            } else {
+                                                Log::warning('⚠️ No se encontró registro de técnica para guardar imagen', [
+                                                    'logo_cotizacion_id' => $logoCotizacion->id,
+                                                    'tipo_logo_id' => $tipoLogoId,
+                                                    'prenda_cot_id' => $prendaCot->id
+                                                ]);
+                                            }
+                                        } else {
+                                            Log::warning('⚠️ No se encontró prenda en BD para guardar imagen', [
+                                                'nombre_prenda_base' => $nombrePrendaBase,
+                                                'cotizacion_id' => $cotizacionId
+                                            ]);
+                                        }
+                                    } else {
+                                        Log::warning('⚠️ Índices fuera de rango', [
+                                            'tecnica_index' => $tecnicaIndex,
+                                            'prenda_index' => $prendaIndex,
+                                            'tecnicas_count' => count($tecnicasAgregadas),
+                                            'prendas_count' => isset($tecnicasAgregadas[$tecnicaIndex]) ? count($tecnicasAgregadas[$tecnicaIndex]['prendas']) : 0
+                                        ]);
+                                    }
+                                } catch (\Exception $e) {
+                                    Log::error('❌ Error procesando imagen del PASO 3', [
+                                        'error' => $e->getMessage(),
+                                        'fieldName' => $fieldName,
+                                        'file' => $e->getFile(),
+                                        'line' => $e->getLine()
+                                    ]);
+                                }
+                            }
+                        }
+                        
+                        Log::info('✅ Procesamiento de imágenes PASO 3 completado', [
+                            'total_procesadas' => count($imagenesP3Archivos)
+                        ]);
+                    } else {
+                        Log::info('⚠️ No hay imágenes del PASO 3 para procesar');
+                    }
                     
                 } catch (\Exception $e) {
                         Log::error('❌ Error procesando técnicas', [
@@ -3100,6 +3243,32 @@ final class CotizacionController extends Controller
                 'success' => false,
                 'message' => 'Error al actualizar cotización: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Flatear recursivamente array de archivos para obtener todos los File objects
+     */
+    private function flatearArchivos(&$archivos, &$resultado, $prefijo = ''): void
+    {
+        if (!is_array($archivos)) {
+            return;
+        }
+
+        foreach ($archivos as $key => $valor) {
+            $nuevaLlave = $prefijo . '[' . $key . ']';
+            
+            if ($valor instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
+                // Es un archivo, agregarlo al resultado
+                $resultado[$nuevaLlave] = $valor;
+                Log::info('✅ Archivo encontrado durante flateo', [
+                    'key' => $nuevaLlave,
+                    'size' => $valor->getSize()
+                ]);
+            } elseif (is_array($valor)) {
+                // Es un array, recursionar
+                $this->flatearArchivos($valor, $resultado, $nuevaLlave);
+            }
         }
     }
 

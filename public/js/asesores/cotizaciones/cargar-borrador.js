@@ -8,6 +8,10 @@ function cargarBorrador(cotizacion) {
     
     console.log('📂 Cargando borrador:', cotizacion);
     
+    // 💾 GUARDAR COTIZACIÓN EN MEMORIA PARA PASO 3
+    window.cotizacionData = cotizacion;
+    console.log('💾 Cotización guardada en window.cotizacionData');
+    
     // 🧹 LIMPIAR MEMORIA DE FOTOS ANTES DE CARGAR PARA EVITAR DUPLICADOS
     if (window.fotosSeleccionadas) {
         window.fotosSeleccionadas = {};
