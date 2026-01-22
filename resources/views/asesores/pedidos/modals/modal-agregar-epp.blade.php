@@ -38,29 +38,17 @@
                 </div>
             </div>
 
-            <!-- Campos Medida/Talla y Cantidad -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-sm font-medium text-gray-700 block mb-2">Medida / Talla</label>
-                    <input 
-                        type="text"
-                        id="medidaTallaEPP"
-                        placeholder="S, M, L, XL, 40..."
-                        disabled
-                        class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none"
-                    >
-                </div>
-                <div>
-                    <label class="text-sm font-medium text-gray-700 block mb-2">Cantidad</label>
-                    <input 
-                        type="number"
-                        id="cantidadEPP"
-                        value="1"
-                        placeholder="1"
-                        disabled
-                        class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none"
-                    >
-                </div>
+            <!-- Cantidad -->
+            <div>
+                <label class="text-sm font-medium text-gray-700 block mb-2">Cantidad</label>
+                <input 
+                    type="number"
+                    id="cantidadEPP"
+                    value="1"
+                    placeholder="1"
+                    disabled
+                    class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none"
+                >
             </div>
 
             <!-- Observaciones -->
@@ -158,8 +146,6 @@ function resetearModalAgregarEPP() {
     productoSeleccionadoEPP = null;
     document.getElementById('inputBuscadorEPP').value = '';
     document.getElementById('productoCardEPP').style.display = 'none';
-    document.getElementById('medidaTallaEPP').disabled = true;
-    document.getElementById('medidaTallaEPP').value = '';
     document.getElementById('cantidadEPP').disabled = true;
     document.getElementById('cantidadEPP').value = '1';
     document.getElementById('observacionesEPP').disabled = true;
@@ -204,7 +190,6 @@ function mostrarProductoEPP(producto) {
     document.getElementById('codigoProductoEPP').textContent = producto.codigo;
 
     // Habilitar campos
-    document.getElementById('medidaTallaEPP').disabled = false;
     document.getElementById('cantidadEPP').disabled = false;
     document.getElementById('observacionesEPP').disabled = false;
 
@@ -216,8 +201,6 @@ function mostrarProductoEPP(producto) {
 }
 
 function resetearFormularioEPP() {
-    document.getElementById('medidaTallaEPP').disabled = true;
-    document.getElementById('medidaTallaEPP').value = '';
     document.getElementById('cantidadEPP').disabled = true;
     document.getElementById('cantidadEPP').value = '1';
     document.getElementById('observacionesEPP').disabled = true;
@@ -229,15 +212,8 @@ function resetearFormularioEPP() {
 }
 
 function actualizarEstilosCampos() {
-    const medidaInput = document.getElementById('medidaTallaEPP');
     const cantidadInput = document.getElementById('cantidadEPP');
     const observacionesInput = document.getElementById('observacionesEPP');
-
-    if (medidaInput.disabled) {
-        medidaInput.classList.add('disabled');
-    } else {
-        medidaInput.classList.remove('disabled');
-    }
 
     if (cantidadInput.disabled) {
         cantidadInput.classList.add('disabled');
@@ -258,14 +234,12 @@ function agregarEPPAlPedido() {
         return;
     }
 
-    const medida = document.getElementById('medidaTallaEPP').value;
     const cantidad = document.getElementById('cantidadEPP').value;
     const observaciones = document.getElementById('observacionesEPP').value;
 
     // Simulación de agregar al pedido
     console.log('EPP Agregado:', {
         producto: productoSeleccionadoEPP,
-        medida: medida || 'Sin especificar',
         cantidad: cantidad || 1,
         observaciones: observaciones || 'Sin observaciones'
     });

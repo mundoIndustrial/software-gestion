@@ -34,9 +34,10 @@ class ActualizarPedidoService
 
         DB::beginTransaction();
         try {
-            // Separar datos de prendas del resto
+            // Separar datos de prendas y EPP del resto
             $prendas = $datos['prendas'] ?? [];
-            $updateData = collect($datos)->except('prendas')->toArray();
+            $epp = $datos['epp'] ?? [];
+            $updateData = collect($datos)->except(['prendas', 'epp'])->toArray();
 
             // Actualizar datos del pedido
             if (!empty($updateData)) {
@@ -47,6 +48,11 @@ class ActualizarPedidoService
             // Actualizar prendas si se enviaron
             if (!empty($prendas)) {
                 $this->actualizarPrendas($pedido, $prendas);
+            }
+
+            // Actualizar EPP si se envió
+            if (!empty($epp)) {
+                $this->actualizarEpp($pedido, $epp);
             }
 
             DB::commit();
@@ -114,6 +120,35 @@ class ActualizarPedidoService
             Log::info(' [ACTUALIZAR-PRENDAS] Prendas actualizadas');
         } catch (\Exception $e) {
             Log::error(' [ACTUALIZAR-PRENDAS] Error', ['error' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Actualizar EPP de un pedido
+     */
+    private function actualizarEpp(PedidoProduccion $pedido, array $epp): void
+    {
+        Log::info(' [ACTUALIZAR-EPP] Actualizando ' . count($epp) . ' items de EPP');
+
+        try {
+            foreach ($epp as $eppData) {
+                if (isset($eppData['id'])) {
+                    // Actualizar EPP existente
+                    $eppItem = $pedido->epp()->where('id', $eppData['id'])->first();
+                    if ($eppItem) {
+                        $eppItem->update([
+                            'cantidad' => $eppData['cantidad'] ?? 0,
+                            'observaciones' => $eppData['observaciones'] ?? null,
+                        ]);
+                        Log::info(' [ACTUALIZAR-EPP] EPP actualizado', ['epp_id' => $eppData['id']]);
+                    }
+                }
+            }
+
+            Log::info(' [ACTUALIZAR-EPP] EPP actualizado completamente');
+        } catch (\Exception $e) {
+            Log::error(' [ACTUALIZAR-EPP] Error', ['error' => $e->getMessage()]);
             throw $e;
         }
     }

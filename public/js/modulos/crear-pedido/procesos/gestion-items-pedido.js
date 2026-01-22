@@ -232,8 +232,12 @@ class GestionItemsUI {
         try {
             console.log('[GestionItemsUI.agregarPrendaNueva] Iniciando...');
 
-            // Recolectar datos del formulario modal
-            const prendaData = this._construirPrendaDesdeFormulario();
+            // Recolectar datos del formulario modal usando el componente extraído
+            window.prendaFormCollector.setNotificationService(this.notificationService);
+            const prendaData = window.prendaFormCollector.construirPrendaDesdeFormulario(
+                this.prendaEditIndex,
+                this.prendas
+            );
             
             if (!prendaData) {
                 console.warn('[GestionItemsUI.agregarPrendaNueva] No se obtuvieron datos válidos del formulario');
@@ -255,10 +259,23 @@ class GestionItemsUI {
                 }
             } else {
                 console.log('[GestionItemsUI.agregarPrendaNueva] Modo AGREGAR NUEVA');
-                // Agregar prenda al orden
-                this.agregarPrendaAlOrden(prendaData);
-                console.log('[GestionItemsUI.agregarPrendaNueva] Prenda agregada. Total prendas:', this.prendas.length);
-                this.notificationService?.exito('Prenda agregada correctamente');
+                
+                // GUARDAR EN LA BASE DE DATOS SI ESTAMOS EN EDICIÓN DE PEDIDO EXISTENTE
+                if (window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)) {
+                    const pedidoId = window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido;
+                    console.log('[GestionItemsUI.agregarPrendaNueva] Guardando prenda en pedido:', pedidoId);
+                    
+                    // PASO 1: MOSTRAR MODAL DE NOVEDAD USANDO COMPONENTE EXTRAÍDO
+                    return await window.modalNovedadPrenda.mostrarModalYGuardar(pedidoId, prendaData);
+                    
+                } else {
+                    console.log('[GestionItemsUI.agregarPrendaNueva] No hay pedido activo, agregando solo en memoria');
+                    this.notificationService?.exito('Prenda agregada correctamente');
+                    
+                    // Agregar prenda al orden
+                    this.agregarPrendaAlOrden(prendaData);
+                    console.log('[GestionItemsUI.agregarPrendaNueva] Prenda agregada. Total prendas:', this.prendas.length);
+                }
             }
 
             // Cerrar el modal
@@ -272,6 +289,14 @@ class GestionItemsUI {
 
             // Resetear índice de edición
             this.prendaEditIndex = null;
+            
+            // IMPORTANTE: Actualizar window.datosEdicionPedido.prendas (sin reabrirse automáticamente)
+            if (window.datosEdicionPedido) {
+                console.log('[GestionItemsUI.agregarPrendaNueva] Actualizando prendas globales...');
+                window.datosEdicionPedido.prendas = this.prendas;
+                console.log('[GestionItemsUI.agregarPrendaNueva] Prendas actualizadas. Total:', this.prendas.length);
+                // El modal de éxito se mostrará y el usuario decidirá si ver la lista
+            }
 
         } catch (error) {
             console.error('[GestionItemsUI.agregarPrendaNueva] ERROR:', error);
@@ -284,171 +309,6 @@ class GestionItemsUI {
      * Recolecta: nombre, descripción, origen, imágenes, telas, tallas, variaciones, procesos
      * @private
      */
-    _construirPrendaDesdeFormulario() {
-        try {
-            // Obtener datos básicos
-            const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim();
-            const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
-            const origen = document.getElementById('nueva-prenda-origen-select')?.value || 'bodega';
-
-            // Validar campos requeridos
-            if (!nombre) {
-                this.notificationService?.error('El nombre de la prenda es requerido');
-                return null;
-            }
-
-            // Obtener imágenes de prenda desde storage
-            const imagenesTemporales = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
-            
-            console.log('[GestionItemsUI] Imágenes temporales del storage:', imagenesTemporales);
-            
-            // Copiar SOLO los File objects (NO blobs ni previewUrl)
-            const imagenesCopia = imagenesTemporales.map(img => {
-                console.log('[GestionItemsUI] Procesando imagen:', img instanceof File ? 'File' : typeof img, img);
-                
-                // Si img es directamente un File object, usarlo
-                if (img instanceof File) {
-                    console.log('[GestionItemsUI]  Imagen es File object');
-                    return img;
-                }
-                // Si img tiene propiedad file que es File object, usar eso
-                if (img && img.file instanceof File) {
-                    console.log('[GestionItemsUI]  Imagen tiene propiedad file');
-                    return img.file;
-                }
-                // Si es un objeto con previewUrl (desde BD), ignorar - no es un File nuevo
-                if (img && img.previewUrl && !img.file) {
-                    console.log('[GestionItemsUI] ⚠️ Imagen es desde BD, ignorando');
-                    return null;
-                }
-                // Fallback: retornar img tal cual si es File
-                console.log('[GestionItemsUI] ⚠️ Imagen no reconocida');
-                return img;
-            }).filter(img => img !== null && img instanceof File);
-            
-            // Construir objeto de prenda
-            const prendaData = {
-                tipo: 'prenda_nueva',
-                nombre_producto: nombre,
-                descripcion: descripcion || '',
-                origen: origen,
-                // Imágenes de prenda copiadas del storage
-                imagenes: imagenesCopia,
-                telasAgregadas: [],
-                procesos: window.procesosSeleccionados || {},
-                // Formato único: cantidad_talla (JSON plano)
-                cantidad_talla: window.cantidadesTallas || {},
-                variantes: {}
-            };
-
-            // Recolectar telas desde window.telasAgregadas (gestionadas por gestion-telas.js)
-            if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
-                prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
-                    // Copiar imágenes de tela: SOLO File objects (NO blobs ni previewUrl)
-                    const imagenesCopia = (tela.imagenes || []).map(img => {
-                        // Si img es directamente un File object, usarlo
-                        if (img instanceof File) {
-                            console.log(`[GestionItemsUI] Tela ${telaIdx} imagen es File object`);
-                            return img;
-                        }
-                        // Si img tiene propiedad file que es File object, usar eso
-                        if (img && img.file instanceof File) {
-                            console.log(`[GestionItemsUI] Tela ${telaIdx} imagen tiene propiedad file`);
-                            return img.file;
-                        }
-                        // Si es un objeto con previewUrl (desde BD), ignorar
-                        if (img && img.previewUrl && !img.file) {
-                            console.log(`[GestionItemsUI] Tela ${telaIdx} imagen es desde BD, ignorando`);
-                            return null;
-                        }
-                        console.log(`[GestionItemsUI] Tela ${telaIdx} imagen no reconocida`);
-                        return img;
-                    }).filter(img => img !== null && img instanceof File);
-                    
-                    return {
-                        tela: tela.tela || '',
-                        color: tela.color || '',
-                        referencia: tela.referencia || '',
-                        // Imágenes de tela copiadas
-                        imagenes: imagenesCopia
-                    };
-                });
-            }
-            // Si estamos en modo edición y no hay telas en window.telasAgregadas, 
-            // obtener telas de la prenda anterior
-            else if (this.prendaEditIndex !== null && this.prendaEditIndex !== undefined) {
-                const prendaAnterior = this.prendas[this.prendaEditIndex];
-                if (prendaAnterior && prendaAnterior.telasAgregadas && prendaAnterior.telasAgregadas.length > 0) {
-                    prendaData.telasAgregadas = prendaAnterior.telasAgregadas.map(tela => ({
-                        tela: tela.tela || '',
-                        color: tela.color || '',
-                        referencia: tela.referencia || '',
-                        imagenes: tela.imagenes || []
-                    }));
-                    console.log('[GestionItemsUI._recolectarDatosFormularioModal] Telas recuperadas de prenda anterior:', prendaData.telasAgregadas);
-                }
-            }
-
-            // Recolectar variaciones/variantes desde el formulario
-            const variantes = {};
-            
-            // Manga
-            const checkManga = document.getElementById('aplica-manga');
-            if (checkManga && checkManga.checked) {
-                const mangaInput = document.getElementById('manga-input');
-                const mangaObs = document.getElementById('manga-obs');
-                variantes.manga = mangaInput?.value || '';
-                variantes.obs_manga = mangaObs?.value || '';
-            } else {
-                variantes.manga = '';
-                variantes.obs_manga = '';
-            }
-            
-            // Bolsillos
-            const checkBolsillos = document.getElementById('aplica-bolsillos');
-            if (checkBolsillos && checkBolsillos.checked) {
-                const bolsillosObs = document.getElementById('bolsillos-obs');
-                variantes.tiene_bolsillos = true;
-                variantes.obs_bolsillos = bolsillosObs?.value || '';
-            } else {
-                variantes.tiene_bolsillos = false;
-                variantes.obs_bolsillos = '';
-            }
-            
-            // Broche
-            const checkBroche = document.getElementById('aplica-broche');
-            if (checkBroche && checkBroche.checked) {
-                const broqueInput = document.getElementById('broche-input');
-                const broqueObs = document.getElementById('broche-obs');
-                variantes.broche = broqueInput?.value || '';
-                variantes.obs_broche = broqueObs?.value || '';
-            } else {
-                variantes.broche = '';
-                variantes.obs_broche = '';
-            }
-            
-            // Reflectivo
-            const checkReflectivo = document.getElementById('aplica-reflectivo');
-            if (checkReflectivo && checkReflectivo.checked) {
-                const reflectivoObs = document.getElementById('reflectivo-obs');
-                variantes.tiene_reflectivo = true;
-                variantes.obs_reflectivo = reflectivoObs?.value || '';
-            } else {
-                variantes.tiene_reflectivo = false;
-                variantes.obs_reflectivo = '';
-            }
-            
-            prendaData.variantes = variantes;
-
-            console.log('[GestionItemsUI._recolectarDatosFormularioModal] Datos preparados:', prendaData);
-            return prendaData;
-
-        } catch (error) {
-            console.error('[GestionItemsUI._recolectarDatosFormularioModal] ERROR:', error);
-            return null;
-        }
-    }
-
     /**
      * Actualizar prenda existente
      */

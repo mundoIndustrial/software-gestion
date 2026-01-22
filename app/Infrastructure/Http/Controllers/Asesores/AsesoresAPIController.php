@@ -251,6 +251,221 @@ class AsesoresAPIController extends Controller
     }
 
     /**
+     * GET /asesores/pedidos/{id}/editar-datos
+     * Obtener datos completos del pedido para edición (formato JSON)
+     */
+    public function obtenerDatosEdicion($id)
+    {
+        try {
+            $pedido = PedidoProduccion::with([
+                'prendas' => function($query) {
+                    $query->with([
+                        'fotos',
+                        'coloresTelas' => function($q) {
+                            $q->with(['color', 'tela', 'fotos']);
+                        },
+                        'fotosTelas',
+                        'variantes' => function($q) {
+                            $q->with(['tipoManga', 'tipoBroche']);
+                        },
+                        'procesos' => function($q) {
+                            $q->with(['imagenes']);
+                        }
+                    ]);
+                },
+                'epps' => function($query) {
+                    $query->with(['epp', 'imagenes']);
+                }
+            ])->findOrFail($id);
+
+            // Verificar permisos
+            if ($pedido->asesor_id && $pedido->asesor_id !== Auth::id()) {
+                return response()->json(['error' => 'No tienes permiso para editar este pedido'], 403);
+            }
+
+            // Preparar datos de prendas
+            $prendasData = $pedido->prendas->map(function($prenda) {
+                // Convertir IDs de tallas a nombres
+                $cantidadTallaConNombres = [];
+                $cantidadTalla = $prenda->cantidad_talla;
+                if (is_string($cantidadTalla)) {
+                    $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
+                }
+                
+                if ($cantidadTalla && is_array($cantidadTalla)) {
+                    foreach ($cantidadTalla as $tallaId => $cantidad) {
+                        if ($cantidad > 0) {
+                            $talla = \App\Models\Talla::find($tallaId);
+                            $nombreTalla = $talla ? $talla->nombre : $tallaId;
+                            $cantidadTallaConNombres[$nombreTalla] = $cantidad;
+                        }
+                    }
+                }
+
+                // Preparar variantes
+                $variantes = [];
+                if ($prenda->variantes && count($prenda->variantes) > 0) {
+                    foreach ($prenda->variantes as $variante) {
+                        $variantes[] = [
+                            'id' => $variante->id,
+                            'tipo_manga_id' => $variante->tipo_manga_id,
+                            'tipo_manga_nombre' => $variante->tipoManga?->nombre,
+                            'manga_obs' => $variante->manga_obs,
+                            'tipo_broche_id' => $variante->tipo_broche_boton_id,
+                            'tipo_broche_nombre' => $variante->tipoBroche?->nombre,
+                            'broche_boton_obs' => $variante->broche_boton_obs,
+                            'tiene_bolsillos' => $variante->tiene_bolsillos,
+                            'bolsillos_obs' => $variante->bolsillos_obs
+                        ];
+                    }
+                }
+
+                // Preparar procesos
+                $procesos = [];
+                if ($prenda->procesos && count($prenda->procesos) > 0) {
+                    foreach ($prenda->procesos as $proceso) {
+                        $ubicacionesData = [];
+                        if ($proceso->ubicaciones) {
+                            if (is_string($proceso->ubicaciones)) {
+                                $ubicacionesData = json_decode($proceso->ubicaciones, true) ?? [];
+                            } else if (is_array($proceso->ubicaciones)) {
+                                $ubicacionesData = $proceso->ubicaciones;
+                            }
+                        }
+                        
+                        $tallasDama = [];
+                        if ($proceso->tallas_dama) {
+                            if (is_string($proceso->tallas_dama)) {
+                                $tallasDama = json_decode($proceso->tallas_dama, true) ?? [];
+                            } else if (is_array($proceso->tallas_dama)) {
+                                $tallasDama = $proceso->tallas_dama;
+                            }
+                        }
+                        
+                        $tallasCalballero = [];
+                        if ($proceso->tallas_caballero) {
+                            if (is_string($proceso->tallas_caballero)) {
+                                $tallasCalballero = json_decode($proceso->tallas_caballero, true) ?? [];
+                            } else if (is_array($proceso->tallas_caballero)) {
+                                $tallasCalballero = $proceso->tallas_caballero;
+                            }
+                        }
+                        
+                        $tipoProceso = 'Proceso';
+                        if ($proceso->tipo_proceso_id) {
+                            $tipoProcesoDB = \App\Models\TipoProceso::find($proceso->tipo_proceso_id);
+                            if ($tipoProcesoDB) {
+                                $tipoProceso = $tipoProcesoDB->nombre;
+                            }
+                        }
+                        
+                        $procesos[] = [
+                            'id' => $proceso->id,
+                            'tipo_proceso_id' => $proceso->tipo_proceso_id,
+                            'tipo' => $tipoProceso,
+                            'nombre' => $tipoProceso,
+                            'observaciones' => $proceso->observaciones,
+                            'ubicaciones' => is_array($ubicacionesData) ? $ubicacionesData : [],
+                            'tallas_dama' => $tallasDama,
+                            'tallas_caballero' => $tallasCalballero,
+                            'estado' => $proceso->estado,
+                            'imagenes' => $proceso->imagenes ? $proceso->imagenes->map(function($img) {
+                                return [
+                                    'id' => $img->id,
+                                    'url' => $img->url,
+                                    'ruta' => $img->ruta_webp ?? $img->ruta_original
+                                ];
+                            })->toArray() : []
+                        ];
+                    }
+                }
+
+                return [
+                    'id' => $prenda->id,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'cantidad' => $prenda->cantidad,
+                    'descripcion' => $prenda->descripcion,
+                    'cantidad_talla' => $cantidadTallaConNombres,
+                    'color_id' => $prenda->color_id,
+                    'color_nombre' => $prenda->color?->nombre ?? null,
+                    'tela_id' => $prenda->tela_id,
+                    'tela_nombre' => $prenda->tela?->nombre ?? null,
+                    'tipo_manga_id' => $prenda->tipo_manga_id,
+                    'tipo_manga_nombre' => $prenda->tipoManga?->nombre ?? null,
+                    'tipo_broche_id' => $prenda->tipo_broche_id,
+                    'tipo_broche_nombre' => $prenda->tipoBrocheBoton?->nombre ?? null,
+                    'tiene_bolsillos' => $prenda->tiene_bolsillos,
+                    'tiene_reflectivo' => $prenda->tiene_reflectivo,
+                    'fotos' => $prenda->fotos->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $foto->url,
+                            'url' => $foto->url
+                        ];
+                    })->toArray(),
+                    'fotos_tela' => $prenda->fotosTelas->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $foto->url,
+                            'url' => $foto->url
+                        ];
+                    })->toArray(),
+                    'procesos' => $procesos
+                ];
+            });
+
+            // Preparar EPP
+            $eppData = [];
+            if ($pedido->epps && count($pedido->epps) > 0) {
+                foreach ($pedido->epps as $epp) {
+                    $eppData[] = [
+                        'id' => $epp->id,
+                        'epp_id' => $epp->epp_id,
+                        'epp_nombre' => $epp->epp?->nombre ?? 'EPP sin nombre',
+                        'epp_codigo' => $epp->epp?->codigo ?? '',
+                        'cantidad' => $epp->cantidad,
+                        'observaciones' => $epp->observaciones,
+                        'imagenes' => $epp->imagenes ? $epp->imagenes->map(function($img) {
+                            return [
+                                'id' => $img->id,
+                                'ruta' => $img->ruta_web ?? $img->ruta_original,
+                                'url' => $img->ruta_web ?? $img->ruta_original,
+                                'principal' => $img->principal ?? false
+                            ];
+                        })->toArray() : []
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'pedido' => [
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'forma_de_pago' => $pedido->forma_de_pago,
+                    'estado' => $pedido->estado,
+                    'descripcion' => $pedido->descripcion,
+                    'novedades' => $pedido->novedades,
+                    'area' => $pedido->area,
+                    'prendas' => $prendasData,
+                    'epp' => $eppData
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[EDICION-DATOS] Error obteniendo datos', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error obteniendo datos del pedido: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener código HTTP de excepción
      */
     protected function getHttpStatusCode(\Exception $e): int

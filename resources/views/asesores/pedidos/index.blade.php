@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
+    <!-- CSS del modal EPP -->
+    <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
+    <!-- CSS de modales personalizados (EPP y Prendas) -->
+    <link rel="stylesheet" href="{{ asset('css/modales-personalizados.css') }}">
 @endsection
 
 @section('content')
@@ -30,6 +34,21 @@
 @endpush
 
 @push('scripts')
+<!-- Componente: Modal Editar Pedido -->
+@include('asesores.pedidos.components.modal-editar-pedido')
+
+<!-- Componente: Modal Lista Prendas -->
+@include('asesores.pedidos.components.modal-prendas-lista')
+
+<!-- Componente: Modal Agregar Prenda -->
+@include('asesores.pedidos.components.modal-agregar-prenda')
+
+<!-- Componente: Modal Editar Prenda Específica -->
+@include('asesores.pedidos.components.modal-editar-prenda')
+
+<!-- Componente: Modal Editar EPP -->
+@include('asesores.pedidos.components.modal-editar-epp')
+
 <!--  SERVICIOS CENTRALIZADOS - Cargar PRIMERO -->
 <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
 <script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
@@ -221,37 +240,7 @@
         return resultado;
     }
 
-    /**
-     * Navegación de filtros - Spinner ya está desactivado en esta página
-     */
-    function navegarFiltro(url, event) {
-        event.preventDefault();
-        window.location.href = url;
-        return false;
-    }
 
-    // DESACTIVAR SPINNER en esta página - solo navegación de filtros, sin AJAX
-    // El spinner se mantiene desactivado durante toda la sesión en esta página
-    window.addEventListener('DOMContentLoaded', function() {
-        if (window.setSpinnerConfig) {
-            window.setSpinnerConfig({ enabled: false });
-        }
-        console.log(' Spinner desactivado en página de pedidos');
-    });
-
-    // Asegurar que el spinner esté oculto al cargar
-    window.addEventListener('load', function() {
-        if (window.hideLoadingSpinner) {
-            window.hideLoadingSpinner();
-        }
-        const spinner = document.getElementById('loadingSpinner');
-        if (spinner) {
-            spinner.classList.add('hidden');
-            spinner.style.display = 'none';
-            spinner.style.visibility = 'hidden';
-        }
-        console.log(' Spinner oculto al cargar la página');
-    });
 
 
 
@@ -271,7 +260,7 @@
             .then(respuesta => {
                 Swal.close();
                 if (!respuesta.success) throw new Error(respuesta.message || 'Error al cargar datos');
-                abrirModalEditarPedido(pedidoId, respuesta.datos);
+                abrirModalEditarPedido(pedidoId, respuesta.datos, 'editar');  // Pasar 'editar' para mostrar botones
             })
             .catch(err => {
                 Swal.close();
@@ -279,31 +268,6 @@
             });
     }
     
-    /**
-     * Abrir modal de edición de pedido (factura interactiva)
-     */
-    function abrirModalEditarPedido(pedidoId, datosCompletos) {
-        // Guardar datos en variable global
-        window.datosEdicionPedido = datosCompletos;
-        
-        // Generar factura
-        let htmlFactura = window.generarHTMLFactura ? window.generarHTMLFactura(datosCompletos) : '<p>Error: No se pudo generar la factura</p>';
-        
-        const htmlBotones = `
-            <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; border-left: 4px solid #6b7280; margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                <button onclick="abrirEditarDatos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'"> Editar Datos</button>
-                <button onclick="abrirEditarPrendas()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'"> Editar Prendas</button>
-                <button onclick="abrirEditarEPP()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#4b5563'" onmouseout="this.style.backgroundColor='#6b7280'">💊 Editar EPP</button>
-            </div>
-        `;
-        
-        UI.contenido({
-            titulo: ` Editar Pedido #${datosCompletos.numero_pedido}`,
-            html: htmlBotones + `<div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">${htmlFactura}</div>`,
-            ancho: '900px',
-            confirmButtonText: ' Listo'
-        });
-    }
     
     /**
      * Abrir formulario para editar datos generales del pedido
@@ -323,8 +287,8 @@
                     <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
                 </div>
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Observaciones</label>
-                    <textarea id="editObservaciones" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px;">${datos.observaciones || ''}</textarea>
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Novedades</label>
+                    <textarea id="editNovedades" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px;">${datos.novedades || ''}</textarea>
                 </div>
             </div>
         `;
@@ -340,107 +304,79 @@
                 const datosActualizados = {
                     cliente: document.getElementById('editCliente').value,
                     forma_de_pago: document.getElementById('editFormaPago').value,
-                    observaciones: document.getElementById('editObservaciones').value
+                    novedades: document.getElementById('editNovedades').value
                 };
-                UI.exito('Datos guardados correctamente');
+                
+                guardarCambiosPedido(datos.id || datos.numero_pedido, datosActualizados);
             }
         });
         });
     }
     
-
     /**
-     * Abrir formulario para editar EPP del pedido (lista seleccionable)
+     * Guardar cambios del pedido en el backend
      */
-    function abrirEditarEPP() {
-        Validator.requireEdicionPedido(() => {
-            const datos = window.datosEdicionPedido;
-            const epp = datos.epp || [];
+    function guardarCambiosPedido(pedidoId, datosActualizados) {
+        UI.cargando('Guardando cambios...', 'Por favor espera');
+        
+        fetch(`/asesores/pedidos/${pedidoId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(datosActualizados)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            Swal.close();
             
-            if (epp.length === 0) {
-                UI.info('Sin EPP', 'No hay EPP agregado en este pedido');
-                return;
+            // Actualizar los datos globales
+            if (window.datosEdicionPedido) {
+                window.datosEdicionPedido.cliente = datosActualizados.cliente;
+                window.datosEdicionPedido.forma_de_pago = datosActualizados.forma_de_pago;
+                window.datosEdicionPedido.novedades = datosActualizados.novedades;
             }
             
-            window.eppEdicion = {
-                pedidoId: datos.numero_pedido || datos.id,
-                epp: epp
-            };
-            
-            let htmlListaEPP = `<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">`;
-            
-            epp.forEach((item, idx) => {
-                const nombre = item.nombre || item.descripcion || 'EPP sin nombre';
-                htmlListaEPP += `
-                    <button onclick="abrirEditarEPPEspecifico(${idx})" 
-                        style="background: white; border: 2px solid #ec4899; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
-                        onmouseover="this.style.background='#fce7f3'; this.style.borderColor='#be185d';"
-                        onmouseout="this.style.background='white'; this.style.borderColor='#ec4899';">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">💊 ${nombre.toUpperCase()}</h4>
-                                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
-                            </div>
-                            <span style="background: #ec4899; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
-                        </div>
-                    </button>
-                `;
-            });
-            htmlListaEPP += '</div>';
-            
-            UI.contenido({
-                titulo: '💊 Selecciona un EPP para Editar',
-                html: htmlListaEPP,
-                ancho: '600px',
-                confirmButtonText: 'Cerrar'
-            });
-        });
-    }
-    
-    /**
-     * Abrir modal de edición para un EPP específico
-     */
-    function abrirEditarEPPEspecifico(eppIndex) {
-        Validator.requireEppItem(eppIndex, (epp) => {
-            const html = `
-                <div style="text-align: left;">
-                    <div style="background: #fce7f3; border-left: 4px solid #ec4899; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h3 style="margin: 0; color: #1f2937; font-size: 1.1rem;">💊 ${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}</h3>
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cantidad</label>
-                        <input type="number" id="eppCantidad" value="${epp.cantidad || 0}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-weight: 600;">
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Descripción</label>
-                        <input type="text" id="eppDescripcion" value="${epp.descripcion || epp.nombre || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Observaciones</label>
-                        <textarea id="eppObservaciones" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px;">${epp.observaciones || ''}</textarea>
-                    </div>
-                </div>
-            `;
-            
-            UI.contenido({
-                titulo: `💊 Editar EPP - ${(epp.nombre || epp.descripcion || 'EPP').toUpperCase()}`,
-                html: html,
-                ancho: '600px',
-                confirmButtonText: '💾 Guardar Cambios',
-                confirmButtonColor: '#ec4899',
-                showCancelButton: true
+            // Mostrar modal de confirmación para continuar editando
+            Swal.fire({
+                title: '✅ Guardado Exitosamente',
+                text: '¿Deseas continuar editando este pedido?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, continuar editando',
+                cancelButtonText: 'No, cerrar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    const cambios = {
-                        cantidad: parseInt(document.getElementById('eppCantidad').value) || 0,
-                        descripcion: document.getElementById('eppDescripcion').value,
-                        observaciones: document.getElementById('eppObservaciones').value
-                    };
-                    UI.exito('EPP actualizado correctamente');
+                    // Volver a abrir el modal de edición del pedido
+                    abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');
+                } else {
+                    // Recargar la tabla de pedidos
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
                 }
             });
+        })
+        .catch(error => {
+            console.error('Error al guardar cambios:', error);
+            Swal.close();
+            UI.error('Error al guardar', error.message || 'Ocurrió un error al guardar los cambios');
         });
     }
+    
+    // Funciones refactorizadas - Cargar desde componentes:
+    // - abrirEditarPrendas() → modal-prendas-lista.blade.php
+    // - abrirAgregarPrenda() y guardarNuevaPrenda() → modal-agregar-prenda.blade.php
+    // - abrirEditarPrendaEspecifica() → modal-editar-prenda.blade.php
+    // - abrirEditarEPP() y abrirEditarEPPEspecifico() → modal-editar-epp.blade.php
 
     //  REFACTORIZADO: eliminarPedido - DeletionService maneja todo (confirmación, fetch, notificaciones)
 
@@ -593,6 +529,10 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
 
+<!-- Componentes de Modales - Deben cargarse ANTES de GestionItemsUI -->
+<script src="{{ asset('js/componentes/modal-novedad-prenda.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/componentes/prenda-form-collector.js') }}?v={{ time() }}"></script>
+
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
 
 <!-- Dependencias para Modal Dinámico -->
@@ -609,6 +549,29 @@
 
 <!-- Componente: Editor de Prendas Modal -->
 <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}"></script>
+<!-- EPP Services - Deben cargarse ANTES del modal -->
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}"></script>
+
+<!-- EPP Services SOLID - Mejoras de refactorización -->
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}"></script>
+
+<!-- EPP Templates e Interfaces -->
+<script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}"></script>
+
+<!-- EPP Initialization -->
+<script src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}"></script>
+
+<!-- Modal EPP (refactorizado) - Carga DESPUÉS de los servicios -->
+<script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}"></script>
+
 <!-- MODULAR ORDER TRACKING (SOLID Architecture) -->
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>
@@ -620,4 +583,43 @@
 <script src="{{ asset('js/order-tracking/modules/tableManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}"></script>
+
+<!-- CSS para controlar z-index de modales SweetAlert2 -->
+<style>
+    /* Estrategia agresiva: z-index muy alto para modal de novedad y sus variantes */
+    .swal-modal-novedad,
+    .swal-modal-novedad.swal2-container {
+        z-index: 999999 !important;
+    }
+    
+    .swal-modal-novedad .swal2-popup,
+    .swal-modal-novedad .swal2-modal {
+        z-index: 999999 !important;
+    }
+    
+    .swal-modal-novedad .swal2-backdrop {
+        z-index: 999998 !important;
+    }
+    
+    /* Modales secundarios (warning, cargando, éxito, error) también con z-index alto */
+    .swal-modal-warning,
+    .swal-modal-warning.swal2-container,
+    .swal-modal-cargando,
+    .swal-modal-cargando.swal2-container,
+    .swal-modal-exito,
+    .swal-modal-exito.swal2-container,
+    .swal-modal-error,
+    .swal-modal-error.swal2-container {
+        z-index: 999999 !important;
+    }
+    
+    /* Popup de SweetAlert */
+    .swal-modal-warning .swal2-popup,
+    .swal-modal-cargando .swal2-popup,
+    .swal-modal-exito .swal2-popup,
+    .swal-modal-error .swal2-popup {
+        z-index: 999999 !important;
+    }
+</style>
+
 @endpush

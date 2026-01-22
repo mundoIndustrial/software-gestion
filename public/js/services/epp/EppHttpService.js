@@ -124,12 +124,11 @@ class EppHttpService {
      * Agregar EPP a un pedido
      * @param {number} pedidoId - ID del pedido
      * @param {number} eppId - ID del EPP
-     * @param {string} talla - Talla del EPP
      * @param {number} cantidad - Cantidad
      * @param {string|null} observaciones - Observaciones opcionales
      * @returns {Promise<Object>} Respuesta de la API
      */
-    async agregarAlPedido(pedidoId, eppId, talla, cantidad, observaciones = null) {
+    async agregarAlPedido(pedidoId, eppId, cantidad, observaciones = null) {
         const response = await fetch(`${this.baseUrl}/pedidos/${pedidoId}/epp/agregar`, {
             method: 'POST',
             headers: {
@@ -139,7 +138,6 @@ class EppHttpService {
             },
             body: JSON.stringify({
                 epp_id: eppId,
-                talla: talla,
                 cantidad: cantidad,
                 observaciones: observaciones,
             }),

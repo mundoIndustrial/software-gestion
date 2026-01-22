@@ -48,7 +48,17 @@ class EppService {
     /**
      * Editar EPP desde formulario (no guardado en BD)
      */
-    editarEPPFormulario(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes) {
+    editarEPPFormulario(id, nombre, codigo, categoria, cantidad, observaciones, imagenes) {
+        // Asegurar que el modal existe en el DOM
+        if (!document.getElementById('modal-agregar-epp')) {
+            console.log('[EppService] Modal no encontrado, inyectando...');
+            if (typeof window.EppModalTemplate !== 'undefined') {
+                const modalHTML = window.EppModalTemplate.getHTML();
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                console.log('[EppService] Modal inyectado al DOM');
+            }
+        }
+
         this.stateManager.iniciarEdicion(id, false);
         this.stateManager.setProductoSeleccionado({ id, nombre, codigo, categoria });
         this.stateManager.guardarDatosItem(id, { id, nombre, codigo, categoria, cantidad, observaciones, imagenes });
@@ -166,7 +176,6 @@ class EppService {
                 producto.nombre,
                 producto.codigo,
                 producto.categoria,
-                null,
                 valores.cantidad,
                 valores.observaciones,
                 imagenes

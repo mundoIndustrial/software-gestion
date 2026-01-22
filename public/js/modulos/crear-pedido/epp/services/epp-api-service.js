@@ -90,7 +90,7 @@ class EppApiService {
      */
     async eliminarImagen(imagenId) {
         try {
-            const response = await fetch(`${this.baseUrl}/imagenes/${imagenId}`, {
+            const response = await fetch(`${this.baseUrl}/epp/imagenes/${imagenId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': this._obtenerCsrfToken()

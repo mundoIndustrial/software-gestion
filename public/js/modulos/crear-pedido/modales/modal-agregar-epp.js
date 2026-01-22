@@ -67,8 +67,8 @@ function agregarEPPAlPedido() {
     window.EppModalInterface?.agregarEPP();
 }
 
-function editarItemEPP(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes) {
-    window.EppModalInterface?.editarEPP(id, nombre, codigo, categoria, null, cantidad, observaciones, imagenes);
+function editarItemEPP(id, nombre, codigo, categoria, cantidad, observaciones, imagenes) {
+    window.EppModalInterface?.editarEPP(id, nombre, codigo, categoria, cantidad, observaciones, imagenes);
 }
 
 async function editarEPPDesdeDB(eppId) {
@@ -119,9 +119,9 @@ function mostrarErrorEPP(mensaje) {
     }
 }
 
-function crearItemEPP(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes = []) {
+function crearItemEPP(id, nombre, codigo, categoria, cantidad, observaciones, imagenes = []) {
     if (window.eppItemManager) {
-        window.eppItemManager.crearItem(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes);
+        window.eppItemManager.crearItem(id, nombre, codigo, categoria, cantidad, observaciones, imagenes);
     }
 }
 
@@ -146,7 +146,7 @@ function configurarEventListenersItem(id) {
                     if (datosItem.epp_id) {
                         editarEPPDesdeDB(datosItem.epp_id);
                     } else {
-                        editarItemEPP(datosItem.id, datosItem.nombre, datosItem.codigo, datosItem.categoria, datosItem.talla, datosItem.cantidad, datosItem.observaciones, datosItem.imagenes);
+                        editarItemEPP(datosItem.id, datosItem.nombre, datosItem.codigo, datosItem.categoria, datosItem.cantidad, datosItem.observaciones, datosItem.imagenes);
                     }
                 }
                 if (submenu) submenu.style.display = 'none';
@@ -536,15 +536,6 @@ function agregarEPPAlPedido() {
 function eliminarItemEPP(id) {
     if (window.eppService) {
         window.eppService.eliminarEPP(id);
-    }
-}
-
-/**
- * Editar item EPP
- */
-function editarItemEPP(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes) {
-    if (window.eppService) {
-        window.eppService.editarEPPFormulario(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes);
     }
 }
 

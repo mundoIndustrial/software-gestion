@@ -294,11 +294,11 @@ class DashboardController extends Controller
     {
         $titles = [
             'entrega_pedido_costura' => ' Entrega Costura - Pedido',
-            'entrega_pedido_corte' => '✂️ Entrega Corte - Pedido',
-            'entrega_bodega_costura' => '🏭 Entrega Costura - Bodega',
-            'entrega_bodega_corte' => '🏭 Entrega Corte - Bodega',
-            'registro_piso_produccion' => '⚙️ Registro - Producción',
-            'registro_piso_corte' => '✂️ Registro - Corte',
+            'entrega_pedido_corte' => ' Entrega Corte - Pedido',
+            'entrega_bodega_costura' => ' Entrega Costura - Bodega',
+            'entrega_bodega_corte' => ' Entrega Corte - Bodega',
+            'registro_piso_produccion' => ' Registro - Producción',
+            'registro_piso_corte' => ' Registro - Corte',
             'registro_piso_polo' => ' Registro - Polos',
         ];
         

@@ -11,7 +11,7 @@ class EppItemManager {
     /**
      * Crear item visual de EPP
      */
-    crearItem(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes = []) {
+    crearItem(id, nombre, codigo, categoria, cantidad, observaciones, imagenes = []) {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
             console.error('[EppItemManager] Lista de items no encontrada');
@@ -115,7 +115,8 @@ class EppItemManager {
      * Crear galería HTML
      */
     _crearGaleriaHTML(nombre, imagenes) {
-        if (!imagenes || imagenes.length === 0) {
+        // Asegurar que imagenes sea un array
+        if (!imagenes || !Array.isArray(imagenes) || imagenes.length === 0) {
             return '';
         }
 
@@ -125,7 +126,7 @@ class EppItemManager {
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
                     ${imagenes.map(img => `
                         <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                            <img src="${img.url}" alt="${nombre}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="${img.url || img}" alt="${nombre}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </div>
                     `).join('')}
                 </div>

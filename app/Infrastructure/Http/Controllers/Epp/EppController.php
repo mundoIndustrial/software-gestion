@@ -377,11 +377,36 @@ class EppController extends Controller
     /**
      * DELETE /api/epp/imagenes/{imagenId}
      * 
-     * Eliminar imagen de un EPP
+     * Eliminar imagen de un EPP (tanto del maestro como de PedidoEpp)
      */
     public function eliminarImagen(int $imagenId): JsonResponse
     {
         try {
+            // Primero intentar eliminar imagen de PedidoEpp
+            $imagenPedido = \DB::table('pedido_epp_imagenes')->where('id', $imagenId)->first();
+            
+            if ($imagenPedido) {
+                // Eliminar archivo del servidor
+                if ($imagenPedido->ruta_web) {
+                    $rutaArchivo = str_replace('/storage/', '', $imagenPedido->ruta_web);
+                    Storage::disk('public')->delete($rutaArchivo);
+                }
+                
+                // Eliminar registro de la base de datos
+                \DB::table('pedido_epp_imagenes')->where('id', $imagenId)->delete();
+                
+                \Log::info('[EppController] Imagen de PedidoEpp eliminada', [
+                    'imagen_id' => $imagenId,
+                    'ruta' => $imagenPedido->ruta_web
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Imagen eliminada correctamente',
+                ]);
+            }
+            
+            // Si no está en PedidoEpp, intentar en EppImagen (maestro)
             $imagen = EppImagen::findOrFail($imagenId);
             $epp = $imagen->epp;
 
@@ -404,9 +429,14 @@ class EppController extends Controller
                 'message' => 'Imagen no encontrada',
             ], 404);
         } catch (\Exception $e) {
+            \Log::error('[EppController] Error eliminando imagen', [
+                'imagen_id' => $imagenId,
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar imagen',
+                'message' => 'Error al eliminar imagen: ' . $e->getMessage(),
             ], 500);
         }
     }

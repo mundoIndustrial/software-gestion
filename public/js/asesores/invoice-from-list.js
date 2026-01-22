@@ -35,8 +35,14 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         // Ocultar spinner
         ocultarCargando();
         
-        // Crear modal con la factura
-        crearModalFacturaDesdeListaPedidos(datos);
+        // Usar el modal de VISUALIZACIÓN bonito con botones de PDF e imprimir (NO el de edición)
+        if (typeof crearModalFacturaDesdeListaPedidos === 'function') {
+            console.log(' [FACTURA] Usando modal de VISUALIZACIÓN bonito con botones de PDF e imprimir');
+            crearModalFacturaDesdeListaPedidos(datos);
+        } else {
+            console.warn(' [FACTURA] Función crearModalFacturaDesdeListaPedidos no encontrada');
+            abrirModalEditarPedido(pedidoId, datos, 'ver');  // Fallback al modal simple
+        }
         
     } catch (error) {
         console.error(' [FACTURA] Error cargando factura:', error);
@@ -55,11 +61,29 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
 function crearModalFacturaDesdeListaPedidos(datos) {
     console.log(' [FACTURA] Creando modal de factura');
     
-    // Agregar estilos de impresión al documento si no existen
-    if (!document.getElementById('print-styles-factura')) {
+    // Agregar estilos y animaciones al documento si no existen
+    if (!document.getElementById('factura-styles')) {
         const styleSheet = document.createElement('style');
-        styleSheet.id = 'print-styles-factura';
+        styleSheet.id = 'factura-styles';
         styleSheet.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
             @media print {
                 /* Ocultar TODA la página */
                 body > * {
@@ -132,17 +156,37 @@ function crearModalFacturaDesdeListaPedidos(datos) {
             }
         `;
         document.head.appendChild(styleSheet);
-        console.log(' [FACTURA] Estilos de impresión agregados');
+        console.log(' [FACTURA] Estilos y animaciones agregados');
     }
     
     // Usar la función existente de invoice-preview-live.js
     let htmlFactura;
     if (typeof generarHTMLFactura === 'function') {
-        htmlFactura = generarHTMLFactura(datos);
-        console.log(' [FACTURA] Usando generarHTMLFactura de invoice-preview-live.js');
+        try {
+            htmlFactura = generarHTMLFactura(datos);
+            console.log(' [FACTURA] HTML generado correctamente, longitud:', htmlFactura.length);
+            if (!htmlFactura || htmlFactura.trim().length === 0) {
+                throw new Error('HTML vacío generado');
+            }
+        } catch (error) {
+            console.error(' [FACTURA] Error al generar HTML:', error);
+            htmlFactura = `
+                <div style="padding: 30px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; color: #856404;">
+                    <h3>Error al generar factura</h3>
+                    <p>${error.message}</p>
+                    <hr>
+                    <div style="font-size: 12px; color: #666;">
+                        <strong>Datos disponibles:</strong><br>
+                        Pedido: ${datos.numero_pedido}<br>
+                        Cliente: ${datos.cliente}<br>
+                        Asesor: ${datos.asesora}
+                    </div>
+                </div>
+            `;
+        }
     } else {
         console.warn('  [FACTURA] generarHTMLFactura no encontrada, usando fallback simple');
-        htmlFactura = `<div style="padding: 20px;"><p>Pedido #${datos.numero_pedido}</p><p>Cliente: ${datos.cliente}</p></div>`;
+        htmlFactura = `<div style="padding: 30px; background: #f3f4f6; border-radius: 6px;"><h3>Información del Pedido</h3><p><strong>Pedido #${datos.numero_pedido}</strong></p><p>Cliente: ${datos.cliente}</p><p>Asesor: ${datos.asesora}</p></div>`;
     }
     
     // Crear overlay
@@ -299,10 +343,27 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     
     // Contenido de la factura
     const contenido = document.createElement('div');
+    contenido.id = 'modal-factura-contenido';
     contenido.style.cssText = `
         padding: 30px;
+        overflow-y: auto;
+        max-height: calc(90vh - 100px);
     `;
-    contenido.innerHTML = htmlFactura;
+    
+    try {
+        contenido.innerHTML = htmlFactura;
+        console.log(' [FACTURA] HTML inyectado en el contenedor, elementos:', contenido.children.length);
+        
+        // Verificar que el contenido se inyectó correctamente
+        if (contenido.innerHTML.trim().length === 0) {
+            console.error(' [FACTURA] ADVERTENCIA: innerHTML vacío después de asignar');
+            contenido.innerHTML = '<p style="color: red;">Error: el contenido de la factura no se pudo renderizar</p>';
+        }
+    } catch (error) {
+        console.error(' [FACTURA] Error inyectando HTML:', error);
+        contenido.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
+    
     modal.appendChild(contenido);
     
     overlay.appendChild(modal);

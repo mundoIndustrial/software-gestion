@@ -270,10 +270,8 @@ class PedidosEditableWebClient {
                     formData.append(`items[${itemIdx}][nombre]`, item.nombre || '');
                     formData.append(`items[${itemIdx}][codigo]`, item.codigo || '');
                     formData.append(`items[${itemIdx}][categoria]`, item.categoria || '');
-                    formData.append(`items[${itemIdx}][talla]`, item.talla || '');
                     formData.append(`items[${itemIdx}][cantidad]`, item.cantidad || '');
                     formData.append(`items[${itemIdx}][observaciones]`, item.observaciones || '');
-                    formData.append(`items[${itemIdx}][tallas_medidas]`, item.tallas_medidas || '');
                     
                     // Imágenes del EPP
                     if (item.imagenes && Array.isArray(item.imagenes)) {

@@ -30,7 +30,6 @@ class PedidoEppService
                 'pedido_produccion_id' => $pedido->id,
                 'epp_id' => $eppData['epp_id'] ?? $eppData['id'],
                 'cantidad' => $eppData['cantidad'] ?? 1,
-                'tallas_medidas' => $eppData['tallas_medidas'] ?? null,
                 'observaciones' => $eppData['observaciones'] ?? null,
             ]);
 

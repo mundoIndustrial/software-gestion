@@ -59,14 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
  * Inicializar event listeners del modal
  */
 function _inicializarEventListeners() {
-    // Input de talla
-    const inputTalla = document.getElementById('medidaTallaEPP');
-    if (inputTalla) {
-        inputTalla.addEventListener('input', () => {
-            window.eppService.actualizarBoton();
-        });
-    }
-
     // Input de cantidad
     const inputCantidad = document.getElementById('cantidadEPP');
     if (inputCantidad) {
@@ -102,8 +94,8 @@ function agregarEPPAlPedido() {
     window.eppService?.guardarEPP();
 }
 
-function editarItemEPP(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes) {
-    window.eppService?.editarEPPFormulario(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes);
+function editarItemEPP(id, nombre, codigo, categoria, cantidad, observaciones, imagenes) {
+    window.eppService?.editarEPPFormulario(id, nombre, codigo, categoria, cantidad, observaciones, imagenes);
 }
 
 function editarEPPDesdeDB(eppId) {

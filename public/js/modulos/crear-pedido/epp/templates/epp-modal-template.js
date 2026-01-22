@@ -14,7 +14,7 @@ class EppModalTemplate {
             <div class="modal-container" style="max-width: 500px;">
                 <div class="modal-header modal-header-primary">
                     <h3 class="modal-title">
-                        <span class="material-symbols-rounded">shield</span>Agregar EPP al Pedido
+                        <span class="material-symbols-rounded">shield</span>EPP
                     </h3>
                     <button class="modal-close-btn" onclick="cerrarModalAgregarEPP()">
                         <span class="material-symbols-rounded">close</span>
@@ -139,7 +139,8 @@ class EppModalTemplate {
                             type="number"
                             id="cantidadEPP"
                             min="1"
-                            value="1"
+                            value=""
+                            placeholder="0"
                             oninput="actualizarEstilosBotonEPP();"
                             disabled
                             style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: #f3f4f6; color: #9ca3af; cursor: not-allowed;"
@@ -201,7 +202,7 @@ class EppModalTemplate {
                             disabled
                             style="padding: 0.75rem 1.5rem; background: #0066cc; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: not-allowed; font-size: 0.95rem; opacity: 0.5; transition: all 0.3s ease;"
                         >
-                            Agregar al Pedido
+                            Guardar
                         </button>
                     </div>
             </div>

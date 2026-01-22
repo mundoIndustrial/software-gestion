@@ -77,18 +77,67 @@ class EppImagenManager {
      * Eliminar imagen
      */
     async eliminarImagen(imagenId) {
-        if (!confirm('¿Eliminar esta imagen?')) return;
+        // Mostrar confirmación elegante con SweetAlert
+        const result = await Swal.fire({
+            title: '⚠️ Eliminar Imagen',
+            text: '¿Estás seguro de que deseas eliminar esta imagen? Se eliminará de la base de datos y del servidor.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: '✓ Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            zIndex: 99999,
+            didOpen: (modal) => {
+                // Asegurar que el modal esté bien posicionado
+                const popup = modal.querySelector('.swal2-popup');
+                if (popup) {
+                    popup.style.zIndex = '99999';
+                }
+                const backdrop = document.querySelector('.swal2-backdrop-show');
+                if (backdrop) {
+                    backdrop.style.zIndex = '99998';
+                }
+            }
+        });
+
+        if (!result.isConfirmed) {
+            console.log('[EppImagenManager] Eliminación de imagen cancelada por el usuario');
+            return;
+        }
 
         try {
+            // Llamar al API para eliminar del servidor y base de datos
             await this.apiService.eliminarImagen(imagenId);
 
             this.stateManager.eliminarImagenSubida(imagenId);
             this.modalManager.eliminarImagenUI(imagenId);
 
-            console.log('[EppImagenManager] Imagen eliminada:', imagenId);
+            // Mostrar confirmación de éxito
+            Swal.fire({
+                title: '✓ Eliminada',
+                text: 'La imagen ha sido eliminada correctamente',
+                icon: 'success',
+                confirmButtonColor: '#10b981',
+                confirmButtonText: 'OK',
+                zIndex: 99999
+            });
+
+            console.log('[EppImagenManager] Imagen eliminada exitosamente:', imagenId);
         } catch (error) {
             console.error('[EppImagenManager] Error eliminando imagen:', error);
-            alert('Error eliminando imagen: ' + error.message);
+            
+            // Mostrar error
+            Swal.fire({
+                title: '❌ Error',
+                text: 'No se pudo eliminar la imagen: ' + error.message,
+                icon: 'error',
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'OK',
+                zIndex: 99999
+            });
         }
     }
 

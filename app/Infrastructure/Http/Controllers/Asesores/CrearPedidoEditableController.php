@@ -353,7 +353,6 @@ class CrearPedidoEditableController extends Controller
                         return [
                             'nombre' => $e['nombre'],
                             'cantidad' => $e['cantidad'],
-                            'talla' => $e['talla'],
                         ];
                     }, $eppsParaGuardar),
                 ]);

@@ -1019,10 +1019,6 @@ function crearModalPreviewFactura(datos) {
             
             <!-- Footer -->
             <div style="padding: 8px 12px; border-top: 1px solid #ddd; display: flex; gap: 6px; justify-content: flex-end; background: #f9f9f9;">
-                <button onclick="document.getElementById('invoice-preview-modal-wrapper').remove();" 
-                        style="padding: 6px 12px; background: #ddd; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 11px;">
-                    ✕ Cerrar
-                </button>
                 <button onclick="document.getElementById('preview-content').contentWindow?.print() || window.print();" 
                         style="padding: 6px 12px; background: #2c3e50; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 11px;">
                     🖨️ Imprimir
@@ -1438,34 +1434,23 @@ function generarHTMLFactura(datos) {
                     ${datos.epps.map((epp, idx) => `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
                             <!-- HEADER EPP -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                                 <!-- COLUMNA 1: Nombre + Código -->
                                 <div style="font-size: 11px;">
-                                    <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">${epp.nombre || 'Sin nombre'}</div>
-                                    ${epp.codigo ? `<div style="color: #9ca3af; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Código: ${epp.codigo}</div>` : ''}
+                                    <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">${epp.epp_nombre || 'Sin nombre'}</div>
+                                    ${epp.epp_codigo ? `<div style="color: #9ca3af; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Código: ${epp.epp_codigo}</div>` : ''}
                                 </div>
                                 
                                 <!-- COLUMNA 2: Categoría -->
                                 <div style="font-size: 11px;">
                                     <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Categoría</div>
-                                    <div style="font-weight: 600; color: #374151;">${epp.categoria || '—'}</div>
+                                    <div style="font-weight: 600; color: #374151;">${epp.epp_categoria || '—'}</div>
                                 </div>
                                 
-                                <!-- COLUMNA 3: Talla + Cantidad -->
+                                <!-- COLUMNA 3: Cantidad -->
                                 <div style="font-size: 11px;">
-                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Talla / Cantidad</div>
-                                    <div style="font-weight: 600; color: #374151;">${epp.talla || '—'} / <strong>${epp.cantidad || 0}</strong></div>
-                                </div>
-                                
-                                <!-- COLUMNA 4: Imágenes -->
-                                <div style="font-size: 11px;">
-                                    ${epp.imagenes && epp.imagenes.length > 0 ? `
-                                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                            ${epp.imagenes.map(img => `
-                                                <img src="${img}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 3px; border: 1px solid #e5e7eb; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(epp.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${epp.nombre}')">
-                                            `).join('')}
-                                        </div>
-                                    ` : `<div style="color: #d1d5db; font-size: 9px; font-style: italic;">Sin imágenes</div>`}
+                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Cantidad</div>
+                                    <div style="font-weight: 600; color: #374151;"><strong>${epp.cantidad || 0}</strong></div>
                                 </div>
                             </div>
                             

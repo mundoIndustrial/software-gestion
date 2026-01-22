@@ -358,14 +358,18 @@ class AsesoresController extends Controller
             'descripcion' => 'nullable|string',
             'novedades' => 'nullable|string',
             'forma_de_pago' => 'nullable|string|max:69',
-            'estado' => 'nullable|string',
-            'area' => 'nullable|string',
+            'estado' => 'nullable|string|in:Pendiente,Entregado,En Ejecución,No iniciado,Anulada,PENDIENTE_SUPERVISOR',
+            'area' => 'nullable|string|max:255',
             'prendas' => 'sometimes|array',
             'prendas.*.id' => 'nullable|exists:prendas_pedido,id',
             'prendas.*.nombre_prenda' => 'required_with:prendas|string',
             'prendas.*.talla' => 'nullable|string',
             'prendas.*.cantidad' => 'required_with:prendas|integer|min:1',
             'prendas.*.precio_unitario' => 'nullable|numeric|min:0',
+            'epp' => 'sometimes|array',
+            'epp.*.id' => 'required_with:epp|integer|exists:pedido_epp,id',
+            'epp.*.cantidad' => 'required_with:epp|integer|min:0',
+            'epp.*.observaciones' => 'nullable|string',
         ]);
 
         try {
@@ -577,6 +581,59 @@ class AsesoresController extends Controller
             return response()->json([
                 'error' => 'Error obteniendo datos de los recibos: ' . $e->getMessage(),
             ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Agregar prenda simple al pedido (sin requerimientos complejos)
+     */
+    public function agregarPrendaSimple(Request $request, $pedidoId)
+    {
+        try {
+            $validated = $request->validate([
+                'nombre_prenda' => 'required|string|max:255',
+                'cantidad' => 'required|integer|min:1',
+                'descripcion' => 'nullable|string|max:1000',
+            ]);
+
+            $pedido = PedidoProduccion::find($pedidoId);
+            if (!$pedido) {
+                return response()->json([
+                    'error' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            // Verificar permisos
+            if ($pedido->asesor_id !== Auth::id()) {
+                return response()->json([
+                    'error' => 'No tienes permiso para agregar prendas a este pedido'
+                ], 403);
+            }
+
+            // Crear la prenda
+            $prenda = $pedido->prendas()->create([
+                'nombre_prenda' => $validated['nombre_prenda'],
+                'cantidad' => $validated['cantidad'],
+                'descripcion' => $validated['descripcion'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'id' => $prenda->id,
+                'nombre_prenda' => $prenda->nombre_prenda,
+                'cantidad' => $prenda->cantidad,
+                'descripcion' => $prenda->descripcion,
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Error agregando prenda simple', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'error' => 'Error al agregar la prenda: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

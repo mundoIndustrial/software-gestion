@@ -90,9 +90,9 @@ class EppModalInterface {
     /**
      * Editar EPP
      */
-    static editarEPP(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes) {
+    static editarEPP(id, nombre, codigo, categoria, cantidad, observaciones, imagenes) {
         if (window.eppService) {
-            window.eppService.editarEPPFormulario(id, nombre, codigo, categoria, talla, cantidad, observaciones, imagenes);
+            window.eppService.editarEPPFormulario(id, nombre, codigo, categoria, cantidad, observaciones, imagenes);
         }
     }
 

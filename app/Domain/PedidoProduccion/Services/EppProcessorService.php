@@ -24,11 +24,9 @@ class EppProcessorService
             'nombre' => $item['nombre'] ?? '',
             'codigo' => $item['codigo'] ?? '',
             'categoria' => $item['categoria'] ?? '',
-            'talla' => $item['talla'] ?? '',
             'cantidad' => $item['cantidad'] ?? 0,
             'observaciones' => $item['observaciones'] ?? null,
             'imagenes' => [],
-            'tallas_medidas' => $item['tallas_medidas'] ?? $item['talla'],
             'pedido_id' => $pedidoId,
         ];
 

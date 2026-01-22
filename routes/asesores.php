@@ -62,6 +62,15 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     
     // Actualizar prenda desde editor modal
     Route::post('/pedidos-produccion/actualizar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrenda'])->name('pedidos.actualizar-prenda');
+    
+    // Cargar datos de pedido para edición
+    Route::get('/pedidos/{id}/editar-datos', [AsesoresAPIController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('pedidos.api.editar-datos');
+    
+    // Agregar prenda simple al pedido
+    Route::post('/pedidos/{pedidoId}/agregar-prenda-simple', [AsesoresController::class, 'agregarPrendaSimple'])->where('pedidoId', '[0-9]+')->name('pedidos.agregar-prenda-simple');
+    
+    // Agregar prenda completa (con telas y procesos) al pedido en edición
+    Route::post('/pedidos/{id}/agregar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'agregarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.agregar-prenda-completa');
 
     // ========================================
     // RECIBOS - NUEVO MÓDULO

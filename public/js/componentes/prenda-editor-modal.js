@@ -19,11 +19,6 @@ function abrirEditarPrendas() {
     const prendas = datos.prendas || [];
     console.log(' Abriendo lista de prendas:', prendas.length);
     
-    if (prendas.length === 0) {
-        Swal.fire('', 'No hay prendas en este pedido', 'info');
-        return;
-    }
-    
     // Guardar prendas en variable global para acceso desde onclick
     window.prendasEdicion = {
         pedidoId: datos.id || datos.numero_pedido,
@@ -32,29 +27,47 @@ function abrirEditarPrendas() {
     
     let htmlListaPrendas = '<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">';
     
-    prendas.forEach((prenda, idx) => {
-        const nombrePrenda = prenda.nombre_prenda || prenda.nombre || 'Prenda sin nombre';
-        const cantTallas = prenda.tallas ? Object.keys(prenda.tallas).length : 0;
-        const cantProcesos = (prenda.procesos || []).length;
-        
+    if (prendas.length === 0) {
+        // Mostrar botón para agregar prenda si la lista está vacía
+        console.log(' Sin prendas - mostrando botón para agregar');
         htmlListaPrendas += `
-            <button onclick="abrirEditarPrendaEspecifica(${idx})" 
-                style="background: white; border: 2px solid #3b82f6; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
-                onmouseover="this.style.background='#f5f3ff'; this.style.borderColor='#7c3aed';"
-                onmouseout="this.style.background='white'; this.style.borderColor='#8b5cf6';">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">PRENDA ${idx + 1}: ${nombrePrenda.toUpperCase()}</h4>
-                        <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">${prenda.descripcion || 'Sin descripción'}</p>
-                        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #9ca3af;">
-                            📏 Tallas: ${cantTallas} |  Procesos: ${cantProcesos}
-                        </div>
-                    </div>
-                    <span style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
-                </div>
-            </button>
+            <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px; border: 2px dashed #d1d5db;">
+                <p style="color: #6b7280; margin: 0 0 1rem 0;">No hay prendas agregadas aún</p>
+                <button onclick="abrirAgregarPrenda()" 
+                    style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s;"
+                    onmouseover="this.style.backgroundColor='#059669'"
+                    onmouseout="this.style.backgroundColor='#10b981'">
+                    ➕ Agregar Prenda
+                </button>
+            </div>
         `;
-    });
+    } else {
+        // Mostrar lista de prendas
+        console.log(' Con prendas - mostrando lista');
+        prendas.forEach((prenda, idx) => {
+            const nombrePrenda = prenda.nombre_prenda || prenda.nombre || 'Prenda sin nombre';
+            const cantTallas = prenda.tallas ? Object.keys(prenda.tallas).length : 0;
+            const cantProcesos = (prenda.procesos || []).length;
+            
+            htmlListaPrendas += `
+                <button onclick="abrirEditarPrendaEspecifica(${idx})" 
+                    style="background: white; border: 2px solid #3b82f6; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
+                    onmouseover="this.style.background='#f5f3ff'; this.style.borderColor='#7c3aed';"
+                    onmouseout="this.style.background='white'; this.style.borderColor='#8b5cf6';">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">PRENDA ${idx + 1}: ${nombrePrenda.toUpperCase()}</h4>
+                            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">${prenda.descripcion || 'Sin descripción'}</p>
+                            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #9ca3af;">
+                                📏 Tallas: ${cantTallas} |  Procesos: ${cantProcesos}
+                            </div>
+                        </div>
+                        <span style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
+                    </div>
+                </button>
+            `;
+        });
+    }
     
     htmlListaPrendas += '</div>';
     
@@ -112,27 +125,43 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     console.log('  Telas agregadas finales:', telasAgregadas);
     
     // Mapear variantes del nuevo endpoint a formato esperado por el frontend
-    const variantesFormateadas = prenda.variantes ? prenda.variantes.map(v => ({
-        id: v.id,
-        talla: v.talla || '',
-        cantidad: v.cantidad || 0,
-        genero: v.genero || '',
-        color_id: v.color_id,
-        color_nombre: v.color_nombre,
-        tela_id: v.tela_id,
-        tela_nombre: v.tela_nombre,
-        tipo_manga_id: v.tipo_manga_id,
-        tipo_manga_nombre: v.tipo_manga_nombre,
-        tipo_broche_id: v.tipo_broche_id,
-        tipo_broche_nombre: v.tipo_broche_nombre,
-        manga_obs: v.manga_obs || '',
-        broche_boton_obs: v.broche_boton_obs || '',
-        bolsillos_obs: v.bolsillos_obs || '',
-        tiene_bolsillos: v.tiene_bolsillos || false
-    })) : [];
+    // Manejar tanto estructuras de array como de objeto
+    let variantesFormateadas = [];
+    
+    if (Array.isArray(prenda.variantes)) {
+        // Si es array (del backend de pedidos)
+        variantesFormateadas = prenda.variantes.map(v => ({
+            id: v.id,
+            talla: v.talla || '',
+            cantidad: v.cantidad || 0,
+            genero: v.genero || '',
+            color_id: v.color_id,
+            color_nombre: v.color_nombre,
+            tela_id: v.tela_id,
+            tela_nombre: v.tela_nombre,
+            tipo_manga_id: v.tipo_manga_id,
+            tipo_manga_nombre: v.tipo_manga_nombre,
+            tipo_broche_id: v.tipo_broche_id,
+            tipo_broche_nombre: v.tipo_broche_nombre,
+            manga_obs: v.manga_obs || '',
+            broche_boton_obs: v.broche_boton_obs || '',
+            bolsillos_obs: v.bolsillos_obs || '',
+            tiene_bolsillos: v.tiene_bolsillos || false
+        }));
+    } else if (prenda.variantes && typeof prenda.variantes === 'object') {
+        // Si es objeto (de prenda nueva creada en memoria)
+        variantesFormateadas = [{
+            manga: prenda.variantes.manga || '',
+            obs_manga: prenda.variantes.obs_manga || '',
+            tiene_bolsillos: prenda.variantes.tiene_bolsillos || false,
+            obs_bolsillos: prenda.variantes.obs_bolsillos || '',
+            broche: prenda.variantes.broche || '',
+            obs_broche: prenda.variantes.obs_broche || ''
+        }];
+    }
     
     const prendaParaEditar = {
-        nombre_producto: prenda.nombre_prenda || prenda.nombre || '',
+        nombre_producto: prenda.nombre_prenda || prenda.nombre_producto || prenda.nombre || '',
         descripcion: prenda.descripcion || '',
         origen: prenda.origen || 'bodega',
         imagenes: prenda.imagenes || [],

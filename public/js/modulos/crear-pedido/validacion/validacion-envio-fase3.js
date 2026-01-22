@@ -254,7 +254,6 @@
                         formData.append(`items[${itemIndex}][nombre]`, item.nombre || '');
                         formData.append(`items[${itemIndex}][codigo]`, item.codigo || '');
                         formData.append(`items[${itemIndex}][categoria]`, item.categoria || '');
-                        formData.append(`items[${itemIndex}][talla]`, item.talla || '');
                         formData.append(`items[${itemIndex}][cantidad]`, item.cantidad || 0);
                         formData.append(`items[${itemIndex}][observaciones]`, item.observaciones || '');
                         

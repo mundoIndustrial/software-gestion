@@ -1,0 +1,46 @@
+/* Estilos para modales de EPP y Prendas */
+
+/* EPP Modal */
+.epp-modal-popup,
+.prendas-modal-popup {
+    padding: 0 !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3) !important;
+}
+
+.epp-modal-html,
+.prendas-modal-html {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+/* Asegurar que el contenido interno se muestre correctamente */
+.epp-modal-html > div,
+.prendas-modal-html > div {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Header del modal */
+.epp-modal-html > div > div:first-child,
+.prendas-modal-html > div > div:first-child {
+    padding: 20px !important;
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+/* Contenido del modal */
+.epp-modal-html > div > div:last-child,
+.prendas-modal-html > div > div:last-child {
+    padding: 24px !important;
+    background: #fafafa !important;
+    overflow-y: auto !important;
+    max-height: 65vh !important;
+    min-height: 200px !important;
+    border-radius: 0 0 6px 6px !important;
+}

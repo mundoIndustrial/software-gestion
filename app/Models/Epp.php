@@ -23,7 +23,6 @@ class Epp extends Model
 
     protected $fillable = [
         'codigo',
-        'nombre',
         'nombre_completo',
         'marca',
         'categoria_id',

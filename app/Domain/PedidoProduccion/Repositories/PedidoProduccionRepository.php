@@ -346,7 +346,10 @@ class PedidoProduccionRepository
             }
             
             $eppFormato = [
-                'nombre' => $epp->nombre ?? '',
+                'id' => $pedidoEpp->id,  // ID del registro PedidoEpp
+                'epp_id' => $pedidoEpp->epp_id,  // ID del EPP
+                'nombre' => $epp->nombre_completo ?? '',
+                'nombre_completo' => $epp->nombre_completo ?? '',
                 'codigo' => $epp->codigo ?? '',
                 'categoria' => $epp->categoria?->nombre ?? $epp->categoria ?? '',  // Acceder al nombre de la categoría
                 'talla' => $talla,  // Datos específicos del pedido
@@ -358,22 +361,46 @@ class PedidoProduccionRepository
             
             // Obtener imágenes del PedidoEpp desde la tabla pedido_epp_imagenes
             try {
-                $imagenes = \DB::table('pedido_epp_imagenes')
+                $imagenesData = \DB::table('pedido_epp_imagenes')
                     ->where('pedido_epp_id', $pedidoEpp->id)
+                    ->where('deleted_at', null)
                     ->orderBy('orden', 'asc')
-                    ->pluck('ruta_web')
-                    ->toArray();
+                    ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
                 
-                if (!empty($imagenes)) {
+                if ($imagenesData->count() > 0) {
+                    $imagenes = $imagenesData->pluck('ruta_web')->filter()->toArray();
                     $eppFormato['imagenes'] = $imagenes;
                     $eppFormato['imagen'] = $imagenes[0] ?? null;
+                    
+                    \Log::info('[RECIBOS-REPO] Imágenes encontradas:', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'cantidad' => count($imagenes),
+                        'imagenes' => $imagenes,
+                        'data_completa' => $imagenesData->toArray()
+                    ]);
+                } else {
+                    \Log::info('[RECIBOS-REPO] Sin imágenes para EPP:', [
+                        'pedido_epp_id' => $pedidoEpp->id
+                    ]);
                 }
             } catch (\Exception $e) {
-                \Log::debug('[FACTURA] Error obteniendo imágenes de EPP: ' . $e->getMessage());
+                \Log::error('[RECIBOS-REPO] Error obteniendo imágenes de EPP:', [
+                    'pedido_epp_id' => $pedidoEpp->id,
+                    'error' => $e->getMessage()
+                ]);
             }
             
             $datos['epps'][] = $eppFormato;
             $datos['total_items'] += ($pedidoEpp->cantidad ?? 0);
+            
+            \Log::info('[RECIBOS-REPO] EPP formateado:', [
+                'id' => $eppFormato['id'] ?? $pedidoEpp->id,
+                'nombre' => $eppFormato['nombre'],
+                'cantidad' => $eppFormato['cantidad'],
+                'observaciones' => $eppFormato['observaciones'],
+                'imagenes_count' => count($eppFormato['imagenes']),
+                'estructura_keys' => array_keys($eppFormato)
+            ]);
         }
 
         return $datos;
@@ -393,6 +420,18 @@ class PedidoProduccionRepository
             throw new \Exception('Pedido no encontrado');
         }
 
+        //  AGREGAR EPP A LOS DATOS DE FACTURA
+        \Log::info('[RECIBOS-REPO] EPPs del pedido:', [
+            'count' => $pedido->epps->count(),
+            'epps' => $pedido->epps->map(fn($e) => [
+                'id' => $e->id,
+                'cantidad' => $e->cantidad,
+                'observaciones' => $e->observaciones,
+                'epp_id' => $e->epp_id,
+                'epp_nombre' => $e->epp?->nombre_completo ?? 'N/A'
+            ])->toArray()
+        ]);
+
         // Construir datos base iguales a factura
         $datos = [
             'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
@@ -404,6 +443,7 @@ class PedidoProduccionRepository
             'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
             'observaciones' => $pedido->observaciones ?? '',
             'prendas' => [],
+            'epps' => [],
         ];
 
         // Procesar prendas para recibos
@@ -774,8 +814,76 @@ class PedidoProduccionRepository
             $datos['prendas'][] = $prendasFormato;
         }
 
+        // Cargar EPP del pedido
+        try {
+            \Log::debug('[RECIBOS-REPO] Intentando cargar EPP con relación epps()');
+            $epps = $pedido->epps()->get();
+            
+            \Log::info('[RECIBOS-REPO] EPP encontrados:', ['count' => $epps->count()]);
+            
+            foreach ($epps as $pedidoEpp) {
+                \Log::debug('[RECIBOS-REPO] Procesando EPP:', [
+                    'id' => $pedidoEpp->id,
+                    'epp_id' => $pedidoEpp->epp_id,
+                    'epp' => $pedidoEpp->epp,
+                    'cantidad' => $pedidoEpp->cantidad
+                ]);
+                
+                $eppFormato = [
+                    'id' => $pedidoEpp->id,
+                    'epp_id' => $pedidoEpp->epp_id,
+                    'nombre' => $pedidoEpp->epp->nombre_completo ?? '',
+                    'nombre_completo' => $pedidoEpp->epp->nombre_completo ?? '',
+                    'epp_nombre' => $pedidoEpp->epp->nombre_completo ?? '',
+                    'epp_codigo' => $pedidoEpp->epp->codigo ?? '',
+                    'epp_categoria' => $pedidoEpp->epp->categoria->nombre ?? '',
+                    'cantidad' => $pedidoEpp->cantidad ?? 0,
+                    'observaciones' => $pedidoEpp->observaciones ?? '',
+                    'imagenes' => [],
+                    'imagen' => null,
+                ];
+                
+                // Obtener imágenes del PedidoEpp desde la tabla pedido_epp_imagenes
+                try {
+                    $imagenesData = \DB::table('pedido_epp_imagenes')
+                        ->where('pedido_epp_id', $pedidoEpp->id)
+                        ->orderBy('orden', 'asc')
+                        ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
+                    
+                    if ($imagenesData->count() > 0) {
+                        $imagenes = $imagenesData->pluck('ruta_web')->filter()->toArray();
+                        $eppFormato['imagenes'] = $imagenes;
+                        $eppFormato['imagen'] = $imagenes[0] ?? null;
+                        
+                        \Log::info('[RECIBOS-REPO] Imágenes encontradas para EPP:', [
+                            'pedido_epp_id' => $pedidoEpp->id,
+                            'cantidad' => count($imagenes),
+                            'imagenes' => $imagenes
+                        ]);
+                    } else {
+                        \Log::info('[RECIBOS-REPO] Sin imágenes para EPP:', [
+                            'pedido_epp_id' => $pedidoEpp->id
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('[RECIBOS-REPO] Error obteniendo imágenes de EPP:', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+                
+                $datos['epps'][] = $eppFormato;
+            }
+            \Log::info('📄 [RECIBOS-REPO] EPP cargados exitosamente', ['count' => count($datos['epps'])]);
+        } catch (\Exception $e) {
+            \Log::error('[RECIBOS-REPO] Error cargando EPP: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+
         \Log::info('📄 [RECIBOS-REPO] Datos retornados', [
             'prendas_count' => count($datos['prendas'] ?? []),
+            'epps_count' => count($datos['epps'] ?? []),
             'primera_prenda_keys' => count($datos['prendas'] ?? []) > 0 ? array_keys($datos['prendas'][0]) : []
         ]);
 

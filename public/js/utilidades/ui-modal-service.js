@@ -298,6 +298,11 @@ class UIModalService {
             cancelText = 'Cancelar'
         } = config;
 
+        // Filtrar config para evitar parámetros no válidos de SweetAlert2
+        const swalConfig = { ...config };
+        delete swalConfig.titulo;
+        delete swalConfig.ancho;
+
         return Swal.fire({
             title: titulo,
             html: html,
@@ -305,7 +310,7 @@ class UIModalService {
             showCancelButton: showCancel,
             confirmButtonText: confirmText,
             cancelButtonText: cancelText,
-            ...config
+            ...swalConfig
         });
     }
 
