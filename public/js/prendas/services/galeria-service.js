@@ -200,4 +200,3 @@ class GaleriaService {
 }
 
 window.GaleriaService = GaleriaService;
-console.log('✓ [GALERIA-SERVICE] Cargado correctamente');

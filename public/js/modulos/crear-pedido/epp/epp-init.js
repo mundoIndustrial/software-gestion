@@ -46,13 +46,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar servicio principal
     if (window.eppService) {
         window.eppService.inicializar();
-        console.log('[EppInit] EppService inicializado');
     }
 
     // Agregar event listeners al modal
     _inicializarEventListeners();
 
-    console.log('[EppInit] Servicios de EPP listos');
 });
 
 /**
@@ -75,7 +73,6 @@ function _inicializarEventListeners() {
         });
     }
 
-    console.log('[EppInit] Event listeners inicializados');
 }
 
 /**

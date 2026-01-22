@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pedido extends Model
 {
-    protected $table = 'pedidos';
+    protected $table = 'pedidos_produccion';
 
     protected $fillable = [
         'numero',
@@ -22,6 +22,14 @@ class Pedido extends Model
     public function epps()
     {
         return $this->hasMany(PedidoEpp::class);
+    }
+
+    /**
+     * Relación con las prendas del pedido
+     */
+    public function prendas()
+    {
+        return $this->hasMany(PrendaPedido::class, 'pedido_produccion_id');
     }
 
     /**

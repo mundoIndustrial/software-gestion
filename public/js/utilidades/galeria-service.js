@@ -326,4 +326,3 @@ window.Galeria = {
     }
 };
 
-console.log('✓ [GALERIA-SERVICE] Cargado correctamente');

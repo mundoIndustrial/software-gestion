@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\OrdenController;
 use App\Http\Controllers\PrendaController;
 use App\Http\Controllers\Api\ProcesosController;
+use App\Http\Controllers\Api\PedidoController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
@@ -68,6 +69,18 @@ Route::middleware('api')->group(function () {
     // Rutas de prendas
     Route::apiResource('prendas', PrendaController::class);
     Route::get('prendas/search', [PrendaController::class, 'search'])->name('prendas.search');
+    
+    // Rutas de Pedidos (DDD)
+    Route::prefix('pedidos')->name('pedidos.')->group(function () {
+        Route::post('/', [PedidoController::class, 'store'])
+            ->name('crear');
+        
+        Route::get('{id}', [PedidoController::class, 'show'])
+            ->name('mostrar');
+        
+        Route::patch('{id}/confirmar', [PedidoController::class, 'confirmar'])
+            ->name('confirmar');
+    });
     
     // Rutas de cotizaciones
     Route::apiResource('cotizaciones', CotizacionPrendaController::class);

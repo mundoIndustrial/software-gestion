@@ -31,6 +31,9 @@ class PrendaPedido extends Model
         'nombre_prenda',
         'descripcion',
         'de_bodega',
+        'prenda_id',
+        'cantidad',
+        'observaciones',
         //  REMOVIDOS: color_id, tela_id, tipo_manga_id, tipo_broche_boton_id
         //  Estos van en prenda_pedido_variantes, no en prendas_pedido
         // 'numero_pedido', //  COMENTADO [16/01/2026]: Se usa pedido_produccion_id en su lugar

@@ -3,7 +3,6 @@
  * Handles opening, closing, and overlay management for the order detail modal
  */
 
-console.log(' [MODAL] Cargando pedidos-detail-modal.js');
 
 /**
  * Abre el modal de detalle de la orden y carga los datos

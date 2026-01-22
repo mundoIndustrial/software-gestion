@@ -12,6 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    ->withProviders([
+        // Domain providers
+        \App\Infrastructure\Pedidos\Providers\PedidoServiceProvider::class,
+        \App\Infrastructure\Procesos\Providers\ProcesosServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,

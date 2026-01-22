@@ -512,4 +512,3 @@ if (!document.getElementById('ui-modal-service-styles')) {
 
 window.UI = UIModalService;
 
-console.log(' UIModalService cargado y disponible como window.UI');
