@@ -20,6 +20,16 @@ use App\Models\PrendaPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
+use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
+use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
 
 /**
  * PedidosProduccionController - REFACTORIZADO CON CQRS
@@ -46,17 +56,21 @@ class PedidosProduccionController
         private QueryBus $queryBus,
         private CommandBus $commandBus,
         private PedidoProduccionRepository $prendaPedidoRepository,
+        private ListarProduccionPedidosUseCase $listarPedidosUseCase,
+        private ObtenerProduccionPedidoUseCase $obtenerPedidoUseCase,
+        private CrearProduccionPedidoUseCase $crearPedidoUseCase,
+        private ActualizarProduccionPedidoUseCase $actualizarPedidoUseCase,
+        private AnularProduccionPedidoUseCase $anularPedidoUseCase,
     ) {}
 
     /**
      * GET /api/pedidos
-     * Listar todos los pedidos con paginación
+     * Listar todos los pedidos con paginación - DELEGADO A USE CASE
      * 
      * Query Parameters:
      * - page: int (default 1)
      * - per_page: int (default 15)
-     * - ordenar: string (default 'created_at')
-     * - direccion: string (default 'desc')
+     * - estado: string (optional)
      * 
      * @param Request $request
      * @return JsonResponse
@@ -64,31 +78,24 @@ class PedidosProduccionController
     public function index(Request $request): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] GET /api/pedidos');
+            Log::info('[PedidosProduccionController] GET /api/pedidos');
 
-            $validated = $request->validate([
-                'page' => 'sometimes|integer|min:1',
-                'per_page' => 'sometimes|integer|min:1|max:100',
-                'ordenar' => 'sometimes|string|in:numero_pedido,cliente,created_at,estado',
-                'direccion' => 'sometimes|string|in:asc,desc',
-            ]);
+            $filtros = [
+                'estado' => $request->get('estado'),
+                'search' => $request->get('search'),
+            ];
 
-            $pedidos = $this->queryBus->execute(new ListarPedidosQuery(
-                page: $validated['page'] ?? 1,
-                perPage: $validated['per_page'] ?? 15,
-                ordenar: $validated['ordenar'] ?? 'created_at',
-                direccion: $validated['direccion'] ?? 'desc',
-            ));
+            $dto = ListarProduccionPedidosDTO::fromRequest(null, $filtros);
+            $pedidos = $this->listarPedidosUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Listado obtenido', [
+            Log::info('[PedidosProduccionController] Listado obtenido', [
                 'total' => $pedidos->total(),
-                'per_page' => $pedidos->perPage(),
             ]);
 
             return response()->json($pedidos, 200);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error listando pedidos', [
+            Log::error('[PedidosProduccionController] Error listando pedidos', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -101,7 +108,7 @@ class PedidosProduccionController
 
     /**
      * GET /api/pedidos/:id
-     * Obtener un pedido específico
+     * Obtener un pedido específico - DELEGADO A USE CASE
      * 
      * @param int|string $id
      * @return JsonResponse
@@ -109,26 +116,26 @@ class PedidosProduccionController
     public function show(int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] GET /api/pedidos/{id}', ['id' => $id]);
+            Log::info('[PedidosProduccionController] GET /api/pedidos/{id}', ['id' => $id]);
 
-            $pedido = $this->queryBus->execute(new ObtenerPedidoQuery($id));
+            $dto = ObtenerProduccionPedidoDTO::fromRoute($id);
+            $pedido = $this->obtenerPedidoUseCase->ejecutar($dto);
 
             if (!$pedido) {
-                Log::warning(' [PedidosController] Pedido no encontrado', ['id' => $id]);
+                Log::warning('[PedidosProduccionController] Pedido no encontrado', ['id' => $id]);
                 return response()->json([
                     'error' => 'Pedido no encontrado',
                 ], 404);
             }
 
-            Log::info(' [PedidosController] Pedido obtenido', [
+            Log::info('[PedidosProduccionController] Pedido obtenido', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
             ]);
 
             return response()->json($pedido, 200);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error obteniendo pedido', [
+            Log::error('[PedidosProduccionController] Error obteniendo pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -142,16 +149,7 @@ class PedidosProduccionController
 
     /**
      * POST /api/pedidos
-     * Crear nuevo pedido
-     * 
-     * Body:
-     * {
-     *   "numero_pedido": "PED-001",
-     *   "cliente": "Cliente XYZ",
-     *   "forma_pago": "contado",
-     *   "asesor_id": 1,
-     *   "cantidad_inicial": 0
-     * }
+     * Crear nuevo pedido - DELEGADO A USE CASE
      * 
      * @param Request $request
      * @return JsonResponse
@@ -159,7 +157,7 @@ class PedidosProduccionController
     public function store(Request $request): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] POST /api/pedidos');
+            Log::info('[PedidosProduccionController] POST /api/pedidos');
 
             // Validación HTTP (sintaxis/tipos)
             $validated = $request->validate([
@@ -170,25 +168,18 @@ class PedidosProduccionController
                 'cantidad_inicial' => 'sometimes|integer|min:0|default:0',
             ]);
 
-            // Validación de negocio (uniqueness, etc) → PedidoValidator en handler
-            $pedido = $this->commandBus->execute(new CrearPedidoCommand(
-                numeroPedido: $validated['numero_pedido'],
-                cliente: $validated['cliente'],
-                formaPago: $validated['forma_pago'],
-                asesorId: $validated['asesor_id'],
-                cantidadInicial: $validated['cantidad_inicial'] ?? 0,
-            ));
+            // Usar Use Case DDD
+            $dto = CrearProduccionPedidoDTO::fromRequest(null, $validated);
+            $pedido = $this->crearPedidoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Pedido creado', [
+            Log::info('[PedidosProduccionController] Pedido creado', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
             ]);
 
             return response()->json($pedido, 201);
 
         } catch (\InvalidArgumentException $e) {
-            // Validación de negocio fallida
-            Log::warning(' [PedidosController] Validación de negocio fallida', [
+            Log::warning('[PedidosProduccionController] Validación de negocio fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -198,7 +189,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error creando pedido', [
+            Log::error('[PedidosProduccionController] Error creando pedido', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -211,13 +202,7 @@ class PedidosProduccionController
 
     /**
      * PUT /api/pedidos/:id
-     * Actualizar pedido
-     * 
-     * Body (todos opcionales):
-     * {
-     *   "cliente": "Nuevo cliente",
-     *   "forma_pago": "credito"
-     * }
+     * Actualizar pedido - DELEGADO A USE CASE
      * 
      * @param Request $request
      * @param int|string $id
@@ -226,27 +211,25 @@ class PedidosProduccionController
     public function update(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] PUT /api/pedidos/{id}', ['id' => $id]);
+            Log::info('[PedidosProduccionController] PUT /api/pedidos/{id}', ['id' => $id]);
 
             $validated = $request->validate([
                 'cliente' => 'sometimes|string|max:255',
                 'forma_pago' => 'sometimes|string|in:contado,credito,transferencia,cheque',
             ]);
 
-            $pedido = $this->commandBus->execute(new ActualizarPedidoCommand(
-                pedidoId: $id,
-                cliente: $validated['cliente'] ?? null,
-                formaPago: $validated['forma_pago'] ?? null,
-            ));
+            // Usar Use Case DDD
+            $dto = ActualizarProduccionPedidoDTO::fromRequest($id, $validated);
+            $pedido = $this->actualizarPedidoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Pedido actualizado', [
+            Log::info('[PedidosProduccionController] Pedido actualizado', [
                 'pedido_id' => $pedido->id,
             ]);
 
             return response()->json($pedido, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning(' [PedidosController] Validación fallida', [
+            Log::warning('[PedidosProduccionController] Validación fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -256,7 +239,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error actualizando pedido', [
+            Log::error('[PedidosProduccionController] Error actualizando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -419,23 +402,22 @@ class PedidosProduccionController
     public function destroy(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] DELETE /api/pedidos/{id}', ['id' => $id]);
+            Log::info('[PedidosProduccionController] DELETE /api/pedidos/{id}', ['id' => $id]);
 
             $validated = $request->validate([
                 'razon' => 'sometimes|string|max:500',
             ]);
 
-            $this->commandBus->execute(new EliminarPedidoCommand(
-                pedidoId: $id,
-                razon: $validated['razon'] ?? 'Sin especificar',
-            ));
+            // Usar Use Case DDD
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, ['razon' => $validated['razon'] ?? 'Sin especificar']);
+            $this->anularPedidoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Pedido eliminado', ['pedido_id' => $id]);
+            Log::info('[PedidosProduccionController] Pedido eliminado', ['pedido_id' => $id]);
 
             return response()->json([], 204);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error eliminando pedido', [
+            Log::error('[PedidosProduccionController] Error eliminando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);

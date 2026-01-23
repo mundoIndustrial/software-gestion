@@ -13,6 +13,7 @@ use App\Observers\PedidoProduccionObserver;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Infrastructure\Persistence\Eloquent\OperarioRepositoryImpl;
 use App\Infrastructure\Providers\AsesoresServiceProvider;
+use App\Infrastructure\Providers\PedidosProduccionServiceProvider;
 use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Registrar Asesores Service Provider
         $this->app->register(AsesoresServiceProvider::class);
+        // Registrar PedidosProduccionController Service Provider
+        $this->app->register(PedidosProduccionServiceProvider::class);
         // Registrar implementación de OperarioRepository
         $this->app->bind(
             OperarioRepository::class,
