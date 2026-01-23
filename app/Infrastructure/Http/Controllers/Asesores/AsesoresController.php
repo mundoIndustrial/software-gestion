@@ -31,12 +31,14 @@ use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
+use App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
+use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -64,6 +66,7 @@ class AsesoresController extends Controller
     protected AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase;
     protected ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase;
     protected ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase;
+    protected PrepararCreacionProduccionPedidoUseCase $prepararCreacionProduccionPedidoUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -88,7 +91,8 @@ class AsesoresController extends Controller
         ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase,
         AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase,
         ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase,
-        ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase
+        ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase,
+        PrepararCreacionProduccionPedidoUseCase $prepararCreacionProduccionPedidoUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -113,6 +117,7 @@ class AsesoresController extends Controller
         $this->anularProduccionPedidoUseCase = $anularProduccionPedidoUseCase;
         $this->obtenerProduccionPedidoUseCase = $obtenerProduccionPedidoUseCase;
         $this->listarProduccionPedidosUseCase = $listarProduccionPedidosUseCase;
+        $this->prepararCreacionProduccionPedidoUseCase = $prepararCreacionProduccionPedidoUseCase;
     }
 
     /**
@@ -188,63 +193,46 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Mostrar formulario para crear pedido (versión amigable)
+     * Mostrar formulario para crear pedido (versión amigable) - DELEGADO A USE CASE
      */
     public function create(Request $request)
     {
-        $tipo = $request->query('tipo', 'PB');
-        $esEdicion = false;
-        $cotizacion = null;
-        
-        if ($request->has('editar')) {
-            $cotizacionId = $request->query('editar');
-            $cotizacion = \App\Models\Cotizacion::with([
-                'cliente',
-                'prendas' => function($query) {
-                    $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
-                },
-                'logoCotizacion.fotos',
-                'reflectivoCotizacion.fotos'
-            ])->findOrFail($cotizacionId);
+        try {
+            $editarId = $request->query('editar');
             
-            $prenda0 = $cotizacion->prendas->first();
-            \Log::info('DEBUG - Cotización cargada para edición DETALLE', [
-                'cotizacion_id' => $cotizacionId,
-                'prendas_count' => $cotizacion->prendas->count(),
-                'prenda_0_id' => $prenda0 ? $prenda0->id : null,
-                'prenda_0_telaFotos_count' => $prenda0 ? $prenda0->telaFotos->count() : 0,
-                'prenda_0_fotos_count' => $prenda0 ? $prenda0->fotos->count() : 0,
-                'prenda_0_tallas_count' => $prenda0 ? $prenda0->tallas->count() : 0,
-            ]);
+            // Crear DTO para el Use Case
+            $dto = PrepararCreacionProduccionPedidoDTO::fromRequest(
+                tipo: $request->query('tipo', 'PB'),
+                editarId: $editarId,
+                usuarioId: \Auth::id()
+            );
+
+            // Usar el nuevo Use Case DDD
+            $datos = $this->prepararCreacionProduccionPedidoUseCase->ejecutar($dto);
             
-            $cotizacionArray = $cotizacion->toArray();
-            \Log::info('DEBUG - toArray() result', [
-                'tiene_prendas' => isset($cotizacionArray['prendas']) ? true : false,
-                'prendas_count_en_array' => isset($cotizacionArray['prendas']) ? count($cotizacionArray['prendas']) : 0,
-                'prenda_0_keys' => isset($cotizacionArray['prendas'][0]) ? array_keys($cotizacionArray['prendas'][0]) : [],
-                'prenda_0_tiene_tela_fotos' => isset($cotizacionArray['prendas'][0]['tela_fotos']) ? true : false,
-            ]);
+            $tipo = $datos['tipo'];
+            $esEdicion = $datos['esEdicion'];
+            $cotizacion = $datos['cotizacion'];
             
-            if ($cotizacion->asesor_id !== \Auth::id() || !$cotizacion->es_borrador) {
-                abort(403, 'No tienes permiso para editar este borrador');
+            // Redirigir según el tipo
+            if ($tipo === 'B') {
+                return redirect()->route('asesores.cotizaciones-bordado.create');
             }
             
-            $esEdicion = true;
+            if ($tipo === 'PL') {
+                return redirect()->route('asesores.cotizaciones-prenda.create');
+            }
+            
+            if ($tipo === 'RF') {
+                return view('asesores.pedidos.create-reflectivo', compact('tipo', 'esEdicion', 'cotizacion'));
+            }
+            
+            return view('asesores.pedidos.create-friendly', compact('tipo', 'esEdicion', 'cotizacion'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error al preparar formulario de creación: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
         }
-        
-        if ($tipo === 'B') {
-            return redirect()->route('asesores.cotizaciones-bordado.create');
-        }
-        
-        if ($tipo === 'PL') {
-            return redirect()->route('asesores.cotizaciones-prenda.create');
-        }
-        
-        if ($tipo === 'RF') {
-            return view('asesores.pedidos.create-reflectivo', compact('tipo', 'esEdicion', 'cotizacion'));
-        }
-        
-        return view('asesores.pedidos.create-friendly', compact('tipo', 'esEdicion', 'cotizacion'));
     }
 
     /**
@@ -390,9 +378,13 @@ class AsesoresController extends Controller
     public function edit($pedido)
     {
         try {
-            $pedidoModel = PedidoProduccion::findOrFail($pedido);
-            $datos = $this->obtenerPedidoDetalleService->obtenerParaEdicion($pedido);
-            
+            // Crear DTO para el Use Case
+            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$pedido);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoModel = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
+            $datos = $pedidoModel; // Ya obtenemos los datos del Use Case
+
             return view('asesores.pedidos.editar-pedido', [
                 'pedido' => $pedidoModel,
                 'pedidoData' => $datos,

@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Application\Pedidos\UseCases;
+
+use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
+
+class PrepararCreacionProduccionPedidoUseCase
+{
+    public function ejecutar(PrepararCreacionProduccionPedidoDTO $dto): array
+    {
+        $esEdicion = false;
+        $cotizacion = null;
+
+        // Si está editando, obtener la cotización
+        if ($dto->editarId) {
+            $cotizacion = \App\Models\Cotizacion::with([
+                'cliente',
+                'prendas' => function($query) {
+                    $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
+                },
+                'logoCotizacion.fotos',
+                'reflectivoCotizacion.fotos'
+            ])->findOrFail($dto->editarId);
+            
+            // Validar permisos
+            if ($cotizacion->asesor_id !== $dto->usuarioId || !$cotizacion->es_borrador) {
+                throw new \Exception('No tienes permiso para editar este borrador');
+            }
+            
+            $esEdicion = true;
+        }
+
+        return [
+            'tipo' => $dto->tipo ?? 'PB',
+            'esEdicion' => $esEdicion,
+            'cotizacion' => $cotizacion
+        ];
+    }
+}
