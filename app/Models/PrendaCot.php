@@ -18,10 +18,12 @@ class PrendaCot extends Model
         'descripcion',
         'cantidad',
         'texto_personalizado_tallas',
+        'prenda_bodega',
     ];
 
     protected $casts = [
         'cantidad' => 'integer',
+        'prenda_bodega' => 'boolean',
     ];
 
     /**

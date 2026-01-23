@@ -6,6 +6,7 @@
 
 @push('scripts')
 <script src="{{ asset('js/asesores/cotizaciones-show.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/reflectivo-paso4-show.js') }}"></script>
 @endpush
 
 @section('content')
@@ -55,11 +56,22 @@
                     'esLogo' => $esLogoTab
                 ])
 
+                {{-- Reflectivo Tab (PASO 4) --}}
+                @php
+                    // Verificar si hay reflectivos por prenda (PASO 4)
+                    $tieneReflectivoPaso4 = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacion->id)->count() > 0;
+                @endphp
                 
-                {{-- Reflectivo Tab --}}
-                @include('components.cotizaciones.show.reflectivo-tab', [
-                    'cotizacion' => $cotizacion
-                ])
+                @if($tieneReflectivoPaso4)
+                    @include('components.cotizaciones.show.reflectivo-paso4-prenda', [
+                        'cotizacion' => $cotizacion
+                    ])
+                @else
+                    {{-- Mostrar reflectivo general si existe (para cotizaciones tipo RF) --}}
+                    @include('components.cotizaciones.show.reflectivo-tab', [
+                        'cotizacion' => $cotizacion
+                    ])
+                @endif
             </div>
         @endif
     </div>

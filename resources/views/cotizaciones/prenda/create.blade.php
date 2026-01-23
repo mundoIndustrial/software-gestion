@@ -751,19 +751,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
-                                <!-- REFLECTIVO -->
-                                <tr style="border-bottom: 1px solid #eee; background-color: white;">
-                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" name="productos_prenda[][variantes][aplica_reflectivo]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
-                                    </td>
-                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
-                                        <i class="fas fa-star"></i> Reflectivo
-                                    </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" name="productos_prenda[][variantes][obs_reflectivo]" placeholder="Ej: En brazos y espalda..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
 
@@ -808,15 +795,6 @@
                                     </select>
                                     <input type="text" name="productos_prenda[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
                                 </div>
-                            </div>
-
-                            <!-- REFLECTIVO -->
-                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <input type="checkbox" name="productos_prenda[][variantes][aplica_reflectivo]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
-                                    <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-star"></i> Reflectivo</label>
-                                </div>
-                                <input type="text" name="productos_prenda[][variantes][obs_reflectivo]" placeholder="Ej: En brazos y espalda..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
                             </div>
                         </div>
 

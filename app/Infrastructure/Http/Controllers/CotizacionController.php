@@ -2340,212 +2340,87 @@ final class CotizacionController extends Controller
                         ]);
                     }
                     
+                    // 🔴 COMENTADO: El procesamiento de imágenes desde prendas_reflectivo_paso4['imagenes']
+                    // NO funciona porque los archivos Blob/File NO pueden viajr en JSON.
+                    // Los archivos se procesan DESPUÉS, directamente desde $request->allFiles() en la Sección 2.
+                    // 
                     // Guardar imágenes del reflectivo (máximo 3)
                     // Procesar imágenes desde prendas_reflectivo_paso4
-                    $ordenFoto = 1;
-                    $maxImagenes = 3;
+                    // $ordenFoto = 1;
+                    // $maxImagenes = 3;
+                    // 
+                    // foreach ($prendas as $prenda) {
+                    //     ...código comentado...
+                    // }
                     
-                    foreach ($prendas as $prenda) {
+                    // ✅ PROCESAR IMÁGENES DEL PASO 4 - IDÉNTICO A storeReflectivo()
+                    // Las imágenes vienen con el patrón: imagenes_reflectivo_prenda_{prendaIndex}[]
+                    foreach ($prendas as $prendaIndex => $prenda) {
                         $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
                             ->where('prenda_cot_id', $prenda->id)
                             ->first();
                         
                         if (!$reflectivoCotizacion) {
+                            \Log::info('⏭️ Prenda sin reflectivo_cotizacion, saltando imágenes', [
+                                'prenda_id' => $prenda->id,
+                                'cotizacion_id' => $cotizacionId,
+                            ]);
                             continue;
                         }
                         
-                        // Buscar imágenes específicas de esta prenda desde prendas_reflectivo_paso4
-                        foreach ($prendasReflectivoPaso4 as $prendaReflectivo) {
-                            if (isset($prendaReflectivo['tipo_prenda']) && 
-                                $prendaReflectivo['tipo_prenda'] === $prenda->nombre_producto &&
-                                !empty($prendaReflectivo['imagenes'])) {
-                                
-                                $ordenFoto = 1;
-                                
-                                foreach ($prendaReflectivo['imagenes'] as $imagen) {
-                                    if ($ordenFoto > $maxImagenes) {
-                                        break;
-                                    }
-                                    
-                                    $rutaGuardar = null;
-                                    
-                                    // Si es imagen del PASO 2, usar la ruta directamente
-                                    if (isset($imagen['tipo']) && $imagen['tipo'] === 'paso2' && isset($imagen['ruta'])) {
-                                        $rutaGuardar = $imagen['ruta'];
-                                        \Log::info('📸 Reflectivo: Imagen del PASO 2 detectada', [
-                                            'prenda' => $prenda->nombre_producto,
-                                            'ruta' => $rutaGuardar,
-                                        ]);
-                                    }
-                                    // Si es imagen nueva del PASO 4, procesar el archivo
-                                    elseif (isset($imagen['tipo']) && $imagen['tipo'] === 'paso4' && isset($imagen['file'])) {
-                                        // La imagen ya fue procesada en FormData como archivo
-                                        // Aquí procesamos las rutas que se reciben
-                                        \Log::info('📸 Reflectivo: Imagen del PASO 4 detectada', [
-                                            'prenda' => $prenda->nombre_producto,
-                                            'tipo' => isset($imagen['file']) ? 'archivo' : 'ruta',
-                                        ]);
-                                    }
-                                    
-                                    // Guardar la ruta en reflectivo_fotos_cotizacion
-                                    if ($rutaGuardar) {
-                                        $reflectivoCotizacion->fotos()->create([
-                                            'ruta_original' => $rutaGuardar,
-                                            'ruta_webp' => $rutaGuardar,
-                                            'orden' => $ordenFoto,
-                                        ]);
-                                        
-                                        \Log::info(' Reflectivo foto guardada en BD', [
-                                            'reflectivo_id' => $reflectivoCotizacion->id,
-                                            'ruta' => $rutaGuardar,
-                                            'orden' => $ordenFoto,
-                                        ]);
-                                        
-                                        $ordenFoto++;
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // ✅ PROCESAR IMÁGENES DEL PASO 4 (Reflectivo) - Guardar archivos en disco
-                    // Las imágenes vienen en: reflectivo[imagenes_paso4][prendaIndex][imagenIndex]
-                    
-                    // 🔍 DEBUG: Check all files in request
-                    $allFilesInRequest = $request->allFiles();
-                    \Log::debug('DEBUG - Todos los archivos en request:', $allFilesInRequest);
-                    
-                    $imagenesP4ReflectivoFiles = $request->file('reflectivo.imagenes_paso4');
-                    \Log::debug('DEBUG - imagenesP4ReflectivoFiles:', [$imagenesP4ReflectivoFiles]);
-                    
-                    $imagenesP4ReflectivoArchivos = [];
-                    if ($imagenesP4ReflectivoFiles && is_array($imagenesP4ReflectivoFiles)) {
-                        \Log::debug('DEBUG - Entrando a flatearArchivos con imagenesP4ReflectivoFiles');
-                        $this->flatearArchivos($imagenesP4ReflectivoFiles, $imagenesP4ReflectivoArchivos, 'reflectivo[imagenes_paso4]');
-                    } else {
-                        \Log::debug('DEBUG - imagenesP4ReflectivoFiles es null o no es array', ['imagenesP4ReflectivoFiles' => $imagenesP4ReflectivoFiles]);
-                    }
-                    
-                    if (count($imagenesP4ReflectivoArchivos) > 0) {
+                        // 🔑 CLAVE: Usar el MISMO CAMPO que storeReflectivo()
+                        $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
                         
-                        foreach ($imagenesP4ReflectivoArchivos as $fieldName => $archivo) {
-                            // Coincide con patrón: reflectivo[imagenes_paso4][{prendaIndex}][{imagenIndex}]
-                            if (preg_match('/^reflectivo\[imagenes_paso4\]\[(\d+)\]\[(\d+)\]$/', $fieldName, $matches)) {
-                                $prendaIndex = (int)$matches[1];
-                                $imagenIndex = (int)$matches[2];
-                                
-                                try {
-                                    if (isset($prendasReflectivoPaso4[$prendaIndex])) {
-                                        $prendaReflectivoData = $prendasReflectivoPaso4[$prendaIndex];
-                                        $nombrePrendaBase = $prendaReflectivoData['tipo_prenda'];
-                                        
-                                        $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
-                                            ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
-                                            ->first();
-                                        
-                                        if ($prendaCot) {
-                                            $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
-                                                ->where('prenda_cot_id', $prendaCot->id)
-                                                ->first();
-                                            
-                                            if ($reflectivoCotizacion) {
-                                                $ordenFoto = $reflectivoCotizacion->fotos()->count() + 1;
-                                                
-                                                if ($ordenFoto > 3) {
-                                                    continue;
-                                                }
-                                                
-                                                $rutaDirectorio = "cotizaciones/{$cotizacionId}/reflectivo";
-                                                $nombreArchivo = uniqid('img_reflectivo_') . '.' . $archivo->getClientOriginalExtension();
-                                                $rutaCompleta = $rutaDirectorio . '/' . $nombreArchivo;
-                                                
-                                                // Guardar archivo en disco (public/storage)
-                                                $path = $archivo->store($rutaDirectorio, 'public');
-                                                
-                                                // Registrar en BD (reflectivo_fotos_cotizacion)
-                                                $reflectivoCotizacion->fotos()->create([
-                                                    'ruta_original' => $path,
-                                                    'ruta_webp' => $path,
-                                                    'orden' => $ordenFoto,
-                                                ]);
-                                                
-                                                // ✅ LOG DETALLADO - Solo cuando se guarda correctamente
-                                                Log::info('
-╔════════════════════════════════════════════════════════════════╗
-║     ✅ IMAGEN REFLECTIVO GUARDADA CORRECTAMENTE - PASO 4       ║
-╠════════════════════════════════════════════════════════════════╣
-║ Cotización ID: ' . $cotizacionId . '
-║ Prenda: ' . $nombrePrendaBase . '
-║ Archivo: ' . $archivo->getClientOriginalName() . '
-║ Tamaño: ' . round($archivo->getSize() / 1024, 2) . ' KB
-║ Tipo: ' . $archivo->getClientMimeType() . '
-║ 
-║ ALMACENADO EN:
-║ Directorio: ' . $rutaDirectorio . '
-║ Ruta BD: ' . $path . '
-║ Orden: ' . $ordenFoto . '/3
-║ 
-║ TABLA: reflectivo_fotos_cotizacion
-║ ID Reflectivo: ' . $reflectivoCotizacion->id . '
-╚════════════════════════════════════════════════════════════════╝
-                                                ');
-                                            } else {
-                                                Log::warning('⚠️ No se encontró reflectivo_cotizacion', ['prenda' => $nombrePrendaBase]);
-                                            }
-                                        } else {
-                                            Log::warning('⚠️ No se encontró prenda en BD', ['nombre_prenda' => $nombrePrendaBase]);
-                                        }
-                                    }
-                                } catch (\Exception $e) {
-                                    Log::error('❌ Error procesando imagen reflectivo PASO 4', ['error' => $e->getMessage()]);
-                                }
-                            }
+                        // Intentar obtener archivos con o sin []
+                        $archivos = $request->file($campoImagenes);
+                        if (!$archivos) {
+                            $archivos = $request->file($campoImagenes . '[]');
                         }
-                    }
-
-                    if (!empty($reflectivoArchivos)) {
-                        $ordenFoto = 1;
                         
-                        foreach ($reflectivoArchivos as $foto) {
-                            if ($ordenFoto > $maxImagenes) {
-                                \Log::warning('⚠️ Se alcanzó el límite de 3 imágenes para reflectivo', [
-                                    'cotizacion_id' => $cotizacionId,
-                                ]);
-                                break;
+                        if ($archivos) {
+                            \Log::info('📸 ENCONTRADAS IMÁGENES PARA PRENDA PASO 4', [
+                                'prenda_index' => $prendaIndex,
+                                'campo' => $campoImagenes,
+                                'cantidad' => is_array($archivos) ? count($archivos) : 1,
+                            ]);
+                            
+                            // Normalizar a array
+                            if (!is_array($archivos)) {
+                                $archivos = [$archivos];
                             }
                             
-                            if ($foto instanceof \Illuminate\Http\UploadedFile) {
-                                // Procesar la imagen usando el servicio existente
-                                $rutaWebP = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
-                                
-                                // Guardar en reflectivo_fotos_cotizacion para cada prenda
-                                foreach ($prendas as $prenda) {
-                                    $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
-                                        ->where('prenda_cot_id', $prenda->id)
-                                        ->first();
+                            $orden = 1;
+                            foreach ($archivos as $archivo) {
+                                if ($archivo && $archivo->isValid()) {
+                                    // Guardar archivo - EXACTAMENTE como storeReflectivo
+                                    $ruta = $archivo->store("cotizaciones/{$cotizacionId}/reflectivo", 'public');
                                     
-                                    if ($reflectivoCotizacion) {
-                                        $reflectivoCotizacion->fotos()->create([
-                                            'ruta_original' => $rutaWebP,
-                                            'ruta_webp' => $rutaWebP,
-                                            'orden' => $ordenFoto,
-                                        ]);
-                                        
-                                        \Log::info(' Reflectivo foto (PASO 4) guardada', [
-                                            'reflectivo_id' => $reflectivoCotizacion->id,
-                                            'ruta' => $rutaWebP,
-                                            'orden' => $ordenFoto,
-                                        ]);
-                                    }
+                                    // Guardar en tabla reflectivo_fotos_cotizacion
+                                    $foto = \App\Models\ReflectivoCotizacionFoto::create([
+                                        'reflectivo_cotizacion_id' => $reflectivoCotizacion->id,
+                                        'ruta_original' => $ruta,
+                                        'ruta_webp' => $ruta,
+                                        'orden' => $orden++,
+                                    ]);
+                                    
+                                    \Log::info('✅ IMAGEN PASO 4 GUARDADA EN BD', [
+                                        'ruta' => $ruta,
+                                        'prenda_index' => $prendaIndex,
+                                        'prenda_cot_id' => $prenda->id,
+                                        'reflectivo_id' => $reflectivoCotizacion->id,
+                                        'foto_id' => $foto->id,
+                                    ]);
                                 }
-                                
-                                $ordenFoto++;
                             }
+                        } else {
+                            \Log::info('ℹ️ NO HAY IMÁGENES PARA ESTA PRENDA PASO 4', [
+                                'campo' => $campoImagenes,
+                                'prenda_index' => $prendaIndex,
+                            ]);
                         }
                     }
                 } catch (\Exception $e) {
-                    Log::error(' Error al guardar reflectivo', [
+                    Log::error('❌ Error al guardar reflectivo PASO 4', [
                         'cotizacion_id' => $cotizacionId,
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString(),
@@ -2931,7 +2806,7 @@ final class CotizacionController extends Controller
                                 foreach ($archivos as $archivo) {
                                     if ($archivo && $archivo->isValid()) {
                                         // Guardar archivo
-                                        $ruta = $archivo->store('cotizaciones/reflectivo', 'public');
+                                        $ruta = $archivo->store("cotizaciones/{$cotizacion->id}/reflectivo", 'public');
                                         
                                         // Guardar en tabla reflectivo_fotos_cotizacion vinculada a ESTE reflectivo
                                         $foto = \App\Models\ReflectivoCotizacionFoto::create([
@@ -3255,7 +3130,7 @@ final class CotizacionController extends Controller
                                 $orden = 1;
                                 foreach ($request->file($campoImagenes) as $archivo) {
                                     if ($archivo && $archivo->isValid()) {
-                                        $ruta = $archivo->store('cotizaciones/reflectivo', 'public');
+                                        $ruta = $archivo->store("cotizaciones/{$cotizacion->id}/reflectivo", 'public');
                                         
                                         \App\Models\ReflectivoCotizacionFoto::create([
                                             'reflectivo_cotizacion_id' => $reflectivo->id,

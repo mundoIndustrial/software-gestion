@@ -55,6 +55,7 @@ class CotizacionPrendaService
                     'nombre_producto' => $nombre,
                     'descripcion' => $productoData['descripcion'] ?? '',
                     'cantidad' => $productoData['cantidad'] ?? 1,
+                    'prenda_bodega' => ($productoData['variantes']['prenda_bodega'] === true || $productoData['variantes']['prenda_bodega'] === 'true' || $productoData['variantes']['prenda_bodega'] === '1' || $productoData['variantes']['prenda_bodega'] === 1) ? true : false,
                 ]);
                 
                 Log::info(" Prenda creada en prendas_cot", [

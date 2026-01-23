@@ -1,5 +1,5 @@
 {{-- Reflectivo Tab Content - Completa toda la información --}}
-<div id="tab-content-reflectivo" class="tab-content" style="padding: 2rem; background: transparent; border-radius: 0 0 12px 12px;">
+<div id="tab-reflectivo" class="tab-content" style="padding: 2rem; background: transparent; border-radius: 0 0 12px 12px;">
     @if($cotizacion->reflectivoCotizacion)
         @php
             $reflectivo = $cotizacion->reflectivoCotizacion;
