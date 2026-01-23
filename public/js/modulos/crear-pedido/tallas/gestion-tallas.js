@@ -42,13 +42,18 @@ window.cargarCatálogoTallas = async function() {
 
         console.log('[gestion-tallas] Cargando catálogo de tallas desde BD...');
         
+        // Obtener CSRF token del meta tag o del DOM
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
         const response = await fetch('/api/tallas-disponibles', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            credentials: 'same-origin'  // Incluir cookies de sesión
         });
 
         if (!response.ok) {
