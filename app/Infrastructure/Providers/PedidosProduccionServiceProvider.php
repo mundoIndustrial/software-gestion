@@ -10,6 +10,15 @@ use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaAlPedidoUseCase;
+use App\Application\Pedidos\UseCases\FiltrarPedidosPorEstadoUseCase;
+use App\Application\Pedidos\UseCases\BuscarPedidoPorNumeroUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPrendasPedidoUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPrendaPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaCompletaUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase;
+use App\Application\Pedidos\UseCases\RenderItemCardUseCase;
 
 // Repositories
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
@@ -72,6 +81,67 @@ class PedidosProduccionServiceProvider extends ServiceProvider
             return new AnularProduccionPedidoUseCase(
                 $app->make(PedidoProduccionRepository::class)
             );
+        });
+
+        // Cambiar Estado de Pedido
+        $this->app->singleton(CambiarEstadoPedidoUseCase::class, function ($app) {
+            return new CambiarEstadoPedidoUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Agregar Prenda al Pedido
+        $this->app->singleton(AgregarPrendaAlPedidoUseCase::class, function ($app) {
+            return new AgregarPrendaAlPedidoUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Filtrar Pedidos por Estado
+        $this->app->singleton(FiltrarPedidosPorEstadoUseCase::class, function ($app) {
+            return new FiltrarPedidosPorEstadoUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Buscar Pedido por Número
+        $this->app->singleton(BuscarPedidoPorNumeroUseCase::class, function ($app) {
+            return new BuscarPedidoPorNumeroUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Obtener Prendas de Pedido
+        $this->app->singleton(ObtenerPrendasPedidoUseCase::class, function ($app) {
+            return new ObtenerPrendasPedidoUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Actualizar Prenda de Pedido
+        $this->app->singleton(ActualizarPrendaPedidoUseCase::class, function ($app) {
+            return new ActualizarPrendaPedidoUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Agregar Prenda Completa
+        $this->app->singleton(AgregarPrendaCompletaUseCase::class, function ($app) {
+            return new AgregarPrendaCompletaUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Actualizar Prenda Completa
+        $this->app->singleton(ActualizarPrendaCompletaUseCase::class, function ($app) {
+            return new ActualizarPrendaCompletaUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Render Item Card
+        $this->app->singleton(RenderItemCardUseCase::class, function ($app) {
+            return new RenderItemCardUseCase();
         });
     }
 

@@ -25,11 +25,29 @@ use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaAlPedidoUseCase;
+use App\Application\Pedidos\UseCases\FiltrarPedidosPorEstadoUseCase;
+use App\Application\Pedidos\UseCases\BuscarPedidoPorNumeroUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPrendasPedidoUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPrendaPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaCompletaUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase;
+use App\Application\Pedidos\UseCases\RenderItemCardUseCase;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
+use App\Application\Pedidos\DTOs\AgregarPrendaAlPedidoDTO;
+use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
+use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
+use App\Application\Pedidos\DTOs\ObtenerPrendasPedidoDTO;
+use App\Application\Pedidos\DTOs\ActualizarPrendaPedidoDTO;
+use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
+use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
+use App\Application\Pedidos\DTOs\RenderItemCardDTO;
 
 /**
  * PedidosProduccionController - REFACTORIZADO CON CQRS
@@ -61,6 +79,15 @@ class PedidosProduccionController
         private CrearProduccionPedidoUseCase $crearPedidoUseCase,
         private ActualizarProduccionPedidoUseCase $actualizarPedidoUseCase,
         private AnularProduccionPedidoUseCase $anularPedidoUseCase,
+        private CambiarEstadoPedidoUseCase $cambiarEstadoUseCase,
+        private AgregarPrendaAlPedidoUseCase $agregarPrendaUseCase,
+        private FiltrarPedidosPorEstadoUseCase $filtrarEstadoUseCase,
+        private BuscarPedidoPorNumeroUseCase $buscarNumeroUseCase,
+        private ObtenerPrendasPedidoUseCase $obtenerPrendasUseCase,
+        private ActualizarPrendaPedidoUseCase $actualizarPrendaUseCase,
+        private AgregarPrendaCompletaUseCase $agregarPrendaCompletaUseCase,
+        private ActualizarPrendaCompletaUseCase $actualizarPrendaCompletaUseCase,
+        private RenderItemCardUseCase $renderItemCardUseCase,
     ) {}
 
     /**
@@ -268,20 +295,18 @@ class PedidosProduccionController
     public function cambiarEstado(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info('🔄 [PedidosController] PUT /api/pedidos/{id}/estado', ['id' => $id]);
+            Log::info('[PedidosProduccionController] PUT /api/pedidos/{id}/estado', ['id' => $id]);
 
             $validated = $request->validate([
                 'nuevo_estado' => 'required|string|in:activo,pendiente,completado,cancelado',
                 'razon' => 'sometimes|string|max:500',
             ]);
 
-            $pedido = $this->commandBus->execute(new CambiarEstadoPedidoCommand(
-                pedidoId: $id,
-                nuevoEstado: $validated['nuevo_estado'],
-                razon: $validated['razon'] ?? null,
-            ));
+            // Usar Use Case DDD
+            $dto = CambiarEstadoPedidoDTO::fromRequest($id, $validated);
+            $pedido = $this->cambiarEstadoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Estado cambiadoId', [
+            Log::info('[PedidosProduccionController] Estado cambiado exitosamente', [
                 'pedido_id' => $pedido->id,
                 'nuevo_estado' => $pedido->estado,
             ]);
@@ -289,7 +314,7 @@ class PedidosProduccionController
             return response()->json($pedido, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning(' [PedidosController] Transición no permitida', [
+            Log::warning('[PedidosProduccionController] Transición no permitida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -299,7 +324,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error cambiando estado', [
+            Log::error('[PedidosProduccionController] Error cambiando estado', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -313,7 +338,7 @@ class PedidosProduccionController
 
     /**
      * POST /api/pedidos/:id/prendas
-     * Agregar prenda a pedido
+     * Agregar prenda a pedido - DELEGADO A USE CASE
      * 
      * Body:
      * {
@@ -333,7 +358,7 @@ class PedidosProduccionController
     public function agregarPrenda(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
+            Log::info('[PedidosProduccionController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
 
             $validated = $request->validate([
                 'nombre_prenda' => 'required|string|max:255',
@@ -345,28 +370,18 @@ class PedidosProduccionController
                 'tela_id' => 'required|integer|min:1',
             ]);
 
-            $pedido = $this->commandBus->execute(new AgregarPrendaAlPedidoCommand(
-                pedidoId: $id,
-                prendaData: [
-                    'nombre_prenda' => $validated['nombre_prenda'],
-                    'cantidad' => $validated['cantidad'],
-                    'tipo_manga' => $validated['tipo_manga'],
-                    'tipo_broche' => $validated['tipo_broche'],
-                    'color_id' => $validated['color_id'],
-                    'tela_id' => $validated['tela_id'],
-                ],
-                tipo: $validated['tipo'],
-            ));
+            // Usar Use Case DDD
+            $dto = AgregarPrendaAlPedidoDTO::fromRequest($id, $validated);
+            $pedido = $this->agregarPrendaUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Prenda agregada', [
+            Log::info('[PedidosProduccionController] Prenda agregada exitosamente', [
                 'pedido_id' => $pedido->id,
-                'cantidad_total' => $pedido->cantidad_total,
             ]);
 
             return response()->json($pedido, 201);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning(' [PedidosController] Validación de prenda fallida', [
+            Log::warning('[PedidosProduccionController] Validación de prenda fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -376,7 +391,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error agregando prenda', [
+            Log::error('[PedidosProduccionController] Error agregando prenda', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
