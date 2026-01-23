@@ -22,13 +22,19 @@ class SetSecurityHeaders
         $response->headers->remove('Content-Security-Policy');
         $response->headers->remove('Content-Security-Policy-Report-Only');
 
+        // Detectar si estamos en desarrollo
+        $isDevelopment = app()->environment('local');
+        
+        // Agregar localhost:5173 (Vite dev server) solo en desarrollo
+        $viteSources = $isDevelopment ? " http://localhost:5173 ws://localhost:5173" : "";
+
         // Content Security Policy (CSP) - More permissive for Laravel Echo and CDNs
         $csp = "default-src 'self'; "
-            . "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-            . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.bunny.net; "
+            . "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com{$viteSources}; "
+            . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.bunny.net{$viteSources}; "
             . "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net; "
             . "img-src 'self' data: https: blob:; "
-            . "connect-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com ws://servermi:8080 wss://servermi:8080 ws: wss: https:; "
+            . "connect-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com ws://servermi:8080 wss://servermi:8080 ws: wss: https: ws://localhost:8080{$viteSources}; "
             . "frame-ancestors 'none'; "
             . "base-uri 'self'; "
             . "form-action 'self'; "
