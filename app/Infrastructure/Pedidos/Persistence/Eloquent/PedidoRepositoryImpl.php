@@ -13,34 +13,72 @@ use App\Models\PrendaPedido as PrendaPedidoModel;
 /**
  * Repository Implementation para Pedidos
  * 
- * Implementa la persistencia usando Eloquent
- * Convierte entre agregado de dominio y modelo Eloquent
+ * Mapea el agregado DDD PedidoAggregate a la tabla pedidos_produccion existente
  * 
- * TALLAS: Se guardan en tabla relacional `prenda_pedido_tallas`
- * ========
- * Representa LO QUE PIDIÓ EL CLIENTE para cada prenda
- * - Un registro por cada (genero, talla, cantidad)
- * - NO como JSON en la propia prenda_pedido
+ * MAPEO DE CAMPOS:
+ * ================
+ * PedidoAggregate.numero -> pedidos_produccion.numero_pedido
+ * PedidoAggregate.estado -> pedidos_produccion.estado
+ * PedidoAggregate.descripcion -> pedidos_produccion.novedades
+ * PedidoAggregate.observaciones -> pedidos_produccion.novedades (parte de)
  * 
- * Ejemplo:
- *   Prenda: Camiseta (prenda_pedido_id = 10)
- *   Tallas pedidas:
- *   - DAMA XS: 5 unidades
- *   - DAMA S:  5 unidades
- *   - DAMA M:  5 unidades
+ * Tabla base: pedidos_produccion
+ * Tablas relacionadas (lectura): prendas_pedido, prenda_pedido_tallas, prenda_pedido_colores_telas, etc.
+ * 
+ * ESTADOS ENUM (pedidos_produccion):
+ * - Pendiente
+ * - Entregado
+ * - En Ejecución
+ * - No iniciado
+ * - Anulada
+ * - PENDIENTE_SUPERVISOR
+ * 
+ * Se mapean a DDD Estados: PENDIENTE, CONFIRMADO, EN_PRODUCCION, COMPLETADO, CANCELADO
  */
 class PedidoRepositoryImpl implements PedidoRepository
 {
+    /**
+     * Mapeo de estados: DDD -> BD
+     */
+    private function mapEstadoABD(string $estadoDDD): string
+    {
+        $mapa = [
+            'PENDIENTE' => 'Pendiente',
+            'CONFIRMADO' => 'En Ejecución',
+            'EN_PRODUCCION' => 'En Ejecución',
+            'COMPLETADO' => 'Entregado',
+            'CANCELADO' => 'Anulada',
+        ];
+        
+        return $mapa[$estadoDDD] ?? 'Pendiente';
+    }
+
+    /**
+     * Mapeo de estados: BD -> DDD
+     */
+    private function mapEstadoADDD(string $estadoBD): string
+    {
+        $mapa = [
+            'Pendiente' => 'PENDIENTE',
+            'PENDIENTE_SUPERVISOR' => 'PENDIENTE',
+            'En Ejecución' => 'EN_PRODUCCION',
+            'Entregado' => 'COMPLETADO',
+            'Anulada' => 'CANCELADO',
+            'No iniciado' => 'PENDIENTE',
+        ];
+        
+        return $mapa[$estadoBD] ?? 'PENDIENTE';
+    }
+
     public function guardar(PedidoAggregate $pedido): void
     {
         \DB::transaction(function () use ($pedido) {
-            // Determinar si es nuevo o actualización
+            // Mapear agregado DDD a campos BD
             $datos = [
+                'numero_pedido' => $pedido->numero()->valor(),
                 'cliente_id' => $pedido->clienteId(),
-                'estado' => $pedido->estado()->valor(),
-                'descripcion' => $pedido->descripcion(),
-                'observaciones' => $pedido->observaciones(),
-                'numero' => (string)$pedido->numero(),
+                'estado' => $this->mapEstadoABD($pedido->estado()->valor()),
+                'novedades' => $pedido->descripcion() ? $pedido->descripcion() . "\n" . ($pedido->observaciones() ?? '') : $pedido->observaciones(),
             ];
 
             if ($pedido->id() === null) {
@@ -71,7 +109,7 @@ class PedidoRepositoryImpl implements PedidoRepository
     public function porNumero(NumeroPedido $numero): ?PedidoAggregate
     {
         $pedidoModel = PedidoModel::with('prendas')
-            ->where('numero', (string)$numero)
+            ->where('numero_pedido', $numero->valor())
             ->first();
 
         if (!$pedidoModel) {
@@ -92,8 +130,11 @@ class PedidoRepositoryImpl implements PedidoRepository
 
     public function porEstado(string $estado): array
     {
+        // Convertir estado DDD a estado BD
+        $estadoBD = $this->mapEstadoABD($estado);
+        
         return PedidoModel::with('prendas')
-            ->where('estado', $estado)
+            ->where('estado', $estadoBD)
             ->get()
             ->map(fn($model) => $this->reconstituir($model))
             ->toArray();
@@ -102,44 +143,34 @@ class PedidoRepositoryImpl implements PedidoRepository
     public function eliminar(int $id): void
     {
         \DB::transaction(function () use ($id) {
-            PrendaPedidoModel::where('pedido_id', $id)->delete();
+            // Soft delete en pedidos_produccion (respeta datos históricos)
             PedidoModel::destroy($id);
         });
     }
 
     private function reconstituir(PedidoModel $model): PedidoAggregate
     {
-        // Para esta fase, solo reconstruimos el agregado básico sin prendas
-        // Las prendas están en otra tabla y requieren otra estrategia
+        // Reconstruir agregado desde modelo BD existente (pedidos_produccion)
+        // Mapear estados: BD -> DDD
+        $estadoDDD = $this->mapEstadoADDD($model->estado);
         
         return PedidoAggregate::reconstruir(
             id: $model->id,
-            numero: NumeroPedido::desde($model->numero),
+            numero: NumeroPedido::desde((string)$model->numero_pedido),
             clienteId: $model->cliente_id,
-            estado: Estado::desde($model->estado),
-            descripcion: $model->descripcion,
-            prendas: [], // Fase posterior: integrar prendas_pedido
+            estado: Estado::desde($estadoDDD),
+            descripcion: $model->novedades ?? '',
+            prendas: [], // Las prendas se cargan desde prendas_pedido si es necesario
             fechaCreacion: $model->created_at,
-            observaciones: $model->observaciones,
+            observaciones: $model->novedades ?? '',
             fechaActualizacion: $model->updated_at
         );
     }
 
     private function guardarPrendas(PedidoAggregate $pedido, PedidoModel $pedidoModel): void
     {
-        // Fase posterior: implementar integración con prendas_pedido
-        // Por ahora, no guardamos prendas en el agregado
-        // Las prendas se gestionan a través de otro endpoint/use case
-    }
-
-    private function guardarTallas(int $prendaPedidoId, array $tallas): void
-    {
-        // Fase posterior: implementar guardar tallas cuando se integre con prendas
-    }
-
-    private function reconstruirTallas(int $prendaPedidoId): array
-    {
-        // Fase posterior: implementar recuperar tallas cuando se integre con prendas
-        return [];
+        // Las prendas se gestionan a través de la tabla prendas_pedido
+        // Que usa pedido_produccion_id como FK
+        // Esto se implementará en una segunda fase: PrendaPedidoRepository
     }
 }
