@@ -57,6 +57,10 @@ class DashboardController extends Controller
             if ($roleName === 'visualizador_cotizaciones_logo') {
                 return redirect()->route('visualizador-logo.dashboard');
             }
+
+            if ($roleName === 'cartera') {
+                return redirect()->route('cartera.pedidos');
+            }
         }
 
         return view('dashboard');

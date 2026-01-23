@@ -148,7 +148,7 @@ class CotizacionBordadoController extends Controller
                 $clienteId = $request->input('cliente_id');
                 $nombreCliente = $request->input('cliente');
 
-                Log::info('👤 Cliente recibido en updateBorrador', [
+                Log::info('Cliente recibido en updateBorrador', [
                     'cliente_id' => $clienteId,
                     'nombre_cliente' => $nombreCliente,
                     'cliente_actual_id' => $cotizacion->cliente_id
@@ -160,7 +160,7 @@ class CotizacionBordadoController extends Controller
                         ['nombre' => $nombreCliente]
                     );
                     $clienteId = $cliente->id;
-                    Log::info('👤 Cliente creado o encontrado', ['cliente_id' => $clienteId, 'nombre' => $nombreCliente]);
+                    Log::info('Cliente creado o encontrado', ['cliente_id' => $clienteId, 'nombre' => $nombreCliente]);
                 }
 
                 // Si es envío, generar número y cambiar estado
@@ -398,7 +398,7 @@ class CotizacionBordadoController extends Controller
                 $clienteId = $request->input('cliente_id');
                 $nombreCliente = $request->input('cliente');
 
-                Log::info('👤 Cliente recibido en store', [
+                Log::info('Cliente recibido en store', [
                     'cliente_id' => $clienteId,
                     'nombre_cliente' => $nombreCliente,
                     'all_inputs' => $request->all()
@@ -410,7 +410,7 @@ class CotizacionBordadoController extends Controller
                         ['nombre' => $nombreCliente]
                     );
                     $clienteId = $cliente->id;
-                    Log::info('👤 Cliente creado o encontrado en store', ['cliente_id' => $clienteId, 'nombre' => $nombreCliente]);
+                    Log::info('Cliente creado o encontrado en store', ['cliente_id' => $clienteId, 'nombre' => $nombreCliente]);
                 }
 
                 // Generar número SINCRONICAMENTE si se envía

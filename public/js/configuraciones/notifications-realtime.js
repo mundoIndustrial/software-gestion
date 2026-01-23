@@ -624,7 +624,7 @@ function showNotificationDetailModal(notif) {
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
-                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">👤 Usuario</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">Usuario</h4>
                         <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${notif.user || 'N/A'}</p>
                     </div>
                     <div>

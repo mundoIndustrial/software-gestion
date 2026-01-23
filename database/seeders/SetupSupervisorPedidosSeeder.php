@@ -25,7 +25,7 @@ class SetupSupervisorPedidosSeeder extends Seeder
         $this->command->newLine();
 
         // Paso 2: Asignar el rol a usuarios
-        $this->command->info('👤 Paso 2: Asignando rol a usuarios...');
+        $this->command->info('Paso 2: Asignando rol a usuarios...');
         $this->call(AssignSupervisorPedidosRoleSeeder::class);
         $this->command->newLine();
 

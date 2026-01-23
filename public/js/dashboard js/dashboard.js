@@ -407,7 +407,7 @@ const DataLoader = {
                         <div class="news-content-wrapper">
                             <div class="title">${item.description}</div>
                             <div class="meta">
-                                <span class="user-badge">👤 ${item.user}</span>
+                                <span class="user-badge">${item.user}</span>
                                 <span class="time-badge">🕐 ${item.created_at}</span>
                                 ${item.pedido ? `<span class="pedido-badge"> #${item.pedido}</span>` : ''}
                                 ${detailsButton}

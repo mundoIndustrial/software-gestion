@@ -919,6 +919,33 @@ Route::middleware(['auth', 'role:asesor'])->prefix('api/pedidos')->name('api.ped
 });
 
 // ========================================
+// RUTAS PARA CARTERA - PEDIDOS
+// ========================================
+Route::middleware(['auth', 'role:cartera,admin'])->prefix('cartera')->name('cartera.')->group(function () {
+    // Gestión de pedidos por aprobar
+    Route::get('/pedidos', function () {
+        return view('cartera-pedidos.cartera-pedidos-supervisor');
+    })->name('pedidos');
+});
+
+// ========================================
+// API CARTERA - PEDIDOS
+// ========================================
+Route::middleware(['auth', 'role:cartera,admin'])->prefix('api/cartera')->name('api.cartera.')->group(function () {
+    // GET pedidos por estado (cartera)
+    Route::get('/pedidos', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerPedidos'])->name('list');
+    
+    // POST aprobar pedido
+    Route::post('/pedidos/{id}/aprobar', [App\Http\Controllers\CarteraPedidosController::class, 'aprobarPedido'])->name('aprobar');
+    
+    // POST rechazar pedido
+    Route::post('/pedidos/{id}/rechazar', [App\Http\Controllers\CarteraPedidosController::class, 'rechazarPedido'])->name('rechazar');
+    
+    // GET datos de factura para ver en modal
+    Route::get('/pedidos/{id}/factura-datos', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerDatosFactura'])->name('factura-datos');
+});
+
+// ========================================
 // RUTAS DE ASESORES (ORGANIZADA EN ARCHIVO SEPARADO)
 // ========================================
 require __DIR__.'/asesores.php';

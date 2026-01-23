@@ -41,6 +41,11 @@ class PedidoProduccion extends Model
         'fecha_anulacion',
         'usuario_anulacion',
         'cantidad_total',
+        'aprobado_por_usuario_cartera',
+        'aprobado_por_cartera_en',
+        'rechazado_por_usuario_cartera',
+        'rechazado_por_cartera_en',
+        'motivo_rechazo_cartera',
     ];
 
     protected $casts = [

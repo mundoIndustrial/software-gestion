@@ -1914,7 +1914,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             
             console.log(` Prenda ${index + 1}: ${tipo}`);
             console.log(`    Ubicaciones: ${ubicacionesDePrenda.length}`);
-            console.log(`   👤 Género: ${genero || 'No especificado'}`);
+            console.log(`   Género: ${genero || 'No especificado'}`);
             console.log(`   📏 Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'Ninguna'}`);
         }
     });
@@ -2260,7 +2260,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Cargar cliente
             if (datosIniciales.cliente) {
                 const nombreCliente = datosIniciales.cliente.nombre || datosIniciales.cliente;
-                console.log('👤 Cargando cliente:', nombreCliente);
+                console.log('Cargando cliente:', nombreCliente);
                 document.getElementById('header-cliente').value = nombreCliente;
                 document.getElementById('cliente').value = nombreCliente;
             }

@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (cotizaciones.data.length > 0) {
             console.log(' Primer registro completo:', cotizaciones.data[0]);
-            console.log('👤 Campo cliente:', cotizaciones.data[0].cliente);
+            console.log('Campo cliente:', cotizaciones.data[0].cliente);
             console.log('🆔 Campo cliente_id:', cotizaciones.data[0].cliente_id);
             console.log('👨 Objeto asesor:', cotizaciones.data[0].asesor);
             console.log(' Todas las propiedades del primer registro:', Object.keys(cotizaciones.data[0]));
