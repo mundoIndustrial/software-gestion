@@ -25,13 +25,13 @@ function applyRowConditionalColors(row) {
     // Prioridad 1: Si es Entregado o Anulada, aplicar ese color sin importar días
     if (estado === 'Entregado') {
         row.classList.add('status-entregado');
-        console.log(`🔵 Fila marcada como Entregado (azul claro)`);
+
         return;
     }
     
     if (estado === 'Anulada') {
         row.classList.add('status-anulada');
-        console.log(`🟤 Fila marcada como Anulada (marrón claro)`);
+
         return;
     }
     
@@ -55,15 +55,15 @@ function applyRowConditionalColors(row) {
     // Aplicar color según rango de días
     if (diasTotales >= 5 && diasTotales <= 9) {
         row.classList.add('dias-5-9');
-        console.log(` Fila con ${diasTotales} días (amarillo claro)`);
+
     } else if (diasTotales >= 10 && diasTotales <= 15) {
         row.classList.add('dias-10-15');
-        console.log(`🔴 Fila con ${diasTotales} días (rojo claro)`);
+
     } else if (diasTotales > 15) {
         row.classList.add('dias-mayor-15');
-        console.log(`⚫ Fila con ${diasTotales} días (gris semi oscuro)`);
+
     } else {
-        console.log(`⚪ Fila con ${diasTotales} días (sin color especial)`);
+
     }
 }
 
@@ -75,7 +75,7 @@ function applyAllRowConditionalColors() {
     rows.forEach(row => {
         applyRowConditionalColors(row);
     });
-    console.log(' Colores condicionales aplicados a todas las filas');
+
 }
 
 /**
@@ -88,7 +88,7 @@ function initializeStatusChangeListeners() {
             const row = e.target.closest('.table-row');
             if (row) {
                 applyRowConditionalColors(row);
-                console.log(` Color de fila actualizado para estado: ${e.target.value}`);
+
             }
         }
     });
@@ -100,7 +100,7 @@ function initializeStatusChangeListeners() {
 document.addEventListener('DOMContentLoaded', function() {
     applyAllRowConditionalColors();
     initializeStatusChangeListeners();
-    console.log(' Sistema de colores condicionales inicializado');
+
 });
 
 /**

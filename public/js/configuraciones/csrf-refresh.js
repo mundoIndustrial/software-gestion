@@ -35,7 +35,7 @@
     async function refreshCsrfToken() {
         try {
             if (CONFIG.DEBUG) {
-                console.log('🔄 Refrescando token CSRF...');
+
             }
             
             const response = await fetch(CONFIG.REFRESH_URL, {
@@ -80,7 +80,7 @@
                     
                     return true;
                 } else {
-                    console.error(' Meta tag csrf-token no encontrado');
+
                     return false;
                 }
             } else {
@@ -88,7 +88,7 @@
             }
             
         } catch (error) {
-            console.error(' Error al refrescar token CSRF:', error);
+
             
             // Si falla, NO mostrar advertencia para no interrumpir al usuario
             // Solo loguear el error en consola
@@ -127,10 +127,6 @@
         }, warningTime);
         
         if (CONFIG.DEBUG) {
-            console.log('⏰ Timers reiniciados:', {
-                refresh_cada: `${CONFIG.REFRESH_INTERVAL / 60000} minutos`,
-                advertencia_en: `${warningTime / 60000} minutos`
-            });
         }
     }
     
@@ -148,7 +144,7 @@
                 // Si pasaron más de 5 minutos desde la última actividad, refrescar
                 if (timeSinceLastActivity > 5 * 60 * 1000) {
                     if (CONFIG.DEBUG) {
-                        console.log('👆 Actividad detectada - Refrescando token...');
+
                     }
                     refreshCsrfToken();
                 }
@@ -167,7 +163,7 @@
         // Verificar que exista el meta tag
         const metaTag = document.querySelector('meta[name="csrf-token"]');
         if (!metaTag) {
-            console.error(' Sistema de refresh CSRF no iniciado: meta tag no encontrado');
+
             return;
         }
         
@@ -180,7 +176,7 @@
         // Hacer un refresh inmediato después de 1 minuto (para verificar que funciona)
         setTimeout(() => {
             if (CONFIG.DEBUG) {
-                console.log('🔄 Ejecutando primer refresh de verificación...');
+
             }
             refreshCsrfToken();
         }, 60000); // 1 minuto
@@ -197,3 +193,4 @@
     window.refreshCsrfToken = refreshCsrfToken;
     
 })();
+

@@ -23,31 +23,31 @@ const nombresProcesos = {
  * Renderizar todas las tarjetas de procesos en el modal de prenda
  */
 window.renderizarTarjetasProcesos = function() {
-    console.log('🎨 [TARJETAS-PROCESOS] ===== INICIANDO RENDERIZADO =====');
-    console.log('🎨 [TARJETAS-PROCESOS] window.procesosSeleccionados:', window.procesosSeleccionados);
+
+
     
     const container = document.getElementById('contenedor-tarjetas-procesos');
-    console.log('🎨 [TARJETAS-PROCESOS] Buscando contenedor #contenedor-tarjetas-procesos');
+
     
     if (!container) {
-        console.error(' [TARJETAS-PROCESOS] CONTENEDOR NO ENCONTRADO en el DOM');
-        console.log('🎨 [TARJETAS-PROCESOS] Elementos con "contenedor" en el ID:', document.querySelectorAll('[id*="contenedor"]'));
+
+
         return;
     }
     
-    console.log(' [TARJETAS-PROCESOS] Contenedor encontrado:', container);
-    console.log('🎨 [TARJETAS-PROCESOS] Display actual:', container.style.display);
-    console.log('🎨 [TARJETAS-PROCESOS] Parent:', container.parentElement);
+
+
+
     
     // Obtener procesos configurados
     const procesos = window.procesosSeleccionados || {};
     const procesosConDatos = Object.keys(procesos).filter(tipo => procesos[tipo]?.datos);
     
-    console.log('🎨 [TARJETAS-PROCESOS] Procesos con datos:', procesosConDatos);
-    console.log('🎨 [TARJETAS-PROCESOS] Cantidad de procesos:', procesosConDatos.length);
+
+
     
     if (procesosConDatos.length === 0) {
-        console.log('⚠️  [TARJETAS-PROCESOS] Sin procesos, mostrando mensaje vacío');
+
         container.innerHTML = `
             <div style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;">add_circle</span>
@@ -55,7 +55,7 @@ window.renderizarTarjetasProcesos = function() {
             </div>
         `;
         container.style.display = 'block';
-        console.log('🎨 [TARJETAS-PROCESOS] Contenedor mostrado (display: block)');
+
         return;
     }
     
@@ -63,17 +63,17 @@ window.renderizarTarjetasProcesos = function() {
     let html = '';
     procesosConDatos.forEach(tipo => {
         const proceso = procesos[tipo];
-        console.log(`🎨 [TARJETAS-PROCESOS] Generando tarjeta para: ${tipo}`, proceso.datos);
+
         html += generarTarjetaProceso(tipo, proceso.datos);
     });
     
-    console.log('🎨 [TARJETAS-PROCESOS] HTML generado (primeros 300 chars):', html.substring(0, 300));
+
     
     container.innerHTML = html;
     container.style.display = 'block';
     
-    console.log(' [TARJETAS-PROCESOS] ===== RENDERIZADO COMPLETADO =====');
-    console.log('🎨 [TARJETAS-PROCESOS] Contenedor ahora contiene:', container.innerHTML.substring(0, 200));
+
+
 };
 
 /**
@@ -193,7 +193,7 @@ function generarTarjetaProceso(tipo, datos) {
  * Eliminar una tarjeta de proceso
  */
 window.eliminarTarjetaProceso = function(tipo) {
-    console.log(`🗑️ [TARJETAS-PROCESOS] Eliminando proceso: ${tipo}`);
+
     
     // Desmarcar checkbox
     const checkbox = document.getElementById(`checkbox-${tipo}`);
@@ -214,31 +214,31 @@ window.eliminarTarjetaProceso = function(tipo) {
         window.actualizarResumenProcesos();
     }
     
-    console.log(` [TARJETAS-PROCESOS] Proceso ${tipo} eliminado`);
+
 };
 
 /**
  * Editar un proceso existente (desde modal de edición de prenda)
  */
 window.editarProcesoDesdeModal = function(tipo) {
-    console.log(` [TARJETAS-PROCESOS] Editando proceso desde modal: ${tipo}`);
+
     
     // Obtener datos del proceso ANTES de abrir el modal
     const proceso = window.procesosSeleccionados[tipo];
-    console.log(` [TARJETAS-PROCESOS] Proceso encontrado:`, proceso);
+
     
     if (!proceso?.datos) {
-        console.error(` [TARJETAS-PROCESOS] ERROR: No hay datos para el proceso ${tipo}`);
+
         return;
     }
     
     // IMPORTANTE: Cargar datos ANTES de abrir el modal (que limpia las variables)
-    console.log(` [TARJETAS-PROCESOS] Cargando datos ANTES de abrir modal...`);
+
     cargarDatosProcesoEnModal(tipo, proceso.datos);
     
     // AHORA abrir el modal en modo EDICIÓN (preservará los datos cargados)
     if (window.abrirModalProcesoGenerico) {
-        console.log(` [TARJETAS-PROCESOS] Abriendo modal en modo EDICIÓN...`);
+
         window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
     }
 };
@@ -247,7 +247,7 @@ window.editarProcesoDesdeModal = function(tipo) {
  * Editar un proceso existente
  */
 window.editarProceso = function(tipo) {
-    console.log(` [TARJETAS-PROCESOS] Editando proceso: ${tipo}`);
+
     
     // Abrir modal del proceso
     if (window.abrirModalProcesoGenerico) {
@@ -265,9 +265,9 @@ window.editarProceso = function(tipo) {
  * Cargar datos de un proceso en el modal para editar
  */
 function cargarDatosProcesoEnModal(tipo, datos) {
-    console.log(` [TARJETAS-PROCESOS] Cargando datos en modal:`, datos);
-    console.log(` [TARJETAS-PROCESOS] window.ubicacionesProcesoSeleccionadas antes:`, window.ubicacionesProcesoSeleccionadas);
-    console.log(` [TARJETAS-PROCESOS] window.tallasSeleccionadasProceso antes:`, window.tallasSeleccionadasProceso);
+
+
+
     
     // Limpiar imágenes anteriores
     if (window.imagenesProcesoActual) {
@@ -300,18 +300,18 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     
     // Cargar ubicaciones
     if (datos.ubicaciones && window.ubicacionesProcesoSeleccionadas) {
-        console.log(` [TARJETAS-PROCESOS] Ubicaciones a cargar:`, datos.ubicaciones);
+
         window.ubicacionesProcesoSeleccionadas.length = 0;
         window.ubicacionesProcesoSeleccionadas.push(...datos.ubicaciones);
-        console.log(` [TARJETAS-PROCESOS] Ubicaciones cargadas en window:`, window.ubicacionesProcesoSeleccionadas);
+
         if (window.renderizarListaUbicaciones) {
-            console.log(` [TARJETAS-PROCESOS] Llamando a renderizarListaUbicaciones()`);
+
             window.renderizarListaUbicaciones();
         } else {
-            console.error(` [TARJETAS-PROCESOS] ERROR: window.renderizarListaUbicaciones NO existe`);
+
         }
     } else {
-        console.warn(` [TARJETAS-PROCESOS] No se pueden cargar ubicaciones - datos.ubicaciones:`, datos.ubicaciones, 'window.ubicacionesProcesoSeleccionadas:', window.ubicacionesProcesoSeleccionadas);
+
     }
     
     // Cargar observaciones
@@ -322,7 +322,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     
     // Cargar tallas
     if (datos.tallas && window.tallasSeleccionadasProceso) {
-        console.log(` [TARJETAS-PROCESOS] Tallas a cargar:`, datos.tallas);
+
         // Convertir objetos de tallas a arrays de strings
         const damaTallas = datos.tallas.dama || {};
         const caballeroTallas = datos.tallas.caballero || {};
@@ -331,7 +331,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
         window.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
         window.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
         
-        console.log(` [TARJETAS-PROCESOS] Tallas cargadas en window:`, window.tallasSeleccionadasProceso);
+
         
         // Guardar las cantidades en estructura relacional
         if (!window.tallasRelacionales) {
@@ -342,21 +342,21 @@ function cargarDatosProcesoEnModal(tipo, datos) {
         window.tallasRelacionales.DAMA = { ...damaTallas };
         window.tallasRelacionales.CABALLERO = { ...caballeroTallas };
         
-        console.log(` [TARJETAS-PROCESOS] Tallas guardadas (relacional):`, window.tallasRelacionales);
+
         
         if (window.actualizarResumenTallasProceso) {
-            console.log(` [TARJETAS-PROCESOS] Llamando a actualizarResumenTallasProceso()`);
+
             window.actualizarResumenTallasProceso();
         } else {
-            console.error(` [TARJETAS-PROCESOS] ERROR: window.actualizarResumenTallasProceso NO existe`);
+
         }
     } else {
-        console.warn(` [TARJETAS-PROCESOS] No se pueden cargar tallas - datos.tallas:`, datos.tallas, 'window.tallasSeleccionadasProceso:', window.tallasSeleccionadasProceso);
+
     }
     
-    console.log(` [TARJETAS-PROCESOS] ===== CARGA DE DATOS COMPLETADA =====`);
-    console.log(` [TARJETAS-PROCESOS] Estado final - ubicaciones:`, window.ubicacionesProcesoSeleccionadas);
-    console.log(` [TARJETAS-PROCESOS] Estado final - tallas:`, window.tallasSeleccionadasProceso);
+
+
+
 }
 
 /**
@@ -615,5 +615,5 @@ window.cerrarGaleriaImagenesProceso = function() {
     window.imagenesGaleriaProceso = null;
 };
 
-console.log(' [TARJETAS-PROCESOS] Módulo renderizador-tarjetas-procesos.js cargado');
+
 

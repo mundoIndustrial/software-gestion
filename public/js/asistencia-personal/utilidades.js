@@ -86,20 +86,20 @@ const AsistenciaUtilidades = (() => {
             return h * 60 + m + (s || 0) / 60;
         }).sort((a, b) => a - b);
         
-        console.log('Minutos ordenados:', minutosArray);
-        console.log('¿Es sábado?:', diaSabado);
-        console.log('ID Rol:', idRol);
+
+
+
         
         const horasValidas = [];
         for (let i = 0; i < minutosArray.length; i++) {
             if (horasValidas.length === 0 || Math.abs(minutosArray[i] - horasValidas[horasValidas.length - 1]) >= 2) {
                 horasValidas.push(minutosArray[i]);
             } else {
-                console.log(`Duplicado ignorado: ${minutosArray[i]} minutos`);
+
             }
         }
         
-        console.log('Horas válidas después de limpiar duplicados:', horasValidas);
+
         
         if (horasValidas.length < 2) {
             return {
@@ -114,7 +114,7 @@ const AsistenciaUtilidades = (() => {
         
         let registrosAUsar = horasValidas;
         if (horasValidas.length > 4 && !(idRol === 21 && !diaSabado)) {
-            console.log(`Más de 4 registros detectados (${horasValidas.length}). Usando los primeros 4.`);
+
             registrosAUsar = horasValidas.slice(0, 4);
         }
         
@@ -142,12 +142,12 @@ const AsistenciaUtilidades = (() => {
             }
         }
         
-        console.log('Registros faltantes:', registrosFaltantes);
-        console.log('¿Jornada completa?:', jornada_completa);
+
+
         
         let excepcion = false;
         if (!diaSabado && idRol !== 21 && registrosAUsar.length === 3 && registrosFaltantes.includes('salida_final')) {
-            console.log('EXCEPCIÓN DETECTADA: Falta solo salida de la tarde. Se asume jornada de 8 horas.');
+
             excepcion = true;
             return {
                 horasTotales: '08:00:00',
@@ -180,14 +180,14 @@ const AsistenciaUtilidades = (() => {
                     bloqueMañana = salida_manana - entrada_manana;
                     totalMinutos += bloqueMañana;
                     bloqueMañanaCalculado = true;
-                    console.log(`[ROL 21 - 4 MARCAS] Bloque Mañana: ${entrada_manana} → ${salida_manana} = ${bloqueMañana.toFixed(2)} minutos`);
+
                 }
                 
                 if (entrada_tarde < salida_tarde) {
                     bloqueTarde = salida_tarde - entrada_tarde;
                     totalMinutos += bloqueTarde;
                     bloqueTardeCalculado = true;
-                    console.log(`[ROL 21 - 4 MARCAS] Bloque Tarde: ${entrada_tarde} → ${salida_tarde} = ${bloqueTarde.toFixed(2)} minutos`);
+
                 }
             } else if (horasValidas.length >= 2) {
                 // Con 2 o 3 marcas: contar desde primera a última marca
@@ -197,7 +197,7 @@ const AsistenciaUtilidades = (() => {
                 const duracion = ultima_marca - primera_marca;
                 totalMinutos = duracion;
                 bloqueMañanaCalculado = true;
-                console.log(`[ROL 21 - ${horasValidas.length} MARCAS] Primera marca a última marca: ${primera_marca} → ${ultima_marca} = ${duracion.toFixed(2)} minutos`);
+
             }
         } else if (diaSabado) {
             if (registrosAUsar.length >= 2) {
@@ -208,7 +208,7 @@ const AsistenciaUtilidades = (() => {
                     const duracion = salida_medidia - entrada_manana;
                     totalMinutos += duracion;
                     bloqueMañanaCalculado = true;
-                    console.log(`[SÁBADO] Bloque Mañana: ${entrada_manana} → ${salida_medidia} = ${duracion.toFixed(2)} minutos`);
+
                 }
             }
         } else {
@@ -220,7 +220,7 @@ const AsistenciaUtilidades = (() => {
                     const duracion = salida_medidia - entrada_manana;
                     totalMinutos += duracion;
                     bloqueMañanaCalculado = true;
-                    console.log(`Bloque Mañana: ${entrada_manana} → ${salida_medidia} = ${duracion.toFixed(2)} minutos`);
+
                 }
             }
             
@@ -232,10 +232,10 @@ const AsistenciaUtilidades = (() => {
                     const duracion = salida_final - entrada_tarde;
                     totalMinutos += duracion;
                     bloqueTardeCalculado = true;
-                    console.log(`Bloque Tarde: ${entrada_tarde} → ${salida_final} = ${duracion.toFixed(2)} minutos`);
+
                 }
             } else if (registrosAUsar.length === 3) {
-                console.log('Bloque Tarde: No se puede calcular (falta salida final)');
+
             }
         }
         
@@ -266,7 +266,7 @@ const AsistenciaUtilidades = (() => {
             }
         }
         
-        console.log(`Total horas trabajadas: ${resultado} (${totalMinutos.toFixed(2)} minutos) - ${estado}`);
+
         
         return {
             horasTotales: resultado,

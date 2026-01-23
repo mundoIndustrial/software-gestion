@@ -174,7 +174,7 @@ En `storage/logs/laravel.log`:
 
 ---
 
-## 🚀 Próximos Pasos (Opcional)
+## Próximos Pasos (Opcional)
 
 Si quiere optimizar más:
 1. Agregar caché de 5 minutos para prenda.js (evita múltiples queries si edita varias veces)

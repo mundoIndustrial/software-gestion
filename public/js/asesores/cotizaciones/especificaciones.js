@@ -48,22 +48,22 @@ function guardarEspecificaciones() {
         'tbody_flete': 'flete'
     };
     
-    console.log(' Buscando especificaciones en modal...');
+
     
     // Procesar cada categoría
     Object.entries(categoriasMap).forEach(([tbodyId, categoriaKey]) => {
         const tbody = document.getElementById(tbodyId);
         if (!tbody) {
-            console.warn(` No encontrado: ${tbodyId}`);
+
             return;
         }
         
-        console.log(` Procesando ${categoriaKey} (${tbodyId})`);
+
         
         const filas = tbody.querySelectorAll('tr');
         const valoresSeleccionados = [];
         
-        console.log(`   Encontradas ${filas.length} filas`);
+
         
         filas.forEach((fila, filaIndex) => {
             const checkbox = fila.querySelector('input[type="checkbox"]');
@@ -83,7 +83,7 @@ function guardarEspecificaciones() {
                 obsInput = allTextInputs[allTextInputs.length - 1];
             }
             
-            console.log(`   Fila ${filaIndex}: checkbox=${checkbox ? checkbox.checked : 'no'}, itemInput=${itemInput ? itemInput.value : 'no'}, obsInput=${obsInput ? obsInput.value : 'no'}, label=${label ? label.textContent : 'no'}`);
+
             
             // Si está marcado, guardar el valor con observaciones
             if (checkbox && checkbox.checked) {
@@ -114,7 +114,7 @@ function guardarEspecificaciones() {
                         observacion: observacion || ''
                     };
                     valoresSeleccionados.push(item);
-                    console.log(`       Valor guardado: ${valor} | Obs: ${observacion || '(vacío)'}`);
+
                 }
             }
         });
@@ -122,13 +122,13 @@ function guardarEspecificaciones() {
         // Solo guardar la categoría si tiene valores seleccionados
         if (valoresSeleccionados.length > 0) {
             especificaciones[categoriaKey] = valoresSeleccionados;
-            console.log(` ${categoriaKey}:`, valoresSeleccionados);
+
         }
     });
     
     window.especificacionesSeleccionadas = especificaciones;
-    console.log(' Especificaciones guardadas:', especificaciones);
-    console.log(' Total categorías:', Object.keys(especificaciones).length);
+
+
     
     //  ACTUALIZAR COLOR DEL BOTÓN ENVIAR
     actualizarColorBotonEnviar();
@@ -149,13 +149,13 @@ function actualizarColorBotonEnviar() {
         btnEnviar.style.background = '#10b981';
         btnEnviar.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
         btnEnviar.title = ' Especificaciones completadas - Listo para enviar';
-        console.log(' Botón ENVIAR en VERDE - Especificaciones completadas');
+
     } else {
         // Rojo: falta especificaciones
         btnEnviar.style.background = '#ef4444';
         btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
         btnEnviar.title = ' Falta completar especificaciones';
-        console.log('🔴 Botón ENVIAR en ROJO - Falta completar especificaciones');
+
     }
 }
 
@@ -276,8 +276,8 @@ function agregarSeccion() {
     // Agregar opciones como checkboxes (con delay para que el DOM se actualice)
     setTimeout(() => {
         const container = document.getElementById('opcionesUbicacionFriendly');
-        console.log('Opciones Friendly:', opciones);
-        console.log('Container Friendly:', container);
+
+
         
         if (container && opciones.length > 0) {
             opciones.forEach(opcion => {
@@ -292,7 +292,7 @@ function agregarSeccion() {
                 container.appendChild(label);
             });
         } else {
-            console.log('Container o opciones vacías Friendly');
+
         }
     }, 10);
 }
@@ -349,7 +349,7 @@ function guardarUbicacionFriendly(ubicacion) {
     const campoOculto = document.getElementById('paso3_secciones_datos');
     if (campoOculto) {
         campoOculto.value = JSON.stringify(seccionesSeleccionadasFriendly);
-        console.log(' Campo paso3_secciones_datos actualizado:', seccionesSeleccionadasFriendly);
+
     }
 }
 
@@ -426,7 +426,7 @@ function eliminarSeccionFriendly(index) {
     const campoOculto = document.getElementById('paso3_secciones_datos');
     if (campoOculto) {
         campoOculto.value = JSON.stringify(seccionesSeleccionadasFriendly);
-        console.log(' Campo paso3_secciones_datos actualizado (eliminación):', seccionesSeleccionadasFriendly);
+
     }
 }
 

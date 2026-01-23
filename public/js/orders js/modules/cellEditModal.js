@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility)
  */
 
-console.log(' Cargando CellEditModal...');
+
 
 const CellEditModal = {
     /**
@@ -33,10 +33,10 @@ const CellEditModal = {
      * Inicializar el módulo
      */
     initialize() {
-        console.log(' Inicializando CellEditModal...');
+
         this._createModalHTML();
         this._attachEventListeners();
-        console.log(' CellEditModal inicializado');
+
     },
 
     /**
@@ -231,7 +231,7 @@ const CellEditModal = {
      * Abrir el modal de visualización
      */
     open(orderId, column, currentValue) {
-        console.log(`👁️ Abriendo modal de visualización para orden ${orderId}, columna ${column}`);
+
 
         this.state.currentOrderId = orderId;
         this.state.currentColumn = column;
@@ -282,7 +282,7 @@ const CellEditModal = {
             return response.json();
         })
         .then(data => {
-            console.log(' Datos de orden obtenidos:', data);
+
             
             if (data.prendas && data.prendas.length > 0) {
                 // Guardar estado para paginación
@@ -304,7 +304,7 @@ const CellEditModal = {
             }
         })
         .catch(error => {
-            console.error(' Error obteniendo datos de orden:', error);
+
             if (contentDiv) {
                 contentDiv.textContent = currentValue || '(vacío)';
             }
@@ -419,7 +419,7 @@ ${prenda.atributos}<br>
         
         // Aquí podrías agregar lógica para mostrar/ocultar botones si los tienes
         // Por ahora solo registramos el estado
-        console.log(` Página ${currentPage + 1} de ${totalPages}`);
+
     },
 
     /**
@@ -450,14 +450,14 @@ ${prenda.atributos}<br>
         });
 
         contentDiv.innerHTML = html;
-        console.log(' Plantilla de cotización renderizada');
+
     },
 
     /**
      * Cerrar el modal
      */
     close() {
-        console.log(' Cerrando modal de edición');
+
 
         const modal = document.getElementById(this.config.modalId);
         const overlay = document.getElementById(this.config.overlayId);
@@ -498,4 +498,4 @@ document.addEventListener('DOMContentLoaded', () => {
     CellEditModal.initialize();
 });
 
-console.log(' CellEditModal cargado');
+

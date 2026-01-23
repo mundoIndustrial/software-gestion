@@ -31,8 +31,8 @@ class DebugService {
      */
     static logFormData(formData) {
         const obj = this.formDataToObject(formData);
-        console.log('📤 FormData enviado:', obj);
-        console.log(' JSON:', JSON.stringify(obj, null, 2));
+
+
         return obj;
     }
 

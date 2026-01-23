@@ -21,7 +21,7 @@ class PedidoSubmitHandler {
             clienteInput
         } = options;
 
-        console.log('🚀 [SUBMIT] Iniciando envío de pedido con cotización');
+
 
         // ============================================================
         // 1. VALIDACIÓN INICIAL
@@ -43,14 +43,6 @@ class PedidoSubmitHandler {
         const esLogo = logoTecnicasSeleccionadas?.length > 0 || 
                        logoSeccionesSeleccionadas?.length > 0 || 
                        logoFotosSeleccionadas?.length > 0;
-
-        console.log(' Tipo de cotización:', {
-            tipo: tipoInfo.tipo,
-            esCombinada: tipoInfo.esCombinada,
-            esLogoSolo: tipoInfo.esLogoSolo,
-            esLogo: esLogo
-        });
-
         // ============================================================
         // 3. RECOPILAR DATOS
         // ============================================================
@@ -63,13 +55,13 @@ class PedidoSubmitHandler {
                 prendasCargadas,
                 prendasEliminadas
             );
-            console.log(' Prendas a enviar:', prendasParaEnviar);
+
         }
 
         // Recopilar datos de logo (para LOGO SOLO o COMBINADA)
         if (tipoInfo.esLogoSolo || tipoInfo.esCombinada) {
             datosLogo = window.FormDataCollector.recopilarDatosLogo(currentLogoCotizacion);
-            console.log(' Datos de logo:', datosLogo);
+
         }
 
         // ============================================================
@@ -81,7 +73,7 @@ class PedidoSubmitHandler {
             prendas: prendasParaEnviar
         };
 
-        console.log('📤 Enviando creación de pedido...', bodyCrearPedido);
+
 
         try {
             // ============================================================
@@ -92,7 +84,7 @@ class PedidoSubmitHandler {
                 'Creando pedido...'
             );
 
-            console.log(' Pedido creado:', resultadoPedido);
+
 
             if (!resultadoPedido.success) {
                 throw new Error(resultadoPedido.message || 'Error al crear pedido');
@@ -104,7 +96,7 @@ class PedidoSubmitHandler {
             let resultadoLogo = null;
 
             if (tipoInfo.esCombinada && datosLogo && this.tieneDataLogo(datosLogo)) {
-                console.log(' [COMBINADA] Enviando datos de logo...');
+
                 
                 resultadoLogo = await this.enviarDatosLogo({
                     pedidoId: resultadoPedido.logo_pedido_id,
@@ -116,7 +108,7 @@ class PedidoSubmitHandler {
                     logoFotos: logoFotosSeleccionadas
                 });
 
-                console.log(' Logo guardado:', resultadoLogo);
+
             }
 
             // ============================================================
@@ -130,7 +122,7 @@ class PedidoSubmitHandler {
             });
 
         } catch (error) {
-            console.error(' Error al crear pedido:', error);
+
             window.ApiService.handleError(error, 'Crear pedido');
         }
     }
@@ -181,7 +173,7 @@ class PedidoSubmitHandler {
             fotos: logoFotos
         };
 
-        console.log(' Datos del logo a guardar:', bodyLogoPedido);
+
 
         const response = await fetch('/asesores/pedidos/guardar-logo-pedido', {
             method: 'POST',
@@ -249,3 +241,4 @@ class PedidoSubmitHandler {
 
 // Exportar globalmente
 window.PedidoSubmitHandler = PedidoSubmitHandler;
+

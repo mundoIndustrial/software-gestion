@@ -13,12 +13,12 @@ class PrendaCardService {
      * @returns {string} HTML de tarjeta
      */
     static generar(prendaRaw, indice) {
-        console.log('[PrendaCardService] Generando tarjeta para prenda:', indice);
+
 
         // 1. Transformar datos
         const prenda = PrendaDataTransformer.transformar(prendaRaw);
         if (!prenda) {
-            console.error('[PrendaCardService] Error transformando prenda');
+
             return '';
         }
 
@@ -167,4 +167,4 @@ class PrendaCardService {
 }
 
 window.PrendaCardService = PrendaCardService;
-console.log('✓ [PRENDA-CARD-SERVICE] Cargado correctamente');
+

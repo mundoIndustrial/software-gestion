@@ -25,9 +25,9 @@ const GENEROS_MAP = {
     'caballero': 1
 };
 
-console.log('🔵 Sistema de cotizaciones inicializado');
-console.log('📸 imagenesEnMemoria inicializado:', window.imagenesEnMemoria);
-console.log('📸 fotosEliminadasServidor inicializado:', window.fotosEliminadasServidor);
+
+
+
 
 // ============ GESTIÓN DE TIPO DE COTIZACIÓN ============
 
@@ -35,7 +35,7 @@ console.log('📸 fotosEliminadasServidor inicializado:', window.fotosEliminadas
  * Seleccionar tipo de cotización desde las pastillas
  */
 function seleccionarTipoCotizacion(tipo) {
-    console.log(' Seleccionando tipo de cotización:', tipo);
+
     
     // Mapear tipo de pastilla a tipo_venta
     const mapeos = {
@@ -47,7 +47,7 @@ function seleccionarTipoCotizacion(tipo) {
     const tipoVenta = mapeos[tipo];
     
     if (!tipoVenta) {
-        console.error(' Tipo de cotización desconocido:', tipo);
+
         return;
     }
     
@@ -58,7 +58,7 @@ function seleccionarTipoCotizacion(tipo) {
     localStorage.setItem('tipo_cotizacion_seleccionado', tipo);
     localStorage.setItem('tipo_venta', tipoVenta);
     
-    console.log(`✓ Tipo de cotización configurado: ${tipo} (${tipoVenta})`);
+
     
     // Mostrar confirmación visual
     mostrarNotificacionTipoCotizacion(tipo);
@@ -77,13 +77,13 @@ function mostrarNotificacionTipoCotizacion(tipo) {
     const mensaje = info[tipo] || 'Tipo desconocido';
     
     // Mostrar toast
-    console.log(` ${mensaje} seleccionado`);
+
 }
 
 // ============ INICIALIZACIÓN ============
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(' DOM cargado - Inicializando cotizaciones');
+
     
     // Ocultar navbar
     const topNav = document.querySelector('.top-nav');
@@ -115,7 +115,7 @@ function convertirArchivoABase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-            console.log(`✓ Archivo convertido a Base64:`, file.name, `(${(reader.result.length / 1024).toFixed(2)} KB)`);
+
             resolve({
                 nombre: file.name,
                 base64: reader.result,
@@ -124,7 +124,7 @@ function convertirArchivoABase64(file) {
             });
         };
         reader.onerror = (error) => {
-            console.error(' Error al leer archivo:', file.name, error);
+
             reject(error);
         };
         reader.readAsDataURL(file);
@@ -135,7 +135,7 @@ function convertirArchivoABase64(file) {
  * Convertir todas las imágenes de un producto a Base64
  */
 async function convertirImagenesProducto(producto) {
-    console.log(`📸 Convirtiendo imágenes del producto: ${producto.nombre_producto}`);
+
     
     // Convertir fotos de prenda
     if (producto.fotos && producto.fotos.length > 0) {
@@ -143,9 +143,9 @@ async function convertirImagenesProducto(producto) {
             producto.fotos_base64 = await Promise.all(
                 producto.fotos.map(foto => convertirArchivoABase64(foto))
             );
-            console.log(`✓ ${producto.fotos_base64.length} fotos de prenda convertidas`);
+
         } catch (error) {
-            console.error(' Error al convertir fotos de prenda:', error);
+
             producto.fotos_base64 = [];
         }
     } else {
@@ -158,9 +158,9 @@ async function convertirImagenesProducto(producto) {
             producto.telas_base64 = await Promise.all(
                 producto.telas.map(tela => convertirArchivoABase64(tela))
             );
-            console.log(`✓ ${producto.telas_base64.length} telas convertidas`);
+
         } catch (error) {
-            console.error(' Error al convertir telas:', error);
+
             producto.telas_base64 = [];
         }
     } else {
@@ -187,27 +187,27 @@ function irAlPaso(paso) {
     
     // Si es el paso 4 (REFLECTIVO), agregar la primera prenda vacía si no existe ninguna
     if (paso === 4) {
-        console.log(' Navegando al PASO 4: REFLECTIVO');
+
         setTimeout(() => {
             const container = document.getElementById('prendas_reflectivo_container');
             if (container && container.children.length === 0) {
-                console.log(' Contenedor vacío - Agregando primera prenda reflectivo');
+
                 if (typeof agregarPrendaReflectivoPaso4 === 'function') {
                     agregarPrendaReflectivoPaso4();
-                    console.log(' Primera prenda reflectivo agregada');
+
                 }
             } else {
-                console.log(' Ya hay prendas en el contenedor, no se agrega nueva');
+
             }
         }, 100);
     }
     
     // Si es el paso 5 (REVISAR COTIZACIÓN), actualizar resumen completo
     if (paso === 5) {
-        console.log(' Navegando al PASO 5: REVISAR COTIZACIÓN');
+
         setTimeout(() => {
             // Actualizar el resumen dinámico del paso 5
-            console.log(' Llamando a actualizarResumenFriendly() para Paso 5');
+
             actualizarResumenFriendly();
         }, 200);
     }
@@ -233,18 +233,18 @@ function mostrarFechaActual() {
 }
 
 function actualizarResumenFriendly() {
-    console.log('🔄 actualizarResumenFriendly() INICIADO');
-    console.log('    Prendas DOM encontradas:', document.querySelectorAll('.producto-card').length);
-    console.log('   🎨 Técnicas DOM encontradas:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
-    console.log('   🎨 Técnicas guardadas:', window.tecnicasGuardadas?.length || 0);
-    console.log('🔄 Actualizando resumen del paso 4...');
+
+
+
+
+
     
     // 1. INFORMACIÓN DEL CLIENTE
     const cliente = document.getElementById('cliente');
     const resumenCliente = document.getElementById('resumen_cliente');
     if (resumenCliente && cliente) {
         resumenCliente.textContent = cliente.value || '-';
-        console.log(' Cliente actualizado:', cliente.value);
+
     }
     
     // 2. FECHA
@@ -266,7 +266,7 @@ function actualizarResumenFriendly() {
         }
         
         resumenFecha.textContent = fechaTexto;
-        console.log(' Fecha actualizada:', fechaTexto);
+
     }
     
     // 3. TIPO DE COTIZACIÓN (DINÁMICO según contenido)
@@ -289,14 +289,14 @@ function actualizarResumenFriendly() {
         }
         
         resumenTipo.textContent = tipoDetectado;
-        console.log(' Tipo actualizado (dinámico):', tipoDetectado);
+
     }
     
     // 4. RESUMEN DE PRENDAS (Solo si hay prendas)
     const resumenPrendas = document.getElementById('resumen_prendas');
     if (resumenPrendas) {
         const prendas = document.querySelectorAll('.producto-card');
-        console.log(' Prendas encontradas:', prendas.length);
+
         
         // Buscar el contenedor padre (el div con background #f0f7ff)
         const resumenPrendasContainer = resumenPrendas.parentElement;
@@ -319,11 +319,11 @@ function actualizarResumenFriendly() {
                     const varGuardadas = window.variacionesGuardadas[index];
                     if (varGuardadas.tallas && varGuardadas.tallas.trim() !== '') {
                         tallasTexto = varGuardadas.tallas;
-                        console.log('📏 Tallas desde guardadas:', tallasTexto);
+
                     }
                     if (varGuardadas.genero) {
                         generoTexto = varGuardadas.genero;
-                        console.log('👥 Género desde guardadas:', generoTexto);
+
                     }
                 } 
                 
@@ -332,7 +332,7 @@ function actualizarResumenFriendly() {
                     const tallasHiddenInput = prenda.querySelector('input[name*="tallas"][type="hidden"]');
                     if (tallasHiddenInput && tallasHiddenInput.value?.trim()) {
                         tallasTexto = tallasHiddenInput.value;
-                        console.log('📏 Tallas desde DOM (input hidden):', tallasTexto);
+
                     }
                     
                     // Si aún no hay, buscar botones activos (fallback)
@@ -340,7 +340,7 @@ function actualizarResumenFriendly() {
                         const tallas = prenda.querySelectorAll('button[data-talla].active');
                         if (tallas.length > 0) {
                             tallasTexto = Array.from(tallas).map(t => t.textContent).join(', ');
-                            console.log('📏 Tallas desde botones activos:', tallasTexto);
+
                         }
                     }
                 }
@@ -350,7 +350,7 @@ function actualizarResumenFriendly() {
                     const generoSelect = prenda.querySelector('select.talla-genero-select');
                     if (generoSelect && generoSelect.value) {
                         generoTexto = generoSelect.options[generoSelect.selectedIndex]?.text || '';
-                        console.log('👥 Género desde DOM:', generoTexto);
+
                     }
                 }
                 
@@ -361,7 +361,7 @@ function actualizarResumenFriendly() {
                 
                 if (window.variacionesGuardadas && window.variacionesGuardadas[index]) {
                     const varGuardadas = window.variacionesGuardadas[index];
-                    console.log('🎨 Variaciones desde guardadas:', varGuardadas);
+
                     
                     // ====== SECCIÓN DE TELAS (Agrupadas) ======
                     let telas = [];
@@ -588,7 +588,7 @@ function actualizarResumenFriendly() {
                 div.innerHTML = html;
                 resumenPrendas.appendChild(div);
             });
-            console.log(' Prendas mostradas en resumen');
+
         }
     }
     
@@ -605,7 +605,7 @@ function actualizarResumenFriendly() {
             resumenLogoContainer.style.display = 'block';
             const texto = descLogo?.value || '-';
             resumenLogDesc.textContent = texto;
-            console.log(' Descripción logo actualizada');
+
         }
     }
     
@@ -624,14 +624,8 @@ function actualizarResumenFriendly() {
                     tecnicasArray.push(input.value);
                 }
             });
-            console.log('🎨 Técnicas desde DOM:', tecnicasArray);
+
         }
-        
-        console.log('🎨 DEBUG Técnicas desde global:', {
-            tecnicasGuardadas: window.tecnicasGuardadas,
-            cantidad: tecnicasArray.length
-        });
-        
         resumenTecnicas.innerHTML = '';
         
         if (tecnicasArray.length === 0) {
@@ -659,7 +653,7 @@ function actualizarResumenFriendly() {
             p.innerHTML = tecnicasTexto;
             resumenTecnicas.appendChild(p);
         }
-        console.log(' Técnicas actualizado');
+
     }
     
     // 6B. UBICACIONES EN LOGO
@@ -670,12 +664,6 @@ function actualizarResumenFriendly() {
         
         // Usar variable global si está disponible (desde cargar-borrador.js)
         let ubicacionesArray = window.ubicacionesGuardadas || [];
-        
-        console.log('📍 DEBUG Ubicaciones desde global:', {
-            ubicacionesGuardadas: window.ubicacionesGuardadas,
-            cantidad: ubicacionesArray.length
-        });
-        
         if (ubicacionesArray.length === 0) {
             resumenLogoUbicacionesContainer.style.display = 'none';
         } else {
@@ -726,7 +714,7 @@ function actualizarResumenFriendly() {
                 `;
                 resumenLogoUbicaciones.appendChild(divResumen);
             });
-            console.log(' Ubicaciones en LOGO actualizadas');
+
         }
     }
     
@@ -750,7 +738,7 @@ function actualizarResumenFriendly() {
                 div.innerHTML = `<strong>${seccion}</strong><br><small style="color: #666;">${ubicaciones}</small>`;
                 resumenUbicaciones.appendChild(div);
             });
-            console.log(' Ubicaciones actualizadas');
+
         }
     }
     
@@ -800,11 +788,11 @@ function actualizarResumenFriendly() {
             `;
             
             resumenEspecificaciones.innerHTML = tableHTML;
-            console.log(' Especificaciones en tabla actualizadas');
+
         }
     }
     
-    console.log(' Resumen del paso 4 completamente actualizado');
+
 }
 
 function cargarDatosDelBorrador() {
@@ -814,17 +802,17 @@ function cargarDatosDelBorrador() {
 function recopilarDatos() {
     const cliente = document.getElementById('cliente');
     if (!cliente) {
-        console.error(' Campo cliente no encontrado');
+
         return null;
     }
     
     const clienteValue = cliente.value;
     const productos = [];
     
-    console.log(' Total de prendas encontradas:', document.querySelectorAll('.producto-card').length);
+
     
     document.querySelectorAll('.producto-card').forEach((item, index) => {
-        console.log(` Procesando prenda ${index + 1}...`);
+
         const nombre = item.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = item.querySelector('textarea[name*="descripcion"]')?.value || '';
         const cantidad = item.querySelector('input[name*="cantidad"]')?.value || 1;
@@ -854,19 +842,19 @@ function recopilarDatos() {
         if (fotosSeleccionadas && fotosSeleccionadas[productoId]) {
             // Guardar los archivos File completos, NO solo el nombre
             fotos = fotosSeleccionadas[productoId];
-            console.log(`📸 Fotos desde fotosSeleccionadas[${productoId}]:`, fotos.length, 'archivos');
+
         }
         
         // Opción 2: Desde window.imagenesEnMemoria.prendaConIndice (con índice de prenda)
         let fotosConIndice = [];
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
             fotosConIndice = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
-            console.log(`📸 Fotos desde prendaConIndice (índice ${index}):`, fotosConIndice.length);
+
             
             // Si hay fotos con índice, usarlas en lugar de fotosSeleccionadas
             if (fotosConIndice.length > 0) {
                 fotos = fotosConIndice.map(p => p.file);
-                console.log(`📸 Usando fotos de prendaConIndice:`, fotos.length, 'archivos');
+
             }
         }
         
@@ -876,13 +864,13 @@ function recopilarDatos() {
         // OPCIÓN 1: Buscar en window.telasSeleccionadas (la estructura correcta)
         if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
             const telasObj = window.telasSeleccionadas[productoId];
-            console.log('🧵 DEBUG - telasSeleccionadas encontrado:', telasObj);
+
             
             // telasObj es un objeto con índices como claves: {'0': [files], '1': [files]}
             for (let telaIdx in telasObj) {
                 if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
                     const fotosDelaTela = telasObj[telaIdx];
-                    console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
+
                     
                     // Agregar cada foto con información de su índice de tela
                     fotosDelaTela.forEach((foto, fotoIdx) => {
@@ -896,7 +884,7 @@ function recopilarDatos() {
                     });
                 }
             }
-            console.log(` Telas desde telasSeleccionadas: ${telas.length} archivos`);
+
         }
         
         // OPCIÓN 2: Fallback - Buscar en window.imagenesEnMemoria.telaConIndice (compatibilidad)
@@ -904,7 +892,7 @@ function recopilarDatos() {
             const telasEncontradas = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
             if (telasEncontradas.length > 0) {
                 telas = telasEncontradas.map(t => t.file);
-                console.log(`🧵 Telas desde telaConIndice (fallback): ${telas.length} archivos`);
+
             }
         }
         
@@ -938,16 +926,6 @@ function recopilarDatos() {
                 const color = colorInput?.value || '';
                 const tela = telaInput?.value || '';
                 const referencia = referenciaInput?.value || '';
-                
-                console.log(`🔍 DEBUG Tela ${telaIndex}:`, {
-                    colorInput_encontrado: !!colorInput,
-                    telaInput_encontrado: !!telaInput,
-                    referenciaInput_encontrado: !!referenciaInput,
-                    color,
-                    tela,
-                    referencia
-                });
-                
                 // Solo agregar si al menos uno de los campos tiene valor
                 if (color || tela || referencia) {
                     telasFila.push({
@@ -956,7 +934,7 @@ function recopilarDatos() {
                         tela: tela,
                         referencia: referencia
                     });
-                    console.log(`🧵 Tela ${telaIndex + 1} capturada:`, { color, tela, referencia });
+
                 }
             });
         }
@@ -964,7 +942,7 @@ function recopilarDatos() {
         // Guardar las telas en variantes
         if (telasFila.length > 0) {
             variantes.telas_multiples = telasFila;
-            console.log(`📝 Total de telas capturadas: ${telasFila.length}`);
+
         } else {
             // Si no hay múltiples telas, capturar la primera (compatibilidad)
             const colorInput = item.querySelector('.color-input');
@@ -1012,26 +990,16 @@ function recopilarDatos() {
                     }
                 }
             }
-            
-            console.log('🔍 Buscando manga:', {
-                checkbox_checked: mangaCheckbox.checked,
-                tipo: mangaIdInput?.tagName,
-                mangaId_encontrado: !!mangaId,
-                mangaId_value: mangaId,
-                mangaNombre_encontrado: !!mangaNombre,
-                mangaNombre_value: mangaNombre
-            });
-            
             // Guardar el tipo de manga ID (ID del manga seleccionado)
             if (mangaId) {
                 variantes.tipo_manga_id = mangaId;
-                console.log(' tipo_manga_id capturado:', mangaId);
+
             }
             
             // Guardar el tipo de manga nombre (nombre del manga seleccionado)
             if (mangaNombre) {
                 variantes.tipo_manga = mangaNombre;
-                console.log(' tipo_manga capturado:', mangaNombre);
+
             }
             
             // Capturar observación de manga SOLO SI CHECKBOX ESTÁ CHECKED
@@ -1039,10 +1007,10 @@ function recopilarDatos() {
             if (mangaObs && mangaObs.value) {
                 variantes.obs_manga = mangaObs.value;
                 observacionesVariantes.push(`Manga: ${mangaObs.value}`);
-                console.log(' obs_manga capturada:', mangaObs.value);
+
             }
         } else {
-            console.log(' Manga NO seleccionado - obs_manga NO se captura');
+
             variantes.tipo_manga_id = null;
             variantes.tipo_manga = null;
         }
@@ -1056,30 +1024,22 @@ function recopilarDatos() {
             if (bolsillosObs && bolsillosObs.value) {
                 variantes.obs_bolsillos = bolsillosObs.value;
                 observacionesVariantes.push(`Bolsillos: ${bolsillosObs.value}`);
-                console.log(' obs_bolsillos capturada:', bolsillosObs.value);
+
             }
-            console.log(' Bolsillos SELECCIONADO');
+
         } else {
             variantes.tiene_bolsillos = false;
-            console.log(' Bolsillos NO seleccionado - obs_bolsillos NO se captura');
+
         }
         
         // Broche/Botón - SOLO SI ESTÁ CHECKED
         const brocheCheckbox = item.querySelector('input[name*="aplica_broche"]');
         if (brocheCheckbox && brocheCheckbox.checked) {
             const brocheSelect = item.querySelector('select[name*="tipo_broche_id"]');
-            
-            console.log('🔍 Buscando broche:', {
-                checkbox_checked: brocheCheckbox.checked,
-                brocheSelect_encontrado: !!brocheSelect,
-                brocheSelect_value: brocheSelect?.value,
-                brocheSelect_text: brocheSelect?.options[brocheSelect?.selectedIndex]?.text
-            });
-            
             // Guardar el tipo_broche_id (1 para Broche, 2 para Botón)
             if (brocheSelect && brocheSelect.value) {
                 variantes.tipo_broche_id = brocheSelect.value;
-                console.log(' tipo_broche_id capturado:', brocheSelect.value);
+
             }
             
             // Capturar observación de broche SOLO SI CHECKBOX ESTÁ CHECKED
@@ -1087,10 +1047,10 @@ function recopilarDatos() {
             if (brocheObs && brocheObs.value) {
                 variantes.obs_broche = brocheObs.value;
                 observacionesVariantes.push(`Broche: ${brocheObs.value}`);
-                console.log(' obs_broche capturada:', brocheObs.value);
+
             }
         } else {
-            console.log(' Broche NO seleccionado - obs_broche NO se captura');
+
             variantes.tipo_broche_id = null;
         }
         
@@ -1103,63 +1063,58 @@ function recopilarDatos() {
             if (reflectivoObs && reflectivoObs.value) {
                 variantes.obs_reflectivo = reflectivoObs.value;
                 observacionesVariantes.push(`Reflectivo: ${reflectivoObs.value}`);
-                console.log(' obs_reflectivo capturada:', reflectivoObs.value);
+
             }
-            console.log(' Reflectivo SELECCIONADO');
+
         } else {
             variantes.tiene_reflectivo = false;
-            console.log(' Reflectivo NO seleccionado - obs_reflectivo NO se captura');
+
         }
         
         // Agregar todas las observaciones como descripción_adicional
         if (observacionesVariantes.length > 0) {
             variantes.descripcion_adicional = observacionesVariantes.join(' | ');
-            console.log('📝 descripcion_adicional construida:', {
-                observacionesCount: observacionesVariantes.length,
-                observaciones: observacionesVariantes,
-                descripcion_adicional: variantes.descripcion_adicional
-            });
         } else {
-            console.log(' Sin observaciones de variantes para agregar a descripcion_adicional');
+
         }
         
         //  CAPTURAR TIPO DE JEAN/PANTALÓN
-        console.log('🔍 Buscando campos jean/pantalón en producto:', nombre);
+
         
         // Buscar en formulario estático (productos_prenda)
         let esJeanPantalonInput = item.querySelector('.es-jean-pantalon-hidden');
         let tipoJeanPantalonSelect = item.querySelector('select[name*="tipo_jean_pantalon"]');
         
-        console.log('   🔸 Búsqueda estática - Input hidden:', esJeanPantalonInput ? ' ENCONTRADO' : ' NO');
-        console.log('   🔸 Búsqueda estática - Select:', tipoJeanPantalonSelect ? ' ENCONTRADO' : ' NO');
+
+
         
         // Si no se encuentran, buscar en formulario dinámico (productos_friendly)
         if (!esJeanPantalonInput) {
             esJeanPantalonInput = item.querySelector('input[name*="[variantes][es_jean_pantalon]"]');
-            console.log('   🔸 Búsqueda dinámica - Input hidden:', esJeanPantalonInput ? ' ENCONTRADO' : ' NO');
+
         }
         if (!tipoJeanPantalonSelect) {
             tipoJeanPantalonSelect = item.querySelector('select[name*="[variantes][tipo_jean_pantalon]"]');
-            console.log('   🔸 Búsqueda dinámica - Select:', tipoJeanPantalonSelect ? ' ENCONTRADO' : ' NO');
+
         }
         
         // 🔍 DEBUG ADICIONAL: Verificar si el contenedor existe
         const container = item.querySelector('.tipo-jean-pantalon-inline-container');
-        console.log('   🔸 Contenedor .tipo-jean-pantalon-inline-container:', container ? ' EXISTE' : ' NO EXISTE');
+
         if (container) {
-            console.log('   🔸 Contenido COMPLETO del contenedor:', container.innerHTML);
-            console.log('   🔸 Elementos hijo en contenedor:', container.children.length);
+
+
             
             // Intentar encontrar directamente en el contenedor
             const hiddenInContainer = container.querySelector('.es-jean-pantalon-hidden');
             const selectInContainer = container.querySelector('select[name*="tipo_jean_pantalon"]');
-            console.log('   🔸 Búsqueda DENTRO del contenedor:');
-            console.log('      - Hidden:', hiddenInContainer ? ' ENCONTRADO' : ' NO');
-            console.log('      - Select:', selectInContainer ? ' ENCONTRADO' : ' NO');
+
+
+
             
             if (selectInContainer) {
-                console.log('      - Select name:', selectInContainer.getAttribute('name'));
-                console.log('      - Select value:', selectInContainer.value);
+
+
             }
         }
         
@@ -1167,16 +1122,16 @@ function recopilarDatos() {
             // Capturar es_jean_pantalon (0 o 1)
             if (esJeanPantalonInput) {
                 variantes.es_jean_pantalon = esJeanPantalonInput.value;
-                console.log(' es_jean_pantalon capturado:', esJeanPantalonInput.value);
+
             }
             
             // Capturar tipo_jean_pantalon (SKINNY, SLIM, RECTO, etc.)
             if (tipoJeanPantalonSelect && tipoJeanPantalonSelect.value) {
                 variantes.tipo_jean_pantalon = tipoJeanPantalonSelect.value;
-                console.log(' tipo_jean_pantalon capturado:', tipoJeanPantalonSelect.value);
+
             }
         } else {
-            console.log(' No es jean/pantalón - campos NO encontrados');
+
         }
         
         //  CAPTURAR GENERO_ID desde el input hidden (IMPORTANTE para "ambos")
@@ -1198,11 +1153,11 @@ function recopilarDatos() {
             if (generoNombre) {
                 variantes.genero = generoNombre;
             }
-            console.log(' genero_id capturado:', variantes.genero_id, '- genero:', generoNombre);
+
         } else {
             // Si no existe o está vacío, NO incluir la clave en variantes
             // genero_id = null en backend significa "aplica a ambos géneros"
-            console.log(' genero_id vacío/no encontrado - no se incluye en variantes (null = ambos)');
+
         }
 
         //  CAPTURAR PRENDA DE BODEGA (checkbox)
@@ -1210,9 +1165,9 @@ function recopilarDatos() {
         if (prendaBodegaCheckbox) {
             // Capturar si está checked (true/false)
             variantes.prenda_bodega = prendaBodegaCheckbox.checked;
-            console.log(' prenda_bodega capturado:', prendaBodegaCheckbox.checked);
+
         } else {
-            console.log(' prenda_bodega checkbox no encontrado');
+
         }
         
         console.log('📝 RESUMEN VARIANTES CAPTURADAS:', {
@@ -1246,20 +1201,13 @@ function recopilarDatos() {
                 telas: telas,
                 variantes: variantes
             };
-            
-            console.log(' PRODUCTO AGREGADO:', {
-                nombre: nombre,
-                tallas: tallasSeleccionadas.length,
-                fotos: fotos.length,
-                telas: telas.length,
-                variantes_keys: Object.keys(variantes)
             });
             
             productos.push(producto);
         }
     });
     
-    console.log(' RESUMEN PRODUCTOS RECOPILADOS:');
+
     productos.forEach((prod, idx) => {
         console.log(`  [${idx + 1}] ${prod.nombre_producto}:`, {
             '📸 Fotos': prod.fotos.length,
@@ -1270,36 +1218,30 @@ function recopilarDatos() {
     });
     
     // Verificar imágenes en memoria
-    console.log('📸 IMÁGENES EN MEMORIA:', {
-        'prendaConIndice': window.imagenesEnMemoria?.prendaConIndice?.length || 0,
-        'telaConIndice': window.imagenesEnMemoria?.telaConIndice?.length || 0,
-        'logo': window.imagenesEnMemoria?.logo?.length || 0
-    });
-    
     // ========== PASO 4: LOGO ==========
     
     // Recopilar técnicas
     const contenedorTecnicas = document.getElementById('tecnicas_seleccionadas');
-    console.log('🎨 Contenedor técnicas encontrado:', !!contenedorTecnicas);
+
     if (contenedorTecnicas) {
-        console.log('🎨 innerHTML del contenedor:', contenedorTecnicas.innerHTML);
-        console.log('🎨 Número de children:', contenedorTecnicas.children.length);
+
+
     }
     
     const tecnicas = [];
     document.querySelectorAll('#tecnicas_seleccionadas > div').forEach(tag => {
         const input = tag.querySelector('input[name="tecnicas[]"]');
         if (input) {
-            console.log('🎨 Input encontrado:', input.value);
+
             tecnicas.push(input.value);
         }
     });
-    console.log('🎨 Técnicas recopiladas:', tecnicas);
-    console.log('🎨 Elementos encontrados:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
+
+
     
     // Recopilar observaciones técnicas
     const observaciones_tecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
-    console.log('📝 Observaciones técnicas:', observaciones_tecnicas);
+
     
     // Recopilar ubicaciones desde paso3_secciones_datos o seccionesSeleccionadasFriendly
     const ubicaciones = [];
@@ -1308,13 +1250,13 @@ function recopilarDatos() {
     const tipoCotizacionInput = document.getElementById('tipo_cotizacion');
     const tipoCotizacion = tipoCotizacionInput?.value || '';
     
-    console.log('🔍 BUSCANDO UBICACIONES - Cotización tipo:', tipoCotizacion);
-    console.log('🔍 window.ubicacionesReflectivo existe?', !!window.ubicacionesReflectivo);
-    console.log('🔍 window.ubicacionesReflectivo:', window.ubicacionesReflectivo);
+
+
+
     
     // SI ES COTIZACIÓN COMBINADA (PL), BUSCAR EN PASO 4 (REFLECTIVO)
     if (tipoCotizacion === 'PL' && Array.isArray(window.ubicacionesReflectivo) && window.ubicacionesReflectivo.length > 0) {
-        console.log(' ES COTIZACIÓN COMBINADA - Usando ubicaciones del PASO 4 (Reflectivo)');
+
         window.ubicacionesReflectivo.forEach(ubic => {
             ubicaciones.push({
                 ubicacion: ubic.ubicacion,
@@ -1324,7 +1266,7 @@ function recopilarDatos() {
     } 
     // SI NO, BUSCAR EN PASO 3 (LOGO)
     else {
-        console.log('ℹ️ NO ES COTIZACIÓN COMBINADA O NO HAY UBICACIONES REFLECTIVO - Buscando en PASO 3 (Logo)');
+
     
     // Primero intentar desde el campo oculto paso3_secciones_datos (paso-tres.blade.php)
     const paso3_secciones_campo = document.getElementById('paso3_secciones_datos');
@@ -1344,7 +1286,7 @@ function recopilarDatos() {
                 });
             }
         } catch (e) {
-            console.error(' Error parsing paso3_secciones_datos:', e);
+
         }
     }
     
@@ -1362,9 +1304,9 @@ function recopilarDatos() {
         });
     }
     
-    console.log('📍 Ubicaciones recopiladas:', ubicaciones);
-    console.log('📍 paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');
-    console.log('📍 seccionesSeleccionadasFriendly:', typeof window.seccionesSeleccionadasFriendly !== 'undefined' ? window.seccionesSeleccionadasFriendly : 'NO DEFINIDO');
+
+
+
     } // Cierre del bloque else
     
     // Recopilar observaciones generales CON TIPO Y VALOR como objetos
@@ -1391,7 +1333,7 @@ function recopilarDatos() {
                     texto: texto,
                     valor: valorInput?.value || ''
                 });
-                console.log('📝 Modo TEXTO:', texto, '=', valorInput?.value);
+
             } else if (esModoCheckbox) {
                 // Modo checkbox: guardar objeto con tipo, texto y valor
                 observaciones_generales.push({
@@ -1399,7 +1341,7 @@ function recopilarDatos() {
                     texto: texto,
                     valor: checkboxInput?.checked ? 'on' : ''
                 });
-                console.log('✓ Modo CHECK:', texto, '=', checkboxInput?.checked ? 'checked' : 'unchecked');
+
             } else {
                 // Por defecto, asumir modo checkbox
                 observaciones_generales.push({
@@ -1410,8 +1352,8 @@ function recopilarDatos() {
             }
         }
     });
-    console.log('💬 Observaciones generales recopiladas:', observaciones_generales);
-    console.log('💬 Observaciones #observaciones_lista divs encontrados:', document.querySelectorAll('#observaciones_lista > div').length);
+
+
     
     // Obtener la fecha seleccionada
     const fechaInput = document.getElementById('fechaActual');
@@ -1436,12 +1378,6 @@ function recopilarDatos() {
     // Recopilar datos del reflectivo
     const descripcionReflectivo = document.getElementById('descripcion_reflectivo')?.value || '';
     const ubicacionReflectivo = document.getElementById('ubicacion_reflectivo')?.value || '';
-    
-    console.log('✨ Datos del reflectivo capturados:', {
-        descripcion: descripcionReflectivo,
-        ubicacion: ubicacionReflectivo
-    });
-
     // Recopilar observaciones generales del reflectivo
     const observacionesReflectivo = [];
     if (typeof observacionesReflectivo !== 'undefined' && Array.isArray(observacionesReflectivo)) {
@@ -1484,10 +1420,10 @@ function recopilarDatos() {
  * Retorna una promesa con el data actualizado
  */
 async function procesarImagenesABase64(datos) {
-    console.log(' Iniciando procesamiento de imágenes a Base64...');
+
     
     if (!datos.productos || datos.productos.length === 0) {
-        console.log('✓ Sin productos a procesar');
+
         return datos;
     }
     
@@ -1495,32 +1431,32 @@ async function procesarImagenesABase64(datos) {
         // Procesar cada producto
         for (let i = 0; i < datos.productos.length; i++) {
             const producto = datos.productos[i];
-            console.log(` Procesando producto ${i + 1}/${datos.productos.length}: ${producto.nombre_producto}`);
+
             
             // Procesar fotos de prenda
             if (producto.fotos && producto.fotos.length > 0) {
-                console.log(`  📸 Convirtiendo ${producto.fotos.length} foto(s) de prenda...`);
+
                 producto.fotos_base64 = await Promise.all(
                     producto.fotos.map((foto, idx) => {
-                        console.log(`    [${idx + 1}/${producto.fotos.length}] Procesando foto prenda...`);
+
                         return convertirArchivoABase64(foto);
                     })
                 );
-                console.log(`   ${producto.fotos_base64.length} foto(s) de prenda procesadas`);
+
             } else {
                 producto.fotos_base64 = [];
             }
             
             // Procesar telas
             if (producto.telas && producto.telas.length > 0) {
-                console.log(`  🧵 Convirtiendo ${producto.telas.length} tela(s)...`);
+
                 producto.telas_base64 = await Promise.all(
                     producto.telas.map((tela, idx) => {
-                        console.log(`    [${idx + 1}/${producto.telas.length}] Procesando tela...`);
+
                         return convertirArchivoABase64(tela);
                     })
                 );
-                console.log(`   ${producto.telas_base64.length} tela(s) procesada(s)`);
+
             } else {
                 producto.telas_base64 = [];
             }
@@ -1532,14 +1468,14 @@ async function procesarImagenesABase64(datos) {
         
         // Procesar imágenes de logo
         if (datos.logo && datos.logo.imagenes && datos.logo.imagenes.length > 0) {
-            console.log(`📸 Convirtiendo ${datos.logo.imagenes.length} imagen(es) de logo...`);
+
             datos.logo.imagenes_base64 = await Promise.all(
                 datos.logo.imagenes.map((imagen, idx) => {
-                    console.log(`    [${idx + 1}/${datos.logo.imagenes.length}] Procesando imagen logo...`);
+
                     return convertirArchivoABase64(imagen);
                 })
             );
-            console.log(`   ${datos.logo.imagenes_base64.length} imagen(es) de logo procesadas`);
+
             // Eliminar los File objects
             delete datos.logo.imagenes;
         } else {
@@ -1550,14 +1486,14 @@ async function procesarImagenesABase64(datos) {
 
         // Procesar imágenes de reflectivo
         if (datos.reflectivo && datos.reflectivo.imagenes && datos.reflectivo.imagenes.length > 0) {
-            console.log(`📸 Convirtiendo ${datos.reflectivo.imagenes.length} imagen(es) de reflectivo...`);
+
             datos.reflectivo.imagenes_base64 = await Promise.all(
                 datos.reflectivo.imagenes.map((imagen, idx) => {
-                    console.log(`    [${idx + 1}/${datos.reflectivo.imagenes.length}] Procesando imagen reflectivo...`);
+
                     return convertirArchivoABase64(imagen);
                 })
             );
-            console.log(`   ${datos.reflectivo.imagenes_base64.length} imagen(es) de reflectivo procesadas`);
+
             // Eliminar los File objects
             delete datos.reflectivo.imagenes;
         } else {
@@ -1576,7 +1512,8 @@ async function procesarImagenesABase64(datos) {
         
         return datos;
     } catch (error) {
-        console.error(' Error al procesar imágenes:', error);
+
         throw error;
     }
 }
+

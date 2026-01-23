@@ -15,7 +15,7 @@ const FormattingModule = {
      * Formatear fecha a DD/MM/YYYY
      */
     formatearFecha(fecha, columna = 'desconocida') {
-        console.log(`[formatting] Entrada: "${fecha}" (tipo: ${typeof fecha}, columna: ${columna})`);
+
         
         if (!fecha) return fecha;
         

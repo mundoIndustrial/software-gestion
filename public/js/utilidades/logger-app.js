@@ -78,9 +78,8 @@ class LoggerApp {
     static debug(mensaje, grupo = null, datos = null) {
         if (this.nivelActivo('debug')) {
             const prefijo = this.obtenerPrefijo(grupo);
-            console.debug(`%c${prefijo} ${mensaje}`, 'color: #888; font-weight: bold;');
             if (datos !== null) {
-                console.debug('  └─ Datos:', datos);
+
             }
         }
     }
@@ -95,9 +94,8 @@ class LoggerApp {
     static info(mensaje, grupo = null, datos = null) {
         if (this.nivelActivo('info')) {
             const prefijo = this.obtenerPrefijo(grupo);
-            console.log(`%c${prefijo} ${mensaje}`, 'color: #0066cc; font-weight: bold;');
             if (datos !== null) {
-                console.log('  └─ Datos:', datos);
+
             }
         }
     }
@@ -112,9 +110,8 @@ class LoggerApp {
     static warn(mensaje, grupo = null, datos = null) {
         if (this.nivelActivo('warn')) {
             const prefijo = this.obtenerPrefijo(grupo);
-            console.warn(`%c${prefijo}   ${mensaje}`, 'color: #ff9900; font-weight: bold;');
             if (datos !== null) {
-                console.warn('  └─ Datos:', datos);
+
             }
         }
     }
@@ -129,11 +126,10 @@ class LoggerApp {
     static error(mensaje, grupo = null, error = null) {
         // Los errores siempre se muestran
         const prefijo = this.obtenerPrefijo(grupo);
-        console.error(`%c${prefijo}  ${mensaje}`, 'color: #cc0000; font-weight: bold; font-size: 14px;');
         if (error) {
-            console.error('  Error:', error);
+
             if (error.stack) {
-                console.error('  Stack:', error.stack);
+
             }
         }
     }
@@ -148,9 +144,8 @@ class LoggerApp {
     static success(mensaje, grupo = null, datos = null) {
         if (this.nivelActivo('info')) {
             const prefijo = this.obtenerPrefijo(grupo);
-            console.log(`%c${prefijo}  ${mensaje}`, 'color: #00aa00; font-weight: bold; font-size: 14px;');
             if (datos !== null) {
-                console.log('  └─ Datos:', datos);
+
             }
         }
     }
@@ -168,7 +163,6 @@ class LoggerApp {
         if (this.nivelActivo('info')) {
             const progreso = `[${numPaso}/${totalPasos}]`;
             const prefijo = this.obtenerPrefijo(grupo);
-            console.log(`%c${prefijo} ${progreso} ${paso}`, 'color: #6600cc; font-weight: bold;');
         }
     }
 
@@ -181,9 +175,7 @@ class LoggerApp {
     static separador(titulo = '', grupo = null) {
         const prefijo = this.obtenerPrefijo(grupo);
         const linea = '═'.repeat(60);
-        console.log(`%c${linea}`, 'color: #999;');
         if (titulo) {
-            console.log(`%c${prefijo} ${titulo}`, 'color: #666; font-weight: bold;');
         }
     }
 
@@ -208,7 +200,7 @@ class LoggerApp {
     static tabla(datos, grupo = null) {
         if (this.nivelActivo('info')) {
             const prefijo = this.obtenerPrefijo(grupo);
-            console.log(`${prefijo} Tabla de datos:`);
+
             console.table(datos);
         }
     }
@@ -269,7 +261,7 @@ class LoggerApp {
         } else {
             this.error(`✗ ${mensaje}`, grupo);
             errores.forEach((error, idx) => {
-                console.error(`    [${idx + 1}] ${error}`);
+
             });
         }
     }
@@ -284,3 +276,4 @@ class LoggerApp {
 
 // Exportar globalmente
 window.LoggerApp = LoggerApp;
+

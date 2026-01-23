@@ -193,8 +193,6 @@
      * @param {number} pedidoId - ID del pedido
      */
     window.abrirSelectorRecibos = async function(pedidoId) {
-        console.log('%c[SELECTOR] Abriendo selector para pedido: ' + pedidoId, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
-        
         window.selectorRecibosState.pedidoId = pedidoId;
         window.selectorRecibosState.isOpen = true;
 
@@ -204,7 +202,6 @@
         const error = document.getElementById('selector-error');
 
         if (!overlay || !modal) {
-            console.error('[SELECTOR] Elementos del selector no encontrados en DOM');
             return;
         }
 
@@ -217,15 +214,14 @@
 
         // Cargar datos de recibos
         try {
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`);
+            const response = await fetch(`/api/pedidos/${pedidoId}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
 
-            const datos = await response.json();
-            console.log('[SELECTOR] Datos recibidos:', datos);
-
+            const result = await response.json();
+            const datos = result.data || result;
             window.selectorRecibosState.prendas = datos.prendas || [];
 
             // Actualizar número de pedido
@@ -237,7 +233,6 @@
             loading.style.display = 'none';
 
         } catch (err) {
-            console.error('[SELECTOR] Error cargando datos:', err);
             loading.style.display = 'none';
             error.style.display = 'block';
             document.getElementById('selector-error-message').textContent = err.message || 'Error desconocido';
@@ -333,7 +328,6 @@
         });
 
         container.innerHTML = html;
-        console.log('%c[SELECTOR] Prendas renderizadas con recibos base + procesos', 'color: #10b981; font-weight: bold;', prendas.length);
     }
 
     /**
@@ -350,8 +344,6 @@
         processes.classList.toggle('visible');
         header.classList.toggle('expanded');
         chevron.classList.toggle('expanded');
-
-        console.log('[SELECTOR] Acordeón ' + id + ' toggled');
     };
 
     /**
@@ -361,35 +353,20 @@
      * @param {string} tipoProceso - Tipo/nombre del proceso (DEBE ser STRING)
      */
     window.seleccionarProceso = function(prendaId, tipoProceso) {
-        console.log('%c[SELECTOR] ===== SELECCIONANDO RECIBO =====', 'color: #10b981; font-weight: bold; font-size: 12px;');
-        
         //  CRÍTICO: Validación defensiva
         if (typeof tipoProceso !== 'string') {
-            console.error('%c[SELECTOR]  ERROR: tipoProceso DEBE ser STRING', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof tipoProceso, tipoProceso);
             alert('Error: tipo de recibo debe ser texto (STRING)');
             return;
         }
         
         if (typeof prendaId !== 'number') {
-            console.error('%c[SELECTOR]  ERROR: prendaId DEBE ser NÚMERO', 'color: #ef4444; font-weight: bold;', 'Recibido:', typeof prendaId, prendaId);
             alert('Error: ID de prenda debe ser número');
             return;
         }
         
         const tipoString = String(tipoProceso);
         const pedidoId = window.selectorRecibosState.pedidoId;
-        
-        console.log('%c[SELECTOR] Parámetros correctos:', 'color: #10b981;', {
-            pedidoId: pedidoId,
-            prendaId: prendaId,
-            tipoProceso: tipoString
-        });
-        console.log('%c[SELECTOR] Tipos:', 'color: #10b981;', {
-            pedidoId_type: typeof pedidoId,
-            prendaId_type: typeof prendaId,
-            tipoProceso_type: typeof tipoString
-        });
-        
+
         // Cerrar selector
         cerrarSelectorRecibos();
 
@@ -402,8 +379,6 @@
      * Cierra el selector de recibos
      */
     window.cerrarSelectorRecibos = function() {
-        console.log('%c[SELECTOR] Cerrando selector', 'color: #3b82f6;');
-        
         const overlay = document.getElementById('recibos-process-selector-overlay');
         const modal = document.getElementById('recibos-process-selector-modal');
 
@@ -426,3 +401,4 @@
     }
 
 </script>
+

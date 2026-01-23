@@ -72,7 +72,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
     const config = procesosConfig[tipoProceso];
     
     if (!config) {
-        console.error(' Tipo de proceso desconocido:', tipoProceso);
+
         return;
     }
     
@@ -100,7 +100,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso) {
     const modal = document.getElementById('modal-proceso-generico');
     modal.style.display = 'flex';
     
-    console.log(` Modal de ${config.titulo} abierto`);
+
 };
 
 /**
@@ -110,7 +110,7 @@ window.cerrarModalProcesoGenerico = function() {
     const modal = document.getElementById('modal-proceso-generico');
     modal.style.display = 'none';
     procesoActual = null;
-    console.log(' Modal de proceso cerrado');
+
 };
 
 /**
@@ -132,7 +132,7 @@ window.manejarImagenesProceso = function(input) {
         const btnAgregar = document.getElementById('proceso-foto-btn');
         btnAgregar.style.display = 'block';
         
-        console.log(` Imagen agregada para ${procesoActual}`);
+
     };
     
     reader.readAsDataURL(file);
@@ -142,7 +142,7 @@ window.manejarImagenesProceso = function(input) {
  * Abre el modal para seleccionar tallas del proceso
  */
 window.abrirModalSeleccionarTallasProceso = function(genero) {
-    console.log(` Seleccionando tallas para ${procesoActual} - ${genero}`);
+
     
     // Guardar referencia para que el gestor de tallas sepa que es para un proceso
     window._tallas_modal_tipo = 'proceso';
@@ -156,7 +156,7 @@ window.abrirModalSeleccionarTallasProceso = function(genero) {
         // Alternativa si existe una función más genérica
         abrirModalSeleccionarTallas(genero, 'proceso', procesoActual);
     } else {
-        console.error(' No se encontró función para abrir modal de tallas');
+
     }
 };
 
@@ -165,7 +165,7 @@ window.abrirModalSeleccionarTallasProceso = function(genero) {
  */
 window.agregarProceso = function() {
     if (!procesoActual) {
-        console.error(' Ningún proceso seleccionado');
+
         return;
     }
     
@@ -216,7 +216,7 @@ window.agregarProceso = function() {
         tallas: obtenerTallasSeleccionadas(procesoActual)
     };
     
-    console.log(` Agregando ${procesoActual}:`, datos);
+
     
     // Agregar a la lista de ítems del pedido
     window.agregarItemPedido(datos);
@@ -237,4 +237,4 @@ function obtenerTallasSeleccionadas(tipoProceso) {
     };
 }
 
-console.log(' Módulo gestor-procesos-generico.js cargado correctamente');
+

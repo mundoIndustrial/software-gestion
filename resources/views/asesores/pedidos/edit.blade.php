@@ -225,31 +225,26 @@
     // Asegurar que imagenesPrendaStorage existe
     if (!window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage = new ImageStorageService(3);
-        console.log(' [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesTelaStorage existe
     if (!window.imagenesTelaStorage) {
         window.imagenesTelaStorage = new ImageStorageService(3);
-        console.log(' [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesReflectivoStorage existe
     if (!window.imagenesReflectivoStorage) {
         window.imagenesReflectivoStorage = new ImageStorageService(3);
-        console.log(' [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que telasAgregadas existe
     if (!window.telasAgregadas) {
         window.telasAgregadas = [];
-        console.log(' [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que procesosSeleccionados existe
     if (!window.procesosSeleccionados) {
         window.procesosSeleccionados = {};
-        console.log(' [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
     }
 </script>
 
@@ -287,31 +282,26 @@
     // Asegurar que imagenesPrendaStorage existe
     if (!window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage = new ImageStorageService(3);
-        console.log(' [EDIT SYNC] imagenesPrendaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesTelaStorage existe
     if (!window.imagenesTelaStorage) {
         window.imagenesTelaStorage = new ImageStorageService(3);
-        console.log(' [EDIT SYNC] imagenesTelaStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que imagenesReflectivoStorage existe
     if (!window.imagenesReflectivoStorage) {
         window.imagenesReflectivoStorage = new ImageStorageService(3);
-        console.log(' [EDIT SYNC] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que telasAgregadas existe
     if (!window.telasAgregadas) {
         window.telasAgregadas = [];
-        console.log(' [EDIT SYNC] telasAgregadas inicializado INMEDIATAMENTE');
     }
 
     // Asegurar que procesosSeleccionados existe
     if (!window.procesosSeleccionados) {
         window.procesosSeleccionados = {};
-        console.log(' [EDIT SYNC] procesosSeleccionados inicializado INMEDIATAMENTE');
     }
 </script>
 
@@ -332,10 +322,10 @@
         if (btnAgregarProducto && window.gestionItemsUI) {
             btnAgregarProducto.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log(' [EDIT] Botón agregar producto clickeado, abriendo modal de prenda');
                 window.gestionItemsUI.abrirModalAgregarPrendaNueva();
             });
         }
     });
 </script>
 @endpush
+

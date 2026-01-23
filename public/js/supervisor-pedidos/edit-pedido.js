@@ -123,7 +123,7 @@ function cargarDatosPedido(ordenId) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+
             showToast('Error al cargar datos del pedido', 'error');
         });
 }
@@ -420,7 +420,7 @@ function eliminarImagen(tipo, id, button) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         showToast('Error al eliminar la imagen', 'error');
     });
 }
@@ -459,14 +459,14 @@ function calcularFechaEstimada() {
             // Guardar la fecha ISO en el campo oculto para enviar al servidor
             fieldOculto.value = data.fecha_estimada_iso;
             
-            console.log(' Fecha estimada calculada:', data.fecha_estimada);
-            console.log(' Campo oculto actualizado:', fieldOculto.value);
+
+
         } else {
             alert('Error al calcular la fecha estimada: ' + (data.message || 'Error desconocido'));
         }
     })
     .catch(error => {
-        console.error('Error al calcular fecha estimada:', error);
+
         alert('Error al calcular la fecha estimada');
     });
 }
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 showToast('Error al actualizar el pedido', 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;

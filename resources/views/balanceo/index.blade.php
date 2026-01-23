@@ -10,7 +10,7 @@
 <!-- CSS de balanceo -->
 <link rel="stylesheet" href="{{ asset('css/balanceo.css') }}">
 <link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
-<link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
+<link rel="stylesheet" href="{{ asset('css/orders-styles/modern-table.css') }}">
 
 <!-- CSS Crítico Inline SOLO para balanceo -->
 <style>

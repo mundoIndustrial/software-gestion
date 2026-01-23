@@ -352,16 +352,12 @@
  * @param {number} pedido - Número del pedido
  */
 window.openAsesorasTrackingModal = async function(pedido) {
-    console.log('🔵 [ASESORAS TRACKING] Abriendo modal para pedido:', pedido);
-    
     try {
-        // Obtener datos del pedido en JSON - usar endpoint de recibos que devuelve JSON
-        const response = await fetch(`/asesores/pedidos/${pedido}/recibos-datos`);
+        // Obtener datos del pedido en JSON - usar endpoint DDD
+        const response = await fetch(`/api/pedidos/${pedido}`);
         if (!response.ok) throw new Error('Error fetching order');
-        const order = await response.json();
-        
-        console.log(' [ASESORAS TRACKING] Datos obtenidos:', order);
-        
+        const result = await response.json();
+        const order = result.data || result;
         // Llenar información básica del modal
         document.getElementById('asesorasTrackingOrderNumber').textContent = pedido || '-';
         document.getElementById('asesorasTrackingClient').textContent = order.cliente_nombre || order.cliente || '-';
@@ -396,10 +392,8 @@ window.openAsesorasTrackingModal = async function(pedido) {
         const modal = document.getElementById('asesorasTrackingModal');
         if (modal) {
             modal.style.display = 'flex';
-            console.log(' [ASESORAS TRACKING] Modal mostrado');
         }
     } catch (error) {
-        console.error(' [ASESORAS TRACKING] Error:', error);
     }
 };
 
@@ -411,9 +405,6 @@ async function fillAsesorasTimeline(pedido) {
     try {
         const container = document.getElementById('asesorasTimelineContainer');
         if (!container) return;
-        
-        console.log(' [ASESORAS TIMELINE] Obteniendo procesos para pedido:', pedido);
-        
         // Obtener los procesos del pedido (misma lógica que en tracking)
         let responseData = null;
         
@@ -428,10 +419,8 @@ async function fillAsesorasTimeline(pedido) {
             
             if (response.ok) {
                 responseData = await response.json();
-                console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/ordenes:', responseData);
             }
         } catch (error) {
-            console.log(' [ASESORAS TIMELINE] Error en /api/ordenes, intentando /api/tabla-original');
         }
         
         // Si falla, intentar con /api/tabla-original/{pedido}/procesos
@@ -446,10 +435,8 @@ async function fillAsesorasTimeline(pedido) {
                 
                 if (response.ok) {
                     responseData = await response.json();
-                    console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original:', responseData);
                 }
             } catch (error) {
-                console.log(' [ASESORAS TIMELINE] Error en /api/tabla-original');
             }
         }
         
@@ -465,10 +452,8 @@ async function fillAsesorasTimeline(pedido) {
                 
                 if (response.ok) {
                     responseData = await response.json();
-                    console.log(' [ASESORAS TIMELINE] Datos obtenidos de /api/tabla-original-bodega:', responseData);
                 }
             } catch (error) {
-                console.log(' [ASESORAS TIMELINE] Error en /api/tabla-original-bodega');
             }
         }
         
@@ -480,18 +465,13 @@ async function fillAsesorasTimeline(pedido) {
                 procesos = responseData;
             } else if (responseData.procesos && Array.isArray(responseData.procesos)) {
                 procesos = responseData.procesos;
-                console.log(' [ASESORAS TIMELINE] Procesos extraídos de responseData.procesos');
             }
         }
         
         if (!procesos || procesos.length === 0) {
-            console.log(' [ASESORAS TIMELINE] No hay procesos disponibles');
             container.innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 0.9rem;">Sin procesos registrados</p>';
             return;
         }
-        
-        console.log(' [ASESORAS TIMELINE] Total de procesos:', procesos.length);
-        
         // Ordenar procesos por fecha de inicio
         procesos.sort((a, b) => {
             const fechaA = new Date(a.fecha_inicio || a.createdAt || 0);
@@ -546,13 +526,10 @@ async function fillAsesorasTimeline(pedido) {
                     </div>
                 </div>
             `;
-            
-            console.log(` [ASESORAS TIMELINE] Proceso ${index + 1}: ${nombreArea} - ${fechaFormato}`);
             container.appendChild(timelineItem);
         });
         
     } catch (error) {
-        console.error(' [ASESORAS TIMELINE] Error al llenar timeline:', error);
         const container = document.getElementById('asesorasTimelineContainer');
         if (container) {
             container.innerHTML = '<p style="text-align: center; color: #d32f2f; font-size: 0.9rem;">Error al cargar procesos</p>';
@@ -577,7 +554,6 @@ function formatAsesorasOrderStatus(estado) {
  * Cierra el modal de seguimiento para asesoras
  */
 window.closeAsesorasTrackingModal = function() {
-    console.log('🔵 [ASESORAS TRACKING] Cerrando modal');
     const modal = document.getElementById('asesorasTrackingModal');
     if (modal) {
         modal.style.display = 'none';
@@ -605,3 +581,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+

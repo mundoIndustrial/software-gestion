@@ -7,9 +7,6 @@
         Validator.requireEdicionPedido(() => {
             const datos = window.datosEdicionPedido;
             const prendas = datos.prendas || [];
-            
-            console.log('[MODAL-PRENDAS-LISTA] Abriendo modal. Prendas encontradas:', prendas.length);
-            
             // Siempre mostrar lista, aunque esté vacía
             window.prendasEdicion = {
                 pedidoId: datos.numero_pedido || datos.id,
@@ -19,7 +16,6 @@
             let htmlListaPrendas = `<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">`;
             
             if (prendas.length === 0) {
-                console.log('[MODAL-PRENDAS-LISTA] Sin prendas - mostrando botón para agregar');
                 // Mostrar botón para agregar prenda si la lista está vacía
                 htmlListaPrendas += `
                     <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px; border: 2px dashed #d1d5db;">
@@ -33,13 +29,11 @@
                     </div>
                 `;
             } else {
-                console.log('[MODAL-PRENDAS-LISTA] Con prendas - mostrando lista');
                 prendas.forEach((item, idx) => {
                     const nombre = item.nombre_prenda || 'Prenda sin nombre';
                     const cantidad = item.cantidad || 0;
                     htmlListaPrendas += `
-                        <button onclick="(function() { 
-                            console.log('[MODAL-PRENDAS-LISTA] Editando prenda en índice:', ${idx});
+                        <button onclick="(function() {
                             Swal.close();
                             setTimeout(() => {
                                 abrirEditarPrendaEspecifica(${idx});
@@ -112,3 +106,4 @@
         });
     }
 </script>
+

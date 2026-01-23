@@ -21,7 +21,7 @@ class PedidoFormHandlers {
         this.currentModalContext = null;
         this.isSubmitting = false;
 
-        console.log('🎮 PedidoFormHandlers inicializado');
+
     }
 
     /**
@@ -30,14 +30,14 @@ class PedidoFormHandlers {
     init(containerId) {
         this.container = document.getElementById(containerId);
         if (!this.container) {
-            console.error(` No se encontró elemento: ${containerId}`);
+
             return;
         }
 
         this.attachEventListeners();
         this.listenToFormChanges();
 
-        console.log(' Event listeners adjuntados');
+
     }
 
     /**
@@ -163,7 +163,7 @@ class PedidoFormHandlers {
                 this.closeModal();
             }
         } catch (error) {
-            console.error(` Error en handler ${action}:`, error);
+
             this.ui.renderToast('error', `Error: ${error.message}`);
         }
     }
@@ -934,7 +934,7 @@ class PedidoFormHandlers {
         if (this.isSubmitting) return;
 
         this.isSubmitting = true;
-        console.log('📤 Enviando pedido...', state);
+
 
         try {
             //  TRANSFORMAR ESTADO: Eliminar File objects, mantener solo metadatos
@@ -1007,7 +1007,7 @@ class PedidoFormHandlers {
                 throw new Error(result.message || 'Error desconocido');
             }
         } catch (error) {
-            console.error(' Error enviando pedido:', error);
+
             this.ui.renderToast('error', `Error: ${error.message}`);
         } finally {
             this.isSubmitting = false;
@@ -1190,19 +1190,19 @@ class PedidoFormHandlers {
 
         console.group(' DIAGNÓSTICO DE TRANSFORMACIÓN');
 
-        console.log(' Estado transformado (sin File):');
-        console.log(JSON.stringify(stateToSend, null, 2));
 
-        console.log('\n Validación:');
+
+
+
         console.table(validation);
 
         if (validation.errors.length > 0) {
-            console.error(' ERRORES ENCONTRADOS:');
+
             validation.errors.forEach(err => console.error(`  - ${err}`));
         }
 
         if (validation.warnings.length > 0) {
-            console.warn(' ADVERTENCIAS:');
+
             validation.warnings.forEach(warn => console.warn(`  - ${warn}`));
         }
 
@@ -1215,7 +1215,7 @@ class PedidoFormHandlers {
 
     destroy() {
         this.fm.destroy();
-        console.log('🗑️  PedidoFormHandlers destruido');
+
     }
 }
 

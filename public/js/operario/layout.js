@@ -65,7 +65,7 @@ function buscarPedidos(busqueda) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Resultados encontrados:', data.resultados);
+
             // Aquí puedes mostrar los resultados en un dropdown o modal
         }
     })

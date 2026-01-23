@@ -155,7 +155,7 @@ function parseArrayData(data) {
         try {
             return JSON.parse(data);
         } catch (e) {
-            console.warn(' No se pudo parsear:', data);
+
             return [];
         }
     }

@@ -333,7 +333,7 @@ Size: ~5KB (dependiendo de cantidad de imágenes)
 
 ---
 
-## 🚀 Próximas Optimizaciones (Opcional)
+## Próximas Optimizaciones (Opcional)
 
 1. **Caché local**
    - Guardar datos fetched en sessionStorage

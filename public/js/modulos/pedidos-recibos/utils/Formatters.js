@@ -9,7 +9,7 @@ export class Formatters {
      * Formato especializado para recibos de costura
      */
     static construirDescripcionCostura(prenda) {
-        console.log('[FORMATTERS] Construyendo descripción de costura');
+
         
         const lineas = [];
 
@@ -85,7 +85,7 @@ export class Formatters {
      * Formato específico para procesos productivos
      */
     static construirDescripcionProceso(prenda, proceso) {
-        console.log('[FORMATTERS] Construyendo descripción de proceso');
+
         
         const lineas = [];
 
@@ -221,7 +221,7 @@ export class Formatters {
         
         // Si la fecha es inválida, usar fecha actual
         if (isNaN(fecha.getTime())) {
-            console.warn('[FORMATTERS] Fecha inválida, usando fecha actual');
+
             fecha = new Date();
         }
         

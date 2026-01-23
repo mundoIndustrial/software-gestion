@@ -20,8 +20,8 @@
  * @returns {string} HTML generado para la vista reflectivo
  */
 window.renderizarReflectivo = function(prendas, datosReflectivo = null) {
-    console.log(' RENDERIZANDO COTIZACIÓN TIPO REFLECTIVO');
-    console.log(' Datos reflectivo:', datosReflectivo);
+
+
     
     // Parsear ubicaciones del reflectivo
     let ubicacionesReflectivo = [];
@@ -30,9 +30,9 @@ window.renderizarReflectivo = function(prendas, datosReflectivo = null) {
             ubicacionesReflectivo = typeof datosReflectivo.ubicacion === 'string' 
                 ? JSON.parse(datosReflectivo.ubicacion) 
                 : datosReflectivo.ubicacion;
-            console.log(' Ubicaciones parseadas:', ubicacionesReflectivo);
+
         } catch (e) {
-            console.error('Error parseando ubicaciones:', e);
+
             ubicacionesReflectivo = [];
         }
     }
@@ -45,9 +45,9 @@ window.renderizarReflectivo = function(prendas, datosReflectivo = null) {
         if (!window.telasGaleria) window.telasGaleria = [];
         window.telasGaleria[index] = [];
         
-        console.log(` Prenda ${index + 1}:`, prenda);
-        console.log(`   - Tallas:`, prenda.tallas);
-        console.log(`   - Tipo de tallas:`, typeof prenda.tallas);
+
+
+
         
         html += generarCardPrendaReflectivo(prenda, index, ubicacionesReflectivo);
     });
@@ -134,7 +134,7 @@ function generarCardPrendaReflectivo(prenda, index, ubicacionesReflectivo) {
                 </label>
                 <div id="tallas-container-${index}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem;">
                     ${prenda.tallas.map((talla, tallaIdx) => {
-                        console.log(`     Talla ${tallaIdx}:`, talla);
+
                         return `
                         <div class="talla-item-reflectivo" data-talla="${talla}" data-prenda="${index}" style="background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.75rem; position: relative;">
                             <button type="button" 
@@ -185,7 +185,7 @@ function generarSeccionFotosReflectivo(datosReflectivo) {
     });
     
     if (fotosReflectivoCompletas.length > 0) {
-        console.log('📸 Fotos del reflectivo encontradas:', fotosReflectivoCompletas);
+
         return `
         <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
@@ -226,7 +226,7 @@ function generarSeccionFotosReflectivo(datosReflectivo) {
         </div>
         `;
     } else {
-        console.log('📸 Sin fotos del reflectivo - mostrar botón para agregar');
+
         return `
         <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -263,7 +263,7 @@ window.eliminarFotoReflectivoPedido = window.eliminarFotoReflectivoPedido || fun
                     const img = contenedor.querySelector('img');
                     const fotoUrl = img?.getAttribute('src');
                     
-                    console.log(` Eliminando foto del reflectivo ID ${fotoId}, URL:`, fotoUrl);
+
                     
                     // Marcar esta foto como eliminada
                     if (fotoUrl) {
@@ -297,7 +297,7 @@ window.eliminarTallaReflectivo = window.eliminarTallaReflectivo || function(pren
             if (result.isConfirmed) {
                 const tallaElement = document.querySelector(`.talla-item-reflectivo[data-talla="${talla}"][data-prenda="${prendaIndex}"]`);
                 if (tallaElement) {
-                    console.log(` Eliminando talla ${talla} de la prenda ${prendaIndex + 1}`);
+
                     
                     // GUARDAR CANTIDADES ANTES DE RE-RENDERIZAR
                     if (typeof guardarCantidadesActuales === 'function') {
@@ -320,7 +320,7 @@ window.eliminarTallaReflectivo = window.eliminarTallaReflectivo || function(pren
                     if (window.eliminarImagenTimeout) clearTimeout(window.eliminarImagenTimeout);
                     window.eliminarImagenTimeout = setTimeout(() => {
                         if (typeof renderizarPrendas === 'function') {
-                            console.log(`🔄 Renderizando prendas después de eliminar talla...`);
+
                             renderizarPrendas();
                             // Restaurar cantidades guardadas después del render
                             setTimeout(() => {
@@ -366,7 +366,7 @@ window.manejarArchivosReflectivo = function(files) {
     let renderTimeout = null;
     
     if (fotosADeProcesar === 0) {
-        console.log(' No hay archivos de imagen para procesar');
+
         return;
     }
     
@@ -391,17 +391,17 @@ window.manejarArchivosReflectivo = function(files) {
                 if (!yaExiste) {
                     window.reflectiveFotosNuevas.push(fotoObj);
                     fotosAgregadas++;
-                    console.log(`📸 Foto agregada a reflectivo: ${file.name} (${fotosAgregadas}/${fotosADeProcesar})`);
-                    console.log(`   ID: ${fotoId}`);
+
+
                 } else {
-                    console.log(` Foto duplicada ignorada: ${file.name}`);
+
                 }
                 
                 // Cuando se terminen de procesar todas las fotos, renderizar una sola vez con debounce
                 if (renderTimeout) clearTimeout(renderTimeout);
                 
                 if (fotosAgregadas === fotosADeProcesar) {
-                    console.log(` Todas las fotos han sido procesadas. Renderizando...`);
+
                     renderTimeout = setTimeout(() => {
                         if (typeof renderizarPrendas === 'function') {
                             renderizarPrendas();
@@ -414,5 +414,5 @@ window.manejarArchivosReflectivo = function(files) {
         }
     });
     
-    console.log(`📤 Procesando ${fotosADeProcesar} archivo(s) de imagen...`);
+
 };

@@ -60,7 +60,7 @@ const AsistenciaHorasTrabajadas = (() => {
         const recordsTableHeader = document.getElementById('recordsTableHeader');
         
         if (!recordsTableBody || !recordsTableHeader) {
-            console.error('Elementos de tabla no encontrados');
+
             return;
         }
         
@@ -70,7 +70,7 @@ const AsistenciaHorasTrabajadas = (() => {
             
             // Si no hay filas en la tabla, no proceder
             if (rowsExistentes.length === 0) {
-                console.log('No hay registros en la tabla');
+
                 return;
             }
             

@@ -25,7 +25,7 @@ class ProductoModule {
      */
     agregarProducto() {
         if (!this.template || !this.contenedor) {
-            console.error('Template o contenedor no encontrado');
+
             return;
         }
 
@@ -54,7 +54,7 @@ class ProductoModule {
         // Configurar listeners del nuevo producto
         this.setupProductoListeners(productoId);
 
-        console.log(` Producto agregado: ${productoId}`);
+
         return productoId;
     }
 
@@ -124,11 +124,11 @@ class ProductoModule {
      */
     eliminarProducto(card) {
         const productoId = card.dataset.productoId;
-        console.log(`🗑️ Intentando eliminar producto: ${productoId}`);
+
 
         // Prevenir eliminaciones duplicadas
         if (card.dataset.eliminando === 'true') {
-            console.log(' Este producto ya está siendo eliminado');
+
             return;
         }
 
@@ -161,21 +161,21 @@ class ProductoModule {
     confirmarEliminacion(card, productoId) {
         // Marcar como en proceso de eliminación
         card.dataset.eliminando = 'true';
-        console.log(` Card antes de remover:`, card);
-        console.log(` Contenedor tiene ${this.contenedor.querySelectorAll('.producto-card').length} productos`);
+
+
 
         // Limpiar datos asociados
         delete window.fotosSeleccionadas[productoId];
         delete window.telasSeleccionadas[productoId];
 
         card.remove();
-        console.log(` Card removida del DOM`);
-        console.log(` Contenedor ahora tiene ${this.contenedor.querySelectorAll('.producto-card').length} productos`);
+
+
         
         this.renumerarProductos();
-        console.log(` Productos renumerados`);
 
-        console.log(` Producto eliminado: ${productoId}`);
+
+
         
         // Mostrar toast de éxito
         if (window.mostrarToast) {

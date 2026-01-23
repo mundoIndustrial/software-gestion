@@ -9,12 +9,12 @@ let bodegaPrendaUniqueId = 0; // ID único para cada prenda
  * Función wrapper para ser llamada desde onclick en la tabla
  */
 function openEditModal(pedido) {
-    console.log('🖱️ Click en botón Editar, pedido:', pedido);
-    console.log(' Verificando si openBodegaEditModal existe:', typeof openBodegaEditModal);
+
+
     if (typeof openBodegaEditModal === 'function') {
         openBodegaEditModal(pedido);
     } else {
-        console.error(' openBodegaEditModal no es una función');
+
     }
 }
 
@@ -22,7 +22,7 @@ function openEditModal(pedido) {
  * Inicializar modal de edición de bodega
  */
 function initializeBodegaEditModal() {
-    console.log(' Bodega Edit Modal Script Loaded');
+
     
     // Event delegation para botones de editar
     document.addEventListener('click', function(e) {
@@ -47,45 +47,45 @@ function initializeBodegaEditModal() {
  * Abrir el modal de edición y cargar los datos de la orden
  */
 async function openBodegaEditModal(pedido) {
-    console.log(` Abriendo edición de bodega ${pedido}`);
+
     currentBodegaOrderId = pedido;
     
     try {
         // Verificar que el modal existe
         const modal = document.getElementById('bodegaEditModal');
         if (!modal) {
-            console.error(' Modal #bodegaEditModal no encontrado en el DOM');
-            console.log(' Elementos en el DOM:', document.querySelectorAll('[id*="Modal"]').length);
+
+
             showNotification('Error: Modal no encontrado', 'error');
             return;
         }
-        console.log(' Modal encontrado en el DOM');
-        console.log(' Computado style display:', window.getComputedStyle(modal).display);
+
+
         
         // Cargar datos de la orden
-        console.log(' Cargando datos de la orden...');
+
         await loadBodegaOrderData(pedido);
         
         // Cargar prendas y tallas
-        console.log(' Cargando prendas...');
+
         await loadBodegaPrendas(pedido);
         
         // Mostrar modal
-        console.log(' Mostrando modal...');
+
         showBodegaEditModal();
         
         // Verificar que se mostró
         setTimeout(() => {
             const computedStyle = window.getComputedStyle(modal);
-            console.log(' Después de mostrar - display:', computedStyle.display);
-            console.log(' Después de mostrar - visibility:', computedStyle.visibility);
-            console.log(' Después de mostrar - opacity:', computedStyle.opacity);
-            console.log(' Después de mostrar - z-index:', computedStyle.zIndex);
+
+
+
+
         }, 100);
         
-        console.log(' Modal abierto exitosamente');
+
     } catch (error) {
-        console.error(' Error abriendo modal:', error);
+
         showNotification('Error al cargar los datos: ' + error.message, 'error');
     }
 }
@@ -94,7 +94,7 @@ async function openBodegaEditModal(pedido) {
  * Cerrar el modal de edición
  */
 function closeBodegaEditModal() {
-    console.log(' Cerrando modal de edición');
+
     const modal = document.getElementById('bodegaEditModal');
     if (modal) {
         modal.style.display = 'none';
@@ -119,8 +119,8 @@ async function loadBodegaOrderData(pedido) {
         if (!response.ok) throw new Error('Error al cargar datos');
         
         const orden = await response.json();
-        console.log(' Orden completa recibida:', orden);
-        console.log(' Área recibida:', orden.area);
+
+
         
         // Llenar información general
         document.getElementById('bodega_edit_pedido').value = orden.pedido || '';
@@ -131,9 +131,9 @@ async function loadBodegaOrderData(pedido) {
         document.getElementById('bodega_edit_novedades').value = orden.novedades || '';
         document.getElementById('editBodegaOrderNumber').textContent = `#${orden.pedido}`;
         
-        console.log(' Datos de orden cargados');
+
     } catch (error) {
-        console.error('Error al cargar datos de orden:', error);
+
         throw error;
     }
 }
@@ -151,7 +151,7 @@ async function loadBodegaPrendas(pedido) {
         });
         
         if (!response.ok) {
-            console.warn(' No se pudieron cargar las prendas');
+
             return;
         }
         
@@ -188,9 +188,9 @@ async function loadBodegaPrendas(pedido) {
             addBodegaPrendaCard(prenda, index);
         });
         
-        console.log(` ${prendasArray.length} prendas cargadas`);
+
     } catch (error) {
-        console.warn(' No se pudieron cargar las prendas:', error);
+
     }
 }
 
@@ -374,15 +374,15 @@ function updateBodegaPrendaNumbers() {
 function showBodegaEditModal() {
     const modal = document.getElementById('bodegaEditModal');
     if (modal) {
-        console.log(' Mostrando modal de edición');
+
         modal.style.display = 'flex';
         modal.style.visibility = 'visible';
         modal.style.opacity = '1';
         // Forzar reflow para asegurar que se aplique el display
         const _ = modal.offsetHeight;
-        console.log(' Modal visible');
+
     } else {
-        console.error(' Modal #bodegaEditModal no encontrado en el DOM');
+
     }
 }
 
@@ -429,7 +429,7 @@ async function saveBodegaChanges(pedido) {
             prendas: prendas
         };
         
-        console.log('💾 Guardando cambios:', formData);
+
         
         const response = await fetch(`/bodega/${pedido}`, {
             method: 'PATCH',
@@ -445,7 +445,7 @@ async function saveBodegaChanges(pedido) {
             throw new Error('Error al guardar cambios');
         }
         
-        console.log(' Cambios guardados');
+
         showBodegaEditNotification('Cambios guardados exitosamente', 'success');
         
         setTimeout(() => {
@@ -454,7 +454,7 @@ async function saveBodegaChanges(pedido) {
         }, 1500);
         
     } catch (error) {
-        console.error('Error al guardar:', error);
+
         showBodegaEditNotification('Error al guardar los cambios', 'error');
     }
 }
@@ -465,7 +465,7 @@ async function saveBodegaChanges(pedido) {
 function showBodegaEditNotification(message, type = 'success') {
     const notification = document.getElementById('editBodegaNotification');
     if (!notification) {
-        console.warn(' Elemento #editBodegaNotification no encontrado');
+
         return;
     }
     notification.textContent = message;
@@ -515,12 +515,12 @@ function showNotification(message, type = 'info') {
 // Inicializar inmediatamente si el DOM ya está listo, o esperar si no
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-        console.log(' DOM Loaded - Inicializando Bodega Edit Modal');
+
         initializeBodegaEditModal();
     });
 } else {
     // El DOM ya está completamente cargado
-    console.log(' DOM Already Ready - Inicializando Bodega Edit Modal');
+
     initializeBodegaEditModal();
 }
 

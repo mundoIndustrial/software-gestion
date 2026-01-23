@@ -210,7 +210,6 @@
             const hiddenInput = document.getElementById('cotizacion_id_editable');
             
             if (!searchInput) {
-                console.error(' No se encontró el input de búsqueda');
                 return;
             }
             
@@ -283,9 +282,6 @@
                 
                 // Guardar para usar en agregar prendas
                 window.cotizacionSeleccionadaActual = cotizacion;
-                
-                console.log(' Cotización seleccionada:', cotizacion);
-                
                 // Abrir modal de selección de prendas
                 if (typeof window.abrirModalSeleccionPrendas === 'function') {
                     window.abrirModalSeleccionPrendas(cotizacion);
@@ -304,9 +300,7 @@
             if (seccionItems) {
                 seccionItems.style.display = 'block';
             }
-            
-            console.log(' Vista de cotización inicializada');
-            console.log(' Cotizaciones disponibles:', window.cotizacionesData.length);
+
         });
     </script>
 @endpush

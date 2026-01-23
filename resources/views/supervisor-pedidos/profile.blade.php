@@ -468,7 +468,6 @@
                 const submitBtn = document.getElementById('submitBtn');
                 
                 if (!submitBtn) {
-                    console.error('No se encontró el botón de envío');
                     return;
                 }
                 
@@ -510,7 +509,6 @@
                         submitBtn.innerHTML = originalText;
                     }
                 } catch (error) {
-                    console.error('Error:', error);
                     showMessage('error', 'Error de conexión al guardar los cambios');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalText;
@@ -540,3 +538,4 @@
 </script>
 @endpush
 @endsection
+

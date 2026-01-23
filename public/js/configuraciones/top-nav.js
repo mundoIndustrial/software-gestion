@@ -63,7 +63,7 @@
                 e.stopPropagation();
                 e.preventDefault();
                 
-                console.log('🔴 Click en userBtn - clase show actual:', userMenu.classList.contains('show'));
+
                 
                 const isShowing = userMenu.classList.contains('show');
                 
@@ -75,7 +75,7 @@
                 userMenu.classList.toggle('show');
                 userMenu.classList.toggle('active');
                 
-                console.log(' Después del toggle - clase show:', userMenu.classList.contains('show'));
+
                 
                 // Cerrar notificaciones si se abre el menú de usuario
                 if (notificationMenu && userMenu.classList.contains('show')) {
@@ -84,7 +84,7 @@
                 }
             });
         } else {
-            console.warn(' User button or menu not found', { userBtn: !!userBtn, userMenu: !!userMenu });
+
         }
 
         // Close menus when clicking outside

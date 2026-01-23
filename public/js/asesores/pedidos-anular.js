@@ -163,7 +163,7 @@ function anularPedido(numeroPedido, novedad) {
         }
     })
     .catch(error => {
-        console.error('Error al anular pedido:', error);
+
         Swal.fire({
             title: 'Error',
             text: error.message || 'Ocurrió un error al anular el pedido',

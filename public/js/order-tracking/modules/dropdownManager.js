@@ -9,12 +9,10 @@ const ViewDropdownManager = (() => {
      * Crea un dropdown para el botón Ver
      */
     function createViewButtonDropdown(orderId) {
-        console.log('%c [DROPDOWN] Creando dropdown para orden: ' + orderId, 'color: purple; font-weight: bold;');
-        
         // Verificar si ya existe un dropdown
         const existingDropdown = document.querySelector(`.view-button-dropdown[data-order-id="${orderId}"]`);
         if (existingDropdown) {
-            console.log(' [DROPDOWN] Dropdown ya existe, removiendo...');
+
             existingDropdown.remove();
             return;
         }
@@ -49,7 +47,7 @@ const ViewDropdownManager = (() => {
             dropdown.style.zIndex = '9999';
             document.body.appendChild(dropdown);
             
-            console.log(' [DROPDOWN] Dropdown creado y agregado al DOM');
+
             
             // Cerrar dropdown al hacer click fuera
             setTimeout(() => {
@@ -61,7 +59,7 @@ const ViewDropdownManager = (() => {
                 });
             }, 0);
         } else {
-            console.warn(' [DROPDOWN] No se encontró el botón Ver para la orden:', orderId);
+
         }
     }
     
@@ -83,3 +81,4 @@ const ViewDropdownManager = (() => {
 })();
 
 globalThis.ViewDropdownManager = ViewDropdownManager;
+

@@ -43,7 +43,7 @@ const AsistenciaPersonal = (() => {
         const modalTitle = document.getElementById('reportModalTitle');
         
         if (!modal) {
-            console.error('Modal reportDetailModal no encontrado');
+
             return;
         }
         
@@ -158,7 +158,7 @@ const AsistenciaPersonal = (() => {
             if (menuHorasTrabajadas && !menuHorasTrabajadas.dataset.listenerAttached) {
                 menuHorasTrabajadas.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log('Navegando a Horas Trabajadas');
+
                     
                     // Ocultar botón de descarga PDF
                     const btnDescargarPDFMenu = document.getElementById('btnDescargarPDFMenu');
@@ -184,7 +184,7 @@ const AsistenciaPersonal = (() => {
             if (menuRegistros && !menuRegistros.dataset.listenerAttached) {
                 menuRegistros.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log('Navegando a Registros');
+
                     
                     // Ocultar botón de descarga PDF
                     const btnDescargarPDFMenu = document.getElementById('btnDescargarPDFMenu');
@@ -210,8 +210,8 @@ const AsistenciaPersonal = (() => {
             if (menuTotalHorasExtras && !menuTotalHorasExtras.dataset.listenerAttached) {
                 menuTotalHorasExtras.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log('Navegando a Total Horas Extras');
-                    console.log('Vista anterior guardada:', vistaAnterior);
+
+
                     
                     if (reporteActual) {
                         AsistenciaTotalHorasExtras.mostrarVista(reporteActual);
@@ -365,7 +365,7 @@ const AsistenciaPersonal = (() => {
      */
     function fetchReportDetails(reportId, callback) {
         const url = `/asistencia-personal/reportes/${reportId}/detalles`;
-        console.log('Fetching report details from:', url);
+
         
         fetch(url, {
             method: 'GET',
@@ -375,18 +375,18 @@ const AsistenciaPersonal = (() => {
             }
         })
         .then(response => {
-            console.log('Response status:', response.status);
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Detalles del reporte recibidos:', data);
+
             callback(data);
         })
         .catch(error => {
-            console.error('Error al cargar detalles:', error);
+
             alert('Error al cargar los detalles del reporte: ' + error.message);
         });
     }
@@ -408,15 +408,15 @@ const AsistenciaPersonal = (() => {
             if (btnNuevo) {
                 btnNuevo.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log('Descargando PDF de Total Horas Extras...');
+
                     
                     // Obtener datos del módulo AsistenciaTotalHorasExtras
                     if (typeof AsistenciaTotalHorasExtras !== 'undefined') {
                         const personasConExtras = AsistenciaTotalHorasExtras.obtenerPersonasConExtras();
                         const todasLasFechas = AsistenciaTotalHorasExtras.obtenerTodasLasFechas();
                         
-                        console.log('Personas con extras:', personasConExtras);
-                        console.log('Fechas:', todasLasFechas);
+
+
                         
                         if (personasConExtras && personasConExtras.length > 0 && todasLasFechas && todasLasFechas.length > 0) {
                             // Llamar a la función de descarga del PDF
@@ -424,19 +424,19 @@ const AsistenciaPersonal = (() => {
                                 PDFGenerator.descargar(personasConExtras, todasLasFechas);
                             } else {
                                 alert('Error: No se pudo inicializar el generador de PDF');
-                                console.error('PDFGenerator no disponible');
+
                             }
                         } else {
                             alert('No hay datos para descargar. Asegúrate de que hay personas con horas extras registradas.');
-                            console.warn('Datos insuficientes:', { personasConExtras, todasLasFechas });
+
                         }
                     } else {
                         alert('Error: Módulo de horas extras no disponible');
-                        console.error('AsistenciaTotalHorasExtras no disponible');
+
                     }
                 });
                 
-                console.log('✓ Botón de descargar PDF configurado');
+
             }
         }
     }
@@ -452,5 +452,5 @@ document.addEventListener('DOMContentLoaded', function() {
     AsistenciaPersonal.init();
 });
 
-console.log('Asistencia Personal module loaded');
+
 

@@ -8,27 +8,27 @@
 
     // Check if Echo is available
     if (typeof window.Echo === 'undefined') {
-        console.error('Laravel Echo no está disponible. Asegúrate de que está correctamente configurado.');
+
         return;
     }
 
     // Get current user ID from meta tag or global variable
     const userId = document.querySelector('meta[name="user-id"]')?.content || window.userId;
     
-    console.log('🔴 Iniciando escucha de eventos en tiempo real para cotizaciones');
+
 
     // Listen to general quotations channel
     window.Echo.channel('cotizaciones')
         .listen('.cotizacion.creada', (event) => {
-            console.log(' Nueva cotización creada:', event);
+
             handleNuevaCotizacion(event);
         })
         .listen('.cotizacion.estado.cambiado', (event) => {
-            console.log('🔄 Estado de cotización cambiado:', event);
+
             handleEstadoCambiado(event);
         })
         .listen('.cotizacion.aprobada', (event) => {
-            console.log(' Cotización aprobada:', event);
+
             handleCotizacionAprobada(event);
         });
 
@@ -36,16 +36,16 @@
     if (userId) {
         window.Echo.channel(`cotizaciones.asesor.${userId}`)
             .listen('.cotizacion.creada', (event) => {
-                console.log(' Tu cotización fue creada:', event);
+
                 handleNuevaCotizacion(event);
             })
             .listen('.cotizacion.estado.cambiado', (event) => {
-                console.log('🔄 Estado de tu cotización cambió:', event);
+
                 handleEstadoCambiado(event);
                 mostrarNotificacion('Estado Actualizado', `Tu cotización ha cambiado a: ${event.nuevo_estado}`);
             })
             .listen('.cotizacion.aprobada', (event) => {
-                console.log(' Tu cotización fue aprobada:', event);
+
                 handleCotizacionAprobada(event);
                 mostrarNotificacion('Cotización Aprobada', 'Tu cotización ha sido aprobada');
             });
@@ -54,14 +54,14 @@
     // Listen to contador channel
     window.Echo.channel('cotizaciones.contador')
         .listen('.cotizacion.creada', (event) => {
-            console.log(' Nueva cotización para revisar:', event);
+
             handleNuevaCotizacion(event);
             if (event.estado === 'ENVIADA_CONTADOR') {
                 mostrarNotificacion('Nueva Cotización', 'Hay una nueva cotización para revisar');
             }
         })
         .listen('.cotizacion.estado.cambiado', (event) => {
-            console.log('🔄 Estado de cotización cambió:', event);
+
             handleEstadoCambiado(event);
         });
 
@@ -123,11 +123,11 @@
         const row = document.querySelector(`[data-cotizacion-id="${cotizacionId}"]`);
         
         if (!row) {
-            console.log(`Fila de cotización ${cotizacionId} no encontrada en la página actual`);
+
             return;
         }
 
-        console.log(`Actualizando fila de cotización ${cotizacionId}`);
+
 
         // Update status badge
         const estadoCell = row.querySelector('[data-estado]');
@@ -155,11 +155,11 @@
         const tableBody = document.querySelector('#tablaCotizacionesBody, .table-body');
         
         if (!tableBody) {
-            console.log('Tabla de cotizaciones no encontrada');
+
             return;
         }
 
-        console.log('Agregando nueva cotización a la lista');
+
 
         // Create new row (you'll need to adapt this to your table structure)
         const newRow = crearFilaCotizacion(cotizacion);
@@ -180,11 +180,11 @@
         const tableBody = document.querySelector('#tablaCotizacionesBody');
         
         if (!tableBody) {
-            console.log('Tabla de contador no encontrada');
+
             return;
         }
 
-        console.log('Agregando cotización a lista de contador');
+
 
         const newRow = crearFilaCotizacion(cotizacion);
         newRow.classList.add('row-new');
@@ -205,7 +205,7 @@
             return;
         }
 
-        console.log(`Removiendo cotización ${cotizacionId} de lista de contador`);
+
 
         row.classList.add('row-removed');
         setTimeout(() => {
@@ -263,7 +263,7 @@
      */
     function actualizarContadores() {
         // Reload counters or update them via AJAX
-        console.log('Actualizando contadores');
+
         
         // You can implement a fetch to get updated counts
         // or increment/decrement based on the event
@@ -275,7 +275,7 @@
     function mostrarNotificacion(titulo, mensaje) {
         // Check if browser supports notifications
         if (!('Notification' in window)) {
-            console.log('Este navegador no soporta notificaciones');
+
             return;
         }
 
@@ -344,5 +344,5 @@
         return window.location.pathname.includes('/contador');
     }
 
-    console.log(' Real-time cotizaciones listener initialized');
+
 })();

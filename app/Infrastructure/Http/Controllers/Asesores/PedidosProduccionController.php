@@ -17,9 +17,48 @@ use App\Domain\PedidoProduccion\Commands\EliminarPedidoCommand;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
+use App\Models\ProcesoPrenda;
+use App\Models\Cotizacion;
+use App\Models\TipoProceso;
+use App\Models\Festivo;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\CambiarEstadoPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaAlPedidoUseCase;
+use App\Application\Pedidos\UseCases\FiltrarPedidosPorEstadoUseCase;
+use App\Application\Pedidos\UseCases\BuscarPedidoPorNumeroUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPrendasPedidoUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPrendaPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaCompletaUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase;
+use App\Application\Pedidos\UseCases\RenderItemCardUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCase;
+use App\Application\Pedidos\UseCases\EditarProcesoUseCase;
+use App\Application\Pedidos\UseCases\EliminarProcesoUseCase;
+use App\Application\Pedidos\UseCases\CrearProcesoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
+use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
+use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
+use App\Application\Pedidos\DTOs\AgregarPrendaAlPedidoDTO;
+use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
+use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
+use App\Application\Pedidos\DTOs\ObtenerPrendasPedidoDTO;
+use App\Application\Pedidos\DTOs\ActualizarPrendaPedidoDTO;
+use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
+use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
+use App\Application\Pedidos\DTOs\RenderItemCardDTO;
 
 /**
  * PedidosProduccionController - REFACTORIZADO CON CQRS
@@ -46,17 +85,35 @@ class PedidosProduccionController
         private QueryBus $queryBus,
         private CommandBus $commandBus,
         private PedidoProduccionRepository $prendaPedidoRepository,
+        private ListarProduccionPedidosUseCase $listarPedidosUseCase,
+        private ObtenerProduccionPedidoUseCase $obtenerPedidoUseCase,
+        private CrearProduccionPedidoUseCase $crearPedidoUseCase,
+        private ActualizarProduccionPedidoUseCase $actualizarPedidoUseCase,
+        private AnularProduccionPedidoUseCase $anularPedidoUseCase,
+        private CambiarEstadoPedidoUseCase $cambiarEstadoUseCase,
+        private AgregarPrendaAlPedidoUseCase $agregarPrendaUseCase,
+        private FiltrarPedidosPorEstadoUseCase $filtrarEstadoUseCase,
+        private BuscarPedidoPorNumeroUseCase $buscarNumeroUseCase,
+        private ObtenerPrendasPedidoUseCase $obtenerPrendasUseCase,
+        private ActualizarPrendaPedidoUseCase $actualizarPrendaUseCase,
+        private AgregarPrendaCompletaUseCase $agregarPrendaCompletaUseCase,
+        private ActualizarPrendaCompletaUseCase $actualizarPrendaCompletaUseCase,
+        private RenderItemCardUseCase $renderItemCardUseCase,
+        private ObtenerProcesosPorPedidoUseCase $obtenerProcesosPedidoUseCase,
+        private EditarProcesoUseCase $editarProcesoUseCase,
+        private EliminarProcesoUseCase $eliminarProcesoUseCase,
+        private CrearProcesoUseCase $crearProcesoUseCase,
+        private ObtenerHistorialProcesosUseCase $obtenerHistorialProcesosUseCase,
     ) {}
 
     /**
      * GET /api/pedidos
-     * Listar todos los pedidos con paginación
+     * Listar todos los pedidos con paginación - DELEGADO A USE CASE
      * 
      * Query Parameters:
      * - page: int (default 1)
      * - per_page: int (default 15)
-     * - ordenar: string (default 'created_at')
-     * - direccion: string (default 'desc')
+     * - estado: string (optional)
      * 
      * @param Request $request
      * @return JsonResponse
@@ -64,31 +121,24 @@ class PedidosProduccionController
     public function index(Request $request): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] GET /api/pedidos');
+            Log::info('[PedidosProduccionController] GET /api/pedidos');
 
-            $validated = $request->validate([
-                'page' => 'sometimes|integer|min:1',
-                'per_page' => 'sometimes|integer|min:1|max:100',
-                'ordenar' => 'sometimes|string|in:numero_pedido,cliente,created_at,estado',
-                'direccion' => 'sometimes|string|in:asc,desc',
-            ]);
+            $filtros = [
+                'estado' => $request->get('estado'),
+                'search' => $request->get('search'),
+            ];
 
-            $pedidos = $this->queryBus->execute(new ListarPedidosQuery(
-                page: $validated['page'] ?? 1,
-                perPage: $validated['per_page'] ?? 15,
-                ordenar: $validated['ordenar'] ?? 'created_at',
-                direccion: $validated['direccion'] ?? 'desc',
-            ));
+            $dto = ListarProduccionPedidosDTO::fromRequest(null, $filtros);
+            $pedidos = $this->listarPedidosUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Listado obtenido', [
+            Log::info('[PedidosProduccionController] Listado obtenido', [
                 'total' => $pedidos->total(),
-                'per_page' => $pedidos->perPage(),
             ]);
 
             return response()->json($pedidos, 200);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error listando pedidos', [
+            Log::error('[PedidosProduccionController] Error listando pedidos', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -101,7 +151,7 @@ class PedidosProduccionController
 
     /**
      * GET /api/pedidos/:id
-     * Obtener un pedido específico
+     * Obtener un pedido específico - DELEGADO A USE CASE
      * 
      * @param int|string $id
      * @return JsonResponse
@@ -109,26 +159,26 @@ class PedidosProduccionController
     public function show(int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] GET /api/pedidos/{id}', ['id' => $id]);
+            Log::info('[PedidosProduccionController] GET /api/pedidos/{id}', ['id' => $id]);
 
-            $pedido = $this->queryBus->execute(new ObtenerPedidoQuery($id));
+            $dto = ObtenerProduccionPedidoDTO::fromRoute($id);
+            $pedido = $this->obtenerPedidoUseCase->ejecutar($dto);
 
             if (!$pedido) {
-                Log::warning(' [PedidosController] Pedido no encontrado', ['id' => $id]);
+                Log::warning('[PedidosProduccionController] Pedido no encontrado', ['id' => $id]);
                 return response()->json([
                     'error' => 'Pedido no encontrado',
                 ], 404);
             }
 
-            Log::info(' [PedidosController] Pedido obtenido', [
+            Log::info('[PedidosProduccionController] Pedido obtenido', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
             ]);
 
             return response()->json($pedido, 200);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error obteniendo pedido', [
+            Log::error('[PedidosProduccionController] Error obteniendo pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -142,16 +192,7 @@ class PedidosProduccionController
 
     /**
      * POST /api/pedidos
-     * Crear nuevo pedido
-     * 
-     * Body:
-     * {
-     *   "numero_pedido": "PED-001",
-     *   "cliente": "Cliente XYZ",
-     *   "forma_pago": "contado",
-     *   "asesor_id": 1,
-     *   "cantidad_inicial": 0
-     * }
+     * Crear nuevo pedido - DELEGADO A USE CASE
      * 
      * @param Request $request
      * @return JsonResponse
@@ -159,7 +200,7 @@ class PedidosProduccionController
     public function store(Request $request): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] POST /api/pedidos');
+            Log::info('[PedidosProduccionController] POST /api/pedidos');
 
             // Validación HTTP (sintaxis/tipos)
             $validated = $request->validate([
@@ -170,25 +211,18 @@ class PedidosProduccionController
                 'cantidad_inicial' => 'sometimes|integer|min:0|default:0',
             ]);
 
-            // Validación de negocio (uniqueness, etc) → PedidoValidator en handler
-            $pedido = $this->commandBus->execute(new CrearPedidoCommand(
-                numeroPedido: $validated['numero_pedido'],
-                cliente: $validated['cliente'],
-                formaPago: $validated['forma_pago'],
-                asesorId: $validated['asesor_id'],
-                cantidadInicial: $validated['cantidad_inicial'] ?? 0,
-            ));
+            // Usar Use Case DDD
+            $dto = CrearProduccionPedidoDTO::fromRequest(null, $validated);
+            $pedido = $this->crearPedidoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Pedido creado', [
+            Log::info('[PedidosProduccionController] Pedido creado', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
             ]);
 
             return response()->json($pedido, 201);
 
         } catch (\InvalidArgumentException $e) {
-            // Validación de negocio fallida
-            Log::warning(' [PedidosController] Validación de negocio fallida', [
+            Log::warning('[PedidosProduccionController] Validación de negocio fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -198,7 +232,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error creando pedido', [
+            Log::error('[PedidosProduccionController] Error creando pedido', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -211,13 +245,7 @@ class PedidosProduccionController
 
     /**
      * PUT /api/pedidos/:id
-     * Actualizar pedido
-     * 
-     * Body (todos opcionales):
-     * {
-     *   "cliente": "Nuevo cliente",
-     *   "forma_pago": "credito"
-     * }
+     * Actualizar pedido - DELEGADO A USE CASE
      * 
      * @param Request $request
      * @param int|string $id
@@ -226,27 +254,25 @@ class PedidosProduccionController
     public function update(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] PUT /api/pedidos/{id}', ['id' => $id]);
+            Log::info('[PedidosProduccionController] PUT /api/pedidos/{id}', ['id' => $id]);
 
             $validated = $request->validate([
                 'cliente' => 'sometimes|string|max:255',
                 'forma_pago' => 'sometimes|string|in:contado,credito,transferencia,cheque',
             ]);
 
-            $pedido = $this->commandBus->execute(new ActualizarPedidoCommand(
-                pedidoId: $id,
-                cliente: $validated['cliente'] ?? null,
-                formaPago: $validated['forma_pago'] ?? null,
-            ));
+            // Usar Use Case DDD
+            $dto = ActualizarProduccionPedidoDTO::fromRequest($id, $validated);
+            $pedido = $this->actualizarPedidoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Pedido actualizado', [
+            Log::info('[PedidosProduccionController] Pedido actualizado', [
                 'pedido_id' => $pedido->id,
             ]);
 
             return response()->json($pedido, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning(' [PedidosController] Validación fallida', [
+            Log::warning('[PedidosProduccionController] Validación fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -256,7 +282,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error actualizando pedido', [
+            Log::error('[PedidosProduccionController] Error actualizando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -285,20 +311,18 @@ class PedidosProduccionController
     public function cambiarEstado(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info('🔄 [PedidosController] PUT /api/pedidos/{id}/estado', ['id' => $id]);
+            Log::info('[PedidosProduccionController] PUT /api/pedidos/{id}/estado', ['id' => $id]);
 
             $validated = $request->validate([
                 'nuevo_estado' => 'required|string|in:activo,pendiente,completado,cancelado',
                 'razon' => 'sometimes|string|max:500',
             ]);
 
-            $pedido = $this->commandBus->execute(new CambiarEstadoPedidoCommand(
-                pedidoId: $id,
-                nuevoEstado: $validated['nuevo_estado'],
-                razon: $validated['razon'] ?? null,
-            ));
+            // Usar Use Case DDD
+            $dto = CambiarEstadoPedidoDTO::fromRequest($id, $validated);
+            $pedido = $this->cambiarEstadoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Estado cambiadoId', [
+            Log::info('[PedidosProduccionController] Estado cambiado exitosamente', [
                 'pedido_id' => $pedido->id,
                 'nuevo_estado' => $pedido->estado,
             ]);
@@ -306,7 +330,7 @@ class PedidosProduccionController
             return response()->json($pedido, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning(' [PedidosController] Transición no permitida', [
+            Log::warning('[PedidosProduccionController] Transición no permitida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -316,7 +340,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error cambiando estado', [
+            Log::error('[PedidosProduccionController] Error cambiando estado', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -330,7 +354,7 @@ class PedidosProduccionController
 
     /**
      * POST /api/pedidos/:id/prendas
-     * Agregar prenda a pedido
+     * Agregar prenda a pedido - DELEGADO A USE CASE
      * 
      * Body:
      * {
@@ -350,7 +374,7 @@ class PedidosProduccionController
     public function agregarPrenda(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
+            Log::info('[PedidosProduccionController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
 
             $validated = $request->validate([
                 'nombre_prenda' => 'required|string|max:255',
@@ -362,28 +386,18 @@ class PedidosProduccionController
                 'tela_id' => 'required|integer|min:1',
             ]);
 
-            $pedido = $this->commandBus->execute(new AgregarPrendaAlPedidoCommand(
-                pedidoId: $id,
-                prendaData: [
-                    'nombre_prenda' => $validated['nombre_prenda'],
-                    'cantidad' => $validated['cantidad'],
-                    'tipo_manga' => $validated['tipo_manga'],
-                    'tipo_broche' => $validated['tipo_broche'],
-                    'color_id' => $validated['color_id'],
-                    'tela_id' => $validated['tela_id'],
-                ],
-                tipo: $validated['tipo'],
-            ));
+            // Usar Use Case DDD
+            $dto = AgregarPrendaAlPedidoDTO::fromRequest($id, $validated);
+            $pedido = $this->agregarPrendaUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Prenda agregada', [
+            Log::info('[PedidosProduccionController] Prenda agregada exitosamente', [
                 'pedido_id' => $pedido->id,
-                'cantidad_total' => $pedido->cantidad_total,
             ]);
 
             return response()->json($pedido, 201);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning(' [PedidosController] Validación de prenda fallida', [
+            Log::warning('[PedidosProduccionController] Validación de prenda fallida', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -393,7 +407,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error agregando prenda', [
+            Log::error('[PedidosProduccionController] Error agregando prenda', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -419,23 +433,22 @@ class PedidosProduccionController
     public function destroy(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] DELETE /api/pedidos/{id}', ['id' => $id]);
+            Log::info('[PedidosProduccionController] DELETE /api/pedidos/{id}', ['id' => $id]);
 
             $validated = $request->validate([
                 'razon' => 'sometimes|string|max:500',
             ]);
 
-            $this->commandBus->execute(new EliminarPedidoCommand(
-                pedidoId: $id,
-                razon: $validated['razon'] ?? 'Sin especificar',
-            ));
+            // Usar Use Case DDD
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, ['razon' => $validated['razon'] ?? 'Sin especificar']);
+            $this->anularPedidoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Pedido eliminado', ['pedido_id' => $id]);
+            Log::info('[PedidosProduccionController] Pedido eliminado', ['pedido_id' => $id]);
 
             return response()->json([], 204);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error eliminando pedido', [
+            Log::error('[PedidosProduccionController] Error eliminando pedido', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -449,7 +462,7 @@ class PedidosProduccionController
 
     /**
      * GET /api/pedidos/filtro/estado
-     * Filtrar pedidos por estado
+     * Filtrar pedidos por estado - DELEGADO A USE CASE
      * 
      * Query Parameters:
      * - estado: string (requerido: activo|pendiente|completado|cancelado)
@@ -462,7 +475,7 @@ class PedidosProduccionController
     public function filtrarPorEstado(Request $request): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] GET /api/pedidos/filtro/estado');
+            Log::info('[PedidosProduccionController] GET /api/pedidos/filtro/estado');
 
             $validated = $request->validate([
                 'estado' => 'required|string|in:activo,pendiente,completado,cancelado',
@@ -470,21 +483,19 @@ class PedidosProduccionController
                 'per_page' => 'sometimes|integer|min:1|max:100',
             ]);
 
-            $pedidos = $this->queryBus->execute(new FiltrarPedidosPorEstadoQuery(
-                estado: $validated['estado'],
-                page: $validated['page'] ?? 1,
-                perPage: $validated['per_page'] ?? 15,
-            ));
+            // Usar Use Case DDD
+            $dto = FiltrarPedidosPorEstadoDTO::fromRequest($validated);
+            $pedidos = $this->filtrarEstadoUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Filtrado por estado', [
+            Log::info('[PedidosProduccionController] Filtrado por estado exitosamente', [
                 'estado' => $validated['estado'],
-                'total' => $pedidos->total(),
+                'total' => is_object($pedidos) && method_exists($pedidos, 'total') ? $pedidos->total() : count($pedidos),
             ]);
 
             return response()->json($pedidos, 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::warning(' [PedidosController] Estado inválido', [
+            Log::warning('[PedidosProduccionController] Estado inválido', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -494,7 +505,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error filtrando por estado', [
+            Log::error('[PedidosProduccionController] Error filtrando por estado', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -507,7 +518,7 @@ class PedidosProduccionController
 
     /**
      * GET /api/pedidos/buscar/:numero
-     * Buscar pedido por número
+     * Buscar pedido por número - DELEGADO A USE CASE
      * 
      * @param string $numero
      * @return JsonResponse
@@ -515,18 +526,20 @@ class PedidosProduccionController
     public function buscarPorNumero(string $numero): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] GET /api/pedidos/buscar/{numero}', ['numero' => $numero]);
+            Log::info('[PedidosProduccionController] GET /api/pedidos/buscar/{numero}', ['numero' => $numero]);
 
-            $pedido = $this->queryBus->execute(new BuscarPedidoPorNumeroQuery($numero));
+            // Usar Use Case DDD
+            $dto = BuscarPedidoPorNumeroDTO::fromRequest($numero);
+            $pedido = $this->buscarNumeroUseCase->ejecutar($dto);
 
             if (!$pedido) {
-                Log::warning(' [PedidosController] Pedido no encontrado', ['numero' => $numero]);
+                Log::warning('[PedidosProduccionController] Pedido no encontrado', ['numero' => $numero]);
                 return response()->json([
                     'error' => 'Pedido no encontrado',
                 ], 404);
             }
 
-            Log::info(' [PedidosController] Pedido encontrado', [
+            Log::info('[PedidosProduccionController] Pedido encontrado exitosamente', [
                 'numero' => $numero,
                 'pedido_id' => $pedido->id,
             ]);
@@ -534,7 +547,7 @@ class PedidosProduccionController
             return response()->json($pedido, 200);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error buscando pedido', [
+            Log::error('[PedidosProduccionController] Error buscando pedido', [
                 'numero' => $numero,
                 'error' => $e->getMessage(),
             ]);
@@ -548,7 +561,7 @@ class PedidosProduccionController
 
     /**
      * GET /api/pedidos/:id/prendas
-     * Obtener todas las prendas de un pedido
+     * Obtener todas las prendas de un pedido - DELEGADO A USE CASE
      * 
      * @param int|string $id
      * @return JsonResponse
@@ -556,11 +569,13 @@ class PedidosProduccionController
     public function obtenerPrendas(int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] GET /api/pedidos/{id}/prendas', ['id' => $id]);
+            Log::info('[PedidosProduccionController] GET /api/pedidos/{id}/prendas', ['id' => $id]);
 
-            $prendas = $this->queryBus->execute(new ObtenerPrendasPorPedidoQuery($id));
+            // Usar Use Case DDD
+            $dto = ObtenerPrendasPedidoDTO::fromRoute($id);
+            $prendas = $this->obtenerPrendasUseCase->ejecutar($dto);
 
-            Log::info(' [PedidosController] Prendas obtenidas', [
+            Log::info('[PedidosProduccionController] Prendas obtenidas exitosamente', [
                 'pedido_id' => $id,
                 'total_prendas' => $prendas->count(),
             ]);
@@ -568,7 +583,7 @@ class PedidosProduccionController
             return response()->json($prendas, 200);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error obteniendo prendas', [
+            Log::error('[PedidosProduccionController] Error obteniendo prendas', [
                 'id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -582,7 +597,7 @@ class PedidosProduccionController
 
     /**
      * POST /api/pedidos/render-item-card
-     * Renderizar componente item-card para agregar dinámicamente
+     * Renderizar componente item-card para agregar dinámicamente - DELEGADO A USE CASE
      * 
      * Body:
      * {
@@ -601,14 +616,9 @@ class PedidosProduccionController
                 'index' => 'required|integer|min:0',
             ]);
 
-            $item = $validated['item'];
-            $index = $validated['index'];
-
-            // Renderizar el componente Blade
-            $html = view('asesores.pedidos.components.item-card', [
-                'item' => $item,
-                'index' => $index,
-            ])->render();
+            // Usar Use Case DDD
+            $dto = RenderItemCardDTO::fromRequest($validated);
+            $html = $this->renderItemCardUseCase->ejecutar($dto);
 
             return response()->json([
                 'success' => true,
@@ -616,7 +626,7 @@ class PedidosProduccionController
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error(' [PedidosController] Error renderizando item-card', [
+            Log::error('[PedidosProduccionController] Error renderizando item-card', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -630,7 +640,7 @@ class PedidosProduccionController
 
     /**
      * POST /api/pedidos-produccion/actualizar-prenda
-     * Actualizar datos de una prenda específica dentro de un pedido
+     * Actualizar datos de una prenda específica dentro de un pedido - DELEGADO A USE CASE
      */
     public function actualizarPrenda(Request $request): JsonResponse
     {
@@ -646,55 +656,13 @@ class PedidosProduccionController
                 'observaciones' => 'sometimes|nullable|string',
             ]);
 
-            $pedidoId = (int) $validated['pedidoId'];
-            $prendasIndex = (int) $validated['prendasIndex'];
+            // Usar Use Case DDD
+            $dto = ActualizarPrendaPedidoDTO::fromRequest($validated['pedidoId'], $validated);
+            $prenda = $this->actualizarPrendaUseCase->ejecutar($dto);
 
-            Log::info(' Actualizando prenda', [
-                'pedido_id' => $pedidoId,
-                'prenda_index' => $prendasIndex,
-            ]);
-
-            // Obtener el pedido directamente por ID
-            $pedido = \App\Models\PedidoProduccion::find($pedidoId);
-
-            if (!$pedido) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado',
-                ], 404);
-            }
-
-            // Validar que el índice de prenda existe
-            $prendas = $pedido->prendas()->get()->toArray();
-            if (!isset($prendas[$prendasIndex])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Prenda no encontrada en este pedido',
-                ], 404);
-            }
-
-            // Obtener la prenda como modelo (no array) para poder guardar
-            $prenda = $pedido->prendas()->get()[$prendasIndex];
-
-            // Actualizar campos simples
-            if (isset($validated['nombre'])) {
-                $prenda->nombre_prenda = $validated['nombre'];
-            }
-            if (isset($validated['descripcion'])) {
-                $prenda->descripcion = $validated['descripcion'];
-            }
-
-            // Actualizar tallas (guardadas en cantidad_talla como JSON)
-            if (isset($validated['tallas'])) {
-                $prenda->cantidad_talla = $validated['tallas'];
-            }
-
-            // Guardar cambios
-            $prenda->save();
-
-            Log::info(' Prenda actualizada correctamente', [
-                'pedido_id' => $pedidoId,
-                'prenda_index' => $prendasIndex,
+            Log::info('[PedidosProduccionController] Prenda actualizada exitosamente', [
+                'pedido_id' => $validated['pedidoId'],
+                'prenda_index' => $validated['prendasIndex'],
             ]);
 
             return response()->json([
@@ -703,10 +671,19 @@ class PedidosProduccionController
                 'prenda' => $prenda,
             ], 200);
 
-        } catch (\Exception $e) {
-            Log::error(' Error actualizando prenda', [
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('[PedidosProduccionController] Validación de prenda fallida', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error actualizando prenda', [
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -717,12 +694,13 @@ class PedidosProduccionController
     }
 
     /**
-     * Agregar prenda completa (con telas e imágenes) al pedido en edición
+     * POST /asesores/pedidos/{id}/agregar-prenda
+     * Agregar prenda completa (con telas e imágenes) al pedido en edición - DELEGADO A USE CASE
      */
     public function agregarPrendaCompleta(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] POST /asesores/pedidos/{id}/agregar-prenda', ['id' => $id]);
+            Log::info('[PedidosProduccionController] POST /asesores/pedidos/{id}/agregar-prenda', ['id' => $id]);
 
             // Validar datos básicos
             $validated = $request->validate([
@@ -731,13 +709,11 @@ class PedidosProduccionController
                 'origen' => 'required|string|in:bodega,confeccion',
                 'cantidad_talla' => 'nullable|json',
                 'procesos' => 'nullable|json',
-                'novedad' => 'required|string|max:500',  // NOVEDAD OBLIGATORIA
+                'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
                 'telas' => 'nullable|array',
             ]);
-
-            Log::info(' [PedidosController] Datos validados', $validated);
 
             // Procesar imágenes de prenda
             $imagenesGuardadas = [];
@@ -745,124 +721,26 @@ class PedidosProduccionController
                 foreach ($request->file('imagenes') as $imagen) {
                     $path = $imagen->store('prendas', 'public');
                     $imagenesGuardadas[] = $path;
-                    Log::info(' Imagen de prenda guardada', ['path' => $path]);
                 }
             }
 
-            // Procesar telas con imágenes
-            $telasGuardadas = [];
-            if ($request->has('telas')) {
-                $telas = $request->input('telas');
-                foreach ($telas as $telaIdx => $tela) {
-                    $telaData = [
-                        'tela' => $tela['tela'] ?? '',
-                        'color' => $tela['color'] ?? '',
-                        'referencia' => $tela['referencia'] ?? '',
-                        'imagenes' => []
-                    ];
+            // Usar Use Case DDD
+            $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas);
+            $prenda = $this->agregarPrendaCompletaUseCase->ejecutar($dto);
 
-                    // Procesar imágenes de tela
-                    if ($request->hasFile("telas.$telaIdx.imagenes")) {
-                        foreach ($request->file("telas.$telaIdx.imagenes") as $imagen) {
-                            $path = $imagen->store('telas', 'public');
-                            $telaData['imagenes'][] = $path;
-                            Log::info(' Imagen de tela guardada', ['path' => $path]);
-                        }
-                    }
-
-                    $telasGuardadas[] = $telaData;
-                }
-            }
-
-            // Construir datos de la prenda para el comando
-            $prendaData = [
-                'nombre_prenda' => $validated['nombre_prenda'],
-                'descripcion' => $validated['descripcion'] ?? '',
-                'origen' => $validated['origen'],
-                'imagenes' => $imagenesGuardadas,
-                'telas' => $telasGuardadas,
-                'procesos' => $validated['procesos'] ? json_decode($validated['procesos'], true) : [],
-                'novedad' => $validated['novedad'],
-                'cantidad' => 1,
-                'tipo_manga' => null,
-                'tipo_broche' => null,
-                'color_id' => null,
-                'tela_id' => null,
-            ];
-
-            Log::info(' Datos de prenda preparados', $prendaData);
-
-            // Guardar novedad en el pedido
-            if (!empty($validated['novedad'])) {
-                $pedido = PedidoProduccion::find($id);
-                if ($pedido) {
-                    // Agregar nueva novedad a las existentes
-                    $novedadesActuales = !empty($pedido->novedades) ? $pedido->novedades . "\n" : '';
-                    $timestamp = now()->format('Y-m-d H:i:s');
-                    $usuario = auth()->user()->name ?? 'Sistema';
-                    $novedadesNuevas = $novedadesActuales . "[{$timestamp}] {$usuario}: {$validated['novedad']}";
-                    
-                    $pedido->update(['novedades' => $novedadesNuevas]);
-                    Log::info(' Novedad guardada en pedido', [
-                        'pedido_id' => $id,
-                        'novedad' => $validated['novedad']
-                    ]);
-                }
-            }
-
-            // Guardar en la base de datos usando el comando existente
-            $prendaGuardada = $this->commandBus->execute(new AgregarPrendaAlPedidoCommand(
-                pedidoId: $id,
-                prendaData: $prendaData,
-                tipo: 'sin_cotizacion'
-            ));
-
-            Log::info(' Prenda guardada en BD', [
+            Log::info('[PedidosProduccionController] Prenda completa agregada exitosamente', [
                 'pedido_id' => $id,
-                'prenda_data' => $prendaData,
+                'prenda_id' => $prenda->id,
             ]);
-
-            // Guardar tallas SOLO en tabla relacional prenda_pedido_tallas
-            if ($prendaGuardada && !empty($validated['cantidad_talla'])) {
-                $this->prendaPedidoRepository->guardarTallasDesdeJson(
-                    $prendaGuardada->id,
-                    $validated['cantidad_talla']
-                );
-                Log::info(' Tallas guardadas en prenda_pedido_tallas', ['prenda_id' => $prendaGuardada->id]);
-            }
-
-            // Guardar imágenes en prenda_fotos_pedido
-            if ($prendaGuardada) {
-                Log::info(' Guardando imágenes en prenda_fotos_pedido para prenda ' . $prendaGuardada->id);
-                try {
-                    foreach ($imagenesGuardadas as $orden => $rutaImagen) {
-                        if (!empty($rutaImagen)) {
-                            \DB::table('prenda_fotos_pedido')->insert([
-                                'prenda_pedido_id' => $prendaGuardada->id,
-                                'ruta_webp' => $rutaImagen,
-                                'ruta_original' => $rutaImagen,
-                                'orden' => $orden + 1,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                            Log::debug('   Foto insertada: ' . $rutaImagen);
-                        }
-                    }
-                    
-                    Log::info('  Total de fotos guardadas: ' . count($imagenesGuardadas));
-                } catch (\Exception $e) {
-                    Log::error('Error guardando fotos en prenda_fotos_pedido: ' . $e->getMessage());
-                }
-            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Prenda agregada correctamente a la base de datos',
-                'prenda' => $prendaGuardada ? $prendaGuardada->toArray() : $prendaData,
+                'prenda' => $prenda->toArray(),
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning(' Validación fallida', [
+            Log::warning('[PedidosProduccionController] Validación fallida', [
                 'errors' => $e->errors(),
             ]);
 
@@ -873,9 +751,8 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' Error agregando prenda completa', [
+            Log::error('[PedidosProduccionController] Error agregando prenda completa', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
@@ -887,42 +764,30 @@ class PedidosProduccionController
 
     /**
      * POST /asesores/pedidos/{id}/actualizar-prenda
-     * Actualizar una prenda existente en un pedido
-     * 
-     * Similar a agregarPrendaCompleta pero para actualizar
+     * Actualizar una prenda existente en un pedido - DELEGADO A USE CASE
      */
     public function actualizarPrendaCompleta(Request $request, int|string $id): JsonResponse
     {
         try {
-            Log::info(' [PedidosController] POST /asesores/pedidos/{id}/actualizar-prenda', ['id' => $id]);
+            Log::info('[PedidosProduccionController] POST /asesores/pedidos/{id}/actualizar-prenda', ['id' => $id]);
 
             // Validar datos básicos
             $validated = $request->validate([
-                'prenda_id' => 'required|numeric|min:1',  // ID de la prenda a actualizar
+                'prenda_id' => 'required|numeric|min:1',
                 'nombre_prenda' => 'required|string|max:255',
                 'descripcion' => 'nullable|string',
                 'origen' => 'required|string|in:bodega,confeccion',
                 'cantidad_talla' => 'nullable|json',
+                'variantes' => 'nullable|json',
+                'colores_telas' => 'nullable|json',
+                'fotos_telas' => 'nullable|json',
                 'procesos' => 'nullable|json',
-                'novedad' => 'required|string|max:500',  // NOVEDAD OBLIGATORIA
+                'fotos_procesos' => 'nullable|json',
+                'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
                 'telas' => 'nullable|array',
             ]);
-            
-            // Convertir prenda_id a integer
-            $validated['prenda_id'] = (int) $validated['prenda_id'];
-
-            Log::info(' [PedidosController] Datos validados para actualización', $validated);
-
-            // Obtener la prenda existente
-            $prenda = PrendaPedido::find($validated['prenda_id']);
-            if (!$prenda) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Prenda no encontrada',
-                ], 404);
-            }
 
             // Procesar imágenes de prenda
             $imagenesGuardadas = [];
@@ -930,120 +795,32 @@ class PedidosProduccionController
                 foreach ($request->file('imagenes') as $imagen) {
                     $path = $imagen->store('prendas', 'public');
                     $imagenesGuardadas[] = $path;
-                    Log::info(' Imagen de prenda guardada', ['path' => $path]);
                 }
             }
 
-            // Actualizar SOLO campos reales de prendas_pedido
-            // NO incluir cantidad_talla aquí - se maneja SOLO en prenda_pedido_tallas
-            $prenda->nombre_prenda = $validated['nombre_prenda'];
-            $prenda->descripcion = $validated['descripcion'] ?? '';
-            $prenda->save();
-
-            // Guardar tallas SOLO en tabla relacional prenda_pedido_tallas
-            if (!empty($validated['cantidad_talla'])) {
-                $this->prendaPedidoRepository->guardarTallasDesdeJson(
-                    $validated['prenda_id'],
-                    $validated['cantidad_talla']
-                );
-                Log::info(' Tallas actualizadas en prenda_pedido_tallas', ['prenda_id' => $validated['prenda_id']]);
-            }
-
-            // Guardar imágenes en prenda_fotos_pedido
-            Log::info(' Guardando imágenes en prenda_fotos_pedido para prenda ' . $validated['prenda_id']);
-            try {
-                // Primero, eliminar las fotos antiguas
-                \DB::table('prenda_fotos_pedido')
-                    ->where('prenda_pedido_id', $validated['prenda_id'])
-                    ->delete();
-                
-                Log::info('  Fotos antiguas eliminadas');
-                
-                // Luego, insertar las nuevas
-                foreach ($imagenesGuardadas as $orden => $rutaImagen) {
-                    if (!empty($rutaImagen)) {
-                        \DB::table('prenda_fotos_pedido')->insert([
-                            'prenda_pedido_id' => $validated['prenda_id'],
-                            'ruta_webp' => $rutaImagen,
-                            'ruta_original' => $rutaImagen,
-                            'orden' => $orden + 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        Log::debug('   Foto insertada: ' . $rutaImagen);
-                    }
-                }
-                
-                Log::info('  Total de fotos guardadas: ' . count($imagenesGuardadas));
-            } catch (\Exception $e) {
-                Log::error('Error guardando fotos en prenda_fotos_pedido: ' . $e->getMessage());
-            }
-
-            Log::info(' Prenda actualizada en BD', [
-                'prenda_id' => $validated['prenda_id'],
-                'pedido_id' => $id,
+            // Usar Use Case DDD
+            Log::info('[PedidosProduccionController] Datos validados para actualizar prenda', [
+                'variantes_recibidas' => $validated['variantes'] ?? 'NO ENVIADAS',
+                'cantidad_talla' => $validated['cantidad_talla'] ?? 'NO ENVIADAS',
+                'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
             ]);
-
-            // Guardar novedad en el pedido
-            if (!empty($validated['novedad'])) {
-                $pedido = PedidoProduccion::find($id);
-                if ($pedido) {
-                    // Agregar nueva novedad a las existentes
-                    $novedadesActuales = !empty($pedido->novedades) ? $pedido->novedades . "\n" : '';
-                    $timestamp = now()->format('Y-m-d H:i:s');
-                    $usuario = auth()->user()->name ?? 'Sistema';
-                    $novedadesNuevas = $novedadesActuales . "[{$timestamp}] {$usuario}: {$validated['novedad']}";
-                    
-                    $pedido->update(['novedades' => $novedadesNuevas]);
-                    Log::info(' Novedad de actualización guardada en pedido', [
-                        'pedido_id' => $id,
-                        'novedad' => $validated['novedad']
-                    ]);
-                }
-            }
-
-            // Recargar la prenda desde BD con todas las imágenes y datos relacionados
-            $prendaActualizada = PrendaPedido::find($validated['prenda_id']);
             
-            // Obtener imágenes de la BD
-            $fotosGuardadas = [];
-            try {
-                $fotos = \DB::table('prenda_fotos_pedido')
-                    ->where('prenda_pedido_id', $validated['prenda_id'])
-                    ->where('deleted_at', null)
-                    ->orderBy('orden')
-                    ->select('ruta_webp')
-                    ->get();
-                
-                $fotosGuardadas = $fotos->map(function($foto) {
-                    $ruta = str_replace('\\', '/', $foto->ruta_webp);
-                    if (strpos($ruta, '/storage/') === 0) {
-                        return $ruta;
-                    }
-                    if (strpos($ruta, 'storage/') === 0) {
-                        return '/' . $ruta;
-                    }
-                    if (strpos($ruta, '/') !== 0) {
-                        return '/storage/' . $ruta;
-                    }
-                    return $ruta;
-                })->toArray();
-            } catch (\Exception $e) {
-                Log::debug('Error obteniendo imágenes de prenda actualizada: ' . $e->getMessage());
-                $fotosGuardadas = [];
-            }
+            $dto = ActualizarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas);
+            $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
+
+            Log::info('[PedidosProduccionController] Prenda completa actualizada exitosamente', [
+                'pedido_id' => $id,
+                'prenda_id' => $prenda->id,
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Prenda actualizada correctamente en la base de datos',
-                'prenda' => array_merge($prendaActualizada->toArray(), [
-                    'imagenes' => $fotosGuardadas,
-                    'telasAgregadas' => []  // Se recargará desde la vista cuando el frontend recarga /datos-edicion
-                ]),
+                'prenda' => $prenda->toArray(),
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning(' Validación fallida en actualización', [
+            Log::warning('[PedidosProduccionController] Validación fallida en actualización', [
                 'errors' => $e->errors(),
             ]);
 
@@ -1054,9 +831,8 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error(' Error actualizando prenda completa', [
+            Log::error('[PedidosProduccionController] Error actualizando prenda completa', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
@@ -1065,4 +841,407 @@ class PedidosProduccionController
             ], 500);
         }
     }
+
+    /**
+     * GET /api/pedidos/{id}/procesos
+     * Obtener procesos de un pedido con cálculo de días hábiles - DELEGADO A USE CASE
+     */
+    public function getProcesos($id): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /procesos', ['id' => $id]);
+
+            $resultado = $this->obtenerProcesosPedidoUseCase->ejecutar($id);
+
+            return response()->json($resultado, 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('[PedidosProduccionController] Pedido no encontrado', ['id' => $id]);
+
+            return response()->json([
+                'error' => 'No se encontró la orden o no tiene permiso para verla'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error en getProcesos', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Error al obtener procesos'
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/pedidos/{id}/procesos
+     * Crear un nuevo proceso - DELEGADO A USE CASE
+     */
+    public function crearProceso(Request $request): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] POST /procesos', ['data' => $request->all()]);
+
+            $validated = $request->validate([
+                'numero_pedido' => 'required|integer',
+                'proceso' => 'required|string|max:255',
+                'fecha_inicio' => 'required|date',
+                'encargado' => 'nullable|string|max:255',
+                'estado_proceso' => 'required|in:Pendiente,En Progreso,Completado,Pausado',
+            ]);
+
+            $resultado = $this->crearProcesoUseCase->ejecutar($validated);
+
+            return response()->json($resultado, 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[PedidosProduccionController] Validación fallida en crear proceso', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error creando proceso', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el proceso: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * PATCH /api/pedidos/{id}/procesos/{procesoId}
+     * Editar un proceso existente - DELEGADO A USE CASE
+     */
+    public function editarProceso(Request $request, $id): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] PATCH /procesos/{id}', ['id' => $id]);
+
+            $validated = $request->validate([
+                'numero_pedido' => 'required|integer',
+                'proceso' => 'required|string|max:255',
+                'fecha_inicio' => 'required|date',
+                'encargado' => 'nullable|string|max:255',
+                'estado_proceso' => 'required|in:Pendiente,En Progreso,Completado,Pausado',
+                'observaciones' => 'nullable|string',
+            ]);
+
+            $resultado = $this->editarProcesoUseCase->ejecutar((int)$id, $validated);
+
+            return response()->json($resultado, 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[PedidosProduccionController] Validación fallida en editar proceso', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\DomainException $e) {
+            Log::warning('[PedidosProduccionController] Error de dominio en editar proceso', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error editando proceso', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al editar proceso: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/pedidos/{id}/procesos/{procesoId}
+     * Eliminar un proceso - DELEGADO A USE CASE
+     */
+    public function eliminarProceso(Request $request, $id): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] DELETE /procesos/{id}', ['id' => $id]);
+
+            $validated = $request->validate([
+                'numero_pedido' => 'required|integer',
+            ]);
+
+            $resultado = $this->eliminarProcesoUseCase->ejecutar((int)$id, $validated['numero_pedido']);
+
+            return response()->json($resultado, 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[PedidosProduccionController] Validación fallida en eliminar proceso', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\DomainException $e) {
+            Log::warning('[PedidosProduccionController] Error de dominio en eliminar proceso', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error eliminando proceso', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar proceso: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/pedidos/{numeroPedido}/procesos/historial
+     * Obtener historial de procesos - DELEGADO A USE CASE
+     */
+    public function obtenerHistorial($numeroPedido): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /procesos/historial', ['numero_pedido' => $numeroPedido]);
+
+            $resultado = $this->obtenerHistorialProcesosUseCase->ejecutar((int)$numeroPedido);
+
+            return response()->json($resultado, 200);
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener historial', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el historial'
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/tallas-disponibles
+     * Obtener catálogo de tallas disponibles por género
+     * 
+     * Parámetros opcionales:
+     * - ?genero=DAMA (retorna solo ese género)
+     * - ?prendaId=123 (retorna tallas CON CANTIDADES de esa prenda)
+     * 
+     * Retorna: 
+     *   - Con prendaId: { DAMA: {S: 10, M: 15}, CABALLERO: {...} }
+     *   - Sin prendaId: { DAMA: ['XS', 'S', 'M', 'L'], CABALLERO: [...] }
+     */
+    public function obtenerTallasDisponibles(Request $request): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/tallas-disponibles', [
+                'params' => $request->all()
+            ]);
+
+            $genero = $request->query('genero');
+            $prendaId = $request->query('prendaId');
+
+            // Si pide tallas de una prenda ESPECÍFICA (con cantidades)
+            if ($prendaId) {
+                return $this->obtenerTallasPrenda((int)$prendaId);
+            }
+
+            // CATÁLOGO GENERAL: Constantes de tallas por género
+            $tallasPorGenero = [
+                'DAMA' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+                'CABALLERO' => ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46'],
+                'UNISEX' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+            ];
+
+            // Si pide género específico, retornar solo ese
+            if ($genero && isset($tallasPorGenero[strtoupper($genero)])) {
+                $resultado = [
+                    strtoupper($genero) => $tallasPorGenero[strtoupper($genero)]
+                ];
+            } else {
+                // Retornar todas las tallas por género
+                $resultado = $tallasPorGenero;
+            }
+
+            Log::info('[PedidosProduccionController] Tallas retornadas', [
+                'count' => count($resultado),
+                'generos' => array_keys($resultado)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado,
+                'mensaje' => 'Catálogo de tallas cargado exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener tallas', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el catálogo de tallas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/prenda-pedido/{prendaId}/tallas
+     * Obtener tallas específicas de una prenda (si está guardada)
+     * 
+     * Retorna: { DAMA: { S: 10, M: 15 }, CABALLERO: { 32: 20 } }
+     */
+    public function obtenerTallasPrenda(int $prendaId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/prenda-pedido/{prendaId}/tallas', [
+                'prenda_id' => $prendaId
+            ]);
+
+            // Obtener tallas desde BD - tabla prenda_pedido_tallas
+            $tallas = DB::table('prenda_pedido_tallas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->select('genero', 'talla', 'cantidad')
+                ->get();
+
+            if ($tallas->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => ['DAMA' => [], 'CABALLERO' => []],
+                    'mensaje' => 'Prenda sin tallas asignadas'
+                ], 200);
+            }
+
+            // Agrupar tallas por género: { DAMA: { S: 10, M: 15 }, ... }
+            $tallasPorGenero = [];
+            foreach ($tallas as $talla) {
+                $genero = $talla->genero;
+                if (!isset($tallasPorGenero[$genero])) {
+                    $tallasPorGenero[$genero] = [];
+                }
+                $tallasPorGenero[$genero][$talla->talla] = (int)$talla->cantidad;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tallasPorGenero,
+                'mensaje' => 'Tallas de prenda cargadas exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener tallas de prenda', [
+                'error' => $e->getMessage(),
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las tallas de la prenda: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/prenda-pedido/{prendaId}/variantes
+     * Obtener variantes de prenda (manga, broche, bolsillos)
+     */
+    public function obtenerVariantesPrenda(int $prendaId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/prenda-pedido/{prendaId}/variantes', [
+                'prenda_id' => $prendaId
+            ]);
+
+            $variantes = DB::table('prenda_pedido_variantes')
+                ->leftJoin('tipos_manga', 'prenda_pedido_variantes.tipo_manga_id', '=', 'tipos_manga.id')
+                ->leftJoin('tipos_broche_boton', 'prenda_pedido_variantes.tipo_broche_boton_id', '=', 'tipos_broche_boton.id')
+                ->where('prenda_pedido_variantes.prenda_pedido_id', $prendaId)
+                ->select(
+                    'prenda_pedido_variantes.*',
+                    'tipos_manga.nombre as nombre_manga',
+                    'tipos_broche_boton.nombre as nombre_broche'
+                )
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $variantes,
+                'mensaje' => 'Variantes de prenda cargadas exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener variantes de prenda', [
+                'error' => $e->getMessage(),
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las variantes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/prenda-pedido/{prendaId}/colores-telas
+     * Obtener colores y telas seleccionados para una prenda
+     */
+    public function obtenerColoresTelasPrenda(int $prendaId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/prenda-pedido/{prendaId}/colores-telas', [
+                'prenda_id' => $prendaId
+            ]);
+
+            $coloresTelas = DB::table('prenda_pedido_colores_telas')
+                ->leftJoin('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
+                ->leftJoin('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
+                ->where('prenda_pedido_colores_telas.prenda_pedido_id', $prendaId)
+                ->select(
+                    'prenda_pedido_colores_telas.id',
+                    'colores_prenda.nombre as color',
+                    'colores_prenda.codigo as codigo_color',
+                    'telas_prenda.nombre as tela',
+                    'telas_prenda.referencia as referencia_tela'
+                )
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $coloresTelas,
+                'mensaje' => 'Colores y telas cargados exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener colores y telas', [
+                'error' => $e->getMessage(),
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los colores y telas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
+

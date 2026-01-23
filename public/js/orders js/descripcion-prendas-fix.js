@@ -3,7 +3,7 @@
  * Se ejecuta ANTES de orders-table-v2.js para interceptar la extracción de contenido
  */
 
-console.log(' descripcion-prendas-fix.js cargado');
+
 
 // Función para obtener el contenido real de descripcion_prendas
 function obtenerContenidoDescripcionPrendas(cell, column) {
@@ -11,17 +11,17 @@ function obtenerContenidoDescripcionPrendas(cell, column) {
         return null;
     }
     
-    console.log(' Buscando contenido de descripcion_prendas...');
+
     
     // Buscar el div con data-full-content
     const descripcionDiv = cell.querySelector('.descripcion-preview');
     if (descripcionDiv && descripcionDiv.dataset.fullContent) {
         try {
             const decodedContent = atob(descripcionDiv.dataset.fullContent);
-            console.log(' Contenido decodificado:', decodedContent.substring(0, 100));
+
             return decodedContent;
         } catch (e) {
-            console.error(' Error decodificando base64:', e);
+
         }
     }
     
@@ -48,9 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         try {
                             const decodedContent = atob(descripcionDiv.dataset.fullContent);
                             cellText.dataset.fullDescripcion = decodedContent;
-                            console.log('💾 Contenido guardado en cell-text para:', cellText.dataset.pedido);
+
                         } catch (e) {
-                            console.error(' Error:', e);
+
                         }
                     }
                 }
@@ -73,7 +73,7 @@ document.addEventListener('dblclick', function(e) {
     // Verificar si es descripcion_prendas
     const column = cell.getAttribute('data-column') || 'unknown';
     if (column === 'descripcion_prendas' && cellText.dataset.fullDescripcion) {
-        console.log(' Interceptando dblclick en descripcion_prendas');
+
         
         // Guardar el contenido en un lugar donde orders-table-v2.js pueda encontrarlo
         window.lastDescripcionPrendasContent = cellText.dataset.fullDescripcion;
@@ -83,7 +83,7 @@ document.addEventListener('dblclick', function(e) {
         if (row) {
             const numeroPedido = row.getAttribute('data-orden-id');
             window.lastNumeroPedido = numeroPedido;
-            console.log(' Contenido guardado en window.lastDescripcionPrendasContent para pedido:', numeroPedido);
+
             
             // Obtener datos de prendas si es una cotización
             obtenerDatosPrendasParaModal(numeroPedido);
@@ -105,12 +105,12 @@ function obtenerDatosPrendasParaModal(numeroPedido) {
         return response.json();
     })
     .then(data => {
-        console.log(' Datos de orden obtenidos:', data);
+
         // Guardar datos para que showOrderDescriptionModal los use
         window.lastOrderData = data;
     })
     .catch(error => {
-        console.error(' Error obteniendo datos de orden:', error);
+
     });
 }
 
@@ -128,7 +128,7 @@ function inyectarContenidoEnModal() {
     setTimeout(function() {
         if (input.value.trim() === '' && window.lastDescripcionPrendasContent) {
             // NO poner el contenido en el input, solo mostrar formateado
-            console.log(' Contenido de descripcion_prendas detectado');
+
             
             // Ocultar el input para descripcion_prendas
             input.style.display = 'none';
@@ -186,7 +186,7 @@ function renderizarContenidoFormateado(content) {
     const input = document.getElementById('cell-input');
     if (input && input.parentElement) {
         input.parentElement.appendChild(display);
-        console.log(' Contenido formateado renderizado');
+
     }
 }
 
@@ -196,7 +196,7 @@ const modalObserver = new MutationObserver(function(mutations) {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
             const modal = mutation.target;
             if (modal.id === 'cell-modal' && modal.classList.contains('active')) {
-                console.log('🎭 Modal abierto, inyectando contenido...');
+
                 inyectarContenidoEnModal();
             }
         }
@@ -208,8 +208,8 @@ setTimeout(function() {
     const modal = document.getElementById('cell-modal');
     if (modal) {
         modalObserver.observe(modal, { attributes: true, attributeFilter: ['class'] });
-        console.log('👀 Observador de modal iniciado');
+
     }
 }, 500);
 
-console.log(' descripcion-prendas-fix.js inicializado');
+

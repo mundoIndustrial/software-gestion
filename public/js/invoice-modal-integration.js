@@ -8,14 +8,14 @@
  * - Llama a window.descargarFactura(numeroPedido)
  */
 
-console.log(' [INVOICE] Cargando invoice-modal-integration.js');
+
 
 /**
  * Abre la factura en una nueva ventana/pestaña
  * @param {number} numeroPedido - Número del pedido
  */
 window.abrirFacturaEnVentana = function(numeroPedido) {
-    console.log('🖨️ [INVOICE] Abriendo factura en ventana:', numeroPedido);
+
     const url = `/facturas/${numeroPedido}/preview`;
     window.open(url, `factura-${numeroPedido}`, 'width=1000,height=800,scrollbars=yes');
 };
@@ -25,7 +25,7 @@ window.abrirFacturaEnVentana = function(numeroPedido) {
  * @param {number} numeroPedido - Número del pedido
  */
 window.abrirFacturaEnModal = async function(numeroPedido) {
-    console.log('🖨️ [INVOICE] Abriendo factura en modal:', numeroPedido);
+
     
     try {
         // Obtener el HTML de la factura
@@ -39,7 +39,7 @@ window.abrirFacturaEnModal = async function(numeroPedido) {
         abrirFacturaEnIframe(numeroPedido);
         
     } catch (error) {
-        console.error(' [INVOICE] Error al cargar factura:', error);
+
         alert('Error al cargar la factura. Intenta nuevamente.');
     }
 };
@@ -49,7 +49,7 @@ window.abrirFacturaEnModal = async function(numeroPedido) {
  * @param {number} numeroPedido - Número del pedido
  */
 window.abrirFacturaEnIframe = function(numeroPedido) {
-    console.log('🖨️ [INVOICE] Abriendo factura en iframe:', numeroPedido);
+
     
     // Crear modal si no existe
     let invoiceModal = document.getElementById('invoice-modal-wrapper');
@@ -109,7 +109,7 @@ window.abrirFacturaEnIframe = function(numeroPedido) {
  * @param {number} numeroPedido - Número del pedido
  */
 window.descargarFactura = function(numeroPedido) {
-    console.log('📥 [INVOICE] Descargando factura:', numeroPedido);
+
     
     // Redirigir a la ruta de descarga
     window.location.href = `/facturas/${numeroPedido}/download`;
@@ -120,7 +120,7 @@ window.descargarFactura = function(numeroPedido) {
  * Agregar opciones en el menú contextual de la fila
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔗 [INVOICE] Integrando en menú de acciones');
+
     
     // Cuando se hace click en el botón de acciones
     document.addEventListener('click', function(e) {
@@ -148,4 +148,4 @@ window.InvoiceManager = {
     descargar: window.descargarFactura
 };
 
-console.log(' [INVOICE] invoice-modal-integration.js cargado correctamente');
+

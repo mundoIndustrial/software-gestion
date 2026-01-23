@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility)
  */
 
-console.log(' Cargando NotificationModule...');
+
 
 const NotificationModule = {
     /**
@@ -33,7 +33,7 @@ const NotificationModule = {
         
         this._ensureStyles();
         document.body.appendChild(notification);
-        console.log(`🔄 Notificación mostrada: ${message}`);
+
     },
 
     /**

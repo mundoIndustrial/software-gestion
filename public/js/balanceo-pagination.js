@@ -4,7 +4,7 @@
     
     // Evitar inicialización múltiple
     if (window.balanceoPaginationInitialized) {
-        console.log(' Paginación de balanceo ya inicializada');
+
         return;
     }
     window.balanceoPaginationInitialized = true;
@@ -29,7 +29,7 @@
         const page = btn.dataset.page;
         if (!page) return;
         
-        console.log(` Cargando página ${page} de balanceo...`);
+
         
         isLoading = true;
         const startTime = performance.now();
@@ -57,7 +57,7 @@
         })
         .then(response => {
             const fetchEnd = performance.now();
-            console.log(`⏱️ Petición completada en ${(fetchEnd - fetchStart).toFixed(2)}ms`);
+
             return response.json();
         })
         .then(data => {
@@ -65,12 +65,12 @@
                 throw new Error('Respuesta inválida del servidor');
             }
             
-            console.log(` Tiempo del servidor: ${data.debug.server_time_ms}ms`);
+
             
             // Actualizar grid de prendas
             if (prendasGrid) {
                 prendasGrid.innerHTML = data.cards_html;
-                console.log(` Grid actualizado con ${data.pagination.per_page} prendas`);
+
             }
             
             // Actualizar controles de paginación
@@ -107,14 +107,14 @@
             
             const endTime = performance.now();
             const totalTime = (endTime - startTime).toFixed(2);
-            console.log(` Página ${page} cargada en ${totalTime}ms (${(totalTime/1000).toFixed(2)}s)`);
+
             
             if (totalTime > 1000) {
-                console.warn(` Carga lenta: ${totalTime}ms`);
+
             }
         })
         .catch(error => {
-            console.error(' Error al cargar página:', error);
+
             if (prendasGrid) {
                 prendasGrid.style.opacity = '1';
                 prendasGrid.style.pointerEvents = 'auto';
@@ -123,6 +123,6 @@
         });
     });
     
-    console.log(' Paginación de balanceo inicializada');
+
 })();
 

@@ -8,10 +8,10 @@
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/registros.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/action-menu.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/filter-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/row-conditional-colors.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bodega-column-widths.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bodega-table.css') }}">
     <link rel="stylesheet" href="{{ asset('css/novedades-button.css') }}?v={{ time() }}">
@@ -309,15 +309,11 @@
     <!-- Script de inicialización de colores -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log(' Inicializando colores condicionales en bodega...');
-            
             // Esperar a que los scripts estén cargados
             setTimeout(() => {
                 if (typeof window.applyAllRowConditionalColors === 'function') {
-                    console.log(' Aplicando colores a todas las filas');
                     window.applyAllRowConditionalColors();
                 } else {
-                    console.warn(' applyAllRowConditionalColors no está disponible');
                 }
             }, 100);
         });
@@ -327,17 +323,16 @@
     <script>
         // Esperar a que todo esté cargado
         setTimeout(() => {
-            console.log(' DEBUGGING BODEGA');
-            console.log(' openEditModal existe:', typeof openEditModal);
-            console.log(' applyAllRowConditionalColors existe:', typeof window.applyAllRowConditionalColors);
+
+
             console.log(' Filas con clase table-row:', document.querySelectorAll('.table-row').length);
             
             const rows = document.querySelectorAll('.table-row');
             if (rows.length > 0) {
                 console.log(' Primera fila data-estado:', rows[0].getAttribute('data-estado'));
                 console.log(' Primera fila data-total-dias:', rows[0].getAttribute('data-total-dias'));
-                console.log(' Clases de primera fila:', rows[0].className);
             }
         }, 500);
     </script>
 @endsection
+

@@ -22,11 +22,8 @@ class TelaProcessor {
      */
     static crearBlobUrlsParaTelas(telasAgregadas) {
         if (!telasAgregadas || telasAgregadas.length === 0) {
-            console.log(' TelaProcessor: Sin telas para procesar');
             return [];
         }
-
-        console.log(` TelaProcessor: Creando blob URLs para ${telasAgregadas.length} tela(s)`);
 
         return telasAgregadas.map(tela => ({
             ...tela,
@@ -34,7 +31,6 @@ class TelaProcessor {
                 let blobUrl = null;
                 if (img.file instanceof File) {
                     blobUrl = URL.createObjectURL(img.file);
-                    console.log(`   📸 Blob URL creado: ${blobUrl}`);
                 }
                 return {
                     ...img,
@@ -56,9 +52,6 @@ class TelaProcessor {
         if (telasConUrls && telasConUrls.length > 0) {
             colorPrenda = telasConUrls[0].color || null;
             telaPrenda = telasConUrls[0].tela || null;
-            console.log(` TelaProcessor: Color y tela extraídos:`, { colorPrenda, telaPrenda });
-        } else {
-            console.log(` TelaProcessor: Sin telas agregadas para extraer`);
         }
 
         return { color: colorPrenda, tela: telaPrenda };
@@ -71,18 +64,7 @@ class TelaProcessor {
      * @returns {Object} {telaObj: Object|null, procesada: boolean}
      */
     static cargarTelaDesdeBaseDatos(prenda) {
-        console.log(' TelaProcessor: Cargando tela desde BD');
-        console.log('   Propiedades:', {
-            tela: prenda.tela,
-            color: prenda.color,
-            ref: prenda.ref,
-            referencia: prenda.referencia,
-            imagenes_tela: !!prenda.imagenes_tela
-        });
-
         if ((prenda.tela || prenda.color) && window.telasAgregadas) {
-            console.log('   ✓ Encontradas propiedades de tela en raíz (BD)');
-
             const telaObj = {
                 color: prenda.color || '',
                 tela: prenda.tela || '',
@@ -96,18 +78,14 @@ class TelaProcessor {
                 // La segunda imagen es la de tela real (primera es imagen_tela de portada)
                 if (prenda.imagenes_tela.length > 1) {
                     telaObj.imagenes = [prenda.imagenes_tela[1]];  // Usar la segunda imagen (foto de tela)
-                    console.log('   📸 Imagen de tela (segunda): ', prenda.imagenes_tela[1]);
                 } else if (prenda.imagenes_tela.length === 1) {
                     // Si solo hay una, usarla
                     telaObj.imagenes = [prenda.imagenes_tela[0]];
-                    console.log('   📸 Única imagen de tela: ', prenda.imagenes_tela[0]);
                 }
             }
 
-            console.log('   ✓ Objeto tela construido:', telaObj);
             return { telaObj, procesada: true };
         } else {
-            console.log('    No hay datos de tela para cargar desde BD');
             return { telaObj: null, procesada: false };
         }
     }
@@ -122,11 +100,9 @@ class TelaProcessor {
         }
         window.telasAgregadas.length = 0;  // Limpiar telas anteriores
         window.telasAgregadas.push(telaObj);
-        console.log('   ✓ 1 tela cargada desde propiedades raíz (BD)');
 
         // Actualizar tabla de telas si existe
         if (window.actualizarTablaTelas) {
-            console.log('   Llamando a actualizarTablaTelas...');
             window.actualizarTablaTelas();
         }
     }
@@ -150,14 +126,11 @@ class TelaProcessor {
 
         // Intentar en orden: blobUrl > File > string path
         if (primeraImagen.blobUrl) {
-            console.log(' TelaProcessor: Imagen de tela usando blobUrl');
             return primeraImagen.blobUrl;
         } else if (primeraImagen.file instanceof File) {
             const blobUrl = URL.createObjectURL(primeraImagen.file);
-            console.log(' TelaProcessor: Imagen de tela usando createObjectURL');
             return blobUrl;
         } else if (typeof primeraImagen === 'string') {
-            console.log(' TelaProcessor: Imagen de tela usando path directo');
             return primeraImagen;
         }
 
@@ -174,8 +147,6 @@ class TelaProcessor {
         const itemSinCot = {};
         let imagenTelaUrl = null;
 
-        console.log(' TelaProcessor: Construyendo item desde telas');
-
         // PRIMERA OPCIÓN: Usar telasAgregadas (frontend - usuario agregó telas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
             itemSinCot.telas = prenda.telasAgregadas;
@@ -188,13 +159,11 @@ class TelaProcessor {
             imagenTelaUrl = this.extraerImagenTela(prenda.telasAgregadas);
             if (imagenTelaUrl) itemSinCot.imagenTela = imagenTelaUrl;
 
-            console.log(`   ✓ Item construido desde telasAgregadas (${prenda.telasAgregadas.length} telas)`);
             return { itemSinCot, imagenTelaUrl };
         }
 
         // SEGUNDA OPCIÓN: Usar estructura BD (tela, color, imagenes_tela en raíz)
         if ((prenda.tela || prenda.color) && prenda.imagenes_tela) {
-            console.log('    Construyendo item desde estructura BD (tela, color, imagenes_tela)');
             itemSinCot.color = prenda.color || null;
             itemSinCot.tela = prenda.tela || null;
             itemSinCot.ref = prenda.ref || null;
@@ -204,19 +173,15 @@ class TelaProcessor {
             if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
                 if (prenda.imagenes_tela.length > 1) {
                     imagenTelaUrl = prenda.imagenes_tela[1];
-                    console.log('   📸 Imagen de tela (BD - segunda):', imagenTelaUrl);
                 } else if (prenda.imagenes_tela.length === 1) {
                     imagenTelaUrl = prenda.imagenes_tela[0];
-                    console.log('   📸 Imagen de tela (BD - única):', imagenTelaUrl);
                 }
             }
 
             if (imagenTelaUrl) itemSinCot.imagenTela = imagenTelaUrl;
-            console.log('   ✓ Item construido desde estructura BD');
             return { itemSinCot, imagenTelaUrl };
         }
 
-        console.log('    Sin datos de tela para construir item');
         return { itemSinCot, imagenTelaUrl: null };
     }
 
@@ -238,7 +203,6 @@ class TelaProcessor {
         if (window.telasAgregadas) {
             window.telasAgregadas.length = 0;
         }
-        console.log(' TelaProcessor: Storage de telas limpiado');
     }
 }
 

@@ -4,7 +4,7 @@ title Servidor Analizador de Artículos
 
 echo.
 echo ========================================
-echo  🚀 ANALIZADOR DE ARTICULOS
+echo  ANALIZADOR DE ARTICULOS
 echo  Servidor Python Flask
 echo ========================================
 echo.

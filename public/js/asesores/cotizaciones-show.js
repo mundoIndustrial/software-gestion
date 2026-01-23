@@ -50,8 +50,8 @@ window.addEventListener('beforeunload', function() {
 });
 
 function abrirModalImagen(src, titulo, imagenes = null, indiceActual = 0) {
-    console.log('Abriendo imagen:', src);
-    console.log('Imágenes disponibles:', imagenes, 'Índice:', indiceActual);
+
+
     
     // Guardar imágenes en window para navegación
     if (imagenes && Array.isArray(imagenes)) {

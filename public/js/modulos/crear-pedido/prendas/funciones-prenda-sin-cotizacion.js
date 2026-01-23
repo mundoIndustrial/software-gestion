@@ -41,4 +41,4 @@
  * Este archivo se mantiene por compatibilidad de versiones anteriores.
  */
 
-console.warn('  [LEGADO] funciones-prenda-sin-cotizacion.js cargado. Ver componentes modulares para implementaci�n actual.');
+

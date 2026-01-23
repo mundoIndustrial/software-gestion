@@ -22,7 +22,7 @@ class PrendaComponent {
     renderizarPrendas(prendas, options = {}) {
         const container = document.getElementById('prendas-container-editable');
         if (!container) {
-            console.error('Contenedor de prendas no encontrado');
+
             return;
         }
 
@@ -43,7 +43,7 @@ class PrendaComponent {
         });
 
         container.innerHTML = html;
-        console.log(` ${prendas.length} prendas renderizadas`);
+
     }
 
     /**
@@ -412,7 +412,7 @@ class PrendaComponent {
                 prendaCard.remove();
             }
 
-            console.log(`🗑️ Prenda ${index} eliminada`);
+
 
             Swal.fire({
                 icon: 'success',
@@ -450,7 +450,7 @@ class PrendaComponent {
         // Re-renderizar solo la sección de telas
         this.actualizarSeccionTelas(prendaIndex);
 
-        console.log(`➕ Tela agregada a prenda ${prendaIndex}`);
+
     }
 
     /**
@@ -481,7 +481,7 @@ class PrendaComponent {
                 window.PedidoState.updatePrenda(prendaIndex, prenda);
                 this.actualizarSeccionTelas(prendaIndex);
 
-                console.log(`🗑️ Tela ${telaIndex} eliminada de prenda ${prendaIndex}`);
+
 
                 Swal.fire({
                     icon: 'success',

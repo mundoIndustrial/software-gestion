@@ -637,8 +637,6 @@
     
     // Función para actualizar las tablas con datos JSON
     function updateCorteTablas(horasData, operariosData) {
-        console.log(' Actualizando tablas con datos JSON', { horasData, operariosData });
-        
         // Actualizar tabla de horas
         const horasTable = document.querySelector('.table-section:nth-child(1) tbody');
         if (horasTable && horasData && horasData.length) {
@@ -680,7 +678,6 @@
             </tr>`;
             
             horasTable.innerHTML = html;
-            console.log(' Tabla de horas actualizada');
         }
         
         // Actualizar tabla de operarios
@@ -724,7 +721,6 @@
             </tr>`;
             
             operariosTable.innerHTML = html;
-            console.log(' Tabla de operarios actualizada');
         }
     }
     
@@ -733,13 +729,10 @@
         const url = new URL('{{ route("tableros.corte.dashboard") }}', window.location.origin);
         
         // Usar los filterParams globales (establecidos al cargar la página)
-        console.log('📤 Utilizando filterParams globales:', filterParams);
-        
         // Agregar todos los parámetros al URL
         Object.keys(filterParams).forEach(key => {
             if (filterParams[key]) {
                 url.searchParams.set(key, filterParams[key]);
-                console.log(`  - ${key}: ${filterParams[key]}`);
             }
         });
         
@@ -753,36 +746,24 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log(' Datos obtenidos del API:', data);
             updateCorteTablas(data.horas, data.operarios);
         })
         .catch(error => {
-            console.error(' Error al obtener datos del API:', error);
         });
     }
     
     // Esperar a que Echo esté disponible
     function initializeCorteFullscreenRealtime() {
-        console.log('=== CORTE FULLSCREEN - Inicializando tiempo real ===');
-        
         if (!window.Echo) {
-            console.log('Echo no disponible, reintentando...');
             setTimeout(initializeCorteFullscreenRealtime, 500);
             return;
         }
-
-        console.log(' Echo disponible, suscribiendo al canal de corte...');
-
         // Canal de Corte
         window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
-            console.log('🎉 Evento CorteRecordCreated recibido en fullscreen', e);
-            console.log(' Actualizando tablas con nuevo registro...');
-            
+
             // Recargar datos del API
             fetchCorteData();
         });
-
-        console.log(' Listener configurado en fullscreen de corte');
     }
 
     // Inicializar cuando el DOM esté listo
@@ -858,3 +839,4 @@
     </div>
 </body>
 </html>
+

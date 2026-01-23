@@ -267,7 +267,7 @@ const validator = orchestrator.obtenerValidator();
 
 ---
 
-## 🚀 Próximos Pasos
+## Próximos Pasos
 
 1. **Agregar tests unitarios** para cada servicio
 2. **Mock services** para pruebas sin API

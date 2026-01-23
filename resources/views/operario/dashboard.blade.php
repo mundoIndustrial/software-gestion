@@ -535,7 +535,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 document.getElementById('novedadesAnteriores').innerHTML = '<p style="color: #999;">No hay novedades anteriores</p>';
             });
         
@@ -584,7 +583,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('Error al reportar la novedad');
         });
     }
@@ -639,7 +637,6 @@
                 document.getElementById('modalExito').style.display = 'flex';
             }
         } catch (error) {
-            console.error('Error:', error);
             // Mostrar modal de error
             document.getElementById('exitoTitulo').textContent = ' Error';
             document.getElementById('exitoMensaje').textContent = 'Error al completar el proceso';
@@ -925,3 +922,4 @@
 </div>
 
 @endsection
+

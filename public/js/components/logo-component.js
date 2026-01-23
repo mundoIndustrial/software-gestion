@@ -118,9 +118,9 @@ class LogoComponent {
                 try {
                     const imageData = await window.ImageService.uploadLogoImage(file, logoCotizacionId);
                     uploadedImages.push(imageData);
-                    console.log(` Imagen de logo subida: ${imageData.filename}`);
+
                 } catch (error) {
-                    console.error(` Error al subir imagen de logo:`, error);
+
                 }
             }
 
@@ -148,7 +148,7 @@ class LogoComponent {
             this.renderizarFotos();
             
         } catch (error) {
-            console.error(' Error al subir imágenes de logo:', error);
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -178,9 +178,9 @@ class LogoComponent {
             if (foto.id) {
                 try {
                     await window.ImageService.deleteLogoImage(foto.id);
-                    console.log(` Imagen de logo eliminada del servidor: ${foto.id}`);
+
                 } catch (error) {
-                    console.error(' Error al eliminar imagen del servidor:', error);
+
                 }
             }
 

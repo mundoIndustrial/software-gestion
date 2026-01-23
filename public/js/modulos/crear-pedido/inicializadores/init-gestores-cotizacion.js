@@ -29,7 +29,7 @@
             '#cotizacion_selected_editable',
             function(id, numero, cliente, asesora, formaPago) {
                 // Callback cuando se selecciona una cotización
-                console.log(' Cotización seleccionada:', { id, numero, cliente, asesora, formaPago });
+
                 
                 // Actualizar campos del formulario
                 document.getElementById('cotizacion_id_editable').value = id;
@@ -62,7 +62,7 @@
 
                     })
                     .catch(error => {
-                        console.error(' Error cargando cotización:', error);
+
                         mostrarError('Error', 'No se pudieron cargar los datos de la cotización');
                     });
             }

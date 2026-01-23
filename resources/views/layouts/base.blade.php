@@ -76,7 +76,6 @@
             enabledTransports: ['ws', 'wss'],
             disableStats: true,
         });
-        console.log(' Laravel Echo configurado');
     </script>
     @endauth
     
@@ -169,3 +168,4 @@
     @stack('modals')
 </body>
 </html>
+

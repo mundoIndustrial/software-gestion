@@ -31,7 +31,7 @@ export class PedidosRecibosModule {
 
         const faltantes = elementosCriticos.filter(id => !document.getElementById(id));
         if (faltantes.length > 0) {
-            console.error('[PedidosRecibosModule] Elementos críticos faltantes:', faltantes);
+
         }
 
         // Elementos opcionales - solo advertencia
@@ -42,7 +42,7 @@ export class PedidosRecibosModule {
         ];
         const opcionalesFaltantes = elementosOpcionales.filter(id => !document.getElementById(id));
         if (opcionalesFaltantes.length > 0) {
-            console.log('[PedidosRecibosModule] Elementos opcionales no encontrados (puede estar bien):', opcionalesFaltantes);
+
         }
     }
 
@@ -57,19 +57,16 @@ export class PedidosRecibosModule {
     async abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex = null) {
         // Validaciones
         if (typeof tipoRecibo !== 'string') {
-            console.error('[PedidosRecibosModule] tipoRecibo debe ser STRING');
+
             alert('Error: tipo de recibo debe ser texto');
             return;
         }
 
         if (typeof prendaId !== 'number') {
-            console.error('[PedidosRecibosModule] prendaId debe ser NUMBER');
+
             alert('Error: ID de prenda debe ser número');
             return;
         }
-
-        console.log(`%c[PedidosRecibosModule] Abriendo recibo: ${tipoRecibo}`, 'color: #10b981; font-weight: bold;');
-
         // Actualizar estado
         this.modalManager.setState({
             pedidoId,
@@ -93,7 +90,7 @@ export class PedidosRecibosModule {
             const prendaData = datos.prendas.find(p => p.id == prendaId);
             if (!prendaData) throw new Error(`Prenda ${prendaId} no encontrada`);
 
-            console.log('[PedidosRecibosModule] Prenda encontrada:', prendaData.nombre);
+
 
             // Construir lista de recibos
             const recibos = ReceiptBuilder.construirListaRecibos(prendaData);
@@ -116,7 +113,7 @@ export class PedidosRecibosModule {
             this.modalManager.configurarZIndex();
 
         } catch (err) {
-            console.error('[PedidosRecibosModule] Error:', err);
+
             alert('Error al cargar el recibo: ' + err.message);
             this.modalManager.cerrarModal();
         }
@@ -241,4 +238,3 @@ window.toggleGaleria = async function() {
     }
 };
 
-console.log('%c[PedidosRecibosModule] Cargado correctamente ✓', 'color: #10b981; font-weight: bold; font-size: 14px;');

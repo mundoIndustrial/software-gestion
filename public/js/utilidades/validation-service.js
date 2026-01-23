@@ -157,4 +157,3 @@ window.Guard = {
     }
 };
 
-console.log(' ValidationService cargado - Usar Validator.* o Guard.*');

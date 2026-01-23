@@ -328,8 +328,6 @@
         const backupLocalBtn = document.getElementById('backupLocalBtn');
         if (backupLocalBtn) {
             backupLocalBtn.addEventListener('click', function() {
-                console.log('Botón de backup local clickeado');
-                
                 // Mostrar el modal
                 document.getElementById('backupModal').style.display = 'block';
                 
@@ -347,15 +345,11 @@
                     }
                 })
                 .then(response => {
-                    console.log('Respuesta recibida:', response);
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Datos:', data);
-                    
                     // Si hay información de debug, mostrarla en consola
                     if (data.debug) {
-                        console.log('Debug info:', data.debug);
                     }
                     
                     // Ocultar loading
@@ -373,7 +367,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     // Ocultar loading
                     document.getElementById('backupLoading').style.display = 'none';
                     
@@ -383,28 +376,22 @@
                 });
             });
         } else {
-            console.error('No se encontró el botón de backup local');
         }
 
         // Manejar el botón de descarga
         const backupDownloadBtn = document.getElementById('backupDownloadBtn');
         if (backupDownloadBtn) {
             backupDownloadBtn.addEventListener('click', function() {
-                console.log('Botón de descarga clickeado');
-                
                 // Redirigir a la ruta de descarga
                 window.location.href = '{{ route('configuracion.downloadBackup') }}';
             });
         } else {
-            console.error('No se encontró el botón de descarga');
         }
 
         // Manejar el botón de Google Drive
         const backupGoogleDriveBtn = document.getElementById('backupGoogleDriveBtn');
         if (backupGoogleDriveBtn) {
             backupGoogleDriveBtn.addEventListener('click', function() {
-                console.log('Botón de Google Drive clickeado');
-                
                 // Mostrar el modal
                 document.getElementById('backupModal').style.display = 'block';
                 
@@ -422,12 +409,9 @@
                     }
                 })
                 .then(response => {
-                    console.log('Respuesta recibida:', response);
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Datos:', data);
-                    
                     // Ocultar loading
                     document.getElementById('backupLoading').style.display = 'none';
                     
@@ -443,7 +427,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     // Ocultar loading
                     document.getElementById('backupLoading').style.display = 'none';
                     
@@ -453,57 +436,45 @@
                 });
             });
         } else {
-            console.error('No se encontró el botón de Google Drive');
         }
 
         // Manejar el botón de backup Insert Only (guardar en servidor)
         const backupInsertOnlyBtn = document.getElementById('backupInsertOnlyBtn');
         if (backupInsertOnlyBtn) {
             backupInsertOnlyBtn.addEventListener('click', function() {
-                console.log('Botón de backup insert-only clickeado');
-                
                 // Redirigir a la ruta de descarga
                 window.location.href = '{{ route('configuracion.backupInsertOnly') }}';
             });
         } else {
-            console.error('No se encontró el botón de backup insert-only');
         }
 
         // Manejar el botón de descarga Insert Only
         const backupDownloadInsertOnlyBtn = document.getElementById('backupDownloadInsertOnlyBtn');
         if (backupDownloadInsertOnlyBtn) {
             backupDownloadInsertOnlyBtn.addEventListener('click', function() {
-                console.log('Botón de descarga insert-only clickeado');
-                
                 // Redirigir a la ruta de descarga
                 window.location.href = '{{ route('configuracion.downloadBackupInsertOnly') }}';
             });
         } else {
-            console.error('No se encontró el botón de descarga insert-only');
         }
 
         // Manejar el botón de backup flexible
         const backupFlexibleBtn = document.getElementById('backupFlexibleBtn');
         if (backupFlexibleBtn) {
             backupFlexibleBtn.addEventListener('click', function() {
-                console.log('Botón de backup flexible clickeado');
-                
                 // Redirigir a la ruta de descarga
                 window.location.href = '{{ route('configuracion.backupFlexible') }}';
             });
         } else {
-            console.error('No se encontró el botón de backup flexible');
         }
 
         // Manejar el botón de backup flexible avanzado
         const backupFlexibleAdvBtn = document.getElementById('backupFlexibleAdvBtn');
         if (backupFlexibleAdvBtn) {
             backupFlexibleAdvBtn.addEventListener('click', function() {
-                console.log('Botón de backup flexible avanzado clickeado');
                 document.getElementById('selectDbModal').style.display = 'block';
             });
         } else {
-            console.error('No se encontró el botón de backup flexible avanzado');
         }
     });
 

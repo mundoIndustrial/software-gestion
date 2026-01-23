@@ -5,7 +5,7 @@ let lastMarkAllReadTime = 0; // Timestamp de última vez que se marcaron todas c
 
 document.addEventListener('DOMContentLoaded', function() {
     // Sistema de notificaciones deshabilitado para rol Insumos
-    console.debug('Notificaciones deshabilitadas en rol Insumos');
+
 });
 
 function updateNotificationBadge(count) {
@@ -157,7 +157,7 @@ async function markAllAsRead() {
         
         showToast('Notificaciones marcadas como leídas', 'success');
     } catch (error) {
-        console.error('Error marcando notificaciones:', error);
+
         showToast('Error al marcar notificaciones', 'error');
     }
 }

@@ -3,7 +3,6 @@
  * Handles opening, closing, and overlay management for the order detail modal
  */
 
-console.log(' [MODAL] Cargando pedidos-detail-modal.js');
 
 /**
  * Abre el modal de detalle de la orden y carga los datos
@@ -13,40 +12,40 @@ window.verFactura = async function verFactura(numeroPedido) {
     // Limpiar el número del pedido (remover # si existe)
     const pedidoLimpio = numeroPedido.replace('#', '');
     
-    console.log('🔵 [MODAL] Abriendo modal de factura para pedido:', pedidoLimpio);
+
     
     try {
         //  HACER FETCH a la API para obtener datos del pedido
         // Intentar primero con /registros (para asesores), luego con /orders (para órdenes)
-        console.log('🔵 [MODAL] Haciendo fetch a /registros/' + pedidoLimpio);
+
         let response = await fetch(`/registros/${pedidoLimpio}`);
         
         // Si no encuentra en /registros, intentar con /orders
         if (!response.ok) {
-            console.log('🔵 [MODAL] No encontrado en /registros, intentando /orders/' + pedidoLimpio);
+
             response = await fetch(`/orders/${pedidoLimpio}`);
         }
         
         if (!response.ok) {
-            console.error(' [MODAL] Error en respuesta:', response.status, response.statusText);
+
             throw new Error('Error fetching order: ' + response.status);
         }
         const order = await response.json();
         
-        console.log(' [MODAL] Datos del pedido obtenidos:', order);
-        console.log(' [MODAL] Campos disponibles:', Object.keys(order));
-        console.log(' [MODAL] prendas:', order.prendas);
-        console.log(' [MODAL] es_cotizacion:', order.es_cotizacion);
+
+
+
+
         
         // Disparar evento para que order-detail-modal-manager.js maneje la apertura
-        console.log('🔵 [MODAL] Disparando evento load-order-detail');
+
         const loadEvent = new CustomEvent('load-order-detail', { 
             detail: order 
         });
         window.dispatchEvent(loadEvent);
         
     } catch (error) {
-        console.error(' Error al cargar datos del pedido:', error);
+
         alert('Error al cargar los datos del pedido. Intenta nuevamente.');
     }
 }
@@ -56,14 +55,14 @@ window.verFactura = async function verFactura(numeroPedido) {
  * @param {number} numeroPedido - Número del pedido
  */
 window.verSeguimiento = function verSeguimiento(numeroPedido) {
-    console.log('🔵 [ASESORAS] Abriendo modal de seguimiento simplificado para pedido:', numeroPedido);
+
     
     // Usar la función simplificada para asesoras
     if (typeof openAsesorasTrackingModal === 'function') {
         openAsesorasTrackingModal(numeroPedido);
-        console.log(' [ASESORAS] Modal de seguimiento abierto');
+
     } else {
-        console.error(' [ASESORAS] Función openAsesorasTrackingModal no disponible');
+
         alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');
     }
 }
@@ -73,43 +72,43 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
  * @param {number} logoPedidoId - ID del LogoPedido (NO número de pedido)
  */
 window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
-    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para ID:', logoPedidoId);
-    console.log('🔴 [MODAL LOGO] Verificando si window.openOrderDetailModalLogo existe:', typeof window.openOrderDetailModalLogo);
+
+
     
     try {
         //  HACER FETCH a la API usando el ID en lugar del número de pedido
-        console.log('🔴 [MODAL LOGO] Haciendo fetch a /api/logo-pedidos/' + logoPedidoId);
+
         let response = await fetch(`/api/logo-pedidos/${logoPedidoId}`);
         
         if (!response.ok) {
-            console.error(' [MODAL LOGO] Error en respuesta:', response.status, response.statusText);
+
             throw new Error('Error fetching logo pedido: ' + response.status);
         }
         const order = await response.json();
         
-        console.log(' [MODAL LOGO] Datos del LogoPedido obtenidos:', order);
+
         
         // Disparar evento para que order-detail-modal-manager.js maneje la apertura del logo
-        console.log('🔴 [MODAL LOGO] Disparando evento load-order-detail-logo con detail:', order);
+
         const loadEvent = new CustomEvent('load-order-detail-logo', { 
             detail: order 
         });
-        console.log('🔴 [MODAL LOGO] CustomEvent creado:', loadEvent);
+
         window.dispatchEvent(loadEvent);
-        console.log('🔴 [MODAL LOGO] Evento disparado con window.dispatchEvent');
-        console.log('🔴 [MODAL LOGO] ¿Hay listeners? Será visto en la consola del siguiente evento');
+
+
         
         // DEBUG: Verificar que el evento se dispara
         setTimeout(() => {
-            console.log('🧪 [MODAL LOGO] Verificando si el modal se abrió después de 500ms');
+
             const overlay = document.getElementById('modal-overlay');
             const wrapper = document.getElementById('order-detail-modal-wrapper-logo');
-            console.log('🧪 overlay.style.display:', overlay?.style.display);
-            console.log('🧪 wrapper.style.display:', wrapper?.style.display);
+
+
         }, 500);
         
     } catch (error) {
-        console.error(' Error al cargar datos del pedido (logo):', error);
+
         alert('Error al cargar los datos del pedido. Intenta nuevamente.');
     }
 }
@@ -131,10 +130,10 @@ window.closeModalOverlay = function closeModalOverlay() {
     //  Recargar filtros desde localStorage al cerrar modal
     if (typeof loadFiltersFromLocalStorage === 'function') {
         loadFiltersFromLocalStorage();
-        console.log(' Filtros recargados después de cerrar modal');
+
         if (typeof applyTableFilters === 'function') {
             applyTableFilters();
-            console.log(' Filtros reaplicados a la tabla');
+
         }
     }
     
@@ -338,7 +337,7 @@ window.eliminarPedidoConfirmado = async function(pedidoId) {
         
         const data = await response.json();
         
-        console.log('🗑️ Respuesta del servidor:', { status: response.status, data: data });
+
         
         if (response.ok && data.success) {
             // Cerrar modal
@@ -356,11 +355,11 @@ window.eliminarPedidoConfirmado = async function(pedidoId) {
         } else {
             // El servidor devolvió un error (pero fue procesable)
             const errorMsg = data.message || 'Error al eliminar el pedido';
-            console.error(' Error del servidor:', errorMsg);
+
             throw new Error(errorMsg);
         }
     } catch (error) {
-        console.error(' Error al eliminar pedido:', error);
+
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar Pedido';
         
@@ -427,7 +426,7 @@ window.eliminarPedidoDirecto = async function(pedidoId) {
         
         const data = await response.json();
         
-        console.log('🗑️ Pedido eliminado:', { status: response.status, data: data });
+
         
         if (response.ok && data.success) {
             // Mostrar mensaje de éxito
@@ -439,12 +438,12 @@ window.eliminarPedidoDirecto = async function(pedidoId) {
             }, 1000);
         } else {
             const errorMsg = data.message || 'Error al eliminar el pedido';
-            console.error(' Error:', errorMsg);
+
             // Mostrar error
             showErrorMessage(' ' + errorMsg);
         }
     } catch (error) {
-        console.error(' Error al eliminar pedido:', error);
+
         showErrorMessage(' Error al eliminar el pedido');
     }
 }

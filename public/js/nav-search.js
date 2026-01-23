@@ -25,14 +25,14 @@ const NavSearch = {
      * Inicializar búsqueda en el nav
      */
     initialize() {
-        console.log(' Inicializando NavSearch');
+
 
         const searchInput = document.getElementById('navSearchInput');
         const searchClear = document.getElementById('navSearchClear');
         const searchResults = document.getElementById('navSearchResults');
 
         if (!searchInput) {
-            console.log(' NavSearch no disponible en esta página');
+
             return;
         }
 
@@ -41,7 +41,7 @@ const NavSearch = {
         const searchParam = urlParams.get('search');
         
         if (searchParam) {
-            console.log('🔎 Búsqueda encontrada en URL:', searchParam);
+
             searchInput.value = searchParam;
             this.state.isSearchActive = true;
             this.state.currentQuery = searchParam;
@@ -72,7 +72,7 @@ const NavSearch = {
             }
         });
 
-        console.log(' NavSearch inicializado');
+
     },
 
     /**
@@ -114,7 +114,7 @@ const NavSearch = {
         }
 
         // Ejecutar búsqueda inmediatamente (sin debounce)
-        console.log(` Búsqueda iniciada por Enter: ${query}`);
+
         this.performSearch(query);
     },
 
@@ -133,7 +133,7 @@ const NavSearch = {
      * Realizar búsqueda
      */
     async performSearch(query, page = 1) {
-        console.log(` Buscando: ${query} (página ${page})`);
+
 
         this.state.isLoading = true;
 
@@ -142,7 +142,7 @@ const NavSearch = {
             const isBodega = window.location.pathname.startsWith('/bodega');
             const searchEndpoint = isBodega ? '/bodega/search' : '/registros/search';
             
-            console.log(` Usando endpoint: ${searchEndpoint}`);
+
 
             // Hacer búsqueda con paginación
             const searchResponse = await fetch(searchEndpoint, {
@@ -162,8 +162,8 @@ const NavSearch = {
             if (searchResponse.ok) {
                 const searchData = await searchResponse.json();
                 const ordenes = searchData.data || searchData.ordenes || [];
-                console.log(' Resultados recibidos:', ordenes.length, 'órdenes');
-                console.log(' Paginación:', searchData.pagination);
+
+
 
                 // Guardar estado de búsqueda
                 this.state.isSearchActive = true;
@@ -187,7 +187,7 @@ const NavSearch = {
                 throw new Error(`HTTP error! status: ${searchResponse.status}`);
             }
         } catch (error) {
-            console.error(' Error en búsqueda:', error);
+
             this.showError('Error al buscar');
         } finally {
             this.state.isLoading = false;
@@ -198,11 +198,11 @@ const NavSearch = {
      * Actualizar tabla dinámicamente sin recargar
      */
     updateTableDynamically(ordenes, pagination) {
-        console.log(' Actualizando tabla dinámicamente');
+
 
         const tableBody = document.querySelector('.table-body');
         if (!tableBody) {
-            console.warn(' Tabla no encontrada');
+
             return;
         }
 
@@ -236,7 +236,7 @@ const NavSearch = {
             this.updatePaginationControls(pagination);
         }
 
-        console.log(' Tabla actualizada');
+
     },
 
     /**
@@ -455,7 +455,7 @@ const NavSearch = {
         const paginationControls = document.getElementById('paginationControls');
 
         if (!paginationInfo || !paginationControls) {
-            console.warn(' Controles de paginación no encontrados');
+
             return;
         }
 
@@ -512,7 +512,7 @@ const NavSearch = {
             });
         });
 
-        console.log(' Paginación actualizada');
+
     },
 
     /**
@@ -525,7 +525,7 @@ const NavSearch = {
         
         // Usar history.replaceState para actualizar URL sin recargar
         window.history.replaceState({ search: query, page: page }, '', url.toString());
-        console.log(' URL actualizada:', url.toString());
+
     },
 
     /**
@@ -578,7 +578,7 @@ const NavSearch = {
      * Seleccionar un resultado
      */
     selectResult(numeroPedido) {
-        console.log(` Seleccionado pedido: ${numeroPedido}`);
+
 
         // Navegar a la vista del pedido
         window.location.href = `/registros/${numeroPedido}`;
@@ -648,7 +648,7 @@ const NavSearch = {
      * Limpiar búsqueda
      */
     clearSearch() {
-        console.log('🗑️ Limpiando búsqueda y filtros');
+
         
         const searchInput = document.getElementById('navSearchInput');
         const clearBtn = document.getElementById('navSearchClear');
@@ -684,7 +684,7 @@ const NavSearch = {
      * Restaurar tabla original sin recargar
      */
     restoreOriginalTable() {
-        console.log('🔄 Restaurando tabla original');
+
         
         const tableBody = document.querySelector('.table-body');
         if (!tableBody) return;
@@ -756,9 +756,9 @@ const NavSearch = {
                 }
             }
 
-            console.log(' Tabla original restaurada');
+
         } catch (error) {
-            console.error(' Error al restaurar tabla:', error);
+
         }
     }
 };

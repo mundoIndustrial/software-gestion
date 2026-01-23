@@ -1,0 +1,293 @@
+/* ============================================
+   MÓDULO BORDADO - SIDEBAR STYLES
+   ============================================ */
+
+/* Evitar herencias conflictivas de asesores */
+.sidebar {
+    width: 280px !important;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+    color: white !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: width 0.3s ease !important;
+    position: relative !important;
+    z-index: 200 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.sidebar.collapsed {
+    width: 80px !important;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.sidebar-header {
+    padding: 1.5rem 1rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    flex-shrink: 0 !important;
+}
+
+.logo-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    text-decoration: none !important;
+}
+
+.logo-wrapper img {
+    height: 40px !important;
+    width: auto !important;
+}
+
+.sidebar-toggle {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: none !important;
+    color: white !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background 0.2s ease !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.sidebar-toggle .material-symbols-rounded {
+    transition: transform 0.3s ease !important;
+    font-size: 1.2rem !important;
+}
+
+.sidebar.collapsed .sidebar-toggle .material-symbols-rounded {
+    transform: scaleX(-1) !important;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+.sidebar-nav {
+    flex: 1 !important;
+    padding: 1rem 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.nav-section {
+    padding: 0.5rem !important;
+    margin: 0 !important;
+}
+
+.nav-section-title {
+    display: block !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    padding: 0.75rem 1rem 0.5rem !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 !important;
+}
+
+.sidebar.collapsed .nav-section-title {
+    display: none !important;
+}
+
+/* ============================================
+   NAV ITEMS
+   ============================================ */
+
+.nav-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 0.75rem 1rem !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-decoration: none !important;
+    border-radius: 8px !important;
+    margin: 0.25rem 0.5rem !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    background: none !important;
+    border: none !important;
+    text-align: left !important;
+    width: auto !important;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+}
+
+.nav-item.active {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4) !important;
+}
+
+.nav-icon {
+    font-size: 1.5rem !important;
+    flex-shrink: 0 !important;
+    color: inherit !important;
+}
+
+.nav-label {
+    flex: 1 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    color: inherit !important;
+}
+
+.sidebar.collapsed .nav-label {
+    display: none !important;
+}
+
+/* ============================================
+   SUBMENU
+   ============================================ */
+
+.nav-submenu-container {
+    position: relative !important;
+    width: 100% !important;
+}
+
+.submenu-toggle {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.submenu-arrow {
+    transition: transform 0.3s ease !important;
+    font-size: 1.2rem !important;
+    flex-shrink: 0 !important;
+    color: inherit !important;
+}
+
+.nav-submenu {
+    display: flex !important;
+    flex-direction: column !important;
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
+    margin: 0.25rem 0.5rem 0.25rem 0.5rem !important;
+    border-radius: 0 8px 8px 0 !important;
+    overflow: hidden !important;
+}
+
+.nav-submenu-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.65rem 1rem 0.65rem 1.5rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-decoration: none !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.nav-submenu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    padding-left: 2rem !important;
+}
+
+.nav-submenu-item.active {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding-left: 2rem !important;
+}
+
+.nav-submenu-item span {
+    display: flex !important;
+    align-items: center !important;
+    color: inherit !important;
+}
+
+.sidebar.collapsed .nav-submenu {
+    display: none !important;
+}
+
+/* ============================================
+   FOOTER (si existe)
+   ============================================ */
+
+.sidebar-footer {
+    padding: 1rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    flex-shrink: 0 !important;
+}
+
+/* ============================================
+   SCROLLBAR PERSONALIZADO
+   ============================================ */
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 3px !important;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 250px !important;
+    }
+
+    .sidebar.collapsed {
+        width: 60px !important;
+    }
+
+    .sidebar-header {
+        padding: 1rem !important;
+    }
+
+    .nav-item {
+        padding: 0.65rem 0.75rem !important;
+        margin: 0.15rem 0.4rem !important;
+    }
+
+    .nav-submenu-item {
+        padding: 0.55rem 0.75rem 0.55rem 1.25rem !important;
+        font-size: 0.85rem !important;
+    }
+}

@@ -18,7 +18,7 @@ function initializeNotifications() {
         // Si pasaron menos de 2 minutos desde que marcamos todas, esperar 60 segundos más
         // Si no, cargar normalmente
         if (timeSinceMarkAllRead < 120000) {
-            console.debug('Esperando antes de recargar notificaciones...');
+
             return;
         }
         loadNotifications();
@@ -115,7 +115,7 @@ async function loadNotifications() {
                 newsItems = result.news || result;
             }
         } catch (e) {
-            console.debug('Timeout o error cargando news:', e.message);
+
         }
         
         // Si no hay datos de news, intentar contador
@@ -138,7 +138,7 @@ async function loadNotifications() {
                     newsItems = data.cotizaciones_para_revisar;
                 }
             } catch (e) {
-                console.debug('Error cargando contador:', e.message);
+
             }
         }
         
@@ -151,7 +151,7 @@ async function loadNotifications() {
             renderNotifications({ total_notificaciones: 0, all_notifications: [] });
         }
     } catch (error) {
-        console.debug('Error cargando notificaciones:', error.message);
+
     }
 }
 
@@ -399,7 +399,7 @@ async function markAllAsRead() {
                 });
                 success = result?.success || true;
             } catch (e) {
-                console.debug('Error con fetchAPI, intentando fetch normal:', e.message);
+
                 success = false;
             }
         }
@@ -416,7 +416,7 @@ async function markAllAsRead() {
             });
             
             if (!response.ok) {
-                console.error('Error en marcar-leidas:', response.status, response.statusText);
+
                 throw new Error(`HTTP Error ${response.status}`);
             }
             
@@ -447,7 +447,7 @@ async function markAllAsRead() {
             }
         }
     } catch (error) {
-        console.error('Error al marcar notificaciones como leídas:', error);
+
     }
 }
 
@@ -542,7 +542,7 @@ ${JSON.stringify(notif.metadata, null, 2)}
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
-                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">👤 Usuario</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">Usuario</h4>
                         <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${notif.user || 'N/A'}</p>
                     </div>
                     <div>

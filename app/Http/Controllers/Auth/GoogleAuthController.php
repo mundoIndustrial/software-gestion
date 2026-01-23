@@ -89,6 +89,10 @@ class GoogleAuthController extends Controller
             if ($roleName === 'supervisor_pedidos') {
                 return redirect()->intended(route('supervisor-pedidos.index'));
             }
+            
+            if ($roleName === 'cartera') {
+                return redirect()->intended(route('cartera.pedidos'));
+            }
         }
         
         return redirect()->intended(route('dashboard'));

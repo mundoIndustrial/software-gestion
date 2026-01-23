@@ -13,7 +13,7 @@ use App\Models\Cliente;
 use Carbon\Carbon;
 
 /**
- * 🚀 COMANDO ÚNICO DE MIGRACIÓN COMPLETA
+ * COMANDO ÚNICO DE MIGRACIÓN COMPLETA
  * 
  * Migra TODA la información de tabla_original + registros_por_orden
  * a la nueva arquitectura normalizada en 6 pasos:
@@ -33,7 +33,7 @@ class MigrateTablaOriginalCompleto extends Command
 {
     protected $signature = 'migrate:tabla-original-completo {--dry-run : Simular sin guardar} {--reset : Limpiar datos migrados primero}';
 
-    protected $description = '🚀 MIGRACIÓN UNIFICADA COMPLETA: tabla_original → Nueva Arquitectura Normalizada';
+    protected $description = 'MIGRACIÓN UNIFICADA COMPLETA: tabla_original → Nueva Arquitectura Normalizada';
 
     protected $stats = [
         'usuarios_creados' => 0,
@@ -134,7 +134,7 @@ class MigrateTablaOriginalCompleto extends Command
     {
         $this->info("\n");
         $this->info(str_repeat("=", 140));
-        $this->info("🚀 MIGRACIÓN UNIFICADA COMPLETA: tabla_original + registros_por_orden → Nueva Arquitectura");
+        $this->info("MIGRACIÓN UNIFICADA COMPLETA: tabla_original + registros_por_orden → Nueva Arquitectura");
         $this->info(str_repeat("=", 140) . "\n");
 
         $dryRun = $this->option('dry-run');
@@ -146,7 +146,7 @@ class MigrateTablaOriginalCompleto extends Command
 
         try {
             // PASO 0: Limpiar SIEMPRE (para evitar duplicados)
-            $this->info("🧹 PASO 0: Limpiando datos existentes para evitar duplicados...\n");
+            $this->info(" PASO 0: Limpiando datos existentes para evitar duplicados...\n");
             $this->limpiarDatos($dryRun);
 
             // PASO 1: Crear Usuarios (Asesoras)

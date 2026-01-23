@@ -201,13 +201,13 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/facturas/{numeroPedido}/download', [App\Http\Controllers\InvoiceController::class, 'download'])->name('invoices.download');
 
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
-    Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::get('/api/ordenes/{id}/procesos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'getProcesos'])->name('api.ordenes.procesos');
     Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');
     Route::post('/api/ordenes/{numero_pedido}/novedades/add', [RegistroOrdenController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
     Route::post('/api/bodega/{pedido}/novedades', [RegistroBodegaController::class, 'updateNovedadesBodega'])->name('api.bodega.novedades');
     Route::post('/api/bodega/{pedido}/novedades/add', [RegistroBodegaController::class, 'addNovedadBodega'])->name('api.bodega.novedades.add');
-    Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');
-    Route::delete('/api/procesos/{id}/eliminar', [App\Http\Controllers\OrdenController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
+    Route::put('/api/procesos/{id}/editar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'editarProceso'])->name('api.procesos.editar');
+    Route::delete('/api/procesos/{id}/eliminar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
     Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
@@ -446,13 +446,11 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::put('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'update'])->name('pedidos.update');
     Route::delete('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'destroy'])->name('pedidos.destroy');
     
-    // Pedidos - APIs (DDD: AsesoresAPIController)
-    Route::post('/pedidos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'store'])->name('pedidos.api.store');
-    Route::post('/pedidos/confirm', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'confirm'])->name('pedidos.api.confirm');
-    Route::post('/pedidos/{id}/anular', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
+    // Pedidos - APIs ahora usan DDD (usar /api/pedidos en lugar de /asesores/pedidos)
+    // Las rutas POST, PATCH, DELETE se han migrado a /api/pedidos en routes/api.php
     Route::get('/pedidos/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
-    Route::get('/pedidos/{id}/recibos-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'obtenerDatosRecibos'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
-    Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
+    Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\Api\PedidoController::class, 'obtenerDetalleCompleto'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
+    Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
     // ========================================
     // SISTEMA DE ÓRDENES CON BORRADORES
@@ -587,7 +585,17 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
 });
 
 // ========================================
-// API ROUTES - LOGO COTIZACIÓN TÉCNICAS (DDD) - Fuera del grupo de asesores
+// API ROUTES - CATÁLOGOS - Tallas, variantes, colores/telas de prendas
+// ========================================
+Route::middleware(['auth', 'role:asesor,admin'])->prefix('api')->name('api.')->group(function () {
+    Route::get('/tallas-disponibles', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasDisponibles'])->name('tallas.disponibles');
+    Route::get('/prenda-pedido/{prendaId}/tallas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasPrenda'])->name('prenda.tallas');
+    Route::get('/prenda-pedido/{prendaId}/variantes', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerVariantesPrenda'])->name('prenda.variantes');
+    Route::get('/prenda-pedido/{prendaId}/colores-telas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerColoresTelasPrenda'])->name('prenda.colores-telas');
+});
+
+// ========================================
+// RUTAS PARA LOGO COTIZACIÓN TÉCNICAS (DDD) - Fuera del grupo de asesores
 // ========================================
 Route::middleware(['auth', 'role:asesor,admin'])->prefix('api/logo-cotizacion-tecnicas')->name('api.logo-cotizacion-tecnicas.')->group(function () {
     Route::get('tipos-disponibles', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'tiposDisponibles'])->name('tipos');
@@ -683,6 +691,8 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/materiales', [\App\Http\Controllers\Insumos\InsumosController::class, 'materiales'])->name('materiales.index');
     Route::post('/materiales/{pedido}/guardar', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
     Route::post('/materiales/{pedido}/eliminar', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
+    Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetraje'])->name('materiales.guardar-ancho-metraje');
+    Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetraje'])->name('materiales.obtener-ancho-metraje');
     Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
     Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\MaterialesController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
@@ -748,6 +758,34 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     
     // Eliminar imagen de prenda
     Route::delete('/imagen/{tipo}/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'deleteImage'])->name('imagen.eliminar');
+});
+
+// ========================================
+// RUTAS PARA MÓDULO BORDADO
+// ========================================
+Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bordado.')->group(function () {
+    // Listar pedidos del módulo Bordado
+    Route::get('/', function () {
+        return view('bordado.index');
+    })->name('index');
+
+    // Ruta legada de cotizaciones (redireccionar a lista)
+    Route::get('/cotizaciones', function () {
+        return redirect()->route('bordado.cotizaciones.lista');
+    })->name('cotizaciones');
+
+    // Cotizaciones - Submenú
+    Route::prefix('cotizaciones')->name('cotizaciones.')->group(function () {
+        // Lista de cotizaciones
+        Route::get('/lista', function () {
+            return view('bordado.cotizaciones.lista');
+        })->name('lista');
+
+        // Medidas
+        Route::get('/medidas', function () {
+            return view('bordado.cotizaciones.medidas');
+        })->name('medidas');
+    });
 });
 
 // ========================================
@@ -916,6 +954,33 @@ Route::middleware(['auth', 'role:asesor'])->prefix('api/pedidos')->name('api.ped
         ->name('guardar-json');
     Route::post('/validar-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'validar'])
         ->name('validar-json');
+});
+
+// ========================================
+// RUTAS PARA CARTERA - PEDIDOS
+// ========================================
+Route::middleware(['auth', 'role:cartera,admin'])->prefix('cartera')->name('cartera.')->group(function () {
+    // Gestión de pedidos por aprobar
+    Route::get('/pedidos', function () {
+        return view('cartera-pedidos.cartera-pedidos-supervisor');
+    })->name('pedidos');
+});
+
+// ========================================
+// API CARTERA - PEDIDOS
+// ========================================
+Route::middleware(['auth', 'role:cartera,admin'])->prefix('api/cartera')->name('api.cartera.')->group(function () {
+    // GET pedidos por estado (cartera)
+    Route::get('/pedidos', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerPedidos'])->name('list');
+    
+    // POST aprobar pedido
+    Route::post('/pedidos/{id}/aprobar', [App\Http\Controllers\CarteraPedidosController::class, 'aprobarPedido'])->name('aprobar');
+    
+    // POST rechazar pedido
+    Route::post('/pedidos/{id}/rechazar', [App\Http\Controllers\CarteraPedidosController::class, 'rechazarPedido'])->name('rechazar');
+    
+    // GET datos de factura para ver en modal
+    Route::get('/pedidos/{id}/factura-datos', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerDatosFactura'])->name('factura-datos');
 });
 
 // ========================================

@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility)
  */
 
-console.log(' Cargando CellClickHandler...');
+
 
 const CellClickHandler = {
     /**
@@ -22,10 +22,10 @@ const CellClickHandler = {
      * Inicializar el módulo
      */
     initialize() {
-        console.log(' Inicializando CellClickHandler...');
+
         this._attachCellClickListeners();
         this._listenForTableUpdates();
-        console.log(' CellClickHandler inicializado');
+
     },
 
     /**
@@ -58,7 +58,7 @@ const CellClickHandler = {
             if (typeof CellEditModal !== 'undefined') {
                 CellEditModal.open(orderId, column, currentValue);
             } else {
-                console.error(' CellEditModal no disponible');
+
             }
         });
     },
@@ -70,7 +70,7 @@ const CellClickHandler = {
         document.addEventListener('cell-edit-save', async (e) => {
             const { orderId, column, newValue, oldValue } = e.detail;
 
-            console.log(`🔄 Guardando cambios: orden=${orderId}, columna=${column}`);
+
 
             try {
                 // Enviar actualización al servidor
@@ -90,7 +90,7 @@ const CellClickHandler = {
                 }
 
                 const data = await response.json();
-                console.log(' Cambios guardados:', data);
+
 
                 // Actualizar la celda en la tabla
                 this._updateCellInTable(orderId, column, newValue);
@@ -100,7 +100,7 @@ const CellClickHandler = {
                     NotificationModule.showSuccess(`${this._getColumnLabel(column)} actualizado correctamente`);
                 }
             } catch (error) {
-                console.error(' Error al guardar cambios:', error);
+
 
                 // Notificar error
                 if (typeof NotificationModule !== 'undefined') {
@@ -187,7 +187,7 @@ const CellClickHandler = {
         const span = cellContent.querySelector('span');
         if (span) {
             span.textContent = newValue;
-            console.log(` Celda actualizada: ${column} = ${newValue}`);
+
         }
     },
 
@@ -211,4 +211,4 @@ document.addEventListener('DOMContentLoaded', () => {
     CellClickHandler.initialize();
 });
 
-console.log(' CellClickHandler cargado');
+

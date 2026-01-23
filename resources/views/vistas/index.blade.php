@@ -352,7 +352,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error en búsqueda:', error);
                     resultsContent.innerHTML = '<div class="no-data"><h3>Error en la búsqueda</h3><p>Por favor, intenta de nuevo.</p></div>';
                 });
             }
@@ -437,7 +436,6 @@
                 });
             })
             .catch(error => {
-                console.error('Error al cargar página:', error);
                 resultsContainer.style.opacity = '1';
                 resultsContainer.style.pointerEvents = 'auto';
                 isLoadingPagination = false;
@@ -539,7 +537,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     cell.innerHTML = originalContent;
                     alert('Error al guardar los cambios');
                 });
@@ -637,8 +634,6 @@
         // ============================================================
         function construirDescripcionDinamica() {
             const celdas = document.querySelectorAll('.descripcion-dinamica');
-            console.log(' [DESCRIPCION] Total de celdas encontradas:', celdas.length);
-            
             celdas.forEach((cell, index) => {
                 const descripcion = cell.dataset.descripcion || '';
                 const color = cell.dataset.color || '';
@@ -663,13 +658,9 @@
 
                 // Si no hay datos de variantes, mostrar solo la descripción simple
                 if (!color && !tela && !tipoManga) {
-                    console.log(` [DESCRIPCION] Celda ${index + 1}: Sin datos de variantes, mostrando descripción simple`);
                     cell.innerHTML = descripcion || '-';
                     return;
                 }
-
-                console.log(` [DESCRIPCION] Celda ${index + 1}: Construyendo descripción dinámica`);
-
                 // Construir descripción dinámica
                 let html = '';
 
@@ -733,3 +724,4 @@
         });
     </script>
 @endsection
+

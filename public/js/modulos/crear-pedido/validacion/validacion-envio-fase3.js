@@ -174,13 +174,13 @@
                             document.querySelector('meta[name="csrf-token"]')?.content;
 
             if (!csrfToken) {
-                console.error(' Token CSRF no encontrado');
+
                 mostrarError('Error', 'Token de seguridad no encontrado');
                 reject(new Error('CSRF token missing'));
                 return;
             }
 
-            console.log('📤 Enviando datos al servidor:', datos);
+
 
             // Usar FormData para enviar archivos correctamente
             const formData = new FormData();
@@ -287,7 +287,7 @@
                 return response.json();
             })
             .then(data => {
-                console.log(' Respuesta del servidor:', data);
+
 
                 if (data.success) {
                     mostrarExito(
@@ -300,7 +300,7 @@
                 }
             })
             .catch(error => {
-                console.error(' Error al enviar datos:', error);
+
                 mostrarError(
                     'Error al crear pedido',
                     error.message || 'Ocurrió un error inesperado'
@@ -322,14 +322,14 @@
         const validacion = window.validarFormularioConGestores();
 
         if (!validacion.valido) {
-            console.warn(' Validación fallida:', validacion.errores);
+
             window.mostrarErroresValidacion(validacion.errores);
             return Promise.reject('Validación fallida');
         }
 
         // 2. PREPARAR DATOS
         const datos = window.prepararDatosParaEnvio();
-        console.log(' Datos preparados para envío:', datos);
+
 
         // 3. ENVIAR
         return window.enviarDatosAlServidor(datos, endpoint)

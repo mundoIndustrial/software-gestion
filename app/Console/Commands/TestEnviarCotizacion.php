@@ -27,7 +27,7 @@ class TestEnviarCotizacion extends Command
             return;
         }
         
-        $this->info("👤 Usuario: {$usuario->name} (ID: {$usuario->id})");
+        $this->info("Usuario: {$usuario->name} (ID: {$usuario->id})");
         
         // 1. GUARDAR COMO BORRADOR
         $this->info("\n PASO 1: Guardar como BORRADOR...");

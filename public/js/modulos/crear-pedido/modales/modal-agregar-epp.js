@@ -59,7 +59,7 @@ async function crearEPPNuevoYAgregar() {
     try {
         await window.EppModalInterface?.crearEPP();
     } catch (error) {
-        console.error('Error creando EPP:', error);
+
     }
 }
 
@@ -294,7 +294,7 @@ async function crearEPPNuevoYAgregar() {
         actualizarEstilosBotonEPP();
         
     } catch (error) {
-        console.error('Error creando EPP:', error);
+
         // Actualizar modal a error
         actualizarModalAError('Error al crear EPP', error.message);
     }

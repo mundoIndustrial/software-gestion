@@ -16,7 +16,7 @@ class SetupSupervisorPedidosSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->command->info('🚀 Iniciando configuración de Supervisor de Pedidos...');
+        $this->command->info('Iniciando configuración de Supervisor de Pedidos...');
         $this->command->newLine();
 
         // Paso 1: Crear el rol
@@ -25,7 +25,7 @@ class SetupSupervisorPedidosSeeder extends Seeder
         $this->command->newLine();
 
         // Paso 2: Asignar el rol a usuarios
-        $this->command->info('👤 Paso 2: Asignando rol a usuarios...');
+        $this->command->info('Paso 2: Asignando rol a usuarios...');
         $this->call(AssignSupervisorPedidosRoleSeeder::class);
         $this->command->newLine();
 

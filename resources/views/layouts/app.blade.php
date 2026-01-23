@@ -163,53 +163,35 @@
         <script>
             // Inicializar búsqueda para cotizaciones pendientes
             function initSearchBar() {
-                console.log(' Intentando inicializar búsqueda...');
-                console.log('🌐 Ruta actual:', window.location.pathname);
-                
+
                 // Buscar el input de múltiples formas
                 let searchInput = document.getElementById('searchInput');
-                console.log('Por ID searchInput:', searchInput);
-                
                 if (!searchInput) {
                     // Intentar buscar por clase
                     searchInput = document.querySelector('.nav-search-input');
-                    console.log('Por clase nav-search-input:', searchInput);
                 }
                 
                 if (!searchInput) {
                     // Listar todos los inputs en el nav
                     const allInputs = document.querySelectorAll('input');
-                    console.log('Todos los inputs en la página:', allInputs);
                     const navInputs = document.querySelectorAll('.nav-search-wrapper input, .nav-search-container input');
-                    console.log('Inputs en nav-search:', navInputs);
                     if (navInputs.length > 0) {
                         searchInput = navInputs[0];
-                        console.log('Usando primer input de nav-search:', searchInput);
                     }
                 }
-                
-                console.log('Función disponible:', typeof aplicarBusquedaYFiltros);
-                
                 if (searchInput && typeof aplicarBusquedaYFiltros === 'function') {
                     searchInput.addEventListener('input', aplicarBusquedaYFiltros);
-                    console.log(' Búsqueda inicializada correctamente en input:', searchInput.id || searchInput.className);
                     return true;
                 } else {
-                    console.error(' No se pudo inicializar la búsqueda:', {
-                        inputExists: !!searchInput,
-                        functionExists: typeof aplicarBusquedaYFiltros === 'function'
-                    });
                     return false;
                 }
             }
             
             // Intentar múltiples veces para asegurar que el DOM esté listo
             document.addEventListener('DOMContentLoaded', function() {
-                console.log(' DOMContentLoaded disparado');
                 if (!initSearchBar()) {
                     // Si falla, intentar después de un pequeño delay
                     setTimeout(function() {
-                        console.log('⏰ Reintentando inicialización después de delay...');
                         initSearchBar();
                     }, 100);
                 }
@@ -217,7 +199,6 @@
             
             // También intentar cuando la ventana esté completamente cargada
             window.addEventListener('load', function() {
-                console.log('🪟 Window load disparado');
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput && !searchInput.hasAttribute('data-initialized')) {
                     searchInput.setAttribute('data-initialized', 'true');
@@ -227,3 +208,4 @@
         </script>
     @endif
 @endpush
+

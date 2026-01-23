@@ -15,18 +15,18 @@
  * @returns {string} HTML de la tarjeta
  */
 function generarTarjetaPrendaReadOnly(prenda, indice) {
-    console.log(' [PRENDA-CARD-READONLY] Generando tarjeta para prenda índice:', indice);
+
     
     // Verificar que servicios estén disponibles
     if (!window.PrendaCardService) {
-        console.error(' ✗ PrendaCardService no disponible');
+
         return `<div class="error">Error: servicios no cargados</div>`;
     }
 
     // Usar PrendaCardService para generar HTML
     const htmlTarjeta = window.PrendaCardService.generar(prenda, indice);
     
-    console.log(' [PRENDA-CARD-READONLY] HTML generado correctamente');
+
     return htmlTarjeta;
 }
 
@@ -51,15 +51,15 @@ if (document.readyState === 'loading') {
  * Después de generar y insertar una tarjeta en el DOM, inicializar event listeners
  */
 function inicializarTarjetaReadOnly(tarjeta, prenda, indice, callbacks = {}) {
-    console.log(' [PRENDA-CARD-READONLY] Inicializando tarjeta índice:', indice);
+
     
     if (!window.PrendaCardHandlers) {
-        console.error(' ✗ PrendaCardHandlers no disponible');
+
         return;
     }
     
     // Delegar toda la gestión de eventos al servicio
     window.PrendaCardHandlers.inicializar(tarjeta, prenda, indice, callbacks);
 }
-console.log(' [PRENDA-CARD-READONLY] Componente refactorizado - Versión modular con servicios');
-console.log(' Usa: PrendaCardService (HTML), PrendaCardHandlers (eventos)');
+
+

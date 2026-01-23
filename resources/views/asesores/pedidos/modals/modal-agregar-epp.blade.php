@@ -238,12 +238,6 @@ function agregarEPPAlPedido() {
     const observaciones = document.getElementById('observacionesEPP').value;
 
     // Simulación de agregar al pedido
-    console.log('EPP Agregado:', {
-        producto: productoSeleccionadoEPP,
-        cantidad: cantidad || 1,
-        observaciones: observaciones || 'Sin observaciones'
-    });
-
     alert(`EPP "${productoSeleccionadoEPP.nombre}" agregado al pedido exitosamente.`);
     cerrarModalAgregarEPP();
 }
@@ -260,3 +254,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+

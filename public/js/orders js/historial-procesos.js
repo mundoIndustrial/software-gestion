@@ -26,7 +26,7 @@ class HistorialProcesos {
 
             return await response.json();
         } catch (error) {
-            console.error('Error al obtener historial:', error);
+
             return null;
         }
     }
@@ -195,5 +195,5 @@ class HistorialProcesos {
 // Inicializar instancia global
 window.historialProcesos = new HistorialProcesos();
 
-console.log(' Sistema de historial de procesos cargado');
+
 

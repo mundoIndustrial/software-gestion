@@ -314,7 +314,6 @@ function abrirModalComparar(ordenId) {
             overlay.classList.add('active');
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('Error al cargar la comparación');
         });
 }
@@ -491,3 +490,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+

@@ -25,7 +25,7 @@ class ItemFormCollector {
         if (window.gestionItemsUI && window.gestionItemsUI.obtenerItemsOrdenados) {
             const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
             items = items.concat(itemsOrdenados);
-            console.log(' [recolectarDatosPedido] Items desde GestionItemsUI:', itemsOrdenados.length);
+
         }
         
         // Obtener EPPs desde window.itemsPedido (si no están ya en GestionItemsUI)
@@ -33,11 +33,11 @@ class ItemFormCollector {
             const eppsDirectos = window.itemsPedido.filter(item => item.tipo === 'epp');
             if (eppsDirectos.length > 0) {
                 items = items.concat(eppsDirectos);
-                console.log(' [recolectarDatosPedido] EPPs desde window.itemsPedido:', eppsDirectos.length);
+
             }
         }
         
-        console.log(' [recolectarDatosPedido] Items totales recibidos:', items.length);
+
         
         const itemsFormato = items.map((item, itemIndex) => {
             if (item.tipo === 'epp') {
@@ -56,10 +56,10 @@ class ItemFormCollector {
                 // Incluir imágenes de EPP para que se envíen en FormData
                 if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
                     epp.imagenes = item.imagenes;
-                    console.log(` [Item ${itemIndex}] EPP con ${item.imagenes.length} imágenes`);
+
                 }
                 
-                console.log(` [Item ${itemIndex}] EPP procesado:`, epp);
+
                 return epp;
             }
             
@@ -76,12 +76,12 @@ class ItemFormCollector {
             
             if (item.pedido_produccion_id) {
                 baseItem.pedido_produccion_id = item.pedido_produccion_id;
-                console.log(` [Item ${itemIndex}] Incluido pedido_produccion_id: ${item.pedido_produccion_id}`);
+
             }
             
             if (item.imagenes && item.imagenes.length > 0) {
                 baseItem.imagenes = item.imagenes;
-                console.log(` [Item ${itemIndex}] Imágenes: ${item.imagenes.length}`);
+
             }
             
             if (item.tipo === 'cotizacion') {
@@ -95,11 +95,11 @@ class ItemFormCollector {
         
         // AGREGAR PRENDAS SIN COTIZACIÓN
         if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.obtenerActivas().length > 0) {
-            console.log(' Integrando prendas sin cotización (tipo PRENDA)...');
+
             const prendasSinCot = window.gestorPrendaSinCotizacion.obtenerActivas();
             
             prendasSinCot.forEach((prenda, prendaIndex) => {
-                console.log(`Procesando prenda sin cotización ${prendaIndex}:`, prenda);
+
                 
                 const cantidadTalla = {};
                 if (prenda.generosConTallas && typeof prenda.generosConTallas === 'object') {
@@ -192,7 +192,7 @@ class ItemFormCollector {
                 }
                 
                 itemsFormato.push(itemSinCot);
-                console.log(' Prenda sin cotización agregada:', itemSinCot);
+
             });
         }
         
@@ -203,7 +203,7 @@ class ItemFormCollector {
             items: itemsFormato
         };
         
-        console.log(' Objeto pedido final a enviar:', pedidoFinal);
+
         return pedidoFinal;
     }
 
@@ -216,7 +216,7 @@ class ItemFormCollector {
             const procesador = this.procesadores[item.tipo];
             
             if (!procesador) {
-                console.warn(`No hay procesador para tipo: ${item.tipo}`);
+
                 return item;
             }
 

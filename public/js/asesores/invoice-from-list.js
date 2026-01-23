@@ -3,14 +3,14 @@
  * Reutiliza la función generarHTMLFactura de invoice-preview-live.js
  */
 
-console.log(' [INVOICE LIST] Cargando invoice-from-list.js');
+
 
 /**
  * Abre la vista previa de factura para un pedido guardado
  * Obtiene los datos del servidor y los muestra
  */
 window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
-    console.log(' [FACTURA] Abriendo factura para pedido:', numeroPedido);
+
     
     try {
         // Mostrar spinner de carga
@@ -30,22 +30,22 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         }
         
         const datos = await response.json();
-        console.log(' [FACTURA] Datos del pedido obtenidos:', datos);
+
         
         // Ocultar spinner
         ocultarCargando();
         
         // Usar el modal de VISUALIZACIÓN bonito con botones de PDF e imprimir (NO el de edición)
         if (typeof crearModalFacturaDesdeListaPedidos === 'function') {
-            console.log(' [FACTURA] Usando modal de VISUALIZACIÓN bonito con botones de PDF e imprimir');
+
             crearModalFacturaDesdeListaPedidos(datos);
         } else {
-            console.warn(' [FACTURA] Función crearModalFacturaDesdeListaPedidos no encontrada');
+
             abrirModalEditarPedido(pedidoId, datos, 'ver');  // Fallback al modal simple
         }
         
     } catch (error) {
-        console.error(' [FACTURA] Error cargando factura:', error);
+
         ocultarCargando();
         
         mostrarErrorNotificacion(
@@ -59,7 +59,7 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
  * Crea y muestra el modal con la factura
  */
 function crearModalFacturaDesdeListaPedidos(datos) {
-    console.log(' [FACTURA] Creando modal de factura');
+
     
     // Agregar estilos y animaciones al documento si no existen
     if (!document.getElementById('factura-styles')) {
@@ -156,7 +156,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
             }
         `;
         document.head.appendChild(styleSheet);
-        console.log(' [FACTURA] Estilos y animaciones agregados');
+
     }
     
     // Usar la función existente de invoice-preview-live.js
@@ -164,12 +164,12 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     if (typeof generarHTMLFactura === 'function') {
         try {
             htmlFactura = generarHTMLFactura(datos);
-            console.log(' [FACTURA] HTML generado correctamente, longitud:', htmlFactura.length);
+
             if (!htmlFactura || htmlFactura.trim().length === 0) {
                 throw new Error('HTML vacío generado');
             }
         } catch (error) {
-            console.error(' [FACTURA] Error al generar HTML:', error);
+
             htmlFactura = `
                 <div style="padding: 30px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; color: #856404;">
                     <h3>Error al generar factura</h3>
@@ -185,7 +185,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
             `;
         }
     } else {
-        console.warn('  [FACTURA] generarHTMLFactura no encontrada, usando fallback simple');
+
         htmlFactura = `<div style="padding: 30px; background: #f3f4f6; border-radius: 6px;"><h3>Información del Pedido</h3><p><strong>Pedido #${datos.numero_pedido}</strong></p><p>Cliente: ${datos.cliente}</p><p>Asesor: ${datos.asesora}</p></div>`;
     }
     
@@ -352,15 +352,15 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     
     try {
         contenido.innerHTML = htmlFactura;
-        console.log(' [FACTURA] HTML inyectado en el contenedor, elementos:', contenido.children.length);
+
         
         // Verificar que el contenido se inyectó correctamente
         if (contenido.innerHTML.trim().length === 0) {
-            console.error(' [FACTURA] ADVERTENCIA: innerHTML vacío después de asignar');
+
             contenido.innerHTML = '<p style="color: red;">Error: el contenido de la factura no se pudo renderizar</p>';
         }
     } catch (error) {
-        console.error(' [FACTURA] Error inyectando HTML:', error);
+
         contenido.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
     }
     
@@ -383,7 +383,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
         }
     };
     
-    console.log(' [FACTURA] Modal creado exitosamente');
+
 }
 
 /**
@@ -518,7 +518,7 @@ function mostrarErrorNotificacion(titulo, mensaje) {
  * Abre la vista de recibos dinámicos para un pedido
  */
 window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex = null) {
-    console.log(' [RECIBOS] Abriendo recibos para pedido:', numeroPedido, 'prenda:', prendasIndex);
+
     
     try {
         // Mostrar spinner de carga
@@ -538,7 +538,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         }
         
         const datos = await response.json();
-        console.log(' [RECIBOS] Datos del pedido obtenidos:', datos);
+
         
         // Ocultar spinner
         ocultarCargando();
@@ -547,7 +547,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         crearModalRecibosDesdeListaPedidos(datos, prendasIndex);
         
     } catch (error) {
-        console.error(' [RECIBOS] Error cargando recibos:', error);
+
         ocultarCargando();
         
         mostrarErrorNotificacion(
@@ -562,7 +562,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
  * Usa el componente order-detail-modal.blade.php existente
  */
 function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
-    console.log(' [RECIBOS] Creando modal de recibos usando order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
+
     
     // Crear overlay
     const overlay = document.createElement('div');
@@ -630,7 +630,7 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
  * Carga el componente order-detail-modal e inyecta los datos
  */
 function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null) {
-    console.log(' [RECIBOS] Inyectando componente order-detail-modal', prendasIndex !== null ? `para prenda ${prendasIndex}` : '');
+
     
     // Usar directamente el HTML que funciona (sin fetch, para evitar problemas con Blade)
     contenedor.innerHTML = `
@@ -716,7 +716,7 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
         
         // Cargar ReceiptManager
         if (typeof ReceiptManager === 'undefined') {
-            console.log(' [RECIBOS] Cargando ReceiptManager...');
+
             cargarReceiptManager(() => {
                 window.receiptManager = new ReceiptManager(datos, prendasIndex);
             });
@@ -734,7 +734,7 @@ function cargarReceiptManager(callback) {
     script.src = '/js/asesores/receipt-manager.js';
     script.onload = callback;
     script.onerror = () => {
-        console.error(' [RECIBOS] Error cargando ReceiptManager');
+
         mostrarErrorNotificacion('Error', 'No se pudo cargar el gestor de recibos');
     };
     document.head.appendChild(script);
@@ -750,4 +750,4 @@ function cerrarModalRecibos() {
     }
 }
 
-console.log(' [INVOICE LIST] invoice-from-list.js cargado correctamente');
+

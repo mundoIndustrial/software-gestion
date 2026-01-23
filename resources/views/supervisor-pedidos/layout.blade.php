@@ -411,7 +411,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error cargando notificaciones:', error);
                     document.getElementById('notificationList').innerHTML = `
                         <div class="notification-empty" style="padding: 1rem; text-align: center; color: #e74c3c;">
                             <p>Error al cargar notificaciones</p>
@@ -428,8 +427,11 @@
 
         // Cargar notificaciones al iniciar página
         document.addEventListener('DOMContentLoaded', function() {
-            cargarNotificacionesPendientes();
-            cargarContadorOrdenesPendientes();
+            // No ejecutar en cartera (será sobrescrito)
+            if (typeof isCartera === 'undefined' || !isCartera) {
+                cargarNotificacionesPendientes();
+                cargarContadorOrdenesPendientes();
+            }
         });
 
         /**
@@ -471,13 +473,20 @@
         }
 
         // Cargar contador al cargar la página
-        document.addEventListener('DOMContentLoaded', cargarContadorOrdenesPendientes);
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof isCartera === 'undefined' || !isCartera) {
+                cargarContadorOrdenesPendientes();
+            }
+        });
 
-        // Recargar contador cada 30 segundos
-        setInterval(cargarContadorOrdenesPendientes, 30000);
+        // Recargar contador cada 30 segundos (solo en supervisores)
+        if (typeof isCartera === 'undefined' || !isCartera) {
+            setInterval(cargarContadorOrdenesPendientes, 30000);
+        }
     </script>
 
     @stack('scripts')
 
 </body>
 </html>
+

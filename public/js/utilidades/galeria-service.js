@@ -21,11 +21,11 @@ window.Galeria = {
      * Muestra la factura de costura (oculta galería)
      */
     toggleFactura: function(modalWrapperId, btnFacturaId, btnGaleriaId) {
-        console.log(' [GALERIA] Alternando a vista de factura');
+
         
         const modalWrapper = document.getElementById(modalWrapperId);
         if (!modalWrapper) {
-            console.error(' [GALERIA] No se encontró el wrapper del modal');
+
             return;
         }
         
@@ -51,18 +51,18 @@ window.Galeria = {
         modalWrapper.style.height = 'auto';
         
         this._actualizarBotones(btnFacturaId, btnGaleriaId, true);
-        console.log('✓ [GALERIA] Vista de factura activada');
+
     },
     
     /**
      * Alterna a vista de galería de costura
      */
     toggleGaleria: function(modalWrapperId, pedidoElementId, btnFacturaId, btnGaleriaId) {
-        console.log(' [GALERIA] Alternando a vista de galería');
+
         
         const modalWrapper = document.getElementById(modalWrapperId);
         if (!modalWrapper) {
-            console.error(' [GALERIA] No se encontró el wrapper del modal');
+
             return;
         }
         
@@ -75,7 +75,7 @@ window.Galeria = {
         const container = modalWrapper.querySelector('.order-detail-modal-container');
         
         if (!container) {
-            console.error(' [GALERIA] No se encontró el contenedor modal');
+
             return;
         }
         
@@ -98,7 +98,7 @@ window.Galeria = {
         // Extraer número de pedido
         const pedidoElement = document.getElementById(pedidoElementId);
         if (!pedidoElement) {
-            console.error(' [GALERIA] No se encontró elemento de pedido');
+
             galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
             return;
         }
@@ -107,7 +107,7 @@ window.Galeria = {
         const pedido = pedidoMatch ? pedidoMatch[0] : null;
         
         if (!pedido) {
-            console.error(' [GALERIA] No se pudo extraer número de pedido');
+
             galeria.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error: Número de pedido no disponible</p>';
             return;
         }
@@ -115,7 +115,7 @@ window.Galeria = {
         // Cargar imágenes
         this._cargarImagenes(galeria, pedido);
         this._actualizarBotones(btnFacturaId, btnGaleriaId, false);
-        console.log('✓ [GALERIA] Vista de galería activada para pedido:', pedido);
+
     },
     
     /**
@@ -126,7 +126,7 @@ window.Galeria = {
         const pedidoLimpio = pedido.replace('#', '');
         const url = `/registros/${pedidoLimpio}/images`;
         
-        console.log('📥 [GALERIA] Cargando imágenes desde:', url);
+
         
         fetch(url)
             .then(response => response.json())
@@ -134,7 +134,7 @@ window.Galeria = {
                 this._construirGaleria(container, data);
             })
             .catch(error => {
-                console.error(' [GALERIA] Error cargando imágenes:', error);
+
                 container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">Error al cargar las fotos. Intenta nuevamente.</p>';
             });
     },
@@ -180,7 +180,7 @@ window.Galeria = {
         }
         
         container.innerHTML = html;
-        console.log('✓ [GALERIA] Galería construida con', totalFotos, 'fotos');
+
     },
     
     /**
@@ -226,11 +226,11 @@ window.Galeria = {
      * Muestra una imagen en grande
      */
     mostrarImagenGrande: function(index) {
-        console.log(' [IMAGEN] Mostrando imagen', index + 1, 'de', this.allImages.length);
+
         this.currentImageIndex = index;
         
         if (!this.allImages || this.allImages.length === 0) {
-            console.error(' [IMAGEN] No hay imágenes disponibles');
+
             return;
         }
         
@@ -326,4 +326,3 @@ window.Galeria = {
     }
 };
 
-console.log('✓ [GALERIA-SERVICE] Cargado correctamente');

@@ -32,7 +32,7 @@ class PedidosEditableWebClient {
 
             return data;
         } catch (error) {
-            console.error(' Error en agregarItem:', error);
+
             throw error;
         }
     }
@@ -59,7 +59,7 @@ class PedidosEditableWebClient {
 
             return data;
         } catch (error) {
-            console.error(' Error en eliminarItem:', error);
+
             throw error;
         }
     }
@@ -84,7 +84,7 @@ class PedidosEditableWebClient {
 
             return data;
         } catch (error) {
-            console.error(' Error en obtenerItems:', error);
+
             throw error;
         }
     }
@@ -116,7 +116,7 @@ class PedidosEditableWebClient {
 
             return data;
         } catch (error) {
-            console.error(' Error en validarPedido:', error);
+
             return {
                 valid: false,
                 errores: ['Error al validar el pedido'],
@@ -130,11 +130,11 @@ class PedidosEditableWebClient {
      */
     async crearPedido(pedidoData) {
         try {
-            console.log(' Enviando pedido:', pedidoData);
+
             
             // Detectar si hay procesos con archivos
             const tieneArchivos = this.tieneArchivosEnPedido(pedidoData);
-            console.log(' ¿Pedido tiene archivos?', tieneArchivos);
+
             
             let fetchConfig;
             
@@ -149,7 +149,7 @@ class PedidosEditableWebClient {
                     },
                     body: formData,
                 };
-                console.log(' Enviando como FormData');
+
             } else {
                 //  Usar JSON cuando no hay archivos (más simple)
                 fetchConfig = {
@@ -160,7 +160,7 @@ class PedidosEditableWebClient {
                     },
                     body: JSON.stringify(pedidoData),
                 };
-                console.log(' Enviando como JSON');
+
             }
             
             const response = await fetch(`${this.baseUrl}/crear`, fetchConfig);
@@ -169,13 +169,13 @@ class PedidosEditableWebClient {
 
             if (!response.ok) {
                 // Mostrar errores detallados
-                console.error(' Errores del servidor:', data.errores || data.message);
-                console.error(' Respuesta completa:', data);
+
+
                 
                 if (data.errores && typeof data.errores === 'object') {
                     // Errores por campo
                     Object.entries(data.errores).forEach(([field, messages]) => {
-                        console.error(`   ${field}:`, messages);
+
                     });
                 }
                 
@@ -184,7 +184,7 @@ class PedidosEditableWebClient {
 
             return data;
         } catch (error) {
-            console.error(' Error en crearPedido:', error);
+
             throw error;
         }
     }
@@ -202,7 +202,7 @@ class PedidosEditableWebClient {
                     if (procesoData?.imagenes && Array.isArray(procesoData.imagenes)) {
                         for (const img of procesoData.imagenes) {
                             if (img instanceof File) {
-                                console.log(` Archivo encontrado en proceso ${tipoProceso}:`, img.name);
+
                                 return true;
                             }
                         }
@@ -215,10 +215,10 @@ class PedidosEditableWebClient {
                 for (const imgObj of item.imagenes) {
                     // Las imágenes pueden ser File directo o objeto con propiedad 'file'
                     if (imgObj instanceof File) {
-                        console.log(` Archivo encontrado en imagen de prenda:`, imgObj.name);
+
                         return true;
                     } else if (imgObj.file instanceof File) {
-                        console.log(` Archivo encontrado en imagen de prenda:`, imgObj.file.name);
+
                         return true;
                     }
                 }
@@ -230,10 +230,10 @@ class PedidosEditableWebClient {
                     if (tela.imagenes && Array.isArray(tela.imagenes)) {
                         for (const telaImgObj of tela.imagenes) {
                             if (telaImgObj instanceof File) {
-                                console.log(` Archivo encontrado en tela:`, telaImgObj.name);
+
                                 return true;
                             } else if (telaImgObj.file instanceof File) {
-                                console.log(` Archivo encontrado en tela:`, telaImgObj.file.name);
+
                                 return true;
                             }
                         }
@@ -262,7 +262,7 @@ class PedidosEditableWebClient {
             pedidoData.items.forEach((item, itemIdx) => {
                 //  SI ES EPP, PROCESARLO DIFERENTE
                 if (item.tipo === 'epp') {
-                    console.log(` Procesando EPP en FormData: índice ${itemIdx}`);
+
                     
                     // Usar 'items' en lugar de 'prendas' para EPP
                     formData.append(`items[${itemIdx}][tipo]`, 'epp');
@@ -282,7 +282,7 @@ class PedidosEditableWebClient {
                                     `items[${itemIdx}][imagenes][${imgIdx}]`,
                                     archivo
                                 );
-                                console.log(`📷 Agregado imagen EPP: ${imgIdx} = ${archivo.name}`);
+
                             }
                         });
                     }
@@ -370,7 +370,7 @@ class PedidosEditableWebClient {
                                             `prendas[${itemIdx}][procesos][${tipoProceso}][imagenes][${imgIdx}]`,
                                             archivo
                                         );
-                                        console.log(`📷 Agregado archivo: ${tipoProceso}/${imgIdx} = ${archivo.name}`);
+
                                     }
                                 });
                             }
@@ -388,7 +388,7 @@ class PedidosEditableWebClient {
                                 `prendas[${itemIdx}][imagenes][${imgIdx}]`,
                                 archivo
                             );
-                            console.log(`📷 Agregado imagen prenda: ${imgIdx} = ${archivo.name}`);
+
                         }
                     });
                 }
@@ -405,7 +405,7 @@ class PedidosEditableWebClient {
                                         `prendas[${itemIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`,
                                         archivo
                                     );
-                                    console.log(`📷 Agregado imagen tela: ${telaIdx}/${imgIdx} = ${archivo.name}`);
+
                                 }
                             });
                         }
@@ -452,10 +452,10 @@ class PedidosEditableWebClient {
                 throw new Error(data.message || 'Error al subir imágenes');
             }
 
-            console.log(' Imágenes subidas correctamente:', data.rutas);
+
             return data;
         } catch (error) {
-            console.error(' Error en subirImagenesPrenda:', error);
+
             throw error;
         }
     }

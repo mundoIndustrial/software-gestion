@@ -19,7 +19,7 @@ use App\Infrastructure\Http\Controllers\CotizacionController;
 use App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController;
 use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
 use App\Http\Controllers\PDFCotizacionController;
-use App\Http\Controllers\OrdenController;
+use App\Infrastructure\Http\Controllers\CotizacionController as CotizacionControllerAlias;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('asesores.')->group(function () {
@@ -87,18 +87,18 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/pedidos/{id}/recibos-datos', [ReciboController::class, 'datos'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
 
     // ========================================
-    // ÓRDENES - SISTEMA DE BORRADORES
+    // ÓRDENES/COTIZACIONES - SISTEMA DE BORRADORES
     // ========================================
-    Route::get('/borradores', [OrdenController::class, 'borradores'])->name('borradores.index');
-    Route::get('/ordenes/create', [OrdenController::class, 'create'])->name('ordenes.create');
-    Route::post('/ordenes/guardar', [OrdenController::class, 'guardarBorrador'])->name('ordenes.store.draft');
-    Route::get('/ordenes/{id}/edit', [OrdenController::class, 'edit'])->name('ordenes.edit');
-    Route::patch('/ordenes/{id}', [OrdenController::class, 'update'])->name('ordenes.update');
-    Route::post('/ordenes/{id}/confirmar', [OrdenController::class, 'confirmar'])->name('ordenes.confirm');
-    Route::delete('/ordenes/{id}', [OrdenController::class, 'destroy'])->name('ordenes.destroy');
-    Route::get('/ordenes', [OrdenController::class, 'index'])->name('ordenes.index');
-    Route::get('/ordenes/{id}', [OrdenController::class, 'show'])->name('ordenes.show');
-    Route::get('/ordenes/stats', [OrdenController::class, 'stats'])->name('ordenes.stats');
+    Route::get('/borradores', [CotizacionControllerAlias::class, 'borradores'])->name('borradores.index');
+    Route::get('/ordenes/create', [CotizacionControllerAlias::class, 'create'])->name('ordenes.create');
+    Route::post('/ordenes/guardar', [CotizacionControllerAlias::class, 'guardarBorrador'])->name('ordenes.store.draft');
+    Route::get('/ordenes/{id}/edit', [CotizacionControllerAlias::class, 'edit'])->name('ordenes.edit');
+    Route::patch('/ordenes/{id}', [CotizacionControllerAlias::class, 'update'])->name('ordenes.update');
+    Route::post('/ordenes/{id}/confirmar', [CotizacionControllerAlias::class, 'confirmar'])->name('ordenes.confirm');
+    Route::delete('/ordenes/{id}', [CotizacionControllerAlias::class, 'destroy'])->name('ordenes.destroy');
+    Route::get('/ordenes', [CotizacionControllerAlias::class, 'index'])->name('ordenes.index');
+    Route::get('/ordenes/{id}', [CotizacionControllerAlias::class, 'show'])->name('ordenes.show');
+    Route::get('/ordenes/stats', [CotizacionControllerAlias::class, 'stats'])->name('ordenes.stats');
 
     // ========================================
     // COTIZACIONES - DDD Refactorizado

@@ -6,7 +6,7 @@
 
 class EppModalInterface {
     static initialize(eppService, eppImagenManager, eppCreationService, eppFormManager) {
-        console.log('[EppModalInterface] Inicializando interfaz del modal');
+
         
         window.eppService = eppService;
         window.eppImagenManager = eppImagenManager;
@@ -73,7 +73,7 @@ class EppModalInterface {
 
             return producto;
         } catch (error) {
-            console.error('[EppModalInterface] Error creando EPP:', error);
+
             throw error;
         }
     }

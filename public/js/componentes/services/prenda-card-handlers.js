@@ -5,7 +5,7 @@
 
 window.PrendaCardHandlers = {
     inicializar(tarjeta, prenda, indice, callbacks = {}) {
-        console.log(' [PrendaCardHandlers] Inicializando tarjeta índice:', indice);
+
         this._setupEventListeners();
     },
 
@@ -13,20 +13,20 @@ window.PrendaCardHandlers = {
         // Expandir/contraer secciones
         document.addEventListener('click', (e) => {
             if (e.target.closest('.seccion-expandible-header')) {
-                console.log('🔽 Click en header expandible');
+
                 const header = e.target.closest('.seccion-expandible-header');
                 const content = header.nextElementSibling;
                 
                 if (content && content.classList.contains('seccion-expandible-content')) {
                     content.classList.toggle('active');
                     header.classList.toggle('active');
-                    console.log(' Sección expandida/contraída');
+
                 }
             }
 
             // Menú de 3 puntos
             if (e.target.closest('.btn-menu-tres-puntos')) {
-                console.log('☰ Click en menú de 3 puntos');
+
                 e.stopPropagation();
                 const btn = e.target.closest('.btn-menu-tres-puntos');
                 const submenu = btn.nextElementSibling;
@@ -40,11 +40,11 @@ window.PrendaCardHandlers = {
 
             // Botón EDITAR
             if (e.target.closest('.btn-editar-prenda')) {
-                console.log('  Click en botón EDITAR');
+
                 e.stopPropagation();
                 const btn = e.target.closest('.btn-editar-prenda');
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
-                console.log(`   Editando prenda índice: ${prendaIndex}`);
+
                 
                 let prenda = null;
                 let esCrearNuevo = false;
@@ -55,43 +55,43 @@ window.PrendaCardHandlers = {
                     if (itemsOrdenados && itemsOrdenados[prendaIndex]) {
                         prenda = itemsOrdenados[prendaIndex];
                         esCrearNuevo = true;
-                        console.log('   Prenda obtenida desde GestionItemsUI.obtenerItemsOrdenados()');
+
                     }
                 }
                 
                 // Prioridad 2: Obtener desde itemsPedido (fallback)
                 if (!prenda && window.itemsPedido && window.itemsPedido[prendaIndex]) {
                     prenda = window.itemsPedido[prendaIndex];
-                    console.log('   Prenda obtenida desde itemsPedido');
+
                 }
                 
                 // Prioridad 3: Obtener desde gestor (pedidos guardados)
                 if (!prenda && window.gestorPrendaSinCotizacion) {
                     prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
-                    console.log('   Prenda obtenida desde gestorPrendaSinCotizacion');
+
                 }
                 
-                console.log('   Prenda obtenida:', prenda);
-                console.log('   esCrearNuevo:', esCrearNuevo);
+
+
                 
                 if (prenda) {
                     // Si es crear-nuevo, abrir el modal de creación con datos precargados
                     if (esCrearNuevo && window.gestionItemsUI) {
-                        console.log('    Abriendo modal de creación (crear-nuevo) para editar');
+
                         window.gestionItemsUI.prendaEditIndex = prendaIndex;
                         window.gestionItemsUI.abrirModalAgregarPrendaNueva();
                         
                         // Esperar a que el modal se abra, se limpie y luego cargar datos
                         // Aumentar delay para asegurar que modal-cleanup termine
                         setTimeout(() => {
-                            console.log('    Cargando datos de prenda en modal...');
+
                             window.gestionItemsUI.prendaEditor?.cargarPrendaEnModal(prenda, prendaIndex);
                         }, 500);
                     }
                     // Si es pedido guardado, abrir modal simple de edición
                     else if (window.abrirEditarPrendaModal) {
                         const pedidoId = document.querySelector('[data-pedido-id]')?.dataset.pedidoId || null;
-                        console.log('    Abriendo modal de edición simple (pedido guardado), pedidoId:', pedidoId);
+
                         window.abrirEditarPrendaModal(prenda, prendaIndex, pedidoId);
                     }
                 }
@@ -102,11 +102,11 @@ window.PrendaCardHandlers = {
 
             // Botón ELIMINAR
             if (e.target.closest('.btn-eliminar-prenda')) {
-                console.log('🗑️  Click en botón ELIMINAR');
+
                 e.stopPropagation();
                 const btn = e.target.closest('.btn-eliminar-prenda');
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
-                console.log(`   Eliminando prenda índice: ${prendaIndex}`);
+
                 
                 Swal.fire({
                     title: '¿Eliminar prenda?',
@@ -118,14 +118,14 @@ window.PrendaCardHandlers = {
                     confirmButtonColor: '#dc3545'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        console.log('    Confirmado eliminar');
+
                         
                         // Obtener instancia de GestionItemsUI si existe
                         if (window.gestionItemsUI) {
                             const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
                             if (prendaIndex >= 0 && prendaIndex < itemsOrdenados.length) {
                                 itemsOrdenados.splice(prendaIndex, 1);
-                                console.log(`    Item eliminado del orden`);
+
                             }
                         }
                         
@@ -156,7 +156,7 @@ window.PrendaCardHandlers = {
                                 });
                                 container.innerHTML = html;
                             }
-                            console.log(`    Items re-renderizados. Total: ${items.length}`);
+
                         }
                     }
                 });
@@ -176,68 +176,68 @@ window.PrendaCardHandlers = {
         // Galerías de fotos
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('foto-principal-readonly')) {
-                console.log(' Click en foto principal');
+
                 e.stopPropagation();
                 const prendaIndex = parseInt(e.target.dataset.prendaIndex);
-                console.log(`   Prenda índice: ${prendaIndex}`);
+
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
                 if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas[prendaIndex]) {
                     prenda = window.gestionItemsUI.prendas[prendaIndex];
-                    console.log('   Prenda obtenida desde GestionItemsUI');
+
                 } else if (window.itemsPedido && window.itemsPedido[prendaIndex]) {
                     prenda = window.itemsPedido[prendaIndex];
-                    console.log('   Prenda obtenida desde itemsPedido');
+
                 } else if (window.gestorPrendaSinCotizacion) {
                     prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
-                    console.log('   Prenda obtenida desde gestorPrendaSinCotizacion');
+
                 }
                 
-                console.log('   Prenda obtenida para galería:', prenda);
+
                 if (prenda && prenda.imagenes && prenda.imagenes.length > 0) {
                     this._abrirGaleriaFotos(prenda, prendaIndex);
                 } else {
-                    console.warn('   No hay imágenes para mostrar en galería');
+
                 }
             }
 
             if (e.target.classList.contains('foto-tela-readonly')) {
-                console.log(' Click en foto de tela');
+
                 e.stopPropagation();
                 const prendaIndex = parseInt(e.target.dataset.prendaIndex);
-                console.log(`   Prenda índice: ${prendaIndex}`);
+
                 
                 let prenda = null;
                 // Obtener desde GestionItemsUI (fuente principal)
                 if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas[prendaIndex]) {
                     prenda = window.gestionItemsUI.prendas[prendaIndex];
-                    console.log('   Prenda obtenida desde GestionItemsUI');
+
                 } else if (window.itemsPedido && window.itemsPedido[prendaIndex]) {
                     prenda = window.itemsPedido[prendaIndex];
-                    console.log('   Prenda obtenida desde itemsPedido');
+
                 } else if (window.gestorPrendaSinCotizacion) {
                     prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
-                    console.log('   Prenda obtenida desde gestorPrendaSinCotizacion');
+
                 }
                 
-                console.log('   Prenda obtenida para galería de tela:', prenda);
+
                 if (prenda && prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
                     this._abrirGaleriaTelas(prenda, prendaIndex);
                 } else {
-                    console.warn('   No hay telas para mostrar en galería');
+
                 }
             }
         });
     },
 
     _abrirGaleriaFotos(prenda, prendaIndex) {
-        console.log('  Abriendo galería de fotos para prenda:', prendaIndex);
+
         
         let imagenes = (prenda.imagenes?.length > 0 ? prenda.imagenes : null) || 
                        (prenda.fotos?.length > 0 ? prenda.fotos : null) || 
                        [];
-        console.log(`   Imágenes brutas encontradas: ${imagenes.length}`);
+
         
         const fotosUrls = imagenes.map((img, idx) => {
             // Usar servicio centralizado para convertir imágenes
@@ -263,10 +263,10 @@ window.PrendaCardHandlers = {
             return null;
         }).filter(url => url !== null);
         
-        console.log(`    Fotos procesadas: ${fotosUrls.length}`);
+
         
         if (fotosUrls.length === 0) {
-            console.warn('  Sin fotos disponibles');
+
             Swal.fire({
                 title: ' Sin fotos',
                 html: '<p style="color: #666;">Esta prenda no tiene fotos cargadas</p>',
@@ -350,13 +350,13 @@ window.PrendaCardHandlers = {
     },
 
     _abrirGaleriaTelas(prenda, prendaIndex) {
-        console.log(' Abriendo galería de fotos de tela para prenda:', prendaIndex);
+
         
         const telas = prenda.telasAgregadas || [];
-        console.log(`   Telas disponibles: ${telas.length}`);
+
         
         if (telas.length === 0) {
-            console.warn('  Sin telas disponibles');
+
             Swal.fire({
                 title: ' Sin telas',
                 html: '<p style="color: #666;">Esta prenda no tiene telas cargadas</p>',
@@ -405,10 +405,10 @@ window.PrendaCardHandlers = {
             }
         });
 
-        console.log(`   Telas con fotos: ${telasConFotos.length}`);
+
 
         if (telasConFotos.length === 0) {
-            console.warn('  Sin fotos de telas disponibles');
+
             Swal.fire({
                 title: ' Sin fotos',
                 html: '<p style="color: #666;">Las telas no tienen fotos cargadas</p>',
@@ -507,4 +507,4 @@ window.PrendaCardHandlers = {
     }
 };
 
-console.log(' [PrendaCardHandlers] Cargado - Gestión de eventos para tarjetas');
+

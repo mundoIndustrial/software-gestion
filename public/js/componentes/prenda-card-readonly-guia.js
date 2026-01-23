@@ -98,7 +98,7 @@ const ejemploPrenda = {
 function mostrarTarjetaPrenda(prenda, indice) {
     const container = document.getElementById('prendas-container-editable');
     if (!container) {
-        console.error('Container no encontrado');
+
         return;
     }
     
@@ -114,7 +114,7 @@ function mostrarTarjetaPrenda(prenda, indice) {
  */
 function renderizarPrendasEnTarjetas() {
     if (!window.gestorPrendaSinCotizacion) {
-        console.error('Gestor no inicializado');
+
         return;
     }
     
@@ -265,4 +265,4 @@ function renderizarPrendasEnTarjetas() {
  *    - Click en Eliminar → abre confirmación
  */
 
-console.log(' Guía de uso prenda-card-readonly cargada');
+

@@ -80,7 +80,7 @@ function seleccionarColor(id, nombre, element) {
     idInput.value = id;
     td.querySelector('.color-suggestions').style.display = 'none';
     
-    console.log(` Color seleccionado: ${nombre} (ID: ${id})`);
+
 }
 
 function buscarOCrearColor(btn) {
@@ -110,7 +110,7 @@ function buscarOCrearColor(btn) {
         idInput.value = nuevoId;
         td.querySelector('.color-suggestions').style.display = 'none';
         
-        console.log(` Nuevo color creado: ${valor} (ID: ${nuevoId})`);
+
         alert(` Color "${valor}" creado exitosamente`);
     }
 }
@@ -180,7 +180,7 @@ function seleccionarTela(id, nombre, referencia, element) {
     
     td.querySelector('.tela-suggestions').style.display = 'none';
     
-    console.log(` Tela seleccionada: ${nombre} (ID: ${id})`);
+
 }
 
 function buscarOCrearTela(btn) {
@@ -222,7 +222,7 @@ function buscarOCrearTela(btn) {
         
         td.querySelector('.tela-suggestions').style.display = 'none';
         
-        console.log(` Nueva tela creada: ${valor} (ID: ${nuevoId})`);
+
         alert(` Tela "${valor}" creada exitosamente`);
     }
 }
@@ -251,7 +251,7 @@ function crearColorDesdeInput(input) {
         idInput.value = nuevoId;
         td.querySelector('.color-suggestions').style.display = 'none';
         
-        console.log(` Nuevo color creado: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -278,7 +278,7 @@ function crearColorDesdeSelector(valor, element) {
         idInput.value = nuevoId;
         td.querySelector('.color-suggestions').style.display = 'none';
         
-        console.log(` Nuevo color creado desde selector: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -317,7 +317,7 @@ function crearTelaDesdeInput(input) {
         
         td.querySelector('.tela-suggestions').style.display = 'none';
         
-        console.log(` Nueva tela creada: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -355,7 +355,7 @@ function crearTelaDesdeSelector(valor, element) {
         
         td.querySelector('.tela-suggestions').style.display = 'none';
         
-        console.log(` Nueva tela creada desde selector: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -405,7 +405,7 @@ function agregarCampoImagen(btn) {
         btn.style.cursor = 'not-allowed';
     }
     
-    console.log(` Campo de imagen agregado: ${numeroImagen}/3`);
+
 }
 
 /**

@@ -56,7 +56,7 @@ class PrendaController extends Controller
      */
     public function store(CrearPrendaRequest $request): JsonResponse
     {
-        \Log::info('🚀 Creando nueva prenda', [
+        \Log::info('Creando nueva prenda', [
             'nombre' => $request->input('nombre_producto'),
         ]);
 

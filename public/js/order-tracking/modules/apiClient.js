@@ -26,7 +26,7 @@ const ApiClient = (() => {
             }
             
             // Si falla, intentar con tabla_original (RegistroOrden)
-            console.log(' Ruta /api/ordenes falló, intentando /api/tabla-original');
+
             const responseTablaOriginal = await fetch(`/api/tabla-original/${orderId}/procesos`, {
                 headers: {
                     'Accept': 'application/json',
@@ -39,7 +39,7 @@ const ApiClient = (() => {
             }
             
             // Si falla, intentar con tabla_original_bodega
-            console.log(' Ruta /api/tabla-original falló, intentando /api/tabla-original-bodega');
+
             const responseTablaOriginalBodega = await fetch(`/api/tabla-original-bodega/${orderId}/procesos`, {
                 headers: {
                     'Accept': 'application/json',
@@ -53,7 +53,7 @@ const ApiClient = (() => {
             
             return await responseTablaOriginalBodega.json();
         } catch (error) {
-            console.error('Error al obtener procesos:', error);
+
             throw error;
         }
     }
@@ -77,7 +77,7 @@ const ApiClient = (() => {
             }
             
             // Si falla, intentar con ruta de bodega
-            console.log(' Ruta /api/registros falló, intentando /api/bodega');
+
             const responseBodega = await fetch(`/api/bodega/${orderId}/dias`, {
                 headers: {
                     'Accept': 'application/json',
@@ -91,7 +91,7 @@ const ApiClient = (() => {
             
             return null;
         } catch (error) {
-            console.error('Error al obtener días:', error);
+
             return null;
         }
     }
@@ -119,7 +119,7 @@ const ApiClient = (() => {
             
             return await response.json();
         } catch (error) {
-            console.error('Error al buscar proceso:', error);
+
             throw error;
         }
     }
@@ -145,7 +145,7 @@ const ApiClient = (() => {
             
             return await response.json();
         } catch (error) {
-            console.error('Error al actualizar:', error);
+
             throw error;
         }
     }
@@ -170,7 +170,7 @@ const ApiClient = (() => {
             
             return await response.json();
         } catch (error) {
-            console.error('Error al eliminar:', error);
+
             throw error;
         }
     }

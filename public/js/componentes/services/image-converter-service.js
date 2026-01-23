@@ -82,4 +82,4 @@ window.ImageConverterService = {
     }
 };
 
-console.log(' [ImageConverterService] Cargado - Servicio centralizado de conversión de imágenes');
+

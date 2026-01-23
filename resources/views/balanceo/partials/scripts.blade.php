@@ -69,7 +69,6 @@ function balanceoApp(balanceoId) {
                     successMsg.remove();
                 }, 2000);
             }).catch(err => {
-                console.error('Error al copiar:', err);
                 alert('No se pudo copiar la columna');
             });
         },
@@ -144,7 +143,6 @@ function balanceoApp(balanceoId) {
                     alert('Error al guardar: ' + (data.message || 'Error desconocido'));
                 }
             } catch (error) {
-                console.error('Error saving SAM:', error);
                 alert('Error al guardar el cambio');
             } finally {
                 this.cancelEdit();
@@ -187,7 +185,6 @@ function balanceoApp(balanceoId) {
                     alert('Error al guardar: ' + (data.message || 'Error desconocido'));
                 }
             } catch (error) {
-                console.error('Error saving cell:', error);
                 alert('Error al guardar el cambio');
             } finally {
                 this.cancelEdit();
@@ -229,7 +226,6 @@ function balanceoApp(balanceoId) {
                     this.updateMetricas(data.balanceo);
                 }
             } catch (error) {
-                console.error('Error updating parameters:', error);
             }
         },
 
@@ -312,7 +308,6 @@ function balanceoApp(balanceoId) {
                     }
                 }
             } catch (error) {
-                console.error('Error saving operation:', error);
             }
         },
 
@@ -333,7 +328,6 @@ function balanceoApp(balanceoId) {
                     this.updateMetricas(data.balanceo);
                 }
             } catch (error) {
-                console.error('Error deleting operation:', error);
             }
         },
 
@@ -362,7 +356,6 @@ function balanceoApp(balanceoId) {
                     }, 1000);
                 }
             } catch (error) {
-                console.error('Error deleting balanceo:', error);
                 alert('Error al eliminar el balanceo');
             }
         },
@@ -436,7 +429,6 @@ function balanceoApp(balanceoId) {
                             failedCount++;
                         }
                     } catch (error) {
-                        console.error('Error saving operation:', error);
                         failedCount++;
                     }
                 }
@@ -456,7 +448,6 @@ function balanceoApp(balanceoId) {
                 this.resetForm();
 
             } catch (error) {
-                console.error('Error saving operations:', error);
                 alert('Error al guardar las operaciones');
             }
         },
@@ -499,7 +490,6 @@ function balanceoApp(balanceoId) {
                     alert('Error al cambiar el estado');
                 }
             } catch (error) {
-                console.error('Error toggling estado:', error);
                 alert('Error al cambiar el estado');
             }
         }
@@ -538,8 +528,8 @@ async function deletePrenda(prendaId) {
             alert(data.message || 'Error al eliminar la prenda');
         }
     } catch (error) {
-        console.error('Error deleting prenda:', error);
         alert('Error al eliminar la prenda');
     }
 }
 </script>
+

@@ -19,7 +19,6 @@
     {{-- Definir URL de filtros para supervisor-asesores --}}
     <script>
         window.FILTER_VALUES_URL = '{{ route("supervisor-asesores.cotizaciones.filtros.valores") }}';
-        console.log('🔗 FILTER_VALUES_URL establecida:', window.FILTER_VALUES_URL);
     </script>
 
     {{-- Header --}}
@@ -249,3 +248,4 @@
 <script src="{{ asset('js/asesores/cotizaciones-index.js') }}"></script>
 
 @endsection
+

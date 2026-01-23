@@ -167,7 +167,7 @@ class FormModule {
                 this.handleError(response);
             }
         } catch (error) {
-            console.error('Error al procesar la solicitud:', error);
+
             this.handleError({
                 success: false,
                 message: error.message
@@ -203,23 +203,13 @@ class FormModule {
         const fecha = document.getElementById('header-fecha')?.value || '';
         const tipoVenta = document.getElementById('header-tipo-cotizacion')?.value || '';
         const token = document.querySelector('input[name="_token"]')?.value || '';
-
-        console.log(' FormData Debug:', {
-            cliente,
-            asesora,
-            fecha,
-            tipoVenta,
-            token,
-            especificaciones: window.especificacionesSeleccionadas
-        });
-
         // Validar campos requeridos
         if (!cliente) {
-            console.error(' CLIENTE VACÍO - No se puede enviar');
+
             throw new Error('El nombre del cliente es requerido');
         }
         if (!tipoVenta) {
-            console.error(' TIPO VENTA VACÍO - No se puede enviar');
+
             throw new Error('El tipo de venta (M/D/X) es requerido');
         }
 
@@ -239,19 +229,19 @@ class FormModule {
 
         // Productos
         const productCards = document.querySelectorAll('.producto-card');
-        console.log(' Productos encontrados:', productCards.length);
+
         
         for (let index = 0; index < productCards.length; index++) {
             try {
                 await this.addProductToFormData(formData, productCards[index], index);
             } catch (error) {
-                console.error(` Error procesando producto ${index}:`, error);
+
                 throw error;
             }
         }
 
-        console.log(' FormData construido correctamente');
-        console.log(' FormData es instancia de FormData:', formData instanceof FormData);
+
+
         return formData;
     }
 
@@ -288,21 +278,21 @@ class FormModule {
         // Fotos - Enviar archivos File directamente
         if (window.fotosSeleccionadas && window.fotosSeleccionadas[productoId]) {
             const fotos = window.fotosSeleccionadas[productoId];
-            console.log(`📸 Fotos encontradas para ${productoId}:`, fotos.length);
+
             fotos.forEach((foto, fotoIdx) => {
                 if (foto instanceof File) {
                     formData.append(`productos[${index}][fotos][${fotoIdx}]`, foto, foto.name);
-                    console.log(` Foto ${fotoIdx + 1} agregada: ${foto.name}`);
+
                 }
             });
         } else {
-            console.log(` No hay fotos para ${productoId}`);
+
         }
 
         // Telas - Procesar múltiples telas por prenda
         // Capturar datos de cada fila de tela de la tabla
         const tblasRows = card.querySelectorAll('.fila-tela');
-        console.log(` Filas de telas encontradas para ${productoId}:`, tblasRows.length);
+
         
         tblasRows.forEach((row, rowIdx) => {
             const telaIndex = row.getAttribute('data-tela-index') || rowIdx;
@@ -313,12 +303,6 @@ class FormModule {
             const colorId = colorIdInput ? colorIdInput.value : null;
             const telaId = telaIdInput ? telaIdInput.value : null;
             const referencia = referenciaInput ? referenciaInput.value : null;
-            
-            console.log(` Procesando fila de tela ${telaIndex}:`, {
-                colorId,
-                telaId,
-                referencia,
-                tieneFotos: !!(window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex])
             });
             
             // Guardar datos básicos de la tela
@@ -329,12 +313,12 @@ class FormModule {
             // Agregar fotos de esta tela específica
             if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
                 const fotosDelaTela = window.telasSeleccionadas[productoId][telaIndex];
-                console.log(`📸 Fotos de tela ${telaIndex}:`, fotosDelaTela.length);
+
                 
                 fotosDelaTela.forEach((foto, fotoIdx) => {
                     if (foto instanceof File) {
                         formData.append(`productos[${index}][telas][${telaIndex}][fotos][${fotoIdx}]`, foto, foto.name);
-                        console.log(` Foto ${fotoIdx + 1} de tela ${telaIndex} agregada: ${foto.name}`);
+
                     }
                 });
             }
@@ -379,15 +363,15 @@ class FormModule {
             url = '/asesores/cotizaciones/prenda';
         }
         
-        console.log('🚀 Enviando a:', url);
+
         
         // Verificar que formData es válido
         if (!(formData instanceof FormData)) {
-            console.error(' formData no es un FormData válido:', typeof formData, formData);
+
             throw new Error('FormData inválido');
         }
         
-        console.log(' FormData válido, enviando...');
+
         
         try {
             const response = await fetch(url, {
@@ -397,10 +381,10 @@ class FormModule {
             });
 
             const responseData = await response.json();
-            console.log('📥 Respuesta del servidor:', responseData);
+
             return responseData;
         } catch (error) {
-            console.error('Error en fetch:', error);
+
             throw error;
         }
     }
@@ -409,7 +393,7 @@ class FormModule {
      * Maneja respuesta exitosa
      */
     handleSuccess(data) {
-        console.log(' Cotización guardada exitosamente');
+
         alert(data.message || 'Cotización guardada correctamente');
         if (data.redirect) {
             window.location.href = data.redirect;
@@ -420,7 +404,7 @@ class FormModule {
      * Maneja errores en la respuesta
      */
     handleError(data) {
-        console.error(' Error al guardar:', data);
+
         let mensaje = data.message || 'Error desconocido';
 
         if (data.errors && Object.keys(data.errors).length > 0) {
@@ -446,3 +430,4 @@ class FormModule {
 
 // Exportar para uso global
 const formModule = new FormModule();
+

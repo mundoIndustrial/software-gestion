@@ -315,13 +315,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         dropdown.style.left = buttonRect.left + 'px';
-        
-        console.log('Dropdown posicionado:', {
-            buttonRect: {top: buttonRect.top, bottom: buttonRect.bottom, left: buttonRect.left},
-            spaceBelow: spaceBelow,
-            dropdownTop: dropdown.style.top,
-            dropdownLeft: dropdown.style.left
-        });
     }
     
     // Delegación de eventos para botón Ver
@@ -418,3 +411,4 @@ document.addEventListener('click', function(e) {
         });
     }
 });
+

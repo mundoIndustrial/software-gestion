@@ -44,13 +44,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             e.preventDefault();
             
-            console.log('User button clicked');
-            console.log('Current show state BEFORE:', userMenu.classList.contains('show'));
+
+
             
             userMenu.classList.toggle('show');
             
-            console.log('Current show state AFTER:', userMenu.classList.contains('show'));
-            console.log('Menu display:', window.getComputedStyle(userMenu).display);
+
+
             
             // Cerrar notificaciones si están abiertas
             const notificationMenu = document.getElementById('notificationMenu');
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     } else {
-        console.warn('User button or menu not found in asesores layout');
+
     }
 });
 */
@@ -146,7 +146,7 @@ window.fetchAPI = async function(url, options = {}) {
         const response = await fetch(url, mergedOptions);
         return await _handleAsesorFetchResponse(response);
     } catch (error) {
-        console.error('Error en fetchAPI:', error);
+
         throw error;
     }
 };

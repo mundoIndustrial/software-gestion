@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             FormatoCotizacionSeeder::class, // Seeder para formatos de cotización
             InventarioTelasSeeder::class, // Seeder para inventario de telas con stock
             EppSeeder::class, // Seeder para EPP con categorías e imágenes
+            BordadoRoleSeeder::class, // Seeder para rol de Bordado
         ]);
     }
 }

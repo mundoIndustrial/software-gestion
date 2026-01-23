@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 showMessage('Error al guardar cambios: ' + error.message, 'error');
             });
         });
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 showMessage('Error al actualizar contraseña: ' + error.message, 'error');
             });
         });

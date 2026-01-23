@@ -4,7 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(' Bodega Detail Modal Script Loaded');
+
     initializeBodegaDetailModal();
 });
 
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * Función wrapper para ser llamada desde onclick en la tabla
  */
 function openDetailBodega(pedido) {
-    console.log('👁️ Click en botón Ver, pedido:', pedido);
+
     openBodegaDetailModal(pedido);
 }
 
@@ -34,7 +34,7 @@ function initializeBodegaDetailModal() {
  * Abrir modal de detalle de bodega
  */
 function openBodegaDetailModal(pedido) {
-    console.log(`👁️ Abriendo detalle de bodega para pedido ${pedido}`);
+
     
     // Obtener datos de la orden
     fetch(`/bodega/${pedido}`, {
@@ -49,7 +49,7 @@ function openBodegaDetailModal(pedido) {
         displayBodegaDetailModal(data);
     })
     .catch(error => {
-        console.error('Error al obtener datos:', error);
+
         showNotification('Error al cargar los detalles', 'error');
     });
 }
@@ -165,11 +165,11 @@ function displayBodegaDetailModal(orden) {
                 prendasValue.textContent = `${orden.total_entregado || orden.cantidad || 0}/${orden.cantidad || 0}`;
             }
 
-            console.log(' Modal de detalle completado y mostrando...');
+
             showBodegaDetailModal();
         } else if (attempts++ > 20) {
             clearInterval(checkElements);
-            console.error(' Timeout esperando elementos del modal');
+
         }
     }, 100);
 }
@@ -272,7 +272,7 @@ function formatearPrenda(prendaText, index) {
  * Mostrar modal de detalle
  */
 function showBodegaDetailModal() {
-    console.log('📱 Mostrando modal de detalle de bodega...');
+
     
     // Disparar evento Alpine.js para abrir el modal
     // El componente x-modal está configurado para escuchar el evento 'bodega-order-detail'
@@ -280,21 +280,21 @@ function showBodegaDetailModal() {
         detail: 'bodega-order-detail'
     }));
     
-    console.log(' Evento open-modal disparado');
+
 }
 
 /**
  * Cerrar modal de detalle
  */
 function closeBodegaDetailModal() {
-    console.log(' Cerrando modal de detalle de bodega...');
+
     
     // Disparar evento Alpine.js para cerrar el modal
     window.dispatchEvent(new CustomEvent('close-modal', {
         detail: 'bodega-order-detail'
     }));
     
-    console.log(' Evento close-modal disparado');
+
 }
 
 /**

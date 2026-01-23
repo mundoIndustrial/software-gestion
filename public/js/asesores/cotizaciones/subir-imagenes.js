@@ -76,12 +76,6 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
             throw new Error(data.message || 'Error desconocido');
         }
     } catch (error) {
-        console.error(' Error al subir imagen', {
-            error: error.message,
-            archivo: archivo.name,
-            cotizacion_id: cotizacionId
-        });
-
         throw error;
     }
 }
@@ -96,13 +90,6 @@ async function subirImagenCotizacion(archivo, cotizacionId, prendaId, tipo) {
  * @returns {Promise<{success: boolean, rutas: string[]}>}
  */
 async function subirMultiplesImagenes(archivos, cotizacionId, prendaId, tipo) {
-    console.log('📸 Subiendo múltiples imágenes', {
-        cantidad: archivos.length,
-        cotizacion_id: cotizacionId,
-        prenda_id: prendaId,
-        tipo: tipo
-    });
-
     const rutas = [];
     const errores = [];
 
@@ -119,20 +106,13 @@ async function subirMultiplesImagenes(archivos, cotizacionId, prendaId, tipo) {
                 rutas.push(resultado.ruta);
             }
         } catch (error) {
-            console.error(` Error subiendo imagen ${i + 1}`, error.message);
+
             errores.push({
                 archivo: archivos[i].name,
                 error: error.message
             });
         }
     }
-
-    console.log(' Subida de múltiples imágenes completada', {
-        exitosas: rutas.length,
-        fallidas: errores.length,
-        rutas: rutas
-    });
-
     return {
         success: errores.length === 0,
         rutas: rutas,
@@ -156,11 +136,11 @@ function manejarDropImagenes(event, cotizacionId, prendaId, tipo, callback) {
     const archivos = event.dataTransfer.files;
 
     if (archivos.length === 0) {
-        console.warn(' No se proporcionaron archivos');
+
         return;
     }
 
-    console.log('📁 Archivos detectados en drop:', archivos.length);
+
 
     subirMultiplesImagenes(Array.from(archivos), cotizacionId, prendaId, tipo)
         .then(resultado => {
@@ -169,7 +149,7 @@ function manejarDropImagenes(event, cotizacionId, prendaId, tipo, callback) {
             }
         })
         .catch(error => {
-            console.error(' Error en manejador de drop', error);
+
             if (callback) {
                 callback({
                     success: false,
@@ -192,11 +172,11 @@ function manejarInputImagenes(event, cotizacionId, prendaId, tipo, callback) {
     const archivos = event.target.files;
 
     if (archivos.length === 0) {
-        console.warn(' No se seleccionaron archivos');
+
         return;
     }
 
-    console.log('📁 Archivos seleccionados:', archivos.length);
+
 
     subirMultiplesImagenes(Array.from(archivos), cotizacionId, prendaId, tipo)
         .then(resultado => {
@@ -207,7 +187,7 @@ function manejarInputImagenes(event, cotizacionId, prendaId, tipo, callback) {
             event.target.value = '';
         })
         .catch(error => {
-            console.error(' Error en manejador de input', error);
+
             if (callback) {
                 callback({
                     success: false,
@@ -227,7 +207,7 @@ function mostrarProgresoSubida(mensaje, porcentaje) {
     const elemento = document.getElementById('progreso-subida');
 
     if (!elemento) {
-        console.warn(' Elemento de progreso no encontrado');
+
         return;
     }
 
@@ -261,4 +241,5 @@ window.manejarInputImagenes = manejarInputImagenes;
 window.mostrarProgresoSubida = mostrarProgresoSubida;
 window.ocultarProgresoSubida = ocultarProgresoSubida;
 
-console.log(' Sistema de subida de imágenes (FormData) inicializado');
+
+

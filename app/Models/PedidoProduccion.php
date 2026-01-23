@@ -41,6 +41,11 @@ class PedidoProduccion extends Model
         'fecha_anulacion',
         'usuario_anulacion',
         'cantidad_total',
+        'aprobado_por_usuario_cartera',
+        'aprobado_por_cartera_en',
+        'rechazado_por_usuario_cartera',
+        'rechazado_por_cartera_en',
+        'motivo_rechazo_cartera',
     ];
 
     protected $casts = [
@@ -164,6 +169,14 @@ class PedidoProduccion extends Model
     public function materiales(): HasMany
     {
         return $this->hasMany(MaterialesOrdenInsumos::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Relación: Un pedido tiene un registro de ancho y metraje
+     */
+    public function anchoMetraje()
+    {
+        return $this->hasOne(PedidoAnchoMetraje::class, 'pedido_produccion_id');
     }
 
     /**

@@ -342,7 +342,6 @@ function verComparacion(cotizacionId) {
             modal.style.setProperty('opacity', '1', 'important');
         })
         .catch(error => {
-            console.error('Error:', error);
             Swal.fire('Error', 'No se pudo cargar la comparación', 'error');
         });
 }
@@ -607,7 +606,6 @@ function enviarCorreccion(cotizacionId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         Swal.fire('Error', 'No se pudo enviar la corrección: ' + error.message, 'error');
     });
 }
@@ -663,7 +661,6 @@ function aprobarCotizacionAprobador(cotizacionId) {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 Swal.fire('Error', 'No se pudo aprobar la cotización: ' + error.message, 'error');
             });
         }
@@ -794,7 +791,6 @@ window.abrirModalVisorCostosAprobacion = function(cotizacionId, cliente) {
                 .then(data => ({ costos: data, nombres: prendasNombres }));
         })
         .then(({ costos, nombres }) => {
-            console.log('Datos de costos recibidos:', costos);
             if (costos.success && costos.prendas.length > 0) {
                 // Asignar nombres a las prendas
                 costos.prendas.forEach((prenda, idx) => {
@@ -804,7 +800,6 @@ window.abrirModalVisorCostosAprobacion = function(cotizacionId, cliente) {
                 });
                 
                 visorCostosActual.prendas = costos.prendas;
-                console.log('Prendas cargadas:', visorCostosActual.prendas);
                 document.getElementById('visorCostosModal').style.display = 'flex';
                 
                 // Resetear scroll al abrir
@@ -828,7 +823,6 @@ window.abrirModalVisorCostosAprobacion = function(cotizacionId, cliente) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             Swal.fire({
                 title: 'Error al Cargar Costos',
                 html: `Ocurrió un error al intentar cargar los costos de la cotización.<br><br>${error.message || 'Por favor, intenta de nuevo más tarde.'}`,
@@ -948,3 +942,4 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="{{ asset('js/contador/visor-costos.js') }}"></script>
 
 @endsection
+

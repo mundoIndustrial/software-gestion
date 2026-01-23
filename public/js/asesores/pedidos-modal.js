@@ -50,7 +50,7 @@ async function obtenerSiguientePedido() {
         siguientePedido = data.siguiente_pedido;
         document.getElementById('nuevoPedido').value = siguientePedido;
     } catch (error) {
-        console.error('Error:', error);
+
         document.getElementById('nuevoPedido').value = 1;
     }
 }
@@ -314,7 +314,7 @@ function guardarPedidoModal() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 Swal.fire({
                     title: 'Error',
                     text: 'Ocurrió un error al guardar el pedido',

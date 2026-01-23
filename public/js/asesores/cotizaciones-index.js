@@ -18,21 +18,21 @@ function mostrarTab(tab) {
  * @param {string} tipo - 'todas', 'P', 'L', 'PL'
  */
 function mostrarTipo(tipo) {
-    console.log(' mostrarTipo() llamado con tipo:', tipo);
+
     
     // Actualizar estado visual de las pastillas
     const botones = document.querySelectorAll('.cotizacion-tab-btn');
-    console.log('🔘 Botones encontrados:', botones.length);
+
     
     botones.forEach(btn => {
         if (btn.getAttribute('data-tipo') === tipo) {
             // Activar botón
             btn.classList.add('active');
-            console.log(' Botón activado:', tipo);
+
         } else {
             // Desactivar botón
             btn.classList.remove('active');
-            console.log('⚪ Botón desactivado:', btn.getAttribute('data-tipo'));
+
         }
     });
     
@@ -40,26 +40,26 @@ function mostrarTipo(tipo) {
     const tabCotizaciones = document.getElementById('tab-cotizaciones');
     const tabBorradores = document.getElementById('tab-borradores');
     
-    console.log(' Tab Cotizaciones encontrado:', !!tabCotizaciones);
-    console.log(' Tab Borradores encontrado:', !!tabBorradores);
+
+
     
     // Verificar el display actual
     if (tabCotizaciones) {
-        console.log(' Tab Cotizaciones display:', window.getComputedStyle(tabCotizaciones).display);
+
     }
     if (tabBorradores) {
-        console.log(' Tab Borradores display:', window.getComputedStyle(tabBorradores).display);
+
     }
     
     const esCotizacionesActivo = tabCotizaciones && window.getComputedStyle(tabCotizaciones).display === 'block';
     const esBorradoresActivo = tabBorradores && window.getComputedStyle(tabBorradores).display === 'block';
     
-    console.log(' Cotizaciones activo:', esCotizacionesActivo);
-    console.log(' Borradores activo:', esBorradoresActivo);
+
+
     
     // Si ninguno está activo, mostrar cotizaciones por defecto
     if (!esCotizacionesActivo && !esBorradoresActivo) {
-        console.warn(' Ningún tab activo, mostrando cotizaciones por defecto');
+
         if (tabCotizaciones) {
             tabCotizaciones.style.display = 'block';
         }
@@ -67,7 +67,7 @@ function mostrarTipo(tipo) {
     
     // Oculta todas las secciones
     const seccionesTodas = document.querySelectorAll('.seccion-tipo');
-    console.log(' Secciones encontradas:', seccionesTodas.length);
+
     seccionesTodas.forEach(sec => sec.style.display = 'none');
     
     // Mapeo de tipos a IDs de secciones
@@ -79,34 +79,34 @@ function mostrarTipo(tipo) {
         'RF': { cot: 'seccion-rf', bor: 'seccion-bor-rf' }
     };
     
-    console.log('🗺️ Secciones mapeadas:', secciones);
-    console.log('🔎 Tipo solicitado existe en mapeo:', !!secciones[tipo]);
+
+
     
     if (secciones[tipo]) {
-        console.log(' Mostrando sección para tipo:', tipo);
+
         // Muestra solo la sección correspondiente al tab activo
         if (esCotizacionesActivo) {
             const cotElement = document.getElementById(secciones[tipo].cot);
-            console.log(' Elemento cotizaciones encontrado:', !!cotElement, 'ID:', secciones[tipo].cot);
+
             if (cotElement) {
                 cotElement.style.display = 'block';
-                console.log(' Mostrando cotizaciones:', secciones[tipo].cot);
+
             } else {
-                console.error(' Elemento cotizaciones NO encontrado:', secciones[tipo].cot);
+
             }
         }
         if (esBorradoresActivo) {
             const borElement = document.getElementById(secciones[tipo].bor);
-            console.log(' Elemento borradores encontrado:', !!borElement, 'ID:', secciones[tipo].bor);
+
             if (borElement) {
                 borElement.style.display = 'block';
-                console.log(' Mostrando borradores:', secciones[tipo].bor);
+
             } else {
-                console.error(' Elemento borradores NO encontrado:', secciones[tipo].bor);
+
             }
         }
     } else {
-        console.error(' Tipo no encontrado en mapeo:', tipo);
+
     }
 }
 
@@ -185,7 +185,7 @@ function eliminarBorrador(id) {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 Swal.fire({
                     title: 'Error',
                     text: 'Ocurrió un error al eliminar el borrador',
@@ -207,7 +207,7 @@ function eliminarBorrador(id) {
  * @param {number} id - ID de la cotización a eliminar
  */
 function eliminarCotizacion(id) {
-    console.log('🗑️ eliminarCotizacion() llamado con id:', id);
+
     Swal.fire({
         title: '¿Eliminar cotización?',
         text: 'Esta acción no se puede deshacer',
@@ -225,7 +225,7 @@ function eliminarCotizacion(id) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            console.log(' Usuario confirmó eliminación, enviando DELETE a /asesores/cotizaciones/' + id);
+
             fetch(`/asesores/cotizaciones/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -233,27 +233,27 @@ function eliminarCotizacion(id) {
                 }
             })
             .then(response => {
-                console.log('📡 Respuesta recibida, status:', response.status);
+
                 return response.json();
             })
             .then(data => {
-                console.log(' Datos de respuesta:', data);
+
                 if (data.success) {
-                    console.log(' Eliminación exitosa, removiendo fila de la tabla');
+
                     // Animación de eliminación
                     const rows = document.querySelectorAll('table tbody tr');
-                    console.log(' Total de filas encontradas:', rows.length);
+
                     let rowRemoved = false;
                     rows.forEach(row => {
                         if (!rowRemoved) {
                             const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
                             if (cell) {
-                                console.log(' Fila encontrada, animando eliminación');
+
                                 row.style.transition = 'opacity 0.3s ease';
                                 row.style.opacity = '0';
                                 setTimeout(() => {
                                     row.remove();
-                                    console.log(' Fila removida del DOM');
+
                                 }, 300);
                                 rowRemoved = true;
                             }
@@ -279,7 +279,7 @@ function eliminarCotizacion(id) {
                         }
                     });
                 } else {
-                    console.error(' Error en respuesta:', data.message);
+
                     Swal.fire({
                         title: 'Error',
                         text: data.message || 'No se pudo eliminar la cotización',
@@ -294,7 +294,7 @@ function eliminarCotizacion(id) {
                 }
             })
             .catch(error => {
-                console.error(' Error en fetch:', error);
+
                 Swal.fire({
                     title: 'Error',
                     text: 'Ocurrió un error al eliminar la cotización',
@@ -473,7 +473,7 @@ function eliminarCotizacion(id, numeroCotizacion) {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 Swal.fire('Error', 'Error al eliminar la cotización', 'error');
             });
         }

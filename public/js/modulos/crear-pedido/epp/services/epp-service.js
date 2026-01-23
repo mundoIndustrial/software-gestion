@@ -23,7 +23,7 @@ class EppService {
         window.eppModalManager = this.modalManager;
         window.eppImagenManager = this.imagenManager;
 
-        console.log('[EppService] Servicio inicializado');
+
     }
 
     /**
@@ -33,7 +33,7 @@ class EppService {
         this.stateManager.resetear();
         this.modalManager.limpiarFormulario();
         this.modalManager.abrirModal();
-        console.log('[EppService] Modal abierto para agregar');
+
     }
 
     /**
@@ -51,11 +51,11 @@ class EppService {
     editarEPPFormulario(id, nombre, codigo, categoria, cantidad, observaciones, imagenes) {
         // Asegurar que el modal existe en el DOM
         if (!document.getElementById('modal-agregar-epp')) {
-            console.log('[EppService] Modal no encontrado, inyectando...');
+
             if (typeof window.EppModalTemplate !== 'undefined') {
                 const modalHTML = window.EppModalTemplate.getHTML();
                 document.body.insertAdjacentHTML('beforeend', modalHTML);
-                console.log('[EppService] Modal inyectado al DOM');
+
             }
         }
 
@@ -69,7 +69,7 @@ class EppService {
         this.modalManager.habilitarCampos();
         this.modalManager.abrirModal();
 
-        console.log('[EppService] EPP formulario abierto para editar:', id);
+
     }
 
     /**
@@ -77,7 +77,7 @@ class EppService {
      */
     async editarEPPDesdeDB(eppId) {
         try {
-            console.log('[EppService] Obteniendo EPP desde BD:', eppId);
+
 
             const epp = await this.apiService.obtenerEPP(eppId);
 
@@ -99,9 +99,9 @@ class EppService {
             this.modalManager.habilitarCampos();
             this.modalManager.abrirModal();
 
-            console.log('[EppService] EPP BD abierto para editar:', eppId);
+
         } catch (error) {
-            console.error('[EppService] Error editando EPP desde BD:', error);
+
             alert('Error al obtener EPP: ' + error.message);
         }
     }
@@ -131,7 +131,7 @@ class EppService {
     async _guardarEPPDesdeDB(valores) {
         try {
             const eppId = this.stateManager.getEditandoId();
-            console.log('[EppService] Guardando EPP en BD:', eppId);
+
 
             await this.apiService.actualizarEPP(eppId, {
                 cantidad: valores.cantidad,
@@ -145,7 +145,7 @@ class EppService {
             // Recargar página
             location.reload();
         } catch (error) {
-            console.error('[EppService] Error guardando EPP en BD:', error);
+
             alert('Error al guardar: ' + error.message);
         }
     }
@@ -201,22 +201,22 @@ class EppService {
             // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
             if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {
                 window.gestionItemsUI.agregarEPPDesdeModal(eppData);
-                console.log('[EppService] EPP agregado a GestionItemsUI');
+
             } else {
                 // Fallback: agregar a window.itemsPedido si GestionItemsUI no está disponible
                 if (!window.itemsPedido) {
                     window.itemsPedido = [];
                 }
                 window.itemsPedido.push(eppData);
-                console.log('[EppService] EPP guardado en window.itemsPedido (fallback)');
+
             }
 
-            console.log('[EppService] EPP guardado en formulario');
+
 
             this.cerrarModal();
             this.stateManager.finalizarEdicion();
         } catch (error) {
-            console.error('[EppService] Error guardando EPP:', error);
+
             alert('Error: ' + error.message);
         }
     }
@@ -237,7 +237,7 @@ class EppService {
             }
         }
 
-        console.log('[EppService] EPP eliminado:', eppId);
+
     }
 
     /**
@@ -286,7 +286,7 @@ class EppService {
 
             container.style.display = 'block';
         } catch (error) {
-            console.error('[EppService] Error filtrando EPP:', error);
+
             container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626;">Error al buscar EPP</div>`;
             container.style.display = 'block';
         }
@@ -304,7 +304,7 @@ class EppService {
             const result = await response.json();
             return result.data && Array.isArray(result.data) ? result.data : [];
         } catch (error) {
-            console.error('[EppService] Error en búsqueda desde BD:', error);
+
             return [];
         }
     }
@@ -313,7 +313,7 @@ class EppService {
      * Cargar EPP disponibles
      */
     cargarEPP() {
-        console.log('[EppService] Cargando EPPs disponibles');
+
         // Implementar carga de EPPs desde API
     }
 
@@ -321,7 +321,7 @@ class EppService {
      * Cargar categorías
      */
     cargarCategorias() {
-        console.log('[EppService] Cargando categorías');
+
         // Implementar carga de categorías desde API
     }
 
@@ -331,7 +331,7 @@ class EppService {
     limpiarModal() {
         this.stateManager.resetear();
         this.modalManager.limpiarFormulario();
-        console.log('[EppService] Modal limpiado');
+
     }
 
     /**

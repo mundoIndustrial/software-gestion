@@ -60,10 +60,8 @@ window.PedidoAPI = {
 
             return await response.json();
         } catch (error) {
-            console.error(' Error en PedidoAPI:', error);
+
             throw error;
         }
     }
 };
-
-console.log(' PedidoAPIService cargado');

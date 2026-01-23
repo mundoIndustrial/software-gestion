@@ -122,7 +122,7 @@ const AsistenciaEditarRegistro = (() => {
         personasDisponibles = personas;
         idReporteGlobal = idReporte;
         todasLasFechas = fechas && fechas.length > 0 ? fechas : [];
-        console.log('✓ Módulo editar-registro inicializado con fechas:', todasLasFechas);
+
         setupEventListeners();
         limpiarFormulario();
     }
@@ -285,12 +285,12 @@ const AsistenciaEditarRegistro = (() => {
     function cargarDatosDelDia() {
         // Validar que personaSeleccionada y sus registros existan
         if (!personaSeleccionada) {
-            console.error('Error: personaSeleccionada es null');
+
             return;
         }
 
         if (!personaSeleccionada.registros) {
-            console.warn('Advertencia: persona no tiene registros cargados. Inicializando estructura...');
+
             personaSeleccionada.registros = {};
         }
 
@@ -408,7 +408,7 @@ const AsistenciaEditarRegistro = (() => {
      * Actualizar una marca (después de que el usuario la edite)
      */
     function actualizarMarca(indice, nuevoValor) {
-        console.log(`Actualizando marca ${indice} a ${nuevoValor}`);
+
         if (indice >= 0 && indice < marcasEditables.length) {
             marcasEditables[indice] = nuevoValor;
             recalcularTotalMarcas();
@@ -477,7 +477,7 @@ const AsistenciaEditarRegistro = (() => {
                     }
                 })
                 .catch(error => {
-                    console.error('Error al guardar marcas:', error);
+
                     mostrarNotificacion('✕ Error al guardar marcas: ' + error.message, 'error', 4000);
                     btnGuardar.textContent = textoOriginal;
                     btnGuardar.disabled = false;
@@ -500,7 +500,7 @@ const AsistenciaEditarRegistro = (() => {
                 marcas: marcasEditables
             };
 
-            console.log('Guardando marcas editadas:', datos);
+
 
             fetch('/asistencia-personal/guardar-marcas-editadas', {
                 method: 'POST',
@@ -548,7 +548,7 @@ const AsistenciaEditarRegistro = (() => {
             novedad: novedad || null
         };
 
-        console.log('Guardando horas extras:', datos);
+
 
         fetch('/asistencia-personal/guardar-hora-extra-agregada', {
             method: 'POST',
@@ -589,7 +589,7 @@ const AsistenciaEditarRegistro = (() => {
             }
         })
         .catch(error => {
-            console.error('Error al guardar horas extras:', error);
+
             mostrarNotificacion('✕ Error de conexión: ' + error.message, 'error', 4000);
             btnGuardar.textContent = textoOriginal;
             btnGuardar.disabled = false;

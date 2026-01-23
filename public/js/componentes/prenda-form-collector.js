@@ -49,29 +49,29 @@ class PrendaFormCollector {
             // ============================================
             const imagenesTemporales = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
             
-            console.log('[PrendaFormCollector] Imágenes temporales del storage:', imagenesTemporales);
+
             
             // Copiar SOLO los File objects (NO blobs ni previewUrl)
             const imagenesCopia = imagenesTemporales.map(img => {
-                console.log('[PrendaFormCollector] Procesando imagen:', img instanceof File ? 'File' : typeof img, img);
+
                 
                 // Si img es directamente un File object, usarlo
                 if (img instanceof File) {
-                    console.log('[PrendaFormCollector] ✓ Imagen es File object');
+
                     return img;
                 }
                 // Si img tiene propiedad file que es File object, usar eso
                 if (img && img.file instanceof File) {
-                    console.log('[PrendaFormCollector] ✓ Imagen tiene propiedad file');
+
                     return img.file;
                 }
                 // Si es un objeto con previewUrl (desde BD), ignorar - no es un File nuevo
                 if (img && img.previewUrl && !img.file) {
-                    console.log('[PrendaFormCollector] ⚠️ Imagen es desde BD, ignorando');
+
                     return null;
                 }
                 // Fallback: retornar img tal cual si es File
-                console.log('[PrendaFormCollector] ⚠️ Imagen no reconocida');
+
                 return img;
             }).filter(img => img !== null && img instanceof File);
 
@@ -101,20 +101,20 @@ class PrendaFormCollector {
                     const imagenesCopia = (tela.imagenes || []).map(img => {
                         // Si img es directamente un File object, usarlo
                         if (img instanceof File) {
-                            console.log(`[PrendaFormCollector] Tela ${telaIdx} imagen es File object`);
+
                             return img;
                         }
                         // Si img tiene propiedad file que es File object, usar eso
                         if (img && img.file instanceof File) {
-                            console.log(`[PrendaFormCollector] Tela ${telaIdx} imagen tiene propiedad file`);
+
                             return img.file;
                         }
                         // Si es un objeto con previewUrl (desde BD), ignorar
                         if (img && img.previewUrl && !img.file) {
-                            console.log(`[PrendaFormCollector] Tela ${telaIdx} imagen es desde BD, ignorando`);
+
                             return null;
                         }
-                        console.log(`[PrendaFormCollector] Tela ${telaIdx} imagen no reconocida`);
+
                         return img;
                     }).filter(img => img !== null && img instanceof File);
                     
@@ -138,7 +138,7 @@ class PrendaFormCollector {
                         referencia: tela.referencia || '',
                         imagenes: tela.imagenes || []
                     }));
-                    console.log('[PrendaFormCollector] Telas recuperadas de prenda anterior:', prendaData.telasAgregadas);
+
                 }
             }
 
@@ -195,11 +195,11 @@ class PrendaFormCollector {
             
             prendaData.variantes = variantes;
 
-            console.log('[PrendaFormCollector] Datos preparados:', prendaData);
+
             return prendaData;
 
         } catch (error) {
-            console.error('[PrendaFormCollector] ERROR:', error);
+
             return null;
         }
     }

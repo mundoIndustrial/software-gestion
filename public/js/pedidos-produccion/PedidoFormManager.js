@@ -43,7 +43,7 @@ class PedidoFormManager {
     // ==================== INICIALIZACIÓN ====================
 
     init() {
-        console.log(' Inicializando PedidoFormManager...');
+
         
         // Cargar estado guardado
         this.loadFromStorage();
@@ -53,7 +53,7 @@ class PedidoFormManager {
             this.startAutoSave();
         }
 
-        console.log(' PedidoFormManager inicializado');
+
     }
 
     // ==================== PERSISTENCIA ====================
@@ -67,9 +67,9 @@ class PedidoFormManager {
                 this.config.storageKey,
                 JSON.stringify(this.state)
             );
-            console.log('💾 Estado guardado en localStorage');
+
         } catch (error) {
-            console.error(' Error guardando estado:', error);
+
         }
     }
 
@@ -81,10 +81,10 @@ class PedidoFormManager {
             const saved = localStorage.getItem(this.config.storageKey);
             if (saved) {
                 this.state = JSON.parse(saved);
-                console.log('📂 Estado cargado desde localStorage');
+
             }
         } catch (error) {
-            console.error(' Error cargando estado:', error);
+
         }
     }
 
@@ -118,7 +118,7 @@ class PedidoFormManager {
         this.historyIndex = -1;
         this.saveToStorage();
         this.notifyListeners('state:cleared');
-        console.log('🗑️  Estado limpiado');
+
     }
 
     // ==================== GESTIÓN DE PEDIDO ====================
@@ -133,7 +133,7 @@ class PedidoFormManager {
         this.state.pedido_produccion_id = pedidoId;
         this.saveToStorage();
         this.notifyListeners('pedido:updated');
-        console.log(` Pedido ID establecido: ${pedidoId}`);
+
     }
 
     /**
@@ -155,7 +155,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('prenda:added', { prenda });
         
-        console.log(` Prenda agregada (ID: ${prenda._id})`);
+
         return prenda;
     }
 
@@ -187,7 +187,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('prenda:updated', { prendaId, updates });
         
-        console.log(` Prenda actualizada: ${prendaId}`);
+
         return prenda;
     }
 
@@ -211,7 +211,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('prenda:deleted', { prendaId });
         
-        console.log(` Prenda eliminada: ${prendaId}`);
+
         return prenda;
     }
 
@@ -249,7 +249,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('variante:added', { prendaId, variante });
         
-        console.log(` Variante agregada a prenda ${prendaId}`);
+
         return variante;
     }
 
@@ -324,7 +324,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('foto:added', { prendaId, foto });
         
-        console.log(` Foto agregada a prenda ${prendaId}`);
+
         return foto;
     }
 
@@ -411,7 +411,7 @@ class PedidoFormManager {
         this.saveToStorage();
         this.notifyListeners('proceso:added', { prendaId, proceso });
         
-        console.log(` Proceso agregado a prenda ${prendaId}`);
+
         return proceso;
     }
 
@@ -496,7 +496,7 @@ class PedidoFormManager {
             this.listeners.set(event, []);
         }
         this.listeners.get(event).push(callback);
-        console.log(`📻 Listener agregado: ${event}`);
+
     }
 
     /**
@@ -523,7 +523,7 @@ class PedidoFormManager {
             try {
                 callback(data);
             } catch (error) {
-                console.error(` Error en listener ${event}:`, error);
+
             }
         });
     }
@@ -573,7 +573,7 @@ class PedidoFormManager {
     destroy() {
         this.stopAutoSave();
         this.listeners.clear();
-        console.log('🗑️  PedidoFormManager destruido');
+
     }
 }
 

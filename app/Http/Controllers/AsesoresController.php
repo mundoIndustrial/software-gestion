@@ -14,84 +14,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AsesoresInventarioTelasController;
-use App\Application\Services\PedidoLogoService;
-use App\Application\Services\PedidoPrendaService;
-use App\Application\Services\Asesores\CrearPedidoService;
-use App\Application\Services\Asesores\DashboardService;
-use App\Application\Services\Asesores\NotificacionesService;
-use App\Application\Services\Asesores\PerfilService;
-use App\Application\Services\Asesores\EliminarPedidoService;
-use App\Application\Services\Asesores\ObtenerFotosService;
-use App\Application\Services\Asesores\AnularPedidoService;
-use App\Application\Services\Asesores\ObtenerPedidosService;
-use App\Application\Services\Asesores\ObtenerProximoPedidoService;
-use App\Application\Services\Asesores\ObtenerDatosFacturaService;
-use App\Application\Services\Asesores\ObtenerDatosRecibosService;
-use App\Application\Services\Asesores\ProcesarFotosTelasService;
-use App\Application\Services\Asesores\GuardarPedidoLogoService;
-use App\Application\Services\Asesores\GuardarPedidoProduccionService;
-use App\Application\Services\Asesores\ConfirmarPedidoService;
-use App\Application\Services\Asesores\ActualizarPedidoService;
-use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
+use App\Application\Services\Asesores\AsesoresApplicationFacadeService;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 
 class AsesoresController extends Controller
 {
-    protected PedidoProduccionRepository $pedidoProduccionRepository;
-    protected DashboardService $dashboardService;
-    protected NotificacionesService $notificacionesService;
-    protected PerfilService $perfilService;
-    protected EliminarPedidoService $eliminarPedidoService;
-    protected ObtenerFotosService $obtenerFotosService;
-    protected AnularPedidoService $anularPedidoService;
-    protected ObtenerPedidosService $obtenerPedidosService;
-    protected ObtenerProximoPedidoService $obtenerProximoPedidoService;
-    protected ObtenerDatosFacturaService $obtenerDatosFacturaService;
-    protected ObtenerDatosRecibosService $obtenerDatosRecibosService;
-    protected ProcesarFotosTelasService $procesarFotosTelasService;
-    protected GuardarPedidoLogoService $guardarPedidoLogoService;
-    protected GuardarPedidoProduccionService $guardarPedidoProduccionService;
-    protected ConfirmarPedidoService $confirmarPedidoService;
-    protected ActualizarPedidoService $actualizarPedidoService;
-    protected ObtenerPedidoDetalleService $obtenerPedidoDetalleService;
-
     public function __construct(
-        PedidoProduccionRepository $pedidoProduccionRepository,
-        DashboardService $dashboardService,
-        NotificacionesService $notificacionesService,
-        PerfilService $perfilService,
-        EliminarPedidoService $eliminarPedidoService,
-        ObtenerFotosService $obtenerFotosService,
-        AnularPedidoService $anularPedidoService,
-        ObtenerPedidosService $obtenerPedidosService,
-        ObtenerProximoPedidoService $obtenerProximoPedidoService,
-        ObtenerDatosFacturaService $obtenerDatosFacturaService,
-        ObtenerDatosRecibosService $obtenerDatosRecibosService,
-        ProcesarFotosTelasService $procesarFotosTelasService,
-        GuardarPedidoLogoService $guardarPedidoLogoService,
-        GuardarPedidoProduccionService $guardarPedidoProduccionService,
-        ConfirmarPedidoService $confirmarPedidoService,
-        ActualizarPedidoService $actualizarPedidoService,
-        ObtenerPedidoDetalleService $obtenerPedidoDetalleService
-    ) {
-        $this->pedidoProduccionRepository = $pedidoProduccionRepository;
-        $this->dashboardService = $dashboardService;
-        $this->notificacionesService = $notificacionesService;
-        $this->perfilService = $perfilService;
-        $this->eliminarPedidoService = $eliminarPedidoService;
-        $this->obtenerFotosService = $obtenerFotosService;
-        $this->anularPedidoService = $anularPedidoService;
-        $this->obtenerPedidosService = $obtenerPedidosService;
-        $this->obtenerProximoPedidoService = $obtenerProximoPedidoService;
-        $this->obtenerDatosFacturaService = $obtenerDatosFacturaService;
-        $this->obtenerDatosRecibosService = $obtenerDatosRecibosService;
-        $this->procesarFotosTelasService = $procesarFotosTelasService;
-        $this->guardarPedidoLogoService = $guardarPedidoLogoService;
-        $this->guardarPedidoProduccionService = $guardarPedidoProduccionService;
-        $this->confirmarPedidoService = $confirmarPedidoService;
-        $this->actualizarPedidoService = $actualizarPedidoService;
-        $this->obtenerPedidoDetalleService = $obtenerPedidoDetalleService;
-    }
+        private AsesoresApplicationFacadeService $asesoresService,
+        private PedidoProduccionRepository $pedidoProduccionRepository,
+    ) {}
     /**
      * Mostrar el perfil del asesor
      *
@@ -117,7 +48,7 @@ class AsesoresController extends Controller
      */
     public function dashboard()
     {
-        $stats = $this->dashboardService->obtenerEstadisticas();
+        $stats = $this->asesoresService->dashboard->obtenerEstadisticas();
         return view('asesores.dashboard', compact('stats'));
     }
 
@@ -127,7 +58,7 @@ class AsesoresController extends Controller
     public function getDashboardData(Request $request)
     {
         $dias = $request->get('tipo', 30);
-        $datos = $this->dashboardService->obtenerDatosGraficas($dias);
+        $datos = $this->asesoresService->dashboard->obtenerDatosGraficas($dias);
         return response()->json($datos);
     }
 
@@ -148,8 +79,8 @@ class AsesoresController extends Controller
                 $filtros['search'] = $request->search;
             }
 
-            $pedidos = $this->obtenerPedidosService->obtener($tipo, $filtros);
-            $estados = $tipo !== 'logo' ? $this->obtenerPedidosService->obtenerEstados() : [];
+            $pedidos = $this->asesoresService->obtenerPedidos->obtener($tipo, $filtros);
+            $estados = $tipo !== 'logo' ? $this->asesoresService->obtenerPedidos->obtenerEstados() : [];
 
             return view('asesores.pedidos.index', compact('pedidos', 'estados'));
 
@@ -269,12 +200,12 @@ class AsesoresController extends Controller
             $tipoCotizacion = $request->input('tipo_cotizacion');
             $cotizacionId = $request->input('cotizacion_id');
             
-            if ($this->guardarPedidoLogoService->esLogoPedido($tipoCotizacion, $cotizacionId)) {
+            if ($this->asesoresService->guardarPedidoLogo->esLogoPedido($tipoCotizacion, $cotizacionId)) {
                 // Procesar imágenes del logo
-                $imagenesProcesadas = $this->procesarFotosTelasService->procesarImagenesLogo($request);
+                $imagenesProcesadas = $this->asesoresService->procesarFotosTelas->procesarImagenesLogo($request);
                 
                 // Guardar logo
-                $logoPedidoId = $this->guardarPedidoLogoService->guardar($validated, $imagenesProcesadas);
+                $logoPedidoId = $this->asesoresService->guardarPedidoLogo->guardar($validated, $imagenesProcesadas);
 
                 DB::commit();
 
@@ -287,8 +218,8 @@ class AsesoresController extends Controller
             }
 
             // Guardar pedido de producción
-            $productosConFotos = $this->procesarFotosTelasService->procesar($request, $validated[$productosKey]);
-            $pedido = $this->guardarPedidoProduccionService->guardar($validated, $productosConFotos);
+            $productosConFotos = $this->asesoresService->procesarFotosTelas->procesar($request, $validated[$productosKey]);
+            $pedido = $this->asesoresService->guardarPedidoProduccion->guardar($validated, $productosConFotos);
 
             DB::commit();
 
@@ -319,7 +250,7 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedido = $this->confirmarPedidoService->confirmar($validated['borrador_id'], $validated['numero_pedido']);
+            $pedido = $this->asesoresService->confirmarPedido->confirmar($validated['borrador_id'], $validated['numero_pedido']);
 
             return response()->json([
                 'success' => true,
@@ -341,7 +272,7 @@ class AsesoresController extends Controller
     public function show($pedido)
     {
         try {
-            $pedidoData = $this->obtenerPedidoDetalleService->obtenerConPrendas($pedido);
+            $pedidoData = $this->asesoresService->obtenerPedidoDetalle->obtenerConPrendas($pedido);
             return view('asesores.pedidos.plantilla-erp-antigua', compact('pedidoData'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -354,7 +285,7 @@ class AsesoresController extends Controller
     public function edit($pedido)
     {
         try {
-            $datos = $this->obtenerPedidoDetalleService->obtenerParaEdicion($pedido);
+            $datos = $this->asesoresService->obtenerPedidoDetalle->obtenerParaEdicion($pedido);
             return view('asesores.pedidos.edit', $datos);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -382,7 +313,7 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedidoActualizado = $this->actualizarPedidoService->actualizar($pedido, $validated);
+            $pedidoActualizado = $this->asesoresService->actualizarPedido->actualizar($pedido, $validated);
 
             return response()->json([
                 'success' => true,
@@ -406,7 +337,7 @@ class AsesoresController extends Controller
     public function destroy($pedido)
     {
         try {
-            $resultado = $this->eliminarPedidoService->eliminarPedido($pedido);
+            $resultado = $this->asesoresService->eliminarPedido->eliminarPedido($pedido);
             return response()->json($resultado);
         } catch (\Exception $e) {
             return response()->json([
@@ -422,7 +353,7 @@ class AsesoresController extends Controller
     public function getNextPedido()
     {
         try {
-            $siguientePedido = $this->obtenerProximoPedidoService->obtenerProximo();
+            $siguientePedido = $this->asesoresService->obtenerProximoPedido->obtenerProximo();
 
             return response()->json([
                 'siguiente_pedido' => $siguientePedido
@@ -440,7 +371,7 @@ class AsesoresController extends Controller
      */
     public function getNotificaciones()
     {
-        return response()->json($this->notificacionesService->obtenerNotificaciones());
+        return response()->json($this->asesoresService->notificaciones->obtenerNotificaciones());
     }
 
     /**
@@ -457,7 +388,7 @@ class AsesoresController extends Controller
     public function markAllAsRead()
     {
         try {
-            $this->notificacionesService->marcarTodosLeidosPedidos();
+            $this->asesoresService->notificaciones->marcarTodosLeidosPedidos();
             
             return response()->json([
                 'success' => true,
@@ -477,7 +408,7 @@ class AsesoresController extends Controller
     public function markNotificationAsRead($notificationId)
     {
         try {
-            $this->notificacionesService->marcarNotificacionLeida($notificationId);
+            $this->asesoresService->notificaciones->marcarNotificacionLeida($notificationId);
             
             return response()->json([
                 'success' => true,
@@ -509,7 +440,7 @@ class AsesoresController extends Controller
             ]);
 
             $archivoAvatar = $request->hasFile('avatar') ? $request->file('avatar') : null;
-            $resultado = $this->perfilService->actualizarPerfil($validated, $archivoAvatar);
+            $resultado = $this->asesoresService->perfil->actualizarPerfil($validated, $archivoAvatar);
 
             return response()->json($resultado);
 
@@ -543,7 +474,7 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedido = $this->anularPedidoService->anular($id, $request->novedad);
+            $pedido = $this->asesoresService->anularPedido->anular($id, $request->novedad);
             
             return response()->json([
                 'success' => true,
@@ -572,7 +503,7 @@ class AsesoresController extends Controller
     public function obtenerDatosFactura($id)
     {
         try {
-            $datos = $this->obtenerDatosFacturaService->obtener($id);
+            $datos = $this->asesoresService->obtenerDatosFactura->obtener($id);
             return response()->json($datos);
         } catch (\Exception $e) {
             return response()->json([
@@ -587,7 +518,7 @@ class AsesoresController extends Controller
     public function obtenerDatosRecibos($id)
     {
         try {
-            $datos = $this->obtenerDatosRecibosService->obtener($id);
+            $datos = $this->asesoresService->obtenerDatosRecibos->obtener($id);
             return response()->json($datos);
         } catch (\Exception $e) {
             return response()->json([

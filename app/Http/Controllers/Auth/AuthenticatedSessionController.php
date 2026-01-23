@@ -86,6 +86,16 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('supervisor-pedidos.index', absolute: false));
             }
 
+            // Cartera - Aprobación/Rechazo de pedidos
+            if ($roleName === 'cartera') {
+                return redirect(route('cartera.pedidos', absolute: false));
+            }
+
+            // Bordado - Cartera de pedidos y cotizaciones
+            if ($roleName === 'bordado') {
+                return redirect(route('bordado.index', absolute: false));
+            }
+
             // Supervisor de Asesores - Supervisión de asesores, cotizaciones y pedidos
             if ($roleName === 'supervisor_asesores') {
                 return redirect(route('supervisor-asesores.dashboard', absolute: false));

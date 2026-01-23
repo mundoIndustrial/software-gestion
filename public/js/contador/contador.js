@@ -4,7 +4,7 @@ function abrirModalImagenes(productoIndex, nombreProducto) {
     const contenedorImagenes = document.querySelector(`[data-producto-index="${productoIndex}"]`);
     
     if (!contenedorImagenes) {
-        console.error('No se encontró el contenedor de imágenes para el producto:', productoIndex);
+
         alert('No hay imágenes para este producto');
         return;
     }
@@ -16,7 +16,7 @@ function abrirModalImagenes(productoIndex, nombreProducto) {
     try {
         todasLasImagenes = JSON.parse(imagenesJSON) || [];
     } catch (e) {
-        console.error('Error al parsear imágenes:', e);
+
         todasLasImagenes = [];
     }
     
@@ -25,7 +25,7 @@ function abrirModalImagenes(productoIndex, nombreProducto) {
         return;
     }
     
-    console.log(`📸 Abriendo modal para producto ${productoIndex} con ${todasLasImagenes.length} imágenes`);
+
     
     // Llenar el modal con las imágenes
     const grid = document.getElementById('modalImagenesGrid');
@@ -133,7 +133,7 @@ function cambiarEstadoCotizacion(selectElement) {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 Swal.fire({
                     title: 'Error',
                     text: 'Error al cambiar el estado',

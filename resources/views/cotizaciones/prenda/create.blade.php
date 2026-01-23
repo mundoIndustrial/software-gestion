@@ -965,7 +965,6 @@ function guardarCotizacionPrenda(action) {
 
 // Actualizar resumen (función legacy)
 function actualizarResumenPrenda() {
-    console.log('Resumen actualizado');
 }
 
 // Buscar prendas
@@ -1039,11 +1038,6 @@ function marcarEsJeanPantalon(select) {
     
     // Si tiene un valor seleccionado (no vacío), marcar como 1
     hiddenInput.value = select.value && select.value !== '' ? '1' : '0';
-    
-    console.log(' es_jean_pantalon actualizado:', {
-        tipo_jean_seleccionado: select.value,
-        es_jean_pantalon: hiddenInput.value
-    });
 }
 
 // Gestión de imágenes (delegado a scripts heredados)
@@ -1093,7 +1087,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                    console.log(' ATRIBUTO STYLE CAMBIÓ:', menu.style.display);
                     console.trace('Stack trace:');
                 }
             });
@@ -1195,7 +1188,6 @@ document.addEventListener('click', function(e) {
     @if(isset($cotizacion))
     // Datos de cotización para edición
     window.cotizacionParaEditar = {!! json_encode($cotizacion->toArray()) !!};
-    console.log(' Cotización cargada para editar:', window.cotizacionParaEditar);
     @endif
 </script>
 
@@ -1234,18 +1226,14 @@ document.addEventListener('click', function(e) {
         const sidebar = document.getElementById('sidebar');
         if (sidebar) {
             sidebar.classList.remove('collapsed');
-            console.log('✓ Sidebar expandido');
         }
         
         // Cargar datos de cotización si estamos editando
         if (window.cotizacionParaEditar) {
-            console.log('🔄 Detectada cotización para editar, cargando datos...');
             setTimeout(() => {
                 if (typeof cargarBorrador === 'function') {
                     cargarBorrador(window.cotizacionParaEditar);
-                    console.log(' Datos de cotización cargados en el formulario');
                 } else {
-                    console.error(' Función cargarBorrador no disponible');
                 }
             }, 500);
         }

@@ -29,11 +29,11 @@ const HolidayManager = (() => {
             if (response.ok) {
                 const data = await response.json();
                 festivosCache = data.map(h => h.date);
-                console.log(` Festivos obtenidos de API para ${year}`);
+
                 return festivosCache;
             }
         } catch (error) {
-            console.log(' API de festivos no disponible, usando fallback');
+
         }
         
         festivosCache = FESTIVOS_COLOMBIA_2025;

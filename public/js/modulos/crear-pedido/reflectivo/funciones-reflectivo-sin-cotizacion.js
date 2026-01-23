@@ -18,7 +18,7 @@
  * Se llama cuando se selecciona "Nuevo Pedido" > "REFLECTIVO"
  */
 function crearPedidoTipoReflectivoSinCotizacion() {
-    console.log(' INICIANDO: Crear pedido tipo REFLECTIVO sin cotización');
+
 
     // Mostrar los pasos 2 y 3
     const seccionInfoPrenda = document.getElementById('seccion-info-prenda');
@@ -30,13 +30,13 @@ function crearPedidoTipoReflectivoSinCotizacion() {
     const tituloPrendasDinamico = document.getElementById('titulo-prendas-dinamico');
     if (tituloPrendasDinamico) {
         tituloPrendasDinamico.innerHTML = 'Nuevo Pedido Reflectivo';
-        console.log(' Título dinámico actualizado a REFLECTIVO');
+
     }
 
     // Limpiar container
     const container = document.getElementById('prendas-container-editable');
     if (!container) {
-        console.error(' Container no encontrado: prendas-container-editable');
+
         return;
     }
 
@@ -81,13 +81,13 @@ function crearPedidoTipoReflectivoSinCotizacion() {
  * @returns {number} Índice de la prenda agregada
  */
 function agregarPrendaReflectivoSinCotizacion() {
-    console.log('➕ Agregando nueva prenda reflectivo');
+
 
     const gestor = window.gestorReflectivoSinCotizacion;
     const container = document.getElementById('prendas-container-editable');
 
     if (!container || !gestor) {
-        console.error(' Gestor o container no disponible');
+
         return -1;
     }
 
@@ -122,7 +122,7 @@ function agregarPrendaReflectivoSinCotizacion() {
  * @param {number} index - Índice de la prenda
  */
 function eliminarPrendaReflectivoSinCotizacion(index) {
-    console.log(`🗑️ Eliminando prenda reflectivo ${index + 1}`);
+
 
     if (typeof modalConfirmarEliminarPrenda !== 'function') {
         if (confirm(`¿Eliminar prenda reflectivo ${index + 1}?`)) {
@@ -150,7 +150,7 @@ function eliminarPrendaReflectivoSinCotizacion(index) {
  * @param {number} prendaIndex - Índice de la prenda
  */
 function abrirGaleriaImagenesReflectivo(prendaIndex) {
-    console.log(`📸 Abriendo galería para prenda ${prendaIndex + 1}`);
+
     const input = document.querySelector(`input.input-file-imagenes-reflectivo[name="imagenes_reflectivo[${prendaIndex}][]"]`);
     if (input) {
         input.click();
@@ -163,7 +163,7 @@ function abrirGaleriaImagenesReflectivo(prendaIndex) {
  * @param {number} imagenIndex - Índice de la imagen
  */
 function eliminarImagenReflectivo(prendaIndex, imagenIndex) {
-    console.log(`🗑️ Eliminando imagen ${imagenIndex + 1} de prenda ${prendaIndex + 1}`);
+
 
     const gestor = window.gestorReflectivoSinCotizacion;
     gestor.eliminarFoto(prendaIndex, imagenIndex);
@@ -176,7 +176,7 @@ function eliminarImagenReflectivo(prendaIndex, imagenIndex) {
  * @param {number} prendaIndex - Índice de la prenda
  */
 function abrirSelectorTallasReflectivo(prendaIndex) {
-    console.log(`📏 Abriendo selector de tallas para prenda ${prendaIndex + 1}`);
+
 
     // Opciones de tallas disponibles
     const tallasDisponibles = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -304,7 +304,7 @@ window.cerrarModalTallaReflectivo = function() {
  * @param {string} talla - Talla a eliminar
  */
 function eliminarTallaReflectivo(prendaIndex, talla) {
-    console.log(`🗑️ Eliminando talla ${talla} de prenda ${prendaIndex + 1}`);
+
 
     const gestor = window.gestorReflectivoSinCotizacion;
     gestor.eliminarTalla(prendaIndex, talla);
@@ -390,7 +390,7 @@ function mostrarBotonAgregarMasPrendas() {
         btnAnterior.remove();
     }
     
-    console.log(' No se muestra botón "Agregar Prenda" en tipo Reflectivo (máximo 1 prenda permitida)');
+
 }
 
 /**
@@ -782,7 +782,7 @@ window.enviarReflectivoSinCotizacion = function() {
             // Validar
             const validacion = gestor.validar();
             if (!validacion.valido) {
-                console.error(' Validación fallida:', validacion.errores);
+
                 let mensajeError = 'Errores de validación:\n';
                 validacion.errores.forEach(error => {
                     mensajeError += `• ${error}\n`;
@@ -909,7 +909,7 @@ window.enviarReflectivoSinCotizacion = function() {
                 throw new Error(data.message || 'Error desconocido en el servidor');
             }
         } catch (error) {
-            console.error(' Error al enviar pedido REFLECTIVO:', error);
+
             Swal.fire('Error', error.message || 'Error al crear el pedido', 'error');
             reject(error);
         }
@@ -925,17 +925,17 @@ window.enviarReflectivoSinCotizacion = function() {
  * Abrir flujo de selección de géneros y tallas
  */
 window.agregarTallasAlGeneroReflectivo = function(prendaIndex, genero) {
-    console.log(` Abriendo flujo de tallas para género: ${genero}`);
+
     
     const prendaCard = document.querySelector(`.prenda-card-reflectivo[data-prenda-index="${prendaIndex}"]`);
     if (!prendaCard) {
-        console.error(` Prenda card no encontrada`);
+
         return;
     }
 
     const prenda = window.gestorReflectivoSinCotizacion.obtenerPorIndice(prendaIndex);
     if (!prenda) {
-        console.error(` Prenda no encontrada en gestor`);
+
         return;
     }
 
@@ -1208,7 +1208,7 @@ function agregarTallasAlGeneroReflectivo_Interno(prendaIndex, genero, tallas, ti
             `.talla-cantidad-genero-editable[data-prenda="${prendaIndex}"][data-genero="${genero}"][data-talla="${talla}"]`
         );
         if (existente) {
-            console.warn(` Talla ${talla} ya existe para ${genero}`);
+
             return; // Saltar si ya existe
         }
 
@@ -1223,7 +1223,7 @@ function agregarTallasAlGeneroReflectivo_Interno(prendaIndex, genero, tallas, ti
         inputTalla.dataset.tipoTalla = tipoTalla;
 
         prendaCard.appendChild(inputTalla);
-        console.log(` Input creado para ${genero} ${talla}`);
+
     });
 
     // Re-renderizar la sección del género
@@ -1327,7 +1327,7 @@ function renderizarTallasDelGeneroReflectivo(prendaIndex, genero) {
                     prenda.generosConTallas[gen] = {};
                 }
                 prenda.generosConTallas[gen][talla] = cantidad;
-                console.log(` Cantidad actualizada - Prenda: ${prendaIdx}, Género: ${gen}, Talla: ${talla}, Cantidad: ${cantidad}`);
+
             }
         });
     });

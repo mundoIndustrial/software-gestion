@@ -37,7 +37,7 @@ function initializeRealtimeNotifications() {
 // Configurar Laravel Echo para escuchar eventos en tiempo real
 function setupEchoListener() {
     if (typeof Echo === 'undefined') {
-        console.warn('Laravel Echo no está disponible. Las notificaciones en tiempo real no funcionarán.');
+
         return;
     }
 
@@ -47,11 +47,11 @@ function setupEchoListener() {
         
         // Evento: Nueva notificación
         notificationChannel.listen('.new-notification', (data) => {
-            console.log('📬 Nueva notificación recibida:', data);
+
             
             // No mostrar notificaciones del usuario actual
             if (data.exclude_user_id && currentUserId && data.exclude_user_id === currentUserId) {
-                console.log(' Notificación del usuario actual, ignorando');
+
                 return;
             }
             
@@ -67,7 +67,7 @@ function setupEchoListener() {
         
         // Evento: Notificaciones marcadas como leídas
         notificationChannel.listen('.notifications-marked-read', (data) => {
-            console.log(' Notificaciones marcadas como leídas:', data);
+
             
             // Si es del usuario actual, actualizar UI
             if (data.user_id === currentUserId) {
@@ -75,9 +75,9 @@ function setupEchoListener() {
             }
         });
         
-        console.log(' Laravel Echo configurado correctamente');
+
     } catch (error) {
-        console.error(' Error configurando Laravel Echo:', error);
+
     }
 }
 
@@ -182,7 +182,7 @@ async function loadNotifications() {
         renderNotifications(data.notifications || []);
         
     } catch (error) {
-        console.error('Error cargando notificaciones:', error);
+
     }
 }
 
@@ -204,7 +204,7 @@ async function updateUnreadCount() {
         updateNotificationBadge(data.unread_count || 0);
         
     } catch (error) {
-        console.debug('Error actualizando contador:', error);
+
     }
 }
 
@@ -347,7 +347,7 @@ function addNotificationToUI(data) {
     const user = (data.user || '').toLowerCase();
     
     if (description.includes('token') || user.includes('token')) {
-        console.log(' Notificación filtrada (contiene token)');
+
         return;
     }
     
@@ -421,7 +421,7 @@ async function markAllAsRead() {
         }
         
     } catch (error) {
-        console.error('Error marcando notificaciones como leídas:', error);
+
     }
 }
 
@@ -443,7 +443,7 @@ async function markAsReadOnClose() {
         updateUnreadCount();
         
     } catch (error) {
-        console.debug('Error marcando como leídas al cerrar:', error);
+
     }
 }
 
@@ -458,7 +458,7 @@ function showNotificationToast(data) {
     const user = (data.user || '').toLowerCase();
     
     if (description.includes('token') || user.includes('token')) {
-        console.log(' Toast filtrado (contiene token)');
+
         return;
     }
     
@@ -624,7 +624,7 @@ function showNotificationDetailModal(notif) {
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
-                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">👤 Usuario</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">Usuario</h4>
                         <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${notif.user || 'N/A'}</p>
                     </div>
                     <div>

@@ -12,7 +12,7 @@
         const sidebar = document.getElementById('sidebar');
 
         if (!hamburgerBtn || !sidebar) {
-            console.warn('Hamburguesa o sidebar no encontrados');
+
             return;
         }
 

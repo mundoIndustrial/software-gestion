@@ -46,7 +46,7 @@ extraerTallas()               ← Método auxiliar de cotización
 
 ---
 
-## 🚀 Recomendación Final
+## Recomendación Final
 
 ### ESTADO: ✅ LISTO PARA PRODUCCIÓN
 

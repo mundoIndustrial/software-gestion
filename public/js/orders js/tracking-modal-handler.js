@@ -6,7 +6,7 @@
 (function() {
   'use strict';
 
-  console.log(' Tracking Modal Handler Loaded');
+
 
   // Inicializar event listeners del modal
   function initTrackingModalListeners() {
@@ -16,7 +16,7 @@
 
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
-        console.log('Cerrando modal de seguimiento (botón)');
+
         if (typeof closeOrderTracking === 'function') {
           closeOrderTracking();
         } else if (modal) {
@@ -27,7 +27,7 @@
 
     if (overlay) {
       overlay.addEventListener('click', () => {
-        console.log('Cerrando modal de seguimiento (overlay)');
+
         if (typeof closeOrderTracking === 'function') {
           closeOrderTracking();
         } else if (modal) {
@@ -39,7 +39,7 @@
     // Cerrar con ESC
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
-        console.log('Cerrando modal de seguimiento (ESC)');
+
         if (typeof closeOrderTracking === 'function') {
           closeOrderTracking();
         } else {
@@ -48,7 +48,7 @@
       }
     });
 
-    console.log(' Event listeners del modal inicializados');
+
   }
 
   // Inicializar cuando el DOM esté listo

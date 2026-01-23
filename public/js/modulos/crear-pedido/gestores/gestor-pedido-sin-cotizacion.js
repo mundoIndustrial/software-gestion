@@ -280,7 +280,7 @@ class GestorPedidoSinCotizacion {
         // Validar
         const validacion = this.validar();
         if (!validacion.valido) {
-            console.error(' Validación fallida:', validacion.errores);
+
             window.mostrarErroresValidacion(validacion.errores);
             return Promise.reject('Validación fallida');
         }
@@ -292,13 +292,13 @@ class GestorPedidoSinCotizacion {
                             document.querySelector('meta[name="csrf-token"]')?.content;
 
             if (!csrfToken) {
-                console.error(' Token CSRF no encontrado');
+
                 mostrarError('Error', 'Token de seguridad no encontrado');
                 reject(new Error('CSRF token missing'));
                 return;
             }
 
-            console.log('📤 [SIN COTIZACIÓN] Enviando datos:', datos);
+
 
             fetch('/asesores/pedidos-produccion/crear-sin-cotizacion', {
                 method: 'POST',
@@ -316,7 +316,7 @@ class GestorPedidoSinCotizacion {
                 return response.json();
             })
             .then(data => {
-                console.log(' [SIN COTIZACIÓN] Respuesta del servidor:', data);
+
 
                 if (data.success) {
                     mostrarExito(
@@ -329,7 +329,7 @@ class GestorPedidoSinCotizacion {
                 }
             })
             .catch(error => {
-                console.error(' [SIN COTIZACIÓN] Error:', error);
+
                 mostrarError(
                     'Error al crear pedido',
                     error.message || 'Ocurrió un error inesperado'

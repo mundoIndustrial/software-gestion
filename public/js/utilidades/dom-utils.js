@@ -16,7 +16,7 @@ class DOMUtils {
     static getElement(id) {
         const element = document.getElementById(id);
         if (!element) {
-            console.warn(` [DOMUtils] Elemento no encontrado: #${id}`);
+
             return null;
         }
         return element;

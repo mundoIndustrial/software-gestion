@@ -956,7 +956,6 @@
     function llenarDatosModal() {
         // Esta función ahora solo es usada por el API
         // Los datos se llenan a través de llenarReciboCosturaMobile()
-        console.log(' llenarDatosModal: datos ya se llenan desde el API');
     }
 
     // Detectar si es móvil
@@ -965,8 +964,6 @@
     }
 
     // Generar imagen al cargar la página - Ejecutar inmediatamente
-    console.log(' Script cargado - verificando elementos del DOM');
-    
     /**
      * Función: llenarFotos
      * Carga las fotos en la galería desde la API
@@ -975,13 +972,10 @@
     let indiceActualGaleria = 0; // Índice de la foto actual en la galería
     
     function llenarFotos(fotos) {
-        console.log(' Función llenarFotos llamada con', fotos.length, 'fotos');
-        
         fotosGlobales = fotos; // Guardar fotos globalmente
         
         const fotosGrid = document.getElementById('fotos-grid');
         if (!fotosGrid) {
-            console.error(' No se encontró elemento #fotos-grid');
             return;
         }
         
@@ -989,7 +983,6 @@
         fotosGrid.innerHTML = '';
         
         if (!fotos || fotos.length === 0) {
-            console.log(' No hay fotos disponibles');
             fotosGrid.innerHTML = `
                 <div class="empty-fotos">
                     <span class="material-symbols-rounded">image_not_supported</span>
@@ -1001,8 +994,6 @@
         
         // Generar HTML para cada foto
         fotos.forEach((foto, index) => {
-            console.log(`📷 Foto ${index + 1}:`, foto);
-            
             const fotoCard = document.createElement('div');
             fotoCard.className = 'foto-card';
             fotoCard.style.cursor = 'pointer';
@@ -1198,20 +1189,11 @@
     });
     
     // Generar imagen al cargar la página - Ejecutar inmediatamente
-    console.log(' Script cargado - verificando elementos del DOM');
-    
     // Esperar un poco para asegurar que el DOM esté listo
     setTimeout(function() {
-        console.log(' Iniciando verificación de móvil');
         llenarDatosModal();
-        
-        console.log('📱 Verificando elementos del DOM...');
-        
         const containerMobile = document.getElementById('factura-container-mobile');
-        console.log('📱 Container mobile encontrado?', !!containerMobile);
-        
         if (!containerMobile) {
-            console.error(' ERROR: No se encontró #factura-container-mobile en el DOM');
             console.log(' IDs en el documento:', document.querySelectorAll('[id]').length);
             return;
         }
@@ -1220,10 +1202,7 @@
         containerMobile.style.display = 'block';
         
         const numeroPedido = containerMobile.dataset.numeroPedido;
-        console.log('📱 Número de pedido del data-attribute:', numeroPedido);
-        
         if (!numeroPedido) {
-            console.error(' ERROR: No hay data-numero-pedido en el contenedor');
             return;
         }
         
@@ -1233,18 +1212,15 @@
         
         fetch(apiUrl)
             .then(function(response) {
-                console.log('📡 Respuesta del API - Status:', response.status);
                 if (!response.ok) {
                     throw new Error('API error: ' + response.status);
                 }
                 return response.json();
             })
             .then(function(data) {
-                console.log(' Datos del API recibidos:', data);
-                console.log(' DEBUG - data.descripcion_prendas:', data.descripcion_prendas);
-                console.log(' DEBUG - data.prendas:', data.prendas);
-                console.log(' DEBUG - data.prendas?.length:', data.prendas?.length);
-                
+
+
+
                 //  USAR LOS DATOS DIRECTAMENTE DEL CONTROLADOR (igual que asesores)
                 const pedidoData = {
                     fecha: data.fecha_de_creacion_de_orden || data.fecha_creacion || new Date().toISOString().split('T')[0],
@@ -1257,20 +1233,13 @@
                     descripcion: data.descripcion_prendas || '',
                     prendas: data.prendas || []
                 };
-                
-                console.log(' Datos reformateados:', pedidoData);
-                console.log(' descripcion_prendas disponible:', !!pedidoData.descripcion);
-                
+
                 if (window.llenarReciboCosturaMobile) {
-                    console.log(' Llamando a llenarReciboCosturaMobile...');
                     window.llenarReciboCosturaMobile(pedidoData);
-                    console.log(' llenarReciboCosturaMobile completado');
                 } else {
-                    console.error(' Función llenarReciboCosturaMobile NO encontrada');
                 }
                 
                 // ===== CARGAR FOTOS DESDE ENDPOINT DE IMÁGENES (igual que asesores) =====
-                console.log('📸 Cargando fotos desde /registros/' + numeroPedido + '/images');
                 fetch('/registros/' + numeroPedido + '/images')
                     .then(function(response) {
                         if (!response.ok) {
@@ -1279,8 +1248,6 @@
                         return response.json();
                     })
                     .then(function(imageData) {
-                        console.log('📸 Datos de imágenes recibidos:', imageData);
-                        
                         // Extraer todas las URLs de imágenes de todas las prendas
                         const todasLasFotos = [];
                         if (imageData.prendas && imageData.prendas.length > 0) {
@@ -1292,18 +1259,14 @@
                                 }
                             });
                         }
-                        
-                        console.log('📸 Total de fotos extraídas:', todasLasFotos.length);
                         llenarFotos(todasLasFotos);
                     })
                     .catch(function(error) {
-                        console.error(' Error al cargar imágenes:', error);
                         llenarFotos([]);
                     });
             })
             .catch(function(error) {
-                console.error(' Error en fetch:', error);
-                console.error(' Stack:', error.stack);
+
             });
     }, 500);
 
@@ -1335,7 +1298,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('Error al completar el proceso');
         });
     }
@@ -1482,7 +1444,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             mostrarModalRespuesta(' Error', 'Error al enviar la novedad', 'error');
         });
     }
@@ -1980,3 +1941,4 @@
         }
     }
 </style>
+

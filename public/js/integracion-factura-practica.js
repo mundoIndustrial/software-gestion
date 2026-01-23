@@ -43,7 +43,7 @@ function renderOrderDetail_ConFactura(orden) {
         modalContent.appendChild(facturaBtnContainer);
     }
     
-    console.log(' Botones de factura agregados al modal');
+
 }
 
 
@@ -99,7 +99,7 @@ window.agregarOpcionFactura = function() {
         }
     });
     
-    console.log(' Opciones de factura agregadas a todos los menús');
+
 };
 
 
@@ -155,7 +155,7 @@ window.addEventListener('load', function() {
                 container.style.position = 'relative';
                 container.appendChild(floatingBtn);
                 
-                console.log(' Botón flotante de factura agregado');
+
             }
         }, 100);
     }, { once: true });
@@ -182,7 +182,7 @@ window.addEventListener('keydown', function(e) {
             if (match) {
                 e.preventDefault();
                 const numeroPedido = match[1];
-                console.log('⌨️ Abriendo factura por atajo: Ctrl+F');
+
                 abrirFacturaEnVentana(numeroPedido);
             }
         }
@@ -206,7 +206,7 @@ window.Factura = {
         if (numeroPedido) {
             abrirFacturaEnVentana(numeroPedido);
         } else {
-            console.warn('No hay pedido actual');
+
         }
     },
     
@@ -268,10 +268,10 @@ window.cargarScriptFactura = function() {
         const script = document.createElement('script');
         script.src = '/js/invoice-modal-integration.js?v=' + Date.now();
         script.onload = function() {
-            console.log(' Scripts de factura cargados exitosamente');
+
         };
         script.onerror = function() {
-            console.error(' Error al cargar scripts de factura');
+
         };
         document.head.appendChild(script);
     }
@@ -350,17 +350,6 @@ if (!document.querySelector('#factura-animations')) {
 // ========================================
 // 8. INFORMACIÓN EN CONSOLA
 // ========================================
-
-console.log(`
-╔══════════════════════════════════════════╗
-║   SISTEMA DE FACTURACIÓN INTEGRADO     ║
-╚══════════════════════════════════════════╝
-
-Comandos disponibles en la consola:
-
-1. Abrir factura en ventana:
-   abrirFacturaEnVentana(45703)
-
 2. Abrir factura en modal:
    abrirFacturaEnIframe(45703)
 
@@ -377,3 +366,4 @@ Comandos disponibles en la consola:
 
  Para más información, ver INTEGRACION_FACTURA_MODAL.md
 `);
+

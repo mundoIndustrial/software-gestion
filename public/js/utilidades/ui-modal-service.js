@@ -14,6 +14,37 @@
 
 'use strict';
 
+/**
+ * Función auxiliar para esperar a que Swal esté disponible
+ * Soporta tanto callbacks como async/await
+ * @param {Function} callback - Función a ejecutar cuando Swal esté listo
+ * @param {number} maxWaitTime - Tiempo máximo de espera en ms (default 5000)
+ * @returns {Promise} Promesa que se resuelve cuando Swal está disponible o timeout
+ * @private
+ */
+function _ensureSwal(callback, maxWaitTime = 5000) {
+    return new Promise((resolve) => {
+        if (typeof Swal !== 'undefined') {
+            if (callback) callback();
+            resolve(true);
+            return;
+        }
+        
+        const startTime = Date.now();
+        const checkInterval = setInterval(() => {
+            if (typeof Swal !== 'undefined') {
+                clearInterval(checkInterval);
+                if (callback) callback();
+                resolve(true);
+            } else if (Date.now() - startTime > maxWaitTime) {
+                clearInterval(checkInterval);
+
+                resolve(false);  // Resolver con false para indicar timeout
+            }
+        }, 50);
+    });
+}
+
 class UIModalService {
     // ============================================================
     // CONFIGURACIÓN POR DEFECTO
@@ -57,7 +88,6 @@ class UIModalService {
         const modal = document.getElementById(id);
         
         if (!modal) {
-            console.warn(` Modal con ID '${id}' no encontrado`);
             return false;
         }
 
@@ -92,7 +122,6 @@ class UIModalService {
             document.addEventListener('keydown', handleEsc);
         }
 
-        console.log(` Modal '${id}' abierto`);
         return true;
     }
 
@@ -105,7 +134,6 @@ class UIModalService {
         const modal = document.getElementById(id);
         
         if (!modal) {
-            console.warn(` Modal con ID '${id}' no encontrado`);
             return false;
         }
 
@@ -122,7 +150,6 @@ class UIModalService {
             document.body.style.overflow = '';
         }
 
-        console.log(` Modal '${id}' cerrado`);
         return true;
     }
 
@@ -134,7 +161,6 @@ class UIModalService {
             modal.style.display = 'none';
         });
         document.body.style.overflow = '';
-        console.log(' Todos los modales cerrados');
     }
 
     // ============================================================
@@ -147,6 +173,14 @@ class UIModalService {
      * @returns {Promise} Resultado de Swal.fire
      */
     static async confirmar(config = {}) {
+        if (typeof Swal === 'undefined') {
+            return new Promise((resolve) => {
+                _ensureSwal(() => {
+                    this.confirmar(config).then(resolve);
+                });
+            });
+        }
+
         const {
             titulo = 'Confirmar',
             mensaje = '¿Estás seguro?',
@@ -201,6 +235,11 @@ class UIModalService {
      * @param {number} duracion - Duración en ms (default 2000)
      */
     static exito(titulo, mensaje, duracion = 2000) {
+        if (typeof Swal === 'undefined') {
+            _ensureSwal(() => this.exito(titulo, mensaje, duracion));
+            return;
+        }
+        
         return Swal.fire({
             icon: 'success',
             title: titulo,
@@ -219,6 +258,11 @@ class UIModalService {
      * @param {string} mensaje - Mensaje de error
      */
     static error(titulo, mensaje) {
+        if (typeof Swal === 'undefined') {
+            _ensureSwal(() => this.error(titulo, mensaje));
+            return;
+        }
+        
         return Swal.fire({
             icon: 'error',
             title: titulo,
@@ -235,6 +279,11 @@ class UIModalService {
      * @param {number} duracion - Duración en ms (default 2000)
      */
     static advertencia(titulo, mensaje, duracion = 2000) {
+        if (typeof Swal === 'undefined') {
+            _ensureSwal(() => this.advertencia(titulo, mensaje, duracion));
+            return;
+        }
+        
         return Swal.fire({
             icon: 'warning',
             title: titulo,
@@ -254,6 +303,11 @@ class UIModalService {
      * @param {number} duracion - Duración en ms (default 3000)
      */
     static info(titulo, mensaje, duracion = 3000) {
+        if (typeof Swal === 'undefined') {
+            _ensureSwal(() => this.info(titulo, mensaje, duracion));
+            return;
+        }
+        
         return Swal.fire({
             icon: 'info',
             title: titulo,
@@ -272,6 +326,20 @@ class UIModalService {
      * @param {string} mensaje - Mensaje
      */
     static cargando(titulo = 'Procesando...', mensaje = 'Por favor espera') {
+        // Validar que Swal esté disponible
+        if (typeof Swal === 'undefined') {
+            
+            // Esperar a que Swal esté disponible
+            const checkSwal = setInterval(() => {
+                if (typeof Swal !== 'undefined') {
+                    clearInterval(checkSwal);
+                    this.cargando(titulo, mensaje);
+                }
+            }, 50);
+            
+            return;
+        }
+        
         Swal.fire({
             title: titulo,
             html: mensaje,
@@ -289,6 +357,14 @@ class UIModalService {
      * @param {Object} config - Configuración
      */
     static async contenido(config = {}) {
+        if (typeof Swal === 'undefined') {
+            return new Promise((resolve) => {
+                _ensureSwal(() => {
+                    this.contenido(config).then(resolve);
+                });
+            });
+        }
+
         const {
             titulo = '',
             html = '',
@@ -512,4 +588,3 @@ if (!document.getElementById('ui-modal-service-styles')) {
 
 window.UI = UIModalService;
 
-console.log(' UIModalService cargado y disponible como window.UI');

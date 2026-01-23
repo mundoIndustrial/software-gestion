@@ -35,39 +35,39 @@ function obtenerPedidoId() {
  * @param {number} pedidoId - ID del pedido en BD (para guardar)
  */
 async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
-    console.log('🖊️  [EDITAR-MODAL] Abriendo prenda para editar');
-    console.log(' Prenda:', prenda);
-    console.log(' Pedido ID:', pedidoId);
+
+
+
     
     // Si no viene pedidoId, intentar obtenerlo
     if (!pedidoId) {
         pedidoId = obtenerPedidoId();
-        console.log('    Pedido ID obtenido del contexto:', pedidoId);
+
     }
 
     //  NUEVO: Si tenemos pedidoId y prenda.id, obtener datos frescos de la BD
     let prendaEditable = JSON.parse(JSON.stringify(prenda));
     if (pedidoId && prenda.id) {
         try {
-            console.log(`   Obteniendo datos frescos de la BD para prenda ${prenda.id}...`);
+
             const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prenda/${prenda.id}/datos`);
             if (response.ok) {
                 const resultado = await response.json();
                 if (resultado.success && resultado.prenda) {
-                    console.log('    Datos obtenidos desde BD:', resultado.prenda);
+
                     prendaEditable = resultado.prenda;
                 } else {
-                    console.warn('   ⚠️  Respuesta sin datos válidos, usando prenda de memoria');
+
                 }
             } else {
-                console.warn('   ⚠️  Error en request (' + response.status + '), usando prenda de memoria');
+
             }
         } catch (error) {
-            console.error('    Error obteniendo datos frescos:', error);
-            console.log('   Continuando con prenda de memoria...');
+
+
         }
     } else {
-        console.log('   No hay pedidoId o prenda.id, usando prenda de memoria');
+
     }
     
     // Preparar datos para generarHTMLFactura
@@ -79,7 +79,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     // Obtener HTML de factura
     if (typeof generarHTMLFactura !== 'function') {
-        console.error(' generarHTMLFactura no disponible');
+
         Swal.fire('Error', 'No se puede generar el formulario', 'error');
         return;
     }
@@ -101,11 +101,11 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         cancelButtonText: 'Cancelar',
         cancelButtonColor: '#ef4444',
         preConfirm: async () => {
-            console.log('Pre-guardando: validando datos...');
+
             
             // Extraer datos editados
             const datosModificados = extraerDatosModalEdicion(prendaEditable);
-            console.log(' Datos para guardar:', datosModificados);
+
             
             // Guardar en BD
             if (pedidoId && prenda.id) {
@@ -119,14 +119,14 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
             // Actualizar en gestor local
             if (window.gestorPrendaSinCotizacion) {
                 window.gestorPrendaSinCotizacion.actualizar(prendaIndex, datosModificados);
-                console.log(' Prenda actualizada en gestor local');
+
             }
             
             return true;
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            console.log(' Edición guardada');
+
             
             // Re-renderizar tarjeta
             reRenderizarTarjetaPrendaEditada(prendaIndex);
@@ -139,7 +139,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                 showConfirmButton: false
             });
         } else {
-            console.log(' Edición cancelada');
+
         }
     });
 }
@@ -148,18 +148,18 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
  * Convertir factura a editable
  */
 function hacerFacturaEditable(htmlFactura, prenda) {
-    console.log('🔄 Haciendo factura editable...');
+
     
     const temp = document.createElement('div');
     temp.innerHTML = htmlFactura;
     
     // === 1. EDITAR VARIACIONES (Tabla) ===
-    console.log(' Buscando tablas de variaciones...');
+
     temp.querySelectorAll('table').forEach((table) => {
         const header = table.previousElementSibling?.textContent || '';
         
         if (header.includes('VARIANTES') || header.includes('ESPECIFICACIONES')) {
-            console.log('    Haciendo editable:', header);
+
             
             table.querySelectorAll('tbody tr').forEach((row) => {
                 const cells = row.querySelectorAll('td');
@@ -185,7 +185,7 @@ function hacerFacturaEditable(htmlFactura, prenda) {
     });
     
     // === 2. EDITAR TALLAS (Tabla) ===
-    console.log(' Buscando tablas de tallas...');
+
     temp.querySelectorAll('table').forEach((table) => {
         const filas = table.querySelectorAll('tbody tr');
         let esTablaTallas = false;
@@ -199,7 +199,7 @@ function hacerFacturaEditable(htmlFactura, prenda) {
         });
         
         if (esTablaTallas) {
-            console.log('    Haciendo editable tabla de tallas');
+
             
             filas.forEach(row => {
                 const cells = row.querySelectorAll('td');
@@ -238,7 +238,7 @@ function hacerFacturaEditable(htmlFactura, prenda) {
     });
     
     // === 3. EDITAR PROCESOS (Observaciones) ===
-    console.log('⚙️  Buscando campos de procesos...');
+
     temp.querySelectorAll('[style*="color: #64748b"]').forEach((elem) => {
         const texto = elem.textContent.trim();
         
@@ -260,7 +260,7 @@ function hacerFacturaEditable(htmlFactura, prenda) {
  * Extraer datos del modal de edición
  */
 function extraerDatosModalEdicion(prendaOriginal) {
-    console.log(' Extrayendo datos del modal...');
+
     
     const datos = JSON.parse(JSON.stringify(prendaOriginal));
     
@@ -273,7 +273,7 @@ function extraerDatosModalEdicion(prendaOriginal) {
             const nombreCampo = celdas[0]?.textContent.trim().toLowerCase() || '';
             const valor = input.value.trim();
             
-            console.log(`    Variación ${nombreCampo}: ${valor}`);
+
             
             datos.variantes = datos.variantes || {};
             
@@ -291,7 +291,7 @@ function extraerDatosModalEdicion(prendaOriginal) {
         const talla = input.dataset.talla;
         
         if (talla) {
-            console.log(`    Talla ${talla}: ${cantidad}`);
+
             
             // Buscar género de la fila
             const fila = input.closest('tr');
@@ -306,16 +306,16 @@ function extraerDatosModalEdicion(prendaOriginal) {
     // Extraer observaciones de procesos
     document.querySelectorAll('.editar-observacion-input').forEach((textarea) => {
         const observacion = textarea.value.trim();
-        console.log(`   💬 Observación proceso: ${observacion.substring(0, 50)}...`);
+
         
         // Buscar a qué proceso pertenece
         const proc = textarea.closest('[style*="border"]')?.querySelector('[style*="1e40af"]')?.textContent || '';
         if (proc) {
-            console.log(`      → Proceso: ${proc}`);
+
         }
     });
     
-    console.log(' Datos extraídos:', datos);
+
     return datos;
 }
 
@@ -323,10 +323,10 @@ function extraerDatosModalEdicion(prendaOriginal) {
  * Guardar prenda en BD
  */
 async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
-    console.log('💾 Guardando prenda en BD...');
-    console.log('   Pedido:', pedidoId);
-    console.log('   Prenda:', prendaId);
-    console.log('   Datos:', datos);
+
+
+
+
     
     try {
         const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prendas/${prendaId}`, {
@@ -340,17 +340,17 @@ async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
         
         if (!response.ok) {
             const error = await response.json();
-            console.error(' Error en respuesta:', error);
+
             Swal.fire('Error', `No se pudo guardar: ${error.message}`, 'error');
             return false;
         }
         
         const result = await response.json();
-        console.log(' Prenda guardada en BD:', result);
+
         return true;
         
     } catch (error) {
-        console.error(' Error guardando:', error);
+
         Swal.fire('Error', 'Error de conexión al guardar', 'error');
         return false;
     }
@@ -360,23 +360,23 @@ async function guardarPrendaEnBD(pedidoId, prendaId, datos) {
  * Re-renderizar tarjeta de prenda editada
  */
 function reRenderizarTarjetaPrendaEditada(prendaIndex) {
-    console.log('🔄 Re-renderizando tarjeta prenda:', prendaIndex);
+
     
     if (!window.gestorPrendaSinCotizacion || !window.generarTarjetaPrendaReadOnly) {
-        console.warn('  Gestor o función no disponible');
+
         return;
     }
     
     const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(prendaIndex);
     if (!prenda) {
-        console.warn('  Prenda no encontrada');
+
         return;
     }
     
     // Buscar tarjeta en DOM
     const tarjeta = document.querySelector(`[data-prenda-index="${prendaIndex}"]`);
     if (!tarjeta) {
-        console.warn('  Tarjeta no encontrada en DOM');
+
         return;
     }
     
@@ -387,8 +387,8 @@ function reRenderizarTarjetaPrendaEditada(prendaIndex) {
     
     // Reemplazar tarjeta
     tarjeta.replaceWith(nuevoElemento.firstElementChild);
-    console.log(' Tarjeta re-renderizada');
+
 }
 
-console.log(' Componente prenda-card-editar-simple cargado');
-console.log(' Función: abrirEditarPrendaModal(prenda, index, pedidoId)');
+
+

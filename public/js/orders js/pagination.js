@@ -20,7 +20,7 @@ function _updateTableContent(tableBody, paginationControls, doc, page) {
     if (newTableBody) {
         _cleanupOldDropdowns(tableBody);
         tableBody.innerHTML = newTableBody.innerHTML;
-        console.log(` Tabla actualizada con ${newTableBody.querySelectorAll('tr').length} filas`);
+
     }
     
     const newPaginationControls = doc.getElementById('paginationControls');
@@ -51,7 +51,7 @@ function _initializeControls() {
     // Aplicar colores condicionales a las filas
     if (typeof updateRowConditionalColors === 'function') {
         updateRowConditionalColors();
-        console.log(' Colores condicionales aplicados después de cambiar página');
+
     }
 }
 
@@ -67,11 +67,11 @@ function _restoreTableState(tableBody, page, btn) {
             block: 'start' 
         });
     }
-    console.log(` Página ${page} cargada completamente`);
+
 }
 
 function _handlePaginationResponse(html, url, page, tableBody, paginationControls, btn) {
-    console.log(` HTML recibido para página ${page}`);
+
     
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -80,7 +80,7 @@ function _handlePaginationResponse(html, url, page, tableBody, paginationControl
     window.history.pushState({}, '', url.toString());
     
     setTimeout(() => {
-        console.log('🔄 Inicializando dropdowns y actualizando días...');
+
         _initializeControls();
         _restoreTableState(tableBody, page, btn);
     }, 100);
@@ -88,7 +88,7 @@ function _handlePaginationResponse(html, url, page, tableBody, paginationControl
 
 function _handlePaginationError(error, tableBody, btn, timeoutId) {
     clearTimeout(timeoutId);
-    console.error(' Error al cargar página:', error);
+
     tableBody.style.opacity = '1';
     tableBody.style.pointerEvents = 'auto';
     btn.disabled = false;
@@ -96,7 +96,7 @@ function _handlePaginationError(error, tableBody, btn, timeoutId) {
     
     // No mostrar alerta si fue un AbortSignal (timeout)
     if (error.name === 'AbortError') {
-        console.warn('⏱️ Timeout en carga de página');
+
         return;
     }
     
@@ -149,31 +149,31 @@ function initializePaginationListeners() {
         e.stopPropagation();
         
         if (btn.disabled || paginationState.isLoading) {
-            console.log('Botón deshabilitado o ya cargando, ignorando click');
+
             return;
         }
         
         const now = Date.now();
         if (now - paginationState.lastPageLoad < paginationState.MIN_PAGE_LOAD_DELAY) {
-            console.log('⏱️ Click demasiado rápido, ignorando');
+
             return;
         }
         paginationState.lastPageLoad = now;
         
         const page = btn.dataset.page;
         if (!page) {
-            console.log(' No se encontró número de página:', btn);
+
             return;
         }
         
         paginationState.isLoading = true;
         btn.disabled = true;
         
-        console.log(` Cargando página ${page}...`);
+
         
         const tableBody = document.getElementById('tablaOrdenesBody');
         if (!tableBody) {
-            console.error(' tablaOrdenesBody no encontrado');
+
             paginationState.isLoading = false;
             btn.disabled = false;
             return;
@@ -192,7 +192,7 @@ function initializePaginationListeners() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando paginación...');
+
     initializePaginationListeners();
 });
 

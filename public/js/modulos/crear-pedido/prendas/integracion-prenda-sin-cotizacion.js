@@ -11,7 +11,7 @@
  */
 window.validarPrendasTipoPrendaSinCotizacion = function() {
     if (!window.gestorPrendaSinCotizacion) {
-        console.warn(' GestorPrendaSinCotizacion no inicializado');
+
         return false;
     }
 
@@ -61,11 +61,11 @@ window.validarPrendasTipoPrendaSinCotizacion = function() {
 window.sincronizarCantidadesDelDOM = function() {
     try {
         if (!window.gestorPrendaSinCotizacion) {
-            console.warn(` Gestor no disponible`);
+
             return;
         }
         
-        console.log(`\n🔄 ========== SINCRONIZANDO CANTIDADES DEL DOM ==========`);
+
         
         // Buscar TODOS los inputs de display (variaciones de clase)
         const selectores = [
@@ -79,16 +79,16 @@ window.sincronizarCantidadesDelDOM = function() {
             const encontrados = document.querySelectorAll(selector);
             if (encontrados.length > 0) {
                 displayInputs = encontrados;
-                console.log(` Selector encontrado: "${selector}" → ${encontrados.length} inputs`);
+
                 break;
             }
         }
         
-        console.log(` Total de inputs de display encontrados en DOM: ${displayInputs.length}`);
+
         
         // Si encontramos inputs, sincronizarlos
         if (displayInputs.length > 0) {
-            console.log(` Leyendo valores de inputs...`);
+
             const cantidadesPorPrenda = {};
             
             displayInputs.forEach((displayInput, i) => {
@@ -106,17 +106,17 @@ window.sincronizarCantidadesDelDOM = function() {
                 
                 cantidadesPorPrenda[prendaIndex][genero][talla] = cantidad;
                 
-                console.log(`   [${i}] Prenda ${prendaIndex}, ${genero} ${talla}: ${cantidad}`);
+
             });
             
             // Sincronizar con el gestor
-            console.log(`\n🔄 Actualizando gestor con cantidades del DOM...`);
+
             Object.entries(cantidadesPorPrenda).forEach(([prendaIndex, generos]) => {
                 try {
                     const prenda = window.gestorPrendaSinCotizacion.obtenerPorIndice(parseInt(prendaIndex));
                     
                     if (!prenda) {
-                        console.warn(` Prenda ${prendaIndex} no existe en gestor`);
+
                         return;
                     }
                     
@@ -131,23 +131,23 @@ window.sincronizarCantidadesDelDOM = function() {
                         });
                     });
                     
-                    console.log(` Prenda ${prendaIndex} actualizada:`, prenda.generosConTallas);
+
                 } catch (e) {
-                    console.error(` Error sincronizando prenda ${prendaIndex}:`, e);
+
                 }
             });
         } else {
             // Sin inputs de display
-            console.log(` Sin inputs de display en DOM. Los datos ya deberían estar en el gestor.`);
-            console.log(` Estado actual del gestor:`);
+
+
             const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
             prendas.forEach((prenda, idx) => {
-                console.log(`   Prenda ${idx} (${prenda.nombre_producto}):`, prenda.generosConTallas);
+
             });
         }
-        console.log(` SINCRONIZACIÓN COMPLETADA\n`);
+
     } catch (e) {
-        console.error(` Error en sincronizarCantidadesDelDOM:`, e);
+
         throw new Error('Error al sincronizar datos: ' + e.message);
     }
 };
@@ -166,12 +166,12 @@ window.obtenerDatosPrendasTipoPrendaSinCotizacion = function() {
         };
     }
 
-    console.log(` ANTES DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
+
 
     //  CRÍTICO: Sincronizar datos del DOM antes de obtenerlos
     window.sincronizarCantidadesDelDOM();
 
-    console.log(` DESPUÉS DE SINCRONIZAR - Prendas en gestor:`, window.gestorPrendaSinCotizacion.obtenerActivas());
+
 
     return window.gestorPrendaSinCotizacion.obtenerDatosFormato();
 };
@@ -232,7 +232,7 @@ window.hookPreValidacionPrendaSinCotizacion = function() {
     const tipoPrendaSelect = document.getElementById('tipo_pedido_nuevo')?.value;
     
     if (tipoNuevo && tipoPrendaSelect === 'P') {
-        console.log(' Pre-validación: Modo PRENDA sin cotización detectado');
+
         return window.validarPrendasTipoPrendaSinCotizacion();
     }
     
@@ -249,7 +249,7 @@ window.hookSerializacionPrendaSinCotizacion = function(datosEnvio) {
     const tipoPrendaSelect = document.getElementById('tipo_pedido_nuevo')?.value;
     
     if (tipoNuevo && tipoPrendaSelect === 'P') {
-        console.log('📤 Serializando datos PRENDA sin cotización');
+
         const datosPrenda = window.obtenerDatosPrendasTipoPrendaSinCotizacion();
         
         // Agregar datos de prendas al objeto de envío
@@ -259,7 +259,7 @@ window.hookSerializacionPrendaSinCotizacion = function(datosEnvio) {
         datosEnvio.prendasEliminadas = datosPrenda.prendasEliminadas;
         datosEnvio.tipoPedidoNuevo = 'P'; // PRENDA
         
-        console.log(' Datos PRENDA agregados:', datosEnvio);
+
     }
     
     return datosEnvio;
@@ -273,38 +273,38 @@ window.hookSerializacionPrendaSinCotizacion = function(datosEnvio) {
 window.enviarPrendaSinCotizacion = function() {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log(`🚀 ============ INICIANDO ENVÍO PRENDA SIN COTIZACIÓN ============`);
+
             
             // Validar datos
-            console.log(` [1] Validando prendas...`);
+
             if (!window.validarPrendasTipoPrendaSinCotizacion()) {
-                console.error(` Validación fallida`);
+
                 reject(new Error('Validación fallida'));
                 return;
             }
-            console.log(` [1] Validación OK`);
+
 
             // Obtener cliente
             const cliente = document.getElementById('cliente_editable')?.value;
             const formaPago = document.getElementById('forma_de_pago_editable')?.value || '';
 
-            console.log(` Cliente: ${cliente}, Forma Pago: ${formaPago}`);
+
 
             if (!cliente) {
-                console.error(` Cliente no especificado`);
+
                 reject(new Error('Cliente no especificado'));
                 return;
             }
 
             //  USAR GESTOR CENTRALIZADO JSON
             if (!window.gestorDatosPedidoJSON) {
-                console.error(` GestorDatosPedidoJSON no disponible`);
+
                 reject(new Error('GestorDatosPedidoJSON no inicializado'));
                 return;
             }
 
             // Crear FormData con todos los datos del JSON
-            console.log(` [2] Preparando FormData desde gestorDatosPedidoJSON...`);
+
             const formData = window.gestorDatosPedidoJSON.crearFormData();
             
             // Agregar cliente y forma de pago
@@ -312,10 +312,10 @@ window.enviarPrendaSinCotizacion = function() {
             formData.append('forma_de_pago', formaPago);
             formData.append('tipo_pedido', 'P'); // PRENDA sin cotización
 
-            console.log(` [2] FormData preparado`);
+
 
             // Enviar al servidor
-            console.log(` [3] Enviando FormData al servidor...`);
+
             
             const response = await fetch('/asesores/pedidos-produccion/crear-prenda-sin-cotizacion', {
                 method: 'POST',
@@ -325,18 +325,18 @@ window.enviarPrendaSinCotizacion = function() {
                 }
             });
 
-            console.log(` [3] Respuesta recibida del servidor: ${response.status} ${response.statusText}`);
+
 
             const result = await response.json();
             
-            console.log(` [4] Resultado JSON:`, result);
+
 
             if (!response.ok) {
-                console.error(` Error en respuesta: ${result.message}`);
+
                 throw new Error(result.message || 'Error al crear el pedido');
             }
 
-            console.log(` ============ ENVÍO COMPLETADO CON ÉXITO ============\n`);
+
 
             // Mostrar éxito
             Swal.fire({
@@ -359,7 +359,7 @@ window.enviarPrendaSinCotizacion = function() {
             resolve(result);
             
         } catch (error) {
-            console.error(` Error al enviar pedido PRENDA:`, error);
+
             Swal.fire('Error', error.message || 'Error al crear el pedido', 'error');
             reject(error);
         }

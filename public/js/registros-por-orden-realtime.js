@@ -7,43 +7,43 @@
  * Initialize real-time listeners for registros por orden
  */
 function initializeRegistrosPorOrdenRealtimeListeners() {
-    console.log('=== REGISTROS POR ORDEN - Inicializando Echo para tiempo real ===');
-    console.log('window.Echo disponible:', !!window.Echo);
+
+
 
     if (!window.Echo) {
-        console.error(' Echo NO está disponible. Reintentando en 500ms...');
+
         setTimeout(initializeRegistrosPorOrdenRealtimeListeners, 500);
         return;
     }
 
-    console.log(' Echo disponible. Suscribiendo al canal "registros-por-orden"...');
+
 
     // Canal de Registros Por Orden
     const registrosChannel = window.Echo.channel('registros-por-orden');
 
     registrosChannel.subscribed(() => {
-        console.log(' Suscrito al canal "registros-por-orden"');
+
     });
 
     registrosChannel.error((error) => {
-        console.error(' Error en canal "registros-por-orden":', error);
+
     });
 
     registrosChannel.listen('RegistrosPorOrdenUpdated', (e) => {
-        console.log('🎉 Evento RegistrosPorOrdenUpdated recibido!', e);
+
         
         // Manejar la actualización de registros
         handleRegistrosUpdate(e.pedido, e.registros, e.action);
     });
 
-    console.log(' Listener de registros por orden configurado');
+
 }
 
 /**
  * Handle registros updates (updated, deleted)
  */
 function handleRegistrosUpdate(pedido, registros, action) {
-    console.log(`📡 Procesando acción: ${action} para pedido ${pedido}`);
+
 
     if (action === 'deleted') {
         // Eliminar todas las filas del pedido
@@ -71,7 +71,7 @@ function removeRegistrosFromTable(pedido) {
             row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
             setTimeout(() => {
                 row.remove();
-                console.log(` Registro del pedido ${pedido} eliminado de la tabla`);
+
             }, 500);
         });
     });
@@ -82,11 +82,11 @@ function removeRegistrosFromTable(pedido) {
  */
 function updateRegistrosInTable(pedido, registros) {
     if (!registros || registros.length === 0) {
-        console.log(` No hay registros para actualizar del pedido ${pedido}`);
+
         return;
     }
 
-    console.log(`🔄 Actualizando ${registros.length} registros del pedido ${pedido}`);
+
 
     // Primero, eliminar los registros existentes del pedido
     const tables = document.querySelectorAll('table[data-section]');
@@ -113,7 +113,7 @@ function insertRegistroInTable(registro) {
     const visibleTable = document.querySelector('table[data-section]:not([style*="display: none"]) tbody');
     
     if (!visibleTable) {
-        console.log(' No hay tabla visible para insertar el registro');
+
         return;
     }
 

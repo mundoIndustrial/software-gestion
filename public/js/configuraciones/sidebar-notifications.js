@@ -17,14 +17,14 @@ function updateCotizacionesPendientesAprobador() {
             if (data.success && data.count > 0) {
                 badgeElement.textContent = data.count;
                 badgeElement.style.display = 'inline-flex';
-                console.log(` Badge actualizado: ${data.count} cotizaciones pendientes`);
+
             } else {
                 badgeElement.style.display = 'none';
-                console.log(' No hay cotizaciones pendientes');
+
             }
         })
         .catch(error => {
-            console.error('Error al obtener contador de cotizaciones:', error);
+
         });
 }
 
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 window.addEventListener('storage', function(event) {
     if (event.key === 'cotizacionesUpdated') {
-        console.log('📢 Evento de actualización recibido desde otra ventana');
+
         updateCotizacionesPendientesAprobador();
     }
 });

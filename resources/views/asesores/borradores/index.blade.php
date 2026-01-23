@@ -655,7 +655,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -697,7 +696,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -723,3 +721,4 @@
     }
 </script>
 @endsection
+

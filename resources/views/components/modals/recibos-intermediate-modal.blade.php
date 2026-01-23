@@ -175,12 +175,9 @@
         loading.style.display = 'block';
         error.style.display = 'none';
         container.style.display = 'none';
-        
-        console.log(' [RECIBOS-INTERMEDIO] Abriendo modal para pedido:', pedidoId);
-        
         try {
             // Obtener datos del servidor
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`, {
+            const response = await fetch(`/api/pedidos/${pedidoId}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -192,9 +189,8 @@
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             
-            const datos = await response.json();
-            console.log(' [RECIBOS-INTERMEDIO] Datos cargados:', datos);
-            
+            const result = await response.json();
+            const datos = result.data || result;
             // Actualizar número de pedido
             document.getElementById('intermediate-pedido-numero').textContent = `#${datos.numero_pedido || '?'}`;
             
@@ -256,7 +252,6 @@
             error.style.display = 'none';
             
         } catch (err) {
-            console.error(' [RECIBOS-INTERMEDIO] Error:', err);
             document.getElementById('intermediate-error-message').textContent = err.message;
             
             loading.style.display = 'none';
@@ -308,3 +303,4 @@
         }
     });
 </script>
+

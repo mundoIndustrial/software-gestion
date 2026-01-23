@@ -10,21 +10,42 @@ use App\Http\Controllers\AsesoresInventarioTelasController;
 use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
-use App\Application\Services\Asesores\EliminarPedidoService;
-use App\Application\Services\Asesores\ObtenerFotosService;
-use App\Application\Services\Asesores\AnularPedidoService;
-use App\Application\Services\Asesores\ObtenerPedidosService;
-use App\Application\Services\Asesores\ObtenerProximoPedidoService;
-use App\Application\Services\Asesores\ObtenerDatosFacturaService;
-use App\Application\Services\Asesores\ObtenerDatosRecibosService;
-use App\Application\Services\Asesores\ProcesarFotosTelasService;
-use App\Application\Services\Asesores\GuardarPedidoLogoService;
-use App\Application\Services\Asesores\GuardarPedidoProduccionService;
-use App\Application\Services\Asesores\ConfirmarPedidoService;
-use App\Application\Services\Asesores\ActualizarPedidoService;
-use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
+use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ConfirmarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
+use App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaSimpleUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerFacturaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerRecibosUseCase;
+use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
+use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\AgregarPrendaSimpleDTO;
+use App\Application\Pedidos\DTOs\ObtenerProximoNumeroPedidoDTO;
+use App\Application\Pedidos\DTOs\ObtenerFacturaDTO;
+use App\Application\Pedidos\DTOs\ObtenerRecibosDTO;
+use App\Application\Pedidos\UseCases\ObtenerEstadisticasDashboardUseCase;
+use App\Application\Pedidos\UseCases\ObtenerDatosGraficasDashboardUseCase;
+use App\Application\Pedidos\UseCases\ObtenerNotificacionesUseCase;
+use App\Application\Pedidos\UseCases\MarcarNotificacionLeidaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPerfilAsesorUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPerfilAsesorUseCase;
+use App\Application\Pedidos\DTOs\ObtenerEstadisticasDashboardDTO;
+use App\Application\Pedidos\DTOs\ObtenerDatosGraficasDashboardDTO;
+use App\Application\Pedidos\DTOs\ObtenerNotificacionesDTO;
+use App\Application\Pedidos\DTOs\MarcarNotificacionLeidaDTO;
+use App\Application\Pedidos\DTOs\ObtenerPerfilAsesorDTO;
+use App\Application\Pedidos\DTOs\ActualizarPerfilAsesorDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -33,56 +54,68 @@ class AsesoresController extends Controller
     protected DashboardService $dashboardService;
     protected NotificacionesService $notificacionesService;
     protected PerfilService $perfilService;
-    protected EliminarPedidoService $eliminarPedidoService;
-    protected ObtenerFotosService $obtenerFotosService;
-    protected AnularPedidoService $anularPedidoService;
-    protected ObtenerPedidosService $obtenerPedidosService;
-    protected ObtenerProximoPedidoService $obtenerProximoPedidoService;
-    protected ObtenerDatosFacturaService $obtenerDatosFacturaService;
-    protected ObtenerDatosRecibosService $obtenerDatosRecibosService;
-    protected ProcesarFotosTelasService $procesarFotosTelasService;
-    protected GuardarPedidoLogoService $guardarPedidoLogoService;
-    protected GuardarPedidoProduccionService $guardarPedidoProduccionService;
-    protected ConfirmarPedidoService $confirmarPedidoService;
-    protected ActualizarPedidoService $actualizarPedidoService;
-    protected ObtenerPedidoDetalleService $obtenerPedidoDetalleService;
+    protected CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase;
+    protected ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase;
+    protected ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase;
+    protected AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase;
+    protected ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase;
+    protected ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase;
+    protected PrepararCreacionProduccionPedidoUseCase $prepararCreacionProduccionPedidoUseCase;
+    protected AgregarPrendaSimpleUseCase $agregarPrendaSimpleUseCase;
+    protected ObtenerProximoNumeroPedidoUseCase $obtenerProximoNumeroPedidoUseCase;
+    protected ObtenerFacturaUseCase $obtenerFacturaUseCase;
+    protected ObtenerRecibosUseCase $obtenerRecibosUseCase;
+    protected ObtenerEstadisticasDashboardUseCase $obtenerEstadisticasDashboardUseCase;
+    protected ObtenerDatosGraficasDashboardUseCase $obtenerDatosGraficasDashboardUseCase;
+    protected ObtenerNotificacionesUseCase $obtenerNotificacionesUseCase;
+    protected MarcarNotificacionLeidaUseCase $marcarNotificacionLeidaUseCase;
+    protected ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase;
+    protected ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
         DashboardService $dashboardService,
         NotificacionesService $notificacionesService,
         PerfilService $perfilService,
-        EliminarPedidoService $eliminarPedidoService,
-        ObtenerFotosService $obtenerFotosService,
-        AnularPedidoService $anularPedidoService,
-        ObtenerPedidosService $obtenerPedidosService,
-        ObtenerProximoPedidoService $obtenerProximoPedidoService,
-        ObtenerDatosFacturaService $obtenerDatosFacturaService,
-        ObtenerDatosRecibosService $obtenerDatosRecibosService,
-        ProcesarFotosTelasService $procesarFotosTelasService,
-        GuardarPedidoLogoService $guardarPedidoLogoService,
-        GuardarPedidoProduccionService $guardarPedidoProduccionService,
-        ConfirmarPedidoService $confirmarPedidoService,
-        ActualizarPedidoService $actualizarPedidoService,
-        ObtenerPedidoDetalleService $obtenerPedidoDetalleService
+        CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase,
+        ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase,
+        ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase,
+        AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase,
+        ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase,
+        ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase,
+        PrepararCreacionProduccionPedidoUseCase $prepararCreacionProduccionPedidoUseCase,
+        AgregarPrendaSimpleUseCase $agregarPrendaSimpleUseCase,
+        ObtenerProximoNumeroPedidoUseCase $obtenerProximoNumeroPedidoUseCase,
+        ObtenerFacturaUseCase $obtenerFacturaUseCase,
+        ObtenerRecibosUseCase $obtenerRecibosUseCase,
+        ObtenerEstadisticasDashboardUseCase $obtenerEstadisticasDashboardUseCase,
+        ObtenerDatosGraficasDashboardUseCase $obtenerDatosGraficasDashboardUseCase,
+        ObtenerNotificacionesUseCase $obtenerNotificacionesUseCase,
+        MarcarNotificacionLeidaUseCase $marcarNotificacionLeidaUseCase,
+        ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase,
+        ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
         $this->notificacionesService = $notificacionesService;
         $this->perfilService = $perfilService;
-        $this->eliminarPedidoService = $eliminarPedidoService;
-        $this->obtenerFotosService = $obtenerFotosService;
-        $this->anularPedidoService = $anularPedidoService;
-        $this->obtenerPedidosService = $obtenerPedidosService;
-        $this->obtenerProximoPedidoService = $obtenerProximoPedidoService;
-        $this->obtenerDatosFacturaService = $obtenerDatosFacturaService;
-        $this->obtenerDatosRecibosService = $obtenerDatosRecibosService;
-        $this->procesarFotosTelasService = $procesarFotosTelasService;
-        $this->guardarPedidoLogoService = $guardarPedidoLogoService;
-        $this->guardarPedidoProduccionService = $guardarPedidoProduccionService;
-        $this->confirmarPedidoService = $confirmarPedidoService;
-        $this->actualizarPedidoService = $actualizarPedidoService;
-        $this->obtenerPedidoDetalleService = $obtenerPedidoDetalleService;
+        $this->crearProduccionPedidoUseCase = $crearProduccionPedidoUseCase;
+        $this->confirmarProduccionPedidoUseCase = $confirmarProduccionPedidoUseCase;
+        $this->actualizarProduccionPedidoUseCase = $actualizarProduccionPedidoUseCase;
+        $this->anularProduccionPedidoUseCase = $anularProduccionPedidoUseCase;
+        $this->obtenerProduccionPedidoUseCase = $obtenerProduccionPedidoUseCase;
+        $this->listarProduccionPedidosUseCase = $listarProduccionPedidosUseCase;
+        $this->prepararCreacionProduccionPedidoUseCase = $prepararCreacionProduccionPedidoUseCase;
+        $this->agregarPrendaSimpleUseCase = $agregarPrendaSimpleUseCase;
+        $this->obtenerProximoNumeroPedidoUseCase = $obtenerProximoNumeroPedidoUseCase;
+        $this->obtenerFacturaUseCase = $obtenerFacturaUseCase;
+        $this->obtenerRecibosUseCase = $obtenerRecibosUseCase;
+        $this->obtenerEstadisticasDashboardUseCase = $obtenerEstadisticasDashboardUseCase;
+        $this->obtenerDatosGraficasDashboardUseCase = $obtenerDatosGraficasDashboardUseCase;
+        $this->obtenerNotificacionesUseCase = $obtenerNotificacionesUseCase;
+        $this->marcarNotificacionLeidaUseCase = $marcarNotificacionLeidaUseCase;
+        $this->obtenerPerfilAsesorUseCase = $obtenerPerfilAsesorUseCase;
+        $this->actualizarPerfilAsesorUseCase = $actualizarPerfilAsesorUseCase;
     }
 
     /**
@@ -93,35 +126,37 @@ class AsesoresController extends Controller
     public function profile()
     {
         try {
-            $user = Auth::user();
-            
-            if (!$user) {
-                abort(401, 'Por favor inicia sesión para ver tu perfil.');
-            }
-            
+            // Crear DTO para el Use Case
+            $dto = ObtenerPerfilAsesorDTO::crear();
+
+            // Usar el nuevo Use Case DDD
+            $user = $this->obtenerPerfilAsesorUseCase->ejecutar($dto);
+
             return view('asesores.profile', compact('user'));
-            
+
         } catch (\Exception $e) {
             abort(500, 'Error al cargar el perfil: ' . $e->getMessage());
         }
     }
 
     /**
-     * Mostrar el dashboard de asesores
+     * Mostrar el dashboard de asesores - DELEGADO A USE CASE
      */
     public function dashboard()
     {
-        $stats = $this->dashboardService->obtenerEstadisticas();
+        $dto = ObtenerEstadisticasDashboardDTO::crear();
+        $stats = $this->obtenerEstadisticasDashboardUseCase->ejecutar($dto);
         return view('asesores.dashboard', compact('stats'));
     }
 
     /**
-     * Obtener datos para gráficas del dashboard
+     * Obtener datos para gráficas del dashboard - DELEGADO A USE CASE
      */
     public function getDashboardData(Request $request)
     {
-        $dias = $request->get('tipo', 30);
-        $datos = $this->dashboardService->obtenerDatosGraficas($dias);
+        $dias = (int) $request->get('tipo', 30);
+        $dto = ObtenerDatosGraficasDashboardDTO::fromRequest($dias);
+        $datos = $this->obtenerDatosGraficasDashboardUseCase->ejecutar($dto);
         return response()->json($datos);
     }
 
@@ -142,8 +177,12 @@ class AsesoresController extends Controller
                 $filtros['search'] = $request->search;
             }
 
-            $pedidos = $this->obtenerPedidosService->obtener($tipo, $filtros);
-            $estados = $tipo !== 'logo' ? $this->obtenerPedidosService->obtenerEstados() : [];
+            // Crear DTO para el Use Case
+            $dto = ListarProduccionPedidosDTO::fromRequest($tipo, $filtros);
+
+            // Usar el nuevo Use Case DDD
+            $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
+            $estados = $tipo !== 'logo' ? $this->listarProduccionPedidosUseCase->obtenerEstados() : [];
 
             return view('asesores.pedidos.index', compact('pedidos', 'estados'));
 
@@ -154,63 +193,46 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Mostrar formulario para crear pedido (versión amigable)
+     * Mostrar formulario para crear pedido (versión amigable) - DELEGADO A USE CASE
      */
     public function create(Request $request)
     {
-        $tipo = $request->query('tipo', 'PB');
-        $esEdicion = false;
-        $cotizacion = null;
-        
-        if ($request->has('editar')) {
-            $cotizacionId = $request->query('editar');
-            $cotizacion = \App\Models\Cotizacion::with([
-                'cliente',
-                'prendas' => function($query) {
-                    $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
-                },
-                'logoCotizacion.fotos',
-                'reflectivoCotizacion.fotos'
-            ])->findOrFail($cotizacionId);
+        try {
+            $editarId = $request->query('editar');
             
-            $prenda0 = $cotizacion->prendas->first();
-            \Log::info('DEBUG - Cotización cargada para edición DETALLE', [
-                'cotizacion_id' => $cotizacionId,
-                'prendas_count' => $cotizacion->prendas->count(),
-                'prenda_0_id' => $prenda0 ? $prenda0->id : null,
-                'prenda_0_telaFotos_count' => $prenda0 ? $prenda0->telaFotos->count() : 0,
-                'prenda_0_fotos_count' => $prenda0 ? $prenda0->fotos->count() : 0,
-                'prenda_0_tallas_count' => $prenda0 ? $prenda0->tallas->count() : 0,
-            ]);
+            // Crear DTO para el Use Case
+            $dto = PrepararCreacionProduccionPedidoDTO::fromRequest(
+                tipo: $request->query('tipo', 'PB'),
+                editarId: $editarId,
+                usuarioId: \Auth::id()
+            );
+
+            // Usar el nuevo Use Case DDD
+            $datos = $this->prepararCreacionProduccionPedidoUseCase->ejecutar($dto);
             
-            $cotizacionArray = $cotizacion->toArray();
-            \Log::info('DEBUG - toArray() result', [
-                'tiene_prendas' => isset($cotizacionArray['prendas']) ? true : false,
-                'prendas_count_en_array' => isset($cotizacionArray['prendas']) ? count($cotizacionArray['prendas']) : 0,
-                'prenda_0_keys' => isset($cotizacionArray['prendas'][0]) ? array_keys($cotizacionArray['prendas'][0]) : [],
-                'prenda_0_tiene_tela_fotos' => isset($cotizacionArray['prendas'][0]['tela_fotos']) ? true : false,
-            ]);
+            $tipo = $datos['tipo'];
+            $esEdicion = $datos['esEdicion'];
+            $cotizacion = $datos['cotizacion'];
             
-            if ($cotizacion->asesor_id !== \Auth::id() || !$cotizacion->es_borrador) {
-                abort(403, 'No tienes permiso para editar este borrador');
+            // Redirigir según el tipo
+            if ($tipo === 'B') {
+                return redirect()->route('asesores.cotizaciones-bordado.create');
             }
             
-            $esEdicion = true;
+            if ($tipo === 'PL') {
+                return redirect()->route('asesores.cotizaciones-prenda.create');
+            }
+            
+            if ($tipo === 'RF') {
+                return view('asesores.pedidos.create-reflectivo', compact('tipo', 'esEdicion', 'cotizacion'));
+            }
+            
+            return view('asesores.pedidos.create-friendly', compact('tipo', 'esEdicion', 'cotizacion'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error al preparar formulario de creación: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
         }
-        
-        if ($tipo === 'B') {
-            return redirect()->route('asesores.cotizaciones-bordado.create');
-        }
-        
-        if ($tipo === 'PL') {
-            return redirect()->route('asesores.cotizaciones-prenda.create');
-        }
-        
-        if ($tipo === 'RF') {
-            return view('asesores.pedidos.create-reflectivo', compact('tipo', 'esEdicion', 'cotizacion'));
-        }
-        
-        return view('asesores.pedidos.create-friendly', compact('tipo', 'esEdicion', 'cotizacion'));
     }
 
     /**
@@ -270,14 +292,23 @@ class AsesoresController extends Controller
             }
 
             $productosConFotos = $this->procesarFotosTelasService->procesar($request, $validated[$productosKey]);
-            $pedido = $this->guardarPedidoProduccionService->guardar($validated, $productosConFotos);
+            
+            // Crear DTO para el Use Case
+            $dto = new CrearProduccionPedidoDTO(
+                $validated['cliente'],
+                $validated['cliente'],
+                $productosConFotos
+            );
+            
+            // Usar el nuevo Use Case DDD
+            $pedido = $this->crearProduccionPedidoUseCase->ejecutar($dto);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido guardado como borrador',
-                'borrador_id' => $pedido->id
+                'borrador_id' => $pedido->getId()
             ]);
 
         } catch (\Exception $e) {
@@ -291,7 +322,7 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Confirmar pedido y asignar ID - DELEGADO A SERVICIO
+     * Confirmar pedido y asignar ID - DELEGADO A USE CASE
      */
     public function confirm(Request $request)
     {
@@ -301,7 +332,13 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedido = $this->confirmarPedidoService->confirmar($validated['borrador_id'], $validated['numero_pedido']);
+            // Crear DTO para el Use Case
+            $dto = new ConfirmarProduccionPedidoDTO(
+                (string)$validated['borrador_id']
+            );
+
+            // Usar el nuevo Use Case DDD
+            $pedido = $this->confirmarProduccionPedidoUseCase->ejecutar($dto);
 
             return response()->json([
                 'success' => true,
@@ -323,7 +360,12 @@ class AsesoresController extends Controller
     public function show($pedido)
     {
         try {
-            $pedidoData = $this->obtenerPedidoDetalleService->obtenerConPrendas($pedido);
+            // Crear DTO para el Use Case
+            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$pedido);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoData = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
+
             return view('asesores.pedidos.plantilla-erp-antigua', compact('pedidoData'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -336,9 +378,13 @@ class AsesoresController extends Controller
     public function edit($pedido)
     {
         try {
-            $pedidoModel = PedidoProduccion::findOrFail($pedido);
-            $datos = $this->obtenerPedidoDetalleService->obtenerParaEdicion($pedido);
-            
+            // Crear DTO para el Use Case
+            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$pedido);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoModel = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
+            $datos = $pedidoModel; // Ya obtenemos los datos del Use Case
+
             return view('asesores.pedidos.editar-pedido', [
                 'pedido' => $pedidoModel,
                 'pedidoData' => $datos,
@@ -349,7 +395,7 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Actualizar pedido - DELEGADO A SERVICIO
+     * Actualizar pedido - DELEGADO A USE CASE
      */
     public function update(Request $request, $pedido)
     {
@@ -373,7 +419,11 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedidoActualizado = $this->actualizarPedidoService->actualizar($pedido, $validated);
+            // Crear DTO para el Use Case
+            $dto = ActualizarProduccionPedidoDTO::fromRequest((string)$pedido, $validated);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoActualizado = $this->actualizarProduccionPedidoUseCase->ejecutar($dto);
 
             return response()->json([
                 'success' => true,
@@ -389,17 +439,30 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Eliminar pedido
+     * Anular pedido - DELEGADO A USE CASE
      */
-    public function destroy($pedido)
+    public function destroy(Request $request, $pedido)
     {
         try {
-            $resultado = $this->eliminarPedidoService->eliminarPedido($pedido);
-            return response()->json($resultado);
+            $validated = $request->validate([
+                'razon' => 'required|string|max:500',
+            ]);
+
+            // Crear DTO para el Use Case
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$pedido, $validated);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutar($dto);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido anulado exitosamente'
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Error al anular el pedido: ' . $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -407,10 +470,17 @@ class AsesoresController extends Controller
     /**
      * Obtener siguiente número de pedido - DELEGADO A SERVICIO
      */
+    /**
+     * Obtener siguiente número de pedido - DELEGADO A USE CASE
+     */
     public function getNextPedido()
     {
         try {
-            $siguientePedido = $this->obtenerProximoPedidoService->obtenerProximo();
+            // Crear DTO para el Use Case
+            $dto = ObtenerProximoNumeroPedidoDTO::crear();
+
+            // Usar el nuevo Use Case DDD
+            $siguientePedido = $this->obtenerProximoNumeroPedidoUseCase->ejecutar($dto);
 
             return response()->json([
                 'siguiente_pedido' => $siguientePedido
@@ -428,7 +498,9 @@ class AsesoresController extends Controller
      */
     public function getNotificaciones()
     {
-        return response()->json($this->notificacionesService->obtenerNotificaciones());
+        $dto = ObtenerNotificacionesDTO::crear();
+        $notificaciones = $this->obtenerNotificacionesUseCase->ejecutar($dto);
+        return response()->json($notificaciones);
     }
 
     /**
@@ -440,17 +512,14 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Marcar todas las notificaciones como leídas
+     * Marcar todas las notificaciones como leídas - DELEGADO A USE CASE
      */
     public function markAllAsRead()
     {
         try {
-            $this->notificacionesService->marcarTodosLeidosPedidos();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Notificaciones marcadas como leídas'
-            ]);
+            $dto = MarcarNotificacionLeidaDTO::marcarTodos();
+            $resultado = $this->marcarNotificacionLeidaUseCase->ejecutar($dto);
+            return response()->json($resultado);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al marcar notificaciones',
@@ -460,17 +529,14 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Marcar una notificación específica como leída
+     * Marcar una notificación específica como leída - DELEGADO A USE CASE
      */
     public function markNotificationAsRead($notificationId)
     {
         try {
-            $this->notificacionesService->marcarNotificacionLeida($notificationId);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Notificación marcada como leída'
-            ]);
+            $dto = MarcarNotificacionLeidaDTO::fromRequest($notificationId);
+            $resultado = $this->marcarNotificacionLeidaUseCase->ejecutar($dto);
+            return response()->json($resultado);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al marcar notificación',
@@ -497,7 +563,12 @@ class AsesoresController extends Controller
             ]);
 
             $archivoAvatar = $request->hasFile('avatar') ? $request->file('avatar') : null;
-            $resultado = $this->perfilService->actualizarPerfil($validated, $archivoAvatar);
+
+            // Crear DTO para el Use Case
+            $dto = ActualizarPerfilAsesorDTO::fromRequest($validated, $archivoAvatar);
+
+            // Usar el nuevo Use Case DDD
+            $resultado = $this->actualizarPerfilAsesorUseCase->ejecutar($dto);
 
             return response()->json($resultado);
 
@@ -520,9 +591,12 @@ class AsesoresController extends Controller
     /**
      * Anular pedido con novedad
      */
+    /**
+     * Anular pedido con novedad - DELEGADO A USE CASE (refactorizado de anularPedidoService)
+     */
     public function anularPedido(Request $request, $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'novedad' => 'required|string|min:10|max:500',
         ], [
             'novedad.required' => 'La novedad es obligatoria',
@@ -531,12 +605,16 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedido = $this->anularPedidoService->anular($id, $request->novedad);
+            // Crear DTO para el Use Case
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, ['razon' => $validated['novedad']]);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutar($dto);
             
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido anulado correctamente',
-                'pedido' => $pedido,
+                'pedido' => $pedidoAnulado,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -557,10 +635,18 @@ class AsesoresController extends Controller
     /**
      * Obtener datos de la factura de un pedido - DELEGADO A SERVICIO
      */
+    /**
+     * Obtener datos de la factura de un pedido - DELEGADO A USE CASE
+     */
     public function obtenerDatosFactura($id)
     {
         try {
-            $datos = $this->obtenerDatosFacturaService->obtener($id);
+            // Crear DTO para el Use Case
+            $dto = ObtenerFacturaDTO::fromRequest((string)$id);
+
+            // Usar el nuevo Use Case DDD
+            $datos = $this->obtenerFacturaUseCase->ejecutar($dto);
+            
             return response()->json($datos);
         } catch (\Exception $e) {
             return response()->json([
@@ -572,10 +658,18 @@ class AsesoresController extends Controller
     /**
      * Obtener datos de recibos dinámicos para un pedido - DELEGADO A SERVICIO
      */
+    /**
+     * Obtener datos de recibos dinámicos para un pedido - DELEGADO A USE CASE
+     */
     public function obtenerDatosRecibos($id)
     {
         try {
-            $datos = $this->obtenerDatosRecibosService->obtener($id);
+            // Crear DTO para el Use Case
+            $dto = ObtenerRecibosDTO::fromRequest((string)$id);
+
+            // Usar el nuevo Use Case DDD
+            $datos = $this->obtenerRecibosUseCase->ejecutar($dto);
+            
             return response()->json($datos);
         } catch (\Exception $e) {
             return response()->json([
@@ -587,6 +681,9 @@ class AsesoresController extends Controller
     /**
      * Agregar prenda simple al pedido (sin requerimientos complejos)
      */
+    /**
+     * Agregar prenda simple al pedido - DELEGADO A USE CASE
+     */
     public function agregarPrendaSimple(Request $request, $pedidoId)
     {
         try {
@@ -596,44 +693,18 @@ class AsesoresController extends Controller
                 'descripcion' => 'nullable|string|max:1000',
             ]);
 
-            $pedido = PedidoProduccion::find($pedidoId);
-            if (!$pedido) {
-                return response()->json([
-                    'error' => 'Pedido no encontrado'
-                ], 404);
-            }
+            // Crear DTO para el Use Case
+            $dto = AgregarPrendaSimpleDTO::fromRequest((string)$pedidoId, $validated);
 
-            // Verificar permisos
-            if ($pedido->asesor_id !== Auth::id()) {
-                return response()->json([
-                    'error' => 'No tienes permiso para agregar prendas a este pedido'
-                ], 403);
-            }
+            // Usar el nuevo Use Case DDD
+            $resultado = $this->agregarPrendaSimpleUseCase->ejecutar($dto);
 
-            // Crear la prenda
-            $prenda = $pedido->prendas()->create([
-                'nombre_prenda' => $validated['nombre_prenda'],
-                'cantidad' => $validated['cantidad'],
-                'descripcion' => $validated['descripcion'] ?? null,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'id' => $prenda->id,
-                'nombre_prenda' => $prenda->nombre_prenda,
-                'cantidad' => $prenda->cantidad,
-                'descripcion' => $prenda->descripcion,
-            ], 201);
+            return response()->json($resultado, 201);
 
         } catch (\Exception $e) {
-            Log::error('Error agregando prenda simple', [
-                'pedido_id' => $pedidoId,
-                'error' => $e->getMessage()
-            ]);
-
             return response()->json([
-                'error' => 'Error al agregar la prenda: ' . $e->getMessage()
-            ], 500);
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 }

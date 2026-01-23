@@ -4,7 +4,7 @@
  * sin necesidad de guardar en la base de datos
  */
 
-console.log(' [INVOICE PREVIEW] Cargando invoice-preview-live.js');
+
 
 /**
  * Almacenamiento global de galerías de imágenes para el preview
@@ -18,7 +18,7 @@ window._idGaleriaPreview = 0;
  */
 window._extraerURLImagen = function(img) {
     if (!img) {
-        console.log('[EXTRAER-URL-IMAGEN] Imagen nula o vacía');
+
         return '';
     }
     
@@ -68,22 +68,22 @@ window._extraerURLImagen = function(img) {
     if (url) {
         // Si comienza con /storage/, devolverla tal cual
         if (url.startsWith('/storage/')) {
-            console.log('[EXTRAER-URL-IMAGEN] URL ya tiene /storage/, devolviéndola tal cual');
+
             return url;
         }
         // Si comienza con storage/ (sin /), agregar / al inicio
         else if (url.startsWith('storage/') && !url.startsWith('/storage/')) {
             url = '/' + url;
-            console.log('[EXTRAER-URL-IMAGEN] Agregando / al inicio de storage/');
+
         }
         // Si no comienza con / ni con storage/, agregar /storage/
         else if (!url.startsWith('/') && !url.startsWith('storage/')) {
             url = '/storage/' + url;
-            console.log('[EXTRAER-URL-IMAGEN] Agregando /storage/ al inicio');
+
         }
     }
     
-    console.log('[EXTRAER-URL-IMAGEN] URL final:', url);
+
     
     return url;
 };
@@ -97,7 +97,7 @@ window._registrarGalería = function(imagenes, titulo) {
     const id = window._idGaleriaPreview++;
     window._galeríasPreview[id] = { imagenes, titulo };
     
-    console.log(` Galería registrada con ID: ${id}, título: "${titulo}", imágenes: ${imagenes.length}`);
+
     return id;
 };
 
@@ -106,7 +106,7 @@ window._registrarGalería = function(imagenes, titulo) {
  */
 window._abrirGaleriaImagenesDesdeID = function(galeriaId) {
     if (galeriaId === null || galeriaId === undefined || !window._galeríasPreview[galeriaId]) {
-        console.warn(` Galería ID ${galeriaId} no encontrada`);
+
         return;
     }
     
@@ -275,7 +275,7 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
  * Abre una vista previa en vivo de la factura con datos del formulario actual
  */
 window.abrirPreviewFacturaEnVivo = function() {
-    console.log('👁️ [PREVIEW] Abriendo vista previa en vivo de factura');
+
     
     // Capturar datos del formulario
     const datosFormulario = capturarDatosFormulario();
@@ -285,7 +285,7 @@ window.abrirPreviewFacturaEnVivo = function() {
         return;
     }
     
-    console.log(' [PREVIEW] Datos capturados:', datosFormulario);
+
     
     // Crear modal con la vista previa
     crearModalPreviewFactura(datosFormulario);
@@ -295,7 +295,7 @@ window.abrirPreviewFacturaEnVivo = function() {
  * Captura los datos del formulario de creación de pedido
  */
 function capturarDatosFormulario() {
-    console.log(' [PREVIEW] Capturando datos del formulario...');
+
     
     // Información básica
     const cliente = document.getElementById('cliente_editable')?.value || 'Cliente Nuevo';
@@ -303,7 +303,7 @@ function capturarDatosFormulario() {
     const formaPago = document.getElementById('forma_de_pago_editable')?.value || 'No especificada';
     
     if (!cliente || cliente.trim() === '') {
-        console.error(' Cliente es requerido');
+
         return null;
     }
     
@@ -334,7 +334,7 @@ function capturarDatosFormulario() {
         numero_pedido_temporal: Math.floor(Math.random() * 90000) + 10000
     };
     
-    console.log(' [PREVIEW] Datos capturados correctamente');
+
     return datos;
 }
 
@@ -342,7 +342,7 @@ function capturarDatosFormulario() {
  * Captura las prendas del formulario usando el GestorPrendaSinCotizacion
  */
 function capturarPrendas() {
-    console.log(' [PREVIEW] Capturando prendas del gestor...');
+
     
     const prendas = [];
     
@@ -358,7 +358,7 @@ function capturarPrendas() {
     }
     
     if (!gestor) {
-        console.warn('  [PREVIEW] GestorPrendaSinCotizacion no disponible - intentando acceso alternativo');
+
         // Intentar obtener del elemento data si existe
         const formElement = document.querySelector('[data-gestor-prendas]');
         if (formElement && formElement.__gestorPrendas) {
@@ -367,7 +367,7 @@ function capturarPrendas() {
     }
     
     if (!gestor) {
-        console.error(' [PREVIEW] GestorPrendaSinCotizacion no disponible en ninguna ubicación');
+
         return prendas;
     }
     
@@ -376,7 +376,7 @@ function capturarPrendas() {
         const prendasDelGestor = gestor.obtenerActivas ? gestor.obtenerActivas() : 
                                  (gestor.prendas ? Object.values(gestor.prendas) : []);
         
-        console.log(` [PREVIEW] Prendas en gestor: ${prendasDelGestor.length}`);
+
         
         prendasDelGestor.forEach((prenda, index) => {
             // Extracción será hecha posteriormente desde prenda.tallas (estructura relacional única)
@@ -444,7 +444,7 @@ function capturarPrendas() {
                                 return img.src;
                             } else {
                                 // Fallback: si es un objeto vacío o desconocido, retorna string vacío
-                                console.warn(' Imagen de proceso no reconocida:', img);
+
                                 return '';
                             }
                         }).filter(url => url); // Filtrar URLs vacías
@@ -487,10 +487,10 @@ function capturarPrendas() {
                 imagenCapturada = typeof firstFoto === 'string' ? firstFoto : (firstFoto?.blobUrl || firstFoto?.src || firstFoto?.url || '');
             } else if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
                 const firstImagen = prenda.imagenes[0];
-                console.log(`         DEBUG firstImagen:`, firstImagen);
-                console.log(`         DEBUG firstImagen type:`, typeof firstImagen);
-                console.log(`         DEBUG firstImagen constructor:`, firstImagen?.constructor?.name);
-                console.log(`         DEBUG firstImagen keys:`, Object.keys(firstImagen || {}));
+
+
+
+
                 
                 // El componente ImagenesFormDataComponent devuelve: {file, nombre, tamaño}
                 // Sin previewUrl (blob URLs son efímeros)
@@ -548,10 +548,10 @@ function capturarPrendas() {
                         // Generar blob URL on-demand si es File object
                         if (telaImg instanceof File) {
                             imagenTelaCapturada = URL.createObjectURL(telaImg);
-                            console.log(`         Blob URL generado on-demand desde File (tela fallback): ${imagenTelaCapturada}`);
+
                         } else {
                             imagenTelaCapturada = typeof telaImg === 'string' ? telaImg : (telaImg?.blobUrl || telaImg?.previewUrl || telaImg?.src || telaImg?.url || '');
-                            console.log(`         Fallback (tela fallback): ${imagenTelaCapturada}`);
+
                         }
                     }
                 }
@@ -570,7 +570,7 @@ function capturarPrendas() {
                 });
             }
             
-            console.log(`      Tallas finales reconstruidas:`, tallasReconstruidas);
+
             
             // Calcular cantidad total desde tallasReconstruidas (estructura relacional: {GENERO: {TALLA: CANTIDAD}})
             cantidadTotal = Object.values(tallasReconstruidas).reduce((sum, generoTallas) => {
@@ -602,7 +602,7 @@ function capturarPrendas() {
                         return URL.createObjectURL(img);
                     }
                     const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
-                    console.log('[INVOICE-PREVIEW] Ruta final para imagen de prenda:', rutaFinal);
+
                     return rutaFinal;
                 }) : (imagenCapturada ? [imagenCapturada] : []),
                 imagen_tela: imagenTelaCapturada,
@@ -622,7 +622,7 @@ function capturarPrendas() {
                         return URL.createObjectURL(img);
                     }
                     const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
-                    console.log('[INVOICE-PREVIEW] Ruta final para imagen de tela:', rutaFinal);
+
                     return rutaFinal;
                 }) : (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas.filter(t => t.imagenes && t.imagenes.length > 0).flatMap(t => t.imagenes.map(img => {
                     console.log('[INVOICE-PREVIEW] Procesando imagen de tela agregada:', {
@@ -640,7 +640,7 @@ function capturarPrendas() {
                         return URL.createObjectURL(img);
                     }
                     const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
-                    console.log('[INVOICE-PREVIEW] Ruta final para imagen de tela agregada:', rutaFinal);
+
                     return rutaFinal;
                 })) : (imagenTelaCapturada ? [imagenTelaCapturada] : [])),
                 manga: tipoManga && tipoManga !== 'No aplica' ? tipoManga : '',
@@ -661,10 +661,10 @@ function capturarPrendas() {
             });
         });
     } catch (error) {
-        console.error(' [PREVIEW] Error capturando prendas:', error);
+
     }
     
-    console.log(` [PREVIEW] ${prendas.length} prenda(s) capturada(s) del gestor`);
+
     return prendas;
 }
 
@@ -674,7 +674,7 @@ function capturarPrendas() {
  * Esta función captura procesos globales aplicables a todo el pedido
  */
 function capturarProcesos() {
-    console.log(' [PREVIEW] Capturando procesos globales...');
+
     
     const procesos = [];
     
@@ -688,7 +688,7 @@ function capturarProcesos() {
         }
     });
     
-    console.log(` [PREVIEW] ${procesos.length} proceso(s) global(es) capturado(s)`);
+
     return procesos;
 }
 
@@ -697,7 +697,7 @@ function capturarProcesos() {
  * Lee los items EPP agregados en la lista lista-items-pedido
  */
 function capturarEPP() {
-    console.log('🦺 [PREVIEW] Capturando EPP...');
+
     
     const epp = [];
     
@@ -731,7 +731,7 @@ function capturarEPP() {
         });
     });
     
-    console.log(` [PREVIEW] ${epp.length} EPP capturado(s)`, epp);
+
     return epp;
 }
 
@@ -739,7 +739,7 @@ function capturarEPP() {
  * Crea un modal con la vista previa de la factura
  */
 function crearModalPreviewFactura(datos) {
-    console.log('  [PREVIEW] Creando modal de vista previa...');
+
     
     // Remover modal anterior si existe
     const modalAnterior = document.getElementById('invoice-preview-modal-wrapper');
@@ -817,14 +817,26 @@ function crearModalPreviewFactura(datos) {
         }
     });
     
-    console.log(' [PREVIEW] Modal de vista previa creado');
+
 }
 
 /**
  * Genera el HTML de la factura con los datos en tiempo real
  */
 function generarHTMLFactura(datos) {
-    console.log('  [PREVIEW] Generando HTML de factura...');
+
+    
+    // Validar que datos y prendas existan
+    if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
+
+        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;">❌ Error: No se pudieron cargar las prendas del pedido. Estructura de datos inválida.</div>';
+    }
+
+    // Si no hay prendas, mostrar mensaje
+    if (datos.prendas.length === 0) {
+
+        return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;">⚠️ Advertencia: El pedido no contiene prendas.</div>';
+    }
     
     // Generar las tarjetas de prendas con todos los detalles
     const prendasHTML = datos.prendas.map((prenda, idx) => {
@@ -1207,7 +1219,7 @@ function generarHTMLFactura(datos) {
  * Guarda el HTML de la factura
  */
 function guardarComoHTML(nombreArchivo) {
-    console.log('💾 [PREVIEW] Guardando como HTML:', nombreArchivo);
+
     
     const contenido = document.getElementById('preview-content').innerHTML;
     const elemento = document.createElement('a');
@@ -1220,7 +1232,7 @@ function guardarComoHTML(nombreArchivo) {
     elemento.click();
     document.body.removeChild(elemento);
     
-    console.log(' [PREVIEW] Archivo guardado');
+
 }
 
 // ========================================
@@ -1231,7 +1243,7 @@ function guardarComoHTML(nombreArchivo) {
  * Agregar botón de vista previa al formulario
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 [PREVIEW] Inicializando invoice-preview-live.js');
+
     
     // Esperar a que el formulario esté completamente cargado
     setTimeout(() => {
@@ -1282,11 +1294,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.appendChild(btnPreview);
             }
             
-            console.log(' [PREVIEW] Botón de vista previa agregado al formulario');
+
         } else {
-            console.warn('  [PREVIEW] Formulario no encontrado');
+
         }
     }, 500);
 });
 
-console.log(' [INVOICE PREVIEW] invoice-preview-live.js cargado');
+

@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 showMessage('Error de conexión al actualizar contraseña', 'error');
             });
         });
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Respuesta del servidor:', data);
+
             
             if (data.success) {
                 // Actualizar la URL de la imagen con la URL correcta del servidor
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Agregar un parámetro de cache para forzar la recarga
                     const timestamp = new Date().getTime();
                     avatarImage.src = data.avatar_url + '?t=' + timestamp;
-                    console.log('Avatar actualizado a:', data.avatar_url);
+
                 }
                 
                 showMessage('✓ Foto de perfil actualizada exitosamente', 'success');
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Error al subir avatar:', error);
+
             showMessage('Error de conexión al subir la foto', 'error');
         });
     }
@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Respuesta del servidor:', data);
+
             
             if (data.success) {
                 showMessage('✓ ' + data.message, 'success');
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+
             showMessage('Error de conexión al actualizar perfil', 'error');
         });
     }

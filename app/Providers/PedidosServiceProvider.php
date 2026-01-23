@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Services\Pedidos\CotizacionSearchService;
 use App\Services\Pedidos\PedidoProduccionCreatorService;
 use App\Services\Pedidos\PrendaProcessorService;
 use App\Application\Services\PedidoPrendaService;
@@ -29,11 +28,6 @@ class PedidosServiceProvider extends ServiceProvider
         // (reutilizable sin estado)
         $this->app->singleton(PrendaProcessorService::class, function ($app) {
             return new PrendaProcessorService();
-        });
-
-        // Registrar CotizacionSearchService como singleton
-        $this->app->singleton(CotizacionSearchService::class, function ($app) {
-            return new CotizacionSearchService();
         });
 
         // Registrar PedidoProduccionCreatorService con inyección de PrendaProcessorService

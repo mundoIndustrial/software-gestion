@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility), OCP (Open/Closed)
  */
 
-console.log(' Cargando RowManager...');
+
 
 const RowManager = {
     /**
@@ -29,7 +29,7 @@ const RowManager = {
         }
 
         this._applyRowStyles(row, newStatus, totalDias, diaDeEntrega);
-        console.log(` Color actualizado para orden ${orderId}: estado="${newStatus}", totalDias=${totalDias}`);
+
     },
 
     /**
@@ -87,7 +87,7 @@ const RowManager = {
         });
 
         table.insertBefore(row, table.firstChild);
-        console.log(` Fila ${orden.pedido} creada`);
+
     },
 
     /**
@@ -98,7 +98,7 @@ const RowManager = {
         if (row) {
             row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
             setTimeout(() => row.remove(), 500);
-            console.log(` Fila ${pedido} eliminada`);
+
         }
     },
 
@@ -106,10 +106,10 @@ const RowManager = {
      * Ejecutar actualización completa de fila
      */
     executeRowUpdate(row, data, orderId, valorAEnviar) {
-        console.log(`🔄 executeRowUpdate iniciado para orden ${orderId}, valorAEnviar: ${valorAEnviar}`);
+
         
         if (!row) {
-            console.warn(` Row es nula para orden ${orderId}`);
+
             return;
         }
 
@@ -117,7 +117,7 @@ const RowManager = {
             const totalDias = data.totalDiasCalculados[orderId] || 0;
             const estado = data.order?.estado || '';
 
-            console.log(` totalDias: ${totalDias}, estado: ${estado}`);
+
 
             // Actualizar fecha estimada (incluso si es null para limpiar)
             // Buscar por clase fecha-estimada-cell (para div.table-row)
@@ -128,7 +128,7 @@ const RowManager = {
                 fechaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"]');
             }
             
-            console.log(` Buscando celda fecha estimada, encontrada:`, !!fechaCell);
+
             
             if (fechaCell) {
                 let spanFecha = fechaCell.querySelector('.fecha-estimada-span');
@@ -143,24 +143,24 @@ const RowManager = {
                         const fechaFormateada = FormattingModule.formatearFecha(data.order.fecha_estimada_de_entrega);
                         spanFecha.textContent = fechaFormateada;
                         fechaCell.setAttribute('data-fecha-estimada', fechaFormateada);
-                        console.log(` Fecha estimada actualizada: ${fechaFormateada}`);
+
                     } else {
                         // Si es null, limpiar la fecha
                         spanFecha.textContent = '-';
                         fechaCell.setAttribute('data-fecha-estimada', '-');
-                        console.log(` Fecha estimada limpiada (valor null)`);
+
                     }
                 } else {
-                    console.warn(` No se encontró span dentro de fechaCell`);
+
                 }
             } else {
-                console.warn(` No se encontró celda de fecha estimada`);
+
             }
 
             // Actualizar estilos
             this._applyRowStyles(row, estado, totalDias, valorAEnviar);
         } else {
-            console.warn(` No hay totalDiasCalculados en data`);
+
         }
     },
 

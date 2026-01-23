@@ -31,6 +31,9 @@ class PrendaPedido extends Model
         'nombre_prenda',
         'descripcion',
         'de_bodega',
+        'prenda_id',
+        'cantidad',
+        'observaciones',
         //  REMOVIDOS: color_id, tela_id, tipo_manga_id, tipo_broche_boton_id
         //  Estos van en prenda_pedido_variantes, no en prendas_pedido
         // 'numero_pedido', //  COMENTADO [16/01/2026]: Se usa pedido_produccion_id en su lugar
@@ -379,6 +382,26 @@ class PrendaPedido extends Model
                     if ($texto) {
                         $lineas[] = "<br><strong>{$nombreBroche}:</strong> " . trim($texto);
                     }
+                }
+            }
+            
+            // Agregar tallas (NUEVO)
+            if ($this->relationLoaded('tallas') && $this->tallas && $this->tallas->count() > 0) {
+                $tallasInfo = [];
+                
+                // Agrupar tallas por género
+                $tallasPorGenero = $this->tallas->groupBy('genero');
+                
+                foreach ($tallasPorGenero as $genero => $tallaRecords) {
+                    $tallaTexto = [];
+                    foreach ($tallaRecords as $tallaRecord) {
+                        $tallaTexto[] = "{$tallaRecord->talla} ({$tallaRecord->cantidad})";
+                    }
+                    $tallasInfo[] = "{$genero}: " . implode(", ", $tallaTexto);
+                }
+                
+                if (!empty($tallasInfo)) {
+                    $lineas[] = "<br><strong>Tallas:</strong> " . implode(" | ", $tallasInfo);
                 }
             }
             

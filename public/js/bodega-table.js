@@ -4,7 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(' Bodega Table Script Inicializado');
+
     
     // Inicializar filtros
     initializeBodegaFilters();
@@ -23,7 +23,7 @@ function initializeBodegaFilters() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const columnName = this.dataset.columnName;
-            console.log(' Abriendo filtro para:', columnName);
+
             openFilterModal(columnName);
         });
     });
@@ -197,7 +197,7 @@ function initializeDropdowns() {
  * Actualizar estado de la orden
  */
 function updateOrderStatus(pedido, newStatus) {
-    console.log(`🔄 Actualizando estado del pedido ${pedido} a ${newStatus}`);
+
     
     fetch(`/bodega/${pedido}`, {
         method: 'PATCH',
@@ -211,15 +211,15 @@ function updateOrderStatus(pedido, newStatus) {
     })
     .then(response => {
         if (response.ok) {
-            console.log(' Estado actualizado correctamente');
+
             showNotification('Estado actualizado correctamente', 'success');
         } else {
-            console.error(' Error al actualizar estado');
+
             showNotification('Error al actualizar estado', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         showNotification('Error en la solicitud', 'error');
     });
 }
@@ -228,7 +228,7 @@ function updateOrderStatus(pedido, newStatus) {
  * Actualizar área de la orden
  */
 function updateOrderArea(pedido, newArea) {
-    console.log(`🔄 Actualizando área del pedido ${pedido} a ${newArea}`);
+
     
     fetch(`/bodega/${pedido}`, {
         method: 'PATCH',
@@ -242,15 +242,15 @@ function updateOrderArea(pedido, newArea) {
     })
     .then(response => {
         if (response.ok) {
-            console.log(' Área actualizada correctamente');
+
             showNotification('Área actualizada correctamente', 'success');
         } else {
-            console.error(' Error al actualizar área');
+
             showNotification('Error al actualizar área', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         showNotification('Error en la solicitud', 'error');
     });
 }
@@ -288,7 +288,7 @@ function showNotification(message, type = 'info') {
  * Editar orden
  */
 function openEditModal(pedido) {
-    console.log(` Abriendo editor para pedido ${pedido}`);
+
     openBodegaEditModal(pedido);
 }
 
@@ -296,7 +296,7 @@ function openEditModal(pedido) {
  * Ver detalles de la orden
  */
 function createViewButtonDropdown(pedido) {
-    console.log(`👁️ Viendo detalles del pedido ${pedido}`);
+
     
     // Verificar si ya existe un dropdown
     const existingDropdown = document.querySelector(`.view-button-dropdown[data-order-id="${pedido}"]`);
@@ -336,20 +336,20 @@ function createViewButtonDropdown(pedido) {
         dropdown.style.zIndex = '9999';
         document.body.appendChild(dropdown);
         
-        console.log(' Dropdown creado');
+
         
         // Agregar event listeners
         const detailBtn = dropdown.querySelector('.detail-option');
         const trackingBtn = dropdown.querySelector('.tracking-option');
         
         detailBtn.addEventListener('click', function() {
-            console.log(' Abriendo detalle de bodega:', pedido);
+
             openDetailBodega(pedido);
             dropdown.remove();
         });
         
         trackingBtn.addEventListener('click', function() {
-            console.log(' Abriendo seguimiento de bodega:', pedido);
+
             openBodegaTrackingModal(pedido);
             dropdown.remove();
         });
@@ -364,7 +364,7 @@ function createViewButtonDropdown(pedido) {
             });
         }, 0);
     } else {
-        console.warn(' No se encontró el botón Ver para el pedido:', pedido);
+
     }
 }
 
@@ -376,7 +376,7 @@ function deleteOrder(pedido) {
         return;
     }
     
-    console.log(`🗑️ Eliminando pedido ${pedido}`);
+
     
     fetch(`/bodega/${pedido}`, {
         method: 'DELETE',
@@ -395,7 +395,7 @@ function deleteOrder(pedido) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         showNotification('Error en la solicitud', 'error');
     });
 }

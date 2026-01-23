@@ -200,11 +200,11 @@ window.manejarImagenReflectivo = function(input) {
 window.actualizarPreviewImagenesReflectivo = function() {
     const preview = document.getElementById('reflectivo-imagenes-preview');
     if (!preview) {
-        console.log(' Preview element not found');
+
         return;
     }
     
-    console.log('📸 Actualizando preview con', window.datosReflectivo.imagenes.length, 'imágenes');
+
     
     preview.innerHTML = '';
     window.datosReflectivo.imagenes.forEach((img, index) => {
@@ -726,13 +726,13 @@ window.guardarConfiguracionReflectivo = function() {
         window.datosReflectivo.aplicarATodas = aplicarTodas.checked;
     }
     
-    console.log(' Datos antes de mostrar resumen:', window.datosReflectivo);
+
     
     // Mostrar sección de reflectivo en el modal principal
     mostrarResumenReflectivo();
     
     cerrarModalReflectivo();
-    console.log(' Configuración de reflectivo guardada:', window.datosReflectivo);
+
 };
 
 /**

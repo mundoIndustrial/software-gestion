@@ -164,7 +164,7 @@
                 return response.json();
             })
             .then(data => {
-                console.log('📥 Datos de cotización recibidos:', data);
+
                 
                 // Actualizar forma de pago con los datos del servidor
                 const formaPagoInput = document.getElementById('forma_de_pago');
@@ -178,7 +178,7 @@
                 }
             })
             .catch(error => {
-                console.error(' Error al cargar cotización:', error);
+
                 const prendasContainer = document.getElementById('prendas-container');
                 if (prendasContainer) {
                     prendasContainer.innerHTML = '<p class="text-red-500">Error al cargar los datos: ' + error.message + '</p>';

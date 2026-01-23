@@ -181,7 +181,6 @@ function verDetallesCorreccion(cotizacionId) {
             modal.style.setProperty('opacity', '1', 'important');
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('No se pudo cargar la cotización');
         });
 }
@@ -290,3 +289,4 @@ function cerrarModalDetallesCorreccion() {
 }
 </script>
 @endsection
+

@@ -197,13 +197,13 @@ class ModalNovedadPrenda {
                 throw new Error(resultado.message || 'Error al guardar prenda en el servidor');
             }
             
-            console.log('[ModalNovedadPrenda] Prenda guardada en BD:', resultado);
+
             
             // Mostrar modal de éxito
             this.mostrarExito();
             
         } catch (error) {
-            console.error('[ModalNovedadPrenda] Error guardando en BD:', error);
+
             
             // Mostrar modal de error
             this.mostrarError(error.message);
@@ -260,13 +260,13 @@ class ModalNovedadPrenda {
             if (result.isConfirmed) {
                 // Cerrar el modal de edición de prendas
                 if (typeof window.cerrarModalPrendaNueva === 'function') {
-                    console.log('[ModalNovedadPrenda] Cerrando modal de edición de prendas...');
+
                     window.cerrarModalPrendaNueva();
                 }
                 
                 // Ir a la lista de prendas
                 if (typeof window.abrirEditarPrendas === 'function') {
-                    console.log('[ModalNovedadPrenda] Abriendo lista de prendas...');
+
                     window.abrirEditarPrendas();
                 }
             }

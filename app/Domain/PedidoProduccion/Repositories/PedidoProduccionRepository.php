@@ -36,6 +36,14 @@ class PedidoProduccionRepository
     }
 
     /**
+     * Obtener el último pedido creado (para secuencial de números)
+     */
+    public function obtenerUltimoPedido(): ?PedidoProduccion
+    {
+        return PedidoProduccion::orderBy('id', 'desc')->first();
+    }
+
+    /**
      * Obtener pedidos del asesor con filtros
      */
     public function obtenerPedidosAsesor(array $filtros = []): LengthAwarePaginator

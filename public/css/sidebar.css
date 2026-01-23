@@ -189,7 +189,8 @@ body.dark-theme .sidebar-header .header-logo {
 .sidebar .sidebar-content {
   flex: 1;
   padding: 16px 12px;
-  overflow: visible !important;
+  overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-hr) transparent;
 }

@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof window.Echo !== 'undefined') {
         window.Echo.channel('control-calidad')
             .listen('ControlCalidadUpdated', (e) => {
-                console.log('Control de Calidad actualizado:', e);
+
                 
                 if (e.action === 'added') {
                     // Agregar nueva orden a la tabla correspondiente

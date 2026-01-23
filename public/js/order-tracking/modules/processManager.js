@@ -239,7 +239,7 @@ const ProcessManager = (() => {
                 throw new Error(result.message);
             }
         } catch (error) {
-            console.error('Error al guardar:', error);
+
             const Toast = Swal.mixin({
                 toast: true,
                 position: 'top-end',
@@ -321,7 +321,7 @@ const ProcessManager = (() => {
                 if (typeof showToast === 'function') {
                     showToast('Proceso eliminado exitosamente', 'success');
                 } else {
-                    console.log(' Proceso eliminado exitosamente');
+
                 }
                 
                 // 🆕 IMPORTANTE: El Observer ya actualizó el área en la BD
@@ -330,15 +330,15 @@ const ProcessManager = (() => {
                 const ordenActualizada = await ordenResponse.json();
                 const newAreaFromServer = ordenActualizada.area;
                 
-                console.log(`📡 Área actualizada en servidor: ${newAreaFromServer}`);
+
                 
                 // Obtener los procesos actualizados (solo para referencia)
                 const procesosData = await fetch(`/api/ordenes/${procesoData.numero_pedido}/procesos`).then(r => r.json());
                 const procesos = procesosData.procesos || [];
                 
-                console.log(` Procesos restantes: ${procesos.length}`);
+
                 procesos.forEach((p, i) => {
-                    console.log(`   [${i}] ${p.proceso}: ${p.estado_proceso} (fecha: ${p.fecha_inicio})`);
+
                 });
                 
                 // Usar el área que el Observer ya actualizó en la BD
@@ -358,11 +358,11 @@ const ProcessManager = (() => {
                             
                             const oldArea = areaDropdown?.dataset.value || '';
                             
-                            console.log(`🔄 [deleteProcess] Llamando UpdatesModule.updateOrderArea`);
-                            console.log(`   - Pedido: ${procesoData.numero_pedido}`);
-                            console.log(`   - Area anterior: ${oldArea}`);
-                            console.log(`   - Area nueva: ${newArea}`);
-                            console.log(`   - Dropdown en tabla encontrado: ${!!areaDropdown}`);
+
+
+
+
+
                             
                             await updatesModule.updateOrderArea(
                                 procesoData.numero_pedido,
@@ -371,9 +371,9 @@ const ProcessManager = (() => {
                                 areaDropdown
                             );
                             
-                            console.log(' UpdatesModule.updateOrderArea completado');
+
                         } else {
-                            console.warn(' UpdatesModule no disponible, intentando alternativa...');
+
                             const tabla = document.querySelector('table#tablaOrdenes tbody');
                             const areaDropdown = tabla ? tabla.querySelector(`.area-dropdown[data-id="${procesoData.numero_pedido}"]`) : null;
                             if (areaDropdown) {
@@ -381,11 +381,11 @@ const ProcessManager = (() => {
                                 areaDropdown.dataset.value = newArea;
                                 areaDropdown.dataset.programmaticChange = 'true';
                                 areaDropdown.dispatchEvent(new Event('change', { bubbles: true }));
-                                console.log(' Área actualizada directamente en dropdown de tabla');
+
                             }
                         }
                     } catch (error) {
-                        console.error('Error al actualizar área después de eliminar:', error);
+
                     }
                 }
                 
@@ -396,27 +396,27 @@ const ProcessManager = (() => {
                     await new Promise(resolve => setTimeout(resolve, 300));
                     
                     try {
-                        console.log(`🔄 Recargando modal para pedido ${numeroPedido}...`);
+
                         const data = await ApiClient.getOrderProcesos(numeroPedido);
-                        console.log(` Procesos recargados: ${data.procesos?.length || 0}`);
+
                         
                         // Recargar el modal con los nuevos datos
                         if (typeof displayOrderTrackingWithProcesos === 'function') {
                             displayOrderTrackingWithProcesos(data);
-                            console.log(' Modal recargado con nuevos procesos');
+
                         } else if (typeof reloadTrackingModal === 'function') {
                             reloadTrackingModal();
-                            console.log(' Modal recargado con reloadTrackingModal');
+
                         } else {
-                            console.warn(' No se encontró función para recargar el modal');
+
                         }
                     } catch (error) {
-                        console.error('Error recargando tracking:', error);
+
                     }
                 }
                 
                 // Refrescar la tabla en segundo plano
-                console.log('🔄 Refrescando tabla en segundo plano...');
+
                 setTimeout(() => {
                     _refreshTableRow(procesoData.numero_pedido);
                 }, 500);
@@ -424,11 +424,11 @@ const ProcessManager = (() => {
                 throw new Error(result.message);
             }
         } catch (error) {
-            console.error('Error al eliminar:', error);
+
             if (typeof showToast === 'function') {
                 showToast(`Error al eliminar: ${error.message}`, 'error');
             } else {
-                console.error('Error al eliminar:', error);
+
             }
         }
     }
@@ -439,21 +439,21 @@ const ProcessManager = (() => {
     function _refreshTableRow(numeroPedido) {
         return (async () => {
             try {
-                console.log(` Refrescando fila ${numeroPedido} en tabla...`);
+
                 
                 // Obtener los procesos actuales desde el API
                 const procesosResponse = await fetch(`/api/ordenes/${numeroPedido}/procesos`);
                 if (!procesosResponse.ok) {
-                    console.warn(` No se pudieron obtener procesos para ${numeroPedido}`);
+
                     return;
                 }
                 
                 const procesosData = await procesosResponse.json();
                 const procesos = procesosData.procesos || [];
                 
-                console.log(` Procesos totales: ${procesos.length}`);
+
                 procesos.forEach((p, i) => {
-                    console.log(`   [${i}] ${p.proceso}: ${p.estado_proceso}`);
+
                 });
                 
                 // Buscar el próximo proceso pendiente
@@ -461,13 +461,13 @@ const ProcessManager = (() => {
                 
                 // Si no hay pendiente, buscar el primer no-completado
                 if (!proximoProceso) {
-                    console.log(' No hay proceso Pendiente, buscando próximo no-completado...');
+
                     proximoProceso = procesos.find(p => p.estado_proceso !== 'Completado');
                 }
                 
                 // Si tampoco hay, simplemente usar el área actual del dropdown
                 if (!proximoProceso) {
-                    console.log(' Todos los procesos están completados, no hay cambios que hacer');
+
                     return;
                 }
                 
@@ -476,13 +476,13 @@ const ProcessManager = (() => {
                 // Buscar la fila en la tabla
                 const tabla = document.querySelector('table#tablaOrdenes tbody');
                 if (!tabla) {
-                    console.warn(' Tabla no encontrada');
+
                     return;
                 }
                 
                 const fila = tabla.querySelector(`tr[data-numero-pedido="${numeroPedido}"]`);
                 if (!fila) {
-                    console.warn(` Fila ${numeroPedido} no encontrada en tabla`);
+
                     return;
                 }
                 
@@ -497,15 +497,15 @@ const ProcessManager = (() => {
                         // Disparar evento para actualizar visualmente
                         areaDropdown.dispatchEvent(new Event('input', { bubbles: true }));
                         
-                        console.log(` Fila ${numeroPedido} refrescada: ${oldValue} → ${newArea}`);
+
                     } else {
-                        console.log(` Fila ${numeroPedido} ya estaba actualizada: ${newArea}`);
+
                     }
                 } else {
-                    console.warn(` Dropdown de área no encontrado en fila ${numeroPedido}`);
+
                 }
             } catch (error) {
-                console.error(` Error refrescando fila ${numeroPedido}:`, error);
+
             }
         })();
     }
@@ -521,7 +521,7 @@ const ProcessManager = (() => {
                 const data = await ApiClient.getOrderProcesos(numeroPedido);
                 displayOrderTrackingWithProcesos(data);
             } catch (error) {
-                console.error('Error recargando tracking:', error);
+
             }
         }
     }

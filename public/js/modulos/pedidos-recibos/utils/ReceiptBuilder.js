@@ -45,9 +45,6 @@ export class ReceiptBuilder {
             imagenes: [],
             tallas: tallasObj
         });
-        
-        console.log(`%c[RECIBOS] Recibo base agregado: "${tipoBase}"`, 'color: #10b981; font-weight: bold;');
-        
         // PASO 2: AGREGAR PROCESOS ADICIONALES
         const procesos = prenda.procesos || [];
         procesos.forEach((proc) => {
@@ -56,8 +53,6 @@ export class ReceiptBuilder {
                 recibos.push(proc);
             }
         });
-        
-        console.log(`%c[RECIBOS] Lista construida: ${recibos.length} recibos (1 base + ${procesos.length} adicionales)`, 'color: #10b981;');
         
         return recibos;
     }
@@ -76,3 +71,4 @@ export class ReceiptBuilder {
         );
     }
 }
+

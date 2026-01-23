@@ -82,16 +82,16 @@ console.log(`
  Para verificar que todo está integrado, ejecuta en consola:
 
 // 1. Ver si el componente está cargado
-console.log('¿Función principal cargada?', typeof generarTarjetaPrendaReadOnly === 'function');
-console.log('¿Secciones cargadas?', typeof construirSeccionProcesos === 'function');
-console.log('¿Galerías cargadas?', typeof abrirGaleriaFotosModal === 'function');
-console.log('¿Interacciones inicializadas?', typeof inicializarInteraccionesTarjeta === 'function');
+
+
+
+
 
 // 2. Ver si el gestor existe
-console.log('¿Gestor existe?', !!window.gestorPrendaSinCotizacion);
+
 
 // 3. Ver prendas agregadas
-console.log('Prendas:', window.gestorPrendaSinCotizacion?.obtenerActivas());
+
 
 // 4. Renderizar manualmente
 if (window.generarTarjetaPrendaReadOnly && window.gestorPrendaSinCotizacion) {
@@ -101,7 +101,7 @@ if (window.generarTarjetaPrendaReadOnly && window.gestorPrendaSinCotizacion) {
         container.innerHTML = prendas.map((p, i) => 
             generarTarjetaPrendaReadOnly(p, i)
         ).join('');
-        console.log(' Tarjetas renderizadas manualmente');
+
     }
 }
 `);
@@ -143,7 +143,7 @@ SOLUCIÓN:
 
 // Para agregar más interacciones, usar event delegation:
 document.addEventListener('custom-event-prenda', (e) => {
-    console.log('Evento en prenda:', e.detail);
+
 });
 
-console.log(' Integración cargada correctamente - Esperando módulos prenda-tarjeta...');
+

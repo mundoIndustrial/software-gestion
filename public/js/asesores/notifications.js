@@ -6,7 +6,7 @@ let lastMarkAllReadTime = 0; // Timestamp de última vez que se marcaron todas c
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar que fetchAPI esté disponible
     if (typeof window.fetchAPI !== 'function') {
-        console.warn('fetchAPI no está disponible aún, retrasando carga de notificaciones');
+
         setTimeout(initializeNotifications, 100);
         return;
     }
@@ -22,7 +22,7 @@ function initializeNotifications() {
         const timeSinceMarkAllRead = Date.now() - lastMarkAllReadTime;
         // Si pasaron menos de 2 minutos desde que marcamos todas, esperar 60 segundos más
         if (timeSinceMarkAllRead < 120000) {
-            console.debug('Esperando antes de recargar notificaciones...');
+
             return;
         }
         loadNotifications();
@@ -43,10 +43,10 @@ async function loadNotifications() {
     } catch (error) {
         // Ignorar error 401 (no autenticado)
         if (error.message && error.message.includes('Unauthenticated')) {
-            console.debug('Usuario no autenticado, notificaciones deshabilitadas');
+
             return;
         }
-        console.error('Error cargando notificaciones:', error);
+
     }
 }
 
@@ -251,7 +251,7 @@ async function markAllAsRead() {
         
         showToast('Notificaciones marcadas como leídas', 'success');
     } catch (error) {
-        console.error('Error marcando notificaciones:', error);
+
         showToast('Error al marcar notificaciones', 'error');
     }
 }
@@ -264,9 +264,9 @@ async function markNotificationAsRead(notificationId) {
         await window.fetchAPI(`/asesores/notifications/${notificationId}/mark-read`, {
             method: 'POST'
         });
-        console.log(` Notificación ${notificationId} marcada como leída`);
+
     } catch (error) {
-        console.error(`Error marcando notificación ${notificationId}:`, error);
+
     }
 }
 

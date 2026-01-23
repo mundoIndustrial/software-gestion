@@ -14,11 +14,11 @@ const TableManager = {
      */
     async init() {
         if (this.initialized) {
-            console.warn(' TableManager ya fue inicializado');
+
             return;
         }
 
-        console.log('🚀 Iniciando TableManager...');
+
         
         try {
             // Fase 1: Inicializar módulos sin dependencias
@@ -34,9 +34,9 @@ const TableManager = {
             this._attachGlobalListeners();
             
             this.initialized = true;
-            console.log(' TableManager inicializado correctamente');
+
         } catch (error) {
-            console.error(' Error al inicializar TableManager:', error);
+
             this._handleInitializationError(error);
         }
     },
@@ -45,7 +45,7 @@ const TableManager = {
      * FASE 1: Módulos sin dependencias
      */
     _loadPhase1() {
-        console.log(' Fase 1: Inicializando módulos base...');
+
         
         // Estos módulos no dependen de otros
         this.modules.notification = NotificationModule;
@@ -57,14 +57,14 @@ const TableManager = {
             StorageModule.initializeListener();
         }
         
-        console.log(' Fase 1 completada');
+
     },
 
     /**
      * FASE 2: Módulos con dependencias
      */
     _loadPhase2() {
-        console.log(' Fase 2: Inicializando módulos dependientes...');
+
         
         // UpdatesModule depende de NotificationModule
         this.modules.updates = UpdatesModule;
@@ -84,14 +84,14 @@ const TableManager = {
             DiaEntregaModule.initialize();
         }
         
-        console.log(' Fase 2 completada');
+
     },
 
     /**
      * FASE 3: Integraciones y configuraciones
      */
     _loadPhase3() {
-        console.log(' Fase 3: Configurando integraciones...');
+
         
         // Inicializar todos los dropdowns
         this._initializeAllDropdowns();
@@ -99,30 +99,30 @@ const TableManager = {
         // Configurar handlers de WebSocket
         this._setupWebSocketHandlers();
         
-        console.log(' Fase 3 completada');
+
     },
 
     /**
      * FASE 4: Listeners globales
      */
     _attachGlobalListeners() {
-        console.log(' Fase 4: Adjuntando listeners globales...');
+
         
         // Detectar cuando la página está a punto de recargar
         window.addEventListener('beforeunload', () => {
-            console.log('🔄 Página a recargar');
+
         });
         
         // Detectar cambios de visibilidad (tab cambió de activo)
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                console.log('👁️ Tab ocultada');
+
             } else {
-                console.log('👁️ Tab visible');
+
             }
         });
         
-        console.log(' Fase 4 completada');
+
     },
 
     /**
@@ -133,7 +133,7 @@ const TableManager = {
         const areaSelects = document.querySelectorAll('.area-select');
         const diaSelects = document.querySelectorAll('.dia-entrega-select');
         
-        console.log(` Encontrados: ${statusSelects.length} dropdowns estado, ${areaSelects.length} área, ${diaSelects.length} día`);
+
         
         // Inicializar dropdowns de estado y área
         if (DropdownManager.initializeStatusDropdowns) {
@@ -151,7 +151,7 @@ const TableManager = {
     _setupWebSocketHandlers() {
         // Este método será complementado por realtime-listeners.js
         // que se carga después de este módulo
-        console.log('🔌 WebSocket handlers configurados');
+
     },
 
     /**
@@ -159,7 +159,7 @@ const TableManager = {
      */
     getModule(moduleName) {
         if (!this.modules[moduleName]) {
-            console.warn(` Módulo '${moduleName}' no encontrado`);
+
             return null;
         }
         return this.modules[moduleName];
@@ -179,7 +179,7 @@ const TableManager = {
      * Recargar tabla
      */
     reloadTable() {
-        console.log('🔄 Recargando tabla...');
+
         location.reload();
     },
 
@@ -187,7 +187,7 @@ const TableManager = {
      * Manejar errores de inicialización
      */
     _handleInitializationError(error) {
-        console.error(' Error crítico:', error);
+
         
         // Mostrar notificación al usuario
         if (NotificationModule && NotificationModule.showError) {
@@ -198,7 +198,7 @@ const TableManager = {
         }
         
         // Log adicional para debugging
-        console.log('Estado de módulos:', this.modules);
+
     },
 
     /**
@@ -221,11 +221,11 @@ const TableManager = {
         });
         
         if (missing.length > 0) {
-            console.warn(` Módulos faltantes: ${missing.join(', ')}`);
+
             return false;
         }
         
-        console.log(' Todas las dependencias disponibles');
+
         return true;
     }
 };

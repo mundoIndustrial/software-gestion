@@ -27,7 +27,7 @@ class InitializeLogoPedidoProcesses extends Command
      */
     public function handle()
     {
-        $this->info('🚀 Inicializando procesos de pedidos LOGO...');
+        $this->info('Inicializando procesos de pedidos LOGO...');
 
         $logoPedidos = LogoPedido::all();
         $procesosCreados = 0;

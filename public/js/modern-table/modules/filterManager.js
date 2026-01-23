@@ -39,7 +39,7 @@ const FilterManager = (() => {
             .then(r => r.json())
             .then(data => FilterManager.generateFilterList(data.unique_values || [], columnIndex, columnName))
             .catch(error => {
-                console.error('Error fetching values:', error);
+
                 const values = [...new Set(
                     Array.from(document.querySelectorAll(`#tablaOrdenes tbody tr td:nth-child(${columnIndex + 1})`))
                         .map(td => td.querySelector('select')?.value || td.querySelector('.cell-text')?.textContent.trim() || td.textContent.trim())
@@ -147,7 +147,7 @@ const FilterManager = (() => {
                 document.querySelector('.table-container')?.scrollIntoView({ behavior: 'auto', block: 'start' });
             })
             .catch(error => {
-                console.error('Error al aplicar filtro:', error);
+
                 tableBody.style.opacity = '1';
                 tableBody.style.pointerEvents = 'auto';
             });

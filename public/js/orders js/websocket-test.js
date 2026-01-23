@@ -3,19 +3,19 @@
  * Simula cambios de estado y área para verificar que los colores se actualicen
  */
 
-console.log('🧪 WebSocket Test Script Cargado');
+
 
 /**
  * Simular un evento OrdenUpdated desde el servidor
  * Útil para testing sin cambiar realmente la BD
  */
 function simulateOrdenUpdate(numeroPedido, cambios) {
-    console.log('🧪 Simulando actualización de orden:', { numeroPedido, cambios });
+
     
     // Obtener la orden actual
     const row = document.querySelector(`.table-row[data-orden-id="${numeroPedido}"]`);
     if (!row) {
-        console.error(` Fila no encontrada para pedido ${numeroPedido}`);
+
         return;
     }
     
@@ -32,9 +32,9 @@ function simulateOrdenUpdate(numeroPedido, cambios) {
     
     if (typeof RealtimeOrderHandler !== 'undefined') {
         RealtimeOrderHandler.updateOrderRow(ordenData, changedFields);
-        console.log(' Actualización simulada completada');
+
     } else {
-        console.error(' RealtimeOrderHandler no disponible');
+
     }
 }
 
@@ -53,4 +53,4 @@ function simulateOrdenUpdate(numeroPedido, cambios) {
 
 // Exponer globalmente para testing
 window.simulateOrdenUpdate = simulateOrdenUpdate;
-console.log(' Función simulateOrdenUpdate disponible en consola');
+

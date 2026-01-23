@@ -10,7 +10,7 @@
  * Actualizar el resumen del reflectivo en el Paso 5
  */
 function actualizarResumenReflectivo() {
-    console.log('🔄 Actualizando resumen del reflectivo...');
+
 
     // Obtener datos del reflectivo
     const descripcion = document.getElementById('descripcion_reflectivo')?.value || '-';
@@ -20,14 +20,14 @@ function actualizarResumenReflectivo() {
     const descElement = document.getElementById('resumen_reflectivo_desc');
     if (descElement) {
         descElement.textContent = descripcion;
-        console.log(' Descripción reflectivo actualizada:', descripcion);
+
     }
 
     // Actualizar ubicación
     const ubicElement = document.getElementById('resumen_reflectivo_ubicacion');
     if (ubicElement) {
         ubicElement.textContent = ubicacion;
-        console.log(' Ubicación reflectivo actualizada:', ubicacion);
+
     }
 
     // Actualizar observaciones generales
@@ -56,14 +56,14 @@ function actualizarResumenReflectivo() {
 
                     obsElement.appendChild(div);
                 });
-                console.log(' Observaciones reflectivo actualizadas:', observacionesReflectivo.length);
+
             }
         } else {
             obsElement.innerHTML = '<p style="color: #999; font-size: 0.9rem;">Sin observaciones</p>';
         }
     }
 
-    console.log(' Resumen del reflectivo actualizado correctamente');
+
 }
 
 /**
@@ -71,7 +71,7 @@ function actualizarResumenReflectivo() {
  * Esta función se llama cuando se navega al Paso 5
  */
 function actualizarResumenCompleto() {
-    console.log(' Actualizando resumen completo...');
+
 
     // Actualizar cliente
     const clienteInput = document.getElementById('cliente');
@@ -172,7 +172,7 @@ function actualizarResumenCompleto() {
     // Actualizar reflectivo
     actualizarResumenReflectivo();
 
-    console.log(' Resumen completo actualizado');
+
 }
 
 /**
@@ -180,7 +180,7 @@ function actualizarResumenCompleto() {
  * Se llama desde irAlPaso(5)
  */
 window.actualizarResumenAlNavegar = function() {
-    console.log(' Navegando al Paso 5 - Actualizando resumen...');
+
     setTimeout(() => {
         actualizarResumenCompleto();
     }, 100);

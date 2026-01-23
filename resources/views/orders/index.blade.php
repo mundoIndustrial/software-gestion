@@ -9,11 +9,11 @@
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/column-widths.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/registros.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/column-widths.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/action-menu.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/filter-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders-styles/row-conditional-colors.css') }}">
     <link rel="stylesheet" href="{{ asset('css/novedades-button.css') }}?v={{ time() }}">
 @endpush
 

@@ -200,7 +200,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error al cargar cotizaciones:', error);
                 mostrarError();
             });
     }
@@ -209,14 +208,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.getElementById('cotizaciones-body');
         
         // Debug: Mostrar estructura de datos
-        console.log(' ===== INICIO renderizarCotizaciones =====');
-        console.log(' Objeto cotizaciones completo:', cotizaciones);
-        console.log(' Array de datos:', cotizaciones.data);
-        console.log(' Total de registros:', cotizaciones.data.length);
-        
+
+
+
         if (cotizaciones.data.length > 0) {
             console.log(' Primer registro completo:', cotizaciones.data[0]);
-            console.log('👤 Campo cliente:', cotizaciones.data[0].cliente);
+            console.log('Campo cliente:', cotizaciones.data[0].cliente);
             console.log('🆔 Campo cliente_id:', cotizaciones.data[0].cliente_id);
             console.log('👨 Objeto asesor:', cotizaciones.data[0].asesor);
             console.log(' Todas las propiedades del primer registro:', Object.keys(cotizaciones.data[0]));
@@ -235,15 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.innerHTML = cotizaciones.data.map((cot, index) => {
             // Extraer nombre del cliente - el campo 'cliente' es texto plano en la tabla
             let nombreCliente = cot.cliente || '-';
-            
-            console.log(` Procesando cotización #${index}:`, {
-                id: cot.id,
-                numero: cot.numero_cotizacion,
-                cliente_campo: cot.cliente,
-                cliente_id: cot.cliente_id,
-                nombreCliente_asignado: nombreCliente
-            });
-            
             let nombreAsesor = cot.asesor?.name || cot.asesor_nombre || '-';
             
             return `
@@ -362,3 +350,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+

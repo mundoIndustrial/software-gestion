@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<link rel="stylesheet" href="{{ asset('css/dashboard styles/dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/dashboard-styles/dashboard.css') }}">
 
 <div class="dashboard-container">
     <div class="kpis-row animate-in">
@@ -46,5 +46,5 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ asset('js/dashboard js/dashboard.js') }}"></script>
+<script src="{{ asset('js/dashboard-js/dashboard.js') }}"></script>
 @endsection

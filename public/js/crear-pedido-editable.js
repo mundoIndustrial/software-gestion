@@ -13,7 +13,7 @@ window.eliminarTallaReflectivo = window.eliminarTallaReflectivo || function(pren
             if (result.isConfirmed) {
                 const tallaElement = document.querySelector(`.talla-item-reflectivo[data-talla="${talla}"][data-prenda="${prendaIndex}"]`);
                 if (tallaElement) {
-                    console.log(` Eliminando talla ${talla} de la prenda ${prendaIndex + 1}`);
+
                     
                     // GUARDAR CANTIDADES ANTES DE RE-RENDERIZAR
                     guardarCantidadesActuales(prendaIndex);
@@ -32,7 +32,7 @@ window.eliminarTallaReflectivo = window.eliminarTallaReflectivo || function(pren
                     if (eliminarImagenTimeout) clearTimeout(eliminarImagenTimeout);
                     eliminarImagenTimeout = setTimeout(() => {
                         if (typeof renderizarPrendas === 'function') {
-                            console.log(`🔄 Renderizando prendas después de eliminar talla...`);
+
                             renderizarPrendas();
                             // Restaurar cantidades guardadas después del render
                             setTimeout(() => {
@@ -51,12 +51,12 @@ window.eliminarTallaReflectivo = window.eliminarTallaReflectivo || function(pren
 // FUNCIÓN GLOBAL: Eliminar Prenda del Pedido
 // ============================================================
 window.eliminarPrendaDelPedido = function(index) {
-    console.log(`🗑️ Eliminando prenda ${index + 1}`);
+
     
     const prendaCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${index}"]`);
     if (prendaCard) {
         prendaCard.remove();
-        console.log(` Prenda ${index + 1} eliminada`);
+
         
         // Si no hay más prendas, mostrar mensaje
         window.prendasContainer = document.getElementById('prendas-container-editable');
@@ -83,20 +83,20 @@ window.eliminarPrendaDelPedido = function(index) {
 function procesarImagenesRestantes(prendaIndex, tipo = 'prenda') {
     if (prendaIndex === null || prendaIndex === undefined) {
         // Procesamiento para imágenes globales (logo, reflectivo)
-        console.log(`🔄 Procesando imágenes restantes de ${tipo}...`);
+
         
         if (tipo === 'logo') {
             const imagenesLogo = document.querySelectorAll('img[data-logo-url]');
-            console.log(`   📸 Imágenes de logo restantes: ${imagenesLogo.length}`);
+
             imagenesLogo.forEach((img, idx) => {
-                console.log(`     - Logo ${idx + 1} será incluido`);
+
             });
         } else if (tipo === 'reflectivo') {
             const imagenesReflectivo = document.querySelectorAll('.reflectivo-foto-item');
-            console.log(`   📸 Imágenes de reflectivo restantes: ${imagenesReflectivo.length}`);
+
             imagenesReflectivo.forEach((item, idx) => {
                 const fotoId = item.getAttribute('data-foto-id');
-                console.log(`     - Reflectivo ID ${fotoId} será incluido`);
+
             });
         }
     } else {
@@ -106,23 +106,23 @@ function procesarImagenesRestantes(prendaIndex, tipo = 'prenda') {
         if (prendasCard) {
             if (tipo === 'prenda') {
                 const imagenesPrenda = prendasCard.querySelectorAll('img[data-foto-url]');
-                console.log(`🔄 Procesando imágenes restantes de prenda ${prendaIndex + 1}`);
-                console.log(`   📸 Imágenes de prenda restantes: ${imagenesPrenda.length}`);
+
+
                 imagenesPrenda.forEach((img, idx) => {
-                    console.log(`     - Foto ${idx + 1} de prenda será incluida`);
+
                 });
             } else if (tipo === 'tela') {
                 const imagenesTela = prendasCard.querySelectorAll('img[data-tela-foto-url]');
-                console.log(`🔄 Procesando imágenes restantes de telas para prenda ${prendaIndex + 1}`);
-                console.log(`   📸 Imágenes de tela restantes: ${imagenesTela.length}`);
+
+
                 imagenesTela.forEach((img, idx) => {
-                    console.log(`     - Foto de tela ${idx + 1} será incluida`);
+
                 });
             }
         }
     }
     
-    console.log(` Procesamiento completado. Las imágenes restantes están listas para ser enviadas al servidor.`);
+
 }
 
 /**
@@ -136,7 +136,7 @@ window.restaurarCantidadesGuardadas = (prendaIndex) => window.CantidadesManager.
  * Maneja la activación y desactivación de tabs
  */
 window.cambiarTab = function(tabName, element = null) {
-    console.log('🔄 Cambiando a tab:', tabName);
+
     
     // Ocultar todos los tabs
     const tabContents = document.querySelectorAll('.tab-content');
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             paso3Alerta.innerHTML = ' Puedes editar los campos de cada prenda, cambiar cantidades por talla, o eliminar prendas que no desees incluir en el pedido.';
                         }
                     } else {
-                        console.warn(' No se encontraron los elementos paso3_titulo_logo o paso3_alerta_logo');
+
                     }
                     
                     // Actualizar el título dinámico junto al círculo del índice 3
@@ -381,18 +381,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else if (tipoPedido === 'REFLECTIVO') {
                             if (seccionPrendas) seccionPrendas.style.display = 'block';
                             tituloPrendasDinamico.innerHTML = 'Nuevo Pedido Reflectivo';
-                            console.log(' Título dinámico actualizado para REFLECTIVO:', tituloPrendasDinamico.textContent);
+
                         } else if (tipoPedido === 'PRENDA') {
                             if (seccionPrendas) seccionPrendas.style.display = 'block';
                             tituloPrendasDinamico.textContent = 'Prendas';
-                            console.log(' Título dinámico actualizado:', tituloPrendasDinamico.textContent);
+
                         } else {
                             if (seccionPrendas) seccionPrendas.style.display = 'block';
                             tituloPrendasDinamico.textContent = 'Prendas Técnicas del Logo';
-                            console.log(' Título dinámico actualizado:', tituloPrendasDinamico.textContent);
+
                         }
                     } else {
-                        console.warn(' No se encontró el elemento titulo-prendas-dinamico');
+
                     }
                     
                     // Mostrar/ocultar botón "Agregar Prenda Técnica" solo cuando hay cotización seleccionada
@@ -400,10 +400,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (btnAgregarPrendaTecnica) {
                         if (esLogo) {
                             btnAgregarPrendaTecnica.style.display = 'block';
-                            console.log(' Botón "Agregar Prenda Técnica" mostrado');
+
                         } else {
                             btnAgregarPrendaTecnica.style.display = 'none';
-                            console.log(' Botón "Agregar Prenda Técnica" ocultado');
+
                         }
                     }
                     
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error(' Error:', error);
+
                 prendasContainer.innerHTML = `<p style="color: #ef4444;">Error al cargar las prendas: ${error.message}</p>`;
             });
     }
@@ -449,11 +449,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     tipoCotizacion
                 );
             } else {
-                console.error(' RenderizadorPrendasComponent no está disponible');
+
                 prendasContainer.innerHTML = '<p style="color: #ef4444;">Error: Componente de renderizado no disponible</p>';
             }
         } catch (error) {
-            console.error(' ERROR en renderizarPrendasEditables:', error);
+
             prendasContainer.innerHTML = `<p style="color: #ef4444;">Error al renderizar: ${error.message}</p>`;
         }
     }

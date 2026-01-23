@@ -38,16 +38,16 @@ function guardarDatosEnStorage() {
         };
         
         localStorage.setItem(STORAGE_KEY_PREFIX + 'datos_generales', JSON.stringify(datos));
-        console.log('💾 Datos generales guardados en localStorage:', datos);
+
         
         // Guardar también especificaciones de forma independiente
         if (window.especificacionesSeleccionadas && Object.keys(window.especificacionesSeleccionadas).length > 0) {
             localStorage.setItem(STORAGE_SPECS_KEY, JSON.stringify(window.especificacionesSeleccionadas));
-            console.log(' Especificaciones guardadas:', window.especificacionesSeleccionadas);
+
         }
         
     } catch (error) {
-        console.error(' Error al guardar en localStorage:', error);
+
     }
 }
 
@@ -74,10 +74,10 @@ function guardarProductosEnStorage() {
         });
         
         localStorage.setItem(STORAGE_PRODUCTOS_KEY, JSON.stringify(productos));
-        console.log(' Productos guardados en localStorage:', productos.length, 'productos');
+
         
     } catch (error) {
-        console.error(' Error al guardar productos:', error);
+
     }
 }
 
@@ -87,7 +87,7 @@ function cargarDatosDesdeStorage() {
     try {
         const datosGuardados = localStorage.getItem(STORAGE_KEY_PREFIX + 'datos_generales');
         if (!datosGuardados) {
-            console.log(' No hay datos guardados en localStorage');
+
             return false;
         }
         
@@ -95,7 +95,7 @@ function cargarDatosDesdeStorage() {
         
         // Validar versión
         if (datos.version !== STORAGE_VERSION) {
-            console.warn(' Versión de datos incompatible, ignorando');
+
             limpiarStorage();
             return false;
         }
@@ -106,23 +106,23 @@ function cargarDatosDesdeStorage() {
             const input = document.querySelector(`[name="${campo}"]`);
             if (input && datos[campo]) {
                 input.value = datos[campo];
-                console.log(`✓ Restaurado: ${campo}`);
+
             }
         });
         
         // Restaurar especificaciones
         if (datos.especificaciones && Object.keys(datos.especificaciones).length > 0) {
             window.especificacionesSeleccionadas = datos.especificaciones;
-            console.log('✓ Especificaciones restauradas');
+
         }
         
         const fecha = new Date(datos.timestamp).toLocaleString('es-CO');
-        console.log(` Datos cargados desde localStorage (última modificación: ${fecha})`);
+
         
         return true;
         
     } catch (error) {
-        console.error(' Error al cargar desde localStorage:', error);
+
         return false;
     }
 }
@@ -131,7 +131,7 @@ function cargarProductosDesdeStorage() {
     try {
         const productosGuardados = localStorage.getItem(STORAGE_PRODUCTOS_KEY);
         if (!productosGuardados) {
-            console.log(' No hay productos guardados en localStorage');
+
             return false;
         }
         
@@ -173,11 +173,11 @@ function cargarProductosDesdeStorage() {
             }
         });
         
-        console.log(` ${productos.length} productos cargados desde localStorage`);
+
         return true;
         
     } catch (error) {
-        console.error(' Error al cargar productos:', error);
+
         return false;
     }
 }
@@ -205,10 +205,10 @@ function limpiarStorage() {
             window.fotosSeleccionadas = {};
         }
         
-        console.log('🗑️ localStorage limpiado completamente');
-        console.log('🗑️ Variables globales limpiadas');
+
+
     } catch (error) {
-        console.error(' Error al limpiar localStorage:', error);
+
     }
 }
 
@@ -216,7 +216,7 @@ function limpiarStorage() {
 
 function limpiarFormularioCompleto() {
     try {
-        console.log('🧹 Iniciando limpieza completa del formulario...');
+
         
         // 1. Limpiar localStorage
         if (typeof limpiarStorage === 'function') {
@@ -237,7 +237,7 @@ function limpiarFormularioCompleto() {
                     input.checked = false;
                 }
             });
-            console.log('✓ Formulario HTML limpiado');
+
         }
         
         // 3. Limpiar contenedor de productos
@@ -265,28 +265,28 @@ function limpiarFormularioCompleto() {
                     preview.innerHTML = '';
                 });
             }
-            console.log('✓ Contenedor de productos limpiado');
+
         }
         
         // 3.5. Limpiar memoria de fotos seleccionadas
         if (window.fotosSeleccionadas) {
             window.fotosSeleccionadas = {};
-            console.log('✓ window.fotosSeleccionadas limpiado');
+
         }
         if (window.telasSeleccionadas) {
             window.telasSeleccionadas = {};
-            console.log('✓ window.telasSeleccionadas limpiado');
+
         }
         if (window.fotosEliminadasServidor) {
             window.fotosEliminadasServidor = { prendas: [], telas: [] };
-            console.log('✓ window.fotosEliminadasServidor limpiado');
+
         }
         
         // 4. Limpiar secciones de ubicación
         const seccionesContainer = document.getElementById('secciones_agregadas');
         if (seccionesContainer) {
             seccionesContainer.innerHTML = '';
-            console.log('✓ Secciones de ubicación limpiadas');
+
         }
         
         // 5. Limpiar modal de especificaciones
@@ -300,7 +300,7 @@ function limpiarFormularioCompleto() {
             modalEspecificaciones.querySelectorAll('input[type="text"]').forEach(input => {
                 input.value = '';
             });
-            console.log('✓ Modal de especificaciones limpiado');
+
         }
         
         // 6. Resetear botón ENVIAR a rojo
@@ -308,7 +308,7 @@ function limpiarFormularioCompleto() {
         if (btnEnviar) {
             btnEnviar.style.background = '#ef4444';
             btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
-            console.log('✓ Botón ENVIAR resetado a rojo');
+
         }
         
         // 7. Limpiar variables globales adicionales (SOLO si existen)
@@ -327,10 +327,10 @@ function limpiarFormularioCompleto() {
         // NO limpiar tecnicasSeleccionadas, seccionesSeleccionadas, observacionesGenerales, imagenesSeleccionadas
         // porque se declaran DESPUÉS de que se carga este script
         
-        console.log(' Limpieza completa del formulario finalizada');
+
         
     } catch (error) {
-        console.error(' Error al limpiar formulario:', error);
+
     }
 }
 
@@ -343,7 +343,7 @@ function configurarAutoGuardado() {
         guardarProductosEnStorage();
     }, 5000);
     
-    console.log('⏱️ Auto-guardado configurado (cada 5 segundos)');
+
 }
 
 // ============ INICIALIZACIÓN ============
@@ -351,16 +351,16 @@ function configurarAutoGuardado() {
 document.addEventListener('DOMContentLoaded', function() {
     //  DESACTIVADO: No cargar datos del localStorage
     // Esto evita que se carguen datos de cotizaciones anteriores
-    console.log(' localStorage DESACTIVADO - Formulario limpio');
+
     
     //  NO limpiar si estamos en la página de bordado
     // La página de bordado declara sus propias variables globales DESPUÉS de que se carga este script
     if (window.location.pathname.includes('/cotizaciones-bordado/') || window.location.pathname.includes('/cotizaciones/bordado/')) {
-        console.log(' Página de bordado detectada - No se ejecuta limpiarFormularioCompleto()');
+
     } else if (!window.location.search.includes('editar=')) {
         limpiarFormularioCompleto();
     } else {
-        console.log(' Modo edición detectado - No se limpian variables globales');
+
     }
     
     //  DESACTIVADO: Auto-guardado desactivado
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
             originalGuardarEspecificaciones();
             //  DESACTIVADO: No guardar en localStorage
             // guardarDatosEnStorage();
-            console.log('✓ Especificaciones guardadas');
+
         };
     }
 });
@@ -408,7 +408,7 @@ function mostrarEstorageSummary() {
     summary += specs ? `✓ Especificaciones guardadas\n` : '✗ Sin especificaciones\n';
     summary += `🌐 WebSockets: ${window.Echo ? 'Disponible ✓' : 'No disponible'}\n`;
     
-    console.log(summary);
+
     return summary;
 }
 

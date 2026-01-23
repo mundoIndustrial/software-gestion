@@ -11,7 +11,7 @@ export class GalleryManager {
         const state = modalManager.getState();
         const { imagenesActuales, prendaPedidoId, prendaData } = state;
         
-        console.log('[GalleryManager] Abriendo galería...');
+
         
         // Combinar imágenes de tela + imágenes del recibo/prenda
         let fotosParaMostrar = [];
@@ -30,7 +30,7 @@ export class GalleryManager {
                 .filter(url => url);
             
             fotosParaMostrar = [...imagenesPrendaLimpias];
-            console.log('[GalleryManager] Imágenes de prenda obtenidas desde prendaData:', fotosParaMostrar.length);
+
         }
         
         // 2. Agregar imágenes de tela (desde prendaData.imagenes_tela)
@@ -46,7 +46,7 @@ export class GalleryManager {
                 .filter(url => url);
             
             fotosParaMostrar = [...fotosParaMostrar, ...imagenesTelaLimpias];
-            console.log('[GalleryManager] Imágenes de tela obtenidas desde prendaData:', imagenesTelaLimpias.length);
+
         }
         
         // 3. Agregar imágenes del recibo/proceso (si existen)
@@ -62,7 +62,7 @@ export class GalleryManager {
                 .filter(url => url);
             
             fotosParaMostrar = [...fotosParaMostrar, ...imagenesRecibosLimpias];
-            console.log('[GalleryManager] Imágenes del recibo agregadas:', imagenesRecibosLimpias.length);
+
         }
         
         // 4. Si aún no hay imágenes, intentar obtener desde el endpoint
@@ -81,21 +81,21 @@ export class GalleryManager {
                         .filter(f => f);
                     
                     fotosParaMostrar = [...fotosParaMostrar, ...fotosLimpias];
-                    console.log('[GalleryManager] Fotos de prenda obtenidas desde endpoint:', fotosLimpias.length);
+
                 }
             } catch (error) {
-                console.error('[GalleryManager] Error obteniendo fotos:', error);
+
             }
         }
         
         if (fotosParaMostrar.length === 0) {
-            console.log('[GalleryManager] Sin imágenes, usando galería original');
+
             return false; // Usar galería original
         }
 
         const modalWrapper = modalManager.getModalWrapper();
         if (!modalWrapper) {
-            console.error('[GalleryManager] No se encontró wrapper del modal');
+
             return false;
         }
 
@@ -155,7 +155,7 @@ export class GalleryManager {
         html += '</div></div>';
         galeria.innerHTML = html;
         
-        console.log('[GalleryManager] Galería renderizada con', fotos.length, 'imágenes');
+
     }
 
     /**
@@ -246,6 +246,6 @@ export class GalleryManager {
         if (modalWrapper) modalWrapper.style.display = 'block';
         
         this.actualizarBotonesEstilo(false);
-        console.log('[GalleryManager] Galería cerrada');
+
     }
 }

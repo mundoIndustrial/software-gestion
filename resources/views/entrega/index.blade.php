@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<link rel="stylesheet" href="{{ asset('css/entregas styles/entregas.css') }}">
+<link rel="stylesheet" href="{{ asset('css/entregas-styles/entregas.css') }}">
 
 <div class="ep-container">
     <div class="max-w-7xl mx-auto">
@@ -188,7 +188,7 @@
 <x-entrega-form-modal />
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ asset('js/entregas js/entregas.js') }}"></script>
+<script src="{{ asset('js/entregas-js/entregas.js') }}"></script>
 <script>
     // Inicializar el módulo de entregas con el tipo
     initEntregas('{{ $tipo }}');

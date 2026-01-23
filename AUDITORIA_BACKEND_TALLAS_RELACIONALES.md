@@ -223,7 +223,7 @@ Implementar el método mejorado que procesa estructura relacional.
 
 ---
 
-## 🚀 PRÓXIMAS ACCIONES
+## PRÓXIMAS ACCIONES
 
 1. Actualizar `PrendaTallaService.php` según especificación
 2. Ejecutar tests para validar cambios

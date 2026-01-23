@@ -717,14 +717,12 @@
                     if (window.agregarRegistrosATabla) {
                         window.agregarRegistrosATabla(data.registros, data.section);
                     } else {
-                        console.error('Función agregarRegistrosATabla no encontrada');
                     }
                 } else {
                     alert('Error al guardar los registros: ' + (data.message || 'Error desconocido'));
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 alert('Error al procesar la solicitud.');
             });
         });
@@ -755,3 +753,4 @@
 
     </script>
 </x-modal>
+

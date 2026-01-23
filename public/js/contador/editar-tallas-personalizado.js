@@ -113,7 +113,7 @@ function editarTallasPersonalizado(element, prendaId, tallasBase, textoPersonali
         element.style.borderRadius = '4px';
         element.style.transition = 'all 0.2s';
 
-        console.log(' Texto personalizado de tallas guardado para prenda ' + prendaId + ':', textoPersonalizado);
+
 
         // Guardar en la base de datos
         guardarTextoPersonalizadoEnBD(prendaId, textoPersonalizado);
@@ -134,7 +134,7 @@ function editarTallasPersonalizado(element, prendaId, tallasBase, textoPersonali
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log(' Guardado en BD:', data.message);
+
                 // Mostrar notificación de éxito
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -148,7 +148,7 @@ function editarTallasPersonalizado(element, prendaId, tallasBase, textoPersonali
                     });
                 }
             } else {
-                console.error(' Error al guardar:', data.message);
+
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'error',
@@ -161,7 +161,7 @@ function editarTallasPersonalizado(element, prendaId, tallasBase, textoPersonali
             }
         })
         .catch(error => {
-            console.error(' Error de red:', error);
+
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'error',
@@ -195,6 +195,6 @@ function editarTallasPersonalizado(element, prendaId, tallasBase, textoPersonali
 
 // Mostrar textos personalizados guardados en consola
 function mostrarTallasPersonalizadasGuardadas() {
-    console.log(' Textos Personalizados de Tallas Guardados:', window.tallasTextoPersonalizado);
+
     return window.tallasTextoPersonalizado;
 }

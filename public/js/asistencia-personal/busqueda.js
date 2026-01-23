@@ -91,7 +91,7 @@ const AsistenciaBusqueda = (() => {
                         });
                     }
                     
-                    console.log(`Búsqueda: "${searchTerm}" - ${registrosFiltrados.length} de ${registrosOriginales.length} registros`);
+
                     renderRecordosTableWithSearch(registrosFiltrados, maxHoras, registrosOriginales.length, searchTerm);
                 }
             });
@@ -147,7 +147,7 @@ const AsistenciaBusqueda = (() => {
                     });
                 }
                 
-                console.log(`Búsqueda en Horas: "${searchTerm}" - ${filtrados.length} de ${horasData.length} registros`);
+
                 renderHorasTrabajadasSearchResults(filtrados, searchTerm, horasData.length);
             });
             

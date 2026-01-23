@@ -19,7 +19,7 @@ class EppStateManager {
      */
     setProductoSeleccionado(producto) {
         this.estado.productoSeleccionado = producto;
-        console.log('[EppStateManager] Producto seleccionado:', producto);
+
     }
 
     /**
@@ -34,7 +34,7 @@ class EppStateManager {
      */
     agregarImagenSubida(imagen) {
         this.estado.imagenesSubidas.push(imagen);
-        console.log('[EppStateManager] Imagen agregada. Total:', this.estado.imagenesSubidas.length);
+
     }
 
     /**
@@ -49,7 +49,7 @@ class EppStateManager {
      */
     limpiarImagenesSubidas() {
         this.estado.imagenesSubidas = [];
-        console.log('[EppStateManager] Imágenes limpiadas');
+
     }
 
     /**
@@ -57,7 +57,7 @@ class EppStateManager {
      */
     eliminarImagenSubida(imagenId) {
         this.estado.imagenesSubidas = this.estado.imagenesSubidas.filter(img => img.id !== imagenId);
-        console.log('[EppStateManager] Imagen eliminada:', imagenId);
+
     }
 
     /**
@@ -66,7 +66,7 @@ class EppStateManager {
     iniciarEdicion(eppId, desdeDB = false) {
         this.estado.editandoId = eppId;
         this.estado.editandoDesdeDB = desdeDB;
-        console.log('[EppStateManager] Edición iniciada:', { eppId, desdeDB });
+
     }
 
     /**
@@ -90,7 +90,7 @@ class EppStateManager {
         this.estado.editandoId = null;
         this.estado.editandoDesdeDB = false;
         this.limpiarImagenesSubidas();
-        console.log('[EppStateManager] Edición finalizada');
+
     }
 
     /**
@@ -125,7 +125,7 @@ class EppStateManager {
             editandoDesdeDB: false,
             itemsData: {}
         };
-        console.log('[EppStateManager] Estado reseteado');
+
     }
 }
 

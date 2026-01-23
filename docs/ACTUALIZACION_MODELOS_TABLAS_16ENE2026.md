@@ -310,7 +310,7 @@ $this->assertEquals('tipos_broche_boton', $broche->getTable());
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+## PRÓXIMOS PASOS
 
 ### Inmediatos (Hoy)
 
@@ -453,7 +453,7 @@ WHERE TABLE_NAME = 'prenda_pedido_variantes';
 
 ---
 
-## 👤 INFORMACIÓN
+## INFORMACIÓN
 
 **Fecha:** 16 de Enero, 2026  
 **Versión:** 1.0.0  

@@ -966,7 +966,6 @@
                             this.updateButtonState();
                         }
                     } catch (error) {
-                        console.error('Error:', error);
                         document.getElementById('pedidoError').textContent = 'Error al buscar pedido';
                         document.getElementById('pedidoError').classList.remove('hidden');
                     }
@@ -990,7 +989,6 @@
                             prendaSelect.appendChild(option);
                         });
                     } catch (error) {
-                        console.error('Error:', error);
                     }
                 },
 
@@ -1012,7 +1010,6 @@
                             tallaSelect.appendChild(option);
                         });
                     } catch (error) {
-                        console.error('Error:', error);
                     }
                 },
 
@@ -1132,7 +1129,6 @@
                     try {
                         return `Pedido: ${entrega.pedido}, Prenda: ${entrega.prenda || 'N/A'}, Cantidad: ${entrega.cantidad_entregada || entrega.piezas}`;
                     } catch (error) {
-                        console.error('Error in getEntregaText:', error, entrega);
                         return 'Error displaying entrega';
                     }
                 },
@@ -1145,8 +1141,6 @@
                     if (submitBtn) submitBtn.disabled = true;
 
                     // Debug log entregas before sending
-                    console.log('Submitting entregas:', this.entregas);
-
                     // Check all entregas have prenda field non-empty
                     for (const entrega of this.entregas) {
                         if (!entrega.prenda || entrega.prenda.trim() === '') {
@@ -1197,7 +1191,6 @@
                             }, 5000);
                         }
                     } catch (error) {
-                        console.error('Error:', error);
                         this.showErrorMessage = true;
                         this.errorMessage = 'Error al enviar el formulario';
                         setTimeout(() => {

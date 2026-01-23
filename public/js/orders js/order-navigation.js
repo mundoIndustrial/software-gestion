@@ -65,7 +65,7 @@ function navigateToPreviousOrder() {
 function setCurrentOrder(pedido) {
     currentOrderId = pedido;
     allOrderIds = getAllOrderIds();
-    console.log(` Orden actual: ${currentOrderId}, Total órdenes: ${allOrderIds.length}`);
+
 }
 
 /**

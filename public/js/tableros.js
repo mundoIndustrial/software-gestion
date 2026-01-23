@@ -1,28 +1,28 @@
 function tablerosApp() {
-    console.log('🚀 Inicializando tablerosApp...');
+
     return {
         activeTab: 'produccion',
         showRecords: false,
 
         setActiveTab(tab) {
-            console.log('📑 Cambiando tab a:', tab, '- Reseteando showRecords a false');
+
             this.activeTab = tab;
             this.showRecords = false; // Reset when changing tabs
         },
 
         toggleRecords() {
-            console.log('🔄 Toggle Records - Antes:', this.showRecords);
+
             this.showRecords = !this.showRecords;
-            console.log('🔄 Toggle Records - Después:', this.showRecords);
+
             if (this.showRecords) {
                 // Initialize filters when showing records
                 const currentTab = this.activeTab;
-                console.log(' Mostrando registros para tab:', currentTab);
+
                 setTimeout(() => {
                     initializeTableFilters(currentTab);
                 }, 100);
             } else {
-                console.log('📈 Mostrando seguimiento/dashboard');
+
             }
         },
 
@@ -111,7 +111,7 @@ function showFilterDropdown(column, section) {
     fetchUniqueValues(column, section).then(uniqueValues => {
         buildDropdownContent(dropdown, column, section, uniqueValues, headerCell, icon);
     }).catch(error => {
-        console.error('Error fetching unique values:', error);
+
         // Fallback to local values
         const uniqueValues = collectUniqueValues(column, section);
         buildDropdownContent(dropdown, column, section, uniqueValues, headerCell, icon);
@@ -344,7 +344,7 @@ function applyFiltersBackend(section) {
         }
     })
     .catch(error => {
-        console.error('Error applying filters:', error);
+
         if (tableBody) {
             tableBody.style.opacity = '1';
             tableBody.style.pointerEvents = 'auto';
@@ -429,14 +429,14 @@ function restoreSavedFilters(section) {
             }
         })
         .catch(error => {
-            console.error('Error restoring filters:', error);
+
             if (tableBody) {
                 tableBody.style.opacity = '1';
                 tableBody.style.pointerEvents = 'auto';
             }
         });
     } catch (error) {
-        console.error('Error parsing saved filters:', error);
+
         sessionStorage.removeItem(`tableros_filters_${section}`);
     }
 }
@@ -539,7 +539,7 @@ function attachPaginationListeners(section) {
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading page:', error);
+
                     if (tableBody) {
                         tableBody.style.opacity = '1';
                         tableBody.style.pointerEvents = 'auto';
