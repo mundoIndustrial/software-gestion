@@ -29,10 +29,12 @@ use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -58,6 +60,7 @@ class AsesoresController extends Controller
     protected ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase;
     protected ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase;
     protected AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase;
+    protected ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -80,7 +83,8 @@ class AsesoresController extends Controller
         CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase,
         ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase,
         ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase,
-        AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase
+        AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase,
+        ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -103,6 +107,7 @@ class AsesoresController extends Controller
         $this->confirmarProduccionPedidoUseCase = $confirmarProduccionPedidoUseCase;
         $this->actualizarProduccionPedidoUseCase = $actualizarProduccionPedidoUseCase;
         $this->anularProduccionPedidoUseCase = $anularProduccionPedidoUseCase;
+        $this->obtenerProduccionPedidoUseCase = $obtenerProduccionPedidoUseCase;
     }
 
     /**
@@ -358,7 +363,12 @@ class AsesoresController extends Controller
     public function show($pedido)
     {
         try {
-            $pedidoData = $this->obtenerPedidoDetalleService->obtenerConPrendas($pedido);
+            // Crear DTO para el Use Case
+            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$pedido);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoData = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
+
             return view('asesores.pedidos.plantilla-erp-antigua', compact('pedidoData'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
