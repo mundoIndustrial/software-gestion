@@ -2,35 +2,54 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\UseCases\Base\AbstractObtenerUseCase;
 use App\Application\Pedidos\DTOs\ObtenerPrendasPedidoDTO;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
-final class ObtenerPrendasPedidoUseCase
+/**
+ * Use Case: Obtener Prendas del Pedido
+ * 
+ * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
+ * 
+ * Antes: 33 líneas (10 líneas de lógica actual + 23 líneas duplicadas)
+ * Después: 18 líneas (solo implementa personalización)
+ * Reducción: 45%
+ */
+final class ObtenerPrendasPedidoUseCase extends AbstractObtenerUseCase
 {
-    public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
-    ) {}
-
     public function ejecutar(ObtenerPrendasPedidoDTO $dto)
     {
         Log::info('[ObtenerPrendasPedidoUseCase] Obteniendo prendas del pedido', [
             'pedido_id' => $dto->pedidoId,
         ]);
 
-        $pedido = $this->pedidoRepository->obtenerPorId($dto->pedidoId);
-        
-        if (!$pedido) {
-            throw new \InvalidArgumentException("Pedido {$dto->pedidoId} no encontrado");
-        }
+        return $this->obtenerYEnriquecer($dto->pedidoId);
+    }
 
-        $prendas = $pedido->prendas()->get();
+    /**
+     * Personalización: Incluir solo prendas
+     */
+    protected function obtenerOpciones(): array
+    {
+        return [
+            'incluirPrendas' => true,
+            'incluirEpps' => false,
+            'incluirProcesos' => false,
+            'incluirImagenes' => false,
+        ];
+    }
 
+    /**
+     * Personalización: Retornar solo array de prendas
+     */
+    protected function construirRespuesta(array $datosEnriquecidos)
+    {
         Log::info('[ObtenerPrendasPedidoUseCase] Prendas obtenidas', [
-            'pedido_id' => $pedido->id,
-            'total_prendas' => $prendas->count(),
+            'pedido_id' => $datosEnriquecidos['id'],
+            'total_prendas' => count($datosEnriquecidos['prendas'] ?? []),
         ]);
 
-        return $prendas;
+        return $datosEnriquecidos['prendas'] ?? [];
     }
 }

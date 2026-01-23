@@ -30,6 +30,7 @@ use App\Application\Pedidos\UseCases\AgregarImagenEppUseCase;
 use App\Application\Pedidos\UseCases\AgregarImagenTelaUseCase;
 
 // Repositories
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Domain\Shared\CQRS\QueryBus;
 use App\Domain\Shared\CQRS\CommandBus;
@@ -75,20 +76,24 @@ class PedidosProduccionServiceProvider extends ServiceProvider
 
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
-            return new CrearProduccionPedidoUseCase();
+            return new CrearProduccionPedidoUseCase(
+                $app->make(PedidoProduccionRepository::class),
+                $app->make('events')
+            );
         });
 
         // Actualizar Pedido
         $this->app->singleton(ActualizarProduccionPedidoUseCase::class, function ($app) {
             return new ActualizarProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionRepository::class),
+                $app->make('events')
             );
         });
 
         // Anular Pedido
         $this->app->singleton(AnularProduccionPedidoUseCase::class, function ($app) {
             return new AnularProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
