@@ -2,6 +2,13 @@
 <tr style="border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
     <td style="padding: 1.2rem; font-size: 1.05rem;">
         <div style="font-weight: 700; color: #1e40af;">{{ $prenda->nombre_producto ?? 'Sin nombre' }}</div>
+        @if($prenda->prenda_bodega == 1)
+            <div style="margin-top: 0.5rem;">
+                <span style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;">
+                    <i class="fas fa-box" style="margin-right: 0.4rem;"></i> Prenda viene de bodega: SI
+                </span>
+            </div>
+        @endif
     </td>
     <td style="padding: 1.2rem; font-size: 1.05rem;">
         <div style="color: #64748b; font-size: 0.9rem; line-height: 1.6;">

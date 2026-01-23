@@ -595,8 +595,19 @@ async function guardarCotizacion() {
             const tieneUbicacionesReflectivo = ubicacionesReflectivo && ubicacionesReflectivo.length > 0;
             const tieneDescripcionReflectivo = reflectivoDescripcion && reflectivoDescripcion.length > 0;
             const tieneImagenesReflectivo = window.imagenesReflectivo && window.imagenesReflectivo.length > 0;
-            const tienePrendasP4ConDatos = typeof window.prendas_reflectivo_paso4 !== 'undefined' && 
-                                            window.prendas_reflectivo_paso4.length > 0;
+            
+            //  IMPORTANTE: Validar que prendas_reflectivo_paso4 tenga DATOS REALES
+            let tienePrendasP4ConDatos = false;
+            if (typeof window.prendas_reflectivo_paso4 !== 'undefined' && window.prendas_reflectivo_paso4.length > 0) {
+                tienePrendasP4ConDatos = window.prendas_reflectivo_paso4.some(prenda => {
+                    const tieneUbicaciones = prenda.ubicaciones && prenda.ubicaciones.length > 0;
+                    const tieneDescripcion = prenda.descripcion && prenda.descripcion.trim().length > 0;
+                    const tieneImagenes = prenda.imagenes && prenda.imagenes.length > 0;
+                    const tieneTallas = prenda.tallas && prenda.tallas.length > 0;
+                    
+                    return tieneUbicaciones || tieneDescripcion || tieneImagenes || tieneTallas;
+                });
+            }
             
             const refletivoTieneInfoValida = tieneUbicacionesReflectivo || 
                                             (tieneDescripcionReflectivo && tieneImagenesReflectivo) ||
@@ -1370,9 +1381,31 @@ async function procederEnviarCotizacion() {
             const tieneDescripcionReflectivo = reflectivoDescripcion && reflectivoDescripcion.length > 0;
             const tieneImagenesReflectivo = window.imagenesReflectivo && window.imagenesReflectivo.length > 0;
             
-            //  IMPORTANTE: También verificar directamente prendas_reflectivo_paso4
-            const tienePrendasP4ConDatos = typeof window.prendas_reflectivo_paso4 !== 'undefined' && 
-                                            window.prendas_reflectivo_paso4.length > 0;
+            //  IMPORTANTE: Validar que prendas_reflectivo_paso4 tenga DATOS REALES
+            // No solo que exista el array, sino que las prendas tengan ubicaciones, descripciones o imágenes
+            let tienePrendasP4ConDatos = false;
+            if (typeof window.prendas_reflectivo_paso4 !== 'undefined' && window.prendas_reflectivo_paso4.length > 0) {
+                tienePrendasP4ConDatos = window.prendas_reflectivo_paso4.some(prenda => {
+                    const tieneUbicaciones = prenda.ubicaciones && prenda.ubicaciones.length > 0;
+                    const tieneDescripcion = prenda.descripcion && prenda.descripcion.trim().length > 0;
+                    const tieneImagenes = prenda.imagenes && prenda.imagenes.length > 0;
+                    const tieneTallas = prenda.tallas && prenda.tallas.length > 0;
+                    
+                    // Una prenda tiene datos si tiene ubicaciones, descripción, imágenes o tallas
+                    return tieneUbicaciones || tieneDescripcion || tieneImagenes || tieneTallas;
+                });
+                console.log('✅ Validación prendas_reflectivo_paso4:', {
+                    'cantidad_prendas': window.prendas_reflectivo_paso4.length,
+                    'tiene_datos_validos': tienePrendasP4ConDatos,
+                    'detalles': window.prendas_reflectivo_paso4.map((p, i) => ({
+                        'index': i,
+                        'ubicaciones': p.ubicaciones?.length || 0,
+                        'descripcion': p.descripcion?.trim().length || 0,
+                        'imagenes': p.imagenes?.length || 0,
+                        'tallas': p.tallas?.length || 0
+                    }))
+                });
+            }
             
             const refletivoTieneInfoValida = tieneUbicacionesReflectivo || 
                                             (tieneDescripcionReflectivo && tieneImagenesReflectivo) ||

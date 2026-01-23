@@ -47,9 +47,16 @@
                     <div style="border: 2px solid #3b82f6; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);">
                         {{-- Header del Acordeón - Solo nombre de prenda --}}
                         <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: white;" onclick="this.parentElement.querySelector('.reflectivo-contenido').style.display = this.parentElement.querySelector('.reflectivo-contenido').style.display === 'none' ? 'block' : 'none';">
-                            <div style="display: flex; align-items: center; gap: 1rem;">
-                                <i class="fas fa-tshirt" style="font-size: 1.3rem;"></i>
-                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">{{ $prendasNombre }}</h3>
+                            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; flex-grow: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                                    <i class="fas fa-tshirt" style="font-size: 1.3rem;"></i>
+                                    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">{{ $prendasNombre }}</h3>
+                                </div>
+                                @if($prenda && $prenda->prenda_bodega == 1)
+                                    <span style="display: inline-block; background: rgba(16, 185, 129, 0.2); color: #d1fae5; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px; border: 1px solid rgba(16, 185, 129, 0.4); margin-left: 1rem;">
+                                        <i class="fas fa-box" style="margin-right: 0.4rem;"></i> Prenda viene de bodega: SI
+                                    </span>
+                                @endif
                             </div>
                             <i class="fas fa-chevron-down" style="transition: transform 0.3s ease; font-size: 1rem;"></i>
                         </div>

@@ -2213,7 +2213,23 @@ final class CotizacionController extends Controller
             
             //  VALIDAR si reflectivo tiene información escrita válida
             // Prioridad: Si hay prendas_reflectivo_paso4, usar eso para validar
-            $tieneInfoValidaDesdeP4 = !empty($prendasReflectivoPaso4) && count($prendasReflectivoPaso4) > 0;
+            // IMPORTANTE: Validar que las prendas REALMENTE tengan datos (ubicaciones, descripciones, imágenes, etc.)
+            $tieneInfoValidaDesdeP4 = false;
+            if (!empty($prendasReflectivoPaso4) && count($prendasReflectivoPaso4) > 0) {
+                // Verificar que al menos una prenda tenga datos reales
+                foreach ($prendasReflectivoPaso4 as $prenda) {
+                    $tieneUbicaciones = !empty($prenda['ubicaciones']) && is_array($prenda['ubicaciones']) && count($prenda['ubicaciones']) > 0;
+                    $tieneDescripcion = !empty($prenda['descripcion']) && trim($prenda['descripcion']) !== '';
+                    $tieneImagenes = !empty($prenda['imagenes']) && is_array($prenda['imagenes']) && count($prenda['imagenes']) > 0;
+                    $tieneTallas = !empty($prenda['tallas']) && is_array($prenda['tallas']) && count($prenda['tallas']) > 0;
+                    
+                    // Si al menos UNA prenda tiene datos, entonces es válido
+                    if ($tieneUbicaciones || $tieneDescripcion || $tieneImagenes || $tieneTallas) {
+                        $tieneInfoValidaDesdeP4 = true;
+                        break;
+                    }
+                }
+            }
             
             // Si no hay datos en P4, validar usando los datos unificados (fallback)
             $tieneUbicacionesReflectivo = !empty($reflectivoUbicacion) && $reflectivoUbicacion !== '[]' && $reflectivoUbicacion !== '{}';
@@ -2231,9 +2247,37 @@ final class CotizacionController extends Controller
                 'reflectivoTieneInfoValida' => $reflectivoTieneInfoValida,
             ]);
             
-            if ($prendas->count() > 0 && $reflectivoTieneInfoValida) {
+            // 🔥 FILTRAR PRENDAS: Solo procesar las prendas que fueron seleccionadas en PASO 4
+            // Si hay prendas_reflectivo_paso4, filtrar para solo procesar esas prendas
+            $prendasAProc = $prendas;
+            if (!empty($prendasReflectivoPaso4) && count($prendasReflectivoPaso4) > 0) {
+                // Obtener los nombres de las prendas seleccionadas en Paso 4
+                $prendasSeleccionadasNombres = [];
+                foreach ($prendasReflectivoPaso4 as $prendaP4) {
+                    if (!empty($prendaP4['tipo_prenda'])) {
+                        $prendasSeleccionadasNombres[] = $prendaP4['tipo_prenda'];
+                    }
+                }
+                
+                \Log::info('🔥 Prendas seleccionadas en PASO 4', [
+                    'nombres' => $prendasSeleccionadasNombres,
+                    'count' => count($prendasSeleccionadasNombres),
+                ]);
+                
+                // Filtrar $prendasAProc para solo incluir las que están en el Paso 4
+                $prendasAProc = $prendas->filter(function ($prenda) use ($prendasSeleccionadasNombres) {
+                    return in_array($prenda->nombre_producto, $prendasSeleccionadasNombres);
+                });
+                
+                \Log::info('🔥 Prendas filtradas para procesar reflectivo', [
+                    'original_count' => $prendas->count(),
+                    'filtered_count' => $prendasAProc->count(),
+                ]);
+            }
+            
+            if ($prendasAProc->count() > 0 && $reflectivoTieneInfoValida) {
                 try {
-                    foreach ($prendas as $prenda) {
+                    foreach ($prendasAProc as $prenda) {
                         \Log::info('✨ Guardando reflectivo para prenda', [
                             'prenda_id' => $prenda->id,
                             'cotizacion_id' => $cotizacionId,
@@ -2355,7 +2399,7 @@ final class CotizacionController extends Controller
                     
                     // ✅ PROCESAR IMÁGENES DEL PASO 4 - IDÉNTICO A storeReflectivo()
                     // Las imágenes vienen con el patrón: imagenes_reflectivo_prenda_{prendaIndex}[]
-                    foreach ($prendas as $prendaIndex => $prenda) {
+                    foreach ($prendasAProc as $prendaIndex => $prenda) {
                         $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
                             ->where('prenda_cot_id', $prenda->id)
                             ->first();

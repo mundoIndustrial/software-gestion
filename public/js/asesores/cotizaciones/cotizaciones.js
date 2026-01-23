@@ -1201,7 +1201,6 @@ function recopilarDatos() {
                 telas: telas,
                 variantes: variantes
             };
-            });
             
             productos.push(producto);
         }

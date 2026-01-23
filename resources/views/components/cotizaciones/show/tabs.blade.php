@@ -24,12 +24,15 @@
 
     $tieneReflectivo = $tieneReflectivoCotizacion || $tieneReflectivoPrenda;
 
-    // ✅ MOSTRAR TAB DE LOGO SOLO SI:
+    // ✅ MOSTRAR TAB DE LOGO SI:
     // 1. Es tipo logo O combinada
-    // 2. Y tiene información de logo (descripción o fotos)
+    // 2. Y tiene registros en la tabla logo_cotizacion_tecnica_prendas
     $mostrarTabLogo = false;
-    if ($esLogo && $logo && ($logo->descripcion || ($logo->fotos && $logo->fotos->count() > 0))) {
-        $mostrarTabLogo = true;
+    if ($esLogo && $logo) {
+        $tieneRegistrosTecnicas = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logo->id)->exists();
+        if ($tieneRegistrosTecnicas) {
+            $mostrarTabLogo = true;
+        }
     }
     
     // Determinar qué tab debe estar activo por defecto

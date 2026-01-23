@@ -173,6 +173,13 @@
                                 <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
                                     {{ $nombrePrenda }}
                                 </h3>
+                                @if($prenda1->prendaCot && $prenda1->prendaCot->prenda_bodega == 1)
+                                    <div style="margin-top: 0.5rem;">
+                                        <span style="display: inline-block; background: rgba(16, 185, 129, 0.2); color: #d1fae5; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                            <i class="fas fa-box" style="margin-right: 0.4rem;"></i> Prenda viene de bodega: SI
+                                        </span>
+                                    </div>
+                                @endif
                             </div>
                             
                             {{-- Cuerpo de la Tarjeta --}}
