@@ -6,16 +6,16 @@ use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
 use App\Models\PrendaPedido;
 
 /**
- * Use Case para agregar una prenda al pedido con fotos
+ * Use Case para agregar una prenda al pedido con fotos y tallas
  * 
  * Responsabilidades:
- * - Crear registro en prendas_pedido (nombre, descripción, de_bodega)
- * - Asociar fotos de referencia (prenda_fotos_pedido)
+ * - Crear registro en prendas_pedido
+ * - Crear fotos de referencia (prenda_fotos_pedido)
+ * - Crear tallas y cantidades (prenda_pedido_tallas)
  * 
  * Responsabilidades SEPARADAS en otros Use Cases:
- * - Agregar variantes (tipo_manga, tipo_broche) → AgregarVariantePrendaUseCase
+ * - Agregar variantes → AgregarVariantePrendaUseCase
  * - Agregar colores y telas → AgregarColorTelaUseCase
- * - Agregar tallas y cantidades → AgregarTallaPrendaUseCase
  * - Agregar procesos → AgregarProcesoPrendaUseCase
  */
 final class AgregarPrendaCompletaUseCase
@@ -25,9 +25,9 @@ final class AgregarPrendaCompletaUseCase
         // 1. Crear prenda base
         $prenda = PrendaPedido::create([
             'pedido_produccion_id' => $dto->pedidoId,
-            'nombre_prenda' => $dto->nombrePrenda,
+            'nombre_prenda' => $dto->nombre_prenda,
             'descripcion' => $dto->descripcion,
-            'de_bodega' => $dto->deBodega,
+            'de_bodega' => $dto->de_bodega,
         ]);
 
         // 2. Agregar fotos si existen
@@ -41,12 +41,22 @@ final class AgregarPrendaCompletaUseCase
             }
         }
 
+        // 3. Agregar tallas si existen
+        if (!empty($dto->tallas)) {
+            foreach ($dto->tallas as $talla) {
+                $prenda->tallas()->create([
+                    'genero' => $talla['genero'],
+                    'talla' => $talla['talla'],
+                    'cantidad' => $talla['cantidad'] ?? 0,
+                ]);
+            }
+        }
+
         return $prenda;
     }
 
     private function generarRutaWebp(string $rutaOriginal): string
     {
-        // Reemplazar extensión por .webp
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }

@@ -13,9 +13,8 @@ namespace App\Application\Pedidos\DTOs;
  * - aprobado_por: ID del usuario que aprobó
  * - notas_rechazo: razón de rechazo si aplica
  * - datos_adicionales: JSON con datos extra
- * 
- * IMPORTANTE: Las tallas se agregan por separado con AgregarTallaProcesoPrendaUseCase
- * No se manejan tallas_dama ni tallas_caballero aquí
+ * - tallas: Array de tallas para poblar tallas_dama y tallas_caballero
+ *   Estructura: [{ genero: 'DAMA'|'CABALLERO'|'UNISEX', talla: 'S'|'M'|'L'|'XL', cantidad: 5 }, ...]
  */
 final class AgregarProcesoPrendaDTO
 {
@@ -28,6 +27,7 @@ final class AgregarProcesoPrendaDTO
         public readonly ?int $aprobado_por = null,
         public readonly ?string $notas_rechazo = null,
         public readonly ?array $datos_adicionales = null,
+        public readonly ?array $tallas = null,
     ) {}
 
     public static function fromRequest(int|string $prendaId, array $data): self
@@ -41,6 +41,7 @@ final class AgregarProcesoPrendaDTO
             aprobado_por: isset($data['aprobado_por']) ? (int) $data['aprobado_por'] : null,
             notas_rechazo: $data['notas_rechazo'] ?? null,
             datos_adicionales: $data['datos_adicionales'] ?? null,
+            tallas: $data['tallas'] ?? null,
         );
     }
 }

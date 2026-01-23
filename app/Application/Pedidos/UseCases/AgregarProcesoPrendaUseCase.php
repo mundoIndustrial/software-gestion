@@ -9,11 +9,13 @@ use App\Models\PrendaPedido;
  * Use Case para agregar proceso a una prenda
  * 
  * Crea un registro en pedidos_procesos_prenda_detalles
- * Las tallas se agregan DESPUÉS con AgregarTallaProcesoPrendaUseCase
+ * Si se proporcionan tallas, las agrupa por genero y puebla:
+ * - tallas_dama: JSON con ['S', 'M', 'L'] para genero DAMA
+ * - tallas_caballero: JSON con ['XL', 'XXL'] para genero CABALLERO
+ * 
+ * También crea registros en pedidos_procesos_prenda_tallas (uno por cada talla)
  * 
  * Tabla: pedidos_procesos_prenda_detalles
- * Campos manejados: tipo_proceso_id, ubicaciones (json), observaciones, 
- *                   estado, notas_rechazo, fecha_aprobacion, aprobado_por, datos_adicionales
  */
 final class AgregarProcesoPrendaUseCase
 {
@@ -21,14 +23,47 @@ final class AgregarProcesoPrendaUseCase
     {
         $prenda = PrendaPedido::findOrFail($dto->prendaId);
 
-        return $prenda->procesos()->create([
+        // Agrupar tallas por genero
+        $tallasDama = [];
+        $tallasCaballero = [];
+        
+        if (!empty($dto->tallas)) {
+            foreach ($dto->tallas as $talla) {
+                $genero = $talla['genero'] ?? null;
+                $nombreTalla = $talla['talla'] ?? null;
+                
+                if ($genero === 'DAMA' && $nombreTalla) {
+                    $tallasDama[] = $nombreTalla;
+                } elseif ($genero === 'CABALLERO' && $nombreTalla) {
+                    $tallasCaballero[] = $nombreTalla;
+                }
+            }
+        }
+
+        // Crear proceso con tallas agrupadas en JSON
+        $proceso = $prenda->procesos()->create([
             'tipo_proceso_id' => $dto->tipo_proceso_id,
             'ubicaciones' => !empty($dto->ubicaciones) ? json_encode($dto->ubicaciones) : null,
             'observaciones' => $dto->observaciones,
+            'tallas_dama' => !empty($tallasDama) ? json_encode($tallasDama) : null,
+            'tallas_caballero' => !empty($tallasCaballero) ? json_encode($tallasCaballero) : null,
             'estado' => $dto->estado,
             'notas_rechazo' => $dto->notas_rechazo,
             'aprobado_por' => $dto->aprobado_por,
             'datos_adicionales' => !empty($dto->datos_adicionales) ? json_encode($dto->datos_adicionales) : null,
         ]);
+
+        // Crear registros en tabla de tallas (uno por cada talla)
+        if (!empty($dto->tallas)) {
+            foreach ($dto->tallas as $talla) {
+                $proceso->tallas()->create([
+                    'genero' => $talla['genero'],
+                    'talla' => $talla['talla'],
+                    'cantidad' => $talla['cantidad'] ?? 0,
+                ]);
+            }
+        }
+
+        return $proceso;
     }
 }
