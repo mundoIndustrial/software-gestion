@@ -150,7 +150,8 @@ class CarteraPedidosController extends Controller
         try {
             $pedido = PedidoProduccion::with([
                 'prendas.variantes.tipoManga',
-                'prendas.variantes.tipoBroche'
+                'prendas.variantes.tipoBroche',
+                'prendas.tallas'
             ])->find($id);
             
             if (!$pedido) {
@@ -162,6 +163,17 @@ class CarteraPedidosController extends Controller
             
             // Mapear prendas con variantes para el modal profesional
             $prendasFormato = $pedido->prendas->map(function($prenda) {
+                // Obtener tallas agrupadas por género en formato { GENERO: { TALLA: CANTIDAD } }
+                $tallasAgrupadas = [];
+                if ($prenda->tallas && $prenda->tallas->count() > 0) {
+                    foreach ($prenda->tallas as $talla) {
+                        if (!isset($tallasAgrupadas[$talla->genero])) {
+                            $tallasAgrupadas[$talla->genero] = [];
+                        }
+                        $tallasAgrupadas[$talla->genero][$talla->talla] = $talla->cantidad;
+                    }
+                }
+                
                 return [
                     'nombre' => $prenda->nombre_prenda ?? 'Prenda sin nombre',
                     'cantidad' => $prenda->cantidad ?? 0,
@@ -171,6 +183,7 @@ class CarteraPedidosController extends Controller
                     'obs_broche' => null,
                     'tiene_bolsillos' => $prenda->tiene_bolsillos ?? false,
                     'obs_bolsillos' => null,
+                    'tallas' => $tallasAgrupadas,  // Estructura: { DAMA: { L: 5, M: 15, S: 10 } }
                     'variantes' => $prenda->variantes ? $prenda->variantes->map(function($var) {
                         return [
                             'talla' => $var->talla ?? 'N/A',
@@ -194,6 +207,14 @@ class CarteraPedidosController extends Controller
                 'fecha' => $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at,
                 'prendas' => $prendasFormato
             ];
+            
+            // LOG: Debug de estructura de tallas
+            \Log::info('📋 [CarteraPedidosController] Estructura de prendas con tallas:', [
+                'pedido_numero' => $pedido->numero_pedido,
+                'cantidad_prendas' => count($prendasFormato),
+                'primera_prenda' => $prendasFormato[0] ?? null,
+                'tallas_primera_prenda' => $prendasFormato[0]['tallas'] ?? 'VACÍO'
+            ]);
             
             return response()->json($datos);
         } catch (\Exception $e) {

@@ -88,6 +88,15 @@ class ModalNovedadEdicion {
             // Convertir tallas array a JSON compatible con guardarTallasDesdeJson()
             const tallasJson = this.convertirTallasAlFormatoJson(this.prendaData.tallas);
             formData.append('cantidad_talla', JSON.stringify(tallasJson));
+            
+            // Agregar variantes si existen
+            if (this.prendaData.variantes && this.prendaData.variantes.length > 0) {
+                formData.append('variantes', JSON.stringify(this.prendaData.variantes));
+                console.log('[modal-novedad-edicion] Variantes enviadas:', this.prendaData.variantes);
+            } else {
+                console.log('[modal-novedad-edicion] ⚠️ No hay variantes para enviar');
+            }
+            
             formData.append('procesos', JSON.stringify(this.prendaData.procesos || {}));
             formData.append('novedad', novedad);
             

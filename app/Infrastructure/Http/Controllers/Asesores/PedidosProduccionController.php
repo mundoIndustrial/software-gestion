@@ -778,7 +778,11 @@ class PedidosProduccionController
                 'descripcion' => 'nullable|string',
                 'origen' => 'required|string|in:bodega,confeccion',
                 'cantidad_talla' => 'nullable|json',
+                'variantes' => 'nullable|json',
+                'colores_telas' => 'nullable|json',
+                'fotos_telas' => 'nullable|json',
                 'procesos' => 'nullable|json',
+                'fotos_procesos' => 'nullable|json',
                 'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
@@ -795,6 +799,12 @@ class PedidosProduccionController
             }
 
             // Usar Use Case DDD
+            Log::info('[PedidosProduccionController] Datos validados para actualizar prenda', [
+                'variantes_recibidas' => $validated['variantes'] ?? 'NO ENVIADAS',
+                'cantidad_talla' => $validated['cantidad_talla'] ?? 'NO ENVIADAS',
+                'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
+            ]);
+            
             $dto = ActualizarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas);
             $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 

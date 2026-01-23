@@ -385,6 +385,26 @@ class PrendaPedido extends Model
                 }
             }
             
+            // Agregar tallas (NUEVO)
+            if ($this->relationLoaded('tallas') && $this->tallas && $this->tallas->count() > 0) {
+                $tallasInfo = [];
+                
+                // Agrupar tallas por género
+                $tallasPorGenero = $this->tallas->groupBy('genero');
+                
+                foreach ($tallasPorGenero as $genero => $tallaRecords) {
+                    $tallaTexto = [];
+                    foreach ($tallaRecords as $tallaRecord) {
+                        $tallaTexto[] = "{$tallaRecord->talla} ({$tallaRecord->cantidad})";
+                    }
+                    $tallasInfo[] = "{$genero}: " . implode(", ", $tallaTexto);
+                }
+                
+                if (!empty($tallasInfo)) {
+                    $lineas[] = "<br><strong>Tallas:</strong> " . implode(" | ", $tallasInfo);
+                }
+            }
+            
             return implode("", $lineas);
         } catch (\Exception $e) {
             \Log::error('Error generando descripción para PrendaPedido', [

@@ -87,6 +87,9 @@ window.cargarCatálogoTallas = async function() {
  * Guardar cantidad de talla en estructura relacional { GENERO: { TALLA: CANTIDAD } }
  */
 window.guardarCantidadTalla = function(genero, talla, cantidad) {
+    // Normalizar género a mayúsculas para consistencia
+    genero = String(genero).toUpperCase();
+    
     const cantInt = parseInt(cantidad) || 0;
     
     if (!window.tallasRelacionales[genero]) {
@@ -95,13 +98,14 @@ window.guardarCantidadTalla = function(genero, talla, cantidad) {
     
     if (cantInt > 0) {
         window.tallasRelacionales[genero][talla] = cantInt;
-
+        console.log(`[gestion-tallas] ✅ Talla guardada: ${genero} - ${talla}: ${cantInt}`);
     } else {
         delete window.tallasRelacionales[genero][talla];
-
+        console.log(`[gestion-tallas] 🗑️ Talla eliminada: ${genero} - ${talla}`);
     }
     
-
+    // Log del estado actual de todas las tallas
+    console.log('[gestion-tallas] 📊 Estado actual de tallasRelacionales:', window.tallasRelacionales);
 };
 
 /**
@@ -183,6 +187,7 @@ window.mostrarTallasDisponibles = function(tipo) {
             if (isCurrentlySelected) {
                 // Deseleccionar: eliminar talla
                 delete window.tallasRelacionales[window.generoActualModal][talla];
+                console.log(`[gestion-tallas] ❌ Talla deseleccionada: ${window.generoActualModal} - ${talla}`);
                 btn.style.borderColor = '#d1d5db';
                 btn.style.background = 'white';
                 btn.style.color = '#1f2937';
@@ -190,11 +195,13 @@ window.mostrarTallasDisponibles = function(tipo) {
             } else {
                 // Seleccionar: agregar talla con cantidad 0
                 window.tallasRelacionales[window.generoActualModal][talla] = 0;
+                console.log(`[gestion-tallas] ✅ Talla seleccionada: ${window.generoActualModal} - ${talla}`);
                 btn.style.borderColor = '#0066cc';
                 btn.style.background = '#0066cc';
                 btn.style.color = 'white';
 
             }
+            console.log('[gestion-tallas] 📊 Tallas actuales del modal:', window.tallasRelacionales[window.generoActualModal]);
         };
         
         grid.appendChild(btn);
@@ -273,8 +280,8 @@ window.mostrarSelectorTipo = function() {
  * Abrir modal para seleccionar tallas de un género
  */
 window.abrirModalSeleccionarTallas = async function(genero) {
-
-
+    // Normalizar género a mayúsculas para consistencia
+    genero = String(genero).toUpperCase();
     
     // Cargar catálogo de tallas si no está cargado
     await window.cargarCatálogoTallas();
@@ -428,10 +435,18 @@ window.abrirModalSeleccionarTallas = async function(genero) {
     btnConfirmar.onmouseover = () => btnConfirmar.style.background = '#0052a3';
     btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#0066cc';
     btnConfirmar.onclick = () => {
+        // Asegurar que el género existe en el objeto, sino crear un objeto vacío
+        if (!window.tallasRelacionales[genero]) {
+            window.tallasRelacionales[genero] = {};
+        }
+        
         if (Object.keys(window.tallasRelacionales[genero]).length === 0) {
+            console.warn('[gestion-tallas] ⚠️ No hay tallas seleccionadas para', genero);
             alert(' Debes seleccionar al menos una talla');
             return;
         }
+        
+        console.log(`[gestion-tallas] ✅ Confirmando tallas para ${genero}:`, window.tallasRelacionales[genero]);
         cerrarModalTallas(genero);
         crearTarjetaGenero(genero);
         actualizarTotalPrendas();
@@ -447,6 +462,9 @@ window.abrirModalSeleccionarTallas = async function(genero) {
  * Cerrar modal de tallas
  */
 window.cerrarModalTallas = function(genero) {
+    // Normalizar género a mayúsculas para consistencia
+    genero = String(genero).toUpperCase();
+    
     const modal = document.getElementById(`modal-tallas-${genero}`);
     if (modal) {
         modal.remove();
@@ -459,8 +477,8 @@ window.cerrarModalTallas = function(genero) {
  * Crear tarjeta de género con tallas y cantidades en estructura relacional
  */
 window.crearTarjetaGenero = function(genero) {
-
-
+    // Normalizar género a mayúsculas para consistencia
+    genero = String(genero).toUpperCase();
     
     const tallasDic = window.tallasRelacionales[genero] || {};
     
@@ -634,7 +652,7 @@ window.actualizarTotalPrendas = function() {
     const totalElement = document.getElementById('total-prendas');
     if (totalElement) {
         totalElement.textContent = total;
-
+        console.log(`[gestion-tallas] 📦 Total de prendas actualizado: ${total}`);
     }
 };
 
@@ -645,13 +663,19 @@ window.obtenerTallasYCantidades = function() {
     // Retornar directamente la estructura relacional: { GENERO: { TALLA: CANTIDAD } }
     const resultado = {};
     
+    console.log('[gestion-tallas] 🔍 Diagnóstico antes de procesar:');
+    console.log('[gestion-tallas] Estado completo de tallasRelacionales:', window.tallasRelacionales);
+    
     Object.entries(window.tallasRelacionales).forEach(([genero, tallasObj]) => {
         if (Object.keys(tallasObj).length > 0) {
             resultado[genero] = tallasObj;
+            console.log(`[gestion-tallas] ✅ Género ${genero} incluido en resultado:`, tallasObj);
+        } else {
+            console.log(`[gestion-tallas] ⏭️ Género ${genero} ignorado (vacío)`, tallasObj);
         }
     });
     
-
+    console.log('[gestion-tallas] 🎯 Tallas y cantidades FINALES a enviar:', resultado);
     return resultado;
 };
 

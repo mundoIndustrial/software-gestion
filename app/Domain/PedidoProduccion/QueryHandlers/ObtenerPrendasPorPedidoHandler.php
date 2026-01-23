@@ -41,7 +41,7 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
 
             $prendas = $this->prendaModel
                 ->where('pedido_id', $query->getPedidoId())
-                ->with(['color', 'tela', 'tipoManga', 'tipoBroche'])
+                ->with(['color', 'tela', 'tipoManga', 'tipoBroche', 'tallas'])
                 ->get();
 
             // Cachear por 1 hora
