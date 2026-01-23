@@ -6,41 +6,41 @@ namespace App\Application\Pedidos\DTOs;
  * DTO para agregar proceso a una prenda
  * 
  * Maneja campos de pedidos_procesos_prenda_detalles:
- * - tipo_proceso_id: referencia a tipos_procesos
- * - ubicaciones: JSON con array de ubicaciones
- * - tallas_dama: JSON con array de tallas dama ['S', 'M', 'L', etc]
- * - tallas_caballero: JSON con array de tallas caballero ['S', 'M', 'L', etc]
- * - estado: estado del proceso
- * - aprobado_por: usuario que aprobó
+ * - tipo_proceso_id: referencia a tipos_procesos (obligatorio)
+ * - ubicaciones: JSON con array de ubicaciones ['pecho', 'espalda', etc]
+ * - observaciones: notas sobre el proceso
+ * - estado: estado del proceso (enum: PENDIENTE, EN_REVISION, APROBADO, etc)
+ * - aprobado_por: ID del usuario que aprobó
+ * - notas_rechazo: razón de rechazo si aplica
+ * - datos_adicionales: JSON con datos extra
+ * 
+ * IMPORTANTE: Las tallas se agregan por separado con AgregarTallaProcesoPrendaUseCase
+ * No se manejan tallas_dama ni tallas_caballero aquí
  */
 final class AgregarProcesoPrendaDTO
 {
     public function __construct(
         public readonly int|string $prendaId,
-        public readonly int $tipoProcesosId,
+        public readonly int $tipo_proceso_id,
         public readonly ?array $ubicaciones = null,
-        public readonly ?array $tallasDama = null,
-        public readonly ?array $tallasCaballero = null,
-        public readonly string $estado = 'PENDIENTE',
-        public readonly ?int $aprobadoPor = null,
         public readonly ?string $observaciones = null,
-        public readonly ?string $notasRechazo = null,
-        public readonly ?array $datosAdicionales = null,
+        public readonly string $estado = 'PENDIENTE',
+        public readonly ?int $aprobado_por = null,
+        public readonly ?string $notas_rechazo = null,
+        public readonly ?array $datos_adicionales = null,
     ) {}
 
     public static function fromRequest(int|string $prendaId, array $data): self
     {
         return new self(
             prendaId: $prendaId,
-            tipoProcesosId: $data['tipo_proceso_id'] ?? throw new \InvalidArgumentException('tipo_proceso_id requerido'),
+            tipo_proceso_id: $data['tipo_proceso_id'] ?? throw new \InvalidArgumentException('tipo_proceso_id requerido'),
             ubicaciones: $data['ubicaciones'] ?? null,
-            tallasDama: $data['tallas_dama'] ?? null,
-            tallasCaballero: $data['tallas_caballero'] ?? null,
-            estado: $data['estado'] ?? 'PENDIENTE',
-            aprobadoPor: isset($data['aprobado_por']) ? (int) $data['aprobado_por'] : null,
             observaciones: $data['observaciones'] ?? null,
-            notasRechazo: $data['notas_rechazo'] ?? null,
-            datosAdicionales: $data['datos_adicionales'] ?? null,
+            estado: $data['estado'] ?? 'PENDIENTE',
+            aprobado_por: isset($data['aprobado_por']) ? (int) $data['aprobado_por'] : null,
+            notas_rechazo: $data['notas_rechazo'] ?? null,
+            datos_adicionales: $data['datos_adicionales'] ?? null,
         );
     }
 }

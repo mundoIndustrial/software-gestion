@@ -8,13 +8,12 @@ use App\Models\PrendaPedido;
 /**
  * Use Case para agregar proceso a una prenda
  * 
- * Maneja la creación de registro en pedidos_procesos_prenda_detalles
- * Los procesos incluyen datos complejos como ubicaciones y tallas en JSON
+ * Crea un registro en pedidos_procesos_prenda_detalles
+ * Las tallas se agregan DESPUÉS con AgregarTallaProcesoPrendaUseCase
  * 
  * Tabla: pedidos_procesos_prenda_detalles
- * Campos: tipo_proceso_id, ubicaciones (json), observaciones, tallas_dama (json), 
- *         tallas_caballero (json), estado, notas_rechazo, fecha_aprobacion, 
- *         aprobado_por, datos_adicionales
+ * Campos manejados: tipo_proceso_id, ubicaciones (json), observaciones, 
+ *                   estado, notas_rechazo, fecha_aprobacion, aprobado_por, datos_adicionales
  */
 final class AgregarProcesoPrendaUseCase
 {
@@ -23,15 +22,13 @@ final class AgregarProcesoPrendaUseCase
         $prenda = PrendaPedido::findOrFail($dto->prendaId);
 
         return $prenda->procesos()->create([
-            'tipo_proceso_id' => $dto->tipoProcesosId,
+            'tipo_proceso_id' => $dto->tipo_proceso_id,
             'ubicaciones' => !empty($dto->ubicaciones) ? json_encode($dto->ubicaciones) : null,
             'observaciones' => $dto->observaciones,
-            'tallas_dama' => !empty($dto->tallasDama) ? json_encode($dto->tallasDama) : null,
-            'tallas_caballero' => !empty($dto->tallasCaballero) ? json_encode($dto->tallasCaballero) : null,
             'estado' => $dto->estado,
-            'notas_rechazo' => $dto->notasRechazo,
-            'aprobado_por' => $dto->aprobadoPor,
-            'datos_adicionales' => !empty($dto->datosAdicionales) ? json_encode($dto->datosAdicionales) : null,
+            'notas_rechazo' => $dto->notas_rechazo,
+            'aprobado_por' => $dto->aprobado_por,
+            'datos_adicionales' => !empty($dto->datos_adicionales) ? json_encode($dto->datos_adicionales) : null,
         ]);
     }
 }
