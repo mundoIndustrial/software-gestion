@@ -129,19 +129,6 @@ class GestorPrendaSinCotizacion {
      */
     obtenerPorIndice(index) {
         const prenda = this.prendas[index] || null;
-
-
-
-
-        if (prenda?.imagenes) {
-=> ({
-                index: i,
-                tieneFile: !!img.file,
-                tieneBlobUrl: !!img.blobUrl,
-                blobUrl: img.blobUrl,
-                nombre: img.nombre
-            })));
-        }
         return prenda;
     }
 

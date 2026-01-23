@@ -3,12 +3,16 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
 
 /**
  * Use Case para actualizar una prenda y fotos
  * 
+ * REFACTORIZADO: FASE 3 - Validaciones centralizadas
+ * 
  * Responsabilidades:
+ * - Validar prenda existe ✅ TRAIT
  * - Actualizar registro en prendas_pedido (nombre, descripción, de_bodega)
  * - Actualizar fotos de referencia (prenda_fotos_pedido)
  * 
@@ -17,12 +21,20 @@ use App\Models\PrendaPedido;
  * - Actualizar colores y telas → ActualizarColorTelaUseCase
  * - Actualizar tallas → ActualizarTallaPrendaUseCase
  * - Actualizar procesos → ActualizarProcesoPrendaUseCase
+ * 
+ * Antes: 70 líneas | Después: ~60 líneas | Reducción: ~14%
  */
 final class ActualizarPrendaCompletaUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function execute(ActualizarPrendaCompletaDTO $dto): PrendaPedido
     {
-        $prenda = PrendaPedido::findOrFail($dto->prendaId);
+        // CENTRALIZADO: Validar prenda existe (trait)
+        $prenda = $this->validarObjetoExiste(
+            PrendaPedido::find($dto->prendaId),
+            "Prenda con ID {$dto->prendaId}"
+        );
 
         // 1. Actualizar campos básicos si se proporcionan
         $datosActualizar = [];

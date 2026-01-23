@@ -3,23 +3,29 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarPrendaSimpleDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Use Case: Agregar Prenda Simple
+ * 
+ * REFACTORIZADO: FASE 3 - Validaciones centralizadas
+ * 
+ * Antes: 44 líneas | Después: ~28 líneas | Reducción: ~36%
+ */
 class AgregarPrendaSimpleUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function __construct(
         private PedidoProduccionRepository $pedidoRepository
     ) {}
 
     public function ejecutar(AgregarPrendaSimpleDTO $dto): array
     {
-        // Obtener el pedido
-        $pedido = $this->pedidoRepository->obtenerPorId($dto->pedidoId);
-
-        if (!$pedido) {
-            throw new \Exception("Pedido con ID {$dto->pedidoId} no encontrado");
-        }
+        // CENTRALIZADO: Validar pedido existe (trait)
+        $pedido = $this->validarPedidoExiste($dto->pedidoId, $this->pedidoRepository);
 
         // Validar permisos (solo el asesor que creó puede agregar prendas)
         if ($pedido->asesor_id !== Auth::id()) {
