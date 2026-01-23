@@ -11,7 +11,6 @@ use App\Application\Services\Asesores\PerfilService;
 
 // Repositories
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
-use App\Infrastructure\Persistence\EloquentPedidoProduccionRepository;
 
 // Use Cases (DDD)
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
@@ -25,6 +24,12 @@ use App\Application\Pedidos\UseCases\AgregarPrendaSimpleUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerFacturaUseCase;
 use App\Application\Pedidos\UseCases\ObtenerRecibosUseCase;
+use App\Application\Pedidos\UseCases\ObtenerEstadisticasDashboardUseCase;
+use App\Application\Pedidos\UseCases\ObtenerDatosGraficasDashboardUseCase;
+use App\Application\Pedidos\UseCases\ObtenerNotificacionesUseCase;
+use App\Application\Pedidos\UseCases\MarcarNotificacionLeidaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPerfilAsesorUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPerfilAsesorUseCase;
 
 /**
  * AsesoresServiceProvider
@@ -52,10 +57,7 @@ class AsesoresServiceProvider extends ServiceProvider
     public function register()
     {
         // ===== REPOSITORIES =====
-        $this->app->singleton(
-            PedidoProduccionRepository::class,
-            EloquentPedidoProduccionRepository::class
-        );
+        $this->app->singleton(PedidoProduccionRepository::class);
 
         // ===== LEGACY SERVICES (Gradualmente siendo eliminados) =====
         $this->app->singleton(DashboardService::class, function ($app) {
@@ -144,6 +146,48 @@ class AsesoresServiceProvider extends ServiceProvider
         $this->app->singleton(ObtenerRecibosUseCase::class, function ($app) {
             return new ObtenerRecibosUseCase(
                 $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // ===== USE CASES PRESENTACIÓN (DDD - NUEVA ARQUITECTURA) =====
+
+        // Obtener Estadísticas Dashboard
+        $this->app->singleton(ObtenerEstadisticasDashboardUseCase::class, function ($app) {
+            return new ObtenerEstadisticasDashboardUseCase(
+                $app->make(DashboardService::class)
+            );
+        });
+
+        // Obtener Datos Gráficas Dashboard
+        $this->app->singleton(ObtenerDatosGraficasDashboardUseCase::class, function ($app) {
+            return new ObtenerDatosGraficasDashboardUseCase(
+                $app->make(DashboardService::class)
+            );
+        });
+
+        // Obtener Notificaciones
+        $this->app->singleton(ObtenerNotificacionesUseCase::class, function ($app) {
+            return new ObtenerNotificacionesUseCase(
+                $app->make(NotificacionesService::class)
+            );
+        });
+
+        // Marcar Notificación Leída
+        $this->app->singleton(MarcarNotificacionLeidaUseCase::class, function ($app) {
+            return new MarcarNotificacionLeidaUseCase(
+                $app->make(NotificacionesService::class)
+            );
+        });
+
+        // Obtener Perfil Asesor
+        $this->app->singleton(ObtenerPerfilAsesorUseCase::class, function ($app) {
+            return new ObtenerPerfilAsesorUseCase();
+        });
+
+        // Actualizar Perfil Asesor
+        $this->app->singleton(ActualizarPerfilAsesorUseCase::class, function ($app) {
+            return new ActualizarPerfilAsesorUseCase(
+                $app->make(PerfilService::class)
             );
         });
     }

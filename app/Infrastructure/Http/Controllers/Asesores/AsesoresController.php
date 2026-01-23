@@ -34,6 +34,18 @@ use App\Application\Pedidos\DTOs\AgregarPrendaSimpleDTO;
 use App\Application\Pedidos\DTOs\ObtenerProximoNumeroPedidoDTO;
 use App\Application\Pedidos\DTOs\ObtenerFacturaDTO;
 use App\Application\Pedidos\DTOs\ObtenerRecibosDTO;
+use App\Application\Pedidos\UseCases\ObtenerEstadisticasDashboardUseCase;
+use App\Application\Pedidos\UseCases\ObtenerDatosGraficasDashboardUseCase;
+use App\Application\Pedidos\UseCases\ObtenerNotificacionesUseCase;
+use App\Application\Pedidos\UseCases\MarcarNotificacionLeidaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPerfilAsesorUseCase;
+use App\Application\Pedidos\UseCases\ActualizarPerfilAsesorUseCase;
+use App\Application\Pedidos\DTOs\ObtenerEstadisticasDashboardDTO;
+use App\Application\Pedidos\DTOs\ObtenerDatosGraficasDashboardDTO;
+use App\Application\Pedidos\DTOs\ObtenerNotificacionesDTO;
+use App\Application\Pedidos\DTOs\MarcarNotificacionLeidaDTO;
+use App\Application\Pedidos\DTOs\ObtenerPerfilAsesorDTO;
+use App\Application\Pedidos\DTOs\ActualizarPerfilAsesorDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -53,6 +65,12 @@ class AsesoresController extends Controller
     protected ObtenerProximoNumeroPedidoUseCase $obtenerProximoNumeroPedidoUseCase;
     protected ObtenerFacturaUseCase $obtenerFacturaUseCase;
     protected ObtenerRecibosUseCase $obtenerRecibosUseCase;
+    protected ObtenerEstadisticasDashboardUseCase $obtenerEstadisticasDashboardUseCase;
+    protected ObtenerDatosGraficasDashboardUseCase $obtenerDatosGraficasDashboardUseCase;
+    protected ObtenerNotificacionesUseCase $obtenerNotificacionesUseCase;
+    protected MarcarNotificacionLeidaUseCase $marcarNotificacionLeidaUseCase;
+    protected ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase;
+    protected ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -69,7 +87,13 @@ class AsesoresController extends Controller
         AgregarPrendaSimpleUseCase $agregarPrendaSimpleUseCase,
         ObtenerProximoNumeroPedidoUseCase $obtenerProximoNumeroPedidoUseCase,
         ObtenerFacturaUseCase $obtenerFacturaUseCase,
-        ObtenerRecibosUseCase $obtenerRecibosUseCase
+        ObtenerRecibosUseCase $obtenerRecibosUseCase,
+        ObtenerEstadisticasDashboardUseCase $obtenerEstadisticasDashboardUseCase,
+        ObtenerDatosGraficasDashboardUseCase $obtenerDatosGraficasDashboardUseCase,
+        ObtenerNotificacionesUseCase $obtenerNotificacionesUseCase,
+        MarcarNotificacionLeidaUseCase $marcarNotificacionLeidaUseCase,
+        ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase,
+        ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -86,6 +110,12 @@ class AsesoresController extends Controller
         $this->obtenerProximoNumeroPedidoUseCase = $obtenerProximoNumeroPedidoUseCase;
         $this->obtenerFacturaUseCase = $obtenerFacturaUseCase;
         $this->obtenerRecibosUseCase = $obtenerRecibosUseCase;
+        $this->obtenerEstadisticasDashboardUseCase = $obtenerEstadisticasDashboardUseCase;
+        $this->obtenerDatosGraficasDashboardUseCase = $obtenerDatosGraficasDashboardUseCase;
+        $this->obtenerNotificacionesUseCase = $obtenerNotificacionesUseCase;
+        $this->marcarNotificacionLeidaUseCase = $marcarNotificacionLeidaUseCase;
+        $this->obtenerPerfilAsesorUseCase = $obtenerPerfilAsesorUseCase;
+        $this->actualizarPerfilAsesorUseCase = $actualizarPerfilAsesorUseCase;
     }
 
     /**
@@ -96,35 +126,37 @@ class AsesoresController extends Controller
     public function profile()
     {
         try {
-            $user = Auth::user();
-            
-            if (!$user) {
-                abort(401, 'Por favor inicia sesión para ver tu perfil.');
-            }
-            
+            // Crear DTO para el Use Case
+            $dto = ObtenerPerfilAsesorDTO::crear();
+
+            // Usar el nuevo Use Case DDD
+            $user = $this->obtenerPerfilAsesorUseCase->ejecutar($dto);
+
             return view('asesores.profile', compact('user'));
-            
+
         } catch (\Exception $e) {
             abort(500, 'Error al cargar el perfil: ' . $e->getMessage());
         }
     }
 
     /**
-     * Mostrar el dashboard de asesores
+     * Mostrar el dashboard de asesores - DELEGADO A USE CASE
      */
     public function dashboard()
     {
-        $stats = $this->dashboardService->obtenerEstadisticas();
+        $dto = ObtenerEstadisticasDashboardDTO::crear();
+        $stats = $this->obtenerEstadisticasDashboardUseCase->ejecutar($dto);
         return view('asesores.dashboard', compact('stats'));
     }
 
     /**
-     * Obtener datos para gráficas del dashboard
+     * Obtener datos para gráficas del dashboard - DELEGADO A USE CASE
      */
     public function getDashboardData(Request $request)
     {
-        $dias = $request->get('tipo', 30);
-        $datos = $this->dashboardService->obtenerDatosGraficas($dias);
+        $dias = (int) $request->get('tipo', 30);
+        $dto = ObtenerDatosGraficasDashboardDTO::fromRequest($dias);
+        $datos = $this->obtenerDatosGraficasDashboardUseCase->ejecutar($dto);
         return response()->json($datos);
     }
 
@@ -466,7 +498,9 @@ class AsesoresController extends Controller
      */
     public function getNotificaciones()
     {
-        return response()->json($this->notificacionesService->obtenerNotificaciones());
+        $dto = ObtenerNotificacionesDTO::crear();
+        $notificaciones = $this->obtenerNotificacionesUseCase->ejecutar($dto);
+        return response()->json($notificaciones);
     }
 
     /**
@@ -478,17 +512,14 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Marcar todas las notificaciones como leídas
+     * Marcar todas las notificaciones como leídas - DELEGADO A USE CASE
      */
     public function markAllAsRead()
     {
         try {
-            $this->notificacionesService->marcarTodosLeidosPedidos();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Notificaciones marcadas como leídas'
-            ]);
+            $dto = MarcarNotificacionLeidaDTO::marcarTodos();
+            $resultado = $this->marcarNotificacionLeidaUseCase->ejecutar($dto);
+            return response()->json($resultado);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al marcar notificaciones',
@@ -498,17 +529,14 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Marcar una notificación específica como leída
+     * Marcar una notificación específica como leída - DELEGADO A USE CASE
      */
     public function markNotificationAsRead($notificationId)
     {
         try {
-            $this->notificacionesService->marcarNotificacionLeida($notificationId);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Notificación marcada como leída'
-            ]);
+            $dto = MarcarNotificacionLeidaDTO::fromRequest($notificationId);
+            $resultado = $this->marcarNotificacionLeidaUseCase->ejecutar($dto);
+            return response()->json($resultado);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al marcar notificación',
@@ -535,7 +563,12 @@ class AsesoresController extends Controller
             ]);
 
             $archivoAvatar = $request->hasFile('avatar') ? $request->file('avatar') : null;
-            $resultado = $this->perfilService->actualizarPerfil($validated, $archivoAvatar);
+
+            // Crear DTO para el Use Case
+            $dto = ActualizarPerfilAsesorDTO::fromRequest($validated, $archivoAvatar);
+
+            // Usar el nuevo Use Case DDD
+            $resultado = $this->actualizarPerfilAsesorUseCase->ejecutar($dto);
 
             return response()->json($resultado);
 

@@ -3,7 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 
 class ObtenerProduccionPedidoUseCase
 {
