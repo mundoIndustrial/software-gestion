@@ -201,13 +201,13 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/facturas/{numeroPedido}/download', [App\Http\Controllers\InvoiceController::class, 'download'])->name('invoices.download');
 
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
-    Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::get('/api/ordenes/{id}/procesos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'getProcesos'])->name('api.ordenes.procesos');
     Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');
     Route::post('/api/ordenes/{numero_pedido}/novedades/add', [RegistroOrdenController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
     Route::post('/api/bodega/{pedido}/novedades', [RegistroBodegaController::class, 'updateNovedadesBodega'])->name('api.bodega.novedades');
     Route::post('/api/bodega/{pedido}/novedades/add', [RegistroBodegaController::class, 'addNovedadBodega'])->name('api.bodega.novedades.add');
-    Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');
-    Route::delete('/api/procesos/{id}/eliminar', [App\Http\Controllers\OrdenController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
+    Route::put('/api/procesos/{id}/editar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'editarProceso'])->name('api.procesos.editar');
+    Route::delete('/api/procesos/{id}/eliminar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
     Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
