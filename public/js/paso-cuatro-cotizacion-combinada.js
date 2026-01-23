@@ -152,15 +152,6 @@ function agregarPrendaReflectivoPaso4() {
                 </datalist>
                 <div class="ubicaciones-reflectivo-agregadas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; min-height: 24px;"></div>
             </div>
-            
-            <!-- OBSERVACIONES GENERALES -->
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.95rem;">💬 OBSERVACIONES GENERALES</label>
-                <button type="button" class="btn-agregar-obs-reflectivo" style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem; margin-bottom: 10px; white-space: nowrap;">
-                    + Agregar Observación
-                </button>
-                <div class="observaciones-reflectivo-lista" style="display: flex; flex-direction: column; gap: 8px;"></div>
-            </div>
         </div>
     `;
     
@@ -330,13 +321,6 @@ function agregarPrendaReflectivoPaso4() {
     btnAgregarUbicacionModal.addEventListener('click', (e) => {
         e.preventDefault();
         abrirModalUbicacionReflectivoPaso4(prendasIndex, fila);
-    });
-    
-    // Setup para agregar observación
-    const btnAgregarObs = fila.querySelector('.btn-agregar-obs-reflectivo');
-    btnAgregarObs.addEventListener('click', (e) => {
-        e.preventDefault();
-        agregarObservacionReflectivoPaso4(prendasIndex, fila);
     });
     
     // Setup drag and drop para imágenes
@@ -874,49 +858,6 @@ function eliminarUbicacionReflectivoPaso4(prendasIndex, index) {
 /**
  * Agrega fila de observación
  */
-function agregarObservacionReflectivoPaso4(prendasIndex, fila) {
-    const contenedor = fila.querySelector('.observaciones-reflectivo-lista');
-    if (!contenedor) return;
-    
-    const filaObs = document.createElement('div');
-    filaObs.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
-    filaObs.innerHTML = `
-        <input type="text" class="obs-reflectivo-texto" placeholder="Escribe una observación..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-        <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
-            <div class="obs-checkbox-mode" style="display: flex; align-items: center; gap: 5px;">
-                <input type="checkbox" class="obs-reflectivo-check" style="width: 20px; height: 20px; cursor: pointer;">
-            </div>
-            <div class="obs-text-mode" style="display: none; flex: 1;">
-                <input type="text" class="obs-reflectivo-valor" placeholder="Valor..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-            </div>
-            <button type="button" class="obs-toggle-btn" style="background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">✓/✎</button>
-        </div>
-        <button type="button" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
-    `;
-    contenedor.appendChild(filaObs);
-    
-    const toggleBtn = filaObs.querySelector('.obs-toggle-btn');
-    const checkboxMode = filaObs.querySelector('.obs-checkbox-mode');
-    const textMode = filaObs.querySelector('.obs-text-mode');
-    const deleteBtn = filaObs.querySelector('button:last-child');
-    
-    // Toggle entre checkbox y text
-    toggleBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (checkboxMode.style.display === 'none') {
-            checkboxMode.style.display = 'flex';
-            textMode.style.display = 'none';
-            toggleBtn.style.background = '#3498db';
-        } else {
-            checkboxMode.style.display = 'none';
-            textMode.style.display = 'flex';
-            toggleBtn.style.background = '#ff9800';
-        }
-    });
-    
-    // Eliminar fila
-    deleteBtn.addEventListener('click', () => filaObs.remove());
-}
 
 // =========================================================
 // INICIALIZACIÓN

@@ -203,18 +203,6 @@ function obtenerPrendasDelPaso2() {
                 };
             }
             
-            // REFLECTIVO (opcional, similar a otros)
-            const aplicaReflectivoCheckbox = card.querySelector('input[name*="aplica_reflectivo"]');
-            const reflectivoObsInput = card.querySelector('input[name*="obs_reflectivo"]');
-            
-            if (aplicaReflectivoCheckbox && aplicaReflectivoCheckbox.checked) {
-                const reflectivoObs = reflectivoObsInput ? reflectivoObsInput.value.trim() : '';
-                variaciones.reflectivo = {
-                    valor: 'Sí',
-                    observacion: reflectivoObs
-                };
-            }
-            
             prendas.push({
                 nombre: nombre,
                 tallas: tallas,

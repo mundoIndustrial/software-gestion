@@ -225,19 +225,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
-                                <!-- REFLECTIVO -->
-                                <tr style="border-bottom: 1px solid #eee; background-color: white;">
-                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" name="productos_friendly[][variantes][aplica_reflectivo]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
-                                    </td>
-                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
-                                        <i class="fas fa-star"></i> Reflectivo
-                                    </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" name="productos_friendly[][variantes][obs_reflectivo]" placeholder="Ej: En brazos y espalda..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
 

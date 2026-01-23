@@ -45,16 +45,6 @@
             
             <div id="ubicaciones_reflectivo_agregadas" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;"></div>
         </div>
-
-        <!-- OBSERVACIONES GENERALES -->
-        <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <label style="font-weight: bold; font-size: 1.1rem; margin: 0;">Observaciones Generales</label>
-                <button type="button" onclick="agregarObservacionReflectivo()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
-            </div>
-            
-            <div id="observaciones_reflectivo_lista" style="display: flex; flex-direction: column; gap: 10px;"></div>
-        </div>
     </div>
 
     <div class="form-actions">

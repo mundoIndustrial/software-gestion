@@ -39,6 +39,7 @@ class ReflectivoCotizacionFoto extends Model
     /**
      * Accessor: Obtener URL de la imagen (usa WebP si existe, sino original)
      * Las rutas se guardan sin prefijo 'storage/', así que aquí se agrega
+     * Maneja tanto rutas antiguas (cotizaciones/reflectivo/) como nuevas (cotizaciones/{id}/reflectivo/)
      */
     public function getUrlAttribute(): string
     {
@@ -58,6 +59,13 @@ class ReflectivoCotizacionFoto extends Model
         if (str_starts_with($ruta, 'storage/')) {
             return '/' . $ruta;
         }
+        
+        // ✅ Manejo de rutas antiguas y nuevas
+        // Si empieza con cotizaciones/ (antigua o nueva), agregar /storage/
+        if (str_starts_with($ruta, 'cotizaciones/')) {
+            return '/storage/' . ltrim($ruta, '/');
+        }
+        
         // Si es una ruta relativa, agregar /storage/
         return '/storage/' . ltrim($ruta, '/');
     }

@@ -567,20 +567,14 @@ async function guardarCotizacion() {
         // ✅ REFLECTIVO (PASO 4) - Para cotizaciones combinadas (PL)
         if (window.tipoCotizacionGlobal === 'PL' || window.tipoCotizacionGlobal === 'PB' || window.tipoCotizacionGlobal === 'RF') {
             
-            // ✅ ACTUALIZAR window.prendas_reflectivo_paso4 DESDE EL DOM
-            if (typeof capturePrendasReflectivoPaso4 === 'function') {
-                const prendasCapturadas = capturePrendasReflectivoPaso4();
-                window.prendas_reflectivo_paso4 = prendasCapturadas.map((prenda, idx) => ({
-                    index: idx,
-                    tipo_prenda: prenda.tipo_prenda,
-                    descripcion: prenda.descripcion,
-                    ubicaciones: prenda.ubicaciones || [],
-                    tallas: prenda.tallas || [],
-                    variaciones: prenda.variaciones || {},
-                    observaciones_generales: prenda.observaciones_generales || [],
-                    imagenes: prenda.imagenes || []
-                }));
+            // ✅ NO CAPTURAR DESDE DOM - USAR window.prendas_reflectivo_paso4 DIRECTAMENTE
+            // capturePrendasReflectivoPaso4() NO retorna los file objects, solo datos del DOM
+            // window.prendas_reflectivo_paso4 YA CONTIENE los file objects correctamente
+            if (typeof window.prendas_reflectivo_paso4 === 'undefined' || !Array.isArray(window.prendas_reflectivo_paso4)) {
+                window.prendas_reflectivo_paso4 = [];
             }
+            
+            console.log('✅ USANDO window.prendas_reflectivo_paso4 DIRECTAMENTE (con file objects):', window.prendas_reflectivo_paso4);
             
             const reflectivoElement = document.getElementById('descripcion_reflectivo');
             const reflectivoDescripcion = (reflectivoElement?.value || '').trim();
@@ -623,13 +617,16 @@ async function guardarCotizacion() {
                     console.log('🔍 DEBUG PASO 4 - window.prendas_reflectivo_paso4:', window.prendas_reflectivo_paso4);
                     let totalImagenesP4Reflectivo = 0;
                     
+                    // ✅ USAR LA MISMA ESTRUCTURA QUE storeReflectivo()
+                    // imagenes_reflectivo_prenda_{index}[] para cada prenda
                     window.prendas_reflectivo_paso4.forEach((prenda, prendaIndex) => {
                         if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
-                            prenda.imagenes.forEach((imagen, imagenIndex) => {
+                            prenda.imagenes.forEach((imagen) => {
                                 if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso4') {
-                                    const fieldName = `reflectivo[imagenes_paso4][${prendaIndex}][${imagenIndex}]`;
-                                    console.log(`✅ APPENDING IMAGE TO FORMDATA - Prenda ${prendaIndex}, Imagen ${imagenIndex}: ${imagen.file.name}`);
-                                    formData.append(fieldName, imagen.file);
+                                    // ✅ EXACTAMENTE como storeReflectivo: imagenes_reflectivo_prenda_{index}[]
+                                    const fieldName = `imagenes_reflectivo_prenda_${prendaIndex}`;
+                                    console.log(`✅ APPENDING IMAGE TO FORMDATA - Prenda ${prendaIndex}: ${imagen.file.name}`);
+                                    formData.append(fieldName + '[]', imagen.file);
                                     totalImagenesP4Reflectivo++;
                                 }
                             });

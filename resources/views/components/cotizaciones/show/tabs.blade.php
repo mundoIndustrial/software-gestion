@@ -14,16 +14,23 @@
     $tienePrendas = $cotizacion->prendas && count($cotizacion->prendas) > 0;
     $tieneReflectivoCotizacion = $cotizacion->reflectivoCotizacion !== null;
 
-    // Verificar si alguna prenda tiene reflectivo
+    // ✅ VERIFICAR PASO 4 - Reflectivos por prenda en la tabla reflectivo_cotizacion
     $tieneReflectivoPrenda = false;
-    if ($cotizacion->prendas) {
-        $tieneReflectivoPrenda = $cotizacion->prendas->contains(fn($prenda) => $prenda->tiene_reflectivo ?? false);
+    $reflectivoPrendasCount = 0;
+    if ($cotizacion->id) {
+        $reflectivoPrendasCount = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacion->id)->count();
+        $tieneReflectivoPrenda = $reflectivoPrendasCount > 0;
     }
 
     $tieneReflectivo = $tieneReflectivoCotizacion || $tieneReflectivoPrenda;
 
-    // Mostrar tab de logo si es tipo logo O si tiene información de logo
-    $mostrarTabLogo = $esLogo || ($logo && ($logo->descripcion || ($logo->fotos && $logo->fotos->count() > 0)));
+    // ✅ MOSTRAR TAB DE LOGO SOLO SI:
+    // 1. Es tipo logo O combinada
+    // 2. Y tiene información de logo (descripción o fotos)
+    $mostrarTabLogo = false;
+    if ($esLogo && $logo && ($logo->descripcion || ($logo->fotos && $logo->fotos->count() > 0))) {
+        $mostrarTabLogo = true;
+    }
     
     // Determinar qué tab debe estar activo por defecto
     // Logo puro (L): tab de Logo
