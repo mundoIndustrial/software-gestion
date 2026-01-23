@@ -10,7 +10,6 @@ use App\Http\Controllers\AsesoresInventarioTelasController;
 use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
-use App\Application\Services\Asesores\AnularPedidoService;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
