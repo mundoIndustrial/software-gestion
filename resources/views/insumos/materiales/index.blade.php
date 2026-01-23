@@ -193,7 +193,6 @@
 
 @if(app()->isLocal())
 <script>
-    console.log(' Vista materiales: Inicio carga');
     console.time('RENDER_TOTAL');
 </script>
 @endif
@@ -235,7 +234,6 @@
         const diasSpan = document.getElementById('dias_' + materialId);
         
         if (!fechaPedidoInput || !fechaLlegadaInput || !diasSpan) {
-            console.error('No se encontraron elementos para:', materialId);
             return;
         }
         
@@ -689,7 +687,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Error al eliminar el material', 'error');
             Swal.hideLoading();
             Swal.close();
@@ -707,16 +704,11 @@
         
         // Obtener todos los checkboxes de materiales
         const checkboxes = document.querySelectorAll(`input[type="checkbox"][id^="checkbox_"]`);
-        
-        console.log('🔵 Guardando materiales para pedido:', ordenPedido);
-        console.log(' Checkboxes encontrados:', checkboxes.length);
-        console.log(' Buscando en:', `input[type="checkbox"][id^="checkbox_"]`);
-        
+
+
         // Debug: mostrar todos los checkboxes de la página
         const todosCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-        console.log(' Total de checkboxes en la página:', todosCheckboxes.length);
         todosCheckboxes.forEach((cb, i) => {
-            console.log(`  ${i}: id=${cb.id}, checked=${cb.checked}`);
         });
         
         checkboxes.forEach((inputCheckbox, index) => {
@@ -752,20 +744,6 @@
             const fechaPedidoCambio = (fechaPedido || null) !== (originalFechaPedido || null);
             const fechaLlegadaCambio = (fechaLlegada || null) !== (originalFechaLlegada || null);
             const hayChangios = checkboxCambio || fechaPedidoCambio || fechaLlegadaCambio;
-            
-            console.log(` Material ${index}: ${nombreMaterial}`, { 
-                recibido, 
-                originalCheckbox,
-                checkboxCambio,
-                fechaPedido, 
-                originalFechaPedido,
-                fechaPedidoCambio,
-                fechaLlegada,
-                originalFechaLlegada, 
-                fechaLlegadaCambio,
-                hayChangios 
-            });
-            
             // Guardar si el checkbox está marcado O si hay cambios
             if (recibido || hayChangios) {
                 materiales.push({
@@ -776,9 +754,6 @@
                 });
             }
         });
-        
-        console.log(' Materiales a guardar:', materiales);
-        
         fetch(`/insumos/materiales/${ordenPedido}/guardar`, {
             method: 'POST',
             headers: {
@@ -797,7 +772,6 @@
             return response.json();
         })
         .then(data => {
-            console.log(' Respuesta servidor:', data);
             if (data.success) {
                 showToast('Guardado exitoso', 'success');
             } else {
@@ -805,7 +779,6 @@
             }
         })
         .catch(error => {
-            console.error('Error completo:', error);
             let mensajeError = 'Error al guardar los cambios';
             
             // Si es un error JSON, extraer el mensaje
@@ -1398,7 +1371,6 @@
                 llenarTablaInsumos(data.materiales || []);
             })
             .catch(error => {
-                console.error('Error al cargar insumos:', error);
                 showToast('Error al cargar los insumos', 'error');
             });
     }
@@ -1791,7 +1763,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
                         showToast('Error al eliminar el material', 'error');
                     });
                 }
@@ -1959,7 +1930,6 @@
             cerrarModalObservaciones();
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Error al guardar observaciones: ' + error.message, 'error');
         });
     }
@@ -2002,9 +1972,6 @@
             // Obtener observaciones del input hidden
             const inputObservaciones = fila.querySelector(`input[type="hidden"][id^="observaciones_"]`);
             const observaciones = inputObservaciones ? inputObservaciones.value : '';
-            
-            console.log(` Material: ${nombreMaterial}, Fecha Pedido: ${fechaPedido}, Fecha Llegada: ${fechaLlegada}, Recibido: ${recibido}, Observaciones: ${observaciones}`);
-            
             // Agregar si está marcado o tiene fechas
             if (recibido || fechaOrden || fechaPedido || fechaPago || fechaLlegada || fechaDespacho || observaciones) {
                 materiales.push({
@@ -2019,9 +1986,6 @@
                 });
             }
         });
-        
-        console.log(' Materiales del modal a guardar:', materiales);
-        
         // Enviar al servidor
         fetch(`/insumos/materiales/${pedido}/guardar`, {
             method: 'POST',
@@ -2033,7 +1997,6 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log(' Respuesta servidor:', data);
             if (data.success) {
                 showToast('Materiales guardados correctamente', 'success');
             } else {
@@ -2042,7 +2005,6 @@
             cerrarModalInsumos();
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Error al guardar los materiales', 'error');
         });
     }
@@ -2143,9 +2105,6 @@
             
             const column = this.getAttribute('data-column');
             currentFilterColumn = column;
-            
-            console.log('🔵 Abriendo modal de filtros para:', column);
-            
             // Mostrar modal vacío (sin cargar valores aún)
             currentFilterValues = [];
             showFilterModal(column, []);
@@ -2257,9 +2216,6 @@
         // Cargar valores al abrir el modal
         let allValuesLoaded = false;
         let allValues = [];
-        
-        console.log('🔵 Cargando valores iniciales para:', column);
-        
         // Mostrar mensaje de carga
         const filterList = document.getElementById('filterListInsumos');
         filterList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Cargando...</p>';
@@ -2271,8 +2227,6 @@
                 if (data.success) {
                     allValues = data.valores;
                     allValuesLoaded = true;
-                    console.log(` Valores cargados para ${column}:`, allValues.length);
-                    
                     // Renderizar primeros 15 valores
                     renderFilterValues(allValues, '', column);
                 } else {
@@ -2280,7 +2234,6 @@
                 }
             })
             .catch(error => {
-                console.error(' Error:', error);
                 filterList.innerHTML = '<p style="text-align: center; color: #f00; padding: 20px;">Error al cargar valores</p>';
             });
         
@@ -2365,13 +2318,6 @@
 
     function applyFilters() {
         const selected = Array.from(document.querySelectorAll('.filter-checkbox:checked')).map(cb => cb.value);
-        
-        console.log('🔵 Aplicando filtros:', {
-            currentFilterColumn,
-            selected,
-            selectedLength: selected.length
-        });
-        
         if (selected.length === 0) {
             // Si no hay selección, ir a la página sin filtros
             window.location.href = '{{ route("insumos.materiales.index") }}';
@@ -2383,9 +2329,6 @@
             // Recopilar filtros existentes
             const filterColumns = urlParams.getAll('filter_columns[]') || [];
             const filterValuesArray = urlParams.getAll('filter_values[]') || [];
-            
-            console.log(' Filtros existentes:', { filterColumns, filterValuesArray });
-            
             // Reconstruir objeto de filtros existentes
             filterColumns.forEach((col, idx) => {
                 if (!existingFilters[col]) {
@@ -2398,9 +2341,6 @@
             
             // Agregar o actualizar el filtro actual
             existingFilters[currentFilterColumn] = selected;
-            
-            console.log(' Filtros combinados:', existingFilters);
-            
             // Construir URL con todos los filtros
             const filterParams = new URLSearchParams();
             Object.keys(existingFilters).forEach(column => {
@@ -2411,7 +2351,6 @@
             });
             
             const finalUrl = `{{ route("insumos.materiales.index") }}?${filterParams.toString()}`;
-            console.log('🌐 URL final:', finalUrl);
             window.location.href = finalUrl;
         }
         
@@ -2523,13 +2462,11 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Error al cambiar el estado', 'error');
         });
     }
     
     console.timeEnd('RENDER_TOTAL');
-    console.log(' Vista materiales: Carga completada');
     console.log(` Total de órdenes: {{ $ordenes->total() }}`);
     
     // Mostrar indicador de carga cuando se hace clic en paginación
@@ -2549,3 +2486,4 @@
 <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
 <script src="{{ asset('js/insumos/pagination.js') }}"></script>
 @endsection
+

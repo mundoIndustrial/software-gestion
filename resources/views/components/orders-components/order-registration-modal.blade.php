@@ -693,7 +693,6 @@
                         document.getElementById('pedidoError').textContent = `Consecutivo disponible: ${data.next_pedido}`;
                         document.getElementById('pedidoError').classList.remove('hidden');
                     } catch (error) {
-                        console.error('Error:', error);
                     }
                 },
 
@@ -724,9 +723,6 @@
                 addPrenda() {
                     if (this.isAddingPrenda) return;
                     this.isAddingPrenda = true;
-
-                    console.log('addPrenda called');
-
                     const btn = document.getElementById('añadirPrendaBtn');
                     btn.disabled = true;
 
@@ -866,7 +862,6 @@
                         input.setCustomValidity('');
                         return true;
                     } catch (error) {
-                        console.error('Error:', error);
                         return false;
                     }
                 },
@@ -972,7 +967,6 @@
                             setTimeout(() => this.showErrorMessage = false, 5000);
                         }
                     } catch (error) {
-                        console.error('Error:', error);
                         this.errorMessage = 'Error al enviar el formulario';
                         this.showErrorMessage = true;
                         setTimeout(() => this.showErrorMessage = false, 5000);

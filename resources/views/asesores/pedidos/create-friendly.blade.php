@@ -163,9 +163,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const cotizacion = {!! json_encode($cotizacion->toArray()) !!};
-        console.log(' Datos de cotización recibidos:', cotizacion);
-        console.log(' Cotización ID:', cotizacion.id);
-        
+
         // Guardar ID en variable global para actualizar después
         window.cotizacionIdActual = cotizacion.id;
         
@@ -175,7 +173,6 @@
                 console.log(' Llamando a cargarBorrador()');
                 cargarBorrador(cotizacion);
             } else {
-                console.error(' Función cargarBorrador no encontrada');
             }
         }, 1000);
     });
@@ -187,4 +184,5 @@
 @endpush
 
 @endsection
+
 

@@ -130,8 +130,6 @@ let dashboardFilterParams = {};
 
 // Función para obtener filtros desde inputs o URL
 function obtenerFiltrosDashboard() {
-    console.log(' Obteniendo filtros del dashboard...');
-    
     // Resetear filtros
     dashboardFilterParams = {};
     
@@ -160,13 +158,10 @@ function obtenerFiltrosDashboard() {
             const specificDates = currentUrl.searchParams.get('specific_dates');
             if (specificDates) dashboardFilterParams['specific_dates'] = specificDates;
         }
-        
-        console.log(' Filtros desde URL:', dashboardFilterParams);
     }
     
     // Si no hay filtros en URL, mostrar mensaje de "sin filtros"
     if (Object.keys(dashboardFilterParams).length === 0) {
-        console.log('📅 Sin filtros - Se mostrarán TODOS los registros de cualquier fecha');
     }
     
     return dashboardFilterParams;
@@ -174,8 +169,6 @@ function obtenerFiltrosDashboard() {
 
 // Función para actualizar filtros desde top-controls (llamada desde filtrarPorFechas)
 function actualizarFiltrosDashboard(filterType, specificDate, startDate, endDate, month, specificDates) {
-    console.log('🔄 Actualizando filtros del dashboard desde top-controls...');
-    
     dashboardFilterParams = {};
     
     if (filterType) {
@@ -198,8 +191,6 @@ function actualizarFiltrosDashboard(filterType, specificDate, startDate, endDate
 
 // Función para recargar las tablas del dashboard
 function recargarDashboardCorte() {
-    console.log('🔄 Recargando dashboard de Corte...');
-    
     // Crear URL base
     const url = new URL('/tableros/corte/dashboard', window.location.origin);
     
@@ -221,8 +212,6 @@ function recargarDashboardCorte() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(' Datos del dashboard recibidos:', data);
-        
         // Actualizar tabla de horas
         if (data.horas) {
             actualizarTablaHorasCompleta(data.horas);
@@ -234,7 +223,6 @@ function recargarDashboardCorte() {
         }
     })
     .catch(error => {
-        console.error(' Error al recargar dashboard:', error);
     });
 }
 
@@ -242,11 +230,8 @@ function recargarDashboardCorte() {
 function actualizarTablaHorasCompleta(horas) {
     const tbody = document.getElementById('horasTableBody');
     if (!tbody) {
-        console.warn('No se encontró el tbody de horas');
         return;
     }
-    
-    console.log('🔄 Actualizando tabla de horas sin recargar página...');
     tbody.innerHTML = '';
     
     // Calcular totales
@@ -290,19 +275,14 @@ function actualizarTablaHorasCompleta(horas) {
         </td>
     `;
     tbody.appendChild(totalRow);
-    
-    console.log(' Tabla de horas actualizada');
 }
 
 // Función para actualizar la tabla de operarios completa
 function actualizarTablaOperariosCompleta(operarios) {
     const tbody = document.getElementById('operariosTableBody');
     if (!tbody) {
-        console.warn('No se encontró el tbody de operarios');
         return;
     }
-    
-    console.log('🔄 Actualizando tabla de operarios sin recargar página...');
     tbody.innerHTML = '';
     
     // Calcular totales
@@ -346,8 +326,6 @@ function actualizarTablaOperariosCompleta(operarios) {
         </td>
     `;
     tbody.appendChild(totalRow);
-    
-    console.log(' Tabla de operarios actualizada');
 }
 
 // Listen for real-time updates with detailed debugging
@@ -355,30 +333,20 @@ function actualizarTablaOperariosCompleta(operarios) {
 let recargarDashboardTimeout = null;
 
 function initializeCorteChannel() {
-    console.log('=== DASHBOARD CORTE - Inicializando Echo ===');
-    console.log('window.Echo disponible:', !!window.Echo);
-    
+
     // Obtener y guardar filtros globales en el componente
     obtenerFiltrosDashboard();
-    console.log(' Filtros capturados para dashboard:', dashboardFilterParams);
-
     if (window.Echo) {
-        console.log('Suscribiéndose al canal "corte"...');
-        
         const channel = window.Echo.channel('corte');
         
         channel.subscribed(() => {
-            console.log(' Suscrito exitosamente al canal "corte"');
         });
         
         channel.error((error) => {
-            console.error(' Error en el canal "corte":', error);
         });
         
         channel.listen('CorteRecordCreated', (e) => {
-            console.log('🎉 Evento CorteRecordCreated recibido en dashboard-tables-corte!');
-            console.log(' Usando filtros:', dashboardFilterParams);
-            
+
             // ⚡ DEBOUNCE: Evitar múltiples recargas en corto tiempo
             // Cancelar el timeout anterior si existe
             if (recargarDashboardTimeout) {
@@ -392,10 +360,7 @@ function initializeCorteChannel() {
                 recargarDashboardTimeout = null;
             }, 500);
         });
-        
-        console.log('Listeners configurados. Esperando eventos...');
     } else {
-        console.error(' Echo NO está disponible todavía. Reintentando en 500ms...');
         setTimeout(initializeCorteChannel, 500);
     }
 }
@@ -660,3 +625,4 @@ function getEficienciaTextColor(eficiencia) {
     return '#ffffff';
 }
 </script>
+

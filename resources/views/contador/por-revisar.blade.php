@@ -192,7 +192,6 @@ function openCotizacionModal(cotizacionId) {
             modal.style.display = 'flex';
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('Error al cargar la cotización');
         });
 }
@@ -222,7 +221,6 @@ function aprobarCotizacion(cotizacionId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         alert(' Error al aprobar la cotización: ' + error.message);
     });
 }
@@ -232,3 +230,4 @@ function aprobarCotizacion(cotizacionId) {
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>
 
 @endsection
+

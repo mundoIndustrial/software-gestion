@@ -311,8 +311,6 @@
 <script>
     // Esperar a que el DOM esté listo
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Inicializando formulario de pedidos...');
-
         // ==================== INICIALIZACIÓN ====================
 
         // 1. Crear instancias
@@ -397,8 +395,6 @@
         window.UIComponents = UIComponents;
         window.PedidoValidator = PedidoValidator;
 
-        console.log(' Formulario inicializado correctamente');
-        console.log('💡 Acceso en consola: window.formManager, window.handlers, etc.');
     });
 </script>
 
@@ -433,3 +429,4 @@
         </div>
     </div>
 </div>
+

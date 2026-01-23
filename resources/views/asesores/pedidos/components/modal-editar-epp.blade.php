@@ -8,11 +8,8 @@
             const datos = window.datosEdicionPedido;
             // datosEdicionPedido tiene estructura: { epps: [...], prendas: [...], numero_pedido, ...}
             const epp = datos.epps || [];
-            
-            console.log('[EDITAR-EPP] Datos del pedido recibidos:', datos);
-            console.log('[EDITAR-EPP] Estructura de datos.epps:', epp);
-            console.log('[EDITAR-EPP] Primera EPP ejemplo:', epp.length > 0 ? epp[0] : 'Sin EPP');
-            
+
+
             if (epp.length === 0) {
                 UI.info('Sin EPP', 'No hay EPP agregado en este pedido');
                 return;
@@ -91,9 +88,8 @@
             // Usar el servicio de EPP si está disponible (para usar el mismo modal de la página de crear)
             if (typeof window.eppService !== 'undefined' && window.eppService?.editarEPPFormulario) {
                 console.log('[EDITAR-EPP] Objeto EPP completo:', JSON.stringify(epp, null, 2));
-                console.log('[EDITAR-EPP] Cantidad:', epp.cantidad);
-                console.log('[EDITAR-EPP] Observaciones:', epp.observaciones);
-                console.log('[EDITAR-EPP] Imágenes objeto:', epp.imagenes);
+
+
                 console.log('[EDITAR-EPP] Todas las claves del EPP:', Object.keys(epp));
                 
                 // Preparar datos del EPP - usar los campos del backend: epp_id, epp_nombre, epp_codigo, epp_categoria
@@ -106,11 +102,8 @@
                 
                 // Las imágenes vienen como array desde el backend
                 const imagenes = Array.isArray(epp.imagenes) ? epp.imagenes : [];
-                console.log('[EDITAR-EPP] Imágenes formateadas:', imagenes);
-                console.log('[EDITAR-EPP] Cantidad de imágenes:', imagenes.length);
-                
-                console.log('[EDITAR-EPP] Abriendo modal de EPP usando servicio con datos:', datosEpp);
-                
+
+
                 // Abrir el modal con los datos del EPP y las imágenes
                 window.eppService.editarEPPFormulario(
                     datosEpp.id,
@@ -125,3 +118,4 @@
         });
     }
 </script>
+

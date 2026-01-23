@@ -88,7 +88,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error en búsqueda:', error);
                     resultsContainer.innerHTML = '<div class="no-data"><h3>Error en la búsqueda</h3><p>Por favor, intenta de nuevo.</p></div>';
                 });
             }
@@ -115,3 +114,4 @@
         });
     </script>
 @endsection
+

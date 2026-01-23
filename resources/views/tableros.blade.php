@@ -524,7 +524,6 @@ let isSearchingCell = false; // Flag para evitar actualizar seguimiento durante 
 function actualizarSeguimientoDebounced(section) {
     // NO actualizar si estamos buscando una celda
     if (isSearchingCell) {
-        console.log(`Saltando actualización de seguimiento porque isSearchingCell=true`);
         return;
     }
     
@@ -536,7 +535,6 @@ function actualizarSeguimientoDebounced(section) {
     // Esperar 1500ms antes de recargar el seguimiento (antes era 500ms)
     // Si se llama de nuevo antes de que termine el timeout, se cancela el anterior
     seguimientoDebounceTimers[section] = setTimeout(() => {
-        console.log(` Actualizando seguimiento de ${section} después del debounce...`);
         if (typeof recargarSeguimientoEspecifico === 'function') {
             recargarSeguimientoEspecifico(section);
         }
@@ -576,24 +574,17 @@ let modalOpening = false;
 function handleCellDoubleClick() {
     // ⚡ Evitar múltiples aperturas del modal
     if (modalOpening) {
-        console.log('Modal ya está abriéndose, ignorando doble clic');
         return;
     }
-    
-    console.log('🖱️ Doble clic detectado en celda');
     currentCell = this;
     const row = this.closest('tr');
-    console.log(' Row encontrado:', !!row);
-    console.log(' Row dataset:', row?.dataset);
+
     currentRowId = row?.dataset?.id;
     currentColumn = this.dataset.column;
 
     // Obtener el valor a mostrar (preferir textContent que tiene el nombre, no el ID)
     const currentValue = this.textContent.trim();
-    console.log(` Editando - ID: ${currentRowId}, Columna: ${currentColumn}, Valor: ${currentValue}`);
-    
     if (!currentRowId) {
-        console.error(' ERROR: No se pudo obtener el ID del registro');
         alert('Error: No se pudo identificar el registro');
         return;
     }
@@ -603,8 +594,6 @@ function handleCellDoubleClick() {
     const datalist = document.getElementById('autocompleteList');
     const modalTitle = document.getElementById('editModalTitle');
     const hint = document.getElementById('editHint');
-    
-    console.log('Modal encontrado:', !!modal);
     if (modal) {
         modalOpening = true;
         // Configurar título según la columna
@@ -637,7 +626,6 @@ function handleCellDoubleClick() {
         input.focus();
         input.select();
     } else {
-        console.error('Modal no encontrado');
     }
 }
 
@@ -674,9 +662,6 @@ function setupAutocomplete(type) {
             } else if (type === 'tela') {
                 searchUrl = '/search-telas';
             }
-            
-            console.log(` Buscando ${type}: "${query}"`);
-            
             fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
                 .then(response => {
                     if (!response.ok) {
@@ -695,9 +680,6 @@ function setupAutocomplete(type) {
                     } else if (type === 'tela' && data.telas) {
                         items = data.telas;
                     }
-                    
-                    console.log(` Encontrados ${items.length} resultados para ${type}`);
-                    
                     items.forEach(item => {
                         const option = document.createElement('option');
                         if (type === 'operario') {
@@ -722,13 +704,10 @@ function setupAutocomplete(type) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('JavaScript cargado para edición de celdas y filtros');
-
     // Función para agregar registros a la tabla dinámicamente
     window.agregarRegistrosATabla = function(registros, section) {
         const table = document.querySelector(`table[data-section="${section}"]`);
         if (!table) {
-            console.error('Tabla no encontrada para sección:', section);
             return;
         }
 
@@ -807,8 +786,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 paginationInfo.textContent = `Mostrando ${start}-${end} de ${total} registros`;
             }
         }
-
-        console.log(`Agregados ${registros.length} registros a la tabla de ${section}`);
     };
 
     // Función para hacer celdas editables con doble click
@@ -823,7 +800,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             window.editableCellListenerAttached = true;
-            console.log(' Event delegation para celdas editables adjuntado UNA sola vez');
         }
     }
 
@@ -881,8 +857,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Datos a enviar (permitir agregar campos adicionales cuando se requiera)
         const payload = { [columnName]: newValue, section: section };
-        console.log(` Columna original: ${currentColumn}, Columna mapeada: ${columnName}`);
-
         // Mapear PARADAS PROGRAMADAS -> TIEMPO PARA PROGRAMADA (segundos)
         function mapParadaToSeconds(valor) {
             const v = (valor || '').toString().trim().toUpperCase();
@@ -982,7 +956,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         } catch (error) {
-            console.error(' Error al buscar/crear:', error);
             isSearchingCell = false; // Resetear también en caso de error
             hideLoading();
             alert('Error al procesar el cambio');
@@ -997,9 +970,6 @@ document.addEventListener('DOMContentLoaded', function() {
             payload[currentColumn] = newValue; // Asegurar que el payload tiene el valor correcto
         }
 
-        console.log(`📤 Enviando PATCH a /tableros/${currentRowId}`);
-        console.log(` Payload:`, payload);
-        
         const patchStart = performance.now();
         
         //  FIX: Actualizar la celda INMEDIATAMENTE en el front (Optimistic Update)
@@ -1007,7 +977,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
             currentCell.dataset.value = displayName;
             currentCell.textContent = displayName;
-            console.log(` Celda actualizada INMEDIATAMENTE en el front: ${displayName}`);
         } else if (currentColumn !== 'paradas_programadas') {
             // Para otros campos que no son paradas_programadas, actualizar también inmediatamente
             currentCell.dataset.value = newValue;
@@ -1028,9 +997,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            console.log(` Respuesta del servidor:`, data);
-            console.log(` data.data existe:`, !!data.data);
-            console.log(` data.data contenido:`, data.data);
+
+
             const totalTime = performance.now() - startTime;
             console.log(`⏱️ TIMINGS TOTALES:
             - Búsqueda: ${timings.searchRequest?.toFixed(2) || 'N/A'}ms
@@ -1041,51 +1009,42 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 //  FIX: Si se cambió una relación (operario, máquina, tela), obtener el nombre actualizado del servidor
                 if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn) && data.data) {
-                    console.log(` Intentando extraer relación de data.data para columna: ${currentColumn}`);
                     // El servidor devolvió el registro actualizado con las relaciones cargadas
                     let displayValue = displayName;
                     
                     if (currentColumn === 'hora_id' && data.data.hora && typeof data.data.hora === 'object') {
                         displayValue = data.data.hora.hora;
-                        console.log(` Extraído hora: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].hora = data.data.hora;
                         }
                     } else if (currentColumn === 'operario_id' && data.data.operario && typeof data.data.operario === 'object') {
                         displayValue = data.data.operario.name;
-                        console.log(` Extraído operario: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].operario = data.data.operario;
                         }
                     } else if (currentColumn === 'maquina_id' && data.data.maquina && typeof data.data.maquina === 'object') {
                         displayValue = data.data.maquina.nombre_maquina;
-                        console.log(` Extraído maquina: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].maquina = data.data.maquina;
                         }
                     } else if (currentColumn === 'tela_id' && data.data.tela && typeof data.data.tela === 'object') {
                         displayValue = data.data.tela.nombre_tela;
-                        console.log(` Extraído tela: ${displayValue}`);
                         // Actualizar el objeto local también
                         if (registrosMap[section] && registrosMap[section][currentRowId]) {
                             registrosMap[section][currentRowId].tela = data.data.tela;
                         }
                     } else {
-                        console.log(` No se encontró relación en data.data. data.data.operario:`, data.data.operario, 'data.data.maquina:', data.data.maquina, 'data.data.tela:', data.data.tela, 'data.data.hora:', data.data.hora);
                     }
                     
                     currentCell.dataset.value = displayValue;
                     currentCell.textContent = displayValue;
-                    console.log(` Celda confirmada con nombre desde servidor: ${displayValue}`);
                 } else if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn)) {
-                    console.log(` No hay data.data para extraer, usando displayName: ${displayName}`);
                     // Asegurar que se muestra el displayName (ya actualizado en optimistic update)
                     currentCell.dataset.value = displayName;
                     currentCell.textContent = displayName;
-                    console.log(` Celda confirmada con: ${displayName}`);
                 } else {
                     currentCell.dataset.value = newValue;
                     currentCell.textContent = formatDisplayValue(currentColumn, newValue);
@@ -1093,11 +1052,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Si se editó una celda dependiente, actualizar también tiempo_disponible, meta y eficiencia
                 if (['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad', 'paradas_programadas'].includes(currentColumn)) {
-                    console.log('Actualizando celdas calculadas:', data.data);
-                    console.log('data.data existe:', !!data.data);
-                    console.log('data.data.tiempo_disponible:', data.data?.tiempo_disponible);
-                    console.log('data.data.meta:', data.data?.meta);
-                    console.log('data.data.eficiencia:', data.data?.eficiencia);
+
+
+
 
                     // Si cambiamos paradas_programadas y el backend no devuelve tpp, actualizarlo localmente también
                     if (currentColumn === 'paradas_programadas') {
@@ -1110,23 +1067,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     const tiempoDisponibleCell = currentCell.closest('tr').querySelector('[data-column="tiempo_disponible"]');
-                    console.log('tiempoDisponibleCell encontrado:', !!tiempoDisponibleCell);
                     if (tiempoDisponibleCell && data.data && data.data.tiempo_disponible !== undefined) {
                         tiempoDisponibleCell.dataset.value = data.data.tiempo_disponible;
                         tiempoDisponibleCell.textContent = formatDisplayValue('tiempo_disponible', data.data.tiempo_disponible);
-                        console.log('Tiempo disponible actualizado:', data.data.tiempo_disponible);
                     }
 
                     const metaCell = currentCell.closest('tr').querySelector('[data-column="meta"]');
-                    console.log('metaCell encontrado:', !!metaCell);
                     if (metaCell && data.data && data.data.meta !== undefined) {
                         metaCell.dataset.value = data.data.meta;
                         metaCell.textContent = formatDisplayValue('meta', data.data.meta);
-                        console.log('Meta actualizada:', data.data.meta);
                     }
 
                     const eficienciaCell = currentCell.closest('tr').querySelector('[data-column="eficiencia"]');
-                    console.log('eficienciaCell encontrado:', !!eficienciaCell);
                     if (eficienciaCell && data.data && data.data.eficiencia !== undefined) {
                         eficienciaCell.dataset.value = data.data.eficiencia;
                         eficienciaCell.textContent = formatDisplayValue('eficiencia', data.data.eficiencia);
@@ -1136,14 +1088,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (newClass) {
                             eficienciaCell.classList.add(newClass);
                         }
-                        console.log('Eficiencia actualizada:', data.data.eficiencia);
                     }
 
                     // Recalcular en el front como respaldo inmediato con los valores visibles
                     try {
                         recalculateRowDerivedValues(currentCell.closest('tr'));
                     } catch (e) {
-                        console.warn('Recalculo local fallido:', e);
                     }
                 }
 
@@ -1155,13 +1105,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification('Cambios guardados correctamente', 'success');
             } else {
                 hideLoading();
-                console.error(' Error del servidor:', data.message);
-                console.error(' Respuesta completa:', data);
+
                 alert('Error al guardar: ' + data.message);
             }
         })
         .catch(error => {
-            console.error(' Error de red:', error);
             hideLoading();
             alert('Error al guardar los cambios: ' + error.message);
         });
@@ -1246,10 +1194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log(' Registro duplicado exitosamente:', data.registro);
-                
                 // Agregar el registro a la tabla INMEDIATAMENTE (sin esperar WebSocket)
-                console.log('⚡ Agregando registro a la tabla inmediatamente...');
                 agregarRegistroTiempoReal(data.registro, section);
                 
                 // Ocultar loading
@@ -1258,13 +1203,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Mostrar notificación de éxito
                 showNotification('Registro duplicado correctamente', 'success');
             } else {
-                console.error('Error al duplicar:', data.message);
                 hideLoading();
                 alert('Error al duplicar el registro: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             hideLoading();
             alert('Error al duplicar el registro');
         });
@@ -1294,7 +1237,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function confirmDeleteRegistro() {
         // Prevenir múltiples clics
         if (isDeleting) {
-            console.log('⏳ Ya hay una eliminación en proceso...');
             return;
         }
 
@@ -1328,16 +1270,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (table) {
                         const tbody = table.querySelector('tbody');
                         const remainingRows = tbody ? tbody.querySelectorAll('tr[data-id]').length : 0;
-                        
-                        console.log(`Filas restantes en la página: ${remainingRows}`);
-                        
                         // Si no quedan filas, ir a la página anterior
                         if (remainingRows === 0) {
                             const urlParams = new URLSearchParams(window.location.search);
                             const currentPage = parseInt(urlParams.get('page')) || 1;
                             
                             if (currentPage > 1) {
-                                console.log(`Página vacía, redirigiendo a página ${currentPage - 1}`);
                                 window.isRedirecting = true;
                                 
                                 // Esperar un poco antes de redirigir para evitar bucles
@@ -1376,8 +1314,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log(' Registro eliminado del servidor:', id);
-                
                 // Ocultar loading
                 hideLoading();
                 
@@ -1389,14 +1325,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     detail: { id, section } 
                 }));
             } else {
-                console.error('Error al eliminar:', data.message);
                 hideLoading();
                 // Si falla, recargar la página para restaurar el estado correcto
                 setTimeout(() => location.reload(), 1000);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             hideLoading();
             alert('Error al eliminar el registro');
             // Re-habilitar el botón si hay error
@@ -1461,7 +1395,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Mover attachEditableCellListeners fuera para que sea global
 window.attachEditableCellListeners = function() {
     const editableCells = document.querySelectorAll('.editable-cell');
-    console.log('Celdas editables encontradas:', editableCells.length);
     editableCells.forEach(cell => {
         cell.removeEventListener('dblclick', handleCellDoubleClick);
         cell.addEventListener('dblclick', handleCellDoubleClick);
@@ -1532,8 +1465,6 @@ function recalculateRowDerivedValues(row) {
 <script>
 // Initialize real-time listeners for all tableros
 function initializeRealtimeListeners() {
-    console.log('=== TABLEROS - Inicializando Echo para tiempo real ===');
-    console.log('window.Echo disponible:', !!window.Echo);
 
     // 🗺️ Inicializar el mapa de registros con los datos que ya están en las tablas
     // Esto es importante para que cuando se editen celdas, se actualice la relación correcta
@@ -1551,38 +1482,26 @@ function initializeRealtimeListeners() {
             // pero nos permite tener un registro incluso si solo hay datos en HTML
         });
     });
-    
-    console.log(' Mapa de registros inicializado. Contenido:', registrosMap);
-
     if (!window.Echo) {
-        console.error(' Echo NO está disponible. Reintentando en 500ms...');
         setTimeout(initializeRealtimeListeners, 500);
         return;
     }
 
     // Verificar si ya hay suscripciones activas (de seguimiento-modulos)
     if (window.tablerosChannelSubscribed) {
-        console.log(' Listeners de tableros ya inicializados, omitiendo...');
         return;
     }
     
     window.tablerosChannelSubscribed = true;
-    console.log(' Echo disponible. Suscribiendo a canales...');
-
     // Canal de Producción
     const produccionChannel = window.Echo.channel('produccion');
     produccionChannel.subscribed(() => {
-        console.log(' Suscrito al canal "produccion"');
     });
     produccionChannel.error((error) => {
-        console.error(' Error en canal "produccion":', error);
     });
     produccionChannel.listen('ProduccionRecordCreated', (e) => {
-        console.log('🎉 Evento ProduccionRecordCreated recibido!', e);
-        
         // Si es un evento de eliminación
         if (e.registro && e.registro.deleted) {
-            console.log('🗑️ Eliminando registro ID:', e.registro.id);
             const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
             if (row) {
                 row.style.transition = 'opacity 0.3s ease';
@@ -1591,7 +1510,6 @@ function initializeRealtimeListeners() {
             }
             
             // También notificar al seguimiento para que se actualice
-            console.log(' Notificando actualización al seguimiento de producción...');
             if (typeof recargarSeguimientoEspecifico === 'function') {
                 recargarSeguimientoEspecifico('produccion');
             }
@@ -1603,17 +1521,12 @@ function initializeRealtimeListeners() {
     // Canal de Polo
     const poloChannel = window.Echo.channel('polo');
     poloChannel.subscribed(() => {
-        console.log(' Suscrito al canal "polo"');
     });
     poloChannel.error((error) => {
-        console.error(' Error en canal "polo":', error);
     });
     poloChannel.listen('PoloRecordCreated', (e) => {
-        console.log('🎉 Evento PoloRecordCreated recibido!', e);
-        
         // Si es un evento de eliminación
         if (e.registro && e.registro.deleted) {
-            console.log('🗑️ Eliminando registro ID:', e.registro.id);
             const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
             if (row) {
                 row.style.transition = 'opacity 0.3s ease';
@@ -1622,7 +1535,6 @@ function initializeRealtimeListeners() {
             }
             
             // También notificar al seguimiento para que se actualice
-            console.log(' Notificando actualización al seguimiento de polos...');
             if (typeof recargarSeguimientoEspecifico === 'function') {
                 recargarSeguimientoEspecifico('polos');
             }
@@ -1634,25 +1546,19 @@ function initializeRealtimeListeners() {
     // Canal de Corte
     const corteChannel = window.Echo.channel('corte');
     corteChannel.subscribed(() => {
-        console.log(' Suscrito al canal "corte"');
     });
     corteChannel.error((error) => {
-        console.error(' Error en canal "corte":', error);
     });
     corteChannel.listen('CorteRecordCreated', (e) => {
-        console.log('🎉 Evento CorteRecordCreated recibido!', e);
-        
         // ⚡ OPTIMIZACIÓN: Solo procesar si la tabla de corte está visible
         // El dashboard-tables-corte.blade.php tiene su propio listener
         const corteTable = document.querySelector('table[data-section="corte"]');
         if (!corteTable) {
-            console.log('Tabla de corte no visible, ignorando evento');
             return;
         }
         
         // Si es un evento de eliminación
         if (e.registro && e.registro.deleted) {
-            console.log('🗑️ Eliminando registro ID:', e.registro.id);
             const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
             if (row) {
                 row.style.transition = 'opacity 0.3s ease';
@@ -1664,19 +1570,13 @@ function initializeRealtimeListeners() {
             agregarRegistroTiempoReal(e.registro, 'corte');
         }
     });
-
-    console.log(' Todos los listeners configurados');
 }
 
 // Función para agregar un registro en tiempo real a la tabla
 function agregarRegistroTiempoReal(registro, section) {
-    console.log(`Agregando registro en tiempo real a sección: ${section}`, registro);
-    
     const table = document.querySelector(`table[data-section="${section}"]`);
     if (!table) {
-        console.warn(`Tabla no encontrada para sección: ${section}`);
         // Aún así, actualizar el seguimiento con debounce
-        console.log(' Actualizando seguimiento aunque no haya tabla visible...');
         if (typeof actualizarSeguimientoDebounced === 'function') {
             actualizarSeguimientoDebounced(section);
         }
@@ -1685,14 +1585,12 @@ function agregarRegistroTiempoReal(registro, section) {
 
     const tbody = table.querySelector('tbody');
     if (!tbody) {
-        console.warn(`tbody no encontrado en tabla de sección: ${section}`);
         return;
     }
 
     // Verificar si el registro ya existe
     const existingRow = tbody.querySelector(`tr[data-id="${registro.id}"]`);
     if (existingRow) {
-        console.log(`Registro ${registro.id} ya existe, actualizando...`);
         // Actualizar fila existente
         actualizarFilaExistente(existingRow, registro, section);
         // ⚡ OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
@@ -1811,9 +1709,6 @@ function agregarRegistroTiempoReal(registro, section) {
 
     // 🗺️ Guardar referencia al registro para poder actualizarlo si se edita
     registrosMap[section][registro.id] = registro;
-
-    console.log(` Registro ${registro.id} agregado a la tabla de ${section}`);
-    
     // ⚡ OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
     if (typeof actualizarSeguimientoDebounced === 'function') {
         actualizarSeguimientoDebounced(section);
@@ -1924,7 +1819,6 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         } else if (tabText.includes('corte')) {
             currentSection = 'corte';
         }
-        console.log(' Tablero detectado por tab-card activo:', currentSection);
     } else {
         // Método 2: Buscar el contenedor visible (sin display: none)
         const visibleTab = document.querySelector('.chart-placeholder:not([style*="display: none"])');
@@ -1936,7 +1830,6 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
                 else if (xShow.includes('corte')) currentSection = 'corte';
             }
         }
-        console.log(' Tablero detectado por contenedor visible:', currentSection);
     }
     
     // Construir URL con filtros
@@ -1953,22 +1846,15 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
     
     // Buscar el contenedor del componente de seguimiento por ID específico
     const containerId = `seguimiento-container-${currentSection}`;
-    console.log(` Buscando contenedor con ID: ${containerId}`);
-    
     const seguimientoContainer = document.getElementById(containerId);
     
     if (!seguimientoContainer) {
-        console.log(` No se encontró contenedor de seguimiento para ${currentSection}`);
         console.log(' Contenedores disponibles:', 
             Array.from(document.querySelectorAll('[id^="seguimiento-container-"]')).map(el => el.id)
         );
-        console.log(' Recargando página completa...');
         window.location.href = url.toString();
         return;
     }
-    
-    console.log(' Contenedor de seguimiento encontrado:', seguimientoContainer);
-    
     // Mostrar indicador de carga
     seguimientoContainer.style.opacity = '0.5';
     seguimientoContainer.style.pointerEvents = 'none';
@@ -1987,20 +1873,15 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         return response.text();
     })
     .then(html => {
-        console.log('HTML recibido para seguimiento');
-        
         // Crear un documento temporal para parsear el HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
         // Buscar el nuevo contenedor de seguimiento en el HTML recibido por ID
         const newContainerId = `seguimiento-container-${currentSection}`;
-        console.log(` Buscando nuevo contenedor con ID: ${newContainerId}`);
-        
         const newSeguimientoContainer = tempDiv.querySelector(`#${newContainerId}`);
         
         if (!newSeguimientoContainer) {
-            console.log(' No se encontró nuevo contenedor en HTML recibido');
             console.log(' IDs disponibles en HTML recibido:', 
                 Array.from(tempDiv.querySelectorAll('[id^="seguimiento-container-"]')).map(el => el.id)
             );
@@ -2008,28 +1889,20 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         
         if (newSeguimientoContainer && seguimientoContainer) {
             // Reemplazar el contenido completo del contenedor
-            console.log('🔄 Reemplazando contenido del contenedor...');
             seguimientoContainer.innerHTML = newSeguimientoContainer.innerHTML;
-            console.log(' Componente de seguimiento actualizado completamente');
-            
             // Restaurar opacidad
             seguimientoContainer.style.opacity = '1';
             seguimientoContainer.style.pointerEvents = 'auto';
             
             // Actualizar URL sin recargar
             window.history.pushState({}, '', url.toString());
-            
-            console.log(' Filtro aplicado exitosamente');
             return;
         }
         
         // Si no se encontró el nuevo contenedor, recargar la página
-        console.log(' No se pudo actualizar el componente, recargando página...');
         window.location.href = url.toString();
     })
     .catch(error => {
-        console.error('Error al aplicar filtros:', error);
-        
         // Restaurar opacidad
         if (seguimientoContainer) {
             seguimientoContainer.style.opacity = '1';
@@ -2042,7 +1915,6 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
 
 // Función para actualizar tabla de seguimiento
 function updateSeguimientoTable(section, data) {
-    console.log(`Actualizando tabla de seguimiento para ${section}`, data);
     // TODO: Implementar actualización dinámica de la tabla de seguimiento
     // Por ahora solo mostramos un mensaje en consola
 }
@@ -2058,41 +1930,29 @@ if (document.readyState === 'loading') {
 
 // Paginación AJAX sin recargar la página
 function initializePaginationAjax() {
-    console.log(' Inicializando event listeners de paginación AJAX');
-    
     document.addEventListener('click', function(e) {
-        console.log('👆 Click detectado en:', e.target);
-        
         // Buscar si el click fue en un enlace o botón de paginación
         const paginationLink = e.target.closest('.pagination-link, .pagination-btn:not([disabled])');
         
         if (paginationLink) {
-            console.log(' Click en elemento de paginación:', paginationLink);
             console.log(' Texto del elemento:', paginationLink.textContent.trim());
-            console.log(' Tag:', paginationLink.tagName);
-            console.log(' Clases:', paginationLink.className);
-            
+
             // Si es un botón activo, no hacer nada
             if (paginationLink.classList.contains('active')) {
-                console.log(' Es el botón activo, no hacer nada');
                 return;
             }
             
             e.preventDefault();
-            console.log('✋ Evento preventDefault aplicado');
-            
             let page = null;
             
             // Primero intentar obtener de data-page
             if (paginationLink.dataset.page) {
                 page = paginationLink.dataset.page;
-                console.log(' Página obtenida del data-page:', page);
             }
             // Si es un enlace, obtener la página de la URL
             else if (paginationLink.tagName === 'A' && paginationLink.href) {
                 const url = new URL(paginationLink.href);
                 page = url.searchParams.get('page');
-                console.log('🔗 Página obtenida del enlace:', page);
             }
             // Si es un botón, obtener el número del texto
             else if (paginationLink.tagName === 'BUTTON') {
@@ -2100,12 +1960,10 @@ function initializePaginationAjax() {
                 // Verificar si es un número
                 if (!isNaN(pageText)) {
                     page = pageText;
-                    console.log('🔘 Página obtenida del botón:', page);
                 }
             }
             
             if (!page) {
-                console.log(' No se pudo obtener el número de página');
                 return;
             }
             
@@ -2116,47 +1974,30 @@ function initializePaginationAjax() {
             if (paginationContainer) {
                 section = paginationContainer.dataset.section || 'produccion';
             }
-            
-            console.log(' Sección detectada:', section);
-            
-            console.log(' Sección determinada:', section);
-            
+
             // ✨ ACTUALIZAR BOTÓN ACTIVO INMEDIATAMENTE (antes del AJAX)
             updateActiveButtonImmediately(paginationLink, section, page);
             
             // Hacer petición AJAX
             loadPage(page, section);
         } else {
-            console.log(' Click NO fue en elemento de paginación');
         }
     });
-    
-    console.log(' Event listeners de paginación inicializados');
 }
 
 // Función para actualizar el botón activo INMEDIATAMENTE al hacer click
 function updateActiveButtonImmediately(clickedElement, section, page) {
-    console.log(`🚀 Actualizando botón activo INMEDIATAMENTE: página ${page} en ${section}`);
-    console.log('Elemento clickeado:', clickedElement);
-    console.log('Clases antes:', clickedElement.className);
-    
+
+
     const paginationContainer = document.querySelector(`[data-section="${section}"]`);
     if (!paginationContainer) {
-        console.error(' No se encontró paginationContainer para sección:', section);
         return;
     }
-    
-    console.log(' paginationContainer encontrado:', paginationContainer);
-    
     const paginationNav = paginationContainer.querySelector('.pagination');
     if (!paginationNav) {
-        console.error(' No se encontró paginationNav dentro de:', paginationContainer);
-        console.log(' Elementos dentro del container:', paginationContainer.innerHTML);
-        
+
         // Buscar en todo el documento como fallback
         const allPaginations = document.querySelectorAll('.pagination');
-        console.log(' Todas las paginaciones encontradas:', allPaginations.length);
-        
         if (allPaginations.length > 0) {
             // Buscar la paginación de la sección correcta
             let fallbackNav = null;
@@ -2165,7 +2006,6 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
                 const paginationContainer = pagination.closest('.table-pagination');
                 if (paginationContainer && paginationContainer.dataset.section === section) {
                     fallbackNav = pagination;
-                    console.log(` Paginación encontrada para sección ${section}:`, fallbackNav);
                 }
             });
             
@@ -2190,19 +2030,13 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
             
             // PASO 2: Agregar 'active' al elemento clickeado
             clickedElement.classList.add('active');
-            console.log(` Clases después de agregar active: ${clickedElement.className}`);
-            
             // PASO 3: Aplicar estilos directamente SOLO al elemento clickeado
             clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
             clickedElement.style.color = 'white';
             clickedElement.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.4)';
-            console.log(' Estilos aplicados directamente al elemento clickeado');
         }
         return;
     }
-    
-    console.log(' Elementos encontrados en paginación:');
-    
     // PASO 1: Quitar 'active' y estilos de TODOS los botones/enlaces
     paginationNav.querySelectorAll('button, a').forEach((element, index) => {
         const hadActive = element.classList.contains('active');
@@ -2218,14 +2052,10 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
     
     // PASO 2: Agregar 'active' al elemento clickeado
     clickedElement.classList.add('active');
-    console.log(` Clases después de agregar active: ${clickedElement.className}`);
-    
     // PASO 3: Aplicar estilos directamente SOLO al elemento clickeado
     clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
     clickedElement.style.color = 'white';
     clickedElement.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.4)';
-    console.log(' Estilos aplicados directamente al elemento clickeado');
-    
     // PASO 5: Actualizar barra de progreso inmediatamente (estimado)
     const progressFill = paginationContainer.querySelector('.progress-fill');
     if (progressFill) {
@@ -2243,14 +2073,11 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
         if (maxPage > 0) {
             const progressPercent = (parseInt(page) / maxPage) * 100;
             progressFill.style.width = progressPercent + '%';
-            console.log(` Barra de progreso actualizada INMEDIATAMENTE: ${progressPercent}%`);
         }
     }
 }
 
 function loadPage(page, section) {
-    console.log(`Cargando página ${page} para sección ${section}`);
-    
     const url = new URL(window.location.origin + window.location.pathname);
     url.searchParams.set('page', page);
     
@@ -2285,8 +2112,6 @@ function loadPage(page, section) {
         return response.json();
     })
     .then(data => {
-        console.log('Datos recibidos:', data);
-        
         try {
             // Actualizar la tabla según la sección
             if (section === 'produccion' && data.registros) {
@@ -2305,10 +2130,7 @@ function loadPage(page, section) {
             
             // Actualizar URL sin recargar
             window.history.pushState({}, '', url.toString());
-            
-            console.log(' Tabla actualizada exitosamente');
         } catch (updateError) {
-            console.error('Error al actualizar tabla:', updateError);
             // No recargar la página, solo mostrar el error
         } finally {
             // Restaurar opacidad siempre
@@ -2324,7 +2146,6 @@ function loadPage(page, section) {
         }
     })
     .catch(error => {
-        console.error('Error al cargar página:', error);
         // NO recargar la página, solo restaurar el estado
         if (tableBody) {
             tableBody.style.opacity = '1';
@@ -2337,15 +2158,10 @@ function loadPage(page, section) {
 function updatePaginationLinks(pagination, section) {
     const paginationContainer = document.querySelector(`[data-section="${section}"]`);
     if (!paginationContainer || !pagination) return;
-    
-    console.log(`🔄 Actualizando paginación para ${section}, página actual: ${pagination.current_page}`);
-    
     // Actualizar el HTML de los enlaces de paginación directamente desde el servidor
     const paginationControls = paginationContainer.querySelector('.pagination-controls');
     if (paginationControls && pagination.links_html) {
         paginationControls.innerHTML = pagination.links_html;
-        console.log(` Enlaces de paginación actualizados desde el servidor`);
-        
         // Re-attach event listeners after updating pagination HTML
         attachPaginationClickListeners(section);
     }
@@ -2361,15 +2177,10 @@ function updatePaginationLinks(pagination, section) {
     if (progressFill && pagination.last_page > 0) {
         const progressPercent = (pagination.current_page / pagination.last_page) * 100;
         progressFill.style.width = progressPercent + '%';
-        console.log(` Barra de progreso: ${progressPercent}%`);
     }
-    
-    console.log(` Paginación actualizada para ${section}`);
 }
 
 function updateTableContent(registros, columns, section) {
-    console.log(`Actualizando contenido de tabla para ${section}`, registros.length, 'registros');
-    
     // Buscar el tbody de la sección correcta
     const allTableBodies = document.querySelectorAll('.table-body');
     let tableBody = null;
@@ -2379,16 +2190,12 @@ function updateTableContent(registros, columns, section) {
         const table = tbody.closest('table');
         if (table && table.dataset.section === section) {
             tableBody = tbody;
-            console.log(` Tabla encontrada para sección ${section}:`, table);
         }
     });
     
     if (!tableBody) {
-        console.error(`No se encontró tabla para la sección: ${section}`);
         return;
     }
-    
-    console.log('Tabla encontrada, actualizando contenido...');
     tableBody.innerHTML = '';
     
     registros.forEach(registro => {
@@ -2446,14 +2253,10 @@ function updateTableContent(registros, columns, section) {
         
         tableBody.appendChild(row);
     });
-    
-    console.log(`Tabla actualizada con ${registros.length} registros`);
-    
     // Reinicializar event listeners
     if (typeof window.attachEditableCellListeners === 'function') {
         window.attachEditableCellListeners();
     } else {
-        console.warn('attachEditableCellListeners no está disponible');
     }
 }
 

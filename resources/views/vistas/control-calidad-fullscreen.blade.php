@@ -499,8 +499,6 @@
 
     @vite(['resources/js/app.js'])
     <script>
-        console.log(' Echo cargado desde Vite:', typeof window.Echo);
-
         document.addEventListener('DOMContentLoaded', function() {
             function closeFullscreen() {
                 const currentParams = new URLSearchParams(window.location.search);
@@ -669,8 +667,6 @@
             if (typeof window.Echo !== 'undefined') {
                 window.Echo.channel('control-calidad')
                     .listen('ControlCalidadUpdated', (e) => {
-                        console.log('Control de Calidad actualizado:', e);
-                        
                         if (e.action === 'added') {
                             // Agregar nueva orden a la tabla correspondiente
                             agregarOrden(e.orden, e.tipo);
@@ -684,3 +680,4 @@
     </script>
 </body>
 </html>
+

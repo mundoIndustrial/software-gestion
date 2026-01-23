@@ -551,7 +551,6 @@ let tempUbicaciones = []; // Almacenar ubicaciones personalizadas temporalmente
 const originalTecnicas = tecnicasSeleccionadas;
 tecnicasSeleccionadas = new Proxy(originalTecnicas, {
     set(target, property, value) {
-        console.log(`🔔 tecnicasSeleccionadas.${property} = ${value}`);
         console.trace(' Stack trace:');
         target[property] = value;
         return true;
@@ -614,8 +613,6 @@ function manejarImagenes(files) {
 
     // Si es una imagen existente (tiene ID), borrarla inmediatamente de la BD
     if (imagenAEliminar.existing && imagenAEliminar.id) {
-        console.log('🗑️ Borrando imagen de la BD:', imagenAEliminar.id);
-        
         // Obtener cotizacion_id de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const cotizacionId = urlParams.get('editar');
@@ -636,9 +633,7 @@ function manejarImagenes(files) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    console.log(' Imagen borrada de la BD:', imagenAEliminar.id);
                 } else {
-                    console.error(' Error al borrar imagen:', data.message);
                 }
             })
             .catch(error => console.error(' Error en petición:', error));
@@ -647,8 +642,6 @@ function manejarImagenes(files) {
     
     // SIEMPRE quitar la imagen del array (sea existente o nueva)
     imagenesSeleccionadas.splice(index, 1);
-    console.log('📸 imagenesSeleccionadas después de eliminar:', imagenesSeleccionadas);
-    
     renderizarImagenes();
 }
 */
@@ -657,10 +650,8 @@ function manejarImagenes(files) {
 function agregarTecnica() {
     const selector = document.getElementById('selector_tecnicas');
     const tecnica = selector.value;
-    
-    console.log('➕ Agregando técnica:', tecnica);
-    console.log(' tecnicasSeleccionadas antes:', tecnicasSeleccionadas);
-    console.log(' Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
+
+
     console.log(' Es array?', Array.isArray(tecnicasSeleccionadas));
     
     if (!tecnica) {
@@ -690,8 +681,7 @@ function agregarTecnica() {
     }
     
     tecnicasSeleccionadas.push(tecnica);
-    console.log(' tecnicasSeleccionadas después de push:', tecnicasSeleccionadas);
-    console.log(' Length después de push:', tecnicasSeleccionadas.length);
+
     selector.value = '';
     renderizarTecnicas();
 }
@@ -777,12 +767,9 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     //  NO LLAMAR guardarTecnicasEnBD() AQUÍ
     // Las técnicas se guardarán DESPUÉS de crear la cotización en el servidor
     // Esto evita crear una cotización vacía de borrador
-    console.log(' Preparando envío de cotización con técnicas...');
-
     // Detectar cuál botón se presionó PRIMERO
     const submitButton = e.submitter;
     if (!submitButton) {
-        console.error(' No se detectó el botón de envío');
         return;
     }
 
@@ -809,13 +796,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const cliente = clienteInput?.value || '';
     const asesora = document.getElementById('asesora')?.value || '';
     const observacionesTecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
-
-    console.log(' Valores sincronizados:', {
-        cliente: cliente,
-        asesora: asesora,
-        observacionesTecnicas: observacionesTecnicas
-    });
-
     if (!cliente || !asesora) {
         Swal.fire(' Campos Incompletos', 'Completa el cliente y otros campos obligatorios', 'warning');
         document.querySelectorAll('button[type="submit"]').forEach(btn => {
@@ -830,10 +810,9 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const action = submitButton.value;
     
     console.log('🔵 Botón presionado:', submitButton?.textContent?.trim());
-    console.log('🔵 Acción:', action);
-    console.log('⏳ Enviando cotización...');
-    console.log(' tecnicasSeleccionadas ANTES de enviar:', tecnicasSeleccionadas);
-    console.log(' Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
+
+
+
     console.log(' Es array?', Array.isArray(tecnicasSeleccionadas));
 
     // Determinar si es edición o creación
@@ -891,26 +870,18 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         tipo_venta_bordado: headerTipoVentaElement?.value || ''
     };
 
-    console.log(' Datos a enviar:', data);
-    console.log(' window.tecnicasAgregadas:', window.tecnicasAgregadas);
-    console.log(' Observaciones generales:', observacionesDelDOM);
 
     // Verificar si hay imágenes nuevas EN EL LOGO O EN LAS TÉCNICAS
     const tieneImagenesNuevas = imagenesSeleccionadas.some(img => !img.existing);
     const tieneImagenesEnTecnicas = (data.tecnicas || []).some(tecnica => {
-        console.log(' Checando técnica:', tecnica.tipo_logo.nombre, 'prendas:', tecnica.prendas.length);
         return (tecnica.prendas || []).some(prenda => {
-            console.log('  🔹 Checando prenda:', prenda.nombre_prenda, 'imagenes_files:', !!prenda.imagenes_files, 'length:', prenda.imagenes_files ? prenda.imagenes_files.length : 0);
             return prenda.imagenes_files && prenda.imagenes_files.length > 0;
         });
     });
     const debeUsarFormData = tieneImagenesNuevas || tieneImagenesEnTecnicas;
-    
-    console.log('📸 ¿Tiene imágenes nuevas en LOGO?', tieneImagenesNuevas);
-    console.log('📸 ¿Tiene imágenes en TÉCNICAS?', tieneImagenesEnTecnicas);
-    console.log(' ¿Debe usar FormData?', debeUsarFormData);
-    console.log(' window.tecnicasAgregadas:', window.tecnicasAgregadas);
-    
+
+
+
     if (debeUsarFormData) {
         // Si hay imágenes nuevas, usar FormData (un solo fetch)
         const formData = new FormData();
@@ -921,28 +892,20 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         }
 
         //  EXTRAER Y PROCESAR ARCHIVOS DE TÉCNICAS ANTES DE SERIALIZARLAS
-        console.log('📸 Procesando archivos de técnicas...');
-        console.log(' data.tecnicas ANTES de extraer:', data.tecnicas);
+
         let totalArchivosEnTecnicas = 0;
         
         // Crear versión sin archivos para JSON
         const tecnicasParaJSON = (data.tecnicas || []).map((tecnica, tecnicaIdx) => {
-            console.log(`🔵 Procesando técnica ${tecnicaIdx}:`, tecnica.tipo_logo.nombre);
-            console.log(`   Prendas en técnica ${tecnicaIdx}:`, tecnica.prendas.length);
-            
+
             return {
                 ...tecnica,
                 prendas: (tecnica.prendas || []).map((prenda, prendaIdx) => {
-                    console.log(`   🔹 Prenda ${prendaIdx}:`, prenda.nombre_prenda);
-                    console.log(`      imagenes_files existe:`, !!prenda.imagenes_files);
+
                     console.log(`      imagenes_files es array:`, Array.isArray(prenda.imagenes_files));
-                    console.log(`      imagenes_files length:`, prenda.imagenes_files ? prenda.imagenes_files.length : 0);
-                    
                     // Extraer archivos si existen
                     if (prenda.imagenes_files && Array.isArray(prenda.imagenes_files)) {
-                        console.log(`      Iterando ${prenda.imagenes_files.length} archivos...`);
                         prenda.imagenes_files.forEach((archivo, imgIdx) => {
-                            console.log(`        Archivo ${imgIdx}:`, archivo.name ? archivo.name : 'no es File', 'instanceof File:', archivo instanceof File);
                             if (archivo instanceof File) {
                                 const fieldName = `tecnica_${tecnicaIdx}_prenda_${prendaIdx}_img_${imgIdx}`;
                                 formData.append(fieldName, archivo);
@@ -964,9 +927,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 })
             };
         });
-        
-        console.log(` ${totalArchivosEnTecnicas} archivos extraídos de técnicas`);
-        console.log(' tecnicasParaJSON:', tecnicasParaJSON);
+
         data.tecnicas = tecnicasParaJSON;
 
         // Agregar datos JSON al FormData
@@ -990,13 +951,9 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         console.log('📤 FormData enviado (imagenes_a_borrar):', formData.get('imagenes_a_borrar'));
 
         // Enviar IDs de imágenes existentes para preservarlas
-        console.log('📸 imagenesSeleccionadas completo:', imagenesSeleccionadas);
         const imagenesExistentesIds = imagenesSeleccionadas
             .filter(img => img.existing)
             .map(img => img.id);
-
-        console.log('📸 Imágenes existentes a preservar:', imagenesExistentesIds);
-        
         // IMPORTANTE: Siempre enviar imagenes_existentes, aunque sea vacío
         formData.append('imagenes_existentes', JSON.stringify(imagenesExistentesIds));
 
@@ -1009,7 +966,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 }
             });
         } catch (error) {
-            console.error(' Error en el fetch con FormData:', error);
             throw error;
         }
     } else {
@@ -1021,9 +977,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         data.imagenes_existentes = imagenesSeleccionadas
             .filter(img => img.existing)
             .map(img => img.id);
-        
-        console.log('📤 Datos JSON a enviar:', data);
-        
         try {
             response = await fetch(url, {
                 method: method,
@@ -1034,7 +987,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 body: JSON.stringify(data)
             });
         } catch (error) {
-            console.error(' Error en el fetch con JSON:', error);
             throw error;
         }
     }
@@ -1047,7 +999,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             // Limpiar localStorage después del guardado exitoso
             if (typeof limpiarStorage === 'function') {
                 limpiarStorage();
-                console.log('✓ localStorage limpiado después del guardado');
             }
             
             Swal.fire({
@@ -1059,7 +1010,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 window.location.href = result.redirect;
             });
         } else {
-            console.error(' Respuesta del servidor indica error:', result);
             Swal.fire({
                 title: ' Error al Guardar',
                 text: result.message || 'No se pudo guardar la cotización',
@@ -1067,7 +1017,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             });
         }
     } catch (error) {
-        console.error(' Error en el fetch:', error);
         Swal.fire({
             title: ' Error en la Conexión',
             text: error.message || 'No se pudo conectar con el servidor',
@@ -1106,7 +1055,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             localStorage.setItem('cotizacion_bordado_datos', JSON.stringify(datos));
         } catch (error) {
-            console.error(' Error al guardar bordado:', error);
         }
     }
 
@@ -1135,7 +1083,6 @@ function cargarDatosBorrador(cotizacion) {
         }
         
         if (nombreCliente) {
-            console.log(' Cargando cliente:', nombreCliente);
             document.getElementById('header-cliente').value = nombreCliente;
             document.getElementById('cliente').value = nombreCliente;
         } else {
@@ -1153,10 +1100,8 @@ function cargarDatosBorrador(cotizacion) {
                 // Renderizar las técnicas seleccionadas
                 renderizarTecnicas();
             } else {
-                console.log(' Técnicas no es un array:', tecnicas);
             }
         } else {
-            console.log(' No se encontraron técnicas en logo_cotizacion');
         }
 
         // Cargar observaciones técnicas
@@ -1166,7 +1111,6 @@ function cargarDatosBorrador(cotizacion) {
 
         // Cargar tipo_venta
         if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.tipo_venta) {
-            console.log('💰 Tipo venta encontrado:', cotizacion.logo_cotizacion.tipo_venta);
             document.getElementById('header-tipo-venta').value = cotizacion.logo_cotizacion.tipo_venta;
             document.getElementById('tipo_venta_bordado').value = cotizacion.logo_cotizacion.tipo_venta;
         }
@@ -1206,13 +1150,10 @@ function cargarDatosBorrador(cotizacion) {
             imagenesSeleccionadas = imagenesNuevas;
             // IMPORTANTE: NO limpiar imagenesABorrar aquí
             // Se mantiene para rastrear imágenes que el usuario quiera borrar
-            
-            console.log('📸 Total imágenes cargadas:', imagenesSeleccionadas.length);
             renderizarImagenes();
         }
 
     } catch (error) {
-        console.error(' Error al cargar datos del borrador:', error);
     }
 }
 
@@ -1313,4 +1254,5 @@ function agregarObservacionDesdeBorrador(obs) {
 <script src="{{ asset('js/logo-cotizacion-tecnicas.js') }}"></script>
 
 @endsection
+
 

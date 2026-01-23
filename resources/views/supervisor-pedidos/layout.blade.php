@@ -411,7 +411,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error cargando notificaciones:', error);
                     document.getElementById('notificationList').innerHTML = `
                         <div class="notification-empty" style="padding: 1rem; text-align: center; color: #e74c3c;">
                             <p>Error al cargar notificaciones</p>
@@ -490,3 +489,4 @@
 
 </body>
 </html>
+

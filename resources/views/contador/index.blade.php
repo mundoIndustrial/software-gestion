@@ -12,13 +12,9 @@
                 const boton = event.target.closest('.btn-editar-costos');
                 const cotizacionId = boton.getAttribute('data-cotizacion-id');
                 const cliente = boton.getAttribute('data-cliente');
-                
-                console.log('Botón Editar Costos clickeado:', { cotizacionId, cliente });
-                
                 if (typeof abrirModalCalculoCostos === 'function') {
                     abrirModalCalculoCostos(cotizacionId, cliente);
                 } else {
-                    console.error('Función abrirModalCalculoCostos no disponible');
                     alert('Función abrirModalCalculoCostos no disponible');
                 }
             }
@@ -30,7 +26,6 @@
     
     // Re-registrar cuando se recargue la tabla
     document.addEventListener('tablaPendientesRecargada', function() {
-        console.log('Tabla recargada, re-registrando event listeners');
         registrarEventListeners();
     });
 </script>

@@ -570,12 +570,10 @@ function resetearFiltro(columna) {
 }
 
 function verDetallesPedido(pedidoId) {
-    console.log('Ver detalles del pedido:', pedidoId);
     window.location.href = `/asesores/pedidos-produccion/${pedidoId}`;
 }
 
 function verSeguimiento(pedidoId) {
-    console.log('Ver seguimiento del pedido:', pedidoId);
     window.location.href = `/asesores/pedidos-produccion/${pedidoId}/seguimiento`;
 }
 
@@ -836,3 +834,4 @@ document.addEventListener('click', function(event) {
     background: rgba(255, 255, 255, 0.15);
 }
 </style>
+

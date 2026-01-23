@@ -438,7 +438,6 @@ body.dark-theme .seguimiento-gray { background: rgba(160,174,192,0.2) !important
 
 <div class="records-table-container" id="seguimiento-{{ $section }}">
     <script>
-        console.log('=== SEGUIMIENTO RENDERIZADO: {{ $section }} ===');
         console.log('Módulos disponibles:', @json($modulosDisponibles));
         console.log('Total de horas:', @json(count($dataPorHora)));
     </script>
@@ -557,11 +556,9 @@ function updateSeguimientoTable(params) {
         return response.json();
     })
     .then(data => {
-        console.log(' Datos de seguimiento recibidos:', data);
         updateSeguimientoTableContent(data);
     })
     .catch(error => {
-        console.error('Error updating seguimiento table:', error);
         alert('Error al actualizar la tabla de seguimiento. Por favor, recarga la página.');
     });
 }
@@ -588,49 +585,36 @@ function getCurrentSection() {
 
 // Función para actualizar el contenido de la tabla de seguimiento
 function updateSeguimientoTableContent(seguimientoData, section = null) {
-    console.log(' Buscando tabla de seguimiento...');
-    
     let tableContainer = null;
     
     // Si se especifica una sección, buscar en su contenedor específico
     if (section) {
         const containerId = `seguimiento-container-${section}`;
-        console.log(` Buscando en contenedor específico: ${containerId}`);
-        
         const container = document.getElementById(containerId);
         if (container) {
             tableContainer = container.querySelector('.seguimiento-table');
-            console.log(` Contenedor encontrado, tabla=${!!tableContainer}`);
         } else {
-            console.error(` No se encontró el contenedor ${containerId}`);
         }
     }
     
     // Si no se encontró con la sección específica, buscar globalmente
     if (!tableContainer) {
-        console.log(' Buscando tabla globalmente con .seguimiento-table');
         tableContainer = document.querySelector('.seguimiento-table');
     }
     
     if (!tableContainer) {
-        console.error(' No se encontró ninguna tabla .seguimiento-table');
-        console.log(' Intentando buscar en todos los contenedores...');
-        
+
         // Intentar buscar en cada contenedor de sección
         const contenedores = ['seguimiento-container-produccion', 'seguimiento-container-polos', 'seguimiento-container-corte'];
         contenedores.forEach(id => {
             const container = document.getElementById(id);
             if (container) {
                 const tabla = container.querySelector('.seguimiento-table');
-                console.log(` Contenedor ${id}: tabla encontrada=${!!tabla}, visible=${container.offsetParent !== null}`);
             }
         });
         
         return;
     }
-    
-    console.log(' Tabla encontrada:', tableContainer);
-
     // Actualizar módulos disponibles
     const modulosDisponibles = seguimientoData.modulosDisponibles || [];
     const dataPorHora = seguimientoData.dataPorHora || {};
@@ -670,7 +654,6 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
         });
         totales.modulos = totalesNorm;
     } catch (err) {
-        console.warn('No se pudo recalcular seguimiento en front:', err);
     }
 
     // Reconstruir la tabla
@@ -753,10 +736,7 @@ function updateSeguimientoTableContent(seguimientoData, section = null) {
         html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${formatEfficiency(modTotal.eficiencia)}</td>`;
     });
     html += '</tr></tbody>';
-
-    console.log('🔄 Actualizando innerHTML de la tabla...');
     tableContainer.innerHTML = html;
-    console.log(' Tabla actualizada con nuevo HTML');
 }
 
 // Función auxiliar para formatear números
@@ -800,19 +780,12 @@ window.getEficienciaClass = function(eficiencia) {
 // TIEMPO REAL - Actualización automática
 // ============================================
 function initializeSeguimientoRealtime() {
-    console.log('=== SEGUIMIENTO - Inicializando tiempo real ===');
-    
     if (!window.Echo) {
-        console.log('Echo no disponible, reintentando...');
         setTimeout(initializeSeguimientoRealtime, 500);
         return;
     }
-
-    console.log(' Echo disponible, suscribiendo a canales...');
-    
     // Evitar suscripciones duplicadas
     if (window.seguimientoChannelSubscribed) {
-        console.log(' Ya hay una suscripción activa, omitiendo...');
         return;
     }
     
@@ -827,8 +800,6 @@ function initializeSeguimientoRealtime() {
 
 // Función para recargar los datos de seguimiento
 function recargarSeguimiento() {
-    console.log('Recargando datos de seguimiento...');
-    
     // Obtener los parámetros actuales de la URL
     const params = new URLSearchParams(window.location.search);
     const currentSection = getCurrentSection();
@@ -846,37 +817,27 @@ function recargarSeguimiento() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Datos de seguimiento recibidos:', data);
-        
         // Los datos pueden venir en data.seguimiento o directamente en data
         const seguimientoData = data.seguimiento || data;
         
         if (seguimientoData && seguimientoData.modulosDisponibles) {
-            console.log(' Actualizando tabla de seguimiento...');
-            console.log('Módulos:', seguimientoData.modulosDisponibles);
-            console.log('Totales:', seguimientoData.totales);
-            
+
+
             // Actualizar las variables globales
             window.seguimientoData = seguimientoData;
             
             // Redibujar la tabla usando la función existente
             updateSeguimientoTableContent(seguimientoData);
-            
-            console.log(' Tabla de seguimiento actualizada');
         } else {
-            console.error(' No se recibieron datos de seguimiento válidos');
-            console.error('Estructura recibida:', data);
+
         }
     })
     .catch(error => {
-        console.error('Error al recargar seguimiento:', error);
     });
 }
 
 // Función para recargar el seguimiento de una sección específica
 function recargarSeguimientoEspecifico(section) {
-    console.log(`🔄 Recargando datos de seguimiento para sección: ${section}`);
-    
     // Obtener los parámetros actuales de la URL
     const params = new URLSearchParams(window.location.search);
     
@@ -893,30 +854,22 @@ function recargarSeguimientoEspecifico(section) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(` Datos de seguimiento recibidos para ${section}:`, data);
-        
         // Los datos pueden venir en data.seguimiento o directamente en data
         const seguimientoData = data.seguimiento || data;
         
         if (seguimientoData && seguimientoData.modulosDisponibles) {
-            console.log(' Actualizando tabla de seguimiento...');
-            console.log('Módulos:', seguimientoData.modulosDisponibles);
-            console.log('Totales:', seguimientoData.totales);
-            
+
+
             // Actualizar las variables globales
             window.seguimientoData = seguimientoData;
             
             // Redibujar la tabla usando la función existente, pasando la sección
             updateSeguimientoTableContent(seguimientoData, section);
-            
-            console.log(` Tabla de seguimiento de ${section} actualizada`);
         } else {
-            console.error(' No se recibieron datos de seguimiento válidos');
-            console.error('Estructura recibida:', data);
+
         }
     })
     .catch(error => {
-        console.error(` Error al recargar seguimiento de ${section}:`, error);
     });
 }
 
@@ -934,3 +887,4 @@ if (!window.seguimientoRealtimeInitialized) {
     }
 }
 </script>
+

@@ -144,7 +144,6 @@
                 Swal.close();
             });
             UI.error('Error', 'No se pudo cargar la información');
-            console.error('Error:', error);
         }
     }
 
@@ -397,8 +396,6 @@
             });
         })
         .catch(error => {
-            console.error('Error al guardar cambios:', error);
-            
             // Cerrar modal de carga
             _ensureSwal(() => {
                 Swal.close();
@@ -519,15 +516,12 @@
     //  CRÍTICO: Esto se ejecuta INMEDIATAMENTE
     if (!window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage = new ImageStorageService(3);
-        console.log(' [INDEX] imagenesPrendaStorage inicializado INMEDIATAMENTE');
     }
     if (!window.imagenesTelaStorage) {
         window.imagenesTelaStorage = new ImageStorageService(3);
-        console.log(' [INDEX] imagenesTelaStorage inicializado INMEDIATAMENTE');
     }
     if (!window.imagenesReflectivoStorage) {
         window.imagenesReflectivoStorage = new ImageStorageService(3);
-        console.log(' [INDEX] imagenesReflectivoStorage inicializado INMEDIATAMENTE');
     }
     if (!window.telasAgregadas) {
         window.telasAgregadas = [];
@@ -660,3 +654,4 @@
 </style>
 
 @endpush
+

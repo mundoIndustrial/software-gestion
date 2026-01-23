@@ -512,7 +512,6 @@
                 modal.style.display = 'flex';
             })
             .catch(error => {
-                console.error('Error cargando opciones:', error);
                 filtroContenido.innerHTML = `<p style="color: red;">Error cargando opciones de filtro</p>`;
                 modal.style.display = 'flex';
             });
@@ -620,7 +619,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('Error al anular la orden');
         });
     }
@@ -672,7 +670,6 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('Error al aprobar la orden');
         });
     }
@@ -729,3 +726,4 @@
 @endpush
 
 @endsection
+

@@ -192,7 +192,6 @@ function openCotizacionModal(cotizacionId) {
             }
         })
         .catch(error => {
-            console.error('Error al cargar cotización:', error);
             alert('Error al cargar la cotización. Por favor, intenta de nuevo.');
         });
 }
@@ -219,8 +218,6 @@ document.addEventListener('keydown', function(event) {
 // Callback para procesar resultado de subida de imágenes
 function procesarResultadoSubidaImagenes(resultado) {
     if (resultado.success) {
-        console.log(' Imágenes subidas exitosamente:', resultado.rutas);
-        
         // Mostrar notificación de éxito
         Swal.fire({
             icon: 'success',
@@ -235,8 +232,6 @@ function procesarResultadoSubidaImagenes(resultado) {
             openCotizacionModal(cotizacionId);
         }
     } else {
-        console.error(' Error al subir imágenes:', resultado.errores);
-        
         // Mostrar errores
         let mensajeError = 'Errores al subir imágenes:\n';
         resultado.errores.forEach(error => {
@@ -281,3 +276,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+

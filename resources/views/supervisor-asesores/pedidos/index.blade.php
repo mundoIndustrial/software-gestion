@@ -1149,7 +1149,6 @@
         if (window.setSpinnerConfig) {
             window.setSpinnerConfig({ enabled: false });
         }
-        console.log(' Spinner desactivado en página de pedidos');
     });
 
     // Asegurar que el spinner esté oculto al cargar
@@ -1163,7 +1162,6 @@
             spinner.style.display = 'none';
             spinner.style.visibility = 'hidden';
         }
-        console.log(' Spinner oculto al cargar la página');
     });
 
 
@@ -1190,8 +1188,6 @@
 <!-- DEBUG LAYOUT -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== DEBUG LAYOUT SUPERVISOR-ASESORES ===');
-    
     const container = document.querySelector('.container');
     const mainContent = document.querySelector('.main-content');
     const sidebar = document.querySelector('.sidebar');
@@ -1201,22 +1197,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (el) {
             const rect = el.getBoundingClientRect();
             const computed = window.getComputedStyle(el);
-            console.log(`${name}:`, {
-                width: rect.width,
-                height: rect.height,
-                left: rect.left,
-                top: rect.top,
-                right: rect.right,
-                'css-width': computed.width,
-                'css-margin-left': computed.marginLeft,
-                'css-margin-right': computed.marginRight,
-                'css-padding-left': computed.paddingLeft,
-                'css-padding-right': computed.paddingRight,
-                'css-flex': computed.flex,
-                'css-display': computed.display
-            });
         } else {
-            console.warn(`${name}: NO ENCONTRADO`);
         }
     }
     
@@ -1224,8 +1205,7 @@ document.addEventListener('DOMContentLoaded', function() {
     logElement('Sidebar', sidebar);
     logElement('Main-content', mainContent);
     logElement('Page-content', pageContent);
-    
-    console.log('=== FIN DEBUG ===');
 });
 </script>
 @endpush
+

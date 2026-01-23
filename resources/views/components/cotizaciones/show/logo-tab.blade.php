@@ -636,28 +636,19 @@
         
         // Obtener todas las fotos de esta prenda
         const prendasFotos = document.querySelectorAll(`img[onclick*="${prendaId}"]`);
-        console.log('📸 Fotos encontradas:', prendasFotos.length);
-        
         fotosActuales = Array.from(prendasFotos).map(img => img.src);
-        console.log(' Fotos actuales:', fotosActuales);
-        
         if (fotosActuales.length === 0) {
-            console.error(' No hay fotos para mostrar');
             return;
         }
         
         indiceActual = indiceInicial;
         const modalFotos = document.getElementById('modalFotos');
-        console.log(' Modal encontrado:', modalFotos);
-        console.log(' Display anterior:', modalFotos.style.display);
-        
+
         modalFotos.style.display = 'flex';
-        console.log(' Display nuevo:', modalFotos.style.display);
         console.log(' Visible:', window.getComputedStyle(modalFotos).display);
         
         mostrarFoto();
         document.body.style.overflow = 'hidden';
-        console.log(' Modal abierto');
     }
 
     function cerrarModalFotos() {
@@ -665,28 +656,21 @@
         const modalFotos = document.getElementById('modalFotos');
         modalFotos.style.display = 'none';
         document.body.style.overflow = 'auto';
-        console.log(' Modal cerrado');
     }
 
     function mostrarFoto() {
         console.log(' mostrarFoto() - indiceActual:', indiceActual, 'total:', fotosActuales.length);
         if (fotosActuales.length === 0) {
-            console.warn(' No hay fotos para mostrar');
             return;
         }
         
         const imgElement = document.getElementById('imagenPrincipal');
         const contadorElement = document.getElementById('contadorFoto');
-        
-        console.log(' Imagen element:', imgElement);
-        console.log(' Contador element:', contadorElement);
-        
+
         if (imgElement && contadorElement) {
             imgElement.src = fotosActuales[indiceActual];
             contadorElement.textContent = (indiceActual + 1) + ' / ' + fotosActuales.length;
-            console.log(' Foto mostrada:', fotosActuales[indiceActual]);
         } else {
-            console.error(' Elementos no encontrados');
         }
     }
 
@@ -831,3 +815,4 @@
     `;
     document.head.appendChild(style);
 </script>
+

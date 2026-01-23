@@ -245,9 +245,7 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log(' Paso 4 Reflectivo - Listo para agregar prendas');
             // NO agregar automáticamente - esperará a que el usuario navegue al paso 4
-            console.log('⏳ Esperando a que el usuario navegue al paso 4...');
         });
     </script>
 
@@ -380,13 +378,11 @@ function agregarSeccion() {
     errorDiv.style.display = 'none';
 
     abrirModalUbicaciones(ubicacion, [], (nuevasUbicaciones, obs) => {
-        console.log(' CALLBACK - Ubicaciones guardadas desde modal:', {nuevasUbicaciones, obs});
         seccionesSeleccionadas.push({
             ubicacion: ubicacion,
             opciones: nuevasUbicaciones,
             observaciones: obs
         });
-        console.log(' Sección agregada a seccionesSeleccionadas:', seccionesSeleccionadas);
         opcionesPorUbicacion[ubicacion] = nuevasUbicaciones;
         renderizarSecciones();
         console.log(' renderizarSecciones() ejecutado, campo oculto actualizado');
@@ -423,12 +419,10 @@ function cerrarModalUbicacion(modalId) {
 }
 
 function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacionesIniciales = '') {
-    console.log('🎬 PASO-TRES - abrirModalUbicaciones iniciado');
-    console.log('📌 prenda:', prenda);
-    console.log('📌 ubicacionesIniciales:', ubicacionesIniciales);
-    console.log('📌 observacionesIniciales:', observacionesIniciales);
-    console.log('📌 todasLasUbicaciones:', todasLasUbicaciones);
-    
+
+
+
+
     let ubicacionesSeleccionadasModal = [...ubicacionesIniciales];
 
     const modalId = 'modalUbicaciones';
@@ -566,12 +560,10 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, onSave, observacion
     const obsTextarea = document.getElementById('obs-ubicacion-modal');
 
     saveButton.addEventListener('click', () => {
-        console.log('🔵 BOTÓN GUARDAR PRESIONADO - Modal');
-        console.log('📍 ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
-        console.log('📍 observaciones:', obsTextarea.value);
+
+
         // Pasar array vacío para tallas (ya no se manejan por ubicación)
         onSave(ubicacionesSeleccionadasModal, [], obsTextarea.value);
-        console.log(' onSave callback ejecutado');
     });
 
     renderizarUbicacionesSeleccionadas();
@@ -668,17 +660,11 @@ function agregarObservacion() {
 document.addEventListener('DOMContentLoaded', function() {
     // Los selectores de tipo_venta en PASO 2 y PASO 3 son independientes
     // No se sincronizan automáticamente para permitir valores diferentes
-    console.log(' Selectores tipo_venta configurados como independientes');
-    
     // 🔥 SOBRESCRIBIR LA FUNCIÓN agregarSeccion DE especificaciones.js
     // Paso-tres debe usar SU PROPIA FUNCIÓN, no la de especificaciones.js
-    console.log('🎬 PASO-TRES - Inicializando funciones del paso-tres');
-    console.log('📍 PASO-TRES - agregarSeccion será redefinida para usar abrirModalUbicaciones de paso-tres');
-    
+
     // Usar setTimeout para asegurar que especificaciones.js ya se cargó y puede ser sobrescrita
     setTimeout(() => {
-        console.log('🔄 PASO-TRES - Redefining agregarSeccion to override especificaciones.js version');
-        
         window.agregarSeccion = function() {
             const selector = document.getElementById('seccion_prenda');
             const ubicacion = selector.value.trim().toUpperCase();
@@ -717,10 +703,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 selector.value = '';
             });
         };
-        
-        console.log(' PASO-TRES - agregarSeccion redefinida correctamente');
         console.log(' PASO-TRES - Ahora usa abrirModalUbicaciones (modal de bordado)');
     }, 100);
 });
 </script>
+
 

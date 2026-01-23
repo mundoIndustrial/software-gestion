@@ -10,12 +10,9 @@ export class ReceiptRenderer {
      * Renderiza un recibo completo en el modal
      */
     static renderizar(modalManager, prendaData, reciboIndice, tipoProceso, datosPedido, recibos) {
-`, 'color: #10b981;');
-
         // Obtener el recibo
         const recibo = recibos && recibos[reciboIndice] ? recibos[reciboIndice] : null;
         if (!recibo) {
-
             return;
         }
 
@@ -45,7 +42,7 @@ export class ReceiptRenderer {
         const titleElement = document.querySelector('.receipt-title');
         if (titleElement) {
             const nombreRecibo = String(tipoProceso || recibo.tipo_proceso || recibo.nombre_proceso || 'Recibo').toUpperCase();
-            titleElement.textContent = `RECIBO DE ${nombreRecibo}`;
+            titleElement.textContent = 'RECIBO DE ' + nombreRecibo;
         }
     }
 
@@ -65,8 +62,6 @@ export class ReceiptRenderer {
             dayBox.textContent = day;
             monthBox.textContent = month;
             yearBox.textContent = year;
-            
-
         }
 
         // Cliente
@@ -83,7 +78,7 @@ export class ReceiptRenderer {
 
         // Número de pedido
         const pedidoNumber = document.querySelector('.pedido-number');
-        if (pedidoNumber) pedidoNumber.textContent = `#${datosPedido.numero_pedido}`;
+        if (pedidoNumber) pedidoNumber.textContent = '#' + datosPedido.numero_pedido;
 
         // Encargado
         const encargadoValue = document.getElementById('encargado-value');
@@ -106,21 +101,16 @@ export class ReceiptRenderer {
 
         // Determinar si es costura
         if (tipoProcesoBajo === 'costura' || tipoProcesoBajo === 'costura-bodega') {
-
-            
             // Intentar usar ReceiptManager si existe
             if (typeof window.ReceiptManager !== 'undefined' && window.ReceiptManager.prototype.construirDescripcionCostura) {
                 const rm = new window.ReceiptManager({prendas: []}, null, null);
                 html = rm.construirDescripcionCostura(prendaData);
-
             } else {
                 // Usar formateador
                 html = Formatters.construirDescripcionCostura(prendaData);
-
             }
         } else {
             // Para otros procesos
-
             html = Formatters.construirDescripcionProceso(prendaData, recibo);
         }
 

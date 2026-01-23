@@ -40,8 +40,7 @@
             'estados' => $estados ?? [],
             'areas' => $areas ?? []
         ]) !!};
-        console.log(' Modo edición: Editando pedido #{{ $pedidoEditarId }}');
-        console.log(' Datos cargados:', window.pedidoEditarData);
+
     </script>
 @endif
 
@@ -186,15 +185,12 @@
     <script>
         if (!window.imagenesPrendaStorage) {
             window.imagenesPrendaStorage = new ImageStorageService(3);
-            console.log(' [CREAR-PEDIDO-NUEVO] imagenesPrendaStorage inicializado');
         }
         if (!window.imagenesTelaStorage) {
             window.imagenesTelaStorage = new ImageStorageService(3);
-            console.log(' [CREAR-PEDIDO-NUEVO] imagenesTelaStorage inicializado');
         }
         if (!window.imagenesReflectivoStorage) {
             window.imagenesReflectivoStorage = new ImageStorageService(3);
-            console.log(' [CREAR-PEDIDO-NUEVO] imagenesReflectivoStorage inicializado');
         }
     </script>
     
@@ -321,7 +317,6 @@
                 tipoPedidoLoading.style.display = 'none';
                 tipoPedidoSelect.style.display = 'block';
                 tipoPedidoSelect.removeAttribute('disabled');
-                console.log(' Selector de tipo de pedido listo');
             }, 500);
         }
 
@@ -343,9 +338,6 @@
                     alert('Por favor selecciona un tipo de pedido primero');
                     return;
                 }
-                
-                console.log(' Abriendo modal para tipo:', tipoPedido);
-                
                 // Manejar diferentes tipos de pedido
                 if (tipoPedido === 'P') {
                     // Prenda - incluye prendas, reflectivo, bordado, estampado, DTF, sublimado
@@ -364,9 +356,6 @@
             const tipoPedido = selectTipoPedidoNuevo.value;
             
             if (!tipoPedido) return;
-            
-            console.log('🔄 Tipo de pedido seleccionado:', tipoPedido);
-            
             // Mostrar botón inline
             const btnAgregarTipoInline = document.getElementById('btn-agregar-item-tipo-inline');
             if (btnAgregarTipoInline) {
@@ -377,9 +366,6 @@
         // Abrir modal según tipo de pedido seleccionado
         window.abrirModalSegunTipo = function() {
             const tipoPedido = selectTipoPedidoNuevo.value;
-            
-            console.log(' Abriendo modal para tipo:', tipoPedido);
-            
             if (tipoPedido === 'EPP') {
                 window.abrirModalAgregarEPP();
             } else if (tipoPedido === 'P') {
@@ -387,8 +373,6 @@
                 window.abrirModalPrendaNueva();
             }
         };
-
-        console.log('Vista de nuevo pedido inicializada');
     });
 </script>
 

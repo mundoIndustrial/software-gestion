@@ -62,7 +62,6 @@
                 // 🔑 LIMPIAR dashboardFilterParams GLOBAL para mostrar todos los datos
                 if (typeof dashboardFilterParams !== 'undefined') {
                     dashboardFilterParams = {};
-                    console.log(' dashboardFilterParams limpiado - Mostrando TODOS los datos');
                 }
 
                 // Clear URL parameters
@@ -79,8 +78,6 @@
                 }
             },
             filtrarPorFechas() {
-                console.log('Filter type:', this.filterType);
-
                 // Construir parámetros de filtro
                 const params = new URLSearchParams();
                 params.set('filter_type', this.filterType);
@@ -88,9 +85,6 @@
                 if (this.filterType === 'range') {
                     const start = this.startDate;
                     const end = this.endDate;
-
-                    console.log('Start date:', start);
-                    console.log('End date:', end);
 
                     if (!start || !end) {
                         showFilterModal('Selecciona ambas fechas (inicio y fin)');
@@ -102,8 +96,6 @@
                 }
                 else if (this.filterType === 'day') {
                     const day = this.specificDate;
-                    console.log('Specific date:', day);
-
                     if (!day) {
                         showFilterModal('Selecciona un día específico');
                         return;
@@ -113,8 +105,6 @@
                 }
                 else if (this.filterType === 'month') {
                     const month = this.month;
-                    console.log('Month:', month);
-
                     if (!month) {
                         showFilterModal('Selecciona un mes');
                         return;
@@ -125,8 +115,6 @@
                 else if (this.filterType === 'specific') {
                     // Sincronizar con window.selectedDatesTopControls
                     this.selectedDates = new Set(window.selectedDatesTopControls);
-                    
-                    console.log('Selected dates size:', this.selectedDates.size);
                     console.log('Selected dates:', Array.from(this.selectedDates));
                     
                     if (this.selectedDates.size === 0) {
@@ -135,7 +123,6 @@
                     }
 
                     const datesArray = Array.from(this.selectedDates).sort();
-                    console.log('Specific dates to send:', datesArray);
                     params.set('specific_dates', datesArray.join(','));
                 }
 
@@ -164,8 +151,6 @@
                             dashboardFilterParams['specific_dates'] = params.get('specific_dates');
                         }
                     }
-                    
-                    console.log(' dashboardFilterParams actualizado para tiempo real:', dashboardFilterParams);
                 }
                 
                 // Llamar a la función para actualizar las tablas del dashboard
@@ -874,8 +859,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Actualizar la URL sin recargar
         window.history.replaceState({}, '', url.toString());
-        console.log(' Todos los filtros limpiados al recargar la página');
-        
         // También limpiar sessionStorage de filtros de columnas
         const section = url.searchParams.get('section') || 'produccion';
         sessionStorage.removeItem(`tableros_filters_${section}`);
@@ -898,7 +881,6 @@ if (typeof window.currentCalendarMonth === 'undefined') {
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) {
-        console.log('Calendar element not found, retrying...');
         setTimeout(initCalendar, 100);
         return;
     }
@@ -1040,12 +1022,10 @@ function updateDashboardTablesFromFilter(params) {
         if (data.horasData && data.operariosData) {
             updateDashboardTables(data.horasData, data.operariosData);
         } else {
-            console.error('Invalid data structure received:', data);
             showFilterModal('Error: Datos inválidos recibidos del servidor');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showFilterModal('Error al filtrar los datos del dashboard. Por favor, recarga la página.');
     });
 }
@@ -1136,7 +1116,6 @@ function openFullscreenView() {
             activeTab = alpineEl.__x.$data.activeTab || activeTab;
         }
     } catch (e) {
-        console.log('No se pudo obtener activeTab desde Alpine:', e);
     }
     
     // Método 2: Desde URL params si existe
@@ -1153,9 +1132,6 @@ function openFullscreenView() {
         else if (tabText.includes('corte')) activeTab = 'corte';
         else if (tabText.includes('produccion')) activeTab = 'produccion';
     }
-    
-    console.log('Abriendo vista completa para sección:', activeTab);
-    
     // Construir URL con parámetros actuales
     const currentParams = new URLSearchParams(window.location.search);
     
@@ -1197,3 +1173,4 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="modal-button-filter" onclick="closeFilterModal()">Entendido</button>
     </div>
 </div>
+

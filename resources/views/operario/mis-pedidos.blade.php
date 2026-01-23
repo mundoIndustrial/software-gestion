@@ -368,10 +368,10 @@
                     alert('Error: ' + (data.message || 'No se pudo completar el proceso'));
                 }
             } catch (error) {
-                console.error('Error:', error);
                 alert('Error al completar el proceso');
             }
         };
     });
 </script>
 @endsection
+

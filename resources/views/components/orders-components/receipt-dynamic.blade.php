@@ -86,9 +86,6 @@ class ReceiptManager {
         this.recibos = this.generarRecibos(datosFactura);
         this.indexActual = 0;
 
-        console.log(' [RECEIPT MANAGER] Inicializado');
-        console.log(' Total de recibos:', this.recibos.length);
-        console.log(' Recibos:', this.recibos);
 
         this.inicializarEventos();
         this.renderizar();
@@ -181,9 +178,6 @@ class ReceiptManager {
      */
     renderizar() {
         const recibo = this.recibos[this.indexActual];
-
-        console.log(` Renderizando recibo ${recibo.numero}/${recibo.total}:`, recibo);
-
         // Actualizar contador
         document.getElementById('receipt-number').textContent = recibo.numero;
         document.getElementById('receipt-total').textContent = recibo.total;
@@ -367,3 +361,4 @@ class ReceiptManager {
 // Exportar para uso externo
 window.ReceiptManager = ReceiptManager;
 </script>
+
