@@ -7,6 +7,9 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
+use App\Application\Pedidos\UseCases\ListarPedidosPorClienteUseCase;
+use App\Application\Pedidos\UseCases\CancelarPedidoUseCase;
 use App\Application\Pedidos\DTOs\CrearPedidoDTO;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Domain\Pedidos\Exceptions\PedidoNoEncontrado;
@@ -27,6 +30,9 @@ class PedidoController extends Controller
     public function __construct(
         private CrearPedidoUseCase $crearPedidoUseCase,
         private ConfirmarPedidoUseCase $confirmarPedidoUseCase,
+        private ObtenerPedidoUseCase $obtenerPedidoUseCase,
+        private ListarPedidosPorClienteUseCase $listarPedidosPorClienteUseCase,
+        private CancelarPedidoUseCase $cancelarPedidoUseCase,
         private PedidoRepository $pedidoRepository
     ) {}
 
@@ -127,6 +133,36 @@ class PedidoController extends Controller
     }
 
     /**
+     * DELETE /api/pedidos/{id}/cancelar
+     * 
+     * Cancelar un pedido
+     */
+    public function cancelar(int $id): JsonResponse
+    {
+        try {
+            $response = $this->cancelarPedidoUseCase->ejecutar($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido cancelado exitosamente',
+                'data' => $response->toArray()
+            ], 200);
+
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cancelar pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/pedidos/{id}
      * 
      * Obtener un pedido (lectura - CQRS read side)
@@ -134,33 +170,76 @@ class PedidoController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $pedido = $this->pedidoRepository->porId($id);
-
-            if (!$pedido) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado',
-                ], 404);
-            }
+            $response = $this->obtenerPedidoUseCase->ejecutar($id);
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'id' => $pedido->id(),
-                    'numero' => (string)$pedido->numero(),
-                    'cliente_id' => $pedido->clienteId(),
-                    'descripcion' => $pedido->descripcion(),
-                    'estado' => $pedido->estado()->valor(),
-                    'observaciones' => $pedido->observaciones(),
-                    'total_prendas' => $pedido->totalPrendas(),
-                    'total_articulos' => $pedido->totalArticulos(),
-                ]
+                'data' => $response->toArray()
             ], 200);
+
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/pedidos/cliente/{clienteId}
+     * 
+     * Listar pedidos de un cliente
+     */
+    public function listarPorCliente(int $clienteId): JsonResponse
+    {
+        try {
+            $response = $this->listarPedidosPorClienteUseCase->ejecutar($clienteId);
+
+            return response()->json([
+                'success' => true,
+                'data' => array_map(fn($dto) => $dto->toArray(), $response)
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al listar pedidos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/pedidos/{id}/recibos-datos
+     * 
+     * Obtener datos completos del pedido (para recibos)
+     * Método de compatibilidad con rutas de asesores
+     */
+    public function obtenerDetalleCompleto(int $id): JsonResponse
+    {
+        try {
+            $response = $this->obtenerPedidoUseCase->ejecutar($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $response->toArray()
+            ], 200);
+
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
     }

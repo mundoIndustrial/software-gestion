@@ -80,6 +80,12 @@ Route::middleware('api')->group(function () {
         
         Route::patch('{id}/confirmar', [PedidoController::class, 'confirmar'])
             ->name('confirmar');
+        
+        Route::delete('{id}/cancelar', [PedidoController::class, 'cancelar'])
+            ->name('cancelar');
+        
+        Route::get('cliente/{clienteId}', [PedidoController::class, 'listarPorCliente'])
+            ->name('listar-por-cliente');
     });
     
     // Rutas de cotizaciones

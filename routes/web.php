@@ -446,13 +446,11 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::put('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'update'])->name('pedidos.update');
     Route::delete('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'destroy'])->name('pedidos.destroy');
     
-    // Pedidos - APIs (DDD: AsesoresAPIController)
-    Route::post('/pedidos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'store'])->name('pedidos.api.store');
-    Route::post('/pedidos/confirm', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'confirm'])->name('pedidos.api.confirm');
-    Route::post('/pedidos/{id}/anular', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
+    // Pedidos - APIs ahora usan DDD (usar /api/pedidos en lugar de /asesores/pedidos)
+    // Las rutas POST, PATCH, DELETE se han migrado a /api/pedidos en routes/api.php
     Route::get('/pedidos/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
-    Route::get('/pedidos/{id}/recibos-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'obtenerDatosRecibos'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
-    Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresAPIController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
+    Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\Api\PedidoController::class, 'obtenerDetalleCompleto'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
+    Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
     // ========================================
     // SISTEMA DE ÓRDENES CON BORRADORES
