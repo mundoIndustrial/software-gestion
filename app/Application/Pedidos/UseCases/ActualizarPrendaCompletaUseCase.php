@@ -3,83 +3,67 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
-use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Use Case para actualizar una prenda y fotos
+ * 
+ * Responsabilidades:
+ * - Actualizar registro en prendas_pedido (nombre, descripción, de_bodega)
+ * - Actualizar fotos de referencia (prenda_fotos_pedido)
+ * 
+ * Responsabilidades SEPARADAS en otros Use Cases:
+ * - Actualizar variantes → ActualizarVariantePrendaUseCase
+ * - Actualizar colores y telas → ActualizarColorTelaUseCase
+ * - Actualizar tallas → ActualizarTallaPrendaUseCase
+ * - Actualizar procesos → ActualizarProcesoPrendaUseCase
+ */
 final class ActualizarPrendaCompletaUseCase
 {
-    public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
-    ) {}
-
-    public function ejecutar(ActualizarPrendaCompletaDTO $dto)
+    public function execute(ActualizarPrendaCompletaDTO $dto): PrendaPedido
     {
-        Log::info('[ActualizarPrendaCompletaUseCase] Iniciando actualización de prenda completa', [
-            'pedido_id' => $dto->pedidoId,
-            'prenda_id' => $dto->prendaId,
-        ]);
+        $prenda = PrendaPedido::findOrFail($dto->prendaId);
 
-        $prenda = PrendaPedido::find($dto->prendaId);
+        // 1. Actualizar campos básicos si se proporcionan
+        $datosActualizar = [];
         
-        if (!$prenda) {
-            throw new \InvalidArgumentException("Prenda {$dto->prendaId} no encontrada");
+        if ($dto->nombrePrenda !== null) {
+            $datosActualizar['nombre_prenda'] = $dto->nombrePrenda;
+        }
+        
+        if ($dto->descripcion !== null) {
+            $datosActualizar['descripcion'] = $dto->descripcion;
+        }
+        
+        if ($dto->deBodega !== null) {
+            $datosActualizar['de_bodega'] = $dto->deBodega;
         }
 
-        // Actualizar campos básicos
-        $prenda->nombre_prenda = $dto->nombrePrenda;
-        $prenda->descripcion = $dto->descripcion;
-        $prenda->save();
-
-        // Guardar tallas
-        if (!empty($dto->tallaJson)) {
-            $this->pedidoRepository->guardarTallasDesdeJson($prenda->id, $dto->tallaJson);
+        if (!empty($datosActualizar)) {
+            $prenda->update($datosActualizar);
         }
 
-        // Actualizar imágenes
+        // 2. Actualizar fotos si se proporcionan
         if (!empty($dto->imagenes)) {
-            // Eliminar antiguas
-            DB::table('prenda_fotos_pedido')
-                ->where('prenda_pedido_id', $prenda->id)
-                ->delete();
+            // Eliminar fotos antiguas
+            $prenda->fotos()->delete();
 
-            // Insertar nuevas
-            foreach ($dto->imagenes as $orden => $ruta) {
-                DB::table('prenda_fotos_pedido')->insert([
-                    'prenda_pedido_id' => $prenda->id,
-                    'ruta_webp' => $ruta,
-                    'ruta_original' => $ruta,
+            // Crear nuevas fotos
+            foreach ($dto->imagenes as $orden => $rutaOriginal) {
+                $prenda->fotos()->create([
+                    'ruta_original' => $rutaOriginal,
+                    'ruta_webp' => $this->generarRutaWebp($rutaOriginal),
                     'orden' => $orden + 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
         }
 
-        // Guardar novedad en el pedido
-        if ($dto->novedad) {
-            $pedido = PedidoProduccion::find($dto->pedidoId);
-            if ($pedido) {
-                $this->guardarNovedad($pedido, $dto->novedad);
-            }
-        }
-
-        Log::info('[ActualizarPrendaCompletaUseCase] Prenda completa actualizada exitosamente', [
-            'prenda_id' => $prenda->id,
-        ]);
-
-        return $prenda;
+        return $prenda->refresh();
     }
 
-    private function guardarNovedad(PedidoProduccion $pedido, string $novedad): void
+    private function generarRutaWebp(string $rutaOriginal): string
     {
-        $novedadesActuales = !empty($pedido->novedades) ? $pedido->novedades . "\n" : '';
-        $timestamp = now()->format('Y-m-d H:i:s');
-        $usuario = auth()->user()->name ?? 'Sistema';
-        $novedadesNuevas = $novedadesActuales . "[{$timestamp}] {$usuario}: {$novedad}";
-        
-        $pedido->update(['novedades' => $novedadesNuevas]);
+        // Reemplazar extensión por .webp
+        return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }

@@ -2,24 +2,30 @@
 
 namespace App\Application\Pedidos\DTOs;
 
+/**
+ * DTO para actualizar datos de una prenda existente
+ * 
+ * Solo permite actualizar campos en prendas_pedido:
+ * - nombre_prenda
+ * - descripcion
+ * - de_bodega
+ */
 final class ActualizarPrendaPedidoDTO
 {
     public function __construct(
-        public readonly int|string $pedidoId,
-        public readonly int $prendaIndex,
-        public readonly ?string $nombre = null,
+        public readonly int $prendaId,
+        public readonly ?string $nombrePrenda = null,
         public readonly ?string $descripcion = null,
-        public readonly ?array $tallas = null,
+        public readonly ?bool $deBodega = null,
     ) {}
 
-    public static function fromRequest(int|string $pedidoId, array $data): self
+    public static function fromRequest(int $prendaId, array $data): self
     {
         return new self(
-            pedidoId: $pedidoId,
-            prendaIndex: $data['prendasIndex'] ?? throw new \InvalidArgumentException('prendasIndex requerido'),
-            nombre: $data['nombre'] ?? null,
+            prendaId: $prendaId,
+            nombrePrenda: $data['nombre_prenda'] ?? null,
             descripcion: $data['descripcion'] ?? null,
-            tallas: isset($data['tallas']) ? json_decode($data['tallas'], true) : null,
+            deBodega: isset($data['de_bodega']) ? (bool) $data['de_bodega'] : null,
         );
     }
 }

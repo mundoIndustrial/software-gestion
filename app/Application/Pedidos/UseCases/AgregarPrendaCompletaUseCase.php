@@ -3,77 +3,50 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
-use App\Models\PedidoProduccion;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use App\Models\PrendaPedido;
 
+/**
+ * Use Case para agregar una prenda al pedido con fotos
+ * 
+ * Responsabilidades:
+ * - Crear registro en prendas_pedido (nombre, descripción, de_bodega)
+ * - Asociar fotos de referencia (prenda_fotos_pedido)
+ * 
+ * Responsabilidades SEPARADAS en otros Use Cases:
+ * - Agregar variantes (tipo_manga, tipo_broche) → AgregarVariantePrendaUseCase
+ * - Agregar colores y telas → AgregarColorTelaUseCase
+ * - Agregar tallas y cantidades → AgregarTallaPrendaUseCase
+ * - Agregar procesos → AgregarProcesoPrendaUseCase
+ */
 final class AgregarPrendaCompletaUseCase
 {
-    public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
-    ) {}
-
-    public function ejecutar(AgregarPrendaCompletaDTO $dto)
+    public function execute(AgregarPrendaCompletaDTO $dto): PrendaPedido
     {
-        Log::info('[AgregarPrendaCompletaUseCase] Iniciando agregación de prenda completa', [
-            'pedido_id' => $dto->pedidoId,
-            'nombre_prenda' => $dto->nombrePrenda,
-        ]);
-
-        $pedido = $this->pedidoRepository->obtenerPorId($dto->pedidoId);
-        
-        if (!$pedido) {
-            throw new \InvalidArgumentException("Pedido {$dto->pedidoId} no encontrado");
-        }
-
-        // Crear prenda
-        $prenda = $pedido->prendas()->create([
+        // 1. Crear prenda base
+        $prenda = PrendaPedido::create([
+            'pedido_produccion_id' => $dto->pedidoId,
             'nombre_prenda' => $dto->nombrePrenda,
             'descripcion' => $dto->descripcion,
-            'origen' => $dto->origen,
-            'cantidad' => 1,
+            'de_bodega' => $dto->deBodega,
         ]);
 
-        // Guardar tallas
-        if (!empty($dto->tallaJson)) {
-            $this->pedidoRepository->guardarTallasDesdeJson($prenda->id, $dto->tallaJson);
-        }
-
-        // Guardar imágenes de prenda
+        // 2. Agregar fotos si existen
         if (!empty($dto->imagenes)) {
-            foreach ($dto->imagenes as $orden => $ruta) {
-                DB::table('prenda_fotos_pedido')->insert([
-                    'prenda_pedido_id' => $prenda->id,
-                    'ruta_webp' => $ruta,
-                    'ruta_original' => $ruta,
+            foreach ($dto->imagenes as $orden => $rutaOriginal) {
+                $prenda->fotos()->create([
+                    'ruta_original' => $rutaOriginal,
+                    'ruta_webp' => $this->generarRutaWebp($rutaOriginal),
                     'orden' => $orden + 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
         }
 
-        // Guardar novedad en el pedido
-        if ($dto->novedad) {
-            $this->guardarNovedad($pedido, $dto->novedad);
-        }
-
-        Log::info('[AgregarPrendaCompletaUseCase] Prenda completa agregada exitosamente', [
-            'pedido_id' => $pedido->id,
-            'prenda_id' => $prenda->id,
-        ]);
-
         return $prenda;
     }
 
-    private function guardarNovedad(PedidoProduccion $pedido, string $novedad): void
+    private function generarRutaWebp(string $rutaOriginal): string
     {
-        $novedadesActuales = !empty($pedido->novedades) ? $pedido->novedades . "\n" : '';
-        $timestamp = now()->format('Y-m-d H:i:s');
-        $usuario = auth()->user()->name ?? 'Sistema';
-        $novedadesNuevas = $novedadesActuales . "[{$timestamp}] {$usuario}: {$novedad}";
-        
-        $pedido->update(['novedades' => $novedadesNuevas]);
+        // Reemplazar extensión por .webp
+        return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }

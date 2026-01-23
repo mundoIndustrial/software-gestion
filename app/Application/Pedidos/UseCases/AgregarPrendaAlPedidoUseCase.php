@@ -25,28 +25,20 @@ final class AgregarPrendaAlPedidoUseCase
             throw new \InvalidArgumentException("Pedido {$dto->pedidoId} no encontrado");
         }
 
-        // Crear nueva prenda
+        // Crear nueva prenda con SOLO campos reales de prendas_pedido
+        // Nota: Variantes, colores, telas, tallas se agregan después en tablas relacionadas
         $prenda = $pedido->prendas()->create([
             'nombre_prenda' => $dto->nombrePrenda,
-            'cantidad' => $dto->cantidad,
-            'tipo_manga' => $dto->tipoManga,
-            'tipo_broche' => $dto->tipoBroche,
-            'color_id' => $dto->colorId,
-            'tela_id' => $dto->telaId,
             'descripcion' => $dto->descripcion,
-            'origen' => $dto->origen,
+            'de_bodega' => $dto->deBodega,
         ]);
-
-        // Guardar tallas si existen
-        if (!empty($dto->tallas)) {
-            $this->pedidoRepository->guardarTallasDesdeJson($prenda->id, json_encode($dto->tallas));
-        }
 
         Log::info('[AgregarPrendaAlPedidoUseCase] Prenda agregada exitosamente', [
             'pedido_id' => $pedido->id,
             'prenda_id' => $prenda->id,
+            'nombre_prenda' => $prenda->nombre_prenda,
         ]);
 
-        return $pedido;
+        return $prenda;
     }
 }

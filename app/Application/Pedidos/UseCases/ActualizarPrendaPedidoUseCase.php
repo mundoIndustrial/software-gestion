@@ -3,52 +3,39 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ActualizarPrendaPedidoDTO;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Log;
 
 final class ActualizarPrendaPedidoUseCase
 {
-    public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
-    ) {}
-
     public function ejecutar(ActualizarPrendaPedidoDTO $dto)
     {
         Log::info('[ActualizarPrendaPedidoUseCase] Iniciando actualización de prenda', [
-            'pedido_id' => $dto->pedidoId,
-            'prenda_index' => $dto->prendaIndex,
+            'prenda_id' => $dto->prendaId,
         ]);
 
-        $pedido = $this->pedidoRepository->obtenerPorId($dto->pedidoId);
+        $prenda = PrendaPedido::find($dto->prendaId);
         
-        if (!$pedido) {
-            throw new \InvalidArgumentException("Pedido {$dto->pedidoId} no encontrado");
+        if (!$prenda) {
+            throw new \InvalidArgumentException("Prenda {$dto->prendaId} no encontrada");
         }
 
-        // Obtener la prenda por índice
-        $prendas = $pedido->prendas()->get();
-        if (!isset($prendas[$dto->prendaIndex])) {
-            throw new \InvalidArgumentException("Prenda en índice {$dto->prendaIndex} no encontrada");
+        // Actualizar SOLO campos reales de prendas_pedido
+        if ($dto->nombrePrenda !== null) {
+            $prenda->nombre_prenda = $dto->nombrePrenda;
         }
-
-        $prenda = $prendas[$dto->prendaIndex];
-
-        // Actualizar campos
-        if ($dto->nombre) {
-            $prenda->nombre_prenda = $dto->nombre;
-        }
-        if ($dto->descripcion) {
+        
+        if ($dto->descripcion !== null) {
             $prenda->descripcion = $dto->descripcion;
         }
-        if ($dto->tallas) {
-            $prenda->cantidad_talla = json_encode($dto->tallas);
+        
+        if ($dto->deBodega !== null) {
+            $prenda->de_bodega = $dto->deBodega;
         }
 
         $prenda->save();
 
         Log::info('[ActualizarPrendaPedidoUseCase] Prenda actualizada exitosamente', [
-            'pedido_id' => $pedido->id,
             'prenda_id' => $prenda->id,
         ]);
 
