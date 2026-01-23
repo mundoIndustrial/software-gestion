@@ -5,6 +5,7 @@
 
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/page-loading.css') }}">
     <!-- CSS necesarios para el modal de crear/editar prendas -->
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
@@ -18,6 +19,19 @@
 @endsection
 
 @section('content')
+
+    <!-- 🔄 LOADING OVERLAY - Se muestra mientras carga la página -->
+    <div id="page-loading-overlay">
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <div class="loading-text">
+                Cargando los pedidos<span class="loading-dots"></span>
+            </div>
+            <div class="loading-subtext">
+                Por favor espera mientras se cargan los datos
+            </div>
+        </div>
+    </div>
 
     @include('asesores.pedidos.components.header')
 
@@ -254,6 +268,9 @@
 
 
 
+    //  FLAG GLOBAL - Prevenir múltiples ediciones simultáneas (Race Condition Fix)
+    let edicionEnProgreso = false;
+
     //  REFACTORIZADO: confirmarEliminarPedido - Usar DeletionService
     function confirmarEliminarPedido(pedidoId, numeroPedido) {
         Deletion.eliminarPedido(pedidoId, numeroPedido);
@@ -261,31 +278,57 @@
 
     /**
      * Editar pedido - carga datos y abre modal de edición
+     * FIX: Usar async/await para evitar race condition cuando se hace clic durante carga de página
+     * Ref: ANALISIS_RACE_CONDITION_EDITAR_PEDIDO.md
      */
-    function editarPedido(pedidoId) {
-        // Usar _ensureSwal para esperar a que Swal esté listo
-        _ensureSwal(() => {
-            UI.cargando('Cargando datos del pedido...', 'Por favor espera');
-        });
+    async function editarPedido(pedidoId) {
+        // ✅ Prevenir múltiples clics simultáneos
+        if (edicionEnProgreso) {
+            console.warn('[editarPedido] Edición ya en progreso. Clic ignorado.');
+            return;
+        }
         
-        fetch(`/api/pedidos/${pedidoId}`)
-            .then(res => res.json())
-            .then(respuesta => {
-                // Cerrar modal de carga usando _ensureSwal
-                _ensureSwal(() => {
-                    Swal.close();
-                });
-                
-                if (!respuesta.success) throw new Error(respuesta.message || 'Error al cargar datos');
-                const datos = respuesta.data || respuesta.datos;
-                abrirModalEditarPedido(pedidoId, datos, 'editar');  // Pasar 'editar' para mostrar botones
-            })
-            .catch(err => {
-                _ensureSwal(() => {
-                    Swal.close();
-                });
-                UI.error('Error', 'No se pudo cargar el pedido: ' + err.message);
-            });
+        edicionEnProgreso = true;
+        
+        try {
+            // ✅ PASO 1: Esperar a que Swal esté disponible (await correcto)
+            await _ensureSwal();
+            console.log('[editarPedido] Swal disponible, mostrando modal de carga...');
+            
+            // ✅ PASO 2: Mostrar modal de carga
+            UI.cargando('Cargando datos del pedido...', 'Por favor espera');
+            
+            // ✅ PASO 3: Hacer fetch
+            console.log(`[editarPedido] Fetch a /api/pedidos/${pedidoId}`);
+            const response = await fetch(`/api/pedidos/${pedidoId}`);
+            const respuesta = await response.json();
+            
+            // ✅ PASO 4: Cerrar modal de carga ANTES de abrir el siguiente
+            console.log('[editarPedido] Cerrando modal de carga...');
+            Swal.close();
+            
+            // ✅ PASO 5: Validar respuesta
+            if (!respuesta.success) {
+                throw new Error(respuesta.message || 'Error al cargar datos');
+            }
+            
+            const datos = respuesta.data || respuesta.datos;
+            console.log('[editarPedido] Datos obtenidos:', datos.numero_pedido || datos.id);
+            
+            // ✅ PASO 6: Abrir modal de edición
+            abrirModalEditarPedido(pedidoId, datos, 'editar');
+            
+        } catch (err) {
+            console.error('[editarPedido] Error:', err.message);
+            // Cerrar cualquier modal abierto
+            Swal.close();
+            UI.error('Error', 'No se pudo cargar el pedido: ' + err.message);
+            
+        } finally {
+            // ✅ PASO 7: Permitir nuevas ediciones
+            edicionEnProgreso = false;
+            console.log('[editarPedido] Flag edicionEnProgreso = false');
+        }
     }
     
     
@@ -335,74 +378,78 @@
     
     /**
      * Guardar cambios del pedido en el backend
+     * FIX: Usar async/await para mejor manejo de race conditions
      */
-    function guardarCambiosPedido(pedidoId, datosActualizados) {
-        // Usar _ensureSwal para esperar a que Swal esté listo
-        _ensureSwal(() => {
+    async function guardarCambiosPedido(pedidoId, datosActualizados) {
+        try {
+            // ✅ Esperar a que Swal esté disponible
+            await _ensureSwal();
+            
+            console.log('[guardarCambiosPedido] Mostrando modal de carga...');
             UI.cargando('Guardando cambios...', 'Por favor espera');
-        });
-        
-        fetch(`/api/pedidos/${pedidoId}/actualizar-descripcion`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                descripcion: datosActualizados.novedades || ''
-            })
-        })
-        .then(response => {
+            
+            // ✅ Hacer fetch
+            const response = await fetch(`/api/pedidos/${pedidoId}/actualizar-descripcion`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    descripcion: datosActualizados.novedades || ''
+                })
+            });
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            // Cerrar modal de carga y mostrar confirmación
-            _ensureSwal(() => {
-                Swal.close();
-            });
             
-            // Actualizar los datos globales
+            const data = await response.json();
+            console.log('[guardarCambiosPedido] Respuesta del servidor:', data);
+            
+            // ✅ Cerrar modal de carga ANTES de abrir el siguiente
+            Swal.close();
+            
+            // ✅ Actualizar los datos globales
             if (window.datosEdicionPedido) {
                 window.datosEdicionPedido.cliente = datosActualizados.cliente;
                 window.datosEdicionPedido.forma_de_pago = datosActualizados.forma_de_pago;
                 window.datosEdicionPedido.novedades = datosActualizados.novedades;
             }
             
-            // Mostrar modal de confirmación para continuar editando
-            _ensureSwal(() => {
-                Swal.fire({
-                    title: ' Guardado Exitosamente',
-                    text: '¿Deseas continuar editando este pedido?',
-                    icon: 'success',
-                    showCancelButton: true,
-                    confirmButtonColor: '#10b981',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Sí, continuar editando',
-                    cancelButtonText: 'No, cerrar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Volver a abrir el modal de edición del pedido
-                        abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');
-                    } else {
-                        // Recargar la tabla de pedidos
-                        setTimeout(() => {
-                            location.reload();
-                        }, 500);
-                    }
-                });
-            });
-        })
-        .catch(error => {
-            // Cerrar modal de carga
-            _ensureSwal(() => {
-                Swal.close();
+            // ✅ Esperar a que Swal esté disponible para mostrar éxito
+            await _ensureSwal();
+            
+            // ✅ Mostrar modal de confirmación para continuar editando
+            Swal.fire({
+                title: ' Guardado Exitosamente',
+                text: '¿Deseas continuar editando este pedido?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, continuar editando',
+                cancelButtonText: 'No, cerrar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Volver a abrir el modal de edición del pedido
+                    abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');
+                } else {
+                    // Recargar la tabla de pedidos
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                }
             });
             
+        } catch (error) {
+            console.error('[guardarCambiosPedido] Error:', error.message);
+            
+            // Cerrar modal de carga
+            Swal.close();
+            
             UI.error('Error al guardar', error.message || 'Ocurrió un error al guardar los cambios');
-        });
+        }
     }
     
     // Funciones refactorizadas - Cargar desde componentes:
@@ -652,6 +699,53 @@
         z-index: 999999 !important;
     }
 </style>
+
+<!-- 🔄 SCRIPT: Ocultar loading cuando la página está lista -->
+<script>
+    (function() {
+        console.log('[PageLoading] Script inicializado');
+        
+        // ✅ Cuando el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[PageLoading] DOMContentLoaded - Inicios scripts de la página');
+            
+            // Dar un pequeño delay para que todos los scripts se inicialicen
+            setTimeout(function() {
+                console.log('[PageLoading] Ocultando overlay...');
+                const overlay = document.getElementById('page-loading-overlay');
+                
+                if (overlay) {
+                    // Agregar clase 'hidden' para animar la desaparición
+                    overlay.classList.add('hidden');
+                    
+                    // Remover del DOM después de la animación
+                    setTimeout(function() {
+                        overlay.remove();
+                        console.log('[PageLoading] ✅ Overlay removido del DOM');
+                    }, 400);  // Coincide con duración de transición CSS
+                }
+            }, 500);  // Pequeño delay para sincronización
+        });
+        
+        // Alternativa: Si por algún motivo pasa mucho tiempo, ocultar después de X segundos
+        const maxLoadTime = setTimeout(function() {
+            console.warn('[PageLoading] ⚠️ Timeout - Ocultando overlay por seguridad');
+            const overlay = document.getElementById('page-loading-overlay');
+            if (overlay && !overlay.classList.contains('hidden')) {
+                overlay.classList.add('hidden');
+                setTimeout(function() {
+                    overlay.remove();
+                }, 400);
+            }
+        }, 10000);  // 10 segundos máximo
+        
+        // Cuando la ventana cargue completamente (incluyendo imágenes)
+        window.addEventListener('load', function() {
+            console.log('[PageLoading] Evento load disparado - Página completamente cargada');
+            clearTimeout(maxLoadTime);  // Cancelar timeout si aún está activo
+        });
+    })();
+</script>
 
 @endpush
 

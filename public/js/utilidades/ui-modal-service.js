@@ -17,28 +17,49 @@
 /**
  * Función auxiliar para esperar a que Swal esté disponible
  * Soporta tanto callbacks como async/await
- * @param {Function} callback - Función a ejecutar cuando Swal esté listo
+ * 
+ * MEJORADO: Usar como Promise que se resuelve cuando Swal está listo
+ * 
+ * @param {Function} callback - (OPCIONAL) Función a ejecutar cuando Swal esté listo (deprecated, usar await)
  * @param {number} maxWaitTime - Tiempo máximo de espera en ms (default 5000)
  * @returns {Promise} Promesa que se resuelve cuando Swal está disponible o timeout
  * @private
+ * 
+ * @example
+ * // Usar con async/await (recomendado)
+ * await _ensureSwal();
+ * Swal.fire({...});
+ * 
+ * // Uso legacy con callback (deprecado)
+ * _ensureSwal(() => {
+ *     Swal.fire({...});
+ * });
  */
 function _ensureSwal(callback, maxWaitTime = 5000) {
     return new Promise((resolve) => {
         if (typeof Swal !== 'undefined') {
-            if (callback) callback();
+            // ✅ Swal ya está disponible
+            if (callback) {
+                callback();  // Ejecutar callback si se proporciona (legacy)
+            }
             resolve(true);
             return;
         }
         
+        // ⏳ Swal no está disponible, esperar
         const startTime = Date.now();
         const checkInterval = setInterval(() => {
             if (typeof Swal !== 'undefined') {
+                // ✅ Swal ahora está disponible
                 clearInterval(checkInterval);
-                if (callback) callback();
+                if (callback) {
+                    callback();  // Ejecutar callback si se proporciona (legacy)
+                }
                 resolve(true);
             } else if (Date.now() - startTime > maxWaitTime) {
+                // ❌ Timeout: Swal no se cargó
                 clearInterval(checkInterval);
-
+                console.error('[_ensureSwal] Timeout esperando a Swal después de', maxWaitTime, 'ms');
                 resolve(false);  // Resolver con false para indicar timeout
             }
         }, 50);
