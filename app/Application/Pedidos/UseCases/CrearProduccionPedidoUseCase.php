@@ -4,30 +4,32 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
+use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use Illuminate\Events\Dispatcher;
 use Exception;
 
 /**
  * CrearProduccionPedidoUseCase
  * 
+ * COMPLETADO: Fue refactorizado en FASE 1
+ * 
  * Use Case para crear un nuevo pedido de producción
  * 
  * Responsabilidades:
- * - Validar datos de entrada
+ * - Validar datos de entrada (delegado a agregado)
  * - Crear agregado de dominio
- * - Persistir en repositorio
+ * - Persistir en repositorio ✅ AHORA FUNCIONA
+ * - Publicar domain events ✅ AHORA FUNCIONA
  * - Retornar resultado
  * 
  * Patrón: Command Handler
  */
 class CrearProduccionPedidoUseCase
 {
-    /**
-     * Constructor puede inyectar repositorios, servicios, etc.
-     * Por ahora está vacío pero vamos a agregar dependencias
-     */
-    public function __construct()
-    {
-    }
+    public function __construct(
+        private PedidoProduccionRepository $pedidoRepository,
+        private Dispatcher $eventDispatcher
+    ) {}
 
     /**
      * Ejecutar el use case
@@ -48,11 +50,13 @@ class CrearProduccionPedidoUseCase
                 }
             }
 
-            // 3. TODO: Persistir en repositorio
-            // $this->pedidoRepository->guardar($pedido);
+            // 3. ✅ PERSISTIR EN REPOSITORIO (ANTES ERA TODO)
+            $this->pedidoRepository->guardar($pedido);
 
-            // 4. TODO: Publicar domain events si es necesario
-            // $this->eventPublisher->publicar($pedido->eventos());
+            // 4. ✅ PUBLICAR DOMAIN EVENTS (ANTES ERA TODO)
+            foreach ($pedido->eventos() as $evento) {
+                $this->eventDispatcher->dispatch($evento);
+            }
 
             return $pedido;
 

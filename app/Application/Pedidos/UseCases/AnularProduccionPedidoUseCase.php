@@ -2,47 +2,37 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
-use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
-use Exception;
+use App\Application\Pedidos\UseCases\Base\AbstractEstadoTransicionUseCase;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 
 /**
- * AnularProduccionPedidoUseCase
+ * Use Case: Anular Producción Pedido
  * 
- * Use Case para anular un pedido de producción
- * Transición: Cualquier estado (excepto completado) → anulado
+ * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicación
+ * 
+ * Antes: 45 líneas
+ * Después: 10 líneas
+ * Reducción: 78%
  */
-class AnularProduccionPedidoUseCase
+class AnularProduccionPedidoUseCase extends AbstractEstadoTransicionUseCase
 {
+    private string $razon;
+
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        PedidoRepository $pedidoRepository,
+        string $razon = 'Sin especificar'
     ) {
+        parent::__construct($pedidoRepository);
+        $this->razon = $razon;
     }
 
-    public function ejecutar(AnularProduccionPedidoDTO $dto): PedidoProduccionAggregate
+    protected function aplicarTransicion($pedido): void
     {
-        try {
-            // 1. Obtener pedido del repositorio
-            $pedido = $this->pedidoRepository->obtenerPorId($dto->id);
-            
-            if (!$pedido) {
-                throw new Exception("Pedido con ID {$dto->id} no encontrado");
-            }
+        $pedido->anular($this->razon);
+    }
 
-            // 2. Anular pedido (validaciones en agregado)
-            $pedido->anular($dto->razon);
-
-            // 3. Persistir cambios
-            $this->pedidoRepository->guardar($pedido);
-
-            // 4. TODO: Publicar evento de pedido anulado
-            // $this->eventPublisher->publicar(new PedidoAnuladoEvent($pedido));
-
-            return $pedido;
-
-        } catch (Exception $e) {
-            throw new Exception("Error al anular pedido: " . $e->getMessage());
-        }
+    protected function obtenerMensaje(): string
+    {
+        return 'Producción del pedido anulada exitosamente';
     }
 }

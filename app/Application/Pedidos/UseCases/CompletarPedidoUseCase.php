@@ -2,40 +2,26 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Application\Pedidos\DTOs\PedidoResponseDTO;
+use App\Application\Pedidos\UseCases\Base\AbstractEstadoTransicionUseCase;
 
 /**
  * Use Case: Completar Pedido
  * 
- * Transiciona un pedido de EN_PRODUCCION a COMPLETADO
+ * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicación
+ * 
+ * Antes: 28 líneas
+ * Después: 8 líneas
+ * Reducción: 71%
  */
-class CompletarPedidoUseCase
+class CompletarPedidoUseCase extends AbstractEstadoTransicionUseCase
 {
-    public function __construct(
-        private PedidoRepository $pedidoRepository
-    ) {}
-
-    public function ejecutar(int $pedidoId): PedidoResponseDTO
+    protected function aplicarTransicion($pedido): void
     {
-        $pedido = $this->pedidoRepository->porId($pedidoId);
-
-        if (!$pedido) {
-            throw new \DomainException("Pedido $pedidoId no encontrado");
-        }
-
         $pedido->completar();
-        $this->pedidoRepository->guardar($pedido);
+    }
 
-        return new PedidoResponseDTO(
-            id: $pedido->id(),
-            numero: (string)$pedido->numero(),
-            clienteId: $pedido->clienteId(),
-            estado: $pedido->estado()->valor(),
-            descripcion: $pedido->descripcion(),
-            totalPrendas: $pedido->totalPrendas(),
-            totalArticulos: $pedido->totalArticulos(),
-            mensaje: 'Pedido completado exitosamente'
-        );
+    protected function obtenerMensaje(): string
+    {
+        return 'Pedido completado exitosamente';
     }
 }

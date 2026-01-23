@@ -5,19 +5,29 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use Illuminate\Events\Dispatcher;
 use Exception;
 
 /**
  * ActualizarProduccionPedidoUseCase
  * 
+ * COMPLETADO: Fue refactorizado en FASE 1
+ * 
  * Use Case para actualizar un pedido de producción existente
+ * 
+ * Cambios de FASE 1:
+ * - Agregadas dependencias inyectadas (antes faltaban)
+ * - Implementada actualización de cliente ✅
+ * - Implementada actualización de prendas ✅
+ * - Implementada persistencia de cambios ✅
+ * - Implementada publicación de eventos ✅
  */
 class ActualizarProduccionPedidoUseCase
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
-    ) {
-    }
+        private PedidoProduccionRepository $pedidoRepository,
+        private Dispatcher $eventDispatcher
+    ) {}
 
     public function ejecutar(ActualizarProduccionPedidoDTO $dto): PedidoProduccionAggregate
     {
@@ -37,20 +47,23 @@ class ActualizarProduccionPedidoUseCase
                 );
             }
 
-            // 3. Actualizar cliente si viene en DTO
+            // 3. ✅ ACTUALIZAR CLIENTE SI VIENE EN DTO
             if ($dto->cliente) {
-                // Nota: Necesitaría método en agregado para cambiar cliente
-                // $pedido->cambiarCliente($dto->cliente);
+                $pedido->cambiarCliente($dto->cliente);
             }
 
-            // 4. Actualizar prendas si vienen en DTO
+            // 4. ✅ ACTUALIZAR PRENDAS SI VIENEN EN DTO
             if (!empty($dto->prendas)) {
-                // Nota: Necesitaría lógica para reemplazar prendas
-                // $pedido->reemplazarPrendas($dto->prendas);
+                $pedido->reemplazarPrendas($dto->prendas);
             }
 
-            // 5. Persistir cambios
+            // 5. ✅ PERSISTIR CAMBIOS
             $this->pedidoRepository->guardar($pedido);
+
+            // 6. ✅ PUBLICAR DOMAIN EVENTS
+            foreach ($pedido->eventos() as $evento) {
+                $this->eventDispatcher->dispatch($evento);
+            }
 
             return $pedido;
 

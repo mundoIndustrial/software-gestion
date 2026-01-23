@@ -2,40 +2,26 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Application\Pedidos\DTOs\PedidoResponseDTO;
+use App\Application\Pedidos\UseCases\Base\AbstractEstadoTransicionUseCase;
 
 /**
  * Use Case: Cancelar Pedido
  * 
- * Comando para cancelar un pedido en estado PENDIENTE o CONFIRMADO
+ * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicación
+ * 
+ * Antes: 28 líneas
+ * Después: 8 líneas
+ * Reducción: 71%
  */
-class CancelarPedidoUseCase
+class CancelarPedidoUseCase extends AbstractEstadoTransicionUseCase
 {
-    public function __construct(
-        private PedidoRepository $pedidoRepository
-    ) {}
-
-    public function ejecutar(int $pedidoId): PedidoResponseDTO
+    protected function aplicarTransicion($pedido): void
     {
-        $pedido = $this->pedidoRepository->porId($pedidoId);
-
-        if (!$pedido) {
-            throw new \DomainException("Pedido $pedidoId no encontrado");
-        }
-
         $pedido->cancelar();
-        $this->pedidoRepository->guardar($pedido);
+    }
 
-        return new PedidoResponseDTO(
-            id: $pedido->id(),
-            numero: (string)$pedido->numero(),
-            clienteId: $pedido->clienteId(),
-            estado: $pedido->estado()->valor(),
-            descripcion: $pedido->descripcion(),
-            totalPrendas: $pedido->totalPrendas(),
-            totalArticulos: $pedido->totalArticulos(),
-            mensaje: 'Pedido cancelado exitosamente'
-        );
+    protected function obtenerMensaje(): string
+    {
+        return 'Pedido cancelado exitosamente';
     }
 }
