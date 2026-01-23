@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\DTOs\ItemPedidoDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\PedidoProduccion\Services\GestionItemsPedidoService;
 
 /**
@@ -15,6 +16,8 @@ use App\Domain\PedidoProduccion\Services\GestionItemsPedidoService;
  */
 class AgregarItemPedidoUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function __construct(
         private GestionItemsPedidoService $gestionItems
     ) {}
@@ -24,13 +27,11 @@ class AgregarItemPedidoUseCase
      */
     public function ejecutar(array $itemData): array
     {
-        // Crear DTO desde datos
-        $itemDTO = ItemPedidoDTO::fromArray($itemData);
+        $this->validarNoVacio($itemData, 'Datos del item');
         
-        // Agregar item
+        $itemDTO = ItemPedidoDTO::fromArray($itemData);
         $this->gestionItems->agregarItem($itemDTO);
 
-        // Retornar estado actualizado
         return [
             'success' => true,
             'message' => 'Ítem agregado correctamente',

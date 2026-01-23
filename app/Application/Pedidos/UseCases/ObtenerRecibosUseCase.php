@@ -3,24 +3,21 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerRecibosDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 
 class ObtenerRecibosUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function __construct(
         private PedidoProduccionRepository $pedidoRepository
     ) {}
 
     public function ejecutar(ObtenerRecibosDTO $dto): array
     {
-        // Obtener el pedido
-        $pedido = $this->pedidoRepository->obtenerPorId($dto->pedidoId);
+        $pedido = $this->validarPedidoExiste($dto->pedidoId, $this->pedidoRepository);
 
-        if (!$pedido) {
-            throw new \Exception("Pedido con ID {$dto->pedidoId} no encontrado");
-        }
-
-        // Obtener recibos del EPP si existen
         $recibos = [];
         if ($pedido->epps) {
             foreach ($pedido->epps as $epp) {

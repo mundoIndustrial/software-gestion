@@ -3,24 +3,26 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ActualizarPrendaPedidoDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Log;
 
 final class ActualizarPrendaPedidoUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function ejecutar(ActualizarPrendaPedidoDTO $dto)
     {
         Log::info('[ActualizarPrendaPedidoUseCase] Iniciando actualización de prenda', [
             'prenda_id' => $dto->prendaId,
         ]);
 
-        $prenda = PrendaPedido::find($dto->prendaId);
-        
-        if (!$prenda) {
-            throw new \InvalidArgumentException("Prenda {$dto->prendaId} no encontrada");
-        }
+        $prenda = $this->validarObjetoExiste(
+            PrendaPedido::find($dto->prendaId),
+            'Prenda',
+            $dto->prendaId
+        );
 
-        // Actualizar SOLO campos reales de prendas_pedido
         if ($dto->nombrePrenda !== null) {
             $prenda->nombre_prenda = $dto->nombrePrenda;
         }

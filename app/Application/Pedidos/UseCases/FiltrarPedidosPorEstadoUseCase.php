@@ -2,12 +2,16 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use Illuminate\Support\Facades\Log;
 
 final class FiltrarPedidosPorEstadoUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function __construct(
         private PedidoProduccionRepository $pedidoRepository,
     ) {}
@@ -19,10 +23,8 @@ final class FiltrarPedidosPorEstadoUseCase
             'page' => $dto->page,
         ]);
 
-        $estadosValidos = ['activo', 'pendiente', 'completado', 'cancelado'];
-        if (!in_array($dto->estado, $estadosValidos)) {
-            throw new \InvalidArgumentException("Estado '{$dto->estado}' no válido");
-        }
+        $this->validarEstadoValido($dto->estado);
+        $this->validarPositivo($dto->page, 'Página');
 
         $pedidos = $this->pedidoRepository->obtenerPorEstado(
             $dto->estado,

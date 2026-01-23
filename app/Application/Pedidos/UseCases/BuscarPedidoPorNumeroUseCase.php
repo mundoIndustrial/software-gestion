@@ -3,11 +3,14 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use Illuminate\Support\Facades\Log;
 
 final class BuscarPedidoPorNumeroUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function __construct(
         private PedidoProduccionRepository $pedidoRepository,
     ) {}
@@ -18,9 +21,7 @@ final class BuscarPedidoPorNumeroUseCase
             'numero' => $dto->numero,
         ]);
 
-        if (empty($dto->numero)) {
-            throw new \InvalidArgumentException('Número de pedido requerido');
-        }
+        $this->validarNoVacio($dto->numero, 'Número de pedido');
 
         $pedido = $this->pedidoRepository->obtenerPorNumero($dto->numero);
 

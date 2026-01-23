@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\MarcarNotificacionLeidaDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Application\Services\Asesores\NotificacionesService;
 
 /**
@@ -13,6 +14,8 @@ use App\Application\Services\Asesores\NotificacionesService;
  */
 class MarcarNotificacionLeidaUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function __construct(
         private NotificacionesService $notificacionesService
     ) {}
@@ -27,17 +30,11 @@ class MarcarNotificacionLeidaUseCase
             ];
         }
 
-        if ($dto->notificacionId) {
-            $this->notificacionesService->marcarNotificacionLeida($dto->notificacionId);
-            return [
-                'success' => true,
-                'message' => 'Notificación marcada como leída'
-            ];
-        }
-
+        $this->validarPositivo($dto->notificacionId, 'ID de notificación');
+        $this->notificacionesService->marcarNotificacionLeida($dto->notificacionId);
         return [
-            'success' => false,
-            'message' => 'Debe especificar una notificación o marcar todas'
+            'success' => true,
+            'message' => 'Notificación marcada como leída'
         ];
     }
 }

@@ -38,7 +38,7 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
     /**
      * Personalización: Retornar modelo directamente
      */
-    protected function construirRespuesta(array $datosEnriquecidos)
+    protected function construirRespuesta(array $datosEnriquecidos): mixed
     {
         return $this->pedidoRepository->porId($datosEnriquecidos['id']);
     }

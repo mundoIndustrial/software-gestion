@@ -2,6 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
  */
 class EditarProcesoUseCase
 {
+    use ManejaPedidosUseCase;
+
     /**
      * Ejecutar caso de uso
      * 
@@ -25,16 +28,14 @@ class EditarProcesoUseCase
      */
     public function ejecutar(int $id, array $data): array
     {
-        // Buscar el proceso
+        $this->validarNoVacio($data, 'Datos de proceso');
+
         $proceso = \App\Models\ProcesoPrenda::where('id', $id)
             ->where('numero_pedido', $data['numero_pedido'])
             ->first();
 
-        if (!$proceso) {
-            throw new \DomainException('Proceso no encontrado');
-        }
+        $this->validarObjetoExiste($proceso, 'Proceso', $id);
 
-        // Actualizar usando el modelo (dispara Observer)
         $proceso->update([
             'proceso' => $data['proceso'],
             'fecha_inicio' => $data['fecha_inicio'],

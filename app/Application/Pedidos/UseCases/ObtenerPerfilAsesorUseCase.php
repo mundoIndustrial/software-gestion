@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerPerfilAsesorDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -13,14 +14,11 @@ use Illuminate\Support\Facades\Auth;
  */
 class ObtenerPerfilAsesorUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function ejecutar(ObtenerPerfilAsesorDTO $dto): mixed
     {
         $user = Auth::user();
-
-        if (!$user) {
-            throw new \Exception('Por favor inicia sesión para ver tu perfil.');
-        }
-
-        return $user;
+        return $this->validarObjetoExiste($user, 'Usuario', 'autenticado');
     }
 }

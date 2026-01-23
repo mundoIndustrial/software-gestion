@@ -2,6 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\ProcesoPrenda;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\DB;
  */
 class EliminarProcesoUseCase
 {
+    use ManejaPedidosUseCase;
+
     /**
      * Ejecutar caso de uso
      * 
@@ -26,16 +29,15 @@ class EliminarProcesoUseCase
      */
     public function ejecutar(int $id, int $numeroPedido): array
     {
-        // Buscar el proceso
+        $this->validarPositivo($id, 'ID del proceso');
+        $this->validarPositivo($numeroPedido, 'Número de pedido');
+
         $proceso = ProcesoPrenda::where('id', $id)
             ->where('numero_pedido', $numeroPedido)
             ->first();
 
-        if (!$proceso) {
-            throw new \DomainException('Proceso no encontrado o ya fue eliminado');
-        }
+        $this->validarObjetoExiste($proceso, 'Proceso', $id);
 
-        // Verificar que no sea el último proceso
         $totalProcesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
             ->count();
 
@@ -43,10 +45,8 @@ class EliminarProcesoUseCase
             throw new \DomainException('No se puede eliminar el último proceso de una orden');
         }
 
-        // Eliminar usando el Model (dispara el Observer deleting)
         $proceso->delete();
 
-        // También eliminar del historial
         DB::table('procesos_historial')
             ->where('numero_pedido', $numeroPedido)
             ->where('proceso', $proceso->proceso)

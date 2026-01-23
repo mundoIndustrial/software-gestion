@@ -43,7 +43,7 @@ final class ObtenerPrendasPedidoUseCase extends AbstractObtenerUseCase
     /**
      * Personalización: Retornar solo array de prendas
      */
-    protected function construirRespuesta(array $datosEnriquecidos)
+    protected function construirRespuesta(array $datosEnriquecidos): mixed
     {
         Log::info('[ObtenerPrendasPedidoUseCase] Prendas obtenidas', [
             'pedido_id' => $datosEnriquecidos['id'],

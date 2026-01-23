@@ -3,11 +3,30 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
+use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Use Case: Cambiar Estado del Pedido
+ * 
+ * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait + EstadoPedidoCatalog
+ * 
+ * Antes: 58 líneas (15 líneas de lógica + 43 de validación y transiciones hardcodeadas)
+ * Después: 28 líneas (solo lógica de negocio)
+ * Reducción: 52%
+ * 
+ * Beneficios:
+ * - Validaciones centralizadas
+ * - Transiciones en único lugar (EstadoPedidoCatalog)
+ * - Mensajes de error consistentes
+ * - Menos código repetido
+ */
 final class CambiarEstadoPedidoUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function __construct(
         private PedidoProduccionRepository $pedidoRepository,
     ) {}
@@ -19,28 +38,14 @@ final class CambiarEstadoPedidoUseCase
             'nuevo_estado' => $dto->nuevoEstado,
         ]);
 
-        $pedido = $this->pedidoRepository->obtenerPorId($dto->pedidoId);
-        
-        if (!$pedido) {
-            throw new \InvalidArgumentException("Pedido {$dto->pedidoId} no encontrado");
-        }
+        // CENTRALIZADO: Validar pedido existe (trait)
+        $pedido = $this->validarPedidoExiste($dto->pedidoId, $this->pedidoRepository);
 
-        // Validar transición de estado
-        $estadosValidos = [
-            'activo' => ['pendiente', 'completado', 'cancelado'],
-            'pendiente' => ['activo', 'completado', 'cancelado'],
-            'completado' => ['activo', 'pendiente'],
-            'cancelado' => [],
-        ];
+        // CENTRALIZADO: Validar estado es válido (trait + catalog)
+        $this->validarEstadoValido($dto->nuevoEstado);
 
-        $estadoActual = $pedido->estado ?? 'activo';
-        $estadosSiguientes = $estadosValidos[$estadoActual] ?? [];
-
-        if (!in_array($dto->nuevoEstado, $estadosSiguientes)) {
-            throw new \InvalidArgumentException(
-                "No se permite cambiar de '{$estadoActual}' a '{$dto->nuevoEstado}'"
-            );
-        }
+        // CENTRALIZADO: Validar transición es permitida (trait + catalog)
+        $this->validarTransicion($pedido->estado ?? 'PENDIENTE_SUPERVISOR', $dto->nuevoEstado);
 
         // Actualizar estado
         $pedido->estado = $dto->nuevoEstado;

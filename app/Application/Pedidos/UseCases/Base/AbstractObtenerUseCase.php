@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases\Base;
 
-use App\Domain\Pedidos\Repositories\PedidoRepository;
+use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 
 /**
@@ -23,9 +23,9 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
  */
 abstract class AbstractObtenerUseCase
 {
-    protected PedidoRepository $pedidoRepository;
+    protected PedidoProduccionRepository $pedidoRepository;
 
-    public function __construct(PedidoRepository $pedidoRepository)
+    public function __construct(PedidoProduccionRepository $pedidoRepository)
     {
         $this->pedidoRepository = $pedidoRepository;
     }
