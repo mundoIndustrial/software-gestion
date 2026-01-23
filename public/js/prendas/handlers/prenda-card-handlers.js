@@ -14,7 +14,7 @@ class PrendaCardHandlers {
      * @param {Object} callbacks - Callbacks de acciones (editar, eliminar, etc)
      */
     static inicializar(tarjeta, prenda, prendaIndex, callbacks = {}) {
-        console.log('[PrendaCardHandlers] Inicializando handlers para prenda:', prendaIndex);
+
 
         this._inicializarExpandibles(tarjeta, prendaIndex);
         this._inicializarMenuContextual(tarjeta, prendaIndex, prenda, callbacks);
@@ -40,7 +40,7 @@ class PrendaCardHandlers {
                     contenedor.style.display = estaAbierto ? 'none' : 'block';
                     btn.classList.toggle('expanded', !estaAbierto);
                     
-                    console.log(`[PrendaCardHandlers] Toggle sección ${seccionId} - Abierto: ${!estaAbierto}`);
+
                 }
             });
         });
@@ -78,7 +78,7 @@ class PrendaCardHandlers {
                 if (callbacks.onEditar) {
                     callbacks.onEditar(prendaIndex, prenda);
                 }
-                console.log('[PrendaCardHandlers] Editar prenda:', prendaIndex);
+
             });
         }
 
@@ -120,7 +120,7 @@ class PrendaCardHandlers {
      */
     static _inicializarAcciones(tarjeta, prendaIndex, prenda, callbacks) {
         // Puede extenderse para más acciones en el futuro
-        console.log('[PrendaCardHandlers] Acciones inicializadas para prenda:', prendaIndex);
+
     }
 
     /**
@@ -129,7 +129,7 @@ class PrendaCardHandlers {
      */
     static _confirmarEliminar(prendaIndex, callbacks) {
         if (!window.DeletionService) {
-            console.warn('[PrendaCardHandlers] DeletionService no disponible');
+
             return;
         }
 
@@ -140,7 +140,7 @@ class PrendaCardHandlers {
                 if (callbacks.onEliminar) {
                     callbacks.onEliminar(prendaIndex);
                 }
-                console.log('[PrendaCardHandlers] Prenda eliminada:', prendaIndex);
+
             }
         );
     }
@@ -155,9 +155,9 @@ class PrendaCardHandlers {
         const clone = tarjeta.cloneNode(true);
         tarjeta.parentNode.replaceChild(clone, tarjeta);
         
-        console.log('[PrendaCardHandlers] Listeners limpios');
+
     }
 }
 
 window.PrendaCardHandlers = PrendaCardHandlers;
-console.log('✓ [PRENDA-CARD-HANDLERS] Cargado correctamente');
+

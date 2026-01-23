@@ -13,11 +13,11 @@ let bodegaFestivos = [];
  * Fallback: intenta múltiples APIs disponibles
  */
 async function loadBodegaFestivos() {
-    console.log('🌐 Intentando cargar festivos desde APIs...\n');
+
     
     // Intentar con API local primero
     try {
-        console.log('    Intentando: GET /api/festivos');
+
         const response = await fetch('/api/festivos', {
             headers: {
                 'Accept': 'application/json',
@@ -52,19 +52,19 @@ async function loadBodegaFestivos() {
             }
             
             if (bodegaFestivos.length > 0) {
-                console.log('   Festivos cargados desde API local: ' + bodegaFestivos.length);
-                console.log('     Primer festivo: ' + bodegaFestivos[0]);
-                console.log('     Último festivo: ' + bodegaFestivos[bodegaFestivos.length-1] + '\n');
+
+
+
                 return;
             }
         }
     } catch (error) {
-        console.log('   API local no disponible: ' + error.message);
+
     }
     
     //  Intentar con API pública de zolv.co
     try {
-        console.log('    Intentando: https://api.zolv.co/api/holidays');
+
         const response = await fetch('https://api.zolv.co/api/holidays', {
             headers: {
                 'Accept': 'application/json'
@@ -78,19 +78,19 @@ async function loadBodegaFestivos() {
                 .map(f => f.date.split('T')[0]);
             
             if (bodegaFestivos.length > 0) {
-                console.log('   Festivos cargados desde zolv.co: ' + bodegaFestivos.length);
-                console.log('     Primer festivo: ' + bodegaFestivos[0]);
-                console.log('     Último festivo: ' + bodegaFestivos[bodegaFestivos.length-1] + '\n');
+
+
+
                 return;
             }
         }
     } catch (error) {
-        console.log('   zolv.co no disponible: ' + error.message);
+
     }
     
     //  Intentar con API Calendarific
     try {
-        console.log('    Intentando: https://api.calendarific.com/v2/holidays');
+
         const year = new Date().getFullYear();
         const response = await fetch(`https://api.calendarific.com/v2/holidays?country=CO&year=${year}&api_key=public`, {
             headers: {
@@ -104,19 +104,19 @@ async function loadBodegaFestivos() {
                 bodegaFestivos = data.response.holidays.map(h => h.date.split('T')[0]);
                 
                 if (bodegaFestivos.length > 0) {
-                    console.log('   Festivos cargados desde Calendarific: ' + bodegaFestivos.length);
-                    console.log('     Primer festivo: ' + bodegaFestivos[0]);
-                    console.log('     Último festivo: ' + bodegaFestivos[bodegaFestivos.length-1] + '\n');
+
+
+
                     return;
                 }
             }
         }
     } catch (error) {
-        console.log('   Calendarific no disponible: ' + error.message);
+
     }
     
     // 4️⃣ Fallback: Usar festivos comunes de Colombia si todas las APIs fallan
-    console.log('  4️⃣  Usando festivos por defecto (fallback)');
+
     const year = new Date().getFullYear();
     
     // Festivos fijos y móviles aproximados para 2024-2026
@@ -142,14 +142,14 @@ async function loadBodegaFestivos() {
     };
     
     bodegaFestivos = festivosPorAño[year] || festivosPorAño[2025];
-    console.log('📅 Usando festivos por defecto:', bodegaFestivos.length);
+
 }
 
 /**
  * Abrir modal de seguimiento de bodega
  */
 function openBodegaTrackingModal(pedido) {
-    console.log(' Abriendo tracking de bodega para pedido:', pedido);
+
     bodegaCurrentTrackingOrder = pedido;
     
     // Cargar festivos primero, luego datos
@@ -163,7 +163,7 @@ function openBodegaTrackingModal(pedido) {
             modal.style.opacity = '1';
         }
     }).catch(error => {
-        console.error(' Error al cargar tracking:', error);
+
         alert('Error al cargar los datos del seguimiento');
     });
 }
@@ -198,7 +198,7 @@ async function loadBodegaTrackingData(pedido) {
         }
         
         const orden = await response.json();
-        console.log(' Orden completa:', orden);
+
         
         // Actualizar información básica
         document.getElementById('bodegaTrackingOrderNumber').textContent = `#${orden.pedido || '-'}`;
@@ -214,7 +214,7 @@ async function loadBodegaTrackingData(pedido) {
         buildBodegaProcessTimeline(orden);
         
     } catch (error) {
-        console.error('Error cargando datos:', error);
+
         throw error;
     }
 }
@@ -263,7 +263,7 @@ function calculateTotalDias(orden) {
                 if (fechaFin) {
                     const diasHabiles = calculateBusinessDays(fechaInicio, fechaFin, bodegaFestivos);
                     totalDiasHabiles += diasHabiles;
-                    console.log(` ${procesoActual.nombre} → ${procesoSiguiente.nombre}: ${diasHabiles} días hábiles`);
+
                     break;  // Salir del loop interno después de encontrar la siguiente fecha
                 }
             }
@@ -273,7 +273,7 @@ function calculateTotalDias(orden) {
     
     // Si no se calculó nada, usar fallback: sumar campos de días registrados
     if (totalDiasHabiles === 0) {
-        console.log('  No hay pares de fechas con ambas válidas, usando campos de días registrados');
+
         
         const diasFields = [
             'dias_orden',
@@ -298,13 +298,13 @@ function calculateTotalDias(orden) {
                 const numValue = parseInt(value, 10);
                 if (!isNaN(numValue)) {
                     totalDiasHabiles += numValue;
-                    console.log(`  ${field}: ${numValue} días (valor guardado)`);
+
                 }
             }
         });
     }
     
-    console.log(` TOTAL DE DÍAS HÁBILES: ${totalDiasHabiles}`);
+
     return totalDiasHabiles;
 }
 
@@ -365,8 +365,8 @@ function buildBodegaProcessTimeline(orden) {
     const container = document.getElementById('bodegaTrackingTimelineContainer');
     container.innerHTML = '';
     
-    console.log('🏗️ Construyendo timeline...');
-    console.log(`📅 Festivos disponibles: ${bodegaFestivos.length}`);
+
+
     
     // Mapeo de los 14 procesos en orden secuencial
     const procesos = [
@@ -392,7 +392,7 @@ function buildBodegaProcessTimeline(orden) {
         return fechaValue !== null && fechaValue !== undefined && fechaValue !== '';
     });
     
-    console.log(`✓ Procesos con fecha: ${procesosConFecha.length}`);
+
     
     // Si no hay procesos con fecha, mostrar mensaje
     if (procesosConFecha.length === 0) {
@@ -420,7 +420,7 @@ function buildBodegaProcessTimeline(orden) {
             if (fechaFin) {
                 diasHabiles = calculateBusinessDays(fechaInicio, fechaFin, bodegaFestivos);
                 siguienteProceso = procesoSiguiente.nombre;
-                console.log(` ${proceso.nombre} → ${siguienteProceso}: ${diasHabiles} días hábiles`);
+
                 break;
             }
         }
@@ -499,7 +499,7 @@ function createBodegaTimelineItem(number, processName, isCompleted, fecha, encar
  * Inicializar event listeners
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(' Bodega Tracking Script Initialized');
+
     
     // Cerrar modal con botón
     const closeBtn = document.getElementById('closeBodegaTrackingModal');

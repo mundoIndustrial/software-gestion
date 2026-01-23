@@ -13,5 +13,5 @@
 // 5. FormModule (depende de ProductoModule)
 // 6. CotizacionPrendaApp (orquestador - depende de todos)
 
-console.log(' Cargando módulos de cotización de prendas...');
-console.log('✓ Módulos listos para inicializar');
+
+

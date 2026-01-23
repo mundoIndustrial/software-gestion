@@ -13,7 +13,7 @@ export class NavigationManager {
         const arrowContainer = document.querySelector('.arrow-container');
 
         if (!prevArrow || !nextArrow || !arrowContainer) {
-            console.warn('[NavigationManager] Elementos de navegación no encontrados');
+
             return;
         }
 
@@ -24,7 +24,7 @@ export class NavigationManager {
         // Mostrar/ocultar según cantidad de procesos
         if (procesosActuales.length <= 1) {
             arrowContainer.style.display = 'none';
-            console.log('[NavigationManager] Solo 1 recibo, flechas ocultas');
+
             return;
         }
 
@@ -46,10 +46,6 @@ export class NavigationManager {
             prendaData, 
             onProcesoCambiado
         );
-
-        console.log(
-            `[NavigationManager] Configurado: ${procesoActualIndice + 1}/${procesosActuales.length}`
-        );
     }
 
     /**
@@ -64,9 +60,6 @@ export class NavigationManager {
             const tipoRecibo = String(nuevoRecibo.tipo || nuevoRecibo.tipo_proceso || '');
             
             modalManager.setState({ procesoActualIndice: nuevoIndice });
-            
-            console.log(`%c[NavigationManager] Anterior: índice ${nuevoIndice}`, 'color: #10b981;');
-            
             if (onProcesoCambiado) {
                 onProcesoCambiado(prendaData, nuevoIndice, tipoRecibo);
             }
@@ -86,9 +79,6 @@ export class NavigationManager {
             const tipoRecibo = String(nuevoRecibo.tipo || nuevoRecibo.tipo_proceso || '');
             
             modalManager.setState({ procesoActualIndice: nuevoIndice });
-            
-            console.log(`%c[NavigationManager] Siguiente: índice ${nuevoIndice}`, 'color: #10b981;');
-            
             if (onProcesoCambiado) {
                 onProcesoCambiado(prendaData, nuevoIndice, tipoRecibo);
             }
@@ -137,3 +127,4 @@ export class NavigationManager {
         nextArrow.style.display = procesoActualIndice < procesosActuales.length - 1 ? 'flex' : 'none';
     }
 }
+

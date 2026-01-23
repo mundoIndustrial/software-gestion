@@ -95,16 +95,22 @@
     }
 
 
-    //  REFACTORIZADO: abrirModalDescripcion() - Usar UIModalService
+    //  REFACTORIZADO: abrirModalDescripcion() - Usar UIModalService con _ensureSwal
     async function abrirModalDescripcion(pedidoId, tipo) {
         try {
-            UI.cargando('Cargando información...', 'Por favor espera');
+            // Esperar a que Swal esté disponible antes de mostrar modal
+            await _ensureSwal(() => {
+                UI.cargando('Cargando información...', 'Por favor espera');
+            });
             
             const response = await fetch(`/api/pedidos/${pedidoId}`);
             const result = await response.json();
             const data = result.data || result;
             
-            Swal.close();
+            // Cerrar modal de carga usando _ensureSwal
+            await _ensureSwal(() => {
+                Swal.close();
+            });
             
             let htmlContenido = '';
             if (data.prendas && Array.isArray(data.prendas)) {
@@ -126,13 +132,17 @@
                 htmlContenido += '</div>';
             }
             
+            // Mostrar contenido usando UI que internamente usa _ensureSwal
             UI.contenido({
                 titulo: ' Prendas y Procesos',
                 html: htmlContenido,
                 ancho: '800px'
             });
         } catch (error) {
-            Swal.close();
+            // Cerrar cualquier modal abierto
+            await _ensureSwal(() => {
+                Swal.close();
+            });
             UI.error('Error', 'No se pudo cargar la información');
             console.error('Error:', error);
         }
@@ -254,18 +264,27 @@
      * Editar pedido - carga datos y abre modal de edición
      */
     function editarPedido(pedidoId) {
-        UI.cargando('Cargando datos del pedido...', 'Por favor espera');
+        // Usar _ensureSwal para esperar a que Swal esté listo
+        _ensureSwal(() => {
+            UI.cargando('Cargando datos del pedido...', 'Por favor espera');
+        });
         
         fetch(`/api/pedidos/${pedidoId}`)
             .then(res => res.json())
             .then(respuesta => {
-                Swal.close();
+                // Cerrar modal de carga usando _ensureSwal
+                _ensureSwal(() => {
+                    Swal.close();
+                });
+                
                 if (!respuesta.success) throw new Error(respuesta.message || 'Error al cargar datos');
                 const datos = respuesta.data || respuesta.datos;
                 abrirModalEditarPedido(pedidoId, datos, 'editar');  // Pasar 'editar' para mostrar botones
             })
             .catch(err => {
-                Swal.close();
+                _ensureSwal(() => {
+                    Swal.close();
+                });
                 UI.error('Error', 'No se pudo cargar el pedido: ' + err.message);
             });
     }
@@ -319,7 +338,10 @@
      * Guardar cambios del pedido en el backend
      */
     function guardarCambiosPedido(pedidoId, datosActualizados) {
-        UI.cargando('Guardando cambios...', 'Por favor espera');
+        // Usar _ensureSwal para esperar a que Swal esté listo
+        _ensureSwal(() => {
+            UI.cargando('Guardando cambios...', 'Por favor espera');
+        });
         
         fetch(`/api/pedidos/${pedidoId}/actualizar-descripcion`, {
             method: 'PATCH',
@@ -338,7 +360,10 @@
             return response.json();
         })
         .then(data => {
-            Swal.close();
+            // Cerrar modal de carga y mostrar confirmación
+            _ensureSwal(() => {
+                Swal.close();
+            });
             
             // Actualizar los datos globales
             if (window.datosEdicionPedido) {
@@ -348,30 +373,37 @@
             }
             
             // Mostrar modal de confirmación para continuar editando
-            Swal.fire({
-                title: ' Guardado Exitosamente',
-                text: '¿Deseas continuar editando este pedido?',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Sí, continuar editando',
-                cancelButtonText: 'No, cerrar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Volver a abrir el modal de edición del pedido
-                    abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');
-                } else {
-                    // Recargar la tabla de pedidos
-                    setTimeout(() => {
-                        location.reload();
-                    }, 500);
-                }
+            _ensureSwal(() => {
+                Swal.fire({
+                    title: ' Guardado Exitosamente',
+                    text: '¿Deseas continuar editando este pedido?',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonColor: '#10b981',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Sí, continuar editando',
+                    cancelButtonText: 'No, cerrar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Volver a abrir el modal de edición del pedido
+                        abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');
+                    } else {
+                        // Recargar la tabla de pedidos
+                        setTimeout(() => {
+                            location.reload();
+                        }, 500);
+                    }
+                });
             });
         })
         .catch(error => {
             console.error('Error al guardar cambios:', error);
-            Swal.close();
+            
+            // Cerrar modal de carga
+            _ensureSwal(() => {
+                Swal.close();
+            });
+            
             UI.error('Error al guardar', error.message || 'Ocurrió un error al guardar los cambios');
         });
     }

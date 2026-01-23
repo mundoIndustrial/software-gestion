@@ -162,26 +162,26 @@ function agregarFotos(files, dropZone) {
         }
     }
     
-    console.log('📁 Agregando fotos de prenda a memoria');
-    console.log('📁 Producto ID:', productoId);
-    console.log('📁 Índice de prenda:', prendaIndex);
+
+
+
     
     // Contar imágenes guardadas (desde cargarBorrador)
     const fotosGuardadas = Array.from(dropZone.closest('.producto-card').querySelectorAll('[data-foto]:not([data-foto-nueva])')).length;
     const fotosNuevasActuales = window.fotosSeleccionadas[productoId].length;
     const totalFotosActuales = fotosGuardadas + fotosNuevasActuales;
     
-    console.log(` Fotos guardadas: ${fotosGuardadas}, Fotos nuevas actuales: ${fotosNuevasActuales}, Total actual: ${totalFotosActuales}`);
+
     
     // Calcular cuántas fotos podemos agregar
     const espacioDisponible = 3 - totalFotosActuales;
     
     if (espacioDisponible <= 0) {
-        console.warn(` Límite de 3 fotos alcanzado. No se puede agregar más fotos.`);
+
         return;
     }
     
-    console.log(` Espacio disponible para ${espacioDisponible} foto(s)`);
+
     
     // Agregar solo las fotos que caben en el límite
     const fotosParaAgregar = Array.from(files).slice(0, espacioDisponible);
@@ -198,13 +198,13 @@ function agregarFotos(files, dropZone) {
             prendaIndex: prendaIndex
         });
         
-        console.log(` Foto ${fileIndex + 1} de ${fotosParaAgregar.length} agregada: ${file.name} (Prenda ${prendaIndex})`);
+
     });
     
     // Mostrar mensaje si no se pudieron agregar todas las fotos seleccionadas
     if (files.length > fotosParaAgregar.length) {
         const noAgregadas = files.length - fotosParaAgregar.length;
-        console.warn(` Solo se agregaron ${fotosParaAgregar.length} de ${files.length} fotos. Límite de 3 fotos alcanzado.`);
+
     }
     actualizarPreviewFotos(dropZone);
 }
@@ -212,39 +212,39 @@ function agregarFotos(files, dropZone) {
 function actualizarPreviewFotos(input) {
     const productoCard = input.closest('.producto-card');
     if (!productoCard) {
-        console.warn(' No se encontró .producto-card');
+
         return;
     }
     const productoId = productoCard.dataset.productoId || 'default';
     
     let container = null;
     const label = input.closest('label');
-    console.log(' Buscando contenedor para fotos:');
-    console.log('   - label:', label);
+
+
     
     if (label && label.parentElement) {
         container = label.parentElement.querySelector('.fotos-preview');
-        console.log('   - Intentó label.parentElement.querySelector:', container);
+
     }
     if (!container) {
         container = productoCard.querySelector('.fotos-preview');
-        console.log('   - Intentó productoCard.querySelector:', container);
+
     }
     if (!container) {
-        console.warn(' No se encontró contenedor .fotos-preview');
+
         return;
     }
     
-    console.log('✓ Contenedor encontrado:', container);
+
     
     // NO limpiar el contenedor - solo agregar las nuevas fotos (File objects)
     // Las imágenes guardadas ya están en el contenedor desde cargarBorrador()
     const fotos = window.fotosSeleccionadas[productoId] || [];
     
-    console.log(`📸 Procesando ${fotos.length} fotos para producto ${productoId}`);
+
     
     if (fotos.length === 0) {
-        console.log(' No hay fotos nuevas para mostrar');
+
         return;
     }
     
@@ -254,7 +254,7 @@ function actualizarPreviewFotos(input) {
     // Filtrar solo las fotos que NO están en el preview
     const fotosNuevasParaMostrar = fotos.filter(file => !fotosEnPreview.includes(file.name));
     
-    console.log(`📸 Mostrando ${fotosNuevasParaMostrar.length} fotos nuevas (${fotosEnPreview.length} ya en preview)`);
+
     
     fotosNuevasParaMostrar.forEach((file, index) => {
         // Generar un ID único para esta foto (usando timestamp + random)
@@ -394,13 +394,6 @@ function eliminarFoto(productoId, index) {
         const esGuardada = fotoAEliminar.hasAttribute('data-foto-guardada');
         const fileName = fotoAEliminar.getAttribute('data-file-name');
         const fotoId = fotoAEliminar.getAttribute('data-foto-id');
-        
-        console.log(`🗑️ Intentando eliminar foto ${index + 1}:`, {
-            esGuardada: esGuardada,
-            fileName: fileName,
-            fotoId: fotoId
-        });
-        
         if (esGuardada) {
             // Es una foto guardada - mostrar modal de confirmación
             Swal.fire({
@@ -416,7 +409,7 @@ function eliminarFoto(productoId, index) {
                 if (result.isConfirmed) {
                     const rutaFoto = fotoAEliminar.querySelector('img')?.src || '';
                     
-                    console.log(`🗑️ Eliminando foto inmediatamente:`, rutaFoto);
+
                     
                     // Mostrar loading
                     Swal.fire({
@@ -445,7 +438,7 @@ function eliminarFoto(productoId, index) {
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            console.log(` Foto eliminada del servidor:`, rutaFoto);
+
                             
                             // Eliminar del preview
                             fotoAEliminar.remove();
@@ -459,7 +452,7 @@ function eliminarFoto(productoId, index) {
                                 timer: 2000
                             });
                         } else {
-                            console.error(` Error al eliminar foto:`, data.message);
+
                             Swal.fire({
                                 title: 'Error',
                                 text: data.message || 'No se pudo eliminar la imagen.',
@@ -469,7 +462,7 @@ function eliminarFoto(productoId, index) {
                         }
                     })
                     .catch(error => {
-                        console.error(` Error en la solicitud:`, error);
+
                         Swal.fire({
                             title: 'Error',
                             text: 'No se pudo conectar con el servidor.',
@@ -486,7 +479,7 @@ function eliminarFoto(productoId, index) {
                 const indexEnFotos = window.fotosSeleccionadas[productoId].findIndex(f => f.name === fileName);
                 if (indexEnFotos !== -1) {
                     window.fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
-                    console.log(` Foto nueva eliminada de fotosSeleccionadas`);
+
                 }
             }
             fotoAEliminar.remove();
@@ -515,18 +508,12 @@ function eliminarFotoById(productoId, fotoId) {
     // Encontrar la foto por su ID único
     const fotoAEliminar = fotosPreview.querySelector(`[data-foto-id="${fotoId}"]`);
     if (!fotoAEliminar) {
-        console.warn(` No se encontró foto con ID: ${fotoId}`);
+
         return;
     }
     
     const esGuardada = fotoAEliminar.hasAttribute('data-foto-guardada');
     const fileName = fotoAEliminar.getAttribute('data-file-name');
-    
-    console.log(`🗑️ Eliminando foto con ID ${fotoId}:`, {
-        esGuardada: esGuardada,
-        fileName: fileName
-    });
-    
     if (esGuardada) {
         // Es una foto guardada - mostrar modal de confirmación
         Swal.fire({
@@ -542,7 +529,7 @@ function eliminarFotoById(productoId, fotoId) {
             if (result.isConfirmed) {
                 const rutaFoto = fotoAEliminar.querySelector('img')?.src || '';
                 
-                console.log(`🗑️ Eliminando foto del servidor:`, rutaFoto);
+
                 
                 // Mostrar loading
                 Swal.fire({
@@ -569,7 +556,7 @@ function eliminarFotoById(productoId, fotoId) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        console.log(` Foto eliminada del servidor:`, rutaFoto);
+
                         
                         // Eliminar del preview
                         fotoAEliminar.remove();
@@ -583,7 +570,7 @@ function eliminarFotoById(productoId, fotoId) {
                             timer: 2000
                         });
                     } else {
-                        console.error(` Error al eliminar foto:`, data.message);
+
                         Swal.fire({
                             title: 'Error',
                             text: data.message || 'No se pudo eliminar la imagen.',
@@ -593,7 +580,7 @@ function eliminarFotoById(productoId, fotoId) {
                     }
                 })
                 .catch(error => {
-                    console.error(` Error en la solicitud:`, error);
+
                     Swal.fire({
                         title: 'Error',
                         text: 'No se pudo conectar con el servidor.',
@@ -610,7 +597,7 @@ function eliminarFotoById(productoId, fotoId) {
             const indexEnFotos = fotosSeleccionadas[productoId].findIndex(f => f.name === fileName);
             if (indexEnFotos !== -1) {
                 fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
-                console.log(` Foto nueva eliminada de fotosSeleccionadas`);
+
             }
         }
         fotoAEliminar.remove();
@@ -636,7 +623,7 @@ function actualizarNumerosPreview(fotosPreview) {
             spanNumero.textContent = index + 1;
         }
     });
-    console.log(` Números de fotos actualizados. Total: ${todasLasFotos.length}`);
+
 }
 
 function agregarFotoTela(input) {
@@ -648,7 +635,7 @@ function agregarFotoTela(input) {
     
     const productoCard = input.closest('.producto-card');
     if (!productoCard) {
-        console.error(' No se encontró producto-card para este input');
+
         return;
     }
     
@@ -669,11 +656,11 @@ function agregarFotoTela(input) {
         }
     }
     
-    console.log('📁 Agregando foto de tela a memoria');
-    console.log('📁 Producto ID:', productoId);
-    console.log('📁 Tela Index:', telaIndex);
-    console.log('📁 Índice de prenda:', prendaIndex);
-    console.log('📁 Total de archivos cargados:', input.files.length);
+
+
+
+
+
     
     // Contar fotos existentes ANTES de agregar
     const fotosExistentesAntes = window.telasSeleccionadas[productoId][telaIndex].length;
@@ -686,7 +673,7 @@ function agregarFotoTela(input) {
         if (window.telasSeleccionadas[productoId][telaIndex].length < 3) {
             window.telasSeleccionadas[productoId][telaIndex].push(file);
             fotosNuevasAgregadas.push(file); // Guardar para la iteración de preview
-            console.log(` Foto ${fileIndex + 1} de tela ${telaIndex} guardada: ${file.name}`);
+
         }
     });
     
@@ -701,11 +688,11 @@ function agregarFotoTela(input) {
     
     const container = productoCard.querySelector(`.fila-tela[data-tela-index="${telaIndex}"] .foto-tela-preview`);
     if (container) {
-        console.log(' Contenedor encontrado, mostrando preview');
+
         // Pasar SOLO las fotos nuevas, no input.files
         mostrarPreviewFoto(fotosNuevasAgregadas, container, fotosExistentesAntes);
     } else {
-        console.error(' No se encontró contenedor para mostrar preview');
+
     }
 }
 
@@ -794,7 +781,7 @@ function eliminarFotoTelaById(fotoTelaId) {
     // Encontrar el contenedor de fotos de tela
     const fotoElement = document.querySelector(`[data-foto-tela-id="${fotoTelaId}"]`);
     if (!fotoElement) {
-        console.warn(` No se encontró foto de tela con ID: ${fotoTelaId}`);
+
         return;
     }
     
@@ -809,14 +796,14 @@ function eliminarFotoTelaById(fotoTelaId) {
         }
         if (!window.fotosEliminadasServidor.telas.includes(fotoIdServidor)) {
             window.fotosEliminadasServidor.telas.push(fotoIdServidor);
-            console.log(` Foto de tela ID ${fotoIdServidor} marcada para eliminar del servidor`);
+
         }
     }
     
     // Obtener el contenedor (foto-tela-preview)
     const container = fotoElement.closest('.foto-tela-preview');
     if (!container) {
-        console.warn(` No se encontró contenedor .foto-tela-preview`);
+
         return;
     }
     
@@ -826,7 +813,7 @@ function eliminarFotoTelaById(fotoTelaId) {
     
     const fileName = fotoElement.getAttribute('data-file-name');
     
-    console.log(`🗑️ Eliminando foto de tela ${telaIndex} con ID ${fotoTelaId}:`, fileName);
+
     
     // Eliminar la foto del DOM
     fotoElement.remove();
@@ -840,7 +827,7 @@ function eliminarFotoTelaById(fotoTelaId) {
         }
     });
     
-    console.log(` Foto de tela ${telaIndex} eliminada. Total restante: ${todasLasFotos.length}`);
+
     
     // Actualizar telasSeleccionadas (solo si es foto nueva, no guardada)
     if (!fotoIdServidor) {
@@ -851,7 +838,7 @@ function eliminarFotoTelaById(fotoTelaId) {
                 const indexEnTelas = window.telasSeleccionadas[productoId][telaIndex].findIndex(f => f.name === fileName);
                 if (indexEnTelas !== -1) {
                     window.telasSeleccionadas[productoId][telaIndex].splice(indexEnTelas, 1);
-                    console.log(` Foto nueva de tela ${telaIndex} eliminada de telasSeleccionadas`);
+
                 }
             }
         }
@@ -893,7 +880,7 @@ function buscarPrendas(input) {
     
     // Validar que el contenedor existe
     if (!container) {
-        console.warn(' Contenedor .prenda-search-container no encontrado');
+
         return;
     }
     
@@ -901,7 +888,7 @@ function buscarPrendas(input) {
     
     // Validar que suggestions existe
     if (!suggestions) {
-        console.warn(' Elemento .prenda-suggestions no encontrado');
+
         return;
     }
     
@@ -956,21 +943,21 @@ function toggleSeccion(btn) {
 // ============ TÉCNICAS ============
 
 function agregarTecnica() {
-    console.log(' agregarTecnica() llamado');
-    console.log('⏰ Timestamp:', new Date().toISOString());
+
+
     
     const selector = document.getElementById('selector_tecnicas');
-    console.log(' Selector encontrado:', !!selector);
+
     
     if (!selector) {
-        console.error(' ERROR: No se encontró selector_tecnicas');
+
         return;
     }
     
     const tecnica = selector.value;
-    console.log(' Técnica seleccionada:', tecnica);
-    console.log(' Value del selector:', selector.value);
-    console.log(' Options disponibles:', Array.from(selector.options).map(o => o.value));
+
+
+
     
     if (!tecnica) {
         alert('Por favor selecciona una técnica');
@@ -978,8 +965,8 @@ function agregarTecnica() {
     }
     
     const contenedor = document.getElementById('tecnicas_seleccionadas');
-    console.log(' Contenedor encontrado:', !!contenedor);
-    console.log(' innerHTML del contenedor ANTES:', contenedor.innerHTML);
+
+
     
     if (Array.from(contenedor.children).some(tag => tag.textContent.includes(tecnica))) {
         alert('Esta técnica ya está agregada');
@@ -995,9 +982,9 @@ function agregarTecnica() {
     `;
     
     contenedor.appendChild(tag);
-    console.log(' Técnica agregada:', tecnica);
-    console.log(' innerHTML del contenedor DESPUÉS:', contenedor.innerHTML);
-    console.log(' Total técnicas:', contenedor.children.length);
+
+
+
     
     selector.value = '';
 }
@@ -1085,7 +1072,7 @@ function previewTelaImagen(input) {
                     e.preventDefault();
                     input.value = '';
                     preview.innerHTML = '<i class="fas fa-image" style="font-size: 2rem; color: #ccc;"></i>';
-                    console.log(' Imagen de tela eliminada');
+
                 };
                 
                 preview.appendChild(img);
@@ -1100,7 +1087,7 @@ function previewTelaImagen(input) {
                 };
                 
                 const index = preview.dataset.index || '?';
-                console.log(` Imagen de tela ${index} cargada`);
+
             }
         };
         reader.readAsDataURL(input.files[0]);
@@ -1117,24 +1104,17 @@ function agregarFilaTela(btn) {
     const tbody = productoCard.querySelector('.telas-tbody');
     
     if (!tbody) {
-        console.error(' No se encontró tbody para telas');
+
         return;
     }
     
     // Obtener el número de filas existentes para usar como índice
     const filasExistentes = tbody.querySelectorAll('.fila-tela');
     const nuevoIndice = filasExistentes.length;
-    
-    console.log(' agregarFilaTela DEBUG:', {
-        filasActuales: filasExistentes.length,
-        nuevoIndice,
-        tblasLength: tbody ? tbody.childNodes.length : 'sin tbody'
-    });
-    
     // Obtener la primera fila como template
     const primeraFila = tbody.querySelector('.fila-tela');
     if (!primeraFila) {
-        console.error(' No se encontró fila template');
+
         return;
     }
     
@@ -1151,7 +1131,7 @@ function agregarFilaTela(btn) {
         if (nameAttr && nameAttr.includes('[telas]')) {
             // Buscar el patrón [telas][número] y reemplazarlo con [telas][nuevoIndice]
             const nuevoName = nameAttr.replace(/\[telas\]\[\d+\]/, '[telas][' + nuevoIndice + ']');
-            console.log('🔄 Actualizando input:', { nameOriginal: nameAttr, nameNuevo: nuevoName });
+
             input.setAttribute('name', nuevoName);
         }
         // Limpiar valores
@@ -1175,7 +1155,7 @@ function agregarFilaTela(btn) {
     // Agregar la nueva fila a la tabla
     tbody.appendChild(nuevaFila);
     
-    console.log(' Nueva fila de tela agregada con índice:', nuevoIndice);
+
     console.log(' Fila agregada - inputs actualizados:', {
         colorInput: nuevaFila.querySelector('.color-id-input')?.getAttribute('name'),
         telaInput: nuevaFila.querySelector('.tela-id-input')?.getAttribute('name'),
@@ -1194,7 +1174,7 @@ function eliminarFilaTela(btn) {
     const tbody = fila.closest('.telas-tbody');
     
     if (!tbody) {
-        console.error(' No se encontró tbody');
+
         return;
     }
     
@@ -1225,10 +1205,11 @@ function eliminarFilaTela(btn) {
     }).then((result) => {
         if (result.isConfirmed) {
             fila.remove();
-            console.log(' Fila de tela eliminada');
+
             
             // Mostrar toast
             mostrarToast('Tela eliminada', 'success');
         }
     });
 }
+

@@ -30,7 +30,7 @@ function abrirModalVisorCostos(cotizacionId, cliente) {
                 .then(data => ({ costos: data, nombres: prendasNombres }));
         })
         .then(({ costos, nombres }) => {
-            console.log('Datos de costos recibidos:', costos);
+
             if (costos.success && costos.prendas.length > 0) {
                 // Asignar nombres a las prendas
                 costos.prendas.forEach((prenda, idx) => {
@@ -40,7 +40,7 @@ function abrirModalVisorCostos(cotizacionId, cliente) {
                 });
                 
                 visorCostosActual.prendas = costos.prendas;
-                console.log('Prendas cargadas:', visorCostosActual.prendas);
+
                 document.getElementById('visorCostosModal').style.display = 'flex';
                 
                 // Resetear scroll al abrir
@@ -58,7 +58,7 @@ function abrirModalVisorCostos(cotizacionId, cliente) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+
             mostrarModalErrorCostos(error.message);
         });
 }
@@ -217,14 +217,14 @@ function visorCostosProximo() {
 function generarTabsPrendas() {
     const tabsContainer = document.getElementById('visorCostosTabsContainer');
     if (!tabsContainer) {
-        console.error('visorCostosTabsContainer no encontrado');
+
         return;
     }
     
     // Limpiar tabs existentes antes de generar nuevos
     tabsContainer.innerHTML = '';
     
-    console.log('Generando tabs para', visorCostosActual.prendas.length, 'prendas');
+
     
     visorCostosActual.prendas.forEach((prenda, idx) => {
         const tab = document.createElement('button');

@@ -39,9 +39,9 @@ async function cargarPrendasDisponibles() {
             selector.appendChild(option);
         });
 
-        console.log(' Prendas cargadas:', prendas.length);
+
     } catch (error) {
-        console.error(' Error cargando prendas:', error);
+
     }
 }
 
@@ -75,7 +75,7 @@ function buscarPrendas(termino) {
             selector.appendChild(option);
         });
 
-        console.log(' Búsqueda completada:', prendas.length);
+
     })
     .catch(error => console.error(' Error buscando prendas:', error));
 }
@@ -121,7 +121,7 @@ function agregarPrendaSeleccionada() {
                 });
             }
 
-            console.log(' Prenda agregada:', prenda.nombre_producto);
+
         }
     }, 500);
 
@@ -189,7 +189,7 @@ function recopilarObservaciones() {
  * Actualizar resumen (Paso 5: REVISAR COTIZACIÓN)
  */
 function actualizarResumen() {
-    console.log('🔄 Actualizando resumen en PASO 5...');
+
     
     const cliente = document.getElementById('cliente')?.value || '-';
     const fecha = document.getElementById('fechaActual')?.value || '-';
@@ -203,7 +203,7 @@ function actualizarResumen() {
     if (fechaEl) fechaEl.textContent = fecha;
     if (tipoEl) tipoEl.textContent = tipo;
 
-    console.log(' Cliente, fecha y tipo actualizados:', { cliente, fecha, tipo });
+
 
     // Resumen de prendas
     const resumenPrendas = document.getElementById('resumen_prendas');
@@ -223,7 +223,7 @@ function actualizarResumen() {
                 `;
                 resumenPrendas.appendChild(div);
             });
-            console.log(' Prendas actualizadas:', productos.length);
+
         }
     }
 
@@ -242,7 +242,7 @@ function actualizarResumen() {
                 span.textContent = tec;
                 resumenTecnicas.appendChild(span);
             });
-            console.log(' Técnicas actualizadas:', tecnicas.length);
+
         }
     }
 
@@ -251,7 +251,7 @@ function actualizarResumen() {
     if (logoDescEl) {
         const logoDesc = document.getElementById('descripcion_logo')?.value || '-';
         logoDescEl.textContent = logoDesc;
-        console.log(' Logo/descripción actualizado');
+
     }
 }
 
@@ -302,12 +302,12 @@ async function guardarCotizacion() {
 
         if (data.success) {
             alert(' Cotización guardada como borrador');
-            console.log(' Cotización guardada:', data.data);
+
         } else {
             alert(' Error: ' + (data.message || 'Error desconocido'));
         }
     } catch (error) {
-        console.error(' Error guardando cotización:', error);
+
         alert('Error: ' + error.message);
     }
 }
@@ -364,14 +364,14 @@ async function enviarCotizacion() {
 
         if (data.success) {
             alert(' Cotización enviada exitosamente');
-            console.log(' Cotización enviada:', data.data);
+
             // Redirigir a lista de cotizaciones
             // window.location.href = '/cotizaciones';
         } else {
             alert(' Error: ' + (data.message || 'Error desconocido'));
         }
     } catch (error) {
-        console.error(' Error enviando cotización:', error);
+
         alert('Error: ' + error.message);
     }
 }
@@ -387,17 +387,17 @@ window.irAlPaso = function(paso) {
     if (paso === 5) {
         // Primero intentar con la función completa si está disponible
         if (typeof actualizarResumenCompleto === 'function') {
-            console.log(' Llamando a actualizarResumenCompleto()');
+
             actualizarResumenCompleto();
         } else {
             // Si no está disponible, usar la función local
-            console.log(' Llamando a actualizarResumen()');
+
             actualizarResumen();
         }
         
         // Además, actualizar reflectivo si está disponible
         if (typeof actualizarResumenReflectivoPaso4 === 'function') {
-            console.log(' Llamando a actualizarResumenReflectivoPaso4()');
+
             actualizarResumenReflectivoPaso4();
         }
     }

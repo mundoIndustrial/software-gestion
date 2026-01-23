@@ -46,7 +46,7 @@ class ApiService {
             return data;
 
         } catch (error) {
-            console.error(' Error en petición API:', error);
+
             throw error;
         }
     }
@@ -61,7 +61,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async obtenerDatosCotizacion(cotizacionId) {
-        console.log(`📥 Obteniendo datos de cotización ${cotizacionId}...`);
+
         
         const data = await this.request(
             `${this.baseUrl}/obtener-datos-cotizacion/${cotizacionId}`,
@@ -82,7 +82,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoDesdeCotizacion(cotizacionId, pedidoData) {
-        console.log(`📤 Creando pedido desde cotización ${cotizacionId}...`);
+
         
         const data = await this.request(
             `${this.baseUrl}/crear-desde-cotizacion/${cotizacionId}`,
@@ -105,7 +105,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoSinCotizacion(pedidoData) {
-        console.log(`📤 Creando pedido sin cotización...`);
+
         
         const data = await this.request(
             `${this.baseUrl}/crear-sin-cotizacion`,
@@ -124,7 +124,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoPrendaSinCotizacion(pedidoData) {
-        console.log(`📤 Creando pedido PRENDA sin cotización...`);
+
         
         const data = await this.request(
             `${this.baseUrl}/crear-prenda-sin-cotizacion`,
@@ -143,7 +143,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoReflectivoSinCotizacion(pedidoData) {
-        console.log(`📤 Creando pedido REFLECTIVO sin cotización...`);
+
         
         const data = await this.request(
             `${this.baseUrl}/crear-reflectivo-sin-cotizacion`,
@@ -167,7 +167,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async eliminarFotoLogo(cotizacionId, fotoId) {
-        console.log(`🗑️ Eliminando foto ${fotoId} de logo...`);
+
         
         const data = await this.request(
             `/asesores/logos/${cotizacionId}/eliminar-foto`,
@@ -190,7 +190,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async validarPedido(pedidoData) {
-        console.log(` Validando datos de pedido...`);
+
         
         // Endpoint futuro para validación en backend
         // Por ahora retornamos validación local
@@ -241,7 +241,7 @@ class ApiService {
      * @param {string} context - Contexto del error
      */
     handleError(error, context = 'Operación') {
-        console.error(` Error en ${context}:`, error);
+
         
         let message = error.message || 'Error desconocido';
         
@@ -317,7 +317,7 @@ class ApiService {
                 throw error;
             }
             
-            console.log(` Reintentando... (${retries} intentos restantes)`);
+
             await new Promise(resolve => setTimeout(resolve, delay));
             return this.retry(fn, retries - 1, delay);
         }

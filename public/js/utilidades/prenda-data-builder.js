@@ -23,9 +23,9 @@ class PrendaDataBuilder {
      * @returns {Object} {dama: {S: 5, M: 3}, caballero: {...}}
      */
     static construirGenerosConTallas(tallasPorGenero, cantidadesPorTalla) {
-        console.log(' PrendaDataBuilder: Construyendo generosConTallas');
-        console.log('   tallasPorGenero:', tallasPorGenero);
-        console.log('   cantidadesPorTalla:', cantidadesPorTalla);
+
+
+
 
         const generosConTallas = {};
 
@@ -40,13 +40,13 @@ class PrendaDataBuilder {
 
                     if (cantidad > 0) {
                         generosConTallas[generoKey][talla] = cantidad;
-                        console.log(`   ✓ ${generoKey}.${talla} = ${cantidad}`);
+
                     }
                 });
             }
         });
 
-        console.log('   ✓ generosConTallas construido:', generosConTallas);
+
         return generosConTallas;
     }
 
@@ -70,7 +70,7 @@ class PrendaDataBuilder {
      * @returns {Object} prendaNueva completamente formada
      */
     static construirPrendaNueva(datos) {
-        console.log(' PrendaDataBuilder: Construyendo prendaNueva');
+
 
         // Validar datos esenciales
         if (!datos.nombrePrenda) {
@@ -103,7 +103,7 @@ class PrendaDataBuilder {
             tela: datos.telaPrenda || null
         };
 
-        console.log('   ✓ Prenda nueva construida:', prendaNueva);
+
         return prendaNueva;
     }
 
@@ -114,13 +114,13 @@ class PrendaDataBuilder {
      * @returns {Object} {nombrePrenda, origen, descripcion}
      */
     static extraerDatosFormularioBasico() {
-        console.log(' PrendaDataBuilder: Extrayendo datos básicos del formulario');
+
 
         const nombrePrenda = document.getElementById('nueva-prenda-nombre')?.value?.trim();
         const origen = document.getElementById('nueva-prenda-origen-select')?.value;
         const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
 
-        console.log('   Datos extraídos:', { nombrePrenda, origen, descripcion });
+
 
         return { nombrePrenda, origen, descripcion };
     }
@@ -132,7 +132,7 @@ class PrendaDataBuilder {
      * @returns {string|null} 'dama', 'caballero', 'unisex', o null
      */
     static determinarGenero(tallasSeleccionadas) {
-        console.log('👗 PrendaDataBuilder: Determinando género desde tallas');
+
 
         const tienetallasDama = tallasSeleccionadas?.dama?.tallas?.length > 0;
         const tieneTallasCaballero = tallasSeleccionadas?.caballero?.tallas?.length > 0;
@@ -146,7 +146,7 @@ class PrendaDataBuilder {
             genero = 'unisex';
         }
 
-        console.log(`   ✓ Género determinado: ${genero}`);
+
         return genero;
     }
 
@@ -157,7 +157,7 @@ class PrendaDataBuilder {
      * @returns {Array<Object>} [{genero: 'dama', tallas: [...], tipo: null}, ...]
      */
     static construirTallasPorGenero(tallasSeleccionadas) {
-        console.log('📏 PrendaDataBuilder: Construyendo tallasPorGenero');
+
 
         const tallasPorGenero = [];
         const tienetallasDama = tallasSeleccionadas?.dama?.tallas?.length > 0;
@@ -179,7 +179,7 @@ class PrendaDataBuilder {
             });
         }
 
-        console.log('   ✓ Tallas por género construidas:', tallasPorGenero);
+
         return tallasPorGenero;
     }
 
@@ -191,7 +191,7 @@ class PrendaDataBuilder {
      * @returns {Array<Object>} Imágenes con blobUrl agregado
      */
     static procesarImagenes(imagenesPrenda) {
-        console.log(`📸 PrendaDataBuilder: Procesando ${imagenesPrenda?.length || 0} imágenes`);
+
 
         if (!imagenesPrenda || imagenesPrenda.length === 0) {
             return [];
@@ -201,7 +201,7 @@ class PrendaDataBuilder {
             let blobUrl = null;
             if (img.file instanceof File) {
                 blobUrl = URL.createObjectURL(img.file);
-                console.log(`   📸 Blob URL creado: ${blobUrl}`);
+
             }
             return {
                 ...img,
@@ -217,7 +217,7 @@ class PrendaDataBuilder {
      * @returns {Object} Procesos configurables válidos
      */
     static obtenerProcesosConfigurablesValidos() {
-        console.log(' PrendaDataBuilder: Obteniendo procesos configurables válidos');
+
 
         let procesosConfigurables = window.obtenerProcesosConfigurables?.() || {};
 
@@ -230,7 +230,7 @@ class PrendaDataBuilder {
             return acc;
         }, {});
 
-        console.log('   ✓ Procesos válidos:', Object.keys(procesosConfigurables));
+
         return procesosConfigurables;
     }
 
@@ -241,7 +241,7 @@ class PrendaDataBuilder {
      * @returns {Object} {tipo_manga, obs_manga, tipo_broche, obs_broche, tiene_bolsillos, ...}
      */
     static construirVariacionesConfiguradas() {
-        console.log(' PrendaDataBuilder: Construyendo variaciones configuradas');
+
 
         const variaciones = {
             tipo_manga: 'No aplica',
@@ -258,31 +258,31 @@ class PrendaDataBuilder {
         if (document.getElementById('aplica-manga')?.checked) {
             variaciones.tipo_manga = document.getElementById('manga-input')?.value?.trim() || 'No aplica';
             variaciones.obs_manga = document.getElementById('manga-obs')?.value?.trim() || '';
-            console.log('   ✓ Manga capturada:', variaciones.tipo_manga);
+
         }
 
         // BOLSILLOS
         if (document.getElementById('aplica-bolsillos')?.checked) {
             variaciones.tiene_bolsillos = true;
             variaciones.obs_bolsillos = document.getElementById('bolsillos-obs')?.value?.trim() || '';
-            console.log('   ✓ Bolsillos capturados');
+
         }
 
         // BROCHE
         if (document.getElementById('aplica-broche')?.checked) {
             variaciones.tipo_broche = document.getElementById('broche-input')?.value?.trim() || 'No aplica';
             variaciones.obs_broche = document.getElementById('broche-obs')?.value?.trim() || '';
-            console.log('   ✓ Broche capturado:', variaciones.tipo_broche);
+
         }
 
         // REFLECTIVO
         if (document.getElementById('aplica-reflectivo')?.checked) {
             variaciones.tiene_reflectivo = true;
             variaciones.obs_reflectivo = document.getElementById('reflectivo-obs')?.value?.trim() || '';
-            console.log('   ✓ Reflectivo capturado');
+
         }
 
-        console.log('   ✓ Variaciones construidas:', variaciones);
+
         return variaciones;
     }
 
@@ -296,7 +296,7 @@ class PrendaDataBuilder {
      * @returns {Object} Item formateado para backend
      */
     static construirItemParaEnvio(prenda, prendaIndex, fotosNuevas) {
-        console.log(` PrendaDataBuilder: Construyendo item para envío (índice: ${prendaIndex})`);
+
 
         const itemSinCot = {
             nombre_producto: prenda.nombre_producto,
@@ -313,10 +313,10 @@ class PrendaDataBuilder {
         let fotosParaEnviar = [];
         if (fotosNuevas?.[prendaIndex]) {
             fotosParaEnviar = fotosNuevas[prendaIndex];
-            console.log(`   📸 Fotos de fotosNuevas: ${fotosParaEnviar.length}`);
+
         } else if (prenda.imagenes && prenda.imagenes.length > 0) {
             fotosParaEnviar = prenda.imagenes;
-            console.log(`   📸 Fotos de prenda.imagenes: ${fotosParaEnviar.length}`);
+
         }
 
         if (fotosParaEnviar.length > 0) {
@@ -332,7 +332,7 @@ class PrendaDataBuilder {
             }
         }
 
-        console.log('   ✓ Item para envío construido');
+
         return itemSinCot;
     }
 }

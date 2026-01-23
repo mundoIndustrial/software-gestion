@@ -46,12 +46,12 @@ const tallasEstandar = {
 
 // Abrir modal para un tipo específico de proceso
 window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
-    console.log(`🔓 Intentando abrir modal para: ${tipoProceso}, esEdicion: ${esEdicion}`);
+
     
     // Verificar que el modal existe
     const modal = document.getElementById('modal-proceso-generico');
     if (!modal) {
-        console.error(' ERROR: Modal #modal-proceso-generico no encontrado en el DOM');
+
         return;
     }
     
@@ -59,7 +59,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
     const config = procesosConfig[tipoProceso];
     
     if (!config) {
-        console.error(` ERROR: Configuración no encontrada para proceso: ${tipoProceso}`);
+
         return;
     }
     
@@ -79,7 +79,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         
         // SOLO limpiar variables si NO es edición
         if (!esEdicion) {
-            console.log(` [MODAL] Modo CREAR - limpiando variables`);
+
             tallasSeleccionadasProceso = { dama: [], caballero: [] };
             
             // Limpiar resumen
@@ -98,7 +98,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
                 limpiarImagenesProceso();
             }
         } else {
-            console.log(` [MODAL] Modo EDITAR - preservando datos cargados`);
+
             // En modo edición, renderizar lo que ya está cargado
             if (window.renderizarListaUbicaciones) {
                 window.renderizarListaUbicaciones();
@@ -111,9 +111,9 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         // Mostrar modal
         modal.style.display = 'flex';
         
-        console.log(` Modal abierto para proceso: ${tipoProceso}`);
+
     } catch (error) {
-        console.error(` ERROR al abrir modal para ${tipoProceso}:`, error);
+
     }
 };
 
@@ -127,7 +127,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     
     // Solo deseleccionar si NO se guardó el proceso (usuario cerró sin guardar)
     if (procesoActual && !procesoGuardado) {
-        console.log(`🔴 Cerrando modal SIN guardar para: ${procesoActual}`);
+
         
         //  PASO 1: Deseleccionar el checkbox visualmente en el HTML
         // IMPORTANTE: Hacemos esto ANTES de llamar a manejarCheckboxProceso
@@ -137,7 +137,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
             // Usar una bandera temporal para evitar que onclick se dispare
             checkbox._ignorarOnclick = true;
             checkbox.checked = false;
-            console.log(` Checkbox ${procesoActual} deseleccionado`);
+
         }
         
         //  PASO 2: Actualizar el estado del gestor (procesos seleccionados)
@@ -150,9 +150,9 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
             checkbox._ignorarOnclick = false;
         }
         
-        console.log(` Modal cerrado y proceso ${procesoActual} deseleccionado`);
+
     } else if (procesoActual && procesoGuardado) {
-        console.log(` Modal cerrado CON proceso guardado: ${procesoActual} - checkbox mantiene selección`);
+
     }
     
     procesoActual = null;
@@ -185,7 +185,7 @@ window.manejarImagenProceso = function(input, indice) {
             preview._objectUrl = objectUrl;
         }
         
-        console.log(`📸 Imagen ${indice} agregada al proceso (File: ${file.name}, ${(file.size / 1024).toFixed(2)}KB)`);
+
     }
 };
 
@@ -215,7 +215,7 @@ window.eliminarImagenProceso = function(indice) {
         input.value = '';
     }
     
-    console.log(`🗑️ Imagen ${indice} eliminada del proceso`);
+
 };
 
 // Limpiar todas las imágenes del proceso
@@ -255,19 +255,19 @@ window.agregarUbicacionProceso = function() {
     const ubicacion = input?.value?.trim();
     
     if (!ubicacion) {
-        console.warn(' Campo de ubicación vacío');
+
         return;
     }
     
     // Evitar duplicados
     if (ubicacionesProcesoSeleccionadas.includes(ubicacion)) {
-        console.warn(` Ubicación "${ubicacion}" ya existe`);
+
         return;
     }
     
     // Agregar a la lista
     ubicacionesProcesoSeleccionadas.push(ubicacion);
-    console.log(` Ubicación agregada: ${ubicacion}`);
+
     
     // Limpiar input
     input.value = '';
@@ -279,7 +279,7 @@ window.agregarUbicacionProceso = function() {
 // Remover ubicación de la lista
 window.removerUbicacionProceso = function(ubicacion) {
     ubicacionesProcesoSeleccionadas = ubicacionesProcesoSeleccionadas.filter(u => u !== ubicacion);
-    console.log(` Ubicación removida: ${ubicacion}`);
+
     window.renderizarListaUbicaciones();
 };
 
@@ -310,7 +310,7 @@ window.renderizarListaUbicaciones = function() {
 
 // Aplicar proceso para TODAS las tallas (de la prenda)
 window.aplicarProcesoParaTodasTallas = function() {
-    console.log(' Intentando aplicar proceso para todas las tallas de la prenda');
+
     
     // Obtener las tallas registradas de la prenda actual (con cantidades)
     const tallasPrendaConCantidades = obtenerTallasDeLaPrenda();
@@ -336,8 +336,8 @@ window.aplicarProcesoParaTodasTallas = function() {
     // Guardar cantidades en variable global para acceso posterior
     window._tallasCantidadesProceso = tallasPrendaConCantidades;
     
-    console.log(' Tallas aplicadas:', tallasSeleccionadasProceso);
-    console.log(' Cantidades guardadas:', window._tallasCantidadesProceso);
+
+
     actualizarResumenTallasProceso();
 };
 
@@ -351,8 +351,8 @@ function obtenerTallasDeLaPrenda() {
     const cantidadesRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
     const cantidadesDisponibles = { ...cantidadesRelacionales.DAMA, ...cantidadesRelacionales.CABALLERO };
     
-    console.log(' [obtenerTallasDeLaPrenda] window.tallasSeleccionadas:', tallasGlobales);
-    console.log(' [obtenerTallasDeLaPrenda] Cantidades disponibles:', cantidadesDisponibles);
+
+
     
     // Obtener tallas de dama CON CANTIDADES
     if (tallasGlobales.dama && tallasGlobales.dama.tallas && Array.isArray(tallasGlobales.dama.tallas)) {
@@ -364,7 +364,7 @@ function obtenerTallasDeLaPrenda() {
                 tallas.dama[talla] = cantidad;
             }
         });
-        console.log(` Tallas dama encontradas con cantidades:`, tallas.dama);
+
     }
     
     // Obtener tallas de caballero CON CANTIDADES
@@ -377,10 +377,10 @@ function obtenerTallasDeLaPrenda() {
                 tallas.caballero[talla] = cantidad;
             }
         });
-        console.log(` Tallas caballero encontradas con cantidades:`, tallas.caballero);
+
     }
     
-    console.log(' [obtenerTallasDeLaPrenda] Tallas finales:', tallas);
+
     return tallas;
 }
 
@@ -438,11 +438,11 @@ window.cerrarModalAdvertencia = function() {
 
 // Abrir editor de tallas específicas
 window.abrirEditorTallasEspecificas = function() {
-    console.log(' Abriendo editor de tallas específicas de la prenda');
+
     
     const modalEditor = document.getElementById('modal-editor-tallas');
     if (!modalEditor) {
-        console.error(' ERROR: Modal editor de tallas no encontrado');
+
         return;
     }
     
@@ -458,8 +458,8 @@ window.abrirEditorTallasEspecificas = function() {
         return;
     }
     
-    console.log(' Tallas dama encontradas:', tallasDamaArray);
-    console.log(' Tallas caballero encontradas:', tallasCaballeroArray);
+
+
     
     // Renderizar tallas DAMA (solo las seleccionadas en la prenda)
     const containerDama = document.getElementById('tallas-dama-container');
@@ -523,7 +523,7 @@ window.abrirEditorTallasEspecificas = function() {
     
     // Mostrar modal editor
     modalEditor.style.display = 'flex';
-    console.log(' Editor de tallas abierto');
+
 };
 
 // Actualizar cantidad de talla en el modal de proceso
@@ -543,7 +543,7 @@ window.actualizarCantidadTallaProceso = function(input) {
     }
     window.tallasRelacionales[generoMayuscula][talla] = cantidad;
     
-    console.log(` Cantidad actualizada: ${genero}-${talla} = ${cantidad}`);
+
 };
 
 // Cerrar editor de tallas
@@ -552,12 +552,12 @@ window.cerrarEditorTallas = function() {
     if (modal) {
         modal.style.display = 'none';
     }
-    console.log(' Editor de tallas cerrado');
+
 };
 
 // Guardar tallas seleccionadas desde el editor
 window.guardarTallasSeleccionadas = function() {
-    console.log('💾 Guardando tallas seleccionadas');
+
     
     // Recopilar tallas DAMA
     const checksDama = document.querySelectorAll('input[data-genero="dama"]:checked');
@@ -567,7 +567,7 @@ window.guardarTallasSeleccionadas = function() {
     const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
     tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
     
-    console.log(' Tallas seleccionadas:', tallasSeleccionadasProceso);
+
     
     // Cerrar editor y actualizar resumen
     cerrarEditorTallas();
@@ -657,12 +657,12 @@ window.agregarProcesoAlPedido = function() {
             imagenes: imagenesValidas // Array de imágenes
         };
         
-        console.log(`💾 Guardando proceso con ${imagenesValidas.length} imágenes:`, datos);
+
         
         //  CRÍTICO: Guardar en procesosSeleccionados CON SINCRONIZACIÓN
         if (!window.procesosSeleccionados) {
             window.procesosSeleccionados = {};
-            console.warn(' window.procesosSeleccionados no existía, creado ahora');
+
         }
         
         // Si el proceso NO existe todavía, crearlo
@@ -671,17 +671,17 @@ window.agregarProcesoAlPedido = function() {
                 tipo: procesoActual,
                 datos: null
             };
-            console.log(` Proceso ${procesoActual} creado en window.procesosSeleccionados`);
+
         }
         
         // Asignar los datos capturados
         window.procesosSeleccionados[procesoActual].datos = datos;
-        console.log(` Datos asignados a ${procesoActual}:`, datos);
+
         
         //  NUEVO: Renderizar tarjetas de procesos en el modal de prenda
         if (window.renderizarTarjetasProcesos) {
             window.renderizarTarjetasProcesos();
-            console.log(' Tarjetas de procesos renderizadas');
+
         }
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente
@@ -692,11 +692,11 @@ window.agregarProcesoAlPedido = function() {
             window.actualizarResumenProcesos();
         }
         
-        console.log(` Proceso ${procesoActual} agregado`);
+
     } catch (error) {
-        console.error(` ERROR al agregar proceso:`, error);
+
     }
 };
 
 // Confirmar que el módulo se cargó correctamente
-console.log(' Módulo gestor-modal-proceso-generico.js cargado correctamente');
+

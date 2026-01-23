@@ -27,7 +27,7 @@ async function cargarTiposDisponibles() {
             renderizarSelectTecnicas();
         }
     } catch (error) {
-        console.error(' Error cargando tipos:', error);
+
     }
 }
 
@@ -39,7 +39,7 @@ function renderizarSelectTecnicas() {
     const container = document.getElementById('tecnicas-checkboxes');
     
     if (!container) {
-        console.error(' Elemento tecnicas-checkboxes no encontrado');
+
         return;
     }
     
@@ -310,7 +310,7 @@ function abrirModalDatosIguales(tecnicas) {
                 .then(r => r.json())
                 .then(data => {
                     prendasDisponibles = data.data || [];
-                    console.log(' Prendas cargadas:', prendasDisponibles);
+
                 })
                 .catch(e => console.warn('No se pudo cargar prendas:', e));
             
@@ -1023,23 +1023,23 @@ function mostrarFormularioTecnicaDiferente(index) {
                 datos: datos
             };
             
-            console.log(` Técnica ${index} guardada en datosMultiplesTecnicas`);
-            console.log(' Estado actual:', window.datosMultiplesTecnicas);
+
+
             
             // Verificar si es la última técnica
             if (index === totalTecnicas - 1) {
                 // Es la última técnica, guardar todas
-                console.log('🎉 Última técnica completada, guardando todas...');
+
                 guardarTecnica();
             } else {
                 // Ir a la siguiente
-                console.log(`➡️ Mostrando técnica ${index + 1}`);
+
                 window.indiceActualTecnica = index + 1;
                 mostrarFormularioTecnicaDiferente(index + 1);
             }
         } else if (result.dismiss === Swal.DismissReason.cancel) {
             // Cancelar flujo
-            console.log(' Flujo cancelado por el usuario');
+
             window.tecnicasCombinadas = null;
             window.modoTecnicasCombinadas = null;
             window.datosMultiplesTecnicas = null;
@@ -1055,7 +1055,7 @@ function agregarFilaPrenda() {
     const container = document.getElementById('listaPrendas');
     
     if (!container) {
-        console.error(' Elemento listaPrendas no encontrado');
+
         return;
     }
     
@@ -1395,25 +1395,25 @@ function agregarTallaCantidad(button) {
 async function guardarTecnica() {
     // Verificar si estamos en modo técnicas combinadas
     if (window.modoTecnicasCombinadas === 'iguales') {
-        console.log(' Guardando técnicas con datos IGUALES');
+
         guardarTecnicaCombinada();
     } else if (window.modoTecnicasCombinadas === 'diferentes') {
-        console.log(' Guardando técnicas con datos DIFERENTES');
-        console.log(' datosMultiplesTecnicas:', window.datosMultiplesTecnicas);
+
+
         guardarTecnicasMultiples();
     } else if (window.modoTecnicasCombinadas === 'por-talla') {
-        console.log(' Guardando técnicas POR TALLA');
+
         // Este modo se maneja directamente en guardarPrendaTecnicasPorTalla
     } else {
         // Modo simple: una única técnica
-        console.log(' Guardando técnica SIMPLE');
+
         guardarTecnicaSimple();
     }
 }
 
 function guardarPrendaTecnicasPorTalla(datos) {
-    console.log(' Guardando prenda con técnicas por talla');
-    console.log(' Datos:', datos);
+
+
     
     const tecnicas = window.tecnicasCombinadas;
     
@@ -1428,7 +1428,7 @@ function guardarPrendaTecnicasPorTalla(datos) {
             const tipo = tecnicas.find(t => t.id === tecnicaId);
             
             if (!tipo) {
-                console.warn(` Técnica con ID ${tecnicaId} no encontrada`);
+
                 return;
             }
             
@@ -1444,13 +1444,13 @@ function guardarPrendaTecnicasPorTalla(datos) {
                 grupo_combinado: null // El backend generará el grupo_combinado automáticamente El backend generará el grupo_combinado automáticamente
             };
             
-            console.log(`  → Talla ${talla} / ${tipo.nombre}: ${cantidad} unidades`);
+
             tecnicasAgregadas.push(nuevaTecnica);
         });
     });
     
     window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-    console.log(` Total técnicas agregadas: ${tecnicasAgregadas.length}`);
+
     
     // Limpiar contexto
     window.tecnicasCombinadas = null;
@@ -1481,7 +1481,7 @@ function guardarTecnicaSimple() {
         prendas = extraerPrendasDelModal();
     } catch (error) {
         // La validación ya mostró el error con SweetAlert
-        console.error('Validación fallida:', error.message);
+
         return;
     }
     
@@ -1504,10 +1504,10 @@ function guardarTecnicaSimple() {
         grupo_combinado: null
     };
     
-    console.log(' Técnica simple agregada:', nuevaTecnica);
+
     tecnicasAgregadas.push(nuevaTecnica);
     window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-    console.log(` Total técnicas: ${tecnicasAgregadas.length}`);
+
     
     // Cerrar modal y actualizar
     cerrarModalAgregarTecnica();
@@ -1517,16 +1517,16 @@ function guardarTecnicaSimple() {
 function guardarTecnicaCombinada(datosForm) {
     const tecnicas = window.tecnicasCombinadas;
     
-    console.log(` Guardando técnicas combinadas con ${tecnicas.length} técnicas`);
+
     
     // Si no se pasa datosForm, construirlo desde el formulario actual
     if (!datosForm) {
-        console.log(' Construyendo datosForm desde el formulario...');
+
         
         // Validar que haya nombre de prenda
         const nombrePrenda = document.querySelector('.nombre_prenda')?.value.trim();
         if (!nombrePrenda) {
-            console.error(' No se encontró nombre de prenda');
+
             return;
         }
         
@@ -1558,7 +1558,7 @@ function guardarTecnicaCombinada(datosForm) {
         const imagesPorTecnicaDiv = document.getElementById('dImagenesPorTecnica');
         if (imagesPorTecnicaDiv) {
             const divImagenes = imagesPorTecnicaDiv.querySelectorAll('[data-tecnica-idx]');
-            console.log(' Divs de imágenes encontrados:', divImagenes.length);
+
             divImagenes.forEach(div => {
                 const idx = parseInt(div.getAttribute('data-tecnica-idx'));
                 console.log(`  Div ${idx}:`, {
@@ -1568,7 +1568,7 @@ function guardarTecnicaCombinada(datosForm) {
                 });
                 if (div.imagenesAgregadas && div.imagenesAgregadas.length > 0) {
                     imagenesPorTecnica[idx] = div.imagenesAgregadas;
-                    console.log(` Imágenes agregadas para técnica ${idx}:`, imagenesPorTecnica[idx].map(f => f.name));
+
                 }
             });
         }
@@ -1582,7 +1582,7 @@ function guardarTecnicaCombinada(datosForm) {
         };
     }
     
-    console.log(' Datos del formulario:', datosForm);
+
     
     // Generar un ID único para el grupo combinado (basado en timestamp en milisegundos)
     // Esto garantiza unicidad a nivel de usuario y sesión
@@ -1637,12 +1637,12 @@ function guardarTecnicaCombinada(datosForm) {
                 es_combinada: true,
                 grupo_combinado: grupoId  // ID numérico único para agrupar técnicas combinadas
             };
-            console.log(`  → ${tipo.nombre} + ${datosForm.nombre_prenda}:`, nuevaTecnica);
+
             tecnicasAgregadas.push(nuevaTecnica);
         });
         
-        console.log(` Total técnicas agregadas: ${tecnicasAgregadas.length}`);
-        console.log(`🔗 Grupo combinado asignado: ${grupoId}`);
+
+
         
         window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
         
@@ -1659,7 +1659,7 @@ function guardarTecnicaCombinada(datosForm) {
         
         // Actualizar también el renderizado en logo-pedido-tecnicas.js si existe
         if (typeof renderizarLogoPrendasTecnicas === 'function') {
-            console.log(' Llamando a renderizarLogoPrendasTecnicas() para actualizar tabla de prendas');
+
             renderizarLogoPrendasTecnicas();
         }
     });
@@ -1668,8 +1668,8 @@ function guardarTecnicaCombinada(datosForm) {
 function guardarTecnicasMultiples() {
     const datosMultiples = window.datosMultiplesTecnicas;
     
-    console.log(' Intentando guardar técnicas múltiples');
-    console.log(' datosMultiples:', datosMultiples);
+
+
     
     if (!datosMultiples || datosMultiples.length === 0) {
         Swal.fire({
@@ -1677,17 +1677,17 @@ function guardarTecnicasMultiples() {
             title: 'Error',
             text: 'No hay datos de técnicas para guardar'
         });
-        console.error(' No hay datosMultiplesTecnicas');
+
         return;
     }
     
-    console.log(` Cantidad de técnicas: ${datosMultiples.length}`);
+
     
     datosMultiples.forEach((item, idx) => {
-        console.log(`\n Procesando técnica ${idx}:`, item);
+
         
         if (!item || !item.tecnica) {
-            console.warn(` Item ${idx} sin técnica`);
+
             return;
         }
         
@@ -1703,13 +1703,13 @@ function guardarTecnicasMultiples() {
             grupo_combinado: null // El backend generará el grupo_combinado automáticamente
         };
         
-        console.log(` Técnica procesada:`, nuevaTecnica);
+
         tecnicasAgregadas.push(nuevaTecnica);
     });
     
     window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-    console.log(`\n Total técnicas en array: ${tecnicasAgregadas.length}`);
-    console.log(' tecnicasAgregadas:', tecnicasAgregadas);
+
+
     
     // Limpiar contexto
     window.tecnicasCombinadas = null;
@@ -1777,19 +1777,19 @@ function extraerPrendasDelModal() {
         // Extraer datos de variaciones
         const variacionesPrenda = {};
         
-        console.log(' Extrayendo variaciones de la fila:', fila);
+
         
         // Verificar que la tabla existe
         const tablaVariaciones = fila.querySelector('.variaciones-table');
-        console.log(' Tabla de variaciones encontrada:', !!tablaVariaciones);
+
         
         // MANGA
         const mangaInput = fila.querySelector('.variacion-manga');
-        console.log(' Input manga encontrado:', !!mangaInput, 'Valor:', mangaInput?.value);
+
         const manga = mangaInput?.value?.trim();
         const obsMangaInput = fila.querySelector('.observacion-manga');
         const obsManga = obsMangaInput?.value?.trim();
-        console.log(' Manga:', { manga, obsManga });
+
         if (manga) {
             variacionesPrenda.manga = {
                 opcion: manga,
@@ -1799,11 +1799,11 @@ function extraerPrendasDelModal() {
         
         // BOLSILLOS
         const bolsillosInput = fila.querySelector('.variacion-bolsillos');
-        console.log(' Input bolsillos encontrado:', !!bolsillosInput, 'Valor:', bolsillosInput?.value);
+
         const bolsillos = bolsillosInput?.value?.trim();
         const obsBolsillosInput = fila.querySelector('.observacion-bolsillos');
         const obsBolsillos = obsBolsillosInput?.value?.trim();
-        console.log(' Bolsillos:', { bolsillos, obsBolsillos });
+
         if (bolsillos) {
             variacionesPrenda.bolsillos = {
                 opcion: bolsillos,
@@ -1813,11 +1813,11 @@ function extraerPrendasDelModal() {
         
         // BROCHE/BOTÓN (es un SELECT)
         const brocheSelect = fila.querySelector('.variacion-broche');
-        console.log(' Select broche encontrado:', !!brocheSelect, 'Valor:', brocheSelect?.value);
+
         const broche = brocheSelect?.value?.trim();
         const obsBrocheInput = fila.querySelector('.observacion-broche');
         const obsBroche = obsBrocheInput?.value?.trim();
-        console.log(' Broche:', { broche, obsBroche });
+
         if (broche && broche !== '') {
             variacionesPrenda.broche_boton = {
                 opcion: broche,
@@ -1825,7 +1825,7 @@ function extraerPrendasDelModal() {
             };
         }
         
-        console.log(' Variaciones Prenda Completas:', variacionesPrenda);
+
         
         prendas.push({
             nombre_prenda: nombrePrenda,
@@ -1836,7 +1836,7 @@ function extraerPrendasDelModal() {
             variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null  // JSON con variaciones
         });
         
-        console.log(' Prenda agregada con variaciones:', prendas[prendas.length - 1]);
+
     });
     
     return prendas.length > 0 ? prendas : null;
@@ -1854,23 +1854,23 @@ async function guardarTecnicasEnBD() {
     const logoCotId = document.getElementById('logoCotizacionId')?.value;
     
     if (!logoCotId) {
-        console.error(' Guardar Técnicas - Error:', { error: 'No se encontró logoCotizacionId' });
+
         return false;
     }
     
     try {
         for (const tecnica of tecnicasAgregadas) {
-            console.log(' Procesando técnica:', tecnica.tipo_logo.nombre);
+
             
             // Validar que tenga tipo_logo
             if (!tecnica.tipo_logo || !tecnica.tipo_logo.id) {
-                console.error(' Guardar Técnica - Error:', { error: 'Técnica sin tipo_logo', tecnica });
+
                 continue;
             }
             
-            console.log('✓ tipo_logo_id:', tecnica.tipo_logo.id);
-            console.log('✓ es_combinada:', tecnica.es_combinada, '(tipo:', typeof tecnica.es_combinada + ')');
-            console.log('✓ grupo_combinado:', tecnica.grupo_combinado);
+
+
+
             
             // Crear FormData para enviar archivos
             const formData = new FormData();
@@ -1893,10 +1893,10 @@ async function guardarTecnicasEnBD() {
                 imagenes_data_urls: prenda.imagenes_data_urls || [] // URLs para BD si las hay
             }));
             
-            console.log('✓ Prendas a guardar:', prendasSinArchivos.length);
+
             prendasSinArchivos.forEach((p, idx) => {
-                console.log(`  Prenda ${idx}:`, p.nombre_prenda, '- Ubicaciones:', p.ubicaciones, '- Tallas:', p.talla_cantidad);
-                console.log(`    ✓ variaciones_prenda:`, p.variaciones_prenda);
+
+
             });
             
             formData.append('prendas', JSON.stringify(prendasSinArchivos));
@@ -1905,37 +1905,26 @@ async function guardarTecnicasEnBD() {
             let totalArchivos = 0;
             tecnica.prendas.forEach((prenda, prendasIdx) => {
                 if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
-                    console.log(`  Prenda ${prendasIdx} tiene ${prenda.imagenes_files.length} imágenes`);
+
                     prenda.imagenes_files.forEach((archivo, imgIdx) => {
                         const fieldName = `imagenes_prenda_${prendasIdx}_${imgIdx}`;
-                        console.log(`    → Imagen ${imgIdx}: ${archivo.name} (${(archivo.size / 1024).toFixed(2)}KB)`);
+
                         formData.append(fieldName, archivo);
                         totalArchivos++;
                     });
                 }
             });
-            
-            console.log(' FormData construido:', {
-                logo_cotizacion_id: logoCotId,
-                tipo_logo_id: tecnica.tipo_logo.id,
-                tipo_logo_nombre: tecnica.tipo_logo.nombre,
-                es_combinada: tecnica.es_combinada,
-                grupo_combinado: tecnica.grupo_combinado,
-                prendas: prendasSinArchivos.length,
-                archivos_totales: totalArchivos
-            });
-            
             // DEBUG: Mostrar contenido de FormData
-            console.log(' FormData entries:');
+
             for (let [key, value] of formData.entries()) {
                 if (value instanceof File) {
-                    console.log(`  ${key}: File(${value.name}, ${(value.size/1024).toFixed(2)}KB)`);
+
                 } else {
-                    console.log(`  ${key}: ${value}`);
+
                 }
             }
             
-            console.log('📤 Enviando POST a /api/logo-cotizacion-tecnicas/agregar');
+
             const response = await fetch('/api/logo-cotizacion-tecnicas/agregar', {
                 method: 'POST',
                 headers: {
@@ -1944,10 +1933,10 @@ async function guardarTecnicasEnBD() {
                 body: formData
             });
             
-            console.log('📥 Response status:', response.status);
+
             const data = await response.json();
             
-            console.log(' Response data COMPLETO:', JSON.stringify(data, null, 2));
+
             
             if (!data.success) {
                 console.error(' Guardar Técnica - Error DETALLADO:', { 
@@ -1964,15 +1953,15 @@ async function guardarTecnicasEnBD() {
                 return false;
             }
             
-            console.log(' Técnica guardada exitosamente');
+
         }
         
         tecnicasAgregadas = []; // Limpiar array temporal
-        console.log(' Todas las técnicas guardadas');
+
         return true;
         
     } catch (error) {
-        console.error(' Guardar Técnicas - Error:', { error: error.message || error, stack: error.stack });
+
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -1996,7 +1985,7 @@ function renderizarTecnicasAgregadas() {
     const sinTecnicas = document.getElementById('sin_tecnicas');
     
     if (!container) {
-        console.error(' Elemento tecnicas_agregadas no encontrado');
+
         return;
     }
     
@@ -2059,7 +2048,7 @@ function renderizarTecnicasAgregadas() {
         });
     });
     
-    console.log(' [renderizarTecnicasAgregadas] Agrupado por PRENDA:', Object.keys(prendasMap).length, 'prendas');
+
     
     // Procesar las imágenes de File objects de forma asíncrona
     imagenesParaCargar.forEach(imgData => {
@@ -2444,11 +2433,11 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
     const tecnicasDelGrupo = tecnicaIndices.map(idx => tecnicasAgregadas[idx]);
     
     if (tecnicasDelGrupo.length === 0) {
-        console.error(' No se encontraron técnicas para editar');
+
         return;
     }
     
-    console.log(' Editando grupo:', tecnicaIndices, tecnicasDelGrupo, 'Prenda filtro:', nombrePrendaFiltro);
+
     
     // Agrupar por NOMBRE DE PRENDA y mantener datos de CADA TÉCNICA
     const prendasMap = {};
@@ -2488,7 +2477,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
     // Convertir map a array
     const todasLasPrendas = Object.values(prendasMap);
     
-    console.log(' Prendas agrupadas:', todasLasPrendas);
+
     
     // Construir HTML de las prendas
     let prendasHTML = '<div style="max-height: 600px; overflow-y: auto;">';
@@ -2756,7 +2745,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     const tecnicaIdx = parseInt(input.getAttribute('data-tecnica-idx'));
                     
                     if (tecnicaIdx === undefined || tecnicaIdx === null) {
-                        console.error(' No se encontró tecnicaIdx en el input de imágenes');
+
                         return;
                     }
                     
@@ -2853,7 +2842,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 prendaIdxs.add(elem.getAttribute('data-prenda-idx'));
             });
             
-            console.log(' Índices de prendas encontrados:', Array.from(prendaIdxs));
+
             
             prendaIdxs.forEach((prendaIdxStr) => {
                 const prendaIdx = parseInt(prendaIdxStr);
@@ -2862,7 +2851,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 const nombrePrenda = nombreInput ? nombreInput.value.trim().toUpperCase() : '';
                 
                 if (!nombrePrenda) {
-                    console.warn(' Prenda sin nombre en índice', prendaIdx);
+
                     valido = false;
                     return;
                 }
@@ -2878,7 +2867,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     // Actualizar la ubicación en tecnicasData
                     if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
                         todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].ubicaciones = [ubicacion];
-                        console.log(` Ubicación actualizada para técnica ${tecnicaIdx}:`, ubicacion);
+
                     }
                 });
                 
@@ -2921,7 +2910,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 });
                 
                 if (nuevasTallas.length === 0) {
-                    console.warn(' Prenda sin tallas en índice', prendaIdx);
+
                     valido = false;
                     return;
                 }
@@ -2934,7 +2923,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     tecnicasData: todasLasPrendas[prendaIdx].tecnicasData || {}
                 };
                 
-                console.log(` Prenda ${prendaIdx} actualizada:`, prendasActualizadas[prendaIdx]);
+
                 contadorPrendas++;
             });
             
@@ -2943,31 +2932,31 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 return false;
             }
             
-            console.log(' Todas las prendas actualizadas:', prendasActualizadas);
+
             return prendasActualizadas;
         }
     }).then((result) => {
-        console.log(' Result de Swal:', result);
+
         
         if (result.isConfirmed && result.value) {
-            console.log('💾 Guardando cambios...');
-            console.log('todasLasPrendas antes:', todasLasPrendas);
-            console.log('Datos a aplicar:', result.value);
+
+
+
             
             // Actualizar TODAS las prendas del grupo usando índices numéricos
             todasLasPrendas.forEach((prenda, prendaIdx) => {
-                console.log(`Verificando prenda ${prendaIdx}:`, result.value[prendaIdx]);
+
                 
                 if (result.value[prendaIdx]) {
-                    console.log(` Actualizando prenda ${prendaIdx}`);
+
                     prenda.nombre_prenda = result.value[prendaIdx].nombre_prenda;
                     prenda.observaciones = result.value[prendaIdx].observaciones;
                     prenda.talla_cantidad = result.value[prendaIdx].talla_cantidad;
                     prenda.variaciones_prenda = result.value[prendaIdx].variaciones_prenda;
                     prenda.tecnicasData = result.value[prendaIdx].tecnicasData;
-                    console.log(` Prenda ${prendaIdx} actualizada:`, prenda);
+
                 } else {
-                    console.warn(` No hay datos para prenda ${prendaIdx}`);
+
                 }
             });
             
@@ -2976,7 +2965,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 tecnica.prendas.forEach((prenda, prendaIdxLocal) => {
                     const prendaActualizado = todasLasPrendas[prendaIdxLocal];
                     if (prendaActualizado && result.value[prendaIdxLocal]) {
-                        console.log(`🔄 Actualizando prenda original en técnica:`, result.value[prendaIdxLocal]);
+
                         prenda.nombre_prenda = prendaActualizado.nombre_prenda;
                         prenda.observaciones = prendaActualizado.observaciones;
                         prenda.talla_cantidad = prendaActualizado.talla_cantidad;
@@ -2992,11 +2981,11 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 });
             });
             
-            console.log(' Técnicas editadas y actualizadas en memory');
-            console.log('tecnicasAgregadas actualizado:', tecnicasAgregadas);
+
+
             renderizarTecnicasAgregadas();
         } else {
-            console.log(' Edición cancelada');
+
         }
     });
 }
@@ -3021,7 +3010,7 @@ function eliminarTecnicaDelGrupo(tecnicaIndices) {
             }
         });
         
-        console.log(' Técnicas eliminadas');
+
         renderizarTecnicasAgregadas();
     });
 }
@@ -3073,7 +3062,7 @@ async function eliminarTecnica(tecnicaIndex) {
             });
         }
     } catch (error) {
-        console.error(' Error:', error);
+
     }
 }
 
@@ -3129,24 +3118,24 @@ window.LogoCotizacion = {
 // =========================================================
 
 function abrirModalValidacionTecnica() {
-    console.log('🚀 abrirModalValidacionTecnica() ejecutándose');
+
     
     const modal = document.getElementById('modalValidacionTecnica');
     
-    console.log(' Modal elemento:', modal);
-    console.log(' Modal existe:', !!modal);
+
+
     
     if (modal) {
-        console.log(' Modal encontrado, mostrando...');
+
         modal.style.display = 'flex';
-        console.log(' Display set a flex');
+
     } else {
-        console.error(' Modal no encontrado en el DOM');
+
     }
 }
 
 function cerrarModalValidacionTecnica() {
-    console.log('🔴 Cerrando modalValidacionTecnica');
+
     const modal = document.getElementById('modalValidacionTecnica');
     if (modal) {
         modal.style.display = 'none';
@@ -3155,4 +3144,5 @@ function cerrarModalValidacionTecnica() {
 
 //  EXPORTAR PARA ACCESO GLOBAL EN create.blade.php
 window.tecnicasAgregadas = tecnicasAgregadas;
+
 

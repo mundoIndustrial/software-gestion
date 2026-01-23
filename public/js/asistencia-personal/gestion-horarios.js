@@ -57,7 +57,7 @@ const GestionHorariosManager = {
                 this.renderHorariosTable(data);
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 alert('Error al cargar los horarios');
             });
     },
@@ -157,7 +157,7 @@ const GestionHorariosManager = {
                 this.loadHorarios();
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 this.showErrorToast('Error al actualizar el horario');
             });
     },

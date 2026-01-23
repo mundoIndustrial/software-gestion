@@ -28,16 +28,16 @@ const SearchManager = (() => {
                 const data = await response.json();
                 
                 if (data.totalDiasCalculados && Object.keys(data.totalDiasCalculados).length > 0) {
-                    console.log(' Días calculados por pedido:', data.totalDiasCalculados);
+
                 }
                 
                 return data;
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    console.log(' Búsqueda anterior cancelada');
+
                     return null;
                 }
-                console.error('Error en búsqueda:', error);
+
                 throw error;
             }
         },

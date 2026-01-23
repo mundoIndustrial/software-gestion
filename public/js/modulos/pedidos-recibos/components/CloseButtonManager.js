@@ -56,7 +56,7 @@ export class CloseButtonManager {
         // Observar cambios en el modal para eliminar el botón cuando se cierre
         this.configurarObservador(modalManager);
         
-        console.log('[CloseButtonManager] Botón X creado');
+
     }
 
     /**
@@ -95,7 +95,7 @@ export class CloseButtonManager {
         const btn = document.getElementById(this.BUTTON_ID);
         if (btn) {
             btn.remove();
-            console.log('[CloseButtonManager] Botón X removido');
+
         }
     }
 

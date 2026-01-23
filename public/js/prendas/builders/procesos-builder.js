@@ -15,7 +15,7 @@ class ProcesosBuilder {
     };
 
     static construir(prenda, indice) {
-        console.log('[ProcesosBuilder] Construyendo para prenda:', indice);
+
 
         const procesos = prenda.procesos || {};
         const procesosConDatos = Object.entries(procesos).filter(
@@ -188,4 +188,4 @@ class ProcesosBuilder {
 }
 
 window.ProcesosBuilder = ProcesosBuilder;
-console.log('✓ [PROCESOS-BUILDER] Cargado correctamente');
+

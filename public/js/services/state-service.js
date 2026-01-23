@@ -67,7 +67,7 @@ class PedidoStateManager {
     setCotizacion(data) {
         this.cotizacion = { ...this.cotizacion, ...data };
         this.notifyObservers('cotizacion', this.cotizacion);
-        console.log(' Cotización actualizada:', this.cotizacion);
+
     }
 
     /**
@@ -97,7 +97,7 @@ class PedidoStateManager {
     setPrendas(prendas) {
         this.prendas = prendas;
         this.notifyObservers('prendas', this.getPrendas());
-        console.log(` ${prendas.length} prendas cargadas`);
+
     }
 
     /**
@@ -125,7 +125,7 @@ class PedidoStateManager {
         this.prendas.push(prenda);
         const index = this.prendas.length - 1;
         this.notifyObservers('prendaAdded', { prenda, index });
-        console.log(`➕ Prenda agregada en índice ${index}`);
+
         return index;
     }
 
@@ -136,7 +136,7 @@ class PedidoStateManager {
     removePrenda(index) {
         this.prendasEliminadas.add(index);
         this.notifyObservers('prendaRemoved', index);
-        console.log(`🗑️ Prenda ${index} marcada como eliminada`);
+
     }
 
     /**
@@ -160,7 +160,7 @@ class PedidoStateManager {
         if (this.prendas[index]) {
             this.prendas[index] = { ...this.prendas[index], ...data };
             this.notifyObservers('prendaUpdated', { index, data });
-            console.log(` Prenda ${index} actualizada`);
+
         }
     }
 
@@ -186,7 +186,7 @@ class PedidoStateManager {
         this.esReflectivo = tipo === 'RF';
         this.esLogo = tipo === 'L' || tipo === 'PL';
         this.notifyObservers('tipo', tipo);
-        console.log(` Tipo de pedido: ${tipo}`);
+
     }
 
     /**
@@ -223,7 +223,7 @@ class PedidoStateManager {
      */
     setTallasDisponibles(tallas) {
         this.tallasDisponibles = tallas;
-        console.log(`📏 ${tallas.length} tallas disponibles`);
+
     }
 
     /**
@@ -248,7 +248,7 @@ class PedidoStateManager {
             this.fotosNuevas.prendas[prendaIndex] = [];
         }
         this.fotosNuevas.prendas[prendaIndex].push(foto);
-        console.log(`📸 Foto agregada a prenda ${prendaIndex}`);
+
     }
 
     /**
@@ -274,7 +274,7 @@ class PedidoStateManager {
             this.fotosNuevas.telas[prendaIndex][telaIndex] = [];
         }
         this.fotosNuevas.telas[prendaIndex][telaIndex].push(foto);
-        console.log(`📸 Foto agregada a tela ${telaIndex} de prenda ${prendaIndex}`);
+
     }
 
     /**
@@ -293,7 +293,7 @@ class PedidoStateManager {
      */
     addFotoLogo(foto) {
         this.fotosNuevas.logos.push(foto);
-        console.log(`📸 Foto de logo agregada`);
+
     }
 
     /**
@@ -310,7 +310,7 @@ class PedidoStateManager {
      */
     addFotoReflectivo(foto) {
         this.fotosNuevas.reflectivos.push(foto);
-        console.log(`📸 Foto de reflectivo agregada`);
+
     }
 
     /**
@@ -331,7 +331,7 @@ class PedidoStateManager {
      */
     markFotoEliminada(fotoUrl) {
         this.fotosEliminadas.add(fotoUrl);
-        console.log(`🗑️ Foto marcada como eliminada: ${fotoUrl.substring(0, 50)}...`);
+
     }
 
     /**
@@ -356,7 +356,7 @@ class PedidoStateManager {
      */
     clearFotosEliminadas() {
         this.fotosEliminadas.clear();
-        console.log(`🧹 Fotos eliminadas limpiadas`);
+
     }
 
     // ============================================================
@@ -372,7 +372,7 @@ class PedidoStateManager {
         if (logo && logo.id) {
             this.logoCotizacionId = logo.id;
         }
-        console.log(` Logo establecido`);
+
     }
 
     /**
@@ -453,7 +453,7 @@ class PedidoStateManager {
             try {
                 callback(event, data);
             } catch (error) {
-                console.error('Error en observer:', error);
+
             }
         });
     }
@@ -487,7 +487,7 @@ class PedidoStateManager {
      * Imprimir estado en consola (debugging)
      */
     debug() {
-        console.log(' ESTADO ACTUAL DEL PEDIDO:');
+
         console.table({
             'Cotización ID': this.cotizacion.id,
             'Cliente': this.cotizacion.cliente,
@@ -500,7 +500,7 @@ class PedidoStateManager {
             'Fotos logos': this.fotosNuevas.logos.length,
             'Fotos eliminadas': this.fotosEliminadas.size
         });
-        console.log('Estado completo:', this.getState());
+
     }
 
     /**
@@ -531,7 +531,7 @@ class PedidoStateManager {
             this.especificaciones = state.especificaciones || null;
             this.datosReflectivo = state.datosReflectivo || null;
         } catch (error) {
-            console.error(' Error al importar estado:', error);
+
         }
     }
 }

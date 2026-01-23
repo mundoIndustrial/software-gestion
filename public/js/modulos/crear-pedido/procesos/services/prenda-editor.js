@@ -14,7 +14,7 @@ class PrendaEditor {
      * Abrir modal para agregar o editar prenda
      */
     abrirModal(esEdicion = false, prendaIndex = null) {
-        console.log(`🔓 [PrendaEditor] abrirModal() llamado | esEdicion: ${esEdicion} | prendaIndex: ${prendaIndex}`)
+
         
         if (esEdicion && prendaIndex !== null && prendaIndex !== undefined) {
             this.prendaEditIndex = prendaIndex;
@@ -24,28 +24,28 @@ class PrendaEditor {
 
         // Preparar modal
         if (window.ModalCleanup) {
-            console.log(`    ModalCleanup disponible`)
+
             if (esEdicion) {
                 window.ModalCleanup.prepararParaEditar(prendaIndex);
             } else {
                 window.ModalCleanup.prepararParaNueva();
             }
         } else {
-            console.warn(`    ModalCleanup NO disponible`)
+
         }
 
         // Mostrar modal
-        console.log(`    Buscando modal con ID: ${this.modalId}`)
+
         const modal = document.getElementById(this.modalId);
         if (modal) {
-            console.log(`    Modal encontrado`)
-            console.log(`     - Tabla tbody: ${!!document.getElementById('tbody-telas')}`)
-            console.log(`     - Campo tela: ${!!document.getElementById('nueva-prenda-tela')}`)
-            console.log(`     - Campo color: ${!!document.getElementById('nueva-prenda-color')}`)
-            console.log(`     - Campo ref: ${!!document.getElementById('nueva-prenda-referencia')}`)
+
+
+
+
+
             modal.style.display = 'flex';
         } else {
-            console.error(` Modal ${this.modalId} no encontrado en el DOM`)
+
         }
     }
 
@@ -72,7 +72,7 @@ class PrendaEditor {
             this.mostrarNotificacion('Prenda cargada para editar', 'success');
         } catch (error) {
             this.mostrarNotificacion(`Error al cargar prenda: ${error.message}`, 'error');
-            console.error('Error al cargar prenda en modal:', error);
+
         }
     }
 
@@ -85,13 +85,13 @@ class PrendaEditor {
         const descripcionField = document.getElementById('nueva-prenda-descripcion');
         const origenField = document.getElementById('nueva-prenda-origen-select');
 
-        console.log('[PrendaEditor] llenarCamposBasicos() - origen recibido:', prenda.origen);
+
         
         if (nombreField) nombreField.value = prenda.nombre_prenda || '';
         if (descripcionField) descripcionField.value = prenda.descripcion || '';
         if (origenField) {
-            console.log('[PrendaEditor] origenField encontrado');
-            console.log('[PrendaEditor] Opciones disponibles:', Array.from(origenField.options).map(o => ({ value: o.value, text: o.text })));
+
+
             
             // Función para normalizar texto (remover acentos)
             const normalizarTexto = (texto) => {
@@ -110,20 +110,20 @@ class PrendaEditor {
                 if (optValueNormalizado === origenNormalizado || optTextNormalizado === origenNormalizado) {
                     origenField.value = opt.value;
                     encontrado = true;
-                    console.log('[PrendaEditor] Origen seleccionado:', opt.value, '(original:', opt.textContent, ')');
+
                     break;
                 }
             }
             
             if (!encontrado) {
-                console.log('[PrendaEditor] Origen no encontrado, usando valor directo:', origen);
+
                 origenField.value = origen;
             }
             
             // Disparar evento de cambio para que se actualice la UI
             origenField.dispatchEvent(new Event('change', { bubbles: true }));
         } else {
-            console.log('[PrendaEditor] origenField NO encontrado');
+
         }
     }
 
@@ -132,29 +132,29 @@ class PrendaEditor {
      * @private
      */
     cargarImagenes(prenda) {
-        console.log('[PrendaEditor.cargarImagenes] Iniciando - Prenda recibida:', prenda);
-        console.log('[PrendaEditor.cargarImagenes] prenda.imagenes:', prenda.imagenes);
-        console.log('[PrendaEditor.cargarImagenes] window.imagenesPrendaStorage disponible:', !!window.imagenesPrendaStorage);
+
+
+
         
         if (!prenda.imagenes || prenda.imagenes.length === 0) {
-            console.log('[PrendaEditor.cargarImagenes] Sin imágenes para cargar');
+
             return;
         }
 
         if (window.imagenesPrendaStorage) {
-            console.log('[PrendaEditor.cargarImagenes] Limpiando storage previo...');
+
             window.imagenesPrendaStorage.limpiar();
 
-            console.log('[PrendaEditor.cargarImagenes] Procesando ' + prenda.imagenes.length + ' imágenes...');
+
             prenda.imagenes.forEach((img, idx) => {
-                console.log('[PrendaEditor.cargarImagenes] Procesando imagen [' + idx + ']:', img);
+
                 this.procesarImagen(img, idx);
             });
 
-            console.log('[PrendaEditor.cargarImagenes] Actualizando preview con ' + window.imagenesPrendaStorage.images.length + ' imágenes cargadas');
+
             this.actualizarPreviewImagenes(prenda.imagenes);
         } else {
-            console.error('[PrendaEditor.cargarImagenes] window.imagenesPrendaStorage NO disponible!');
+
         }
     }
 
@@ -198,11 +198,11 @@ class PrendaEditor {
      * @private
      */
     actualizarPreviewImagenes(imagenes) {
-        console.log('[PrendaEditor.actualizarPreviewImagenes] Iniciando...');
-        console.log('[PrendaEditor.actualizarPreviewImagenes] Cantidad de imágenes en storage:', window.imagenesPrendaStorage?.images?.length || 0);
+
+
         
         if (window.actualizarPreviewPrenda) {
-            console.log('[PrendaEditor.actualizarPreviewImagenes] Usando window.actualizarPreviewPrenda()');
+
             window.actualizarPreviewPrenda();
             return;
         }
@@ -210,23 +210,23 @@ class PrendaEditor {
         const preview = document.getElementById('nueva-prenda-foto-preview');
         const contador = document.getElementById('nueva-prenda-foto-contador');
         
-        console.log('[PrendaEditor.actualizarPreviewImagenes] Preview elemento encontrado:', !!preview);
-        console.log('[PrendaEditor.actualizarPreviewImagenes] Contador elemento encontrado:', !!contador);
+
+
 
         if (preview && window.imagenesPrendaStorage.images.length > 0) {
             const primerImg = window.imagenesPrendaStorage.images[0];
             const urlImg = primerImg.previewUrl || primerImg.url;
-            console.log('[PrendaEditor.actualizarPreviewImagenes] Configurando preview con URL:', urlImg);
+
             
             preview.style.backgroundImage = `url('${urlImg}')`;
             preview.style.cursor = 'pointer';
 
             if (contador && window.imagenesPrendaStorage.images.length > 1) {
                 contador.textContent = window.imagenesPrendaStorage.images.length;
-                console.log('[PrendaEditor.actualizarPreviewImagenes] Contador actualizado a:', window.imagenesPrendaStorage.images.length);
+
             }
         } else {
-            console.warn('[PrendaEditor.actualizarPreviewImagenes] No hay imágenes para mostrar o preview no existe');
+
         }
     }
 
@@ -235,11 +235,11 @@ class PrendaEditor {
      * @private
      */
     cargarTelas(prenda) {
-        console.log('[PrendaEditor] cargarTelas() - Prenda recibida:', prenda);
+
         
         // Intentar cargar desde telasAgregadas (prendas nuevas Y prendas de BD editadas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
-            console.log('[PrendaEditor] Cargando telas desde telasAgregadas:', prenda.telasAgregadas);
+
             
             // Limpiar storage de telas y inputs
             if (window.imagenesTelaStorage) {
@@ -262,25 +262,25 @@ class PrendaEditor {
                 previewTemporal.style.display = 'none';
             }
             
-            console.log('[PrendaEditor] Inputs de tela y preview limpiados para edición');
+
             
             // Cargar cada tela
             prenda.telasAgregadas.forEach((tela, idx) => {
-                console.log(`[PrendaEditor] Procesando tela ${idx}:`, tela);
+
                 
                 // Cargar imágenes de tela
                 if (tela.imagenes && tela.imagenes.length > 0 && window.imagenesTelaStorage) {
-                    console.log(`[PrendaEditor] Tela ${idx} tiene ${tela.imagenes.length} imágenes`);
+
                     
                     tela.imagenes.forEach((img, imgIdx) => {
-                        console.log(`[PrendaEditor]   Imagen ${imgIdx}:`, img);
+
                         
                         if (img.file instanceof File) {
-                            console.log(`[PrendaEditor]   Imagen ${imgIdx} es File object`);
+
                             window.imagenesTelaStorage.agregarImagen(img.file);
                         } else if (img.previewUrl || img.url || img.ruta) {
                             const urlImg = img.previewUrl || img.url || img.ruta;
-                            console.log(`[PrendaEditor]   Imagen ${imgIdx} es URL desde BD:`, urlImg);
+
                             
                             if (!window.imagenesTelaStorage.images) {
                                 window.imagenesTelaStorage.images = [];
@@ -295,18 +295,18 @@ class PrendaEditor {
                         }
                     });
                 } else {
-                    console.log(`[PrendaEditor] Tela ${idx} NO tiene imágenes`);
+
                 }
             });
             
             // Actualizar tabla de telas - Asignar a window.telasAgregadas para que se muestre en la tabla
             window.telasAgregadas = [...prenda.telasAgregadas];
-            console.log('[PrendaEditor] window.telasAgregadas actualizado con', window.telasAgregadas.length, 'telas');
+
             
             // Actualizar tabla de telas
             if (window.actualizarTablaTelas) {
                 window.actualizarTablaTelas();
-                console.log('[PrendaEditor] Tabla de telas actualizada');
+
             }
             
             // Actualizar preview de tela
@@ -317,7 +317,7 @@ class PrendaEditor {
             return;
         }
 
-        console.log('[PrendaEditor] No hay telasAgregadas para cargar');
+
     }
 
     /**
@@ -332,13 +332,13 @@ class PrendaEditor {
         window.tallasRelacionales.CABALLERO = {};
         window.tallasRelacionales.UNISEX = {};
 
-        console.log('[PrendaEditor] cargarTallasYCantidades() - Prenda recibida:', prenda);
-        console.log('[PrendaEditor] tallas (array relacional):', prenda.tallas);
-        console.log('[PrendaEditor] generosConTallas (fallback):', prenda.generosConTallas);
+
+
+
 
         // PRIORIDAD 1: Usar array relacional {genero, talla, cantidad} de prenda_pedido_tallas
         if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-            console.log('[PrendaEditor] ✅ Usando tallas desde array relacional (prenda_pedido_tallas)');
+
             const generosMap = {};
             
             // Iterar array de objetos {genero, talla, cantidad}
@@ -361,11 +361,11 @@ class PrendaEditor {
             });
             
             // Convertir a estructura esperada
-            console.log('[PrendaEditor] Tallas cargadas en estructura relacional:', window.tallasRelacionales);
+
         }
         // PRIORIDAD 2: Fallback a generosConTallas (estructura alternativa)
         else if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
-            console.log('[PrendaEditor] ⚠️ Fallback a generosConTallas (estructura alternativa)');
+
             
             // Extraer cantidades a estructura relacional
             Object.entries(prenda.generosConTallas).forEach(([genero, generoData]) => {
@@ -382,38 +382,38 @@ class PrendaEditor {
             });
         }
         
-        console.log('[PrendaEditor] Tallas relacionales finales:', window.tallasRelacionales);
+
         
         // Renderizar tallas desde estructura relacional
         Object.entries(window.tallasRelacionales).forEach(([genero, tallasObj]) => {
             const tallasList = Object.keys(tallasObj).filter(t => tallasObj[t] > 0);
             if (tallasList && tallasList.length > 0) {
                 const generoLower = genero.toLowerCase();
-                console.log(`[PrendaEditor] Renderizando tallas para ${generoLower} cantidad: ${tallasList.length}`);
+
                 if (window.mostrarTallasDisponibles) {
                     window.mostrarTallasDisponibles('letra');
                 }
                 
                 // Crear tarjeta de género con tallas y cantidades
                 setTimeout(() => {
-                    console.log(`[PrendaEditor] Creando tarjeta de género para ${generoLower}...`);
+
                     
                     // Llamar a la función que crea la tarjeta de género
                     if (window.crearTarjetaGenero) {
                         window.crearTarjetaGenero(generoLower);
-                        console.log(`[PrendaEditor] Tarjeta de género creada para ${generoLower}`);
+
                     }
                     
                     // Cargar cantidades en los inputs después de crear la tarjeta
                     setTimeout(() => {
-                        console.log(`[PrendaEditor] Cargando cantidades para ${generoLower}...`);
-                        console.log(`[PrendaEditor] Cantidades disponibles (relacional):`, window.tallasRelacionales);
+
+
                         
                         tallasList.forEach(talla => {
                             const cantidad = window.tallasRelacionales[genero][talla];
                             const dataKey = `${generoLower}-${talla}`;
                             
-                            console.log(`[PrendaEditor] Buscando input para: ${dataKey}, cantidad: ${cantidad}`);
+
                             
                             if (cantidad !== undefined && cantidad !== null) {
                                 // Buscar input por data-key (formato: dama-M, dama-L, etc.)
@@ -422,12 +422,12 @@ class PrendaEditor {
                                     input.value = cantidad;
                                     input.dispatchEvent(new Event('change', { bubbles: true }));
                                     input.dispatchEvent(new Event('input', { bubbles: true }));
-                                    console.log(`[PrendaEditor]  Cantidad cargada: ${dataKey} = ${cantidad}`);
+
                                 } else {
-                                    console.log(`[PrendaEditor]  Input no encontrado para: ${dataKey}`);
+
                                     // Debug: mostrar todos los inputs disponibles
                                     const allInputs = document.querySelectorAll('input[data-key]');
-                                    console.log(`[PrendaEditor] Inputs disponibles:`, allInputs.length);
+
                                     allInputs.forEach(inp => console.log(`  - data-key: ${inp.dataset.key}`));
                                 }
                             }
@@ -442,7 +442,7 @@ class PrendaEditor {
             const checkboxGenero = document.querySelector(`input[value="${genero}"]`);
             if (checkboxGenero) {
                 checkboxGenero.dispatchEvent(new Event('change', { bubbles: true }));
-                console.log(`[PrendaEditor] Evento de cambio disparado para ${genero}`);
+
             }
         });
     }
@@ -457,13 +457,13 @@ class PrendaEditor {
         const aplicaBroche = document.getElementById('aplica-broche');
         const aplicaReflectivo = document.getElementById('aplica-reflectivo');
 
-        console.log('[PrendaEditor] Cargando variaciones desde prenda:', prenda);
-        console.log('[PrendaEditor] obs_manga:', prenda.obs_manga);
-        console.log('[PrendaEditor] obs_bolsillos:', prenda.obs_bolsillos);
-        console.log('[PrendaEditor] obs_broche:', prenda.obs_broche);
-        console.log('[PrendaEditor] obs_reflectivo:', prenda.obs_reflectivo);
-        console.log('[PrendaEditor] tiene_bolsillos:', prenda.tiene_bolsillos);
-        console.log('[PrendaEditor] tiene_reflectivo:', prenda.tiene_reflectivo);
+
+
+
+
+
+
+
 
         // Cargar manga desde obs_manga o variantes.obs_manga
         if (aplicaManga && (prenda.obs_manga || (prenda.variantes && prenda.variantes.obs_manga))) {
@@ -505,8 +505,8 @@ class PrendaEditor {
             
             // Cargar tipo de broche en dropdown (broche-input)
             const brocheInput = document.getElementById('broche-input');
-            console.log('[PrendaEditor] tipo_broche_boton_id recibido:', prenda.tipo_broche_boton_id);
-            console.log('[PrendaEditor] brocheInput encontrado:', !!brocheInput);
+
+
             
             if (brocheInput && prenda.tipo_broche_boton_id) {
                 // Mapear ID a valor del dropdown
@@ -518,8 +518,8 @@ class PrendaEditor {
                     valorSeleccionar = 'broche';
                 }
                 
-                console.log('[PrendaEditor] Intentando seleccionar broche con valor:', valorSeleccionar);
-                console.log('[PrendaEditor] Opciones disponibles:', Array.from(brocheInput.options).map(o => ({ value: o.value, text: o.text })));
+
+
                 
                 // Buscar la opción que coincida
                 let encontrado = false;
@@ -527,13 +527,13 @@ class PrendaEditor {
                     if (opt.value.toLowerCase() === valorSeleccionar.toLowerCase()) {
                         brocheInput.value = opt.value;
                         encontrado = true;
-                        console.log('[PrendaEditor] Tipo de broche seleccionado:', opt.value, '(original:', opt.textContent, ')');
+
                         break;
                     }
                 }
                 
                 if (!encontrado) {
-                    console.log('[PrendaEditor] Tipo de broche no encontrado con valor:', valorSeleccionar);
+
                 }
                 
                 brocheInput.dispatchEvent(new Event('change', { bubbles: true }));
@@ -567,11 +567,11 @@ class PrendaEditor {
      */
     cargarProcesos(prenda) {
         if (!prenda.procesos || prenda.procesos.length === 0) {
-            console.log('[PrendaEditor] Sin procesos para cargar');
+
             return;
         }
 
-        console.log('[PrendaEditor] Cargando procesos:', prenda.procesos);
+
 
         // Copiar procesos completos con todos sus datos
         window.procesosSeleccionados = {};
@@ -581,17 +581,17 @@ class PrendaEditor {
             if (proceso) {
                 // Obtener tipo de proceso desde nombre_proceso o tipo_proceso
                 const tipoProceso = (proceso.nombre_proceso || proceso.tipo_proceso || 'proceso').toLowerCase();
-                console.log(`[PrendaEditor] Cargando proceso ${tipoProceso}:`, proceso);
+
                 
                 // Copiar datos completos del proceso
-                console.log(`[PrendaEditor] Estructura de tallas recibida para ${tipoProceso}:`, proceso.tallas);
-                console.log(`[PrendaEditor] Tipo de tallas:`, typeof proceso.tallas);
-                console.log(`[PrendaEditor] Es array:`, Array.isArray(proceso.tallas));
+
+
+
                 
                 // Convertir tallas si es necesario
                 let tallasFormato = proceso.tallas || { dama: {}, caballero: {} };
                 if (Array.isArray(tallasFormato) && tallasFormato.length === 0) {
-                    console.log(`[PrendaEditor] Tallas es array vacío, usando estructura vacía`);
+
                     tallasFormato = { dama: {}, caballero: {} };
                 }
                 
@@ -606,8 +606,8 @@ class PrendaEditor {
                     }
                 };
                 
-                console.log(`[PrendaEditor] Proceso ${tipoProceso} guardado en window.procesosSeleccionados`);
-                console.log(`[PrendaEditor] Tallas guardadas:`, window.procesosSeleccionados[tipoProceso].datos.tallas);
+
+
                 
                 // Marcar checkbox del proceso
                 const checkboxProceso = document.getElementById(`checkbox-${tipoProceso}`);
@@ -617,23 +617,23 @@ class PrendaEditor {
                     checkboxProceso._ignorarOnclick = true;
                     checkboxProceso.dispatchEvent(new Event('change', { bubbles: true }));
                     checkboxProceso._ignorarOnclick = false;
-                    console.log(`[PrendaEditor] Checkbox ${tipoProceso} marcado`);
+
                 } else {
-                    console.warn(`[PrendaEditor] Checkbox #checkbox-${tipoProceso} NO encontrado`);
+
                 }
             }
         });
         
-        console.log('[PrendaEditor] Procesos cargados en window:', window.procesosSeleccionados);
-        console.log('[PrendaEditor] Función renderizarTarjetasProcesos existe:', typeof window.renderizarTarjetasProcesos);
+
+
         
         // Renderizar tarjetas de procesos
         if (window.renderizarTarjetasProcesos) {
-            console.log('[PrendaEditor] Llamando a renderizarTarjetasProcesos()...');
+
             window.renderizarTarjetasProcesos();
-            console.log('[PrendaEditor] renderizarTarjetasProcesos() completado');
+
         } else {
-            console.error('[PrendaEditor] ERROR: window.renderizarTarjetasProcesos NO existe');
+
         }
     }
 
@@ -684,7 +684,7 @@ class PrendaEditor {
         if (this.notificationService) {
             this.notificationService.mostrar(mensaje, tipo);
         } else {
-            console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
+
         }
     }
 }

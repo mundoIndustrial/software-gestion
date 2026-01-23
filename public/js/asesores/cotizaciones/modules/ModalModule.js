@@ -91,7 +91,7 @@ const ModalModule = (() => {
             }))
         };
 
-        console.log('Especificaciones guardadas:', data);
+
 
         // Llamar a módulo de especificaciones si existe
         if (window.especificacionesModule && typeof window.especificacionesModule.guardarEspecificaciones === 'function') {

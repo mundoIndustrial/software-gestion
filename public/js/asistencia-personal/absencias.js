@@ -9,7 +9,7 @@ const AsistenciaAbsencias = (() => {
      */
     function cargar(reportId) {
         const url = `/asistencia-personal/reportes/${reportId}/ausencias`;
-        console.log('Fetching absencias from:', url);
+
         
         fetch(url, {
             method: 'GET',
@@ -26,7 +26,7 @@ const AsistenciaAbsencias = (() => {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+
             alert('Error al cargar las ausencias: ' + error.message);
         });
     }
@@ -39,7 +39,7 @@ const AsistenciaAbsencias = (() => {
         const ausenciasTableBody = document.getElementById('ausenciasTableBody');
         
         if (!absenciasModal || !ausenciasTableBody) {
-            console.error('Modal de ausencias no encontrado');
+
             return;
         }
         
@@ -95,7 +95,7 @@ const AsistenciaAbsencias = (() => {
         const inasistenciasList = document.getElementById('inasistenciasList');
         
         if (!verInasistenciasModal || !inasistenciasTitle || !inasistenciasList) {
-            console.error('Modal de ver inasistencias no encontrado');
+
             return;
         }
         

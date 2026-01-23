@@ -123,7 +123,7 @@ function cancelNewNovedad() {
  */
 async function saveNewNovedad() {
     if (!currentOrderId) {
-        console.error('No se especificó el ID de la orden');
+
         return;
     }
 
@@ -163,11 +163,11 @@ async function saveNewNovedad() {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error(' Error:', data);
+
             throw new Error(data.message || `Error ${response.status}`);
         }
 
-        console.log(' Novedad guardada exitosamente');
+
         showNotification(' Novedad agregada correctamente', 'success');
 
         // Actualizar textarea con las nuevas novedades
@@ -180,7 +180,7 @@ async function saveNewNovedad() {
         cancelNewNovedad();
 
     } catch (error) {
-        console.error(' Error:', error);
+
         showNotification(` Error: ${error.message}`, 'error');
     } finally {
         btnSaveNew.disabled = false;
@@ -193,7 +193,7 @@ async function saveNewNovedad() {
  */
 async function saveEditedNovedades() {
     if (!currentOrderId) {
-        console.error('No se especificó el ID de la orden');
+
         return;
     }
 
@@ -206,7 +206,7 @@ async function saveEditedNovedades() {
         btnSaveEdit.classList.add('loading');
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        console.log('🔄 Enviando novedades editadas:', { ordenId: currentOrderId });
+
 
         // Enviar solicitud AJAX para reemplazar novedades
         const response = await fetch(`/api/ordenes/${currentOrderId}/novedades`, {
@@ -224,11 +224,11 @@ async function saveEditedNovedades() {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error(' Error:', data);
+
             throw new Error(data.message || `Error ${response.status}`);
         }
 
-        console.log(' Cambios guardados exitosamente');
+
         showNotification(' Novedades actualizadas correctamente', 'success');
 
         // Actualizar la fila en la tabla
@@ -240,7 +240,7 @@ async function saveEditedNovedades() {
         }, 500);
 
     } catch (error) {
-        console.error(' Error completo:', error);
+
         showNotification(` Error: ${error.message}`, 'error');
     } finally {
         btnSaveEdit.disabled = false;

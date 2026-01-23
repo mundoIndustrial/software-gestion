@@ -3,7 +3,7 @@
  * Permite filtrar por cualquier columna con modal interactivo
  */
 
-console.log(' filter-system.js cargado');
+
 
 let currentFilterColumn = null;
 let activeFilters = {};
@@ -14,9 +14,9 @@ let activeFilters = {};
 function saveFiltersToStorage() {
     try {
         localStorage.setItem('activeFilters', JSON.stringify(activeFilters));
-        console.log('💾 Filtros guardados en localStorage');
+
     } catch (error) {
-        console.error('Error al guardar filtros:', error);
+
     }
 }
 
@@ -28,11 +28,11 @@ function loadFiltersFromStorage() {
         const stored = localStorage.getItem('activeFilters');
         if (stored) {
             activeFilters = JSON.parse(stored);
-            console.log('📂 Filtros cargados desde localStorage:', activeFilters);
+
             return true;
         }
     } catch (error) {
-        console.error('Error al cargar filtros:', error);
+
     }
     return false;
 }
@@ -43,9 +43,9 @@ function loadFiltersFromStorage() {
 function clearFiltersFromStorage() {
     try {
         localStorage.removeItem('activeFilters');
-        console.log('🗑️ Filtros eliminados de localStorage');
+
     } catch (error) {
-        console.error('Error al limpiar filtros:', error);
+
     }
 }
 
@@ -236,7 +236,7 @@ async function getFilterOptionsFromServer() {
         const data = await response.json();
         return data.options || {};
     } catch (error) {
-        console.error('Error al obtener opciones de filtro:', error);
+
         return {};
     }
 }
@@ -264,7 +264,7 @@ async function getColumnOptionsFromServer(column, page = 1, limit = 25, search =
         }
         return { options: [], total: 0, page: 1, limit: 25 };
     } catch (error) {
-        console.error(`Error al obtener opciones de columna ${column}:`, error);
+
         return { options: [], total: 0, page: 1, limit: 25 };
     }
 }
@@ -340,7 +340,7 @@ async function openFilterModal(column) {
         filterOptions.parentElement.insertBefore(indicator, filterOptions);
     }
     
-    console.log(` Modal de filtro abierto para: ${column}`);
+
 }
 
 /**
@@ -483,7 +483,7 @@ async function filterSearchOptions(e) {
 function closeFilterModal() {
     document.getElementById('filterModalOverlay').classList.remove('active');
     currentFilterColumn = null;
-    console.log(' Modal de filtro cerrado');
+
 }
 
 /**
@@ -495,7 +495,7 @@ async function applyFilters() {
     
     if (selectedValues.length > 0) {
         activeFilters[currentFilterColumn] = selectedValues;
-        console.log(` Filtro aplicado para ${currentFilterColumn}:`, selectedValues);
+
     } else {
         delete activeFilters[currentFilterColumn];
     }
@@ -545,19 +545,19 @@ async function applyFiltersToBackend(page = 1) {
             renderFilteredTable(result.data);
             
             // Actualizar paginación
-            console.log('📡 Respuesta del backend - Paginación:', result.pagination);
-            console.log(' Cálculo de páginas: total=' + result.pagination.total + ', per_page=' + result.pagination.per_page + ', last_page=' + result.pagination.last_page);
+
+
             updatePaginationInfo(result.pagination);
             
             // Actualizar URL con filtros
             updateUrlWithFilters(page);
             
-            console.log(' Tabla actualizada con filtros:', result.data.length, 'registros');
+
         } else {
-            console.error('Error al aplicar filtros:', result.message);
+
         }
     } catch (error) {
-        console.error('Error al enviar filtros al backend:', error);
+
     }
 }
 
@@ -609,7 +609,7 @@ function renderFilteredTable(ordenes) {
     const tableBody = document.getElementById('tablaOrdenesBody');
     
     if (!tableBody) {
-        console.error('Elemento tablaOrdenesBody no encontrado');
+
         return;
     }
 
@@ -782,13 +782,6 @@ function updatePaginationInfo(pagination) {
     
     // Guardar información de paginación actual para referencia
     window.currentPagination = pagination;
-    console.log(' Información de paginación actualizada:', {
-        current_page: pagination.current_page,
-        last_page: pagination.last_page,
-        total: pagination.total,
-        per_page: pagination.per_page
-    });
-    
     // Actualizar botones de paginación
     updatePaginationButtons(pagination);
 }
@@ -881,11 +874,11 @@ function updatePaginationButtons(pagination) {
         lastBtn.textContent = '>>';
         lastBtn.onclick = (e) => {
             e.preventDefault();
-            console.log(`🔘 Botón >> clickeado - Navegando a página ${pagination.last_page} (última página según filtros)`);
+
             applyFiltersToBackend(pagination.last_page);
         };
         paginationContainer.appendChild(lastBtn);
-        console.log(` Botón >> agregado - Última página disponible: ${pagination.last_page}`);
+
     }
 }
 
@@ -895,7 +888,7 @@ function updatePaginationButtons(pagination) {
 function initializeTableEventListeners() {
     // Aquí van los event listeners para botones de acción, dropdowns, etc.
     // Por ahora, solo un placeholder
-    console.log('Event listeners de tabla reinicializados');
+
 }
 
 /**
@@ -905,7 +898,7 @@ function resetFilters() {
     document.querySelectorAll('#filterOptions input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
     });
-    console.log('🔄 Filtros limpiados');
+
 }
 
 /**
@@ -943,14 +936,14 @@ function updateFilterBadges() {
                 badge.textContent = values.length;
                 btn.appendChild(badge);
                 
-                console.log(`🔴 Badge agregado a "${column}": ${values.length}`);
+
             } else {
-                console.warn(` No se encontró botón para columna: ${column}`);
+
             }
         }
     });
     
-    console.log('🏷️ Badges actualizados:', activeFilters);
+
 }
 
 /**
@@ -996,7 +989,7 @@ function filterTable() {
         if (showRow) visibleCount++;
     });
     
-    console.log(` Tabla filtrada: ${visibleCount} filas visibles`);
+
 }
 
 /**
@@ -1048,10 +1041,10 @@ function updateClearButtonVisibility() {
     
     if (hasFilters) {
         clearBtn.classList.add('visible');
-        console.log(' Botón flotante mostrado');
+
     } else {
         clearBtn.classList.remove('visible');
-        console.log(' Botón flotante ocultado');
+
     }
 }
 
@@ -1059,12 +1052,6 @@ function updateClearButtonVisibility() {
  * Limpiar todos los filtros
  */
 async function clearAllFilters() {
-    console.log('🗑️ Limpiando todos los filtros...');
-    console.log('Estado ANTES de limpiar:', {
-        activeFilters: activeFilters,
-        currentPagination: window.currentPagination
-    });
-    
     // Limpiar objeto de filtros activos
     activeFilters = {};
     
@@ -1085,18 +1072,12 @@ async function clearAllFilters() {
     // Cerrar modal si está abierto
     closeFilterModal();
     
-    console.log('🔄 Llamando a applyFiltersToBackend(1) con filtros vacíos...');
+
     // Cargar tabla sin filtros (página 1)
     await applyFiltersToBackend(1);
     
     // Forzar actualización de URL para limpiar parámetros de filtro
     window.history.replaceState({}, '', '/registros');
-    
-    console.log(' Todos los filtros han sido limpiados');
-    console.log('Estado DESPUÉS de limpiar:', {
-        activeFilters: activeFilters,
-        currentPagination: window.currentPagination
-    });
 }
 
 /**
@@ -1113,12 +1094,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        console.log(' Sistema de filtros inicializado');
+
     }
     
     // Cargar filtros desde localStorage
     if (loadFiltersFromStorage()) {
-        console.log('📂 Filtros restaurados desde localStorage');
+
         // Actualizar badges con los filtros cargados
         updateFilterBadges();
         // Aplicar filtros al backend
@@ -1128,3 +1109,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar filtros desde URL si existen
     loadFiltersFromUrl();
 });
+

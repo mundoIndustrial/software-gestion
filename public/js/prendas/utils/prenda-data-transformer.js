@@ -185,4 +185,4 @@ class PrendaDataTransformer {
 }
 
 window.PrendaDataTransformer = PrendaDataTransformer;
-console.log('✓ [PRENDA-DATA-TRANSFORMER] Cargado correctamente');
+

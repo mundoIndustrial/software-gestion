@@ -10,7 +10,7 @@ let variacionesCache = {};
  * Inicializar sistema de variantes
  */
 function inicializarVariantes() {
-    console.log('🔵 Inicializando sistema de variantes de prendas...');
+
     cargarTiposPrenda();
 }
 
@@ -22,7 +22,7 @@ function cargarTiposPrenda() {
         .then(res => res.json())
         .then(tipos => {
             tiposPrendaCache = tipos;
-            console.log(' Tipos de prenda cargados:', tipos.length);
+
         })
         .catch(err => console.error(' Error cargando tipos:', err));
 }
@@ -111,12 +111,12 @@ function mostrarSelectorVariantes(inputElement) {
     
     // Si no se reconoce el tipo, mostrar campos básicos
     if (!tipoPrenda) {
-        console.log(' Tipo de prenda no reconocido, mostrando campos básicos de variantes');
+
         crearSelectorVariantesBasico(inputElement, nombrePrenda);
         return;
     }
 
-    console.log(' Tipo reconocido:', tipoPrenda.nombre);
+
     
     // IMPORTANTE: Mostrar campos de variantes PRIMERO (siempre)
     // Luego intentar cargar variaciones específicas si existen
@@ -127,7 +127,7 @@ function mostrarSelectorVariantes(inputElement) {
         // Las variaciones específicas se cargarían aquí si fueran necesarias
         // Por ahora, los campos básicos ya están visibles
         if (variaciones) {
-            console.log(' Variaciones cargadas para:', tipoPrenda.nombre);
+
         }
     });
 }
@@ -154,18 +154,11 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
     
     // Obtener la primera palabra (palabra principal)
     const palabraPrincipal = nombreUpper.split(/\s+/)[0];
-    
-    console.log(' DEBUG mostrarSelectorJeanPantalon:', {
-        nombrePrenda: nombrePrenda,
-        nombreUpper: nombreUpper,
-        palabraPrincipal: palabraPrincipal
-    });
-    
     // Verificar si la palabra principal es JEAN, JEANS, PANTALÓN o PANTALONES
     const esJean = /^JEAN/.test(palabraPrincipal);
     const esPantalon = /^PANTALÓ?N/.test(palabraPrincipal);
     
-    console.log(' DEBUG esJean:', esJean, 'esPantalon:', esPantalon);
+
     
     if (esJean || esPantalon) {
         const tipoLabel = esJean ? 'JEAN' : 'PANTALÓN';
@@ -185,13 +178,13 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
         tipoJeanPantalon_inline.style.display = 'flex';
         tipoJeanPantalon_inline.style.visibility = 'visible';
         tipoJeanPantalon_inline.style.opacity = '1';
-        console.log(' Selector Tipo de JEAN/PANTALÓN mostrado para:', nombrePrenda);
+
     } else {
         tipoJeanPantalon_inline.style.display = 'none';
         tipoJeanPantalon_inline.style.visibility = 'hidden';
         tipoJeanPantalon_inline.style.opacity = '0';
         tipoJeanPantalon_inline_container.innerHTML = '';
-        console.log(' Selector Tipo de JEAN/PANTALÓN ocultado para:', nombrePrenda);
+
     }
 }
 
@@ -203,7 +196,7 @@ function toggleMangaInput(checkbox) {
     let container = checkbox.closest('tr') || checkbox.closest('td') || checkbox.closest('div');
     
     if (!container) {
-        console.warn(' No se encontró contenedor para el checkbox de manga');
+
         return;
     }
     
@@ -211,7 +204,7 @@ function toggleMangaInput(checkbox) {
     const mangaIdInput = container.querySelector('.manga-id-input');
     
     if (!mangaInput) {
-        console.warn(' No se encontró .manga-input en el contenedor');
+
         return;
     }
     
@@ -358,7 +351,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
     // Insertar después del input de nombre
     inputElement.parentElement.insertAdjacentHTML('afterend', selectorHTML);
     
-    console.log(' Selector de variantes creado para:', tipoPrenda.nombre);
+
 }
 
 /**
@@ -417,7 +410,7 @@ function crearSelectorVariantesEnSeccion(inputElement, tipoPrenda, variaciones) 
         tipoJeanPantalon_inline.style.display = 'none';
     }
     
-    console.log(' Tabla de variaciones lista para:', tipoPrenda.nombre);
+
 }
 
 /**
@@ -463,7 +456,7 @@ function crearSelectorVariantesBasico(inputElement, nombrePrenda) {
         tipoJeanPantalon_inline.style.display = 'none';
     }
     
-    console.log(' Tabla de variaciones básica mostrada para:', nombrePrenda);
+
 }
 
 /**
@@ -515,7 +508,7 @@ function obtenerVariantesSeleccionadas(productoCard) {
  * Por lo que no es necesario hacer nada adicional
  */
 function agregarVariantesAlFormulario() {
-    console.log(' Variantes ya están en los inputs del formulario');
+
 }
 
 /**
@@ -582,27 +575,11 @@ function seleccionarManga(id, nombre, element) {
     const td = element.closest('td');
     const input = td.querySelector('.manga-input');
     const idInput = td.querySelector('.manga-id-input');
-    
-    console.log(` DEBUG seleccionarManga:`, {
-        id: id,
-        nombre: nombre,
-        td_encontrado: !!td,
-        input_encontrado: !!input,
-        idInput_encontrado: !!idInput,
-        idInput_antes: idInput?.value
-    });
-    
     input.value = nombre;
     idInput.value = id;
-    
-    console.log(` DEBUG después de asignar:`, {
-        input_value: input.value,
-        idInput_value: idInput.value
-    });
-    
     td.querySelector('.manga-suggestions').style.display = 'none';
     
-    console.log(` Manga seleccionada: ${nombre} (ID: ${id})`);
+
 }
 
 function crearMangaDesdeInput(input) {
@@ -626,7 +603,7 @@ function crearMangaDesdeInput(input) {
         idInput.value = nuevoId;
         td.querySelector('.manga-suggestions').style.display = 'none';
         
-        console.log(` Nueva manga creada: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -650,7 +627,7 @@ function crearMangaDesdeSelector(valor, element) {
         idInput.value = nuevoId;
         td.querySelector('.manga-suggestions').style.display = 'none';
         
-        console.log(` Nueva manga creada desde selector: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -706,7 +683,7 @@ function seleccionarBroche(id, nombre, element) {
     idInput.value = id;
     div.querySelector('.broche-suggestions').style.display = 'none';
     
-    console.log(` Broche seleccionado: ${nombre} (ID: ${id})`);
+
 }
 
 function crearBrocheDesdeInput(input) {
@@ -730,7 +707,7 @@ function crearBrocheDesdeInput(input) {
         idInput.value = nuevoId;
         div.querySelector('.broche-suggestions').style.display = 'none';
         
-        console.log(` Nuevo broche creado: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -754,7 +731,7 @@ function crearBrocheDesdeSelector(valor, element) {
         idInput.value = nuevoId;
         div.querySelector('.broche-suggestions').style.display = 'none';
         
-        console.log(` Nuevo broche creado desde selector: ${valor} (ID: ${nuevoId})`);
+
     }
 }
 
@@ -768,4 +745,5 @@ document.addEventListener('click', function(e) {
         });
     }
 });
+
 

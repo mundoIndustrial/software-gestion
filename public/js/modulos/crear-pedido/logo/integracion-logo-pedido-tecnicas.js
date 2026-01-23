@@ -28,7 +28,7 @@ window.renderizarPrendasEditables = function(prendas, logoCotizacion = null, esp
     }
     
     // Si NO es LOGO, usar el flujo original
-    console.log(' INTEGRACION: No es LOGO, usando renderizado original');
+
     return originalRenderizarPrendasEditables(prendas, logoCotizacion, especificacionesCotizacion, esReflectivo, datosReflectivo, esLogo, tipoCotizacion);
 };
 
@@ -49,34 +49,25 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
         
         // Mostrar estructura completa de prendas técnicas
         if (resultado.prendas_tecnicas && resultado.prendas_tecnicas.length > 0) {
-            console.log(' DETALLES DE PRENDAS TÉCNICAS:');
+
             resultado.prendas_tecnicas.forEach((prenda, index) => {
-                console.log(`   Prenda ${index}:`, {
-                    id: prenda.id,
-                    tecnica: prenda.tecnica,
-                    talla: prenda.talla,
-                    cantidadTallas: prenda.cantidadTallas,
-                    ubicaciones: prenda.ubicaciones,
-                    fotos: prenda.fotos ? prenda.fotos.length : 0,
-                    estructura_completa: prenda
-                });
             });
         } else {
-            console.log(' INTEGRACION: prendas_tecnicas está vacío o no existe');
-            console.log('   - resultado.prendas_tecnicas:', resultado.prendas_tecnicas);
+
+
         }
         
         // Cargar las prendas técnicas desde la respuesta
         if (resultado.prendas_tecnicas && resultado.prendas_tecnicas.length > 0) {
             cargarLogoPrendasDesdeCotizacion(resultado.prendas_tecnicas);
-            console.log(' INTEGRACION: logoPrendasTecnicas después de cargar:', window.logoPrendasTecnicas);
+
         } else {
-            console.log(' INTEGRACION: No hay prendas técnicas en la respuesta');
+
             window.logoPrendasTecnicas = [];
         }
     } else {
-        console.log(' INTEGRACION: No hay datos de logo en la respuesta');
-        console.log('   - resultado.logo:', resultado?.logo);
+
+
     }
     
     return resultado;
@@ -87,27 +78,21 @@ window.obtenerDatosCotizacion = async function(cotizacionId) {
 // =========================================================
 
 window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTecnicasLogoNuevo() {
-    console.log(' INTEGRACION: Mostrando nueva sección de prendas técnicas');
-    console.log(' Estado actual de logoPrendasTecnicas:', window.logoPrendasTecnicas);
-    console.log('   - Cantidad de prendas:', window.logoPrendasTecnicas?.length || 0);
+
+
+
     if (window.logoPrendasTecnicas && window.logoPrendasTecnicas.length > 0) {
         window.logoPrendasTecnicas.forEach((prenda, i) => {
-            console.log(`   Prenda ${i}:`, {
-                tecnica: prenda.tecnica,
-                ubicaciones: prenda.ubicaciones?.length || 0,
-                tallas: prenda.tallas?.length || 0,
-                fotos: prenda.fotos?.length || 0
-            });
         });
     }
     
     // Ya no es necesario cambiar el título, ahora es estático en el HTML
-    console.log(' Sección de prendas técnicas lista');
+
     
     // Encontrar el contenedor de prendas
     const prendasContainer = document.getElementById('prendas-container-editable');
     if (!prendasContainer) {
-        console.warn(' INTEGRACION: Contenedor de prendas no encontrado');
+
         return;
     }
     
@@ -123,14 +108,14 @@ window.mostrarSeccionPrendasTecnicasLogoNuevo = function mostrarSeccionPrendasTe
     `;
     
     // Renderizar las prendas técnicas que ya están cargadas
-    console.log(' Prendas técnicas para renderizar:', window.logoPrendasTecnicas.length);
-    console.log('   - Llamando a renderizarLogoPrendasTecnicas()...');
+
+
     
     try {
         renderizarLogoPrendasTecnicas();
-        console.log(' renderizarLogoPrendasTecnicas() ejecutada correctamente');
+
     } catch (error) {
-        console.error(' Error al ejecutar renderizarLogoPrendasTecnicas():', error);
+
     }
 }
 
@@ -145,7 +130,7 @@ window.recopilarDatosLogoPedido = function() {
         fotos: (window.logoPrendasTecnicas || []).flatMap(prenda => prenda.fotos || [])
     };
     
-    console.log('📤 Datos compilados para envío:', datos);
+
     return datos;
 };
 
@@ -156,11 +141,11 @@ window.recopilarDatosLogoPedido = function() {
 window.validarLogoPedido = function() {
     // Validar que existan prendas técnicas
     if (!validarLogoPrendasTecnicas()) {
-        console.error(' Validación de prendas técnicas fallida');
+
         return false;
     }
     
-    console.log(' Logo pedido validado correctamente');
+
     return true;
 };
 
@@ -176,3 +161,4 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarTiposLogosDisponibles();
     }
 });
+

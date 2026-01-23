@@ -29,7 +29,7 @@ if (!window.ImageGalleryZoomModule) {
                 // Obtener imágenes de la orden
                 const response = await fetch(`${baseUrl}/${pedido}/images`);
                 if (!response.ok) {
-                    console.log('No hay imágenes para esta orden');
+
                     return;
                 }
 
@@ -39,7 +39,7 @@ if (!window.ImageGalleryZoomModule) {
                 // Verificar que el elemento existe antes de acceder a su propiedad style
                 const imagenesSection = document.getElementById('imagenes-section');
                 if (!imagenesSection) {
-                    console.warn(' El elemento imagenes-section no existe en el DOM');
+
                     return;
                 }
 
@@ -50,7 +50,7 @@ if (!window.ImageGalleryZoomModule) {
                     imagenesSection.style.display = 'none';
                 }
             } catch (error) {
-                console.error('Error al cargar imágenes:', error);
+
                 const imagenesSection = document.getElementById('imagenes-section');
                 if (imagenesSection) {
                     imagenesSection.style.display = 'none';
@@ -239,6 +239,6 @@ if (!window.ImageGalleryZoomModule) {
     window.openImageZoom = window.ImageGalleryZoomModule.openImageZoom;
     window.closeImageZoom = window.ImageGalleryZoomModule.closeImageZoom;
 
-    console.log(' ImageGalleryZoomModule cargado - Evitando redeclaraciones de isDragging');
+
 }
 

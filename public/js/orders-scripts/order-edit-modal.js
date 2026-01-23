@@ -26,7 +26,7 @@ async function openEditModal(pedido) {
         await loadOrderData(pedido);
 
     } catch (error) {
-        console.error('Error al abrir modal de edición:', error);
+
         showEditNotification('Error al cargar la orden', 'error');
     }
 }
@@ -106,7 +106,7 @@ async function loadOrderData(pedido) {
         setTimeout(() => hideEditNotification(), 2000);
 
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+
         showEditNotification('Error al cargar los datos de la orden', 'error');
     }
 }
@@ -161,7 +161,7 @@ async function loadPrendas(pedido) {
         });
 
     } catch (error) {
-        console.error('Error al cargar prendas:', error);
+
         showEditNotification('Error al cargar las prendas', 'error');
     }
 }
@@ -307,7 +307,7 @@ function addNewEditPrenda() {
 function addEditTalla(prendaId) {
     const tallasList = document.querySelector(`.tallas-list[data-prenda-id="${prendaId}"]`);
     if (!tallasList) {
-        console.error('No se encontró la lista de tallas para prenda ID:', prendaId);
+
         return;
     }
     
@@ -364,7 +364,7 @@ function removeEditPrenda(prendaId) {
             updatePrendaNumbers();
         }, 200);
     } else {
-        console.error('No se encontró la prenda con ID:', prendaId);
+
     }
 }
 
@@ -387,7 +387,7 @@ function updatePrendaNumbers() {
 function showEditNotification(message, type = 'success') {
     const notification = document.getElementById('editNotification');
     if (!notification) {
-        console.warn(' Elemento #editNotification no encontrado');
+
         return;
     }
     notification.textContent = message;
@@ -463,7 +463,7 @@ async function saveEditOrder(event) {
         // Actualizar la tabla en tiempo real sin recargar
         if (result.orden && globalThis.modernTableInstance && typeof globalThis.modernTableInstance.actualizarOrdenEnTabla === 'function') {
             globalThis.modernTableInstance.actualizarOrdenEnTabla(result.orden);
-            console.log(' Orden actualizada en tiempo real desde el modal');
+
         }
         
         // Cerrar modal después de 1.5 segundos
@@ -472,7 +472,7 @@ async function saveEditOrder(event) {
         }, 1500);
 
     } catch (error) {
-        console.error('Error al guardar:', error);
+
         showEditNotification(error.message || 'Error al guardar los cambios', 'error');
         
         // Restaurar botón

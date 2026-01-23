@@ -7,7 +7,7 @@
 
 class VariacionesBuilder {
     static construir(prenda, indice) {
-        console.log('[VariacionesBuilder] Construyendo para prenda:', indice);
+
 
         const variantes = prenda.variantes || {};
         
@@ -26,7 +26,7 @@ class VariacionesBuilder {
         });
 
         if (variacionesAplicadas.length === 0) {
-            console.log('[VariacionesBuilder] Sin variaciones aplicadas');
+
             return '';
         }
 
@@ -81,4 +81,4 @@ class VariacionesBuilder {
 }
 
 window.VariacionesBuilder = VariacionesBuilder;
-console.log('✓ [VARIACIONES-BUILDER] Cargado correctamente');
+

@@ -23,14 +23,14 @@ const PDFGenerator = (() => {
                 script2.onerror = function() {
                     mostrarCargando(false);
                     alert('Error cargando la librería AutoTable. Por favor intente de nuevo.');
-                    console.error('Error cargando AutoTable');
+
                 };
                 document.head.appendChild(script2);
             };
             script1.onerror = function() {
                 mostrarCargando(false);
                 alert('Error cargando la librería jsPDF. Por favor intente de nuevo.');
-                console.error('Error cargando jsPDF');
+
             };
             document.head.appendChild(script1);
         } else {
@@ -282,7 +282,7 @@ const PDFGenerator = (() => {
             mostrarNotificacion('PDF descargado exitosamente', 'success');
             
         } catch (error) {
-            console.error('Error generando PDF:', error);
+
             alert('Error al generar el PDF: ' + error.message);
         }
     }
@@ -370,7 +370,7 @@ const PDFGenerator = (() => {
             try {
                 generarPDF(personasConExtras, todasLasFechas);
             } catch (error) {
-                console.error('Error en descargar:', error);
+
                 mostrarNotificacion('Error al generar el PDF', 'error');
             }
         });

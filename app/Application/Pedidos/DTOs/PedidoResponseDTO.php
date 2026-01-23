@@ -17,6 +17,8 @@ class PedidoResponseDTO
         public string $descripcion,
         public int $totalPrendas,
         public int $totalArticulos,
+        public array $prendas = [],
+        public array $epps = [],
         public string $mensaje = ''
     ) {}
 
@@ -25,11 +27,14 @@ class PedidoResponseDTO
         return [
             'id' => $this->id,
             'numero' => $this->numero,
+            'numero_pedido' => $this->numero,
             'cliente_id' => $this->clienteId,
             'estado' => $this->estado,
             'descripcion' => $this->descripcion,
             'total_prendas' => $this->totalPrendas,
             'total_articulos' => $this->totalArticulos,
+            'prendas' => $this->prendas,
+            'epps' => $this->epps,
             'mensaje' => $this->mensaje,
         ];
     }

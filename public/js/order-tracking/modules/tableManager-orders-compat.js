@@ -28,7 +28,7 @@ const TableManager = (() => {
     function getTableRows() {
         const tabla = getOrdersTable();
         if (!tabla) {
-            console.warn(' Tabla de órdenes no encontrada');
+
             return [];
         }
         
@@ -50,11 +50,11 @@ const TableManager = (() => {
         const rows = getTableRows();
         
         if (rows.length === 0) {
-            console.log('⏱️ No hay órdenes en la tabla actual');
+
             return;
         }
         
-        console.log(` Actualizando días en ${rows.length} órdenes`);
+
         
         let actualizadas = 0;
         
@@ -83,12 +83,12 @@ const TableManager = (() => {
             } else {
                 // Para estructura flexbox (divs)
                 // Los días se actualizan a través de otros mecanismos
-                console.log(` Fila ${numeroPedido} procesada (flexbox)`);
+
             }
         });
         
         if (actualizadas > 0) {
-            console.log(` ${actualizadas} celdas de días actualizadas`);
+
         }
     }
     
@@ -96,7 +96,7 @@ const TableManager = (() => {
      * Actualiza los días cuando cambia de página
      */
     function updateDaysOnPageChange() {
-        console.log(' Actualizando días al cambiar de página');
+
         updateDaysInTable();
     }
     
@@ -109,4 +109,4 @@ const TableManager = (() => {
     };
 })();
 
-console.log(' TableManager (compatibilidad flexbox) cargado');
+

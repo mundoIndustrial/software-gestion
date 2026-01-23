@@ -7,7 +7,7 @@
 
 class TallasBuilder {
     static construir(prenda, indice) {
-        console.log('[TallasBuilder] Construyendo para prenda:', indice);
+
 
         const generosConTallas = prenda.generosConTallas || {};
         const cantidadesPorTalla = prenda.cantidadesPorTalla || {};
@@ -91,4 +91,4 @@ class TallasBuilder {
 }
 
 window.TallasBuilder = TallasBuilder;
-console.log('✓ [TALLAS-BUILDER] Cargado correctamente');
+

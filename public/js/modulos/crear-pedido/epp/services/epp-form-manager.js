@@ -18,7 +18,7 @@ class EppFormManager {
         document.getElementById(this.formularioCrearId).style.display = 'block';
         document.getElementById(this.buscadorId).value = '';
         document.getElementById(this.resultadosId).style.display = 'none';
-        console.log('[EppFormManager] Formulario de crear EPP mostrado');
+
     }
 
     /**
@@ -27,7 +27,7 @@ class EppFormManager {
     ocultarFormularioCrear() {
         document.getElementById(this.formularioCrearId).style.display = 'none';
         this.limpiarFormularioCrear();
-        console.log('[EppFormManager] Formulario de crear EPP ocultado');
+
     }
 
     /**
@@ -46,7 +46,7 @@ class EppFormManager {
             if (elem) elem.value = '';
         });
 
-        console.log('[EppFormManager] Formulario de crear EPP limpiado');
+
     }
 
     /**
@@ -68,7 +68,7 @@ class EppFormManager {
         document.getElementById(this.buscadorId).value = '';
         document.getElementById(this.resultadosId).style.display = 'none';
         document.getElementById(this.resultadosId).innerHTML = '';
-        console.log('[EppFormManager] Buscador limpiado');
+
     }
 
     /**
@@ -78,7 +78,7 @@ class EppFormManager {
         const container = document.getElementById(this.resultadosId);
         container.innerHTML = html;
         container.style.display = 'block';
-        console.log('[EppFormManager] Resultados del buscador mostrados');
+
     }
 
     /**
@@ -88,7 +88,7 @@ class EppFormManager {
         const container = document.getElementById(this.resultadosId);
         container.innerHTML = `<div style="padding: 1rem; color: #dc2626; text-align: center;">${mensaje}</div>`;
         container.style.display = 'block';
-        console.log('[EppFormManager] Error en buscador:', mensaje);
+
     }
 
     /**
@@ -96,7 +96,7 @@ class EppFormManager {
      */
     ocultarResultadosBuscador() {
         document.getElementById(this.resultadosId).style.display = 'none';
-        console.log('[EppFormManager] Resultados del buscador ocultados');
+
     }
 }
 

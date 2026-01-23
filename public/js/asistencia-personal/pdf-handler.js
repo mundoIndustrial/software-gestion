@@ -252,7 +252,7 @@ const AsistenciaPDFHandler = (() => {
         const pdfInput = document.getElementById('pdfInput');
 
         if (!insertReportBtn || !saveReportBtn || !pdfInput) {
-            console.error('Elementos PDF no encontrados');
+
             return;
         }
 
@@ -336,7 +336,7 @@ const AsistenciaPDFHandler = (() => {
         .catch(error => {
             clearInterval(progressInterval);
             processingModal.remove();
-            console.error('Error:', error);
+
             alert('Error al procesar el PDF: ' + error.message);
         });
     }
@@ -582,7 +582,7 @@ const AsistenciaPDFHandler = (() => {
         .catch(error => {
             clearInterval(progressInterval);
             savingModal.element.remove();
-            console.error('Error:', error);
+
             alert('Error al guardar los registros');
         });
     }

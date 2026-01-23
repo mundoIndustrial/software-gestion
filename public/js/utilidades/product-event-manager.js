@@ -130,4 +130,4 @@ window.ProductEventManager = {
     }
 };
 
-console.log(' ProductEventManager cargado');
+

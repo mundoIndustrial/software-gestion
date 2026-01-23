@@ -68,7 +68,7 @@
                 this._renderizarPrendasConTabs(prendas, logoCotizacion, tipoCotizacion);
 
             } catch (error) {
-                console.error(' ERROR en renderizar:', error);
+
                 this.prendasContainer.innerHTML = `<p style="color: #ef4444;">Error al renderizar: ${error.message}</p>`;
             }
         }
@@ -100,7 +100,7 @@
             if (typeof mostrarSeccionPrendasTecnicasLogoNuevo === 'function') {
                 mostrarSeccionPrendasTecnicasLogoNuevo();
             } else {
-                console.warn(' mostrarSeccionPrendasTecnicasLogoNuevo no está disponible');
+
             }
         }
 

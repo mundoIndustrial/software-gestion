@@ -61,5 +61,3 @@ window.ProductCollector = {
         return { válido: true };
     }
 };
-
-console.log(' ProductCollectorService cargado');

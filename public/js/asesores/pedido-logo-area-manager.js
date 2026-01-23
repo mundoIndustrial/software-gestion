@@ -33,7 +33,7 @@ class PedidoLogoAreaManager {
             }
             return this.areas;
         } catch (error) {
-            console.error('Error obtener áreas:', error);
+
             return this.areas;
         }
     }
@@ -59,7 +59,7 @@ class PedidoLogoAreaManager {
             const data = await response.json();
 
             if (data.success) {
-                console.log(' Área cambiada:', data.area);
+
                 
                 // Mostrar notificación
                 this.mostrarNotificacion('success', `Área actualizada: ${nuevaArea}`);
@@ -73,7 +73,7 @@ class PedidoLogoAreaManager {
                 return null;
             }
         } catch (error) {
-            console.error('Error cambiar área:', error);
+
             this.mostrarNotificacion('error', 'Error al cambiar el área');
             return null;
         }
@@ -100,7 +100,7 @@ class PedidoLogoAreaManager {
             }
             return null;
         } catch (error) {
-            console.error('Error obtener historial:', error);
+
             return null;
         }
     }

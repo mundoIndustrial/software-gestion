@@ -5,7 +5,7 @@
  * @param {number} cotizacionId - ID de la cotización
  */
 function openCotizacionModal(cotizacionId) {
-    console.log('🔄 Cargando cotización:', cotizacionId);
+
 
     fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => {
@@ -15,7 +15,7 @@ function openCotizacionModal(cotizacionId) {
             return response.json();
         })
         .then(data => {
-            console.log('Datos recibidos:', data);
+
 
             // Actualizar header del modal con información de la cotización
             if (data.cotizacion) {
@@ -66,7 +66,7 @@ function openCotizacionModal(cotizacionId) {
 
             if (data.prendas_cotizaciones && data.prendas_cotizaciones.length > 0) {
                 data.prendas_cotizaciones.forEach((prenda, index) => {
-                    console.log('Renderizando prenda:', prenda);
+
 
                     // Construir atributos principales
                     let atributosLinea = [];
@@ -466,10 +466,10 @@ function openCotizacionModal(cotizacionId) {
 
             document.getElementById('cotizacionModal').style.display = 'flex';
 
-            console.log(' Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas y logo:', data.tiene_logo);
+
         })
         .catch(error => {
-            console.error('Error:', error);
+
             alert('Error al cargar la cotización: ' + error.message);
         });
 }
@@ -626,7 +626,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+
                     Swal.fire({
                         title: 'Error',
                         text: 'Error al eliminar la cotización. Por favor intenta de nuevo.',
@@ -768,7 +768,7 @@ function aprobarCotizacionEnLinea(cotizacionId, estadoActual = null) {
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+
                     Swal.fire({
                         title: 'Error',
                         text: error.message || 'Error al aprobar la cotización. Por favor intenta de nuevo.',
@@ -998,7 +998,7 @@ function aprobarAlAprobador(cotizacionId) {
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+
                     Swal.fire({
                         title: 'Error',
                         text: error.message || 'Error al procesar la solicitud',

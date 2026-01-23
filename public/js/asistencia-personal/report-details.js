@@ -8,7 +8,7 @@ const AsistenciaReportDetails = (() => {
      * Mostrar tab específico con registros de una fecha
      */
     function mostrarTab(fecha, registros) {
-        console.log('Mostrando tab para fecha:', fecha, 'Registros:', registros);
+
         
         // Asegurarse que existe la estructura HTML estándar
         const tabContent = document.getElementById('tabContent');
@@ -57,7 +57,7 @@ const AsistenciaReportDetails = (() => {
         const recordsTableHeader = document.getElementById('recordsTableHeader');
         
         if (!recordsTableBody || !recordsTableHeader) {
-            console.error('Elementos de tabla no encontrados');
+
             return;
         }
         

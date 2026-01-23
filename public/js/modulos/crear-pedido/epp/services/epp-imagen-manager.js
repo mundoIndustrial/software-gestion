@@ -63,12 +63,12 @@ class EppImagenManager {
 
                 this.stateManager.agregarImagenSubida(imagenData);
                 this.modalManager.agregarImagenUI(imagenData);
-                console.log('[EppImagenManager] Imagen agregada localmente:', imagenData.id);
+
             };
 
             reader.readAsDataURL(archivo);
         } catch (error) {
-            console.error('[EppImagenManager] Error procesando imagen:', error);
+
             alert('Error procesando imagen: ' + error.message);
         }
     }
@@ -104,7 +104,7 @@ class EppImagenManager {
         });
 
         if (!result.isConfirmed) {
-            console.log('[EppImagenManager] Eliminación de imagen cancelada por el usuario');
+
             return;
         }
 
@@ -125,9 +125,9 @@ class EppImagenManager {
                 zIndex: 99999
             });
 
-            console.log('[EppImagenManager] Imagen eliminada exitosamente:', imagenId);
+
         } catch (error) {
-            console.error('[EppImagenManager] Error eliminando imagen:', error);
+
             
             // Mostrar error
             Swal.fire({

@@ -11,7 +11,7 @@ let currentCellData = {
  * Abrir modal para editar una celda
  */
 function openCellEditModal(column, value, pedido) {
-    console.log(` Abriendo edición de celda: ${column} = ${value}`);
+
     
     currentCellData = {
         pedido: pedido,
@@ -62,7 +62,7 @@ function openCellEditModal(column, value, pedido) {
     const modal = document.getElementById('bodegaCellEditModal');
     if (modal) {
         modal.style.display = 'flex';
-        console.log(' Modal de edición de celda abierto');
+
     }
 }
 
@@ -70,7 +70,7 @@ function openCellEditModal(column, value, pedido) {
  * Cerrar modal de edición de celda
  */
 function closeCellEditModal() {
-    console.log(' Cerrando modal de edición de celda');
+
     const modal = document.getElementById('bodegaCellEditModal');
     if (modal) {
         modal.style.display = 'none';
@@ -90,11 +90,11 @@ async function saveCellEdit() {
     const newValue = document.getElementById('cellModalInput').value;
     
     if (!currentCellData.pedido || !currentCellData.column) {
-        console.error(' Datos incompletos');
+
         return;
     }
 
-    console.log(`💾 Guardando cambio: ${currentCellData.column} = ${newValue}`);
+
 
     try {
         // Preparar datos para enviar
@@ -102,7 +102,7 @@ async function saveCellEdit() {
             [currentCellData.column]: newValue
         };
 
-        console.log('📤 Enviando PATCH a /bodega/' + currentCellData.pedido, payload);
+
 
         // Enviar PATCH
         const response = await fetch(`/bodega/${currentCellData.pedido}`, {
@@ -120,12 +120,12 @@ async function saveCellEdit() {
         }
 
         const result = await response.json();
-        console.log(' Cambio guardado:', result);
+
 
         // Actualizar celda en la tabla
         if (currentCellData.element) {
             currentCellData.element.textContent = newValue;
-            console.log(' Celda actualizada en la tabla');
+
         }
 
         // Mostrar notificación
@@ -140,7 +140,7 @@ async function saveCellEdit() {
         }, 1000);
 
     } catch (error) {
-        console.error(' Error al guardar:', error);
+
         showCellEditNotification('Error al guardar el cambio: ' + error.message, 'error');
     }
 }
@@ -190,7 +190,7 @@ document.addEventListener('dblclick', function(e) {
     const value = cell.textContent.trim();
 
     if (pedido && column && column !== 'acciones') {
-        console.log(`🖱️ Doble clic en celda: ${column}`);
+
         openCellEditModal(pedido, column, value, cell.querySelector('.cell-text'));
     }
 });
@@ -211,4 +211,4 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-console.log(' Bodega Cell Edit Script Loaded');
+

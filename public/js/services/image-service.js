@@ -72,7 +72,7 @@ class ImageService {
 
             return data.data;
         } catch (error) {
-            console.error('Error en uploadPrendaImage:', error);
+
             throw error;
         }
     }
@@ -113,7 +113,7 @@ class ImageService {
 
             return data.data;
         } catch (error) {
-            console.error('Error en uploadTelaImage:', error);
+
             throw error;
         }
     }
@@ -150,7 +150,7 @@ class ImageService {
 
             return data.data;
         } catch (error) {
-            console.error('Error en uploadLogoImage:', error);
+
             throw error;
         }
     }
@@ -187,7 +187,7 @@ class ImageService {
 
             return data.data;
         } catch (error) {
-            console.error('Error en uploadReflectivoImage:', error);
+
             throw error;
         }
     }
@@ -236,7 +236,7 @@ class ImageService {
 
             return data.data;
         } catch (error) {
-            console.error('Error en uploadMultiple:', error);
+
             throw error;
         }
     }
@@ -269,7 +269,7 @@ class ImageService {
 
             return data;
         } catch (error) {
-            console.error('Error en deleteImage:', error);
+
             throw error;
         }
     }

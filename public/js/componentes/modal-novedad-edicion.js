@@ -3,7 +3,7 @@
  * Maneja modales para registrar novedades antes de actualizar una prenda existente
  */
 
-console.log('[ModalNovedadEdicion]  Cargando...');
+
 
 class ModalNovedadEdicion {
     constructor() {
@@ -93,17 +93,17 @@ class ModalNovedadEdicion {
             
             // Obtener prenda_id - puede venir en diferentes propiedades
             const prendaId = this.prendaData.prenda_pedido_id || this.prendaData.id;
-            console.log('[ModalNovedadEdicion] prendaData completa:', this.prendaData);
-            console.log('[ModalNovedadEdicion] prendaData.prenda_pedido_id:', this.prendaData.prenda_pedido_id);
-            console.log('[ModalNovedadEdicion] prendaData.id:', this.prendaData.id);
-            console.log('[ModalNovedadEdicion] prendaId seleccionado:', prendaId);
+
+
+
+
             
             if (!prendaId || isNaN(prendaId)) {
                 throw new Error('ID de prenda inválido o no disponible. Recibido: ' + prendaId);
             }
             
             const prendaIdInt = parseInt(prendaId);
-            console.log('[ModalNovedadEdicion] prendaIdInt (convertido):', prendaIdInt);
+
             formData.append('prenda_id', prendaIdInt);
             
             if (this.prendaData.imagenes && this.prendaData.imagenes.length > 0) {
@@ -112,8 +112,8 @@ class ModalNovedadEdicion {
                 });
             }
             
-            console.log('[ModalNovedadEdicion] Enviando a:', `/asesores/pedidos/${this.pedidoId}/actualizar-prenda`);
-            console.log('[ModalNovedadEdicion] pedidoId:', this.pedidoId);
+
+
 
             const response = await fetch(`/asesores/pedidos/${this.pedidoId}/actualizar-prenda`, {
                 method: 'POST',
@@ -124,20 +124,20 @@ class ModalNovedadEdicion {
             const resultado = await response.json();
             if (!response.ok || !resultado.success) throw new Error(resultado.message);
             
-            console.log('[ModalNovedadEdicion] Prenda actualizada');
-            console.log('[ModalNovedadEdicion] Respuesta del servidor:', resultado.prenda);
+
+
             
             // IMPORTANTE: Recargar datos completos del pedido para asegurar que telasAgregadas y datos relacionados se actualizan correctamente
             if (window.prendaEnEdicion) {
                 const pedidoId = window.prendaEnEdicion.pedidoId;
-                console.log('[ModalNovedadEdicion] Recargando datos del pedido ' + pedidoId + ' para actualizar telas agregadas...');
+
                 
                 try {
                     const respDataEdicion = await fetch(`/asesores/pedidos-produccion/${pedidoId}/datos-edicion`);
                     const resultadoDataEdicion = await respDataEdicion.json();
                     
                     if (resultadoDataEdicion.success && resultadoDataEdicion.datos) {
-                        console.log('[ModalNovedadEdicion] Datos del pedido recargados correctamente');
+
                         window.datosEdicionPedido = resultadoDataEdicion.datos;
                         
                         // Actualizar en prendasEdicion también
@@ -147,7 +147,7 @@ class ModalNovedadEdicion {
                         }
                     }
                 } catch (e) {
-                    console.warn('[ModalNovedadEdicion] Error recargando datos del pedido:', e);
+
                     // Si falla la recarga automática, al menos actualizar la prenda con los datos que vinieron
                     if (resultado.prenda && window.datosEdicionPedido && window.prendaEnEdicion) {
                         const prendasIndex = window.prendaEnEdicion.prendasIndex;
@@ -163,7 +163,7 @@ class ModalNovedadEdicion {
             
             this.mostrarExito();
         } catch (error) {
-            console.error('[ModalNovedadEdicion] Error:', error);
+
             this.mostrarError(error.message);
         }
     }
@@ -233,4 +233,4 @@ class ModalNovedadEdicion {
 }
 
 window.modalNovedadEditacion = new ModalNovedadEdicion();
-console.log('[ModalNovedadEdicion]  Instancia creada - método disponible:', typeof window.modalNovedadEditacion.mostrarModalYActualizar);
+

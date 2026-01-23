@@ -4,7 +4,7 @@
  * Principios SOLID: SRP (Single Responsibility), DIP (Dependency Inversion)
  */
 
-console.log(' Cargando StorageModule...');
+
 
 const StorageModule = {
     lastTimestamp: 0,
@@ -26,7 +26,7 @@ const StorageModule = {
         }));
         
         localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
-        console.log(`📡 Actualización transmitida: ${type} para orden ${orderId}`);
+
     },
 
     /**
@@ -47,7 +47,7 @@ const StorageModule = {
                     this.lastTimestamp = data.timestamp;
                     this._processUpdate(data);
                 } catch (e) {
-                    console.error('Error parsing storage message:', e);
+
                 }
             }
         });
@@ -77,7 +77,7 @@ const StorageModule = {
             }
         }
 
-        console.log(` Actualización procesada desde otra pestaña: ${field} = ${newValue}`);
+
     }
 };
 

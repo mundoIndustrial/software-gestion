@@ -135,7 +135,7 @@ function ajustarStock(event) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         mostrarNotificacion('✗ Error al ajustar el stock', 'error');
     });
 }
@@ -220,7 +220,7 @@ function crearTela(event) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         mostrarNotificacion('✗ Error al crear la tela', 'error');
     });
 }
@@ -300,7 +300,7 @@ function confirmarEliminacionTela(telaId, telaNombre) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         mostrarNotificacion('✗ Error al eliminar la tela', 'error');
     });
 }
@@ -527,7 +527,7 @@ function cargarDatosHistorial() {
         llenarFiltroTelas(data.telas);
     })
     .catch(error => {
-        console.error('Error:', error);
+
         alert('Error al cargar el historial');
     });
 }

@@ -2,12 +2,12 @@
 
 class FiltroEmbudo {
     constructor() {
-        console.log('🚀 Inicializando FiltroEmbudo...');
+
         this.filtrosActivos = {};
         this.tablaActual = 'todas';
         this.valoresFiltro = {};
         this.init();
-        console.log(' FiltroEmbudo inicializado');
+
         this.cargarValoresFiltro();
     }
 
@@ -35,31 +35,31 @@ class FiltroEmbudo {
 
     // Cargar valores únicos desde la BD
     cargarValoresFiltro() {
-        console.log('🔄 Iniciando carga de valores de filtro...');
+
         const url = window.FILTER_VALUES_URL || '/asesores/cotizaciones/filtros/valores';
-        console.log('📡 Usando URL:', url);
+
         fetch(url)
             .then(response => {
-                console.log('📡 Respuesta recibida:', response.status);
-                console.log('📡 Content-Type:', response.headers.get('content-type'));
+
+
                 return response.text();
             })
             .then(text => {
-                console.log(' Respuesta raw:', text);
+
                 const data = JSON.parse(text);
-                console.log(' Valores de filtro cargados:', data);
-                console.log(' Tipo de datos:', typeof data);
-                console.log(' Es array:', Array.isArray(data));
-                console.log(' Fechas:', data.fechas?.length ?? 0);
-                console.log(' Códigos:', data.codigos?.length ?? 0);
-                console.log(' Clientes:', data.clientes?.length ?? 0);
-                console.log(' Tipos:', data.tipos?.length ?? 0);
-                console.log(' Estados:', data.estados?.length ?? 0);
+
+
+
+
+
+
+
+
                 this.valoresFiltro = data;
                 this.poblarSelectores();
             })
             .catch(error => {
-                console.error(' Error al cargar valores de filtro:', error);
+
             });
     }
 
@@ -165,21 +165,21 @@ class FiltroEmbudo {
 
     // Abrir modal de filtro
     abrirModal(columna) {
-        console.log('🔓 Abriendo modal para columna:', columna);
+
         const modalId = `filter-modal-${columna}`;
         const modal = document.getElementById(modalId);
-        console.log(' Modal encontrado:', !!modal, 'ID:', modalId);
+
         if (modal) {
-            console.log(' Agregando clase active al modal');
+
             modal.classList.add('active');
             // Enfocar el primer input
             const input = modal.querySelector('input, select');
-            console.log(' Input encontrado:', !!input);
+
             if (input) {
                 setTimeout(() => input.focus(), 100);
             }
         } else {
-            console.error(' Modal no encontrado para:', modalId);
+
         }
     }
 
@@ -392,13 +392,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Funciones globales para usar en HTML
 
 function abrirFiltro(columna) {
-    console.log(' abrirFiltro() llamado con columna:', columna);
-    console.log(' filtroEmbudo existe:', !!filtroEmbudo);
+
+
     if (filtroEmbudo) {
-        console.log(' Llamando a abrirModal()');
+
         filtroEmbudo.abrirModal(columna);
     } else {
-        console.error(' filtroEmbudo no está inicializado');
+
     }
 }
 

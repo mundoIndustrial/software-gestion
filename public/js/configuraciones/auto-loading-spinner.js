@@ -25,7 +25,7 @@
         
         // No mostrar spinner para navegación de filtros rápidos
         if (sessionStorage.getItem('skipSpinner') === 'true') {
-            console.log('Saltando spinner para navegación de filtro rápido');
+
             sessionStorage.removeItem('skipSpinner');
             return;
         }
@@ -42,7 +42,7 @@
         spinnerTimeout = setTimeout(() => {
             // Verificar flag de skip NUEVAMENTE antes de mostrar
             if (sessionStorage.getItem('skipSpinner') === 'true') {
-                console.log('Saltando spinner - flag detectado en timeout');
+
                 return;
             }
             if (isOperationInProgress && CONFIG.ENABLED) {
@@ -180,5 +180,5 @@
     };
 
     // Log de inicialización
-    console.log(' Auto Loading Spinner inicializado (delay: ' + CONFIG.DELAY + 'ms)');
+
 })();

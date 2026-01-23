@@ -346,7 +346,7 @@ const DataLoader = {
     async loadNews(date = new Date().toISOString().split('T')[0], filters = {}) {
         try {
             const params = new URLSearchParams({ date, limit: 50, ...filters });
-            console.log('📡 Cargando noticias para:', date);
+
             
             const response = await fetch(`/dashboard/news?${params}`);
             if (!response.ok) {
@@ -356,11 +356,11 @@ const DataLoader = {
             const result = await response.json();
             const data = result.news || result; // Compatibilidad con respuesta antigua
             const counts = result.counts || { total: data.length, unread: 0, read: 0 };
-            console.log('📰 Noticias recibidas:', data.length, data);
+
             
             const newsFeed = document.getElementById('news-feed');
             if (!newsFeed) {
-                console.error(' Elemento news-feed no encontrado');
+
                 return;
             }
             
@@ -420,7 +420,7 @@ const DataLoader = {
             // Guardar datos en memoria para el modal
             window.newsData = data;
         } catch (error) {
-            console.error(' Error cargando noticias:', error);
+
             const newsFeed = document.getElementById('news-feed');
             if (newsFeed) {
                 newsFeed.innerHTML = '<div style="padding: 2rem; text-align: center; color: #ef4444;">Error cargando notificaciones. Ver consola.</div>';
@@ -432,7 +432,7 @@ const DataLoader = {
         const params = new URLSearchParams({ date });
         const stats = await fetch(`/dashboard/audit-stats?${params}`).then(r => r.json());
         
-        console.log(' Estadísticas de Auditoría:', stats);
+
         
         // Actualizar UI con estadísticas si existe un contenedor
         const statsContainer = document.getElementById('audit-stats-container');

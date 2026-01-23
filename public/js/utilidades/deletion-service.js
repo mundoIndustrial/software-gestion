@@ -69,22 +69,18 @@ class DeletionService {
 
         //  Validaciones
         if (!endpoint) {
-            console.error(' [DeletionService] endpoint es requerido');
             UI.toastError('Error: configuración incompleta');
             return;
         }
 
         if (!resourceName) {
-            console.error(' [DeletionService] resourceName es requerido');
             return;
         }
 
         //  1. Solicitar confirmación
-        console.log(`🗑️ [DeletionService] Confirmando eliminación de ${resourceName} #${identifier}`);
         
         const confirmed = await UI.confirmarEliminacion(resourceName, identifier);
         if (!confirmed) {
-            console.log(`⏸️ [DeletionService] Eliminación cancelada por usuario`);
             return;
         }
 
@@ -96,7 +92,6 @@ class DeletionService {
 
         try {
             //  3. Hacer petición DELETE
-            console.log(`📤 [DeletionService] DELETE ${endpoint}`);
             
             const response = await fetch(endpoint, {
                 method: 'DELETE',
@@ -111,7 +106,6 @@ class DeletionService {
 
             //  4. Manejar respuesta
             if (response.ok && data.success) {
-                console.log(` [DeletionService] ${resourceName} eliminado correctamente`);
                 
                 // Cerrar modal de carga
                 Swal.close();
@@ -138,7 +132,6 @@ class DeletionService {
             }
 
         } catch (error) {
-            console.error(` [DeletionService] Error:`, error);
             
             // Cerrar modal de carga
             Swal.close();
@@ -409,5 +402,3 @@ class DeletionService {
 // ============================================================
 
 window.Deletion = DeletionService;
-
-console.log(' DeletionService cargado y disponible como window.Deletion');

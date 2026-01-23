@@ -15,7 +15,7 @@ class EppCreationService {
      */
     async crearEPP(datos) {
         try {
-            console.log('[EppCreationService] Validando datos:', datos);
+
 
             // Validar campos obligatorios
             if (!datos.nombre?.trim()) {
@@ -52,7 +52,7 @@ class EppCreationService {
             }
 
             const eppNuevo = await response.json();
-            console.log('[EppCreationService] EPP creado:', eppNuevo);
+
 
             // Actualizar modal a éxito
             this.notificationService.actualizarAExito(
@@ -68,7 +68,7 @@ class EppCreationService {
             };
 
         } catch (error) {
-            console.error('[EppCreationService] Error:', error);
+
             this.notificationService.actualizarAError('Error al crear EPP', error.message);
             throw error;
         }
@@ -96,9 +96,9 @@ class EppCreationService {
             document.getElementById('listaImagenesSubidas').style.display = 'none';
             document.getElementById('contenedorImagenesSubidas').innerHTML = '';
 
-            console.log('[EppCreationService] UI actualizada');
+
         } catch (error) {
-            console.error('[EppCreationService] Error actualizando UI:', error);
+
         }
     }
 

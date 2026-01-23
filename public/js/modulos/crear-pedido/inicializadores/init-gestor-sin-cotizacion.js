@@ -23,7 +23,7 @@
      * pero ahora usa el gestor
      */
     window.crearPedidoSinCotizacionConGestor = function() {
-        console.log(' Iniciando creación de pedido sin cotización (CON GESTOR)');
+
         
         // Inicializar si no existe
         if (!window.gestorPedidoSinCotizacion) {
@@ -177,14 +177,14 @@
         
         if (tipoNuevo && tipoPrendaSelect === 'P') {
             // Usar módulo especializado para PRENDA sin cotización
-            console.log(' Detectado: Pedido tipo PRENDA sin cotización - usando módulo especializado');
+
             return window.enviarPrendaSinCotizacion()
                 .then(response => {
                     // La redirección la maneja enviarPrendaSinCotizacion
                     return response;
                 })
                 .catch(error => {
-                    console.error('Error en envío PRENDA:', error);
+
                     return Promise.reject(error);
                 });
         }
@@ -192,14 +192,14 @@
         // Detectar si es tipo REFLECTIVO sin cotización
         if (tipoNuevo && tipoPrendaSelect === 'R') {
             // Usar módulo especializado para REFLECTIVO sin cotización
-            console.log(' Detectado: Pedido tipo REFLECTIVO sin cotización - usando módulo especializado');
+
             return window.enviarReflectivoSinCotizacion()
                 .then(response => {
                     // La redirección la maneja enviarReflectivoSinCotizacion
                     return response;
                 })
                 .catch(error => {
-                    console.error('Error en envío REFLECTIVO:', error);
+
                     return Promise.reject(error);
                 });
         }
@@ -209,7 +209,7 @@
             window.inicializarGestorSinCotizacion();
         }
 
-        console.log(' Procesando envío de pedido SIN COTIZACIÓN');
+
 
         return window.gestorPedidoSinCotizacion.enviarAlServidor()
             .then(response => {
@@ -220,7 +220,7 @@
                 return response;
             })
             .catch(error => {
-                console.error('Error en envío:', error);
+
                 return Promise.reject(error);
             });
     };

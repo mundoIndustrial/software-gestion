@@ -27,7 +27,7 @@ class EppApiService {
 
             return await response.json();
         } catch (error) {
-            console.error('[EppApiService] Error obtenerEPP:', error);
+
             throw error;
         }
     }
@@ -52,7 +52,7 @@ class EppApiService {
 
             return await response.json();
         } catch (error) {
-            console.error('[EppApiService] Error actualizarEPP:', error);
+
             throw error;
         }
     }
@@ -80,7 +80,7 @@ class EppApiService {
 
             return await response.json();
         } catch (error) {
-            console.error('[EppApiService] Error subirImagen:', error);
+
             throw error;
         }
     }
@@ -103,7 +103,7 @@ class EppApiService {
 
             return await response.json();
         } catch (error) {
-            console.error('[EppApiService] Error eliminarImagen:', error);
+
             throw error;
         }
     }

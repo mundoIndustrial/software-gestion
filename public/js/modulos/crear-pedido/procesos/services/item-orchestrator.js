@@ -68,7 +68,7 @@ class ItemOrchestrator {
             await this.renderer.actualizar(this.items);
         } catch (error) {
             this.notificationService.error('Error al cargar ítems: ' + error.message);
-            console.error('Error al cargar ítems:', error);
+
         }
     }
 
@@ -165,7 +165,7 @@ class ItemOrchestrator {
             }
         } catch (error) {
             this.notificationService.error('Error: ' + error.message);
-            console.error('Error al crear pedido:', error);
+
         }
     }
 

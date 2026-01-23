@@ -6,11 +6,11 @@
 (function() {
   'use strict';
 
-  console.log('Action Menu Script Loaded');
+
 
   // Inicializar event listeners
   function init() {
-    console.log('Initializing action menu...');
+
     
     // Usar delegación de eventos para botones
     document.addEventListener('click', function(e) {
@@ -31,7 +31,7 @@
     // Cerrar menú al hacer click fuera
     document.addEventListener('click', handleDocumentClick);
     
-    console.log('Action menu initialized');
+
   }
 
   /**
@@ -45,10 +45,10 @@
     const ordenId = button.getAttribute('data-orden-id');
     const menu = document.querySelector(`.action-menu[data-orden-id="${ordenId}"]`);
 
-    console.log('Button clicked, ordenId:', ordenId);
+
 
     if (!menu) {
-      console.warn('Menu not found for orden:', ordenId);
+
       return;
     }
 
@@ -75,7 +75,7 @@
     const menu = item.closest('.action-menu');
     const ordenId = menu.getAttribute('data-orden-id');
 
-    console.log('Menu item clicked, action:', action, 'ordenId:', ordenId);
+
 
     // Cerrar el menú
     menu.classList.remove('active');
@@ -89,7 +89,7 @@
         handleSeguimiento(ordenId);
         break;
       default:
-        console.warn('Acción desconocida:', action);
+
     }
   }
 
@@ -112,7 +112,7 @@
    * Acción: Ver detalle de la orden
    */
   function handleDetalle(ordenId) {
-    console.log('Ver detalle de orden:', ordenId);
+
     
     // Obtener datos de la orden usando el mismo endpoint que asesores
     fetch(`/registros/${ordenId}`, {
@@ -123,19 +123,19 @@
       }
     })
     .then(response => {
-      console.log('Response status:', response.status);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     })
     .then(data => {
-      console.log('Datos recibidos:', data);
+
       // Disparar evento con los datos de la orden
       window.dispatchEvent(new CustomEvent('load-order-detail', { detail: data }));
     })
     .catch(error => {
-      console.error('Error al obtener datos:', error);
+
       alert('Error al cargar los detalles de la orden: ' + error.message);
     });
   }
@@ -144,13 +144,13 @@
    * Acción: Ver seguimiento de la orden
    */
   function handleSeguimiento(ordenId) {
-    console.log('Ver seguimiento de orden:', ordenId);
+
     
     // Verificar que la función openOrderTracking esté disponible
     if (typeof openOrderTracking === 'function') {
       openOrderTracking(ordenId);
     } else {
-      console.error('openOrderTracking no está disponible');
+
       alert('Error: No se pudo cargar el módulo de seguimiento');
     }
   }

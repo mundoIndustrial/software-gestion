@@ -32,7 +32,7 @@ const TableManager = (() => {
         const rows = getTableRows();
         
         if (rows.length === 0) {
-            console.log('⏱️ No hay órdenes en la tabla actual');
+
             return;
         }
         
@@ -57,7 +57,7 @@ const TableManager = (() => {
                         spanDias.textContent = String(diasDelHTML);
                         
                         if (textoAnterior !== String(diasDelHTML)) {
-                            console.log(` Pedido ${numeroPedido}: "${textoAnterior}" → "${diasDelHTML}"`);
+
                             actualizadas++;
                         }
                     }
@@ -65,14 +65,14 @@ const TableManager = (() => {
             }
         });
         
-        console.log(` ${actualizadas} celdas actualizadas desde HTML`);
+
     }
     
     /**
      * Actualiza los días cuando cambia de página
      */
     function updateDaysOnPageChange() {
-        console.log('⏱️ Cambiando página, actualizando días...');
+
         
         setTimeout(() => {
             updateDaysInTable();

@@ -3,7 +3,7 @@
  * Maneja la visualización del resumen de horas extras por persona
  */
 
-console.log('✓ Módulo AsistenciaTotalHorasExtras cargado');
+
 
 const AsistenciaTotalHorasExtras = (() => {
     let reportData = null;
@@ -252,12 +252,12 @@ const AsistenciaTotalHorasExtras = (() => {
                     horasExtrasAgregadas = data.data;
                     return true;
                 }
-                console.warn('No hay datos de horas extras agregadas');
+
                 horasExtrasAgregadas = {};
                 return false;
             })
             .catch(error => {
-                console.error('Error cargando horas extras:', error);
+
                 horasExtrasAgregadas = {};
                 return false;
             });
@@ -282,7 +282,7 @@ const AsistenciaTotalHorasExtras = (() => {
                 // Manejar errores HTTP específicamente
                 if (response.status === 401) {
                     // No autenticado - redirigir a login
-                    console.warn('Sesión expirada. Redirigiendo a login...');
+
                     window.location.href = '/login';
                     return null;
                 }
@@ -300,19 +300,19 @@ const AsistenciaTotalHorasExtras = (() => {
                     const personasConRegistros = Object.values(registrosPorPersona || {});
                     AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
                 } else if (data.error) {
-                    console.error('Error al cargar personas:', data.message);
+
                     // Fallback a personas con extras si falla
                     const personasConRegistros = Object.values(registrosPorPersona || {});
                     AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
                 } else {
-                    console.error('Error al cargar personas - respuesta sin datos');
+
                     // Fallback a personas con extras si falla
                     const personasConRegistros = Object.values(registrosPorPersona || {});
                     AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
                 }
             })
             .catch(error => {
-                console.error('Error cargando todas las personas:', error);
+
                 // Fallback a personas con extras si falla
                 const personasConRegistros = Object.values(registrosPorPersona || {});
                 AsistenciaEditarRegistro.init(personasConRegistros || [], idReporte, todasLasFechas);
@@ -721,7 +721,7 @@ const AsistenciaTotalHorasExtras = (() => {
      * Abrir modal de novedades para editar marcas
      */
     function abrirModalNovedades(persona) {
-        console.log('Abriendo modal de novedades para:', persona);
+
         
         // Crear modal
         const modal = document.createElement('div');
@@ -1064,7 +1064,7 @@ const AsistenciaTotalHorasExtras = (() => {
      * Guardar marcas actualizadas
      */
     function guardarMarcasActualizadas(persona, modal) {
-        console.log('Guardando cambios para persona:', persona.id);
+
         
         // Obtener todos los inputs del modal
         const inputs = modal.querySelectorAll('input[type="text"]');
@@ -1082,7 +1082,7 @@ const AsistenciaTotalHorasExtras = (() => {
             cambios[fecha][tipo] = valor;
         });
         
-        console.log('Cambios a guardar:', cambios);
+
         
         // Enviar cambios al servidor
         fetch('/asistencia-personal/guardar-asistencia-detallada', {
@@ -1099,14 +1099,14 @@ const AsistenciaTotalHorasExtras = (() => {
             })
         })
         .then(response => {
-            console.log('Respuesta HTTP:', response.status, response.statusText);
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Respuesta del servidor:', data);
+
             if (data.success || data.status === 'success') {
                 // Mostrar mensaje de éxito sin cerrar el modal
                 mostrarMensajeExito(modal);
@@ -1140,7 +1140,7 @@ const AsistenciaTotalHorasExtras = (() => {
                     }
                 });
                 
-                console.log('Datos actualizados en memoria:', persona);
+
                 
                 // Recalcular horas extras después de actualizar los datos
                 actualizarHorasExtrasEnTabla(persona);
@@ -1150,7 +1150,7 @@ const AsistenciaTotalHorasExtras = (() => {
             }
         })
         .catch(error => {
-            console.error('Error al guardar:', error);
+
             alert('✗ Error al guardar los cambios: ' + error.message);
         });
     }
@@ -1194,7 +1194,7 @@ const AsistenciaTotalHorasExtras = (() => {
      * Recalcular y actualizar las horas extras en la tabla para una persona
      */
     function actualizarHorasExtrasEnTabla(persona) {
-        console.log('Actualizando horas extras en tabla para:', persona.nombre);
+
         
         // Recalcular horas extras por fecha
         let totalExtrasHoras = 0;
@@ -1209,7 +1209,7 @@ const AsistenciaTotalHorasExtras = (() => {
         // Actualizar el total
         persona.totalHorasExtras = totalExtrasHoras;
         
-        console.log('Nuevas horas extras calculadas:', persona.totalHorasExtras);
+
         
         // Actualizar la fila en la tabla
         const tabla = document.getElementById('totalHorasExtrasTable');
@@ -1235,7 +1235,7 @@ const AsistenciaTotalHorasExtras = (() => {
                 const celdas = filaPersona.querySelectorAll('td');
                 celdas[celdas.length - 2].textContent = Math.round(persona.totalHorasExtras).toString();
                 
-                console.log('Fila de tabla actualizada para persona:', persona.id);
+
             }
         }
     }
@@ -1270,7 +1270,7 @@ const AsistenciaTotalHorasExtras = (() => {
             .then(data => {
                 if (data.success && data.data) {
                     horasExtrasAgregadas[codigoPersona] = data.data;
-                    console.log(`✓ Horas extras actualizadas para ${codigoPersona}`);
+
                     
                     // Actualizar celdas en la tabla para esta persona
                     const fila = document.querySelector(`tr[data-persona-id="${codigoPersona}"]`);
@@ -1344,7 +1344,7 @@ function guardarValorHoraExtra(codigoPersona, valor, btnElement, idReporte) {
         return;
     }
 
-    console.log('Guardando valor:', { codigoPersona, valor, idReporte });
+
 
     const btnText = btnElement.textContent;
     btnElement.textContent = '⏳';
@@ -1356,7 +1356,7 @@ function guardarValorHoraExtra(codigoPersona, valor, btnElement, idReporte) {
         id_reporte: idReporte || null
     };
 
-    console.log('Payload enviado:', payload);
+
 
     fetch('/api/valor-hora-extra/guardar', {
         method: 'POST',
@@ -1384,7 +1384,7 @@ function guardarValorHoraExtra(codigoPersona, valor, btnElement, idReporte) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+
         alert('Error al guardar el valor');
         btnElement.textContent = btnText;
         btnElement.disabled = false;
@@ -1431,7 +1431,7 @@ function inicializarBusquedaTotalHorasExtras() {
 
         // Mostrar mensaje si no hay resultados
         if (filasVisibles === 0 && busqueda !== '') {
-            console.log('No se encontraron resultados para: ' + busqueda);
+
         }
     });
 }
@@ -1492,8 +1492,8 @@ function exportarDatosTotalHorasExtras() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    console.log('✓ JSON exportado:', json);
+
     alert('✓ Archivo JSON descargado correctamente');
 }
 
-console.log('✓ AsistenciaTotalHorasExtras definido:', typeof AsistenciaTotalHorasExtras);
+

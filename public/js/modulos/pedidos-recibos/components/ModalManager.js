@@ -45,7 +45,7 @@ export class ModalManager {
             modalWrapper.style.pointerEvents = 'none'; // Desactivar mientras carga
         }
         
-        console.log('[ModalManager] Modal abierto');
+
     }
 
     /**
@@ -69,7 +69,7 @@ export class ModalManager {
         if (overlay) overlay.style.display = 'none';
         
         this.limpiarEstado();
-        console.log('[ModalManager] Modal cerrado');
+
     }
 
     /**

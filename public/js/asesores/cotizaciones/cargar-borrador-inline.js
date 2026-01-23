@@ -10,11 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     try {
         const cotizacion = JSON.parse(cotizacionElement.getAttribute('data-cotizacion'));
-        console.log('📂 Cargando borrador completo:', cotizacion);
+
         
         // Cargar técnicas
         if (cotizacion.tecnicas && Array.isArray(cotizacion.tecnicas)) {
-            console.log(' Cargando técnicas:', cotizacion.tecnicas);
+
             cotizacion.tecnicas.forEach(tecnica => {
                 const selector = document.getElementById('selector_tecnicas');
                 if (selector) {
@@ -29,13 +29,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const textareaObs = document.getElementById('observaciones_tecnicas');
             if (textareaObs) {
                 textareaObs.value = cotizacion.observaciones_tecnicas;
-                console.log(' Observaciones técnicas cargadas');
+
             }
         }
         
         // Cargar imágenes de LOGO
         if (cotizacion.imagenes && Array.isArray(cotizacion.imagenes)) {
-            console.log('📸 Cargando imágenes:', cotizacion.imagenes);
+
             const galeriaImagenes = document.getElementById('galeria_imagenes');
             if (galeriaImagenes) {
                 cotizacion.imagenes.forEach(imagen => {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Cargar observaciones generales
         if (cotizacion.observaciones_generales && Array.isArray(cotizacion.observaciones_generales)) {
-            console.log(' Cargando observaciones generales:', cotizacion.observaciones_generales);
+
             const contenedor = document.getElementById('observaciones_lista');
             if (contenedor) {
                 cotizacion.observaciones_generales.forEach(obs => {
@@ -96,9 +96,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        console.log(' Borrador cargado completamente');
+
         actualizarResumenFriendly();
     } catch (error) {
-        console.error(' Error al cargar borrador:', error);
+
     }
 });

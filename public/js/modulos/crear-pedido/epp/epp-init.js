@@ -11,11 +11,11 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[EppInit] Inicializando servicios de EPP...');
+
 
     // Inicializar servicios de notificaciones
     if (window.eppNotificationService) {
-        console.log('[EppInit] EppNotificationService disponible');
+
     }
 
     // Inicializar servicio de creación de EPP
@@ -24,12 +24,12 @@ document.addEventListener('DOMContentLoaded', function() {
             window.eppApiService,
             window.eppNotificationService
         );
-        console.log('[EppInit] EppCreationService inicializado');
+
     }
 
     // Inicializar gestor de formularios
     if (window.eppFormManager) {
-        console.log('[EppInit] EppFormManager disponible');
+
     }
 
     // Inicializar interfaz del modal
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.eppCreationService,
             window.eppFormManager
         );
-        console.log('[EppInit] EppModalInterface inicializada');
+
     }
 
     // Inicializar servicio principal
@@ -107,4 +107,4 @@ function actualizarEstilosBotonEPP() {
     window.eppService?.actualizarBoton();
 }
 
-console.log('[EppInit] Funciones globales registradas');
+

@@ -45,11 +45,11 @@ class ImageProcessor {
                 return imagen;
             }
 
-            console.warn('[ImageProcessor] Formato de imagen no reconocido:', imagen);
+
             return null;
 
         } catch (error) {
-            console.error('[ImageProcessor] Error procesando imagen:', error);
+
             return null;
         }
     }
@@ -94,7 +94,7 @@ class ImageProcessor {
                 try {
                     URL.revokeObjectURL(url);
                 } catch (e) {
-                    console.warn('[ImageProcessor] Error al limpiar blob URL:', e);
+
                 }
             }
         });
@@ -102,4 +102,4 @@ class ImageProcessor {
 }
 
 window.ImageProcessor = ImageProcessor;
-console.log('✓ [IMAGE-PROCESSOR] Cargado correctamente');
+

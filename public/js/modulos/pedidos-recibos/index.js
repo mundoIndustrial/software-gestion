@@ -17,4 +17,3 @@ export { ReceiptRenderer } from './components/ReceiptRenderer.js';
 export { ReceiptBuilder } from './utils/ReceiptBuilder.js';
 export { Formatters } from './utils/Formatters.js';
 
-console.log('%c[pedidos-recibos] Módulo cargado ✓', 'color: #10b981; font-weight: bold;');

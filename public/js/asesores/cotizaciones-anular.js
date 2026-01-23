@@ -163,7 +163,7 @@ function anularCotizacion(cotizacionId, numeroCotizacion, novedad) {
         }
     })
     .catch(error => {
-        console.error('Error al anular cotización:', error);
+
         Swal.fire({
             title: 'Error',
             text: error.message || 'Ocurrió un error al anular la cotización',

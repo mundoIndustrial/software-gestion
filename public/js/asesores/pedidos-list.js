@@ -188,12 +188,6 @@ function confirmarEliminar(pedido, cliente) {
 // ELIMINAR PEDIDO
 // ========================================
 async function eliminarPedido(pedido) {
-    console.log('%c[ELIMINAR - DEBUG]', 'color: #ff6b6b; font-weight: bold;', {
-        pedido,
-        tipo: typeof pedido,
-        esVacio: !pedido,
-    });
-
     // Validación
     if (!pedido) {
         mostrarToast('Error: No se proporcionó ID del pedido', 'error');
@@ -202,8 +196,6 @@ async function eliminarPedido(pedido) {
 
     try {
         const url = `/asesores/api/pedidos/${pedido}`;
-        console.log('%c[ELIMINAR - URL]', 'color: #4ecdc4; font-weight: bold;', url);
-
         // Realizar la solicitud DELETE
         const response = await fetch(url, {
             method: 'DELETE',
@@ -224,12 +216,10 @@ async function eliminarPedido(pedido) {
 
         // Manejar errores específicos
         if (response.status === 404) {
-            console.warn('%c[ELIMINAR - 404]', 'color: #ff6b6b;', 'Pedido no encontrado');
             throw new Error('Pedido no encontrado o ya fue eliminado');
         }
 
         if (!response.ok) {
-            console.error('%c[ELIMINAR - ERROR]', 'color: #ff6b6b;', response.status, response.statusText);
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
@@ -248,14 +238,12 @@ async function eliminarPedido(pedido) {
         if (response.status !== 204 && contentType && contentType.includes('application/json') && contentLength !== '0') {
             try {
                 result = await response.json();
-                console.log('%c[ELIMINAR - JSON PARSEADO]', 'color: #95e1d3;', result);
             } catch (e) {
-                console.warn('[ELIMINAR] No se pudo parsear JSON, asumiendo éxito', e);
+
             }
         }
 
         if (result.success !== false) {
-            console.log('%c[ELIMINAR - ÉXITO]', 'color: #10b981; font-weight: bold;', 'Pedido eliminado');
             mostrarToast('Pedido eliminado exitosamente', 'success');
             
             // Cerrar modal
@@ -266,11 +254,9 @@ async function eliminarPedido(pedido) {
                 window.location.href = '/asesores/pedidos';
             }, 1000);
         } else {
-            console.error('%c[ELIMINAR - FALLO]', 'color: #ff6b6b;', result.message);
             mostrarToast(result.message || 'Error al eliminar el pedido', 'error');
         }
     } catch (error) {
-        console.error('%c[ELIMINAR - EXCEPCIÓN]', 'color: #ff6b6b; font-weight: bold;', error);
         mostrarToast('Error al eliminar: ' + error.message, 'error');
     }
 }
@@ -334,4 +320,5 @@ function mostrarToast(mensaje, tipo = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
 

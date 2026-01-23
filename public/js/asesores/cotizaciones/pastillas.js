@@ -3,7 +3,7 @@
  * Responsabilidad: Gestionar la interacción y lógica de las pastillas de tipos de cotización
  */
 
-console.log(' Sistema de pastillas de cotizaciones cargado');
+
 
 // Variables globales
 let tipoCotzacionSeleccionada = null;
@@ -20,7 +20,7 @@ function inicializarPastillas() {
         return;
     }
     
-    console.log('🔵 Inicializando pastillas de cotizaciones');
+
     
     // Agregar event listeners
     tabBtns.forEach(btn => {
@@ -38,14 +38,14 @@ function inicializarPastillas() {
         });
     });
     
-    console.log(`✓ ${tabBtns.length} pastillas inicializadas`);
+
 }
 
 /**
  * Seleccionar una pastilla
  */
 function seleccionarPastilla(element) {
-    console.log('📌 Seleccionando pastilla:', element.dataset.tipo);
+
     
     // Remover clase active de todas
     document.querySelectorAll('.cotizacion-tab-btn').forEach(btn => {
@@ -68,7 +68,7 @@ function seleccionarPastilla(element) {
     const content = document.getElementById(`content-${tipo}`);
     if (content) {
         content.classList.add('active');
-        console.log(`✓ Contenido mostrado: ${tipo}`);
+
     }
     
     // Guardar en localStorage
@@ -91,13 +91,13 @@ function obtenerPastillaSeleccionada() {
  * Establecer pastilla activa por tipo
  */
 function establecerPastillaActiva(tipo) {
-    console.log(' Estableciendo pastilla activa:', tipo);
+
     
     const btn = document.querySelector(`.cotizacion-tab-btn[data-tipo="${tipo}"]`);
     if (btn) {
         seleccionarPastilla(btn);
     } else {
-        console.warn(` No se encontró pastilla de tipo: ${tipo}`);
+
     }
 }
 
@@ -146,7 +146,7 @@ function validarPastillaSeleccionada() {
     const pastilla = obtenerPastillaSeleccionada();
     
     if (!pastilla) {
-        console.warn(' No hay pastilla seleccionada');
+
         Swal.fire({
             title: 'Selecciona un tipo',
             text: 'Debes seleccionar el tipo de cotización antes de continuar',
@@ -156,7 +156,7 @@ function validarPastillaSeleccionada() {
         return false;
     }
     
-    console.log(`✓ Pastilla válida: ${pastilla}`);
+
     return true;
 }
 
@@ -170,7 +170,7 @@ function establecerPastillaHabilitada(tipo, habilitada = true) {
         btn.disabled = !habilitada;
         btn.style.opacity = habilitada ? '1' : '0.5';
         btn.style.cursor = habilitada ? 'pointer' : 'not-allowed';
-        console.log(`✓ Pastilla ${tipo} ${habilitada ? 'habilitada' : 'deshabilitada'}`);
+
     }
 }
 
@@ -183,7 +183,7 @@ function mostrarNotificacionPastilla(tipo) {
     if (indicator) {
         indicator.style.background = '#f59e0b';
         indicator.style.animation = 'pulse-glow 1.5s ease-in-out infinite';
-        console.log(`✓ Notificación mostrada en pastilla: ${tipo}`);
+
     }
 }
 
@@ -195,7 +195,7 @@ function limpiarNotificacionPastilla(tipo) {
     
     if (indicator) {
         indicator.style.animation = 'none';
-        console.log(`✓ Notificación limpiada en pastilla: ${tipo}`);
+
     }
 }
 

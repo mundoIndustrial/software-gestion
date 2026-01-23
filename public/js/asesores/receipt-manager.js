@@ -14,12 +14,12 @@ class ReceiptManager {
         this.recibos = prendasIndex !== null ? this.filtrarRecibosDePrend(todosRecibos, prendasIndex) : todosRecibos;
         this.indexActual = 0;
 
-        console.log(' [RECEIPT MANAGER] Inicializado');
-        console.log(' Total de recibos:', this.recibos.length);
+
+
         if (prendasIndex !== null) {
-            console.log(' Filtrado para prenda:', prendasIndex);
+
         }
-        console.log(' Recibos:', this.recibos);
+
 
         this.inicializarEventos();
         this.crearSelectorPrendas();
@@ -199,7 +199,7 @@ class ReceiptManager {
      * Cambiar prenda seleccionada y filtrar recibos
      */
     cambiarPrend(prendasIndex) {
-        console.log('🔄 [RECEIPT MANAGER] Cambiando a prenda:', prendasIndex);
+
         
         this.prendasIndex = prendasIndex;
         
@@ -210,7 +210,7 @@ class ReceiptManager {
         // Resetear a primer recibo
         this.indexActual = 0;
         
-        console.log(' Recibos después de filtro:', this.recibos.length);
+
         
         // Renderizar el primer recibo de la nueva prenda
         this.renderizar();
@@ -235,7 +235,7 @@ class ReceiptManager {
     renderizar() {
         const recibo = this.recibos[this.indexActual];
 
-        console.log(` Renderizando recibo ${recibo.numero}/${recibo.total}:`, recibo);
+
 
         // Actualizar contador
         document.getElementById('receipt-number').textContent = recibo.numero;
@@ -479,7 +479,7 @@ class ReceiptManager {
                         tallasCalballero[talla] = cantidad;
                     }
                 });
-                console.log(`[RECEIPT]  Tallas desanidadas para ${genero}:`, value);
+
             } 
             //  Si value es un NÚMERO (aplanado: "dama-L" → 30)
             else if (typeof value === 'number' || typeof value === 'string') {
@@ -500,9 +500,9 @@ class ReceiptManager {
                         tallasCalballero[key] = value;
                     }
                 }
-                console.log(`[RECEIPT]  Talla aplanada procesada: ${key} = ${value}`);
+
             } else {
-                console.warn('[RECEIPT]  Formato de talla desconocido:', key, value);
+
             }
         });
 
@@ -629,4 +629,4 @@ class ReceiptManager {
 // Exportar para uso externo
 window.ReceiptManager = ReceiptManager;
 
-console.log(' [RECEIPT MANAGER] receipt-manager.js cargado correctamente');
+

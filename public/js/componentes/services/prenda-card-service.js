@@ -5,7 +5,7 @@
 
 window.PrendaCardService = {
     generar(prenda, indice) {
-        console.log(' DEBUG: generarTarjetaPrendaReadOnly - Prenda recibida:', prenda);
+
         
         // Usar las propiedades correctas
         const imagenes = prenda.imagenes || prenda.fotos || [];
@@ -32,7 +32,7 @@ window.PrendaCardService = {
             telaFoto = window.ImageConverterService ? 
                 window.ImageConverterService.obtenerImagenTela(telaPrincipal) : 
                 null;
-            console.log(' Tela obtenida de telasAgregadas:', {tela, color, referencia, telaFoto});
+
         }
         else if ((prenda.tela || prenda.color) && prenda.imagenes_tela) {
             tela = prenda.tela || 'N/A';
@@ -41,7 +41,7 @@ window.PrendaCardService = {
             telaFoto = window.ImageConverterService ? 
                 window.ImageConverterService.obtenerPrimeraImagen(prenda.imagenes_tela) : 
                 null;
-            console.log(' Tela obtenida de propiedades raíz (BD):', {tela, color, referencia});
+
         }
         else if (prenda.telas && Array.isArray(prenda.telas) && prenda.telas.length > 0) {
             const telaPrincipal = prenda.telas[0];
@@ -51,20 +51,20 @@ window.PrendaCardService = {
             telaFoto = window.ImageConverterService ? 
                 window.ImageConverterService.obtenerImagenTela(telaPrincipal) : 
                 null;
-            console.log(' Tela obtenida de prenda.telas (BD antigua):', {tela, color, referencia});
+
         }
         else {
             tela = prenda.variantes?.tela || prenda.tela || 'N/A';
             color = prenda.variantes?.color || prenda.color || 'N/A';
             referencia = prenda.variantes?.referencia || prenda.referencia || prenda.ref || 'N/A';
-            console.log(' Tela obtenida de fallback variantes:', {tela, color, referencia});
+
         }
 
-        console.log(' Foto principal:', fotoPrincipal);
-        console.log(' Tela:', tela, 'Color:', color, 'Referencia:', referencia);
-        console.log(' Foto tela:', telaFoto);
-        console.log(' Tallas disponibles:', prenda.tallas || prenda.generosConTallas);
-        console.log('⚙️  Procesos:', prenda.procesos);
+
+
+
+
+
 
         // Construir secciones
         const variacionesHTML = this._construirVariaciones(prenda, indice);
@@ -150,14 +150,14 @@ window.PrendaCardService = {
             </div>
         `;
 
-        console.log(' HTML generado para prenda:', html.substring(0, 200) + '...');
+
         return html;
     },
 
     _construirVariaciones(prenda, indice) {
-        console.log(' Construyendo VARIACIONES para prenda:', indice);
+
         const variantes = prenda.variantes || {};
-        console.log(' Variantes disponibles:', variantes);
+
         
         const variacionesMapeo = [
             { label: 'Manga', valKey: 'tipo_manga', obsKey: 'obs_manga' },
@@ -171,10 +171,10 @@ window.PrendaCardService = {
             return valor && valor !== 'No aplica' && valor !== false;
         });
         
-        console.log(` Variaciones aplicadas: ${variacionesAplicadas.length}`);
+
         
         if (variacionesAplicadas.length === 0) {
-            console.log('  Sin variaciones aplicadas para prenda', indice);
+
             return '';
         }
 
@@ -183,12 +183,12 @@ window.PrendaCardService = {
             const valor = variantes[valKey];
             const observaciones = variantes[obsKey] || '';
             
-            console.log(` [VARIACION] ${label}: valor='${valor}', obsKey='${obsKey}', observaciones='${observaciones}'`);
+
             
             if (label === 'Bolsillos') {
-                console.log(' [BOLSILLOS RENDERIZADO] Detalles:');
-                console.log('  - tiene_bolsillos:', variantes.tiene_bolsillos);
-                console.log('  - obs_bolsillos:', variantes.obs_bolsillos);
+
+
+
             }
             
             const esBooleano = typeof valor === 'boolean';
@@ -237,7 +237,7 @@ window.PrendaCardService = {
     },
 
     _construirTallasYCantidades(prenda, indice) {
-        console.log(' Construyendo TALLAS Y CANTIDADES para prenda:', indice);
+
         
         let tallas = prenda.tallas;
         let generosConTallas = prenda.generosConTallas;
@@ -245,8 +245,8 @@ window.PrendaCardService = {
         // Intentar obtener cantidades desde cantidad_talla (nuevo formato) o cantidadesPorTalla (antiguo)
         let cantidadesPorTalla = prenda.cantidad_talla || prenda.cantidadesPorTalla || {};
         
-        console.log(' prenda.tallas:', tallas);
-        console.log('📈 Cantidades disponibles:', cantidadesPorTalla);
+
+
         
         let tallasByGeneroMap = {};
         let cantidadesPorGenero = {};
@@ -273,7 +273,7 @@ window.PrendaCardService = {
         
         // Si no hay generosConTallas pero sí hay cantidades, extraer géneros de las cantidades
         if (totalTallas === 0 && Object.keys(cantidadesPorTalla).length > 0) {
-            console.log(' Extrayendo géneros desde cantidad_talla...');
+
             const generosMap = {};
             Object.keys(cantidadesPorTalla).forEach(clave => {
                 const [genero, talla] = clave.split('-');
@@ -301,10 +301,10 @@ window.PrendaCardService = {
         });
         
         const totalCantidades = Object.keys(cantidadesPorTalla).length;
-        console.log(` Total tallas: ${totalTallas}, Total cantidades: ${totalCantidades}`);
+
         
         if (totalTallas === 0) {
-            console.log('  Sin datos para prenda', indice);
+
             return '';
         }
 
@@ -360,15 +360,15 @@ window.PrendaCardService = {
     },
 
     _construirProcesos(prenda, indice) {
-        console.log('⚙️  Construyendo PROCESOS para prenda:', indice);
+
         const procesos = prenda.procesos || {};
-        console.log(' Procesos disponibles:', procesos);
+
         
         const procesosConDatos = Object.entries(procesos).filter(([_, proc]) => proc && (proc.datos !== null || proc.tipo));
-        console.log(` Procesos con datos: ${procesosConDatos.length}`);
+
         
         if (procesosConDatos.length === 0) {
-            console.log('  Sin procesos para prenda', indice);
+
             return '';
         }
 
@@ -541,11 +541,11 @@ window.PrendaCardService = {
         }
 
         if (telas.length === 0) {
-            console.log(' [TABLA-TELAS] No hay telas para renderizar');
+
             return '';
         }
 
-        console.log(' [TABLA-TELAS] Construyendo tabla con', telas.length, 'telas');
+
 
         // Construir tabla de telas
         const tablaTelasHTML = telas.map((telaItem, telaIndex) => {
@@ -558,10 +558,10 @@ window.PrendaCardService = {
                 window.ImageConverterService.obtenerImagenTela(telaItem) : 
                 null;
             
-            console.log(` [TABLA-TELAS] Procesando tela ${telaIndex}:`, {nombreTela, color, referencia, telaFoto});
+
             
             if (!telaFoto) {
-                console.warn(` [TABLA-TELAS] No se encontró imagen para tela ${telaIndex}`);
+
             }
 
             return `
@@ -612,4 +612,4 @@ window.PrendaCardService = {
     }
 };
 
-console.log(' [PrendaCardService] Cargado - Servicio de generación de tarjetas');
+

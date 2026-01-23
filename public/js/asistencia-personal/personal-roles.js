@@ -80,7 +80,7 @@ const PersonalRolesManager = {
                 this.updateTotalPersonal(this.allPersonalData.length);
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 alert('Error al cargar el personal');
             });
     },
@@ -185,7 +185,7 @@ const PersonalRolesManager = {
                 this.loadPersonal();
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 this.showErrorToast('Error al actualizar el rol');
             });
     },

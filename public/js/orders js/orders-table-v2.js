@@ -13,17 +13,17 @@
  * - Usa DiaEntregaModule para día de entrega
  */
 
-console.log(' orders-table-v2.js cargado (Versión refactorizada con módulos SOLID)');
+
 
 // Verificar que todos los módulos estén disponibles
-console.log(' Verificando módulos disponibles:');
-console.log('  - FormattingModule:', typeof FormattingModule !== 'undefined' ? '' : '');
-console.log('  - RowManager:', typeof RowManager !== 'undefined' ? '' : '');
-console.log('  - StorageModule:', typeof StorageModule !== 'undefined' ? '' : '');
-console.log('  - NotificationModule:', typeof NotificationModule !== 'undefined' ? '' : '');
-console.log('  - UpdatesModule:', typeof UpdatesModule !== 'undefined' ? '' : '');
-console.log('  - OrdersDropdownManager:', typeof OrdersDropdownManager !== 'undefined' ? '' : '');
-console.log('  - DiaEntregaModule:', typeof DiaEntregaModule !== 'undefined' ? '' : '');
+
+
+
+
+
+
+
+
 
 // ============================================================================
 // SECCIÓN 1: INICIALIZACIÓN Y DELEGACIÓN A MÓDULOS
@@ -42,7 +42,7 @@ function initializeStatusDropdowns() {
     if (OrdersDropdownManager && OrdersDropdownManager.initializeStatusDropdowns) {
         OrdersDropdownManager.initializeStatusDropdowns();
     } else {
-        console.error(' OrdersDropdownManager no disponible - los módulos no se cargaron correctamente');
+
     }
 }
 
@@ -54,7 +54,7 @@ function initializeAreaDropdowns() {
     if (OrdersDropdownManager && OrdersDropdownManager.initializeAreaDropdowns) {
         OrdersDropdownManager.initializeAreaDropdowns();
     } else {
-        console.error(' OrdersDropdownManager no disponible - los módulos no se cargaron correctamente');
+
     }
 }
 
@@ -66,7 +66,7 @@ function initializeDiaEntregaDropdowns() {
     if (DiaEntregaModule && DiaEntregaModule.initialize) {
         DiaEntregaModule.initialize();
     } else {
-        console.error(' DiaEntregaModule no disponible');
+
     }
 }
 
@@ -89,7 +89,7 @@ function handleDiaEntregaChange() {
     if (UpdatesModule && UpdatesModule.updateOrderDiaEntrega) {
         UpdatesModule.updateOrderDiaEntrega(orderId, newValue);
     } else {
-        console.warn(' UpdatesModule no disponible para dia_entrega update');
+
     }
 }
 
@@ -167,7 +167,7 @@ function updateRowColor(orderId, newStatus) {
             RowManager.updateRowColor(orden);
         }
     } else {
-        console.log(' RowManager no disponible para updateRowColor');
+
     }
 }
 
@@ -180,21 +180,21 @@ function updateRowColor(orderId, newStatus) {
  * MANTENER: Esta función es crítica para sincronización de días
  */
 function actualizarDiasTabla() {
-    console.log('🕐 actualizarDiasTabla iniciada...');
+
     const tabla = document.getElementById('tablaOrdenes');
     if (!tabla) {
-        console.warn(' Tabla no encontrada');
+
         return;
     }
     
     const tbody = tabla.querySelector('tbody');
     if (!tbody) {
-        console.warn(' tbody no encontrado');
+
         return;
     }
     
     const filas = tbody.querySelectorAll('tr:not(.no-results)');
-    console.log(` Procesando ${filas.length} filas`);
+
     
     let actualizadas = 0;
     filas.forEach((fila, index) => {
@@ -213,7 +213,7 @@ function actualizarDiasTabla() {
         }
     });
     
-    console.log(` actualizarDiasTabla completada - ${actualizadas} celdas actualizadas`);
+
 }
 
 /**
@@ -226,19 +226,19 @@ async function recargarTablaPedidos() {
             headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) {
-            console.error('Error al cargar datos de pedidos:', response.statusText);
+
             return;
         }
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-            console.error('Respuesta no es JSON:', await response.text());
+
             return;
         }
         const data = await response.json();
 
         const tbody = document.getElementById('tablaOrdenesBody');
         if (!tbody) {
-            console.error('No se encontró tbody');
+
             return;
         }
         tbody.innerHTML = '';
@@ -278,10 +278,10 @@ async function recargarTablaPedidos() {
         initializeAreaDropdowns();
         initializeDiaEntregaDropdowns();
         
-        console.log(' Tabla recargada y dropdowns reinicializados (vía módulos)');
+
 
     } catch (error) {
-        console.error('Error al recargar tabla de pedidos:', error);
+
     }
 }
 
@@ -339,7 +339,7 @@ function deleteOrder(pedido) {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+
                 if (NotificationModule && NotificationModule.showError) {
                     NotificationModule.showError('Error al eliminar la orden');
                 } else {
@@ -387,7 +387,6 @@ function showDeleteNotification(message, type) {
  * MANTENER: Lógica compleja de modal de detalles
  */
 async function viewDetail(pedido) {
-    console.log('%c🔵 [VIEWDETAIL] viewDetail called with pedido: ' + pedido, 'color: blue; font-weight: bold; font-size: 14px;');
     try {
         setCurrentOrder(pedido);
         
@@ -395,7 +394,7 @@ async function viewDetail(pedido) {
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
         
-        console.log(' [VIEWDETAIL] Datos de orden obtenidos:', order);        if (typeof loadOrderImages === 'function') {
+if (typeof loadOrderImages === 'function') {
             loadOrderImages(pedido);
         }
 
@@ -590,16 +589,11 @@ async function viewDetail(pedido) {
             descripcionText.innerHTML = '';
             if (arrowContainer) arrowContainer.style.display = 'none';
         }
-        
-        console.log('%c [VIEWDETAIL] Todos los campos llenados, disparando evento open-modal', 'color: green; font-weight: bold;');
-        console.log(' [VIEWDETAIL] Verificando listeners antes de dispatch:');
-        console.log('   - window listeners:', window.getEventListeners ? window.getEventListeners(window)['open-modal'] : 'N/A');
-        
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
-        console.log(' [VIEWDETAIL] Evento open-modal despachado');
+
     } catch (error) {
-        console.error(' [VIEWDETAIL] Error loading order details:', error);
-        console.log(' [VIEWDETAIL] Disparando open-modal incluso en caso de error...');
+
+
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
     }
 }
@@ -611,7 +605,7 @@ async function viewDetail(pedido) {
 function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados) {
     const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
     if (!row) {
-        console.warn(`Fila con orderId ${orderId} no encontrada`);
+
         return;
     }
 
@@ -651,7 +645,7 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
         }
     }
 
-    console.log(`Fila ${orderId} actualizada desde localStorage: ${field} = ${newValue}`);
+
 }
 
 /**
@@ -676,7 +670,7 @@ function clearFilters() {
     window.history.pushState({}, '', `${url.pathname}?${params}`);
     recargarTablaPedidos();
     
-    console.log(' Filtros limpiados correctamente');
+
 }
 
 /**
@@ -699,13 +693,13 @@ window.addEventListener('storage', function(event) {
     if (event.key === 'orders-updates') {
         try {
             const data = JSON.parse(event.newValue);
-            console.log('Recibido mensaje de localStorage:', data);
+
 
             const { type, orderId, field, newValue, updatedFields, order, totalDiasCalculados, timestamp } = data;
 
             const lastTimestamp = Number.parseInt(localStorage.getItem('last-orders-update-timestamp') || '0');
             if (timestamp && timestamp <= lastTimestamp) {
-                console.log('Ignorando actualización duplicada');
+
                 return;
             }
 
@@ -713,7 +707,7 @@ window.addEventListener('storage', function(event) {
 
             updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados);
         } catch (e) {
-            console.error('Error parsing localStorage message:', e);
+
         }
     }
 });
@@ -727,7 +721,7 @@ window.addEventListener('storage', function(event) {
  * DELEGACIÓN: Usa módulos para inicialización
  */
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('🔄 DOM Ready - Inicializando dropdowns y módulos...');
+
     
     // Inicializar con módulos (si están disponibles)
     initializeStatusDropdowns();
@@ -740,9 +734,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Actualizar días con delay
     if (typeof actualizarDiasTabla === 'function') {
         setTimeout(() => {
-            console.log('⏱️ Iniciando actualización de días en carga inicial...');
+
             actualizarDiasTabla();
-            console.log(' Días actualizados en carga inicial');
+
         }, 800);
     }
 });
@@ -782,12 +776,12 @@ function showAutoReloadNotification(message, duration) {
 
 // Detectar errores globales
 window.addEventListener('error', function(event) {
-    console.error(' Error global detectado:', event.error);
+
     
     window.globalJsErrors = (window.globalJsErrors || 0) + 1;
     
     if (window.globalJsErrors >= 5) {
-        console.error(' 5 errores JavaScript detectados. Recargando página...');
+
         showAutoReloadNotification('Múltiples errores detectados. Recargando página...', 3000);
         setTimeout(() => window.location.reload(), 3000);
     }
@@ -796,11 +790,11 @@ window.addEventListener('error', function(event) {
 // WebSocket disconnect handling
 if (window.Echo) {
     window.Echo.connector.pusher.connection.bind('disconnected', function() {
-        console.warn(' WebSocket desconectado');
+
         
         const reconnectTimeout = setTimeout(() => {
             if (window.Echo.connector.pusher.connection.state !== 'connected') {
-                console.error(' WebSocket no se reconectó. Recargando página...');
+
                 showAutoReloadNotification('Conexión perdida. Recargando página...', 2000);
                 setTimeout(() => window.location.reload(), 2000);
             }
@@ -808,10 +802,11 @@ if (window.Echo) {
         
         window.Echo.connector.pusher.connection.bind('connected', function() {
             clearTimeout(reconnectTimeout);
-            console.log(' WebSocket reconectado');
+
         });
     });
 }
 
-console.log(' orders-table-v2.js completamente cargado - Usando módulos SOLID');
+
+
 

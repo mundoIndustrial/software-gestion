@@ -106,7 +106,7 @@
         const numeroPedido = document.getElementById('numero_pedido_editable');
         if (numeroPedido) numeroPedido.value = '';
 
-        console.log('🧹 Formulario limpiado');
+
     }
 
     /**
@@ -158,7 +158,7 @@
         const tipoNuevoRadio = document.getElementById('tipo_nuevo_pedido');
 
         if (!tipoDesdeRadio || !tipoNuevoRadio) {
-            console.warn(' [validar-cambio-tipo-pedido] No se encontraron los radios de tipo de pedido');
+
             return;
         }
 
@@ -194,7 +194,7 @@
                         tipoDesdeRadio.checked = true;
                     }
                     
-                    console.log(' Usuario canceló cambio - radio revertido');
+
                 }
             }
         }

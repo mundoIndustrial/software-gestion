@@ -15,11 +15,11 @@ class EppModalManager {
     abrirModal() {
         const modal = document.getElementById(this.modalId);
         if (!modal) {
-            console.error('[EppModalManager] Modal no encontrado');
+
             return;
         }
         modal.style.display = 'flex';
-        console.log('[EppModalManager] Modal abierto');
+
     }
 
     /**
@@ -30,7 +30,7 @@ class EppModalManager {
         if (!modal) return;
         modal.style.display = 'none';
         this.limpiarFormulario();
-        console.log('[EppModalManager] Modal cerrado');
+
     }
 
     /**
@@ -51,7 +51,7 @@ class EppModalManager {
 
         this.limpiarProductoCard();
         this.limpiarImagenes();
-        console.log('[EppModalManager] Formulario limpiado');
+
     }
 
     /**
@@ -62,7 +62,7 @@ class EppModalManager {
         document.getElementById('categoriaProductoEPP').textContent = producto.categoria;
         document.getElementById('codigoProductoEPP').textContent = producto.codigo;
         document.getElementById('productoCardEPP').style.display = 'flex';
-        console.log('[EppModalManager] Producto mostrado:', producto.nombre);
+
     }
 
     /**
@@ -77,7 +77,7 @@ class EppModalManager {
      * Cargar valores en formulario
      */
     cargarValoresFormulario(talla, cantidad, observaciones) {
-        console.log('[EppModalManager] Cargando valores:', { talla, cantidad, observaciones });
+
         
         // Usar setTimeout para asegurar que el DOM esté listo
         setTimeout(() => {
@@ -88,21 +88,21 @@ class EppModalManager {
                 inputCantidad.value = cantidad || 0;
                 // Forzar actualización del valor
                 inputCantidad.dispatchEvent(new Event('input', { bubbles: true }));
-                console.log('[EppModalManager] Cantidad seteada a:', inputCantidad.value);
+
             } else {
-                console.warn('[EppModalManager] Campo cantidadEPP no encontrado');
+
             }
             
             if (inputObservaciones) {
                 inputObservaciones.value = observaciones || '';
                 // Forzar actualización del valor
                 inputObservaciones.dispatchEvent(new Event('input', { bubbles: true }));
-                console.log('[EppModalManager] Observaciones seteada a:', inputObservaciones.value);
+
             } else {
-                console.warn('[EppModalManager] Campo observacionesEPP no encontrado');
+
             }
             
-            console.log('[EppModalManager] Valores cargados en formulario');
+
         }, 10);
     }
 
@@ -138,20 +138,20 @@ class EppModalManager {
 
         document.getElementById('areaCargarImagenes').style.display = 'block';
         document.getElementById('mensajeSelecccionarEPP').style.display = 'none';
-        console.log('[EppModalManager] Campos habilitados');
+
     }
 
     /**
      * Mostrar imágenes cargadas
      */
     mostrarImagenes(imagenes = []) {
-        console.log('[EppModalManager] Mostrando imágenes:', imagenes);
+
         
         const contenedor = document.getElementById('contenedorImagenesSubidas');
         const listaImagenes = document.getElementById('listaImagenesSubidas');
         
         if (!contenedor || !listaImagenes) {
-            console.warn('[EppModalManager] Contenedores de imágenes no encontrados en el DOM');
+
             return;
         }
         
@@ -163,15 +163,15 @@ class EppModalManager {
                 try {
                     const card = this._crearCardImagen(img);
                     contenedor.appendChild(card);
-                    console.log('[EppModalManager] Imagen agregada:', { idx, img });
+
                 } catch (e) {
-                    console.error('[EppModalManager] Error al crear card de imagen:', e);
+
                 }
             });
-            console.log('[EppModalManager] Imágenes mostradas:', imagenes.length);
+
         } else {
             listaImagenes.style.display = 'none';
-            console.log('[EppModalManager] Sin imágenes para mostrar');
+
         }
     }
 
@@ -187,7 +187,7 @@ class EppModalManager {
             document.getElementById('listaImagenesSubidas').style.display = 'block';
         }
 
-        console.log('[EppModalManager] Imagen agregada a UI');
+
     }
 
     /**
@@ -204,7 +204,7 @@ class EppModalManager {
             document.getElementById('listaImagenesSubidas').style.display = 'none';
         }
 
-        console.log('[EppModalManager] Imagen eliminada de UI');
+
     }
 
     /**

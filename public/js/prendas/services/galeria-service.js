@@ -12,7 +12,7 @@ class GaleriaService {
      * @param {number} prendaIndex - Índice de la prenda
      */
     static abrirGaleriaFotos(prenda, prendaIndex) {
-        console.log('[GaleriaService] Abriendo galería de fotos:', prendaIndex);
+
 
         const imagenes = prenda.imagenes || prenda.fotos || [];
         const fotosUrls = ImageProcessor.procesarImagenes(imagenes);
@@ -37,7 +37,7 @@ class GaleriaService {
      * @param {number} prendaIndex - Índice de la prenda
      */
     static abrirGaleriaTelas(prenda, prendaIndex) {
-        console.log('[GaleriaService] Abriendo galería de telas:', prendaIndex);
+
 
         const telas = prenda.telasAgregadas || [];
         const telasConFotos = [];

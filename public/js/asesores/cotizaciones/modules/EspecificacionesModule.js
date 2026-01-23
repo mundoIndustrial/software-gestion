@@ -62,7 +62,7 @@ class EspecificacionesModule {
     abrirModal() {
         if (this.modal) {
             this.modal.style.display = 'flex';
-            console.log(' Modal de especificaciones abierto');
+
         }
     }
 
@@ -72,7 +72,7 @@ class EspecificacionesModule {
     cerrarModal() {
         if (this.modal) {
             this.modal.style.display = 'none';
-            console.log(' Modal de especificaciones cerrado');
+
         }
     }
 
@@ -83,7 +83,7 @@ class EspecificacionesModule {
         this.especificaciones = this.extraerEspecificaciones();
         window.especificacionesSeleccionadas = this.especificaciones;
 
-        console.log(' Especificaciones guardadas:', this.especificaciones);
+
         this.cerrarModal();
     }
 
@@ -139,7 +139,7 @@ class EspecificacionesModule {
         const tbody = document.getElementById(tbodyId);
 
         if (!tbody) {
-            console.warn(` No encontrado tbody: ${tbodyId}`);
+
             return;
         }
 
@@ -162,7 +162,7 @@ class EspecificacionesModule {
         `;
 
         tbody.appendChild(fila);
-        console.log(` Fila agregada a: ${categoria}`);
+
     }
 
     /**
@@ -189,7 +189,7 @@ class EspecificacionesModule {
     limpiar() {
         this.especificaciones = {};
         window.especificacionesSeleccionadas = {};
-        console.log(' Especificaciones limpias');
+
     }
 }
 

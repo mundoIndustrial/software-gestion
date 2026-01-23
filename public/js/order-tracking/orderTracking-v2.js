@@ -20,14 +20,14 @@
  *  Dependency Inversion: Dependen de abstracciones, no de implementaciones
  */
 
-console.log(' orderTracking-v2.js cargado - Versión SOLID con 9 módulos');
+
 
 /**
  * Función principal: Abre el modal de seguimiento del pedido
  */
 async function openOrderTracking(orderId) {
     try {
-        console.log(' Abriendo tracking para orden:', orderId);
+
         
         // Obtener datos del API
         const procesos = await ApiClient.getOrderProcesos(orderId);
@@ -44,7 +44,7 @@ async function openOrderTracking(orderId) {
         await displayOrderTrackingWithProcesos(procesos);
         
     } catch (error) {
-        console.error(' Error al obtener procesos:', error);
+
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -60,7 +60,7 @@ async function openOrderTracking(orderId) {
 async function displayOrderTrackingWithProcesos(orderData) {
     const modal = TrackingUI.getModal();
     if (!modal) {
-        console.error(' Modal de seguimiento no encontrado');
+
         return;
     }
     
@@ -90,7 +90,7 @@ async function displayOrderTrackingWithProcesos(orderData) {
     let totalDias = orderData.total_dias_habiles || totalDiasCalculado;
     TrackingUI.updateTotalDays(totalDias);
     
-    console.log(` Total de días mostrado: ${totalDias}`);
+
     
     // Agregar event listeners a los botones de admin
     attachProcessButtonListeners(procesos);
@@ -109,7 +109,7 @@ function attachProcessButtonListeners(procesos) {
     // Usar event delegation en el contenedor del timeline
     const timelineContainer = document.getElementById('trackingTimelineContainer');
     if (!timelineContainer) {
-        console.warn(' trackingTimelineContainer no encontrado');
+
         return;
     }
     
@@ -169,7 +169,7 @@ function editarProceso(procesoJsonStr) {
         const proceso = JSON.parse(procesoJsonStr);
         ProcessManager.openEditModal(proceso);
     } catch (error) {
-        console.error('Error al editar:', error);
+
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -187,7 +187,7 @@ function eliminarProceso(procesoJsonStr) {
         const proceso = JSON.parse(procesoJsonStr);
         ProcessManager.deleteProcess(proceso);
     } catch (error) {
-        console.error('Error al eliminar:', error);
+
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -224,7 +224,7 @@ async function getOrderTrackingPath(order) {
 async function displayOrderTracking(order) {
     const modal = TrackingUI.getModal();
     if (!modal) {
-        console.error('Modal de seguimiento no encontrado');
+
         return;
     }
     
@@ -270,7 +270,7 @@ function actualizarDiasAlCambiarPagina() {
  * Inicializa el módulo de tracking
  */
 function initializeOrderTracking() {
-    console.log('🚀 Inicializando Order Tracking v2 (SOLID)...');
+
     
     // Inicializar modal
     initializeTrackingModal();
@@ -280,7 +280,7 @@ function initializeOrderTracking() {
         TableManager.updateDaysInTable();
     }, 500);
     
-    console.log(' Order Tracking v2 inicializado correctamente');
+
 }
 
 /**
@@ -318,7 +318,7 @@ function initializeTrackingModal() {
  * Inicializar cuando el DOM esté listo
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(' DOM listo, inicializando Order Tracking');
+
     initializeOrderTracking();
 });
 

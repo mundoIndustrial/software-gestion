@@ -34,7 +34,7 @@ class TallaComponent {
      */
     getTallasDisponibles(tipoTalla, genero = 'unisex') {
         if (!this.tallasDefinicion[tipoTalla]) {
-            console.warn(`Tipo de talla desconocido: ${tipoTalla}`);
+
             return [];
         }
 
@@ -88,7 +88,7 @@ class TallaComponent {
      * @param {number} prendaIndex - Índice de la prenda
      */
     async mostrarModalAgregarTalla(prendaIndex) {
-        console.log('🔘 Abriendo modal para agregar talla a prenda:', prendaIndex);
+
 
         const tallasDisponibles = window.PedidoState?.getTallasDisponibles() || [];
         
@@ -143,13 +143,13 @@ class TallaComponent {
     agregarTallaAlFormulario(prendaIndex, talla) {
         const prendaCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
         if (!prendaCard) {
-            console.error('No se encontró la tarjeta de prenda');
+
             return;
         }
 
         const tallasContainer = prendaCard.querySelector('.tallas-editable');
         if (!tallasContainer) {
-            console.error('No se encontró el contenedor de tallas');
+
             return;
         }
 
@@ -193,7 +193,7 @@ class TallaComponent {
 
         tallasContainer.appendChild(tallaItem);
 
-        console.log(` Talla ${talla} agregada a prenda ${prendaIndex}`);
+
 
         Swal.fire({
             icon: 'success',
@@ -474,13 +474,13 @@ class TallaComponent {
 
         const generoContainer = prendasCard.querySelector(`[data-genero-container="${genero}"]`);
         if (!generoContainer) {
-            console.error(`No se encontró contenedor para género ${genero}`);
+
             return;
         }
 
         const tallasContainer = generoContainer.querySelector('.tallas-genero-list');
         if (!tallasContainer) {
-            console.error('No se encontró contenedor de tallas');
+
             return;
         }
 
@@ -514,7 +514,7 @@ class TallaComponent {
             tallasContainer.appendChild(tallaItem);
         });
 
-        console.log(` ${tallas.length} tallas agregadas a ${genero}`);
+
 
         Swal.fire({
             icon: 'success',
@@ -552,7 +552,7 @@ class TallaComponent {
                 const input = prendaCard.querySelector(`.talla-cantidad-editable[data-talla="${talla}"]`);
                 if (input) {
                     input.closest('.talla-item').remove();
-                    console.log(`🗑️ Talla ${talla} eliminada`);
+
                     
                     Swal.fire({
                         icon: 'success',
@@ -592,7 +592,7 @@ class TallaComponent {
                 
                 if (input) {
                     input.closest('.talla-item').remove();
-                    console.log(`🗑️ Talla ${talla} eliminada de ${genero}`);
+
                     
                     // Si es gestor sin cotización, actualizar
                     if (window.gestorPrendaSinCotizacion) {

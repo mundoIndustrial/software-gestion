@@ -9,11 +9,11 @@
 window.prendas_reflectivo_paso4 = [];
 
 function agregarPrendaReflectivoPaso4() {
-    console.log('🔸 agregarPrendaReflectivoPaso4() - Iniciando...');
+
     
     const container = document.getElementById('prendas_reflectivo_container');
     if (!container) {
-        console.error(' Container prendas_reflectivo_container no encontrado');
+
         return;
     }
     
@@ -21,11 +21,11 @@ function agregarPrendaReflectivoPaso4() {
     const prendasIndex = numeroPrenda - 1;
     
     // Obtener prendas del PASO 2 - EXACTAMENTE COMO EN PASO 3
-    console.log('📥 Llamando obtenerPrendasDelPaso2()...');
+
     const prendasPaso2 = obtenerPrendasDelPaso2();
-    console.log(` Prendas obtenidas: ${prendasPaso2.length}`);
+
     if (prendasPaso2.length > 0) {
-        console.log(' Prendas del Paso 2:', prendasPaso2);
+
     }
     
     const fila = document.createElement('div');
@@ -169,7 +169,7 @@ function agregarPrendaReflectivoPaso4() {
     // LOG DE VALIDACIÓN
     const selectCreado = fila.querySelector('.select-prenda-paso2-reflectivo');
     const opcionesCreadas = selectCreado ? selectCreado.querySelectorAll('option').length : 0;
-    console.log(` Prenda Reflectivo ${numeroPrenda} agregada. Select con ${opcionesCreadas} opciones (${opcionesCreadas - 1} prendas + 1 opción vacía)`);
+
     
     window.prendas_reflectivo_paso4.push({
         index: prendasIndex,
@@ -188,7 +188,7 @@ function agregarPrendaReflectivoPaso4() {
     // LISTENER: Cuando se selecciona una prenda, cargar sus tallas, imágenes y variaciones
     const selectPrenda = fila.querySelector('.select-prenda-paso2-reflectivo');
     selectPrenda.addEventListener('change', (e) => {
-        console.log(` SELECT PRENDA CAMBIÓ - Prenda ${prendasIndex}:`, e.target.value);
+
         
         const selectedOption = e.target.options[e.target.selectedIndex];
         const tallasJson = selectedOption.getAttribute('data-tallas');
@@ -196,10 +196,10 @@ function agregarPrendaReflectivoPaso4() {
         const variacionesJson = selectedOption.getAttribute('data-variaciones');
         const nombrePrenda = selectPrenda.value.trim();
         
-        console.log(`  - Nombre: ${nombrePrenda}`);
-        console.log(`  - Tallas JSON: ${tallasJson}`);
-        console.log(`  - Imágenes JSON: ${imagenesJson}`);
-        console.log(`  - Variaciones JSON: ${variacionesJson}`);
+
+
+
+
         
         // Actualizar nombre en el objeto prenda
         const prenda = window.prendas_reflectivo_paso4.find(p => p.index === prendasIndex);
@@ -215,18 +215,18 @@ function agregarPrendaReflectivoPaso4() {
         if (tallasJson) {
             try {
                 const tallas = JSON.parse(tallasJson);
-                console.log(`  - Tallas parseadas: ${JSON.stringify(tallas)}`);
+
                 if (Array.isArray(tallas) && tallas.length > 0) {
                     tallas.forEach(talla => {
-                        console.log(`    - Agregando fila para talla: ${talla}`);
+
                         agregarFilaTallaCantidadReflectivo(tablaTallasBody, prendasIndex, talla);
                     });
                 }
             } catch (err) {
-                console.error(' Error al parsear tallas:', err);
+
             }
         } else {
-            console.warn('⚠️ No hay tallasJson en el atributo data-tallas');
+
         }
         
         // CARGAR VARIACIONES DE PRENDA DESDE PASO 2
@@ -236,7 +236,7 @@ function agregarPrendaReflectivoPaso4() {
                 variacionesPaso2 = JSON.parse(variacionesJson);
             }
         } catch (err) {
-            console.error(' Error al parsear variaciones:', err);
+
             variacionesPaso2 = {};
         }
         
@@ -298,7 +298,7 @@ function agregarPrendaReflectivoPaso4() {
                 if (Array.isArray(imagenes) && imagenes.length > 0) {
                     const previewContainer = fila.querySelector(`.imagenes-preview-reflectivo-${prendasIndex}`);
                     if (previewContainer) {
-                        console.log(`  - Imágenes parseadas: ${imagenes.length} encontradas`);
+
                         
                         // Guardar imágenes del PASO 2
                         fila.imagenesPaso2 = imagenes.slice(0, 3);
@@ -318,10 +318,10 @@ function agregarPrendaReflectivoPaso4() {
                     }
                 }
             } catch (err) {
-                console.error(' Error al parsear imágenes:', err);
+
             }
         } else {
-            console.warn('⚠️ No hay imagenesJson en el atributo data-imagenes');
+
         }
     });
     
@@ -835,7 +835,7 @@ function renderizarUbicacionesReflectivoPaso4(prendasIndex) {
         contenedor.appendChild(div);
     });
     
-    console.log(`📍 Ubicaciones para prenda ${prendasIndex}: ${prenda.ubicaciones.length}`);
+
 }
 
 /**
@@ -904,4 +904,4 @@ function agregarObservacionReflectivoPaso4(prendasIndex, fila) {
 // INICIALIZACIÓN
 // =========================================================
 
-console.log(' PASO 4 (Reflectivo) - Módulo cargado correctamente');
+

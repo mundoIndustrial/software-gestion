@@ -24,7 +24,7 @@ function loadFiltersFromLocalStorage() {
             selectedFilters = JSON.parse(saved);
             return true;
         } catch (e) {
-            console.error(' Error al cargar filtros:', e);
+
             return false;
         }
     }
@@ -56,7 +56,7 @@ function getColumnIndexByName(columnName) {
         }
     }
     
-    console.warn(` Columna "${columnName}" NO encontrada`);
+
     return -1;
 }
 
@@ -66,7 +66,7 @@ function getColumnIndexByName(columnName) {
 function getColumnValuesFromTableByName(columnName) {
     const columnIndex = getColumnIndexByName(columnName);
     if (columnIndex === -1) {
-        console.warn(` Columna "${columnName}" no encontrada`);
+
         return [];
     }
     
@@ -157,7 +157,7 @@ function openFilterModal(columnName) {
             });
         }
         
-        console.log('Pedido IDs encontrados:', pedidoIds);
+
         
         // Input de búsqueda
         const searchWrapper = document.createElement('div');
@@ -191,15 +191,15 @@ function openFilterModal(columnName) {
             optionsDiv.innerHTML = '<div style="padding: 1rem; text-align: center; color: #9ca3af;">Cargando prendas...</div>';
             const searchTerm = input.value.toLowerCase();
             
-            console.log('=== RENDERIZAR PRENDAS (ENDPOINT) ===');
-            console.log('Search term:', searchTerm);
+
+
             
             // Cargar datos de todos los pedidos
             Promise.all(pedidoIds.map(id => 
                 fetch(`/asesores/pedidos/${id}/recibos-datos`)
                     .then(r => r.json())
                     .catch(e => {
-                        console.error('Error fetching pedido', id, e);
+
                         return null;
                     })
             )).then(results => {
@@ -208,12 +208,12 @@ function openFilterModal(columnName) {
                 results.forEach((data, idx) => {
                     if (!data || !data.prendas) return;
                     
-                    console.log(`\nPedido ${pedidoIds[idx]}:`, data.prendas);
+
                     
                     data.prendas.forEach(prenda => {
                         // Buscar en nombre, tela, color
                         const searchIn = `${prenda.nombre || ''} ${prenda.tela || ''} ${prenda.color || ''} ${prenda.descripcion || ''}`.toLowerCase();
-                        console.log(`  Prenda: "${searchIn}"`);
+
                         
                         // También buscar en procesos
                         let hasProcess = false;
@@ -221,20 +221,20 @@ function openFilterModal(columnName) {
                             prenda.procesos.forEach(p => {
                                 const processSearch = `${p.descripcion || ''} ${p.ubicacion || ''} ${p.observaciones || ''}`.toLowerCase();
                                 if (processSearch.includes(searchTerm)) {
-                                    console.log(`    ✓ Proceso encontrado: "${p.descripcion}"`);
+
                                     hasProcess = true;
                                 }
                             });
                         }
                         
                         if (!searchTerm || searchIn.includes(searchTerm) || hasProcess) {
-                            console.log(`  ✓ MATCH!`);
+
                             matchedPrendas.push(prenda);
                         }
                     });
                 });
                 
-                console.log('Total matched prendas:', matchedPrendas.length);
+
                 
                 // Mostrar prendas
                 optionsDiv.innerHTML = '';
@@ -261,7 +261,7 @@ function openFilterModal(columnName) {
                         const filterValue = displayText;
                         const isChecked = selectedFilters[columnName] && selectedFilters[columnName][0] === `field:todos:${filterValue}`;
                         
-                        console.log('Rendering:', displayText);
+
                         
                         div.innerHTML = `
                             <input type="checkbox" id="${id}" value="${filterValue}" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
@@ -762,7 +762,7 @@ function updateFilterBadges() {
 function updateClearButtonVisibility() {
     const clearBtn = document.getElementById('btnClearAllFilters');
     if (!clearBtn) {
-        console.warn(' Botón flotante no encontrado');
+
         return;
     }
     

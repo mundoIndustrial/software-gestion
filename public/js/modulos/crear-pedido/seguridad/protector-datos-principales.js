@@ -23,7 +23,7 @@ class ProtectorDatosPrincipales {
     }
 
     inicializar() {
-        console.log('  [ProtectorDatosPrincipales] Inicializando...');
+
         
         // Esperar a que el DOM esté listo
         if (document.readyState === 'loading') {
@@ -37,7 +37,7 @@ class ProtectorDatosPrincipales {
      * Guardar datos principales del pedido
      */
     guardarDatos() {
-        console.log('💾 [ProtectorDatosPrincipales] Guardando datos principales...');
+
         
         const camposAProteger = [
             'cliente_editable',
@@ -50,14 +50,14 @@ class ProtectorDatosPrincipales {
             const element = document.getElementById(fieldId);
             if (element) {
                 this.datosPrincipales[fieldId] = element.value;
-                console.log(`    ${fieldId}: "${element.value}"`);
+
             }
         });
 
         // Agregar listener para monitor cambios accidentales
         this.iniciarMoniteo();
         this.guardados = true;
-        console.log(' [ProtectorDatosPrincipales] Datos guardados');
+
     }
 
     /**
@@ -85,7 +85,7 @@ class ProtectorDatosPrincipales {
 
                 // Si el valor está vacío pero NO debería estarlo (y no está readonly)
                 if (valorActual === '' && valorOriginal !== '' && fieldId !== 'numero_pedido_editable') {
-                    console.warn(`  [ProtectorDatosPrincipales] ALERTA: ${fieldId} fue limpiado accidentalmente!`);
+
                     datosCorruptos = true;
                 }
             }
@@ -100,7 +100,7 @@ class ProtectorDatosPrincipales {
      * Restaurar datos principales si fueron limpiados
      */
     restaurarDatos() {
-        console.warn(' [ProtectorDatosPrincipales] Restaurando datos principales...');
+
 
         Object.entries(this.datosPrincipales).forEach(([fieldId, valor]) => {
             const element = document.getElementById(fieldId);
@@ -108,7 +108,7 @@ class ProtectorDatosPrincipales {
                 const valorAnterior = element.value;
                 element.value = valor;
 
-                console.log(`    ${fieldId} restaurado: "${valorAnterior}" → "${valor}"`);
+
 
                 // Disparar evento change para actualizar componentes
                 const event = new Event('input', { bubbles: true });
@@ -116,14 +116,14 @@ class ProtectorDatosPrincipales {
             }
         });
 
-        console.log(' [ProtectorDatosPrincipales] Datos restaurados');
+
     }
 
     /**
      * Actualizar datos guardados (cuando el usuario cambia voluntariamente)
      */
     actualizarDatos() {
-        console.log(' [ProtectorDatosPrincipales] Actualizando datos guardados...');
+
         this.guardarDatos();
     }
 
@@ -138,4 +138,4 @@ class ProtectorDatosPrincipales {
 // Crear instancia global
 window.protectorDatosPrincipales = new ProtectorDatosPrincipales();
 
-console.log(' Módulo ProtectorDatosPrincipales cargado');
+

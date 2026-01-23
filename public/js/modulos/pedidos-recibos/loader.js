@@ -25,4 +25,3 @@ window.cerrarModalRecibos = () => {
     return module.cerrarRecibo();
 };
 
-console.log('%c✓ Módulo Pedidos-Recibos cargado correctamente', 'color: #10b981; font-weight: bold; font-size: 14px;');

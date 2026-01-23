@@ -29,10 +29,10 @@ class GestionItemsUI {
             if (this.formCollector && this.notificationService) {
                 this.inicializar();
             } else {
-                console.warn('[GestionItemsUI] Servicios esenciales no disponibles. Inicialización diferida.');
+
             }
         } catch (error) {
-            console.error('[GestionItemsUI] Error en inicialización de servicios:', error);
+
         }
     }
 
@@ -58,7 +58,7 @@ class GestionItemsUI {
         const index = this.prendas.length;
         this.prendas.push(prenda);
         this.ordenItems.push({ tipo: 'prenda', index });
-        console.log('[GestionItemsUI] Prenda agregada. Orden actual:', this.ordenItems);
+
     }
 
     /**
@@ -68,7 +68,7 @@ class GestionItemsUI {
         const index = this.epps.length;
         this.epps.push(epp);
         this.ordenItems.push({ tipo: 'epp', index });
-        console.log('[GestionItemsUI] EPP agregado. Orden actual:', this.ordenItems);
+
         return index;
     }
 
@@ -77,7 +77,7 @@ class GestionItemsUI {
      */
     async agregarEPPDesdeModal(eppData) {
         try {
-            console.log('[GestionItemsUI.agregarEPPDesdeModal] Agregando EPP:', eppData);
+
             
             // Agregar al orden
             this.agregarEPPAlOrden(eppData);
@@ -93,7 +93,7 @@ class GestionItemsUI {
             
             return true;
         } catch (error) {
-            console.error('[GestionItemsUI.agregarEPPDesdeModal] ERROR:', error);
+
             this.notificationService?.error('Error al agregar EPP: ' + error.message);
             return false;
         }
@@ -125,14 +125,14 @@ class GestionItemsUI {
     async cargarItems() {
         try {
             if (!this.apiService || !this.renderer || !this.notificationService) {
-                console.warn('[GestionItemsUI.cargarItems] Servicios no disponibles');
+
                 return;
             }
             const resultado = await this.apiService.obtenerItems();
             this.items = resultado.items;
             await this.renderer.actualizar(this.items);
         } catch (error) {
-            console.error('Error al cargar ítems:', error);
+
             if (this.notificationService) {
                 this.notificationService.error('Error al cargar ítems');
             }
@@ -142,7 +142,7 @@ class GestionItemsUI {
     async agregarItem(itemData) {
         try {
             if (!this.apiService || !this.renderer || !this.notificationService) {
-                console.warn('[GestionItemsUI.agregarItem] Servicios no disponibles');
+
                 return false;
             }
             const resultado = await this.apiService.agregarItem(itemData);
@@ -165,7 +165,7 @@ class GestionItemsUI {
 
         try {
             if (!this.apiService || !this.renderer || !this.notificationService) {
-                console.warn('[GestionItemsUI.eliminarItem] Servicios no disponibles');
+
                 return;
             }
             const resultado = await this.apiService.eliminarItem(index);
@@ -213,7 +213,7 @@ class GestionItemsUI {
                 this.prendaEditor.resetearEdicion();
             }
         } catch (error) {
-            console.error('[GestionItemsUI.cerrarModalAgregarPrendaNueva] ERROR:', error);
+
         }
     }
 
@@ -230,7 +230,7 @@ class GestionItemsUI {
      */
     async agregarPrendaNueva() {
         try {
-            console.log('[GestionItemsUI.agregarPrendaNueva] Iniciando...');
+
 
             // Recolectar datos del formulario modal usando el componente extraído
             window.prendaFormCollector.setNotificationService(this.notificationService);
@@ -240,12 +240,12 @@ class GestionItemsUI {
             );
             
             if (!prendaData) {
-                console.warn('[GestionItemsUI.agregarPrendaNueva] No se obtuvieron datos válidos del formulario');
+
                 this.notificationService?.error('Por favor completa los datos de la prenda');
                 return;
             }
 
-            console.log('[GestionItemsUI.agregarPrendaNueva] Datos recolectados:', prendaData);
+
 
             // Verificar si estamos en un pedido existente
             const enPedidoExistente = window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido);
@@ -254,26 +254,26 @@ class GestionItemsUI {
             const pedidoId = enPedidoExistente ? window.datosEdicionPedido.id : null;
             
             if (!pedidoId && enPedidoExistente) {
-                console.warn('[GestionItemsUI.agregarPrendaNueva] ADVERTENCIA: No hay pedido.id disponible, usando numero_pedido como fallback');
+
                 // Solo si realmente no hay id, usar numero_pedido (pero esto NO debería pasar en producción)
             }
 
             // Si es edición (prendaEditIndex !== null), actualizar; si no, agregar nueva
             if (this.prendaEditIndex !== null && this.prendaEditIndex !== undefined) {
-                console.log('[GestionItemsUI.agregarPrendaNueva] Modo EDICIÓN - índice:', this.prendaEditIndex);
+
                 
                 // SI ESTAMOS EDITANDO EN UN PEDIDO EXISTENTE, MOSTRAR MODAL DE NOVEDADES
                 if (enPedidoExistente) {
-                    console.log('[GestionItemsUI.agregarPrendaNueva] Mostrando modal de novedades para registrar cambios...');
+
                     
                     // Obtener la prenda original desde window.prendaEnEdicion (guardada por prenda-editor-modal.js)
                     const prendaOriginal = window.prendaEnEdicion?.prendaOriginal;
-                    console.log('[GestionItemsUI.agregarPrendaNueva] Prenda original desde window.prendaEnEdicion:', prendaOriginal);
-                    console.log('[GestionItemsUI.agregarPrendaNueva] ID de prenda original:', prendaOriginal?.id || prendaOriginal?.prenda_pedido_id);
+
+
                     
                     // Agregar el ID de la prenda original a prendaData
                     prendaData.prenda_pedido_id = prendaOriginal?.prenda_pedido_id || prendaOriginal?.id;
-                    console.log('[GestionItemsUI.agregarPrendaNueva] prendaData.prenda_pedido_id asignado:', prendaData.prenda_pedido_id);
+
                     
                     await window.modalNovedadEditacion.mostrarModalYActualizar(pedidoId, prendaData, this.prendaEditIndex);
                     // El modal de novedades maneja todo: actualización, cierre, etc.
@@ -281,19 +281,19 @@ class GestionItemsUI {
                     return;
                 } else {
                     // Solo en memoria - sin novedades
-                    console.log('[GestionItemsUI.agregarPrendaNueva] Actualizando prenda en memoria...');
+
                     if (this.prendas[this.prendaEditIndex]) {
                         this.prendas[this.prendaEditIndex] = prendaData;
-                        console.log('[GestionItemsUI.agregarPrendaNueva] Prenda actualizada en índice:', this.prendaEditIndex);
+
                         this.notificationService?.exito('Prenda actualizada correctamente');
                     }
                 }
             } else {
-                console.log('[GestionItemsUI.agregarPrendaNueva] Modo AGREGAR NUEVA');
+
                 
                 // GUARDAR EN LA BASE DE DATOS SI ESTAMOS EN EDICIÓN DE PEDIDO EXISTENTE
                 if (enPedidoExistente) {
-                    console.log('[GestionItemsUI.agregarPrendaNueva] Guardando prenda en pedido:', pedidoId);
+
                     
                     // PASO 1: MOSTRAR MODAL DE NOVEDAD USANDO COMPONENTE EXTRAÍDO
                     await window.modalNovedadPrenda.mostrarModalYGuardar(pedidoId, prendaData);
@@ -302,12 +302,12 @@ class GestionItemsUI {
                     return;
                     
                 } else {
-                    console.log('[GestionItemsUI.agregarPrendaNueva] No hay pedido activo, agregando solo en memoria');
+
                     this.notificationService?.exito('Prenda agregada correctamente');
                     
                     // Agregar prenda al orden
                     this.agregarPrendaAlOrden(prendaData);
-                    console.log('[GestionItemsUI.agregarPrendaNueva] Prenda agregada. Total prendas:', this.prendas.length);
+
                 }
             }
 
@@ -325,14 +325,14 @@ class GestionItemsUI {
             
             // IMPORTANTE: Actualizar window.datosEdicionPedido.prendas (sin reabrirse automáticamente)
             if (window.datosEdicionPedido) {
-                console.log('[GestionItemsUI.agregarPrendaNueva] Actualizando prendas globales...');
+
                 window.datosEdicionPedido.prendas = this.prendas;
-                console.log('[GestionItemsUI.agregarPrendaNueva] Prendas actualizadas. Total:', this.prendas.length);
+
                 // El modal de éxito se mostrará y el usuario decidirá si ver la lista
             }
 
         } catch (error) {
-            console.error('[GestionItemsUI.agregarPrendaNueva] ERROR:', error);
+
             this.notificationService?.error('Error al agregar prenda: ' + error.message);
         }
     }
@@ -355,7 +355,7 @@ class GestionItemsUI {
 
         try {
             if (!this.formCollector || !this.apiService || !this.notificationService) {
-                console.warn('[GestionItemsUI.manejarSubmitFormulario] Servicios no disponibles');
+
                 return;
             }
             
@@ -368,7 +368,7 @@ class GestionItemsUI {
 
             const pedidoData = this.formCollector.recolectarDatosPedido();
             
-            console.log('[manejarSubmitFormulario] Datos recolectados:', pedidoData);
+
 
             if (!pedidoData.items || pedidoData.items.length === 0) {
                 this.notificationService.error('Debe agregar al menos un item al pedido');
@@ -399,7 +399,7 @@ class GestionItemsUI {
                 setTimeout(() => this.mostrarModalExito(), 300);
             }
         } catch (error) {
-            console.error('[manejarSubmitFormulario] ERROR:', error);
+
             this.ocultarCargando();
             if (this.notificationService) {
                 this.notificationService.error('Error: ' + error.message);
@@ -541,7 +541,7 @@ class GestionItemsUI {
 
     mostrarVistaPreviaFactura() {
         if (!this.renderer) {
-            console.warn('[GestionItemsUI.mostrarVistaPreviaFactura] Servicio renderer no disponible');
+
             return;
         }
         this.renderer.mostrarVistaPreviaFactura();
@@ -572,13 +572,13 @@ class GestionItemsUI {
  * Wrapper para editarProceso que funciona en contexto de edición
  */
 window.editarProcesoEdicion = function(tipo) {
-    console.log(` Editando proceso en contexto de edición: ${tipo}`);
+
     
     // Asegurar que el modal de proceso esté encima
     const modalProceso = document.getElementById('modal-proceso-generico');
     if (modalProceso) {
         modalProceso.style.zIndex = '10000';
-        console.log('    Z-index del modal de proceso establecido a 10000');
+
     }
     
     // Usar la función global si existe
@@ -604,7 +604,7 @@ window.editarProcesoEdicion = function(tipo) {
             cargarDatosProcesoEnModalEdicion(tipo, proceso.datos);
         }
     } else {
-        console.error(' No se pudo abrir el modal de proceso');
+
     }
 };
 
@@ -612,7 +612,7 @@ window.editarProcesoEdicion = function(tipo) {
  * Cargar datos de un proceso en el modal para editar (fallback)
  */
 function cargarDatosProcesoEnModalEdicion(tipo, datos) {
-    console.log(` Cargando datos en modal para editar:`, datos);
+
     
     // Limpiar imágenes anteriores
     if (window.imagenesProcesoActual) {

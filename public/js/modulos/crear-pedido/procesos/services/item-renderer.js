@@ -21,7 +21,7 @@ class ItemRenderer {
     async actualizar(items) {
         const container = document.getElementById(this.containerId);
         if (!container) {
-            console.warn(`Contenedor ${this.containerId} no encontrado`);
+
             return;
         }
 
@@ -64,7 +64,7 @@ class ItemRenderer {
                     tempDiv.innerHTML = html;
                     container.appendChild(tempDiv.firstElementChild);
                 } catch (error) {
-                    console.error(`Error al renderizar prenda ${index}:`, error);
+
                 }
             }
         }
@@ -81,7 +81,7 @@ class ItemRenderer {
                     tempDiv.innerHTML = html;
                     container.appendChild(tempDiv.firstElementChild);
                 } catch (error) {
-                    console.error(`Error al renderizar EPP ${index}:`, error);
+
                 }
             }
         }
@@ -125,13 +125,13 @@ class ItemRenderer {
     async obtenerHTMLItem(item, index) {
         // Detectar si es un EPP
         if (item.tipo === 'epp' || item.epp_id) {
-            console.log(`[ItemRenderer] Renderizando EPP para ítem ${index}`);
+
             return this._generarTarjetaEPP(item, index);
         }
 
         // Usar la función generarTarjetaPrendaReadOnly para prendas
         if (typeof window.generarTarjetaPrendaReadOnly === 'function') {
-            console.log(`[ItemRenderer] Usando generarTarjetaPrendaReadOnly para ítem ${index}`);
+
             return window.generarTarjetaPrendaReadOnly(item, index);
         }
 

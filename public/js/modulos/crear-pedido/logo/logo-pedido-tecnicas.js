@@ -38,7 +38,7 @@ async function cargarTiposLogosDisponibles() {
             tiposLogosDisponibles = data.data;
         }
     } catch (error) {
-        console.error(' Error cargando tipos de logo:', error);
+
     }
 }
 
@@ -49,7 +49,7 @@ async function cargarTiposLogosDisponibles() {
 function cargarLogoPrendasDesdeCotizacion(prendasTecnicas) {
     
     if (!prendasTecnicas || prendasTecnicas.length === 0) {
-        console.log(' No hay prendas técnicas en esta cotización');
+
         window.logoPrendasTecnicas = [];
         logoPrendasTecnicas = [];
         return;
@@ -66,17 +66,6 @@ function cargarLogoPrendasDesdeCotizacion(prendasTecnicas) {
         } else if (typeof prenda.talla_cantidad === 'object') {
             tallaCantidad = prenda.talla_cantidad || {};
         }
-        
-        console.log(`   [Prenda ${index}] Estructura recibida:`, {
-            id: prenda.id,
-            tecnica: prenda.tipo_logo_nombre,
-            nombre_prenda: prenda.nombre_prenda,
-            ubicaciones: prenda.ubicaciones,
-            talla_cantidad: tallaCantidad,
-            fotos: prenda.fotos ? prenda.fotos.length : 0,
-            observaciones: prenda.observaciones,
-        });
-        
         return {
             id: prenda.id,
             logo_cotizacion_id: prenda.logo_cotizacion_id,
@@ -106,7 +95,7 @@ function renderizarLogoPrendasTecnicas() {
     const container = document.getElementById('logo-prendas-tecnicas-container');
     
     if (!container) {
-        console.warn(' Contenedor #logo-prendas-tecnicas-container no encontrado');
+
         return;
     }
     
@@ -124,19 +113,19 @@ function renderizarLogoPrendasTecnicas() {
     const grupos = {};
     logoPrendasTecnicas.forEach((prenda, index) => {
         const grupoId = prenda.grupo_combinado || `individual_${index}`;
-        console.log(`   [Prenda ${index}] grupo_combinado=${prenda.grupo_combinado}, grupoId=${grupoId}, tipo=${prenda.tipo_logo_nombre}`);
+
         if (!grupos[grupoId]) {
             grupos[grupoId] = [];
         }
         grupos[grupoId].push({ prenda, index });
     });
     
-    console.log(' Grupos detectados:', Object.keys(grupos).length);
+
     Object.entries(grupos).forEach(([grupoId, items]) => {
         const esGrupoCombinado = grupoId.startsWith('combinado_');
-        console.log(`   Grupo "${grupoId}": ${items.length} prenda(s), esGrupoCombinado=${esGrupoCombinado}`);
+
         items.forEach((item, idx) => {
-            console.log(`      [${idx}] ${item.prenda.tipo_logo_nombre} - ${item.prenda.nombre_prenda}, fotos=${item.prenda.fotos?.length || 0}, tallas=${Object.keys(item.prenda.talla_cantidad || {}).length}`);
+
         });
     });
     
@@ -323,7 +312,7 @@ function renderizarLogoPrendasTecnicas() {
         } else {
             // Prenda individual
             const { prenda, index } = items[0];
-            console.log(`    Prenda individual: ${prenda.tipo_logo_nombre}`);
+
             html += `
                 <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
                     <td style="padding: 1rem; vertical-align: top; color: #1e293b; font-weight: 600; font-size: 0.95rem;">
@@ -468,11 +457,11 @@ window.abrirModalEditarPrendaTecnica = function(index) {
     const prenda = logoPrendasTecnicas[index];
     
     if (!prenda) {
-        console.error(' Prenda no encontrada en índice:', index);
+
         return;
     }
     
-    console.log(' Editando prenda técnica:', index, prenda);
+
     
     // Detectar si es grupo COMBINADO y obtener todas las técnicas del grupo
     const esGrupoCombinado = prenda.grupo_combinado && logoPrendasTecnicas.some(p => p.grupo_combinado === prenda.grupo_combinado && p.tipo_logo_id !== prenda.tipo_logo_id);
@@ -1124,3 +1113,4 @@ cargarTiposLogosDisponibles();
 document.addEventListener('DOMContentLoaded', function() {
     cargarTiposLogosDisponibles();
 });
+

@@ -15,7 +15,7 @@ class FormDataCollector {
         
         prendasCargadas.forEach((prenda, index) => {
             if (prendasEliminadas.has(index)) {
-                console.log(`Saltando prenda eliminada: ${index}`);
+
                 return;
             }
 
@@ -68,7 +68,7 @@ class FormDataCollector {
 
         if (currentLogoCotizacion && Object.keys(currentLogoCotizacion).length > 0) {
             // Desde cotización
-            console.log(' Usando datos de currentLogoCotizacion');
+
             
             // Técnicas
             if (currentLogoCotizacion.tecnicas) {
@@ -105,7 +105,7 @@ class FormDataCollector {
             
         } else {
             // Desde formulario DOM
-            console.log(' Leyendo datos del DOM');
+
             
             // Técnicas
             tecnicas = this.obtenerTecnicasDelDOM();
@@ -155,10 +155,10 @@ class FormDataCollector {
         if (tecnicasHiddenField && tecnicasHiddenField.value) {
             try {
                 tecnicas = JSON.parse(tecnicasHiddenField.value);
-                console.log(' Técnicas desde hidden:', tecnicas);
+
                 return tecnicas;
             } catch (e) {
-                console.warn(' Error parseando técnicas:', e);
+
             }
         }
         
@@ -169,7 +169,7 @@ class FormDataCollector {
             if (tecnicaText) tecnicas.push(tecnicaText);
         });
         
-        console.log(' Técnicas desde badges:', tecnicas);
+
         return tecnicas;
     }
 
@@ -195,10 +195,10 @@ class FormDataCollector {
                         cantidad: cantidadTotal
                     };
                 });
-                console.log(' Secciones desde hidden:', secciones);
+
                 return secciones;
             } catch (e) {
-                console.warn(' Error parseando secciones:', e);
+
             }
         }
         
@@ -239,7 +239,7 @@ class FormDataCollector {
             }
         });
         
-        console.log(' Secciones desde cards:', secciones);
+
         return secciones;
     }
 

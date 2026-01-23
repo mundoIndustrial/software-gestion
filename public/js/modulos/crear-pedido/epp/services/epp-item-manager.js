@@ -14,7 +14,7 @@ class EppItemManager {
     crearItem(id, nombre, codigo, categoria, cantidad, observaciones, imagenes = []) {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
-            console.error('[EppItemManager] Lista de items no encontrada');
+
             return;
         }
 
@@ -75,7 +75,7 @@ class EppItemManager {
         itemElement.innerHTML = itemHTML;
         listaItems.appendChild(itemElement.firstElementChild);
 
-        console.log('[EppItemManager] Item creado:', id);
+
     }
 
     /**
@@ -85,7 +85,7 @@ class EppItemManager {
         const item = document.querySelector(`.item-epp[data-item-id="${id}"]`);
         if (item) {
             item.remove();
-            console.log('[EppItemManager] Item eliminado:', id);
+
         }
     }
 
@@ -108,7 +108,7 @@ class EppItemManager {
         if (detalles[1]) detalles[1].textContent = datos.cantidad;
         if (detalles[3]) detalles[3].textContent = datos.observaciones || 'N/A';
 
-        console.log('[EppItemManager] Item actualizado:', id);
+
     }
 
     /**

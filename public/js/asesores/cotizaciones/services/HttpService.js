@@ -125,12 +125,6 @@ class HttpService {
 
             // Validar que la respuesta sea correcta
             if (!response.ok) {
-                console.error(' Error del servidor:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    data: responseData
-                });
-                
                 // Retornar objeto de error con detalles del servidor
                 return {
                     success: false,
@@ -142,7 +136,7 @@ class HttpService {
 
             return responseData.success !== undefined ? responseData : { success: true, ...responseData };
         } catch (error) {
-            console.error(' Error en HttpService:', error);
+
             return {
                 success: false,
                 message: error.message
@@ -172,3 +166,4 @@ class HttpService {
 
 // Crear instancia global
 const httpService = new HttpService();
+

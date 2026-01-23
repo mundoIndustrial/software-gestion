@@ -61,7 +61,7 @@ const UIModule = (() => {
     function getElement(selector) {
         const element = document.querySelector(selector);
         if (!element) {
-            console.warn(` Elemento no encontrado: ${selector}`);
+
             return null;
         }
         return element;
@@ -129,11 +129,11 @@ const UIModule = (() => {
      * Inicializar módulo de UI
      */
     function init() {
-        console.log(' Inicializando UIModule...');
+
         setupEventListeners();
         setupMenuFlotante();
         setupModal();
-        console.log(' UIModule inicializado');
+
     }
 
     /**

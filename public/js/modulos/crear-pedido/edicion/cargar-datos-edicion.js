@@ -36,17 +36,17 @@ if (document.readyState === 'loading') {
 }
 
 function iniciarCargaEdicion() {
-    console.log('[EDICIÓN] Inicializando modo de edición...');
-    console.log('[EDICIÓN] window.modoEdicion:', window.modoEdicion);
-    console.log('[EDICIÓN] window.pedidoEdicionData:', window.pedidoEdicionData ? 'disponible' : 'NO disponible');
+
+
+
     
     if (!window.modoEdicion || !window.pedidoEdicionData) {
-        console.log('[EDICIÓN] No en modo edición, saltando carga de datos');
+
         ocultarLoadingOverlay();
         return;
     }
 
-    console.log('[EDICIÓN] ✓ Modo edición detectado, esperando módulos...');
+
     // Esperar a que se carguen todos los módulos necesarios
     esperarModulosYCargar();
 }
@@ -62,17 +62,12 @@ function esperarModulosYCargar(intentos = 0) {
     const tieneModoCargado = window.modoEdicion && window.pedidoEdicionData;
 
     if (tieneModoCargado && datosEdicionCargados === false) {
-        console.log('[EDICIÓN]  Datos disponibles, cargando...', {
-            tieneGestor,
-            tieneRenderizador,
-            intentos
-        });
         cargarDatosEdicion();
         datosEdicionCargados = true;
     } else if (intentos < 50) {
         setTimeout(() => esperarModulosYCargar(intentos + 1), 200);
     } else {
-        console.warn('[EDICIÓN]  Timeout esperando módulos. Cargando con módulos disponibles...');
+
         cargarDatosEdicion();
         datosEdicionCargados = true;
     }
@@ -80,12 +75,12 @@ function esperarModulosYCargar(intentos = 0) {
 
 function cargarDatosEdicion() {
     try {
-        console.log('[EDICIÓN] 🔄 Cargando datos del pedido para edición');
+
         
         const datos = window.pedidoEdicionData;
         
         if (!datos) {
-            console.warn('[EDICIÓN] No hay datos disponibles');
+
             ocultarLoadingOverlay();
             return;
         }
@@ -101,26 +96,26 @@ function cargarDatosEdicion() {
 
         // 2. Cargar prendas si existen
         if (datos.pedido && datos.pedido.prendas && datos.pedido.prendas.length > 0) {
-            console.log('[EDICIÓN]  Encontradas', datos.pedido.prendas.length, 'prendas');
+
             cargarPrendas(datos.pedido.prendas);
         }
 
         // 3. Actualizar título
         actualizarTituloPagina(datos);
 
-        console.log('[EDICIÓN]  Datos cargados correctamente');
+
         
         // Ocultar overlay después de un pequeño delay para que se vea la transición
         setTimeout(() => ocultarLoadingOverlay(), 300);
 
     } catch (error) {
-        console.error('[EDICIÓN]  Error cargando datos:', error);
+
         ocultarLoadingOverlay();
     }
 }
 
 function cargarInformacionGeneral(datos) {
-    console.log('[EDICIÓN]  Cargando información general...');
+
     
     try {
         const pedido = datos.pedido;
@@ -151,21 +146,21 @@ function cargarInformacionGeneral(datos) {
             if (elemento) {
                 elemento.value = valor;
                 elemento.dispatchEvent(new Event('change', { bubbles: true }));
-                console.log(`[EDICIÓN] ✓ ${nombre}: ${valor}`);
+
             }
         });
 
     } catch (error) {
-        console.error('[EDICIÓN]  Error cargando información general:', error);
+
     }
 }
 
 function cargarPrendas(prendas) {
-    console.log('[EDICIÓN]  Cargando', prendas.length, 'prendas...');
+
     
     // Asegurar que el gestor está inicializado
     if (!window.gestorPrendaSinCotizacion) {
-        console.log('[EDICIÓN]  Inicializando gestor de prendas...');
+
         if (typeof window.inicializarGestorSinCotizacion === 'function') {
             window.inicializarGestorSinCotizacion();
         } else {
@@ -175,7 +170,7 @@ function cargarPrendas(prendas) {
 
     prendas.forEach((prenda, index) => {
         try {
-            console.log(`[EDICIÓN] 📌 Agregando prenda ${index + 1}:`, prenda.nombre_prenda || 'Sin nombre');
+
             
             // Agregar la prenda al gestor
             const prendasIndex = window.gestorPrendaSinCotizacion.agregarPrenda({
@@ -201,24 +196,24 @@ function cargarPrendas(prendas) {
                 variaciones: prenda.variaciones || {},
             });
 
-            console.log(`[EDICIÓN] ✓ Prenda ${index + 1} agregada al gestor (índice: ${prendasIndex})`);
+
 
         } catch (error) {
-            console.error(`[EDICIÓN]  Error procesando prenda ${index + 1}:`, error);
+
         }
     });
 
     // Renderizar todas las prendas
     if (typeof window.renderizarPrendasSinCotizacion === 'function') {
-        console.log('[EDICIÓN]  Renderizando prendas en la interfaz...');
+
         window.renderizarPrendasSinCotizacion();
-        console.log('[EDICIÓN]  Prendas renderizadas');
+
     } else if (typeof renderizarPrendasSinCotizacion === 'function') {
-        console.log('[EDICIÓN]  Renderizando prendas (función global)...');
+
         renderizarPrendasSinCotizacion();
-        console.log('[EDICIÓN]  Prendas renderizadas');
+
     } else {
-        console.warn('[EDICIÓN]  Función renderizarPrendasSinCotizacion no disponible');
+
     }
 }
 
@@ -234,7 +229,7 @@ function actualizarTituloPagina(datos) {
     
     if (pageTitle) {
         pageTitle.textContent = titulo;
-        console.log('[EDICIÓN] ✓ Título actualizado:', titulo);
+
     }
 }
 
@@ -267,5 +262,6 @@ function ocultarLoadingOverlay() {
     }
 }
 
-console.log(' [EDICIÓN] Módulo de edición cargado y listo');
+
+
 

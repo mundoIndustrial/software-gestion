@@ -44,7 +44,7 @@ window.filtrarDatos = async function() {
         updateCharts(costuraData, corteData);
         updateStats(costuraData, corteData);
     } catch (error) {
-        console.error('Error al filtrar datos:', error);
+
     }
 }
 
@@ -248,30 +248,30 @@ function updateStats(costuraData = [], corteData = []) {
 // Configurar listeners de tiempo real
 function setupRealtimeListeners() {
     if (!globalThis.Echo) {
-        console.warn(' Laravel Echo no está disponible. Las actualizaciones en tiempo real no funcionarán.');
+
         return;
     }
 
-    console.log(' Echo disponible. Suscribiendo al canal "entregas.' + TIPO + '"...');
+
 
     const channel = globalThis.Echo.channel(`entregas.${TIPO}`);
     
     channel.subscribed(() => {
-        console.log(' Suscrito al canal "entregas.' + TIPO + '"');
+
     });
 
     channel.error((error) => {
-        console.error(' Error en canal "entregas.' + TIPO + '":', error);
+
     });
     
     channel.listen('EntregaRegistrada', (data) => {
-        console.log('🎉 Evento EntregaRegistrada recibido!', data);
+
         
         const fechaActual = document.getElementById('fechaFilter').value;
         
         // Solo actualizar si la fecha coincide con el filtro actual
         if (data.fecha === fechaActual) {
-            console.log(' Fecha coincide, actualizando vista...');
+
             
             // Recargar datos de forma automática
             window.filtrarDatos();
@@ -279,12 +279,12 @@ function setupRealtimeListeners() {
             // Mostrar notificación visual
             mostrarNotificacion(data);
         } else {
-            console.log(' Fecha no coincide. Filtro actual:', fechaActual, 'Entrega:', data.fecha);
+
         }
     });
 
     channel.listen('EntregaEliminada', (data) => {
-        console.log('🗑️ Evento EntregaEliminada recibido!', data);
+
         
         // Recargar datos de forma automática
         window.filtrarDatos();
@@ -293,7 +293,7 @@ function setupRealtimeListeners() {
         mostrarNotificacionEliminada(data);
     });
 
-    console.log(' Listener de entregas configurado');
+
 }
 
 // Mostrar notificación de nueva entrega
@@ -471,7 +471,7 @@ async function saveCell(newValue) {
             cancelEdit();
         }
     } catch (error) {
-        console.error('Error saving cell:', error);
+
         alert('Error al guardar el cambio');
         cancelEdit();
     }
@@ -509,7 +509,7 @@ window.deleteEntrega = async function(id, subtipo) {
             alert('Error al eliminar: ' + (data.message || 'Error desconocido'));
         }
     } catch (error) {
-        console.error('Error deleting entrega:', error);
+
         alert('Error al eliminar la entrega');
     }
 }

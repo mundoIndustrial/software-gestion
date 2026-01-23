@@ -93,7 +93,7 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
             document.getElementById('calculoCostosModal').style.display = 'flex';
         })
         .catch(error => {
-            console.error('Error:', error);
+
             alert('Error al cargar las prendas: ' + error.message);
         });
 }
@@ -166,7 +166,7 @@ function guardarCostosPrendaActual() {
             items: items
         };
         
-        console.log(`✓ Costos guardados en memoria para prenda ${prendaActualIndex}:`, items);
+
     } else {
         // Si no hay items, eliminar de la memoria
         delete costosTodasPrendas[prendaActualIndex];
@@ -223,7 +223,7 @@ function cargarCostosPrendaDesdeMemoria(prendaIndex) {
         });
         
         actualizarTotal();
-        console.log(`✓ Costos cargados desde memoria para prenda ${prendaIndex}`);
+
     }
 }
 
@@ -324,7 +324,7 @@ function cargarItemsGuardados(cotizacionId) {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.costos && data.costos.length > 0) {
-                console.log('Costos cargados desde BD:', data.costos);
+
                 
                 // Obtener todos los tabs de prendas
                 const prendasTabs = document.querySelectorAll('#prendasTabs button');
@@ -356,7 +356,7 @@ function cargarItemsGuardados(cotizacionId) {
                             items: items
                         };
                         
-                        console.log(`✓ Costos de BD cargados en memoria para prenda ${prendaIndex}:`, items);
+
                     }
                 });
                 
@@ -365,7 +365,7 @@ function cargarItemsGuardados(cotizacionId) {
             }
         })
         .catch(error => {
-            console.error('Error al cargar items guardados:', error);
+
         });
 }
 
@@ -405,7 +405,7 @@ function guardarCalculoCostos() {
     
     // Validar que haya al menos un item
     if (items.length === 0) {
-        console.warn('No hay items para guardar');
+
         Swal.fire({
             title: ' Sin Items',
             html: `
@@ -447,11 +447,11 @@ function guardarCalculoCostos() {
     // Guardar los costos de la prenda actual antes de enviar
     guardarCostosPrendaActual();
     
-    console.log('Costos de todas las prendas en memoria:', costosTodasPrendas);
+
     
     // Validar que haya costos para guardar
     if (Object.keys(costosTodasPrendas).length === 0) {
-        console.error('No hay costos para guardar - objeto vacío');
+
         Swal.fire({
             title: ' Sin Costos',
             html: `
@@ -486,7 +486,7 @@ function guardarCalculoCostos() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Costos guardados en BD:', costosTodasPrendas);
+
             
             // Mostrar modal de éxito
             Swal.fire({
@@ -535,7 +535,7 @@ function guardarCalculoCostos() {
         }
     })
     .catch(error => {
-        console.error('Error al guardar costos:', error);
+
         
         Swal.fire({
             title: ' Error de Conexión',

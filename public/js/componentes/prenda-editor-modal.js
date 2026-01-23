@@ -17,7 +17,7 @@ function abrirEditarPrendas() {
     }
     const datos = window.datosEdicionPedido;
     const prendas = datos.prendas || [];
-    console.log(' Abriendo lista de prendas:', prendas.length);
+
     
     // Guardar prendas en variable global para acceso desde onclick
     window.prendasEdicion = {
@@ -29,7 +29,7 @@ function abrirEditarPrendas() {
     
     if (prendas.length === 0) {
         // Mostrar botón para agregar prenda si la lista está vacía
-        console.log(' Sin prendas - mostrando botón para agregar');
+
         htmlListaPrendas += `
             <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px; border: 2px dashed #d1d5db;">
                 <p style="color: #6b7280; margin: 0 0 1rem 0;">No hay prendas agregadas aún</p>
@@ -43,7 +43,7 @@ function abrirEditarPrendas() {
         `;
     } else {
         // Mostrar lista de prendas
-        console.log(' Con prendas - mostrando lista');
+
         prendas.forEach((prenda, idx) => {
             const nombrePrenda = prenda.nombre_prenda || prenda.nombre || 'Prenda sin nombre';
             const cantTallas = prenda.tallas ? Object.keys(prenda.tallas).length : 0;
@@ -87,10 +87,10 @@ function abrirEditarPrendas() {
  * Usa modal dinámico para evitar conflictos CSS
  */
 function abrirEditarPrendaEspecifica(prendasIndex) {
-    console.log(' [PRENDA EDITOR] abrirEditarPrendaEspecifica() llamado con índice:', prendasIndex);
+
     
     if (!window.prendasEdicion) {
-        console.error(' window.prendasEdicion no existe');
+
         Swal.fire('Error', 'No hay datos de prendas disponibles', 'error');
         return;
     }
@@ -99,22 +99,22 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     const pedidoId = window.prendasEdicion.pedidoId;
     
     if (!prenda) {
-        console.error(' Prenda no encontrada en índice:', prendasIndex);
+
         Swal.fire('Error', 'Prenda no encontrada', 'error');
         return;
     }
     
-    console.log('  Editando prenda:', prenda);
-    console.log('  Estructura de prenda - claves disponibles:', Object.keys(prenda));
-    console.log('  prenda.telasAgregadas:', prenda.telasAgregadas);
-    console.log('  prenda.variantes:', prenda.variantes);
+
+
+
+
     
     //  USAR MODAL DINÁMICO (sin conflictos CSS)
     if (window.modalPrendaDinamico) {
-        console.log(' Abriendo modal dinámico...');
+
         window.modalPrendaDinamico.abrir();
     } else {
-        console.error(' Modal dinámico no disponible');
+
         Swal.fire('Error', 'Modal no disponible', 'error');
         return;
     }
@@ -122,7 +122,7 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     // Preparar datos en formato compatible con el modal
     // IMPORTANTE: Usar telasAgregadas que viene del backend con estructura correcta
     const telasAgregadas = prenda.telasAgregadas || [];
-    console.log('  Telas agregadas finales:', telasAgregadas);
+
     
     // Mapear variantes del nuevo endpoint a formato esperado por el frontend
     // Manejar tanto estructuras de array como de objeto
@@ -187,10 +187,10 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
         tiene_reflectivo: prenda.tiene_reflectivo || false
     };
     
-    console.log('  prendaParaEditar preparada:', prendaParaEditar);
-    console.log('  prendaParaEditar.nombre_prenda:', prendaParaEditar.nombre_prenda);
-    console.log('  prendaParaEditar.imagenes:', prendaParaEditar.imagenes);
-    console.log('  prendaParaEditar.telasAgregadas:', prendaParaEditar.telasAgregadas);
+
+
+
+
     
     // Guardar datos de edición en global
     window.prendaEnEdicion = {
@@ -200,14 +200,14 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     };
     
     // ESTRATEGIA 1: Usar GestionItemsUI si existe (mejor opción - misma apariencia que crear-nuevo)
-    console.log(' Buscando GestionItemsUI para usar igual modal que en crear-nuevo...');
+
     if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
-        console.log(' GestionItemsUI ENCONTRADO - Usando para abrir modal igual a crear-nuevo');
+
         
         // Mover el modal al body para evitar que se vea clipeado
         const modal = document.getElementById('modal-agregar-prenda-nueva');
         if (modal && modal.parentElement !== document.body) {
-            console.log('🔄 Moviendo modal al body para mejor visualización...');
+
             document.body.appendChild(modal);
         }
         
@@ -219,26 +219,26 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
         
         // Cargar datos en el modal
         if (typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
-            console.log(' Cargando datos en modal con GestionItemsUI');
+
             window.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
         }
         
-        console.log(' Modal abierto usando GestionItemsUI - Se ve igual a crear-nuevo');
+
         return;
     }
     
-    console.warn(' GestionItemsUI no disponible, intentando fallback manual');
-    console.log('🔄 Abriendo modal con método manual...');
+
+
     
     // ESTRATEGIA 2: Fallback manual si GestionItemsUI no está disponible
     const modal = window.obtenerModalPrendaNueva();
     if (!modal) {
-        console.error(' No se pudo encontrar el modal de crear prendas');
+
         Swal.fire('Error', 'No se pudo abrir el modal de edición. Por favor, intenta nuevamente.', 'error');
         return;
     }
     
-    console.log(' Modal encontrado, abriendo...');
+
     
     // PASO 1: Limpiar formulario
     limpiarFormularioPrendaNueva();
@@ -260,7 +260,7 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     modal.style.justifyContent = 'center';
     modal.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     
-    console.log(' Modal abierto manualmente');
+
 }
 
 function abrirEditarProcesoEspecifico(prendasIndex, procesoIndex) {
@@ -277,7 +277,7 @@ function abrirEditarProcesoEspecifico(prendasIndex, procesoIndex) {
         return;
     }
     
-    console.log(' Editando proceso:', proceso);
+
     
     const tipoProc = proceso.nombre || proceso.nombre_proceso || proceso.descripcion || proceso.tipo_proceso || `Proceso ${procesoIndex + 1}`;
     
@@ -354,7 +354,7 @@ function abrirEditarProcesoEspecifico(prendasIndex, procesoIndex) {
                 imagenesActualizadas: imagenesActualizadas
             };
             
-            console.log(' Guardando cambios de proceso:', cambiosProceso);
+
             Swal.fire('', ' Proceso actualizado correctamente', 'success');
         }
     });
@@ -395,7 +395,7 @@ function cerrarModalPrendaNueva() {
     if (window.modalPrendaDinamico) {
         window.modalPrendaDinamico.cerrar();
     } else {
-        console.error(' Modal dinámico no disponible');
+
     }
 }
 
@@ -444,20 +444,20 @@ window.obtenerModalPrendaNueva = function() {
     // Buscar en document actual
     let modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
-        console.log(' Modal encontrado en document.getElementById()');
+
         return modal;
     }
     
-    console.log(' Modal no encontrado en document actual, buscando en otros contextos...');
+
     
     // Buscar en iframes
     const iframes = document.querySelectorAll('iframe');
-    console.log(` Buscando en ${iframes.length} iframes...`);
+
     for (let iframe of iframes) {
         try {
             modal = iframe.contentDocument?.getElementById('modal-agregar-prenda-nueva');
             if (modal) {
-                console.log(' Modal encontrado en iframe');
+
                 return modal;
             }
         } catch (e) {
@@ -470,7 +470,7 @@ window.obtenerModalPrendaNueva = function() {
         try {
             modal = window.parent.document.getElementById('modal-agregar-prenda-nueva');
             if (modal) {
-                console.log(' Modal encontrado en parent window');
+
                 return modal;
             }
         } catch (e) {
@@ -478,13 +478,13 @@ window.obtenerModalPrendaNueva = function() {
         }
     }
     
-    console.log(' Modal NO encontrado en ningún contexto');
-    console.log(' Elementos disponibles en el documento:');
-    console.log('   - Total de divs:', document.querySelectorAll('div').length);
+
+
+
     const modalsEnDOM = Array.from(document.querySelectorAll('[id*="modal"]')).map(el => el.id);
-    console.log('   - IDs que contienen "modal":', modalsEnDOM);
+
     if (modalsEnDOM.length === 0) {
-        console.warn(' NO HAY NINGUN MODAL EN EL DOM - El archivo blade probablemente no fue incluido');
+
     }
     
     return null;
@@ -553,7 +553,7 @@ function cargarPrendaEnFormularioModal(prendaData) {
     if (descripcionField) descripcionField.value = prendaData.descripcion || '';
     if (origenSelect) origenSelect.value = prendaData.origen || 'bodega';
     
-    console.log(' Datos básicos de prenda cargados en formulario');
+
     
     // Cargar imágenes de prenda si existen
     if (prendaData.imagenes && prendaData.imagenes.length > 0) {
@@ -601,4 +601,4 @@ function cargarPrendaEnFormularioModal(prendaData) {
     }
 }
 
-console.log(' [PRENDA EDITOR] prenda-editor-modal.js cargado correctamente');
+

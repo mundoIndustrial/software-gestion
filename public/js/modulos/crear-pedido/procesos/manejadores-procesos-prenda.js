@@ -31,7 +31,7 @@ const procesosNombres = {
  * @param {boolean} estaChecked - si el checkbox está marcado
  */
 window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
-    console.log(` manejarCheckboxProceso(${tipoProceso}, ${estaChecked})`);
+
     
     if (estaChecked) {
         // Registrar el proceso
@@ -42,7 +42,7 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
             };
             //  CRÍTICO: Sincronizar con window inmediatamente
             window.procesosSeleccionados[tipoProceso] = procesosSeleccionados[tipoProceso];
-            console.log(` Proceso ${tipoProceso} registrado y sincronizado con window`);
+
         }
         
         // Actualizar resumen visual
@@ -50,10 +50,10 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
         
         // Abrir modal para capturar detalles del proceso
         window.abrirModalProcesoGenerico(tipoProceso);
-        console.log(` Modal abierto para ${tipoProceso}`);
+
     } else {
         // Usuario desmarcó el checkbox
-        console.log(` Removiendo proceso ${tipoProceso}`);
+
         delete procesosSeleccionados[tipoProceso];
         delete window.procesosSeleccionados[tipoProceso];
         actualizarResumenProcesos();
@@ -100,7 +100,7 @@ window.obtenerProcesosConfigurables = function() {
  * Limpia todos los procesos seleccionados
  */
 window.limpiarProcesosSeleccionados = function() {
-    console.log('🧹 [PROCESOS] Limpiando procesos seleccionados');
+
     procesosSeleccionados = {};
     window.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con window
     
@@ -122,7 +122,7 @@ window.limpiarProcesosSeleccionados = function() {
     const seccionResumen = document.getElementById('seccion-procesos-resumen');
     if (seccionResumen) seccionResumen.style.display = 'none';
     
-    console.log(' [PROCESOS] Procesos limpiados completamente');
+
 };
 
-console.log(' Módulo manejadores-procesos-prenda.js cargado correctamente');
+

@@ -8,11 +8,11 @@ const tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '
  * Obtiene el género de la prenda seleccionada anteriormente
  */
 function actualizarSelectTallasSinCot(select) {
-    console.log('🔵 actualizarSelectTallasSinCot() llamado');
+
     
     const container = select.closest('.tipo-prenda-row');
     if (!container) {
-        console.warn(' No se encontró .tipo-prenda-row');
+
         return;
     }
     
@@ -26,31 +26,20 @@ function actualizarSelectTallasSinCot(select) {
     const prendaCard = container.closest('.prenda-card-editable');
     const generoSelect = prendaCard ? prendaCard.querySelector('.prenda-genero') : null;
     const generoSeleccionado = generoSelect ? generoSelect.value : '';
-    
-    console.log(' Tipo seleccionado:', tipo);
-    console.log(' Género de prenda seleccionado:', generoSeleccionado);
-    console.log(' Elementos encontrados:', {
-        tallaBotones: !!tallaBotones,
-        botonesDiv: !!botonesDiv,
-        modoSelect: !!modoSelect,
-        tallaRangoSelectors: !!tallaRangoSelectors,
-        generoSelect: !!generoSelect
-    });
-    
     // LIMPIAR COMPLETAMENTE TODO ANTES DE CAMBIAR
     // 1. Limpiar botones
     botonesDiv.innerHTML = '';
-    console.log(' botonesDiv limpiado');
+
     
     // 2. Ocultar todos los elementos
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
     modoSelect.style.display = 'none';
-    console.log(' tallaBotones, tallaRangoSelectors y modoSelect ocultados');
+
     
     // 3. Resetear modo
     modoSelect.value = '';
-    console.log(' modoSelect reseteado');
+
     
     // 4. Remover TODOS los event listeners anteriores
     if (modoSelect._handlerLetras) {
@@ -65,32 +54,32 @@ function actualizarSelectTallasSinCot(select) {
         modoSelect.removeEventListener('change', modoSelect._handler);
         modoSelect._handler = null;
     }
-    console.log(' Todos los event listeners del modoSelect removidos');
+
     
-    console.log(' LIMPIEZA COMPLETA FINALIZADA');
+
     
     if (tipo === 'letra') {
-        console.log(' Configurando LETRAS');
+
         
         // Mostrar selector de modo para LETRAS
         modoSelect.style.display = 'block';
         modoSelect.value = 'manual';
-        console.log(' modoSelect MOSTRADO para LETRAS');
+
         
         // Agregar event listener al modoSelect para LETRAS
         modoSelect._handlerLetras = function() {
-            console.log(' Modo cambiado para LETRAS:', this.value);
+
             actualizarModoLetrasSinCot(container, this.value);
         };
         modoSelect.addEventListener('change', modoSelect._handlerLetras);
-        console.log(' Event listener agregado a modoSelect para LETRAS');
+
         
         // Mostrar botones de talla directamente para LETRAS
         tallaBotones.style.display = 'block';
         tallaRangoSelectors.style.display = 'none';
         
         // Crear botones de LETRAS
-        console.log(' Creando botones de LETRAS');
+
         botonesDiv.innerHTML = '';
         tallasLetras.forEach(talla => {
             const btn = document.createElement('button');
@@ -114,21 +103,21 @@ function actualizarSelectTallasSinCot(select) {
             };
             botonesDiv.appendChild(btn);
         });
-        console.log(' Botones de LETRAS creados');
+
         
     } else if (tipo === 'numero') {
-        console.log('🔢 Configurando NÚMEROS');
+
         
         // Si ya hay género seleccionado en la prenda, usarlo directamente
         if (generoSeleccionado && (generoSeleccionado === 'Dama' || generoSeleccionado === 'Caballero')) {
-            console.log('🔢 Usando género preseleccionado de la prenda:', generoSeleccionado);
+
             const genero = generoSeleccionado === 'Dama' ? 'dama' : 'caballero';
             actualizarBotonesPorGeneroSinCot(container, genero);
         } else {
-            console.log('🔢 No hay género preseleccionado, esperando selección');
+
             // Mostrar selector de modo sin mostrar botones aún
             modoSelect.style.display = 'none';
-            console.warn(' Por favor selecciona un género en la prenda antes de elegir tallas');
+
         }
     }
 }
@@ -138,7 +127,7 @@ function actualizarSelectTallasSinCot(select) {
  * REPLICACIÓN EXACTA de actualizarBotonesPorGenero() de tallas.js
  */
 function actualizarBotonesPorGeneroSinCot(container, genero) {
-    console.log('🔢 Género seleccionado:', genero);
+
     
     const modoSelect = container.querySelector('.talla-modo-select');
     const tallaBotones = container.querySelector('.talla-botones');
@@ -163,7 +152,7 @@ function actualizarBotonesPorGeneroSinCot(container, genero) {
         }
         
         modoSelect._handlerNumeros = function() {
-            console.log('🔢 Modo cambiado para NÚMEROS:', this.value);
+
             actualizarModoNumerosSinCot(container, this.value);
         };
         modoSelect.addEventListener('change', modoSelect._handlerNumeros);
@@ -180,7 +169,7 @@ function actualizarBotonesPorGeneroSinCot(container, genero) {
  * REPLICACIÓN EXACTA de actualizarModoLetras() de tallas.js
  */
 function actualizarModoLetrasSinCot(container, modo) {
-    console.log(' Modo LETRAS:', modo);
+
     const tallaBotones = container.querySelector('.talla-botones');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const botonesDiv = container.querySelector('.talla-botones-container');
@@ -252,7 +241,7 @@ function actualizarSelectoresRangoLetrasSinCot(container) {
  * REPLICACIÓN EXACTA de actualizarModoNumeros() pero para números
  */
 function actualizarModoNumerosSinCot(container, modo) {
-    console.log('🔢 Modo NÚMEROS:', modo);
+
     const tallaBotones = container.querySelector('.talla-botones');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const botonesDiv = container.querySelector('.talla-botones-container');
@@ -262,7 +251,7 @@ function actualizarModoNumerosSinCot(container, modo) {
     const generoSelect = prendaCard ? prendaCard.querySelector('.prenda-genero') : null;
     const genero = generoSelect ? (generoSelect.value === 'Dama' ? 'dama' : 'caballero') : '';
     
-    console.log('🔢 Género obtenido:', genero);
+
     
     botonesDiv.innerHTML = '';
     
@@ -308,17 +297,17 @@ function actualizarModoNumerosSinCot(container, modo) {
  * Actualiza selectores de rango para NÚMEROS
  */
 function actualizarSelectoresRangoNumerosSinCot(container, genero) {
-    console.log(' actualizarSelectoresRangoNumerosSinCot() llamado con género:', genero);
+
     
     const desdeSelect = container.querySelector('.talla-desde');
     const hastaSelect = container.querySelector('.talla-hasta');
     
     let tallas = [];
     if (genero === 'dama') {
-        console.log(' Usando tallas DAMA para rango');
+
         tallas = tallasDama;
     } else if (genero === 'caballero') {
-        console.log(' Usando tallas CABALLERO para rango');
+
         tallas = tallasCaballero;
     }
     
@@ -337,7 +326,7 @@ function actualizarSelectoresRangoNumerosSinCot(container, genero) {
         hastaSelect.appendChild(optHasta);
     });
     
-    console.log(' Rango actualizado con', tallas.length, 'tallas');
+
 }
 
 /**
@@ -470,7 +459,7 @@ function crearTagTallaSinCot(container, talla, prenda) {
     const prendaIndex = parseInt(prenda.getAttribute('data-prenda-index') || -1);
     if (prendaIndex >= 0 && window.gestorPrendaSinCotizacion) {
         window.gestorPrendaSinCotizacion.agregarTalla(prendaIndex, talla);
-        console.log(' Talla sincronizada con gestor:', talla, 'Prenda:', prendaIndex);
+
     }
     
     actualizarTallasHiddenSinCot(prenda);
@@ -490,7 +479,7 @@ function actualizarTallasHiddenSinCot(container) {
     const tallas = Array.from(tags).map(tag => tag.dataset.talla);
     
     hiddenInput.value = JSON.stringify(tallas);
-    console.log(' Tallas actualizadas:', tallas);
+
 }
 
 /**
@@ -504,14 +493,14 @@ function eliminarTallaDeLaTablaSinCot(talla, container) {
     
     if (tag) {
         tag.remove();
-        console.log('🗑️ Tag de talla eliminado:', talla);
+
     }
     
     // 2. Sincronizar eliminación con el gestor de prendas
     const prendaIndex = parseInt(container.getAttribute('data-prenda-index') || -1);
     if (prendaIndex >= 0 && window.gestorPrendaSinCotizacion) {
         window.gestorPrendaSinCotizacion.eliminarTalla(prendaIndex, talla);
-        console.log('🗑️ Talla eliminada del gestor:', talla, 'Prenda:', prendaIndex);
+
     }
     
     // 3. Actualizar inputs hidden
@@ -542,7 +531,7 @@ function crearOActualizarTablaCantidadesSinCot(container, prendaIndex) {
     // Buscar o crear contenedor de tabla dentro de tallas-section
     const tallasSection = container.querySelector('.tallas-section');
     if (!tallasSection) {
-        console.warn(' No se encontró .tallas-section');
+
         return;
     }
     
@@ -608,7 +597,7 @@ function crearOActualizarTablaCantidadesSinCot(container, prendaIndex) {
             const talla = e.target.dataset.talla;
             const cantidad = parseInt(e.target.value) || 0;
             window.gestorPrendaSinCotizacion.actualizarCantidadTalla(index, talla, cantidad);
-            console.log(` Cantidad actualizada - Prenda: ${index}, Talla: ${talla}, Cantidad: ${cantidad}`);
+
         });
         
         input.addEventListener('input', (e) => {
@@ -619,5 +608,6 @@ function crearOActualizarTablaCantidadesSinCot(container, prendaIndex) {
         });
     });
     
-    console.log(' Tabla de cantidades actualizada');
+
 }
+

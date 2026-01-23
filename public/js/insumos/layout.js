@@ -1,4 +1,4 @@
-﻿// ========================================
+// ========================================
 // SIDEBAR TOGGLE
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle sidebar en desktop
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
-            // En m+�viles, solo cerrar el sidebar sin colapso
+            // En m+?viles, solo cerrar el sidebar sin colapso
             if (window.innerWidth <= 480) {
                 sidebar.classList.remove('show');
                 document.body.classList.remove('sidebar-open');
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle sidebar en mobile
     if (mobileToggle) {
         mobileToggle.addEventListener('click', function() {
-            // En m+�viles, NO usar collapsed, solo show
+            // En m+?viles, NO usar collapsed, solo show
             if (window.innerWidth <= 480) {
                 sidebar.classList.toggle('show');
                 document.body.classList.toggle('sidebar-open');
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             userMenu.classList.toggle('show');
             
-            // Cerrar notificaciones si est+�n abiertas
+            // Cerrar notificaciones si est+?n abiertas
             const notificationMenu = document.getElementById('notificationMenu');
             if (notificationMenu) {
                 notificationMenu.classList.remove('show');
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             notificationMenu.classList.toggle('show');
             
-            // Cerrar men+� de usuario si est+� abierto
+            // Cerrar men+? de usuario si est+? abierto
             const userMenu = document.getElementById('userMenu');
             if (userMenu) {
                 userMenu.classList.remove('show');
@@ -192,7 +192,7 @@ async function _parseResponseData(response) {
     if (contentType && contentType.includes('application/json')) {
         return await response.json();
     }
-    throw new Error('Respuesta no es JSON válida');
+    throw new Error('Respuesta no es JSON v�lida');
 }
 
 /**
@@ -228,7 +228,7 @@ window.fetchAPI = async function(url, options = {}) {
         const response = await fetch(url, mergedOptions);
         return await _handleFetchResponse(response);
     } catch (error) {
-        console.error('Error en fetchAPI:', error);
+
         throw error;
     }
 };
@@ -274,7 +274,7 @@ window.showToast = function(message, type = 'success') {
     
     toastContainer.appendChild(toast);
     
-    // Remover despu+�s de 3 segundos
+    // Remover despu+?s de 3 segundos
     setTimeout(() => {
         toast.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => toast.remove(), 300);
@@ -293,18 +293,18 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log('?? Click en Ver Orden');
+
         
         // Obtener datos de la orden
         const ordenJSON = btn.getAttribute('data-orden');
         if (!ordenJSON) {
-            console.error('? No hay datos de orden en el bot�n');
+
             return;
         }
         
         try {
             const orden = JSON.parse(ordenJSON);
-            console.log('?? Orden:', orden);
+
             
             // Llenar datos del modal
             llenarModalOrden(orden);
@@ -314,14 +314,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.dispatchEvent(new CustomEvent('open-modal', {
                     detail: 'order-detail'
                 }));
-                console.log('? Modal abierto');
+
             }, 100);
         } catch (error) {
-            console.error('? Error al parsear orden:', error);
+
         }
     });
     
-    // Funci�n para llenar el modal con datos de la orden
+    // Funci?n para llenar el modal con datos de la orden
     window.llenarModalOrden = function(orden) {
         try {
             // Llenar campos del modal
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (cliente) cliente.textContent = orden.cliente || 'Sin cliente';
             
             const descripcion = document.querySelector('#descripcion-text');
-            if (descripcion) descripcion.textContent = orden.descripcion || 'Sin descripci�n';
+            if (descripcion) descripcion.textContent = orden.descripcion || 'Sin descripci?n';
             
             const asesora = document.querySelector('#asesora-value');
             if (asesora) asesora.textContent = orden.asesora || 'Sin asesora';
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (prendas) prendas.textContent = orden.prendas_entregadas || '0';
             
             const pedido = document.querySelector('#order-pedido');
-            if (pedido) pedido.textContent = orden.pedido || 'Sin c�digo';
+            if (pedido) pedido.textContent = orden.pedido || 'Sin c?digo';
             
             // Llenar fecha
             if (orden.fecha_de_creacion_de_orden) {
@@ -358,9 +358,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (year) year.textContent = fecha.getFullYear();
             }
             
-            console.log('? Modal llenado correctamente');
+
         } catch (error) {
-            console.error('? Error al llenar modal:', error);
+
         }
     };
 });
