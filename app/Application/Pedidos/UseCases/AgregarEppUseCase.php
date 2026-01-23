@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarEppDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PedidoProduccion;
 
 /**
@@ -12,9 +13,15 @@ use App\Models\PedidoProduccion;
  */
 final class AgregarEppUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function execute(AgregarEppDTO $dto)
     {
-        $pedido = PedidoProduccion::findOrFail($dto->pedidoId);
+        $pedido = $this->validarObjetoExiste(
+            PedidoProduccion::find($dto->pedidoId),
+            'Pedido',
+            $dto->pedidoId
+        );
 
         return $pedido->epps()->create([
             'epp_id' => $dto->eppId,

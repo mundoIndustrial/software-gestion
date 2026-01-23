@@ -48,8 +48,8 @@ abstract class AbstractObtenerUseCase
         // 3. PASO PERSONALIZABLE: Enriquecer pedido
         $datosEnriquecidos = $this->enriquecerPedido($pedido, $opciones);
 
-        // 4. PASO PERSONALIZABLE: Construir respuesta
-        return $this->construirRespuesta($datosEnriquecidos);
+        // 4. PASO PERSONALIZABLE: Construir respuesta (pasando también el modelo original)
+        return $this->construirRespuesta($datosEnriquecidos, $pedido);
     }
 
     /**
@@ -57,7 +57,7 @@ abstract class AbstractObtenerUseCase
      */
     private function obtenerPedidoValidado(int $pedidoId)
     {
-        $pedido = $this->pedidoRepository->porId($pedidoId);
+        $pedido = $this->pedidoRepository->obtenerPorId($pedidoId);
 
         if (!$pedido) {
             throw new \DomainException("Pedido $pedidoId no encontrado", 404);
@@ -87,30 +87,30 @@ abstract class AbstractObtenerUseCase
     protected function enriquecerPedido($pedido, array $opciones): array
     {
         $datos = [
-            'id' => $pedido->id(),
-            'numero' => (string)$pedido->numero(),
-            'clienteId' => $pedido->clienteId(),
-            'estado' => $pedido->estado()->valor() ?? 'desconocido',
-            'descripcion' => $pedido->descripcion(),
-            'totalPrendas' => $pedido->totalPrendas() ?? 0,
-            'totalArticulos' => $pedido->totalArticulos() ?? 0,
+            'id' => $pedido->id,
+            'numero' => (string)$pedido->numero,
+            'clienteId' => $pedido->cliente_id,
+            'estado' => $pedido->estado ?? 'desconocido',
+            'descripcion' => (string)($pedido->descripcion ?? ''),
+            'totalPrendas' => $pedido->total_prendas ?? 0,
+            'totalArticulos' => $pedido->total_articulos ?? 0,
         ];
 
         // Enriquecimiento condicional - Solo si se especifica
         if ($opciones['incluirPrendas'] ?? false) {
-            $datos['prendas'] = $this->obtenerPrendas($pedido->id());
+            $datos['prendas'] = $this->obtenerPrendas($pedido->id);
         }
 
         if ($opciones['incluirEpps'] ?? false) {
-            $datos['epps'] = $this->obtenerEpps($pedido->id());
+            $datos['epps'] = $this->obtenerEpps($pedido->id);
         }
 
         if ($opciones['incluirProcesos'] ?? false) {
-            $datos['procesos'] = $this->obtenerProcesos($pedido->id());
+            $datos['procesos'] = $this->obtenerProcesos($pedido->id);
         }
 
         if ($opciones['incluirImagenes'] ?? false) {
-            $datos['imagenes'] = $this->obtenerImagenes($pedido->id());
+            $datos['imagenes'] = $this->obtenerImagenes($pedido->id);
         }
 
         return $datos;
@@ -120,22 +120,24 @@ abstract class AbstractObtenerUseCase
      * PASO 4 (PERSONALIZABLE): Construir estructura de respuesta
      * 
      * Subclases pueden retornar DTO, array, modelo, etc.
+     * Recibe tanto el array de datos enriquecidos como el modelo original
      */
-    abstract protected function construirRespuesta(array $datosEnriquecidos): mixed;
+    abstract protected function construirRespuesta(array $datosEnriquecidos, $pedido): mixed;
 
     /**
      * Obtener prendas del pedido con relaciones
      */
     protected function obtenerPrendas(int $pedidoId): array
     {
-        $prendas = \App\Models\PrendaPedido::where('numero_pedido', $pedidoId)
+        $prendas = \App\Models\PrendaPedido::where('pedido_produccion_id', $pedidoId)
             ->with([
                 'procesos' => function ($q) {
                     $q->orderBy('created_at', 'desc');
                 },
                 'tallas',
                 'variantes',
-                'coloresTelas'
+                'coloresTelas',
+                'fotos'
             ])
             ->get()
             ->toArray();
@@ -161,10 +163,10 @@ abstract class AbstractObtenerUseCase
      */
     protected function obtenerProcesos(int $pedidoId): array
     {
-        $procesos = \App\Models\PrendaPedidoProceso::whereHas('prenda', function ($q) use ($pedidoId) {
-            $q->where('numero_pedido', $pedidoId);
+        $procesos = \App\Models\PedidosProcesosPrendaDetalle::whereHas('prenda', function ($q) use ($pedidoId) {
+            $q->where('pedido_produccion_id', $pedidoId);
         })
-            ->with(['prenda', 'tipo'])
+            ->with(['prenda', 'tipoProceso', 'imagenes'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->toArray();
@@ -178,7 +180,7 @@ abstract class AbstractObtenerUseCase
     protected function obtenerImagenes(int $pedidoId): array
     {
         $imagenes = \App\Models\PrendaFotoPedido::whereHas('prenda', function ($q) use ($pedidoId) {
-            $q->where('numero_pedido', $pedidoId);
+            $q->where('pedido_produccion_id', $pedidoId);
         })
             ->get()
             ->toArray();

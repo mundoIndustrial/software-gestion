@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarColorTelaDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
 
 /**
@@ -12,9 +13,15 @@ use App\Models\PrendaPedido;
  */
 final class AgregarColorTelaUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function execute(AgregarColorTelaDTO $dto)
     {
-        $prenda = PrendaPedido::findOrFail($dto->prendaId);
+        $prenda = $this->validarObjetoExiste(
+            PrendaPedido::find($dto->prendaId),
+            'Prenda',
+            $dto->prendaId
+        );
 
         return $prenda->coloresTelas()->create([
             'color_id' => $dto->colorId,

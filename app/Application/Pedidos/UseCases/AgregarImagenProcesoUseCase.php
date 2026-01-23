@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarImagenProcesoDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\ProcesosPrendaDetalle;
 
 /**
@@ -12,9 +13,15 @@ use App\Models\ProcesosPrendaDetalle;
  */
 final class AgregarImagenProcesoUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function execute(AgregarImagenProcesoDTO $dto)
     {
-        $proceso = ProcesosPrendaDetalle::findOrFail($dto->procesoId);
+        $proceso = $this->validarObjetoExiste(
+            ProcesosPrendaDetalle::find($dto->procesoId),
+            'Proceso',
+            $dto->procesoId
+        );
 
         return $proceso->imagenes()->create([
             'ruta_original' => $dto->rutaOriginal,

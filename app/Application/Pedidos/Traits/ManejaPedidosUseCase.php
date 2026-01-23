@@ -53,9 +53,11 @@ trait ManejaPedidosUseCase
         }
 
         // Intentar obtener por ID o búsqueda personalizada
-        $pedido = method_exists($repo, 'porId')
-            ? $repo->porId($pedidoIdentificador)
-            : $repo->find($pedidoIdentificador);
+        $pedido = method_exists($repo, 'obtenerPorId')
+            ? $repo->obtenerPorId($pedidoIdentificador)
+            : (method_exists($repo, 'porId')
+                ? $repo->porId($pedidoIdentificador)
+                : $repo->find($pedidoIdentificador));
 
         if (!$pedido) {
             throw new \DomainException(

@@ -2,6 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\PedidoProduccion\Validators\PedidoJSONValidator;
 
 /**
@@ -13,11 +14,14 @@ use App\Domain\PedidoProduccion\Validators\PedidoJSONValidator;
  */
 class ValidarPedidoDesdeJSONUseCase
 {
+    use ManejaPedidosUseCase;
+
     /**
      * Ejecutar caso de uso
      */
     public function ejecutar(array $datos): array
     {
+        $this->validarNoVacio($datos, 'Datos JSON del pedido');
         return PedidoJSONValidator::validar($datos);
     }
 }

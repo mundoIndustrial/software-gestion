@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarImagenEppDTO;
+use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PedidoEpp;
 
 /**
@@ -12,9 +13,15 @@ use App\Models\PedidoEpp;
  */
 final class AgregarImagenEppUseCase
 {
+    use ManejaPedidosUseCase;
+
     public function execute(AgregarImagenEppDTO $dto)
     {
-        $epp = PedidoEpp::findOrFail($dto->eppId);
+        $epp = $this->validarObjetoExiste(
+            PedidoEpp::find($dto->eppId),
+            'EPP',
+            $dto->eppId
+        );
 
         return $epp->imagenes()->create([
             'ruta_original' => $dto->rutaOriginal,

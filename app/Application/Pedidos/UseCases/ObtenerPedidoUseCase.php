@@ -43,9 +43,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     /**
      * Personalización: Construir respuesta DTO con lógica de enriquecimiento compleja
      */
-    protected function construirRespuesta(array $datosEnriquecidos): mixed
+    protected function construirRespuesta(array $datosEnriquecidos, $modeloPedido): mixed
     {
-        $modeloPedido = PedidoProduccion::find($datosEnriquecidos['id']);
         $prendasCompletas = $this->obtenerPrendasCompletas($modeloPedido);
         $eppsCompletos = $this->obtenerEppsCompletos($modeloPedido);
 
