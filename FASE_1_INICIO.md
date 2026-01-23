@@ -1,4 +1,4 @@
-# 🚀 FASE 1 – DOMINIO: GUÍA DE IMPLEMENTACIÓN
+# FASE 1 – DOMINIO: GUÍA DE IMPLEMENTACIÓN
 
 **Status:** Próxima a comenzar  
 **Objetivo:** Completar implementación del dominio con persistencia en tests  

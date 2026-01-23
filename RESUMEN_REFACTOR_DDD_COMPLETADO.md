@@ -171,7 +171,7 @@
 
 ---
 
-## 🚀 PRÓXIMOS PASOS (OPCIONALES)
+## PRÓXIMOS PASOS (OPCIONALES)
 
 Si quieres continuar mejorando:
 

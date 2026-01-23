@@ -23,7 +23,7 @@ fetch('/api/pedidos', ...)
 
 ---
 
-## 🚀 INICIO RÁPIDO
+## INICIO RÁPIDO
 
 ### PASO 1: Leer Guía (30 min)
 ```bash
@@ -329,7 +329,7 @@ Crea un archivo llamado `FASE2_PROGRESO.md`:
 
 ---
 
-## 🚀 PRÓXIMA FASE
+## PRÓXIMA FASE
 
 Cuando Fase 2 esté lista:
 - Notificar al team

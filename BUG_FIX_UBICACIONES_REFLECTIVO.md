@@ -151,7 +151,7 @@ SELECT ubicaciones FROM prenda_cot_reflectivo WHERE cotizacion_id = 4;
 
 ---
 
-## 🚀 CÓMO PROBAR
+## CÓMO PROBAR
 
 1. **Abre DevTools:** F12 > Console
 2. **Crea cotización combinada (PL)**

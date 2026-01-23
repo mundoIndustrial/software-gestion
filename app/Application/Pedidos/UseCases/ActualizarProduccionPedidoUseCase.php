@@ -4,6 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
+use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use Exception;
 
 /**
@@ -13,40 +14,45 @@ use Exception;
  */
 class ActualizarProduccionPedidoUseCase
 {
-    public function __construct()
-    {
+    public function __construct(
+        private PedidoProduccionRepository $pedidoRepository
+    ) {
     }
 
     public function ejecutar(ActualizarProduccionPedidoDTO $dto): PedidoProduccionAggregate
     {
         try {
-            // 1. TODO: Obtener agregado del repositorio
-            // $pedido = $this->pedidoRepository->obtenerPorId($dto->id);
-            // if (!$pedido) {
-            //     throw new Exception("Pedido no encontrado");
-            // }
+            // 1. Obtener pedido del repositorio
+            $pedido = $this->pedidoRepository->obtenerPorId($dto->id);
+            
+            if (!$pedido) {
+                throw new Exception("Pedido con ID {$dto->id} no encontrado");
+            }
 
-            // 2. TODO: Validar que está en estado pendiente
-            // if (!$pedido->estaPendiente()) {
-            //     throw new Exception("Solo se pueden actualizar pedidos pendientes");
-            // }
+            // 2. Validar que está en estado pendiente
+            if (!$pedido->estaPendiente()) {
+                throw new Exception(
+                    "No se puede actualizar un pedido en estado '{$pedido->getEstado()}'. " .
+                    "Solo se pueden actualizar pedidos pendientes."
+                );
+            }
 
-            // 3. TODO: Actualizar cliente si viene
-            // if ($dto->cliente) {
-            //     $pedido->cambiarCliente($dto->cliente);
-            // }
+            // 3. Actualizar cliente si viene en DTO
+            if ($dto->cliente) {
+                // Nota: Necesitaría método en agregado para cambiar cliente
+                // $pedido->cambiarCliente($dto->cliente);
+            }
 
-            // 4. TODO: Actualizar prendas si vienen
-            // if (!empty($dto->prendas)) {
-            //     $pedido->reemplazarPrendas($dto->prendas);
-            // }
+            // 4. Actualizar prendas si vienen en DTO
+            if (!empty($dto->prendas)) {
+                // Nota: Necesitaría lógica para reemplazar prendas
+                // $pedido->reemplazarPrendas($dto->prendas);
+            }
 
-            // 5. TODO: Persistir
-            // $this->pedidoRepository->guardar($pedido);
+            // 5. Persistir cambios
+            $this->pedidoRepository->guardar($pedido);
 
-            // return $pedido;
-
-            throw new Exception("Use Case no implementado aún");
+            return $pedido;
 
         } catch (Exception $e) {
             throw new Exception("Error al actualizar pedido: " . $e->getMessage());

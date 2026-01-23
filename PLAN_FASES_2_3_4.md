@@ -449,7 +449,7 @@ Incluir:
 
 ---
 
-## 🚀 DEPLOYMENT
+## DEPLOYMENT
 
 Una vez Fase 4 completada:
 

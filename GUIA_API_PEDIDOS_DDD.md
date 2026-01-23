@@ -1,4 +1,4 @@
-# 🚀 GUÍA RÁPIDA - API DE PEDIDOS (DDD)
+# GUÍA RÁPIDA - API DE PEDIDOS (DDD)
 
 ## 📍 Base URL
 ```

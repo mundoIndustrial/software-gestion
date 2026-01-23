@@ -153,7 +153,7 @@ foreach ($archivos as $rel => $desc) {
 echo "\n";
 
 // ===== 5. PERMISOS DE ESCRITURA =====
-echo "🔒 5. VERIFICANDO PERMISOS DE ESCRITURA\n";
+echo " 5. VERIFICANDO PERMISOS DE ESCRITURA\n";
 echo str_repeat("─", 70) . "\n";
 
 $pathsToCheck = [

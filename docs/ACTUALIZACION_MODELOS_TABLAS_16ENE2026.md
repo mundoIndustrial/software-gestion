@@ -310,7 +310,7 @@ $this->assertEquals('tipos_broche_boton', $broche->getTable());
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+## PRÓXIMOS PASOS
 
 ### Inmediatos (Hoy)
 

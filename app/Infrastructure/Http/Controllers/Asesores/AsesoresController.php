@@ -27,8 +27,12 @@ use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ActualizarProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -52,6 +56,8 @@ class AsesoresController extends Controller
     protected ObtenerPedidoDetalleService $obtenerPedidoDetalleService;
     protected CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase;
     protected ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase;
+    protected ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase;
+    protected AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -72,7 +78,9 @@ class AsesoresController extends Controller
         ActualizarPedidoService $actualizarPedidoService,
         ObtenerPedidoDetalleService $obtenerPedidoDetalleService,
         CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase,
-        ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase
+        ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase,
+        ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase,
+        AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -93,6 +101,8 @@ class AsesoresController extends Controller
         $this->obtenerPedidoDetalleService = $obtenerPedidoDetalleService;
         $this->crearProduccionPedidoUseCase = $crearProduccionPedidoUseCase;
         $this->confirmarProduccionPedidoUseCase = $confirmarProduccionPedidoUseCase;
+        $this->actualizarProduccionPedidoUseCase = $actualizarProduccionPedidoUseCase;
+        $this->anularProduccionPedidoUseCase = $anularProduccionPedidoUseCase;
     }
 
     /**
@@ -374,7 +384,7 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Actualizar pedido - DELEGADO A SERVICIO
+     * Actualizar pedido - DELEGADO A USE CASE
      */
     public function update(Request $request, $pedido)
     {
@@ -398,7 +408,11 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedidoActualizado = $this->actualizarPedidoService->actualizar($pedido, $validated);
+            // Crear DTO para el Use Case
+            $dto = ActualizarProduccionPedidoDTO::fromRequest((string)$pedido, $validated);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoActualizado = $this->actualizarProduccionPedidoUseCase->ejecutar($dto);
 
             return response()->json([
                 'success' => true,
@@ -414,16 +428,33 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Eliminar pedido
+     * Anular pedido - DELEGADO A USE CASE
      */
-    public function destroy($pedido)
+    public function destroy(Request $request, $pedido)
     {
         try {
-            $resultado = $this->eliminarPedidoService->eliminarPedido($pedido);
-            return response()->json($resultado);
+            $validated = $request->validate([
+                'razon' => 'required|string|max:500',
+            ]);
+
+            // Crear DTO para el Use Case
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$pedido, $validated);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutar($dto);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido anulado exitosamente'
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
+                'message' => 'Error al anular el pedido: ' . $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
                 'message' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }

@@ -12,7 +12,7 @@ function cargarBorrador(cotizacion) {
     window.cotizacionData = cotizacion;
 
     
-    // 🧹 LIMPIAR MEMORIA DE FOTOS ANTES DE CARGAR PARA EVITAR DUPLICADOS
+    //  LIMPIAR MEMORIA DE FOTOS ANTES DE CARGAR PARA EVITAR DUPLICADOS
     if (window.fotosSeleccionadas) {
         window.fotosSeleccionadas = {};
 

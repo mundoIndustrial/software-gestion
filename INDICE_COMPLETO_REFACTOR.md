@@ -198,7 +198,7 @@ php validate-bd-relations.php 2700
 
 ---
 
-## 🚀 Próxima Acción
+## Próxima Acción
 
 **Ejecutar:**
 ```bash

@@ -279,7 +279,7 @@ Equipamiento:
 
 ---
 
-## 🚀 Próximos Pasos
+## Próximos Pasos
 
 1. **Inmediato (Hoy):**
    - Leer RESUMEN_AUDITORIA_JAVASCRIPT.md

@@ -42,7 +42,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 - 🎯 Qué se consiguió en Fase 1
 - 📁 Estructura de código actual
 - 📊 Flujo de negocio implementado
-- 🚀 Próximas tareas por orden de prioridad
+- Próximas tareas por orden de prioridad
 - 🧪 Testing requerido
 - 📞 Soporte
 
@@ -61,7 +61,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 - 🔧 Código migrado al sistema DDD
 - 📋 Checklist Fase 1
 - ⏳ Pendiente: Fase 2, 3, 4
-- 🚀 Guía rápida para desarrolladores
+- Guía rápida para desarrolladores
 
 **Audiencia:** Desarrolladores técnicos
 **Duración:** 20 minutos
@@ -220,7 +220,7 @@ FASE 4 (Cleanup) ................ ⏳ 5-8 HORAS
 
 ---
 
-## 🚀 CÓMO COMENZAR FASE 2
+## CÓMO COMENZAR FASE 2
 
 **Paso 1:** Lee GUIA_MIGRACION_FRONTEND.md completamente
 ```bash

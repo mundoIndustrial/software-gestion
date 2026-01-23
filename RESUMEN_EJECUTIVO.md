@@ -182,7 +182,7 @@ Modal se carga con información COMPLETA
 
 ---
 
-## 🚀 IMPACTO
+## IMPACTO
 
 ###  Problemas Resueltos
 
@@ -222,7 +222,7 @@ Modal se carga con información COMPLETA
 
 ---
 
-## 🔒 GARANTÍAS
+##  GARANTÍAS
 
 ###  Lo que NUNCA pasará
 

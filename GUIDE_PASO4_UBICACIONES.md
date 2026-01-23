@@ -1,4 +1,4 @@
-# 🚀 GUÍA: Cómo Agregar Ubicaciones de Reflectivo en PASO 4
+# GUÍA: Cómo Agregar Ubicaciones de Reflectivo en PASO 4
 
 ##  EL PROBLEMA IDENTIFICADO
 

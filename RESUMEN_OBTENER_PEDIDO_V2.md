@@ -196,7 +196,7 @@ Todas las relaciones Eloquent ya existen en tus modelos:
 
 ---
 
-## 🚀 Próximos Pasos (En Orden)
+## Próximos Pasos (En Orden)
 
 ### 1. ⏳ Ejecutar Validación (5 minutos)
 

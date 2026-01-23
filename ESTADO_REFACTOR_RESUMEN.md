@@ -142,7 +142,7 @@ CANCELAR PEDIDO
 
 ---
 
-## 🚀 PRÓXIMAS TAREAS - PRIORIDAD
+## PRÓXIMAS TAREAS - PRIORIDAD
 
 ### FASE 2: Migración Frontend (URGENTE)
 

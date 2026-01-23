@@ -8,7 +8,7 @@ Documentación completa del sistema de **carga de datos de prendas para edición
 
 ## 📖 DOCUMENTOS DISPONIBLES
 
-### 1. 🔒 [MODELO_DATOS_FIJO_REFERENCIA_RAPIDA.md](./MODELO_DATOS_FIJO_REFERENCIA_RAPIDA.md)
+### 1.  [MODELO_DATOS_FIJO_REFERENCIA_RAPIDA.md](./MODELO_DATOS_FIJO_REFERENCIA_RAPIDA.md)
 
 **Cuándo leer:** SIEMPRE, antes de tocar código
 
@@ -110,7 +110,7 @@ Documentación completa del sistema de **carga de datos de prendas para edición
 -  Casos de uso cubiertos
 -  Beneficios logrados
 - 📌 Restricciones mantenidas
-- 🚀 Próximas optimizaciones
+- Próximas optimizaciones
 
 **Uso:** Documentación técnica completa
 

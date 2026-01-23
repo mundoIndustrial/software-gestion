@@ -19,7 +19,7 @@ class CrearPrendaAction
      */
     public function ejecutar(CrearPrendaDTO $dto): Prenda
     {
-        \Log::info('🚀 Iniciando CrearPrendaAction', [
+        \Log::info('Iniciando CrearPrendaAction', [
             'nombre' => $dto->nombre_producto,
             'tipo' => $dto->tipo_prenda,
             'cantidad_fotos' => count($dto->fotos),

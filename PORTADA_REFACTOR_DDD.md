@@ -148,7 +148,7 @@ TOTAL: ~12-22 HORAS | ~1 SEMANA DE TRABAJO
 
 ---
 
-## 🚀 CÓMO PROCEDER
+## CÓMO PROCEDER
 
 ### Opción A: Empezar Fase 2 (Frontend Migration)
 ```
@@ -282,7 +282,7 @@ RESULTADO: Sistema limpio, mantenible, escalable
 
 ---
 
-## 🚀 PRÓXIMO PASO
+## PRÓXIMO PASO
 
 **¿Qué rol tienes?**
 

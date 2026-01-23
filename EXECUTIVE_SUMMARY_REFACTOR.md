@@ -108,7 +108,7 @@ TOTAL: 100% en ~12-22 horas de desarrollo
 
 ---
 
-## 🚀 TIMELINE
+## TIMELINE
 
 ```
 HOY:           Fase 1 COMPLETADA ✅

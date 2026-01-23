@@ -121,7 +121,7 @@ $tallasDAMA = $this->obtenerTallasGenero($prendaId, 'DAMA');
 
 ---
 
-## 🚀 PASOS DE REFACTORIZACIÓN
+## PASOS DE REFACTORIZACIÓN
 
 ### 1. Migration & Modelos ( HECHO)
 - [x] Crear tabla `prenda_pedido_tallas`

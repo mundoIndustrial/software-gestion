@@ -254,7 +254,7 @@ node -c public/js/componentes/prenda-card-editar-simple.js
 
 ---
 
-## 🚀 Próximos Pasos (Recomendados)
+## Próximos Pasos (Recomendados)
 
 1. **Test manual en ambiente local**
    - Abrir DevTools (F12)

@@ -279,7 +279,7 @@ TOTAL: 16/16 ✅ PASSING
 
 ---
 
-## 🚀 Guía Rápida para Desarrolladores
+## Guía Rápida para Desarrolladores
 
 ### Para el usuario que quiere crear un pedido:
 

@@ -370,7 +370,7 @@ Checklists:              6+ checklists
 
 ---
 
-## 🚀 PRÓXIMO COMANDO
+## PRÓXIMO COMANDO
 
 Cuando estés listo para Fase 2:
 

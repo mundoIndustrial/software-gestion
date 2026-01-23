@@ -71,7 +71,7 @@ Cada archivo que eliminemos debe pasar:
 
 ---
 
-## 🚀 EMPEZAR CON SEGURIDAD
+## EMPEZAR CON SEGURIDAD
 
 **Primera eliminación:** `PedidoLogoAreaController.php`
 

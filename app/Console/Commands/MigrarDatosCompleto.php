@@ -13,7 +13,7 @@ use App\Models\Cliente;
 use Carbon\Carbon;
 
 /**
- * 🚀 COMANDO DE MIGRACIÓN COMPLETA BASADO EN ANÁLISIS DE BASE DE DATOS
+ * COMANDO DE MIGRACIÓN COMPLETA BASADO EN ANÁLISIS DE BASE DE DATOS
  * 
  * Este comando migra TODA la información histórica desde:
  * - tabla_original (pedidos y procesos)
@@ -40,7 +40,7 @@ class MigrarDatosCompleto extends Command
                             {--validate : Validar integridad después de migración}
                             {--force : Forzar limpieza completa (incluye pedidos con cotizacion_id)}';
 
-    protected $description = '🚀 Migración completa de datos históricos: tabla_original + registros_por_orden → Nueva Arquitectura';
+    protected $description = 'Migración completa de datos históricos: tabla_original + registros_por_orden → Nueva Arquitectura';
 
     protected $stats = [
         'usuarios_creados' => 0,
@@ -177,10 +177,10 @@ class MigrarDatosCompleto extends Command
             }
 
             // PROCESO DE MIGRACIÓN COMPLETO
-            $this->info("🚀 INICIANDO MIGRACIÓN COMPLETA\n");
+            $this->info("INICIANDO MIGRACIÓN COMPLETA\n");
 
             // PASO 0: Limpiar datos existentes
-            $this->info("🧹 PASO 0: Limpiando datos existentes...\n");
+            $this->info(" PASO 0: Limpiando datos existentes...\n");
             $this->limpiarDatos($dryRun, $force);
 
             // PASO 1: Migrar Usuarios (Asesoras)
@@ -224,7 +224,7 @@ class MigrarDatosCompleto extends Command
     {
         $this->info("\n");
         $this->info(str_repeat("=", 100));
-        $this->info("║  🚀 MIGRACIÓN COMPLETA DE DATOS - MUNDO INDUSTRIAL");
+        $this->info("║  MIGRACIÓN COMPLETA DE DATOS - MUNDO INDUSTRIAL");
         $this->info("║   Basado en análisis exhaustivo de base de datos");
         $this->info(str_repeat("=", 100));
         $this->info("\n");

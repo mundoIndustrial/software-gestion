@@ -113,7 +113,7 @@ $total = $this->obtenerCantidadTotal($prendaId);
 
 ---
 
-## 🚀 PASO A PASO PARA IMPLEMENTAR
+## PASO A PASO PARA IMPLEMENTAR
 
 ### 1️⃣ Ejecutar Migration
 ```bash

@@ -261,7 +261,7 @@ GET /asesores/pedidos
 - ✅ Contenido con prendas se muestra
 - ✅ Sin errores en consola
 
-## 🚀 Próximos Pasos
+## Próximos Pasos
 
 1. ✅ Código actualizado
 2. ⏳ Probar modales en navegador

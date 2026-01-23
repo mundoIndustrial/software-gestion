@@ -268,7 +268,7 @@ Ninguno identificado en la cadena crítica de datos
 
 ---
 
-## 🚀 Conclusión Final
+## Conclusión Final
 
 ```
 ╔══════════════════════════════════════════════════════╗

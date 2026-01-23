@@ -103,7 +103,7 @@ class MigrarProcesosCorrectamente extends Command
     public function handle()
     {
         $this->info("\n" . str_repeat("=", 140));
-        $this->info("🚀 MIGRACIÓN CORRECTA DE PROCESOS: tabla_original → procesos_prenda");
+        $this->info("MIGRACIÓN CORRECTA DE PROCESOS: tabla_original → procesos_prenda");
         $this->info(str_repeat("=", 140) . "\n");
 
         $dryRun = $this->option('dry-run');
@@ -114,7 +114,7 @@ class MigrarProcesosCorrectamente extends Command
 
         try {
             // PASO 1: Limpiar procesos
-            $this->info("🧹 PASO 1: Limpiando procesos_prenda existentes...\n");
+            $this->info(" PASO 1: Limpiando procesos_prenda existentes...\n");
             if (!$dryRun) {
                 ProcesoPrenda::truncate();
                 $this->line("    Tabla procesos_prenda limpiada");

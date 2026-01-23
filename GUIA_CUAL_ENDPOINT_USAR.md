@@ -77,7 +77,7 @@ PATCH /api/pedidos/{id}/confirmar  // Confirma
 
 ---
 
-## 🚀 PLAN FUTURO
+## PLAN FUTURO
 
 En el futuro (cuando migre `/asesores/pedidos` a DDD):
 ```

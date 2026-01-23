@@ -288,7 +288,7 @@ Revisión pendiente de: [Code Reviewer]
 
 ---
 
-## 🚀 ESTADO ACTUAL DEL SISTEMA
+## ESTADO ACTUAL DEL SISTEMA
 
 ### Hoy (22 Enero 2026)
 ```

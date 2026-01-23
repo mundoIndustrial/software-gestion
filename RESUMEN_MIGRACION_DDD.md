@@ -133,7 +133,7 @@ Eloquent Model ←→ PedidoAggregate
 
 ---
 
-## 🚀 CÓMO CONTINUAR
+## CÓMO CONTINUAR
 
 ### Inmediato (Hoy)
 ```bash

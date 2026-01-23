@@ -376,7 +376,7 @@ describe('ProductoModule', () => {
 
 ---
 
-## 🚀 Próximas Mejoras
+## Próximas Mejoras
 
 1. **TypeScript:** Migrar a TypeScript para mejor tipado
 2. **Service Layer:** Crear capa de servicios en el backend

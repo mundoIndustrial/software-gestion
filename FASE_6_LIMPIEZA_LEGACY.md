@@ -1,4 +1,4 @@
-# 🧹 FASE 6: LIMPIEZA DE CÓDIGO LEGACY
+#  FASE 6: LIMPIEZA DE CÓDIGO LEGACY
 
 **Objetivo:** Limpiar código legacy del módulo de Pedidos después de la migración a DDD/CQRS.
 
@@ -236,7 +236,7 @@ $this->app->singleton(ValidarPedidoDesdeJSONUseCase::class);
 
 ---
 
-## 🚀 PRÓXIMOS PASOS (OPCIONALES)
+## PRÓXIMOS PASOS (OPCIONALES)
 
 Si quieres continuar con limpieza:
 

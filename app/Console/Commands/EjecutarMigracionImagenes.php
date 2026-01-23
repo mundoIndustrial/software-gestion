@@ -12,7 +12,7 @@ class EjecutarMigracionImagenes extends Command
 
     public function handle()
     {
-        $this->info('🚀 INICIANDO MIGRACIÓN COMPLETA DE IMÁGENES');
+        $this->info('INICIANDO MIGRACIÓN COMPLETA DE IMÁGENES');
         $this->newLine();
 
         try {

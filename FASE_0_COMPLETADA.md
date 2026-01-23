@@ -106,7 +106,7 @@ Infrastructure Layer
 
 ---
 
-## 🚀 PRÓXIMO PASO: FASE 1
+## PRÓXIMO PASO: FASE 1
 
 **Objetivo:** Implementar persistencia con tests
 

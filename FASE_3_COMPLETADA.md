@@ -247,7 +247,7 @@ PATCH  api/pedidos/{id}/confirmar  pedidos.confirmar    Api\PedidoController@con
 
 ---
 
-## 🚀 Próximas Fases
+## Próximas Fases
 
 ### Fase 4: Endpoints Adicionales (PLANEADO)
 - [ ] Listar pedidos (GET /api/pedidos)

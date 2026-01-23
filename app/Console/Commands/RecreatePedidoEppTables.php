@@ -26,7 +26,7 @@ class RecreatePedidoEppTables extends Command
             $this->line(" Eliminado registro: $migracion");
         }
 
-        $this->info("\n🚀 Ejecutando migraciones...\n");
+        $this->info("\nEjecutando migraciones...\n");
 
         // Ejecutar la migración
         $this->call('migrate', ['--path' => 'database/migrations/2026_01_17_create_pedido_epp_table.php']);

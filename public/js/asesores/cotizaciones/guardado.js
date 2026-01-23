@@ -1240,7 +1240,7 @@ async function procederEnviarCotizacion() {
                     }
                 }
                 
-                //  🔒 TELAS YA FUERON GUARDADAS EN guardarCotizacion()
+                //   TELAS YA FUERON GUARDADAS EN guardarCotizacion()
                 // Las telas se procesaron y guardaron en la BD durante guardarCotizacion()
                 // NO RE-PROCESAR aquí para evitar DUPLICACIÓN
 
