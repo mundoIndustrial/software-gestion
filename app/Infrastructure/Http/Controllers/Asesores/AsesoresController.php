@@ -25,6 +25,8 @@ use App\Application\Services\Asesores\ActualizarPedidoService;
 use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
+use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
+use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -46,6 +48,7 @@ class AsesoresController extends Controller
     protected ConfirmarPedidoService $confirmarPedidoService;
     protected ActualizarPedidoService $actualizarPedidoService;
     protected ObtenerPedidoDetalleService $obtenerPedidoDetalleService;
+    protected CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -64,7 +67,8 @@ class AsesoresController extends Controller
         GuardarPedidoProduccionService $guardarPedidoProduccionService,
         ConfirmarPedidoService $confirmarPedidoService,
         ActualizarPedidoService $actualizarPedidoService,
-        ObtenerPedidoDetalleService $obtenerPedidoDetalleService
+        ObtenerPedidoDetalleService $obtenerPedidoDetalleService,
+        CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -83,6 +87,7 @@ class AsesoresController extends Controller
         $this->confirmarPedidoService = $confirmarPedidoService;
         $this->actualizarPedidoService = $actualizarPedidoService;
         $this->obtenerPedidoDetalleService = $obtenerPedidoDetalleService;
+        $this->crearProduccionPedidoUseCase = $crearProduccionPedidoUseCase;
     }
 
     /**
@@ -270,14 +275,23 @@ class AsesoresController extends Controller
             }
 
             $productosConFotos = $this->procesarFotosTelasService->procesar($request, $validated[$productosKey]);
-            $pedido = $this->guardarPedidoProduccionService->guardar($validated, $productosConFotos);
+            
+            // Crear DTO para el Use Case
+            $dto = new CrearProduccionPedidoDTO(
+                $validated['cliente'],
+                $validated['cliente'],
+                $productosConFotos
+            );
+            
+            // Usar el nuevo Use Case DDD
+            $pedido = $this->crearProduccionPedidoUseCase->ejecutar($dto);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido guardado como borrador',
-                'borrador_id' => $pedido->id
+                'borrador_id' => $pedido->getId()
             ]);
 
         } catch (\Exception $e) {
