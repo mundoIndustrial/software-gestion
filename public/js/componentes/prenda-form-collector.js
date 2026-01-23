@@ -128,9 +128,11 @@ class PrendaFormCollector {
                 });
             }
             // Si estamos en modo edición y no hay telas en window.telasAgregadas, 
-            // obtener telas de la prenda anterior
+            // obtener telas Y VARIANTES de la prenda anterior
             else if (prendaEditIndex !== null && prendaEditIndex !== undefined && prendasArray[prendaEditIndex]) {
                 const prendaAnterior = prendasArray[prendaEditIndex];
+                
+                // Copiar telas anteriores
                 if (prendaAnterior && prendaAnterior.telasAgregadas && prendaAnterior.telasAgregadas.length > 0) {
                     prendaData.telasAgregadas = prendaAnterior.telasAgregadas.map(tela => ({
                         tela: tela.tela || '',
@@ -138,7 +140,11 @@ class PrendaFormCollector {
                         referencia: tela.referencia || '',
                         imagenes: tela.imagenes || []
                     }));
-
+                }
+                
+                // IMPORTANTE: También copiar variantes anteriores si existen
+                if (prendaAnterior && prendaAnterior.variantes && Object.keys(prendaAnterior.variantes).length > 0) {
+                    prendaData.variantes = prendaAnterior.variantes;
                 }
             }
 
@@ -177,9 +183,21 @@ class PrendaFormCollector {
                 const broqueObs = document.getElementById('broche-obs');
                 variantes.broche = broqueInput?.value || '';
                 variantes.obs_broche = broqueObs?.value || '';
+                
+                // Mapear valor del select a tipo_broche_boton_id
+                // broche-input contiene: "broche" → ID 1, "boton" → ID 2
+                const brocheValor = broqueInput?.value?.toLowerCase() || '';
+                if (brocheValor === 'broche') {
+                    variantes.tipo_broche_boton_id = 1;
+                } else if (brocheValor === 'boton') {
+                    variantes.tipo_broche_boton_id = 2;
+                } else {
+                    variantes.tipo_broche_boton_id = null;
+                }
             } else {
                 variantes.broche = '';
                 variantes.obs_broche = '';
+                variantes.tipo_broche_boton_id = null;
             }
             
             // Reflectivo

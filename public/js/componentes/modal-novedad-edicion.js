@@ -90,9 +90,20 @@ class ModalNovedadEdicion {
             formData.append('cantidad_talla', JSON.stringify(tallasJson));
             
             // Agregar variantes si existen
-            if (this.prendaData.variantes && this.prendaData.variantes.length > 0) {
-                formData.append('variantes', JSON.stringify(this.prendaData.variantes));
-                console.log('[modal-novedad-edicion] Variantes enviadas:', this.prendaData.variantes);
+            // Las variantes pueden ser un objeto {manga, obs_manga, etc} OR un array
+            if (this.prendaData.variantes) {
+                const tieneVariantes = Array.isArray(this.prendaData.variantes) 
+                    ? this.prendaData.variantes.length > 0
+                    : Object.keys(this.prendaData.variantes).length > 0;
+                    
+                if (tieneVariantes) {
+                    // Convertir variantes a formato esperado por backend: array de objetos
+                    const variantesArray = this.convertirVariantesAlFormatoBackend(this.prendaData.variantes);
+                    formData.append('variantes', JSON.stringify(variantesArray));
+                    console.log('[modal-novedad-edicion] Variantes enviadas:', variantesArray);
+                } else {
+                    console.log('[modal-novedad-edicion] ⚠️ No hay variantes para enviar');
+                }
             } else {
                 console.log('[modal-novedad-edicion] ⚠️ No hay variantes para enviar');
             }
@@ -238,6 +249,37 @@ class ModalNovedadEdicion {
             }
         });
         return resultado;
+    }
+
+    convertirVariantesAlFormatoBackend(variantes) {
+        // Convierte variantes (objeto o array) al formato esperado por backend
+        // Formato esperado: [ { tipo_manga_id, tipo_broche_boton_id, manga_obs, broche_boton_obs, tiene_bolsillos, bolsillos_obs } ]
+        
+        // Si ya es un array, retornarlo tal cual
+        if (Array.isArray(variantes)) {
+            return variantes;
+        }
+        
+        // Si es un objeto con propiedades de variantes, convertir a array
+        if (variantes && typeof variantes === 'object') {
+            // Crear un único objeto de variante con todas las propiedades
+            const varianteObject = {
+                tipo_manga_id: variantes.tipo_manga_id || null,
+                tipo_broche_boton_id: variantes.tipo_broche_boton_id || null,
+                manga_obs: variantes.obs_manga || variantes.manga || '',
+                broche_boton_obs: variantes.obs_broche || variantes.broche || '',
+                tiene_bolsillos: variantes.tiene_bolsillos || false,
+                bolsillos_obs: variantes.obs_bolsillos || '',
+                tiene_reflectivo: variantes.tiene_reflectivo || false,
+                reflectivo_obs: variantes.obs_reflectivo || ''
+            };
+            
+            // Retornar como array con un único elemento
+            return [varianteObject];
+        }
+        
+        // Si está vacío, retornar array vacío
+        return [];
     }
 }
 

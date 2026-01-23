@@ -513,9 +513,9 @@ class PrendaEditor {
                 // 1 = Botón, 2 = Broche
                 let valorSeleccionar = '';
                 if (prenda.tipo_broche_boton_id === 1) {
-                    valorSeleccionar = 'boton';
-                } else if (prenda.tipo_broche_boton_id === 2) {
                     valorSeleccionar = 'broche';
+                } else if (prenda.tipo_broche_boton_id === 2) {
+                    valorSeleccionar = 'boton';
                 }
                 
 

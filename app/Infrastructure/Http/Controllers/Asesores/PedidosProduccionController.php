@@ -805,7 +805,8 @@ class PedidosProduccionController
                 'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
             ]);
             
-            $dto = ActualizarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas);
+            // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)
+            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas);
             $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa actualizada exitosamente', [
