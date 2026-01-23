@@ -1025,5 +1025,196 @@ class PedidosProduccionController
             ], 500);
         }
     }
+
+    /**
+     * GET /api/tallas-disponibles
+     * Obtener catálogo de tallas disponibles por género
+     * 
+     * Usado en: Modal de selección de tallas en crear-pedido-nuevo
+     * Retorna: { DAMA: {...}, CABALLERO: {...}, UNISEX: {...} }
+     */
+    public function obtenerTallasDisponibles(Request $request): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/tallas-disponibles');
+
+            // Obtener parámetro opcional de género (si solo quiere un género)
+            $genero = $request->query('genero'); // NULL = todos, o 'DAMA', 'CABALLERO', 'UNISEX'
+
+            // Constantes de tallas (DEFINIDAS EN FRONTEND Y AQUI PARA CONSISTENCIA)
+            $tallasPorGenero = [
+                'DAMA' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+                'CABALLERO' => ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46'],
+                'UNISEX' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+            ];
+
+            // Si pide género específico, retornar solo ese
+            if ($genero && isset($tallasPorGenero[strtoupper($genero)])) {
+                $resultado = [
+                    strtoupper($genero) => $tallasPorGenero[strtoupper($genero)]
+                ];
+            } else {
+                // Retornar todas las tallas por género
+                $resultado = $tallasPorGenero;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado,
+                'mensaje' => 'Catálogo de tallas cargado exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener tallas', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el catálogo de tallas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/prenda-pedido/{prendaId}/tallas
+     * Obtener tallas específicas de una prenda (si está guardada)
+     * 
+     * Retorna: { DAMA: { S: 10, M: 15 }, CABALLERO: { 32: 20 } }
+     */
+    public function obtenerTallasPrenda(int $prendaId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/prenda-pedido/{prendaId}/tallas', [
+                'prenda_id' => $prendaId
+            ]);
+
+            // Obtener tallas desde BD - tabla prenda_pedido_tallas
+            $tallas = DB::table('prenda_pedido_tallas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->select('genero', 'talla', 'cantidad')
+                ->get();
+
+            if ($tallas->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => ['DAMA' => [], 'CABALLERO' => []],
+                    'mensaje' => 'Prenda sin tallas asignadas'
+                ], 200);
+            }
+
+            // Agrupar tallas por género: { DAMA: { S: 10, M: 15 }, ... }
+            $tallasPorGenero = [];
+            foreach ($tallas as $talla) {
+                $genero = $talla->genero;
+                if (!isset($tallasPorGenero[$genero])) {
+                    $tallasPorGenero[$genero] = [];
+                }
+                $tallasPorGenero[$genero][$talla->talla] = (int)$talla->cantidad;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tallasPorGenero,
+                'mensaje' => 'Tallas de prenda cargadas exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener tallas de prenda', [
+                'error' => $e->getMessage(),
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las tallas de la prenda: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/prenda-pedido/{prendaId}/variantes
+     * Obtener variantes de prenda (manga, broche, bolsillos)
+     */
+    public function obtenerVariantesPrenda(int $prendaId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/prenda-pedido/{prendaId}/variantes', [
+                'prenda_id' => $prendaId
+            ]);
+
+            $variantes = DB::table('prenda_pedido_variantes')
+                ->leftJoin('tipos_manga', 'prenda_pedido_variantes.tipo_manga_id', '=', 'tipos_manga.id')
+                ->leftJoin('tipos_broche_boton', 'prenda_pedido_variantes.tipo_broche_boton_id', '=', 'tipos_broche_boton.id')
+                ->where('prenda_pedido_variantes.prenda_pedido_id', $prendaId)
+                ->select(
+                    'prenda_pedido_variantes.*',
+                    'tipos_manga.nombre as nombre_manga',
+                    'tipos_broche_boton.nombre as nombre_broche'
+                )
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $variantes,
+                'mensaje' => 'Variantes de prenda cargadas exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener variantes de prenda', [
+                'error' => $e->getMessage(),
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las variantes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/prenda-pedido/{prendaId}/colores-telas
+     * Obtener colores y telas seleccionados para una prenda
+     */
+    public function obtenerColoresTelasPrenda(int $prendaId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /api/prenda-pedido/{prendaId}/colores-telas', [
+                'prenda_id' => $prendaId
+            ]);
+
+            $coloresTelas = DB::table('prenda_pedido_colores_telas')
+                ->leftJoin('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
+                ->leftJoin('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
+                ->where('prenda_pedido_colores_telas.prenda_pedido_id', $prendaId)
+                ->select(
+                    'prenda_pedido_colores_telas.id',
+                    'colores_prenda.nombre as color',
+                    'colores_prenda.codigo as codigo_color',
+                    'telas_prenda.nombre as tela',
+                    'telas_prenda.referencia as referencia_tela'
+                )
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $coloresTelas,
+                'mensaje' => 'Colores y telas cargados exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error al obtener colores y telas', [
+                'error' => $e->getMessage(),
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los colores y telas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

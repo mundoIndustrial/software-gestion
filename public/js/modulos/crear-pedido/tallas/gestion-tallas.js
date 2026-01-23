@@ -19,9 +19,62 @@ window.tallasRelacionales = window.tallasRelacionales || {
     CABALLERO: {}
 };
 
+// Cache de catálogo de tallas desde BD
+window.catálogoTallasDisponibles = null;
+
 // Variables para rastrear el estado del modal
 window.generoActualModal = null;
 window.tipoTallaSeleccionado = null;
+
+// ========== FUNCIONES PARA CARGAR TALLAS DESDE BD ==========
+
+/**
+ * Cargar catálogo de tallas disponibles desde el endpoint API
+ * Se llama una sola vez al inicializar la página
+ */
+window.cargarCatálogoTallas = async function() {
+    try {
+        if (window.catálogoTallasDisponibles) {
+            // Ya cargado, no hacer nada
+            console.log('[gestion-tallas] Catálogo ya cargado en caché');
+            return;
+        }
+
+        console.log('[gestion-tallas] Cargando catálogo de tallas desde BD...');
+        
+        const response = await fetch('/api/tallas-disponibles', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            window.catálogoTallasDisponibles = result.data;
+            console.log('[gestion-tallas] ✅ Catálogo cargado:', result.data);
+        } else {
+            throw new Error(result.message || 'Respuesta inválida del servidor');
+        }
+
+    } catch (error) {
+        console.error('[gestion-tallas] ❌ Error al cargar catálogo:', error);
+        // Fallback a constantes hardcodeadas si falla el fetch
+        window.catálogoTallasDisponibles = {
+            DAMA: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+            CABALLERO: ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46'],
+            UNISEX: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+        };
+        console.warn('[gestion-tallas] ⚠️ Usando catálogo hardcodeado como fallback');
+    }
+};
 
 // ========== FUNCIONES DE GESTIÓN DE TALLAS RELACIONAL ==========
 
@@ -66,11 +119,26 @@ window.mostrarTallasDisponibles = function(tipo) {
     
     let tallasAMostrar = [];
     
-    if (tipo === 'letra') {
-        tallasAMostrar = TALLAS_LETRAS;
-    } else if (tipo === 'numero') {
+    // Usar catálogo cargado desde BD, con fallback a constantes
+    if (!window.catálogoTallasDisponibles) {
+        console.warn('[gestion-tallas] ⚠️ Catálogo no cargado, usando constantes');
+        // Fallback a constantes si no se cargó el catálogo
+        if (tipo === 'letra') {
+            tallasAMostrar = TALLAS_LETRAS || [];
+        } else if (tipo === 'numero') {
+            const genero = window.generoActualModal;
+            tallasAMostrar = genero === 'DAMA' ? (TALLAS_NUMEROS_DAMA || []) : (TALLAS_NUMEROS_CABALLERO || []);
+        }
+    } else {
+        // Usar catálogo cargado desde BD
         const genero = window.generoActualModal;
-        tallasAMostrar = genero === 'DAMA' ? TALLAS_NUMEROS_DAMA : TALLAS_NUMEROS_CABALLERO;
+        if (tipo === 'letra') {
+            // Mostrar tallas de letra (XS, S, M, L, XL, etc.) - generalmente DAMA
+            tallasAMostrar = window.catálogoTallasDisponibles['DAMA'] || [];
+        } else if (tipo === 'numero') {
+            // Mostrar tallas de número (28, 30, 32, etc.) - generalmente CABALLERO
+            tallasAMostrar = window.catálogoTallasDisponibles['CABALLERO'] || [];
+        }
     }
     
     // Crear grid de tallas
@@ -101,6 +169,11 @@ window.mostrarTallasDisponibles = function(tipo) {
         btn.textContent = talla;
         btn.onclick = () => {
             const isCurrentlySelected = tallasDic.hasOwnProperty(talla);
+            
+            // Asegurar que el objeto del género existe
+            if (!window.tallasRelacionales[window.generoActualModal]) {
+                window.tallasRelacionales[window.generoActualModal] = {};
+            }
             
             if (isCurrentlySelected) {
                 // Deseleccionar: eliminar talla
@@ -194,9 +267,12 @@ window.mostrarSelectorTipo = function() {
 /**
  * Abrir modal para seleccionar tallas de un género
  */
-window.abrirModalSeleccionarTallas = function(genero) {
+window.abrirModalSeleccionarTallas = async function(genero) {
 
 
+    
+    // Cargar catálogo de tallas si no está cargado
+    await window.cargarCatálogoTallas();
     
     window.generoActualModal = genero;
     

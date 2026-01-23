@@ -533,6 +533,12 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/api/pedidos/buscar/{numero}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'buscarPorNumero'])->name('api.pedidos.buscar');
     Route::get('/api/pedidos/{id}/prendas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerPrendas'])->name('api.pedidos.obtener-prendas');
     
+    // Rutas API CATÁLOGOS - Tallas, variantes, colores/telas de prendas
+    Route::get('/api/tallas-disponibles', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasDisponibles'])->name('api.tallas.disponibles');
+    Route::get('/api/prenda-pedido/{prendaId}/tallas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasPrenda'])->name('api.prenda.tallas');
+    Route::get('/api/prenda-pedido/{prendaId}/variantes', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerVariantesPrenda'])->name('api.prenda.variantes');
+    Route::get('/api/prenda-pedido/{prendaId}/colores-telas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerColoresTelasPrenda'])->name('api.prenda.colores-telas');
+    
     // ========================================
     // CLIENTES - Gestión de clientes
     // ========================================
