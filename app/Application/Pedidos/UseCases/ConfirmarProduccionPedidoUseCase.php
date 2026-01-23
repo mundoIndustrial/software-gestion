@@ -4,6 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
 use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
+use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use Exception;
 
 /**
@@ -14,31 +15,41 @@ use Exception;
  */
 class ConfirmarProduccionPedidoUseCase
 {
-    public function __construct()
-    {
+    public function __construct(
+        private PedidoProduccionRepository $pedidoRepository
+    ) {
     }
 
     public function ejecutar(ConfirmarProduccionPedidoDTO $dto): PedidoProduccionAggregate
     {
         try {
-            // 1. TODO: Obtener agregado del repositorio
-            // $pedido = $this->pedidoRepository->obtenerPorId($dto->id);
-            // if (!$pedido) {
-            //     throw new Exception("Pedido no encontrado");
-            // }
+            // 1. Obtener pedido del repositorio
+            $pedido = $this->pedidoRepository->obtenerPorId($dto->id);
+            
+            if (!$pedido) {
+                throw new Exception("Pedido con ID {$dto->id} no encontrado");
+            }
 
-            // 2. TODO: Confirmar pedido (lógica encapsulada en agregado)
-            // $pedido->confirmar();
+            // 2. Validar que está en estado pendiente
+            if (!$pedido->estaPendiente()) {
+                throw new Exception(
+                    "No se puede confirmar un pedido en estado '{$pedido->getEstado()}'. " .
+                    "Solo se pueden confirmar pedidos pendientes."
+                );
+            }
 
-            // 3. TODO: Persistir
-            // $this->pedidoRepository->guardar($pedido);
+            // 3. Validar que tiene prendas
+            if ($pedido->getCantidadPrendas() === 0) {
+                throw new Exception("No se puede confirmar un pedido sin prendas");
+            }
 
-            // 4. TODO: Publicar evento de pedido confirmado
-            // $this->eventPublisher->publicar(new PedidoConfirmadoEvent($pedido));
+            // 4. Confirmar el pedido (lógica en agregado)
+            $pedido->confirmar();
 
-            // return $pedido;
+            // 5. Persistir cambios
+            $this->pedidoRepository->guardar($pedido);
 
-            throw new Exception("Use Case no implementado aún");
+            return $pedido;
 
         } catch (Exception $e) {
             throw new Exception("Error al confirmar pedido: " . $e->getMessage());

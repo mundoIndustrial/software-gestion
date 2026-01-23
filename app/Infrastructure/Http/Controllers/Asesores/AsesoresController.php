@@ -26,7 +26,9 @@ use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\ConfirmarProduccionPedidoUseCase;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -49,6 +51,7 @@ class AsesoresController extends Controller
     protected ActualizarPedidoService $actualizarPedidoService;
     protected ObtenerPedidoDetalleService $obtenerPedidoDetalleService;
     protected CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase;
+    protected ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -68,7 +71,8 @@ class AsesoresController extends Controller
         ConfirmarPedidoService $confirmarPedidoService,
         ActualizarPedidoService $actualizarPedidoService,
         ObtenerPedidoDetalleService $obtenerPedidoDetalleService,
-        CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase
+        CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase,
+        ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -88,6 +92,7 @@ class AsesoresController extends Controller
         $this->actualizarPedidoService = $actualizarPedidoService;
         $this->obtenerPedidoDetalleService = $obtenerPedidoDetalleService;
         $this->crearProduccionPedidoUseCase = $crearProduccionPedidoUseCase;
+        $this->confirmarProduccionPedidoUseCase = $confirmarProduccionPedidoUseCase;
     }
 
     /**
@@ -305,7 +310,7 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Confirmar pedido y asignar ID - DELEGADO A SERVICIO
+     * Confirmar pedido y asignar ID - DELEGADO A USE CASE
      */
     public function confirm(Request $request)
     {
@@ -315,7 +320,13 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedido = $this->confirmarPedidoService->confirmar($validated['borrador_id'], $validated['numero_pedido']);
+            // Crear DTO para el Use Case
+            $dto = new ConfirmarProduccionPedidoDTO(
+                (string)$validated['borrador_id']
+            );
+
+            // Usar el nuevo Use Case DDD
+            $pedido = $this->confirmarProduccionPedidoUseCase->ejecutar($dto);
 
             return response()->json([
                 'success' => true,
