@@ -12,14 +12,14 @@ use Mockery;
  * Test para endpoints de Pedidos (Fase 3)
  * 
  * Validar:
- * - POST /api/pedidos → Crear pedido
- * - PATCH /api/pedidos/{id}/confirmar → Confirmar pedido (cuando haya persistencia)
- * - GET /api/pedidos/{id} → Obtener pedido (cuando haya persistencia)
+ * - POST /api/pedidos â†’ Crear pedido
+ * - PATCH /api/pedidos/{id}/confirmar â†’ Confirmar pedido (cuando haya persistencia)
+ * - GET /api/pedidos/{id} â†’ Obtener pedido (cuando haya persistencia)
  */
 class PedidoControllerTest extends TestCase
 {
     /**
-     * Test: Crear pedido vía POST /api/pedidos
+     * Test: Crear pedido vÃ­a POST /api/pedidos
      * 
      * Usando mock del repositorio para no necesitar BD
      */
@@ -37,7 +37,7 @@ class PedidoControllerTest extends TestCase
             'prendas' => [
                 [
                     'prenda_id' => 1,
-                    'descripcion' => 'Camiseta Básica',
+                    'descripcion' => 'Camiseta BÃ¡sica',
                     'cantidad' => 100,
                     'tallas' => [
                         'DAMA' => [
@@ -127,3 +127,4 @@ class PedidoControllerTest extends TestCase
             ->assertJson(['success' => false]);
     }
 }
+

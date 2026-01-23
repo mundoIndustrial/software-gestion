@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use MySQLi;
 
 /**
- * Tests simples de validación de BD de Cotizaciones
+ * Tests simples de validaciÃ³n de BD de Cotizaciones
  * Uso directo de MySQLi para evitar problemas con PDO
  */
 class CotizacionesBDTest extends TestCase
@@ -25,7 +25,7 @@ class CotizacionesBDTest extends TestCase
         );
 
         if ($this->db->connect_error) {
-            $this->fail("Conexión fallida: " . $this->db->connect_error);
+            $this->fail("ConexiÃ³n fallida: " . $this->db->connect_error);
         }
 
         $this->db->set_charset("utf8mb4");
@@ -40,12 +40,12 @@ class CotizacionesBDTest extends TestCase
     }
 
     /**
-     * Prueba 1: Conexión exitosa a BD
+     * Prueba 1: ConexiÃ³n exitosa a BD
      */
     public function test_database_connected(): void
     {
         $this->assertIsObject($this->db);
-        echo "\n✓ Base de datos conectada";
+        echo "\nâœ“ Base de datos conectada";
     }
 
     /**
@@ -58,11 +58,11 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(0, $count);
-        echo "\n✓ Total de cotizaciones: {$count}";
+        echo "\nâœ“ Total de cotizaciones: {$count}";
     }
 
     /**
-     * Prueba 3: Tipos de cotización disponibles
+     * Prueba 3: Tipos de cotizaciÃ³n disponibles
      */
     public function test_types_count(): void
     {
@@ -71,7 +71,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(3, $count);
-        echo "\n✓ Tipos de cotización: {$count}";
+        echo "\nâœ“ Tipos de cotizaciÃ³n: {$count}";
     }
 
     /**
@@ -88,7 +88,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertEquals(4, $count);
-        echo "\n✓ 4 tablas requeridas existen";
+        echo "\nâœ“ 4 tablas requeridas existen";
     }
 
     /**
@@ -101,7 +101,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(0, $count);
-        echo "\n✓ Total prendas en cotizaciones: {$count}";
+        echo "\nâœ“ Total prendas en cotizaciones: {$count}";
     }
 
     /**
@@ -114,7 +114,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(0, $count);
-        echo "\n✓ Total fotos: {$count}";
+        echo "\nâœ“ Total fotos: {$count}";
     }
 
     /**
@@ -132,7 +132,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(0, $count);
-        echo "\n✓ Cotizaciones con numero válido: {$count}";
+        echo "\nâœ“ Cotizaciones con numero vÃ¡lido: {$count}";
     }
 
     /**
@@ -145,7 +145,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(0, $count);
-        echo "\n✓ Total clientes: {$count}";
+        echo "\nâœ“ Total clientes: {$count}";
     }
 
     /**
@@ -158,7 +158,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(0, $count);
-        echo "\n✓ Total usuarios: {$count}";
+        echo "\nâœ“ Total usuarios: {$count}";
     }
 
     /**
@@ -177,18 +177,19 @@ class CotizacionesBDTest extends TestCase
         
         $row = $result->fetch_assoc();
         
-        echo "\n═══════════════════════════════════════════════════════════";
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•";
         echo "\nRESUMEN ESTRUCTURA BD COTIZACIONES:";
-        echo "\n═══════════════════════════════════════════════════════════";
-        echo "\n• Cotizaciones: " . $row['cot_count'];
-        echo "\n• Prendas: " . $row['prenda_count'];
-        echo "\n• Fotos: " . $row['foto_count'];
-        echo "\n• Clientes: " . $row['client_count'];
-        echo "\n• Usuarios: " . $row['user_count'];
-        echo "\n═══════════════════════════════════════════════════════════";
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•";
+        echo "\nâ€¢ Cotizaciones: " . $row['cot_count'];
+        echo "\nâ€¢ Prendas: " . $row['prenda_count'];
+        echo "\nâ€¢ Fotos: " . $row['foto_count'];
+        echo "\nâ€¢ Clientes: " . $row['client_count'];
+        echo "\nâ€¢ Usuarios: " . $row['user_count'];
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•";
         
-        // Assertions mínimas
+        // Assertions mÃ­nimas
         $this->assertNotNull($row['cot_count']);
         $this->assertNotNull($row['prenda_count']);
     }
 }
+

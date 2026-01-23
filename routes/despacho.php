@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Infrastructure\Http\Controllers\Despacho\DespachoController;
+
+/**
+ * Rutas del módulo DESPACHO
+ * 
+ * Controlador: DespachoController
+ * Prefijo: /despacho
+ * 
+ * Responsabilidades:
+ * - Visualizar pedidos listos para despacho
+ * - Controlar entregas parciales (prendas + EPP)
+ * - Imprimir control de entregas
+ * 
+ * NO crea pedidos, solo visualiza y controla entregas.
+ */
+
+Route::prefix('despacho')
+    ->middleware(['auth', 'check.despacho.role'])
+    ->group(function () {
+        // Listar pedidos disponibles para despacho
+        Route::get('/', [DespachoController::class, 'index'])
+            ->name('despacho.index');
+
+        // Mostrar detalle de despacho para un pedido
+        Route::get('/{pedido}', [DespachoController::class, 'show'])
+            ->name('despacho.show')
+            ->where('pedido', '[0-9]+');
+
+        // Guardar parciales de despacho (POST)
+        Route::post('/{pedido}/guardar', [DespachoController::class, 'guardarDespacho'])
+            ->name('despacho.guardar')
+            ->where('pedido', '[0-9]+');
+
+        // Vista de impresión del control de entregas
+        Route::get('/{pedido}/print', [DespachoController::class, 'printDespacho'])
+            ->name('despacho.print')
+            ->where('pedido', '[0-9]+');
+    });

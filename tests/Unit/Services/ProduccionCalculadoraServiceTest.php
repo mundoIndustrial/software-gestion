@@ -80,3 +80,4 @@ class ProduccionCalculadoraServiceTest extends TestCase
         $this->assertTrue($reflection->getMethod('calcularProduccionPorOperarios')->isPublic());
     }
 }
+

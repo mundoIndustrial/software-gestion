@@ -9,7 +9,7 @@ use App\Domain\Pedidos\ValueObjects\NumeroPedido;
  * Repository Interface para Pedidos
  * 
  * Define el contrato para persistencia de PedidoAggregate
- * La implementación está en Infrastructure
+ * La implementaciÃ³n estÃ¡ en Infrastructure
  */
 interface PedidoRepository
 {
@@ -20,3 +20,4 @@ interface PedidoRepository
     public function eliminar(int $id): void;
     public function porEstado(string $estado): array;
 }
+

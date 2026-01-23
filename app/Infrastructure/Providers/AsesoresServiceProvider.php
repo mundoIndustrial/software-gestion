@@ -10,7 +10,8 @@ use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
 
 // Repositories
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 
 // Use Cases (DDD)
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
@@ -77,35 +78,35 @@ class AsesoresServiceProvider extends ServiceProvider
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
             return new CrearProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Confirmar Pedido
         $this->app->singleton(ConfirmarProduccionPedidoUseCase::class, function ($app) {
             return new ConfirmarProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Actualizar Pedido
         $this->app->singleton(ActualizarProduccionPedidoUseCase::class, function ($app) {
             return new ActualizarProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Anular Pedido
         $this->app->singleton(AnularProduccionPedidoUseCase::class, function ($app) {
             return new AnularProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Obtener Pedido
         $this->app->singleton(ObtenerProduccionPedidoUseCase::class, function ($app) {
             return new ObtenerProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
@@ -124,28 +125,28 @@ class AsesoresServiceProvider extends ServiceProvider
         // Agregar Prenda Simple
         $this->app->singleton(AgregarPrendaSimpleUseCase::class, function ($app) {
             return new AgregarPrendaSimpleUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Obtener Próximo Número Pedido
         $this->app->singleton(ObtenerProximoNumeroPedidoUseCase::class, function ($app) {
             return new ObtenerProximoNumeroPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Obtener Factura
         $this->app->singleton(ObtenerFacturaUseCase::class, function ($app) {
             return new ObtenerFacturaUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Obtener Recibos
         $this->app->singleton(ObtenerRecibosUseCase::class, function ($app) {
             return new ObtenerRecibosUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 

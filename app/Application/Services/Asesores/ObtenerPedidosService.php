@@ -2,24 +2,24 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ObtenerPedidosService
 {
     /**
-     * Obtener pedidos del asesor con filtros y búsqueda
+     * Obtener pedidos del asesor con filtros y bÃºsqueda
      * Soporta filtrado por tipo (logo, prendas, todos)
      * 
      * @param string|null $tipo Tipo de pedido: 'logo', 'prendas', null (todos)
      * @param array $filtros Filtros: ['estado', 'search']
-     * @param int $perPage Resultados por página
+     * @param int $perPage Resultados por pÃ¡gina
      * @return LengthAwarePaginator
      */
     public function obtener(?string $tipo = null, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        \Log::info(' [OBTENER PEDIDOS] Iniciando búsqueda', [
+        \Log::info(' [OBTENER PEDIDOS] Iniciando bÃºsqueda', [
             'tipo' => $tipo,
             'filtros' => $filtros,
             'por_pagina' => $perPage
@@ -33,7 +33,7 @@ class ObtenerPedidosService
             return $this->obtenerLogoPedidos($userName, $filtros, $perPage);
         }
 
-        // PRENDAS o TODOS: Mostrar PedidoProduccion
+        // PRENDAS o TODOS: Mostrar Pedidos
         return $this->obtenerPedidosProduccion($userId, $tipo, $filtros, $perPage);
     }
 
@@ -43,19 +43,19 @@ class ObtenerPedidosService
      */
     private function obtenerLogoPedidos(string $userName, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginación vacía');
+        \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginaciÃ³n vacÃ­a');
         
-        // Retornar paginación vacía
-        return PedidoProduccion::where('id', '=', null)
+        // Retornar paginaciÃ³n vacÃ­a
+        return Pedidos::where('id', '=', null)
             ->paginate($perPage);
     }
 
     /**
-     * Obtener PedidoProduccion del asesor
+     * Obtener Pedidos del asesor
      */
     private function obtenerPedidosProduccion(int $userId, ?string $tipo, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        $query = PedidoProduccion::where('asesor_id', $userId)
+        $query = Pedidos::where('asesor_id', $userId)
             ->with([
                 'prendas' => function ($q) {
                     $q->with(['procesos' => function ($q2) {
@@ -83,7 +83,7 @@ class ObtenerPedidosService
     }
 
     /**
-     * Aplicar filtros al query de PedidoProduccion
+     * Aplicar filtros al query de Pedidos
      */
     private function aplicarFiltros($query, array $filtros): void
     {
@@ -93,14 +93,14 @@ class ObtenerPedidosService
 
         $estado = $filtros['estado'];
 
-        // Si el estado es "No iniciado", filtrar por pendientes de aprobación
+        // Si el estado es "No iniciado", filtrar por pendientes de aprobaciÃ³n
         if ($estado === 'No iniciado') {
             $query->where('estado', 'No iniciado')
                 ->whereNull('aprobado_por_supervisor_en');
         }
-        // Si el estado es "En Ejecución", mostrar "No iniciado" y "En Ejecución"
-        elseif ($estado === 'En Ejecución') {
-            $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
+        // Si el estado es "En EjecuciÃ³n", mostrar "No iniciado" y "En EjecuciÃ³n"
+        elseif ($estado === 'En EjecuciÃ³n') {
+            $query->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n']);
         }
         // Otros estados exactos
         else {
@@ -109,7 +109,7 @@ class ObtenerPedidosService
     }
 
     /**
-     * Obtener búsqueda aplicada
+     * Obtener bÃºsqueda aplicada
      */
     public function aplicarBusqueda($query, string $search): void
     {
@@ -120,13 +120,13 @@ class ObtenerPedidosService
     }
 
     /**
-     * Obtener estados únicos disponibles
+     * Obtener estados Ãºnicos disponibles
      */
     public function obtenerEstados(): array
     {
-        \Log::info(' [ESTADOS] Obteniendo estados únicos');
+        \Log::info(' [ESTADOS] Obteniendo estados Ãºnicos');
 
-        $estados = PedidoProduccion::select('estado')
+        $estados = Pedidos::select('estado')
             ->whereNotNull('estado')
             ->distinct()
             ->pluck('estado')
@@ -138,40 +138,41 @@ class ObtenerPedidosService
     }
 
     /**
-     * Obtener estadísticas de pedidos para dashboard
+     * Obtener estadÃ­sticas de pedidos para dashboard
      */
     public function obtenerEstadisticas(): array
     {
         $userId = Auth::id();
 
-        \Log::info('📈 [ESTADÍSTICAS] Calculando para usuario: ' . $userId);
+        \Log::info('ðŸ“ˆ [ESTADÃSTICAS] Calculando para usuario: ' . $userId);
 
         $ahora = now();
         $inicioMes = $ahora->clone()->startOfMonth();
-        $inicioAño = $ahora->clone()->startOfYear();
+        $inicioAÃ±o = $ahora->clone()->startOfYear();
         $inicioHoy = $ahora->clone()->startOfDay();
 
         $estadisticas = [
-            'pedidos_dia' => PedidoProduccion::where('asesor_id', $userId)
+            'pedidos_dia' => Pedidos::where('asesor_id', $userId)
                 ->whereDate('created_at', $inicioHoy)
                 ->count(),
             
-            'pedidos_mes' => PedidoProduccion::where('asesor_id', $userId)
+            'pedidos_mes' => Pedidos::where('asesor_id', $userId)
                 ->whereBetween('created_at', [$inicioMes, $ahora])
                 ->count(),
             
-            'pedidos_anio' => PedidoProduccion::where('asesor_id', $userId)
-                ->whereBetween('created_at', [$inicioAño, $ahora])
+            'pedidos_anio' => Pedidos::where('asesor_id', $userId)
+                ->whereBetween('created_at', [$inicioAÃ±o, $ahora])
                 ->count(),
             
-            'pedidos_pendientes' => PedidoProduccion::where('asesor_id', $userId)
+            'pedidos_pendientes' => Pedidos::where('asesor_id', $userId)
                 ->where('estado', 'No iniciado')
                 ->whereNull('aprobado_por_supervisor_en')
                 ->count(),
         ];
 
-        \Log::info('📈 [ESTADÍSTICAS] Calculadas', $estadisticas);
+        \Log::info('ðŸ“ˆ [ESTADÃSTICAS] Calculadas', $estadisticas);
 
         return $estadisticas;
     }
 }
+

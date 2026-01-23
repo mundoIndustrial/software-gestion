@@ -23,7 +23,7 @@ class CotizacionTest extends TestCase
     {
         $this->usuarioId = UserId::crear(1);
         $this->cliente = Cliente::crear('Acme Corp');
-        $this->asesora = Asesora::crear('María García');
+        $this->asesora = Asesora::crear('MarÃ­a GarcÃ­a');
     }
 
     /**
@@ -74,7 +74,7 @@ class CotizacionTest extends TestCase
             $this->asesora
         );
 
-        $prenda = PrendaCotizacion::crear('Camiseta', 'Camiseta de algodón', 100);
+        $prenda = PrendaCotizacion::crear('Camiseta', 'Camiseta de algodÃ³n', 100);
         $cotizacion->agregarPrenda($prenda);
 
         $this->assertCount(1, $cotizacion->prendas());
@@ -202,3 +202,4 @@ class CotizacionTest extends TestCase
         $this->assertCount(0, $cotizacion->eventos());
     }
 }
+

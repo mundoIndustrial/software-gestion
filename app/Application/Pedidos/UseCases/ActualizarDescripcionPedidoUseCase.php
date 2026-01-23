@@ -7,15 +7,15 @@ use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 
 /**
- * Use Case: Actualizar Descripción del Pedido
+ * Use Case: Actualizar DescripciÃ³n del Pedido
  * 
- * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validación
+ * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validaciÃ³n
  * 
- * Antes: 46 líneas (20 líneas de lógica + 26 de validación)
- * Después: 30 líneas (solo lógica de negocio)
- * Reducción: 35%
+ * Antes: 46 lÃ­neas (20 lÃ­neas de lÃ³gica + 26 de validaciÃ³n)
+ * DespuÃ©s: 30 lÃ­neas (solo lÃ³gica de negocio)
+ * ReducciÃ³n: 35%
  * 
- * Permite actualizar la descripción de un pedido que no esté finalizado
+ * Permite actualizar la descripciÃ³n de un pedido que no estÃ© finalizado
  */
 class ActualizarDescripcionPedidoUseCase
 {
@@ -27,8 +27,8 @@ class ActualizarDescripcionPedidoUseCase
 
     public function ejecutar(int $pedidoId, string $nuevaDescripcion): PedidoResponseDTO
     {
-        // CENTRALIZADO: Validar descripción no vacía (trait)
-        $this->validarNoVacio($nuevaDescripcion, 'Descripción');
+        // CENTRALIZADO: Validar descripciÃ³n no vacÃ­a (trait)
+        $this->validarNoVacio($nuevaDescripcion, 'DescripciÃ³n');
 
         // CENTRALIZADO: Validar pedido existe (trait)
         $pedido = $this->validarPedidoExiste($pedidoId, $this->pedidoRepository);
@@ -44,7 +44,8 @@ class ActualizarDescripcionPedidoUseCase
             descripcion: $pedido->descripcion(),
             totalPrendas: $pedido->totalPrendas(),
             totalArticulos: $pedido->totalArticulos(),
-            mensaje: 'Descripción actualizada exitosamente'
+            mensaje: 'DescripciÃ³n actualizada exitosamente'
         );
     }
 }
+

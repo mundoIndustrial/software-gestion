@@ -9,7 +9,7 @@ use App\Models\Cliente;
 use Tests\TestCase;
 
 /**
- * Test Rápido: Cotizaciones (Sin crear 260+ cotizaciones)
+ * Test RÃ¡pido: Cotizaciones (Sin crear 260+ cotizaciones)
  * 
  * Tests simples que se ejecutan en segundos para demostrar
  * que el sistema funciona correctamente.
@@ -28,12 +28,12 @@ class CotizacionesRapidoTest extends TestCase
         $this->cliente = Cliente::factory()->create(['nombre' => 'Cliente Test']);
         $this->tipo = TipoCotizacion::firstOrCreate(
             ['codigo' => 'M'],
-            ['nombre' => 'Muestra', 'descripcion' => 'Cotización de muestra']
+            ['nombre' => 'Muestra', 'descripcion' => 'CotizaciÃ³n de muestra']
         );
     }
 
     /**
-     * TEST 1: Crear 1 cotización simple
+     * TEST 1: Crear 1 cotizaciÃ³n simple
      */
     public function test_crear_cotizacion_simple(): void
     {
@@ -54,17 +54,17 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertEquals('COT-TEST-001', $cot->numero_cotizacion);
         $this->assertEquals($this->asesor->id, $cot->asesor_id);
 
-        echo "\n Cotización creada: COT-TEST-001\n";
+        echo "\n CotizaciÃ³n creada: COT-TEST-001\n";
     }
 
     /**
-     * TEST 2: Numero cotizacion es único
+     * TEST 2: Numero cotizacion es Ãºnico
      */
     public function test_numero_cotizacion_unico(): void
     {
         $this->actingAs($this->asesor);
 
-        // Primera cotización
+        // Primera cotizaciÃ³n
         Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
@@ -75,7 +75,7 @@ class CotizacionesRapidoTest extends TestCase
             'estado' => 'enviada',
         ]);
 
-        // Intentar segunda con el mismo número - debe fallar
+        // Intentar segunda con el mismo nÃºmero - debe fallar
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         Cotizacion::create([
@@ -117,7 +117,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertEquals(5, count(array_unique($numeros)));
 
         echo "\n 5 Cotizaciones secuenciales creadas\n";
-        echo "Números: " . implode(', ', $numeros) . "\n";
+        echo "NÃºmeros: " . implode(', ', $numeros) . "\n";
     }
 
     /**
@@ -146,11 +146,11 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertFalse($cot->es_borrador);
         $this->assertEquals('enviada', $cot->estado);
 
-        echo "\n Todos los campos requeridos válidos\n";
+        echo "\n Todos los campos requeridos vÃ¡lidos\n";
     }
 
     /**
-     * TEST 5: Tipos de cotización existen
+     * TEST 5: Tipos de cotizaciÃ³n existen
      */
     public function test_tipos_cotizacion_existen(): void
     {
@@ -167,11 +167,11 @@ class CotizacionesRapidoTest extends TestCase
             $this->assertNotNull($tipo->nombre);
         }
 
-        echo "\n 3 Tipos de cotización disponibles (M, P, G)\n";
+        echo "\n 3 Tipos de cotizaciÃ³n disponibles (M, P, G)\n";
     }
 
     /**
-     * TEST 6: Estados válidos
+     * TEST 6: Estados vÃ¡lidos
      */
     public function test_estados_validos(): void
     {
@@ -193,6 +193,7 @@ class CotizacionesRapidoTest extends TestCase
             $this->assertEquals($estado, $cot->estado);
         }
 
-        echo "\n Estados válidos: enviada, aceptada, rechazada\n";
+        echo "\n Estados vÃ¡lidos: enviada, aceptada, rechazada\n";
     }
 }
+

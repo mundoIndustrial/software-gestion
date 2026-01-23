@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\MaterialesOrdenInsumos;
@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * EliminarPedidoService
  * 
- * Servicio para eliminar pedidos de producción y todas sus relaciones.
- * Encapsula la lógica compleja de cascada de eliminación.
+ * Servicio para eliminar pedidos de producciÃ³n y todas sus relaciones.
+ * Encapsula la lÃ³gica compleja de cascada de eliminaciÃ³n.
  */
 class EliminarPedidoService
 {
@@ -21,7 +21,7 @@ class EliminarPedidoService
      * Eliminar un pedido completamente (incluyendo todas sus relaciones)
      * 
      * Elimina:
-     * - El pedido de producción
+     * - El pedido de producciÃ³n
      * - Todas las prendas asociadas
      * - Todos los procesos de prenda
      * - Todos los materiales de insumos
@@ -36,7 +36,7 @@ class EliminarPedidoService
         $userId = Auth::id();
         
         // Obtener el pedido con mayor tolerancia
-        $pedidoData = PedidoProduccion::where('numero_pedido', $numeroPedido)
+        $pedidoData = Pedidos::where('numero_pedido', $numeroPedido)
             ->where('asesor_id', $userId)
             ->first();
 
@@ -49,7 +49,7 @@ class EliminarPedidoService
             $numeroPedidoGuardado = $pedidoData->numero_pedido;
             $pedidoId = $pedidoData->id;
             
-            \Log::info('🗑️ Iniciando eliminación de pedido', [
+            \Log::info('ðŸ—‘ï¸ Iniciando eliminaciÃ³n de pedido', [
                 'numero_pedido' => $numeroPedidoGuardado,
                 'pedido_id' => $pedidoId,
             ]);
@@ -74,7 +74,7 @@ class EliminarPedidoService
                     ->delete();
             }
             
-            \Log::info('🗑️ Fotos de prendas eliminadas', [
+            \Log::info('ðŸ—‘ï¸ Fotos de prendas eliminadas', [
                 'numero_pedido' => $numeroPedidoGuardado,
                 'prendas_procesadas' => $prendas->count()
             ]);
@@ -85,7 +85,7 @@ class EliminarPedidoService
             // 5. Eliminar prendas (relacionadas por numero_pedido)
             PrendaPedido::where('numero_pedido', $numeroPedidoGuardado)->delete();
             
-            \Log::info('🗑️ Prendas eliminadas', [
+            \Log::info('ðŸ—‘ï¸ Prendas eliminadas', [
                 'numero_pedido' => $numeroPedidoGuardado,
                 'cantidad_prendas' => $prendas->count()
             ]);
@@ -93,13 +93,13 @@ class EliminarPedidoService
             // 6. Eliminar materiales de insumos (relacionados por numero_pedido)
             MaterialesOrdenInsumos::where('numero_pedido', $numeroPedidoGuardado)->delete();
             
-            // 7. Eliminar pedido(s) de LOGO si esta es una cotización combinada
+            // 7. Eliminar pedido(s) de LOGO si esta es una cotizaciÃ³n combinada
             $logoPedidos = DB::table('logo_pedidos')
                 ->where('pedido_id', $pedidoId)
                 ->get();
             
             if ($logoPedidos->count() > 0) {
-                \Log::info('🗑️ Encontrados logo_pedidos vinculados', [
+                \Log::info('ðŸ—‘ï¸ Encontrados logo_pedidos vinculados', [
                     'cantidad' => $logoPedidos->count(),
                     'pedido_id' => $pedidoId
                 ]);
@@ -119,7 +119,7 @@ class EliminarPedidoService
                         ->where('logo_pedido_id', $logoPedido->id)
                         ->delete();
                     
-                    \Log::info('🗑️ Fotos y procesos del logo eliminados', [
+                    \Log::info('ðŸ—‘ï¸ Fotos y procesos del logo eliminados', [
                         'logo_pedido_id' => $logoPedido->id,
                         'numero_logo_pedido' => $logoPedido->numero_pedido ?? 'N/A'
                     ]);
@@ -130,7 +130,7 @@ class EliminarPedidoService
                     ->where('pedido_id', $pedidoId)
                     ->delete();
                 
-                \Log::info('🗑️ Logo pedidos eliminados', [
+                \Log::info('ðŸ—‘ï¸ Logo pedidos eliminados', [
                     'pedido_id' => $pedidoId,
                     'cantidad' => $logoPedidos->count()
                 ]);
@@ -139,17 +139,17 @@ class EliminarPedidoService
             // 8. Eliminar el pedido de pedidos_produccion
             $pedidoData->delete();
             
-            \Log::info('🗑️ Pedido eliminado de pedidos_produccion', [
+            \Log::info('ðŸ—‘ï¸ Pedido eliminado de pedidos_produccion', [
                 'numero_pedido' => $numeroPedidoGuardado,
                 'pedido_id' => $pedidoId,
             ]);
             
-            // 9. Decrementar el número de secuencia
+            // 9. Decrementar el nÃºmero de secuencia
             DB::table('numero_secuencias')
                 ->where('tipo', 'pedido_produccion')
                 ->decrement('siguiente');
             
-            \Log::info('🗑️ Número de secuencia decrementado', [
+            \Log::info('ðŸ—‘ï¸ NÃºmero de secuencia decrementado', [
                 'numero_pedido' => $numeroPedidoGuardado,
             ]);
 
@@ -171,3 +171,4 @@ class EliminarPedidoService
         }
     }
 }
+

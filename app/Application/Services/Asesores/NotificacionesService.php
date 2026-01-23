@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  * NotificacionesService
  * 
  * Servicio para gestionar notificaciones del asesor.
- * Encapsula la lógica de obtención y marcado de notificaciones.
+ * Encapsula la lÃ³gica de obtenciÃ³n y marcado de notificaciones.
  */
 class NotificacionesService
 {
@@ -36,7 +36,7 @@ class NotificacionesService
                 return [
                     'id' => $notif->id,
                     'tipo' => 'fecha_estimada',
-                    'titulo' => '📅 Fecha Estimada Asignada',
+                    'titulo' => 'ðŸ“… Fecha Estimada Asignada',
                     'pedido_id' => $data['pedido_id'],
                     'numero_pedido' => $data['numero_pedido'],
                     'fecha_estimada' => $data['fecha_estimada'],
@@ -51,7 +51,7 @@ class NotificacionesService
         // ============================================
         // NUEVO: Pedidos/Cotizaciones de OTROS asesores
         // ============================================
-        $pedidosOtrosAsesores = PedidoProduccion::where('asesor_id', '!=', $userId)
+        $pedidosOtrosAsesores = Pedidos::where('asesor_id', '!=', $userId)
             ->whereNotNull('asesor_id')
             ->where('created_at', '>=', now()->subHours(24))
             ->orderBy('created_at', 'desc')
@@ -71,18 +71,18 @@ class NotificacionesService
             });
 
         // ============================================
-        // ANTERIOR: Pedidos propios próximos a vencer
+        // ANTERIOR: Pedidos propios prÃ³ximos a vencer
         // ============================================
-        $pedidosProximosEntregar = PedidoProduccion::where('asesor_id', $userId)
-            ->whereIn('estado', ['No iniciado', 'En Ejecución'])
+        $pedidosProximosEntregar = Pedidos::where('asesor_id', $userId)
+            ->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n'])
             ->where('created_at', '<=', now()->addDays(7))
             ->whereNotIn('id', $viewedPedidoIds)
             ->orderBy('created_at')
             ->get();
 
-        // Pedidos propios en ejecución
-        $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
-            ->where('estado', 'En Ejecución')
+        // Pedidos propios en ejecuciÃ³n
+        $pedidosEnEjecucion = Pedidos::where('asesor_id', $userId)
+            ->where('estado', 'En EjecuciÃ³n')
             ->whereNotIn('id', $viewedPedidoIds)
             ->count();
 
@@ -101,13 +101,13 @@ class NotificacionesService
     }
 
     /**
-     * Marcar todas las notificaciones como leídas
+     * Marcar todas las notificaciones como leÃ­das
      */
     public function marcarTodosLeidosPedidos(): void
     {
         $userId = Auth::id();
         
-        // Marcar todas las notificaciones de fecha estimada como leídas
+        // Marcar todas las notificaciones de fecha estimada como leÃ­das
         DB::table('notifications')
             ->where('notifiable_id', $userId)
             ->where('notifiable_type', 'App\\Models\\User')
@@ -116,32 +116,32 @@ class NotificacionesService
             ->update(['read_at' => now()]);
         
         // Obtener todos los pedidos que generan notificaciones
-        $pedidosProximos = PedidoProduccion::where('asesor_id', $userId)
-            ->whereIn('estado', ['No iniciado', 'En Ejecución'])
+        $pedidosProximos = Pedidos::where('asesor_id', $userId)
+            ->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n'])
             ->where('created_at', '<=', now()->addDays(7))
             ->pluck('id')
             ->toArray();
         
-        $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
-            ->where('estado', 'En Ejecución')
+        $pedidosEnEjecucion = Pedidos::where('asesor_id', $userId)
+            ->where('estado', 'En EjecuciÃ³n')
             ->pluck('id')
             ->toArray();
         
         // Combinar todos los IDs de pedidos a marcar como vistos
         $allPedidoIds = array_merge($pedidosProximos, $pedidosEnEjecucion);
         
-        // Guardar en sesión del usuario
+        // Guardar en sesiÃ³n del usuario
         session(['viewed_pedidos_' . $userId => $allPedidoIds]);
     }
 
     /**
-     * Marcar una notificación específica como leída
+     * Marcar una notificaciÃ³n especÃ­fica como leÃ­da
      */
     public function marcarNotificacionLeida(string $notificationId): void
     {
         $userId = Auth::id();
         
-        // Verificar que la notificación pertenezca al usuario actual
+        // Verificar que la notificaciÃ³n pertenezca al usuario actual
         $notificacion = DB::table('notifications')
             ->where('id', $notificationId)
             ->where('notifiable_id', $userId)
@@ -149,12 +149,13 @@ class NotificacionesService
             ->first();
         
         if (!$notificacion) {
-            throw new \Exception('Notificación no encontrada', 404);
+            throw new \Exception('NotificaciÃ³n no encontrada', 404);
         }
         
-        // Marcar como leída
+        // Marcar como leÃ­da
         DB::table('notifications')
             ->where('id', $notificationId)
             ->update(['read_at' => now()]);
     }
 }
+

@@ -249,7 +249,7 @@ class PedidoService
             
             // Guardar tallas en la tabla relacional prenda_pedido_tallas
             if (!empty($cantidadesPorTalla)) {
-                $prendaTallaRepository = new \App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository();
+                $prendaTallaRepository = new \App\Domain\Pedidos\Repositories\PedidoProduccionRepository();
                 $prendaTallaRepository->guardarTallas($prenda->id, $cantidadesPorTalla);
             }
 

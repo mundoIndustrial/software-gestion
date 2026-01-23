@@ -3,8 +3,8 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
-use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Agregado\PedidosAggregate;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Events\Dispatcher;
 use Exception;
 
@@ -13,32 +13,32 @@ use Exception;
  * 
  * COMPLETADO: Fue refactorizado en FASE 1
  * 
- * Use Case para crear un nuevo pedido de producción
+ * Use Case para crear un nuevo pedido de producciÃ³n
  * 
  * Responsabilidades:
  * - Validar datos de entrada (delegado a agregado)
  * - Crear agregado de dominio
- * - Persistir en repositorio ✅ AHORA FUNCIONA
- * - Publicar domain events ✅ AHORA FUNCIONA
+ * - Persistir en repositorio âœ… AHORA FUNCIONA
+ * - Publicar domain events âœ… AHORA FUNCIONA
  * - Retornar resultado
  * 
- * Patrón: Command Handler
+ * PatrÃ³n: Command Handler
  */
 class CrearProduccionPedidoUseCase
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoRepository $pedidoRepository,
         private Dispatcher $eventDispatcher
     ) {}
 
     /**
      * Ejecutar el use case
      */
-    public function ejecutar(CrearProduccionPedidoDTO $dto): PedidoProduccionAggregate
+    public function ejecutar(CrearProduccionPedidoDTO $dto): PedidosAggregate
     {
         try {
             // 1. Crear agregado con validaciones de dominio
-            $pedido = PedidoProduccionAggregate::crear([
+            $pedido = PedidosAggregate::crear([
                 'numero_pedido' => $dto->numeroPedido,
                 'cliente' => $dto->cliente,
             ]);
@@ -50,10 +50,10 @@ class CrearProduccionPedidoUseCase
                 }
             }
 
-            // 3. ✅ PERSISTIR EN REPOSITORIO (ANTES ERA TODO)
+            // 3. âœ… PERSISTIR EN REPOSITORIO (ANTES ERA TODO)
             $this->pedidoRepository->guardar($pedido);
 
-            // 4. ✅ PUBLICAR DOMAIN EVENTS (ANTES ERA TODO)
+            // 4. âœ… PUBLICAR DOMAIN EVENTS (ANTES ERA TODO)
             foreach ($pedido->eventos() as $evento) {
                 $this->eventDispatcher->dispatch($evento);
             }
@@ -61,7 +61,9 @@ class CrearProduccionPedidoUseCase
             return $pedido;
 
         } catch (Exception $e) {
-            throw new Exception("Error al crear pedido de producción: " . $e->getMessage());
+            throw new Exception("Error al crear pedido de producciÃ³n: " . $e->getMessage());
         }
     }
 }
+
+

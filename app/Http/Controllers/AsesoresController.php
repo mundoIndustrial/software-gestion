@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AsesoresInventarioTelasController;
 use App\Application\Services\Asesores\AsesoresApplicationFacadeService;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 
 class AsesoresController extends Controller
 {

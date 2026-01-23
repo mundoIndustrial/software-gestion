@@ -7,7 +7,7 @@ use InvalidArgumentException;
 /**
  * CrearProduccionPedidoDTO
  * 
- * Data Transfer Object para crear un nuevo pedido de producción
+ * Data Transfer Object para crear un nuevo pedido de producciÃ³n
  * Encapsula los datos del request y los valida
  */
 class CrearProduccionPedidoDTO
@@ -43,7 +43,7 @@ class CrearProduccionPedidoDTO
     private function validar(): void
     {
         if (empty($this->numeroPedido)) {
-            throw new InvalidArgumentException("Número de pedido es requerido");
+            throw new InvalidArgumentException("NÃºmero de pedido es requerido");
         }
 
         if (empty($this->cliente)) {
@@ -51,3 +51,4 @@ class CrearProduccionPedidoDTO
         }
     }
 }
+

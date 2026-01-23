@@ -5,19 +5,19 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\UseCases\Base\AbstractObtenerUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Application\Pedidos\DTOs\PedidoResponseDTO;
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Obtener Pedido
  * 
- * REFACTORIZADO: Utiliza AbstractObtenerUseCase para obtención y validación
+ * REFACTORIZADO: Utiliza AbstractObtenerUseCase para obtenciÃ³n y validaciÃ³n
  * 
- * Antes: 316 líneas (185 líneas de lógica + 131 de obtención/validación)
- * Después: 250 líneas (solo lógica de enriquecimiento de datos)
- * Reducción: 21% (la lógica de enriquecimiento es compleja y específica)
+ * Antes: 316 lÃ­neas (185 lÃ­neas de lÃ³gica + 131 de obtenciÃ³n/validaciÃ³n)
+ * DespuÃ©s: 250 lÃ­neas (solo lÃ³gica de enriquecimiento de datos)
+ * ReducciÃ³n: 21% (la lÃ³gica de enriquecimiento es compleja y especÃ­fica)
  * 
- * Query Side - CQRS básico
+ * Query Side - CQRS bÃ¡sico
  * Obtiene un pedido existente por ID con todas sus prendas y detalles enriquecidos
  */
 class ObtenerPedidoUseCase extends AbstractObtenerUseCase
@@ -28,7 +28,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Personalización: Obtener todas las opciones de enriquecimiento
+     * PersonalizaciÃ³n: Obtener todas las opciones de enriquecimiento
      */
     protected function obtenerOpciones(): array
     {
@@ -41,12 +41,23 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Personalización: Construir respuesta DTO con lógica de enriquecimiento compleja
+     * PersonalizaciÃ³n: Construir respuesta DTO con lÃ³gica de enriquecimiento compleja
+     * 
+     * Nota: $pedidoId es el ID del pedido. Cargamos el modelo Eloquent aquÃ­ con relaciones
      */
-    protected function construirRespuesta(array $datosEnriquecidos, $modeloPedido): mixed
+    protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {
-        $prendasCompletas = $this->obtenerPrendasCompletas($modeloPedido);
-        $eppsCompletos = $this->obtenerEppsCompletos($modeloPedido);
+        // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
+        $modeloEloquent = \App\Models\Pedido::with(['prendas' => function($q) {
+            $q->with(['tallas', 'variantes', 'coloresTelas' => function($q2) {
+                $q2->with(['color', 'tela', 'fotos']);
+            }, 'fotos']);
+        }, 'epps' => function($q) {
+            $q->with(['epp', 'imagenes']);
+        }])->find($pedidoId);
+
+        $prendasCompletas = $this->obtenerPrendasCompletas($modeloEloquent);
+        $eppsCompletos = $this->obtenerEppsCompletos($modeloEloquent);
 
         return new PedidoResponseDTO(
             id: $datosEnriquecidos['id'],
@@ -63,19 +74,19 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Obtener prendas completas enriquecidas desde la BD
+     * Obtener prendas completas enriquecidas desde el modelo cargado
      */
-    private function obtenerPrendasCompletas($modeloPedido): array
+    private function obtenerPrendasCompletas($modeloEloquent): array
     {
         try {
-            if (!$modeloPedido || !$modeloPedido->prendas) {
-                Log::warning('Pedido sin prendas', ['pedido_id' => $modeloPedido?->id]);
+            if (!$modeloEloquent || !$modeloEloquent->prendas) {
+                Log::warning('Pedido sin prendas', ['pedido_id' => $modeloEloquent?->id]);
                 return [];
             }
 
             $prendasArray = [];
 
-            foreach ($modeloPedido->prendas as $prenda) {
+            foreach ($modeloEloquent->prendas as $prenda) {
                 Log::info('Procesando prenda', ['prenda_id' => $prenda->id, 'nombre' => $prenda->nombre_prenda]);
 
                 $tallasEstructuradas = $this->construirEstructuraTallas($prenda);
@@ -110,12 +121,12 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 ];
             }
 
-            Log::info('Prendas procesadas exitosamente', ['pedido_id' => $modeloPedido->id, 'cantidad' => count($prendasArray)]);
+            Log::info('Prendas procesadas exitosamente', ['pedido_id' => $modeloEloquent->id, 'cantidad' => count($prendasArray)]);
             return $prendasArray;
 
         } catch (\Exception $e) {
             Log::error('Error obteniendo prendas completas', [
-                'pedido_id' => $modeloPedido?->id,
+                'pedido_id' => $modeloEloquent?->id,
                 'error' => $e->getMessage(),
             ]);
             return [];
@@ -222,7 +233,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Obtener imágenes de tela
+     * Obtener imÃ¡genes de tela
      */
     private function obtenerImagenesTela($prenda): array
     {
@@ -239,7 +250,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 }
             }
         } catch (\Exception $e) {
-            Log::warning('Error obteniendo imágenes de tela', [
+            Log::warning('Error obteniendo imÃ¡genes de tela', [
                 'prenda_id' => $prenda->id ?? null,
                 'error' => $e->getMessage()
             ]);
@@ -251,16 +262,16 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     /**
      * Obtener EPPs del pedido enriquecidos
      */
-    private function obtenerEppsCompletos($modeloPedido): array
+    private function obtenerEppsCompletos($modeloEloquent): array
     {
         $epps = [];
 
         try {
-            if (!$modeloPedido || !$modeloPedido->epps) {
+            if (!$modeloEloquent || !$modeloEloquent->epps) {
                 return [];
             }
 
-            foreach ($modeloPedido->epps as $epp) {
+            foreach ($modeloEloquent->epps as $epp) {
                 $imagenes = $epp->imagenes ? $epp->imagenes->pluck('ruta_web')->toArray() : [];
 
                 $epps[] = [
@@ -274,10 +285,10 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 ];
             }
 
-            Log::info('EPPs procesados exitosamente', ['pedido_id' => $modeloPedido->id, 'cantidad' => count($epps)]);
+            Log::info('EPPs procesados exitosamente', ['pedido_id' => $modeloEloquent->id, 'cantidad' => count($epps)]);
         } catch (\Exception $e) {
             Log::warning('Error obteniendo EPPs', [
-                'pedido_id' => $modeloPedido?->id,
+                'pedido_id' => $modeloEloquent?->id,
                 'error' => $e->getMessage()
             ]);
         }
@@ -285,5 +296,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         return $epps;
     }
 }
+
+
 
 

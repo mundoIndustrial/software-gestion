@@ -20,10 +20,11 @@ class PedidoCreadoListener
             'total_prendas' => $evento->totalPrendas,
         ]);
 
-        // TODO: Aquí puedes:
+        // TODO: AquÃ­ puedes:
         // - Enviar email al cliente
-        // - Actualizar caché
+        // - Actualizar cachÃ©
         // - Sincronizar con otros sistemas
         // - Crear notificaciones
     }
 }
+

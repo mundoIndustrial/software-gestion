@@ -7,11 +7,11 @@ use App\Application\Pedidos\UseCases\Base\AbstractEstadoTransicionUseCase;
 /**
  * Use Case: Cancelar Pedido
  * 
- * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicación
+ * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicaciÃ³n
  * 
- * Antes: 28 líneas
- * Después: 8 líneas
- * Reducción: 71%
+ * Antes: 28 lÃ­neas
+ * DespuÃ©s: 8 lÃ­neas
+ * ReducciÃ³n: 71%
  */
 class CancelarPedidoUseCase extends AbstractEstadoTransicionUseCase
 {
@@ -25,3 +25,4 @@ class CancelarPedidoUseCase extends AbstractEstadoTransicionUseCase
         return 'Pedido cancelado exitosamente';
     }
 }
+

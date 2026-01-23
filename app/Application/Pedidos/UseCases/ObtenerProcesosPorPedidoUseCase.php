@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -10,24 +10,24 @@ use Carbon\Carbon;
 /**
  * ObtenerProcesosPorPedidoUseCase
  * 
- * Caso de uso para obtener todos los procesos de un pedido con cálculo de días hábiles
- * Responsabilidad: Orquestar la obtención de procesos e información relacionada
+ * Caso de uso para obtener todos los procesos de un pedido con cÃ¡lculo de dÃ­as hÃ¡biles
+ * Responsabilidad: Orquestar la obtenciÃ³n de procesos e informaciÃ³n relacionada
  * 
- * Patrón: Use Case (Application Layer - DDD)
+ * PatrÃ³n: Use Case (Application Layer - DDD)
  */
 class ObtenerProcesosPorPedidoUseCase
 {
     /**
      * Ejecutar caso de uso
      * 
-     * @param int|string $id - número de pedido o ID
+     * @param int|string $id - nÃºmero de pedido o ID
      * @return array - Datos del pedido con procesos
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function ejecutar($id): array
     {
         // Buscar por numero_pedido o id
-        $orden = PedidoProduccion::where('numero_pedido', $id)
+        $orden = Pedidos::where('numero_pedido', $id)
             ->orWhere('id', $id)
             ->firstOrFail();
 
@@ -47,7 +47,7 @@ class ObtenerProcesosPorPedidoUseCase
             })
             ->values();
 
-        // Calcular días hábiles totales
+        // Calcular dÃ­as hÃ¡biles totales
         $totalDiasHabiles = $this->calcularDiasHabilesBatch(
             $procesos->count() > 0 
                 ? Carbon::parse($procesos->first()->fecha_inicio)
@@ -68,7 +68,7 @@ class ObtenerProcesosPorPedidoUseCase
     }
 
     /**
-     * Obtener la fecha final para el cálculo de días hábiles
+     * Obtener la fecha final para el cÃ¡lculo de dÃ­as hÃ¡biles
      */
     private function obtenerFechaFinal($procesos): Carbon
     {
@@ -90,7 +90,7 @@ class ObtenerProcesosPorPedidoUseCase
     }
 
     /**
-     * Calcular días hábiles entre dos fechas
+     * Calcular dÃ­as hÃ¡biles entre dos fechas
      */
     private function calcularDiasHabilesBatch(Carbon $inicio, Carbon $fin, array $festivos): int
     {
@@ -98,7 +98,7 @@ class ObtenerProcesosPorPedidoUseCase
         $actual = $inicio->copy();
 
         while ($actual <= $fin) {
-            // No es sábado (6) ni domingo (0)
+            // No es sÃ¡bado (6) ni domingo (0)
             if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
                 // No es festivo
                 $dateString = $actual->format('Y-m-d');
@@ -117,3 +117,5 @@ class ObtenerProcesosPorPedidoUseCase
         return max(0, $diasCalculados - 1);
     }
 }
+
+

@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Auth;
 use App\Events\OrdenUpdated;
 
@@ -10,16 +10,16 @@ use App\Events\OrdenUpdated;
  * AnularPedidoService
  * 
  * Servicio para anular pedidos con registro de novedad.
- * Encapsula la lógica de negocio de anulación.
+ * Encapsula la lÃ³gica de negocio de anulaciÃ³n.
  */
 class AnularPedidoService
 {
     /**
      * Anular un pedido
      */
-    public function anular(int $numeroPedido, string $novedad): PedidoProduccion
+    public function anular(int $numeroPedido, string $novedad): Pedidos
     {
-        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+        $pedido = Pedidos::where('numero_pedido', $numeroPedido)
             ->firstOrFail();
 
         // Verificar permisos
@@ -56,3 +56,4 @@ class AnularPedidoService
         return $pedido;
     }
 }
+

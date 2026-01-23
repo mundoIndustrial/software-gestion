@@ -4,7 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\BuscarPedidoPorNumeroDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 final class BuscarPedidoPorNumeroUseCase
@@ -12,20 +12,20 @@ final class BuscarPedidoPorNumeroUseCase
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoRepository $pedidoRepository,
     ) {}
 
     public function ejecutar(BuscarPedidoPorNumeroDTO $dto)
     {
-        Log::info('[BuscarPedidoPorNumeroUseCase] Buscando pedido por número', [
+        Log::info('[BuscarPedidoPorNumeroUseCase] Buscando pedido por nÃºmero', [
             'numero' => $dto->numero,
         ]);
 
-        $this->validarNoVacio($dto->numero, 'Número de pedido');
+        $this->validarNoVacio($dto->numero, 'NÃºmero de pedido');
 
         $pedido = $this->pedidoRepository->obtenerPorNumero($dto->numero);
 
-        Log::info('[BuscarPedidoPorNumeroUseCase] Búsqueda completada', [
+        Log::info('[BuscarPedidoPorNumeroUseCase] BÃºsqueda completada', [
             'numero' => $dto->numero,
             'encontrado' => !is_null($pedido),
         ]);
@@ -33,3 +33,5 @@ final class BuscarPedidoPorNumeroUseCase
         return $pedido;
     }
 }
+
+

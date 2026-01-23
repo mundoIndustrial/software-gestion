@@ -14,6 +14,7 @@ class PedidoNoEncontrado extends \Exception
 
     public static function conNumero(string $numero): self
     {
-        return new self("Pedido con número $numero no encontrado");
+        return new self("Pedido con nÃºmero $numero no encontrado");
     }
 }
+

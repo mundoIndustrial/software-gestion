@@ -5,7 +5,7 @@ namespace App\Application\Pedidos\DTOs;
 /**
  * ObtenerEstadisticasDashboardDTO
  * 
- * DTO para obtener estadísticas generales del dashboard del asesor
+ * DTO para obtener estadÃ­sticas generales del dashboard del asesor
  */
 class ObtenerEstadisticasDashboardDTO
 {
@@ -24,10 +24,11 @@ class ObtenerEstadisticasDashboardDTO
     }
 
     /**
-     * Crear instancia estática
+     * Crear instancia estÃ¡tica
      */
     public static function crear(): self
     {
         return self::fromRequest();
     }
 }
+

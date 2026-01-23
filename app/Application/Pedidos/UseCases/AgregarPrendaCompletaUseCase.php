@@ -4,7 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Models\PrendaPedido;
 
 /**
@@ -13,24 +13,24 @@ use App\Models\PrendaPedido;
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
  * Responsabilidades:
- * - Validar pedido existe ✅ TRAIT
+ * - Validar pedido existe âœ… TRAIT
  * - Crear registro en prendas_pedido
  * - Crear fotos de referencia (prenda_fotos_pedido)
  * - Crear tallas y cantidades (prenda_pedido_tallas)
  * 
  * Responsabilidades SEPARADAS en otros Use Cases:
- * - Agregar variantes → AgregarVariantePrendaUseCase
- * - Agregar colores y telas → AgregarColorTelaUseCase
- * - Agregar procesos → AgregarProcesoPrendaUseCase
+ * - Agregar variantes â†’ AgregarVariantePrendaUseCase
+ * - Agregar colores y telas â†’ AgregarColorTelaUseCase
+ * - Agregar procesos â†’ AgregarProcesoPrendaUseCase
  * 
- * Antes: 58 líneas | Después: ~45 líneas | Reducción: ~22%
+ * Antes: 58 lÃ­neas | DespuÃ©s: ~45 lÃ­neas | ReducciÃ³n: ~22%
  */
 final class AgregarPrendaCompletaUseCase
 {
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        private PedidoRepository $pedidoRepository
     ) {}
 
     public function execute(AgregarPrendaCompletaDTO $dto): PrendaPedido
@@ -76,3 +76,5 @@ final class AgregarPrendaCompletaUseCase
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }
+
+

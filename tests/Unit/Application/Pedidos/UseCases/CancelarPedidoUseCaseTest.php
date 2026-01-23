@@ -60,7 +60,7 @@ class CancelarPedidoUseCaseTest extends TestCase
     }
 
     /**
-     * Test: Lanzar excepción si pedido no existe
+     * Test: Lanzar excepciÃ³n si pedido no existe
      */
     public function test_error_si_pedido_no_existe()
     {
@@ -76,3 +76,4 @@ class CancelarPedidoUseCaseTest extends TestCase
         $this->useCase->ejecutar(999);
     }
 }
+

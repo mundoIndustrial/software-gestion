@@ -28,7 +28,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente número de pedido
+     * Test: Obtener siguiente nÃºmero de pedido
      */
     public function test_obtener_siguiente_numero_pedido()
     {
@@ -40,7 +40,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente número cuando no hay pedidos
+     * Test: Obtener siguiente nÃºmero cuando no hay pedidos
      */
     public function test_obtener_siguiente_numero_pedido_sin_registros()
     {
@@ -68,7 +68,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Validar transición de PENDIENTE_SUPERVISOR a APROBADO_SUPERVISOR
+     * Test: Validar transiciÃ³n de PENDIENTE_SUPERVISOR a APROBADO_SUPERVISOR
      */
     public function test_validar_transicion_pendiente_a_aprobado()
     {
@@ -85,7 +85,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Rechazar transición inválida
+     * Test: Rechazar transiciÃ³n invÃ¡lida
      */
     public function test_rechazar_transicion_invalida()
     {
@@ -102,7 +102,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Enviar a producción
+     * Test: Enviar a producciÃ³n
      */
     public function test_enviar_a_produccion()
     {
@@ -118,7 +118,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Asignar número de pedido
+     * Test: Asignar nÃºmero de pedido
      */
     public function test_asignar_numero_pedido()
     {
@@ -135,7 +135,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Números únicos no duplicados
+     * Test: NÃºmeros Ãºnicos no duplicados
      */
     public function test_numeros_pedido_son_unicos()
     {
@@ -210,7 +210,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Flujo completo PENDIENTE → FINALIZADO
+     * Test: Flujo completo PENDIENTE â†’ FINALIZADO
      */
     public function test_flujo_completo_pedido()
     {
@@ -226,7 +226,7 @@ class PedidoEstadoServiceTest extends TestCase
         $pedido->refresh();
         $this->assertEquals(EstadoPedido::APROBADO_SUPERVISOR->value, $pedido->estado);
 
-        // Paso 2: Enviar a producción
+        // Paso 2: Enviar a producciÃ³n
         $this->service->enviarAProduccion($pedido);
         $pedido->refresh();
         $this->assertEquals(EstadoPedido::EN_PRODUCCION->value, $pedido->estado);
@@ -243,7 +243,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: No permitir transición desde estado final
+     * Test: No permitir transiciÃ³n desde estado final
      */
     public function test_no_permitir_transicion_desde_estado_final()
     {
@@ -255,3 +255,4 @@ class PedidoEstadoServiceTest extends TestCase
         $this->service->marcarComoFinalizado($pedido);
     }
 }
+

@@ -4,29 +4,31 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerFacturaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 
 class ObtenerFacturaUseCase
 {
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        private PedidoRepository $pedidoRepository
     ) {}
 
     public function ejecutar(ObtenerFacturaDTO $dto): array
     {
         // Obtener pedido con todas las relaciones necesarias incluyendo tallas
-        // El repositorio ya carga 'prendas.tallas' en su método obtenerPorId()
-        $pedido = $this->pedidoRepository->obtenerPorId((int)$dto->pedidoId);
+        // NOTA: PedidoRepository->porId() retorna un PedidoAggregate, no un Eloquent Model
+        // Para acceder a prendas con tallas, necesitamos obtener el modelo directamente
+        $pedidoModel = \App\Models\PedidoProduccion::with('prendas.tallas')
+            ->findOrFail((int)$dto->pedidoId);
 
-        if (!$pedido) {
+        if (!$pedidoModel) {
             throw new \Exception('Pedido no encontrado', 404);
         }
 
         // Transformar prendas para incluir tallas formateadas
-        $prendasTransformadas = $pedido->prendas->map(function($prenda) {
-            // Obtener tallas agrupadas por género en formato { GENERO: { TALLA: CANTIDAD } }
+        $prendasTransformadas = $pedidoModel->prendas->map(function($prenda) {
+            // Obtener tallas agrupadas por gÃ©nero en formato { GENERO: { TALLA: CANTIDAD } }
             $tallasAgrupadas = [];
             if ($prenda->tallas && $prenda->tallas->count() > 0) {
                 foreach ($prenda->tallas as $talla) {
@@ -61,22 +63,24 @@ class ObtenerFacturaUseCase
         })->toArray();
 
         return [
-            'numero_pedido' => $pedido->numero_pedido,
-            'cliente' => $pedido->cliente,
-            'fecha' => $pedido->created_at,
-            'forma_de_pago' => $pedido->forma_de_pago,
-            'estado' => $pedido->estado,
-            'total' => $this->calcularTotal($pedido),
+            'numero_pedido' => $pedidoModel->numero_pedido,
+            'cliente' => $pedidoModel->cliente,
+            'fecha' => $pedidoModel->created_at,
+            'forma_de_pago' => $pedidoModel->forma_de_pago,
+            'estado' => $pedidoModel->estado,
+            'total' => $this->calcularTotal($pedidoModel),
             'prendas' => $prendasTransformadas,
         ];
     }
 
-    private function calcularTotal($pedido): float
+    private function calcularTotal($pedidoModel): float
     {
         $total = 0;
-        foreach ($pedido->prendas as $prenda) {
+        foreach ($pedidoModel->prendas as $prenda) {
             $total += $prenda->precio_unitario * $prenda->cantidad;
         }
         return $total;
     }
 }
+
+

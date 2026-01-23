@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'insumos-access' => \App\Http\Middleware\InsumosAccess::class,
             'redirect-to-login' => \App\Http\Middleware\RedirectToLoginIfUnauthenticated::class,
             'operario-access' => \App\Http\Middleware\OperarioAccess::class,
+            'check.despacho.role' => \App\Http\Middleware\CheckDespachoRole::class,
         ]);
         
         // Add security headers middleware globally

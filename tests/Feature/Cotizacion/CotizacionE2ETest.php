@@ -9,7 +9,7 @@ use Tests\TestCase;
 /**
  * CotizacionE2ETest - Tests E2E para flujo completo de cotizaciones
  *
- * Verifica el flujo completo desde creación hasta aceptación
+ * Verifica el flujo completo desde creaciÃ³n hasta aceptaciÃ³n
  */
 class CotizacionE2ETest extends TestCase
 {
@@ -25,11 +25,11 @@ class CotizacionE2ETest extends TestCase
 
     /**
      * @test
-     * Flujo completo: Crear → Obtener → Cambiar Estado → Aceptar → Eliminar
+     * Flujo completo: Crear â†’ Obtener â†’ Cambiar Estado â†’ Aceptar â†’ Eliminar
      */
     public function flujo_completo_cotizacion(): void
     {
-        // 1. Crear cotización como borrador
+        // 1. Crear cotizaciÃ³n como borrador
         $response = $this->actingAs($this->usuario)->postJson('/asesores/cotizaciones', [
             'tipo' => 'P',
             'cliente' => 'Acme Corporation',
@@ -42,7 +42,7 @@ class CotizacionE2ETest extends TestCase
         $response->assertJsonPath('success', true);
         $cotizacionId = $response->json('data.id');
 
-        // 2. Obtener cotización
+        // 2. Obtener cotizaciÃ³n
         $response = $this->actingAs($this->usuario)->getJson("/asesores/cotizaciones/{$cotizacionId}");
 
         $response->assertStatus(200);
@@ -71,7 +71,7 @@ class CotizacionE2ETest extends TestCase
             "/asesores/cotizaciones/{$cotizacionId}/estado/APROBADA_APROBADOR"
         );
 
-        // 6. Aceptar cotización
+        // 6. Aceptar cotizaciÃ³n
         $response = $this->actingAs($this->usuario)->postJson(
             "/asesores/cotizaciones/{$cotizacionId}/aceptar"
         );
@@ -113,13 +113,13 @@ class CotizacionE2ETest extends TestCase
 
     /**
      * @test
-     * Verificar autorización - usuario no propietario no puede acceder
+     * Verificar autorizaciÃ³n - usuario no propietario no puede acceder
      */
     public function usuario_no_propietario_no_puede_acceder(): void
     {
         $otroUsuario = User::factory()->create(['role' => 'asesor']);
 
-        // Crear cotización
+        // Crear cotizaciÃ³n
         $response = $this->actingAs($this->usuario)->postJson('/asesores/cotizaciones', [
             'tipo' => 'P',
             'cliente' => 'Test Client',
@@ -138,7 +138,7 @@ class CotizacionE2ETest extends TestCase
 
     /**
      * @test
-     * Verificar transiciones de estado válidas
+     * Verificar transiciones de estado vÃ¡lidas
      */
     public function transiciones_estado_validas(): void
     {
@@ -151,16 +151,17 @@ class CotizacionE2ETest extends TestCase
 
         $cotizacionId = $response->json('data.id');
 
-        // Transición válida: BORRADOR → ENVIADA_CONTADOR
+        // TransiciÃ³n vÃ¡lida: BORRADOR â†’ ENVIADA_CONTADOR
         $response = $this->actingAs($this->usuario)->patchJson(
             "/asesores/cotizaciones/{$cotizacionId}/estado/ENVIADA_CONTADOR"
         );
         $this->assertTrue($response->json('success'));
 
-        // Transición inválida: ENVIADA_CONTADOR → BORRADOR (no permitida)
+        // TransiciÃ³n invÃ¡lida: ENVIADA_CONTADOR â†’ BORRADOR (no permitida)
         $response = $this->actingAs($this->usuario)->patchJson(
             "/asesores/cotizaciones/{$cotizacionId}/estado/BORRADOR"
         );
-        $this->assertTrue($response->json('success')); // Sí está permitida volver a borrador
+        $this->assertTrue($response->json('success')); // SÃ­ estÃ¡ permitida volver a borrador
     }
 }
+

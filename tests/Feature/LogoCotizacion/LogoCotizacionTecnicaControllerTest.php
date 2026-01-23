@@ -144,7 +144,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
     /** @test */
     public function puede_obtener_tecnicas_de_cotizacion()
     {
-        // Arrange - Agregar una técnica primero
+        // Arrange - Agregar una tÃ©cnica primero
         $tipoTecnica = TipoLogoCotizacion::where('codigo', 'BORDADO')->first();
         
         $payload = [
@@ -184,7 +184,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
     /** @test */
     public function puede_eliminar_tecnica()
     {
-        // Arrange - Agregar una técnica primero
+        // Arrange - Agregar una tÃ©cnica primero
         $tipoTecnica = TipoLogoCotizacion::where('codigo', 'DTF')->first();
         
         $payload = [
@@ -215,13 +215,13 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
     /** @test */
     public function puede_actualizar_observaciones()
     {
-        // Arrange - Agregar una técnica primero
+        // Arrange - Agregar una tÃ©cnica primero
         $tipoTecnica = TipoLogoCotizacion::where('codigo', 'BORDADO')->first();
         
         $payload = [
             'logoCotizacionId' => $this->logoCotizacion->id,
             'tipoTecnicaId' => $tipoTecnica->id,
-            'observaciones' => 'Observación original',
+            'observaciones' => 'ObservaciÃ³n original',
             'prendas' => [
                 [
                     'nombre_prenda' => 'CAMISETA',
@@ -237,7 +237,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
 
         // Act
         $updatePayload = [
-            'observaciones' => 'Observación actualizada',
+            'observaciones' => 'ObservaciÃ³n actualizada',
         ];
         
         $response = $this->patchJson(
@@ -311,7 +311,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
         $payload = [
             'logoCotizacionId' => $this->logoCotizacion->id,
             'tipoTecnicaId' => $tipoTecnica->id,
-            'observaciones' => 'Bordado en múltiples ubicaciones',
+            'observaciones' => 'Bordado en mÃºltiples ubicaciones',
             'prendas' => [
                 [
                     'nombre_prenda' => 'SUDADERA',
@@ -330,3 +330,4 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
         $response->assertJson(['success' => true]);
     }
 }
+

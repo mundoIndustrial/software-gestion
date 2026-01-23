@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * Caso de uso para obtener el historial de procesos de una orden
  * Responsabilidad: Retornar procesos actuales e historial de cambios
  * 
- * Patrón: Use Case (Application Layer - DDD)
+ * PatrÃ³n: Use Case (Application Layer - DDD)
  */
 class ObtenerHistorialProcesosUseCase
 {
@@ -20,12 +20,12 @@ class ObtenerHistorialProcesosUseCase
     /**
      * Ejecutar caso de uso
      * 
-     * @param int $numeroPedido - Número de pedido
+     * @param int $numeroPedido - NÃºmero de pedido
      * @return array - Procesos actuales e historial
      */
     public function ejecutar(int $numeroPedido): array
     {
-        $this->validarPositivo($numeroPedido, 'Número de pedido');
+        $this->validarPositivo($numeroPedido, 'NÃºmero de pedido');
 
         $procesosActuales = DB::table('procesos_prenda')
             ->where('numero_pedido', $numeroPedido)
@@ -43,3 +43,4 @@ class ObtenerHistorialProcesosUseCase
         ];
     }
 }
+

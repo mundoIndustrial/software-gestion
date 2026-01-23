@@ -20,25 +20,25 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que el service puede obtener valores únicos de columna 'estado'
+     * Prueba que el service puede obtener valores Ãºnicos de columna 'estado'
      */
     public function test_get_unique_values_returns_array_for_valid_column()
     {
         // Crear algunos pedidos de prueba
         PedidoProduccion::factory()->create(['estado' => 'No iniciado']);
-        PedidoProduccion::factory()->create(['estado' => 'En Ejecución']);
-        PedidoProduccion::factory()->create(['estado' => 'En Ejecución']);
+        PedidoProduccion::factory()->create(['estado' => 'En EjecuciÃ³n']);
+        PedidoProduccion::factory()->create(['estado' => 'En EjecuciÃ³n']);
 
         $values = $this->service->getUniqueValues('estado');
 
         $this->assertIsArray($values);
         $this->assertCount(2, $values);
         $this->assertContains('No iniciado', $values);
-        $this->assertContains('En Ejecución', $values);
+        $this->assertContains('En EjecuciÃ³n', $values);
     }
 
     /**
-     * Prueba que lanza excepción para columna inválida
+     * Prueba que lanza excepciÃ³n para columna invÃ¡lida
      */
     public function test_get_unique_values_throws_exception_for_invalid_column()
     {
@@ -47,7 +47,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que puede obtener valores únicos de 'cliente'
+     * Prueba que puede obtener valores Ãºnicos de 'cliente'
      */
     public function test_get_unique_values_works_for_cliente_column()
     {
@@ -63,7 +63,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que filtra valores null y vacíos
+     * Prueba que filtra valores null y vacÃ­os
      */
     public function test_get_unique_values_filters_null_and_empty()
     {
@@ -80,16 +80,17 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que los valores están ordenados alfabéticamente
+     * Prueba que los valores estÃ¡n ordenados alfabÃ©ticamente
      */
     public function test_get_unique_values_returns_sorted_array()
     {
         PedidoProduccion::factory()->create(['estado' => 'Z - Completado']);
         PedidoProduccion::factory()->create(['estado' => 'A - No iniciado']);
-        PedidoProduccion::factory()->create(['estado' => 'M - En Ejecución']);
+        PedidoProduccion::factory()->create(['estado' => 'M - En EjecuciÃ³n']);
 
         $values = $this->service->getUniqueValues('estado');
 
-        $this->assertEquals(['A - No iniciado', 'M - En Ejecución', 'Z - Completado'], $values);
+        $this->assertEquals(['A - No iniciado', 'M - En EjecuciÃ³n', 'Z - Completado'], $values);
     }
 }
+

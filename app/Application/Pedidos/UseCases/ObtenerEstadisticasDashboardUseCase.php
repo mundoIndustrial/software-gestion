@@ -8,8 +8,8 @@ use App\Application\Services\Asesores\DashboardService;
 /**
  * ObtenerEstadisticasDashboardUseCase
  * 
- * Use Case para obtener estadísticas generales del dashboard
- * Encapsula la lógica de obtener datos del dashboard
+ * Use Case para obtener estadÃ­sticas generales del dashboard
+ * Encapsula la lÃ³gica de obtener datos del dashboard
  */
 class ObtenerEstadisticasDashboardUseCase
 {
@@ -22,3 +22,4 @@ class ObtenerEstadisticasDashboardUseCase
         return $this->dashboardService->obtenerEstadisticas();
     }
 }
+

@@ -16,7 +16,7 @@ class CotizacionServiceTest extends TestCase
     }
 
     /**
-     * Test: Determinar tipo de cotización Prenda/Logo
+     * Test: Determinar tipo de cotizaciÃ³n Prenda/Logo
      */
     public function test_determinar_tipo_prenda_logo()
     {
@@ -31,7 +31,7 @@ class CotizacionServiceTest extends TestCase
             'observaciones_generales' => []
         ];
 
-        // Usar reflexión para acceder al método privado
+        // Usar reflexiÃ³n para acceder al mÃ©todo privado
         $reflection = new \ReflectionClass($this->cotizacionService);
         $method = $reflection->getMethod('determinarTipoCotizacion');
         $method->setAccessible(true);
@@ -39,11 +39,11 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Prenda/Logo', $resultado);
-        echo "\n Test Prenda/Logo PASÓ\n";
+        echo "\n Test Prenda/Logo PASÃ“\n";
     }
 
     /**
-     * Test: Determinar tipo de cotización Solo Logo
+     * Test: Determinar tipo de cotizaciÃ³n Solo Logo
      */
     public function test_determinar_tipo_logo()
     {
@@ -63,19 +63,19 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Solo Logo', $resultado);
-        echo "\n Test Solo Logo PASÓ\n";
+        echo "\n Test Solo Logo PASÃ“\n";
     }
 
     /**
-     * Test: Determinar tipo de cotización General (solo prendas)
+     * Test: Determinar tipo de cotizaciÃ³n General (solo prendas)
      */
     public function test_determinar_tipo_general()
     {
         $datos = [
             'productos' => [
-                ['nombre_producto' => 'Pantalón']
+                ['nombre_producto' => 'PantalÃ³n']
             ],
-            'tecnicas' => [], // SIN técnicas
+            'tecnicas' => [], // SIN tÃ©cnicas
             'imagenes' => [],
             'observaciones_tecnicas' => null,
             'ubicaciones' => [],
@@ -89,18 +89,18 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('General', $resultado);
-        echo "\n Test General PASÓ\n";
+        echo "\n Test General PASÃ“\n";
     }
 
     /**
-     * Test: Determinar tipo de cotización con imagenes
+     * Test: Determinar tipo de cotizaciÃ³n con imagenes
      */
     public function test_determinar_tipo_con_imagenes()
     {
         $datos = [
             'productos' => [], // SIN prendas
             'tecnicas' => [],
-            'imagenes' => ['imagen1.jpg'], // CON imágenes
+            'imagenes' => ['imagen1.jpg'], // CON imÃ¡genes
             'observaciones_tecnicas' => null,
             'ubicaciones' => [],
             'observaciones_generales' => []
@@ -113,11 +113,11 @@ class CotizacionServiceTest extends TestCase
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
         $this->assertEquals('Solo Logo', $resultado);
-        echo "\n Test Con Imágenes PASÓ\n";
+        echo "\n Test Con ImÃ¡genes PASÃ“\n";
     }
 
     /**
-     * Test: Determinar tipo de cotización con observaciones generales
+     * Test: Determinar tipo de cotizaciÃ³n con observaciones generales
      */
     public function test_determinar_tipo_con_observaciones()
     {
@@ -128,7 +128,7 @@ class CotizacionServiceTest extends TestCase
             'observaciones_tecnicas' => null,
             'ubicaciones' => [],
             'observaciones_generales' => [
-                ['texto' => 'Observación importante', 'tipo' => 'texto']
+                ['texto' => 'ObservaciÃ³n importante', 'tipo' => 'texto']
             ]
         ];
 
@@ -138,8 +138,9 @@ class CotizacionServiceTest extends TestCase
         
         $resultado = $method->invoke($this->cotizacionService, $datos);
 
-        // Con observaciones generales pero sin prendas, debería ser General
+        // Con observaciones generales pero sin prendas, deberÃ­a ser General
         $this->assertEquals('General', $resultado);
-        echo "\n Test Con Observaciones PASÓ\n";
+        echo "\n Test Con Observaciones PASÃ“\n";
     }
 }
+

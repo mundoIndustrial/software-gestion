@@ -12,7 +12,7 @@ class TodosTiposCotizacionesTest extends TestCase
 
     public function test_todos_tipos_cotizaciones_numeracion_global()
     {
-        echo "\n🔵 TEST: Todos los tipos de cotizaciones - Numeración Global\n";
+        echo "\nðŸ”µ TEST: Todos los tipos de cotizaciones - NumeraciÃ³n Global\n";
         echo "===========================================================\n\n";
 
         $servicio = app(GenerarNumeroCotizacionService::class);
@@ -39,7 +39,7 @@ class TodosTiposCotizacionesTest extends TestCase
             echo "{$detalle}\n";
         }
         
-        echo "\n VALIDACIÓN:\n";
+        echo "\n VALIDACIÃ“N:\n";
         echo "================\n\n";
         
         // Verificar: sin duplicados
@@ -47,9 +47,9 @@ class TodosTiposCotizacionesTest extends TestCase
         $unicos = count(array_unique($numeros_generados));
         
         echo "Total generados: {$total}\n";
-        echo "Números únicos: {$unicos}\n";
+        echo "NÃºmeros Ãºnicos: {$unicos}\n";
         
-        $this->assertEquals($total, $unicos, 'No debe haber números duplicados');
+        $this->assertEquals($total, $unicos, 'No debe haber nÃºmeros duplicados');
         echo " Sin duplicados\n\n";
         
         // Verificar: secuencia consecutiva
@@ -63,7 +63,8 @@ class TodosTiposCotizacionesTest extends TestCase
         echo " PRUEBA EXITOSA\n";
         echo "=================\n";
         echo "Todos los tipos de cotizaciones comparten la MISMA secuencia global.\n";
-        echo "→ Normal, Prenda, Bordado, Reflectivo todos en la MISMA numeración\n";
-        echo "→ Sin duplicados, consecutivos, independiente del asesor o tipo\n\n";
+        echo "â†’ Normal, Prenda, Bordado, Reflectivo todos en la MISMA numeraciÃ³n\n";
+        echo "â†’ Sin duplicados, consecutivos, independiente del asesor o tipo\n\n";
     }
 }
+

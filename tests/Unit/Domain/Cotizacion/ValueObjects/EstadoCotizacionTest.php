@@ -153,3 +153,4 @@ class EstadoCotizacionTest extends TestCase
         $this->assertEmpty($estado->siguientesEstadosPosibles());
     }
 }
+

@@ -48,7 +48,7 @@ class CrearPedidoUseCaseTest extends TestCase
                     'tallas' => ['DAMA' => ['S' => 5, 'M' => 5]],
                 ]
             ],
-            observaciones: 'Observación'
+            observaciones: 'ObservaciÃ³n'
         );
 
         $response = $this->useCase->ejecutar($dto);
@@ -60,3 +60,4 @@ class CrearPedidoUseCaseTest extends TestCase
         $this->assertEquals('Pedido creado exitosamente', $response->mensaje);
     }
 }
+

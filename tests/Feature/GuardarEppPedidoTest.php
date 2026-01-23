@@ -71,7 +71,7 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertCount(1, $pedidosEpp);
         $pedidoEpp = $pedidosEpp[0];
 
-        // Verificar que se guardó en BD
+        // Verificar que se guardÃ³ en BD
         $this->assertDatabaseHas('pedido_epp', [
             'id' => $pedidoEpp->id,
             'pedido_produccion_id' => $this->pedido->id,
@@ -99,11 +99,11 @@ class GuardarEppPedidoTest extends TestCase
     }
 
     /**
-     * Test: Verificar que las imágenes se guardaron correctamente
+     * Test: Verificar que las imÃ¡genes se guardaron correctamente
      */
     public function test_imagenes_del_epp_se_guardaron()
     {
-        $this->info("\nTest: Verificar imágenes del EPP\n");
+        $this->info("\nTest: Verificar imÃ¡genes del EPP\n");
 
         // Primero guardar el EPP
         $epp = Epp::first();
@@ -138,7 +138,7 @@ class GuardarEppPedidoTest extends TestCase
         $pedidosEpp = $this->eppService->guardarEppsDelPedido($this->pedido, $eppsData);
         $pedidoEpp = $pedidosEpp[0];
 
-        // Verificar que las imágenes se guardaron
+        // Verificar que las imÃ¡genes se guardaron
         $imagenes = PedidoEppImagen::where('pedido_epp_id', $pedidoEpp->id)->get();
         
         $this->assertCount(3, $imagenes);
@@ -155,8 +155,8 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertNotNull($imagenPrincipal);
         $this->assertTrue($imagenPrincipal->principal);
 
-        echo "\n Imágenes guardadas correctamente\n";
-        echo "   - Total imágenes: " . count($imagenes) . "\n";
+        echo "\n ImÃ¡genes guardadas correctamente\n";
+        echo "   - Total imÃ¡genes: " . count($imagenes) . "\n";
         echo "   - Imagen principal: {$imagenPrincipal->archivo}\n";
         foreach ($imagenes as $img) {
             $tipo = $img->principal ? '(PRINCIPAL)' : '';
@@ -213,15 +213,15 @@ class GuardarEppPedidoTest extends TestCase
         echo "   - EPP nombre: {$ultimoEpp['epp_nombre']}\n";
         echo "   - Cantidad: {$ultimoEpp['cantidad']}\n";
         echo "   - Observaciones: {$ultimoEpp['observaciones']}\n";
-        echo "   - Total imágenes: " . count($ultimoEpp['imagenes']) . "\n";
+        echo "   - Total imÃ¡genes: " . count($ultimoEpp['imagenes']) . "\n";
     }
 
     /**
-     * Test: Guardar múltiples EPP en un pedido
+     * Test: Guardar mÃºltiples EPP en un pedido
      */
     public function test_guardar_multiples_epps_en_pedido()
     {
-        $this->info("\n Test: Guardar múltiples EPP en un pedido\n");
+        $this->info("\n Test: Guardar mÃºltiples EPP en un pedido\n");
 
         $epps = Epp::limit(2)->get();
         
@@ -229,7 +229,7 @@ class GuardarEppPedidoTest extends TestCase
             $this->markTestSkipped('No hay 2 EPPs disponibles');
         }
 
-        // Preparar datos de múltiples EPP
+        // Preparar datos de mÃºltiples EPP
         $eppsData = [
             [
                 'epp_id' => $epps[0]->id,
@@ -240,7 +240,7 @@ class GuardarEppPedidoTest extends TestCase
             [
                 'epp_id' => $epps[1]->id,
                 'cantidad' => 50,
-                'tallas_medidas' => ['tamaño' => 'M'],
+                'tallas_medidas' => ['tamaÃ±o' => 'M'],
                 'observaciones' => 'Segundo EPP'
             ]
         ];
@@ -261,7 +261,7 @@ class GuardarEppPedidoTest extends TestCase
             'cantidad' => 50
         ]);
 
-        echo "\n Múltiples EPP guardados correctamente\n";
+        echo "\n MÃºltiples EPP guardados correctamente\n";
         echo "   - Total guardados: " . count($pedidosEpp) . "\n";
         foreach ($pedidosEpp as $index => $pe) {
             echo "   - EPP " . ($index + 1) . ": {$pe->cantidad} unidades\n";
@@ -371,11 +371,11 @@ class GuardarEppPedidoTest extends TestCase
     }
 
     /**
-     * Test: Guardar EPP con imágenes sin hacer refresh
+     * Test: Guardar EPP con imÃ¡genes sin hacer refresh
      *  Registra el EPP en la BD
-     *  Guarda las imágenes asociadas
+     *  Guarda las imÃ¡genes asociadas
      *  No borra la BD
-     *  Verifica que todo se guardó correctamente
+     *  Verifica que todo se guardÃ³ correctamente
      */
     public function test_guardar_epp_sin_refresh()
     {
@@ -424,7 +424,7 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertCount(1, $pedidosEpp, 'Se debe guardar exactamente 1 EPP');
         $pedidoEpp = $pedidosEpp[0];
 
-        //  Verificar que está en la BD
+        //  Verificar que estÃ¡ en la BD
         $this->assertDatabaseHas('pedido_epp', [
             'id' => $pedidoEpp->id,
             'pedido_produccion_id' => $this->pedido->id,
@@ -444,9 +444,9 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertEquals('64cm', $pedidoEpp->tallas_medidas['medida']);
         $this->assertEquals('Negro', $pedidoEpp->tallas_medidas['color']);
 
-        //  Verificar que las imágenes se guardaron
+        //  Verificar que las imÃ¡genes se guardaron
         $imagenes = PedidoEppImagen::where('pedido_epp_id', $pedidoEpp->id)->get();
-        $this->assertCount(2, $imagenes, 'Se deben guardar 2 imágenes');
+        $this->assertCount(2, $imagenes, 'Se deben guardar 2 imÃ¡genes');
 
         //  Verificar imagen principal
         $this->assertDatabaseHas('pedido_epp_imagenes', [
@@ -469,13 +469,13 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertNotNull($pedidoEppRecargado, 'El EPP debe existir en la BD');
         $this->assertEquals(25, $pedidoEppRecargado->cantidad);
 
-        //  Output de éxito
+        //  Output de Ã©xito
         echo "\n EPP guardado exitosamente sin refresh\n";
         echo "   - ID PedidoEpp: {$pedidoEpp->id}\n";
         echo "   - Cantidad: {$pedidoEpp->cantidad}\n";
         echo "   - Talla: {$pedidoEpp->tallas_medidas['talla']}\n";
         echo "   - Color: {$pedidoEpp->tallas_medidas['color']}\n";
-        echo "   - Imágenes guardadas: " . count($imagenes) . "\n";
+        echo "   - ImÃ¡genes guardadas: " . count($imagenes) . "\n";
         echo "   - BD NO fue borrada \n\n";
     }
 
@@ -487,3 +487,4 @@ class GuardarEppPedidoTest extends TestCase
         echo $message;
     }
 }
+

@@ -13,7 +13,7 @@ final class ActualizarPrendaPedidoUseCase
 
     public function ejecutar(ActualizarPrendaPedidoDTO $dto)
     {
-        Log::info('[ActualizarPrendaPedidoUseCase] Iniciando actualización de prenda', [
+        Log::info('[ActualizarPrendaPedidoUseCase] Iniciando actualizaciÃ³n de prenda', [
             'prenda_id' => $dto->prendaId,
         ]);
 
@@ -25,7 +25,7 @@ final class ActualizarPrendaPedidoUseCase
             $dto->prendaId
         );
 
-        // 1. Actualizar campos básicos
+        // 1. Actualizar campos bÃ¡sicos
         $this->actualizarCamposBasicos($prenda, $dto);
 
         // 2. Actualizar relaciones
@@ -152,4 +152,5 @@ final class ActualizarPrendaPedidoUseCase
         }
     }
 }
+
 

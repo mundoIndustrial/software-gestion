@@ -17,3 +17,4 @@ class PedidoCreado extends DomainEvent
         public int $totalPrendas
     ) {}
 }
+

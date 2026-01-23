@@ -3,12 +3,12 @@
 namespace App\Application\Pedidos\DTOs;
 
 /**
- * DTO para agregar EPP (Equipos de Protección Personal) a un pedido
+ * DTO para agregar EPP (Equipos de ProtecciÃ³n Personal) a un pedido
  * 
  * Maneja campos de pedido_epp:
  * - epp_id: referencia a tabla de EPP disponibles
- * - cantidad: número de unidades
- * - observaciones: notas específicas para este EPP en este pedido
+ * - cantidad: nÃºmero de unidades
+ * - observaciones: notas especÃ­ficas para este EPP en este pedido
  */
 final class AgregarEppDTO
 {
@@ -29,3 +29,4 @@ final class AgregarEppDTO
         );
     }
 }
+

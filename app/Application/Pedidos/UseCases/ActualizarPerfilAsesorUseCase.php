@@ -9,7 +9,7 @@ use App\Application\Services\Asesores\PerfilService;
  * ActualizarPerfilAsesorUseCase
  * 
  * Use Case para actualizar el perfil del asesor
- * Encapsula la lógica de validación y actualización de datos
+ * Encapsula la lÃ³gica de validaciÃ³n y actualizaciÃ³n de datos
  */
 class ActualizarPerfilAsesorUseCase
 {
@@ -35,3 +35,4 @@ class ActualizarPerfilAsesorUseCase
         return $this->perfilService->actualizarPerfil($validated, $dto->avatar);
     }
 }
+

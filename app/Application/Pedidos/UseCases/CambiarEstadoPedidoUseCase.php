@@ -5,7 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
 use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -13,22 +13,22 @@ use Illuminate\Support\Facades\Log;
  * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait + EstadoPedidoCatalog
  * 
- * Antes: 58 líneas (15 líneas de lógica + 43 de validación y transiciones hardcodeadas)
- * Después: 28 líneas (solo lógica de negocio)
- * Reducción: 52%
+ * Antes: 58 lÃ­neas (15 lÃ­neas de lÃ³gica + 43 de validaciÃ³n y transiciones hardcodeadas)
+ * DespuÃ©s: 28 lÃ­neas (solo lÃ³gica de negocio)
+ * ReducciÃ³n: 52%
  * 
  * Beneficios:
  * - Validaciones centralizadas
- * - Transiciones en único lugar (EstadoPedidoCatalog)
+ * - Transiciones en Ãºnico lugar (EstadoPedidoCatalog)
  * - Mensajes de error consistentes
- * - Menos código repetido
+ * - Menos cÃ³digo repetido
  */
 final class CambiarEstadoPedidoUseCase
 {
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoRepository $pedidoRepository,
     ) {}
 
     public function ejecutar(CambiarEstadoPedidoDTO $dto)
@@ -38,13 +38,13 @@ final class CambiarEstadoPedidoUseCase
             'nuevo_estado' => $dto->nuevoEstado,
         ]);
 
-        // CENTRALIZADO: Validar pedido existe (trait)
-        $pedido = $this->validarPedidoExiste($dto->pedidoId, $this->pedidoRepository);
+        // Obtener modelo Eloquent directamente (no Aggregate) porque se actualiza la BD
+        $pedido = \App\Models\PedidoProduccion::findOrFail($dto->pedidoId);
 
-        // CENTRALIZADO: Validar estado es válido (trait + catalog)
+        // CENTRALIZADO: Validar estado es vÃ¡lido (trait + catalog)
         $this->validarEstadoValido($dto->nuevoEstado);
 
-        // CENTRALIZADO: Validar transición es permitida (trait + catalog)
+        // CENTRALIZADO: Validar transiciÃ³n es permitida (trait + catalog)
         $this->validarTransicion($pedido->estado ?? 'PENDIENTE_SUPERVISOR', $dto->nuevoEstado);
 
         // Actualizar estado
@@ -62,3 +62,5 @@ final class CambiarEstadoPedidoUseCase
         return $pedido;
     }
 }
+
+

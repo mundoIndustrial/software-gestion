@@ -6,22 +6,22 @@ use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
 /**
- * TEST: Validar que la generación sincrónica de números funciona con pessimistic lock
+ * TEST: Validar que la generaciÃ³n sincrÃ³nica de nÃºmeros funciona con pessimistic lock
  * 
- * Este test NO usa RefreshDatabase porque MySQL está causando timeout
+ * Este test NO usa RefreshDatabase porque MySQL estÃ¡ causando timeout
  * En su lugar, usa directamente MySQLi para testing de BD
  */
 class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
 {
     /**
-     *  TEST: Generar número con pessimistic lock
+     *  TEST: Generar nÃºmero con pessimistic lock
      * 
      * Valida que el lock funciona sin timeout
      */
     public function test_genera_numero_con_lock()
     {
         try {
-            // Generar un número
+            // Generar un nÃºmero
             $numero = DB::transaction(function () {
                 $secuencia = DB::table('numero_secuencias')
                     ->lockForUpdate()
@@ -29,7 +29,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
                     ->first();
 
                 if (!$secuencia) {
-                    $this->fail('Secuencia no encontrada. ¿Ejecutaste el seeder?');
+                    $this->fail('Secuencia no encontrada. Â¿Ejecutaste el seeder?');
                 }
 
                 $proximoNumero = $secuencia->proximo_numero;
@@ -43,10 +43,10 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
             $this->assertNotNull($numero);
             $this->assertMatchesRegularExpression('/^COT-\d{8}-\d{3}$/', $numero);
             
-            echo "\n NÚMERO GENERADO: $numero\n";
+            echo "\n NÃšMERO GENERADO: $numero\n";
             
         } catch (\Throwable $e) {
-            $this->fail("Error al generar número: " . $e->getMessage());
+            $this->fail("Error al generar nÃºmero: " . $e->getMessage());
         }
     }
 
@@ -61,12 +61,12 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         
         echo "\n SECUENCIAS ENCONTRADAS:\n";
         foreach ($secuencias as $sec) {
-            echo "  - {$sec->tipo}: próximo_numero = {$sec->proximo_numero}\n";
+            echo "  - {$sec->tipo}: prÃ³ximo_numero = {$sec->proximo_numero}\n";
         }
     }
 
     /**
-     *  TEST: Generar 3 números secuenciales
+     *  TEST: Generar 3 nÃºmeros secuenciales
      */
     public function test_genera_tres_numeros_secuenciales()
     {
@@ -91,9 +91,9 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         }
         
         $this->assertCount(3, $numeros);
-        $this->assertEquals(3, count(array_unique($numeros)), 'Los números no son únicos');
+        $this->assertEquals(3, count(array_unique($numeros)), 'Los nÃºmeros no son Ãºnicos');
         
-        echo "\n NÚMEROS GENERADOS:\n";
+        echo "\n NÃšMEROS GENERADOS:\n";
         foreach ($numeros as $i => $n) {
             echo "  " . ($i + 1) . ". $n\n";
         }
@@ -110,3 +110,4 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         $this->assertGreaterThan(0, $count, 'No hay cotizaciones. Crea algunas primero.');
     }
 }
+

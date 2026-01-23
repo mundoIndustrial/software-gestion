@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * Script de prueba para verificar que se guarde toda la información del pedido
+ * Script de prueba para verificar que se guarde toda la informaciÃ³n del pedido
  * Ejecutar: php artisan tinker
  * Luego: include 'tests/Feature/CrearPedidoTestScript.php'; (new CrearPedidoTestScript())->ejecutarPrueba();
  */
@@ -22,7 +22,7 @@ class CrearPedidoTestScript extends TestCase
     public function ejecutarPrueba()
     {
         echo "\n========================================\n";
-        echo "🧪 INICIANDO PRUEBA DE CREACIÓN DE PEDIDO\n";
+        echo "ðŸ§ª INICIANDO PRUEBA DE CREACIÃ“N DE PEDIDO\n";
         echo "========================================\n\n";
 
         try {
@@ -57,11 +57,11 @@ class CrearPedidoTestScript extends TestCase
             echo "  Pedido creado: #{$pedido->numero_pedido} (ID: {$pedido->id})\n\n";
 
             // 4. Verificar datos del pedido
-            echo "4️⃣  Verificando datos del pedido...\n";
+            echo "4ï¸âƒ£  Verificando datos del pedido...\n";
             $this->verificarPedido($pedido);
 
             // 5. Verificar relaciones
-            echo "\n5️⃣  Verificando relaciones...\n";
+            echo "\n5ï¸âƒ£  Verificando relaciones...\n";
             $this->verificarRelaciones($pedido);
 
             // 6. Resumen final
@@ -69,13 +69,13 @@ class CrearPedidoTestScript extends TestCase
             echo " PRUEBA COMPLETADA EXITOSAMENTE\n";
             echo "========================================\n";
             echo "Pedido guardado correctamente en la base de datos\n";
-            echo "Todas las relaciones están configuradas correctamente\n\n";
+            echo "Todas las relaciones estÃ¡n configuradas correctamente\n\n";
 
         } catch (\Exception $e) {
             echo "\n ERROR EN LA PRUEBA:\n";
             echo "   {$e->getMessage()}\n";
             echo "   Archivo: {$e->getFile()}\n";
-            echo "   Línea: {$e->getLine()}\n\n";
+            echo "   LÃ­nea: {$e->getLine()}\n\n";
         }
     }
 
@@ -83,14 +83,14 @@ class CrearPedidoTestScript extends TestCase
     {
         $datos = [
             'ID' => $pedido->id,
-            'Número de Pedido' => $pedido->numero_pedido,
+            'NÃºmero de Pedido' => $pedido->numero_pedido,
             'Cliente' => $pedido->cliente,
             'Cliente ID' => $pedido->cliente_id,
             'Asesor ID' => $pedido->asesor_id,
             'Forma de Pago' => $pedido->forma_de_pago,
             'Estado' => $pedido->estado,
             'Cantidad Total' => $pedido->cantidad_total,
-            'Fecha Creación' => $pedido->fecha_de_creacion_de_orden,
+            'Fecha CreaciÃ³n' => $pedido->fecha_de_creacion_de_orden,
         ];
 
         foreach ($datos as $campo => $valor) {
@@ -101,20 +101,20 @@ class CrearPedidoTestScript extends TestCase
 
     private function verificarRelaciones(PedidoProduccion $pedido): void
     {
-        // Verificar relación con cliente
+        // Verificar relaciÃ³n con cliente
         $cliente = $pedido->cliente()->first();
         if ($cliente) {
-            echo "  Relación con Cliente: {$cliente->nombre}\n";
+            echo "  RelaciÃ³n con Cliente: {$cliente->nombre}\n";
         } else {
-            echo "    No se encontró relación con Cliente\n";
+            echo "    No se encontrÃ³ relaciÃ³n con Cliente\n";
         }
 
-        // Verificar relación con asesor
+        // Verificar relaciÃ³n con asesor
         $asesor = $pedido->asesor()->first();
         if ($asesor) {
-            echo "  Relación con Asesor: {$asesor->name}\n";
+            echo "  RelaciÃ³n con Asesor: {$asesor->name}\n";
         } else {
-            echo "    No se encontró relación con Asesor\n";
+            echo "    No se encontrÃ³ relaciÃ³n con Asesor\n";
         }
 
         // Verificar que el pedido existe en BD
@@ -125,12 +125,12 @@ class CrearPedidoTestScript extends TestCase
             echo "    Pedido NO existe en base de datos\n";
         }
 
-        // Verificar búsqueda por número de pedido
+        // Verificar bÃºsqueda por nÃºmero de pedido
         $pedidoPorNumero = PedidoProduccion::where('numero_pedido', $pedido->numero_pedido)->first();
         if ($pedidoPorNumero) {
-            echo "  Búsqueda por número de pedido funciona\n";
+            echo "  BÃºsqueda por nÃºmero de pedido funciona\n";
         } else {
-            echo "    Búsqueda por número de pedido NO funciona\n";
+            echo "    BÃºsqueda por nÃºmero de pedido NO funciona\n";
         }
     }
 }
@@ -138,3 +138,4 @@ class CrearPedidoTestScript extends TestCase
 // Ejecutar la prueba
 $prueba = new CrearPedidoTestScript();
 $prueba->ejecutarPrueba();
+

@@ -31,7 +31,7 @@ use App\Application\Pedidos\UseCases\AgregarImagenTelaUseCase;
 
 // Repositories
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Domain\Shared\CQRS\QueryBus;
 use App\Domain\Shared\CQRS\CommandBus;
 
@@ -70,14 +70,14 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Obtener Pedido
         $this->app->singleton(ObtenerProduccionPedidoUseCase::class, function ($app) {
             return new ObtenerProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
             return new CrearProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class),
+                $app->make(PedidoRepository::class),
                 $app->make('events')
             );
         });
@@ -85,7 +85,7 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Actualizar Pedido
         $this->app->singleton(ActualizarProduccionPedidoUseCase::class, function ($app) {
             return new ActualizarProduccionPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class),
+                $app->make(PedidoRepository::class),
                 $app->make('events')
             );
         });
@@ -100,56 +100,56 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Cambiar Estado de Pedido
         $this->app->singleton(CambiarEstadoPedidoUseCase::class, function ($app) {
             return new CambiarEstadoPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Agregar Prenda al Pedido
         $this->app->singleton(AgregarPrendaAlPedidoUseCase::class, function ($app) {
             return new AgregarPrendaAlPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Filtrar Pedidos por Estado
         $this->app->singleton(FiltrarPedidosPorEstadoUseCase::class, function ($app) {
             return new FiltrarPedidosPorEstadoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Buscar Pedido por Número
         $this->app->singleton(BuscarPedidoPorNumeroUseCase::class, function ($app) {
             return new BuscarPedidoPorNumeroUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Obtener Prendas de Pedido
         $this->app->singleton(ObtenerPrendasPedidoUseCase::class, function ($app) {
             return new ObtenerPrendasPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Actualizar Prenda de Pedido
         $this->app->singleton(ActualizarPrendaPedidoUseCase::class, function ($app) {
             return new ActualizarPrendaPedidoUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Agregar Prenda Completa
         $this->app->singleton(AgregarPrendaCompletaUseCase::class, function ($app) {
             return new AgregarPrendaCompletaUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 
         // Actualizar Prenda Completa
         $this->app->singleton(ActualizarPrendaCompletaUseCase::class, function ($app) {
             return new ActualizarPrendaCompletaUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoRepository::class)
             );
         });
 

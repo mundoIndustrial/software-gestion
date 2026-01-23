@@ -582,6 +582,9 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::put('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
     Route::post('/cotizaciones/bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
     Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
+    
+    // Actualizar prenda completa (con novedades) en un pedido existente
+    Route::post('/pedidos/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
 });
 
 // ========================================
@@ -984,8 +987,13 @@ Route::middleware(['auth', 'role:cartera,admin'])->prefix('api/cartera')->name('
 });
 
 // ========================================
-// RUTAS DE ASESORES (ORGANIZADA EN ARCHIVO SEPARADO)
+// RUTAS DE AUTENTICACIÓN
 // ========================================
-require __DIR__.'/asesores.php';
-
 require __DIR__.'/auth.php';
+
+// ========================================
+// RUTAS DE DESPACHO (MÓDULO NUEVO)
+// ========================================
+require __DIR__.'/despacho.php';
+
+// ========================================

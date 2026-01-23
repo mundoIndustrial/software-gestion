@@ -8,17 +8,17 @@ use App\Enums\EstadoPedido;
  * EstadoPedidoCatalog
  * 
  * Centraliza todas las constantes y definiciones de estados de pedidos.
- * Única fuente de verdad para estados válidos, transiciones, mensajes de error, etc.
+ * Ãšnica fuente de verdad para estados vÃ¡lidos, transiciones, mensajes de error, etc.
  * 
  * BENEFICIOS:
  * - 1 lugar para actualizar si cambian los estados
  * - Reutilizable en todas las capas (Application, Domain, Infrastructure)
  * - Consistencia garantizada
- * - Fácil testing
+ * - FÃ¡cil testing
  * 
  * ELIMINA:
- * - Duplicación de constantes en múltiples clases
- * - Validaciones de estados esparcidas en el código
+ * - DuplicaciÃ³n de constantes en mÃºltiples clases
+ * - Validaciones de estados esparcidas en el cÃ³digo
  * - Mensajes de error inconsistentes
  * 
  * Uso:
@@ -29,7 +29,7 @@ use App\Enums\EstadoPedido;
 final class EstadoPedidoCatalog
 {
     /**
-     * Estados válidos del sistema
+     * Estados vÃ¡lidos del sistema
      */
     public const ESTADOS_VALIDOS = [
         'PENDIENTE_SUPERVISOR',
@@ -49,15 +49,15 @@ final class EstadoPedidoCatalog
     ];
 
     /**
-     * Mensajes de error estándar - ÚNICA FUENTE DE VERDAD
+     * Mensajes de error estÃ¡ndar - ÃšNICA FUENTE DE VERDAD
      */
     private const MENSAJES_ERROR = [
         'pedido_no_encontrado' => 'Pedido {identificador} no encontrado',
-        'estado_invalido' => "Estado '{estado}' no es válido. Estados permitidos: {estados_validos}",
+        'estado_invalido' => "Estado '{estado}' no es vÃ¡lido. Estados permitidos: {estados_validos}",
         'transicion_no_permitida' => "No se puede cambiar de estado {estado_actual} a {estado_nuevo}",
         'pedido_no_tiene_prendas' => 'Pedido {identificador} no tiene prendas agregadas',
         'prenda_no_encontrada' => 'Prenda {identificador} no encontrada en el pedido',
-        'validacion_fallida' => 'Validación fallida: {razon}',
+        'validacion_fallida' => 'ValidaciÃ³n fallida: {razon}',
     ];
 
     /**
@@ -76,12 +76,12 @@ final class EstadoPedidoCatalog
     private const ETIQUETAS = [
         'PENDIENTE_SUPERVISOR' => 'Pendiente de Supervisor',
         'APROBADO_SUPERVISOR' => 'Aprobado por Supervisor',
-        'EN_PRODUCCION' => 'En Producción',
+        'EN_PRODUCCION' => 'En ProducciÃ³n',
         'FINALIZADO' => 'Finalizado',
     ];
 
     /**
-     * Validar si un estado es válido
+     * Validar si un estado es vÃ¡lido
      */
     public static function esValido(?string $estado): bool
     {
@@ -89,7 +89,7 @@ final class EstadoPedidoCatalog
     }
 
     /**
-     * Validar si una transición es permitida
+     * Validar si una transiciÃ³n es permitida
      */
     public static function esTransicionPermitida(string $estadoActual, string $estadoNuevo): bool
     {
@@ -140,7 +140,7 @@ final class EstadoPedidoCatalog
     }
 
     /**
-     * Obtener todos los estados válidos
+     * Obtener todos los estados vÃ¡lidos
      */
     public static function obtenerTodos(): array
     {
@@ -158,3 +158,4 @@ final class EstadoPedidoCatalog
         return $estados;
     }
 }
+

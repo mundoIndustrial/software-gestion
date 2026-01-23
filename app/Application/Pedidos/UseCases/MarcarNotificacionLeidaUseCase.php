@@ -9,8 +9,8 @@ use App\Application\Services\Asesores\NotificacionesService;
 /**
  * MarcarNotificacionLeidaUseCase
  * 
- * Use Case para marcar notificaciones como leídas
- * Encapsula la lógica de marcar una o todas las notificaciones
+ * Use Case para marcar notificaciones como leÃ­das
+ * Encapsula la lÃ³gica de marcar una o todas las notificaciones
  */
 class MarcarNotificacionLeidaUseCase
 {
@@ -26,15 +26,16 @@ class MarcarNotificacionLeidaUseCase
             $this->notificacionesService->marcarTodosLeidosPedidos();
             return [
                 'success' => true,
-                'message' => 'Notificaciones marcadas como leídas'
+                'message' => 'Notificaciones marcadas como leÃ­das'
             ];
         }
 
-        $this->validarPositivo($dto->notificacionId, 'ID de notificación');
+        $this->validarPositivo($dto->notificacionId, 'ID de notificaciÃ³n');
         $this->notificacionesService->marcarNotificacionLeida($dto->notificacionId);
         return [
             'success' => true,
-            'message' => 'Notificación marcada como leída'
+            'message' => 'NotificaciÃ³n marcada como leÃ­da'
         ];
     }
 }
+

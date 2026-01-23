@@ -43,7 +43,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable");
         }
         
-        echo "\n Cotizacion: Todos los campos están en fillable\n";
+        echo "\n Cotizacion: Todos los campos estÃ¡n en fillable\n";
     }
 
     /**
@@ -71,7 +71,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertArrayHasKey('observaciones_generales', $casts, 'observaciones_generales debe tener cast');
         $this->assertEquals('array', $casts['observaciones_generales']);
         
-        echo "\n Cotizacion: Todos los casts están configurados correctamente\n";
+        echo "\n Cotizacion: Todos los casts estÃ¡n configurados correctamente\n";
     }
 
     /**
@@ -93,7 +93,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable de PrendaTelaCot");
         }
         
-        echo "\n PrendaTelaCot: Todos los campos están en fillable\n";
+        echo "\n PrendaTelaCot: Todos los campos estÃ¡n en fillable\n";
     }
 
     /**
@@ -103,11 +103,11 @@ class CotizacionSincronizacionTest extends TestCase
     {
         $tela = new PrendaTelaCot();
         
-        // Verificar que los métodos de relación existen
-        $this->assertTrue(method_exists($tela, 'prenda'), 'Debe tener método prenda()');
-        $this->assertTrue(method_exists($tela, 'variante'), 'Debe tener método variante()');
-        $this->assertTrue(method_exists($tela, 'color'), 'Debe tener método color()');
-        $this->assertTrue(method_exists($tela, 'tela'), 'Debe tener método tela()');
+        // Verificar que los mÃ©todos de relaciÃ³n existen
+        $this->assertTrue(method_exists($tela, 'prenda'), 'Debe tener mÃ©todo prenda()');
+        $this->assertTrue(method_exists($tela, 'variante'), 'Debe tener mÃ©todo variante()');
+        $this->assertTrue(method_exists($tela, 'color'), 'Debe tener mÃ©todo color()');
+        $this->assertTrue(method_exists($tela, 'tela'), 'Debe tener mÃ©todo tela()');
         
         echo "\n PrendaTelaCot: Todas las relaciones existen\n";
     }
@@ -126,7 +126,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertArrayHasKey('telas_multiples', $casts, 'telas_multiples debe tener cast');
         $this->assertEquals('json', $casts['telas_multiples']);
         
-        echo "\n PrendaVarianteCot: Campo telas_multiples está sincronizado\n";
+        echo "\n PrendaVarianteCot: Campo telas_multiples estÃ¡ sincronizado\n";
     }
 
     /**
@@ -156,7 +156,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable de HistorialCambiosCotizacion");
         }
         
-        echo "\n HistorialCambiosCotizacion: Todos los campos están en fillable\n";
+        echo "\n HistorialCambiosCotizacion: Todos los campos estÃ¡n en fillable\n";
     }
 
     /**
@@ -166,8 +166,8 @@ class CotizacionSincronizacionTest extends TestCase
     {
         $historial = new HistorialCambiosCotizacion();
         
-        $this->assertTrue(method_exists($historial, 'cotizacion'), 'Debe tener método cotizacion()');
-        $this->assertTrue(method_exists($historial, 'usuario'), 'Debe tener método usuario()');
+        $this->assertTrue(method_exists($historial, 'cotizacion'), 'Debe tener mÃ©todo cotizacion()');
+        $this->assertTrue(method_exists($historial, 'usuario'), 'Debe tener mÃ©todo usuario()');
         
         echo "\n HistorialCambiosCotizacion: Todas las relaciones existen\n";
     }
@@ -179,39 +179,40 @@ class CotizacionSincronizacionTest extends TestCase
     {
         $prenda = new PrendaCot();
         
-        $this->assertTrue(method_exists($prenda, 'cotizacion'), 'Debe tener método cotizacion()');
-        $this->assertTrue(method_exists($prenda, 'fotos'), 'Debe tener método fotos()');
-        $this->assertTrue(method_exists($prenda, 'telas'), 'Debe tener método telas()');
-        $this->assertTrue(method_exists($prenda, 'telaFotos'), 'Debe tener método telaFotos()');
-        $this->assertTrue(method_exists($prenda, 'tallas'), 'Debe tener método tallas()');
-        $this->assertTrue(method_exists($prenda, 'variantes'), 'Debe tener método variantes()');
+        $this->assertTrue(method_exists($prenda, 'cotizacion'), 'Debe tener mÃ©todo cotizacion()');
+        $this->assertTrue(method_exists($prenda, 'fotos'), 'Debe tener mÃ©todo fotos()');
+        $this->assertTrue(method_exists($prenda, 'telas'), 'Debe tener mÃ©todo telas()');
+        $this->assertTrue(method_exists($prenda, 'telaFotos'), 'Debe tener mÃ©todo telaFotos()');
+        $this->assertTrue(method_exists($prenda, 'tallas'), 'Debe tener mÃ©todo tallas()');
+        $this->assertTrue(method_exists($prenda, 'variantes'), 'Debe tener mÃ©todo variantes()');
         
         echo "\n PrendaCot: Todas las relaciones existen\n";
     }
 
     /**
-     * Test: Resumen de sincronización
+     * Test: Resumen de sincronizaciÃ³n
      */
     public function test_resumen_sincronizacion_completa()
     {
         echo "\n";
-        echo "╔════════════════════════════════════════════════════════════╗\n";
-        echo "║  RESUMEN DE SINCRONIZACIÓN - COTIZACIONES DDD              ║\n";
-        echo "╠════════════════════════════════════════════════════════════╣\n";
-        echo "║   Tabla cotizaciones                                      ║\n";
-        echo "║     - Campos: imagenes, tecnicas, observaciones_tecnicas   ║\n";
-        echo "║     - Campos: ubicaciones, observaciones_generales         ║\n";
-        echo "║   Tabla prenda_variantes_cot                              ║\n";
-        echo "║     - Campo: telas_multiples (JSON)                        ║\n";
-        echo "║   Tabla prenda_telas_cot                                  ║\n";
-        echo "║     - Campos: color_id, tela_id, variante_prenda_cot_id    ║\n";
-        echo "║     - Relaciones: color(), tela(), variante()              ║\n";
-        echo "║   Tabla historial_cambios_cotizaciones                    ║\n";
-        echo "║     - Tabla creada con estructura completa                 ║\n";
-        echo "║     - Relaciones: cotizacion(), usuario()                  ║\n";
-        echo "╚════════════════════════════════════════════════════════════╝\n";
+        echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—\n";
+        echo "â•‘  RESUMEN DE SINCRONIZACIÃ“N - COTIZACIONES DDD              â•‘\n";
+        echo "â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£\n";
+        echo "â•‘   Tabla cotizaciones                                      â•‘\n";
+        echo "â•‘     - Campos: imagenes, tecnicas, observaciones_tecnicas   â•‘\n";
+        echo "â•‘     - Campos: ubicaciones, observaciones_generales         â•‘\n";
+        echo "â•‘   Tabla prenda_variantes_cot                              â•‘\n";
+        echo "â•‘     - Campo: telas_multiples (JSON)                        â•‘\n";
+        echo "â•‘   Tabla prenda_telas_cot                                  â•‘\n";
+        echo "â•‘     - Campos: color_id, tela_id, variante_prenda_cot_id    â•‘\n";
+        echo "â•‘     - Relaciones: color(), tela(), variante()              â•‘\n";
+        echo "â•‘   Tabla historial_cambios_cotizaciones                    â•‘\n";
+        echo "â•‘     - Tabla creada con estructura completa                 â•‘\n";
+        echo "â•‘     - Relaciones: cotizacion(), usuario()                  â•‘\n";
+        echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo "\n";
         
         $this->assertTrue(true);
     }
 }
+

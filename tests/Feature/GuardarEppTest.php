@@ -12,7 +12,7 @@ use Tests\TestCase;
 class GuardarEppTest extends TestCase
 {
     /**
-     * Test: Guardar EPP con imágenes en un pedido
+     * Test: Guardar EPP con imÃ¡genes en un pedido
      */
     public function test_guardar_epp_con_imagenes()
     {
@@ -56,7 +56,7 @@ class GuardarEppTest extends TestCase
         // Guardar EPP
         $resultado = $service->guardarEppsDelPedido($pedido, $eppsData);
 
-        // Verificar que se guardó
+        // Verificar que se guardÃ³
         $this->assertCount(1, $resultado);
         $pedidoEpp = $resultado[0];
 
@@ -68,7 +68,7 @@ class GuardarEppTest extends TestCase
             'cantidad' => 10
         ]);
 
-        // Verificar imágenes
+        // Verificar imÃ¡genes
         $imagenes = PedidoEppImagen::where('pedido_epp_id', $pedidoEpp->id)->get();
         $this->assertCount(2, $imagenes);
 
@@ -79,3 +79,4 @@ class GuardarEppTest extends TestCase
         );
     }
 }
+

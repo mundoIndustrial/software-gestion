@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\V1\OrdenController;
+use App\Http\Controllers\Api_temp\V1\OrdenController;
 use App\Http\Controllers\PrendaController;
-use App\Http\Controllers\Api\ProcesosController;
-use App\Http\Controllers\Api\PedidoController;
+use App\Http\Controllers\Api_temp\ProcesosController;
+use App\Http\Controllers\Api_temp\PedidoController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;

@@ -5,10 +5,10 @@ namespace App\Domain\Pedidos\ValueObjects;
 /**
  * Value Object: NumeroPedido
  * 
- * Representa el número único de un pedido
+ * Representa el nÃºmero Ãºnico de un pedido
  * - Immutable
  * - Validado
- * - Único en el dominio
+ * - Ãšnico en el dominio
  */
 class NumeroPedido
 {
@@ -34,15 +34,15 @@ class NumeroPedido
     private function validar(string $valor): void
     {
         if (empty($valor)) {
-            throw new \InvalidArgumentException('Número de pedido no puede estar vacío');
+            throw new \InvalidArgumentException('NÃºmero de pedido no puede estar vacÃ­o');
         }
 
         if (strlen($valor) > 50) {
-            throw new \InvalidArgumentException('Número de pedido muy largo (máx 50 caracteres)');
+            throw new \InvalidArgumentException('NÃºmero de pedido muy largo (mÃ¡x 50 caracteres)');
         }
 
         if (!preg_match('/^[A-Z0-9\-]+$/', $valor)) {
-            throw new \InvalidArgumentException('Número de pedido contiene caracteres inválidos');
+            throw new \InvalidArgumentException('NÃºmero de pedido contiene caracteres invÃ¡lidos');
         }
     }
 
@@ -61,3 +61,4 @@ class NumeroPedido
         return $this->valor;
     }
 }
+

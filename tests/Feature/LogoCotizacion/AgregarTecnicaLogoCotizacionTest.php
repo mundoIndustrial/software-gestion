@@ -20,10 +20,10 @@ class AgregarTecnicaLogoCotizacionTest extends TestCase
     {
         parent::setUp();
         
-        // Crear cotización de prueba
+        // Crear cotizaciÃ³n de prueba
         $this->logoCotizacion = LogoCotizacion::factory()->create();
         
-        // Obtener tipo de técnica (BORDADO)
+        // Obtener tipo de tÃ©cnica (BORDADO)
         $this->tipoTecnica = TipoLogoCotizacion::where('codigo', 'BORDADO')->first();
     }
 
@@ -104,7 +104,7 @@ class AgregarTecnicaLogoCotizacionTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         
         // Act
-        PrendaTecnica::crear('', 'Descripción', [UbicacionPrenda::pecho()], [Talla::medium()]);
+        PrendaTecnica::crear('', 'DescripciÃ³n', [UbicacionPrenda::pecho()], [Talla::medium()]);
     }
 
     /** @test */
@@ -114,7 +114,7 @@ class AgregarTecnicaLogoCotizacionTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         
         // Act
-        PrendaTecnica::crear('CAMISETA', 'Descripción', [], [Talla::medium()]);
+        PrendaTecnica::crear('CAMISETA', 'DescripciÃ³n', [], [Talla::medium()]);
     }
 
     /** @test */
@@ -124,7 +124,7 @@ class AgregarTecnicaLogoCotizacionTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         
         // Act
-        PrendaTecnica::crear('CAMISETA', 'Descripción', [UbicacionPrenda::pecho()], []);
+        PrendaTecnica::crear('CAMISETA', 'DescripciÃ³n', [UbicacionPrenda::pecho()], []);
     }
 
     /** @test */
@@ -234,3 +234,4 @@ class AgregarTecnicaLogoCotizacionTest extends TestCase
         $this->assertCount(6, $tallas);
     }
 }
+

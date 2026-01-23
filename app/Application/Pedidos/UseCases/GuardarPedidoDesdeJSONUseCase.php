@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Domain\PedidoProduccion\Services\GuardarPedidoDesdeJSONService;
+use App\Domain\Pedidos\Services\GuardarPedidoDesdeJSONService;
 
 /**
  * Use Case: Guardar Pedido desde JSON
@@ -27,3 +27,4 @@ class GuardarPedidoDesdeJSONUseCase
         return $this->guardarService->guardar($pedidoId, $prendas);
     }
 }
+

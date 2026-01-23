@@ -9,3 +9,4 @@ class ObtenerProximoNumeroPedidoDTO
         return new self();
     }
 }
+

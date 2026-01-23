@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -11,13 +11,13 @@ class ObtenerPedidoDetalleService
     /**
      * Obtener un pedido con todos sus detalles y relaciones
      * 
-     * @param int|string $pedidoIdentifier Número de pedido o ID
-     * @return PedidoProduccion
+     * @param int|string $pedidoIdentifier NÃºmero de pedido o ID
+     * @return Pedidos
      * @throws \Exception
      */
-    public function obtener($pedidoIdentifier): PedidoProduccion
+    public function obtener($pedidoIdentifier): Pedidos
     {
-        Log::info('📖 [DETALLE] Obteniendo detalles del pedido', [
+        Log::info('ðŸ“– [DETALLE] Obteniendo detalles del pedido', [
             'identificador' => $pedidoIdentifier
         ]);
 
@@ -39,11 +39,11 @@ class ObtenerPedidoDetalleService
     /**
      * Obtener un pedido con prendas
      */
-    public function obtenerConPrendas($pedidoIdentifier): PedidoProduccion
+    public function obtenerConPrendas($pedidoIdentifier): Pedidos
     {
         Log::info(' [DETALLE-PRENDAS] Obteniendo con prendas');
 
-        $pedido = PedidoProduccion::findOrFail($this->obtenerPedido($pedidoIdentifier)->id);
+        $pedido = Pedidos::findOrFail($this->obtenerPedido($pedidoIdentifier)->id);
         $pedido->load(['prendas' => function ($q) {
             $q->with(['procesos' => function ($q2) {
                 $q2->orderBy('created_at', 'desc');
@@ -60,7 +60,7 @@ class ObtenerPedidoDetalleService
     /**
      * Obtener un pedido con todos sus datos
      */
-    public function obtenerCompleto($pedidoIdentifier): PedidoProduccion
+    public function obtenerCompleto($pedidoIdentifier): Pedidos
     {
         Log::info(' [DETALLE-COMPLETO] Obteniendo datos completos');
 
@@ -103,12 +103,12 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener datos de edición (formulario)
+     * Obtener datos de ediciÃ³n (formulario)
      *  NUEVO: Transforma prendas a la estructura esperada por GestorPrendaSinCotizacion
      */
     public function obtenerParaEdicion($pedidoIdentifier): array
     {
-        Log::info(' [EDICION] Obteniendo datos para edición');
+        Log::info(' [EDICION] Obteniendo datos para ediciÃ³n');
 
         $pedido = $this->obtenerCompleto($pedidoIdentifier);
 
@@ -140,12 +140,12 @@ class ObtenerPedidoDetalleService
             'epps' => $epps,  //  Incluir EPPs
             'estados' => [
                 'No iniciado',
-                'En Ejecución',
+                'En EjecuciÃ³n',
                 'Entregado',
                 'Anulada'
             ],
             'areas' => [
-                'Creación de Orden',
+                'CreaciÃ³n de Orden',
                 'Corte',
                 'Costura',
                 'Bordado',
@@ -155,7 +155,7 @@ class ObtenerPedidoDetalleService
                 'Polos',
                 'Taller',
                 'Insumos',
-                'Lavandería',
+                'LavanderÃ­a',
                 'Arreglos',
                 'Despachos'
             ]
@@ -181,7 +181,7 @@ class ObtenerPedidoDetalleService
             $variantes = $this->construirVariantes($prenda);
             $procesos = $this->construirProcesos($prenda);
             
-            //  Extraer datos de variación de las variantes (tomar del primer variante)
+            //  Extraer datos de variaciÃ³n de las variantes (tomar del primer variante)
             $primerVariante = $prenda->variantes && $prenda->variantes->count() > 0 
                 ? $prenda->variantes->first() 
                 : null;
@@ -196,13 +196,13 @@ class ObtenerPedidoDetalleService
             $obs_reflectivo = '';
             
             if ($primerVariante) {
-                // Obtener nombre del tipo de manga si existe la relación
+                // Obtener nombre del tipo de manga si existe la relaciÃ³n
                 if ($primerVariante->tipoManga) {
                     $tipo_manga = $primerVariante->tipoManga->nombre ?? 'No aplica';
                 }
                 $obs_manga = $primerVariante->manga_obs ?? '';
                 
-                // Obtener nombre del tipo de broche si existe la relación
+                // Obtener nombre del tipo de broche si existe la relaciÃ³n
                 if ($primerVariante->tipoBrocheBoton) {
                     $tipo_broche = $primerVariante->tipoBrocheBoton->nombre ?? 'No aplica';
                 }
@@ -212,7 +212,7 @@ class ObtenerPedidoDetalleService
                 $tiene_bolsillos = (bool)($primerVariante->tiene_bolsillos ?? false);
                 $obs_bolsillos = $primerVariante->bolsillos_obs ?? '';
                 
-                // Reflectivo (si existe en tabla, sino será false)
+                // Reflectivo (si existe en tabla, sino serÃ¡ false)
                 $tiene_reflectivo = (bool)($primerVariante->tiene_reflectivo ?? false);
                 $obs_reflectivo = $primerVariante->reflectivo_obs ?? '';
             }
@@ -220,7 +220,7 @@ class ObtenerPedidoDetalleService
             return [
                 'nombre_prenda' => $prenda->nombre_prenda,
                 'descripcion' => $prenda->descripcion,
-                'genero' => [], // Se llenará desde generosConTallas
+                'genero' => [], // Se llenarÃ¡ desde generosConTallas
                 'generosConTallas' => $generosConTallas, //  Dejar como objeto, Blade hace @json()
                 'tipo_manga' => $tipo_manga,
                 'obs_manga' => $obs_manga,
@@ -272,7 +272,7 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener tallas únicas del prenda
+     * Obtener tallas Ãºnicas del prenda
      */
     private function obtenerTallasDelPrenda($prenda)
     {
@@ -329,7 +329,7 @@ class ObtenerPedidoDetalleService
                 if ($telaId || $colorId) {
                     $key = "$telaId-$colorId";
                     if (!isset($telasUnicas[$key])) {
-                        // Acceder a través de relaciones cargadas
+                        // Acceder a travÃ©s de relaciones cargadas
                         $telaNombre = $variante->tela?->nombre ?? 'N/A';
                         $colorNombre = $variante->color?->nombre ?? 'N/A';
                         $colorCodigo = $variante->color?->codigo ?? '';
@@ -398,7 +398,7 @@ class ObtenerPedidoDetalleService
                 
                 $fotoArray = $foto->toArray();
                 
-                Log::info('[OBTENER-FOTOS-PRENDA] Después de toArray():', [
+                Log::info('[OBTENER-FOTOS-PRENDA] DespuÃ©s de toArray():', [
                     'foto_id' => $foto->id,
                     'url_en_array' => $fotoArray['url'] ?? 'NO EXISTE',
                     'ruta_en_array' => $fotoArray['ruta'] ?? 'NO EXISTE',
@@ -442,7 +442,7 @@ class ObtenerPedidoDetalleService
                     $nombreTipoProceso = $proceso->tipoProceso->nombre ?? $proceso->tipoProceso->tipo ?? 'Proceso';
                 }
                 
-                //  Obtener imágenes transformadas a URLs
+                //  Obtener imÃ¡genes transformadas a URLs
                 $imagenes = [];
                 if ($proceso->imagenes && $proceso->imagenes->count() > 0) {
                     $imagenes = $proceso->imagenes->map(function ($img) {
@@ -479,7 +479,7 @@ class ObtenerPedidoDetalleService
                             'ubicaciones' => $ubicaciones,  //  Ubicaciones parseadas
                             'observaciones' => $proceso->observaciones ?? '',
                             'tallas' => $tallas,  //  Tallas parseadas
-                            'imagenes' => $imagenes,  //  Imágenes con URLs
+                            'imagenes' => $imagenes,  //  ImÃ¡genes con URLs
                         ]
                     ];
                 }
@@ -532,11 +532,11 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener solo información básica
+     * Obtener solo informaciÃ³n bÃ¡sica
      */
     public function obtenerBasico($pedidoIdentifier): array
     {
-        Log::info(' [BASICO] Obteniendo información básica');
+        Log::info(' [BASICO] Obteniendo informaciÃ³n bÃ¡sica');
 
         $pedido = $this->obtenerPedido($pedidoIdentifier);
 
@@ -555,20 +555,20 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener el pedido (por número o ID)
+     * Obtener el pedido (por nÃºmero o ID)
      */
-    private function obtenerPedido($pedidoIdentifier): PedidoProduccion
+    private function obtenerPedido($pedidoIdentifier): Pedidos
     {
-        // Si es número (numérico > 100)
+        // Si es nÃºmero (numÃ©rico > 100)
         if (is_numeric($pedidoIdentifier) && $pedidoIdentifier > 100) {
-            $pedido = PedidoProduccion::where('numero_pedido', $pedidoIdentifier)->first();
+            $pedido = Pedidos::where('numero_pedido', $pedidoIdentifier)->first();
             if ($pedido) {
                 return $pedido;
             }
         }
 
         // Intentar por ID
-        $pedido = PedidoProduccion::find($pedidoIdentifier);
+        $pedido = Pedidos::find($pedidoIdentifier);
         if ($pedido) {
             return $pedido;
         }
@@ -602,7 +602,7 @@ class ObtenerPedidoDetalleService
      * Construir tallas de proceso DESDE LA TABLA RELACIONAL
      * 
      * Lee de pedidos_procesos_prenda_tallas (estructura: {genero: {talla: cantidad}})
-     * Soporta DAMA, CABALLERO, UNISEX como géneros.
+     * Soporta DAMA, CABALLERO, UNISEX como gÃ©neros.
      */
     private function construirTallasProcesoRelacional($procesoPrendaDetalleId)
     {
@@ -614,7 +614,7 @@ class ObtenerPedidoDetalleService
         )->get();
         
         if ($tallasRelacionales->count() > 0) {
-            // Agrupar por género
+            // Agrupar por gÃ©nero
             foreach ($tallasRelacionales as $tallaRecord) {
                 $genero = strtolower($tallaRecord->genero); // 'dama', 'caballero', 'unisex'
                 
@@ -645,3 +645,4 @@ class ObtenerPedidoDetalleService
             ->count();
     }
 }
+

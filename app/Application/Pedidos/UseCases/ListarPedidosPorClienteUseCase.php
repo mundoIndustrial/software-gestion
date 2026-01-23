@@ -8,7 +8,7 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 /**
  * Use Case: Listar Pedidos por Cliente
  * 
- * Query Side - CQRS básico
+ * Query Side - CQRS bÃ¡sico
  * Obtiene todos los pedidos de un cliente
  */
 class ListarPedidosPorClienteUseCase
@@ -36,3 +36,4 @@ class ListarPedidosPorClienteUseCase
         );
     }
 }
+

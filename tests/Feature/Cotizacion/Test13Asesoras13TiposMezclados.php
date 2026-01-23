@@ -10,20 +10,20 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * TEST: 13 Asesoras Simultáneas - Tipos Mezclados
+ * TEST: 13 Asesoras SimultÃ¡neas - Tipos Mezclados
  * 
  * Simula el escenario exacto planteado:
  * - 13 asesoras creando cotizaciones al mismo tiempo
  * - Tipos mezclados: Prenda (3), Bordado (2), Reflectivo (4)
  * - Verificar que numero_cotizacion sigue consecutivo sin duplicados
  * 
- * Patrón esperado:
- * COT-000001 → Prenda
- * COT-000002 → Bordado
- * COT-000003 → Reflectivo
- * COT-000004 → Prenda
+ * PatrÃ³n esperado:
+ * COT-000001 â†’ Prenda
+ * COT-000002 â†’ Bordado
+ * COT-000003 â†’ Reflectivo
+ * COT-000004 â†’ Prenda
  * ...
- * COT-000013 → Prenda
+ * COT-000013 â†’ Prenda
  * 
  *  NO USA RefreshDatabase - preserva datos existentes
  */
@@ -37,7 +37,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
     {
         parent::setUp();
 
-        // Crear tipos de cotización
+        // Crear tipos de cotizaciÃ³n
         TipoCotizacion::firstOrCreate(['id' => 2], ['codigo' => 'L', 'nombre' => 'Bordado/Logo']);
         TipoCotizacion::firstOrCreate(['id' => 3], ['codigo' => 'P', 'nombre' => 'Prenda']);
         TipoCotizacion::firstOrCreate(['id' => 4], ['codigo' => 'RF', 'nombre' => 'Reflectivo']);
@@ -54,11 +54,11 @@ class Test13Asesoras13TiposMezclados extends TestCase
      */
     public function test_13_asesoras_tipos_mezclados_numeracion_consecutiva(): void
     {
-        echo "\n\n═══════════════════════════════════════════════════════════════";
-        echo "\n🔬 INICIANDO TEST: 13 Asesoras - Tipos Mezclados";
-        echo "\n═══════════════════════════════════════════════════════════════\n";
+        echo "\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•";
+        echo "\nðŸ”¬ INICIANDO TEST: 13 Asesoras - Tipos Mezclados";
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // Definir patrón de 13 asesoras con tipos mezclados
+        // Definir patrÃ³n de 13 asesoras con tipos mezclados
         $asesoras = [
             1  => ['nombre' => 'Asesor1',  'tipo_id' => 3],  // Prenda
             2  => ['nombre' => 'Asesor2',  'tipo_id' => 2],  // Bordado
@@ -89,10 +89,10 @@ class Test13Asesoras13TiposMezclados extends TestCase
         $errores = [];
 
         echo " Creando 13 cotizaciones de tipos mezclados...\n";
-        echo "─────────────────────────────────────────────\n";
+        echo "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n";
 
         // Simular 13 asesoras creando cotizaciones secuencialmente
-        // (Los locks del DB harán la serialización)
+        // (Los locks del DB harÃ¡n la serializaciÃ³n)
         foreach ($asesoras as $i => $config) {
             $usuario = $usuarios[$i];
             $tipo_id = $config['tipo_id'];
@@ -125,7 +125,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
                 ];
 
                 echo sprintf(
-                    " #%2d %s (tipo=%s) → %s\n",
+                    " #%2d %s (tipo=%s) â†’ %s\n",
                     $i,
                     str_pad($config['nombre'], 10),
                     $nombre_tipo,
@@ -141,11 +141,11 @@ class Test13Asesoras13TiposMezclados extends TestCase
             }
         }
 
-        echo "\n─────────────────────────────────────────────\n";
-        echo " ANÁLISIS DE RESULTADOS\n";
-        echo "─────────────────────────────────────────────\n";
+        echo "\nâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n";
+        echo " ANÃLISIS DE RESULTADOS\n";
+        echo "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n";
 
-        // VERIFICACIÓN 1: Cantidad correcta
+        // VERIFICACIÃ“N 1: Cantidad correcta
         echo "\n  CANTIDAD DE COTIZACIONES\n";
         $cantidad = count($resultados);
         echo "   Esperado: 13\n";
@@ -153,17 +153,17 @@ class Test13Asesoras13TiposMezclados extends TestCase
         $this->assertEquals(13, $cantidad, "Debe haber exactamente 13 cotizaciones");
         echo "    CORRECTO\n";
 
-        // VERIFICACIÓN 2: Sin duplicados
-        echo "\n  VERIFICACIÓN DE DUPLICADOS\n";
+        // VERIFICACIÃ“N 2: Sin duplicados
+        echo "\n  VERIFICACIÃ“N DE DUPLICADOS\n";
         $numeros = array_column($resultados, 'numero_cotizacion');
         $numeros_unicos = array_unique($numeros);
         echo "   Total: " . count($numeros) . "\n";
-        echo "   Únicos: " . count($numeros_unicos) . "\n";
+        echo "   Ãšnicos: " . count($numeros_unicos) . "\n";
         $this->assertEquals(count($numeros), count($numeros_unicos), "No debe haber duplicados");
         echo "    SIN DUPLICADOS\n";
 
-        // VERIFICACIÓN 3: Consecutividad
-        echo "\n  VERIFICACIÓN DE CONSECUTIVIDAD\n";
+        // VERIFICACIÃ“N 3: Consecutividad
+        echo "\n  VERIFICACIÃ“N DE CONSECUTIVIDAD\n";
         $numeros_int = array_column($resultados, 'numero_int');
         echo "   Secuencia obtenida: " . implode(", ", $numeros_int) . "\n";
         
@@ -171,8 +171,8 @@ class Test13Asesoras13TiposMezclados extends TestCase
         $this->assertEquals($esperado, $numeros_int, "Debe ser consecutivo del 1 al 13");
         echo "    CONSECUTIVO PERFECTO\n";
 
-        // VERIFICACIÓN 4: Distribución por tipo
-        echo "\n4️⃣  DISTRIBUCIÓN POR TIPO\n";
+        // VERIFICACIÃ“N 4: DistribuciÃ³n por tipo
+        echo "\n4ï¸âƒ£  DISTRIBUCIÃ“N POR TIPO\n";
         $por_tipo = array_reduce($resultados, function($carry, $item) {
             if (!isset($carry[$item['tipo_id']])) {
                 $carry[$item['tipo_id']] = [];
@@ -187,8 +187,8 @@ class Test13Asesoras13TiposMezclados extends TestCase
         }
         echo "    TIPOS CORRECTAMENTE REGISTRADOS\n";
 
-        // VERIFICACIÓN 5: Tabla numero_secuencias
-        echo "\n5️⃣  ESTADO DE SECUENCIA UNIVERSAL\n";
+        // VERIFICACIÃ“N 5: Tabla numero_secuencias
+        echo "\n5ï¸âƒ£  ESTADO DE SECUENCIA UNIVERSAL\n";
         $secuencia = DB::table('numero_secuencias')
             ->where('tipo', 'cotizaciones_universal')
             ->first();
@@ -197,8 +197,8 @@ class Test13Asesoras13TiposMezclados extends TestCase
         $this->assertEquals(14, $secuencia->siguiente, "El contador debe estar en 14");
         echo "    SECUENCIA CORRECTA\n";
 
-        // VERIFICACIÓN 6: Base de datos
-        echo "\n6️⃣  VERIFICACIÓN EN BASE DE DATOS\n";
+        // VERIFICACIÃ“N 6: Base de datos
+        echo "\n6ï¸âƒ£  VERIFICACIÃ“N EN BASE DE DATOS\n";
         $cotizaciones_bd = Cotizacion::whereIn('numero_cotizacion', $numeros)
             ->orderBy('numero_cotizacion')
             ->get();
@@ -208,21 +208,21 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "    DATOS PERSISTIDOS CORRECTAMENTE\n";
 
         // Resumen final
-        echo "\n═══════════════════════════════════════════════════════════════\n";
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo " TODOS LOS TESTS PASARON EXITOSAMENTE\n";
-        echo "═══════════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo "\n RESUMEN:\n";
-        echo "   • 13 cotizaciones creadas \n";
-        echo "   • 0 duplicados \n";
-        echo "   • Numeración consecutiva (1-13) \n";
-        echo "   • Tipos mezclados registrados \n";
-        echo "   • Secuencia actualizada correctamente \n";
-        echo "   • Datos persistidos en BD \n";
-        echo "\n CONCLUSIÓN: Sistema listo para producción con 13+ asesoras simultáneas\n\n";
+        echo "   â€¢ 13 cotizaciones creadas \n";
+        echo "   â€¢ 0 duplicados \n";
+        echo "   â€¢ NumeraciÃ³n consecutiva (1-13) \n";
+        echo "   â€¢ Tipos mezclados registrados \n";
+        echo "   â€¢ Secuencia actualizada correctamente \n";
+        echo "   â€¢ Datos persistidos en BD \n";
+        echo "\n CONCLUSIÃ“N: Sistema listo para producciÃ³n con 13+ asesoras simultÃ¡neas\n\n";
     }
 
     /**
-     * Generar número de cotización sin lock para evitar bloqueos en test
+     * Generar nÃºmero de cotizaciÃ³n sin lock para evitar bloqueos en test
      */
     private function generarNumeroCotizacionComoDBC(): string
     {
@@ -266,9 +266,9 @@ class Test13Asesoras13TiposMezclados extends TestCase
      */
     public function test_secuencia_es_realmente_universal(): void
     {
-        echo "\n\n═══════════════════════════════════════════════════════════════";
-        echo "\n🔬 TEST: Verificación que secuencia es universal";
-        echo "\n═══════════════════════════════════════════════════════════════\n";
+        echo "\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•";
+        echo "\nðŸ”¬ TEST: VerificaciÃ³n que secuencia es universal";
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
         // Obtener valor actual de secuencia
         $secuencia_inicial = DB::table('numero_secuencias')
@@ -276,24 +276,24 @@ class Test13Asesoras13TiposMezclados extends TestCase
             ->first();
         $num_inicial = $secuencia_inicial->siguiente;
 
-        // Crear un número
+        // Crear un nÃºmero
         $numero1 = $this->generarNumeroCotizacionComoDBC();
-        echo "  Número generado: $numero1\n";
+        echo "  NÃºmero generado: $numero1\n";
         $num1_int = (int)substr($numero1, 5);
 
-        // Crear otro número
+        // Crear otro nÃºmero
         $numero2 = $this->generarNumeroCotizacionComoDBC();
-        echo "  Número generado: $numero2\n";
+        echo "  NÃºmero generado: $numero2\n";
         $num2_int = (int)substr($numero2, 5);
 
-        // Crear otro número
+        // Crear otro nÃºmero
         $numero3 = $this->generarNumeroCotizacionComoDBC();
-        echo "  Número generado: $numero3\n";
+        echo "  NÃºmero generado: $numero3\n";
         $num3_int = (int)substr($numero3, 5);
 
-        // Verificar que los números son consecutivos
-        echo "\n   Diferencia 1→2: " . ($num2_int - $num1_int) . " (debe ser 1)\n";
-        echo "   Diferencia 2→3: " . ($num3_int - $num2_int) . " (debe ser 1)\n";
+        // Verificar que los nÃºmeros son consecutivos
+        echo "\n   Diferencia 1â†’2: " . ($num2_int - $num1_int) . " (debe ser 1)\n";
+        echo "   Diferencia 2â†’3: " . ($num3_int - $num2_int) . " (debe ser 1)\n";
 
         $this->assertEquals(1, $num2_int - $num1_int);
         $this->assertEquals(1, $num3_int - $num2_int);
@@ -302,13 +302,13 @@ class Test13Asesoras13TiposMezclados extends TestCase
     }
 
     /**
-     * TEST TERCIARIO: Estrés con 50 cotizaciones rápidas
+     * TEST TERCIARIO: EstrÃ©s con 50 cotizaciones rÃ¡pidas
      */
     public function test_50_cotizaciones_rapidas_sin_duplicados(): void
     {
-        echo "\n\n═══════════════════════════════════════════════════════════════";
-        echo "\n🔬 TEST: Estrés - 50 cotizaciones rápidas";
-        echo "\n═══════════════════════════════════════════════════════════════\n";
+        echo "\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•";
+        echo "\nðŸ”¬ TEST: EstrÃ©s - 50 cotizaciones rÃ¡pidas";
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
@@ -316,7 +316,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         $numeros = [];
         $tipos_ids = [2, 3, 4]; // Bordado, Prenda, Reflectivo
 
-        echo "⚡ Creando 50 cotizaciones rápidamente...\n";
+        echo "âš¡ Creando 50 cotizaciones rÃ¡pidamente...\n";
 
         for ($i = 0; $i < 50; $i++) {
             $tipo_id = $tipos_ids[$i % 3]; // Rotar entre tipos
@@ -344,10 +344,11 @@ class Test13Asesoras13TiposMezclados extends TestCase
         // Verificar sin duplicados
         $unicos = count(array_unique($numeros));
         echo "\n Total: " . count($numeros) . " cotizaciones\n";
-        echo " Únicos: $unicos (sin duplicados)\n";
+        echo " Ãšnicos: $unicos (sin duplicados)\n";
 
         $this->assertEquals(50, count($numeros));
         $this->assertEquals(50, $unicos);
-        echo "\n Test de estrés completado exitosamente\n\n";
+        echo "\n Test de estrÃ©s completado exitosamente\n\n";
     }
 }
+

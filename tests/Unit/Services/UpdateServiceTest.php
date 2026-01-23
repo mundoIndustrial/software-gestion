@@ -43,8 +43,9 @@ class UpdateServiceTest extends TestCase
     {
         $reflection = new \ReflectionClass($this->service);
         
-        // Verificar que tiene métodos privados para validación y recálculo
+        // Verificar que tiene mÃ©todos privados para validaciÃ³n y recÃ¡lculo
         $this->assertTrue($reflection->hasMethod('getUpdateValidationRules'));
         $this->assertTrue($reflection->hasMethod('shouldRecalculate'));
     }
 }
+

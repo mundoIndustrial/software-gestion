@@ -498,19 +498,23 @@ class PrendaEditor {
             }
         }
 
-        // Cargar broche desde obs_broche o variantes.obs_broche
-        if (aplicaBroche && (prenda.obs_broche || (prenda.variantes && prenda.variantes.obs_broche))) {
+        // Cargar broche desde obs_broche o variantes.obs_broche o tipo_broche_boton_id
+        if (aplicaBroche && (prenda.obs_broche || (prenda.variantes && prenda.variantes.obs_broche) || prenda.tipo_broche_boton_id)) {
+            console.log('[prenda-editor] Broche: Checkbox aplica-broche encontrado', { aplicaBroche: !!aplicaBroche });
             aplicaBroche.checked = true;
+            console.log('[prenda-editor] Broche: Checkbox marcado como checked=true');
             aplicaBroche.dispatchEvent(new Event('change', { bubbles: true }));
+            console.log('[prenda-editor] Broche: Event change disparado');
             
             // Cargar tipo de broche en dropdown (broche-input)
             const brocheInput = document.getElementById('broche-input');
-
+            console.log('[prenda-editor] Broche: brocheInput encontrado?', { encontrado: !!brocheInput, disabled: brocheInput?.disabled });
 
             
             if (brocheInput && prenda.tipo_broche_boton_id) {
+                console.log('[prenda-editor] Broche: tipo_broche_boton_id =', prenda.tipo_broche_boton_id);
                 // Mapear ID a valor del dropdown
-                // 1 = Botón, 2 = Broche
+                // De la tabla tipos_broche_boton: 1 = Broche, 2 = Botón
                 let valorSeleccionar = '';
                 if (prenda.tipo_broche_boton_id === 1) {
                     valorSeleccionar = 'broche';
@@ -518,13 +522,17 @@ class PrendaEditor {
                     valorSeleccionar = 'boton';
                 }
                 
-
+                console.log('[prenda-editor] Broche: valorSeleccionar =', valorSeleccionar);
 
                 
                 // Buscar la opción que coincida
                 let encontrado = false;
+                console.log('[prenda-editor] Broche: Opciones disponibles:', Array.from(brocheInput.options).map(o => ({ value: o.value, text: o.text })));
+                
                 for (let opt of brocheInput.options) {
+                    console.log('[prenda-editor] Broche: Comparando', opt.value.toLowerCase(), '===', valorSeleccionar.toLowerCase(), '?');
                     if (opt.value.toLowerCase() === valorSeleccionar.toLowerCase()) {
+                        console.log('[prenda-editor] Broche: ✓ Opción encontrada! Estableciendo value =', opt.value);
                         brocheInput.value = opt.value;
                         encontrado = true;
 
@@ -533,6 +541,7 @@ class PrendaEditor {
                 }
                 
                 if (!encontrado) {
+                    console.log('[prenda-editor] ⚠️ Broche: NO se encontró opción que coincida');
 
                 }
                 

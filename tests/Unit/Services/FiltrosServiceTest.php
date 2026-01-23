@@ -60,3 +60,4 @@ class FiltrosServiceTest extends TestCase
         $this->assertTrue($method->isPublic());
     }
 }
+

@@ -3,7 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Validators\PedidoJSONValidator;
+use App\Domain\Pedidos\Validators\PedidoJSONValidator;
 
 /**
  * Use Case: Validar Pedido desde JSON
@@ -25,3 +25,4 @@ class ValidarPedidoDesdeJSONUseCase
         return PedidoJSONValidator::validar($datos);
     }
 }
+

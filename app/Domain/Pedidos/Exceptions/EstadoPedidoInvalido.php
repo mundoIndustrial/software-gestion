@@ -3,7 +3,7 @@
 namespace App\Domain\Pedidos\Exceptions;
 
 /**
- * Exception: Estado Pedido Inválido
+ * Exception: Estado Pedido InvÃ¡lido
  */
 class EstadoPedidoInvalido extends \Exception
 {
@@ -12,3 +12,4 @@ class EstadoPedidoInvalido extends \Exception
         return new self("No se puede pasar de $estadoActual a $estadoNuevo");
     }
 }
+

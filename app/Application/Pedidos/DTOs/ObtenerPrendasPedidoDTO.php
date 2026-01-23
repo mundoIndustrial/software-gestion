@@ -13,3 +13,4 @@ final class ObtenerPrendasPedidoDTO
         return new self(pedidoId: $pedidoId);
     }
 }
+

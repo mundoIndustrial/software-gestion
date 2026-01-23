@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\DB;
  * Caso de uso para crear o actualizar un proceso de pedido
  * Responsabilidad: Crear nuevos procesos y guardar cambios en historial
  * 
- * Patrón: Use Case (Application Layer - DDD)
- * Lógica: Si el proceso ya existe, guardar el anterior en historial y actualizar
+ * PatrÃ³n: Use Case (Application Layer - DDD)
+ * LÃ³gica: Si el proceso ya existe, guardar el anterior en historial y actualizar
  */
 class CrearProcesoUseCase
 {
@@ -109,3 +109,4 @@ class CrearProcesoUseCase
         ];
     }
 }
+

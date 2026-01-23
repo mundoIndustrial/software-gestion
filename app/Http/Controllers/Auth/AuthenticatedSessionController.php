@@ -40,6 +40,19 @@ class AuthenticatedSessionController extends Controller
             'role' => $user->role,
             'role_name' => $user->role ? ($user->role->name ?? 'sin nombre') : 'null',
         ]);
+
+        // Verificar primero si tiene rol Despacho en roles_ids
+        $despachoRole = \App\Models\Role::where('name', 'Despacho')->first();
+        if ($despachoRole) {
+            // roles_ids puede ser string JSON o array directamente
+            $rolesIds = is_array($user->roles_ids) 
+                ? $user->roles_ids 
+                : json_decode($user->roles_ids ?? '[]', true);
+            
+            if (in_array($despachoRole->id, $rolesIds)) {
+                return redirect(route('despacho.index', absolute: false));
+            }
+        }
         
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;

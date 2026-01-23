@@ -11,7 +11,7 @@ class PrepararCreacionProduccionPedidoUseCase
         $esEdicion = false;
         $cotizacion = null;
 
-        // Si está editando, obtener la cotización
+        // Si estÃ¡ editando, obtener la cotizaciÃ³n
         if ($dto->editarId) {
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
@@ -37,3 +37,4 @@ class PrepararCreacionProduccionPedidoUseCase
         ];
     }
 }
+

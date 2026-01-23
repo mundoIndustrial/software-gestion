@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -12,12 +12,12 @@ class ActualizarPedidoService
     /**
      * Actualizar datos de un pedido existente
      * 
-     * @param int|string $pedidoIdentifier Número de pedido o ID
+     * @param int|string $pedidoIdentifier NÃºmero de pedido o ID
      * @param array $datos Datos a actualizar
-     * @return PedidoProduccion
+     * @return Pedidos
      * @throws \Exception
      */
-    public function actualizar($pedidoIdentifier, array $datos): PedidoProduccion
+    public function actualizar($pedidoIdentifier, array $datos): Pedidos
     {
         Log::info(' [ACTUALIZAR] Actualizando pedido', [
             'identificador' => $pedidoIdentifier,
@@ -50,7 +50,7 @@ class ActualizarPedidoService
                 $this->actualizarPrendas($pedido, $prendas);
             }
 
-            // Actualizar EPP si se envió
+            // Actualizar EPP si se enviÃ³
             if (!empty($epp)) {
                 $this->actualizarEpp($pedido, $epp);
             }
@@ -72,11 +72,11 @@ class ActualizarPedidoService
     }
 
     /**
-     * Actualizar solo campos específicos
+     * Actualizar solo campos especÃ­ficos
      */
-    public function actualizarCampos($pedidoIdentifier, array $campos): PedidoProduccion
+    public function actualizarCampos($pedidoIdentifier, array $campos): Pedidos
     {
-        Log::info(' [ACTUALIZAR-CAMPOS] Actualizando campos específicos', [
+        Log::info(' [ACTUALIZAR-CAMPOS] Actualizando campos especÃ­ficos', [
             'campos' => array_keys($campos)
         ]);
 
@@ -99,7 +99,7 @@ class ActualizarPedidoService
     /**
      * Actualizar prendas de un pedido
      */
-    private function actualizarPrendas(PedidoProduccion $pedido, array $prendas): void
+    private function actualizarPrendas(Pedidos $pedido, array $prendas): void
     {
         Log::info(' [ACTUALIZAR-PRENDAS] Actualizando ' . count($prendas) . ' prendas');
 
@@ -127,7 +127,7 @@ class ActualizarPedidoService
     /**
      * Actualizar EPP de un pedido
      */
-    private function actualizarEpp(PedidoProduccion $pedido, array $epp): void
+    private function actualizarEpp(Pedidos $pedido, array $epp): void
     {
         Log::info(' [ACTUALIZAR-EPP] Actualizando ' . count($epp) . ' items de EPP');
 
@@ -154,20 +154,20 @@ class ActualizarPedidoService
     }
 
     /**
-     * Obtener el pedido (por número o ID)
+     * Obtener el pedido (por nÃºmero o ID)
      */
-    private function obtenerPedido($pedidoIdentifier): PedidoProduccion
+    private function obtenerPedido($pedidoIdentifier): Pedidos
     {
-        // Si es número (numérico > 1000 usualmente)
+        // Si es nÃºmero (numÃ©rico > 1000 usualmente)
         if (is_numeric($pedidoIdentifier) && $pedidoIdentifier > 100) {
-            $pedido = PedidoProduccion::where('numero_pedido', $pedidoIdentifier)->first();
+            $pedido = Pedidos::where('numero_pedido', $pedidoIdentifier)->first();
             if ($pedido) {
                 return $pedido;
             }
         }
 
         // Intentar por ID
-        $pedido = PedidoProduccion::find($pedidoIdentifier);
+        $pedido = Pedidos::find($pedidoIdentifier);
         if ($pedido) {
             return $pedido;
         }
@@ -178,9 +178,9 @@ class ActualizarPedidoService
     /**
      * Cambiar estado de un pedido
      */
-    public function cambiarEstado($pedidoIdentifier, string $nuevoEstado): PedidoProduccion
+    public function cambiarEstado($pedidoIdentifier, string $nuevoEstado): Pedidos
     {
-        Log::info('🔄 [CAMBIAR-ESTADO] Cambiando a estado: ' . $nuevoEstado);
+        Log::info('ðŸ”„ [CAMBIAR-ESTADO] Cambiando a estado: ' . $nuevoEstado);
 
         $pedido = $this->obtenerPedido($pedidoIdentifier);
 
@@ -208,10 +208,11 @@ class ActualizarPedidoService
     /**
      * Actualizar novedades del pedido
      */
-    public function actualizarNovedades($pedidoIdentifier, string $novedades): PedidoProduccion
+    public function actualizarNovedades($pedidoIdentifier, string $novedades): Pedidos
     {
-        Log::info('📌 [NOVEDADES] Actualizando novedades del pedido');
+        Log::info('ðŸ“Œ [NOVEDADES] Actualizando novedades del pedido');
 
         return $this->actualizarCampos($pedidoIdentifier, ['novedades' => $novedades]);
     }
 }
+

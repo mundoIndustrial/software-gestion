@@ -1,13 +1,13 @@
-namespace Tests\Unit\Domain\PedidoProduccion;
+namespace Tests\Unit\Domain\Pedidos;
 
-use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
+use App\Domain\Pedidos\Agregado\PedidoProduccionAggregate;
 use PHPUnit\Framework\TestCase;
 
 class PedidoProduccionAggregateTest extends TestCase
 {
     /**
      * @test
-     * Validar que se puede crear un agregado de producción
+     * Validar que se puede crear un agregado de producciÃ³n
      */
     public function puede_crear_pedido_produccion()
     {
@@ -44,7 +44,7 @@ class PedidoProduccionAggregateTest extends TestCase
 
     /**
      * @test
-     * Validar que no se puede cambiar a confirmado si ya está
+     * Validar que no se puede cambiar a confirmado si ya estÃ¡
      */
     public function no_puede_confirmar_ya_confirmado()
     {
@@ -55,7 +55,7 @@ class PedidoProduccionAggregateTest extends TestCase
         ]);
 
         $pedido->confirmar();
-        $pedido->confirmar(); // ← Error
+        $pedido->confirmar(); // â† Error
     }
 
     /**
@@ -68,9 +68,10 @@ class PedidoProduccionAggregateTest extends TestCase
             'numero_pedido' => 'PED-2024-001',
         ]);
 
-        $pedido->anular('Cliente solicitó cancelación');
+        $pedido->anular('Cliente solicitÃ³ cancelaciÃ³n');
 
         $this->assertEquals('anulado', $pedido->getEstado());
-        $this->assertEquals('Cliente solicitó cancelación', $pedido->getRazonAnulacion());
+        $this->assertEquals('Cliente solicitÃ³ cancelaciÃ³n', $pedido->getRazonAnulacion());
     }
 }
+

@@ -25,7 +25,7 @@ class ActualizarYTransicionarPedidoUseCasesTest extends TestCase
     }
 
     /**
-     * Test: Actualizar descripción de un pedido
+     * Test: Actualizar descripciÃ³n de un pedido
      */
     public function test_actualizar_descripcion_pedido()
     {
@@ -33,7 +33,7 @@ class ActualizarYTransicionarPedidoUseCasesTest extends TestCase
 
         $pedido = PedidoAggregate::crear(
             clienteId: 1,
-            descripcion: 'Descripción original',
+            descripcion: 'DescripciÃ³n original',
             prendasData: [
                 [
                     'prenda_id' => 1,
@@ -55,14 +55,14 @@ class ActualizarYTransicionarPedidoUseCasesTest extends TestCase
             ->shouldReceive('guardar')
             ->once();
 
-        $response = $useCase->ejecutar(1, 'Nueva descripción');
+        $response = $useCase->ejecutar(1, 'Nueva descripciÃ³n');
 
-        $this->assertEquals('Nueva descripción', $response->descripcion);
-        $this->assertEquals('Descripción actualizada exitosamente', $response->mensaje);
+        $this->assertEquals('Nueva descripciÃ³n', $response->descripcion);
+        $this->assertEquals('DescripciÃ³n actualizada exitosamente', $response->mensaje);
     }
 
     /**
-     * Test: Iniciar producción desde CONFIRMADO
+     * Test: Iniciar producciÃ³n desde CONFIRMADO
      */
     public function test_iniciar_produccion_desde_confirmado()
     {
@@ -96,7 +96,7 @@ class ActualizarYTransicionarPedidoUseCasesTest extends TestCase
         $response = $useCase->ejecutar(1);
 
         $this->assertEquals('EN_PRODUCCION', $response->estado);
-        $this->assertEquals('Producción iniciada exitosamente', $response->mensaje);
+        $this->assertEquals('ProducciÃ³n iniciada exitosamente', $response->mensaje);
     }
 
     /**
@@ -139,15 +139,16 @@ class ActualizarYTransicionarPedidoUseCasesTest extends TestCase
     }
 
     /**
-     * Test: Error al actualizar con descripción vacía
+     * Test: Error al actualizar con descripciÃ³n vacÃ­a
      */
     public function test_error_descripcion_vacia()
     {
         $useCase = new ActualizarDescripcionPedidoUseCase($this->repositoryMock);
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Descripción no puede estar vacía');
+        $this->expectExceptionMessage('DescripciÃ³n no puede estar vacÃ­a');
 
         $useCase->ejecutar(1, '');
     }
 }
+

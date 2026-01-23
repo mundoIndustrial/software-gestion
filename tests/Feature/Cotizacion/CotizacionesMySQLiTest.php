@@ -38,12 +38,12 @@ class CotizacionesMySQLiTest extends BaseTestCase
     }
 
     /**
-     * Test: Conexión a BD
+     * Test: ConexiÃ³n a BD
      */
     public function test_database_connection(): void
     {
         $this->assertFalse($this->db->connect_error);
-        echo "\n✓ Conexión a BD exitosa";
+        echo "\nâœ“ ConexiÃ³n a BD exitosa";
     }
 
     /**
@@ -56,11 +56,11 @@ class CotizacionesMySQLiTest extends BaseTestCase
         $count = $row['total'];
 
         $this->assertGreaterThanOrEqual(0, $count);
-        echo "\n✓ Total cotizaciones: {$count}";
+        echo "\nâœ“ Total cotizaciones: {$count}";
     }
 
     /**
-     * Test: Verificar tipos de cotización
+     * Test: Verificar tipos de cotizaciÃ³n
      */
     public function test_quotation_types_exist(): void
     {
@@ -69,24 +69,24 @@ class CotizacionesMySQLiTest extends BaseTestCase
         $count = $row['total'];
 
         $this->assertGreater(0, $count);
-        echo "\n✓ Tipos de cotización: {$count}";
+        echo "\nâœ“ Tipos de cotizaciÃ³n: {$count}";
     }
 
     /**
-     * Test: Crear cotización simple
+     * Test: Crear cotizaciÃ³n simple
      */
     public function test_create_simple_quotation(): void
     {
         $this->db->query("
-            INSERT INTO usuarios (nombre, email, contraseña, rol, estado, created_at, updated_at)
+            INSERT INTO usuarios (nombre, email, contraseÃ±a, rol, estado, created_at, updated_at)
             VALUES ('Test Asesor', 'test@example.com', 'test123', 'asesor', 'activo', NOW(), NOW())
             ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
         ");
         
         $asesorId = $this->db->insert_id;
-        echo "\n✓ Asesor creado: {$asesorId}";
+        echo "\nâœ“ Asesor creado: {$asesorId}";
 
-        // Crear cotización
+        // Crear cotizaciÃ³n
         $this->db->query("
             INSERT INTO cotizaciones 
             (numero_cotizacion, id_tipo_cotizacion, id_cliente, id_asesor, estado, created_at, updated_at)
@@ -96,11 +96,11 @@ class CotizacionesMySQLiTest extends BaseTestCase
 
         $cotizacionId = $this->db->insert_id;
         $this->assertGreater(0, $cotizacionId);
-        echo "\n✓ Cotización creada: {$cotizacionId}";
+        echo "\nâœ“ CotizaciÃ³n creada: {$cotizacionId}";
     }
 
     /**
-     * Test: Validar numero_cotizacion único
+     * Test: Validar numero_cotizacion Ãºnico
      */
     public function test_numero_cotizacion_unique(): void
     {
@@ -110,7 +110,7 @@ class CotizacionesMySQLiTest extends BaseTestCase
 
         // Verificar si existe la columna
         $this->assertIsArray($field);
-        echo "\n✓ Campo numero_cotizacion existe";
+        echo "\nâœ“ Campo numero_cotizacion existe";
     }
 
     /**
@@ -142,6 +142,7 @@ class CotizacionesMySQLiTest extends BaseTestCase
             $this->assertContains($table, $existingTables, "Tabla {$table} no existe");
         }
 
-        echo "\n✓ Todas las tablas principales existen";
+        echo "\nâœ“ Todas las tablas principales existen";
     }
 }
+

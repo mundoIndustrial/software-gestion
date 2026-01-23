@@ -20,9 +20,9 @@ class EspecificacionesCapturadoTest extends TestCase
                     <td><input type="text" value="En stock disponible"></td>
                 </tr>
                 <tr>
-                    <td><label>Cúcuta</label></td>
+                    <td><label>CÃºcuta</label></td>
                     <td><input type="checkbox" checked></td>
-                    <td><input type="text" value="Disponible en 2 días"></td>
+                    <td><input type="text" value="Disponible en 2 dÃ­as"></td>
                 </tr>
             </tbody>
             <tbody id="tbody_pago">
@@ -38,7 +38,7 @@ class EspecificacionesCapturadoTest extends TestCase
         $especificaciones = [
             'disponibilidad' => [
                 ['valor' => 'Bodega', 'observacion' => 'En stock disponible'],
-                ['valor' => 'Cúcuta', 'observacion' => 'Disponible en 2 días']
+                ['valor' => 'CÃºcuta', 'observacion' => 'Disponible en 2 dÃ­as']
             ],
             'forma_pago' => [
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%']
@@ -58,8 +58,8 @@ class EspecificacionesCapturadoTest extends TestCase
         $this->assertEquals('En stock disponible', $bodega['observacion']);
 
         $cucuta = $especificaciones['disponibilidad'][1];
-        $this->assertEquals('Cúcuta', $cucuta['valor']);
-        $this->assertEquals('Disponible en 2 días', $cucuta['observacion']);
+        $this->assertEquals('CÃºcuta', $cucuta['valor']);
+        $this->assertEquals('Disponible en 2 dÃ­as', $cucuta['observacion']);
 
         // Verificar forma de pago
         $this->assertArrayHasKey('forma_pago', $especificaciones);
@@ -83,29 +83,29 @@ class EspecificacionesCapturadoTest extends TestCase
     }
 
     /**
-     * Test: Verificar que las observaciones vacías se manejan correctamente
+     * Test: Verificar que las observaciones vacÃ­as se manejan correctamente
      */
     public function test_observaciones_vacias_se_manejan()
     {
         $especificaciones = [
             'regimen' => [
-                ['valor' => 'Común', 'observacion' => ''],
-                ['valor' => 'Simplificado', 'observacion' => 'Solo para pequeños negocios']
+                ['valor' => 'ComÃºn', 'observacion' => ''],
+                ['valor' => 'Simplificado', 'observacion' => 'Solo para pequeÃ±os negocios']
             ]
         ];
 
-        // Verificar que las observaciones vacías se preservan
+        // Verificar que las observaciones vacÃ­as se preservan
         $this->assertEquals('', $especificaciones['regimen'][0]['observacion']);
-        $this->assertEquals('Solo para pequeños negocios', $especificaciones['regimen'][1]['observacion']);
+        $this->assertEquals('Solo para pequeÃ±os negocios', $especificaciones['regimen'][1]['observacion']);
 
         // Simular JSON encoding/decoding
         $json = json_encode($especificaciones);
         $decodificado = json_decode($json, true);
 
         $this->assertEquals('', $decodificado['regimen'][0]['observacion']);
-        $this->assertEquals('Solo para pequeños negocios', $decodificado['regimen'][1]['observacion']);
+        $this->assertEquals('Solo para pequeÃ±os negocios', $decodificado['regimen'][1]['observacion']);
 
-        echo "\n TEST PASADO: Observaciones vacías se manejan correctamente\n";
+        echo "\n TEST PASADO: Observaciones vacÃ­as se manejan correctamente\n";
         $this->assertTrue(true);
     }
 
@@ -116,7 +116,7 @@ class EspecificacionesCapturadoTest extends TestCase
     {
         $especificaciones = [
             'disponibilidad' => [
-                ['valor' => 'Bodega', 'observacion' => 'Stock: "Inmediato" (24hrs) & envío gratis']
+                ['valor' => 'Bodega', 'observacion' => 'Stock: "Inmediato" (24hrs) & envÃ­o gratis']
             ]
         ];
 
@@ -126,7 +126,7 @@ class EspecificacionesCapturadoTest extends TestCase
 
         // Verificar que los caracteres especiales se preservan
         $this->assertEquals(
-            'Stock: "Inmediato" (24hrs) & envío gratis',
+            'Stock: "Inmediato" (24hrs) & envÃ­o gratis',
             $decodificado['disponibilidad'][0]['observacion']
         );
 
@@ -135,7 +135,7 @@ class EspecificacionesCapturadoTest extends TestCase
     }
 
     /**
-     * Test: Verificar que todas las categorías se capturan correctamente
+     * Test: Verificar que todas las categorÃ­as se capturan correctamente
      */
     public function test_todas_las_categorias_se_capturan()
     {
@@ -147,20 +147,20 @@ class EspecificacionesCapturadoTest extends TestCase
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%']
             ],
             'regimen' => [
-                ['valor' => 'Común', 'observacion' => 'IVA incluido']
+                ['valor' => 'ComÃºn', 'observacion' => 'IVA incluido']
             ],
             'se_ha_vendido' => [
-                ['valor' => 'Sí', 'observacion' => 'Venta exitosa']
+                ['valor' => 'SÃ­', 'observacion' => 'Venta exitosa']
             ],
             'ultima_venta' => [
                 ['valor' => 'Hace 3 meses', 'observacion' => '500 unidades']
             ],
             'flete' => [
-                ['valor' => 'Incluido', 'observacion' => 'Envío gratis']
+                ['valor' => 'Incluido', 'observacion' => 'EnvÃ­o gratis']
             ]
         ];
 
-        // Verificar que todas las categorías están presentes
+        // Verificar que todas las categorÃ­as estÃ¡n presentes
         $this->assertCount(6, $especificaciones);
         $this->assertArrayHasKey('disponibilidad', $especificaciones);
         $this->assertArrayHasKey('forma_pago', $especificaciones);
@@ -173,11 +173,12 @@ class EspecificacionesCapturadoTest extends TestCase
         $json = json_encode($especificaciones);
         $decodificado = json_decode($json, true);
 
-        // Verificar que todas las categorías se preservan
+        // Verificar que todas las categorÃ­as se preservan
         $this->assertEquals($especificaciones, $decodificado);
 
-        echo "\n TEST PASADO: Todas las categorías se capturan correctamente\n";
-        echo "   Total categorías: " . count($decodificado) . "\n";
+        echo "\n TEST PASADO: Todas las categorÃ­as se capturan correctamente\n";
+        echo "   Total categorÃ­as: " . count($decodificado) . "\n";
         $this->assertTrue(true);
     }
 }
+

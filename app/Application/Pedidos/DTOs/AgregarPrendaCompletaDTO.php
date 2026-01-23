@@ -7,7 +7,7 @@ namespace App\Application\Pedidos\DTOs;
  * 
  * Maneja campos de prendas_pedido + fotos + tallas
  * - nombre_prenda: nombre de la prenda
- * - descripcion: descripción de la prenda
+ * - descripcion: descripciÃ³n de la prenda
  * - de_bodega: si viene de bodega
  * - imagenes: array de rutas de fotos
  * - tallas: array de tallas para poblar prenda_pedido_tallas
@@ -36,3 +36,4 @@ final class AgregarPrendaCompletaDTO
         );
     }
 }
+

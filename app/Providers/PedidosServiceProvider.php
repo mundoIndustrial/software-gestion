@@ -8,6 +8,10 @@ use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use App\Application\Services\ColorGeneroMangaBrocheService;
+use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
+use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
+use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
+use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -52,6 +56,38 @@ class PedidosServiceProvider extends ServiceProvider
         // Registrar CopiarImagenesCotizacionAPedidoService como singleton
         $this->app->singleton(CopiarImagenesCotizacionAPedidoService::class, function ($app) {
             return new CopiarImagenesCotizacionAPedidoService();
+        });
+
+        // ========================================
+        // SERVICIOS DE DESPACHO (DOMAIN LAYER)
+        // ========================================
+
+        // Registrar DespachoGeneradorService como singleton
+        $this->app->singleton(DespachoGeneradorService::class, function ($app) {
+            return new DespachoGeneradorService();
+        });
+
+        // Registrar DespachoValidadorService como singleton
+        $this->app->singleton(DespachoValidadorService::class, function ($app) {
+            return new DespachoValidadorService();
+        });
+
+        // ========================================
+        // USE CASES DE DESPACHO (APPLICATION LAYER)
+        // ========================================
+
+        // Registrar ObtenerFilasDespachoUseCase
+        $this->app->bind(ObtenerFilasDespachoUseCase::class, function ($app) {
+            return new ObtenerFilasDespachoUseCase(
+                $app->make(DespachoGeneradorService::class)
+            );
+        });
+
+        // Registrar GuardarDespachoUseCase
+        $this->app->bind(GuardarDespachoUseCase::class, function ($app) {
+            return new GuardarDespachoUseCase(
+                $app->make(DespachoValidadorService::class)
+            );
         });
     }
 

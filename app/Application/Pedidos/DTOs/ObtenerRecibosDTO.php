@@ -13,3 +13,4 @@ class ObtenerRecibosDTO
         return new self($pedidoId);
     }
 }
+

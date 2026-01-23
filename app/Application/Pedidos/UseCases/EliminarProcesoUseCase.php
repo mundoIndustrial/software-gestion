@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\DB;
  * Caso de uso para eliminar un proceso de un pedido
  * Responsabilidad: Eliminar proceso y su historial asociado
  * 
- * Patrón: Use Case (Application Layer - DDD)
- * Restricción: No se puede eliminar el único proceso de una orden
+ * PatrÃ³n: Use Case (Application Layer - DDD)
+ * RestricciÃ³n: No se puede eliminar el Ãºnico proceso de una orden
  */
 class EliminarProcesoUseCase
 {
@@ -23,14 +23,14 @@ class EliminarProcesoUseCase
      * Ejecutar caso de uso
      * 
      * @param int $id - ID del proceso a eliminar
-     * @param int $numeroPedido - Número de pedido para validación
+     * @param int $numeroPedido - NÃºmero de pedido para validaciÃ³n
      * @return array - Respuesta del resultado
      * @throws \Exception
      */
     public function ejecutar(int $id, int $numeroPedido): array
     {
         $this->validarPositivo($id, 'ID del proceso');
-        $this->validarPositivo($numeroPedido, 'Número de pedido');
+        $this->validarPositivo($numeroPedido, 'NÃºmero de pedido');
 
         $proceso = ProcesoPrenda::where('id', $id)
             ->where('numero_pedido', $numeroPedido)
@@ -42,7 +42,7 @@ class EliminarProcesoUseCase
             ->count();
 
         if ($totalProcesos <= 1) {
-            throw new \DomainException('No se puede eliminar el último proceso de una orden');
+            throw new \DomainException('No se puede eliminar el Ãºltimo proceso de una orden');
         }
 
         $proceso->delete();
@@ -64,3 +64,4 @@ class EliminarProcesoUseCase
         ];
     }
 }
+

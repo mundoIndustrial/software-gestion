@@ -33,7 +33,7 @@ class PedidoServiceTest extends TestCase
             'email' => 'test@example.com'
         ]);
         
-        // Crear cotización de prueba
+        // Crear cotizaciÃ³n de prueba
         $this->cotizacion = Cotizacion::create([
             'user_id' => $this->usuario->id,
             'cliente' => 'Cliente Test',
@@ -45,7 +45,7 @@ class PedidoServiceTest extends TestCase
                 [
                     'nombre_producto' => 'POLO HOMBRE',
                     'cantidad' => 10,
-                    'descripcion' => 'Polo básico'
+                    'descripcion' => 'Polo bÃ¡sico'
                 ]
             ],
             'especificaciones' => [
@@ -55,7 +55,7 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: Crear pedido desde cotización
+     * Test: Crear pedido desde cotizaciÃ³n
      */
     public function test_aceptar_cotizacion_crea_pedido(): void
     {
@@ -70,14 +70,14 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: Número de pedido es único y secuencial
+     * Test: NÃºmero de pedido es Ãºnico y secuencial
      */
     public function test_numero_pedido_es_unico_y_secuencial(): void
     {
         // Crear primer pedido
         $pedido1 = $this->service->aceptarCotizacion($this->cotizacion);
         
-        // Crear segunda cotización
+        // Crear segunda cotizaciÃ³n
         $cotizacion2 = Cotizacion::create([
             'user_id' => $this->usuario->id,
             'cliente' => 'Cliente 2',
@@ -86,7 +86,7 @@ class PedidoServiceTest extends TestCase
             'estado' => 'borrador',
             'es_borrador' => true,
             'productos' => [['nombre_producto' => 'JEAN', 'cantidad' => 5]],
-            'especificaciones' => ['forma_pago' => 'Crédito']
+            'especificaciones' => ['forma_pago' => 'CrÃ©dito']
         ]);
         
         // Crear segundo pedido
@@ -98,7 +98,7 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: Cambiar estado de cotización a aceptada
+     * Test: Cambiar estado de cotizaciÃ³n a aceptada
      */
     public function test_cotizacion_cambia_estado_a_aceptada(): void
     {
@@ -116,17 +116,17 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: Crear prendas del pedido desde cotización
+     * Test: Crear prendas del pedido desde cotizaciÃ³n
      */
     public function test_crear_prendas_pedido_desde_cotizacion(): void
     {
-        // Crear prenda en cotización
+        // Crear prenda en cotizaciÃ³n
         $prenda = PrendaCotizacionFriendly::create([
             'cotizacion_id' => $this->cotizacion->id,
             'nombre_producto' => 'POLO HOMBRE',
             'genero' => 'Hombre',
             'es_jean_pantalon' => false,
-            'descripcion' => 'Polo básico',
+            'descripcion' => 'Polo bÃ¡sico',
             'tallas' => ['S', 'M', 'L'],
             'estado' => 'Pendiente'
         ]);
@@ -140,11 +140,11 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: Heredar variantes de cotización a pedido
+     * Test: Heredar variantes de cotizaciÃ³n a pedido
      */
     public function test_heredar_variantes_de_cotizacion_a_pedido(): void
     {
-        // Crear prenda y variante en cotización
+        // Crear prenda y variante en cotizaciÃ³n
         $prenda = PrendaCotizacionFriendly::create([
             'cotizacion_id' => $this->cotizacion->id,
             'nombre_producto' => 'POLO',
@@ -152,7 +152,7 @@ class PedidoServiceTest extends TestCase
         ]);
 
         $color = ColorPrenda::create(['nombre' => 'Rojo']);
-        $tela = TelaPrenda::create(['nombre' => 'Algodón 100%']);
+        $tela = TelaPrenda::create(['nombre' => 'AlgodÃ³n 100%']);
 
         VariantePrenda::create([
             'prenda_cotizacion_id' => $prenda->id,
@@ -181,7 +181,7 @@ class PedidoServiceTest extends TestCase
      */
     public function test_crear_proceso_inicial_para_prendas(): void
     {
-        // Crear prenda en cotización
+        // Crear prenda en cotizaciÃ³n
         PrendaCotizacionFriendly::create([
             'cotizacion_id' => $this->cotizacion->id,
             'nombre_producto' => 'JEAN',
@@ -196,12 +196,12 @@ class PedidoServiceTest extends TestCase
         $this->assertCount(1, $prenda->procesos);
         
         $proceso = $prenda->procesos->first();
-        $this->assertEquals('Creación Orden', $proceso->proceso);
+        $this->assertEquals('CreaciÃ³n Orden', $proceso->proceso);
         $this->assertEquals('Completado', $proceso->estado_proceso);
     }
 
     /**
-     * Test: Transacción se revierte si hay error
+     * Test: TransacciÃ³n se revierte si hay error
      */
     public function test_transaccion_se_revierte_si_hay_error(): void
     {
@@ -215,7 +215,7 @@ class PedidoServiceTest extends TestCase
         // Contar pedidos antes
         $pedidosAntes = PedidoProduccion::count();
 
-        // Actuar - todo debería completarse sin error
+        // Actuar - todo deberÃ­a completarse sin error
         $pedido = $this->service->aceptarCotizacion($cotizacionOriginal);
 
         // Afirmar - no debe haber rollback
@@ -229,7 +229,7 @@ class PedidoServiceTest extends TestCase
     {
         $this->cotizacion->update([
             'especificaciones' => [
-                'forma_pago' => 'Crédito 30 días'
+                'forma_pago' => 'CrÃ©dito 30 dÃ­as'
             ]
         ]);
 
@@ -237,7 +237,7 @@ class PedidoServiceTest extends TestCase
         $pedido = $this->service->aceptarCotizacion($this->cotizacion);
 
         // Afirmar
-        $this->assertEquals('Crédito 30 días', $pedido->forma_de_pago);
+        $this->assertEquals('CrÃ©dito 30 dÃ­as', $pedido->forma_de_pago);
     }
 
     /**
@@ -254,7 +254,7 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: Fecha de creación es hoy
+     * Test: Fecha de creaciÃ³n es hoy
      */
     public function test_fecha_creacion_es_hoy(): void
     {
@@ -266,11 +266,11 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: Múltiples prendas se crean correctamente
+     * Test: MÃºltiples prendas se crean correctamente
      */
     public function test_multiples_prendas_se_crean_correctamente(): void
     {
-        // Crear múltiples prendas en cotización
+        // Crear mÃºltiples prendas en cotizaciÃ³n
         for ($i = 0; $i < 3; $i++) {
             PrendaCotizacionFriendly::create([
                 'cotizacion_id' => $this->cotizacion->id,
@@ -287,3 +287,4 @@ class PedidoServiceTest extends TestCase
         $this->assertCount(3, $pedido->prendas->pluck('procesos')->flatten());
     }
 }
+

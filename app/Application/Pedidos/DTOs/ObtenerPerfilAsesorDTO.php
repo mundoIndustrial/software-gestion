@@ -24,10 +24,11 @@ class ObtenerPerfilAsesorDTO
     }
 
     /**
-     * Crear instancia estática
+     * Crear instancia estÃ¡tica
      */
     public static function crear(): self
     {
         return self::fromRequest();
     }
 }
+

@@ -4,7 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarPrendaSimpleDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -12,22 +12,22 @@ use Illuminate\Support\Facades\Auth;
  * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
- * Antes: 44 líneas | Después: ~28 líneas | Reducción: ~36%
+ * Antes: 44 lÃ­neas | DespuÃ©s: ~28 lÃ­neas | ReducciÃ³n: ~36%
  */
 class AgregarPrendaSimpleUseCase
 {
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        private PedidoRepository $pedidoRepository
     ) {}
 
     public function ejecutar(AgregarPrendaSimpleDTO $dto): array
     {
-        // CENTRALIZADO: Validar pedido existe (trait)
-        $pedido = $this->validarPedidoExiste($dto->pedidoId, $this->pedidoRepository);
+        // Obtener modelo Eloquent directamente (no Aggregate) porque accede a asesor_id y relaciones
+        $pedido = \App\Models\PedidoProduccion::findOrFail($dto->pedidoId);
 
-        // Validar permisos (solo el asesor que creó puede agregar prendas)
+        // Validar permisos (solo el asesor que creÃ³ puede agregar prendas)
         if ($pedido->asesor_id !== Auth::id()) {
             throw new \Exception("No tienes permiso para agregar prendas a este pedido");
         }
@@ -48,3 +48,5 @@ class AgregarPrendaSimpleUseCase
         ];
     }
 }
+
+

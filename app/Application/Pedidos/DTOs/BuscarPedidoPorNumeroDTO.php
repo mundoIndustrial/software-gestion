@@ -13,3 +13,4 @@ final class BuscarPedidoPorNumeroDTO
         return new self(numero: $numero);
     }
 }
+

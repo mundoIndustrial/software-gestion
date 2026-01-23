@@ -17,3 +17,4 @@ final class RenderItemCardDTO
         );
     }
 }
+

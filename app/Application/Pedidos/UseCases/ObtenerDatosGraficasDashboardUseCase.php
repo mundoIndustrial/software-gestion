@@ -8,8 +8,8 @@ use App\Application\Services\Asesores\DashboardService;
 /**
  * ObtenerDatosGraficasDashboardUseCase
  * 
- * Use Case para obtener datos de gráficas del dashboard
- * Encapsula la lógica de cálculo y obtención de datos para gráficas
+ * Use Case para obtener datos de grÃ¡ficas del dashboard
+ * Encapsula la lÃ³gica de cÃ¡lculo y obtenciÃ³n de datos para grÃ¡ficas
  */
 class ObtenerDatosGraficasDashboardUseCase
 {
@@ -22,3 +22,4 @@ class ObtenerDatosGraficasDashboardUseCase
         return $this->dashboardService->obtenerDatosGraficas($dto->dias);
     }
 }
+

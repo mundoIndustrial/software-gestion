@@ -4,14 +4,14 @@ namespace App\Application\Operario\Services;
 
 use App\Application\Operario\DTOs\ObtenerPedidosOperarioDTO;
 use App\Models\User;
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Collection;
 
 /**
  * Service: ObtenerPedidosOperarioService
  * 
  * Obtiene los pedidos asignados a un operario (cortador/costurero)
- * Filtra por área según el tipo de operario
+ * Filtra por Ã¡rea segÃºn el tipo de operario
  */
 class ObtenerPedidosOperarioService
 {
@@ -34,11 +34,11 @@ class ObtenerPedidosOperarioService
         $tipoOperario = $this->obtenerTipoOperario($usuario);
         $areaOperario = $this->obtenerAreaOperario($tipoOperario);
 
-        // Obtener pedidos en el área del operario
+        // Obtener pedidos en el Ã¡rea del operario
         $pedidos = $this->obtenerPedidosPorArea($areaOperario);
 
         // Contar estados
-        $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
+        $pedidosEnProceso = $pedidos->where('estado', 'En EjecuciÃ³n')->count();
         $pedidosCompletados = $pedidos->where('estado', 'Completada')->count();
 
         return new ObtenerPedidosOperarioDTO(
@@ -57,16 +57,16 @@ class ObtenerPedidosOperarioService
      * Obtener pedidos especiales para Costura-Reflectivo
      * 
      * Filtra pedidos que:
-     * 1. Tengan área "Costura" EN pedidos_produccion
+     * 1. Tengan Ã¡rea "Costura" EN pedidos_produccion
      * 2. Y tengan proceso Costura con encargado "Ramiro"
-     * 3. Y estén en estado "En Ejecución" (campo estado del pedido)
+     * 3. Y estÃ©n en estado "En EjecuciÃ³n" (campo estado del pedido)
      */
     private function obtenerPedidosCosturaReflectivo(User $usuario): ObtenerPedidosOperarioDTO
     {
         \Log::info('=== INICIO obtenerPedidosCosturaReflectivo ===');
         
-        $pedidos = PedidoProduccion::where('area', 'Costura')
-            ->where('estado', 'En Ejecución')
+        $pedidos = Pedidos::where('area', 'Costura')
+            ->where('estado', 'En EjecuciÃ³n')
             ->with(['prendas'])
             ->orderBy('fecha_de_creacion_de_orden', 'desc')
             ->orderBy('created_at', 'desc')
@@ -86,7 +86,7 @@ class ObtenerPedidosOperarioService
             return $this->tieneProcesoRamiro($pedido);
         });
         
-        \Log::info('Pedidos DESPUÉS del filtro Ramiro (antes de sortByDesc):', [
+        \Log::info('Pedidos DESPUÃ‰S del filtro Ramiro (antes de sortByDesc):', [
             'total' => $pedidos->count(),
             'pedidos' => $pedidos->map(fn($p) => [
                 'numero' => $p->numero_pedido,
@@ -110,7 +110,7 @@ class ObtenerPedidosOperarioService
             return $fechaOrden;
         })->values();
         
-        \Log::info('Pedidos DESPUÉS de sortByDesc:', [
+        \Log::info('Pedidos DESPUÃ‰S de sortByDesc:', [
             'total' => $pedidos->count(),
             'pedidos' => $pedidos->map(function($p) {
                 $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $p->numero_pedido)
@@ -129,7 +129,7 @@ class ObtenerPedidosOperarioService
         ]);
 
         // Contar estados
-        $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
+        $pedidosEnProceso = $pedidos->where('estado', 'En EjecuciÃ³n')->count();
         $pedidosCompletados = $pedidos->where('estado', 'Completada')->count();
 
         return new ObtenerPedidosOperarioDTO(
@@ -149,7 +149,7 @@ class ObtenerPedidosOperarioService
      * 
      * Busca en procesos_prenda:
      * - proceso = "Costura"
-     * - encargado = "Ramiro" (normalizado, sin importar mayúsculas)
+     * - encargado = "Ramiro" (normalizado, sin importar mayÃºsculas)
      */
     private function tieneProcesoRamiro($pedido): bool
     {
@@ -186,7 +186,7 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Obtener área según tipo de operario
+     * Obtener Ã¡rea segÃºn tipo de operario
      */
     private function obtenerAreaOperario(string $tipoOperario): string
     {
@@ -198,13 +198,13 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Obtener pedidos por área
+     * Obtener pedidos por Ã¡rea
      */
     private function obtenerPedidosPorArea(string $area): Collection
     {
         $usuarioActual = auth()->user();
 
-        return PedidoProduccion::with(['prendas'])
+        return Pedidos::with(['prendas'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->filter(function ($pedido) use ($area, $usuarioActual) {
@@ -213,7 +213,7 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Verificar si el pedido está asignado al operario actual
+     * Verificar si el pedido estÃ¡ asignado al operario actual
      */
     private function pedidoPertenecealArea($pedido, string $area, $usuarioActual): bool
     {
@@ -268,7 +268,7 @@ class ObtenerPedidosOperarioService
             $totalPrendas = $prendas->sum('cantidad') ?? 0;
             $descripcionPrendas = $prendas->pluck('nombre_prenda')->unique()->join(', ');
 
-            // Obtener fecha de inicio del proceso en el área
+            // Obtener fecha de inicio del proceso en el Ã¡rea
             $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                 ->where('estado_proceso', '!=', 'Completado')
                 ->orderBy('created_at', 'asc')
@@ -279,8 +279,8 @@ class ObtenerPedidosOperarioService
             return [
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
-                'descripcion' => $descripcionPrendas ?: 'Sin descripción',
-                'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripción',
+                'descripcion' => $descripcionPrendas ?: 'Sin descripciÃ³n',
+                'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripciÃ³n',
                 'cantidad' => $totalPrendas,
                 'estado' => $this->obtenerEstadoActual($pedido->numero_pedido),
                 'area' => $this->obtenerAreaActual($pedido->numero_pedido),
@@ -311,7 +311,7 @@ class ObtenerPedidosOperarioService
             return $procesoActivo->estado_proceso;
         }
 
-        // Si todos los procesos están completados, buscar el último completado
+        // Si todos los procesos estÃ¡n completados, buscar el Ãºltimo completado
         $procesoCompletado = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
             ->where('estado_proceso', 'Completado')
             ->orderBy('created_at', 'desc')
@@ -325,7 +325,7 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Obtener área actual del pedido
+     * Obtener Ã¡rea actual del pedido
      */
     private function obtenerAreaActual(string $numeroPedido): string
     {
@@ -341,3 +341,4 @@ class ObtenerPedidosOperarioService
         return 'Desconocida';
     }
 }
+

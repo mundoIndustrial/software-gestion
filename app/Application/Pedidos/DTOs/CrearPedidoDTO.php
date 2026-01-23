@@ -31,11 +31,11 @@ class CrearPedidoDTO
     private function validar(): void
     {
         if ($this->clienteId <= 0) {
-            throw new \InvalidArgumentException('Cliente ID inválido');
+            throw new \InvalidArgumentException('Cliente ID invÃ¡lido');
         }
 
         if (empty($this->descripcion)) {
-            throw new \InvalidArgumentException('Descripción requerida');
+            throw new \InvalidArgumentException('DescripciÃ³n requerida');
         }
 
         if (empty($this->prendas)) {
@@ -43,3 +43,4 @@ class CrearPedidoDTO
         }
     }
 }
+

@@ -6,7 +6,7 @@ namespace App\Application\Pedidos\DTOs;
  * DTO para actualizar prenda COMPLETA con todas sus relaciones
  * 
  * Maneja:
- * - prendas_pedido (campos básicos)
+ * - prendas_pedido (campos bÃ¡sicos)
  * - prenda_pedido_tallas
  * - prenda_pedido_variantes
  * - prenda_pedido_colores_telas
@@ -34,13 +34,36 @@ final class ActualizarPrendaCompletaDTO
 
     public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null): self
     {
-        // Parsear cantidad_talla si viene como JSON string
-        $cantidadTalla = null;
-        if (!empty($data['cantidad_talla'])) {
-            if (is_string($data['cantidad_talla'])) {
-                $cantidadTalla = json_decode($data['cantidad_talla'], true);
+        // Parsear tallas (nuevo formato: array de objetos con genero, talla, cantidad)
+        $tallasArray = null;
+        if (!empty($data['tallas'])) {
+            if (is_string($data['tallas'])) {
+                $tallasArray = json_decode($data['tallas'], true);
             } else {
-                $cantidadTalla = $data['cantidad_talla'];
+                $tallasArray = $data['tallas'];
+            }
+            // Convertir a formato antiguo cantidad_talla: { GENERO: { TALLA: CANTIDAD } }
+            $cantidadTalla = [];
+            if (is_array($tallasArray)) {
+                foreach ($tallasArray as $talla) {
+                    if (isset($talla['genero'], $talla['talla'], $talla['cantidad'])) {
+                        $genero = strtoupper($talla['genero']);
+                        if (!isset($cantidadTalla[$genero])) {
+                            $cantidadTalla[$genero] = [];
+                        }
+                        $cantidadTalla[$genero][$talla['talla']] = $talla['cantidad'];
+                    }
+                }
+            }
+        } else {
+            // Parsear cantidad_talla (formato antiguo) si viene como JSON string
+            $cantidadTalla = null;
+            if (!empty($data['cantidad_talla'])) {
+                if (is_string($data['cantidad_talla'])) {
+                    $cantidadTalla = json_decode($data['cantidad_talla'], true);
+                } else {
+                    $cantidadTalla = $data['cantidad_talla'];
+                }
             }
         }
 
@@ -114,9 +137,10 @@ final class ActualizarPrendaCompletaDTO
             variantes: $variantes,
             coloresTelas: $coloresTelas,
             fotosTelas: $fotosTelas,
-            fotos: $fotos,
+            fotos: $imagenes ?? $fotos,  // Usar $imagenes del parÃ¡metro si existen
             procesos: $procesos,
             fotosProcesosPorProceso: $fotosProcesosPorProceso,
         );
     }
 }
+

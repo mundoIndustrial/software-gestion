@@ -2,62 +2,62 @@
 
 namespace App\Application\Pedidos\UseCases\Base;
 
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 
 /**
  * AbstractObtenerUseCase
  * 
- * Clase base reutilizable para todos los Use Cases de OBTENCIÓN (queries)
+ * Clase base reutilizable para todos los Use Cases de OBTENCIÃ“N (queries)
  * 
- * PATRÓN: Template Method para estandarizar:
- * - Obtención y validación del pedido
+ * PATRÃ“N: Template Method para estandarizar:
+ * - ObtenciÃ³n y validaciÃ³n del pedido
  * - Enriquecimiento condicional de datos
  * - Respuesta estandarizada
  * 
- * Reduce ~70 líneas de código duplicado en cada Use Case
+ * Reduce ~70 lÃ­neas de cÃ³digo duplicado en cada Use Case
  * 
- * Antes: 4 Use Cases × 80 líneas = 320 líneas
- * Después: 1 base + 4 concretas × 15 líneas = 80 líneas
- * Reducción: 75% menos código
+ * Antes: 4 Use Cases Ã— 80 lÃ­neas = 320 lÃ­neas
+ * DespuÃ©s: 1 base + 4 concretas Ã— 15 lÃ­neas = 80 lÃ­neas
+ * ReducciÃ³n: 75% menos cÃ³digo
  */
 abstract class AbstractObtenerUseCase
 {
-    protected PedidoProduccionRepository $pedidoRepository;
+    protected PedidoRepository $pedidoRepository;
 
-    public function __construct(PedidoProduccionRepository $pedidoRepository)
+    public function __construct(PedidoRepository $pedidoRepository)
     {
         $this->pedidoRepository = $pedidoRepository;
     }
 
     /**
-     * Template Method - Define el flujo de obtención
+     * Template Method - Define el flujo de obtenciÃ³n
      * 
      * Cada subclase solo necesita sobrescribir:
-     * - obtenerOpciones() - Qué datos incluir (prendas, epps, etc)
-     * - construirRespuesta() - Qué estructura retornar
+     * - obtenerOpciones() - QuÃ© datos incluir (prendas, epps, etc)
+     * - construirRespuesta() - QuÃ© estructura retornar
      */
     protected function obtenerYEnriquecer(int $pedidoId): mixed
     {
-        // 1. PASO COMÚN: Obtener y validar pedido
+        // 1. PASO COMÃšN: Obtener y validar pedido (retorna agregado)
         $pedido = $this->obtenerPedidoValidado($pedidoId);
 
-        // 2. PASO COMÚN: Obtener opciones de enriquecimiento
+        // 2. PASO COMÃšN: Obtener opciones de enriquecimiento
         $opciones = $this->obtenerOpciones();
 
         // 3. PASO PERSONALIZABLE: Enriquecer pedido
         $datosEnriquecidos = $this->enriquecerPedido($pedido, $opciones);
 
-        // 4. PASO PERSONALIZABLE: Construir respuesta (pasando también el modelo original)
-        return $this->construirRespuesta($datosEnriquecidos, $pedido);
+        // 4. PASO PERSONALIZABLE: Construir respuesta (pasando tanto el agregado como el ID para cargar modelo si es necesario)
+        return $this->construirRespuesta($datosEnriquecidos, $pedidoId);
     }
 
     /**
-     * PASO 1 (COMÚN): Obtener y validar que el pedido existe
+     * PASO 1 (COMÃšN): Obtener y validar que el pedido existe
      */
     private function obtenerPedidoValidado(int $pedidoId)
     {
-        $pedido = $this->pedidoRepository->obtenerPorId($pedidoId);
+        $pedido = $this->pedidoRepository->porId($pedidoId);
 
         if (!$pedido) {
             throw new \DomainException("Pedido $pedidoId no encontrado", 404);
@@ -67,9 +67,9 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 2 (PERSONALIZABLE): Qué opciones de enriquecimiento usar
+     * PASO 2 (PERSONALIZABLE): QuÃ© opciones de enriquecimiento usar
      * 
-     * Subclases pueden sobrescribir para incluir/excluir datos específicos
+     * Subclases pueden sobrescribir para incluir/excluir datos especÃ­ficos
      */
     protected function obtenerOpciones(): array
     {
@@ -82,35 +82,35 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 3 (COMÚN): Enriquecer el pedido con datos opcionales
+     * PASO 3 (COMÃšN): Enriquecer el pedido con datos opcionales
      */
     protected function enriquecerPedido($pedido, array $opciones): array
     {
         $datos = [
-            'id' => $pedido->id,
-            'numero' => (string)$pedido->numero,
-            'clienteId' => $pedido->cliente_id,
-            'estado' => $pedido->estado ?? 'desconocido',
-            'descripcion' => (string)($pedido->descripcion ?? ''),
-            'totalPrendas' => $pedido->total_prendas ?? 0,
-            'totalArticulos' => $pedido->total_articulos ?? 0,
+            'id' => $pedido->id(),
+            'numero' => (string)$pedido->numero(),
+            'clienteId' => $pedido->clienteId(),
+            'estado' => $pedido->estado()->valor(),
+            'descripcion' => (string)($pedido->descripcion() ?? ''),
+            'totalPrendas' => $pedido->totalPrendas(),
+            'totalArticulos' => $pedido->totalArticulos(),
         ];
 
         // Enriquecimiento condicional - Solo si se especifica
         if ($opciones['incluirPrendas'] ?? false) {
-            $datos['prendas'] = $this->obtenerPrendas($pedido->id);
+            $datos['prendas'] = $this->obtenerPrendas($pedido->id());
         }
 
         if ($opciones['incluirEpps'] ?? false) {
-            $datos['epps'] = $this->obtenerEpps($pedido->id);
+            $datos['epps'] = $this->obtenerEpps($pedido->id());
         }
 
         if ($opciones['incluirProcesos'] ?? false) {
-            $datos['procesos'] = $this->obtenerProcesos($pedido->id);
+            $datos['procesos'] = $this->obtenerProcesos($pedido->id());
         }
 
         if ($opciones['incluirImagenes'] ?? false) {
-            $datos['imagenes'] = $this->obtenerImagenes($pedido->id);
+            $datos['imagenes'] = $this->obtenerImagenes($pedido->id());
         }
 
         return $datos;
@@ -120,9 +120,9 @@ abstract class AbstractObtenerUseCase
      * PASO 4 (PERSONALIZABLE): Construir estructura de respuesta
      * 
      * Subclases pueden retornar DTO, array, modelo, etc.
-     * Recibe tanto el array de datos enriquecidos como el modelo original
+     * Recibe el array de datos enriquecidos y el ID del pedido para cargar el modelo Eloquent si lo necesita
      */
-    abstract protected function construirRespuesta(array $datosEnriquecidos, $pedido): mixed;
+    abstract protected function construirRespuesta(array $datosEnriquecidos, $pedidoIdOModelo): mixed;
 
     /**
      * Obtener prendas del pedido con relaciones
@@ -175,7 +175,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * Obtener imágenes del pedido
+     * Obtener imÃ¡genes del pedido
      */
     protected function obtenerImagenes(int $pedidoId): array
     {
@@ -188,3 +188,5 @@ abstract class AbstractObtenerUseCase
         return $imagenes;
     }
 }
+
+

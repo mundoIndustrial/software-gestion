@@ -85,9 +85,29 @@ class ModalNovedadEdicion {
             formData.append('nombre_prenda', this.prendaData.nombre_prenda);
             formData.append('descripcion', this.prendaData.descripcion);
             formData.append('origen', this.prendaData.origen);
-            // Convertir tallas array a JSON compatible con guardarTallasDesdeJson()
-            const tallasJson = this.convertirTallasAlFormatoJson(this.prendaData.tallas);
-            formData.append('cantidad_talla', JSON.stringify(tallasJson));
+            
+            // Enviar tallas - se guardan en prenda_pedido_tallas
+            if (this.prendaData.tallas && Object.keys(this.prendaData.tallas).length > 0) {
+                // Convertir de {GENERO: {TALLA: CANTIDAD}} a [{genero, talla, cantidad}, ...]
+                const tallasArray = [];
+                for (const [genero, tallas] of Object.entries(this.prendaData.tallas)) {
+                    if (typeof tallas === 'object' && tallas !== null) {
+                        for (const [talla, cantidad] of Object.entries(tallas)) {
+                            if (cantidad > 0) {
+                                tallasArray.push({
+                                    genero: genero,
+                                    talla: talla,
+                                    cantidad: parseInt(cantidad)
+                                });
+                            }
+                        }
+                    }
+                }
+                if (tallasArray.length > 0) {
+                    formData.append('tallas', JSON.stringify(tallasArray));
+                    console.log('[modal-novedad-edicion] Tallas enviadas:', tallasArray);
+                }
+            }
             
             // Agregar variantes si existen
             // Las variantes pueden ser un objeto {manga, obs_manga, etc} OR un array
@@ -255,9 +275,18 @@ class ModalNovedadEdicion {
         // Convierte variantes (objeto o array) al formato esperado por backend
         // Formato esperado: [ { tipo_manga_id, tipo_broche_boton_id, manga_obs, broche_boton_obs, tiene_bolsillos, bolsillos_obs } ]
         
-        // Si ya es un array, retornarlo tal cual
+        // Si ya es un array, validar que tenga los campos correctos
         if (Array.isArray(variantes)) {
-            return variantes;
+            return variantes.map(v => ({
+                tipo_manga_id: v.tipo_manga_id || null,
+                tipo_broche_boton_id: v.tipo_broche_boton_id || null,
+                manga_obs: v.manga_obs || v.obs_manga || v.manga || '',
+                broche_boton_obs: v.broche_boton_obs || v.obs_broche || v.broche || '',
+                tiene_bolsillos: v.tiene_bolsillos || false,
+                bolsillos_obs: v.bolsillos_obs || v.obs_bolsillos || '',
+                tiene_reflectivo: v.tiene_reflectivo || false,
+                reflectivo_obs: v.reflectivo_obs || v.obs_reflectivo || ''
+            }));
         }
         
         // Si es un objeto con propiedades de variantes, convertir a array
@@ -266,12 +295,12 @@ class ModalNovedadEdicion {
             const varianteObject = {
                 tipo_manga_id: variantes.tipo_manga_id || null,
                 tipo_broche_boton_id: variantes.tipo_broche_boton_id || null,
-                manga_obs: variantes.obs_manga || variantes.manga || '',
-                broche_boton_obs: variantes.obs_broche || variantes.broche || '',
+                manga_obs: variantes.obs_manga || variantes.manga || variantes.manga_obs || '',
+                broche_boton_obs: variantes.obs_broche || variantes.broche || variantes.broche_boton_obs || '',
                 tiene_bolsillos: variantes.tiene_bolsillos || false,
-                bolsillos_obs: variantes.obs_bolsillos || '',
+                bolsillos_obs: variantes.obs_bolsillos || variantes.bolsillos_obs || '',
                 tiene_reflectivo: variantes.tiene_reflectivo || false,
-                reflectivo_obs: variantes.obs_reflectivo || ''
+                reflectivo_obs: variantes.obs_reflectivo || variantes.reflectivo_obs || ''
             };
             
             // Retornar como array con un único elemento

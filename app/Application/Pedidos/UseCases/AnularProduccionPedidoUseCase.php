@@ -6,13 +6,13 @@ use App\Application\Pedidos\UseCases\Base\AbstractEstadoTransicionUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 
 /**
- * Use Case: Anular Producción Pedido
+ * Use Case: Anular ProducciÃ³n Pedido
  * 
- * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicación
+ * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicaciÃ³n
  * 
- * Antes: 45 líneas
- * Después: 10 líneas
- * Reducción: 78%
+ * Antes: 45 lÃ­neas
+ * DespuÃ©s: 10 lÃ­neas
+ * ReducciÃ³n: 78%
  */
 class AnularProduccionPedidoUseCase extends AbstractEstadoTransicionUseCase
 {
@@ -33,6 +33,7 @@ class AnularProduccionPedidoUseCase extends AbstractEstadoTransicionUseCase
 
     protected function obtenerMensaje(): string
     {
-        return 'Producción del pedido anulada exitosamente';
+        return 'ProducciÃ³n del pedido anulada exitosamente';
     }
 }
+

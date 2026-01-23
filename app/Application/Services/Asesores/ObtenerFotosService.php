@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\DB;
  * ObtenerFotosService
  * 
  * Servicio para obtener fotos de prendas de pedido.
- * Encapsula la lógica de consulta a la nueva relación:
- * pedido_produccion_id → prendas_pedido → prenda_fotos_pedido
+ * Encapsula la lÃ³gica de consulta a la nueva relaciÃ³n:
+ * pedido_produccion_id â†’ prendas_pedido â†’ prenda_fotos_pedido
  */
 class ObtenerFotosService
 {
@@ -58,7 +58,7 @@ class ObtenerFotosService
             throw new \Exception('Prenda no encontrada', 404);
         }
 
-        $pedido = PedidoProduccion::find($prendaPedido->pedido_produccion_id);
+        $pedido = Pedidos::find($prendaPedido->pedido_produccion_id);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);
@@ -103,3 +103,4 @@ class ObtenerFotosService
         ];
     }
 }
+

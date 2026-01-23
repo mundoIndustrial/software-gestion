@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Recibos;
 
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidosRepository;
 use App\Infrastructure\Repositories\AsesoresRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -10,19 +10,19 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ObtenerRecibosService
 {
-    protected PedidoProduccionRepository $pedidoProduccionRepository;
+    protected PedidosRepository $PedidosRepository;
     protected AsesoresRepository $asesoresRepository;
 
     public function __construct(
-        PedidoProduccionRepository $pedidoProduccionRepository,
+        PedidosRepository $PedidosRepository,
         AsesoresRepository $asesoresRepository
     ) {
-        $this->pedidoProduccionRepository = $pedidoProduccionRepository;
+        $this->PedidosRepository = $PedidosRepository;
         $this->asesoresRepository = $asesoresRepository;
     }
 
     /**
-     * Obtener recibo de un pedido específico
+     * Obtener recibo de un pedido especÃ­fico
      * 
      * @param int $pedidoId
      * @return array
@@ -38,7 +38,7 @@ class ObtenerRecibosService
         }
 
         // Obtener datos del recibo
-        $datos = $this->pedidoProduccionRepository->obtenerDatosRecibos($pedidoId);
+        $datos = $this->PedidosRepository->obtenerDatosRecibos($pedidoId);
 
         if (empty($datos)) {
             throw new \Exception('Pedido no encontrado', 404);
@@ -99,7 +99,7 @@ class ObtenerRecibosService
     }
 
     /**
-     * Obtener detalles de procesos de una prenda específica
+     * Obtener detalles de procesos de una prenda especÃ­fica
      */
     public function obtenerProcesosPrenda(int $pedidoId, int $prendaId): array
     {
@@ -135,7 +135,7 @@ class ObtenerRecibosService
      */
     public function obtenerEstadosDisponibles(): array
     {
-        Log::info('🏷️ [RECIBO] Obteniendo estados disponibles');
+        Log::info('ðŸ·ï¸ [RECIBO] Obteniendo estados disponibles');
 
         $estados = $this->asesoresRepository->obtenerEstados();
 
@@ -157,7 +157,7 @@ class ObtenerRecibosService
      */
     public function exportarParaVista(int $pedidoId): array
     {
-        Log::info('📤 [RECIBO-EXPORT] Exportando para vista: ' . $pedidoId);
+        Log::info('ðŸ“¤ [RECIBO-EXPORT] Exportando para vista: ' . $pedidoId);
 
         $recibo = $this->obtenerRecibo($pedidoId);
         $resumen = $this->obtenerResumen($pedidoId);
@@ -165,3 +165,4 @@ class ObtenerRecibosService
         return array_merge($recibo, ['resumen' => $resumen]);
     }
 }
+

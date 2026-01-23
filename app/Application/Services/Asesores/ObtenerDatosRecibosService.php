@@ -2,15 +2,15 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class ObtenerDatosRecibosService
 {
     /**
-     * Obtener datos dinámicos de recibos para un pedido
-     * Incluye información de procesos de prendas
+     * Obtener datos dinÃ¡micos de recibos para un pedido
+     * Incluye informaciÃ³n de procesos de prendas
      * 
      * @param int $pedidoId
      * @return array
@@ -20,8 +20,8 @@ class ObtenerDatosRecibosService
     {
         Log::info('[RECIBOS] Obteniendo datos para pedido: ' . $pedidoId);
 
-        // Obtener el pedido (solo PedidoProduccion tiene recibos de procesos)
-        $pedido = PedidoProduccion::find($pedidoId);
+        // Obtener el pedido (solo Pedidos tiene recibos de procesos)
+        $pedido = Pedidos::find($pedidoId);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);
@@ -35,7 +35,7 @@ class ObtenerDatosRecibosService
         Log::info('[RECIBOS] Pedido encontrado', ['numero_pedido' => $pedido->numero_pedido]);
 
         // Usar el repository para obtener datos
-        $repository = resolve(\App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository::class);
+        $repository = resolve(\App\Domain\Pedidos\Repositories\PedidosRepository::class);
         $datos = $repository->obtenerDatosRecibos($pedidoId);
 
         Log::info('[RECIBOS] Datos obtenidos correctamente', [
@@ -47,13 +47,13 @@ class ObtenerDatosRecibosService
     }
 
     /**
-     * Obtener datos de un recibo específico por número de prenda
+     * Obtener datos de un recibo especÃ­fico por nÃºmero de prenda
      */
     public function obtenerPorPrenda(int $pedidoId, int $prendaId): array
     {
         Log::info('[RECIBOS-PRENDA] Obteniendo para pedido: ' . $pedidoId . ', prenda: ' . $prendaId);
 
-        $pedido = PedidoProduccion::find($pedidoId);
+        $pedido = Pedidos::find($pedidoId);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);
@@ -93,7 +93,7 @@ class ObtenerDatosRecibosService
     {
         Log::info('[RECIBOS-RESUMEN] Generando resumen para: ' . $pedidoId);
 
-        $pedido = PedidoProduccion::find($pedidoId);
+        $pedido = Pedidos::find($pedidoId);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);
@@ -135,7 +135,7 @@ class ObtenerDatosRecibosService
     }
 
     /**
-     * Obtener datos para impresión de recibos
+     * Obtener datos para impresiÃ³n de recibos
      */
     public function obtenerParaImpresion(int $pedidoId): array
     {
@@ -147,3 +147,4 @@ class ObtenerDatosRecibosService
         return array_merge($datos, ['resumen' => $resumen]);
     }
 }
+

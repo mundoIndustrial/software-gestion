@@ -7,13 +7,13 @@ use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 
 /**
- * Use Case: Obtener Producción Pedido
+ * Use Case: Obtener ProducciÃ³n Pedido
  * 
- * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
+ * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicaciÃ³n
  * 
- * Antes: 22 líneas (7 líneas de lógica actual + 15 líneas duplicadas)
- * Después: 12 líneas (solo implementa personalización)
- * Reducción: 45%
+ * Antes: 22 lÃ­neas (7 lÃ­neas de lÃ³gica actual + 15 lÃ­neas duplicadas)
+ * DespuÃ©s: 12 lÃ­neas (solo implementa personalizaciÃ³n)
+ * ReducciÃ³n: 45%
  */
 class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
 {
@@ -23,7 +23,7 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Personalización: Obtener solo el modelo sin enriquecimiento
+     * PersonalizaciÃ³n: Obtener solo el modelo sin enriquecimiento
      */
     protected function obtenerOpciones(): array
     {
@@ -36,10 +36,11 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Personalización: Retornar modelo directamente
+     * PersonalizaciÃ³n: Retornar modelo directamente
      */
-    protected function construirRespuesta(array $datosEnriquecidos, $pedido): mixed
+    protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {
-        return $pedido;
+        return $datosEnriquecidos;
     }
 }
+

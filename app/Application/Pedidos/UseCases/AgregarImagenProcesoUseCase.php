@@ -9,7 +9,7 @@ use App\Models\ProcesosPrendaDetalle;
 /**
  * Use Case para agregar imagen de referencia a un proceso de prenda
  * 
- * Maneja la creación de registro en pedidos_procesos_imagenes
+ * Maneja la creaciÃ³n de registro en pedidos_procesos_imagenes
  */
 final class AgregarImagenProcesoUseCase
 {
@@ -36,3 +36,4 @@ final class AgregarImagenProcesoUseCase
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
 }
+

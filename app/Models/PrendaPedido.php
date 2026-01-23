@@ -141,6 +141,16 @@ class PrendaPedido extends Model
         return $this->hasMany(PrendaPedidoTalla::class, 'prenda_pedido_id');
     }
 
+    /**
+     * Alias para compatibilidad con getFilasDespacho()
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function prendaPedidoTallas(): HasMany
+    {
+        return $this->tallas();
+    }
+
     // ============================================================
     // SCOPES
     // ============================================================

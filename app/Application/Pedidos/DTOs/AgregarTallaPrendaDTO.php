@@ -8,7 +8,7 @@ namespace App\Application\Pedidos\DTOs;
  * Maneja campos de prenda_pedido_tallas:
  * - genero: 'M', 'F', etc (enum)
  * - talla: 'S', 'M', 'L', 'XL', 'XXL', etc
- * - cantidad: número de prendas en esta talla
+ * - cantidad: nÃºmero de prendas en esta talla
  */
 final class AgregarTallaPrendaDTO
 {
@@ -29,3 +29,4 @@ final class AgregarTallaPrendaDTO
         );
     }
 }
+

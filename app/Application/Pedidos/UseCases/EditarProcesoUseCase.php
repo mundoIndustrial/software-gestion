@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\DB;
  * Caso de uso para editar un proceso existente
  * Responsabilidad: Validar y actualizar un proceso de pedido
  * 
- * Patrón: Use Case (Application Layer - DDD)
- * Autorización: Solo admin o producción
+ * PatrÃ³n: Use Case (Application Layer - DDD)
+ * AutorizaciÃ³n: Solo admin o producciÃ³n
  */
 class EditarProcesoUseCase
 {
@@ -58,3 +58,4 @@ class EditarProcesoUseCase
         ];
     }
 }
+

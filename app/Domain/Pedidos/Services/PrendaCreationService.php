@@ -1,0 +1,217 @@
+<?php
+
+namespace App\Domain\Pedidos\Services;
+
+use App\Domain\Pedidos\Strategies\CreacionPrendaStrategy;
+use App\Domain\Pedidos\Strategies\CreacionPrendaSinCtaStrategy;
+use App\Domain\Pedidos\Strategies\CreacionPrendaReflectivoStrategy;
+use App\Domain\Pedidos\Events\PrendaPedidoAgregada;
+use App\Domain\Shared\DomainEventDispatcher;
+use App\Models\PrendaPedido;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Servicio Orquestador de CreaciÃ³n de Prendas
+ * 
+ * Responsabilidades:
+ * - Seleccionar la estrategia correcta segÃºn tipo de prenda
+ * - Coordinar la creaciÃ³n de prendas sin cotizaciÃ³n
+ * - Manejar errores y logging
+ * 
+ * PatrÃ³n: Strategy + Factory
+ * 
+ * Encapsula la lÃ³gica de orquestaciÃ³n que estaba repartida en el controller
+ * MÃ©todos refactorizados:
+ * - crearPrendaSinCotizacion() -> Usa CreacionPrendaSinCtaStrategy
+ * - crearPrendaReflectivo() -> Usa CreacionPrendaReflectivoStrategy
+ */
+class PrendaCreationService
+{
+    public function __construct(
+        private DescripcionService $descripcionService,
+        private ImagenService $imagenService,
+        private UtilitariosService $utilitariosService,
+        private DomainEventDispatcher $eventDispatcher,
+    ) {}
+
+    /**
+     * Crear prenda sin cotizaciÃ³n usando estrategia
+     * 
+     * Encapsula la lÃ³gica de controller::crearPrendaSinCotizacion() (~400 lÃ­neas)
+     * El controlador solo valida y responde HTTP, la lÃ³gica estÃ¡ aquÃ­
+     * 
+     * @param array $prendaData Datos de la prenda del request
+     * @param string $numeroPedido NÃºmero del pedido
+     * @return PrendaPedido Prenda creada
+     * @throws \Exception
+     */
+    public function crearPrendaSinCotizacion(
+        array $prendaData,
+        int $pedidoProduccionId
+    ): PrendaPedido {
+        Log::info(' [PrendaCreationService::crearPrendaSinCotizacion] Iniciando con estrategia', [
+            'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+            'pedido_produccion_id' => $pedidoProduccionId,
+        ]);
+
+        // Usar estrategia para sin cotizaciÃ³n
+        $strategy = new CreacionPrendaSinCtaStrategy();
+
+        // Inyectar servicios
+        $servicios = [
+            'descripcionService' => $this->descripcionService,
+            'imagenService' => $this->imagenService,
+        ];
+
+        try {
+            $prenda = $strategy->procesar($prendaData, $pedidoProduccionId, $servicios);
+
+            // Emitir evento de prenda agregada
+            $pedidoId = $prendaData['pedido_id'] ?? null;
+            if ($pedidoId) {
+                // Calcular cantidad total desde cantidad_talla si estÃ¡ disponible
+                $cantidadTotal = 1;
+                if (isset($prendaData['cantidad_talla']) && is_array($prendaData['cantidad_talla'])) {
+                    $cantidadTotal = array_sum($prendaData['cantidad_talla']);
+                } elseif (isset($prendaData['cantidad_inicial'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad_inicial'];
+                } elseif (isset($prendaData['cantidad'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad'];
+                }
+
+                $event = new PrendaPedidoAgregada(
+                    pedidoId: (int) $pedidoId,
+                    prendaId: $prenda->id,
+                    nombrePrenda: $prenda->nombre_prenda ?? 'Sin nombre',
+                    cantidad: $cantidadTotal,
+                    genero: $prenda->genero ?? 'No especificado',
+                    colorId: $prenda->color_id,
+                    telaId: $prenda->tela_id,
+                    tipoMangaId: $prenda->tipo_manga_id,
+                    tipoBrocheId: $prenda->tipo_broche_id,
+                );
+                $this->eventDispatcher->dispatch($event);
+                Log::info(' Evento PrendaPedidoAgregada emitido', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prenda->id,
+                    'nombre' => $prenda->nombre_prenda,
+                    'cantidad_total' => $cantidadTotal,
+                ]);
+            }
+
+            Log::info(' [PrendaCreationService::crearPrendaSinCotizacion] Prenda creada exitosamente', [
+                'prenda_id' => $prenda->id,
+                'estrategia' => $strategy->getNombre(),
+            ]);
+
+            return $prenda;
+
+        } catch (\Exception $e) {
+            Log::error(' [PrendaCreationService::crearPrendaSinCotizacion] Error', [
+                'error' => $e->getMessage(),
+                'estrategia' => $strategy->getNombre(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Crear prenda reflectivo sin cotizaciÃ³n usando estrategia
+     * 
+     * Encapsula la lÃ³gica de controller::crearReflectivoSinCotizacion() (~300 lÃ­neas)
+     * 
+     * @param array $prendaData Datos de la prenda del request
+     * @param int $pedidoProduccionId ID del pedido
+     * @return PrendaPedido Prenda creada
+     * @throws \Exception
+     */
+    public function crearPrendaReflectivo(
+        array $prendaData,
+        int $pedidoProduccionId
+    ): PrendaPedido {
+        Log::info(' [PrendaCreationService::crearPrendaReflectivo] Iniciando con estrategia', [
+            'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+            'pedido_produccion_id' => $pedidoProduccionId,
+        ]);
+
+        // Usar estrategia para reflectivo
+        $strategy = new CreacionPrendaReflectivoStrategy();
+
+        // Inyectar servicios
+        $servicios = [
+            'imagenService' => $this->imagenService,
+            'utilitariosService' => $this->utilitariosService,
+        ];
+
+        try {
+            $prenda = $strategy->procesar($prendaData, $pedidoProduccionId, $servicios);
+
+            // Emitir evento de prenda agregada
+            $pedidoId = $prendaData['pedido_id'] ?? null;
+            if ($pedidoId) {
+                // Calcular cantidad total desde cantidad_talla si estÃ¡ disponible
+                $cantidadTotal = 1;
+                if (isset($prendaData['cantidad_talla']) && is_array($prendaData['cantidad_talla'])) {
+                    $cantidadTotal = array_sum($prendaData['cantidad_talla']);
+                } elseif (isset($prendaData['cantidad_inicial'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad_inicial'];
+                } elseif (isset($prendaData['cantidad'])) {
+                    $cantidadTotal = (int) $prendaData['cantidad'];
+                }
+
+                $event = new PrendaPedidoAgregada(
+                    pedidoId: (int) $pedidoId,
+                    prendaId: $prenda->id,
+                    nombrePrenda: $prenda->nombre_prenda ?? 'Sin nombre',
+                    cantidad: $cantidadTotal,
+                    genero: $prenda->genero ?? 'No especificado',
+                    colorId: $prenda->color_id,
+                    telaId: $prenda->tela_id,
+                    tipoMangaId: $prenda->tipo_manga_id,
+                    tipoBrocheId: $prenda->tipo_broche_id,
+                );
+                $this->eventDispatcher->dispatch($event);
+                Log::info(' Evento PrendaPedidoAgregada emitido (reflectivo)', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prenda->id,
+                    'nombre' => $prenda->nombre_prenda,
+                    'cantidad_total' => $cantidadTotal,
+                ]);
+            }
+
+            Log::info(' [PrendaCreationService::crearPrendaReflectivo] Prenda creada exitosamente', [
+                'prenda_id' => $prenda->id,
+                'estrategia' => $strategy->getNombre(),
+            ]);
+
+            return $prenda;
+
+        } catch (\Exception $e) {
+            Log::error(' [PrendaCreationService::crearPrendaReflectivo] Error', [
+                'error' => $e->getMessage(),
+                'estrategia' => $strategy->getNombre(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Factory method para obtener estrategia segÃºn tipo
+     * Extensible para futuros tipos de prendas
+     * 
+     * @param string $tipo Tipo de prenda: 'sin_cotizacion', 'reflectivo', etc
+     * @return CreacionPrendaStrategy
+     * @throws \InvalidArgumentException Si tipo no es soportado
+     */
+    public function obtenerEstrategia(string $tipo): CreacionPrendaStrategy
+    {
+        return match ($tipo) {
+            'sin_cotizacion' => new CreacionPrendaSinCtaStrategy(),
+            'reflectivo' => new CreacionPrendaReflectivoStrategy(),
+            default => throw new \InvalidArgumentException("Tipo de prenda no soportado: $tipo"),
+        };
+    }
+}
+

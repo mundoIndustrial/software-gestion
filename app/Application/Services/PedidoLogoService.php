@@ -2,7 +2,7 @@
 
 namespace App\Application\Services;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use App\Models\LogoPed;
 use App\Models\LogoFotoPed;
 use Illuminate\Support\Facades\DB;
@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\Log;
  * Cumple:
  * - SRP: Solo guarda logos
  * - DIP: Inyecta dependencias
- * - OCP: Fácil de extender
+ * - OCP: FÃ¡cil de extender
  */
 class PedidoLogoService
 {
     /**
      * Guardar logo en pedido
      */
-    public function guardarLogoEnPedido(PedidoProduccion $pedido, array $logoData): void
+    public function guardarLogoEnPedido(Pedidos $pedido, array $logoData): void
     {
         if (empty($logoData)) {
             Log::warning('PedidoLogoService: No hay datos de logo para guardar', [
@@ -43,7 +43,7 @@ class PedidoLogoService
                 'observaciones_generales' => $logoData['observaciones_generales'] ?? null,
             ]);
 
-            // 2. Guardar fotos del logo (copiar URLs de cotización)
+            // 2. Guardar fotos del logo (copiar URLs de cotizaciÃ³n)
             if (!empty($logoData['fotos'])) {
                 $this->guardarFotosLogo($logo, $logoData['fotos']);
             }
@@ -64,7 +64,7 @@ class PedidoLogoService
     }
 
     /**
-     * Guardar fotos del logo (copiar URLs de cotización)
+     * Guardar fotos del logo (copiar URLs de cotizaciÃ³n)
      */
     private function guardarFotosLogo(LogoPed $logo, array $fotos): void
     {
@@ -77,8 +77,9 @@ class PedidoLogoService
                 'orden' => $index + 1,
                 'ancho' => $foto['ancho'] ?? null,
                 'alto' => $foto['alto'] ?? null,
-                'tamaño' => $foto['tamaño'] ?? null,
+                'tamaÃ±o' => $foto['tamaÃ±o'] ?? null,
             ]);
         }
     }
 }
+

@@ -52,7 +52,7 @@ class NumeroCotizacionTest extends TestCase
     public function lanza_excepcion_si_formato_invalido(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('El número de cotización debe tener el formato COT-XXXXX');
+        $this->expectExceptionMessage('El nÃºmero de cotizaciÃ³n debe tener el formato COT-XXXXX');
 
         NumeroCotizacion::crear('INVALID-00014');
     }
@@ -143,3 +143,4 @@ class NumeroCotizacionTest extends TestCase
         $this->assertTrue($numero->estaVacio());
     }
 }
+

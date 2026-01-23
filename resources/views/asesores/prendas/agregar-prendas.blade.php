@@ -166,7 +166,10 @@
                                         <i class="fas fa-shirt"></i> Manga
                                     </td>
                                     <td style="padding: 14px 12px;">
-                                        <input type="text" class="manga-input" placeholder="Ej: manga larga..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
+                                        <input type="text" id="manga-input" class="manga-input" placeholder="Ej: manga larga, corta..." list="manga-options" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
+                                        <datalist id="manga-options">
+                                            <!-- Las opciones se cargarán dinámicamente desde el API -->
+                                        </datalist>
                                     </td>
                                 </tr>
                                 
@@ -186,13 +189,18 @@
                                 <!-- BROCHE/BOTÓN -->
                                 <tr style="border-bottom: 1px solid #eee; background-color: #fafafa;">
                                     <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                        <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleBrocheInputs(this)">
                                     </td>
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-link"></i> Broche/Botón
                                     </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" class="broche-input" placeholder="Ej: botones metálicos..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    <td style="padding: 14px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        <select id="broche-tipo" class="broche-tipo-select" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
+                                            <option value="">-- Selecciona --</option>
+                                            <option value="1">Broche</option>
+                                            <option value="2">Botón</option>
+                                        </select>
+                                        <input type="text" class="broche-obs-input" placeholder="Ej: metálicos, 5mm..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
                                     </td>
                                 </tr>
 
@@ -230,10 +238,13 @@
                         <!-- MANGA -->
                         <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <input type="checkbox" class="aplica-manga" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleMangaInput(this)">
+                                <input type="checkbox" class="aplica-manga" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleMangaInputMobile(this)">
                                 <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-shirt"></i> Manga</label>
                             </div>
-                            <input type="text" class="manga-input" placeholder="Ej: manga larga..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                            <input type="text" id="manga-input-mobile" class="manga-input" placeholder="Ej: manga larga, corta..." list="manga-options-mobile" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                            <datalist id="manga-options-mobile">
+                                <!-- Las opciones se cargarán dinámicamente desde el API -->
+                            </datalist>
                         </div>
 
                         <!-- BOLSILLOS -->
@@ -248,10 +259,17 @@
                         <!-- BROCHE/BOTÓN -->
                         <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleBrocheInputsMobile(this)">
                                 <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-link"></i> Broche/Botón</label>
                             </div>
-                            <input type="text" class="broche-input" placeholder="Ej: botones metálicos..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <select id="broche-tipo-mobile" class="broche-tipo-select" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                                    <option value="">-- Selecciona --</option>
+                                    <option value="1">Broche</option>
+                                    <option value="2">Botón</option>
+                                </select>
+                                <input type="text" class="broche-obs-input" placeholder="Ej: metálicos, 5mm..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                            </div>
                         </div>
 
                         <!-- PUÑO -->
@@ -358,6 +376,152 @@
 <script>
 let prendas = [];
 
+// Mapeo de IDs a nombres de broche/botón
+const TIPOS_BROCHE_BOTON = {
+    '1': 'Broche',
+    '2': 'Botón'
+};
+
+function obtenerNombreBrocheBoton(id) {
+    return TIPOS_BROCHE_BOTON[String(id)] || 'Desconocido';
+}
+
+// Cargar tipos de broche/botón desde el API cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    cargarTiposBrocheBoton();
+    cargarTiposManga();
+    configurarManejadorManga();
+});
+
+async function cargarTiposBrocheBoton() {
+    try {
+        const response = await fetch('{{ route("asesores.api.tipos-broche-boton") }}');
+        if (!response.ok) throw new Error('Error fetching tipos broche/botón');
+        
+        const result = await response.json();
+        if (result.success && result.data) {
+            // Actualizar el mapeo local con los datos de la BDD
+            result.data.forEach(tipo => {
+                TIPOS_BROCHE_BOTON[String(tipo.id)] = tipo.nombre;
+            });
+            
+            // Actualizar los selectores con las opciones dinámicas
+            const selects = document.querySelectorAll('.broche-tipo-select');
+            selects.forEach(select => {
+                // Limpiar opciones excepto la primera
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+                
+                // Agregar opciones dinámicas desde la BDD
+                result.data.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.id;
+                    option.textContent = tipo.nombre;
+                    select.appendChild(option);
+                });
+            });
+        }
+    } catch (error) {
+        console.warn('Error cargando tipos de broche/botón:', error);
+        // Fallback a valores por defecto si hay error
+    }
+}
+
+async function cargarTiposManga() {
+    try {
+        const response = await fetch('{{ route("asesores.api.tipos-manga") }}');
+        if (!response.ok) throw new Error('Error fetching tipos manga');
+        
+        const result = await response.json();
+        if (result.success && result.data) {
+            // Llenar los datalists con las opciones disponibles
+            const datalistDesktop = document.getElementById('manga-options');
+            const datalistMobile = document.getElementById('manga-options-mobile');
+            
+            datalistDesktop.innerHTML = '';
+            datalistMobile.innerHTML = '';
+            
+            result.data.forEach(tipo => {
+                const optionDesktop = document.createElement('option');
+                optionDesktop.value = tipo.nombre;
+                optionDesktop.dataset.id = tipo.id;
+                datalistDesktop.appendChild(optionDesktop);
+                
+                const optionMobile = document.createElement('option');
+                optionMobile.value = tipo.nombre;
+                optionMobile.dataset.id = tipo.id;
+                datalistMobile.appendChild(optionMobile);
+            });
+        }
+    } catch (error) {
+        console.warn('Error cargando tipos de manga:', error);
+    }
+}
+
+function configurarManejadorManga() {
+    // Manejador para crear tipo de manga si no existe
+    const mangaInputDesktop = document.getElementById('manga-input');
+    const mangaInputMobile = document.getElementById('manga-input-mobile');
+    
+    if (mangaInputDesktop) {
+        mangaInputDesktop.addEventListener('blur', function() {
+            procesarMangaInput(this);
+        });
+    }
+    
+    if (mangaInputMobile) {
+        mangaInputMobile.addEventListener('blur', function() {
+            procesarMangaInput(this);
+        });
+    }
+}
+
+async function procesarMangaInput(input) {
+    const valor = input.value.trim();
+    if (!valor) return;
+    
+    try {
+        // Verificar si ya existe en el datalist
+        const datalist = document.getElementById(input.getAttribute('list'));
+        let existe = false;
+        
+        for (let option of datalist.options) {
+            if (option.value.toLowerCase() === valor.toLowerCase()) {
+                existe = true;
+                break;
+            }
+        }
+        
+        if (!existe) {
+            // Crear el nuevo tipo de manga
+            const response = await fetch('{{ route("asesores.api.tipos-manga.create") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ nombre: valor })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                // Agregar a los datalists
+                const newOption = document.createElement('option');
+                newOption.value = result.data.nombre;
+                newOption.dataset.id = result.data.id;
+                
+                document.getElementById('manga-options').appendChild(newOption);
+                document.getElementById('manga-options-mobile').appendChild(newOption.cloneNode(true));
+                
+                console.log('✅ Tipo de manga creado:', result.data);
+            }
+        }
+    } catch (error) {
+        console.error('Error procesando manga:', error);
+    }
+}
+
 function seleccionarPrenda(nombre, element) {
     document.getElementById('nombre-prenda').value = nombre;
     document.querySelectorAll('.prenda-suggestion-item').forEach(el => el.style.background = '');
@@ -388,6 +552,40 @@ function toggleMangaInput(checkbox) {
     const input = checkbox.closest('tr').querySelector('.manga-input');
     input.disabled = !checkbox.checked;
     input.style.opacity = checkbox.checked ? '1' : '0.5';
+    input.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
+}
+
+function toggleMangaInputMobile(checkbox) {
+    const card = checkbox.closest('div');
+    const input = card.querySelector('.manga-input');
+    input.disabled = !checkbox.checked;
+    input.style.opacity = checkbox.checked ? '1' : '0.5';
+    input.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
+}
+
+function toggleBrocheInputs(checkbox) {
+    const row = checkbox.closest('tr');
+    const select = row.querySelector('.broche-tipo-select');
+    const input = row.querySelector('.broche-obs-input');
+    
+    select.disabled = !checkbox.checked;
+    input.disabled = !checkbox.checked;
+    select.style.opacity = checkbox.checked ? '1' : '0.5';
+    input.style.opacity = checkbox.checked ? '1' : '0.5';
+    select.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
+    input.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
+}
+
+function toggleBrocheInputsMobile(checkbox) {
+    const card = checkbox.closest('div');
+    const select = card.querySelector('.broche-tipo-select');
+    const input = card.querySelector('.broche-obs-input');
+    
+    select.disabled = !checkbox.checked;
+    input.disabled = !checkbox.checked;
+    select.style.opacity = checkbox.checked ? '1' : '0.5';
+    input.style.opacity = checkbox.checked ? '1' : '0.5';
+    select.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
     input.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
 }
 
@@ -461,9 +659,10 @@ function agregarPrenda() {
         tallas,
         prendaBodega,
         variaciones: {
-            manga: document.querySelector('.aplica-manga').checked ? document.querySelector('.manga-input').value : null,
+            manga_nombre: document.querySelector('.aplica-manga').checked ? document.querySelector('.manga-input').value : null,
             bolsillos: document.querySelector('.aplica-bolsillos').checked ? document.querySelector('.bolsillos-input').value : null,
-            broche: document.querySelector('.aplica-broche').checked ? document.querySelector('.broche-input').value : null,
+            tipo_broche_boton_id: document.querySelector('.aplica-broche').checked ? (document.getElementById('broche-tipo')?.value || null) : null,
+            broche_obs: document.querySelector('.aplica-broche').checked ? document.querySelector('.broche-obs-input').value : null,
             puno: document.querySelector('.aplica-puno').checked ? document.querySelector('.puno-input').value : null,
             proceso: document.querySelector('.aplica-proceso').checked ? document.querySelector('.proceso-input').value : null,
         }
@@ -508,6 +707,19 @@ function actualizarTabla() {
                 <p class="col-span-full"><strong>Prenda de Bodega:</strong> <span style="color: ${prenda.prendaBodega ? '#10b981' : '#ef4444'}; font-weight: bold;">${prenda.prendaBodega ? ' Sí' : ' No'}</span></p>
             </div>
 
+            ${prenda.variaciones.manga_nombre || prenda.variaciones.tipo_broche_boton_id || prenda.variaciones.bolsillos || prenda.variaciones.puno || prenda.variaciones.proceso ? `
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded p-3 mb-3">
+                <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">Variaciones:</p>
+                <div class="space-y-1 text-xs">
+                    ${prenda.variaciones.manga_nombre ? `<p>• <strong>Manga:</strong> ${prenda.variaciones.manga_nombre}</p>` : ''}
+                    ${prenda.variaciones.tipo_broche_boton_id ? `<p>• <strong>Broche/Botón:</strong> ${obtenerNombreBrocheBoton(prenda.variaciones.tipo_broche_boton_id)}${prenda.variaciones.broche_obs ? ' (' + prenda.variaciones.broche_obs + ')' : ''}</p>` : ''}
+                    ${prenda.variaciones.bolsillos ? `<p>• <strong>Bolsillos:</strong> ${prenda.variaciones.bolsillos}</p>` : ''}
+                    ${prenda.variaciones.puno ? `<p>• <strong>Puño:</strong> ${prenda.variaciones.puno}</p>` : ''}
+                    ${prenda.variaciones.proceso ? `<p>• <strong>Proceso:</strong> ${prenda.variaciones.proceso}</p>` : ''}
+                </div>
+            </div>
+            ` : ''}
+
             <div class="bg-white dark:bg-gray-800 rounded p-3">
                 <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Tallas:</p>
                 <div class="flex gap-2 text-sm">
@@ -537,7 +749,8 @@ function limpiarFormulario() {
     document.getElementById('talla-l').value = '0';
     document.getElementById('talla-xl').value = '0';
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    document.querySelectorAll('.manga-input, .bolsillos-input, .broche-input, .puno-input, .proceso-input').forEach(input => input.value = '');
+    document.querySelectorAll('.manga-input, .bolsillos-input, .broche-obs-input, .puno-input, .proceso-input').forEach(input => input.value = '');
+    document.querySelectorAll('.broche-tipo-select').forEach(select => select.value = '');
     document.getElementById('nombre-prenda').focus();
 }
 </script>

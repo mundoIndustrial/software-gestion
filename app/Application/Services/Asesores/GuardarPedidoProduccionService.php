@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use App\Enums\EstadoPedido;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\PedidoPrendaService;
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class GuardarPedidoProduccionService
+class GuardarPedidosService
 {
     protected ProcesarFotosTelasService $procesarFotosService;
 
@@ -25,20 +25,20 @@ class GuardarPedidoProduccionService
      * 
      * @param array $validated
      * @param array $productos
-     * @return PedidoProduccion
+     * @return Pedidos
      * @throws \Exception
      */
-    public function guardar(array $validated, array $productos): PedidoProduccion
+    public function guardar(array $validated, array $productos): Pedidos
     {
-        Log::info('💾 [PRODUCCION] Guardando pedido en pedidos_produccion', [
+        Log::info('ðŸ’¾ [PRODUCCION] Guardando pedido en pedidos_produccion', [
             'cliente' => $validated['cliente'],
             'productos_count' => count($productos)
         ]);
 
         DB::beginTransaction();
         try {
-            // Crear pedido en PedidoProduccion
-            $pedido = PedidoProduccion::create([
+            // Crear pedido en Pedidos
+            $pedido = Pedidos::create([
                 'numero_pedido' => null,
                 'cliente' => $validated['cliente'],
                 'asesor_id' => Auth::id(),
@@ -73,7 +73,7 @@ class GuardarPedidoProduccionService
     /**
      * Guardar prendas del pedido
      */
-    private function guardarPrendas(PedidoProduccion $pedido, array $productos): void
+    private function guardarPrendas(Pedidos $pedido, array $productos): void
     {
         Log::info(' [PRENDAS] Guardando ' . count($productos) . ' prendas');
 
@@ -93,7 +93,7 @@ class GuardarPedidoProduccionService
     /**
      * Guardar logo del pedido si existe
      */
-    private function guardarLogo(PedidoProduccion $pedido, array $validated): void
+    private function guardarLogo(Pedidos $pedido, array $validated): void
     {
         // Verificar si hay datos de logo
         $tieneDataLogo = !empty($validated['logo.descripcion'] ?? null)
@@ -140,7 +140,7 @@ class GuardarPedidoProduccionService
     }
 
     /**
-     * Detectar tipo de pedido (logo o producción)
+     * Detectar tipo de pedido (logo o producciÃ³n)
      */
     public static function detectarTipo(string $tipoCotizacion = null, int $cotizacionId = null): string
     {
@@ -154,3 +154,4 @@ class GuardarPedidoProduccionService
         return 'produccion';
     }
 }
+

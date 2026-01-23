@@ -60,9 +60,6 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/pedidos/{id}/factura-datos', [AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [AsesoresAPIController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
-    // Actualizar prenda desde editor modal
-    Route::post('/pedidos-produccion/actualizar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrenda'])->name('pedidos.actualizar-prenda');
-    
     // Cargar datos de pedido para edición
     Route::get('/pedidos/{id}/editar-datos', [AsesoresAPIController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('pedidos.api.editar-datos');
     
@@ -120,4 +117,11 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // INVENTARIO Y RECURSOS
     // ========================================
     Route::get('/inventario-telas', [AsesoresController::class, 'inventarioTelas'])->name('inventario.telas');
+    
+    // ========================================
+    // DATOS DE CATÁLOGOS (tipos de broche, manga, etc)
+    // ========================================
+    Route::get('/api/tipos-broche-boton', [AsesoresAPIController::class, 'obtenerTiposBrocheBoton'])->name('api.tipos-broche-boton');
+    Route::get('/api/tipos-manga', [AsesoresAPIController::class, 'obtenerTiposManga'])->name('api.tipos-manga');
+    Route::post('/api/tipos-manga', [AsesoresAPIController::class, 'crearObtenerTipoManga'])->name('api.tipos-manga.create');
 });

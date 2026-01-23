@@ -4,26 +4,26 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Agregado\PedidoProduccionAggregate;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Agregado\PedidosAggregate;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Exception;
 
 /**
  * ConfirmarProduccionPedidoUseCase
  * 
- * Use Case para confirmar un pedido de producción
- * Transición: pendiente → confirmado
+ * Use Case para confirmar un pedido de producciÃ³n
+ * TransiciÃ³n: pendiente â†’ confirmado
  */
 class ConfirmarProduccionPedidoUseCase
 {
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        private PedidoRepository $pedidoRepository
     ) {
     }
 
-    public function ejecutar(ConfirmarProduccionPedidoDTO $dto): PedidoProduccionAggregate
+    public function ejecutar(ConfirmarProduccionPedidoDTO $dto): PedidosAggregate
     {
         try {
             $pedido = $this->validarPedidoExiste($dto->id, $this->pedidoRepository);
@@ -40,3 +40,5 @@ class ConfirmarProduccionPedidoUseCase
         }
     }
 }
+
+

@@ -68,3 +68,4 @@ class OperarioServiceTest extends TestCase
         $this->assertGreaterThan(2, count($publicMethods));
     }
 }
+

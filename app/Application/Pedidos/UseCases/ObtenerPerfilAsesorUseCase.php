@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
  * ObtenerPerfilAsesorUseCase
  * 
  * Use Case para obtener el perfil del asesor
- * Encapsula la lógica de obtención de datos del perfil
+ * Encapsula la lÃ³gica de obtenciÃ³n de datos del perfil
  */
 class ObtenerPerfilAsesorUseCase
 {
@@ -22,3 +22,4 @@ class ObtenerPerfilAsesorUseCase
         return $this->validarObjetoExiste($user, 'Usuario', 'autenticado');
     }
 }
+

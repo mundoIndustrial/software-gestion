@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use App\Models\LogoPedido;
 use App\Enums\EstadoPedido;
 use App\Application\Services\PedidoPrendaService;
@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Auth;
 /**
  * CrearPedidoService
  * 
- * Servicio de aplicación para crear pedidos (producción o logo).
- * Encapsula la lógica de negocio de creación de pedidos separando:
- * - Pedidos de prendas (PedidoProduccion)
+ * Servicio de aplicaciÃ³n para crear pedidos (producciÃ³n o logo).
+ * Encapsula la lÃ³gica de negocio de creaciÃ³n de pedidos separando:
+ * - Pedidos de prendas (Pedidos)
  * - Pedidos de logo (LogoPedido)
  */
 class CrearPedidoService
@@ -35,7 +35,7 @@ class CrearPedidoService
     /**
      * Crear pedido (identificar tipo y delegar)
      */
-    public function crear(array $datos, $tipoCotizacion = null): PedidoProduccion|int
+    public function crear(array $datos, $tipoCotizacion = null): Pedidos|int
     {
         DB::beginTransaction();
         try {
@@ -45,7 +45,7 @@ class CrearPedidoService
                 return $this->crearPedidoLogo($datos);
             }
 
-            $resultado = $this->crearPedidoProduccion($datos);
+            $resultado = $this->crearPedidos($datos);
             
             DB::commit();
             return $resultado;
@@ -61,9 +61,9 @@ class CrearPedidoService
     }
 
     /**
-     * Crear pedido de prendas (PedidoProduccion)
+     * Crear pedido de prendas (Pedidos)
      */
-    protected function crearPedidoProduccion(array $datos): PedidoProduccion
+    protected function crearPedidos(array $datos): Pedidos
     {
         $productosKey = isset($datos['productos']) ? 'productos' : 'productos_friendly';
         $productosConTelasProcessadas = $this->procesarFotosTelas(
@@ -72,7 +72,7 @@ class CrearPedidoService
         );
 
         // Crear pedido base
-        $pedido = PedidoProduccion::create([
+        $pedido = Pedidos::create([
             'numero_pedido' => null,
             'cliente' => $datos['cliente'],
             'asesor_id' => Auth::id(),
@@ -80,7 +80,7 @@ class CrearPedidoService
             'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
         ]);
 
-        \Log::info('Pedido creado en PedidoProduccion', ['pedido_id' => $pedido->id]);
+        \Log::info('Pedido creado en Pedidos', ['pedido_id' => $pedido->id]);
 
         // Guardar prendas
         $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $productosConTelasProcessadas);
@@ -134,7 +134,7 @@ class CrearPedidoService
             'updated_at' => now()
         ]);
 
-        // Guardar imágenes
+        // Guardar imÃ¡genes
         foreach ($imagenesProcesadas as $index => $imagen) {
             DB::table('logo_pedido_imagenes')->insert([
                 'logo_pedido_id' => $logoPedidoId,
@@ -143,7 +143,7 @@ class CrearPedidoService
                 'ruta_original' => $imagen['ruta_original'],
                 'ruta_webp' => $imagen['ruta_webp'],
                 'tipo_archivo' => $imagen['tipo_archivo'],
-                'tamaño_archivo' => $imagen['tamaño_archivo'],
+                'tamaÃ±o_archivo' => $imagen['tamaÃ±o_archivo'],
                 'orden' => $index,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -205,7 +205,7 @@ class CrearPedidoService
                                     'ruta_original' => Storage::url($rutaGuardada),
                                     'ruta_webp' => Storage::url(str_replace('.png', '.webp', $rutaGuardada)),
                                     'tipo_archivo' => $archivoFoto->getMimeType(),
-                                    'tamaño_archivo' => $archivoFoto->getSize(),
+                                    'tamaÃ±o_archivo' => $archivoFoto->getSize(),
                                 ];
                             }
                         }
@@ -224,7 +224,7 @@ class CrearPedidoService
     }
 
     /**
-     * Procesar imágenes del logo
+     * Procesar imÃ¡genes del logo
      */
     protected function procesarImagenesLogo(array $imagenes): array
     {
@@ -245,7 +245,7 @@ class CrearPedidoService
                     'ruta_webp' => Storage::url($rutaWebp),
                     'url' => Storage::url($rutaWebp),
                     'tipo_archivo' => $imagen->getMimeType(),
-                    'tamaño_archivo' => $imagen->getSize(),
+                    'tamaÃ±o_archivo' => $imagen->getSize(),
                 ];
             }
         }
@@ -253,3 +253,4 @@ class CrearPedidoService
         return $imagenesProcesadas;
     }
 }
+

@@ -27,10 +27,10 @@ use Tests\TestCase;
  * 
  * Objetivo: Validar que se puede crear 11 cotizaciones por tipo sin errores,
  * incluyendo TODOS los campos, fotos y relaciones.
- * También valida que numero_cotizacion sea secuencial y único.
+ * TambiÃ©n valida que numero_cotizacion sea secuencial y Ãºnico.
  * 
  * Total Tests: ~6 (1 por tipo + 1 de concurrencia + 1 de secuencialidad)
- * Total Cotizaciones Creadas: 77 (11×4 tipos + 33 de concurrencia)
+ * Total Cotizaciones Creadas: 77 (11Ã—4 tipos + 33 de concurrencia)
  */
 class CotizacionesCompleteTest extends TestCase
 {
@@ -55,7 +55,7 @@ class CotizacionesCompleteTest extends TestCase
 
         // Crear datos base
         $this->crearDatosBase();
-        $this->crearCatálogos();
+        $this->crearCatÃ¡logos();
     }
 
     /**
@@ -71,29 +71,29 @@ class CotizacionesCompleteTest extends TestCase
         // Crear cliente
         $this->cliente = Cliente::factory()->create(['nombre' => 'Cliente Test']);
 
-        // Crear tipos de cotización
+        // Crear tipos de cotizaciÃ³n
         $this->tipoM = TipoCotizacion::firstOrCreate(
             ['codigo' => 'M'],
-            ['nombre' => 'Muestra', 'descripcion' => 'Cotización de muestra']
+            ['nombre' => 'Muestra', 'descripcion' => 'CotizaciÃ³n de muestra']
         );
 
         $this->tipoP = TipoCotizacion::firstOrCreate(
             ['codigo' => 'P'],
-            ['nombre' => 'Prototipo', 'descripcion' => 'Cotización de prototipo']
+            ['nombre' => 'Prototipo', 'descripcion' => 'CotizaciÃ³n de prototipo']
         );
 
         $this->tipoG = TipoCotizacion::firstOrCreate(
             ['codigo' => 'G'],
-            ['nombre' => 'Grande', 'descripcion' => 'Cotización grande']
+            ['nombre' => 'Grande', 'descripcion' => 'CotizaciÃ³n grande']
         );
     }
 
     /**
-     * Crear catálogos necesarios (géneros, mangas, broches, etc.)
+     * Crear catÃ¡logos necesarios (gÃ©neros, mangas, broches, etc.)
      */
-    private function crearCatálogos(): void
+    private function crearCatÃ¡logos(): void
     {
-        // Géneros
+        // GÃ©neros
         $this->generos['masculino'] = Genero::firstOrCreate(
             ['nombre' => 'Masculino'],
             ['abreviatura' => 'M']
@@ -113,12 +113,12 @@ class CotizacionesCompleteTest extends TestCase
 
         // Telas
         $this->telas['algodon'] = Tela::firstOrCreate(
-            ['nombre' => 'Algodón'],
-            ['descripcion' => 'Algodón 100%', 'codigo' => 'ALG']
+            ['nombre' => 'AlgodÃ³n'],
+            ['descripcion' => 'AlgodÃ³n 100%', 'codigo' => 'ALG']
         );
         $this->telas['polyester'] = Tela::firstOrCreate(
-            ['nombre' => 'Poliéster'],
-            ['descripcion' => 'Poliéster 100%', 'codigo' => 'POL']
+            ['nombre' => 'PoliÃ©ster'],
+            ['descripcion' => 'PoliÃ©ster 100%', 'codigo' => 'POL']
         );
 
         // Colores
@@ -168,11 +168,11 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertCount(11, $numerosSecuenciales);
 
-        // Verificar que los números son únicos
+        // Verificar que los nÃºmeros son Ãºnicos
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST MUESTRA: {$i} cotizaciones creadas con éxito\n";
-        echo "Números: " . implode(', ', $numerosSecuenciales) . "\n";
+        echo "\n TEST MUESTRA: {$i} cotizaciones creadas con Ã©xito\n";
+        echo "NÃºmeros: " . implode(', ', $numerosSecuenciales) . "\n";
     }
 
     /**
@@ -191,7 +191,7 @@ class CotizacionesCompleteTest extends TestCase
             $this->assertNotNull($cotizacion->id);
             $this->assertEquals($this->tipoP->id, $cotizacion->tipo_cotizacion_id);
             
-            // Verificar múltiples prendas
+            // Verificar mÃºltiples prendas
             $this->assertGreaterThanOrEqual(2, $cotizacion->prendas->count());
 
             $cotizacionesCreadas[] = $cotizacion;
@@ -205,11 +205,11 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST PROTOTIPO: {$i} cotizaciones creadas con éxito\n";
+        echo "\n TEST PROTOTIPO: {$i} cotizaciones creadas con Ã©xito\n";
     }
 
     /**
-     * TEST 3: Crear 11 Cotizaciones TIPO GRANDE (G) con máximos campos
+     * TEST 3: Crear 11 Cotizaciones TIPO GRANDE (G) con mÃ¡ximos campos
      */
     public function test_crear_11_cotizaciones_tipo_grande(): void
     {
@@ -224,7 +224,7 @@ class CotizacionesCompleteTest extends TestCase
             $this->assertNotNull($cotizacion->id);
             $this->assertEquals($this->tipoG->id, $cotizacion->tipo_cotizacion_id);
             
-            // Verificar máximo de prendas
+            // Verificar mÃ¡ximo de prendas
             $this->assertGreaterThanOrEqual(3, $cotizacion->prendas->count());
 
             $cotizacionesCreadas[] = $cotizacion;
@@ -238,7 +238,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST GRANDE: {$i} cotizaciones creadas con éxito\n";
+        echo "\n TEST GRANDE: {$i} cotizaciones creadas con Ã©xito\n";
     }
 
     /**
@@ -271,11 +271,11 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST BORDADO: {$i} cotizaciones creadas con éxito\n";
+        echo "\n TEST BORDADO: {$i} cotizaciones creadas con Ã©xito\n";
     }
 
     /**
-     * TEST 5: Validar Número de Cotización Secuencial Global
+     * TEST 5: Validar NÃºmero de CotizaciÃ³n Secuencial Global
      */
     public function test_numero_cotizacion_secuencial_global(): void
     {
@@ -302,7 +302,7 @@ class CotizacionesCompleteTest extends TestCase
             $cotizacionesPorTipo['G'][] = $cot->numero_cotizacion;
         }
 
-        // Verificar que cada número es único
+        // Verificar que cada nÃºmero es Ãºnico
         $todoNumeros = [];
         foreach ($cotizacionesPorTipo as $tipo => $numeros) {
             foreach ($numeros as $num) {
@@ -312,14 +312,14 @@ class CotizacionesCompleteTest extends TestCase
 
         $this->assertEquals(count($todoNumeros), count(array_unique($todoNumeros)));
 
-        echo "\n TEST SECUENCIAL: Todos los números son únicos\n";
+        echo "\n TEST SECUENCIAL: Todos los nÃºmeros son Ãºnicos\n";
         echo "Total cotizaciones: " . count($todoNumeros) . "\n";
     }
 
     /**
-     * TEST 6: CONCURRENCIA - 3 Asesores creando 11 cotizaciones cada uno simultáneamente
+     * TEST 6: CONCURRENCIA - 3 Asesores creando 11 cotizaciones cada uno simultÃ¡neamente
      * 
-     *  NOTA: Este test simula concurrencia. En producción, se debería usar
+     *  NOTA: Este test simula concurrencia. En producciÃ³n, se deberÃ­a usar
      * herramientas como Guzzle HTTP con promesas para verdadera concurrencia.
      */
     public function test_concurrencia_multiples_asesores(): void
@@ -328,7 +328,7 @@ class CotizacionesCompleteTest extends TestCase
         $cotizacionesPorAsesor = [];
         $numerosGlobales = [];
 
-        // Simular creación simultánea (secuencial, pero validar integridad)
+        // Simular creaciÃ³n simultÃ¡nea (secuencial, pero validar integridad)
         foreach ($asesores as $indiceAsesor => $asesor) {
             $this->actingAs($asesor);
             $cotizacionesPorAsesor[$asesor->id] = [];
@@ -344,7 +344,7 @@ class CotizacionesCompleteTest extends TestCase
         // 1. Total de cotizaciones
         $this->assertEquals(33, count($numerosGlobales));
 
-        // 2. Todos los números son únicos
+        // 2. Todos los nÃºmeros son Ãºnicos
         $this->assertEquals(33, count(array_unique($numerosGlobales)));
 
         // 3. Cada asesor tiene exactamente 11 cotizaciones
@@ -352,21 +352,21 @@ class CotizacionesCompleteTest extends TestCase
             $this->assertCount(11, $cotizaciones);
         }
 
-        // 4. Números están distribuidos
+        // 4. NÃºmeros estÃ¡n distribuidos
         sort($numerosGlobales);
-        echo "\n TEST CONCURRENCIA: 3 Asesores × 11 Cotizaciones = 33 Total\n";
-        echo "Primeros números: " . implode(', ', array_slice($numerosGlobales, 0, 5)) . "\n";
-        echo "Últimos números: " . implode(', ', array_slice($numerosGlobales, -5)) . "\n";
+        echo "\n TEST CONCURRENCIA: 3 Asesores Ã— 11 Cotizaciones = 33 Total\n";
+        echo "Primeros nÃºmeros: " . implode(', ', array_slice($numerosGlobales, 0, 5)) . "\n";
+        echo "Ãšltimos nÃºmeros: " . implode(', ', array_slice($numerosGlobales, -5)) . "\n";
     }
 
     /**
      * ====================================================================
-     * MÉTODOS HELPER PARA CREAR COTIZACIONES
+     * MÃ‰TODOS HELPER PARA CREAR COTIZACIONES
      * ====================================================================
      */
 
     /**
-     * Crear cotización TIPO MUESTRA (M)
+     * Crear cotizaciÃ³n TIPO MUESTRA (M)
      * - 1 Prenda (Camisa)
      * - 3 Fotos
      * - 2 Telas
@@ -387,7 +387,7 @@ class CotizacionesCompleteTest extends TestCase
             'especificaciones' => [],
         ]);
 
-        // Asignar número de cotización (simulando el servicio)
+        // Asignar nÃºmero de cotizaciÃ³n (simulando el servicio)
         $cotizacion->numero_cotizacion = $this->generarNumeroCotizacion($cotizacion);
         $cotizacion->save();
 
@@ -406,8 +406,8 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Crear cotización TIPO PROTOTIPO (P)
-     * - 2 Prendas (Camisa + Pantalón)
+     * Crear cotizaciÃ³n TIPO PROTOTIPO (P)
+     * - 2 Prendas (Camisa + PantalÃ³n)
      * - 4 Fotos por prenda
      * - 3 Telas por prenda
      * - 4 Tallas (XS, S, M, L)
@@ -440,11 +440,11 @@ class CotizacionesCompleteTest extends TestCase
             ['XS', 'S', 'M', 'L']
         );
 
-        // Prenda 2: Pantalón
+        // Prenda 2: PantalÃ³n
         $this->crearPrendaCompleta(
             $cotizacion,
-            "Pantalón Prototipo $numero",
-            "Pantalón de prototipo con bolsillos $numero",
+            "PantalÃ³n Prototipo $numero",
+            "PantalÃ³n de prototipo con bolsillos $numero",
             50,
             4,
             3,
@@ -455,8 +455,8 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Crear cotización TIPO GRANDE (G)
-     * - 3 Prendas (Camisa + Pantalón + Chaqueta)
+     * Crear cotizaciÃ³n TIPO GRANDE (G)
+     * - 3 Prendas (Camisa + PantalÃ³n + Chaqueta)
      * - 5 Fotos por prenda
      * - 4 Telas por prenda
      * - 6 Tallas (XS-2XL)
@@ -489,11 +489,11 @@ class CotizacionesCompleteTest extends TestCase
             ['XS', 'S', 'M', 'L', 'XL', '2XL']
         );
 
-        // Prenda 2: Pantalón
+        // Prenda 2: PantalÃ³n
         $this->crearPrendaCompleta(
             $cotizacion,
-            "Pantalón Grande $numero",
-            "Pantalón jean premium $numero",
+            "PantalÃ³n Grande $numero",
+            "PantalÃ³n jean premium $numero",
             30,
             5,
             4,
@@ -515,11 +515,11 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Crear cotización TIPO BORDADO
+     * Crear cotizaciÃ³n TIPO BORDADO
      * - Logo principal
      * - 4 Fotos de logo
      * - 3 Ubicaciones (pecho, espalda, manga)
-     * - Técnicas de bordado
+     * - TÃ©cnicas de bordado
      */
     private function crearCotizacionBordado(int $numero): Cotizacion
     {
@@ -541,7 +541,7 @@ class CotizacionesCompleteTest extends TestCase
         // Crear logo
         $logo = LogoCotizacion::create([
             'cotizacion_id' => $cotizacion->id,
-            'observaciones_generales' => json_encode(['Validar colores', 'Bordar a máquina']),
+            'observaciones_generales' => json_encode(['Validar colores', 'Bordar a mÃ¡quina']),
             'tipo_venta' => 'bordado',
         ]);
 
@@ -555,7 +555,7 @@ class CotizacionesCompleteTest extends TestCase
                 'orden' => $i,
                 'ancho' => 500,
                 'alto' => 500,
-                'tamaño' => 102400,
+                'tamaÃ±o' => 102400,
             ]);
         }
 
@@ -610,7 +610,7 @@ class CotizacionesCompleteTest extends TestCase
                 'orden' => $i,
                 'ancho' => 1920,
                 'alto' => 1080,
-                'tamaño' => 524288,
+                'tamaÃ±o' => 524288,
             ]);
         }
 
@@ -642,7 +642,7 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Generar número de cotización único
+     * Generar nÃºmero de cotizaciÃ³n Ãºnico
      * Formato: COT-YYYYMMDD-XXXXXXXX (timestamp based)
      */
     private function generarNumeroCotizacion(Cotizacion $cotizacion): string
@@ -673,7 +673,7 @@ class CotizacionesCompleteTest extends TestCase
      */
 
     /**
-     * Verificar que la cotización tiene estructura completa
+     * Verificar que la cotizaciÃ³n tiene estructura completa
      */
     private function verificarEstructuraCotizacion(Cotizacion $cotizacion): void
     {
@@ -687,7 +687,7 @@ class CotizacionesCompleteTest extends TestCase
         // Validar estado
         $this->assertIn($cotizacion->estado, ['enviada', 'aceptada', 'rechazada']);
 
-        // Si no es borrador, debe tener número y fecha de envío
+        // Si no es borrador, debe tener nÃºmero y fecha de envÃ­o
         if (!$cotizacion->es_borrador) {
             $this->assertNotNull($cotizacion->numero_cotizacion);
             $this->assertNotNull($cotizacion->fecha_envio);
@@ -710,3 +710,4 @@ class CotizacionesCompleteTest extends TestCase
         }
     }
 }
+

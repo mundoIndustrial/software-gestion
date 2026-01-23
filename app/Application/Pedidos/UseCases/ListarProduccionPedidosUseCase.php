@@ -3,7 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListarProduccionPedidosUseCase
@@ -28,10 +28,12 @@ class ListarProduccionPedidosUseCase
         return [
             'PENDIENTE_SUPERVISOR' => 'Pendiente Supervisor',
             'Pendiente' => 'Pendiente',
-            'En Ejecución' => 'En Ejecución',
+            'En EjecuciÃ³n' => 'En EjecuciÃ³n',
             'Entregado' => 'Entregado',
             'Anulada' => 'Anulada',
             'No iniciado' => 'No iniciado'
         ];
     }
 }
+
+

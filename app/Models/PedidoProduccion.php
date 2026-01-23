@@ -56,7 +56,7 @@ class PedidoProduccion extends Model
 
     protected $appends = [
         'descripcion_prendas',
-        'numero_pedido_mostrable',
+        // 'numero_pedido_mostrable', // @deprecated La tabla logo_pedidos ha sido eliminada (23/01/2026)
     ];
 
     protected static function boot()
@@ -268,11 +268,14 @@ class PedidoProduccion extends Model
      * Obtener el número de pedido que se debe mostrar
      * Si es LOGO, muestra el número de LOGO (LOGO-00001)
      * Si no, muestra el número de pedido normal
+     * @deprecated La tabla logo_pedidos ha sido eliminada (23/01/2026)
      */
+    /*
     public function getNumeroPedidoMostrableAttribute()
     {
         return $this->getNumeroPedidoMostrable();
     }
+    */
 
     /**
      * Calcular fecha estimada de entrega basada en día_de_entrega
@@ -630,33 +633,44 @@ class PedidoProduccion extends Model
 
     /**
      * Relación: Un pedido tiene un LOGO (nuevas tablas LOGO DDD)
+     * @deprecated La tabla logo_pedidos ha sido eliminada (23/01/2026)
      */
+    /*
     public function logoPedidos(): HasMany
     {
         return $this->hasMany(LogoPedido::class, 'pedido_id', 'id');
     }
+    */
 
     /**
      * Obtener el LOGO pedido si existe
+     * @deprecated La tabla logo_pedidos ha sido eliminada (23/01/2026)
      */
+    /*
     public function logoPedido()
     {
         return $this->logoPedidos()->first();
     }
+    */
 
     /**
      * Determinar si este pedido es de tipo LOGO
+     * @deprecated La tabla logo_pedidos ha sido eliminada (23/01/2026)
      */
+    /*
     public function esLogo(): bool
     {
         return $this->logoPedido() !== null;
     }
+    */
 
     /**
      * Obtener el número de pedido correcto según el tipo
      * Si es LOGO, retorna el número de logo_pedidos (LOGO-00001)
      * Si no, retorna el número de pedidos_produccion
+     * @deprecated La tabla logo_pedidos ha sido eliminada (23/01/2026)
      */
+    /*
     public function getNumeroPedidoMostrable(): string
     {
         if ($this->esLogo()) {
@@ -664,6 +678,7 @@ class PedidoProduccion extends Model
         }
         return $this->numero_pedido ?? '';
     }
+    */
 
     /**
      * Relación anterior (mantener por compatibilidad)

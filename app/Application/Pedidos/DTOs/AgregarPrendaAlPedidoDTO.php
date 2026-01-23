@@ -10,7 +10,7 @@ namespace App\Application\Pedidos\DTOs;
  * - descripcion (optional)
  * - de_bodega (boolean, optional)
  * 
- * Las variantes (manga, broche, colores, telas, tallas) se crean después en tablas relacionadas
+ * Las variantes (manga, broche, colores, telas, tallas) se crean despuÃ©s en tablas relacionadas
  */
 final class AgregarPrendaAlPedidoDTO
 {
@@ -31,3 +31,4 @@ final class AgregarPrendaAlPedidoDTO
         );
     }
 }
+

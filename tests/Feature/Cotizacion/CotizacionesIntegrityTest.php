@@ -14,12 +14,12 @@ use App\Models\PrendaFotoCot;
 use Tests\TestCase;
 
 /**
- * Test Suite: Validación de Campos e Integridad
+ * Test Suite: ValidaciÃ³n de Campos e Integridad
  * 
  *  NOTA: No usa RefreshDatabase para preservar datos existentes
  * 
  * Este archivo complementa CotizacionesCompleteTest.php con validaciones
- * específicas de campos, constraints y validaciones de negocio.
+ * especÃ­ficas de campos, constraints y validaciones de negocio.
  */
 class CotizacionesIntegrityTest extends TestCase
 {
@@ -43,14 +43,14 @@ class CotizacionesIntegrityTest extends TestCase
     /**
      * TEST 1: Validar que numero_cotizacion es UNIQUE
      * 
-     * Crea dos cotizaciones e intenta asignar el mismo número.
-     * Debe fallar o generar excepción.
+     * Crea dos cotizaciones e intenta asignar el mismo nÃºmero.
+     * Debe fallar o generar excepciÃ³n.
      */
     public function test_numero_cotizacion_debe_ser_unico(): void
     {
         $this->actingAs($this->asesor);
 
-        // Crear primera cotización
+        // Crear primera cotizaciÃ³n
         $cot1 = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
@@ -64,13 +64,13 @@ class CotizacionesIntegrityTest extends TestCase
 
         $this->assertNotNull($cot1->id);
 
-        // Intentar crear segunda cotización con el mismo número
+        // Intentar crear segunda cotizaciÃ³n con el mismo nÃºmero
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         $cot2 = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => 'COT-UNIQUE-001', // Mismo número
+            'numero_cotizacion' => 'COT-UNIQUE-001', // Mismo nÃºmero
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'fecha_envio' => now(),
@@ -80,13 +80,13 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 2: Validar que tipo_cotizacion_id es FK válida
+     * TEST 2: Validar que tipo_cotizacion_id es FK vÃ¡lida
      */
     public function test_tipo_cotizacion_id_debe_ser_valido(): void
     {
         $this->actingAs($this->asesor);
 
-        // FK inválido
+        // FK invÃ¡lido
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         Cotizacion::create([
@@ -102,7 +102,7 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 3: Validar que asesor_id es FK válida
+     * TEST 3: Validar que asesor_id es FK vÃ¡lida
      */
     public function test_asesor_id_debe_ser_valido(): void
     {
@@ -150,10 +150,10 @@ class CotizacionesIntegrityTest extends TestCase
         // Verificar que existe
         $this->assertNotNull(PrendaCot::find($prendaId));
 
-        // Eliminar cotización
+        // Eliminar cotizaciÃ³n
         $cot->delete();
 
-        // Verificar que la prenda se eliminó (soft delete o cascada)
+        // Verificar que la prenda se eliminÃ³ (soft delete o cascada)
         $this->assertNull(PrendaCot::withoutTrashed()->find($prendaId));
     }
 
@@ -173,7 +173,7 @@ class CotizacionesIntegrityTest extends TestCase
             'es_borrador' => false,
             'estado' => 'enviada',
             'especificaciones' => [
-                'material' => 'algodón',
+                'material' => 'algodÃ³n',
                 'calidad' => 'premium',
             ],
             'imagenes' => [
@@ -190,12 +190,12 @@ class CotizacionesIntegrityTest extends TestCase
         $this->assertIsArray($cot->especificaciones);
         $this->assertIsArray($cot->imagenes);
         $this->assertIsArray($cot->ubicaciones);
-        $this->assertEquals('algodón', $cot->especificaciones['material']);
+        $this->assertEquals('algodÃ³n', $cot->especificaciones['material']);
         $this->assertCount(2, $cot->imagenes);
     }
 
     /**
-     * TEST 6: Validar tallas válidas en PrendaTallaCot
+     * TEST 6: Validar tallas vÃ¡lidas en PrendaTallaCot
      */
     public function test_tallas_validas(): void
     {
@@ -218,7 +218,7 @@ class CotizacionesIntegrityTest extends TestCase
             'cantidad' => 100,
         ]);
 
-        // Tallas válidas
+        // Tallas vÃ¡lidas
         $tallasValidas = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
 
         foreach ($tallasValidas as $talla) {
@@ -268,7 +268,7 @@ class CotizacionesIntegrityTest extends TestCase
                 'orden' => $i,
                 'ancho' => 1920,
                 'alto' => 1080,
-                'tamaño' => 524288,
+                'tamaÃ±o' => 524288,
             ]);
 
             $this->assertNotNull($foto->id);
@@ -318,13 +318,13 @@ class CotizacionesIntegrityTest extends TestCase
             'telas_multiples' => [
                 [
                     'color' => 'Azul Marino',
-                    'nombre_tela' => 'Algodón 100%',
+                    'nombre_tela' => 'AlgodÃ³n 100%',
                     'referencia' => 'ALG-001',
                     'url_imagen' => 'storage/telas/algodon.jpg',
                 ],
                 [
                     'color' => 'Blanco',
-                    'nombre_tela' => 'Poliéster',
+                    'nombre_tela' => 'PoliÃ©ster',
                     'referencia' => 'POL-002',
                     'url_imagen' => 'storage/telas/polyester.jpg',
                 ],
@@ -335,11 +335,11 @@ class CotizacionesIntegrityTest extends TestCase
         $this->assertIsArray($variante->telas_multiples);
         $this->assertCount(2, $variante->telas_multiples);
         $this->assertEquals('Azul Marino', $variante->telas_multiples[0]['color']);
-        $this->assertEquals('Poliéster', $variante->telas_multiples[1]['nombre_tela']);
+        $this->assertEquals('PoliÃ©ster', $variante->telas_multiples[1]['nombre_tela']);
     }
 
     /**
-     * TEST 9: Validar estado enum de cotización
+     * TEST 9: Validar estado enum de cotizaciÃ³n
      */
     public function test_estado_cotizacion_valores_validos(): void
     {
@@ -373,7 +373,7 @@ class CotizacionesIntegrityTest extends TestCase
         $cotBorrador = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => null, // Los borradores no tienen número
+            'numero_cotizacion' => null, // Los borradores no tienen nÃºmero
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'es_borrador' => true,
@@ -401,7 +401,7 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 11: Validar relación One-to-Many: Cotización -> Prendas
+     * TEST 11: Validar relaciÃ³n One-to-Many: CotizaciÃ³n -> Prendas
      */
     public function test_relacion_cotizacion_prendas(): void
     {
@@ -422,12 +422,12 @@ class CotizacionesIntegrityTest extends TestCase
             PrendaCot::create([
                 'cotizacion_id' => $cot->id,
                 'nombre_producto' => "Prenda $i",
-                'descripcion' => "Descripción $i",
+                'descripcion' => "DescripciÃ³n $i",
                 'cantidad' => 100 * $i,
             ]);
         }
 
-        // Verificar relación
+        // Verificar relaciÃ³n
         $this->assertCount(3, $cot->prendas);
         $this->assertEquals('Prenda 1', $cot->prendas[0]->nombre_producto);
         $this->assertEquals(100, $cot->prendas[0]->cantidad);
@@ -453,7 +453,7 @@ class CotizacionesIntegrityTest extends TestCase
         $this->assertNull($cot->numero_cotizacion);
         $this->assertTrue($cot->es_borrador);
 
-        // Actualizar a enviada - debe asignar número
+        // Actualizar a enviada - debe asignar nÃºmero
         $cot->numero_cotizacion = 'COT-ASIGNADO-001';
         $cot->es_borrador = false;
         $cot->save();
@@ -462,3 +462,4 @@ class CotizacionesIntegrityTest extends TestCase
         $this->assertFalse($cot->es_borrador);
     }
 }
+

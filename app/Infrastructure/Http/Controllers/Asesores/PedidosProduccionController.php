@@ -4,17 +4,17 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Domain\Shared\CQRS\QueryBus;
 use App\Domain\Shared\CQRS\CommandBus;
-use App\Domain\PedidoProduccion\Queries\ObtenerPedidoQuery;
-use App\Domain\PedidoProduccion\Queries\ListarPedidosQuery;
-use App\Domain\PedidoProduccion\Queries\FiltrarPedidosPorEstadoQuery;
-use App\Domain\PedidoProduccion\Queries\BuscarPedidoPorNumeroQuery;
-use App\Domain\PedidoProduccion\Queries\ObtenerPrendasPorPedidoQuery;
-use App\Domain\PedidoProduccion\Commands\CrearPedidoCommand;
-use App\Domain\PedidoProduccion\Commands\ActualizarPedidoCommand;
-use App\Domain\PedidoProduccion\Commands\CambiarEstadoPedidoCommand;
-use App\Domain\PedidoProduccion\Commands\AgregarPrendaAlPedidoCommand;
-use App\Domain\PedidoProduccion\Commands\EliminarPedidoCommand;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Queries\ObtenerPedidoQuery;
+use App\Domain\Pedidos\Queries\ListarPedidosQuery;
+use App\Domain\Pedidos\Queries\FiltrarPedidosPorEstadoQuery;
+use App\Domain\Pedidos\Queries\BuscarPedidoPorNumeroQuery;
+use App\Domain\Pedidos\Queries\ObtenerPrendasPorPedidoQuery;
+use App\Domain\Pedidos\Commands\CrearPedidoCommand;
+use App\Domain\Pedidos\Commands\ActualizarPedidoCommand;
+use App\Domain\Pedidos\Commands\CambiarEstadoPedidoCommand;
+use App\Domain\Pedidos\Commands\AgregarPrendaAlPedidoCommand;
+use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
@@ -777,7 +777,7 @@ class PedidosProduccionController
                 'nombre_prenda' => 'required|string|max:255',
                 'descripcion' => 'nullable|string',
                 'origen' => 'required|string|in:bodega,confeccion',
-                'cantidad_talla' => 'nullable|json',
+                'tallas' => 'nullable|json',
                 'variantes' => 'nullable|json',
                 'colores_telas' => 'nullable|json',
                 'fotos_telas' => 'nullable|json',
@@ -786,23 +786,24 @@ class PedidosProduccionController
                 'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
-                'telas' => 'nullable|array',
             ]);
 
-            // Procesar imágenes de prenda
+            // Procesar imágenes de prenda (convertir a WebP)
             $imagenesGuardadas = [];
             if ($request->hasFile('imagenes')) {
+                $prendaFotoService = new \App\Domain\Pedidos\Services\PrendaFotoService();
                 foreach ($request->file('imagenes') as $imagen) {
-                    $path = $imagen->store('prendas', 'public');
-                    $imagenesGuardadas[] = $path;
+                    $rutas = $prendaFotoService->procesarFoto($imagen);
+                    $imagenesGuardadas[] = $rutas;
                 }
             }
 
             // Usar Use Case DDD
             Log::info('[PedidosProduccionController] Datos validados para actualizar prenda', [
+                'tallas_recibidas' => $validated['tallas'] ?? 'NO ENVIADAS',
                 'variantes_recibidas' => $validated['variantes'] ?? 'NO ENVIADAS',
-                'cantidad_talla' => $validated['cantidad_talla'] ?? 'NO ENVIADAS',
                 'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
+                'imagenes_procesadas' => count($imagenesGuardadas),
             ]);
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)

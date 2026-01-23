@@ -13,7 +13,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Test: Múltiples Telas, Referencias, Colores e Imágenes
+ * Test: MÃºltiples Telas, Referencias, Colores e ImÃ¡genes
  * 
  *  IMPORTANTE: Este test usa DatabaseTransactions para AISLAR los cambios
  * No afecta la base de datos real - todos los cambios se revierten al finalizar
@@ -36,27 +36,27 @@ class CotizacionMultiplesTelasTest extends TestCase
     }
 
     /**
-     * Test: Guardar prenda con múltiples telas, referencias, colores e imágenes
+     * Test: Guardar prenda con mÃºltiples telas, referencias, colores e imÃ¡genes
      */
     public function test_guardar_prenda_multiples_telas_con_imagenes()
     {
         echo "\n\n";
-        echo "════════════════════════════════════════════════════════\n";
-        echo "🧪 TEST: Múltiples Telas con Imágenes\n";
-        echo "════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
+        echo "ðŸ§ª TEST: MÃºltiples Telas con ImÃ¡genes\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // Crear cotización de prueba
+        // Crear cotizaciÃ³n de prueba
         $cotizacion = Cotizacion::factory()->create([
             'numero_cotizacion' => 'TEST-' . time(),
             'tipo' => 'P',
             'es_borrador' => false
         ]);
-        echo " Cotización creada: {$cotizacion->numero_cotizacion}\n";
+        echo " CotizaciÃ³n creada: {$cotizacion->numero_cotizacion}\n";
 
-        // Datos de prenda con múltiples telas
+        // Datos de prenda con mÃºltiples telas
         $prendaData = [
             'nombre_producto' => 'Camiseta Test',
-            'descripcion' => 'Camiseta para prueba de múltiples telas',
+            'descripcion' => 'Camiseta para prueba de mÃºltiples telas',
             'cantidad' => 1,
             'variantes' => [
                 'color' => 'Variado',
@@ -73,7 +73,7 @@ class CotizacionMultiplesTelasTest extends TestCase
                             'ruta_original' => 'cotizaciones/' . $cotizacion->id . '/telas/tela1_' . time() . '.webp',
                             'ruta_webp' => 'cotizaciones/' . $cotizacion->id . '/telas/tela1_' . time() . '.webp',
                             'orden' => 1,
-                            'tamaño' => 45678
+                            'tamaÃ±o' => 45678
                         ]
                     ]
                 ],
@@ -87,13 +87,13 @@ class CotizacionMultiplesTelasTest extends TestCase
                             'ruta_original' => 'cotizaciones/' . $cotizacion->id . '/telas/tela2a_' . time() . '.webp',
                             'ruta_webp' => 'cotizaciones/' . $cotizacion->id . '/telas/tela2a_' . time() . '.webp',
                             'orden' => 1,
-                            'tamaño' => 52341
+                            'tamaÃ±o' => 52341
                         ],
                         [
                             'ruta_original' => 'cotizaciones/' . $cotizacion->id . '/telas/tela2b_' . time() . '.webp',
                             'ruta_webp' => 'cotizaciones/' . $cotizacion->id . '/telas/tela2b_' . time() . '.webp',
                             'orden' => 2,
-                            'tamaño' => 48756
+                            'tamaÃ±o' => 48756
                         ]
                     ]
                 ],
@@ -107,7 +107,7 @@ class CotizacionMultiplesTelasTest extends TestCase
                             'ruta_original' => 'cotizaciones/' . $cotizacion->id . '/telas/tela3_' . time() . '.webp',
                             'ruta_webp' => 'cotizaciones/' . $cotizacion->id . '/telas/tela3_' . time() . '.webp',
                             'orden' => 1,
-                            'tamaño' => 61234
+                            'tamaÃ±o' => 61234
                         ]
                     ]
                 ]
@@ -134,23 +134,23 @@ class CotizacionMultiplesTelasTest extends TestCase
 
         // VERIFICACIONES
         echo "\n";
-        echo "════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo " VERIFICACIONES\n";
-        echo "════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // 1. Verificar que la prenda se guardó
+        // 1. Verificar que la prenda se guardÃ³
         $prenda = PrendaCot::where('cotizacion_id', $cotizacion->id)
             ->where('nombre_producto', 'Camiseta Test')
             ->first();
         
-        $this->assertNotNull($prenda, "La prenda debería existir");
+        $this->assertNotNull($prenda, "La prenda deberÃ­a existir");
         echo "\n PRENDA GUARDADA\n";
         echo "   - ID: {$prenda->id}\n";
         echo "   - Nombre: {$prenda->nombre_producto}\n";
 
-        // 2. Verificar que la variante se guardó
+        // 2. Verificar que la variante se guardÃ³
         $variante = VarianteCot::where('prenda_cot_id', $prenda->id)->first();
-        $this->assertNotNull($variante, "La variante debería existir");
+        $this->assertNotNull($variante, "La variante deberÃ­a existir");
         echo "\n VARIANTE GUARDADA\n";
         echo "   - ID: {$variante->id}\n";
 
@@ -158,7 +158,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         $fotosTelas = PrendaTelaFotoCot::where('prenda_cot_id', $prenda->id)->get();
         echo "\n FOTOS DE TELAS GUARDADAS: " . count($fotosTelas) . "\n";
 
-        $this->assertCount(4, $fotosTelas, "Debería haber exactamente 4 fotos (1+2+1)");
+        $this->assertCount(4, $fotosTelas, "DeberÃ­a haber exactamente 4 fotos (1+2+1)");
 
         // Verificar cada foto
         $fotosAgrupadas = $fotosTelas->groupBy('referencia')->toArray();
@@ -168,10 +168,10 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "      - Referencia: {$foto->referencia}\n";
             echo "      - Ruta: {$foto->ruta_original}\n";
             echo "      - Orden: {$foto->orden}\n";
-            echo "      - Tamaño: {$foto->tamaño} bytes\n";
+            echo "      - TamaÃ±o: {$foto->tamaÃ±o} bytes\n";
         }
 
-        // 4. Verificación de referencias únicas
+        // 4. VerificaciÃ³n de referencias Ãºnicas
         $referencias = ['ALG-001', 'POL-002', 'LIN-003'];
         echo "\n REFERENCIAS POR TELA\n";
         
@@ -180,11 +180,11 @@ class CotizacionMultiplesTelasTest extends TestCase
                 ->where('referencia', $ref)
                 ->get();
             
-            $this->assertGreaterThan(0, count($fotos), "Debería haber fotos para referencia $ref");
+            $this->assertGreaterThan(0, count($fotos), "DeberÃ­a haber fotos para referencia $ref");
             echo "   - {$ref}: " . count($fotos) . " fotos\n";
         }
 
-        // 5. Verificación de colores
+        // 5. VerificaciÃ³n de colores
         echo "\n COLORES POR TELA\n";
         $colores = [10, 15, 20];
         $telaIdx = 0;
@@ -197,7 +197,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "   - Color ID {$colorId}: " . count($fotosColor) . " fotos\n";
         }
 
-        // 6. Verificación de orden de fotos
+        // 6. VerificaciÃ³n de orden de fotos
         echo "\n ORDEN DE FOTOS POR TELA\n";
         
         $fotoPol = PrendaTelaFotoCot::where('prenda_cot_id', $prenda->id)
@@ -213,7 +213,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "   POL-002 Foto {$foto->orden}: \n";
         }
 
-        // 7. Verificación de timestamps
+        // 7. VerificaciÃ³n de timestamps
         echo "\n TIMESTAMPS\n";
         foreach ($fotosTelas as $foto) {
             $this->assertNotNull($foto->created_at);
@@ -221,9 +221,9 @@ class CotizacionMultiplesTelasTest extends TestCase
         }
 
         echo "\n";
-        echo "════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo " TODOS LOS TESTS PASARON\n";
-        echo "════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo "\n";
     }
 
@@ -233,11 +233,11 @@ class CotizacionMultiplesTelasTest extends TestCase
     public function test_estructura_datos_telas()
     {
         echo "\n\n";
-        echo "════════════════════════════════════════════════════════\n";
-        echo "🧪 TEST: Estructura de Datos en BD\n";
-        echo "════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
+        echo "ðŸ§ª TEST: Estructura de Datos en BD\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // Crear cotización
+        // Crear cotizaciÃ³n
         $cotizacion = Cotizacion::factory()->create();
 
         $prendaData = [
@@ -255,7 +255,7 @@ class CotizacionMultiplesTelasTest extends TestCase
                             'ruta_original' => 'test/ruta1.webp',
                             'ruta_webp' => 'test/ruta1.webp',
                             'orden' => 1,
-                            'tamaño' => 12345
+                            'tamaÃ±o' => 12345
                         ]
                     ]
                 ]
@@ -274,16 +274,17 @@ class CotizacionMultiplesTelasTest extends TestCase
         echo "   ruta_original: " . $foto->ruta_original . "\n";
         echo "   ruta_webp: " . $foto->ruta_webp . "\n";
         echo "   orden: " . $foto->orden . "\n";
-        echo "   tamaño: " . $foto->tamaño . "\n";
+        echo "   tamaÃ±o: " . $foto->tamaÃ±o . "\n";
 
         $this->assertEquals('TEST-001', $foto->referencia);
         $this->assertEquals(10, $foto->color_id);
         $this->assertEquals(1, $foto->orden);
-        $this->assertEquals(12345, $foto->tamaño);
+        $this->assertEquals(12345, $foto->tamaÃ±o);
 
-        echo "\n════════════════════════════════════════════════════════\n";
+        echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo " ESTRUCTURA CORRECTA\n";
-        echo "════════════════════════════════════════════════════════\n";
+        echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo "\n";
     }
 }
+

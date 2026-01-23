@@ -3,17 +3,17 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ObtenerProximoNumeroPedidoDTO;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 
 class ObtenerProximoNumeroPedidoUseCase
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        private PedidoRepository $pedidoRepository
     ) {}
 
     public function ejecutar(ObtenerProximoNumeroPedidoDTO $dto): int
     {
-        // Obtener el último número de pedido
+        // Obtener el Ãºltimo nÃºmero de pedido
         $ultimoPedido = $this->pedidoRepository->obtenerUltimoPedido();
 
         if (!$ultimoPedido) {
@@ -23,3 +23,5 @@ class ObtenerProximoNumeroPedidoUseCase
         return (int)$ultimoPedido->numero_pedido + 1;
     }
 }
+
+

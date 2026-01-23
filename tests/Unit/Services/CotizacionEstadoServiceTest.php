@@ -31,11 +31,11 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente número de cotización
+     * Test: Obtener siguiente nÃºmero de cotizaciÃ³n
      */
     public function test_obtener_siguiente_numero_cotizacion()
     {
-        // Crear una cotización con número
+        // Crear una cotizaciÃ³n con nÃºmero
         Cotizacion::factory()->create(['numero_cotizacion' => 100]);
         
         $siguiente = $this->service->obtenerSiguienteNumeroCotizacion();
@@ -44,7 +44,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente número cuando no hay cotizaciones
+     * Test: Obtener siguiente nÃºmero cuando no hay cotizaciones
      */
     public function test_obtener_siguiente_numero_cotizacion_sin_registros()
     {
@@ -54,7 +54,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Enviar cotización a contador
+     * Test: Enviar cotizaciÃ³n a contador
      */
     public function test_enviar_cotizacion_a_contador()
     {
@@ -71,7 +71,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Validar transición de BORRADOR a ENVIADA_CONTADOR
+     * Test: Validar transiciÃ³n de BORRADOR a ENVIADA_CONTADOR
      */
     public function test_validar_transicion_borrador_a_enviada_contador()
     {
@@ -88,7 +88,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Rechazar transición inválida
+     * Test: Rechazar transiciÃ³n invÃ¡lida
      */
     public function test_rechazar_transicion_invalida()
     {
@@ -121,7 +121,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Asignar número de cotización
+     * Test: Asignar nÃºmero de cotizaciÃ³n
      */
     public function test_asignar_numero_cotizacion()
     {
@@ -138,7 +138,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Números únicos no duplicados
+     * Test: NÃºmeros Ãºnicos no duplicados
      */
     public function test_numeros_cotizacion_son_unicos()
     {
@@ -197,7 +197,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Flujo completo BORRADOR → APROBADA_COTIZACIONES
+     * Test: Flujo completo BORRADOR â†’ APROBADA_COTIZACIONES
      */
     public function test_flujo_completo_cotizacion()
     {
@@ -218,7 +218,7 @@ class CotizacionEstadoServiceTest extends TestCase
         $cotizacion->refresh();
         $this->assertEquals(EstadoCotizacion::APROBADA_CONTADOR->value, $cotizacion->estado);
 
-        // Verificar que se asignó número
+        // Verificar que se asignÃ³ nÃºmero
         $this->assertNotNull($cotizacion->numero_cotizacion);
 
         // Paso 3: Aprobar como aprobador
@@ -233,7 +233,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: No permitir transición duplicada
+     * Test: No permitir transiciÃ³n duplicada
      */
     public function test_no_permitir_transicion_desde_estado_invalido()
     {
@@ -245,3 +245,4 @@ class CotizacionEstadoServiceTest extends TestCase
         $this->service->aprobarComoContador($cotizacion);
     }
 }
+

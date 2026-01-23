@@ -5,7 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 final class FiltrarPedidosPorEstadoUseCase
@@ -13,7 +13,7 @@ final class FiltrarPedidosPorEstadoUseCase
     use ManejaPedidosUseCase;
 
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoRepository $pedidoRepository,
     ) {}
 
     public function ejecutar(FiltrarPedidosPorEstadoDTO $dto)
@@ -24,7 +24,7 @@ final class FiltrarPedidosPorEstadoUseCase
         ]);
 
         $this->validarEstadoValido($dto->estado);
-        $this->validarPositivo($dto->page, 'Página');
+        $this->validarPositivo($dto->page, 'PÃ¡gina');
 
         $pedidos = $this->pedidoRepository->obtenerPorEstado(
             $dto->estado,
@@ -40,3 +40,5 @@ final class FiltrarPedidosPorEstadoUseCase
         return $pedidos;
     }
 }
+
+

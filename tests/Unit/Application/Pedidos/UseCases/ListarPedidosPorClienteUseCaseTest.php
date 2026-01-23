@@ -49,7 +49,7 @@ class ListarPedidosPorClienteUseCaseTest extends TestCase
             prendasData: [
                 [
                     'prenda_id' => 2,
-                    'descripcion' => 'Pantalón',
+                    'descripcion' => 'PantalÃ³n',
                     'cantidad' => 5,
                     'tallas' => ['DAMA' => ['S' => 5]],
                 ]
@@ -71,7 +71,7 @@ class ListarPedidosPorClienteUseCaseTest extends TestCase
     }
 
     /**
-     * Test: Listar pedidos vacío si cliente no tiene pedidos
+     * Test: Listar pedidos vacÃ­o si cliente no tiene pedidos
      */
     public function test_listar_pedidos_vacio_si_no_hay()
     {
@@ -86,3 +86,4 @@ class ListarPedidosPorClienteUseCaseTest extends TestCase
         $this->assertCount(0, $response);
     }
 }
+

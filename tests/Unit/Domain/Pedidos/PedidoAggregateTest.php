@@ -7,14 +7,14 @@ use App\Domain\Pedidos\Agregado\PedidoAggregate;
 use App\Domain\Pedidos\ValueObjects\Estado;
 
 /**
- * Tests básicos para PedidoAggregate
+ * Tests bÃ¡sicos para PedidoAggregate
  * 
  * Fase 0: Verificar que el dominio compila y funciona
  */
 class PedidoAggregateTest extends TestCase
 {
     /**
-     * Test 1: Crear pedido válido
+     * Test 1: Crear pedido vÃ¡lido
      */
     public function test_crear_pedido_valido()
     {
@@ -80,7 +80,7 @@ class PedidoAggregateTest extends TestCase
             ]
         );
 
-        // Cambiar a CONFIRMADO → EN_PRODUCCION → COMPLETADO
+        // Cambiar a CONFIRMADO â†’ EN_PRODUCCION â†’ COMPLETADO
         $pedido->confirmar();
         $pedido->iniciarProduccion();
         $pedido->completar();
@@ -90,3 +90,4 @@ class PedidoAggregateTest extends TestCase
         $pedido->confirmar();
     }
 }
+

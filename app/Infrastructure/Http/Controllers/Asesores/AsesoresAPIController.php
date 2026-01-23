@@ -108,4 +108,123 @@ class AsesoresAPIController extends Controller
             'message' => 'Esta funcionalidad está siendo refactorizada a DDD',
         ], 501); // Not Implemented
     }
+
+    /**
+     * Obtener tipos de broche/botón disponibles
+     * 
+     * Endpoint: GET /asesores/api/tipos-broche-boton
+     * Respuesta: Array de tipos de broche/botón con su ID
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function obtenerTiposBrocheBoton()
+    {
+        try {
+            $tipos = \App\Models\TipoBrocheBoton::where('activo', true)
+                ->select('id', 'nombre')
+                ->orderBy('id')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $tipos
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresAPIController] Error obtener tipos broche/botón: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener tipos de broche/botón',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener tipos de manga disponibles
+     * 
+     * Endpoint: GET /asesores/api/tipos-manga
+     * Respuesta: Array de tipos de manga con su ID
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function obtenerTiposManga()
+    {
+        try {
+            $tipos = \App\Models\TipoManga::where('activo', true)
+                ->select('id', 'nombre')
+                ->orderBy('id')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $tipos
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresAPIController] Error obtener tipos manga: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener tipos de manga',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Crear o obtener un tipo de manga por nombre
+     * Si no existe, lo crea automáticamente
+     * 
+     * Endpoint: POST /asesores/api/tipos-manga
+     * Request: { "nombre": "manga larga" }
+     * Respuesta: { "success": true, "data": { "id": 5, "nombre": "manga larga" } }
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function crearObtenerTipoManga(Request $request)
+    {
+        try {
+            $nombre = trim($request->input('nombre', ''));
+            
+            if (empty($nombre)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El nombre del tipo de manga es requerido'
+                ], 400);
+            }
+
+            // Buscar si ya existe (case-insensitive)
+            $tipo = \App\Models\TipoManga::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+                ->first();
+
+            // Si no existe, crearlo
+            if (!$tipo) {
+                $tipo = \App\Models\TipoManga::create([
+                    'nombre' => ucfirst(strtolower($nombre)),
+                    'activo' => true
+                ]);
+
+                \Log::info('[AsesoresAPIController] Nuevo tipo de manga creado', [
+                    'id' => $tipo->id,
+                    'nombre' => $tipo->nombre
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tipo,
+                'mensaje' => $tipo->wasRecentlyCreated ? 'Tipo creado' : 'Tipo existente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresAPIController] Error crear/obtener tipo manga: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear/obtener tipo de manga',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

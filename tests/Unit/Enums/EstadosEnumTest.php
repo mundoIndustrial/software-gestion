@@ -44,7 +44,7 @@ class EstadosEnumTest extends TestCase
     {
         $this->assertEquals('Pendiente de Supervisor', EstadoPedido::PENDIENTE_SUPERVISOR->label());
         $this->assertEquals('Aprobado por Supervisor', EstadoPedido::APROBADO_SUPERVISOR->label());
-        $this->assertEquals('En Producción', EstadoPedido::EN_PRODUCCION->label());
+        $this->assertEquals('En ProducciÃ³n', EstadoPedido::EN_PRODUCCION->label());
         $this->assertEquals('Finalizado', EstadoPedido::FINALIZADO->label());
     }
 
@@ -136,3 +136,4 @@ class EstadosEnumTest extends TestCase
         $this->assertNotContains(EstadoPedido::FINALIZADO->value, $transiciones);
     }
 }
+

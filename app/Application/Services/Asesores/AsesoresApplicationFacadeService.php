@@ -6,8 +6,8 @@ namespace App\Application\Services\Asesores;
  * AsesoresApplicationFacadeService
  * 
  * Facade que agrupa todos los servicios de Asesores
- * Simplifica inyección de dependencias en controller
- * Patrón: Facade + Service Locator
+ * Simplifica inyecciÃ³n de dependencias en controller
+ * PatrÃ³n: Facade + Service Locator
  */
 class AsesoresApplicationFacadeService
 {
@@ -24,9 +24,10 @@ class AsesoresApplicationFacadeService
         public readonly ObtenerDatosRecibosService $obtenerDatosRecibos,
         public readonly ProcesarFotosTelasService $procesarFotosTelas,
         public readonly GuardarPedidoLogoService $guardarPedidoLogo,
-        public readonly GuardarPedidoProduccionService $guardarPedidoProduccion,
+        public readonly GuardarPedidosService $guardarPedidos,
         public readonly ConfirmarPedidoService $confirmarPedido,
         public readonly ActualizarPedidoService $actualizarPedido,
         public readonly ObtenerPedidoDetalleService $obtenerPedidoDetalle,
     ) {}
 }
+

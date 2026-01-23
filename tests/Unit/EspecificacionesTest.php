@@ -16,13 +16,13 @@ class EspecificacionesTest extends TestCase
         $especificaciones = [
             'disponibilidad' => [
                 ['valor' => 'Bodega', 'observacion' => 'En stock disponible'],
-                ['valor' => 'Cúcuta', 'observacion' => 'Disponible en 2 días']
+                ['valor' => 'CÃºcuta', 'observacion' => 'Disponible en 2 dÃ­as']
             ],
             'forma_pago' => [
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%']
             ],
             'regimen' => [
-                ['valor' => 'Común', 'observacion' => '']
+                ['valor' => 'ComÃºn', 'observacion' => '']
             ]
         ];
 
@@ -36,17 +36,17 @@ class EspecificacionesTest extends TestCase
         $this->assertCount(2, $especificaciones['disponibilidad']);
         $this->assertEquals('Bodega', $especificaciones['disponibilidad'][0]['valor']);
         $this->assertEquals('En stock disponible', $especificaciones['disponibilidad'][0]['observacion']);
-        $this->assertEquals('Cúcuta', $especificaciones['disponibilidad'][1]['valor']);
-        $this->assertEquals('Disponible en 2 días', $especificaciones['disponibilidad'][1]['observacion']);
+        $this->assertEquals('CÃºcuta', $especificaciones['disponibilidad'][1]['valor']);
+        $this->assertEquals('Disponible en 2 dÃ­as', $especificaciones['disponibilidad'][1]['observacion']);
 
         // Verificar forma de pago
         $this->assertCount(1, $especificaciones['forma_pago']);
         $this->assertEquals('Contado', $especificaciones['forma_pago'][0]['valor']);
         $this->assertEquals('Descuento 5%', $especificaciones['forma_pago'][0]['observacion']);
 
-        // Verificar régimen
+        // Verificar rÃ©gimen
         $this->assertCount(1, $especificaciones['regimen']);
-        $this->assertEquals('Común', $especificaciones['regimen'][0]['valor']);
+        $this->assertEquals('ComÃºn', $especificaciones['regimen'][0]['valor']);
         $this->assertEquals('', $especificaciones['regimen'][0]['observacion']);
 
         echo "\n TEST PASADO: Estructura de especificaciones es correcta\n";
@@ -60,7 +60,7 @@ class EspecificacionesTest extends TestCase
     {
         $especificaciones = [
             'disponibilidad' => [
-                ['valor' => 'Bodega', 'observacion' => 'En stock: "Inmediato" (24hrs) & envío gratis']
+                ['valor' => 'Bodega', 'observacion' => 'En stock: "Inmediato" (24hrs) & envÃ­o gratis']
             ]
         ];
 
@@ -75,7 +75,7 @@ class EspecificacionesTest extends TestCase
 
         // Verificar que los caracteres especiales se preservan
         $this->assertEquals(
-            'En stock: "Inmediato" (24hrs) & envío gratis',
+            'En stock: "Inmediato" (24hrs) & envÃ­o gratis',
             $decodificado['disponibilidad'][0]['observacion']
         );
 
@@ -84,7 +84,7 @@ class EspecificacionesTest extends TestCase
     }
 
     /**
-     * Test: Verificar que especificaciones vacías se manejan correctamente
+     * Test: Verificar que especificaciones vacÃ­as se manejan correctamente
      */
     public function test_especificaciones_vacias()
     {
@@ -98,45 +98,45 @@ class EspecificacionesTest extends TestCase
         $this->assertEmpty($decodificado);
         $this->assertEquals('[]', $json);
 
-        echo "\n TEST PASADO: Especificaciones vacías se manejan correctamente\n";
+        echo "\n TEST PASADO: Especificaciones vacÃ­as se manejan correctamente\n";
         $this->assertTrue(true);
     }
 
     /**
-     * Test: Verificar que múltiples valores por categoría se guardan
+     * Test: Verificar que mÃºltiples valores por categorÃ­a se guardan
      */
     public function test_especificaciones_multiples_valores()
     {
         $especificaciones = [
             'disponibilidad' => [
                 ['valor' => 'Bodega', 'observacion' => 'Stock: 100 unidades'],
-                ['valor' => 'Cúcuta', 'observacion' => 'Stock: 50 unidades'],
+                ['valor' => 'CÃºcuta', 'observacion' => 'Stock: 50 unidades'],
                 ['valor' => 'Lafayette', 'observacion' => 'Stock: 25 unidades'],
-                ['valor' => 'Fábrica', 'observacion' => 'Producción: 2 semanas']
+                ['valor' => 'FÃ¡brica', 'observacion' => 'ProducciÃ³n: 2 semanas']
             ],
             'forma_pago' => [
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%'],
-                ['valor' => 'Crédito', 'observacion' => 'Plazo: 30 días']
+                ['valor' => 'CrÃ©dito', 'observacion' => 'Plazo: 30 dÃ­as']
             ],
             'regimen' => [
-                ['valor' => 'Común', 'observacion' => 'IVA incluido'],
+                ['valor' => 'ComÃºn', 'observacion' => 'IVA incluido'],
                 ['valor' => 'Simplificado', 'observacion' => 'Sin IVA']
             ],
             'se_ha_vendido' => [
-                ['valor' => 'Sí', 'observacion' => 'Venta exitosa hace 3 meses']
+                ['valor' => 'SÃ­', 'observacion' => 'Venta exitosa hace 3 meses']
             ],
             'ultima_venta' => [
                 ['valor' => 'Hace 3 meses', 'observacion' => 'Cantidad: 500 unidades']
             ],
             'flete' => [
-                ['valor' => 'Incluido', 'observacion' => 'Envío gratis a nivel nacional']
+                ['valor' => 'Incluido', 'observacion' => 'EnvÃ­o gratis a nivel nacional']
             ]
         ];
 
-        // Verificar que todas las categorías se guardaron
+        // Verificar que todas las categorÃ­as se guardaron
         $this->assertCount(6, $especificaciones);
 
-        // Verificar que cada categoría tiene sus valores
+        // Verificar que cada categorÃ­a tiene sus valores
         $this->assertCount(4, $especificaciones['disponibilidad']);
         $this->assertCount(2, $especificaciones['forma_pago']);
         $this->assertCount(2, $especificaciones['regimen']);
@@ -148,10 +148,11 @@ class EspecificacionesTest extends TestCase
         $json = json_encode($especificaciones);
         $decodificado = json_decode($json, true);
 
-        // Verificar que se preservó la estructura
+        // Verificar que se preservÃ³ la estructura
         $this->assertEquals($especificaciones, $decodificado);
 
-        echo "\n TEST PASADO: Múltiples valores por categoría se guardan correctamente\n";
+        echo "\n TEST PASADO: MÃºltiples valores por categorÃ­a se guardan correctamente\n";
         $this->assertTrue(true);
     }
 }
+

@@ -15,3 +15,4 @@ class PedidoActualizado extends DomainEvent
         public string $campo
     ) {}
 }
+

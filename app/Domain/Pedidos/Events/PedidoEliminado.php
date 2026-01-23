@@ -14,3 +14,4 @@ class PedidoEliminado extends DomainEvent
         public string $numero
     ) {}
 }
+

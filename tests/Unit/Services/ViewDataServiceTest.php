@@ -63,3 +63,4 @@ class ViewDataServiceTest extends TestCase
         $this->assertEquals(ViewDataService::class, $reflection->getName());
     }
 }
+

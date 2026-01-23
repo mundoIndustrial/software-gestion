@@ -2,17 +2,22 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\PedidoProduccion;
+use App\Models\Pedidos;
 use App\Models\LogoPedido;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 
 class ObtenerDatosFacturaService
 {
+    public function __construct(
+        private PedidoProduccionRepository $pedidoProduccionRepository
+    ) {}
+
     /**
      * Obtener datos completos de factura para un pedido
-     * Soporta tanto PedidoProduccion como LogoPedido
+     * Soporta tanto Pedidos como LogoPedido
      * 
      * @param int $pedidoId
      * @return array
@@ -22,8 +27,8 @@ class ObtenerDatosFacturaService
     {
         Log::info('[FACTURA] Obteniendo datos para pedido: ' . $pedidoId);
 
-        // Intentar obtener como PedidoProduccion
-        $pedido = PedidoProduccion::find($pedidoId);
+        // Intentar obtener como Pedidos
+        $pedido = Pedidos::find($pedidoId);
         
         if ($pedido) {
             // Verificar permisos
@@ -31,7 +36,7 @@ class ObtenerDatosFacturaService
                 throw new \Exception('No tienes permiso para ver este pedido', 403);
             }
             
-            return $this->obtenerDatosPedidoProduccion($pedido);
+            return $this->obtenerDatosPedidos($pedido);
         }
 
         // Intentar obtener como LogoPedido
@@ -45,21 +50,20 @@ class ObtenerDatosFacturaService
     }
 
     /**
-     * Obtener datos de factura para PedidoProduccion
+     * Obtener datos de factura para Pedidos
      */
-    private function obtenerDatosPedidoProduccion(PedidoProduccion $pedido): array
+    private function obtenerDatosPedidos(Pedidos $pedido): array
     {
-        Log::info('[FACTURA] Procesando PedidoProduccion', ['id' => $pedido->id]);
+        Log::info('[FACTURA] Procesando Pedidos', ['id' => $pedido->id]);
 
-        // Crear instancia del repository directamente
-        $repository = new \App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository();
+        // Usar inyección de dependencias para resolver el repository
         // Usar obtenerDatosRecibos() que retorna la estructura completa con telasAgregadas, generosConTallas, etc.
-        $datos = $repository->obtenerDatosRecibos($pedido->id);
+        $datos = $this->pedidoProduccionRepository->obtenerDatosRecibos($pedido->id);
         
         // Agregar el ID del pedido para poder usarlo en el frontend
         $datos['id'] = $pedido->id;
 
-        Log::info('[FACTURA] Datos extraídos', [
+        Log::info('[FACTURA] Datos extraÃ­dos', [
             'numero_pedido' => $datos['numero_pedido'],
             'prendas_count' => count($datos['prendas']),
             'total_items' => $datos['total_items'] ?? 0,
@@ -108,7 +112,7 @@ class ObtenerDatosFacturaService
     {
         Log::info('[FACTURA-RESUMEN] Obteniendo resumen para: ' . $pedidoId);
 
-        $pedido = PedidoProduccion::find($pedidoId);
+        $pedido = Pedidos::find($pedidoId);
         
         if (!$pedido) {
             $pedido = LogoPedido::find($pedidoId);
@@ -126,3 +130,4 @@ class ObtenerDatosFacturaService
         ];
     }
 }
+
