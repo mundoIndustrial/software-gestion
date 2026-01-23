@@ -54,8 +54,6 @@ export class ReceiptBuilder {
             }
         });
         
-`, 'color: #10b981;');
-        
         return recibos;
     }
 
