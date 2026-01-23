@@ -36,6 +36,11 @@ use App\Application\Pedidos\UseCases\EliminarItemPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerItemsPedidoUseCase;
 use App\Application\Pedidos\UseCases\GuardarPedidoDesdeJSONUseCase;
 use App\Application\Pedidos\UseCases\ValidarPedidoDesdeJSONUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCase;
+use App\Application\Pedidos\UseCases\EditarProcesoUseCase;
+use App\Application\Pedidos\UseCases\EliminarProcesoUseCase;
+use App\Application\Pedidos\UseCases\CrearProcesoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
 
 /**
  * Domain Service Provider
@@ -148,6 +153,15 @@ class DomainServiceProvider extends ServiceProvider
         // ========================================
         $this->app->singleton(GuardarPedidoDesdeJSONUseCase::class);
         $this->app->singleton(ValidarPedidoDesdeJSONUseCase::class);
+
+        // ========================================
+        // PEDIDOS - PROCESOS (Procesos de Producción)
+        // ========================================
+        $this->app->singleton(ObtenerProcesosPorPedidoUseCase::class);
+        $this->app->singleton(EditarProcesoUseCase::class);
+        $this->app->singleton(EliminarProcesoUseCase::class);
+        $this->app->singleton(CrearProcesoUseCase::class);
+        $this->app->singleton(ObtenerHistorialProcesosUseCase::class);
     }
 
     public function boot(): void

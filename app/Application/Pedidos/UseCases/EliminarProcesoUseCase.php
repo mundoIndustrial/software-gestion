@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Application\Pedidos\UseCases;
+
+use App\Models\ProcesoPrenda;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * EliminarProcesoUseCase
+ * 
+ * Caso de uso para eliminar un proceso de un pedido
+ * Responsabilidad: Eliminar proceso y su historial asociado
+ * 
+ * Patrón: Use Case (Application Layer - DDD)
+ * Restricción: No se puede eliminar el único proceso de una orden
+ */
+class EliminarProcesoUseCase
+{
+    /**
+     * Ejecutar caso de uso
+     * 
+     * @param int $id - ID del proceso a eliminar
+     * @param int $numeroPedido - Número de pedido para validación
+     * @return array - Respuesta del resultado
+     * @throws \Exception
+     */
+    public function ejecutar(int $id, int $numeroPedido): array
+    {
+        // Buscar el proceso
+        $proceso = ProcesoPrenda::where('id', $id)
+            ->where('numero_pedido', $numeroPedido)
+            ->first();
+
+        if (!$proceso) {
+            throw new \DomainException('Proceso no encontrado o ya fue eliminado');
+        }
+
+        // Verificar que no sea el último proceso
+        $totalProcesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
+            ->count();
+
+        if ($totalProcesos <= 1) {
+            throw new \DomainException('No se puede eliminar el último proceso de una orden');
+        }
+
+        // Eliminar usando el Model (dispara el Observer deleting)
+        $proceso->delete();
+
+        // También eliminar del historial
+        DB::table('procesos_historial')
+            ->where('numero_pedido', $numeroPedido)
+            ->where('proceso', $proceso->proceso)
+            ->delete();
+
+        \Log::info("Proceso eliminado correctamente", [
+            'id' => $id,
+            'numero_pedido' => $numeroPedido,
+            'proceso' => $proceso->proceso
+        ]);
+
+        return [
+            'success' => true,
+            'message' => 'Proceso eliminado correctamente'
+        ];
+    }
+}
