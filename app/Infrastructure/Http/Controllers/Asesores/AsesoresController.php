@@ -10,19 +10,7 @@ use App\Http\Controllers\AsesoresInventarioTelasController;
 use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
-use App\Application\Services\Asesores\EliminarPedidoService;
-use App\Application\Services\Asesores\ObtenerFotosService;
 use App\Application\Services\Asesores\AnularPedidoService;
-use App\Application\Services\Asesores\ObtenerPedidosService;
-use App\Application\Services\Asesores\ObtenerProximoPedidoService;
-use App\Application\Services\Asesores\ObtenerDatosFacturaService;
-use App\Application\Services\Asesores\ObtenerDatosRecibosService;
-use App\Application\Services\Asesores\ProcesarFotosTelasService;
-use App\Application\Services\Asesores\GuardarPedidoLogoService;
-use App\Application\Services\Asesores\GuardarPedidoProduccionService;
-use App\Application\Services\Asesores\ConfirmarPedidoService;
-use App\Application\Services\Asesores\ActualizarPedidoService;
-use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
@@ -47,19 +35,7 @@ class AsesoresController extends Controller
     protected DashboardService $dashboardService;
     protected NotificacionesService $notificacionesService;
     protected PerfilService $perfilService;
-    protected EliminarPedidoService $eliminarPedidoService;
-    protected ObtenerFotosService $obtenerFotosService;
     protected AnularPedidoService $anularPedidoService;
-    protected ObtenerPedidosService $obtenerPedidosService;
-    protected ObtenerProximoPedidoService $obtenerProximoPedidoService;
-    protected ObtenerDatosFacturaService $obtenerDatosFacturaService;
-    protected ObtenerDatosRecibosService $obtenerDatosRecibosService;
-    protected ProcesarFotosTelasService $procesarFotosTelasService;
-    protected GuardarPedidoLogoService $guardarPedidoLogoService;
-    protected GuardarPedidoProduccionService $guardarPedidoProduccionService;
-    protected ConfirmarPedidoService $confirmarPedidoService;
-    protected ActualizarPedidoService $actualizarPedidoService;
-    protected ObtenerPedidoDetalleService $obtenerPedidoDetalleService;
     protected CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase;
     protected ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase;
     protected ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase;
@@ -73,19 +49,7 @@ class AsesoresController extends Controller
         DashboardService $dashboardService,
         NotificacionesService $notificacionesService,
         PerfilService $perfilService,
-        EliminarPedidoService $eliminarPedidoService,
-        ObtenerFotosService $obtenerFotosService,
         AnularPedidoService $anularPedidoService,
-        ObtenerPedidosService $obtenerPedidosService,
-        ObtenerProximoPedidoService $obtenerProximoPedidoService,
-        ObtenerDatosFacturaService $obtenerDatosFacturaService,
-        ObtenerDatosRecibosService $obtenerDatosRecibosService,
-        ProcesarFotosTelasService $procesarFotosTelasService,
-        GuardarPedidoLogoService $guardarPedidoLogoService,
-        GuardarPedidoProduccionService $guardarPedidoProduccionService,
-        ConfirmarPedidoService $confirmarPedidoService,
-        ActualizarPedidoService $actualizarPedidoService,
-        ObtenerPedidoDetalleService $obtenerPedidoDetalleService,
         CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase,
         ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase,
         ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase,
@@ -98,19 +62,7 @@ class AsesoresController extends Controller
         $this->dashboardService = $dashboardService;
         $this->notificacionesService = $notificacionesService;
         $this->perfilService = $perfilService;
-        $this->eliminarPedidoService = $eliminarPedidoService;
-        $this->obtenerFotosService = $obtenerFotosService;
         $this->anularPedidoService = $anularPedidoService;
-        $this->obtenerPedidosService = $obtenerPedidosService;
-        $this->obtenerProximoPedidoService = $obtenerProximoPedidoService;
-        $this->obtenerDatosFacturaService = $obtenerDatosFacturaService;
-        $this->obtenerDatosRecibosService = $obtenerDatosRecibosService;
-        $this->procesarFotosTelasService = $procesarFotosTelasService;
-        $this->guardarPedidoLogoService = $guardarPedidoLogoService;
-        $this->guardarPedidoProduccionService = $guardarPedidoProduccionService;
-        $this->confirmarPedidoService = $confirmarPedidoService;
-        $this->actualizarPedidoService = $actualizarPedidoService;
-        $this->obtenerPedidoDetalleService = $obtenerPedidoDetalleService;
         $this->crearProduccionPedidoUseCase = $crearProduccionPedidoUseCase;
         $this->confirmarProduccionPedidoUseCase = $confirmarProduccionPedidoUseCase;
         $this->actualizarProduccionPedidoUseCase = $actualizarProduccionPedidoUseCase;
@@ -463,10 +415,6 @@ class AsesoresController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al anular el pedido: ' . $e->getMessage()
-            ], $e->getCode() ?: 500);
-        }
-    }
-                'message' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
