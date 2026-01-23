@@ -100,8 +100,9 @@
         try {
             UI.cargando('Cargando información...', 'Por favor espera');
             
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`);
-            const data = await response.json();
+            const response = await fetch(`/api/pedidos/${pedidoId}`);
+            const result = await response.json();
+            const data = result.data || result;
             
             Swal.close();
             
@@ -255,12 +256,13 @@
     function editarPedido(pedidoId) {
         UI.cargando('Cargando datos del pedido...', 'Por favor espera');
         
-        fetch(`/asesores/pedidos-produccion/${pedidoId}/datos-edicion`)
+        fetch(`/api/pedidos/${pedidoId}`)
             .then(res => res.json())
             .then(respuesta => {
                 Swal.close();
                 if (!respuesta.success) throw new Error(respuesta.message || 'Error al cargar datos');
-                abrirModalEditarPedido(pedidoId, respuesta.datos, 'editar');  // Pasar 'editar' para mostrar botones
+                const datos = respuesta.data || respuesta.datos;
+                abrirModalEditarPedido(pedidoId, datos, 'editar');  // Pasar 'editar' para mostrar botones
             })
             .catch(err => {
                 Swal.close();
@@ -319,13 +321,15 @@
     function guardarCambiosPedido(pedidoId, datosActualizados) {
         UI.cargando('Guardando cambios...', 'Por favor espera');
         
-        fetch(`/asesores/pedidos/${pedidoId}`, {
-            method: 'PUT',
+        fetch(`/api/pedidos/${pedidoId}/actualizar-descripcion`, {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
-            body: JSON.stringify(datosActualizados)
+            body: JSON.stringify({
+                descripcion: datosActualizados.novedades || ''
+            })
         })
         .then(response => {
             if (!response.ok) {

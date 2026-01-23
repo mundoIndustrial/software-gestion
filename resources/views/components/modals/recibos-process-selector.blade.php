@@ -217,13 +217,14 @@
 
         // Cargar datos de recibos
         try {
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`);
+            const response = await fetch(`/api/pedidos/${pedidoId}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
 
-            const datos = await response.json();
+            const result = await response.json();
+            const datos = result.data || result;
             console.log('[SELECTOR] Datos recibidos:', datos);
 
             window.selectorRecibosState.prendas = datos.prendas || [];

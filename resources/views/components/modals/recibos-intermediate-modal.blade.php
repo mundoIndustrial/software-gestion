@@ -180,7 +180,7 @@
         
         try {
             // Obtener datos del servidor
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`, {
+            const response = await fetch(`/api/pedidos/${pedidoId}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -192,7 +192,8 @@
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             
-            const datos = await response.json();
+            const result = await response.json();
+            const datos = result.data || result;
             console.log(' [RECIBOS-INTERMEDIO] Datos cargados:', datos);
             
             // Actualizar número de pedido

@@ -355,10 +355,11 @@ window.openAsesorasTrackingModal = async function(pedido) {
     console.log('🔵 [ASESORAS TRACKING] Abriendo modal para pedido:', pedido);
     
     try {
-        // Obtener datos del pedido en JSON - usar endpoint de recibos que devuelve JSON
-        const response = await fetch(`/asesores/pedidos/${pedido}/recibos-datos`);
+        // Obtener datos del pedido en JSON - usar endpoint DDD
+        const response = await fetch(`/api/pedidos/${pedido}`);
         if (!response.ok) throw new Error('Error fetching order');
-        const order = await response.json();
+        const result = await response.json();
+        const order = result.data || result;
         
         console.log(' [ASESORAS TRACKING] Datos obtenidos:', order);
         
