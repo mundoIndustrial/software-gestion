@@ -1621,3 +1621,5 @@ document.addEventListener('DOMContentLoaded', function() {
         tipoVentaSelect.addEventListener('change', actualizarEstadoBotones);
     }
 });
+
+
