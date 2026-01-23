@@ -683,6 +683,8 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/materiales', [\App\Http\Controllers\Insumos\InsumosController::class, 'materiales'])->name('materiales.index');
     Route::post('/materiales/{pedido}/guardar', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
     Route::post('/materiales/{pedido}/eliminar', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
+    Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetraje'])->name('materiales.guardar-ancho-metraje');
+    Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetraje'])->name('materiales.obtener-ancho-metraje');
     Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
     Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\MaterialesController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');

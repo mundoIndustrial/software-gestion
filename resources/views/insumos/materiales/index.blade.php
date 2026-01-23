@@ -354,6 +354,7 @@
                 <table class="w-full" style="font-size: 0.75em; width: 100%; margin: 0; padding: 0;">
                     <thead>
                         <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                            <th class="text-center py-4 px-6 font-bold whitespace-nowrap" style="min-width: 200px;">Acciones</th>
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
                                     <span>Pedido</span>
@@ -414,12 +415,57 @@
                                     </button>
                                 </div>
                             </th>
-                            <th class="text-center py-4 px-6 font-bold whitespace-nowrap" style="min-width: 200px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($ordenes ?? [] as $orden)
                             <tr class="border-b border-gray-200 hover:bg-gray-50 transition" data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" data-cliente="{{ strtoupper($orden->cliente ?? '') }}" data-orden-pedido="{{ $orden->numero_pedido }}">
+                                <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
+                                    <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
+                                        {{-- Botón Ver (disponible para todos) --}}
+                                        <button 
+                                            class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                            onclick="verFactura('{{ $orden->numero_pedido }}')"
+                                            data-tooltip="Ver orden"
+                                        >
+                                            <i class="fas fa-eye text-lg"></i>
+                                        </button>
+
+                                        {{-- Botones adicionales (solo para no-patronistas) --}}
+                                        @php
+                                            $userRole = auth()->user()->role;
+                                            $roleName = is_object($userRole) ? $userRole->name : $userRole;
+                                            $isPatronista = $roleName === 'patronista';
+                                        @endphp
+                                        @if(!$isPatronista)
+                                            <button 
+                                                class="btn-tooltip btn-ver-insumos p-2 text-green-600 hover:bg-green-50 rounded transition"
+                                                onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
+                                                data-tooltip="Ver insumos"
+                                            >
+                                                <i class="fas fa-box text-lg"></i>
+                                            </button>
+                                            {{-- Botón Ancho y Metraje --}}
+                                            <button 
+                                                class="btn-tooltip p-2 text-orange-600 hover:bg-orange-50 rounded transition"
+                                                onclick="abrirModalAnchoMetraje('{{ $orden->numero_pedido }}')"
+                                                data-tooltip="Ingresar ancho y metraje"
+                                            >
+                                                <i class="fas fa-ruler text-lg"></i>
+                                            </button>
+                                            {{-- Botón enviar a producción: solo visible para estado Pendiente --}}
+                                            @if($orden->estado === 'Pendiente')
+                                                <button 
+                                                    class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                                    onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
+                                                    data-tooltip="Enviar a producción"
+                                                >
+                                                    <i class="fas fa-paper-plane text-lg"></i>
+                                                </button>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </td>
                                 <td class="py-4 px-6">
                                     <span class="font-bold text-blue-600 text-lg">{{ $orden->numero_pedido ?? 'N/A' }}</span>
                                 </td>
@@ -466,44 +512,6 @@
                                     <span class="text-gray-600 text-sm">
                                         {{ $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->subHours(5)->format('d/m/Y') : 'N/A' }}
                                     </span>
-                                </td>
-                                <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
-                                    <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
-                                        {{-- Botón Ver (disponible para todos) --}}
-                                        <button 
-                                            class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                            onclick="verFactura('{{ $orden->numero_pedido }}')"
-                                            data-tooltip="Ver orden"
-                                        >
-                                            <i class="fas fa-eye text-lg"></i>
-                                        </button>
-
-                                        {{-- Botones adicionales (solo para no-patronistas) --}}
-                                        @php
-                                            $userRole = auth()->user()->role;
-                                            $roleName = is_object($userRole) ? $userRole->name : $userRole;
-                                            $isPatronista = $roleName === 'patronista';
-                                        @endphp
-                                        @if(!$isPatronista)
-                                            <button 
-                                                class="btn-tooltip btn-ver-insumos p-2 text-green-600 hover:bg-green-50 rounded transition"
-                                                onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
-                                                data-tooltip="Ver insumos"
-                                            >
-                                                <i class="fas fa-box text-lg"></i>
-                                            </button>
-                                            {{-- Botón enviar a producción: solo visible para estado Pendiente --}}
-                                            @if($orden->estado === 'Pendiente')
-                                                <button 
-                                                    class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                                    onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
-                                                    data-tooltip="Enviar a producción"
-                                                >
-                                                    <i class="fas fa-paper-plane text-lg"></i>
-                                                </button>
-                                            @endif
-                                        @endif
-                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -1177,6 +1185,63 @@
     </div>
 </div>
 
+{{-- Modal de Ancho y Metraje --}}
+<div id="modalAnchoMetraje" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="z-index: 10001;">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" style="z-index: 10002;">
+        <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-6 flex justify-between items-center shadow-lg" style="background: linear-gradient(to right, #111827, #1e3a8a) !important;">
+            <div>
+                <h2 class="text-2xl font-bold flex items-center gap-2 drop-shadow text-white">
+                    <i class="fas fa-ruler"></i>
+                    Ancho y Metraje
+                </h2>
+                <p class="text-white text-sm font-semibold drop-shadow">Pedido: <span id="anchoMetrajePedido" class="font-bold text-white"></span></p>
+            </div>
+            <button onclick="cerrarModalAnchoMetraje()" class="text-white bg-blue-700 rounded-full p-2 transition hover:bg-blue-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6">
+            <div>
+                <label class="block text-base font-bold text-gray-800 mb-2">Ancho (m):</label>
+                <input 
+                    type="number" 
+                    id="anchoInput" 
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    placeholder="Ingresa el ancho en metros..."
+                    step="0.01"
+                    min="0"
+                >
+            </div>
+            <div>
+                <label class="block text-base font-bold text-gray-800 mb-2">Metraje (m):</label>
+                <input 
+                    type="number" 
+                    id="metrajeInput" 
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    placeholder="Ingresa el metraje en metros..."
+                    step="0.01"
+                    min="0"
+                >
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button 
+                    onclick="guardarAnchoMetraje()" 
+                    class="px-6 py-2 text-white font-semibold rounded-lg flex items-center gap-2"
+                    style="background: linear-gradient(to right, #111827, #1e3a8a) !important; color: white !important;"
+                >
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button 
+                    onclick="cerrarModalAnchoMetraje()" 
+                    class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg flex items-center gap-2"
+                >
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Modal de Confirmación para Enviar a Producción --}}
 <div id="modalConfirmarProduccion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="display: none; z-index: 10001; top: 0; left: 0; right: 0; bottom: 0;">
     <div class="bg-white rounded-lg shadow-2xl" style="width: 380px; z-index: 10002;">
@@ -1215,6 +1280,99 @@
     /**
      * Alias para cerrar el modal - compatible con asesores
      */
+
+    /**
+     * Abre el modal de Ancho y Metraje para una orden
+     */
+    function abrirModalAnchoMetraje(pedido) {
+        const modal = document.getElementById('modalAnchoMetraje');
+        modal.style.display = 'flex';
+        
+        // Establecer el pedido
+        document.getElementById('anchoMetrajePedido').textContent = pedido;
+        
+        // Limpiar los inputs
+        document.getElementById('anchoInput').value = '';
+        document.getElementById('metrajeInput').value = '';
+        
+        // Guardar el pedido en el modal para usarlo después
+        modal.dataset.pedido = pedido;
+
+        // Cargar los datos guardados si existen
+        fetch(`/insumos/materiales/${pedido}/obtener-ancho-metraje`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    if (data.data.ancho) {
+                        document.getElementById('anchoInput').value = data.data.ancho;
+                    }
+                    if (data.data.metraje) {
+                        document.getElementById('metrajeInput').value = data.data.metraje;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar ancho y metraje:', error);
+            });
+    }
+
+    /**
+     * Cierra el modal de Ancho y Metraje
+     */
+    function cerrarModalAnchoMetraje() {
+        const modal = document.getElementById('modalAnchoMetraje');
+        modal.style.display = 'none';
+        
+        // Limpiar los inputs
+        document.getElementById('anchoInput').value = '';
+        document.getElementById('metrajeInput').value = '';
+    }
+
+    /**
+     * Guarda los valores de Ancho y Metraje
+     */
+    function guardarAnchoMetraje() {
+        const ancho = parseFloat(document.getElementById('anchoInput').value);
+        const metraje = parseFloat(document.getElementById('metrajeInput').value);
+        const pedido = document.getElementById('anchoMetrajePedido').textContent;
+        
+        // Validar que los campos estén completos
+        if (!ancho || isNaN(ancho) || ancho <= 0) {
+            showToast('Por favor ingresa un ancho válido', 'warning');
+            return;
+        }
+        
+        if (!metraje || isNaN(metraje) || metraje <= 0) {
+            showToast('Por favor ingresa un metraje válido', 'warning');
+            return;
+        }
+        
+        // Enviar los datos al servidor
+        fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ 
+                ancho: ancho,
+                metraje: metraje
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Ancho y metraje guardados correctamente', 'success');
+                cerrarModalAnchoMetraje();
+            } else {
+                showToast('Error al guardar: ' + (data.message || ''), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error al guardar ancho y metraje', 'error');
+        });
+    }
 
     /**
      * Abre el modal de insumos para una orden

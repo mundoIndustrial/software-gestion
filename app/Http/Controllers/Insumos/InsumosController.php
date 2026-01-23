@@ -575,4 +575,140 @@ class InsumosController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener ancho y metraje de un pedido
+     */
+    public function obtenerAnchoMetraje($numeroPedido)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Obtener el pedido por número
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+                ->firstOrFail();
+
+            // Buscar el registro de ancho y metraje
+            $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)
+                ->first();
+
+            if (!$anchoMetraje) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'ancho' => null,
+                        'metraje' => null
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'ancho' => $anchoMetraje->ancho,
+                    'metraje' => $anchoMetraje->metraje
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener ancho y metraje: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener ancho y metraje'
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar ancho y metraje de un pedido
+     */
+    public function guardarAnchoMetraje(Request $request, $numeroPedido)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Validar datos de entrada
+            $validated = $request->validate([
+                'ancho' => 'required|numeric|min:0.01',
+                'metraje' => 'required|numeric|min:0.01',
+            ], [
+                'ancho.required' => 'El ancho es requerido',
+                'ancho.numeric' => 'El ancho debe ser un número',
+                'ancho.min' => 'El ancho debe ser mayor que 0',
+                'metraje.required' => 'El metraje es requerido',
+                'metraje.numeric' => 'El metraje debe ser un número',
+                'metraje.min' => 'El metraje debe ser mayor que 0',
+            ]);
+
+            // Obtener el pedido por número
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+                ->firstOrFail();
+
+            // Importar el modelo si no está importado
+            $modelClass = \App\Models\PedidoAnchoMetraje::class;
+
+            // Buscar si ya existe un registro para este pedido
+            $anchoMetraje = $modelClass::firstOrNew(
+                ['pedido_produccion_id' => $pedido->id]
+            );
+
+            // Actualizar valores
+            $anchoMetraje->ancho = $validated['ancho'];
+            $anchoMetraje->metraje = $validated['metraje'];
+            $anchoMetraje->creado_por = $anchoMetraje->creado_por ?? $user->id;
+            $anchoMetraje->actualizado_por = $user->id;
+
+            // Guardar
+            $anchoMetraje->save();
+
+            \Log::info('✅ Ancho y metraje guardado', [
+                'numero_pedido' => $numeroPedido,
+                'pedido_id' => $pedido->id,
+                'ancho' => $validated['ancho'],
+                'metraje' => $validated['metraje'],
+                'usuario_id' => $user->id,
+                'usuario_nombre' => $user->name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ancho y metraje guardados correctamente',
+                'data' => [
+                    'ancho' => $anchoMetraje->ancho,
+                    'metraje' => $anchoMetraje->metraje,
+                    'actualizado_en' => $anchoMetraje->updated_at,
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::warning('Pedido no encontrado para ancho/metraje', [
+                'numero_pedido' => $numeroPedido,
+                'usuario_id' => Auth::id(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al guardar ancho y metraje: ' . $e->getMessage(), [
+                'numero_pedido' => $numeroPedido,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar ancho y metraje: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

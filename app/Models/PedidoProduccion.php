@@ -172,6 +172,14 @@ class PedidoProduccion extends Model
     }
 
     /**
+     * Relación: Un pedido tiene un registro de ancho y metraje
+     */
+    public function anchoMetraje()
+    {
+        return $this->hasOne(PedidoAnchoMetraje::class, 'pedido_produccion_id');
+    }
+
+    /**
      * Relación: Un pedido tiene muchos EPP agregados
      */
     public function epps()
