@@ -19,6 +19,15 @@ use App\Application\Pedidos\UseCases\ActualizarPrendaPedidoUseCase;
 use App\Application\Pedidos\UseCases\AgregarPrendaCompletaUseCase;
 use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase;
 use App\Application\Pedidos\UseCases\RenderItemCardUseCase;
+use App\Application\Pedidos\UseCases\AgregarVariantePrendaUseCase;
+use App\Application\Pedidos\UseCases\AgregarColorTelaUseCase;
+use App\Application\Pedidos\UseCases\AgregarTallaPrendaUseCase;
+use App\Application\Pedidos\UseCases\AgregarProcesoPrendaUseCase;
+use App\Application\Pedidos\UseCases\AgregarEppUseCase;
+use App\Application\Pedidos\UseCases\AgregarTallaProcesoPrendaUseCase;
+use App\Application\Pedidos\UseCases\AgregarImagenProcesoUseCase;
+use App\Application\Pedidos\UseCases\AgregarImagenEppUseCase;
+use App\Application\Pedidos\UseCases\AgregarImagenTelaUseCase;
 
 // Repositories
 use App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository;
@@ -142,6 +151,51 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Render Item Card
         $this->app->singleton(RenderItemCardUseCase::class, function ($app) {
             return new RenderItemCardUseCase();
+        });
+
+        // Agregar Variante a Prenda
+        $this->app->singleton(AgregarVariantePrendaUseCase::class, function ($app) {
+            return new AgregarVariantePrendaUseCase();
+        });
+
+        // Agregar Color-Tela a Prenda
+        $this->app->singleton(AgregarColorTelaUseCase::class, function ($app) {
+            return new AgregarColorTelaUseCase();
+        });
+
+        // Agregar Talla a Prenda
+        $this->app->singleton(AgregarTallaPrendaUseCase::class, function ($app) {
+            return new AgregarTallaPrendaUseCase();
+        });
+
+        // Agregar Proceso a Prenda
+        $this->app->singleton(AgregarProcesoPrendaUseCase::class, function ($app) {
+            return new AgregarProcesoPrendaUseCase();
+        });
+
+        // Agregar EPP al Pedido
+        $this->app->singleton(AgregarEppUseCase::class, function ($app) {
+            return new AgregarEppUseCase();
+        });
+
+        // Agregar Talla a Proceso de Prenda
+        $this->app->singleton(AgregarTallaProcesoPrendaUseCase::class, function ($app) {
+            return new AgregarTallaProcesoPrendaUseCase();
+        });
+
+        // Agregar Imagen a Proceso
+        $this->app->singleton(AgregarImagenProcesoUseCase::class, function ($app) {
+            return new AgregarImagenProcesoUseCase();
+        });
+
+        // Agregar Imagen a EPP
+        $this->app->singleton(AgregarImagenEppUseCase::class, function ($app) {
+            return new AgregarImagenEppUseCase();
+        });
+
+        // Agregar Imagen a Tela
+        $this->app->singleton(AgregarImagenTelaUseCase::class, function ($app) {
+            return new AgregarImagenTelaUseCase();
         });
     }
 
