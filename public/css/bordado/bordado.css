@@ -152,6 +152,20 @@
     padding: 0.5rem;
 }
 
+.nav-section-title {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0.75rem 1rem 0.5rem;
+    letter-spacing: 0.5px;
+}
+
+.sidebar.collapsed .nav-section-title {
+    display: none;
+}
+
 .nav-item {
     display: flex;
     align-items: center;
@@ -190,6 +204,78 @@
 }
 
 .sidebar.collapsed .nav-label {
+    display: none;
+}
+
+/* ============================================
+   SUBMENÚ ESTILOS
+   ============================================ */
+
+.nav-submenu-container {
+    position: relative;
+}
+
+.submenu-toggle {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.75rem 1rem !important;
+    text-align: left !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+}
+
+.submenu-arrow {
+    transition: transform 0.3s ease !important;
+    font-size: 1.2rem !important;
+    flex-shrink: 0 !important;
+}
+
+.nav-submenu {
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-left: 3px solid rgba(255, 255, 255, 0.3);
+    margin: 0.25rem 0.5rem 0.25rem 0.5rem;
+    border-radius: 0 8px 8px 0;
+    overflow: hidden;
+}
+
+.nav-submenu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem 0.65rem 1.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-submenu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.95);
+    padding-left: 2rem;
+}
+
+.nav-submenu-item.active {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-weight: 600;
+    padding-left: 2rem;
+}
+
+.nav-submenu-item span {
+    display: flex;
+    align-items: center;
+}
+
+.sidebar.collapsed .nav-submenu {
     display: none;
 }
 

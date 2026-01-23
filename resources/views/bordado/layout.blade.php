@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="{{ asset('css/asesores/module.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css') }}">
 
+    <!-- CSS Específico del Sidebar Bordado -->
+    <link rel="stylesheet" href="{{ asset('css/bordado/sidebar.css') }}">>
+
     <!-- Material Symbols para iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 

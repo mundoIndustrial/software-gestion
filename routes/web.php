@@ -756,15 +756,28 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
 // RUTAS PARA MÓDULO BORDADO
 // ========================================
 Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bordado.')->group(function () {
-    // Listar cotizaciones del módulo Bordado
-    Route::get('/cotizaciones', function () {
-        return view('bordado.cotizaciones');
-    })->name('cotizaciones');
-
     // Listar pedidos del módulo Bordado
     Route::get('/', function () {
         return view('bordado.index');
     })->name('index');
+
+    // Ruta legada de cotizaciones (redireccionar a lista)
+    Route::get('/cotizaciones', function () {
+        return redirect()->route('bordado.cotizaciones.lista');
+    })->name('cotizaciones');
+
+    // Cotizaciones - Submenú
+    Route::prefix('cotizaciones')->name('cotizaciones.')->group(function () {
+        // Lista de cotizaciones
+        Route::get('/lista', function () {
+            return view('bordado.cotizaciones.lista');
+        })->name('lista');
+
+        // Medidas
+        Route::get('/medidas', function () {
+            return view('bordado.cotizaciones.medidas');
+        })->name('medidas');
+    });
 });
 
 // ========================================
