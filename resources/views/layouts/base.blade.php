@@ -59,25 +59,7 @@
     <!-- Vite (contiene app.css y app.js críticos) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    <!-- Laravel Echo & Pusher JS (para notificaciones en tiempo real) -->
-    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8/dist/web/pusher.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1/dist/echo.iife.js"></script>
-    
-    <!-- Configurar Laravel Echo -->
-    @auth
-    <script>
-        window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key: '{{ config('broadcasting.connections.reverb.key') }}',
-            wsHost: '{{ config('broadcasting.connections.reverb.options.host') }}',
-            wsPort: {{ config('broadcasting.connections.reverb.options.port') }},
-            wssPort: {{ config('broadcasting.connections.reverb.options.port') }},
-            forceTLS: {{ config('broadcasting.connections.reverb.options.scheme') === 'https' ? 'true' : 'false' }},
-            enabledTransports: ['ws', 'wss'],
-            disableStats: true,
-        });
-    </script>
-    @endauth
+    <!-- Laravel Echo & Pusher JS cargado vía Vite en app.js (bootstrap.js) -->
     
     <!-- SweetAlert2 JS (diferido) -->
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

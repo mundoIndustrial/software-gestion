@@ -1,31 +1,64 @@
 /**
  * Laravel Echo initialization for real-time broadcasting
  * Uses Laravel Reverb as the WebSocket server
+ * 
+ * NOTA: Este archivo es LEGACY. bootstrap.js (vía Vite) es el responsable principal.
+ * Este archivo solo actúa como fallback para casos donde bootstrap.js no cargó correctamente.
  */
 
 (function() {
     'use strict';
 
-    // Check if Echo and Pusher are loaded
+    // Si Echo ya está inicializado por bootstrap.js, no hacer nada
+    if (typeof window.Echo !== 'undefined' && window.Echo !== null) {
+        console.log('✅ Echo ya fue inicializado por bootstrap.js, omitiendo echo-init.js');
+        return;
+    }
+
+    // Verificar si Pusher está disponible
     if (typeof window.Pusher === 'undefined') {
-
+        console.warn('⚠️ Pusher no está disponible, no se puede inicializar Echo');
         return;
     }
 
-    if (typeof window.Echo !== 'undefined') {
+    /**
+     * Detectar entorno (desarrollo vs producción)
+     * En desarrollo: usa localhost:8080 (HTTP)
+     * En producción: usa sistemamundoindustrial.online:443 (HTTPS)
+     */
+    const isProduction = window.location.hostname !== 'localhost' && 
+                         window.location.hostname !== '127.0.0.1';
 
-        return;
-    }
+    const defaults = {
+        dev: {
+            host: 'localhost',
+            port: 8080,
+            scheme: 'http'
+        },
+        prod: {
+            host: 'sistemamundoindustrial.online',
+            port: 443,
+            scheme: 'https'
+        }
+    };
 
-    // Get configuration from meta tags or environment
-    const appKey = document.querySelector('meta[name="reverb-app-key"]')?.content || 'dummy-key';
-    const host = document.querySelector('meta[name="reverb-host"]')?.content || window.location.hostname;
-    const port = document.querySelector('meta[name="reverb-port"]')?.content || 8080;
-    const scheme = document.querySelector('meta[name="reverb-scheme"]')?.content || (window.location.protocol === 'https:' ? 'https' : 'http');
+    const env = isProduction ? defaults.prod : defaults.dev;
+
+    // Obtener configuración de meta tags o usar defaults
+    const appKey = document.querySelector('meta[name="reverb-app-key"]')?.content || 'mundo-industrial-key';
+    const host = document.querySelector('meta[name="reverb-host"]')?.content || env.host;
+    const port = document.querySelector('meta[name="reverb-port"]')?.content || env.port;
+    const scheme = document.querySelector('meta[name="reverb-scheme"]')?.content || env.scheme;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
-
-
+    console.log('🔧 echo-init.js - Environment Detection:');
+    console.log('Hostname:', window.location.hostname);
+    console.log('isProduction:', isProduction);
+    console.log('');
+    console.log('📡 Configuración de Echo/Reverb (echo-init.js):');
+    console.log('Host:', host);
+    console.log('Port:', port);
+    console.log('Scheme:', scheme);
 
     try {
         // Initialize Echo with Reverb (Pusher protocol)
@@ -47,34 +80,34 @@
             }
         });
 
+        console.log('✅ Echo inicializado exitosamente por echo-init.js (fallback)');
+
         // Connection event handlers
         window.Echo.connector.pusher.connection.bind('connected', () => {
-
+            console.log('✅ WebSocket conectado exitosamente a Reverb');
             updateConnectionStatus(true);
         });
 
         window.Echo.connector.pusher.connection.bind('disconnected', () => {
-
+            console.warn('⚠️ WebSocket desconectado');
             updateConnectionStatus(false);
         });
 
         window.Echo.connector.pusher.connection.bind('error', (error) => {
-
+            console.error('❌ Error de conexión WebSocket:', error);
             updateConnectionStatus(false);
         });
 
         window.Echo.connector.pusher.connection.bind('unavailable', () => {
-
+            console.warn('⚠️ WebSocket no disponible');
             updateConnectionStatus(false);
         });
 
         // Add connection status indicator to page
         addConnectionIndicator();
 
-
-
     } catch (error) {
-
+        console.error('❌ Error al inicializar Echo:', error);
     }
 
     /**
@@ -118,8 +151,5 @@
             }
         }, 5000);
     }
-
-    // Expose Echo globally
-    window.Echo = window.Echo;
 
 })();

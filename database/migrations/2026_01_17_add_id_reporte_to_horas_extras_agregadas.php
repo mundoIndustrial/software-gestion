@@ -11,14 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('horas_extras_agregadas', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_reporte')->nullable()->after('codigo_persona');
-            
-            $table->foreign('id_reporte')
-                ->references('id')
-                ->on('reportes_personal')
-                ->onDelete('cascade');
-        });
+        // Migración vacía: la tabla horas_extras_agregadas ya existe con la columna id_reporte
     }
 
     /**

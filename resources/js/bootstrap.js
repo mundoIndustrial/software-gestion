@@ -14,8 +14,40 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
+/**
+ * Detectar entorno (desarrollo vs producción)
+ * En desarrollo: usa localhost:8080 (HTTP)
+ * En producción: usa sistemamundoindustrial.online:443 (HTTPS)
+ */
+const isProduction = import.meta.env.MODE === 'production' || 
+                     import.meta.env.VITE_ENV === 'production' ||
+                     window.location.hostname !== 'localhost' && 
+                     window.location.hostname !== '127.0.0.1';
+
+// Valores por defecto según el entorno
+const defaults = {
+    dev: {
+        host: 'localhost',
+        port: 8080,
+        scheme: 'http'
+    },
+    prod: {
+        host: 'sistemamundoindustrial.online',
+        port: 443,
+        scheme: 'https'
+    }
+};
+
+const env = isProduction ? defaults.prod : defaults.dev;
+
 // Debug: Mostrar variables de entorno
-console.log(' Configuración de Echo/Reverb:');
+console.log('🔧 Environment Detection:');
+console.log('MODE:', import.meta.env.MODE);
+console.log('VITE_ENV:', import.meta.env.VITE_ENV);
+console.log('Hostname:', window.location.hostname);
+console.log('isProduction:', isProduction);
+console.log('');
+console.log('📡 Configuración de Echo/Reverb:');
 console.log('VITE_REVERB_APP_KEY:', import.meta.env.VITE_REVERB_APP_KEY);
 console.log('VITE_REVERB_HOST:', import.meta.env.VITE_REVERB_HOST);
 console.log('VITE_REVERB_PORT:', import.meta.env.VITE_REVERB_PORT);
@@ -23,15 +55,20 @@ console.log('VITE_REVERB_SCHEME:', import.meta.env.VITE_REVERB_SCHEME);
 
 const echoConfig = {
     broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST || '127.0.0.1',
-    wsPort: import.meta.env.VITE_REVERB_PORT || 8080,
-    wssPort: import.meta.env.VITE_REVERB_PORT || 8080,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME || 'http') === 'https',
+    key: import.meta.env.VITE_REVERB_APP_KEY || 'dummy-key',
+    wsHost: import.meta.env.VITE_REVERB_HOST || env.host,
+    wsPort: import.meta.env.VITE_REVERB_PORT || env.port,
+    wssPort: import.meta.env.VITE_REVERB_PORT || env.port,
+    forceTLS: (import.meta.env.VITE_REVERB_SCHEME || env.scheme) === 'https',
     enabledTransports: ['ws', 'wss'],
+    disableStats: true,
 };
 
-console.log('📡 Configuración final de Echo:', echoConfig);
+console.log('✅ Configuración final de Echo:');
+console.log('broadcaster:', echoConfig.broadcaster);
+console.log('wsHost:', echoConfig.wsHost);
+console.log('wsPort:', echoConfig.wsPort);
+console.log('forceTLS:', echoConfig.forceTLS);
 
 window.Echo = new Echo(echoConfig);
 
