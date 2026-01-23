@@ -35,7 +35,6 @@ class AsesoresController extends Controller
     protected DashboardService $dashboardService;
     protected NotificacionesService $notificacionesService;
     protected PerfilService $perfilService;
-    protected AnularPedidoService $anularPedidoService;
     protected CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase;
     protected ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase;
     protected ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase;
@@ -49,7 +48,6 @@ class AsesoresController extends Controller
         DashboardService $dashboardService,
         NotificacionesService $notificacionesService,
         PerfilService $perfilService,
-        AnularPedidoService $anularPedidoService,
         CrearProduccionPedidoUseCase $crearProduccionPedidoUseCase,
         ConfirmarProduccionPedidoUseCase $confirmarProduccionPedidoUseCase,
         ActualizarProduccionPedidoUseCase $actualizarProduccionPedidoUseCase,
@@ -62,7 +60,6 @@ class AsesoresController extends Controller
         $this->dashboardService = $dashboardService;
         $this->notificacionesService = $notificacionesService;
         $this->perfilService = $perfilService;
-        $this->anularPedidoService = $anularPedidoService;
         $this->crearProduccionPedidoUseCase = $crearProduccionPedidoUseCase;
         $this->confirmarProduccionPedidoUseCase = $confirmarProduccionPedidoUseCase;
         $this->actualizarProduccionPedidoUseCase = $actualizarProduccionPedidoUseCase;
@@ -535,9 +532,12 @@ class AsesoresController extends Controller
     /**
      * Anular pedido con novedad
      */
+    /**
+     * Anular pedido con novedad - DELEGADO A USE CASE (refactorizado de anularPedidoService)
+     */
     public function anularPedido(Request $request, $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'novedad' => 'required|string|min:10|max:500',
         ], [
             'novedad.required' => 'La novedad es obligatoria',
@@ -546,12 +546,16 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedido = $this->anularPedidoService->anular($id, $request->novedad);
+            // Crear DTO para el Use Case
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, ['razon' => $validated['novedad']]);
+
+            // Usar el nuevo Use Case DDD
+            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutar($dto);
             
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido anulado correctamente',
-                'pedido' => $pedido,
+                'pedido' => $pedidoAnulado,
             ]);
         } catch (\Exception $e) {
             return response()->json([
