@@ -100,10 +100,15 @@ final class ActualizarPrendaCompletaUseCase
 
         // Eliminar fotos viejas y crear nuevas
         $prenda->fotos()->delete();
-        foreach ($dto->fotos as $foto) {
-            $prenda->fotos()->create([
-                'path' => $foto['path'] ?? null,
-            ]);
+        foreach ($dto->fotos as $idx => $foto) {
+            $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+            if ($ruta) {
+                $prenda->fotos()->create([
+                    'ruta_original' => $ruta,
+                    'ruta_webp' => $this->generarRutaWebp($ruta),
+                    'orden' => $idx + 1,
+                ]);
+            }
         }
     }
 
@@ -227,12 +232,20 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         // Eliminar fotos de telas viejas y crear nuevas
+        // Las fotos de telas se asocian a través de prenda_pedido_colores_telas
         $prenda->fotosTelas()->delete();
-        foreach ($dto->fotosTelas as $foto) {
-            $prenda->fotosTelas()->create([
-                'tela_id' => $foto['tela_id'] ?? null,
-                'path' => $foto['path'] ?? null,
-            ]);
+        foreach ($dto->fotosTelas as $idx => $foto) {
+            $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? null;
+            $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+            
+            if ($colorTelaId && $ruta) {
+                $prenda->fotosTelas()->create([
+                    'prenda_pedido_colores_telas_id' => $colorTelaId,
+                    'ruta_original' => $ruta,
+                    'ruta_webp' => $this->generarRutaWebp($ruta),
+                    'orden' => $idx + 1,
+                ]);
+            }
         }
     }
 
