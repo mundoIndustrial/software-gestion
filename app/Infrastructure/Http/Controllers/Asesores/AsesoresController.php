@@ -19,6 +19,10 @@ use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaSimpleUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerFacturaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerRecibosUseCase;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
@@ -26,6 +30,10 @@ use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\PrepararCreacionProduccionPedidoDTO;
+use App\Application\Pedidos\DTOs\AgregarPrendaSimpleDTO;
+use App\Application\Pedidos\DTOs\ObtenerProximoNumeroPedidoDTO;
+use App\Application\Pedidos\DTOs\ObtenerFacturaDTO;
+use App\Application\Pedidos\DTOs\ObtenerRecibosDTO;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -41,6 +49,10 @@ class AsesoresController extends Controller
     protected ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase;
     protected ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase;
     protected PrepararCreacionProduccionPedidoUseCase $prepararCreacionProduccionPedidoUseCase;
+    protected AgregarPrendaSimpleUseCase $agregarPrendaSimpleUseCase;
+    protected ObtenerProximoNumeroPedidoUseCase $obtenerProximoNumeroPedidoUseCase;
+    protected ObtenerFacturaUseCase $obtenerFacturaUseCase;
+    protected ObtenerRecibosUseCase $obtenerRecibosUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -53,7 +65,11 @@ class AsesoresController extends Controller
         AnularProduccionPedidoUseCase $anularProduccionPedidoUseCase,
         ObtenerProduccionPedidoUseCase $obtenerProduccionPedidoUseCase,
         ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase,
-        PrepararCreacionProduccionPedidoUseCase $prepararCreacionProduccionPedidoUseCase
+        PrepararCreacionProduccionPedidoUseCase $prepararCreacionProduccionPedidoUseCase,
+        AgregarPrendaSimpleUseCase $agregarPrendaSimpleUseCase,
+        ObtenerProximoNumeroPedidoUseCase $obtenerProximoNumeroPedidoUseCase,
+        ObtenerFacturaUseCase $obtenerFacturaUseCase,
+        ObtenerRecibosUseCase $obtenerRecibosUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -66,6 +82,10 @@ class AsesoresController extends Controller
         $this->obtenerProduccionPedidoUseCase = $obtenerProduccionPedidoUseCase;
         $this->listarProduccionPedidosUseCase = $listarProduccionPedidosUseCase;
         $this->prepararCreacionProduccionPedidoUseCase = $prepararCreacionProduccionPedidoUseCase;
+        $this->agregarPrendaSimpleUseCase = $agregarPrendaSimpleUseCase;
+        $this->obtenerProximoNumeroPedidoUseCase = $obtenerProximoNumeroPedidoUseCase;
+        $this->obtenerFacturaUseCase = $obtenerFacturaUseCase;
+        $this->obtenerRecibosUseCase = $obtenerRecibosUseCase;
     }
 
     /**
@@ -418,10 +438,17 @@ class AsesoresController extends Controller
     /**
      * Obtener siguiente número de pedido - DELEGADO A SERVICIO
      */
+    /**
+     * Obtener siguiente número de pedido - DELEGADO A USE CASE
+     */
     public function getNextPedido()
     {
         try {
-            $siguientePedido = $this->obtenerProximoPedidoService->obtenerProximo();
+            // Crear DTO para el Use Case
+            $dto = ObtenerProximoNumeroPedidoDTO::crear();
+
+            // Usar el nuevo Use Case DDD
+            $siguientePedido = $this->obtenerProximoNumeroPedidoUseCase->ejecutar($dto);
 
             return response()->json([
                 'siguiente_pedido' => $siguientePedido
@@ -575,10 +602,18 @@ class AsesoresController extends Controller
     /**
      * Obtener datos de la factura de un pedido - DELEGADO A SERVICIO
      */
+    /**
+     * Obtener datos de la factura de un pedido - DELEGADO A USE CASE
+     */
     public function obtenerDatosFactura($id)
     {
         try {
-            $datos = $this->obtenerDatosFacturaService->obtener($id);
+            // Crear DTO para el Use Case
+            $dto = ObtenerFacturaDTO::fromRequest((string)$id);
+
+            // Usar el nuevo Use Case DDD
+            $datos = $this->obtenerFacturaUseCase->ejecutar($dto);
+            
             return response()->json($datos);
         } catch (\Exception $e) {
             return response()->json([
@@ -590,10 +625,18 @@ class AsesoresController extends Controller
     /**
      * Obtener datos de recibos dinámicos para un pedido - DELEGADO A SERVICIO
      */
+    /**
+     * Obtener datos de recibos dinámicos para un pedido - DELEGADO A USE CASE
+     */
     public function obtenerDatosRecibos($id)
     {
         try {
-            $datos = $this->obtenerDatosRecibosService->obtener($id);
+            // Crear DTO para el Use Case
+            $dto = ObtenerRecibosDTO::fromRequest((string)$id);
+
+            // Usar el nuevo Use Case DDD
+            $datos = $this->obtenerRecibosUseCase->ejecutar($dto);
+            
             return response()->json($datos);
         } catch (\Exception $e) {
             return response()->json([
@@ -605,6 +648,9 @@ class AsesoresController extends Controller
     /**
      * Agregar prenda simple al pedido (sin requerimientos complejos)
      */
+    /**
+     * Agregar prenda simple al pedido - DELEGADO A USE CASE
+     */
     public function agregarPrendaSimple(Request $request, $pedidoId)
     {
         try {
@@ -614,44 +660,18 @@ class AsesoresController extends Controller
                 'descripcion' => 'nullable|string|max:1000',
             ]);
 
-            $pedido = PedidoProduccion::find($pedidoId);
-            if (!$pedido) {
-                return response()->json([
-                    'error' => 'Pedido no encontrado'
-                ], 404);
-            }
+            // Crear DTO para el Use Case
+            $dto = AgregarPrendaSimpleDTO::fromRequest((string)$pedidoId, $validated);
 
-            // Verificar permisos
-            if ($pedido->asesor_id !== Auth::id()) {
-                return response()->json([
-                    'error' => 'No tienes permiso para agregar prendas a este pedido'
-                ], 403);
-            }
+            // Usar el nuevo Use Case DDD
+            $resultado = $this->agregarPrendaSimpleUseCase->ejecutar($dto);
 
-            // Crear la prenda
-            $prenda = $pedido->prendas()->create([
-                'nombre_prenda' => $validated['nombre_prenda'],
-                'cantidad' => $validated['cantidad'],
-                'descripcion' => $validated['descripcion'] ?? null,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'id' => $prenda->id,
-                'nombre_prenda' => $prenda->nombre_prenda,
-                'cantidad' => $prenda->cantidad,
-                'descripcion' => $prenda->descripcion,
-            ], 201);
+            return response()->json($resultado, 201);
 
         } catch (\Exception $e) {
-            Log::error('Error agregando prenda simple', [
-                'pedido_id' => $pedidoId,
-                'error' => $e->getMessage()
-            ]);
-
             return response()->json([
-                'error' => 'Error al agregar la prenda: ' . $e->getMessage()
-            ], 500);
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 }

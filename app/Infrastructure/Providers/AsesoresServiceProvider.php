@@ -21,6 +21,10 @@ use App\Application\Pedidos\UseCases\AnularProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\PrepararCreacionProduccionPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarPrendaSimpleUseCase;
+use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerFacturaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerRecibosUseCase;
 
 /**
  * AsesoresServiceProvider
@@ -113,6 +117,34 @@ class AsesoresServiceProvider extends ServiceProvider
         // Preparar Creación Pedido
         $this->app->singleton(PrepararCreacionProduccionPedidoUseCase::class, function ($app) {
             return new PrepararCreacionProduccionPedidoUseCase();
+        });
+
+        // Agregar Prenda Simple
+        $this->app->singleton(AgregarPrendaSimpleUseCase::class, function ($app) {
+            return new AgregarPrendaSimpleUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Obtener Próximo Número Pedido
+        $this->app->singleton(ObtenerProximoNumeroPedidoUseCase::class, function ($app) {
+            return new ObtenerProximoNumeroPedidoUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Obtener Factura
+        $this->app->singleton(ObtenerFacturaUseCase::class, function ($app) {
+            return new ObtenerFacturaUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Obtener Recibos
+        $this->app->singleton(ObtenerRecibosUseCase::class, function ($app) {
+            return new ObtenerRecibosUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
         });
     }
 
