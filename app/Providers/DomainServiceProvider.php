@@ -31,6 +31,11 @@ use App\Application\Pedidos\UseCases\CancelarPedidoUseCase;
 use App\Application\Pedidos\UseCases\ActualizarDescripcionPedidoUseCase;
 use App\Application\Pedidos\UseCases\IniciarProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\CompletarPedidoUseCase;
+use App\Application\Pedidos\UseCases\AgregarItemPedidoUseCase;
+use App\Application\Pedidos\UseCases\EliminarItemPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerItemsPedidoUseCase;
+use App\Application\Pedidos\UseCases\GuardarPedidoDesdeJSONUseCase;
+use App\Application\Pedidos\UseCases\ValidarPedidoDesdeJSONUseCase;
 
 /**
  * Domain Service Provider
@@ -130,6 +135,19 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->singleton(CompletarPedidoUseCase::class, function ($app) {
             return new CompletarPedidoUseCase($app->make(PedidoRepository::class));
         });
+
+        // ========================================
+        // PEDIDOS - Items (Editable, Agregar, Eliminar)
+        // ========================================
+        $this->app->singleton(AgregarItemPedidoUseCase::class);
+        $this->app->singleton(EliminarItemPedidoUseCase::class);
+        $this->app->singleton(ObtenerItemsPedidoUseCase::class);
+
+        // ========================================
+        // PEDIDOS - JSON (Guardar y Validar desde JSON)
+        // ========================================
+        $this->app->singleton(GuardarPedidoDesdeJSONUseCase::class);
+        $this->app->singleton(ValidarPedidoDesdeJSONUseCase::class);
     }
 
     public function boot(): void

@@ -2,10 +2,9 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
-use App\Application\DTOs\ItemPedidoDTO;
-use App\Application\Services\PedidoPrendaService;
-use App\Application\Services\ColorGeneroMangaBrocheService;
-use App\Domain\PedidoProduccion\Services\GestionItemsPedidoService;
+use App\Application\Pedidos\UseCases\AgregarItemPedidoUseCase;
+use App\Application\Pedidos\UseCases\EliminarItemPedidoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerItemsPedidoUseCase;
 use App\Domain\PedidoProduccion\Services\TransformadorCotizacionService;
 use App\Domain\PedidoProduccion\Services\FormDataProcessorService;
 use App\Domain\PedidoProduccion\Services\ItemValidationService;
@@ -22,13 +21,24 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * CrearPedidoEditableController - REFACTORIZADO CON USE CASES
+ * 
+ * Responsabilidad:
+ * - Recibir requests HTTP del flujo de creación editable
+ * - Usar Use Cases de DDD para operaciones
+ * - Formatear respuestas JSON
+ * 
+ * Patrón: Use Cases (DDD) + Dependency Injection
+ * SRP: Solo HTTP, delegando lógica a Use Cases
+ */
 class CrearPedidoEditableController extends Controller
 {
     public function __construct(
-        private GestionItemsPedidoService $gestionItems,
+        private AgregarItemPedidoUseCase $agregarItemUseCase,
+        private EliminarItemPedidoUseCase $eliminarItemUseCase,
+        private ObtenerItemsPedidoUseCase $obtenerItemsUseCase,
         private TransformadorCotizacionService $transformador,
-        private PedidoPrendaService $pedidoPrendaService,
-        private PedidoEppService $eppService,
         private FormDataProcessorService $formDataProcessor,
         private ItemValidationService $itemValidator,
         private ItemTransformerService $itemTransformer,
@@ -37,6 +47,7 @@ class CrearPedidoEditableController extends Controller
         private EppProcessorService $eppProcessor,
         private PedidoCreationService $pedidoCreationService,
         private ImagenMapperService $imagenMapper,
+        private PedidoEppService $eppService,
     ) {}
 
     public function index(?string $tipoInicial = null): View
@@ -69,15 +80,10 @@ class CrearPedidoEditableController extends Controller
                 'imagenes' => 'nullable|array',
             ]);
 
-            $itemDTO = ItemPedidoDTO::fromArray($validated);
-            $this->gestionItems->agregarItem($itemDTO);
+            // Usar Use Case para agregar item
+            $result = $this->agregarItemUseCase->ejecutar($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Ítem agregado correctamente',
-                'items' => $this->gestionItems->obtenerItemsArray(),
-                'count' => $this->gestionItems->contar(),
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -91,21 +97,15 @@ class CrearPedidoEditableController extends Controller
         try {
             $index = $request->integer('index');
             
-            if ($index < 0 || $index >= $this->gestionItems->contar()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Índice de ítem inválido',
-                ], 422);
-            }
+            // Usar Use Case para eliminar item
+            $result = $this->eliminarItemUseCase->ejecutar($index);
 
-            $this->gestionItems->eliminarItem($index);
-
+            return response()->json($result);
+        } catch (\InvalidArgumentException $e) {
             return response()->json([
-                'success' => true,
-                'message' => 'Ítem eliminado correctamente',
-                'items' => $this->gestionItems->obtenerItemsArray(),
-                'count' => $this->gestionItems->contar(),
-            ]);
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -117,13 +117,12 @@ class CrearPedidoEditableController extends Controller
     public function obtenerItems(): JsonResponse
     {
         try {
-            return response()->json([
-                'items' => $this->gestionItems->obtenerItemsArray(),
-                'count' => $this->gestionItems->contar(),
-                'tieneItems' => $this->gestionItems->tieneItems(),
-            ]);
+            // Usar Use Case para obtener items
+            $result = $this->obtenerItemsUseCase->ejecutar();
+
+            return response()->json($result);
         } catch (\Exception $e) {
-            \Log::error(' Error en obtenerItems:', [
+            \Log::error('Error en obtenerItems:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
