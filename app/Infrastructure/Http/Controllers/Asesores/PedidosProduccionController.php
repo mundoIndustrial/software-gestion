@@ -1030,18 +1030,30 @@ class PedidosProduccionController
      * GET /api/tallas-disponibles
      * Obtener catálogo de tallas disponibles por género
      * 
-     * Usado en: Modal de selección de tallas en crear-pedido-nuevo
-     * Retorna: { DAMA: {...}, CABALLERO: {...}, UNISEX: {...} }
+     * Parámetros opcionales:
+     * - ?genero=DAMA (retorna solo ese género)
+     * - ?prendaId=123 (retorna tallas CON CANTIDADES de esa prenda)
+     * 
+     * Retorna: 
+     *   - Con prendaId: { DAMA: {S: 10, M: 15}, CABALLERO: {...} }
+     *   - Sin prendaId: { DAMA: ['XS', 'S', 'M', 'L'], CABALLERO: [...] }
      */
     public function obtenerTallasDisponibles(Request $request): JsonResponse
     {
         try {
-            Log::info('[PedidosProduccionController] GET /api/tallas-disponibles');
+            Log::info('[PedidosProduccionController] GET /api/tallas-disponibles', [
+                'params' => $request->all()
+            ]);
 
-            // Obtener parámetro opcional de género (si solo quiere un género)
-            $genero = $request->query('genero'); // NULL = todos, o 'DAMA', 'CABALLERO', 'UNISEX'
+            $genero = $request->query('genero');
+            $prendaId = $request->query('prendaId');
 
-            // Constantes de tallas (DEFINIDAS EN FRONTEND Y AQUI PARA CONSISTENCIA)
+            // Si pide tallas de una prenda ESPECÍFICA (con cantidades)
+            if ($prendaId) {
+                return $this->obtenerTallasPrenda((int)$prendaId);
+            }
+
+            // CATÁLOGO GENERAL: Constantes de tallas por género
             $tallasPorGenero = [
                 'DAMA' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
                 'CABALLERO' => ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46'],
@@ -1057,6 +1069,11 @@ class PedidosProduccionController
                 // Retornar todas las tallas por género
                 $resultado = $tallasPorGenero;
             }
+
+            Log::info('[PedidosProduccionController] Tallas retornadas', [
+                'count' => count($resultado),
+                'generos' => array_keys($resultado)
+            ]);
 
             return response()->json([
                 'success' => true,

@@ -77,3 +77,4 @@ final class AgregarProcesoPrendaUseCase
 
         return $proceso;
     }
+}
