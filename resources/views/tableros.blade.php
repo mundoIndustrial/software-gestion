@@ -16,7 +16,7 @@
 <!-- Font Awesome para iconos de paginación -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
-<link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
+<link rel="stylesheet" href="{{ asset('css/orders-styles/modern-table.css') }}">
 <script src="{{ asset('js/tableros.js') }}"></script>
 <style>
     .tableros-container {
