@@ -1,62 +1,59 @@
-<aside class="sidebar">
-    <!-- Sidebar Header -->
+<!-- Sidebar Bordado de Pedidos -->
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <div class="sidebar-brand">
-            <span class="material-symbols-rounded">thread_needle</span>
-            <span class="brand-text">Bordado</span>
-        </div>
-        <button class="sidebar-toggle" onclick="toggleSidebar()">
-            <span class="material-symbols-rounded">chevron_right</span>
+        <a href="{{ route('bordado.index') }}" class="logo-wrapper" aria-label="Ir a Gestión de Bordado">
+            <img src="{{ asset('images/logo2.png') }}"
+                 alt="Logo"
+                 class="header-logo"
+                 data-logo-light="{{ asset('images/logo2.png') }}"
+                 data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
+        </a>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
+            <span class="material-symbols-rounded">chevron_left</span>
         </button>
     </div>
 
-    <!-- Sidebar Content -->
-    <nav class="sidebar-nav">
-        <div class="nav-section">
-            <!-- Cotizaciones -->
-            <a href="{{ route('bordado.cotizaciones') }}" 
-               class="nav-item {{ Route::currentRouteName() === 'bordado.cotizaciones' ? 'active' : '' }}">
-                <span class="nav-icon material-symbols-rounded">assignment</span>
-                <span class="nav-label">Cotizaciones</span>
-            </a>
-
-            <!-- Pedidos -->
-            <a href="{{ route('bordado.index') }}" 
-               class="nav-item {{ Route::currentRouteName() === 'bordado.index' ? 'active' : '' }}">
-                <span class="nav-icon material-symbols-rounded">orders</span>
-                <span class="nav-label">Pedidos</span>
-            </a>
-        </div>
-    </nav>
-
-    <!-- Sidebar Footer -->
-    <div class="sidebar-footer">
-        <div class="sidebar-user">
-            <div class="user-avatar">{{ substr(auth()->user()->name, 0, 1) }}</div>
-            <div class="user-info">
-                <div class="user-name">{{ auth()->user()->name }}</div>
-                <div class="user-role">Bordado</div>
-            </div>
+    <div class="sidebar-content">
+        <!-- Sección Principal -->
+        <div class="menu-section">
+            <span class="menu-section-title">Gestión de Bordado</span>
+            <ul class="menu-list" role="navigation">
+                <li class="menu-item">
+                    <a href="{{ route('bordado.index') }}"
+                       class="menu-link {{ Route::currentRouteName() === 'bordado.index' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">assignment</span>
+                        <span class="menu-label">Pedidos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('bordado.cotizaciones') }}"
+                       class="menu-link {{ Route::currentRouteName() === 'bordado.cotizaciones' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">description</span>
+                        <span class="menu-label">Cotizaciones</span>
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
 </aside>
 
 <script>
-    function toggleSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        sidebar.classList.toggle('collapsed');
-        
-        // Guardar estado en localStorage
-        localStorage.setItem('bordado-sidebar-collapsed', sidebar.classList.contains('collapsed'));
-    }
+    // Sidebar Toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
 
-    // Restaurar estado del sidebar al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        const isCollapsed = localStorage.getItem('bordado-sidebar-collapsed') === 'true';
-        const sidebar = document.querySelector('.sidebar');
-        
-        if (isCollapsed) {
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            // Guardar estado
+            localStorage.setItem('bordado-sidebar-collapsed', sidebar.classList.contains('collapsed'));
+        });
+
+        // Restaurar estado
+        if (localStorage.getItem('bordado-sidebar-collapsed') === 'true') {
             sidebar.classList.add('collapsed');
         }
-    });
+    }
 </script>

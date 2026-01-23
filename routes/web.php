@@ -756,25 +756,12 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
 Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bordado.')->group(function () {
     // Listar cotizaciones del módulo Bordado
     Route::get('/cotizaciones', function () {
-        // Obtener cotizaciones asignadas al rol Bordado
-        // Por ahora todas las cotizaciones tipo BORDADO
-        $cotizaciones = \App\Models\Cotizacion::where('tipo', 'BORDADO')
-            ->with(['usuario'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        return view('bordado.cotizaciones', compact('cotizaciones'));
+        return view('bordado.cotizaciones');
     })->name('cotizaciones');
 
     // Listar pedidos del módulo Bordado
     Route::get('/', function () {
-        // Obtener órdenes asignadas al rol Bordado (por ahora todas las órdenes)
-        // En el futuro, esto se puede filtrar por estado o asignación específica
-        $ordenes = \App\Models\Pedido::with(['asesora'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        return view('bordado.index', compact('ordenes'));
+        return view('bordado.index');
     })->name('index');
 });
 
