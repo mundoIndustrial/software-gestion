@@ -349,7 +349,8 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     private function procesarVariantes(array $prendaData): array
     {
-        $variantes = $prendaData['variantes'] ?? [];
+        // Soportar ambos nombres: 'variaciones' (nuevo, FormRequest) y 'variantes' (antiguo)
+        $variantes = $prendaData['variaciones'] ?? $prendaData['variantes'] ?? [];
         if (is_string($variantes)) {
             $variantes = json_decode($variantes, true) ?? [];
         }

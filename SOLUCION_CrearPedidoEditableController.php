@@ -13,6 +13,11 @@ use App\Http\Requests\CrearPedidoCompletoRequest;
  * 
  * Maneja la creación de pedidos desde la interfaz editable (gestión de ítems, validación y creación)
  * Este controlador es parte de la arquitectura web tradicional para crear pedidos de manera interactiva
+ * 
+ * 🔧 CAMBIOS APLICADOS (24 Enero 2026):
+ * - validarPedido() ahora usa CrearPedidoCompletoRequest para VALIDACIÓN COMPLETA
+ * - Validación incompleta eliminada (que solo validaba cliente, items, cantidad_talla)
+ * - Ahora valida y retorna: variaciones, procesos, telas, imagenes
  */
 class CrearPedidoEditableController extends Controller
 {
@@ -104,7 +109,7 @@ class CrearPedidoEditableController extends Controller
      * - Valida y retorna TODOS los campos: variaciones, procesos, telas, imagenes
      * - Antes solo validaba: cliente, items, cantidad_talla (se perdían los demás)
      * 
-     * @param CrearPedidoCompletoRequest $request
+     * @param CrearPedidoCompletoRequest $request ← CAMBIO: Era Request
      * @return JsonResponse
      */
     public function validarPedido(CrearPedidoCompletoRequest $request): JsonResponse
@@ -123,7 +128,7 @@ class CrearPedidoEditableController extends Controller
             \Log::info('[CrearPedidoEditableController] Validación pasada', [
                 'cliente' => $validated['cliente'] ?? null,
                 'items_count' => count($validated['items'] ?? []),
-                'first_item_keys' => count($validated['items'][0] ?? []) ? array_keys($validated['items'][0]) : [],
+                'items_keys' => count($validated['items'][0] ?? []) ? array_keys($validated['items'][0]) : [],
             ]);
 
             // Obtener o crear el cliente
