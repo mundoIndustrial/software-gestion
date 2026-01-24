@@ -26,7 +26,7 @@ foreach ($carpeta in $carpetas) {
     $path = "app/Domain/Pedidos/$carpeta"
     if (!(Test-Path $path)) {
         New-Item -ItemType Directory -Path $path -Force | Out-Null
-        Write-Host "✅ Creada: $path" -ForegroundColor Green
+        Write-Host " Creada: $path" -ForegroundColor Green
     } else {
         Write-Host "⚠️  Existe: $path" -ForegroundColor Yellow
     }
@@ -54,12 +54,12 @@ foreach ($archivo in $archivos) {
 }
 
 if ($referencias.Count -gt 0) {
-    Write-Host "`n📋 Archivos con referencias a PedidoProduccion:" -ForegroundColor Yellow
+    Write-Host "`n Archivos con referencias a PedidoProduccion:" -ForegroundColor Yellow
     foreach ($ref in $referencias) {
         Write-Host "  - $($ref.Archivo) ($($ref.Matches) referencias)" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "✅ No hay referencias a PedidoProduccion" -ForegroundColor Green
+    Write-Host " No hay referencias a PedidoProduccion" -ForegroundColor Green
 }
 
 # ============================================================
@@ -83,7 +83,7 @@ if (Test-Path $sourceDir) {
 # FASE 4: VALIDACIÓN PRE-MIGRACIÓN
 # ============================================================
 
-Write-Host "`n✅ Pre-migración - Checklist:" -ForegroundColor Cyan
+Write-Host "`n Pre-migración - Checklist:" -ForegroundColor Cyan
 
 $checks = @(
     @{ Name = "Estructura Pedidos existe"; Path = "app/Domain/Pedidos" },
@@ -94,13 +94,13 @@ $checks = @(
 
 foreach ($check in $checks) {
     if (Test-Path $check.Path) {
-        Write-Host "  ✅ $($check.Name)" -ForegroundColor Green
+        Write-Host "   $($check.Name)" -ForegroundColor Green
     } else {
         Write-Host "  ❌ $($check.Name) - NO ENCONTRADO" -ForegroundColor Red
     }
 }
 
-Write-Host "`n🎯 Siguiente paso: Ejecutar FASE 1 del plan manualmente o ejecutar:" -ForegroundColor Cyan
+Write-Host "`nSiguiente paso: Ejecutar FASE 1 del plan manualmente o ejecutar:" -ForegroundColor Cyan
 Write-Host "   php artisan test tests/Unit/Domain/Pedidos/" -ForegroundColor Yellow
 
 Write-Host "`n📌 Recuerda:

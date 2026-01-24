@@ -126,26 +126,26 @@
 
 ---
 
-### 8. **CrearPedidoEditableController.php** ✅ (PARCIALMENTE MIGRADO)
+### 8. **CrearPedidoEditableController.php**  (PARCIALMENTE MIGRADO)
 **Ubicación:** `app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController.php`  
-**Estado:** ✅ Refactorizado a Use Cases (hace poco)
+**Estado:**  Refactorizado a Use Cases (hace poco)
 - Ya usa `AgregarItemPedidoUseCase`
 - Ya usa `EliminarItemPedidoUseCase`
 - Ya usa `ObtenerItemsPedidoUseCase`
 
 ---
 
-### 9. **GuardarPedidoJSONController.php** ✅ (PARCIALMENTE MIGRADO)
+### 9. **GuardarPedidoJSONController.php**  (PARCIALMENTE MIGRADO)
 **Ubicación:** `app/Infrastructure/Http/Controllers/Asesores/GuardarPedidoJSONController.php`  
-**Estado:** ✅ Refactorizado a Use Cases (hace poco)
+**Estado:**  Refactorizado a Use Cases (hace poco)
 - Ya usa `GuardarPedidoDesdeJSONUseCase`
 - Ya usa `ValidarPedidoDesdeJSONUseCase`
 
 ---
 
-### 10. **PedidoController.php** ✅ (MIGRADO)
+### 10. **PedidoController.php**  (MIGRADO)
 **Ubicación:** `app/Http/Controllers/API/PedidoController.php`  
-**Estado:** ✅ YA EN DDD
+**Estado:**  YA EN DDD
 - Usa `CrearPedidoUseCase`
 - Usa `ConfirmarPedidoUseCase`
 - Usa `ObtenerPedidoUseCase`
@@ -163,9 +163,9 @@
 | **SupervisorPedidosController** | ? | ❌ | NO MIGRADO |
 | **RegistroBodegaController** | ~1,200 | ❌ | NO MIGRADO |
 | **OrdenController** | ? | ❌ | NO MIGRADO |
-| CrearPedidoEditableController | ~450 | ✅ | MIGRADO |
-| GuardarPedidoJSONController | ~130 | ✅ | MIGRADO |
-| PedidoController (API) | ~250 | ✅ | MIGRADO |
+| CrearPedidoEditableController | ~450 |  | MIGRADO |
+| GuardarPedidoJSONController | ~130 |  | MIGRADO |
+| PedidoController (API) | ~250 |  | MIGRADO |
 
 ---
 
@@ -214,7 +214,7 @@ public function store(Request $request) {
     // ... más lógica aquí
 }
 
-// ✅ ESTO SÍ ES DDD
+//  ESTO SÍ ES DDD
 public function store(Request $request) {
     $dto = CrearPedidoDTO::fromRequest($request);
     $response = $this->crearPedidoUseCase->ejecutar($dto);
@@ -224,7 +224,7 @@ public function store(Request $request) {
 
 ---
 
-## 📋 PLAN DE MIGRACIÓN COMPLETO (REALISTA)
+##  PLAN DE MIGRACIÓN COMPLETO (REALISTA)
 
 ### FASE 1: Migrar AsesoresController (Principal)
 **Tiempo estimado:** 4-6 horas  
@@ -275,7 +275,7 @@ public function store(Request $request) {
 
 ---
 
-## 🎯 RECOMENDACIÓN
+## RECOMENDACIÓN
 
 **Opción A: Migración Completa (RECOMENDADO)**
 - Total: 19-26 horas de trabajo
@@ -295,7 +295,7 @@ public function store(Request $request) {
 
 ---
 
-## 🚀 PRÓXIMO PASO
+##  PRÓXIMO PASO
 
 ¿Cuál opción prefieres?
 - **A) Migración completa (todas las fases)**

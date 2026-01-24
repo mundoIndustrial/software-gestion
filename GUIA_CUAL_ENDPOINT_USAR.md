@@ -1,4 +1,4 @@
-# 📋 GUÍA: CUÁL ENDPOINT USAR PARA PEDIDOS
+#  GUÍA: CUÁL ENDPOINT USAR PARA PEDIDOS
 
 ## ¿CONFUNDIDO? AQUÍ ESTÁ LA RESPUESTA
 
@@ -45,7 +45,7 @@ POST /api/pedidos                // Creas en tabla pedidos (DISTINTA)
 // Ahora tienes 2 pedidos en 2 tablas sin relación
 ```
 
-**BUENO ✅:**
+**BUENO :**
 ```javascript
 // ELIGE UNO U OTRO:
 
@@ -67,7 +67,7 @@ PATCH /api/pedidos/{id}/confirmar  // Confirma
 
 ---
 
-## 🎯 RECOMENDACIÓN
+## RECOMENDACIÓN
 
 **Si estás integrando un nuevo sistema en 2026:**
 👉 **USA `/api/pedidos`** (DDD, moderno, bien documentado)

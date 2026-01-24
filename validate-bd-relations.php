@@ -28,7 +28,7 @@ echo "\n" . str_repeat("=", 80) . "\n";
 echo "VALIDACIÓN DE ESTRUCTURA BD Y RELACIONES ELOQUENT\n";
 echo str_repeat("=", 80) . "\n\n";
 
-echo "📋 Validando pedido ID: $pedidoId\n\n";
+echo " Validando pedido ID: $pedidoId\n\n";
 
 try {
     // 1. Verificar que el modelo existe
@@ -39,7 +39,7 @@ try {
         throw new \Exception("Pedido $pedidoId no encontrado en BD");
     }
     
-    echo "   ✅ Pedido encontrado: #$modeloPedido->numero_pedido\n\n";
+    echo "    Pedido encontrado: #$modeloPedido->numero_pedido\n\n";
 
     // 2. Verificar prendas
     echo "2️⃣  Verificando relación prendas...\n";
@@ -49,7 +49,7 @@ try {
         throw new \Exception("No se puede cargar relación prendas");
     }
     
-    echo "   ✅ Prendas cargadas: " . count($prendas) . " prendas\n";
+    echo "    Prendas cargadas: " . count($prendas) . " prendas\n";
     
     if ($prendas->isEmpty()) {
         echo "   ⚠️  Advertencia: El pedido no tiene prendas\n";
@@ -61,7 +61,7 @@ try {
         // 3a. Verificar tallas
         echo "   3️⃣  Verificando relación tallas...\n";
         $tallas = $prenda->tallas;
-        echo "      ✅ Tallas cargadas: " . count($tallas) . " registros\n";
+        echo "       Tallas cargadas: " . count($tallas) . " registros\n";
         
         if (!$tallas->isEmpty()) {
             $talla = $tallas->first();
@@ -71,7 +71,7 @@ try {
         // 3b. Verificar variantes
         echo "   4️⃣  Verificando relación variantes...\n";
         $variantes = $prenda->variantes;
-        echo "      ✅ Variantes cargadas: " . count($variantes) . " registros\n";
+        echo "       Variantes cargadas: " . count($variantes) . " registros\n";
         
         if (!$variantes->isEmpty()) {
             $var = $variantes->first();
@@ -82,7 +82,7 @@ try {
                 echo "   5️⃣  Verificando relación tipoManga...\n";
                 $manga = $var->tipoManga;
                 if ($manga) {
-                    echo "      ✅ Manga cargada: $manga->nombre\n";
+                    echo "       Manga cargada: $manga->nombre\n";
                 } else {
                     echo "      ⚠️  Manga con ID $var->tipo_manga_id no encontrado\n";
                 }
@@ -93,7 +93,7 @@ try {
                 echo "   6️⃣  Verificando relación tipoBroche...\n";
                 $broche = $var->tipoBroche;
                 if ($broche) {
-                    echo "      ✅ Broche cargado: $broche->nombre\n";
+                    echo "       Broche cargado: $broche->nombre\n";
                 } else {
                     echo "      ⚠️  Broche con ID $var->tipo_broche_boton_id no encontrado\n";
                 }
@@ -103,7 +103,7 @@ try {
         // 3c. Verificar coloresTelas
         echo "   7️⃣  Verificando relación coloresTelas...\n";
         $coloresTelas = $prenda->coloresTelas;
-        echo "      ✅ Colores/Telas cargados: " . count($coloresTelas) . " registros\n";
+        echo "       Colores/Telas cargados: " . count($coloresTelas) . " registros\n";
         
         if (!$coloresTelas->isEmpty()) {
             $ct = $coloresTelas->first();
@@ -122,19 +122,19 @@ try {
             // Verificar fotos de tela
             echo "   8️⃣  Verificando relación fotos de tela...\n";
             $fotosTela = $ct->fotos;
-            echo "      ✅ Fotos de tela cargadas: " . count($fotosTela) . " registros\n";
+            echo "       Fotos de tela cargadas: " . count($fotosTela) . " registros\n";
         }
         
         // 3d. Verificar fotos de prenda
         echo "   9️⃣  Verificando relación fotos de prenda...\n";
         $fotos = $prenda->fotos;
-        echo "      ✅ Fotos cargadas: " . count($fotos) . " registros\n";
+        echo "       Fotos cargadas: " . count($fotos) . " registros\n";
     }
     
     // 4. Verificar EPPs
     echo "\n   1️⃣0️⃣  Verificando relación epps...\n";
     $epps = $modeloPedido->epps;
-    echo "      ✅ EPPs cargados: " . count($epps) . " registros\n";
+    echo "       EPPs cargados: " . count($epps) . " registros\n";
     
     if (!$epps->isEmpty()) {
         $epp = $epps->first();
@@ -148,7 +148,7 @@ try {
         // Verificar imágenes del EPP
         echo "   1️⃣1️⃣  Verificando relación imágenes de EPP...\n";
         $imagenesEpp = $epp->imagenes;
-        echo "      ✅ Imágenes EPP cargadas: " . count($imagenesEpp) . " registros\n";
+        echo "       Imágenes EPP cargadas: " . count($imagenesEpp) . " registros\n";
     }
     
     // 5. Verificar ObtenerPedidoUseCase
@@ -159,9 +159,9 @@ try {
     
     $resultado = $useCase->ejecutar($pedidoId);
     
-    echo "      ✅ Use Case ejecutado exitosamente\n";
-    echo "      ✅ Prendas en DTO: " . count($resultado->prendas) . "\n";
-    echo "      ✅ EPPs en DTO: " . count($resultado->epps) . "\n";
+    echo "       Use Case ejecutado exitosamente\n";
+    echo "       Prendas en DTO: " . count($resultado->prendas) . "\n";
+    echo "       EPPs en DTO: " . count($resultado->epps) . "\n";
     
     if (!empty($resultado->prendas)) {
         $prenda = $resultado->prendas[0];
@@ -176,7 +176,7 @@ try {
     }
     
     echo "\n" . str_repeat("=", 80) . "\n";
-    echo "✅ VALIDACIÓN COMPLETADA EXITOSAMENTE\n";
+    echo " VALIDACIÓN COMPLETADA EXITOSAMENTE\n";
     echo str_repeat("=", 80) . "\n\n";
     
 } catch (\Throwable $e) {

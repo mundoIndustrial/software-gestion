@@ -4,7 +4,7 @@
 
 ---
 
-## ✅ ARCHIVOS SEGUROS PARA ELIMINAR (Sin referencias activas)
+##  ARCHIVOS SEGUROS PARA ELIMINAR (Sin referencias activas)
 
 ### Nivel 1: SIN REFERENCIAS EN RUTAS (SEGURO)
 
@@ -34,7 +34,7 @@
 
 ---
 
-## 📋 PLAN PASO A PASO
+##  PLAN PASO A PASO
 
 ### PASO 1: Eliminar PedidoLogoAreaController.php
 ```bash
@@ -76,10 +76,10 @@ Cada archivo que eliminemos debe pasar:
 **Primera eliminación:** `PedidoLogoAreaController.php`
 
 Razones:
-1. ✅ No está en rutas
-2. ✅ No hay imports
-3. ✅ Bajo riesgo
-4. ✅ Despeja código
+1.  No está en rutas
+2.  No hay imports
+3.  Bajo riesgo
+4.  Despeja código
 
 ---
 

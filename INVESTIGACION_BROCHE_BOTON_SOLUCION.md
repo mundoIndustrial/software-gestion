@@ -117,11 +117,11 @@ async function cargarTiposBrocheBoton() {
 ## Resultado
 
 Ahora cuando se carga una prenda con `tipo_broche_boton_id = 2`:
-1. ✅ El frontend recibe correctamente el ID
-2. ✅ El selector dropdown muestra "Botón" como seleccionado
-3. ✅ Se pueden capturar observaciones adicionales
-4. ✅ Los datos se guardan correctamente con los IDs
-5. ✅ Los tipos se cargan dinámicamente desde la BDD
+1.  El frontend recibe correctamente el ID
+2.  El selector dropdown muestra "Botón" como seleccionado
+3.  Se pueden capturar observaciones adicionales
+4.  Los datos se guardan correctamente con los IDs
+5.  Los tipos se cargan dinámicamente desde la BDD
 
 ## Archivos Modificados
 

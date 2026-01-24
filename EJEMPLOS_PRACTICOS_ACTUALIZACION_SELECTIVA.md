@@ -1,6 +1,6 @@
 # Ejemplos Prácticos: Actualización Selectiva de Prendas
 
-## 🎯 Introducción
+## Introducción
 
 Este documento contiene ejemplos prácticos de cómo usar el sistema de actualización selectiva de prendas. El principio es simple: **solo envía lo que quieres cambiar**.
 
@@ -53,7 +53,7 @@ Un asesor abre una prenda en la cartera y hace clic en "Editar Tallas". Solo qui
 // → cantidad_talla NO está vacío → continuar
 // → DELETE registros viejos de tallas
 // → INSERT registros nuevos
-// ✅ TABLA AFECTADA: prenda_pedido_tallas
+//  TABLA AFECTADA: prenda_pedido_tallas
 
 // 4. actualizarVariantes()
 // → variantes es null → return (SKIP)
@@ -162,7 +162,7 @@ Un asesor quiere cambiar los tipos de manga y procesos, pero mantener tallas, co
 // → variantes NO está vacío → continuar
 // → DELETE registros viejos de variantes
 // → INSERT 1 nuevo registro de variante
-// ✅ TABLA AFECTADA: prenda_pedido_variantes
+//  TABLA AFECTADA: prenda_pedido_variantes
 
 // 4. actualizarColoresTelas()
 // → colores_telas es null → return (SKIP)
@@ -172,8 +172,8 @@ Un asesor quiere cambiar los tipos de manga y procesos, pero mantener tallas, co
 // → procesos NO está vacío → continuar
 // → DELETE registros viejos de procesos (y sus imágenes en cascada)
 // → INSERT 2 nuevos registros de procesos
-// ✅ TABLA AFECTADA: pedidos_procesos_prenda_detalles
-// ✅ TABLA AFECTADA: pedidos_procesos_prenda_detalle_imagenes (en cascada)
+//  TABLA AFECTADA: pedidos_procesos_prenda_detalles
+//  TABLA AFECTADA: pedidos_procesos_prenda_detalle_imagenes (en cascada)
 ```
 
 ### Resultado en Base de Datos
@@ -231,8 +231,8 @@ Un asesor decide que esta prenda no necesita procesos especiales y quiere limpia
 // → procesos SÍ está vacío (empty([]) = true) → ejecutar:
 // $prenda->procesos()->delete();
 // return;
-// ✅ TABLA AFECTADA: pedidos_procesos_prenda_detalles (eliminada)
-// ✅ TABLA AFECTADA: pedidos_procesos_prenda_detalle_imagenes (eliminada en cascada)
+//  TABLA AFECTADA: pedidos_procesos_prenda_detalles (eliminada)
+//  TABLA AFECTADA: pedidos_procesos_prenda_detalle_imagenes (eliminada en cascada)
 ```
 
 ### Resultado en Base de Datos
@@ -393,7 +393,7 @@ Un asesor solo quiere corregir una descripción, sin tocar ningún dato de confi
 // → nombre_prenda es null → skip
 // → descripcion NO es null → UPDATE descripcion
 // → de_bodega es null → skip
-// ✅ UPDATE tabla: prendas_pedido (solo 1 columna)
+//  UPDATE tabla: prendas_pedido (solo 1 columna)
 
 // 2-6. Todas las relaciones null → SKIP todas
 ```
@@ -528,9 +528,9 @@ curl -X POST http://localhost:8000/asesores/pedidos/1/actualizar \
 
 ---
 
-## 🚀 Mejores Prácticas
+##  Mejores Prácticas
 
-### ✅ Hacer
+###  Hacer
 
 1. **Enviar solo lo que cambia**
    ```json

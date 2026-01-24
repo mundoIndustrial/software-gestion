@@ -7,7 +7,7 @@
 
 ---
 
-## 🎯 PRINCIPIOS DE MIGRACIÓN SEGURA
+## PRINCIPIOS DE MIGRACIÓN SEGURA
 
 ### 1. **No Romper Nada**
 - Cada cambio es pequeño y testeable
@@ -35,7 +35,7 @@ Servicios Legacy → Domain Layer
 
 ---
 
-## 📋 PLAN DETALLADO POR FASES
+##  PLAN DETALLADO POR FASES
 
 ### ⏱️ TOTAL: 3-4 SEMANAS (2-3 horas/día)
 
@@ -118,7 +118,7 @@ app/Domain/PedidoProduccion/Entities/PrendaProduccionEntity.php
 
 **Usar patrón:**
 ```php
-// ✅ Los Use Cases USAN servicios legacy por ahora
+//  Los Use Cases USAN servicios legacy por ahora
 class CrearProduccionPedidoUseCase {
     public function __construct(
         private PedidoProduccionAggregate $agregado,
@@ -153,10 +153,10 @@ class CrearProduccionPedidoUseCase {
 ```
 
 **Ventaja:**
-- ✅ No rompe servicios legacy
-- ✅ Agregado + lógica nueva funciona
-- ✅ Fácil de rollback
-- ✅ Los servicios legacy se pueden eliminar después
+-  No rompe servicios legacy
+-  Agregado + lógica nueva funciona
+-  Fácil de rollback
+-  Los servicios legacy se pueden eliminar después
 
 **Tiempo:** 3-4 horas
 
@@ -308,7 +308,7 @@ tests/Feature/Pedidos/ActualizarPedidoTest.php
 // ❌ Eliminar (porque ya está en agregado)
 app/Services/Pedidos/EnriquecerDatosService.php
 
-// ✅ Mantener (todavía usado)
+//  Mantener (todavía usado)
 app/Services/PedidoEppService.php (si se usa)
 ```
 
@@ -375,7 +375,7 @@ Cada paso es **reversible en 1 comando**.
 
 ---
 
-## ✅ CHECKLIST DE VALIDACIÓN
+##  CHECKLIST DE VALIDACIÓN
 
 Después de cada fase:
 
@@ -392,7 +392,7 @@ Después de cada fase:
 
 ---
 
-## 🚀 EMPEZAMOS HOY
+##  EMPEZAMOS HOY
 
 **Próximo paso:**
 1. ¿Empezamos con Fase 0 (Setup)?
@@ -414,4 +414,4 @@ Después de cada fase:
 
 ---
 
-**¿Empezamos?** 🚀
+**¿Empezamos?** 

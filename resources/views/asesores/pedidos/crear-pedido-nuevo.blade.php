@@ -277,6 +277,14 @@
     <!-- Manejadores de variaciones -->
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
     
+    <!-- UTILIDADES para transformación de datos -->
+    <script src="{{ asset('js/prendas/utils/prenda-data-transformer.js') }}"></script>
+    
+    <!-- BUILDERS para construcción de secciones HTML -->
+    <script src="{{ asset('js/prendas/builders/variaciones-builder.js') }}"></script>
+    <script src="{{ asset('js/prendas/builders/tallas-builder.js') }}"></script>
+    <script src="{{ asset('js/prendas/builders/procesos-builder.js') }}"></script>
+    
     <!-- SERVICIOS MODULARES para tarjeta readonly (DEBEN cargarse ANTES) -->
     <script src="{{ asset('js/componentes/services/image-converter-service.js') }}"></script>
     <script src="{{ asset('js/componentes/services/prenda-card-service.js') }}"></script>

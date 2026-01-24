@@ -1,6 +1,6 @@
 # CARTERA PEDIDOS - DOCUMENTACIÓN Y ESPECIFICACIÓN
 
-## 📋 Descripción General
+##  Descripción General
 
 La vista `cartera_pedidos.blade.php` es una interfaz para que los usuarios con rol "Cartera" aprueben o rechacen pedidos en estado "Pendiente cartera". 
 
@@ -391,9 +391,9 @@ La vista es totalmente responsive:
 
 ---
 
-## 🎯 Puntos Clave
+## Puntos Clave
 
-✅ **Implementado:**
+ **Implementado:**
 - Interfaz completa y responsiva
 - Tabla con carga dinámica
 - Dos modales (Aprobación y Rechazo)

@@ -28,7 +28,7 @@ Pedidos/
 **Características:**
 - ❌ Sin CQRS (sin Commands, Queries, Handlers)
 - ❌ Estructura simplificada
-- ✅ Tiene Domain Services (PrendaFotoService)
+-  Tiene Domain Services (PrendaFotoService)
 
 ---
 
@@ -95,10 +95,10 @@ PedidoProduccion/
 ```
 
 **Características:**
-- ✅ CQRS completo (Commands, CommandHandlers, Queries, QueryHandlers)
-- ✅ Event Sourcing (Events, Listeners)
-- ✅ Patrones avanzados (Aggregates, Strategies, Validators)
-- ✅ Repositorio separado
+-  CQRS completo (Commands, CommandHandlers, Queries, QueryHandlers)
+-  Event Sourcing (Events, Listeners)
+-  Patrones avanzados (Aggregates, Strategies, Validators)
+-  Repositorio separado
 
 ---
 
@@ -139,7 +139,7 @@ Los controllers seguramente importan de `PedidoProduccion/*` porque es donde est
 
 ---
 
-## 🎯 SOLUCIÓN RECOMENDADA
+## SOLUCIÓN RECOMENDADA
 
 ### Opción A: Migrar TODO a Pedidos (RECOMENDADO)
 
@@ -172,9 +172,9 @@ Pedidos/
 │   ├── EstadoPedidoInvalido.php
 │   └── PedidoNoEncontrado.php
 ├── QueryHandlers/                       ⚠️ AQUÍ VAN NUESTROS FIXES
-│   ├── ObtenerPedidoHandler.php         (✅ Ya migrado y arreglado)
-│   ├── ObtenerPrendasPorPedidoHandler.php (✅ Ya migrado y arreglado)
-│   ├── BuscarPedidoPorNumeroHandler.php (✅ Ya migrado y arreglado)
+│   ├── ObtenerPedidoHandler.php         ( Ya migrado y arreglado)
+│   ├── ObtenerPrendasPorPedidoHandler.php ( Ya migrado y arreglado)
+│   ├── BuscarPedidoPorNumeroHandler.php ( Ya migrado y arreglado)
 │   └── ... (etc)
 ├── Queries/
 │   ├── ObtenerPedidoQuery.php
@@ -184,7 +184,7 @@ Pedidos/
 │   ├── LogoPedidoRepository.php
 │   └── CotizacionRepository.php
 ├── Services/
-│   ├── PrendaFotoService.php            (✅ Ya está en Pedidos)
+│   ├── PrendaFotoService.php            ( Ya está en Pedidos)
 │   ├── CreacionPedidoService.php
 │   ├── PrendaVarianteService.php
 │   └── ... (todos de PedidoProduccion)
@@ -218,7 +218,7 @@ Si realmente necesitas dos dominios separados:
 
 ---
 
-## 📋 ANÁLISIS DE IMPACTO
+##  ANÁLISIS DE IMPACTO
 
 ### Archivos que NO necesitan cambios (modelos en `/app/Models/`):
 - `PedidoProduccion.php` (modelo Eloquent)
@@ -237,15 +237,15 @@ Si realmente necesitas dos dominios separados:
 
 ---
 
-## 🚀 MI RECOMENDACIÓN
+##  MI RECOMENDACIÓN
 
 **Opción A: Consolidar TODO en Pedidos** porque:
 
-1. ✅ **Coherencia:** Un dominio = una carpeta
-2. ✅ **Claridad:** Nadie confunde qué usar dónde
-3. ✅ **Mantenibilidad:** Una sola fuente de verdad
-4. ✅ **Performance:** No cargar configuración de dos dominios
-5. ✅ **Escalabilidad:** Fácil agregar nuevas features sin duplicar
+1.  **Coherencia:** Un dominio = una carpeta
+2.  **Claridad:** Nadie confunde qué usar dónde
+3.  **Mantenibilidad:** Una sola fuente de verdad
+4.  **Performance:** No cargar configuración de dos dominios
+5.  **Escalabilidad:** Fácil agregar nuevas features sin duplicar
 
 ---
 
@@ -260,15 +260,15 @@ Si realmente necesitas dos dominios separados:
 | Estado | Estado (VO) | ??? |
 
 **Decisión:** Al migrar, usar nombres CONSISTENTES:
-- ✅ `PedidoAggregate.php` (no PedidoProduccionAggregate)
-- ✅ `PrendaEntity.php` (no PrendaPedido para Entity)
-- ✅ `Estado.php` (VO)
+-  `PedidoAggregate.php` (no PedidoProduccionAggregate)
+-  `PrendaEntity.php` (no PrendaPedido para Entity)
+-  `Estado.php` (VO)
 
 ---
 
 ## 📝 PRÓXIMOS PASOS
 
-1. ✅ Analizar si hay lógica diferente en ambos dominios
+1.  Analizar si hay lógica diferente en ambos dominios
 2. ⏳ Decidir si es realmente una sola cosa o dos cosas
 3. ⏳ Hacer la migración
 4. ⏳ Actualizar todos los imports

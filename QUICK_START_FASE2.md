@@ -31,9 +31,9 @@ fetch('/api/pedidos', ...)
 GUIA_MIGRACION_FRONTEND.md
 
 # Aprenderás:
-✅ Cómo cambiar cada endpoint
-✅ Manejo de errores
-✅ Ejemplos de código
+ Cómo cambiar cada endpoint
+ Manejo de errores
+ Ejemplos de código
 ```
 
 ### PASO 2: Buscar Archivos (15 min)
@@ -69,9 +69,9 @@ php artisan test
 5. Listar pedidos
 
 # Valida:
-✅ No hay errores 410 Gone
-✅ Respuestas JSON correctas
-✅ Flujos completos funcionan
+ No hay errores 410 Gone
+ Respuestas JSON correctas
+ Flujos completos funcionan
 ```
 
 ### PASO 5: Commit
@@ -83,7 +83,7 @@ git push
 
 ---
 
-## 📋 CHECKLIST RÁPIDO
+##  CHECKLIST RÁPIDO
 
 ### Antes de empezar:
 - [ ] Leído GUIA_MIGRACION_FRONTEND.md
@@ -165,10 +165,10 @@ fetch(`/api/pedidos/${id}`)
 
 ```bash
 # Típicamente encontrarás en:
-✅ resources/views/asesores/pedidos/*.blade.php
-✅ resources/js/pedidos/*.js
-✅ resources/js/asesores/*.js
-✅ public/js/pedidos.js (si existe)
+ resources/views/asesores/pedidos/*.blade.php
+ resources/js/pedidos/*.js
+ resources/js/asesores/*.js
+ public/js/pedidos.js (si existe)
 
 # Usa búsqueda para encontrar:
 grep -r "asesores/pedidos" resources/ --include="*.js" --include="*.blade.php"
@@ -178,11 +178,11 @@ grep -r "\.post.*asesores" resources/ --include="*.js"
 
 ---
 
-## ✅ VALIDACIÓN
+##  VALIDACIÓN
 
 ### Código está correcto si:
 ```javascript
-// ✅ CORRECTO
+//  CORRECTO
 fetch('/api/pedidos', { ... })
 fetch(`/api/pedidos/${id}`, { ... })
 fetch(`/api/pedidos/${id}/confirmar`, { ... })
@@ -240,13 +240,13 @@ Asegúrate de acceder a response.data.id, no response.id
 # 3. Haz clic en operación (crear, confirmar, etc.)
 
 # 4. Verifica en Network tab:
-   ✅ Request va a /api/pedidos (no /asesores/pedidos)
-   ✅ Status code es 200/201/204 (no 410)
-   ✅ Response JSON tiene estructura correcta
+    Request va a /api/pedidos (no /asesores/pedidos)
+    Status code es 200/201/204 (no 410)
+    Response JSON tiene estructura correcta
 
 # 5. Verifica en Console tab:
-   ✅ No hay errores JavaScript
-   ✅ Respuesta se procesa correctamente
+    No hay errores JavaScript
+    Respuesta se procesa correctamente
 ```
 
 ---
@@ -303,7 +303,7 @@ Crea un archivo llamado `FASE2_PROGRESO.md`:
 
 ---
 
-## 🎯 ESTIMADOS POR SECCIÓN
+## ESTIMADOS POR SECCIÓN
 
 | Tarea | Tiempo | Notas |
 |-------|--------|-------|
@@ -316,7 +316,7 @@ Crea un archivo llamado `FASE2_PROGRESO.md`:
 
 ---
 
-## ✅ CUÁNDO FASE 2 ESTÁ LISTA
+##  CUÁNDO FASE 2 ESTÁ LISTA
 
 - [x] Todos los archivos actualizados
 - [x] No hay referencias a /asesores/pedidos
@@ -325,7 +325,7 @@ Crea un archivo llamado `FASE2_PROGRESO.md`:
 - [x] No hay errores 410 Gone
 - [x] Cambios commiteados
 
-**Entonces:** FASE 2 COMPLETADA ✅
+**Entonces:** FASE 2 COMPLETADA 
 
 ---
 
@@ -390,11 +390,11 @@ Si empiezas ahora:
 - Hoy: Leer + Buscar archivos (45 min)
 - Mañana: Actualizar archivos (3-4 horas)
 - Mañana: Testing (1-2 horas)
-- Resultado: ✅ FASE 2 COMPLETADA
+- Resultado:  FASE 2 COMPLETADA
 
 ---
 
-**¡COMENZAMOS AHORA? ✅ SI / ⏸️ ESPERAR**
+**¡COMENZAMOS AHORA?  SI / ⏸️ ESPERAR**
 
 **Primer paso:** Abre GUIA_MIGRACION_FRONTEND.md y empieza a leer
 

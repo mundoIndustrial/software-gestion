@@ -14,7 +14,7 @@
     $tienePrendas = $cotizacion->prendas && count($cotizacion->prendas) > 0;
     $tieneReflectivoCotizacion = $cotizacion->reflectivoCotizacion !== null;
 
-    // ✅ VERIFICAR PASO 4 - Reflectivos por prenda en la tabla reflectivo_cotizacion
+    //  VERIFICAR PASO 4 - Reflectivos por prenda en la tabla reflectivo_cotizacion
     $tieneReflectivoPrenda = false;
     $reflectivoPrendasCount = 0;
     if ($cotizacion->id) {
@@ -24,7 +24,7 @@
 
     $tieneReflectivo = $tieneReflectivoCotizacion || $tieneReflectivoPrenda;
 
-    // ✅ MOSTRAR TAB DE LOGO SI:
+    //  MOSTRAR TAB DE LOGO SI:
     // 1. Es tipo logo O combinada
     // 2. Y tiene registros en la tabla logo_cotizacion_tecnica_prendas
     $mostrarTabLogo = false;

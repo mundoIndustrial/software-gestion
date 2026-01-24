@@ -6,7 +6,7 @@
 
 ---
 
-## 📋 TAREAS DE FASE 1
+##  TAREAS DE FASE 1
 
 ### 1️⃣ Crear Tests de Persistencia
 

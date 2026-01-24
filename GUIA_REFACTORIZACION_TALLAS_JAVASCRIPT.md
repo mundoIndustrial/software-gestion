@@ -44,11 +44,11 @@ formData.append(`prendas[${i}][tallas_caballero]`, JSON.stringify(tallasC));
 
 ---
 
-## ✅ PATRÓN CORRECTO (A SEGUIR)
+##  PATRÓN CORRECTO (A SEGUIR)
 
 ### Patrón 1: Estado Relacional Centralizado
 ```javascript
-// ✅ BUENO - Estructura de datos centralizada y clara
+//  BUENO - Estructura de datos centralizada y clara
 class TallasManager {
     constructor() {
         // Estructura relacional única: {GENERO: {TALLA: CANTIDAD}}
@@ -89,7 +89,7 @@ const total = tallasManager.getTotal();                    // 55
 
 ### Patrón 2: Lectura Segura de Tallas
 ```javascript
-// ✅ BUENO - Lectura segura con conversión automática
+//  BUENO - Lectura segura con conversión automática
 function extraerTallas(prenda) {
     // Si viene como JSON string, parsear
     if (typeof prenda.cantidad_talla === 'string') {
@@ -117,7 +117,7 @@ const tallas = extraerTallas(prenda);
 
 ### Patrón 3: Envío Relacional Correcto
 ```javascript
-// ✅ BUENO - Envío en estructura relacional única
+//  BUENO - Envío en estructura relacional única
 function enviarPrendas(prendas) {
     const formData = new FormData();
     
@@ -156,7 +156,7 @@ function enviarPrendas(prendas) {
 window.cantidadesTallas = {};
 window.tallasSeleccionadas = { dama: { tallas: [], tipo: null }, caballero: {...} };
 
-// ✅ DESPUÉS
+//  DESPUÉS
 class GestorTallasModal {
     constructor() {
         this.tallas = {};
@@ -181,7 +181,7 @@ window.guardarCantidadTalla = function(input) {
     window.cantidadesTallas[key] = parseInt(input.value);
 };
 
-// ✅ DESPUÉS
+//  DESPUÉS
 class TallasHandler {
     guardarCantidad(genero, talla, cantidad) {
         if (!this.tallas[genero]) this.tallas[genero] = {};
@@ -204,7 +204,7 @@ const generosTallasHTML = Object.entries(window.cantidadesTallas)
         return `<div>${genero} ${talla}: ${cantidad}</div>`;
     }).join('');
 
-// ✅ DESPUÉS
+//  DESPUÉS
 function renderTallas(tallasObj) {
     // tallasObj: {DAMA: {S: 10, M: 20}, CABALLERO: {32: 15}}
     return Object.entries(tallasObj)
@@ -281,18 +281,18 @@ function legacyGetTallas() {
 ```
 
 ### Performance
-- ✅ Estructura relacional es más eficiente para cálculos
-- ✅ JSON.stringify() es seguro y estándar
-- ✅ Menos iteraciones en rendering
+-  Estructura relacional es más eficiente para cálculos
+-  JSON.stringify() es seguro y estándar
+-  Menos iteraciones en rendering
 
 ### Seguridad
-- ✅ Validar estructura antes de usar
-- ✅ Usar optional chaining: `genero?.talla`
-- ✅ Nunca confiar en estructura sin validar
+-  Validar estructura antes de usar
+-  Usar optional chaining: `genero?.talla`
+-  Nunca confiar en estructura sin validar
 
 ---
 
-## ✅ Validación Post-Refactor
+##  Validación Post-Refactor
 
 Después de refactorizar, ejecutar esta validación:
 

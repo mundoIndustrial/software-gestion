@@ -1,4 +1,4 @@
-# 🚀 FASE 2: REFACTOR DE ASESORESCONTROLLER
+#  FASE 2: REFACTOR DE ASESORESCONTROLLER
 
 ## Estrategia: Cambios Mínimos y Seguros
 
@@ -26,11 +26,11 @@ public function store(Request $request) {
 ```
 
 **Ventajas:**
-✅ Mismo comportamiento externo  
-✅ Mismo response JSON  
-✅ Código más limpio  
-✅ Fácil de rollback  
-✅ Use Case puede crecer sin tocar controller  
+ Mismo comportamiento externo  
+ Mismo response JSON  
+ Código más limpio  
+ Fácil de rollback  
+ Use Case puede crecer sin tocar controller  
 
 ---
 

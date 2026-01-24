@@ -1,6 +1,6 @@
 # 📑 ÍNDICE - CARTERA PEDIDOS
 
-## 🚀 COMIENZA AQUÍ
+##  COMIENZA AQUÍ
 
 👉 **[CARTERA_PEDIDOS_INICIO.txt](CARTERA_PEDIDOS_INICIO.txt)** ← Lee esto primero  
    └─ Resumen visual de todo lo creado
@@ -82,7 +82,7 @@
 
 ---
 
-## 🎯 FLUJO DE IMPLEMENTACIÓN RECOMENDADO
+## FLUJO DE IMPLEMENTACIÓN RECOMENDADO
 
 ### Paso 1: Entender el Proyecto (15 min)
 ```
@@ -203,32 +203,32 @@ Tiempo de Lectura:
 
 ## ✨ CARACTERÍSTICAS PRINCIPALES
 
-✅ Tabla dinámica con carga desde API
-✅ Modal de Aprobación
-✅ Modal de Rechazo con validaciones
-✅ Toast notifications
-✅ Manejo robusto de errores
-✅ 100% responsivo
-✅ JavaScript vanilla (sin dependencias)
-✅ CSS moderno y profesional
-✅ Auditoría integrada
-✅ Documentación completa
+ Tabla dinámica con carga desde API
+ Modal de Aprobación
+ Modal de Rechazo con validaciones
+ Toast notifications
+ Manejo robusto de errores
+ 100% responsivo
+ JavaScript vanilla (sin dependencias)
+ CSS moderno y profesional
+ Auditoría integrada
+ Documentación completa
 
 ---
 
 ## 🔐 SEGURIDAD
 
-✅ Validación CSRF en todos los requests POST
-✅ Verificación de permisos (rol 'cartera')
-✅ Validación de datos en cliente y servidor
-✅ Sanitización de entrada
-✅ Manejo seguro de errores
-✅ Logs para auditoría
-✅ Foreign keys en BD
+ Validación CSRF en todos los requests POST
+ Verificación de permisos (rol 'cartera')
+ Validación de datos en cliente y servidor
+ Sanitización de entrada
+ Manejo seguro de errores
+ Logs para auditoría
+ Foreign keys en BD
 
 ---
 
-## 🚀 PRÓXIMOS PASOS SUGERIDOS
+##  PRÓXIMOS PASOS SUGERIDOS
 
 1. **Corto plazo**: Implementar endpoints backend
 2. **Mediano plazo**: Agregar notificaciones por email
@@ -253,7 +253,7 @@ Todos los archivos contienen:
 
 ---
 
-## 📋 CHECKLIST FINAL
+##  CHECKLIST FINAL
 
 - [ ] Lei CARTERA_PEDIDOS_INICIO.txt
 - [ ] Lei CARTERA_PEDIDOS_RESUMEN.md
@@ -272,11 +272,11 @@ Todos los archivos contienen:
 ## 🎉 ¡LISTO PARA USAR!
 
 Tienes todo lo necesario para:
-✅ Entender la funcionalidad
-✅ Instalar correctamente
-✅ Implementar el backend
-✅ Probar completamente
-✅ Hacer deploy a producción
+ Entender la funcionalidad
+ Instalar correctamente
+ Implementar el backend
+ Probar completamente
+ Hacer deploy a producción
 
 **Documentación completada:** 23 de Enero, 2024
 

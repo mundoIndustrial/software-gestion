@@ -2053,7 +2053,7 @@ function guardarEdiciónPaso3(datosEditados) {
         }
     });
     
-    console.log('✅ Prenda editada en PASO 3:', nombrePrenda);
+    console.log(' Prenda editada en PASO 3:', nombrePrenda);
     renderizarTecnicasAgregadasPaso3();
 }
 

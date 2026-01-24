@@ -13,7 +13,7 @@ Uncaught (in promise) ReferenceError: Swal is not defined
 - Las funciones JavaScript que usan `Swal` se ejecutan **antes** de que SweetAlert2 cargue
 - Resultado: `Swal` no existe cuando se intenta usar
 
-## ✅ Solución Implementada
+##  Solución Implementada
 
 ### 1. Actualización de `_ensureSwal()` en UIModalService
 
@@ -35,7 +35,7 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
     return new Promise((resolve) => {
         if (typeof Swal !== 'undefined') {
             if (callback) callback();
-            resolve(true);  // ✅ Permite await
+            resolve(true);  //  Permite await
             return;
         }
         // ...
@@ -45,10 +45,10 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
 ```
 
 **Beneficios:**
-- ✅ Ahora puedo usar `await _ensureSwal()` en funciones async
-- ✅ Espera a que Swal esté disponible antes de continuar
-- ✅ Timeout de 5 segundos con fallback a alert nativo
-- ✅ Compatible con callbacks y Promises
+-  Ahora puedo usar `await _ensureSwal()` en funciones async
+-  Espera a que Swal esté disponible antes de continuar
+-  Timeout de 5 segundos con fallback a alert nativo
+-  Compatible con callbacks y Promises
 
 ### 2. Fix en `abrirModalDescripcion()`
 
@@ -116,7 +116,7 @@ function editarPedido(pedidoId) {
     fetch(...)
         .then(() => {
             _ensureSwal(() => {
-                Swal.close();  // ✅ Espera a que Swal esté listo
+                Swal.close();  //  Espera a que Swal esté listo
             });
         })
         .catch(() => {
@@ -159,12 +159,12 @@ function guardarCambiosPedido(pedidoId, datosActualizados) {
             });
             
             _ensureSwal(() => {
-                Swal.fire({...});  // ✅ Espera a Swal
+                Swal.fire({...});  //  Espera a Swal
             });
         })
         .catch(() => {
             _ensureSwal(() => {
-                Swal.close();      // ✅ Espera a Swal
+                Swal.close();      //  Espera a Swal
             });
         });
 }
@@ -207,18 +207,18 @@ function guardarCambiosPedido(pedidoId, datosActualizados) {
    Continuar con fetch y mostrar modal
    ```
 
-## ✅ Resultado Esperado
+##  Resultado Esperado
 
 **En consola del navegador:**
 - ❌ NO debería ver: `Uncaught (in promise) ReferenceError: Swal is not defined`
-- ✅ SÍ debería ver: `⚠️ [UIModalService] SweetAlert2 aún no está cargado. Esperando...` (solo si Swal tarda en cargar)
-- ✅ SÍ debería ver: Modales abiertos correctamente
+-  SÍ debería ver: `⚠️ [UIModalService] SweetAlert2 aún no está cargado. Esperando...` (solo si Swal tarda en cargar)
+-  SÍ debería ver: Modales abiertos correctamente
 
 **Modales:**
-- ✅ "Cargando información..." aparece correctamente
-- ✅ Contenido carga sin errores
-- ✅ Botones funcionan correctamente
-- ✅ Guardado de datos funciona
+-  "Cargando información..." aparece correctamente
+-  Contenido carga sin errores
+-  Botones funcionan correctamente
+-  Guardado de datos funciona
 
 ## 🧪 Testing
 
@@ -232,9 +232,9 @@ GET /asesores/pedidos
 ```
 
 **Resultado esperado:**
-- ✅ Modal "Cargando..." aparece
-- ✅ Modal se reemplaza con contenido
-- ✅ Sin errores en consola
+-  Modal "Cargando..." aparece
+-  Modal se reemplaza con contenido
+-  Sin errores en consola
 
 ### Test 2: Guardar cambios
 
@@ -245,9 +245,9 @@ GET /asesores/pedidos
 ```
 
 **Resultado esperado:**
-- ✅ Modal "Guardando..." aparece
-- ✅ Modal de confirmación aparece
-- ✅ Sin errores en consola
+-  Modal "Guardando..." aparece
+-  Modal de confirmación aparece
+-  Sin errores en consola
 
 ### Test 3: Abrir descripción de prendas
 
@@ -257,13 +257,13 @@ GET /asesores/pedidos
 ```
 
 **Resultado esperado:**
-- ✅ Modal "Cargando..." aparece
-- ✅ Contenido con prendas se muestra
-- ✅ Sin errores en consola
+-  Modal "Cargando..." aparece
+-  Contenido con prendas se muestra
+-  Sin errores en consola
 
 ## Próximos Pasos
 
-1. ✅ Código actualizado
+1.  Código actualizado
 2. ⏳ Probar modales en navegador
 3. ⏳ Verificar consola sin errores de Swal
 4. ⏳ Monitorear logs de laravel.log
@@ -295,7 +295,7 @@ GET /asesores/pedidos
 
 ---
 
-**Status:** ✅ COMPLETADO
+**Status:**  COMPLETADO
 **Archivos modificados:** 2 (ui-modal-service.js, index.blade.php)
 **Líneas de código:** ~30 líneas modificadas
 **Testing recomendado:** 3 test cases (todos describos arriba)

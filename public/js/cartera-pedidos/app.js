@@ -43,7 +43,7 @@ function ocultarCargando() {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎯 Cartera Pedidos APP - Inicializado');
+    console.log('Cartera Pedidos APP - Inicializado');
     
     // Cargar pedidos
     cargarPedidos();
@@ -124,7 +124,7 @@ async function cargarPedidos() {
             pedidosData = [];
         }
         
-        console.log('✅ Pedidos cargados:', pedidosData);
+        console.log(' Pedidos cargados:', pedidosData);
         
         // Renderizar tabla
         if (loadingState) loadingState.style.display = 'none';
@@ -208,7 +208,7 @@ function renderizarTabla(pedidos) {
     });
     
     // Logs después de renderizar
-    console.log('✅ Tabla renderizada');
+    console.log(' Tabla renderizada');
     setTimeout(() => {
         const headerRow = document.querySelector('.table-head > div');
         const firstBodyRow = document.querySelector('.table-row');
@@ -254,7 +254,7 @@ function verFactura(pedidoId, numeroPedido) {
     })
     .then(datos => {
         ocultarCargando();
-        console.log('✅ Datos de factura obtenidos:', datos);
+        console.log(' Datos de factura obtenidos:', datos);
         
         // Usar la función profesional de factura que tiene la asesora
         if (typeof crearModalPreviewFactura === 'function') {
@@ -326,7 +326,7 @@ async function confirmarAprobacion() {
             throw new Error(data.message || `Error: ${response.status}`);
         }
         
-        console.log('✅ Pedido aprobado:', data);
+        console.log(' Pedido aprobado:', data);
         
         // Mostrar notificación temporal de éxito
         const notifSuccess = document.createElement('div');
@@ -433,7 +433,7 @@ async function confirmarRechazo(event) {
             throw new Error(data.message || `Error: ${response.status}`);
         }
         
-        console.log('✅ Pedido rechazado:', data);
+        console.log(' Pedido rechazado:', data);
         
         // Mostrar notificación temporal de éxito
         const notifSuccess = document.createElement('div');

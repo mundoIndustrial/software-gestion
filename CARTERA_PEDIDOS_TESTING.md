@@ -172,7 +172,7 @@ fetch(`/api/pedidos/${pedidoId}/rechazar`, {
 
 ---
 
-## ✅ Puntos de Verificación
+##  Puntos de Verificación
 
 ### Vista se carga correctamente
 - [ ] Página muestra título "Cartera - Pedidos por Aprobar"
@@ -251,14 +251,14 @@ console.log({
 
 ---
 
-## 🚀 Flujo de Testing Completo
+##  Flujo de Testing Completo
 
 ### 1. Test básico de carga
 ```javascript
 // Debería ver en consola:
-// ✅ Cartera Pedidos - Inicializado
-// ✅ Pedidos cargados: [Array]
-// ✅ Script de Cartera Pedidos cargado correctamente
+//  Cartera Pedidos - Inicializado
+//  Pedidos cargados: [Array]
+//  Script de Cartera Pedidos cargado correctamente
 ```
 
 ### 2. Test de interfaz

@@ -1,4 +1,4 @@
-# 🎯 PLAN DETALLADO - FASES 2, 3, 4 (PRÓXIMOS PASOS)
+# PLAN DETALLADO - FASES 2, 3, 4 (PRÓXIMOS PASOS)
 
 **Documento de planificación para completar el refactor**
 **Fecha:** 2024
@@ -6,10 +6,10 @@
 
 ---
 
-## 📋 VISIÓN GENERAL
+##  VISIÓN GENERAL
 
 ```
-FASE 1: CONSOLIDACIÓN .......................... ✅ COMPLETADA
+FASE 1: CONSOLIDACIÓN ..........................  COMPLETADA
 ├─ Tiempo: Ya hecho
 ├─ Resultado: Código legacy eliminado, rutas consolidadas
 └─ Status: 100% listo
@@ -36,10 +36,10 @@ TOTAL: ~12-22 horas de trabajo ⏳
 
 ## 📝 FASE 2 - MIGRACIÓN FRONTEND (4-6 HORAS)
 
-### 🎯 Objetivo
+### Objetivo
 Actualizar TODO el código frontend (JavaScript, Blade templates) para llamar a `/api/pedidos` en lugar de `/asesores/pedidos`.
 
-### 📋 Tareas Específicas
+###  Tareas Específicas
 
 #### TAREA 2.1: Búsqueda de archivos (15 min)
 ```bash
@@ -134,7 +134,7 @@ Para cada archivo actualizado:
 # 1. Ejecutar tests automáticos
 php artisan test
 
-# Resultado esperado: 16/16 pasando ✅
+# Resultado esperado: 16/16 pasando 
 
 # 2. Testing manual
 # Abrir navegador, ingresar a la aplicación
@@ -153,7 +153,7 @@ php artisan test
 - GUIA_MIGRACION_FRONTEND.md (ejemplos detallados)
 - GUIA_API_PEDIDOS_DDD.md (referencia de endpoints)
 
-### ✅ Fase 2 está COMPLETA cuando:
+###  Fase 2 está COMPLETA cuando:
 - [x] Todos los archivos actualizados
 - [x] No hay referencias a /asesores/pedidos
 - [x] Tests pasando (16/16)
@@ -164,10 +164,10 @@ php artisan test
 
 ## 📝 FASE 3 - CONSOLIDACIÓN BD (3-4 HORAS)
 
-### 🎯 Objetivo
+### Objetivo
 Migrar datos de tabla legacy `pedidos_produccion` a tabla DDD `pedidos`, eliminando tabla vieja.
 
-### 📋 Tareas Específicas
+###  Tareas Específicas
 
 #### TAREA 3.1: Crear migración (1 hora)
 
@@ -281,7 +281,7 @@ $pedido = Pedido::find($id);
 $pedido = $this->pedidoRepository->obtener($id);
 ```
 
-### ✅ Fase 3 está COMPLETA cuando:
+###  Fase 3 está COMPLETA cuando:
 - [x] Datos migrados correctamente
 - [x] Integridad validada (conteos coinciden)
 - [x] Tabla legacy eliminada
@@ -292,10 +292,10 @@ $pedido = $this->pedidoRepository->obtener($id);
 
 ## 📝 FASE 4 - CLEANUP & TESTING (5-8 HORAS)
 
-### 🎯 Objetivo
+### Objetivo
 Eliminar completamente código legacy, hacer suite final de tests, validar performance y seguridad.
 
-### 📋 Tareas Específicas
+###  Tareas Específicas
 
 #### TAREA 4.1: Eliminar código legacy (2-3 horas)
 
@@ -439,7 +439,7 @@ Incluir:
 - Date de deployment
 ```
 
-### ✅ Fase 4 está COMPLETA cuando:
+###  Fase 4 está COMPLETA cuando:
 - [x] Código legacy completamente eliminado
 - [x] 100% tests pasando
 - [x] Security audit completado
@@ -478,7 +478,7 @@ php artisan horizon:pause  # Pause horizon si aplica
 ## 📊 TIMELINE ESTIMADO
 
 ```
-AHORA:           Fase 1 ✅ completada
+AHORA:           Fase 1  completada
 HOY (4-6h):      Fase 2 - Migración Frontend
 MAÑANA (3-4h):   Fase 3 - Consolidación BD
 PASADO (5-8h):   Fase 4 - Cleanup & Testing
@@ -533,13 +533,13 @@ TOTAL: ~1 semana de trabajo (12-22 horas)
 
 ---
 
-## 🎯 CONCLUSIÓN
+## CONCLUSIÓN
 
 El refactor está en **buen track**. Fase 1 completada con éxito, Fases 2-4 bien documentadas y planificadas.
 
 **Próximo paso:** Ejecutar QUICK_START_FASE2.md
 
-**Status:** ✅ LISTO PARA PROCEDER
+**Status:**  LISTO PARA PROCEDER
 
 ---
 

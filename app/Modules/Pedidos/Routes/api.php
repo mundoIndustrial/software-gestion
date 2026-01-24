@@ -1,29 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
-
 /**
- * Rutas del módulo Pedidos (DDD)
+ * DEPRECATED: Este archivo es legacy y está reemplazado por las rutas en routes/api.php
+ * Las rutas de EPP en pedidos se encuentran en:
+ * - routes/api.php (línea ~188)
  * 
- * Gestión de EPP en pedidos - Rutas RESTful
- * Prefix: /api/v1/pedidos/{pedido}/epps
+ * No eliminar por ahora para evitar conflictos de compatibilidad.
+ * El archivo se mantiene vacío pero no genera rutas duplicadas.
  */
-Route::middleware('api')->group(function () {
-    Route::prefix('pedidos/{pedido}/epps')->name('pedidos.epps.')->group(function () {
-        Route::get('/', [PedidoEppController::class, 'index'])
-            ->name('index');
-        
-        Route::post('/', [PedidoEppController::class, 'store'])
-            ->name('store');
-        
-        Route::patch('{pedidoEpp}', [PedidoEppController::class, 'update'])
-            ->name('update');
-        
-        Route::delete('{pedidoEpp}', [PedidoEppController::class, 'destroy'])
-            ->name('destroy');
-        
-        Route::get('exportar/json', [PedidoEppController::class, 'exportarJson'])
-            ->name('exportar-json');
-    });
-});

@@ -1,10 +1,10 @@
-# 📋 RESUMEN EJECUTIVO: AUDITORÍA JAVASCRIPT TALLAS
+#  RESUMEN EJECUTIVO: AUDITORÍA JAVASCRIPT TALLAS
 
-## 🎯 Respuesta Rápida
+## Respuesta Rápida
 
 **Pregunta:** ¿Existen referencias de lógica legacy de tallas en los archivos JavaScript?  
 **Respuesta:** 
-- ✅ **invoice-preview-live.js** → **SIN REFERENCIAS LEGACY** (100% LIMPIO)
+-  **invoice-preview-live.js** → **SIN REFERENCIAS LEGACY** (100% LIMPIO)
 - ⚠️ Otros archivos tienen variables auxiliares, pero **NO afectan datos finales**
 
 ---
@@ -23,8 +23,8 @@ extraerTallas()               ← Método auxiliar de cotización
 
 ### Resultados por Archivo
 ```
-✅ invoice-preview-live.js         → SIN REFERENCIAS (LIMPIO)
-✅ integracion-prenda.js           → ESTRUCTURA CORRECTA
+ invoice-preview-live.js         → SIN REFERENCIAS (LIMPIO)
+ integracion-prenda.js           → ESTRUCTURA CORRECTA
 ⚠️  modal-cleanup.js               → Variables helper (no crítico)
 ⚠️  cellEditModal.js               → Lectura legacy compatible
 ⚠️  gestion-tallas.js              → Estado formulario (no crítico)
@@ -41,14 +41,14 @@ extraerTallas()               ← Método auxiliar de cotización
 
 | Archivo | Legacy | Crítico | Impacto | Estado |
 |---------|--------|---------|---------|--------|
-| invoice-preview-live.js | ❌ | ✅ | ✅ CONFORME | ✅ MANTENER |
-| Otros | ⚠️ | ❌ | ✅ NO | ✅ ACEPTABLE |
+| invoice-preview-live.js | ❌ |  |  CONFORME |  MANTENER |
+| Otros | ⚠️ | ❌ |  NO |  ACEPTABLE |
 
 ---
 
 ## Recomendación Final
 
-### ESTADO: ✅ LISTO PARA PRODUCCIÓN
+### ESTADO:  LISTO PARA PRODUCCIÓN
 
 El archivo principal `invoice-preview-live.js` está completamente limpio y conforme con la estructura de datos relacional:
 ```javascript
@@ -68,7 +68,7 @@ Si en el futuro se identifica que algún archivo está usando directamente las v
 // ❌ ANTES
 const cantidades = window.cantidadesTallas || {};
 
-// ✅ DESPUÉS  
+//  DESPUÉS  
 const cantidades = await fetch(`/api/prendas/${prendaId}/tallas`).then(r => r.json());
 ```
 
@@ -78,7 +78,7 @@ const cantidades = await fetch(`/api/prendas/${prendaId}/tallas`).then(r => r.js
 const dama_s = window.cantidadesTallas['dama-s'];
 const dama_m = window.cantidadesTallas['dama-m'];
 
-// ✅ DESPUÉS
+//  DESPUÉS
 const tallasPorGenero = {
     'DAMA': {'S': 10, 'M': 20}
 };
@@ -94,7 +94,7 @@ const payload = {
 
 ---
 
-## ✅ Conclusión
+##  Conclusión
 
 **Invoice-preview-live.js es un modelo correcto de uso de tallas.**  
 Otros archivos son compatibles aunque usen variables auxiliares.

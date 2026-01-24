@@ -1,4 +1,4 @@
-# 📋 PLAN DE IMPLEMENTACIÓN: REFACTOR ASESORESCONTROLLER
+#  PLAN DE IMPLEMENTACIÓN: REFACTOR ASESORESCONTROLLER
 
 **Duración estimada**: 14-16 horas  
 **Sprints necesarios**: 2 sprints (si son de 8 horas)  
@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 FASES EJECUTABLES
+## FASES EJECUTABLES
 
 ### ⏱️ FASE 1: ELIMINACIÓN DE DUPLICACIÓN (1-2 horas)
 
@@ -37,7 +37,7 @@ rm -rf app/Domain/PedidoProduccion/Agregado/
 # Ejecutar tests de Domain
 php artisan test tests/Unit/Domain/PedidoProduccion/
 
-# Esperado: ✅ Todos pasan
+# Esperado:  Todos pasan
 ```
 
 #### Paso 1.4: Commit
@@ -120,7 +120,7 @@ Archivo: app/Infrastructure/Http/Controllers/Asesores/AsesoresController.php
 ```bash
 php artisan test tests/Feature/Http/Controllers/AsesoresControllerTest.php
 
-# Esperado: ✅ Todos pasan
+# Esperado:  Todos pasan
 ```
 
 #### Paso 2.6: Commit
@@ -215,8 +215,8 @@ public function anularPedido(Request $request, $id)
 ```
 
 **Cambios necesarios**:
-1. ✅ AnularProduccionPedidoUseCase ya está inyectado
-2. ✅ AnularProduccionPedidoDTO ya existe
+1.  AnularProduccionPedidoUseCase ya está inyectado
+2.  AnularProduccionPedidoDTO ya existe
 3. ✓ Solo reemplazar servicio por Use Case
 
 #### Paso 3.2: Refactorizar obtenerDatosFactura()
@@ -255,7 +255,7 @@ public function obtenerDatosFactura($id)
 ```
 
 **Cambios necesarios**:
-1. ✅ Remover `$this->obtenerDatosFacturaService`
+1.  Remover `$this->obtenerDatosFacturaService`
 2. ✓ Usar `$this->pedidoProduccionRepository` (ya inyectado)
 
 #### Paso 3.3: Refactorizar obtenerDatosRecibos()
@@ -328,7 +328,7 @@ Resultado:
 - Inyecciones reducidas: 16 → 13
 - Eliminada 1 capa de abstracción innecesaria
 
-Tests: ✅ Pasando
+Tests:  Pasando
 "
 ```
 
@@ -439,8 +439,8 @@ public function agregarPrendaSimple(Request $request, $pedidoId)
 ```
 
 **Cambios necesarios**:
-1. ✅ Crear DTO (AgregarItemPedidoDTO debería existir)
-2. ✅ agregarItemPedidoUseCase ya está inyectado
+1.  Crear DTO (AgregarItemPedidoDTO debería existir)
+2.  agregarItemPedidoUseCase ya está inyectado
 3. ✓ Remover lógica directa de BD
 
 #### Paso 4.2: Refactorizar getNextPedido()
@@ -568,7 +568,7 @@ Resultado:
 - Métodos ahora consistentes con patrón DDD
 - Inyecciones reducidas: 13 → 12
 
-Tests: ✅ Pasando
+Tests:  Pasando
 "
 ```
 
@@ -691,7 +691,7 @@ Servicios registrados:
 - ProcesarFotosTelasService
 - GuardarPedidoLogoService
 
-Tests: ✅ Pasando
+Tests:  Pasando
 "
 ```
 
@@ -982,7 +982,7 @@ Resultado:
 - Métodos testables y reutilizables
 - Inyecciones reducidas: 12 → 13 (2 Use Cases + beneficios)
 
-Tests: ✅ Pasando
+Tests:  Pasando
 "
 ```
 
@@ -1024,8 +1024,8 @@ grep -n "use App\\\\" app/Infrastructure/Http/Controllers/Asesores/AsesoresContr
 
 ```bash
 # Verificar que los servicios eliminados no se importan en otro lado
-grep -r "AnularPedidoService" app/Infrastructure/Http/Controllers/ || echo "✅ No encontrado"
-grep -r "ObtenerDatosFacturaService" app/Infrastructure/Http/Controllers/ || echo "✅ No encontrado"
+grep -r "AnularPedidoService" app/Infrastructure/Http/Controllers/ || echo " No encontrado"
+grep -r "ObtenerDatosFacturaService" app/Infrastructure/Http/Controllers/ || echo " No encontrado"
 ```
 
 #### Paso 7.4: Verificar logs
@@ -1045,12 +1045,12 @@ git add -A
 git commit -m "[TEST] Validar refactorización completa de AsesoresController
 
 Validaciones realizadas:
-✅ Tests del controlador pasan (100%)
-✅ Tests de Use Cases pasan (100%)
-✅ Tests del repositorio pasan (100%)
-✅ No hay imports muertos
-✅ No hay servicios zombie
-✅ Logs limpios sin errores
+ Tests del controlador pasan (100%)
+ Tests de Use Cases pasan (100%)
+ Tests del repositorio pasan (100%)
+ No hay imports muertos
+ No hay servicios zombie
+ Logs limpios sin errores
 
 Métricas finales:
 - Inyecciones: 23 → 15 (35% reducción)
@@ -1060,7 +1060,7 @@ Métricas finales:
 
 Deuda técnica reducida significativamente.
 
-Tests: ✅ Pasando (100%)
+Tests:  Pasando (100%)
 "
 ```
 
@@ -1081,7 +1081,7 @@ Tests: ✅ Pasando (100%)
 
 ---
 
-## 🎯 MÉTRICAS ESPERADAS POST-REFACTOR
+## MÉTRICAS ESPERADAS POST-REFACTOR
 
 ```
 ANTES:

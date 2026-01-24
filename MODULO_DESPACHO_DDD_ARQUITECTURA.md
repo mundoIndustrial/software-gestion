@@ -1,6 +1,6 @@
 # 📦 MÓDULO DE DESPACHO - ARQUITECTURA DDD
 
-## ✅ Verificación de arquitectura DDD
+##  Verificación de arquitectura DDD
 
 Este módulo **CUMPLE 100% con Domain-Driven Design (DDD)** siguiendo la estructura del proyecto.
 
@@ -143,10 +143,10 @@ new FilaDespachoDTO(
 ```
 
 **Beneficios:**
-- ✅ Desacoplamiento entre capas
-- ✅ Type-safe (atributos públicos con tipos)
-- ✅ Fácil de serializar a JSON
-- ✅ Evoluciona sin afectar la BD
+-  Desacoplamiento entre capas
+-  Type-safe (atributos públicos con tipos)
+-  Fácil de serializar a JSON
+-  Evoluciona sin afectar la BD
 
 ### DespachoParcialesDTO
 ```php
@@ -173,7 +173,7 @@ new ControlEntregasDTO(
 
 ---
 
-## 🎯 Domain Services
+## Domain Services
 
 ### DespachoGeneradorService
 
@@ -221,13 +221,13 @@ $p3 = $service->calcularPendiente(50, 10, 5, 0);  // 35
 ```
 
 **Validaciones:**
-- ✅ No permite parciales negativos
-- ✅ No permite exceder cantidad total
-- ✅ Verifica que el ítem existe
+-  No permite parciales negativos
+-  No permite exceder cantidad total
+-  Verifica que el ítem existe
 
 ---
 
-## 🚀 Use Cases (Application Services)
+##  Use Cases (Application Services)
 
 ### ObtenerFilasDespachoUseCase
 
@@ -304,10 +304,10 @@ class DespachoController extends Controller
 ```
 
 **Características:**
-- ✅ No contiene lógica de negocio
-- ✅ Inyecta dependencias (UseCases)
-- ✅ Delega responsabilidades
-- ✅ Maneja HTTP concerns (validation, responses)
+-  No contiene lógica de negocio
+-  Inyecta dependencias (UseCases)
+-  Delega responsabilidades
+-  Maneja HTTP concerns (validation, responses)
 
 ---
 
@@ -328,12 +328,12 @@ Las vistas esperan Collection de DTOs, no arrays:
 
 | Aspecto | Beneficio |
 |--------|----------|
-| **Testabilidad** | ✅ Domain Services sin dependencias de Framework |
-| **Mantenibilidad** | ✅ Código organizado en capas |
-| **Escalabilidad** | ✅ Fácil agregar nuevos UseCases |
-| **Reutilización** | ✅ Domain Services reutilizables |
-| **Separación de intereses** | ✅ Cada capa con responsabilidad clara |
-| **Evolución** | ✅ Cambios en BD sin afectar Application Layer |
+| **Testabilidad** |  Domain Services sin dependencias de Framework |
+| **Mantenibilidad** |  Código organizado en capas |
+| **Escalabilidad** |  Fácil agregar nuevos UseCases |
+| **Reutilización** |  Domain Services reutilizables |
+| **Separación de intereses** |  Cada capa con responsabilidad clara |
+| **Evolución** |  Cambios en BD sin afectar Application Layer |
 
 ---
 
@@ -401,11 +401,11 @@ $filas = $this->obtenerFilasUseCase->obtenerTodas($pedido->id);
 return view('despacho.show', ['filas' => $filas]);
 
 // Beneficios:
-// ✅ Controller no tiene lógica
-// ✅ UseCase reutilizable
-// ✅ Domain Service testeable
-// ✅ DTOs desacoplados
-// ✅ Separa responsabilidades
+//  Controller no tiene lógica
+//  UseCase reutilizable
+//  Domain Service testeable
+//  DTOs desacoplados
+//  Separa responsabilidades
 ```
 
 ---
@@ -448,12 +448,12 @@ resources/views/despacho/
 
 El módulo de Despacho está **100% alineado con DDD** y la arquitectura del proyecto:
 
-✅ Domain Layer: Services de negocio puro  
-✅ Application Layer: UseCases coordinadores  
-✅ Presentation Layer: Controller sin lógica  
-✅ DTOs: Transferencia de datos desacoplada  
-✅ Exceptions: Domain exceptions  
-✅ Dependency Injection: Inyección clara  
-✅ Separation of Concerns: Responsabilidades claras  
+ Domain Layer: Services de negocio puro  
+ Application Layer: UseCases coordinadores  
+ Presentation Layer: Controller sin lógica  
+ DTOs: Transferencia de datos desacoplada  
+ Exceptions: Domain exceptions  
+ Dependency Injection: Inyección clara  
+ Separation of Concerns: Responsabilidades claras  
 
 **Pronto para producción** ✨

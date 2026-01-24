@@ -460,7 +460,7 @@ async function guardarCotizacion() {
                     tecnicas_json: JSON.stringify(window.tecnicasAgregadasPaso3).substring(0, 200) + '...'
                 });
                 
-                // ✅ PROCESAR IMÁGENES DEL PASO 3 - Enviar archivos nuevos
+                //  PROCESAR IMÁGENES DEL PASO 3 - Enviar archivos nuevos
 
                 console.log('🔍 DEBUG: window.tecnicasAgregadasPaso3 structure:', JSON.parse(JSON.stringify(window.tecnicasAgregadasPaso3.map(t => ({
                     tipo: t.tipo,
@@ -517,7 +517,7 @@ async function guardarCotizacion() {
 
         }
         
-        // ✅ REFLECTIVO (PASO 4) - Para cotizaciones combinadas (PL)
+        //  REFLECTIVO (PASO 4) - Para cotizaciones combinadas (PL)
         if (window.tipoCotizacionGlobal === 'PL' || window.tipoCotizacionGlobal === 'PB' || window.tipoCotizacionGlobal === 'RF') {
 
             
@@ -620,14 +620,14 @@ async function guardarCotizacion() {
                             prenda.imagenes.forEach((imagen, imagenIndex) => {
                                 if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso4') {
                                     const fieldName = `reflectivo[imagenes_paso4][${prendaIndex}][${imagenIndex}]`;
-                                    console.log(`✅ APPENDING IMAGE TO FORMDATA - Prenda ${prendaIndex}, Imagen ${imagenIndex}: ${imagen.file.name}`);
+                                    console.log(` APPENDING IMAGE TO FORMDATA - Prenda ${prendaIndex}, Imagen ${imagenIndex}: ${imagen.file.name}`);
                                     formData.append(fieldName, imagen.file);
                                     totalImagenesP4Reflectivo++;
                                 }
                             });
                         }
                     });
-                    console.log(`✅ TOTAL IMÁGENES PASO 4 AGREGADAS AL FORMDATA: ${totalImagenesP4Reflectivo}`);
+                    console.log(` TOTAL IMÁGENES PASO 4 AGREGADAS AL FORMDATA: ${totalImagenesP4Reflectivo}`);
                 }
                 
                 if (window.imagenesReflectivo && Array.isArray(window.imagenesReflectivo)) {

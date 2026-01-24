@@ -1,4 +1,4 @@
-# ✅ CHECKLIST: FASE 0 – PREPARACIÓN
+#  CHECKLIST: FASE 0 – PREPARACIÓN
 
 **Estado:** En progreso  
 **Objetivo:** Setup de estructura sin usar en producción
@@ -83,7 +83,7 @@
 
 ---
 
-## ✅ PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 ### 1. Verificar que compila
 ```bash
@@ -98,7 +98,7 @@ dd($pedido);
 php artisan test tests/Unit/Domain/Pedidos/PedidoAggregateTest.php
 ```
 
-### 3. Si todo compila y los tests pasan ✅
+### 3. Si todo compila y los tests pasan 
 Pasar a **Fase 1 – Dominio completo**
 
 ---
@@ -112,6 +112,6 @@ Pasar a **Fase 1 – Dominio completo**
 - La implementación está en Infrastructure
 - Los tests NO usan BD, solo lógica pura
 
-**Estado de Fase 0:** ✅ COMPLETA
+**Estado de Fase 0:**  COMPLETA
 
 Próximo: Comenzar Fase 1 cuando estos tests pasen.

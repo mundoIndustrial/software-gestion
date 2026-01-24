@@ -38,7 +38,7 @@
 function _ensureSwal(callback, maxWaitTime = 5000) {
     return new Promise((resolve) => {
         if (typeof Swal !== 'undefined') {
-            // ✅ Swal ya está disponible
+            //  Swal ya está disponible
             if (callback) {
                 callback();  // Ejecutar callback si se proporciona (legacy)
             }
@@ -50,7 +50,7 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
         const startTime = Date.now();
         const checkInterval = setInterval(() => {
             if (typeof Swal !== 'undefined') {
-                // ✅ Swal ahora está disponible
+                //  Swal ahora está disponible
                 clearInterval(checkInterval);
                 if (callback) {
                     callback();  // Ejecutar callback si se proporciona (legacy)

@@ -514,7 +514,7 @@ async function procesarMangaInput(input) {
                 document.getElementById('manga-options').appendChild(newOption);
                 document.getElementById('manga-options-mobile').appendChild(newOption.cloneNode(true));
                 
-                console.log('✅ Tipo de manga creado:', result.data);
+                console.log(' Tipo de manga creado:', result.data);
             }
         }
     } catch (error) {

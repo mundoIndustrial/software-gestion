@@ -667,7 +667,7 @@ class InsumosController extends Controller
             // Guardar
             $anchoMetraje->save();
 
-            \Log::info('✅ Ancho y metraje guardado', [
+            \Log::info(' Ancho y metraje guardado', [
                 'numero_pedido' => $numeroPedido,
                 'pedido_id' => $pedido->id,
                 'ancho' => $validated['ancho'],

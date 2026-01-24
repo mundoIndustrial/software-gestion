@@ -113,19 +113,19 @@ pedidos_produccion
 
 Todos los modelos tienen las relaciones correctamente definidas:
 
-✅ `PedidoProduccion::prendas()` → HasMany(PrendaPedido)
-✅ `PedidoProduccion::epps()` → HasMany(PedidoEpp)
-✅ `PrendaPedido::tallas()` → HasMany(PrendaPedidoTalla)
-✅ `PrendaPedido::variantes()` → HasMany(PrendaVariantePed)
-✅ `PrendaPedido::coloresTelas()` → HasMany(PrendaPedidoColorTela)
-✅ `PrendaPedido::fotos()` → HasMany(PrendaFotoPedido)
-✅ `PrendaVariantePed::tipoManga()` → BelongsTo(TipoManga)
-✅ `PrendaVariantePed::tipoBroche()` → BelongsTo(TipoBrocheBoton)
-✅ `PrendaPedidoColorTela::color()` → BelongsTo(ColorPrenda)
-✅ `PrendaPedidoColorTela::tela()` → BelongsTo(TelaPrenda)
-✅ `PrendaPedidoColorTela::fotos()` → HasMany(PrendaFotoTelaPedido)
-✅ `PedidoEpp::epp()` → BelongsTo(Epp)
-✅ `PedidoEpp::imagenes()` → HasMany(PedidoEppImagen)
+ `PedidoProduccion::prendas()` → HasMany(PrendaPedido)
+ `PedidoProduccion::epps()` → HasMany(PedidoEpp)
+ `PrendaPedido::tallas()` → HasMany(PrendaPedidoTalla)
+ `PrendaPedido::variantes()` → HasMany(PrendaVariantePed)
+ `PrendaPedido::coloresTelas()` → HasMany(PrendaPedidoColorTela)
+ `PrendaPedido::fotos()` → HasMany(PrendaFotoPedido)
+ `PrendaVariantePed::tipoManga()` → BelongsTo(TipoManga)
+ `PrendaVariantePed::tipoBroche()` → BelongsTo(TipoBrocheBoton)
+ `PrendaPedidoColorTela::color()` → BelongsTo(ColorPrenda)
+ `PrendaPedidoColorTela::tela()` → BelongsTo(TelaPrenda)
+ `PrendaPedidoColorTela::fotos()` → HasMany(PrendaFotoTelaPedido)
+ `PedidoEpp::epp()` → BelongsTo(Epp)
+ `PedidoEpp::imagenes()` → HasMany(PedidoEppImagen)
 
 ## Instrucciones de Validación
 
@@ -145,17 +145,17 @@ php validate-bd-relations.php 2700
 VALIDACIÓN DE ESTRUCTURA BD Y RELACIONES ELOQUENT
 ================================================================================
 
-📋 Validando pedido ID: 2700
+ Validando pedido ID: 2700
 
 1️⃣  Verificando existencia del pedido...
-   ✅ Pedido encontrado: #2700
+    Pedido encontrado: #2700
 
 2️⃣  Verificando relación prendas...
-   ✅ Prendas cargadas: 5 prendas
+    Prendas cargadas: 5 prendas
 
    Verificando prenda ID: 101 (CAMISA DRILL)
    3️⃣  Verificando relación tallas...
-      ✅ Tallas cargadas: 6 registros
+       Tallas cargadas: 6 registros
       - Ejemplo: DAMA S = 20
    ...
 ```
@@ -239,7 +239,7 @@ WHERE prenda_pedido_id = ?;
 
 ## Próximos Pasos
 
-### 1. ✅ Ejecutar validación (hecho hoy)
+### 1.  Ejecutar validación (hecho hoy)
 Verifica que todas las relaciones funcionan
 
 ### 2. ⏳ Probar endpoint API
@@ -287,9 +287,9 @@ Documento completo con:
 
 ## Estado Actual
 
-✅ **ObtenerPedidoUseCase** - Completamente refactorizado para BD real
-✅ **Relaciones Eloquent** - Todas verificadas y funcionan
-✅ **Estructura API** - Lista para retornar datos enriquecidos
+ **ObtenerPedidoUseCase** - Completamente refactorizado para BD real
+ **Relaciones Eloquent** - Todas verificadas y funcionan
+ **Estructura API** - Lista para retornar datos enriquecidos
 ⏳ **Validación** - Pendiente ejecutar script de validación
 ⏳ **Testing frontend** - Pendiente verificar modal y edit flow
 

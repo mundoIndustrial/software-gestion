@@ -8,16 +8,16 @@
 
 ## 🧩 FASES DEL PROYECTO
 
-### ✅ Fase 0 – Preparación (SIN IMPACTO EN PRODUCCIÓN)
+###  Fase 0 – Preparación (SIN IMPACTO EN PRODUCCIÓN)
 
-**Status:** ✅ COMPLETADA  
+**Status:**  COMPLETADA  
 **Objetivo:** Crear estructura de carpetas y clases base sin usarlas aún
 
 **Tareas:**
 - [x] Crear carpetas Domain/Pedidos/, Application/Pedidos/, Infrastructure/Pedidos/
 - [x] Crear clases base vacías (listadas abajo)
 - [x] Crear tests básicos (3 mínimo)
-- [x] Verificar que todo compila ✅ **3/3 tests PASANDO**
+- [x] Verificar que todo compila  **3/3 tests PASANDO**
 
 **Estructura a crear:**
 ```
@@ -176,13 +176,13 @@ app/Infrastructure/Pedidos/
 
 ## 🧠 PRINCIPIOS A CUMPLIR
 
-✅ El dominio NO debe depender de Laravel  
-✅ Los casos de uso deben orquestar el flujo  
-✅ El agregado debe contener reglas del negocio  
-✅ Los repositorios deben ser interfaces  
-✅ La persistencia debe estar en Infrastructure  
-✅ Eventos de dominio para desacoplar acciones  
-✅ Separar lectura y escritura (CQRS)
+ El dominio NO debe depender de Laravel  
+ Los casos de uso deben orquestar el flujo  
+ El agregado debe contener reglas del negocio  
+ Los repositorios deben ser interfaces  
+ La persistencia debe estar en Infrastructure  
+ Eventos de dominio para desacoplar acciones  
+ Separar lectura y escritura (CQRS)
 
 ---
 
@@ -200,11 +200,11 @@ app/Infrastructure/Pedidos/
 
 | Fase | Indicador | Status |
 |------|-----------|--------|
-| 0 | Estructura compilada sin errores | ✅ |
+| 0 | Estructura compilada sin errores |  |
 | 1 | Tests de dominio pasen | 🟢 3/3 PASANDO |
 | 2 | Persistencia funcione en tests | 🔵 |
-| 3 | POST /api/pedidos migrado ✅ | 🔵 |
-| 4 | PATCH /api/pedidos/{id}/confirmar migrado ✅ | 🔵 |
+| 3 | POST /api/pedidos migrado  | 🔵 |
+| 4 | PATCH /api/pedidos/{id}/confirmar migrado  | 🔵 |
 | 5 | GET endpoints usen QueryHandlers | 🔵 |
 | 6 | Código antiguo eliminado | 🔵 |
 | FINAL | Cero regresiones en producción | 🔵 |
@@ -242,7 +242,7 @@ Fase 5: Consultas con QueryHandlers
     ↓
 Fase 6: Limpiar y eliminar código viejo
     ↓
-✅ MIGRACIÓN COMPLETADA
+ MIGRACIÓN COMPLETADA
 ```
 
 ---

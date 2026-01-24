@@ -23,7 +23,7 @@ VITE_REVERB_PORT=8080
 VITE_REVERB_SCHEME=http
 ```
 
-### 🚀 Producción
+###  Producción
 **Archivo:** `.env.production`
 - **Host:** `sistemamundoindustrial.online`
 - **Puerto:** `443`
@@ -98,7 +98,7 @@ php artisan reverb:start --host=0.0.0.0 --port=8080
 2. Vite carga variables del .env (VITE_REVERB_HOST=localhost)
 3. bootstrap.js intenta conectar a ws://localhost:8080
 4. El servidor Reverb local recibe la conexión
-5. WebSocket funcionando: ✅
+5. WebSocket funcionando: 
 ```
 
 ### 🔍 Producción
@@ -107,7 +107,7 @@ php artisan reverb:start --host=0.0.0.0 --port=8080
 2. Vite usa variables del .env.production (VITE_REVERB_HOST=sistemamundoindustrial.online)
 3. bootstrap.js intenta conectar a wss://sistemamundoindustrial.online:443
 4. El servidor Reverb de producción recibe la conexión
-5. WebSocket funcionando: ✅
+5. WebSocket funcionando: 
 ```
 
 ## Verificación en Console
@@ -127,13 +127,13 @@ VITE_REVERB_HOST: localhost
 VITE_REVERB_PORT: 8080
 VITE_REVERB_SCHEME: http
 
-✅ Configuración final de Echo:
+ Configuración final de Echo:
 broadcaster: reverb
 wsHost: localhost
 wsPort: 8080
 forceTLS: false
 
-✅ WebSocket conectado exitosamente a Reverb
+ WebSocket conectado exitosamente a Reverb
 ```
 
 ## Troubleshooting

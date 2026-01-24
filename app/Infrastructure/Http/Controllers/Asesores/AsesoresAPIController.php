@@ -4,7 +4,6 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Api\PedidoController;
 
 /**
  * AsesoresAPIController
@@ -15,17 +14,14 @@ use App\Http\Controllers\Api\PedidoController;
  * Mantener solo para compatibilidad temporal
  * 
  * PLAN DE MIGRACIÓN:
- * - Fase 1: Eliminar rutas duplicadas ✅
+ * - Fase 1: Eliminar rutas duplicadas 
  * - Fase 2: Usar PedidoController como delegado (ACTUAL)
  * - Fase 3: Eliminar este archivo completamente
  */
 class AsesoresAPIController extends Controller
 {
-    private PedidoController $pedidoController;
-
-    public function __construct(PedidoController $pedidoController)
+    public function __construct()
     {
-        $this->pedidoController = $pedidoController;
         $this->middleware('auth');
     }
 

@@ -60,7 +60,7 @@ app/
 
 ---
 
-## 🎯 PASO 1: CREAR VALUE OBJECTS
+## PASO 1: CREAR VALUE OBJECTS
 
 ### 1.1 `app/Domain/Pedidos/ValueObjects/NumeroPedido.php`
 
@@ -279,7 +279,7 @@ class Estado
 
 ---
 
-## 🎯 PASO 2: CREAR ENTIDADES DENTRO DEL AGREGADO
+## PASO 2: CREAR ENTIDADES DENTRO DEL AGREGADO
 
 ### 2.1 `app/Domain/Pedidos/Entities/PrendaPedido.php`
 
@@ -374,7 +374,7 @@ class PrendaPedido extends Entity
 
 ---
 
-## 🎯 PASO 3: CREAR EL AGREGADO RAÍZ
+## PASO 3: CREAR EL AGREGADO RAÍZ
 
 ### 3.1 `app/Domain/Pedidos/Agregado/PedidoAggregate.php`
 
@@ -683,7 +683,7 @@ class PedidoAggregate extends AggregateRoot
 
 ---
 
-## 🎯 PASO 4: CREAR REPOSITORY INTERFACE
+## PASO 4: CREAR REPOSITORY INTERFACE
 
 ### 4.1 `app/Domain/Pedidos/Repositories/PedidoRepository.php`
 
@@ -737,7 +737,7 @@ interface PedidoRepository
 
 ---
 
-## 🎯 PASO 5: CREAR REPOSITORY IMPLEMENTATION
+## PASO 5: CREAR REPOSITORY IMPLEMENTATION
 
 ### 5.1 `app/Infrastructure/Persistence/Eloquent/PedidoRepositoryImpl.php`
 
@@ -927,7 +927,7 @@ class PedidoRepositoryImpl implements PedidoRepository
 
 ---
 
-## 🎯 PASO 6: CREAR USE CASES (APPLICATION LAYER)
+## PASO 6: CREAR USE CASES (APPLICATION LAYER)
 
 ### 6.1 `app/Application/Pedidos/UseCases/CrearPedidoUseCase.php`
 
@@ -1039,7 +1039,7 @@ class ConfirmarPedidoUseCase
 
 ---
 
-## 🎯 PASO 7: CREAR DTOs
+## PASO 7: CREAR DTOs
 
 ### 7.1 `app/Application/Pedidos/DTOs/CrearPedidoDTO.php`
 
@@ -1140,7 +1140,7 @@ class PedidoResponseDTO
 
 ---
 
-## 🎯 PASO 8: CREAR DOMAIN EVENTS
+## PASO 8: CREAR DOMAIN EVENTS
 
 ### 8.1 `app/Domain/Pedidos/Events/PedidoCreado.php`
 
@@ -1168,7 +1168,7 @@ class PedidoCreado extends DomainEvent
 
 ---
 
-## 🎯 PASO 9: CREAR DOMAIN EVENT LISTENER
+## PASO 9: CREAR DOMAIN EVENT LISTENER
 
 ### 9.1 `app/Application/Pedidos/Listeners/PedidoCreadoListener.php`
 
@@ -1210,7 +1210,7 @@ class PedidoCreadoListener
 
 ---
 
-## 🎯 PASO 10: REFACTORIZAR CONTROLLER
+## PASO 10: REFACTORIZAR CONTROLLER
 
 ### 10.1 `app/Http/Controllers/PedidoController.php` (REFACTORIZADO)
 
@@ -1334,7 +1334,7 @@ class PedidoController extends Controller
 
 ---
 
-## 🎯 PASO 11: REGISTRAR BINDINGS EN SERVICE PROVIDER
+## PASO 11: REGISTRAR BINDINGS EN SERVICE PROVIDER
 
 ### 11.1 `app/Providers/PedidoServiceProvider.php` (CREAR)
 
@@ -1404,7 +1404,7 @@ Añadir en `config/app.php`:
 
 ---
 
-## 🎯 PASO 12: ACTUALIZAR RUTAS
+## PASO 12: ACTUALIZAR RUTAS
 
 ### 12.1 `routes/api.php`
 
@@ -1419,7 +1419,7 @@ Route::prefix('api')->middleware('api')->group(function () {
 
 ---
 
-## 📋 RESUMEN: FLUJO DE EJECUCIÓN
+##  RESUMEN: FLUJO DE EJECUCIÓN
 
 ```
 Cliente HTTP (POST /api/pedidos)
@@ -1455,7 +1455,7 @@ HTTP 201 JSON Response
 
 ---
 
-## ✅ CHECKLIST DE IMPLEMENTACIÓN
+##  CHECKLIST DE IMPLEMENTACIÓN
 
 ```
 □ Crear carpeta Domain/Pedidos/
@@ -1508,14 +1508,14 @@ class PrendaPedido extends Model
 
 ## 🎓 BENEFICIOS DE ESTA IMPLEMENTACIÓN
 
-✅ **Lógica de negocio aislada** en Agregado (testeable sin BD)  
-✅ **Transacciones automáticas** en Repository  
-✅ **Eventos de dominio** desacoplados  
-✅ **DTOs** para transferencia de datos  
-✅ **Use Cases** claros y reutilizables  
-✅ **Escalable** (fácil añadir nuevos casos de uso)  
-✅ **Mantenible** (cambios centralizados)  
-✅ **Type-safe** (con PHP 8 strict types)
+ **Lógica de negocio aislada** en Agregado (testeable sin BD)  
+ **Transacciones automáticas** en Repository  
+ **Eventos de dominio** desacoplados  
+ **DTOs** para transferencia de datos  
+ **Use Cases** claros y reutilizables  
+ **Escalable** (fácil añadir nuevos casos de uso)  
+ **Mantenible** (cambios centralizados)  
+ **Type-safe** (con PHP 8 strict types)
 
 ---
 

@@ -10,7 +10,7 @@ POST https://www.googleapis.com/oauth2/v4/token resulted in 401 Unauthorized
 
 ---
 
-## ✅ SOLUCIÓN: Generar Nuevas Credenciales OAuth
+##  SOLUCIÓN: Generar Nuevas Credenciales OAuth
 
 ### Paso 1: Ir a Google Cloud Console
 1. Abre: https://console.cloud.google.com
@@ -108,14 +108,14 @@ php artisan cache:clear
 
 ---
 
-## ✅ Verificación Final
+##  Verificación Final
 
 Cuando funcione, verás:
-1. ✅ Redirige a la pantalla de Google
-2. ✅ Te pide autorización
-3. ✅ Redirige de vuelta a tu app
-4. ✅ Se inicia sesión automáticamente
-5. ✅ Se guarda el `google_id` en la BD
+1.  Redirige a la pantalla de Google
+2.  Te pide autorización
+3.  Redirige de vuelta a tu app
+4.  Se inicia sesión automáticamente
+5.  Se guarda el `google_id` en la BD
 
 ---
 

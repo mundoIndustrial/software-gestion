@@ -1,6 +1,6 @@
 # 🔄 CAMBIO AUTOMÁTICO ENTRE DESARROLLO Y PRODUCCIÓN
 
-## ✅ Archivos Creados
+##  Archivos Creados
 
 - `.env.development` - Configuración para desarrollo local
 - `.env.production` - Configuración para producción online
@@ -8,7 +8,7 @@
 
 ---
 
-## 🚀 Cómo Usar
+##  Cómo Usar
 
 ### En DESARROLLO (localhost)
 
@@ -17,11 +17,11 @@
 ```
 
 **Resultado:**
-- ✅ `APP_ENV=local`
-- ✅ `APP_URL=http://localhost:8000`
-- ✅ `GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback`
-- ✅ `APP_DEBUG=true`
-- ✅ `LOG_LEVEL=debug`
+-  `APP_ENV=local`
+-  `APP_URL=http://localhost:8000`
+-  `GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback`
+-  `APP_DEBUG=true`
+-  `LOG_LEVEL=debug`
 
 ---
 
@@ -32,11 +32,11 @@
 ```
 
 **Resultado:**
-- ✅ `APP_ENV=production`
-- ✅ `APP_URL=https://sistemamundoindustrial.online`
-- ✅ `GOOGLE_REDIRECT_URI=https://sistemamundoindustrial.online/auth/google/callback`
-- ✅ `APP_DEBUG=false`
-- ✅ `LOG_LEVEL=notice`
+-  `APP_ENV=production`
+-  `APP_URL=https://sistemamundoindustrial.online`
+-  `GOOGLE_REDIRECT_URI=https://sistemamundoindustrial.online/auth/google/callback`
+-  `APP_DEBUG=false`
+-  `LOG_LEVEL=notice`
 
 ---
 
@@ -54,7 +54,7 @@
 
 ---
 
-## 📋 Diferencias en Google OAuth
+##  Diferencias en Google OAuth
 
 ### Desarrollo
 ```
@@ -70,11 +70,11 @@ Secret:        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
 Redirect:      https://sistemamundoindustrial.online/auth/google/callback
 ```
 
-**✅ Same credentials, different redirect URLs** - Google Cloud ya lo soporta
+** Same credentials, different redirect URLs** - Google Cloud ya lo soporta
 
 ---
 
-## 🎯 Flujo Recomendado
+## Flujo Recomendado
 
 ### Antes de DEPLOYS a Producción
 
@@ -118,13 +118,13 @@ Desarrollo:
   Usuario clica "Google Login"
   → APP_ENV=local
   → Google redirige a: http://localhost:8000/auth/google/callback
-  → ✅ Funciona
+  →  Funciona
 
 Producción:
   Usuario clica "Google Login"
   → APP_ENV=production
   → Google redirige a: https://sistemamundoindustrial.online/auth/google/callback
-  → ✅ Funciona
+  →  Funciona
 ```
 
 ---
@@ -150,7 +150,7 @@ cat .env | Select-String "APP_ENV|APP_URL|GOOGLE_REDIRECT"
 Antes de desplegar a producción, asegúrate de actualizar en `.env.production`:
 
 ```dotenv
-# ✅ ACTUALIZAR ESTOS VALORES CON TUS CREDENCIALES REALES
+#  ACTUALIZAR ESTOS VALORES CON TUS CREDENCIALES REALES
 
 # Base de datos
 DB_HOST=tu-host-produccion
@@ -171,12 +171,12 @@ GOOGLE_DRIVE_FOLDER_ID=tu-folder-id
 
 ## ✨ Ventajas de Este Sistema
 
-✅ **Cambio rápido**: 1 comando para cambiar todo
-✅ **Seguro**: No mezclas configuraciones
-✅ **Automatizado**: El script limpia caché
-✅ **Versión controlada**: Ambos .env en git (sin .env principal)
-✅ **Google OAuth funciona en ambos lados**: Automáticamente
-✅ **Fácil de mantener**: Cambios en un solo archivo
+ **Cambio rápido**: 1 comando para cambiar todo
+ **Seguro**: No mezclas configuraciones
+ **Automatizado**: El script limpia caché
+ **Versión controlada**: Ambos .env en git (sin .env principal)
+ **Google OAuth funciona en ambos lados**: Automáticamente
+ **Fácil de mantener**: Cambios en un solo archivo
 
 ---
 

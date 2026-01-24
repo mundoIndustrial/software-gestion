@@ -119,7 +119,7 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
 
 | Escenario | Resultado |
 |-----------|-----------|
-| Clic después de carga completa | ✅ Funciona normal |
+| Clic después de carga completa |  Funciona normal |
 | Clic durante carga (script aún inicializando) | ❌ Modal queda atrapado |
 | Clic durante carga + cierre manual del modal | ⚠️ Fetch sigue ejecutándose |
 | Clic rápido múltiples veces | ❌❌ Múltiples modales atrapados |
@@ -128,7 +128,7 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
 
 ## Soluciones Propuestas
 
-### ✅ Solución 1: Usar `await` en lugar de callbacks (RECOMENDADA)
+###  Solución 1: Usar `await` en lugar de callbacks (RECOMENDADA)
 
 ```javascript
 async function editarPedido(pedidoId) {
@@ -167,7 +167,7 @@ async function editarPedido(pedidoId) {
 }
 ```
 
-### ✅ Solución 2: Agregar flag de prevención de múltiples clics
+###  Solución 2: Agregar flag de prevención de múltiples clics
 
 ```javascript
 let edicionEnProgreso = false;  // Flag global
@@ -207,7 +207,7 @@ function editarPedido(pedidoId) {
 }
 ```
 
-### ✅ Solución 3: Mejorar `_ensureSwal()` para retornar una promesa correcta
+###  Solución 3: Mejorar `_ensureSwal()` para retornar una promesa correcta
 
 ```javascript
 async function _ensureSwal() {
@@ -229,10 +229,10 @@ async function _ensureSwal() {
 - Juntas forman una solución robusta
 
 **Ventajas:**
-✅ No queda modal atrapado  
-✅ Previene race conditions  
-✅ Código más legible  
-✅ Funciona con clics durante carga  
+ No queda modal atrapado  
+ Previene race conditions  
+ Código más legible  
+ Funciona con clics durante carga  
 
 ---
 
@@ -254,10 +254,10 @@ Pasos para verificar la solución:
 ```
 1. Cargar http://localhost:8000/asesores/pedidos
 2. Hacer clic inmediatamente en "Editar" (sin esperar carga)
-3. ✅ Verificar que el modal se muestre correctamente
-4. ✅ Verificar que los datos del pedido se carguen
-5. ✅ Hacer clic rápido múltiples veces
-6. ✅ Verificar que no haya modales múltiples atrapados
+3.  Verificar que el modal se muestre correctamente
+4.  Verificar que los datos del pedido se carguen
+5.  Hacer clic rápido múltiples veces
+6.  Verificar que no haya modales múltiples atrapados
 ```
 
 ---
@@ -266,5 +266,5 @@ Pasos para verificar la solución:
 
 Este es un **race condition clásico** donde:
 - ❌ **Código actual:** Asume que `_ensureSwal()` espera correctamente, pero no lo hace
-- ✅ **Código mejorado:** Usar `async/await` + flag de prevención
+-  **Código mejorado:** Usar `async/await` + flag de prevención
 

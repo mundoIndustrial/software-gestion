@@ -204,11 +204,20 @@ class CQRSServiceProvider extends ServiceProvider
      */
     private function registerCommandHandlers(): void
     {
+        // ===== PEDIDOS COMMANDS =====
         $this->app->bind(CrearPedidoHandler::class, function ($app) {
             return new CrearPedidoHandler(
                 $app->make(\App\Models\PedidoProduccion::class),
                 $app->make(\App\Domain\Shared\DomainEventDispatcher::class),
                 $app->make(PedidoValidator::class),
+            );
+        });
+
+        // NUEVO: CrearPedidoCompletoHandler - Orquestador principal
+        $this->app->bind(\App\Domain\Pedidos\CommandHandlers\CrearPedidoCompletoHandler::class, function ($app) {
+            return new \App\Domain\Pedidos\CommandHandlers\CrearPedidoCompletoHandler(
+                $app->make(\App\Domain\Shared\CQRS\CommandBus::class),
+                $app->make(\App\Models\PedidoProduccion::class),
             );
         });
 
@@ -315,9 +324,16 @@ class CQRSServiceProvider extends ServiceProvider
      */
     private function registerCommands(CommandBus $commandBus): void
     {
+        // ===== PEDIDOS COMMANDS =====
         $commandBus->register(
             CrearPedidoCommand::class,
             CrearPedidoHandler::class
+        );
+
+        // NUEVO: CrearPedidoCompletoCommand - Flujo principal de creación
+        $commandBus->register(
+            \App\Domain\Pedidos\Commands\CrearPedidoCompletoCommand::class,
+            \App\Domain\Pedidos\CommandHandlers\CrearPedidoCompletoHandler::class
         );
 
         $commandBus->register(

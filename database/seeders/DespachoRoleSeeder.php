@@ -21,6 +21,6 @@ class DespachoRoleSeeder extends Seeder
             ]
         );
 
-        echo "✅ Rol Despacho creado/verificado correctamente\n";
+        echo " Rol Despacho creado/verificado correctamente\n";
     }
 }

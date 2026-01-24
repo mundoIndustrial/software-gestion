@@ -16,18 +16,29 @@
  */
 function generarTarjetaPrendaReadOnly(prenda, indice) {
 
+    console.log('[generarTarjetaPrendaReadOnly]  Prenda a renderizar:');
+    console.log('[generarTarjetaPrendaReadOnly]', prenda);
     
     // Verificar que servicios estén disponibles
+    console.log('[generarTarjetaPrendaReadOnly] 🔍 ¿PrendaCardService existe?', !!window.PrendaCardService);
+    console.log('[generarTarjetaPrendaReadOnly] 🔍 ¿PrendaDataTransformer existe?', !!window.PrendaDataTransformer);
+    console.log('[generarTarjetaPrendaReadOnly] 🔍 ¿TallasBuilder existe?', !!window.TallasBuilder);
+    
     if (!window.PrendaCardService) {
-
+        console.log('[generarTarjetaPrendaReadOnly] ❌ ERROR: PrendaCardService NO está disponible');
         return `<div class="error">Error: servicios no cargados</div>`;
     }
 
     // Usar PrendaCardService para generar HTML
-    const htmlTarjeta = window.PrendaCardService.generar(prenda, indice);
-    
-
-    return htmlTarjeta;
+    try {
+        console.log('[generarTarjetaPrendaReadOnly] ⚡ Llamando PrendaCardService.generar()');
+        const htmlTarjeta = window.PrendaCardService.generar(prenda, indice);
+        console.log('[generarTarjetaPrendaReadOnly]  HTML generado exitosamente');
+        return htmlTarjeta;
+    } catch (error) {
+        console.error('[generarTarjetaPrendaReadOnly] ❌ ERROR en PrendaCardService:', error);
+        return `<div class="error">Error generando tarjeta: ${error.message}</div>`;
+    }
 }
 
 // Inicializar handlers cuando el documento esté listo

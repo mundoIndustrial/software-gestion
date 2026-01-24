@@ -18,7 +18,7 @@ ACTUAL (❌ INCORRECTO):
   - ❌ ELIMINA TAMBIÉN: variantes (manga, broche)
   - ❌ ELIMINA TAMBIÉN: tallas (S, M, L, XL)
 
-CORRECTO ✅:
+CORRECTO :
   - Actualiza solo la combinación color-tela
   - Preserva: fotos_tela, variantes, tallas, procesos
 ```
@@ -31,12 +31,12 @@ ACTUAL (❌ INCORRECTO):
   - ❌ Elimina color Rojo (que aún es válido)
   - ❌ Crea nueva combinación color-tela
 
-CORRECTO ✅:
+CORRECTO :
   - Solo actualiza tela en la combinación color-tela
   - Preserva: color, variantes, tallas, fotos
 ```
 
-## 📋 ARCHIVOS AFECTADOS
+##  ARCHIVOS AFECTADOS
 
 ### [ActualizarPrendaCompletaUseCase.php](app/Application/Pedidos/UseCases/ActualizarPrendaCompletaUseCase.php)
 
@@ -81,7 +81,7 @@ CORRECTO ✅:
    }
    ```
 
-## 🎯 SOLUCIÓN REQUERIDA
+## SOLUCIÓN REQUERIDA
 
 ### Patrón: "Actualización Selectiva"
 
@@ -103,7 +103,7 @@ private function actualizarColoresTelas(PrendaPedido $prenda, ActualizarPrendaCo
     $prenda->coloresTelas()->delete();  // ❌ PROBLEMA: Siempre elimina
 }
 
-// ✅ DEBERÍA SER:
+//  DEBERÍA SER:
 private function actualizarColoresTelas(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
 {
     if (is_null($dto->coloresTelas)) {
@@ -129,12 +129,12 @@ private function actualizarColoresTelas(PrendaPedido $prenda, ActualizarPrendaCo
 
 | Campo DTO | Estado | Acción Correcta |
 |-----------|--------|-----------------|
-| `coloresTelas` | null | ✅ NO TOCAR (es actualización parcial) |
-| `coloresTelas` | [] (vacío) | ✅ ELIMINAR TODO (intención explícita) |
-| `coloresTelas` | [datos] | ✅ ACTUALIZAR solo diferencias |
-| `variantes` | null | ✅ NO TOCAR |
-| `variantes` | [] (vacío) | ✅ ELIMINAR TODO |
-| `variantes` | [datos] | ✅ ACTUALIZAR solo diferencias |
+| `coloresTelas` | null |  NO TOCAR (es actualización parcial) |
+| `coloresTelas` | [] (vacío) |  ELIMINAR TODO (intención explícita) |
+| `coloresTelas` | [datos] |  ACTUALIZAR solo diferencias |
+| `variantes` | null |  NO TOCAR |
+| `variantes` | [] (vacío) |  ELIMINAR TODO |
+| `variantes` | [datos] |  ACTUALIZAR solo diferencias |
 
 ## 🔧 REFACTORIZACIÓN REQUERIDA
 
@@ -156,16 +156,16 @@ private function actualizarColoresTelas(PrendaPedido $prenda, ActualizarPrendaCo
    - Mismo patrón
 
 5. **`actualizarTallas()`**
-   - ✅ YA IMPLEMENTA CORRECTAMENTE (línea ~135)
+   -  YA IMPLEMENTA CORRECTAMENTE (línea ~135)
    - Preserva tallas no especificadas
 
-## ✅ EJEMPLO: Lo que tallas hace BIEN
+##  EJEMPLO: Lo que tallas hace BIEN
 
 ```php
 private function actualizarTallas(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
 {
     if (is_null($dto->cantidadTalla)) {
-        return;  // ✅ No tocar si no viene
+        return;  //  No tocar si no viene
     }
 
     if (empty($dto->cantidadTalla)) {
@@ -173,7 +173,7 @@ private function actualizarTallas(PrendaPedido $prenda, ActualizarPrendaCompleta
         return;
     }
 
-    // ✅ CORRECTO: Obtener existentes, comparar, eliminar solo lo necesario
+    //  CORRECTO: Obtener existentes, comparar, eliminar solo lo necesario
     $tallasExistentes = $prenda->tallas()->get()->keyBy(...);
     $tallasNuevas = [];
     
@@ -208,7 +208,7 @@ Si solo cambias 1 campo (ej: color), actualmente pierdes:
 
 ## 📝 PRÓXIMOS PASOS
 
-1. ✅ Este análisis (COMPLETADO)
+1.  Este análisis (COMPLETADO)
 2. ⏳ Refactorizar `ActualizarPrendaCompletaUseCase.php` con patrón selectivo
 3. ⏳ Agregar tests para cambios parciales
 4. ⏳ Verificar que cambiar solo color no elimine nada más

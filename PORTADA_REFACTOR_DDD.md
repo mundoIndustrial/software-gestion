@@ -2,7 +2,7 @@
 
 **Bienvenido al refactor del módulo Pedidos**
 
-**Estado:** ✅ FASE 1 COMPLETADA | ⏳ FASE 2-4 PLANIFICADAS
+**Estado:**  FASE 1 COMPLETADA | ⏳ FASE 2-4 PLANIFICADAS
 
 **Inicio rápido:** Menos de 5 minutos para entender qué está pasando
 
@@ -14,12 +14,12 @@
 SE COMPLETÓ: Consolidación de dos sistemas de pedidos en uno
 RESULTADO:   Código más limpio, tests validados, documentado
 PRÓXIMO:     Migración frontend (4-6 horas de trabajo)
-IMPACTO:     +80% menos código, 100% tests pasando ✅
+IMPACTO:     +80% menos código, 100% tests pasando 
 ```
 
 ---
 
-## 🎯 ¿POR DÓNDE EMPIEZO?
+## ¿POR DÓNDE EMPIEZO?
 
 ### Soy PM / Directivo
 **Lee:** [EXECUTIVE_SUMMARY_REFACTOR.md](./EXECUTIVE_SUMMARY_REFACTOR.md)
@@ -85,7 +85,7 @@ IMPACTO:     +80% menos código, 100% tests pasando ✅
 
 ---
 
-## 🎯 POR QUÉ ESTO IMPORTA
+## POR QUÉ ESTO IMPORTA
 
 ### El Problema
 ```
@@ -99,20 +99,20 @@ RESULTADO: Bugs duplicados, mantenimiento difícil, confusión
 ### La Solución
 ```
 DESPUÉS: 1 sistema DDD
-├─ Código limpio ✅
-├─ 100% testado ✅
-├─ Bien documentado ✅
-└─ Fácil de mantener ✅
+├─ Código limpio 
+├─ 100% testado 
+├─ Bien documentado 
+└─ Fácil de mantener 
 
 RESULTADO: 488 líneas de código eliminadas, deuda técnica reducida
 ```
 
 ### El Impacto
 ```
-✅ Menos bugs (código testado)
-✅ Desarrollo más rápido (una sola fuente de verdad)
-✅ Mantenimiento más fácil (código limpio)
-✅ Escalable (arquitectura DDD)
+ Menos bugs (código testado)
+ Desarrollo más rápido (una sola fuente de verdad)
+ Mantenimiento más fácil (código limpio)
+ Escalable (arquitectura DDD)
 ```
 
 ---
@@ -120,7 +120,7 @@ RESULTADO: 488 líneas de código eliminadas, deuda técnica reducida
 ## 📊 ESTADO ACTUAL
 
 ```
-FASE 1: Consolidación ......................... ✅ 100% COMPLETADA
+FASE 1: Consolidación .........................  100% COMPLETADA
 ├─ Código duplicado eliminado (488 líneas)
 ├─ Rutas consolidadas (4 conflictivas)
 ├─ Tests validados (16/16 pasando)
@@ -185,7 +185,7 @@ Tiempo: 1-2 horas
 
 ---
 
-## ✅ CHECKLIST RÁPIDO
+##  CHECKLIST RÁPIDO
 
 Antes de cualquier acción, verifica:
 
@@ -266,16 +266,16 @@ mundoindustrial/
 
 ---
 
-## 🎯 META FINAL
+## META FINAL
 
 ```
 En ~1 semana:
-├─ Código legacy completamente eliminado ✅
-├─ Frontend 100% migrado a /api/pedidos ✅
-├─ BD consolidada en tabla única ✅
-├─ Tests 100% pasando ✅
-├─ Documentación completa ✅
-└─ Listo para producción ✅
+├─ Código legacy completamente eliminado 
+├─ Frontend 100% migrado a /api/pedidos 
+├─ BD consolidada en tabla única 
+├─ Tests 100% pasando 
+├─ Documentación completa 
+└─ Listo para producción 
 
 RESULTADO: Sistema limpio, mantenible, escalable
 ```
@@ -304,7 +304,7 @@ RESULTADO: Sistema limpio, mantenible, escalable
 ---
 
 **Fecha:** 2024
-**Estado:** ✅ FASE 1 COMPLETADA | ⏳ FASES 2-4 LISTAS
-**Aprobación:** ✅ PROCEDER
+**Estado:**  FASE 1 COMPLETADA | ⏳ FASES 2-4 LISTAS
+**Aprobación:**  PROCEDER
 
-**¡Bienvenido al refactor DDD! 🚀**
+**¡Bienvenido al refactor DDD! **

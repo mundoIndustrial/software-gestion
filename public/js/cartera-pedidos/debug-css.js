@@ -68,7 +68,7 @@ elementsWithZIndex.forEach((el, idx) => {
 console.groupEnd();
 
 // Hojas de estilo
-console.group('%c📋 HOJAS DE ESTILO CARGADAS', 'color: #3b82f6; font-weight: bold; font-size: 13px;');
+console.group('%c HOJAS DE ESTILO CARGADAS', 'color: #3b82f6; font-weight: bold; font-size: 13px;');
 Array.from(document.styleSheets).forEach((sheet, idx) => {
     try {
         const href = sheet.href || 'inline';
@@ -91,7 +91,7 @@ vars.forEach(v => {
 console.groupEnd();
 
 // Verificar clases disponibles
-console.group('%c✅ CLASES CSS DISPONIBLES', 'color: #06b6d4; font-weight: bold; font-size: 13px;');
+console.group('%c CLASES CSS DISPONIBLES', 'color: #06b6d4; font-weight: bold; font-size: 13px;');
 const classes = [
     'cartera-pedidos-container',
     'table-container',
@@ -104,7 +104,7 @@ const classes = [
 ];
 classes.forEach(cls => {
     const exists = document.querySelector(`.${cls}`);
-    console.log(`${exists ? '✅' : '❌'} .${cls}`);
+    console.log(`${exists ? '' : '❌'} .${cls}`);
 });
 console.groupEnd();
 

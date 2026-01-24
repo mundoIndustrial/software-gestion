@@ -1,4 +1,4 @@
-# ✅ FIX: Rutas API de Catálogos Reubicadas
+#  FIX: Rutas API de Catálogos Reubicadas
 
 ## 🔴 Problema Inicial
 
@@ -16,7 +16,7 @@ Las rutas estaban **dentro del grupo de asesores con prefijo `/asesores`**, ento
 
 Pero el JavaScript llamaba a `/api/tallas-disponibles` sin el prefijo `/asesores/`.
 
-## ✅ Solución Implementada
+##  Solución Implementada
 
 Moví las 4 rutas de catálogos a un **grupo API separado** con `prefix('api')`:
 
@@ -34,10 +34,10 @@ Route::middleware(['auth', 'role:asesor,admin'])
 
 **Resultado**: Ahora la URL es:
 ```
-✅ GET /api/tallas-disponibles           (FUNCIONA)
-✅ GET /api/prenda-pedido/123/tallas     (FUNCIONA)
-✅ GET /api/prenda-pedido/123/variantes  (FUNCIONA)
-✅ GET /api/prenda-pedido/123/colores-telas (FUNCIONA)
+ GET /api/tallas-disponibles           (FUNCIONA)
+ GET /api/prenda-pedido/123/tallas     (FUNCIONA)
+ GET /api/prenda-pedido/123/variantes  (FUNCIONA)
+ GET /api/prenda-pedido/123/colores-telas (FUNCIONA)
 ```
 
 ## 📍 Ubicación en Código
@@ -49,9 +49,9 @@ Route::middleware(['auth', 'role:asesor,admin'])
 
 ## 🔐 Seguridad
 
-- ✅ Mantiene autenticación (`auth`)
-- ✅ Mantiene validación de rol (`role:asesor,admin`)
-- ✅ Solo asesores y admins pueden acceder
+-  Mantiene autenticación (`auth`)
+-  Mantiene validación de rol (`role:asesor,admin`)
+-  Solo asesores y admins pueden acceder
 
 ## 📝 Cambios
 
@@ -67,7 +67,7 @@ Ejecutar en navegador:
 // DevTools Console
 fetch('/api/tallas-disponibles')
   .then(r => r.json())
-  .then(d => console.log('✅ Tallas cargadas:', d))
+  .then(d => console.log(' Tallas cargadas:', d))
   .catch(e => console.error('❌ Error:', e))
 ```
 
@@ -90,5 +90,5 @@ FIX: Mover rutas API de catálogos fuera del grupo asesores para que sean accesi
 
 ---
 
-**Status**: ✅ Rutas ahora son accesibles desde JavaScript sin el prefijo `/asesores/`
+**Status**:  Rutas ahora son accesibles desde JavaScript sin el prefijo `/asesores/`
 

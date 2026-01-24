@@ -25,7 +25,7 @@ class CarteraRoleSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            $this->command->info('✅ Rol "cartera" creado exitosamente.');
+            $this->command->info(' Rol "cartera" creado exitosamente.');
         } else {
             $this->command->warn('⚠️  El rol "cartera" ya existe.');
         }

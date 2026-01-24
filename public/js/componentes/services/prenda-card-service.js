@@ -90,7 +90,7 @@ window.PrendaCardService = {
                 <div class="prenda-card-header">
                     <div class="prenda-card-title-section">
                         <span class="prenda-label">Prenda ${numeroItem}</span>
-                        <h3 class="prenda-name">${prenda.nombre_producto || 'Sin nombre'}</h3>
+                        <h3 class="prenda-name">${prenda.nombre_prenda || prenda.nombre_producto || 'Sin nombre'}</h3>
                     </div>
                     
                     <div class="prenda-menu-contextual">
@@ -114,7 +114,7 @@ window.PrendaCardService = {
                             <div style="position: relative; display: inline-block;">
                                 <img 
                                     src="${fotoPrincipal}" 
-                                    alt="${prenda.nombre_producto}" 
+                                    alt="${prenda.nombre_prenda || prenda.nombre_producto || 'Prenda'}" 
                                     class="foto-principal-readonly"
                                     data-prenda-index="${indice}"
                                     data-foto-index="0"
@@ -241,11 +241,34 @@ window.PrendaCardService = {
         
         let tallas = prenda.tallas;
         let generosConTallas = prenda.generosConTallas;
+        let cantidadTallaRelacional = prenda.cantidad_talla; // { DAMA: { S: 20, M: 20 } }
         
-        // Intentar obtener cantidades desde cantidad_talla (nuevo formato) o cantidadesPorTalla (antiguo)
-        let cantidadesPorTalla = prenda.cantidad_talla || prenda.cantidadesPorTalla || {};
+        // Intentar obtener cantidades desde cantidad_talla (nuevo formato relacional)
+        let cantidadesPorTalla = prenda.cantidadesPorTalla || {};
         
-
+        // ⚠️ Si viene formato relacional, convertirlo
+        if (cantidadTallaRelacional && typeof cantidadTallaRelacional === 'object' && !Array.isArray(cantidadTallaRelacional)) {
+            // Convertir { DAMA: { S: 20, M: 20 } } → { 'dama-S': 20, 'dama-M': 20 }
+            Object.entries(cantidadTallaRelacional).forEach(([genero, tallasObj]) => {
+                if (typeof tallasObj === 'object') {
+                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                        cantidadesPorTalla[`${genero.toLowerCase()}-${talla}`] = cantidad;
+                    });
+                }
+            });
+            
+            // Construir generosConTallas si no existe
+            if (!generosConTallas || Object.keys(generosConTallas).length === 0) {
+                generosConTallas = {};
+                Object.entries(cantidadTallaRelacional).forEach(([genero, tallasObj]) => {
+                    if (typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
+                        generosConTallas[genero.toLowerCase()] = {
+                            tallas: Object.keys(tallasObj)
+                        };
+                    }
+                });
+            }
+        }
 
         
         let tallasByGeneroMap = {};

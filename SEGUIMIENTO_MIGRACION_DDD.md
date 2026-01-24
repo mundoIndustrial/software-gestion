@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 ESTADO GENERAL
+## ESTADO GENERAL
 
 - **Progreso Global:** 25% (Fases 0, 1A, 1B Completadas)
 - **Última Actividad:** Use Cases y DTOs creados
@@ -14,9 +14,9 @@
 
 ---
 
-## 📋 CHECKLIST DE FASES
+##  CHECKLIST DE FASES
 
-### ✅ FASE 0: PREPARACIÓN (1-2 días)
+###  FASE 0: PREPARACIÓN (1-2 días)
 
 **Status:** � COMPLETADA
 
@@ -30,7 +30,7 @@
 
 ---
 
-### ✅ FASE 1A: DOMAIN LAYER (3-4 días)
+###  FASE 1A: DOMAIN LAYER (3-4 días)
 
 **Status:** 🟢 COMPLETADA
 
@@ -49,7 +49,7 @@
 
 ---
 
-### ✅ FASE 1B: USE CASES (4-5 días)
+###  FASE 1B: USE CASES (4-5 días)
 
 **Status:** 🟢 COMPLETADA
 
@@ -153,7 +153,7 @@ TOTAL: 2-3 SEMANAS
 
 ---
 
-## ✅ VALIDACIONES POR FASE
+##  VALIDACIONES POR FASE
 
 ### Después de Fase 1A ✓
 - [ ] Tests de PedidoProduccionAggregate pasan
@@ -216,7 +216,7 @@ Después de cada fase completada:
 
 ---
 
-## 🎯 PRÓXIMOS PASOS INMEDIATOS
+## PRÓXIMOS PASOS INMEDIATOS
 
 ### Ahora (Fase 0 - Setup):
 ```bash
@@ -252,4 +252,4 @@ Después de cada fase completada:
 ---
 
 **Última actualización:** 2024  
-**Estado:** LISTO PARA EMPEZAR 🚀
+**Estado:** LISTO PARA EMPEZAR 

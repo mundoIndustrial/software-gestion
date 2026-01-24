@@ -1,8 +1,8 @@
 # 📊 ANÁLISIS COMPARATIVO: ¿Cuál carpeta es mejor y cumple DDD?
 
-## 🎯 CRITERIOS DE EVALUACIÓN DDD
+## CRITERIOS DE EVALUACIÓN DDD
 
-### 1. **Aggregate Root Pattern** ✅
+### 1. **Aggregate Root Pattern** 
 Un Agregado debe:
 - Tener una raíz (AggregateRoot)
 - Encapsular lógica de dominio
@@ -15,7 +15,7 @@ Un Agregado debe:
 
 ### **Carpeta A: `/app/Domain/Pedidos`**
 
-#### ✅ **FORTALEZAS DDD:**
+####  **FORTALEZAS DDD:**
 ```php
 // 1. Extiende AggregateRoot (correcto DDD)
 class PedidoAggregate extends AggregateRoot { ... }
@@ -51,7 +51,7 @@ private Collection $prendas;  // PrendaPedido es una Entity interna
 
 ### **Carpeta B: `/app/Domain/PedidoProduccion`**
 
-#### ✅ **FORTALEZAS DDD:**
+####  **FORTALEZAS DDD:**
 ```php
 // 1. Implementa Event Sourcing
 private array $uncommittedEvents = [];
@@ -99,22 +99,22 @@ private int $cantidadTotal;    // Número puro, sin VO
 
 ---
 
-## 📋 TABLA COMPARATIVA
+##  TABLA COMPARATIVA
 
 | Aspecto | Pedidos/ | PedidoProduccion/ | Ganador |
 |---------|----------|-------------------|---------|
-| **Extiende AggregateRoot** | ✅ SÍ | ❌ NO | **Pedidos/** |
-| **ValueObjects** | ✅ SÍ (NumeroPedido, Estado) | ❌ NO (strings) | **Pedidos/** |
-| **Factory Methods** | ✅ SÍ | ✅ SÍ | EMPATE |
-| **Validación de Invariantes** | ✅ SÍ | ✅ SÍ | EMPATE |
-| **Event Sourcing** | ❌ NO (pero disponible) | ✅ SÍ | **PedidoProduccion/** |
-| **CQRS** | ✅ SÍ (en Application) | ✅ SÍ (Commands/Queries) | EMPATE |
-| **Encapsulación de Datos** | ✅ FUERTE | ❌ DÉBIL | **Pedidos/** |
-| **Getters para acceso** | ✅ SÍ | ❌ NO | **Pedidos/** |
-| **Lógica de Dominio Clara** | ✅ SÍ | ✅ SÍ | EMPATE |
-| **Estructura Limpia** | ✅ SÍ | ⚠️ CONFUSA | **Pedidos/** |
-| **Sigue patrones Laravel** | ✅ SÍ | ⚠️ PARCIAL | **Pedidos/** |
-| **Mantenibilidad** | ✅ ALTA | ⚠️ MEDIA | **Pedidos/** |
+| **Extiende AggregateRoot** |  SÍ | ❌ NO | **Pedidos/** |
+| **ValueObjects** |  SÍ (NumeroPedido, Estado) | ❌ NO (strings) | **Pedidos/** |
+| **Factory Methods** |  SÍ |  SÍ | EMPATE |
+| **Validación de Invariantes** |  SÍ |  SÍ | EMPATE |
+| **Event Sourcing** | ❌ NO (pero disponible) |  SÍ | **PedidoProduccion/** |
+| **CQRS** |  SÍ (en Application) |  SÍ (Commands/Queries) | EMPATE |
+| **Encapsulación de Datos** |  FUERTE | ❌ DÉBIL | **Pedidos/** |
+| **Getters para acceso** |  SÍ | ❌ NO | **Pedidos/** |
+| **Lógica de Dominio Clara** |  SÍ |  SÍ | EMPATE |
+| **Estructura Limpia** |  SÍ | ⚠️ CONFUSA | **Pedidos/** |
+| **Sigue patrones Laravel** |  SÍ | ⚠️ PARCIAL | **Pedidos/** |
+| **Mantenibilidad** |  ALTA | ⚠️ MEDIA | **Pedidos/** |
 
 ---
 
@@ -125,11 +125,11 @@ private int $cantidadTotal;    // Número puro, sin VO
 #### 1. **Cumple MEJOR con DDD**
 ```
 PedidoAggregate:
-✅ Extiende AggregateRoot (patrón correcto)
-✅ Usa ValueObjects (NumeroPedido, Estado)
-✅ Encapsula datos privados
-✅ Expone métodos de dominio
-✅ Respeta límites del agregado
+ Extiende AggregateRoot (patrón correcto)
+ Usa ValueObjects (NumeroPedido, Estado)
+ Encapsula datos privados
+ Expone métodos de dominio
+ Respeta límites del agregado
 
 PedidoProduccionAggregate:
 ❌ No extiende AggregateRoot
@@ -203,24 +203,24 @@ use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase; // De aqu�
 
 ---
 
-## 🚀 **RECOMENDACIÓN FINAL**
+##  **RECOMENDACIÓN FINAL**
 
 ### **CONSOLIDAR TODO EN `/app/Domain/Pedidos`**
 
 **Plan:**
-1. ✅ Mantenemos `PedidoAggregate` de `Pedidos/` (mejor implementación)
-2. ✅ Migramos `LogoPedidoAggregate` y `PrendaPedidoAggregate` de `PedidoProduccion/`
-3. ✅ Migramos **Commands, Queries, Handlers** de `PedidoProduccion/` a `Pedidos/`
-4. ✅ Migramos **Services** de `PedidoProduccion/` a `Pedidos/`
-5. ✅ Migramos **Events, Listeners, Repositories** de `PedidoProduccion/` a `Pedidos/`
-6. ✅ Eliminamos completamente `/app/Domain/PedidoProduccion/`
-7. ✅ Actualizamos TODOS los imports (Controllers, Services, Tests, etc.)
+1.  Mantenemos `PedidoAggregate` de `Pedidos/` (mejor implementación)
+2.  Migramos `LogoPedidoAggregate` y `PrendaPedidoAggregate` de `PedidoProduccion/`
+3.  Migramos **Commands, Queries, Handlers** de `PedidoProduccion/` a `Pedidos/`
+4.  Migramos **Services** de `PedidoProduccion/` a `Pedidos/`
+5.  Migramos **Events, Listeners, Repositories** de `PedidoProduccion/` a `Pedidos/`
+6.  Eliminamos completamente `/app/Domain/PedidoProduccion/`
+7.  Actualizamos TODOS los imports (Controllers, Services, Tests, etc.)
 
 **Resultado:**
 ```
 Domain/Pedidos/
 ├── Aggregates/
-│   ├── PedidoAggregate.php        (✅ MEJOR)
+│   ├── PedidoAggregate.php        ( MEJOR)
 │   ├── LogoPedidoAggregate.php
 │   └── PrendaPedidoAggregate.php
 ├── Commands/                       (Movidas de PedidoProduccion)
@@ -238,11 +238,11 @@ Domain/Pedidos/
 ```
 
 **Beneficios:**
-- ✅ Una sola fuente de verdad
-- ✅ Arquitectura DDD correcta
-- ✅ Sin confusiones de imports
-- ✅ Fácil de mantener
-- ✅ Sigue patrones reconocidos
+-  Una sola fuente de verdad
+-  Arquitectura DDD correcta
+-  Sin confusiones de imports
+-  Fácil de mantener
+-  Sigue patrones reconocidos
 
 ---
 

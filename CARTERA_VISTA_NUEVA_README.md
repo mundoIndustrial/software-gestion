@@ -1,6 +1,6 @@
 # CARTERA PEDIDOS - VISTA NUEVA LIMPIA
 
-## ✅ Lo que se ha creado
+##  Lo que se ha creado
 
 Completamente nueva, sin dependencias de supervisor/asesores:
 
@@ -101,7 +101,7 @@ public function index()
 
 ---
 
-## 🚀 Cómo Usar
+##  Cómo Usar
 
 1. **Cambiar en el controlador** el return view a la nueva vista
 2. **Acceder a** `/cartera-pedidos`
@@ -112,14 +112,14 @@ public function index()
 
 ## ✨ Ventajas de la Nueva Vista
 
-✅ Sin herencia de estilos conflictivos  
-✅ CSS limpio y modular  
-✅ JavaScript simple y sin dependencias  
-✅ Responsive design mobile-first  
-✅ Modales sin conflictos de z-index  
-✅ Sidebar con collapse animation suave  
-✅ Notificaciones flotantes  
-✅ Fácil de mantener y extender  
+ Sin herencia de estilos conflictivos  
+ CSS limpio y modular  
+ JavaScript simple y sin dependencias  
+ Responsive design mobile-first  
+ Modales sin conflictos de z-index  
+ Sidebar con collapse animation suave  
+ Notificaciones flotantes  
+ Fácil de mantener y extender  
 
 ---
 

@@ -21,19 +21,19 @@ php validate-bd-relations.php 2700
 VALIDACIÓN DE ESTRUCTURA BD Y RELACIONES ELOQUENT
 ================================================================================
 
-📋 Validando pedido ID: 2700
+ Validando pedido ID: 2700
 
 1️⃣  Verificando existencia del pedido...
-   ✅ Pedido encontrado: #2700
+    Pedido encontrado: #2700
 
 2️⃣  Verificando relación prendas...
-   ✅ Prendas cargadas: 5 prendas
+    Prendas cargadas: 5 prendas
 
    Verificando prenda ID: 101 (CAMISA DRILL)
    3️⃣  Verificando relación tallas...
-      ✅ Tallas cargadas: 6 registros
+       Tallas cargadas: 6 registros
 ...
-✅ VALIDACIÓN COMPLETADA EXITOSAMENTE
+ VALIDACIÓN COMPLETADA EXITOSAMENTE
 ================================================================================
 ```
 
@@ -45,7 +45,7 @@ VALIDACIÓN DE ESTRUCTURA BD Y RELACIONES ELOQUENT
 
 ---
 
-## Si TODO está ✅
+## Si TODO está 
 
 Siguiente: Probar API en navegador
 
@@ -78,13 +78,13 @@ Debe retornar JSON con:
 
 ## Cambios Realizados
 
-✅ Archivo: `app/Application/Pedidos/UseCases/ObtenerPedidoUseCase.php`
+ Archivo: `app/Application/Pedidos/UseCases/ObtenerPedidoUseCase.php`
 - 316 líneas de código (antes 161)
 - 6 métodos privados para acceso a BD
 - Logging integrado
 - Manejo de errores con try-catch
 
-✅ Mapeado a BD real:
+ Mapeado a BD real:
 - `prendas_pedido` → obtenerPrendasCompletas()
 - `prenda_pedido_tallas` → construirEstructuraTallas()
 - `prenda_pedido_variantes` → obtenerVariantes()

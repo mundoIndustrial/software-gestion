@@ -343,44 +343,31 @@ window.aplicarProcesoParaTodasTallas = function() {
 
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
-    //  Leer directamente de window.tallasSeleccionadas (fuente de verdad)
-    const tallasGlobales = window.tallasSeleccionadas || {};
+    // NUEVO: Leer directamente del modelo relacional window.tallasRelacionales
+    // Estructura: { DAMA: { S: 20, M: 20 }, CABALLERO: { 32: 10 } }
+    const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
+    
     const tallas = { dama: {}, caballero: {} };
     
-    // Obtener cantidades desde relacional
-    const cantidadesRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
-    const cantidadesDisponibles = { ...cantidadesRelacionales.DAMA, ...cantidadesRelacionales.CABALLERO };
+    console.log('[obtenerTallasDeLaPrenda] Leyendo de tallasRelacionales:', tallasRelacionales);
     
-
-
-    
-    // Obtener tallas de dama CON CANTIDADES
-    if (tallasGlobales.dama && tallasGlobales.dama.tallas && Array.isArray(tallasGlobales.dama.tallas)) {
-        tallas.dama = {};
-        tallasGlobales.dama.tallas.forEach(talla => {
-            const key = `dama-${talla}`;
-            const cantidad = cantidadesDisponibles[key] || 0;
-            if (cantidad > 0) {
-                tallas.dama[talla] = cantidad;
-            }
-        });
-
+    // Obtener tallas de DAMA CON CANTIDADES
+    if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
+        tallas.dama = { ...tallasRelacionales.DAMA };
+        console.log('[obtenerTallasDeLaPrenda] Tallas DAMA encontradas:', tallas.dama);
+    } else {
+        console.log('[obtenerTallasDeLaPrenda] No hay tallas DAMA');
     }
     
-    // Obtener tallas de caballero CON CANTIDADES
-    if (tallasGlobales.caballero && tallasGlobales.caballero.tallas && Array.isArray(tallasGlobales.caballero.tallas)) {
-        tallas.caballero = {};
-        tallasGlobales.caballero.tallas.forEach(talla => {
-            const key = `caballero-${talla}`;
-            const cantidad = cantidadesDisponibles[key] || 0;
-            if (cantidad > 0) {
-                tallas.caballero[talla] = cantidad;
-            }
-        });
-
+    // Obtener tallas de CABALLERO CON CANTIDADES
+    if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) {
+        tallas.caballero = { ...tallasRelacionales.CABALLERO };
+        console.log('[obtenerTallasDeLaPrenda] Tallas CABALLERO encontradas:', tallas.caballero);
+    } else {
+        console.log('[obtenerTallasDeLaPrenda] No hay tallas CABALLERO');
     }
     
-
+    console.log('[obtenerTallasDeLaPrenda] Resultado final:', tallas);
     return tallas;
 }
 
@@ -588,13 +575,12 @@ window.actualizarResumenTallasProceso = function() {
     
     let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
     
-    // Obtener cantidades desde relacional
+    // Obtener cantidades desde relacional (DAMA y CABALLERO separados)
     const tallasRel = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
-    const cantidades = { ...tallasRel.DAMA, ...tallasRel.CABALLERO };
     
     if (tallasSeleccionadasProceso.dama.length > 0) {
         const tallasDamaHTML = tallasSeleccionadasProceso.dama.map(t => {
-            const cantidad = cantidades[`dama-${t}`] || 0;
+            const cantidad = tallasRel.DAMA[t] || 0;
             return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${t}
                 <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
@@ -615,7 +601,7 @@ window.actualizarResumenTallasProceso = function() {
     
     if (tallasSeleccionadasProceso.caballero.length > 0) {
         const tallasCaballeroHTML = tallasSeleccionadasProceso.caballero.map(t => {
-            const cantidad = cantidades[`caballero-${t}`] || 0;
+            const cantidad = tallasRel.CABALLERO[t] || 0;
             return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${t}
                 <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>

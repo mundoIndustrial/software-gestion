@@ -23,7 +23,7 @@
 
 ---
 
-## 🎯 PATRÓN 1: DUPLICACIÓN DE LÓGICA DE OBTENCIÓN Y RESPUESTA
+## PATRÓN 1: DUPLICACIÓN DE LÓGICA DE OBTENCIÓN Y RESPUESTA
 
 ### ❌ PROBLEMA DETECTADO
 
@@ -115,7 +115,7 @@ public function ejecutar(int $pedidoId): PedidoResponseDTO
 - **% Duplicado:** 85-90% de la lógica en cada clase
 - **DRY Violations:** 3 (tres veces la misma lógica)
 
-### ✅ SOLUCIÓN PROPUESTA - Strategy Pattern
+###  SOLUCIÓN PROPUESTA - Strategy Pattern
 
 ```php
 // CREAR: app/Application/Pedidos/UseCases/Base/AbstractEstadoTransicionUseCase.php
@@ -286,7 +286,7 @@ class IniciarProduccionPedidoUseCase extends AbstractEstadoTransicionUseCase
 
 ---
 
-## 🎯 PATRÓN 2: DUPLICACIÓN EN LÓGICA DE OBTENCIÓN (Query)
+## PATRÓN 2: DUPLICACIÓN EN LÓGICA DE OBTENCIÓN (Query)
 
 ### ❌ PROBLEMA DETECTADO
 
@@ -338,7 +338,7 @@ public function ejecutar(int $pedidoId): PedidoResponseDTO
 - **% Duplicado:** 40-50% en cada clase
 - **Lineas Totales:** 4 Use Cases × ~70-80 lineas = 300+ lineas duplicadas
 
-### ✅ SOLUCIÓN PROPUESTA - Query Handler Base
+###  SOLUCIÓN PROPUESTA - Query Handler Base
 
 ```php
 // CREAR: app/Application/Pedidos/UseCases/Base/AbstractObtenerUseCase.php
@@ -432,7 +432,7 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
 
 ---
 
-## 🎯 PATRÓN 3: DUPLICACIÓN DE MÉTODOS PRIVADOS DE ENRIQUECIMIENTO
+## PATRÓN 3: DUPLICACIÓN DE MÉTODOS PRIVADOS DE ENRIQUECIMIENTO
 
 ### ❌ PROBLEMA DETECTADO
 
@@ -455,7 +455,7 @@ private function construirPrendas(): array { /* 45 lineas */ }
 - **Total Duplicación:** 150-200 lineas
 - **% de Reutilización:** 0% (código idéntico no se reutiliza)
 
-### ✅ SOLUCIÓN PROPUESTA - Extracted Query Objects
+###  SOLUCIÓN PROPUESTA - Extracted Query Objects
 
 ```php
 // CREAR: app/Application/Pedidos/Queries/ObtenerPrendasQuery.php
@@ -513,7 +513,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
 
 ---
 
-## 🎯 PATRÓN 4: USE CASES INCOMPLETOS O "TODO"
+## PATRÓN 4: USE CASES INCOMPLETOS O "TODO"
 
 ### ❌ PROBLEMA DETECTADO
 
@@ -567,7 +567,7 @@ public function ejecutar(ActualizarProduccionPedidoDTO $dto): PedidoProduccionAg
 - **Funcionalidad Desactivada:** 20-25%
 - **Riesgo de Bugs:** 🔴 ALTO
 
-### ✅ SOLUCIÓN PROPUESTA - Completar Implementación
+###  SOLUCIÓN PROPUESTA - Completar Implementación
 
 ```php
 // ARREGLAR: CrearProduccionPedidoUseCase.php
@@ -590,10 +590,10 @@ class CrearProduccionPedidoUseCase
             $pedido->agregarPrenda($prenda);
         }
 
-        // ✅ PERSISTIR
+        //  PERSISTIR
         $this->pedidoRepository->guardar($pedido);
 
-        // ✅ PUBLICAR EVENTOS
+        //  PUBLICAR EVENTOS
         $this->eventPublisher->publicar($pedido->eventos());
 
         return $pedido;
@@ -603,7 +603,7 @@ class CrearProduccionPedidoUseCase
 
 ---
 
-## 🎯 PATRÓN 5: DUPLICACIÓN DE FUNCIONES DE FILTRADO Y BÚSQUEDA
+## PATRÓN 5: DUPLICACIÓN DE FUNCIONES DE FILTRADO Y BÚSQUEDA
 
 ### ❌ PROBLEMA DETECTADO
 
@@ -647,7 +647,7 @@ class ObtenerPedidosService
 - **Total:** 20-30 lineas duplicadas
 - **Riesgo:** Si cambia el catálogo, se olvida actualizar en algún lugar
 
-### ✅ SOLUCIÓN PROPUESTA - Catálogos Centralizados
+###  SOLUCIÓN PROPUESTA - Catálogos Centralizados
 
 ```php
 // CREAR: app/Application/Pedidos/Catalogs/EstadoPedidoCatalog.php
@@ -700,7 +700,7 @@ class ObtenerPedidosService
 
 ---
 
-## 🎯 PATRÓN 6: DUPLICACIÓN EN MANEJO DE ERRORES
+## PATRÓN 6: DUPLICACIÓN EN MANEJO DE ERRORES
 
 ### ❌ PROBLEMA DETECTADO
 
@@ -739,7 +739,7 @@ if (!$pedido) {
 - **% Código Error Handling:** 15-20% en cada UseCase
 - **Riesgo:** Inconsistencia en respuestas a cliente
 
-### ✅ SOLUCIÓN PROPUESTA - Excepciones Personalizadas + Trait
+###  SOLUCIÓN PROPUESTA - Excepciones Personalizadas + Trait
 
 ```php
 // CREAR: app/Domain/Pedidos/Exceptions/PedidoNotFoundException.php
@@ -801,7 +801,7 @@ class CrearPedidoUseCase
 
 ---
 
-## 🎯 PATRÓN 7: DUPLICACIÓN DE ESTRUCTURAS DE RESPUESTA
+## PATRÓN 7: DUPLICACIÓN DE ESTRUCTURAS DE RESPUESTA
 
 ### ❌ PROBLEMA DETECTADO
 
@@ -814,7 +814,7 @@ class CrearPedidoUseCase
 
 **Inconsistencia:** Cada Use Case define su propio DTO aunque representen lo mismo.
 
-### ✅ SOLUCIÓN PROPUESTA - DTO Hierarchy
+###  SOLUCIÓN PROPUESTA - DTO Hierarchy
 
 ```php
 // CREAR: app/Application/Pedidos/DTOs/Base/BasePedidoDTO.php
@@ -857,7 +857,7 @@ class ObtenerPedidoDTO extends BasePedidoDTO
 
 ---
 
-## 📋 TABLA DE RESUMEN DE DUPLICACIÓN
+##  TABLA DE RESUMEN DE DUPLICACIÓN
 
 | Patrón | Archivos Afectados | Lineas Duplicadas | Severidad | Effort |
 |--------|-------------------|-------------------|-----------|--------|
@@ -872,24 +872,24 @@ class ObtenerPedidoDTO extends BasePedidoDTO
 
 ---
 
-## 🚀 PLAN DE ACCIÓN RECOMENDADO
+##  PLAN DE ACCIÓN RECOMENDADO
 
 ### FASE 1: CRÍTICA (Semana 1 - 8 horas)
-1. ✅ Crear AbstractEstadoTransicionUseCase
-2. ✅ Refactorizar 5 Use Cases con patrón A
-3. ✅ Completar CrearProduccionPedidoUseCase y ActualizarProduccionPedidoUseCase
+1.  Crear AbstractEstadoTransicionUseCase
+2.  Refactorizar 5 Use Cases con patrón A
+3.  Completar CrearProduccionPedidoUseCase y ActualizarProduccionPedidoUseCase
 
 ### FASE 2: IMPORTANTE (Semana 2 - 5 horas)
-1. ✅ Crear Query Objects (ObtenerPrendasQuery, ObtenerEppsQuery)
-2. ✅ Refactorizar Use Cases con patrón B
+1.  Crear Query Objects (ObtenerPrendasQuery, ObtenerEppsQuery)
+2.  Refactorizar Use Cases con patrón B
 
 ### FASE 3: MEJORA (Semana 3 - 2.5 horas)
-1. ✅ Crear EstadoPedidoCatalog centralizado
-2. ✅ Crear ManejaPedidosUseCase trait
+1.  Crear EstadoPedidoCatalog centralizado
+2.  Crear ManejaPedidosUseCase trait
 
 ### FASE 4: CONSOLIDACIÓN (Semana 4 - 1.5 horas)
-1. ✅ Estandarizar DTOs con herencia
-2. ✅ Testing e integración
+1.  Estandarizar DTOs con herencia
+2.  Testing e integración
 
 ---
 
@@ -910,7 +910,7 @@ class ObtenerPedidoDTO extends BasePedidoDTO
 
 ---
 
-## ✅ CONCLUSIÓN
+##  CONCLUSIÓN
 
 La auditoría ha identificado **~770 líneas de código duplicado** distribuido en **7 patrones principales**. La refactorización propuesta:
 

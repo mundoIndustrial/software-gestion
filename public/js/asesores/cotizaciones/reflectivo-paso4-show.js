@@ -64,6 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.style.transition = 'opacity 0.3s ease';
     });
     
-    console.log('✅ Script de interactividad PASO 4 cargado correctamente');
+    console.log(' Script de interactividad PASO 4 cargado correctamente');
 });
 

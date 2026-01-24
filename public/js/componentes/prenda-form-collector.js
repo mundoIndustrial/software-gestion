@@ -78,6 +78,35 @@ class PrendaFormCollector {
             // ============================================
             // 3. CONSTRUIR OBJETO BASE DE PRENDA
             // ============================================
+            // ⚠️ IMPORTANTE: Hacer DEEP COPY de tallasRelacionales
+            // porque window.tallasRelacionales es limpiado después
+            // Si asignas la referencia, el objeto se vacía
+            const copiarTallasRelacionales = (obj) => {
+                const copia = {};
+                Object.entries(obj).forEach(([genero, tallasObj]) => {
+                    copia[genero] = { ...tallasObj };
+                });
+                return copia;
+            };
+            
+            // ⚠️ IMPORTANTE: Hacer DEEP COPY de procesosSeleccionados
+            // porque window.procesosSeleccionados puede ser limpiado después
+            const copiarProcesos = (procesos) => {
+                if (!procesos || typeof procesos !== 'object') {
+                    return {};
+                }
+                const copia = {};
+                Object.entries(procesos).forEach(([tipoProceso, proceso]) => {
+                    if (proceso && typeof proceso === 'object') {
+                        copia[tipoProceso] = {
+                            tipo: proceso.tipo || tipoProceso,
+                            datos: proceso.datos ? { ...proceso.datos } : null
+                        };
+                    }
+                });
+                return copia;
+            };
+            
             const prendaData = {
                 tipo: 'prenda_nueva',
                 nombre_prenda: nombre,
@@ -86,11 +115,26 @@ class PrendaFormCollector {
                 // Imágenes de prenda copiadas del storage
                 imagenes: imagenesCopia,
                 telasAgregadas: [],
-                procesos: window.procesosSeleccionados || {},
+                // ⚠️ COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
+                procesos: copiarProcesos(window.procesosSeleccionados),
                 // Estructura relacional: { DAMA: {S: 5}, CABALLERO: {M: 3} }
-                cantidad_talla: window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {} },
+                // ⚠️ COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
+                cantidad_talla: copiarTallasRelacionales(window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {} }),
                 variantes: {}
             };
+
+            // DEBUG: Log para ver qué se capturó
+            console.log('[prenda-form-collector] 📦 Datos capturados en prendaData:');
+            console.log('[prenda-form-collector]   - nombre_prenda:', prendaData.nombre_prenda);
+            console.log('[prenda-form-collector]   - cantidad_talla:', prendaData.cantidad_talla);
+            console.log('[prenda-form-collector]   - procesos:', prendaData.procesos);
+            console.log('[prenda-form-collector]   - DESGLOSE cantidad_talla:');
+            console.log('[prenda-form-collector]     * DAMA:', prendaData.cantidad_talla.DAMA);
+            console.log('[prenda-form-collector]     * CABALLERO:', prendaData.cantidad_talla.CABALLERO);
+            console.log('[prenda-form-collector]     * UNISEX:', prendaData.cantidad_talla.UNISEX);
+            console.log('[prenda-form-collector]   - window.tallasRelacionales:', window.tallasRelacionales);
+            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (tallas)?', prendaData.cantidad_talla === window.tallasRelacionales);
+            console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (procesos)?', prendaData.procesos === window.procesosSeleccionados);
 
             // ============================================
             // 4. PROCESAR TELAS AGREGADAS
@@ -158,10 +202,10 @@ class PrendaFormCollector {
             if (checkManga && checkManga.checked) {
                 const mangaInput = document.getElementById('manga-input');
                 const mangaObs = document.getElementById('manga-obs');
-                variantes.manga = mangaInput?.value || '';
+                variantes.tipo_manga = mangaInput?.value || '';
                 variantes.obs_manga = mangaObs?.value || '';
             } else {
-                variantes.manga = '';
+                variantes.tipo_manga = '';
                 variantes.obs_manga = '';
             }
             
@@ -181,7 +225,7 @@ class PrendaFormCollector {
             if (checkBroche && checkBroche.checked) {
                 const broqueInput = document.getElementById('broche-input');
                 const broqueObs = document.getElementById('broche-obs');
-                variantes.broche = broqueInput?.value || '';
+                variantes.tipo_broche = broqueInput?.value || '';
                 variantes.obs_broche = broqueObs?.value || '';
                 
                 // Mapear valor del select a tipo_broche_boton_id
@@ -195,7 +239,7 @@ class PrendaFormCollector {
                     variantes.tipo_broche_boton_id = null;
                 }
             } else {
-                variantes.broche = '';
+                variantes.tipo_broche = '';
                 variantes.obs_broche = '';
                 variantes.tipo_broche_boton_id = null;
             }
@@ -213,6 +257,8 @@ class PrendaFormCollector {
             
             prendaData.variantes = variantes;
 
+            console.log('[prenda-form-collector]  Retornando prendaData completa:');
+            console.log('[prenda-form-collector]', prendaData);
 
             return prendaData;
 

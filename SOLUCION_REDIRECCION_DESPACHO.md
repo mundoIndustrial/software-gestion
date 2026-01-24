@@ -2,7 +2,7 @@
 
 **Fecha:** 23 de enero de 2026  
 **Problema:** Usuario no redirige a `/despacho` después de login  
-**Estado:** ✅ RESUELTO
+**Estado:**  RESUELTO
 
 ---
 
@@ -28,14 +28,14 @@ if ($user && $user->role) {                    // ← Verifica role_id (singular
 
 ---
 
-## ✅ Solución implementada
+##  Solución implementada
 
 **Archivo:** `app/Http/Controllers/Auth/AuthenticatedSessionController.php`
 
 ### Cambio 1: Verificar primero roles_ids
 
 ```php
-// ✅ AHORA (Funciona correctamente)
+//  AHORA (Funciona correctamente)
 
 // Verificar primero si tiene rol Despacho en roles_ids
 $despachoRole = \App\Models\Role::where('name', 'Despacho')->first();
@@ -98,18 +98,18 @@ php artisan tinker
 
 ---
 
-## 📋 Tabla comparativa
+##  Tabla comparativa
 
 | Aspecto | Antes | Después |
 |---------|-------|---------|
 | Verifica | role_id (singular) | roles_ids (JSON array) |
 | Si role_id es NULL | No entra al if | Igual chequea roles_ids |
-| Redirige a Despacho | ❌ NO | ✅ SÍ |
-| Compatible con multiples roles | ❌ NO | ✅ SÍ |
+| Redirige a Despacho | ❌ NO |  SÍ |
+| Compatible con multiples roles | ❌ NO |  SÍ |
 
 ---
 
-## 🚀 Flujo de login AHORA (Correcto)
+##  Flujo de login AHORA (Correcto)
 
 ```
 1. Usuario: click login
@@ -157,7 +157,7 @@ En `storage/logs/laravel.log` verá:
 
 ---
 
-## ✅ Testing completo
+##  Testing completo
 
 ### Test 1: Usuario CON rol Despacho
 ```bash
@@ -231,14 +231,14 @@ Route::prefix('despacho')
 2. **Línea 85-87:** Removido bloque redundante de Despacho
 
 ### Impacto
-- ✅ Usuario con rol Despacho en `roles_ids` redirige correctamente
-- ✅ Compatible con sistema de múltiples roles
-- ✅ No afecta otros roles
-- ✅ Documentación clara
+-  Usuario con rol Despacho en `roles_ids` redirige correctamente
+-  Compatible con sistema de múltiples roles
+-  No afecta otros roles
+-  Documentación clara
 
 ---
 
-## 🎯 Conclusión
+## Conclusión
 
 **Problema:** Sistema no verificaba `roles_ids` (JSON array)  
 **Solución:** Verificar primero en `roles_ids` antes de `role_id`  
@@ -249,4 +249,4 @@ Route::prefix('despacho')
 ---
 
 **Solución implementada:** 23 de enero de 2026  
-**Estado:** ✅ OPERACIONAL
+**Estado:**  OPERACIONAL

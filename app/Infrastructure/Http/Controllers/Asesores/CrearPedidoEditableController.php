@@ -5,6 +5,8 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\Cliente;
+use App\Http\Requests\CrearPedidoCompletoRequest;
 
 /**
  * CrearPedidoEditableController
@@ -103,58 +105,170 @@ class CrearPedidoEditableController extends Controller
     public function validarPedido(Request $request): JsonResponse
     {
         try {
-            $request->validate([
-                'cliente_id' => 'required|integer',
-                'descripcion' => 'nullable|string|max:1000',
-                'prendas' => 'required|array|min:1',
-                'prendas.*.nombre_prenda' => 'required|string',
-                'prendas.*.cantidad' => 'required|integer|min:1',
+            \Log::info('[CrearPedidoEditableController] validarPedido - Datos recibidos', [
+                'cliente' => $request->input('cliente'),
+                'items_count' => count($request->input('items', [])),
+                'all_input' => $request->all()
             ]);
+
+            // Validación inicial
+            $validated = $request->validate([
+                'cliente' => 'required|string',  // Aceptar nombre del cliente
+                'descripcion' => 'nullable|string|max:1000',
+                'items' => 'required|array|min:1',
+                'items.*.nombre_prenda' => 'required|string',
+                'items.*.cantidad_talla' => 'nullable|array', // Puede ser array vacío o tener items
+            ]);
+
+            \Log::info('[CrearPedidoEditableController] Validación pasada', $validated);
+
+            // Obtener o crear el cliente
+            $clienteNombre = trim($request->input('cliente'));
+            $cliente = $this->obtenerOCrearCliente($clienteNombre);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Validación exitosa',
+                'cliente_id' => $cliente->id,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('[CrearPedidoEditableController] Validación fallida', [
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Validación fallida: ' . $e->getMessage(),
-                'errors' => $e instanceof \Illuminate\Validation\ValidationException ? $e->errors() : [],
+                'message' => 'Validación fallida',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('[CrearPedidoEditableController] Error general', [
+                'error' => $e->getMessage(),
+                'input' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
             ], 422);
         }
     }
 
     /**
-     * Crear el pedido
+     * Obtener cliente existente o crear uno nuevo
      * 
-     * @param Request $request
+     * @param string $nombre
+     * @return Cliente
+     */
+    private function obtenerOCrearCliente(string $nombre): Cliente
+    {
+        // Buscar cliente por nombre
+        $cliente = Cliente::where('nombre', 'LIKE', $nombre)->first();
+        
+        if ($cliente) {
+            \Log::info('[CrearPedidoEditableController] Cliente existente encontrado', [
+                'cliente_id' => $cliente->id,
+                'nombre' => $cliente->nombre
+            ]);
+            return $cliente;
+        }
+        
+        // Crear cliente nuevo si no existe
+        $cliente = Cliente::create([
+            'nombre' => $nombre,
+            'email' => null,
+            'telefono' => null,
+            'direccion' => null,
+            'ciudad' => null,
+            'estado' => 'activo',
+        ]);
+        
+        \Log::info('[CrearPedidoEditableController] Cliente nuevo creado', [
+            'cliente_id' => $cliente->id,
+            'nombre' => $cliente->nombre
+        ]);
+        
+        return $cliente;
+    }
+
+    /**
+     * Crear el pedido completo con todas sus prendas
+     * 
+     * Ejecuta CrearPedidoCompletoCommand que orquesta:
+     * - Creación del pedido base
+     * - Agregado de prendas con tallas, variantes, procesos, imágenes
+     * 
+     * @param CrearPedidoCompletoRequest $request
      * @return JsonResponse
      */
-    public function crearPedido(Request $request): JsonResponse
+    public function crearPedido(CrearPedidoCompletoRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'cliente_id' => 'required|integer|exists:clientes,id',
-                'descripcion' => 'nullable|string|max:1000',
-                'prendas' => 'required|array|min:1',
-                'prendas.*.nombre_prenda' => 'required|string|max:255',
-                'prendas.*.cantidad' => 'required|integer|min:1',
-                'prendas.*.descripcion' => 'nullable|string',
+            \Log::info('[CrearPedidoEditableController] crearPedido - Inicio', [
+                'cliente' => $request->input('cliente'),
+                'items_count' => count($request->input('items', [])),
             ]);
 
-            // Aquí iría la lógica para crear el pedido usando los Use Cases
-            // Por ahora retornamos un placeholder
+            // Los datos ya vienen validados por CrearPedidoCompletoRequest
+            $validated = $request->validated();
+
+            // Obtener o crear el cliente
+            $clienteNombre = trim($request->input('cliente'));
+            $cliente = $this->obtenerOCrearCliente($clienteNombre);
+
+            \Log::info('[CrearPedidoEditableController] Cliente obtenido', [
+                'cliente_id' => $cliente->id,
+                'nombre' => $cliente->nombre,
+            ]);
+
+            // Crear command completo con todos los datos
+            $command = new \App\Domain\Pedidos\Commands\CrearPedidoCompletoCommand(
+                cliente: $cliente->id,
+                formaPago: $validated['forma_de_pago'] ?? 'CONTADO',
+                asesorId: \Illuminate\Support\Facades\Auth::id(),
+                items: $validated['items'],
+                descripcion: $validated['descripcion'] ?? null,
+            );
+
+            // Ejecutar a través del CommandBus
+            /** @var \App\Models\PedidoProduccion $pedido */
+            $pedido = app(\App\Domain\Shared\CQRS\CommandBus::class)->execute($command);
+
+            \Log::info('[CrearPedidoEditableController] Pedido creado exitosamente', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido creado exitosamente',
-                'pedido_id' => null, // Se obtendría del Use Case
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cliente_id' => $cliente->id,
             ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('[CrearPedidoEditableController] Error de validación', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors(),
+            ], 422);
+
         } catch (\Exception $e) {
+            \Log::error('[CrearPedidoEditableController] Error al crear pedido', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al crear pedido: ' . $e->getMessage(),
-            ], 422);
+            ], 500);
         }
     }
 

@@ -32,7 +32,7 @@ function getElementById(id) {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🎯 Cartera Pedidos - Inicializado');
+  console.log('Cartera Pedidos - Inicializado');
   
   // Validar que los elementos críticos existan
   if (!getElement('#tablaPedidosBody')) {
@@ -96,7 +96,7 @@ async function cargarPedidos() {
     
     const data = await response.json();
     
-    console.log('✅ Pedidos cargados:', data);
+    console.log(' Pedidos cargados:', data);
     
     // Verificar estructura de datos
     if (data.data && Array.isArray(data.data)) {
@@ -240,7 +240,7 @@ function mostrarEstadoError(container) {
  * Abre el modal de aprobación
  */
 function abrirModalAprobacion(pedidoId, numeroPedido) {
-  console.log('📋 Abrir modal aprobación - Pedido:', numeroPedido);
+  console.log(' Abrir modal aprobación - Pedido:', numeroPedido);
   
   const modal = getElement('#modalAprobacion');
   const aprobacionNumero = getElement('#aprobacionPedidoNumero');
@@ -331,7 +331,7 @@ async function confirmarAprobacion(event) {
     
     const token = document.querySelector('meta[name="csrf-token"]').content;
     
-    console.log('✅ Enviando aprobación para pedido:', pedidoId);
+    console.log(' Enviando aprobación para pedido:', pedidoId);
     
     const response = await fetch(`${API_BASE}/${pedidoId}/aprobar`, {
       method: 'POST',
@@ -353,7 +353,7 @@ async function confirmarAprobacion(event) {
       throw new Error(data.message || `Error HTTP: ${response.status}`);
     }
     
-    console.log('✅ Pedido aprobado correctamente:', data);
+    console.log(' Pedido aprobado correctamente:', data);
     
     // Cerrar modal
     cerrarModalAprobacion();
@@ -475,7 +475,7 @@ async function confirmarRechazo(event) {
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     const token = csrfMeta ? csrfMeta.content : '';
     
-    console.log('✅ Enviando rechazo para pedido:', pedidoId);
+    console.log(' Enviando rechazo para pedido:', pedidoId);
     
     const response = await fetch(`${API_BASE}/${pedidoId}/rechazar`, {
       method: 'POST',
@@ -498,7 +498,7 @@ async function confirmarRechazo(event) {
       throw new Error(data.message || `Error HTTP: ${response.status}`);
     }
     
-    console.log('✅ Pedido rechazado correctamente:', data);
+    console.log(' Pedido rechazado correctamente:', data);
     
     // Cerrar modal
     cerrarModalRechazo();
@@ -630,4 +630,4 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
-console.log('✅ Script de Cartera Pedidos cargado correctamente');
+console.log(' Script de Cartera Pedidos cargado correctamente');

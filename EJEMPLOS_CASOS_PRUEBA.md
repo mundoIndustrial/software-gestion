@@ -73,7 +73,7 @@ fetch('/asesores/pedidos/2700/actualizar-prenda', {
   },
   body: formData
 }).then(r => r.json()).then(data => {
-  console.log('✅ Prenda actualizada:', data);
+  console.log(' Prenda actualizada:', data);
 });
 ```
 
@@ -212,8 +212,8 @@ fetch('/asesores/pedidos/2700/actualizar-prenda', { /* ... */ });
 ```
 
 ### Resultado:
-- ✅ Nombre actualizado
-- ✅ Tallas, variantes, procesos se MANTIENEN igual (no se envían = no se tocan)
+-  Nombre actualizado
+-  Tallas, variantes, procesos se MANTIENEN igual (no se envían = no se tocan)
 
 ---
 
@@ -284,7 +284,7 @@ Expected: 200 OK + todas las relaciones eliminadas
 
 ---
 
-## ✅ Verificación Post-Actualización
+##  Verificación Post-Actualización
 
 Después de cada actualización, verificar en BD:
 
@@ -323,7 +323,7 @@ SELECT * FROM ... [Ver ObtenerFacturaUseCase]
 
 ---
 
-## 🚀 Flujo de Testing Recomendado
+##  Flujo de Testing Recomendado
 
 ```
 1. Crear pedido con prenda (prenda_id = 3418)

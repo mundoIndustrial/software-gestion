@@ -36,7 +36,7 @@ async function crearPedido(datos) {
 }
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // POST /api/pedidos
 async function crearPedido(datos) {
@@ -94,7 +94,7 @@ async function confirmarPedido(borradorId, numeroPedido) {
 }
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // PATCH /api/pedidos/{id}/confirmar
 async function confirmarPedido(pedidoId) {
@@ -147,7 +147,7 @@ async function anularPedido(pedidoId, razonAnulacion) {
 }
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // DELETE /api/pedidos/{id}/cancelar
 async function cancelarPedido(pedidoId, razonCancelacion) {
@@ -197,7 +197,7 @@ async function obtenerDetallePedido(pedidoId) {
 }
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // GET /api/pedidos/{id}
 async function obtenerDetallePedido(pedidoId) {
@@ -230,7 +230,7 @@ async function obtenerDetallePedido(pedidoId) {
 // Tenía que obtener todos y filtrar en frontend
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // GET /api/pedidos/cliente/{clienteId}
 async function listarPedidosCliente(clienteId) {
@@ -264,7 +264,7 @@ async function listarPedidosCliente(clienteId) {
 // Tenía que hacer PUT a /asesores/pedidos/{id} desde vistas
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // PATCH /api/pedidos/{id}/actualizar-descripcion
 async function actualizarDescripcion(pedidoId, nuevaDescripcion) {
@@ -305,7 +305,7 @@ async function actualizarDescripcion(pedidoId, nuevaDescripcion) {
 // Se usaba en workflows pero sin separación clara
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // POST /api/pedidos/{id}/iniciar-produccion
 async function iniciarProduccion(pedidoId) {
@@ -343,7 +343,7 @@ async function iniciarProduccion(pedidoId) {
 // NO HABÍA MÉTODO ESPECÍFICO
 ```
 
-#### DESPUÉS (DDD - ✅ NUEVO):
+#### DESPUÉS (DDD -  NUEVO):
 ```javascript
 // POST /api/pedidos/{id}/completar
 async function completarPedido(pedidoId) {
@@ -369,7 +369,7 @@ async function completarPedido(pedidoId) {
 
 ---
 
-## 📋 Checklist de Migración
+##  Checklist de Migración
 
 ### Frontend JavaScript/AJAX:
 - [ ] Actualizar llamadas POST /asesores/pedidos → POST /api/pedidos

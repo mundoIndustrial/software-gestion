@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 TABLA DE CONTENIDOS
+## TABLA DE CONTENIDOS
 
 1. [DUPLICACIÓN DE AGREGADOS](#1-duplicación-de-agregados)
 2. [SERVICIOS LEGACY: ANÁLISIS DE USO](#2-servicios-legacy-análisis-de-uso)
@@ -26,9 +26,9 @@ Existen **DOS** implementaciones del mismo agregado:
 | Ubicación | Líneas | Namespace | Estado |
 |-----------|--------|-----------|--------|
 | `app/Domain/PedidoProduccion/Agregado/PedidoProduccionAggregate.php` | 359 | `App\Domain\PedidoProduccion\Agregado` | ⚠️ **LEGACY** |
-| `app/Domain/PedidoProduccion/Aggregates/PedidoProduccionAggregate.php` | 212 | `App\Domain\PedidoProduccion\Aggregates` | ✅ **NUEVO DDD** |
+| `app/Domain/PedidoProduccion/Aggregates/PedidoProduccionAggregate.php` | 212 | `App\Domain\PedidoProduccion\Aggregates` |  **NUEVO DDD** |
 
-### 📋 COMPARATIVA DETALLADA
+###  COMPARATIVA DETALLADA
 
 #### **Agregado Legacy (Agregado/)**
 ```
@@ -55,7 +55,7 @@ Características:
 - Operaciones: 
   ✓ agregarCantidad()
   ✓ cambiarEstado()
-- Event Sourcing: ✅ SÍ
+- Event Sourcing:  SÍ
   - recordEvent()
   - getUncommittedEvents()
   - markEventsAsCommitted()
@@ -63,7 +63,7 @@ Características:
 - Validadores: Mínimos
 ```
 
-### 🎯 RECOMENDACIÓN: ELIMINAR `Agregado/PedidoProduccionAggregate.php`
+### RECOMENDACIÓN: ELIMINAR `Agregado/PedidoProduccionAggregate.php`
 
 **Justificación:**
 
@@ -105,22 +105,22 @@ use App\Application\Services\Asesores\ActualizarPedidoService;
 use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 ```
 
-### ✅ SERVICIOS REALMENTE USADOS (Con análisis de método)
+###  SERVICIOS REALMENTE USADOS (Con análisis de método)
 
-#### **1. DashboardService** ✅ EN USO
+#### **1. DashboardService**  EN USO
 ```
 Usado en:
   - dashboard() → llamada directa
   - getDashboardData() → llamada directa
 
-Análisis: ✅ NO REFACTORIZADO
+Análisis:  NO REFACTORIZADO
   Métodos no refactorizados a Use Case (NO existen en Application/Pedidos/)
   
 Disposición: MANTENER (por ahora)
   Podría moverse a UseCase si se necesita reutilización
 ```
 
-#### **2. NotificacionesService** ✅ EN USO
+#### **2. NotificacionesService**  EN USO
 ```
 Usado en:
   - getNotificaciones() → $this->notificacionesService->obtenerNotificaciones()
@@ -128,31 +128,31 @@ Usado en:
   - markAllAsRead() → $this->notificacionesService->marcarTodosLeidosPedidos()
   - markNotificationAsRead() → $this->notificacionesService->marcarNotificacionLeida()
 
-Análisis: ✅ NO REFACTORIZADO
+Análisis:  NO REFACTORIZADO
   Notificaciones no tienen Use Case equivalente
   
 Disposición: MANTENER
   Es funcionalidad específica de gestión de notificaciones
 ```
 
-#### **3. PerfilService** ✅ EN USO
+#### **3. PerfilService**  EN USO
 ```
 Usado en:
   - updateProfile() → $this->perfilService->actualizarPerfil()
 
-Análisis: ✅ NO REFACTORIZADO
+Análisis:  NO REFACTORIZADO
   Gestión de perfil de usuario, no de pedidos
   
 Disposición: MANTENER
   Es concern separado de gestión de pedidos
 ```
 
-#### **4. ObtenerProximoPedidoService** ✅ EN USO
+#### **4. ObtenerProximoPedidoService**  EN USO
 ```
 Usado en:
   - getNextPedido() → $this->obtenerProximoPedidoService->obtenerProximo()
 
-Análisis: ✅ NO REFACTORIZADO
+Análisis:  NO REFACTORIZADO
   Genera siguiente número de pedido automáticamente
   
 Disposición: ⚠️ REFACTORIZAR
@@ -198,7 +198,7 @@ Análisis: 🤔 NO USADO EN MÉTODOS MOSTRADOS
 Disposición: ❌ ELIMINAR (aparentemente no se usa)
 ```
 
-#### **8. ObtenerDatosFacturaService** ✅ EN USO
+#### **8. ObtenerDatosFacturaService**  EN USO
 ```
 Usado en:
   - obtenerDatosFactura() → $this->obtenerDatosFacturaService->obtener()
@@ -212,7 +212,7 @@ Disposición: ⚠️ REFACTORIZAR
   O crear Use Case: ObtenerDatosFacturaUseCase
 ```
 
-#### **9. ObtenerDatosRecibosService** ✅ EN USO
+#### **9. ObtenerDatosRecibosService**  EN USO
 ```
 Usado en:
   - obtenerDatosRecibos() → $this->obtenerDatosRecibosService->obtener()
@@ -226,7 +226,7 @@ Disposición: ⚠️ REFACTORIZAR
   O crear Use Case: ObtenerDatosRecibosUseCase
 ```
 
-#### **10. ProcesarFotosTelasService** ✅ EN USO
+#### **10. ProcesarFotosTelasService**  EN USO
 ```
 Usado en:
   - store() → $this->procesarFotosTelasService->procesar()
@@ -240,7 +240,7 @@ Disposición: MANTENER
   Podría moverse a Infrastructure/Services
 ```
 
-#### **11. GuardarPedidoLogoService** ✅ EN USO
+#### **11. GuardarPedidoLogoService**  EN USO
 ```
 Usado en:
   - store() → $this->guardarPedidoLogoService->guardar()
@@ -312,7 +312,7 @@ Disposición: ❌ ELIMINAR
 
 ## 3. MÉTODOS POR REFACTORIZAR
 
-### 📋 MÉTODOS NO REFACTORIZADOS
+###  MÉTODOS NO REFACTORIZADOS
 
 | Método | Estado | Prioridad | Acción |
 |--------|--------|-----------|--------|
@@ -328,39 +328,39 @@ Disposición: ❌ ELIMINAR
 | `obtenerDatosRecibos()` | ❌ Legacy | 🔴 Alta | Crear ObtenerDatosRecibosUseCase |
 | `agregarPrendaSimple()` | ❌ Legacy | 🟡 Media | Usar AgregarItemPedidoUseCase |
 
-### 🔍 MÉTODOS YA REFACTORIZADOS ✅
+### 🔍 MÉTODOS YA REFACTORIZADOS 
 
 ```
-✅ index() - Usa ListarProduccionPedidosUseCase
-✅ create() - Usa PrepararCreacionProduccionPedidoUseCase
-✅ store() - Usa CrearProduccionPedidoUseCase
-✅ confirm() - Usa ConfirmarProduccionPedidoUseCase
-✅ show() - Usa ObtenerProduccionPedidoUseCase
-✅ edit() - Usa ObtenerProduccionPedidoUseCase
-✅ update() - Usa ActualizarProduccionPedidoUseCase
-✅ destroy() - Usa AnularProduccionPedidoUseCase
+ index() - Usa ListarProduccionPedidosUseCase
+ create() - Usa PrepararCreacionProduccionPedidoUseCase
+ store() - Usa CrearProduccionPedidoUseCase
+ confirm() - Usa ConfirmarProduccionPedidoUseCase
+ show() - Usa ObtenerProduccionPedidoUseCase
+ edit() - Usa ObtenerProduccionPedidoUseCase
+ update() - Usa ActualizarProduccionPedidoUseCase
+ destroy() - Usa AnularProduccionPedidoUseCase
 ```
 
 ---
 
 ## 4. VALIDACIÓN DE REPOSITORIO
 
-### ✅ PedidoProduccionRepository ANÁLISIS
+###  PedidoProduccionRepository ANÁLISIS
 
 **Ubicación**: `app/Domain/PedidoProduccion/Repositories/PedidoProduccionRepository.php`  
 **Líneas**: 898  
-**Estado**: ✅ COMPLETO Y FUNCIONAL
+**Estado**:  COMPLETO Y FUNCIONAL
 
 #### **Métodos Implementados:**
 
 | Método | Retorno | Relaciones | Estado |
 |--------|---------|-----------|--------|
-| `obtenerPorId(int)` | `?PedidoProduccion` | ✅ Completas (11) | ✅ OK |
-| `obtenerPedidosAsesor(array)` | `LengthAwarePaginator` | ✅ Básicas | ✅ OK |
-| `perteneceAlAsesor(int, int)` | `bool` | N/A | ✅ OK |
-| `actualizarCantidadTotal(string)` | `void` | N/A | ✅ OK |
-| `obtenerDatosFactura(int)` | `array` | ✅ Complejas | ✅ OK |
-| `obtenerDatosRecibos(int)` | `array` | ✅ Complejas | ✅ OK |
+| `obtenerPorId(int)` | `?PedidoProduccion` |  Completas (11) |  OK |
+| `obtenerPedidosAsesor(array)` | `LengthAwarePaginator` |  Básicas |  OK |
+| `perteneceAlAsesor(int, int)` | `bool` | N/A |  OK |
+| `actualizarCantidadTotal(string)` | `void` | N/A |  OK |
+| `obtenerDatosFactura(int)` | `array` |  Complejas |  OK |
+| `obtenerDatosRecibos(int)` | `array` |  Complejas |  OK |
 
 #### **Relaciones Cargadas en obtenerPorId():**
 
@@ -371,30 +371,30 @@ Disposición: ❌ ELIMINAR
 'prendas.variantes.tipoBroche',
 'prendas.fotos',
 'prendas.fotosTelas',
-'prendas.tallas',          // ✅ NUEVA - Tallas relacionales
+'prendas.tallas',          //  NUEVA - Tallas relacionales
 'prendas.procesos',
-'prendas.procesos.tipoProceso',  // ✅ NUEVA
+'prendas.procesos.tipoProceso',  //  NUEVA
 'prendas.procesos.imagenes',
-'epps.epp.categoria',      // ✅ NUEVA - EPP
-'epps.imagenes',           // ✅ NUEVA
+'epps.epp.categoria',      //  NUEVA - EPP
+'epps.imagenes',           //  NUEVA
 ```
 
 #### **Tablas Soportadas:**
 
 | Tabla | Status |
 |-------|--------|
-| `pedidos_produccion` | ✅ Principal |
-| `prendas_pedido` | ✅ Completa |
-| `prenda_pedido_tallas` | ✅ Soportada |
-| `prenda_pedido_variantes` | ✅ Soportada |
-| `prenda_pedido_colores_telas` | ✅ Soportada |
-| `prenda_fotos_pedido` | ✅ Soportada |
-| `prenda_fotos_tela_pedido` | ✅ Soportada |
-| `pedidos_procesos_prenda_detalles` | ✅ Soportada |
-| `pedidos_procesos_prenda_tallas` | ✅ Soportada |
-| `pedidos_procesos_imagenes` | ✅ Soportada |
-| `pedido_epp` | ✅ Soportada |
-| `pedido_epp_imagenes` | ✅ Soportada |
+| `pedidos_produccion` |  Principal |
+| `prendas_pedido` |  Completa |
+| `prenda_pedido_tallas` |  Soportada |
+| `prenda_pedido_variantes` |  Soportada |
+| `prenda_pedido_colores_telas` |  Soportada |
+| `prenda_fotos_pedido` |  Soportada |
+| `prenda_fotos_tela_pedido` |  Soportada |
+| `pedidos_procesos_prenda_detalles` |  Soportada |
+| `pedidos_procesos_prenda_tallas` |  Soportada |
+| `pedidos_procesos_imagenes` |  Soportada |
+| `pedido_epp` |  Soportada |
+| `pedido_epp_imagenes` |  Soportada |
 
 #### **QUÉ FALTA:**
 
@@ -413,10 +413,10 @@ Disposición: ❌ ELIMINAR
 El repositorio usa `obtenerTallas()` pero está en un TRAIT:
 
 ```php
-use GestionaTallasRelacional;  // ✅ Trait con obtenerTallas()
+use GestionaTallasRelacional;  //  Trait con obtenerTallas()
 ```
 
-✅ **ESTÁ PRESENTE EN EL TRAIT**
+ **ESTÁ PRESENTE EN EL TRAIT**
 
 ---
 
@@ -424,49 +424,49 @@ use GestionaTallasRelacional;  // ✅ Trait con obtenerTallas()
 
 ### 📊 Providers Registrados
 
-#### **1. DomainServiceProvider** ✅
+#### **1. DomainServiceProvider** 
 **Ubicación**: `app/Providers/DomainServiceProvider.php`
 
 **Registra**:
-- ✅ PedidoRepository → PedidoRepositoryImpl
-- ✅ CrearPedidoUseCase
-- ✅ ConfirmarPedidoUseCase
-- ✅ ObtenerPedidoUseCase
-- ✅ ListarPedidosPorClienteUseCase
-- ✅ CancelarPedidoUseCase
-- ✅ ActualizarDescripcionPedidoUseCase
-- ✅ IniciarProduccionPedidoUseCase
-- ✅ CompletarPedidoUseCase
-- ✅ AgregarItemPedidoUseCase
-- ✅ EliminarItemPedidoUseCase
-- ✅ ObtenerItemsPedidoUseCase
-- ✅ GuardarPedidoDesdeJSONUseCase
-- ✅ ValidarPedidoDesdeJSONUseCase
+-  PedidoRepository → PedidoRepositoryImpl
+-  CrearPedidoUseCase
+-  ConfirmarPedidoUseCase
+-  ObtenerPedidoUseCase
+-  ListarPedidosPorClienteUseCase
+-  CancelarPedidoUseCase
+-  ActualizarDescripcionPedidoUseCase
+-  IniciarProduccionPedidoUseCase
+-  CompletarPedidoUseCase
+-  AgregarItemPedidoUseCase
+-  EliminarItemPedidoUseCase
+-  ObtenerItemsPedidoUseCase
+-  GuardarPedidoDesdeJSONUseCase
+-  ValidarPedidoDesdeJSONUseCase
 
-#### **2. PedidosServiceProvider** ✅
+#### **2. PedidosServiceProvider** 
 **Ubicación**: `app/Providers/PedidosServiceProvider.php`
 
 **Registra**:
-- ✅ PrendaProcessorService
-- ✅ PedidoProduccionCreatorService
-- ✅ PedidoPrendaService
-- ✅ PedidoLogoService
-- ✅ CopiarImagenesCotizacionAPedidoService
-- ✅ ColorGeneroMangaBrocheService
+-  PrendaProcessorService
+-  PedidoProduccionCreatorService
+-  PedidoPrendaService
+-  PedidoLogoService
+-  CopiarImagenesCotizacionAPedidoService
+-  ColorGeneroMangaBrocheService
 
-#### **3. AppServiceProvider** ✅
+#### **3. AppServiceProvider** 
 **Ubicación**: `app/Providers/AppServiceProvider.php`
 
 **Registra**:
-- ✅ OperarioRepository
-- ✅ TipoProcesoRepository
-- ✅ ProcesoPrendaDetalleRepository
-- ✅ ProcesoPrendaImagenRepository
-- ✅ EppRepositoryInterface
-- ✅ PedidoEppRepositoryInterface
-- ✅ EppDomainService
-- ✅ GenerarNumeroCotizacionService
-- ✅ Image manager (Intervention)
+-  OperarioRepository
+-  TipoProcesoRepository
+-  ProcesoPrendaDetalleRepository
+-  ProcesoPrendaImagenRepository
+-  EppRepositoryInterface
+-  PedidoEppRepositoryInterface
+-  EppDomainService
+-  GenerarNumeroCotizacionService
+-  Image manager (Intervention)
 
 #### **4. Infrastructure/Providers** ⚠️
 **FALTA Service Provider específico para servicios legacy de Asesores**
@@ -501,7 +501,7 @@ use GestionaTallasRelacional;  // ✅ Trait con obtenerTallas()
 
 ## 6. PLAN DE ACCIÓN
 
-### 🎯 FASES DE REFACTORIZACIÓN
+### FASES DE REFACTORIZACIÓN
 
 #### **FASE 1: ELIMINAR DUPLICACIÓN (URGENTE) ⏰ 1-2 horas**
 
@@ -553,23 +553,23 @@ ACCIÓN EN CONTROLADOR:
 ```
 MÉTODO: anularPedido() 
   ❌ Estado actual: Usa AnularPedidoService (legacy)
-  ✅ Cambiar a: AnularProduccionPedidoUseCase (ya existe)
+   Cambiar a: AnularProduccionPedidoUseCase (ya existe)
   Archivo: app/Infrastructure/Http/Controllers/Asesores/AsesoresController.php
   Línea: ~635
 
 MÉTODO: obtenerDatosFactura()
   ❌ Estado actual: Usa ObtenerDatosFacturaService
-  ✅ Cambiar a: Inyectar PedidoProduccionRepository directamente
+   Cambiar a: Inyectar PedidoProduccionRepository directamente
   O crear: ObtenerDatosFacturaUseCase
   
 MÉTODO: obtenerDatosRecibos()
   ❌ Estado actual: Usa ObtenerDatosRecibosService
-  ✅ Cambiar a: Inyectar PedidoProduccionRepository directamente
+   Cambiar a: Inyectar PedidoProduccionRepository directamente
   O crear: ObtenerDatosRecibosUseCase
 
 MÉTODO: getNextPedido()
   ❌ Estado actual: Usa ObtenerProximoPedidoService
-  ✅ Cambiar a: Crear ObtenerSiguientePedidoNumberUseCase
+   Cambiar a: Crear ObtenerSiguientePedidoNumberUseCase
 ```
 
 **Commits**:
@@ -653,7 +653,7 @@ TESTS:
 
 ---
 
-### 📋 RESUMEN DE CAMBIOS
+###  RESUMEN DE CAMBIOS
 
 #### **Total de cambios necesarios:**
 
@@ -723,9 +723,9 @@ TESTS:
 
 ---
 
-## 🎯 RECOMENDACIONES FINALES
+## RECOMENDACIONES FINALES
 
-### ✅ HACER
+###  HACER
 
 1. **Eliminar agregado legacy AHORA**
    - Es la causa directa de confusión

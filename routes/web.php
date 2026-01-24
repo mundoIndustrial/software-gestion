@@ -449,7 +449,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // Pedidos - APIs ahora usan DDD (usar /api/pedidos en lugar de /asesores/pedidos)
     // Las rutas POST, PATCH, DELETE se han migrado a /api/pedidos en routes/api.php
     Route::get('/pedidos/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
-    Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\Api\PedidoController::class, 'obtenerDetalleCompleto'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
+    Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDetalleCompleto'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
     // ========================================
@@ -457,7 +457,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // ========================================
     
     // BORRADORES - Gestión de borradores
-    Route::get('/borradores', [App\Http\Controllers\OrdenController::class, 'borradores'])->name('borradores.index');
+    Route::get('/borradores', [App\Http\Controllers\Api_temp\V1\OrdenController::class, 'borradores'])->name('borradores.index');
     
     // ÓRDENES - CRUD principal
     Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
@@ -684,8 +684,8 @@ Route::middleware(['auth'])->prefix('inventario-telas')->name('inventario-telas.
 
 // API Routes para Prendas (Reconocimiento)
 Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
-    Route::get('/tipos-prenda', [App\Http\Controllers\API\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
-    Route::post('/prenda/reconocer', [App\Http\Controllers\API\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
+    Route::get('/tipos-prenda', [App\Http\Controllers\Api_temp\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
+    Route::post('/prenda/reconocer', [App\Http\Controllers\Api_temp\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
 });
 
 // Rutas de Insumos
@@ -796,10 +796,10 @@ Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bord
 // ========================================
 Route::prefix('api')->name('api.')->group(function () {
     // Rutas públicas para festivos (sin autenticación requerida)
-    Route::get('/festivos', [App\Http\Controllers\Api\FestivosController::class, 'index'])->name('festivos.index');
-    Route::get('/festivos/detailed', [App\Http\Controllers\Api\FestivosController::class, 'detailed'])->name('festivos.detailed');
-    Route::get('/festivos/check', [App\Http\Controllers\Api\FestivosController::class, 'check'])->name('festivos.check');
-    Route::get('/festivos/range', [App\Http\Controllers\Api\FestivosController::class, 'range'])->name('festivos.range');
+    Route::get('/festivos', [App\Http\Controllers\Api_temp\FestivosController::class, 'index'])->name('festivos.index');
+    Route::get('/festivos/detailed', [App\Http\Controllers\Api_temp\FestivosController::class, 'detailed'])->name('festivos.detailed');
+    Route::get('/festivos/check', [App\Http\Controllers\Api_temp\FestivosController::class, 'check'])->name('festivos.check');
+    Route::get('/festivos/range', [App\Http\Controllers\Api_temp\FestivosController::class, 'range'])->name('festivos.range');
 });
 
 // ========================================
@@ -889,7 +889,7 @@ Route::middleware(['auth'])->prefix('asistencia-personal')->name('asistencia-per
         ->name('reportes.detalles');
     Route::get('/reportes/{id}/ausencias', [AsistenciaPersonalController::class, 'getAbsenciasDelDia'])
         ->name('reportes.ausencias');
-    Route::post('/guardar-asistencia-detallada', [App\Http\Controllers\API\AsistenciaDetalladaController::class, 'guardarCambios'])
+    Route::post('/guardar-asistencia-detallada', [App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'guardarCambios'])
         ->name('guardar-asistencia-detallada');
     Route::post('/guardar-hora-extra-agregada', [AsistenciaPersonalController::class, 'guardarHoraExtraAgregada'])
         ->name('guardar-hora-extra-agregada');
@@ -924,9 +924,9 @@ Route::prefix('api')->group(function () {
 // API ROUTES - VALOR HORA EXTRA
 // ========================================
 Route::middleware(['auth', 'verified'])->prefix('api')->name('api.')->group(function () {
-    Route::get('valor-hora-extra/{codigoPersona}', [App\Http\Controllers\Api\ValorHoraExtraController::class, 'obtener'])
+    Route::get('valor-hora-extra/{codigoPersona}', [App\Http\Controllers\Api_temp\ValorHoraExtraController::class, 'obtener'])
         ->name('valor-hora-extra.obtener');
-    Route::post('valor-hora-extra/guardar', [App\Http\Controllers\Api\ValorHoraExtraController::class, 'guardar'])
+    Route::post('valor-hora-extra/guardar', [App\Http\Controllers\Api_temp\ValorHoraExtraController::class, 'guardar'])
         ->name('valor-hora-extra.guardar');
 });
 
@@ -990,6 +990,11 @@ Route::middleware(['auth', 'role:cartera,admin'])->prefix('api/cartera')->name('
 // RUTAS DE AUTENTICACIÓN
 // ========================================
 require __DIR__.'/auth.php';
+
+// ========================================
+// RUTAS DE ASESORES (MÓDULO INDEPENDIENTE)
+// ========================================
+require __DIR__.'/asesores.php';
 
 // ========================================
 // RUTAS DE DESPACHO (MÓDULO NUEVO)

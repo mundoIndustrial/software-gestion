@@ -1,6 +1,6 @@
 # 🧵 Sistema de Manga - Creación Automática de Tipos
 
-## Problema Resuelto ✅
+## Problema Resuelto 
 
 Para la tabla `tipos_manga`, si el tipo **NO existe, se crea automáticamente** en la base de datos.
 
@@ -9,8 +9,8 @@ Usuario escribe: "manga corta"
 ↓
 Sistema verifica si existe en BDD
 ↓
-Si NO existe → ✅ LO CREA automáticamente
-Si YA existe → ✅ USA el existente
+Si NO existe →  LO CREA automáticamente
+Si YA existe →  USA el existente
 ```
 
 ---
@@ -20,9 +20,9 @@ Si YA existe → ✅ USA el existente
 ### 1️⃣ Frontend - Input con Datalist
 
 Cambió de un input text simple a un **datalist** que permite:
-- ✅ Ver opciones existentes en un dropdown
-- ✅ Escribir valores nuevos libremente
-- ✅ Crear nuevos tipos automáticamente
+-  Ver opciones existentes en un dropdown
+-  Escribir valores nuevos libremente
+-  Crear nuevos tipos automáticamente
 
 ```html
 <input type="text" 
@@ -78,10 +78,10 @@ Respuesta:
 ```
 
 **Características:**
-- ✅ Verifica case-insensitive (ignora mayúsculas/minúsculas)
-- ✅ Normaliza el nombre (primera letra mayúscula)
-- ✅ Solo activos en BDD
-- ✅ Logging automático de creaciones
+-  Verifica case-insensitive (ignora mayúsculas/minúsculas)
+-  Normaliza el nombre (primera letra mayúscula)
+-  Solo activos en BDD
+-  Logging automático de creaciones
 
 ---
 
@@ -90,7 +90,7 @@ Respuesta:
 | Aspecto | Broche/Botón | Manga |
 |---------|--------------|-------|
 | **Control** | Select (solo predefinidos) | Datalist (permite crear) |
-| **Crear nuevos** | ❌ No | ✅ Sí |
+| **Crear nuevos** | ❌ No |  Sí |
 | **Caso de uso** | Opciones limitadas y fijas | Tipos extensibles |
 
 ---
@@ -123,7 +123,7 @@ Respuesta:
                    ▼
     Verificar si existe en datalist
                    │
-            NO EXISTE → ✅ Crear
+            NO EXISTE →  Crear
                    │
                    ▼
         POST /api/tipos-manga
@@ -306,12 +306,12 @@ async function procesarMangaInput(input) {
 
 ## Ventajas del Sistema
 
-✅ **Escalable** - Los usuarios pueden crear nuevos tipos sin intervención admin  
-✅ **Case-insensitive** - No crea duplicados por mayúsculas  
-✅ **Auto-normalizado** - Normaliza nombres (primera letra mayúscula)  
-✅ **Auditado** - Logs de nuevos tipos creados  
-✅ **Dinámico** - Las sugerencias se actualizan automáticamente  
-✅ **Consistente** - Mismo patrón que el sistema de broche/botón  
+ **Escalable** - Los usuarios pueden crear nuevos tipos sin intervención admin  
+ **Case-insensitive** - No crea duplicados por mayúsculas  
+ **Auto-normalizado** - Normaliza nombres (primera letra mayúscula)  
+ **Auditado** - Logs de nuevos tipos creados  
+ **Dinámico** - Las sugerencias se actualizan automáticamente  
+ **Consistente** - Mismo patrón que el sistema de broche/botón  
 
 ---
 

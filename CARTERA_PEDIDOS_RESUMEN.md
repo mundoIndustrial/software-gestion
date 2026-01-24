@@ -1,6 +1,6 @@
 # RESUMEN RÁPIDO - CARTERA PEDIDOS
 
-## ✅ Qué se ha creado
+##  Qué se ha creado
 
 ### 1. **Vista Blade** - `cartera_pedidos.blade.php`
 ```
@@ -58,7 +58,7 @@ Incluye:
 
 ---
 
-## 🎯 Endpoints Necesarios
+## Endpoints Necesarios
 
 ### 1. GET /api/pedidos?estado=pendiente_cartera
 Retorna lista de pedidos en estado "Pendiente cartera"
@@ -195,26 +195,26 @@ renderizarTabla(pedidosData);
 
 ## ✨ Características Implementadas
 
-✅ Tabla dinámica con carga desde API  
-✅ Botones Aprobar y Rechazar  
-✅ Modal de Aprobación con confirmación  
-✅ Modal de Rechazo con textarea y contador  
-✅ Validaciones en cliente  
-✅ Manejo de errores  
-✅ Toast notifications (success/error/info/warning)  
-✅ Contador de caracteres automático  
-✅ Auto-refresh cada 5 minutos  
-✅ Cierre de modales con ESC  
-✅ Completamente responsiva  
-✅ Spinner de carga  
-✅ Estado vacío cuando no hay pedidos  
-✅ Prevención de scroll al abrir modales  
-✅ Logs en consola para debugging  
-✅ Soporte para múltiples formatos de datos  
+ Tabla dinámica con carga desde API  
+ Botones Aprobar y Rechazar  
+ Modal de Aprobación con confirmación  
+ Modal de Rechazo con textarea y contador  
+ Validaciones en cliente  
+ Manejo de errores  
+ Toast notifications (success/error/info/warning)  
+ Contador de caracteres automático  
+ Auto-refresh cada 5 minutos  
+ Cierre de modales con ESC  
+ Completamente responsiva  
+ Spinner de carga  
+ Estado vacío cuando no hay pedidos  
+ Prevención de scroll al abrir modales  
+ Logs en consola para debugging  
+ Soporte para múltiples formatos de datos  
 
 ---
 
-## 📋 Checklist para Implementación
+##  Checklist para Implementación
 
 - [ ] Copiar archivos a sus ubicaciones
 - [ ] Crear ruta en routes/web.php
@@ -273,6 +273,6 @@ Todos en `:root` de `cartera_pedidos.css`:
 
 ---
 
-**Estado:** ✅ Completado y listo para usar  
+**Estado:**  Completado y listo para usar  
 **Última actualización:** 23 de Enero, 2024  
 **Versión:** 1.0

@@ -106,7 +106,7 @@ PATCH /api/pedidos/{id}/confirmar
 ```
 
 **Estados permitidos para confirmar:**
-- De: `PENDIENTE` → A: `CONFIRMADO` ✅
+- De: `PENDIENTE` → A: `CONFIRMADO` 
 - De: `CONFIRMADO` → Error ❌
 - De: `EN_PRODUCCION` → Error ❌
 - De: `COMPLETADO` → Error ❌
@@ -138,8 +138,8 @@ DELETE /api/pedidos/{id}/cancelar
 ```
 
 **Estados permitidos para cancelar:**
-- De: `PENDIENTE` → A: `CANCELADO` ✅
-- De: `CONFIRMADO` → A: `CANCELADO` ✅
+- De: `PENDIENTE` → A: `CANCELADO` 
+- De: `CONFIRMADO` → A: `CANCELADO` 
 - De: `EN_PRODUCCION` → Error ❌
 - De: `COMPLETADO` → Error ❌
 - De: `CANCELADO` → Error ❌
@@ -186,12 +186,12 @@ GET /api/pedidos/cliente/{clienteId}
 
 ```
 PENDIENTE
-  ├─ → CONFIRMADO (confirmar) ✅
-  └─ → CANCELADO (cancelar) ✅
+  ├─ → CONFIRMADO (confirmar) 
+  └─ → CANCELADO (cancelar) 
 
 CONFIRMADO
   ├─ → EN_PRODUCCION (iniciar-produccion) [TBD]
-  └─ → CANCELADO (cancelar) ✅
+  └─ → CANCELADO (cancelar) 
 
 EN_PRODUCCION
   ├─ → COMPLETADO (completar) [TBD]

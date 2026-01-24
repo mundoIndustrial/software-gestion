@@ -5,9 +5,12 @@
  * Patrón: Builder
  */
 
+console.log('[DEBUG] 🔧 TallasBuilder.js cargado correctamente');
+
 class TallasBuilder {
     static construir(prenda, indice) {
-
+        console.log('[TallasBuilder.construir] 📦 ENTRADA - generosConTallas:', prenda.generosConTallas);
+        console.log('[TallasBuilder.construir] 📦 ENTRADA - cantidadesPorTalla:', prenda.cantidadesPorTalla);
 
         const generosConTallas = prenda.generosConTallas || {};
         const cantidadesPorTalla = prenda.cantidadesPorTalla || {};
@@ -30,8 +33,11 @@ class TallasBuilder {
         });
 
         const totalTallas = Object.values(tallasByGeneroMap).reduce((sum, tallas) => sum + tallas.length, 0);
+        console.log('[TallasBuilder.construir] 🔍 totalTallas:', totalTallas, 'tallasByGeneroMap:', tallasByGeneroMap);
 
         if (totalTallas === 0) {
+            console.log('[TallasBuilder.construir] ⚠️ SIN TALLAS - RETORNANDO VACÍO');
+
             return '';
         }
 
@@ -70,7 +76,7 @@ class TallasBuilder {
             `;
         });
 
-        return `
+        const htmlCompleto = `
             <div class="seccion-expandible tallas-y-cantidades-section">
                 <button class="seccion-expandible-header" type="button" data-section="tallas-y-cantidades" data-prenda-index="${indice}">
                     <h4 style="display: flex; align-items: center; gap: 0.75rem;">
@@ -87,6 +93,9 @@ class TallasBuilder {
                 </div>
             </div>
         `;
+        
+        console.log('[TallasBuilder.construir] ✅ RETORNANDO HTML CON TALLAS:', htmlCompleto.substring(0, 100) + '...');
+        return htmlCompleto;
     }
 }
 

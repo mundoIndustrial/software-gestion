@@ -424,7 +424,7 @@
     <script>
         // Log de inicio para verificar que el layout se está cargando
         console.clear();
-        console.log('%c✅ CARTERA LAYOUT CARGADO', 'color: #10b981; font-size: 16px; font-weight: bold; background: #d1fae5; padding: 10px;');
+        console.log('%c CARTERA LAYOUT CARGADO', 'color: #10b981; font-size: 16px; font-weight: bold; background: #d1fae5; padding: 10px;');
         
         // Función para inicializar controles
         function inicializarControles() {
@@ -434,14 +434,14 @@
             const userBtn = document.getElementById('userBtn');
             const userMenu = document.getElementById('userMenu');
             
-            console.log('userBtn:', userBtn ? '✅ Encontrado' : '❌ No encontrado');
-            console.log('userMenu:', userMenu ? '✅ Encontrado' : '❌ No encontrado');
+            console.log('userBtn:', userBtn ? ' Encontrado' : '❌ No encontrado');
+            console.log('userMenu:', userMenu ? ' Encontrado' : '❌ No encontrado');
             
             if (userBtn && userMenu) {
                 userBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const isActive = userMenu.classList.toggle('active');
-                    console.log('%c👤 Usuario Menú Dropdown:', 'color: #8b5cf6; font-weight: bold;', isActive ? '✅ ABIERTO' : '❌ CERRADO');
+                    console.log('%c👤 Usuario Menú Dropdown:', 'color: #8b5cf6; font-weight: bold;', isActive ? ' ABIERTO' : '❌ CERRADO');
                     console.log('   Classes:', userMenu.className);
                     console.log('   Display:', window.getComputedStyle(userMenu).display);
                     console.log('   Opacity:', window.getComputedStyle(userMenu).opacity);
@@ -470,15 +470,15 @@
                         }
                     }
                 });
-                console.log('✅ Dropdown del usuario inicializado');
+                console.log(' Dropdown del usuario inicializado');
             }
             
             // TOGGLE DEL SIDEBAR - FLECHA DENTRO DEL SIDEBAR
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('sidebar');
             
-            console.log('🔄 sidebarToggle (FLECHA):', sidebarToggle ? '✅ Encontrado' : '❌ No encontrado');
-            console.log('📋 sidebar:', sidebar ? '✅ Encontrado' : '❌ No encontrado');
+            console.log('🔄 sidebarToggle (FLECHA):', sidebarToggle ? ' Encontrado' : '❌ No encontrado');
+            console.log(' sidebar:', sidebar ? ' Encontrado' : '❌ No encontrado');
             
             if (sidebarToggle && sidebar) {
                 console.log('🔄 Event listener agregado al sidebarToggle (FLECHA)');
@@ -502,7 +502,7 @@
                     
                     // Log visual del estado
                     const isCollapsed = sidebar.classList.contains('collapsed');
-                    console.log('%c📋 Sidebar:', isCollapsed ? '❌ COLAPSADO' : '✅ EXPANDIDO', 'color: ' + (isCollapsed ? '#ef4444' : '#10b981') + '; font-weight: bold; font-size: 12px;');
+                    console.log('%c Sidebar:', isCollapsed ? '❌ COLAPSADO' : ' EXPANDIDO', 'color: ' + (isCollapsed ? '#ef4444' : '#10b981') + '; font-weight: bold; font-size: 12px;');
                     
                     // Debug de estilos computados
                     const computedStyle = window.getComputedStyle(sidebar);
@@ -516,7 +516,7 @@
                     console.log('   - Width:', rect.width);
                     console.log('   - Visible:', rect.width > 0);
                 });
-                console.log('✅ Sidebar toggle (FLECHA) inicializado');
+                console.log(' Sidebar toggle (FLECHA) inicializado');
             } else {
                 console.warn('⚠️ No se encontró sidebarToggle o sidebar');
             }
@@ -539,16 +539,16 @@
             const table = document.querySelector('.modern-table-wrapper');
             const mainContent = document.querySelector('.main-content');
             
-            console.log('Header:', header ? '✅ Encontrado' : '❌ No encontrado');
+            console.log('Header:', header ? ' Encontrado' : '❌ No encontrado');
             if (header) {
                 const rect = header.getBoundingClientRect();
                 console.log(`  Position: top ${rect.top}px, bottom ${rect.bottom}px`);
                 console.log(`  Z-index: ${window.getComputedStyle(header).zIndex}`);
             }
             
-            console.log('Main Content:', mainContent ? '✅ Encontrado' : '❌ No encontrado');
-            console.log('Container:', container ? '✅ Encontrado' : '❌ No encontrado');
-            console.log('Table:', table ? '✅ Encontrado' : '❌ No encontrado');
+            console.log('Main Content:', mainContent ? ' Encontrado' : '❌ No encontrado');
+            console.log('Container:', container ? ' Encontrado' : '❌ No encontrado');
+            console.log('Table:', table ? ' Encontrado' : '❌ No encontrado');
             if (table) {
                 const rect = table.getBoundingClientRect();
                 console.log(`  Position: top ${rect.top}px`);

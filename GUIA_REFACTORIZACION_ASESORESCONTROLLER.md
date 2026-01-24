@@ -87,10 +87,10 @@ public function store(Request $request)
 ```
 
 **Beneficios:**
-- ✅ Controller solo orquesta
-- ✅ Lógica en agregado (testeable)
-- ✅ DTOs validan entrada
-- ✅ Reutilizable en API también
+-  Controller solo orquesta
+-  Lógica en agregado (testeable)
+-  DTOs validan entrada
+-  Reutilizable en API también
 
 ---
 
@@ -242,7 +242,7 @@ php artisan test tests/Feature/AsesoresController/StoreTest.php
 # Debe pasar igual que antes
 ```
 
-**Si pasa:** ✅ Método refactorizado correctamente
+**Si pasa:**  Método refactorizado correctamente
 
 ### Paso 6: Hacer commit
 
@@ -381,7 +381,7 @@ public function store(Request $request)
 
 ---
 
-## 🎯 CHECKLIST PARA REFACTORIZAR CADA MÉTODO
+## CHECKLIST PARA REFACTORIZAR CADA MÉTODO
 
 ```
 □ Leer método actual y entender lógica
@@ -399,7 +399,7 @@ public function store(Request $request)
 
 ---
 
-## 🚀 COMANDO RÁPIDO: REFACTOR LOOP
+##  COMANDO RÁPIDO: REFACTOR LOOP
 
 ```bash
 # Script que automatiza el ciclo
@@ -423,7 +423,7 @@ echo "4. Hacer commit..."
 git add -A
 git commit -m "[CONTROLLER] Refactorizar AsesoresController::${METHOD}()"
 
-echo "✅ Listo!"
+echo " Listo!"
 ```
 
 **Uso:**
@@ -543,6 +543,6 @@ git commit -m "[CONTROLLER] Refactorizar AsesoresController::confirm() → Use C
 
 ---
 
-**¿Listo para empezar?** 🚀
+**¿Listo para empezar?** 
 
 Próximo paso: Leer el método actual de `store()` en AsesoresController y crear el test.

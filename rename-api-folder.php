@@ -37,7 +37,7 @@ echo "✓ Renombrado temporal a Api\n";
 
 // Verificar
 if (is_dir($newPath) && !is_dir($oldPath)) {
-    echo "✅ Éxito: Carpeta renombrada de API a Api\n";
+    echo " Éxito: Carpeta renombrada de API a Api\n";
     exit(0);
 } else {
     echo "❌ Error: El cambio no se verificó correctamente\n";

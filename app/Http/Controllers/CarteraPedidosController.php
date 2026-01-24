@@ -209,7 +209,7 @@ class CarteraPedidosController extends Controller
             ];
             
             // LOG: Debug de estructura de tallas
-            \Log::info('📋 [CarteraPedidosController] Estructura de prendas con tallas:', [
+            \Log::info(' [CarteraPedidosController] Estructura de prendas con tallas:', [
                 'pedido_numero' => $pedido->numero_pedido,
                 'cantidad_prendas' => count($prendasFormato),
                 'primera_prenda' => $prendasFormato[0] ?? null,

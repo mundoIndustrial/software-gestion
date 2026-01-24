@@ -1,6 +1,6 @@
-# 🚀 PLAN DE MIGRACIÓN POR FASES: PedidoProduccion → Pedidos
+#  PLAN DE MIGRACIÓN POR FASES: PedidoProduccion → Pedidos
 
-## 📋 RESUMEN
+##  RESUMEN
 Mover todo de `/app/Domain/PedidoProduccion/` a `/app/Domain/Pedidos/` de forma segura y progresiva.
 
 **Riesgo:** BAJO (si seguimos las fases)
@@ -9,9 +9,9 @@ Mover todo de `/app/Domain/PedidoProduccion/` a `/app/Domain/Pedidos/` de forma 
 
 ---
 
-## 🎯 FASES DE MIGRACIÓN
+## FASES DE MIGRACIÓN
 
-### ✅ FASE 0: PREPARACIÓN (YA HECHO)
+###  FASE 0: PREPARACIÓN (YA HECHO)
 - [x] Análisis de qué migrar
 - [x] Documento de veredicto creado
 - [x] Plan de fases definido
@@ -314,7 +314,7 @@ To: app/Domain/Pedidos/Repositories/
 
 ---
 
-## 🎯 FASE 8: MIGRAR VALIDATORS, TRAITS, STRATEGIES, FACADES
+## FASE 8: MIGRAR VALIDATORS, TRAITS, STRATEGIES, FACADES
 
 **Objetivo:** Mover los archivos restantes
 
@@ -412,7 +412,7 @@ TO:   App\Domain\Pedidos
 
 ---
 
-## ✅ FASE 11: VALIDACIÓN FINAL
+##  FASE 11: VALIDACIÓN FINAL
 
 **Objetivo:** Verificar que no haya referencias faltantes
 
@@ -461,7 +461,7 @@ ls app/Domain/ | grep -i pedido  # Solo debería mostrar "Pedidos"
 
 | Fase | Objetivo | Archivos | Riesgo | Status |
 |------|----------|----------|--------|--------|
-| 0 | Preparación | Análisis | BAJO | ✅ HECHO |
+| 0 | Preparación | Análisis | BAJO |  HECHO |
 | 1 | Crear estructura | Carpetas | BAJO | ⏳ |
 | 2 | Aggregates | 3 | BAJO | ⏳ |
 | 3 | ValueObjects/Entities | ~5 | BAJO | ⏳ |
@@ -493,7 +493,7 @@ ls app/Domain/ | grep -i pedido  # Solo debería mostrar "Pedidos"
 
 ---
 
-## 🚀 COMENZAR
+##  COMENZAR
 
 ¿Comenzamos por la **FASE 1: Crear estructura**?
 

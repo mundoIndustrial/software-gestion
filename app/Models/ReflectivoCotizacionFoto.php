@@ -60,7 +60,7 @@ class ReflectivoCotizacionFoto extends Model
             return '/' . $ruta;
         }
         
-        // ✅ Manejo de rutas antiguas y nuevas
+        //  Manejo de rutas antiguas y nuevas
         // Si empieza con cotizaciones/ (antigua o nueva), agregar /storage/
         if (str_starts_with($ruta, 'cotizaciones/')) {
             return '/storage/' . ltrim($ruta, '/');

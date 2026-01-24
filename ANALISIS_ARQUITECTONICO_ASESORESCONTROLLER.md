@@ -14,7 +14,7 @@
 │               AsesoresController                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
-│  ✅ Métodos Refactorizados → Use Cases                          │
+│   Métodos Refactorizados → Use Cases                          │
 │  ├─ index()              → ListarProduccionPedidosUseCase       │
 │  ├─ create()             → PrepararCreacionProduccionPedidoUseCase
 │  ├─ store()              → CrearProduccionPedidoUseCase         │
@@ -55,7 +55,7 @@
 │               AsesoresController                              │
 ├──────────────────────────────────────────────────────────────┤
 │                                                                │
-│  ✅ Métodos de Pedidos → Use Cases (DDD)                     │
+│   Métodos de Pedidos → Use Cases (DDD)                     │
 │  ├─ index()              → ListarProduccionPedidosUseCase     │
 │  ├─ create()             → PrepararCreacionProduccionPedidoUseCase
 │  ├─ store()              → CrearProduccionPedidoUseCase       │
@@ -69,18 +69,18 @@
 │  ├─ obtenerDatosFactura() → ObtenerDatosFacturaUseCase        │
 │  └─ obtenerDatosRecibos() → ObtenerDatosRecibosUseCase        │
 │                                                                │
-│  ✅ Métodos de Usuario → Use Cases (Separados)               │
+│   Métodos de Usuario → Use Cases (Separados)               │
 │  ├─ updateProfile()      → ActualizarPerfilUseCase            │
 │  ├─ dashboard()          → ObtenerDashboardUseCase            │
 │  ├─ getDashboardData()   → ObtenerDashboardUseCase            │
 │  └─ inventarioTelas()    → [Delegado a otro controlador]      │
 │                                                                │
-│  ✅ Métodos de Notificaciones → Use Cases                     │
+│   Métodos de Notificaciones → Use Cases                     │
 │  ├─ getNotificaciones()         → ObtenerNotificacionesUseCase │
 │  ├─ markAllAsRead()             → MarcarTodoLeidoUseCase      │
 │  └─ markNotificationAsRead()    → MarcarNotificacionUseCase   │
 │                                                                │
-│  ✅ Métodos de Soporte → Servicios especializados             │
+│   Métodos de Soporte → Servicios especializados             │
 │  └─ getNextPedido()      → ObtenerSiguientePedidoNumberUseCase │
 │                                                                │
 └──────────────────────────────────────────────────────────────┘
@@ -113,7 +113,7 @@ public function anularPedido(Request $request, $id)
 
 | Método | Estado Final | Use Case | Status |
 |--------|-------------|----------|--------|
-| `destroy()` | ??? | AnularProduccionPedidoUseCase | ✅ DDD |
+| `destroy()` | ??? | AnularProduccionPedidoUseCase |  DDD |
 | `anularPedido()` | 'Anulada' | AnularPedidoService | ❌ Legacy |
 
 **¿Qué estado usa el agregado?**
@@ -138,14 +138,14 @@ PedidoProduccionModel:
 **Recomendación**:
 
 ```php
-// ✅ ANTES (legacy)
+//  ANTES (legacy)
 public function anularPedido(Request $request, $id)
 {
     $pedido = $this->anularPedidoService->anular($id, $request->novedad);
     return response()->json([...]);
 }
 
-// ✅ DESPUÉS (DDD)
+//  DESPUÉS (DDD)
 public function anularPedido(Request $request, $id)
 {
     $validated = $request->validate([
@@ -270,7 +270,7 @@ class ObtenerDatosFacturaUseCase
 ```php
 public function getNextPedido()
 {
-    // ✅ Usa ObtenerProximoPedidoService - funciona bien
+    //  Usa ObtenerProximoPedidoService - funciona bien
     $siguientePedido = $this->obtenerProximoPedidoService->obtenerProximo();
     return response()->json([
         'siguiente_pedido' => $siguientePedido
@@ -493,7 +493,7 @@ public function updateProfile(Request $request)
 
 **Problema**: 
 
-✅ ESTÁ BIEN. Es funcionalidad separada de pedidos.
+ ESTÁ BIEN. Es funcionalidad separada de pedidos.
 
 Podría refactorizarse a Use Case pero:
 - No es criticidad alta
@@ -529,7 +529,7 @@ public function agregarPrendaSimple(Request $request, $pedidoId)
 
 - ❌ Crea directamente en BD
 - ❌ NO usa Use Case AgregarItemPedidoUseCase que existe
-- ✅ Pero la lógica es simple (solo inserción)
+-  Pero la lógica es simple (solo inserción)
 
 **Existe**:
 ```php
@@ -591,31 +591,31 @@ public function agregarPrendaSimple(Request $request, $pedidoId)
 ├──────────────────────┬────────────┬───────────┬──────────────┤
 │ Nombre               │ Tipo       │ Usado     │ Frecuencia   │
 ├──────────────────────┼────────────┼───────────┼──────────────┤
-│ PedidoRepository     │ Repository │ ✅ Sí    │ 5+ métodos   │
-│ DashboardService     │ Legacy     │ ✅ Sí    │ 2 métodos    │
-│ NotificacionesService│ Legacy     │ ✅ Sí    │ 4 métodos    │
-│ PerfilService        │ Legacy     │ ✅ Sí    │ 1 método     │
+│ PedidoRepository     │ Repository │  Sí    │ 5+ métodos   │
+│ DashboardService     │ Legacy     │  Sí    │ 2 métodos    │
+│ NotificacionesService│ Legacy     │  Sí    │ 4 métodos    │
+│ PerfilService        │ Legacy     │  Sí    │ 1 método     │
 │ EliminarPedidoService│ Legacy     │ ❌ NO    │ -            │
 │ ObtenerFotosService  │ Legacy     │ ❌ NO    │ -            │
-│ AnularPedidoService  │ Legacy     │ ✅ Sí    │ 1 método*    │
+│ AnularPedidoService  │ Legacy     │  Sí    │ 1 método*    │
 │ ObtenerPedidosService│ Legacy     │ ❌ NO    │ -            │
-│ ObtenerProximoPedido │ Legacy     │ ✅ Sí    │ 1 método     │
-│ ObtenerDatosFactura  │ Legacy     │ ✅ Sí    │ 1 método     │
-│ ObtenerDatosRecibos  │ Legacy     │ ✅ Sí    │ 1 método     │
-│ ProcesarFotosTelas   │ Legacy     │ ✅ Sí    │ 2 métodos    │
-│ GuardarPedidoLogo    │ Legacy     │ ✅ Sí    │ 1 método     │
+│ ObtenerProximoPedido │ Legacy     │  Sí    │ 1 método     │
+│ ObtenerDatosFactura  │ Legacy     │  Sí    │ 1 método     │
+│ ObtenerDatosRecibos  │ Legacy     │  Sí    │ 1 método     │
+│ ProcesarFotosTelas   │ Legacy     │  Sí    │ 2 métodos    │
+│ GuardarPedidoLogo    │ Legacy     │  Sí    │ 1 método     │
 │ GuardarPedidoProducc │ Legacy     │ ❌ NO    │ -            │
 │ ConfirmarPedidoSvc   │ Legacy     │ ❌ NO    │ -            │
 │ ActualizarPedidoSvc  │ Legacy     │ ❌ NO    │ -            │
 │ ObtenerPedidoDetalle │ Legacy     │ ❌ NO    │ -            │
 ├──────────────────────┼────────────┼───────────┼──────────────┤
-│ CrearProduccion      │ Use Case   │ ✅ Sí    │ 1 método     │
-│ ConfirmarProduccion  │ Use Case   │ ✅ Sí    │ 1 método     │
-│ ActualizarProduccion │ Use Case   │ ✅ Sí    │ 1 método     │
-│ AnularProduccion     │ Use Case   │ ✅ Sí    │ 1 método     │
-│ ObtenerProduccion    │ Use Case   │ ✅ Sí    │ 2 métodos    │
-│ ListarProduccion     │ Use Case   │ ✅ Sí    │ 1 método     │
-│ PrepararCreacion     │ Use Case   │ ✅ Sí    │ 1 método     │
+│ CrearProduccion      │ Use Case   │  Sí    │ 1 método     │
+│ ConfirmarProduccion  │ Use Case   │  Sí    │ 1 método     │
+│ ActualizarProduccion │ Use Case   │  Sí    │ 1 método     │
+│ AnularProduccion     │ Use Case   │  Sí    │ 1 método     │
+│ ObtenerProduccion    │ Use Case   │  Sí    │ 2 métodos    │
+│ ListarProduccion     │ Use Case   │  Sí    │ 1 método     │
+│ PrepararCreacion     │ Use Case   │  Sí    │ 1 método     │
 └──────────────────────┴────────────┴───────────┴──────────────┘
 
 Totales:
@@ -726,7 +726,7 @@ DISTRIBUCIÓN:
 
 ```
 Total inyecciones: 12 (5 legacy + 7 Use Cases)
-Métodos con Legacy: 2 / 21 = 10% ✅
+Métodos con Legacy: 2 / 21 = 10% 
 
 DISTRIBUCIÓN:
   ┌──────────────────────┐
@@ -735,14 +735,14 @@ DISTRIBUCIÓN:
   └──────────────────────┘
 
 Métodos por patrón:
-  Use Cases (DDD):      14/21 = 67% ✅
-  Servicios Legacy:      5/21 = 24% ✅
-  Directo a BD:          2/21 =  9% ✅
+  Use Cases (DDD):      14/21 = 67% 
+  Servicios Legacy:      5/21 = 24% 
+  Directo a BD:          2/21 =  9% 
 ```
 
 ---
 
-## 📋 CÓDIGO A REMOVER
+##  CÓDIGO A REMOVER
 
 ### Lista de imports a eliminar
 

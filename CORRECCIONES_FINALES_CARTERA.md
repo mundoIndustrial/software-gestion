@@ -17,7 +17,7 @@ form.addEventListener('submit', function(event) {
 
 **Solución:**
 ```javascript
-// ✅ CORRECTO
+//  CORRECTO
 form.addEventListener('submit', async function(event) {
   event.preventDefault();
   await fetch(...);  // OK
@@ -44,13 +44,13 @@ btnRefresh.disabled = true;  // Si no existe, CRASH
 
 **Solución:**
 ```javascript
-// ✅ CORRECTO - Opción 1: Validar primero
+//  CORRECTO - Opción 1: Validar primero
 const btnRefresh = getElementById('btnRefreshPedidos');
 if (btnRefresh) {
   btnRefresh.disabled = true;
 }
 
-// ✅ CORRECTO - Opción 2: Helper que valida
+//  CORRECTO - Opción 2: Helper que valida
 function getElementById(id) {
   const el = document.getElementById(id);
   if (!el) console.warn(`⚠️ No encontrado: #${id}`);
@@ -88,7 +88,7 @@ function getElementById(id) {
 
 **Solución:**
 ```css
-/* ✅ CORRECTO */
+/*  CORRECTO */
 .main-content {
   display: flex;           /* ← Cambio crítico */
   flex-direction: column;  /* ← Stack vertical */
@@ -137,7 +137,7 @@ function getElementById(id) {
 
 **Solución:**
 ```css
-/* ✅ CORRECTO */
+/*  CORRECTO */
 #sidebar {
   position: fixed;      /* Fijo a la izquierda */
   left: 0;
@@ -162,7 +162,7 @@ function getElementById(id) {
 
 ---
 
-## 📋 Cambios Específicos
+##  Cambios Específicos
 
 ### Archivo: `cartera_pedidos.js`
 
@@ -237,27 +237,27 @@ async function confirmarRechazo(event) {  // ← async
 
 ---
 
-## ✅ Validación - Qué Debería Ver Ahora
+##  Validación - Qué Debería Ver Ahora
 
 1. **Console (F12):**
-   - ✅ Sin errores "Cannot set properties of null"
-   - ✅ Sin errores "await is only valid in async"
-   - ✅ Warnings informativos (⚠️) si algo falta
+   -  Sin errores "Cannot set properties of null"
+   -  Sin errores "await is only valid in async"
+   -  Warnings informativos (⚠️) si algo falta
 
 2. **Layout Visual:**
-   - ✅ Header en TOP
-   - ✅ Tabla DEBAJO del header
-   - ✅ Sidebar a la IZQUIERDA (fixed)
-   - ✅ Header es sticky cuando scrolleas
+   -  Header en TOP
+   -  Tabla DEBAJO del header
+   -  Sidebar a la IZQUIERDA (fixed)
+   -  Header es sticky cuando scrolleas
 
 3. **Funcionalidad:**
-   - ✅ Botón "Actualizar" funciona
-   - ✅ Modales se abren/cierran sin crashes
-   - ✅ Contadores de caracteres funcionan
+   -  Botón "Actualizar" funciona
+   -  Modales se abren/cierran sin crashes
+   -  Contadores de caracteres funcionan
 
 ---
 
-## 🎯 Mejor Práctica
+## Mejor Práctica
 
 **ANTES (Vulnerable):**
 ```javascript

@@ -5,6 +5,8 @@
  * Patrón: Builder + Template Method
  */
 
+console.log('[DEBUG] 🔧 ProcesosBuilder.js cargado correctamente');
+
 class ProcesosBuilder {
     static ICONOS = {
         'reflectivo': '<i class="fas fa-lightbulb" style="color: #f59e0b;"></i>',
@@ -15,20 +17,57 @@ class ProcesosBuilder {
     };
 
     static construir(prenda, indice) {
-
+        console.log('[ProcesosBuilder] 🏗️ Construyendo procesos para prenda:', {
+            nombre: prenda.nombre_prenda,
+            indice: indice,
+            tieneProcesos: !!prenda.procesos,
+            procesos: prenda.procesos
+        });
 
         const procesos = prenda.procesos || {};
+        console.log('[ProcesosBuilder]   - Procesos extraídos:', procesos);
+        console.log('[ProcesosBuilder]   - Tipo:', typeof procesos, 'esArray:', Array.isArray(procesos));
+        
         const procesosConDatos = Object.entries(procesos).filter(
-            ([_, proc]) => proc && (proc.datos !== null || proc.tipo)
+            ([tipoProceso, proc]) => {
+                const valido = proc && (proc.datos !== null || proc.tipo);
+                console.log(`[ProcesosBuilder]   - Proceso "${tipoProceso}":`, {
+                    proceso: proc,
+                    tieneDatos: !!(proc && proc.datos),
+                    tieneTipo: !!(proc && proc.tipo),
+                    esValido: valido
+                });
+                return valido;
+            }
         );
+        
+        console.log('[ProcesosBuilder]   - Procesos válidos:', procesosConDatos.length);
 
         if (procesosConDatos.length === 0) {
+            console.log('[ProcesosBuilder]   ⚠️ No hay procesos válidos, retornando vacío');
             return '';
         }
 
+        console.log('[ProcesosBuilder]   - Generando HTML para cada proceso...');
         const itemsHTML = procesosConDatos.map(([tipoProceso, proceso]) => {
-            return this._construirItemProceso(tipoProceso, proceso);
-        }).join('');
+            console.log(`[ProcesosBuilder]     - Construyendo proceso "${tipoProceso}"`);
+            const html = this._construirItemProceso(tipoProceso, proceso);
+            console.log(`[ProcesosBuilder]     - HTML generado (${html.length} caracteres)`);
+            return html;
+        });
+        
+        console.log('[ProcesosBuilder]   - itemsHTML es array:', Array.isArray(itemsHTML), 'length:', itemsHTML?.length);
+        console.log('[ProcesosBuilder]   - Llamando .join() sobre:', itemsHTML);
+        
+        try {
+            const htmlUnido = itemsHTML.join('');
+            console.log('[ProcesosBuilder]   ✅ HTML unido exitosamente');
+        } catch (joinError) {
+            console.error('[ProcesosBuilder] ❌ ERROR EN JOIN:', joinError);
+            console.error('[ProcesosBuilder] ❌ itemsHTML era:', itemsHTML);
+            console.error('[ProcesosBuilder] ❌ Stack:', joinError.stack);
+            throw joinError; // Re-lanzar para ver el error completo
+        }
 
         return `
             <div class="seccion-expandible procesos-section">
@@ -38,7 +77,7 @@ class ProcesosBuilder {
                 </button>
                 <div class="seccion-expandible-content procesos-content">
                     <div style="padding: 1rem;">
-                        ${itemsHTML}
+                        ${htmlUnido}
                     </div>
                 </div>
             </div>

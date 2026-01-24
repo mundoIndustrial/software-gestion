@@ -64,7 +64,7 @@ window.cargarCatálogoTallas = async function() {
         
         if (result.success && result.data) {
             window.catálogoTallasDisponibles = result.data;
-            console.log('[gestion-tallas] ✅ Catálogo cargado:', result.data);
+            console.log('[gestion-tallas]  Catálogo cargado:', result.data);
         } else {
             throw new Error(result.message || 'Respuesta inválida del servidor');
         }
@@ -98,7 +98,7 @@ window.guardarCantidadTalla = function(genero, talla, cantidad) {
     
     if (cantInt > 0) {
         window.tallasRelacionales[genero][talla] = cantInt;
-        console.log(`[gestion-tallas] ✅ Talla guardada: ${genero} - ${talla}: ${cantInt}`);
+        console.log(`[gestion-tallas]  Talla guardada: ${genero} - ${talla}: ${cantInt}`);
     } else {
         delete window.tallasRelacionales[genero][talla];
         console.log(`[gestion-tallas] 🗑️ Talla eliminada: ${genero} - ${talla}`);
@@ -195,7 +195,7 @@ window.mostrarTallasDisponibles = function(tipo) {
             } else {
                 // Seleccionar: agregar talla con cantidad 0
                 window.tallasRelacionales[window.generoActualModal][talla] = 0;
-                console.log(`[gestion-tallas] ✅ Talla seleccionada: ${window.generoActualModal} - ${talla}`);
+                console.log(`[gestion-tallas]  Talla seleccionada: ${window.generoActualModal} - ${talla}`);
                 btn.style.borderColor = '#0066cc';
                 btn.style.background = '#0066cc';
                 btn.style.color = 'white';
@@ -446,7 +446,7 @@ window.abrirModalSeleccionarTallas = async function(genero) {
             return;
         }
         
-        console.log(`[gestion-tallas] ✅ Confirmando tallas para ${genero}:`, window.tallasRelacionales[genero]);
+        console.log(`[gestion-tallas]  Confirmando tallas para ${genero}:`, window.tallasRelacionales[genero]);
         cerrarModalTallas(genero);
         crearTarjetaGenero(genero);
         actualizarTotalPrendas();
@@ -669,13 +669,13 @@ window.obtenerTallasYCantidades = function() {
     Object.entries(window.tallasRelacionales).forEach(([genero, tallasObj]) => {
         if (Object.keys(tallasObj).length > 0) {
             resultado[genero] = tallasObj;
-            console.log(`[gestion-tallas] ✅ Género ${genero} incluido en resultado:`, tallasObj);
+            console.log(`[gestion-tallas]  Género ${genero} incluido en resultado:`, tallasObj);
         } else {
             console.log(`[gestion-tallas] ⏭️ Género ${genero} ignorado (vacío)`, tallasObj);
         }
     });
     
-    console.log('[gestion-tallas] 🎯 Tallas y cantidades FINALES a enviar:', resultado);
+    console.log('[gestion-tallas] Tallas y cantidades FINALES a enviar:', resultado);
     return resultado;
 };
 

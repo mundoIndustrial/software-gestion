@@ -1,8 +1,8 @@
 # 🧪 GUÍA DE TESTING: Actualización Selectiva
 
-## 📋 Checklist de Pruebas
+##  Checklist de Pruebas
 
-### ✅ Test 1: Cambiar solo COLOR (la prueba más importante)
+###  Test 1: Cambiar solo COLOR (la prueba más importante)
 
 **Configuración Inicial:**
 ```
@@ -27,29 +27,29 @@ Prenda: ID=123, nombre="Camiseta Roja"
 SELECT * FROM prenda_pedido_colores_telas WHERE prenda_pedido_id = 123;
 RESULTADO ESPERADO:
 - Rojo-Algodón (1-2): ❌ DEBE ELIMINARSE
-- Azul-Algodón (X-2): ✅ DEBE CREARSE
+- Azul-Algodón (X-2):  DEBE CREARSE
 - Total: 1 registro
 
 -- 2. Telas (DEBEN PRESERVARSE)
 SELECT * FROM telas_prendas WHERE prenda_pedido_id = 123;
 RESULTADO ESPERADO:
-- Algodón (id=2): ✅ DEBE EXISTIR
+- Algodón (id=2):  DEBE EXISTIR
 - Total: 1 registro (MISMO QUE ANTES)
 
 -- 3. Tallas (DEBEN PRESERVARSE)
 SELECT * FROM prenda_pedido_tallas WHERE prenda_pedido_id = 123;
 RESULTADO ESPERADO:
-- Dama-S: ✅ PRESERVADA
-- Dama-M: ✅ PRESERVADA
-- Dama-L: ✅ PRESERVADA
-- Dama-XL: ✅ PRESERVADA
+- Dama-S:  PRESERVADA
+- Dama-M:  PRESERVADA
+- Dama-L:  PRESERVADA
+- Dama-XL:  PRESERVADA
 - Total: 4 registros (IGUAL QUE ANTES)
 
 -- 4. Variantes (DEBEN PRESERVARSE)
 SELECT * FROM prenda_pedido_variantes WHERE prenda_pedido_id = 123;
 RESULTADO ESPERADO:
-- tipo_manga_id: 5 ✅ PRESERVADO
-- tipo_broche_boton_id: 2 ✅ PRESERVADO
+- tipo_manga_id: 5  PRESERVADO
+- tipo_broche_boton_id: 2  PRESERVADO
 - Total: 1 registro (IGUAL QUE ANTES)
 
 -- 5. Fotos de tela (DEBEN PRESERVARSE)
@@ -67,22 +67,22 @@ RESULTADO ESPERADO:
 [ActualizarPrendaCompletaUseCase] Iniciando actualización
   - prenda_id: 123
   - tiene_colores_telas: true
-  - tiene_variantes: null    ✅ (no viene en actualización)
-  - tiene_fotos: null        ✅ (no viene)
-  - tiene_tallas: null       ✅ (no viene)
-  - tiene_fotos_telas: null  ✅ (no viene)
+  - tiene_variantes: null     (no viene en actualización)
+  - tiene_fotos: null         (no viene)
+  - tiene_tallas: null        (no viene)
+  - tiene_fotos_telas: null   (no viene)
 ```
 
-**✅ TEST PASA SI:**
-- ✅ Combinación antigua (Rojo-Algodón) se elimina
-- ✅ Combinación nueva (Azul-Algodón) se crea
-- ✅ Talla S, M, L, XL SIGUEN EXISTIENDO (4 de 4)
-- ✅ Variantes (manga, broche) SIGUEN SIENDO IGUALES
-- ✅ Las fotos de tela existentes se preservan O se actualiza solo la combinación
+** TEST PASA SI:**
+-  Combinación antigua (Rojo-Algodón) se elimina
+-  Combinación nueva (Azul-Algodón) se crea
+-  Talla S, M, L, XL SIGUEN EXISTIENDO (4 de 4)
+-  Variantes (manga, broche) SIGUEN SIENDO IGUALES
+-  Las fotos de tela existentes se preservan O se actualiza solo la combinación
 
 ---
 
-### ✅ Test 2: Cambiar solo TELA
+###  Test 2: Cambiar solo TELA
 
 **Configuración Inicial:**
 ```
@@ -98,22 +98,22 @@ Prenda: ID=124
 ```sql
 -- Color DEBE preservarse
 SELECT * FROM colores_prendas WHERE id=1;
-RESULTADO: Rojo ✅ DEBE EXISTIR
+RESULTADO: Rojo  DEBE EXISTIR
 
 -- Combinación debe actualizarse
 SELECT * FROM prenda_pedido_colores_telas WHERE prenda_pedido_id=124;
 RESULTADO:
 - Rojo-Algodón: ❌ ELIMINARSE
-- Rojo-Poliéster: ✅ CREARSE
+- Rojo-Poliéster:  CREARSE
 
 -- Tallas DEBEN preservarse
 SELECT COUNT(*) FROM prenda_pedido_tallas WHERE prenda_pedido_id=124;
-RESULTADO: 3 ✅
+RESULTADO: 3 
 ```
 
 ---
 
-### ✅ Test 3: Agregar UNA FOTO
+###  Test 3: Agregar UNA FOTO
 
 **Configuración Inicial:**
 ```
@@ -127,9 +127,9 @@ Prenda: ID=125
 ```sql
 SELECT * FROM prenda_fotos_pedido WHERE prenda_pedido_id = 125;
 RESULTADO:
-- foto1.webp: ✅ PRESERVADA
-- foto2.webp: ✅ PRESERVADA
-- foto3.webp: ✅ NUEVA
+- foto1.webp:  PRESERVADA
+- foto2.webp:  PRESERVADA
+- foto3.webp:  NUEVA
 - Total: 3 registros (NO 1)
 ```
 
@@ -138,7 +138,7 @@ RESULTADO:
 
 ---
 
-### ✅ Test 4: Remover UNA FOTO (enviar array sin esa foto)
+###  Test 4: Remover UNA FOTO (enviar array sin esa foto)
 
 **Configuración Inicial:**
 ```
@@ -150,15 +150,15 @@ Fotos: foto1.webp, foto2.webp, foto3.webp (3 registros)
 **Verificación en BD:**
 ```sql
 RESULTADO ESPERADO:
-- foto1.webp: ✅ PRESERVADA
+- foto1.webp:  PRESERVADA
 - foto2.webp: ❌ ELIMINADA
-- foto3.webp: ✅ PRESERVADA
+- foto3.webp:  PRESERVADA
 - Total: 2 registros
 ```
 
 ---
 
-### ✅ Test 5: NO cambiar NADA (guardar sin modificaciones)
+###  Test 5: NO cambiar NADA (guardar sin modificaciones)
 
 **Acción:** Abrir prenda, no cambiar nada, guardar
 
@@ -171,11 +171,11 @@ SELECT * FROM prenda_pedido_colores_telas WHERE prenda_pedido_id=123; -- IGUAL (
 SELECT * FROM prenda_pedido_variantes WHERE prenda_pedido_id=123;     -- IGUAL (values)
 ```
 
-**✅ TEST PASA SI:** Count de cada tabla es EXACTAMENTE igual
+** TEST PASA SI:** Count de cada tabla es EXACTAMENTE igual
 
 ---
 
-### ✅ Test 6: Cambiar MÚLTIPLES cosas (validar interacción)
+###  Test 6: Cambiar MÚLTIPLES cosas (validar interacción)
 
 **Acción:**
 1. Cambiar color de Rojo a Verde
@@ -190,15 +190,15 @@ SELECT * FROM prenda_pedido_variantes WHERE prenda_pedido_id=123;     -- IGUAL (
 SELECT * FROM prenda_pedido_colores_telas;
 RESULTADO:
 - Rojo-Algodón: ❌ ELIMINARSE
-- Verde-Poliéster: ✅ CREARSE
+- Verde-Poliéster:  CREARSE
 
 -- Tallas: la nueva (XXL) se agrega
 SELECT * FROM prenda_pedido_tallas WHERE talla='XXL';
-RESULTADO: ✅ DEBE EXISTIR
+RESULTADO:  DEBE EXISTIR
 
 -- Variantes: manga debe actualizarse
 SELECT tipo_manga_id FROM prenda_pedido_variantes;
-RESULTADO: 7 ✅
+RESULTADO: 7 
 ```
 
 ---
@@ -213,7 +213,7 @@ RESULTADO: 7 ✅
 ```php
 private function actualizarTallas(...) {
     if (is_null($dto->cantidadTalla)) {
-        return;  // ✅ DEBE ESTAR
+        return;  //  DEBE ESTAR
     }
     // ...
 }
@@ -231,11 +231,11 @@ private function actualizarTallas(...) {
 ```php
 private function actualizarFotos(...) {
     $fotosExistentes = $prenda->fotos()->get()->keyBy('ruta_original');
-    // ✅ El keyBy DEBE usar la misma columna que se compara
+    //  El keyBy DEBE usar la misma columna que se compara
     
     foreach ($fotosNuevas as $ruta => $datos) {
         if (!isset($fotosExistentes[$ruta])) {
-            $prenda->fotos()->create($datos);  // ✅ Solo si NO existe
+            $prenda->fotos()->create($datos);  //  Solo si NO existe
         }
     }
 }
@@ -261,7 +261,7 @@ foreach ($dto->coloresTelas as ...) {
     ];
 }
 
-// ✅ $key DEBE coincidir con el formato del keyBy
+//  $key DEBE coincidir con el formato del keyBy
 $key = "{$colorId}_{$telaId}";  // MISMO FORMATO
 ```
 

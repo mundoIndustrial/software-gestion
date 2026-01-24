@@ -5,6 +5,8 @@
  * Patrón: Builder + Strategy
  */
 
+console.log('[DEBUG] 🔧 VariacionesBuilder.js cargado correctamente');
+
 class VariacionesBuilder {
     static construir(prenda, indice) {
 
@@ -22,7 +24,10 @@ class VariacionesBuilder {
         // Filtrar aplicadas
         const variacionesAplicadas = variacionesMapeo.filter(({ valKey }) => {
             const valor = variantes[valKey];
-            return valor && valor !== 'No aplica' && valor !== false;
+            // Mostrar si:
+            // - Es true (boolean)
+            // - Es un string no vacío y no es "No aplica"
+            return valor === true || (typeof valor === 'string' && valor.trim() !== '' && valor !== 'No aplica');
         });
 
         if (variacionesAplicadas.length === 0) {

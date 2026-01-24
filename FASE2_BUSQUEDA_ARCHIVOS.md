@@ -47,7 +47,7 @@ Buscar en:
 <form action="/asesores/pedidos/{{ $id }}/anular" method="POST">
 fetch('/asesores/pedidos/...', { method: 'POST' })
 
-<!-- DESPUÉS - ✅ NUEVO -->
+<!-- DESPUÉS -  NUEVO -->
 <form action="/api/pedidos" method="POST">
 fetch('/api/pedidos', { method: 'POST' })
 ```
@@ -72,7 +72,7 @@ $.ajax('/asesores/pedidos', ...)
 axios.post('/asesores/pedidos', ...)
 window.location = '/asesores/pedidos'
 
-// DESPUÉS - ✅ NUEVO
+// DESPUÉS -  NUEVO
 fetch('/api/pedidos', ...)
 $.ajax('/api/pedidos', ...)
 axios.post('/api/pedidos', ...)
@@ -105,7 +105,7 @@ public function __construct(CrearPedidoService $service) {
 $this->crearPedidoService->crear($datos);
 $this->anularPedidoService->anular($id, $razon);
 
-// DESPUÉS - ✅ NUEVO
+// DESPUÉS -  NUEVO
 use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\CancelarPedidoUseCase;
 
@@ -126,7 +126,7 @@ $this->cancelarPedidoUseCase->ejecutar($id, $razon);
 Buscar en:
 - [x] `routes/web.php` - YA REVISADO Y ACTUALIZADO
 
-**Estado:** ✅ YA CONSOLIDADAS
+**Estado:**  YA CONSOLIDADAS
 
 ---
 
@@ -150,7 +150,7 @@ Archivos a eliminar en Fase 4:
 
 Revisar si usan tabla legacy:
 - [ ] `app/Models/PedidoProduccion.php` - ⚠️ TABLA LEGACY
-- [ ] `app/Models/Pedido.php` - ✅ TABLA NUEVA (DDD)
+- [ ] `app/Models/Pedido.php` -  TABLA NUEVA (DDD)
 
 **Qué buscar:**
 ```php
@@ -159,7 +159,7 @@ class PedidoProduccion extends Model {
     protected $table = 'pedidos_produccion';
 }
 
-// DESPUÉS - ✅ DDD
+// DESPUÉS -  DDD
 class Pedido extends Model {
     protected $table = 'pedidos';
 }
@@ -202,7 +202,7 @@ Get-ChildItem -Path ".\resources\js" -Recurse -Include "*.js"
 
 ---
 
-## 📋 Template de Checklist por Archivo
+##  Template de Checklist por Archivo
 
 Crear este checklist para CADA archivo encontrado:
 
@@ -231,12 +231,12 @@ Validación:
 - [ ] Compila sin errores
 - [ ] Tests pasan
 
-Status: ⏳ PENDIENTE / 🔄 EN PROGRESO / ✅ COMPLETADO
+Status: ⏳ PENDIENTE / 🔄 EN PROGRESO /  COMPLETADO
 ```
 
 ---
 
-## 🎯 Plan de Acción para Fase 2
+## Plan de Acción para Fase 2
 
 ### Paso 1: Ejecutar búsquedas (15 min)
 ```bash

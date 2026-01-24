@@ -245,6 +245,23 @@ class GestionItemsUI {
                 return;
             }
 
+            // Validar que al menos haya seleccionado tallas
+            const tieneTallas = prendaData.cantidad_talla && 
+                Object.values(prendaData.cantidad_talla).some(genero => 
+                    Object.keys(genero).length > 0
+                );
+
+            console.log('[gestion-items-pedido] 🔍 Validación de tallas:');
+            console.log('[gestion-items-pedido]   - prendaData.cantidad_talla:', prendaData.cantidad_talla);
+            console.log('[gestion-items-pedido]   - tieneTallas:', tieneTallas);
+
+            if (!tieneTallas) {
+                this.notificationService?.advertencia('⚠️ Por favor selecciona al menos una talla para la prenda');
+                console.log('[gestion-items-pedido] ❌ Validación FALLIDA: No hay tallas');
+                return;
+            }
+
+            console.log('[gestion-items-pedido]  Validación EXITOSA: Hay tallas, procediendo a guardar');
 
 
             // Verificar si estamos en un pedido existente
@@ -379,11 +396,22 @@ class GestionItemsUI {
             this.mostrarCargando('Validando pedido...');
 
             const validacion = await this.apiService.validarPedido(pedidoData);
-            if (!validacion.valid) {
+            console.log('[gestion-items-pedido] 📋 Validación recibida:', validacion);
+            
+            // El backend retorna "success", no "valid"
+            if (!validacion.success) {
                 this.ocultarCargando();
-                alert('Errores en el pedido:\n' + validacion.errores.join('\n'));
+                console.log('[gestion-items-pedido] ❌ Validación falló:', validacion.errores);
+                const errores = validacion.errores || [];
+                if (Array.isArray(errores) && errores.length > 0) {
+                    alert('Errores en el pedido:\n' + errores.join('\n'));
+                } else {
+                    alert('Error en validación: ' + (validacion.message || JSON.stringify(validacion)));
+                }
                 return;
             }
+            
+            console.log('[gestion-items-pedido] ✅ Validación exitosa, procediendo a crear pedido');
 
             this.mostrarCargando('Creando pedido...');
             const resultado = await this.apiService.crearPedido(pedidoData);
@@ -399,10 +427,14 @@ class GestionItemsUI {
                 setTimeout(() => this.mostrarModalExito(), 300);
             }
         } catch (error) {
-
+            console.error('[gestion-items-pedido] ❌ ERROR CAPTURADO:', error);
+            console.error('[gestion-items-pedido] ❌ Stack:', error.stack);
+            console.error('[gestion-items-pedido] ❌ Message:', error.message);
+            
             this.ocultarCargando();
             if (this.notificationService) {
-                this.notificationService.error('Error: ' + error.message);
+                const mensajeError = error.message || 'Error desconocido al crear el pedido';
+                this.notificationService.error('Error: ' + mensajeError);
             }
         }
     }

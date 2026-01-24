@@ -40,19 +40,6 @@ const defaults = {
 
 const env = isProduction ? defaults.prod : defaults.dev;
 
-// Debug: Mostrar variables de entorno
-console.log('🔧 Environment Detection:');
-console.log('MODE:', import.meta.env.MODE);
-console.log('VITE_ENV:', import.meta.env.VITE_ENV);
-console.log('Hostname:', window.location.hostname);
-console.log('isProduction:', isProduction);
-console.log('');
-console.log('📡 Configuración de Echo/Reverb:');
-console.log('VITE_REVERB_APP_KEY:', import.meta.env.VITE_REVERB_APP_KEY);
-console.log('VITE_REVERB_HOST:', import.meta.env.VITE_REVERB_HOST);
-console.log('VITE_REVERB_PORT:', import.meta.env.VITE_REVERB_PORT);
-console.log('VITE_REVERB_SCHEME:', import.meta.env.VITE_REVERB_SCHEME);
-
 const echoConfig = {
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY || 'dummy-key',
@@ -64,25 +51,17 @@ const echoConfig = {
     disableStats: true,
 };
 
-console.log('✅ Configuración final de Echo:');
-console.log('broadcaster:', echoConfig.broadcaster);
-console.log('wsHost:', echoConfig.wsHost);
-console.log('wsPort:', echoConfig.wsPort);
-console.log('forceTLS:', echoConfig.forceTLS);
-
 window.Echo = new Echo(echoConfig);
 
 // Verificar conexión
 window.Echo.connector.pusher.connection.bind('connected', () => {
-    console.log(' WebSocket conectado exitosamente a Reverb');
+    // Conectado
 });
 
 window.Echo.connector.pusher.connection.bind('error', (err) => {
-    console.error(' Error de conexión WebSocket:', err);
+    console.error('WebSocket error:', err);
 });
 
 window.Echo.connector.pusher.connection.bind('disconnected', () => {
-    console.warn(' WebSocket desconectado');
+    console.warn('WebSocket disconnected');
 });
-
-console.log(' Echo inicializado y disponible globalmente como window.Echo');

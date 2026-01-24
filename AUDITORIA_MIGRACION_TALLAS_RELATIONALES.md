@@ -20,7 +20,7 @@ Se agregó estructura relacional:
 
 ## HALLAZGOS Y CAMBIOS APLICADOS
 
-### ✅ CAMBIO 1: PedidosProduccionViewController.php
+###  CAMBIO 1: PedidosProduccionViewController.php
 **Archivo**: `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionViewController.php`  
 **Líneas**: 712-719  
 **Severidad**: 🔴 CRÍTICO  
@@ -50,7 +50,7 @@ $generos = array_keys($tallas);
 // Ahora $generos contiene ['DAMA', 'CABALLERO'] etc desde la tabla relacional
 ```
 
-**Resultado**: ✅ Géneros extraídos correctamente desde `prenda_pedido_tallas`
+**Resultado**:  Géneros extraídos correctamente desde `prenda_pedido_tallas`
 
 ---
 
@@ -92,7 +92,7 @@ public function guardarTallasPrenda(int $prendaId, mixed $cantidades): void
         foreach ($cantidades as $genero => $tallasObj) {
             foreach ($tallasObj as $talla => $cantidad) {
                 $this->insertarTalla($prendaId, $talla, $cantidad, strtoupper($genero));
-                // ✅ Ahora SI guarda el género
+                //  Ahora SI guarda el género
             }
         }
     } else {
@@ -107,7 +107,7 @@ private function insertarTalla(int $prendaId, string $talla, int $cantidad, stri
 {
     DB::table('prenda_pedido_tallas')->insertOrIgnore([
         'prenda_pedido_id' => $prendaId,
-        'genero' => strtoupper($genero),  // ✅ AHORA SÍ GUARDA GÉNERO
+        'genero' => strtoupper($genero),  //  AHORA SÍ GUARDA GÉNERO
         'talla' => $talla,
         'cantidad' => $cantidad,
         'created_at' => now(),
@@ -116,7 +116,7 @@ private function insertarTalla(int $prendaId, string $talla, int $cantidad, stri
 }
 ```
 
-**Resultado**: ✅ Tallas guardadas correctamente con género
+**Resultado**:  Tallas guardadas correctamente con género
 
 ---
 
@@ -151,7 +151,7 @@ if (!empty($prendaData['cantidad_talla'])) {
 }
 ```
 
-**Resultado**: ✅ Ahora procesa `cantidad_talla` primero
+**Resultado**:  Ahora procesa `cantidad_talla` primero
 
 ---
 
@@ -164,8 +164,8 @@ if (!empty($prendaData['cantidad_talla'])) {
 Creaba la prenda pero NO guardaba las tallas en la tabla relacional:
 ```php
 $prendaPedido = PrendaPedido::create([
-    'cantidad_talla' => json_encode($cantidadesPorTalla),  // ✅ Guarda en JSON
-    'genero' => json_encode($this->procesarGeneros(...)), // ✅ Guarda en JSON
+    'cantidad_talla' => json_encode($cantidadesPorTalla),  //  Guarda en JSON
+    'genero' => json_encode($this->procesarGeneros(...)), //  Guarda en JSON
     // ... resto de campos
 ]);
 
@@ -188,17 +188,17 @@ Log::info(' [CreacionPrendaSinCtaStrategy] Prenda creada', ...);
 if (!empty($cantidadesPorTalla)) {
     $repository = app(\App\Domain\PedidoProduccion\Repositories\PedidoProduccionRepository::class);
     $repository->guardarTallas($prendaPedido->id, $cantidadesPorTalla);
-    // ✅ Ahora SÍ guarda en tabla relacional
+    //  Ahora SÍ guarda en tabla relacional
 }
 ```
 
-**Resultado**: ✅ Tallas guardadas en tabla relacional automáticamente
+**Resultado**:  Tallas guardadas en tabla relacional automáticamente
 
 ---
 
 ## VALIDACIÓN: ¿QUÉ SE MANTIENE COMO LEGACY?
 
-### ✅ PERMITIDO (Estos campos permanecen como legacy, OK):
+###  PERMITIDO (Estos campos permanecen como legacy, OK):
 
 1. **`cantidad_talla` JSON en `prendas_pedido`**
    - Razón: Compatibilidad histórica
@@ -225,23 +225,23 @@ if (!empty($cantidadesPorTalla)) {
 
 | Archivo | Líneas | Tipo | Severidad | Estado |
 |---------|--------|------|-----------|--------|
-| PedidosProduccionViewController.php | 712-719 | DELETE legacy | 🔴 Crítico | ✅ Aplicado |
-| PrendaTallaService.php | 24-75 | REFACTOR | 🔴 Crítico | ✅ Aplicado |
-| PedidoPrendaService.php | 280-287 | REFACTOR | 🟡 Importante | ✅ Aplicado |
-| CreacionPrendaSinCtaStrategy.php | 119-134 | AGREGAR | 🔴 Crítico | ✅ Aplicado |
+| PedidosProduccionViewController.php | 712-719 | DELETE legacy | 🔴 Crítico |  Aplicado |
+| PrendaTallaService.php | 24-75 | REFACTOR | 🔴 Crítico |  Aplicado |
+| PedidoPrendaService.php | 280-287 | REFACTOR | 🟡 Importante |  Aplicado |
+| CreacionPrendaSinCtaStrategy.php | 119-134 | AGREGAR | 🔴 Crítico |  Aplicado |
 
 **Total**: 4 cambios aplicados, 0 fallidos
 
 ---
 
-## CRITERIO DE ACEPTACIÓN ✅
+## CRITERIO DE ACEPTACIÓN 
 
 Todos los criterios cumplidos:
 
-- ✅ No queda ninguna LECTURA ACTIVA de `cantidad_talla` o `genero` de `prendas_pedido`
-- ✅ Factura y recibos construyen géneros desde `prenda_pedido_tallas`
-- ✅ UNISEX funciona como género real en tabla relacional
-- ✅ Sistema es estable aunque:
+-  No queda ninguna LECTURA ACTIVA de `cantidad_talla` o `genero` de `prendas_pedido`
+-  Factura y recibos construyen géneros desde `prenda_pedido_tallas`
+-  UNISEX funciona como género real en tabla relacional
+-  Sistema es estable aunque:
   - Una talla tenga proceso y otra no
   - Las cantidades sean diferentes por talla
   - Múltiples géneros en una prenda
@@ -258,15 +258,15 @@ Todos los criterios cumplidos:
 
 ## NOTAS DE AUDITORÍA
 
-### Archivos Analizados: ✅ CORRECTO
+### Archivos Analizados:  CORRECTO
 
-- ✅ `RegistroOrdenQueryController.php` - Las lecturas de `cantidad_talla` son SOLO para logs
-- ✅ `ObtenerPedidoDetalleService.php` - Usa trait `GestionaTallasRelacional` correctamente
-- ✅ `receipt-manager.js` - Maneja estructura jerárquica correctamente
-- ✅ `PedidoProduccionRepository.php` - Tiene método `obtenerTallas()` que usa tabla relacional
-- ✅ `invoice-preview-live.js` - Procesa `{GENERO: {TALLA: CANTIDAD}}` correctamente
+-  `RegistroOrdenQueryController.php` - Las lecturas de `cantidad_talla` son SOLO para logs
+-  `ObtenerPedidoDetalleService.php` - Usa trait `GestionaTallasRelacional` correctamente
+-  `receipt-manager.js` - Maneja estructura jerárquica correctamente
+-  `PedidoProduccionRepository.php` - Tiene método `obtenerTallas()` que usa tabla relacional
+-  `invoice-preview-live.js` - Procesa `{GENERO: {TALLA: CANTIDAD}}` correctamente
 
-### Flujo Completo Verificado: ✅
+### Flujo Completo Verificado: 
 
 ```
 Frontend: cantidad_talla = {'DAMA': {'S': 10, 'M': 20}}

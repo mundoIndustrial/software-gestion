@@ -1963,7 +1963,7 @@ final class CotizacionController extends Controller
                         'tecnicas_totales' => count($tecnicasAgregadas)
                     ]);
                     
-                    // ✅ PROCESAR IMÁGENES DEL PASO 3 - Guardar archivos en disco
+                    //  PROCESAR IMÁGENES DEL PASO 3 - Guardar archivos en disco
                     // Las imágenes vienen en: logo[imagenes_paso3][tecnicaIndex][prendaIndex][imagenIndex]
                     
                     // Procesar FILES enviados por FormData - acceder directamente a logo.imagenes_paso3
@@ -2049,7 +2049,7 @@ final class CotizacionController extends Controller
                                                 // Guardar archivo en disco (public/storage)
                                                 $path = $archivo->store($rutaDirectorio, 'public');
                                                 
-                                                Log::info('✅ Archivo de imagen guardado en disco', [
+                                                Log::info(' Archivo de imagen guardado en disco', [
                                                     'path' => $path,
                                                     'ruta_completa' => $rutaCompleta
                                                 ]);
@@ -2062,7 +2062,7 @@ final class CotizacionController extends Controller
                                                     'orden' => $ordenFoto,
                                                 ]);
                                                 
-                                                Log::info('✅ Imagen del PASO 3 guardada en BD', [
+                                                Log::info(' Imagen del PASO 3 guardada en BD', [
                                                     'tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
                                                     'ruta' => $path,
                                                     'orden' => $ordenFoto
@@ -2099,7 +2099,7 @@ final class CotizacionController extends Controller
                             }
                         }
                         
-                        Log::info('✅ Procesamiento de imágenes PASO 3 completado', [
+                        Log::info(' Procesamiento de imágenes PASO 3 completado', [
                             'total_procesadas' => count($imagenesP3Archivos)
                         ]);
                     } else {
@@ -2409,7 +2409,7 @@ final class CotizacionController extends Controller
                         }
                     }
                     
-                    // ✅ PROCESAR IMÁGENES DEL PASO 4 (Reflectivo) - Guardar archivos en disco
+                    //  PROCESAR IMÁGENES DEL PASO 4 (Reflectivo) - Guardar archivos en disco
                     // Las imágenes vienen en: reflectivo[imagenes_paso4][prendaIndex][imagenIndex]
                     
                     // 🔍 DEBUG: Check all files in request
@@ -2470,10 +2470,10 @@ final class CotizacionController extends Controller
                                                     'orden' => $ordenFoto,
                                                 ]);
                                                 
-                                                // ✅ LOG DETALLADO - Solo cuando se guarda correctamente
+                                                //  LOG DETALLADO - Solo cuando se guarda correctamente
                                                 Log::info('
 ╔════════════════════════════════════════════════════════════════╗
-║     ✅ IMAGEN REFLECTIVO GUARDADA CORRECTAMENTE - PASO 4       ║
+║      IMAGEN REFLECTIVO GUARDADA CORRECTAMENTE - PASO 4       ║
 ╠════════════════════════════════════════════════════════════════╣
 ║ Cotización ID: ' . $cotizacionId . '
 ║ Prenda: ' . $nombrePrendaBase . '
@@ -3355,7 +3355,7 @@ final class CotizacionController extends Controller
             if ($valor instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
                 // Es un archivo, agregarlo al resultado
                 $resultado[$nuevaLlave] = $valor;
-                Log::info('✅ Archivo encontrado durante flateo', [
+                Log::info(' Archivo encontrado durante flateo', [
                     'key' => $nuevaLlave,
                     'size' => $valor->getSize()
                 ]);

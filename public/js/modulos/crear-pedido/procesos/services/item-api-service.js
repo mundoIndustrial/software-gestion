@@ -113,10 +113,27 @@ class ItemAPIService {
      */
     async validarPedido(pedidoData) {
         try {
+            // Transformar estructura para match backend expectations
+            const pedidoParaValidar = {
+                cliente: pedidoData.cliente || '',
+                asesora: pedidoData.asesora || '',
+                forma_de_pago: pedidoData.forma_de_pago || '',
+                items: pedidoData.items || []
+            };
+            
+            console.log('[item-api-service] 🔍 Enviando a validar:', {
+                cliente: pedidoParaValidar.cliente,
+                cantidadItems: pedidoParaValidar.items.length,
+                items: pedidoParaValidar.items.map((i, idx) => ({
+                    index: idx,
+                    nombre: i.nombre_prenda,
+                    tieneCantidadTalla: !!i.cantidad_talla
+                }))
+            });
 
             return await this.realizarPeticion(`${this.baseUrl}/validar`, {
                 method: 'POST',
-                body: JSON.stringify(pedidoData)
+                body: JSON.stringify(pedidoParaValidar)
             });
         } catch (error) {
 
@@ -149,7 +166,35 @@ class ItemAPIService {
                     
                     // Agregar cantidad_talla como JSON
                     if (item.cantidad_talla) {
-                        formData.append(`items[${itemIndex}][cantidad_talla]`, JSON.stringify(item.cantidad_talla));
+                        // Convertir formato relacional { DAMA: { S: 20 } } a array
+                        let tallasArray = [];
+                        if (typeof item.cantidad_talla === 'object' && !Array.isArray(item.cantidad_talla)) {
+                            Object.entries(item.cantidad_talla).forEach(([genero, tallasObj]) => {
+                                if (typeof tallasObj === 'object') {
+                                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                                        if (cantidad > 0) {
+                                            tallasArray.push({
+                                                genero: genero,
+                                                talla: talla,
+                                                cantidad: cantidad
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        } else if (Array.isArray(item.cantidad_talla)) {
+                            tallasArray = item.cantidad_talla;
+                        }
+                        
+                        if (tallasArray.length > 0) {
+                            // Enviar cada talla individualmente (no usar JSON.stringify con FormData)
+                            tallasArray.forEach((talla, tallaIdx) => {
+                                formData.append(`items[${itemIndex}][cantidad_talla][${tallaIdx}][genero]`, talla.genero);
+                                formData.append(`items[${itemIndex}][cantidad_talla][${tallaIdx}][talla]`, talla.talla);
+                                formData.append(`items[${itemIndex}][cantidad_talla][${tallaIdx}][cantidad]`, talla.cantidad);
+                            });
+                            console.log(`[item-api-service] 📦 Tallas enviadas para item ${itemIndex}:`, tallasArray);
+                        }
                     }
                     
                     // Agregar variaciones como JSON

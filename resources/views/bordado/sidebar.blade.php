@@ -68,10 +68,10 @@
         }
 
         console.log('📍 [TOGGLESUBMENU] Estado actual:', submenu.style.display);
-        console.log('🎯 [TOGGLESUBMENU] Arrow encontrado:', !!arrow);
+        console.log('[TOGGLESUBMENU] Arrow encontrado:', !!arrow);
         
         if (submenu.style.display === 'none') {
-            console.log('✅ [TOGGLESUBMENU] Abriendo submenú:', submenuId);
+            console.log(' [TOGGLESUBMENU] Abriendo submenú:', submenuId);
             submenu.style.display = 'block';
             if (arrow) {
                 arrow.style.transform = 'rotate(180deg)';
@@ -91,8 +91,8 @@
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
 
-    console.log('🎯 [SIDEBAR-INIT] SidebarToggle encontrado:', !!sidebarToggle);
-    console.log('🎯 [SIDEBAR-INIT] Sidebar encontrado:', !!sidebar);
+    console.log('[SIDEBAR-INIT] SidebarToggle encontrado:', !!sidebarToggle);
+    console.log('[SIDEBAR-INIT] Sidebar encontrado:', !!sidebar);
 
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
@@ -100,7 +100,7 @@
             console.log('🔄 [SIDEBAR-TOGGLE] Toggling sidebar. Estado anterior:', isCollapsed);
             sidebar.classList.toggle('collapsed');
             const newState = sidebar.classList.contains('collapsed');
-            console.log('✅ [SIDEBAR-TOGGLE] Nuevo estado collapsed:', newState);
+            console.log(' [SIDEBAR-TOGGLE] Nuevo estado collapsed:', newState);
             
             // Guardar estado
             localStorage.setItem('bordado-sidebar-collapsed', newState);
@@ -113,7 +113,7 @@
         
         if (savedState === 'true') {
             sidebar.classList.add('collapsed');
-            console.log('✅ [SIDEBAR-INIT] Sidebar restaurado como collapsed');
+            console.log(' [SIDEBAR-INIT] Sidebar restaurado como collapsed');
         }
     } else {
         console.error('❌ [SIDEBAR-INIT] No se pudo inicializar sidebar. sidebarToggle:', !!sidebarToggle, 'sidebar:', !!sidebar);
@@ -121,7 +121,7 @@
 
     // Auto-expandir submenú si hay una ruta activa
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('📋 [DOM-LOADED] Verificando rutas activas...');
+        console.log(' [DOM-LOADED] Verificando rutas activas...');
         
         // Buscar por la nueva estructura
         const activeSubmenuItems = document.querySelectorAll('.nav-submenu .nav-submenu-item.active');
@@ -131,20 +131,20 @@
             console.log(`📍 [DOM-LOADED] Item activo ${index}:`, link.textContent.trim());
             const submenu = link.closest('.nav-submenu');
             if (submenu) {
-                console.log(`✅ [DOM-LOADED] Submenú encontrado para item ${index}`);
+                console.log(` [DOM-LOADED] Submenú encontrado para item ${index}`);
                 submenu.style.display = 'block';
-                console.log(`✅ [DOM-LOADED] Abriendo submenú`);
+                console.log(` [DOM-LOADED] Abriendo submenú`);
                 
                 // Buscar el button del toggle
                 const button = submenu.previousElementSibling;
-                console.log(`🎯 [DOM-LOADED] Button encontrado:`, !!button);
+                console.log(`[DOM-LOADED] Button encontrado:`, !!button);
                 
                 if (button) {
                     const arrow = button.querySelector('.submenu-arrow');
-                    console.log(`🎯 [DOM-LOADED] Arrow en button:`, !!arrow);
+                    console.log(`[DOM-LOADED] Arrow en button:`, !!arrow);
                     if (arrow) {
                         arrow.style.transform = 'rotate(180deg)';
-                        console.log(`✅ [DOM-LOADED] Arrow rotado a 180deg`);
+                        console.log(` [DOM-LOADED] Arrow rotado a 180deg`);
                     }
                 }
             }
@@ -203,7 +203,7 @@
             console.log('  - font-size:', submenuItemStyles.fontSize);
         }
 
-        console.log('✅ [DOM-LOADED] Verificación de estilos completada');
+        console.log(' [DOM-LOADED] Verificación de estilos completada');
     });
 
     // Monitoreo de cambios en clases
@@ -224,5 +224,5 @@
         });
     }
 
-    console.log('✅ [BORDADO-SIDEBAR] Sidebar script cargado exitosamente');
+    console.log(' [BORDADO-SIDEBAR] Sidebar script cargado exitosamente');
 </script>

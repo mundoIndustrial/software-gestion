@@ -1,27 +1,27 @@
-# 🎯 MIGRACIÓN: ESTADO Y PRÓXIMOS PASOS
+# MIGRACIÓN: ESTADO Y PRÓXIMOS PASOS
 
-## 📋 DECISIÓN TOMADA
+##  DECISIÓN TOMADA
 
-✅ **SE MIGRA TODO DE `PedidoProduccion/` A `Pedidos/`**
+ **SE MIGRA TODO DE `PedidoProduccion/` A `Pedidos/`**
 
 **Razón:** `Pedidos/` cumple MEJOR con patrones DDD:
-- ✅ Extiende AggregateRoot
-- ✅ Usa ValueObjects (NumeroPedido, Estado)
-- ✅ Mejor encapsulación
-- ✅ Estructura más clara
+-  Extiende AggregateRoot
+-  Usa ValueObjects (NumeroPedido, Estado)
+-  Mejor encapsulación
+-  Estructura más clara
 
 ---
 
 ## 📍 ESTADO ACTUAL
 
 ### Lo que ya existe en `Pedidos/`:
-- ✅ PedidoAggregate.php (bien implementado)
-- ✅ PrendaPedido.php (Entity)
-- ✅ PrendaFotoService.php (Domain Service)
-- ✅ ValueObjects (Estado, NumeroPedido)
-- ✅ Events (PedidoActualizado, PedidoCreado, PedidoEliminado)
-- ✅ Exceptions (EstadoPedidoInvalido, PedidoNoEncontrado)
-- ✅ Repositories (PedidoRepository.php)
+-  PedidoAggregate.php (bien implementado)
+-  PrendaPedido.php (Entity)
+-  PrendaFotoService.php (Domain Service)
+-  ValueObjects (Estado, NumeroPedido)
+-  Events (PedidoActualizado, PedidoCreado, PedidoEliminado)
+-  Exceptions (EstadoPedidoInvalido, PedidoNoEncontrado)
+-  Repositories (PedidoRepository.php)
 
 ### Lo que está en `PedidoProduccion/` y necesita migrar:
 - Commands (5 archivos)
@@ -37,7 +37,7 @@
 
 ---
 
-## 🚀 PLAN POR FASES
+##  PLAN POR FASES
 
 Documento completo en: [PLAN_MIGRACION_FASES_PEDIDOPRODUCCION_A_PEDIDOS.md](PLAN_MIGRACION_FASES_PEDIDOPRODUCCION_A_PEDIDOS.md)
 
@@ -94,7 +94,7 @@ php artisan test tests/
 
 ---
 
-## 📋 CHECKLIST PRE-MIGRACIÓN
+##  CHECKLIST PRE-MIGRACIÓN
 
 Antes de comenzar:
 
@@ -114,9 +114,9 @@ pwsh scripts/migracion-help.ps1
 ```
 
 Este script:
-- ✅ Crea la estructura de directorios
-- ✅ Busca referencias a PedidoProduccion en el código
-- ✅ Verifica que estés listo para migrar
+-  Crea la estructura de directorios
+-  Busca referencias a PedidoProduccion en el código
+-  Verifica que estés listo para migrar
 
 ---
 
@@ -128,7 +128,7 @@ Este script:
 
 ---
 
-## 🎯 PRÓXIMO PASO
+## PRÓXIMO PASO
 
 **¿Quieres que comience la FASE 1?**
 
@@ -143,12 +143,12 @@ Confirma y haré:
 
 **Orden de ejecución sugerido:**
 
-1. ✅ FASE 1: Crear estructura (YA)
+1.  FASE 1: Crear estructura (YA)
 2. ⏳ FASE 2: Aggregates (después confirma)
 3. ⏳ FASE 3-8: El resto
 4. ⚠️ FASE 9: Controllers (después ejecutar tests)
-5. ✅ FASE 10: Tests
-6. ✅ FASE 11: Validación final
-7. ✅ FASE 12: Cleanup
+5.  FASE 10: Tests
+6.  FASE 11: Validación final
+7.  FASE 12: Cleanup
 
 **Hacer commit después de cada fase para poder rollback si algo falla.**

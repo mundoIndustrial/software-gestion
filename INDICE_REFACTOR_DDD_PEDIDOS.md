@@ -1,12 +1,12 @@
 # 📚 ÍNDICE - REFACTOR DDD PEDIDOS (Fase 1 Completada)
 
 **Última actualización:** 2024
-**Estado:** FASE 1 COMPLETADA ✅
+**Estado:** FASE 1 COMPLETADA 
 **Responsable:** Team DDD Refactor
 
 ---
 
-## 🎯 PROPÓSITO
+## PROPÓSITO
 
 Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 - Consolidación de dos sistemas en uno
@@ -23,7 +23,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 **LEER PRIMERO - Estado ejecutivo de Fase 1**
 
 **Contenido:**
-- ✅ Qué se logró en Fase 1
+-  Qué se logró en Fase 1
 - 📊 Métricas y números
 - 📈 Impacto medible
 - ⏳ Próximas fases (Fase 2, 3, 4)
@@ -34,12 +34,12 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 
 ---
 
-### 2. 📋 [ESTADO_REFACTOR_RESUMEN.md](./ESTADO_REFACTOR_RESUMEN.md)
+### 2.  [ESTADO_REFACTOR_RESUMEN.md](./ESTADO_REFACTOR_RESUMEN.md)
 
 **Estado técnico actual y próximos pasos**
 
 **Contenido:**
-- 🎯 Qué se consiguió en Fase 1
+- Qué se consiguió en Fase 1
 - 📁 Estructura de código actual
 - 📊 Flujo de negocio implementado
 - Próximas tareas por orden de prioridad
@@ -59,7 +59,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 - 🔄 Arquitectura ANTES vs DESPUÉS
 - 📊 Cuadro de migración de endpoints
 - 🔧 Código migrado al sistema DDD
-- 📋 Checklist Fase 1
+-  Checklist Fase 1
 - ⏳ Pendiente: Fase 2, 3, 4
 - Guía rápida para desarrolladores
 
@@ -73,7 +73,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 **Documentación de endpoints API DDD**
 
 **Contenido:**
-- 📋 Listado completo de endpoints
+-  Listado completo de endpoints
 - 🔍 Cada endpoint documentado con:
   - Método HTTP
   - Path
@@ -83,7 +83,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
   - Ejemplos curl
 - 🔐 Autenticación requerida
 - 📊 Estados y transiciones
-- ✅ Validaciones
+-  Validaciones
 
 **Audiencia:** Desarrolladores backend/frontend
 **Duración:** 30 minutos
@@ -96,13 +96,13 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 
 **Contenido:**
 - 🔄 Migración por operación (8 operaciones)
-- ✅ Para CADA operación:
+-  Para CADA operación:
   - Código ANTES (legacy)
   - Código DESPUÉS (DDD)
   - Cambios clave
 - ⚠️ Manejo de errores
 - 📍 Endpoints de referencia rápida
-- 📋 Checklist de migración
+-  Checklist de migración
 
 **Audiencia:** Desarrolladores frontend
 **Duración:** 30 minutos
@@ -116,7 +116,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 
 **Contenido:**
 - 🤔 Comparación de endpoints antiguos vs nuevos
-- ✅ Recomendaciones por caso de uso
+-  Recomendaciones por caso de uso
 - 📌 Decisiones tomadas y justificación
 - 🔗 Referencias cruzadas
 
@@ -132,8 +132,8 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 **Contenido:**
 - 🔎 Comandos de búsqueda
 - 📂 Archivos a revisar (templates, JS, controllers)
-- 📋 Template de checklist por archivo
-- 🎯 Plan de acción para Fase 2
+-  Template de checklist por archivo
+- Plan de acción para Fase 2
 - 📊 Matriz de seguimiento
 
 **Audiencia:** Desarrolladores (para ejecutar Fase 2)
@@ -146,7 +146,7 @@ Documentación completa del **refactor DDD del módulo Pedidos**, incluyendo:
 ```
 SISTEMA DE PEDIDOS REFACTOR DDD
 │
-├─ FASE 1: CONSOLIDACIÓN ✅ COMPLETADA
+├─ FASE 1: CONSOLIDACIÓN  COMPLETADA
 │  ├─ Eliminada duplicidad de código (488 líneas)
 │  ├─ Consolidadas rutas (4 duplicadas)
 │  ├─ Creados stubs deprecados
@@ -171,7 +171,7 @@ SISTEMA DE PEDIDOS REFACTOR DDD
 
 ---
 
-## 🎯 GUÍAS RÁPIDAS POR ROLE
+## GUÍAS RÁPIDAS POR ROLE
 
 ### 👨‍💼 Para PM/Stakeholder:
 1. Leer: RESUMEN_FINAL_FASE1.md
@@ -202,11 +202,11 @@ SISTEMA DE PEDIDOS REFACTOR DDD
 ## 📊 ESTADO GENERAL
 
 ```
-FASE 1 (Consolidación) ........... ✅ 100% COMPLETADA
-├─ Código eliminado ............ ✅ 488 líneas
-├─ Rutas consolidadas .......... ✅ 4 rutas
-├─ Tests validados ............ ✅ 16/16 pasando
-└─ Documentación ............... ✅ 5 guías creadas
+FASE 1 (Consolidación) ...........  100% COMPLETADA
+├─ Código eliminado ............  488 líneas
+├─ Rutas consolidadas ..........  4 rutas
+├─ Tests validados ............  16/16 pasando
+└─ Documentación ...............  5 guías creadas
 
 FASE 2 (Frontend) ................ ⏳ 4-6 HORAS
 ├─ Búsqueda de archivos ........ ⏳
@@ -249,7 +249,7 @@ Valida: Todo funciona sin errores 410
 **Paso 5:** Commit y PR
 ```bash
 Tiempo: 15 minutos
-Resultado: Fase 2 completada ✅
+Resultado: Fase 2 completada 
 ```
 
 ---
@@ -320,7 +320,7 @@ Tests:
 
 ---
 
-## ✅ VALIDACIÓN PREVIA
+##  VALIDACIÓN PREVIA
 
 Antes de hacer cambios, verifica:
 
@@ -330,7 +330,7 @@ Antes de hacer cambios, verifica:
 - [x] Rutas consolidadas
 - [x] API DDD funcional
 
-**Status:** ✅ TODO LISTO PARA FASE 2
+**Status:**  TODO LISTO PARA FASE 2
 
 ---
 
@@ -356,4 +356,4 @@ Si tienes dudas:
 
 **Última actualización:** 2024
 **Responsable:** Team DDD Refactor
-**Estado:** FASE 1 COMPLETADA ✅ FASE 2 LISTA ⏳
+**Estado:** FASE 1 COMPLETADA  FASE 2 LISTA ⏳

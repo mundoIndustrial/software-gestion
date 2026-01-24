@@ -13,27 +13,36 @@ class PrendaCardService {
      * @returns {string} HTML de tarjeta
      */
     static generar(prendaRaw, indice) {
+        try {
+            console.log('[PrendaCardService.generar] � INICIA GENERACIÓN DE TARJETA');
+            console.log('[PrendaCardService.generar] �📦 ENTRADA - prendaRaw:', prendaRaw);
 
+            // 1. Transformar datos
+            console.log('[PrendaCardService.generar] 🔍 Verificando PrendaDataTransformer:', !!PrendaDataTransformer);
+            const prenda = PrendaDataTransformer.transformar(prendaRaw);
+            console.log('[PrendaCardService.generar]  DESPUÉS TRANSFORMAR - prenda:', prenda);
+            if (!prenda) {
+                console.log('[PrendaCardService.generar] ❌ TRANSFORMACIÓN RETORNÓ NULL');
+                return '';
+            }
 
-        // 1. Transformar datos
-        const prenda = PrendaDataTransformer.transformar(prendaRaw);
-        if (!prenda) {
-
-            return '';
-        }
-
-        // 2. Obtener elementos visuales
-        const fotoPrincipal = PrendaDataTransformer.obtenerFotoPrincipal(prenda);
-        const fotoTela = PrendaDataTransformer.obtenerFotoTela(prenda);
+            // 2. Obtener elementos visuales
+            const fotoPrincipal = PrendaDataTransformer.obtenerFotoPrincipal(prenda);
+            const fotoTela = PrendaDataTransformer.obtenerFotoTela(prenda);
         const infoTela = PrendaDataTransformer.obtenerInfoTela(prenda);
 
         // 3. Construir secciones expandibles
         const variacionesHTML = VariacionesBuilder.construir(prenda, indice);
-        const tallasHTML = TallasBuilder.construir(prenda, indice);
-        const procesosHTML = ProcesosBuilder.construir(prenda, indice);
+            const tallasHTML = TallasBuilder.construir(prenda, indice);
+            const procesosHTML = ProcesosBuilder.construir(prenda, indice);
 
-        // 4. Generar HTML completo
-        return this._generarHTMLTarjeta(prenda, indice, fotoPrincipal, fotoTela, infoTela, variacionesHTML, tallasHTML, procesosHTML);
+            // 4. Generar HTML completo
+            return this._generarHTMLTarjeta(prenda, indice, fotoPrincipal, fotoTela, infoTela, variacionesHTML, tallasHTML, procesosHTML);
+        } catch (error) {
+            console.error('[PrendaCardService.generar] ❌ ERROR:', error);
+            console.error('[PrendaCardService.generar] Stack:', error.stack);
+            return `<div class="error">Error: ${error.message}</div>`;
+        }
     }
 
     /**
@@ -77,7 +86,7 @@ class PrendaCardService {
             <div class="prenda-card-header">
                 <div class="prenda-card-title-section">
                     <span class="prenda-label">Prenda ${indice + 1}</span>
-                    <h3 class="prenda-name">${prenda.nombre_producto || 'Sin nombre'}</h3>
+                    <h3 class="prenda-name">${prenda.nombre_prenda || prenda.nombre_producto || 'Sin nombre'}</h3>
                 </div>
                 
                 <div class="prenda-menu-contextual">

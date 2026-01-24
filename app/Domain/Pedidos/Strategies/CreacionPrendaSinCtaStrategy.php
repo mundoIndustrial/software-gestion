@@ -171,7 +171,20 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
                 'fecha_inicio' => now(),
                 'fecha_fin' => now(),
             ]);
+            // ===== PASO 7: GUARDAR PROCESOS (REFLECTIVO, BORDADO, ETC) =====
+            if (!empty($prendaData['procesos'])) {
+                $this->guardarProcesos($prendaPedido->id, $numeroPedido, $prendaData['procesos']);
+            }
 
+            // ===== PASO 8: GUARDAR IMÁGENES DE PRENDA =====
+            if (!empty($prendaData['imagenes'])) {
+                $this->guardarImagenesPrenda($prendaPedido->id, $prendaData['imagenes']);
+            }
+
+            // ===== PASO 9: GUARDAR IMÁGENES DE TELAS =====
+            if (!empty($prendaData['telas'])) {
+                $this->guardarImagenesTelas($prendaPedido->id, $prendaData['telas']);
+            }
             DB::commit();
 
             Log::info(' [CreacionPrendaSinCtaStrategy] Prenda completamente procesada', [
@@ -546,5 +559,161 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
 
         return [];
     }
+
+    /**
+     * Guardar procesos de la prenda (reflectivo, bordado, estampado, etc)
+     * 
+     * @param int $prendaPedidoId
+     * @param string $numeroPedido
+     * @param array $procesos Estructura: {reflectivo: {tipo, datos}, bordado: {...}}
+     */
+    private function guardarProcesos(int $prendaPedidoId, string $numeroPedido, array $procesos): void
+    {
+        foreach ($procesos as $tipoProceso => $procesoData) {
+            // Verificar que el proceso tenga datos válidos
+            if (empty($procesoData) || !isset($procesoData['datos'])) {
+                continue;
+            }
+
+            $datos = $procesoData['datos'];
+
+            // Crear registro en pedidos_procesos_prenda_detalle
+            $proceso = \App\Models\PedidosProcesosPrendaDetalle::create([
+                'numero_pedido' => $numeroPedido,
+                'prenda_pedido_id' => $prendaPedidoId,
+                'proceso' => ucfirst($tipoProceso),
+                'estado_proceso' => 'Pendiente',
+                'fecha_inicio' => null,
+                'fecha_fin' => null,
+                'ubicaciones' => isset($datos['ubicaciones']) ? json_encode($datos['ubicaciones']) : null,
+                'observaciones' => $datos['observaciones'] ?? null,
+                'cantidad_talla' => isset($datos['tallas']) ? json_encode($datos['tallas']) : null,
+            ]);
+
+            Log::info(' [guardarProcesos] Proceso guardado', [
+                'proceso_id' => $proceso->id,
+                'tipo' => $tipoProceso,
+                'prenda_id' => $prendaPedidoId,
+            ]);
+
+            // Guardar imágenes del proceso si las hay
+            if (!empty($datos['imagenes'])) {
+                $this->guardarImagenesProceso($proceso->id, $datos['imagenes']);
+            }
+        }
+    }
+
+    /**
+     * Guardar imágenes de la prenda principal
+     * 
+     * @param int $prendaPedidoId
+     * @param array $imagenes Array de rutas o archivos
+     */
+    private function guardarImagenesPrenda(int $prendaPedidoId, array $imagenes): void
+    {
+        foreach ($imagenes as $imagen) {
+            // Si es un array anidado (ej: [[]], [[], []])
+            if (is_array($imagen)) {
+                if (!empty($imagen)) {
+                    $this->guardarImagenesPrenda($prendaPedidoId, $imagen);
+                }
+                continue;
+            }
+
+            // Si es una ruta válida
+            if (is_string($imagen) && !empty($imagen)) {
+                \App\Models\PrendaFotoPedido::create([
+                    'prenda_pedido_id' => $prendaPedidoId,
+                    'ruta' => $imagen,
+                ]);
+
+                Log::debug(' [guardarImagenesPrenda] Imagen guardada', [
+                    'prenda_id' => $prendaPedidoId,
+                    'ruta' => $imagen,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Guardar imágenes de telas
+     * 
+     * @param int $prendaPedidoId
+     * @param array $telas Array de telas con imágenes
+     */
+    private function guardarImagenesTelas(int $prendaPedidoId, array $telas): void
+    {
+        foreach ($telas as $tela) {
+            if (empty($tela['imagenes'])) {
+                continue;
+            }
+
+            // Obtener el registro prenda_pedido_colores_telas para esta tela
+            $colorTela = \App\Models\PrendaPedidoColorTela::where('prenda_pedido_id', $prendaPedidoId)
+                ->latest()
+                ->first();
+
+            if (!$colorTela) {
+                continue;
+            }
+
+            foreach ($tela['imagenes'] as $imagen) {
+                // Si es un array anidado
+                if (is_array($imagen)) {
+                    if (!empty($imagen)) {
+                        $this->guardarImagenesTelas($prendaPedidoId, [$tela]);
+                    }
+                    continue;
+                }
+
+                // Si es una ruta válida
+                if (is_string($imagen) && !empty($imagen)) {
+                    \App\Models\PrendaFotoTelaPedido::create([
+                        'prenda_pedido_colores_telas_id' => $colorTela->id,
+                        'ruta' => $imagen,
+                    ]);
+
+                    Log::debug(' [guardarImagenesTelas] Imagen de tela guardada', [
+                        'prenda_id' => $prendaPedidoId,
+                        'color_tela_id' => $colorTela->id,
+                        'ruta' => $imagen,
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Guardar imágenes de un proceso
+     * 
+     * @param int $procesoId
+     * @param array $imagenes
+     */
+    private function guardarImagenesProceso(int $procesoId, array $imagenes): void
+    {
+        foreach ($imagenes as $imagen) {
+            // Si es un array anidado
+            if (is_array($imagen)) {
+                if (!empty($imagen)) {
+                    $this->guardarImagenesProceso($procesoId, $imagen);
+                }
+                continue;
+            }
+
+            // Si es una ruta válida
+            if (is_string($imagen) && !empty($imagen)) {
+                \App\Models\ProcesosPrendaImagen::create([
+                    'proceso_prenda_detalle_id' => $procesoId,
+                    'ruta' => $imagen,
+                ]);
+
+                Log::debug(' [guardarImagenesProceso] Imagen de proceso guardada', [
+                    'proceso_id' => $procesoId,
+                    'ruta' => $imagen,
+                ]);
+            }
+        }
+    }
 }
+
 

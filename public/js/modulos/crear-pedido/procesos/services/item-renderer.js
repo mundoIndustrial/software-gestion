@@ -374,17 +374,76 @@ class ItemRenderer {
         const itemDiv = document.createElement('div');
         itemDiv.style.cssText = estilos.itemDiv || this.getEstiloItemDiv();
         
-        const nombre = item.prenda?.nombre || item.nombre || 'Prenda';
-        const cantidadTotal = item.cantidad || (item.tallas?.reduce((sum, t) => sum + (t.cantidad || 0), 0) || 0);
-        const origen = item.origen === 'bodega' ? ' BODEGA' : '🏭 CONFECCIÓN';
+        const nombre = item.nombre_prenda || item.prenda?.nombre || item.nombre || 'Prenda';
+        const cantidadTotal = item.cantidad || (item.cantidad_talla ? Object.values(item.cantidad_talla).reduce((sum, cant) => sum + (cant || 0), 0) : 0) || (item.tallas?.reduce((sum, t) => sum + (t.cantidad || 0), 0) || 0);
+        const origen = item.origen === 'bodega' ? '📦 BODEGA' : '🏭 CONFECCIÓN';
         
+        // Helper para validar y renderizar procesos
+        console.log('[item-renderer] 🔍 Procesando procesos para item:', {
+            nombre: nombre,
+            tieneProcesos: !!item.procesos,
+            tipoProcesos: typeof item.procesos,
+            esArray: Array.isArray(item.procesos),
+            procesos: item.procesos
+        });
+        
+        let procesosHTML = '';
+        if (item.procesos) {
+            if (Array.isArray(item.procesos) && item.procesos.length > 0) {
+                console.log('[item-renderer] 📋 Procesos es array:', item.procesos);
+                procesosHTML = `<span>Procesos: ${item.procesos.join(', ')}</span>`;
+            } else if (!Array.isArray(item.procesos) && typeof item.procesos === 'object') {
+                console.log('[item-renderer] 📦 Procesos es objeto, extrayendo keys...');
+                const todasLasKeys = Object.keys(item.procesos);
+                console.log('[item-renderer]   - Todas las keys:', todasLasKeys);
+                
+                const procesosArray = todasLasKeys.filter(key => {
+                    const proceso = item.procesos[key];
+                    const esValido = proceso && (proceso.datos || proceso.tipo);
+                    console.log(`[item-renderer]   - Key "${key}":`, {
+                        proceso: proceso,
+                        tieneDatos: !!(proceso && proceso.datos),
+                        tieneTipo: !!(proceso && proceso.tipo),
+                        esValido: esValido
+                    });
+                    return esValido;
+                });
+                
+                console.log('[item-renderer]   - Procesos válidos filtrados:', procesosArray);
+                
+                if (procesosArray && procesosArray.length > 0) {
+                    console.log('[item-renderer]   - Mapeando nombres...');
+                    const nombresProcesos = procesosArray.map(p => {
+                        const nombre = p.charAt(0).toUpperCase() + p.slice(1);
+                        console.log(`[item-renderer]     - "${p}" -> "${nombre}"`);
+                        return nombre;
+                    });
+                    console.log('[item-renderer]   - Array de nombres:', nombresProcesos);
+                    console.log('[item-renderer]   - Tipo de nombresProcesos:', typeof nombresProcesos, 'esArray:', Array.isArray(nombresProcesos));
+                    
+                    try {
+                        procesosHTML = `<span>Procesos: ${nombresProcesos.join(', ')}</span>`;
+                        console.log('[item-renderer]   ✅ HTML generado:', procesosHTML);
+                    } catch (joinError) {
+                        console.error('[item-renderer] ❌ ERROR EN JOIN:', joinError);
+                        console.error('[item-renderer] ❌ nombresProcesos era:', nombresProcesos);
+                        console.error('[item-renderer] ❌ Stack:', joinError.stack);
+                        // Fallback
+                        procesosHTML = `<span>Procesos: ${procesosArray.join(', ')}</span>`;
+                    }
+                }
+            }
+        }
+        
+        console.log('[item-renderer] 📝 procesosHTML final:', procesosHTML);
+
         itemDiv.innerHTML = `
             <div style="${estilos.itemTitulo || this.getEstiloItemTitulo()}">
                 <strong>#${idx + 1} - ${nombre}</strong>
             </div>
             <div style="${estilos.itemMetadata || this.getEstiloItemMetadata()}">
                 <span>${origen}</span>
-                ${item.procesos?.length > 0 ? `<span>Procesos: ${item.procesos.join(', ')}</span>` : ''}
+                ${procesosHTML}
             </div>
             <div style="margin-top: 10px; padding: 10px; background-color: #f5f5f5; border-radius: 4px;">
                 <strong>Cantidad total: ${cantidadTotal} unidades</strong>

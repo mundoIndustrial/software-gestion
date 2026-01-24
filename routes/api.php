@@ -234,10 +234,10 @@ Route::prefix('operario')->name('operario.')->middleware([])->group(function () 
  * API Routes for Personal (Gestión de Roles)
  */
 Route::prefix('personal')->name('personal.')->middleware(['api'])->group(function () {
-    Route::get('list', [\App\Http\Controllers\API\PersonalController::class, 'list'])
+    Route::get('list', [\App\Http\Controllers\Api_temp\PersonalController::class, 'list'])
         ->name('list');
     
-    Route::put('{id}/rol', [\App\Http\Controllers\API\PersonalController::class, 'updateRol'])
+    Route::put('{id}/rol', [\App\Http\Controllers\Api_temp\PersonalController::class, 'updateRol'])
         ->name('update-rol');
 });
 
@@ -245,16 +245,16 @@ Route::prefix('personal')->name('personal.')->middleware(['api'])->group(functio
  * API Routes for Horarios (Gestión de Horarios por Roles)
  */
 Route::prefix('horarios')->name('horarios.')->middleware(['api'])->group(function () {
-    Route::get('list', [\App\Http\Controllers\API\HorarioController::class, 'list'])
+    Route::get('list', [\App\Http\Controllers\Api_temp\HorarioController::class, 'list'])
         ->name('list');
     
-    Route::get('roles-disponibles', [\App\Http\Controllers\API\HorarioController::class, 'rolesDisponibles'])
+    Route::get('roles-disponibles', [\App\Http\Controllers\Api_temp\HorarioController::class, 'rolesDisponibles'])
         ->name('roles-disponibles');
     
-    Route::put('{id}', [\App\Http\Controllers\API\HorarioController::class, 'update'])
+    Route::put('{id}', [\App\Http\Controllers\Api_temp\HorarioController::class, 'update'])
         ->name('update');
     
-    Route::post('/', [\App\Http\Controllers\API\HorarioController::class, 'store'])
+    Route::post('/', [\App\Http\Controllers\Api_temp\HorarioController::class, 'store'])
         ->name('store');
 });
 
@@ -263,23 +263,23 @@ Route::prefix('horarios')->name('horarios.')->middleware(['api'])->group(functio
  */
 Route::prefix('asistencias')->name('asistencias.')->middleware(['api'])->group(function () {
     // Obtener asistencias de un personal en un período
-    Route::post('obtener', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerAsistencias'])
+    Route::post('obtener', [\App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'obtenerAsistencias'])
         ->name('obtener');
     
     // Obtener asistencia de un día específico
-    Route::post('dia', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerAsistenciaDelDia'])
+    Route::post('dia', [\App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'obtenerAsistenciaDelDia'])
         ->name('dia');
     
     // Rellenar inteligentemente marcas faltantes
-    Route::post('rellenar-inteligente', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'rellenarInteligente'])
+    Route::post('rellenar-inteligente', [\App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'rellenarInteligente'])
         ->name('rellenar-inteligente');
     
     // Guardar cambios de asistencia
-    Route::post('guardar', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'guardarCambios'])
+    Route::post('guardar', [\App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'guardarCambios'])
         ->name('guardar');
     
     // Obtener resumen del mes
-    Route::post('mes', [\App\Http\Controllers\API\AsistenciaDetalladaController::class, 'obtenerMes'])
+    Route::post('mes', [\App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'obtenerMes'])
         ->name('mes');
 });
 
@@ -287,9 +287,9 @@ Route::prefix('asistencias')->name('asistencias.')->middleware(['api'])->group(f
  * Rutas para importación de artículos/EPP
  */
 Route::prefix('articulos')->group(function () {
-    Route::post('guardar', [\App\Http\Controllers\Api\ArticulosImportController::class, 'guardarArticulos']);
-    Route::get('/', [\App\Http\Controllers\Api\ArticulosImportController::class, 'listar']);
-    Route::get('{id}', [\App\Http\Controllers\Api\ArticulosImportController::class, 'obtener']);
+    Route::post('guardar', [\App\Http\Controllers\Api_temp\ArticulosImportController::class, 'guardarArticulos']);
+    Route::get('/', [\App\Http\Controllers\Api_temp\ArticulosImportController::class, 'listar']);
+    Route::get('{id}', [\App\Http\Controllers\Api_temp\ArticulosImportController::class, 'obtener']);
 });
 
 // Test endpoint para procesamiento de imágenes (sin autenticación por ahora)

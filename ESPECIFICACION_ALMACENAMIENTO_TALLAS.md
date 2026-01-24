@@ -194,7 +194,7 @@ private function reconstruirTallas(int $recordId, string $tableName, string $for
 'tallasCalabrero' => json_encode($caballero) // ← NO hacer esto
 ```
 
-✅ **SÍ usar tabla relacional normalizada**:
+ **SÍ usar tabla relacional normalizada**:
 ```php
 // CORRECTO: Un registro por talla
 DB::table('prenda_pedido_tallas')->insert([

@@ -120,7 +120,7 @@ async function procesarMangaInput(input) {
                 // Actualizar array global
                 tiposMangaDisponibles.push(result.data);
                 
-                console.log('✅ Tipo de manga creado:', result.data);
+                console.log(' Tipo de manga creado:', result.data);
             }
         }
     } catch (error) {

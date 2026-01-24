@@ -70,6 +70,7 @@ class ItemFormCollector {
                 origen: item.origen || 'bodega',
                 procesos: item.procesos || {},
                 tallas: item.tallas || [],
+                cantidad_talla: item.cantidad_talla || {}, // ⭐ AGREGAR cantidad_talla aquí
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
             };
@@ -171,6 +172,7 @@ class ItemFormCollector {
                     descripcion: prenda.descripcion || '',
                     genero: prenda.genero || [],
                     tallas: tallas,
+                    cantidad_talla: cantidadTalla,  // ⚠️ AÑADIDO: Incluir cantidad por talla
                     variaciones: variaciones,
                     origen: prenda.origen || 'bodega',
                     de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,

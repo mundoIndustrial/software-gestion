@@ -1,6 +1,6 @@
 # 📦 GUÍA DE INSTALACIÓN - CARTERA PEDIDOS
 
-## ✅ Paso a Paso de Implementación
+##  Paso a Paso de Implementación
 
 ### FASE 1: Preparación
 
@@ -410,7 +410,7 @@ php artisan tinker
 
 ---
 
-## 📋 Archivos de Referencia
+##  Archivos de Referencia
 
 | Archivo | Propósito |
 |---------|----------|
@@ -435,5 +435,5 @@ php artisan tinker
 ---
 
 **Fecha de creación:** 23 de Enero, 2024  
-**Estado:** ✅ Completado y listo para usar  
+**Estado:**  Completado y listo para usar  
 **Versión:** 1.0

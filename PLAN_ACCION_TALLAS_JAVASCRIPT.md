@@ -1,16 +1,16 @@
 # 📌 PLAN DE ACCIÓN: Mantener Conformidad de Tallas en JavaScript
 
-## 🎯 Objetivo
+## Objetivo
 Asegurar que la lógica de tallas permanezca limpia y relacional en futuras modificaciones.
 
 ---
 
-## ✅ Estado Actual (22 Enero 2026)
+##  Estado Actual (22 Enero 2026)
 
 ```
-invoice-preview-live.js: ✅ CONFORME
+invoice-preview-live.js:  CONFORME
 Otros archivos:         ⚠️ VARIABLES AUXILIARES (aceptables)
-Modelo de datos:        ✅ RELACIONAL EN TODOS LADOS
+Modelo de datos:         RELACIONAL EN TODOS LADOS
 ```
 
 ---
@@ -102,23 +102,23 @@ function extraerTallas(data) { ... }
 ### 🟢 VERDE: Patrones Correctos
 
 ```javascript
-// ✅ BIEN - Lectura segura
+//  BIEN - Lectura segura
 const tallas = prenda.tallas || {};
 
-// ✅ BIEN - Estructura relacional
+//  BIEN - Estructura relacional
 {DAMA: {S: 10, M: 20}, CABALLERO: {32: 15}}
 
-// ✅ BIEN - Cálculo correcto
+//  BIEN - Cálculo correcto
 Object.values(tallas).reduce((sum, genero) => 
     sum + Object.values(genero).reduce((s, c) => s + c, 0), 0)
 
-// ✅ BIEN - Envío relacional
+//  BIEN - Envío relacional
 JSON.stringify(prenda.tallas)
 ```
 
 ---
 
-## 📋 Procedimiento para Auditorías Futuras
+##  Procedimiento para Auditorías Futuras
 
 Si necesitas re-auditar en el futuro:
 
@@ -255,16 +255,16 @@ console.log(resultado); // { valido: true, errores: [] }
 Estos documentos deben actualizarse si hay cambios:
 
 ```
-✅ AUDITORIA_COMPLETA_JAVASCRIPT_TALLAS.md
+ AUDITORIA_COMPLETA_JAVASCRIPT_TALLAS.md
    → Actualizar si se encuentran nuevas referencias
    
-✅ GUIA_REFACTORIZACION_TALLAS_JAVASCRIPT.md
+ GUIA_REFACTORIZACION_TALLAS_JAVASCRIPT.md
    → Actualizar si se añaden nuevos patrones
    
-✅ INFORME_VISUAL_AUDITORIA_JAVASCRIPT.md
+ INFORME_VISUAL_AUDITORIA_JAVASCRIPT.md
    → Regenerar anualmente
    
-✅ Este documento (PLAN_ACCION_TALLAS_JAVASCRIPT.md)
+ Este documento (PLAN_ACCION_TALLAS_JAVASCRIPT.md)
    → Actualizar con lecciones aprendidas
 ```
 
@@ -287,7 +287,7 @@ PRÓXIMAS REVISIONES:
 
 ---
 
-## ✅ Signoff
+##  Signoff
 
 ```
 Documento: PLAN_ACCION_TALLAS_JAVASCRIPT.md

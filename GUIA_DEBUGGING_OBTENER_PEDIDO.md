@@ -143,7 +143,7 @@ cd C:\Users\Usuario\Documents\trabahiiiii\v10\v10\mundoindustrial
 php validate-bd-relations.php 2700
 ```
 
-**Resultado esperado:** Todos los ✅
+**Resultado esperado:** Todos los 
 
 **Si hay error:** Leer mensaje específico y buscar en tabla [Errores Comunes](#errores-comunes-y-soluciones)
 

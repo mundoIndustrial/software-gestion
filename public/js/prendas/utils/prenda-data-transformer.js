@@ -5,6 +5,8 @@
  * Patrón: Adapter + Factory
  */
 
+console.log('[DEBUG] 🔧 PrendaDataTransformer.js cargado correctamente');
+
 class PrendaDataTransformer {
     /**
      * Transformar datos de prenda a formato consistente
@@ -14,10 +16,42 @@ class PrendaDataTransformer {
     static transformar(prendaRaw) {
         if (!prendaRaw) return null;
 
+        // Convertir estructura relacional (cantidad_talla) a generosConTallas
+        let generosConTallas = prendaRaw.generosConTallas || {};
+        let cantidadesPorTalla = prendaRaw.cantidadesPorTalla || {};
+
+        // Si viene en formato relacional nuevo (cantidad_talla: { DAMA: {S: 20, M: 20} })
+        if (prendaRaw.cantidad_talla && typeof prendaRaw.cantidad_talla === 'object') {
+            const relacional = prendaRaw.cantidad_talla;
+            
+            console.log('[PrendaDataTransformer] 🔄 Transformando cantidad_talla:', relacional);
+            
+            // Construir generosConTallas y cantidadesPorTalla desde relacional
+            generosConTallas = {};
+            cantidadesPorTalla = {};
+            
+            Object.entries(relacional).forEach(([genero, tallasObj]) => {
+                if (typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
+                    generosConTallas[genero.toLowerCase()] = {
+                        tallas: Object.keys(tallasObj)
+                    };
+                    
+                    // Agregar cantidades
+                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                        cantidadesPorTalla[`${genero.toLowerCase()}-${talla}`] = cantidad;
+                    });
+                }
+            });
+            
+            console.log('[PrendaDataTransformer]  Resultado:');
+            console.log('[PrendaDataTransformer]   - generosConTallas:', generosConTallas);
+            console.log('[PrendaDataTransformer]   - cantidadesPorTalla:', cantidadesPorTalla);
+        }
+
         return {
             // Identidad
             id: prendaRaw.id || null,
-            nombre_producto: prendaRaw.nombre_producto || prendaRaw.nombre || '',
+            nombre_producto: prendaRaw.nombre_producto || prendaRaw.nombre_prenda || prendaRaw.nombre || '',
             descripcion: prendaRaw.descripcion || '',
             origen: prendaRaw.origen || 'bodega',
 
@@ -33,8 +67,8 @@ class PrendaDataTransformer {
 
             // Tallas
             tallas: prendaRaw.tallas || prendaRaw.tallas_estructura || {},
-            generosConTallas: prendaRaw.generosConTallas || {},
-            cantidadesPorTalla: prendaRaw.cantidadesPorTalla || {},
+            generosConTallas: generosConTallas,
+            cantidadesPorTalla: cantidadesPorTalla,
 
             // Variantes/Variaciones
             variantes: prendaRaw.variantes || {},

@@ -4,14 +4,14 @@
 
 Sistema web completo para **controlar entregas parciales** de prendas y EPP desde pedidos de producción.
 
-## 🎯 Características
+## Características
 
-✅ Visualiza pedidos listos para despacho  
-✅ Tabla interactiva con cálculo automático de pendientes  
-✅ Despacho en 3 fases parciales  
-✅ Separación clara entre prendas y EPP  
-✅ Impresión profesional con firmas  
-✅ Validaciones en tiempo real  
+ Visualiza pedidos listos para despacho  
+ Tabla interactiva con cálculo automático de pendientes  
+ Despacho en 3 fases parciales  
+ Separación clara entre prendas y EPP  
+ Impresión profesional con firmas  
+ Validaciones en tiempo real  
 
 ## 📍 Ubicaciones clave
 
@@ -23,7 +23,7 @@ Sistema web completo para **controlar entregas parciales** de prendas y EPP desd
 | **Documentación** | `MODULO_DESPACHO_DOCUMENTACION.md` |
 | **Modelos** | `app/Models/PedidoProduccion.php` (métodos helpers) |
 
-## 🚀 Cómo acceder
+##  Cómo acceder
 
 ```
 URL: http://tuapp.local/despacho
@@ -102,14 +102,14 @@ $epps = $pedido->getEppParaDespacho();
 }
 ```
 
-## ✅ Validaciones automáticas
+##  Validaciones automáticas
 
 - ❌ No permite números negativos
 - ❌ No permite exceder cantidad total
-- ✅ Calcula pendientes en tiempo real
-- ✅ Previene despacho parcial inválido
+-  Calcula pendientes en tiempo real
+-  Previene despacho parcial inválido
 
-## 📋 Tabla de despacho
+##  Tabla de despacho
 
 **Columnas:**
 - Descripción
@@ -209,4 +209,4 @@ Búscar: "Despacho prenda" o "Despacho EPP"
 ---
 
 **Última actualización:** 23 de enero de 2026  
-**Estado:** ✅ Producción lista
+**Estado:**  Producción lista

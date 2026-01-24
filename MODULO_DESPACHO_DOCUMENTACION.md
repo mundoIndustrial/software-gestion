@@ -1,6 +1,6 @@
 # 📦 MÓDULO DE DESPACHO - Documentación Completa
 
-## 📋 Índice
+##  Índice
 1. [Descripción General](#descripción-general)
 2. [Arquitectura](#arquitectura)
 3. [Modelos Eloquent](#modelos-eloquent)
@@ -13,7 +13,7 @@
 
 ---
 
-## 🎯 Descripción General
+## Descripción General
 
 El **Módulo de Despacho** es una solución completa para el control de entregas parciales de:
 
@@ -21,13 +21,13 @@ El **Módulo de Despacho** es una solución completa para el control de entregas
 - **EPP** (Elementos de Protección Personal)
 
 ### Características principales:
-- ✅ Visualización de pedidos listos para despacho
-- ✅ Tabla interactiva de control de entregas
-- ✅ Cálculo automático de pendientes
-- ✅ Despacho parcial en 3 fases
-- ✅ Validaciones en tiempo real
-- ✅ Impresión print-friendly
-- ✅ Separación visual clara entre prendas y EPP
+-  Visualización de pedidos listos para despacho
+-  Tabla interactiva de control de entregas
+-  Cálculo automático de pendientes
+-  Despacho parcial en 3 fases
+-  Validaciones en tiempo real
+-  Impresión print-friendly
+-  Separación visual clara entre prendas y EPP
 
 ### ¿QUÉ NO HACE?
 - ❌ No crea pedidos nuevos
@@ -275,7 +275,7 @@ Documento de impresión con:
 
 ---
 
-## 🎯 JavaScript / Lógica de Cálculos
+## JavaScript / Lógica de Cálculos
 
 **Ubicación:** Inline en `show.blade.php` (script al final del body)
 
@@ -295,8 +295,8 @@ P3 (Pendiente 3) = P2 - Parcial 3
 **Validaciones:**
 - ❌ No permite números negativos → automáticamente pone a 0
 - ❌ No permite parciales > cantidad total → recorta al máximo
-- ✅ Actualiza DOM en tiempo real
-- ✅ Cambia color de fila si pendiente = 0 (verde)
+-  Actualiza DOM en tiempo real
+-  Cambia color de fila si pendiente = 0 (verde)
 
 #### 2. `guardarDespacho()`
 
@@ -490,15 +490,15 @@ Recarga página / print.blade.php
 
 ## 🔒 Notas de seguridad
 
-- ✅ Validación en servidor (no solo cliente)
-- ✅ CSRF token en formulario
-- ✅ Modelo binding automático de PedidoProduccion
-- ✅ Transacción DB para guardar despacho
-- ✅ Logs de auditoría para errores
+-  Validación en servidor (no solo cliente)
+-  CSRF token en formulario
+-  Modelo binding automático de PedidoProduccion
+-  Transacción DB para guardar despacho
+-  Logs de auditoría para errores
 
 ---
 
-## 🚀 Mejoras futuras
+##  Mejoras futuras
 
 - [ ] Tabla de histórico de despachos (`despacho_historico`)
 - [ ] Generación de PDF con datos de despacho

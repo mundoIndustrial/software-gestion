@@ -1,6 +1,6 @@
 # 🔧 Solución: Broche/Botón ID 2 No Se Selecciona Automáticamente
 
-## 📋 Resumen Ejecutivo
+##  Resumen Ejecutivo
 
 **Problema:** Cuando un pedido viene desde la BDD con `tipo_broche_boton_id = 2` (Botón), el frontend no estaba seleccionando automáticamente "Botón" en el formulario de prendas.
 
@@ -10,7 +10,7 @@
 
 ---
 
-## 🎯 Cambios Realizados
+## Cambios Realizados
 
 ### 1️⃣ Frontend - Reemplazar Input por Select
 
@@ -20,7 +20,7 @@
 <!-- ❌ ANTES: Input text simple -->
 <input type="text" class="broche-input" placeholder="Ej: botones metálicos...">
 
-<!-- ✅ DESPUÉS: Select + Input separado para observaciones -->
+<!--  DESPUÉS: Select + Input separado para observaciones -->
 <select id="broche-tipo" class="broche-tipo-select">
     <option value="">-- Selecciona --</option>
     <option value="1">Broche</option>
@@ -51,9 +51,9 @@ broche_obs: document.querySelector('.aplica-broche').checked
 ```
 
 ✨ **Cambios:**
-- ✅ Guarda el ID (1 o 2) en lugar del nombre
-- ✅ Mapea el ID al nombre solo para mostrar en la tabla
-- ✅ Separa lógica de captura y presentación
+-  Guarda el ID (1 o 2) en lugar del nombre
+-  Mapea el ID al nombre solo para mostrar en la tabla
+-  Separa lógica de captura y presentación
 
 ---
 
@@ -92,7 +92,7 @@ public function obtenerTiposBrocheBoton()
 ✨ **Ventajas:**
 - 📊 Datos obtenidos directamente de la BDD
 - 🔄 Dinámico - Si se agregan nuevos tipos, aparecen automáticamente
-- 🚀 Preparado para escalabilidad
+-  Preparado para escalabilidad
 
 ---
 
@@ -218,7 +218,7 @@ console.log(prendas[0].variaciones);
 
 ---
 
-## ✅ Checklist de Validación
+##  Checklist de Validación
 
 - [x] Select dropdown muestra opciones 1=Broche, 2=Botón
 - [x] JavaScript captura correctamente el `tipo_broche_boton_id`
@@ -231,7 +231,7 @@ console.log(prendas[0].variaciones);
 
 ---
 
-## 🚀 Próximas Mejoras (Opcional)
+##  Próximas Mejoras (Opcional)
 
 1. **Cargar otros tipos dinámicamente:**
    - `tipo_manga_id` desde tabla `tipos_manga`

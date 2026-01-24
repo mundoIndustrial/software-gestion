@@ -11,7 +11,7 @@
 
     // Si Echo ya está inicializado por bootstrap.js, no hacer nada
     if (typeof window.Echo !== 'undefined' && window.Echo !== null) {
-        console.log('✅ Echo ya fue inicializado por bootstrap.js, omitiendo echo-init.js');
+        console.log(' Echo ya fue inicializado por bootstrap.js, omitiendo echo-init.js');
         return;
     }
 
@@ -80,11 +80,11 @@
             }
         });
 
-        console.log('✅ Echo inicializado exitosamente por echo-init.js (fallback)');
+        console.log(' Echo inicializado exitosamente por echo-init.js (fallback)');
 
         // Connection event handlers
         window.Echo.connector.pusher.connection.bind('connected', () => {
-            console.log('✅ WebSocket conectado exitosamente a Reverb');
+            console.log(' WebSocket conectado exitosamente a Reverb');
             updateConnectionStatus(true);
         });
 

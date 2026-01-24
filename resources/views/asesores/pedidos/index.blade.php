@@ -282,7 +282,7 @@
      * Ref: ANALISIS_RACE_CONDITION_EDITAR_PEDIDO.md
      */
     async function editarPedido(pedidoId) {
-        // ✅ Prevenir múltiples clics simultáneos
+        //  Prevenir múltiples clics simultáneos
         if (edicionEnProgreso) {
             console.warn('[editarPedido] Edición ya en progreso. Clic ignorado.');
             return;
@@ -291,23 +291,23 @@
         edicionEnProgreso = true;
         
         try {
-            // ✅ PASO 1: Esperar a que Swal esté disponible (await correcto)
+            //  PASO 1: Esperar a que Swal esté disponible (await correcto)
             await _ensureSwal();
             console.log('[editarPedido] Swal disponible, mostrando modal de carga...');
             
-            // ✅ PASO 2: Mostrar modal de carga
+            //  PASO 2: Mostrar modal de carga
             UI.cargando('Cargando datos del pedido...', 'Por favor espera');
             
-            // ✅ PASO 3: Hacer fetch
+            //  PASO 3: Hacer fetch
             console.log(`[editarPedido] Fetch a /api/pedidos/${pedidoId}`);
             const response = await fetch(`/api/pedidos/${pedidoId}`);
             const respuesta = await response.json();
             
-            // ✅ PASO 4: Cerrar modal de carga ANTES de abrir el siguiente
+            //  PASO 4: Cerrar modal de carga ANTES de abrir el siguiente
             console.log('[editarPedido] Cerrando modal de carga...');
             Swal.close();
             
-            // ✅ PASO 5: Validar respuesta
+            //  PASO 5: Validar respuesta
             if (!respuesta.success) {
                 throw new Error(respuesta.message || 'Error al cargar datos');
             }
@@ -315,7 +315,7 @@
             const datos = respuesta.data || respuesta.datos;
             console.log('[editarPedido] Datos obtenidos:', datos.numero_pedido || datos.id);
             
-            // ✅ PASO 6: Abrir modal de edición
+            //  PASO 6: Abrir modal de edición
             abrirModalEditarPedido(pedidoId, datos, 'editar');
             
         } catch (err) {
@@ -325,7 +325,7 @@
             UI.error('Error', 'No se pudo cargar el pedido: ' + err.message);
             
         } finally {
-            // ✅ PASO 7: Permitir nuevas ediciones
+            //  PASO 7: Permitir nuevas ediciones
             edicionEnProgreso = false;
             console.log('[editarPedido] Flag edicionEnProgreso = false');
         }
@@ -382,13 +382,13 @@
      */
     async function guardarCambiosPedido(pedidoId, datosActualizados) {
         try {
-            // ✅ Esperar a que Swal esté disponible
+            //  Esperar a que Swal esté disponible
             await _ensureSwal();
             
             console.log('[guardarCambiosPedido] Mostrando modal de carga...');
             UI.cargando('Guardando cambios...', 'Por favor espera');
             
-            // ✅ Hacer fetch
+            //  Hacer fetch
             const response = await fetch(`/api/pedidos/${pedidoId}/actualizar-descripcion`, {
                 method: 'PATCH',
                 headers: {
@@ -407,20 +407,20 @@
             const data = await response.json();
             console.log('[guardarCambiosPedido] Respuesta del servidor:', data);
             
-            // ✅ Cerrar modal de carga ANTES de abrir el siguiente
+            //  Cerrar modal de carga ANTES de abrir el siguiente
             Swal.close();
             
-            // ✅ Actualizar los datos globales
+            //  Actualizar los datos globales
             if (window.datosEdicionPedido) {
                 window.datosEdicionPedido.cliente = datosActualizados.cliente;
                 window.datosEdicionPedido.forma_de_pago = datosActualizados.forma_de_pago;
                 window.datosEdicionPedido.novedades = datosActualizados.novedades;
             }
             
-            // ✅ Esperar a que Swal esté disponible para mostrar éxito
+            //  Esperar a que Swal esté disponible para mostrar éxito
             await _ensureSwal();
             
-            // ✅ Mostrar modal de confirmación para continuar editando
+            //  Mostrar modal de confirmación para continuar editando
             Swal.fire({
                 title: ' Guardado Exitosamente',
                 text: '¿Deseas continuar editando este pedido?',
@@ -705,7 +705,7 @@
     (function() {
         console.log('[PageLoading] Script inicializado');
         
-        // ✅ Cuando el DOM esté completamente cargado
+        //  Cuando el DOM esté completamente cargado
         document.addEventListener('DOMContentLoaded', function() {
             console.log('[PageLoading] DOMContentLoaded - Inicios scripts de la página');
             
@@ -721,7 +721,7 @@
                     // Remover del DOM después de la animación
                     setTimeout(function() {
                         overlay.remove();
-                        console.log('[PageLoading] ✅ Overlay removido del DOM');
+                        console.log('[PageLoading]  Overlay removido del DOM');
                     }, 400);  // Coincide con duración de transición CSS
                 }
             }, 500);  // Pequeño delay para sincronización

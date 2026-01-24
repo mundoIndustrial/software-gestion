@@ -1,6 +1,6 @@
-# ✅ CARTERA CON DISEÑO DE SUPERVISORES - IMPLEMENTADO
+#  CARTERA CON DISEÑO DE SUPERVISORES - IMPLEMENTADO
 
-## 🎯 Lo que se hizo
+## Lo que se hizo
 
 Se creó una vista de Cartera que **reutiliza 100% el diseño de Supervisores**:
 - Mismo layout
@@ -37,16 +37,16 @@ resources/views/cartera-pedidos/cartera-pedidos-supervisor.blade.php
 return view('cartera-pedidos.cartera-pedidos-supervisor');
 ```
 
-✅ **YA ESTÁ ACTUALIZADO**
+ **YA ESTÁ ACTUALIZADO**
 
 ---
 
 ## 🎨 Qué Verás
 
 ### Layout
-✅ Sidebar fijo (idéntico a supervisores)  
-✅ Header sticky con usuario y notificaciones  
-✅ Contenido principal con tabla  
+ Sidebar fijo (idéntico a supervisores)  
+ Header sticky con usuario y notificaciones  
+ Contenido principal con tabla  
 
 ### Tabla
 - Número de Pedido
@@ -65,7 +65,7 @@ return view('cartera-pedidos.cartera-pedidos-supervisor');
 
 ---
 
-## 🚀 Cómo Probar
+##  Cómo Probar
 
 1. Accede a: `http://localhost/cartera/pedidos`
 2. Deberías ver el **mismo diseño que supervisores**
@@ -111,11 +111,11 @@ js/cartera-pedidos/app.js
 
 ## ✨ Ventajas
 
-✅ Diseño consistente con supervisores  
-✅ No hay conflictos CSS  
-✅ Hereda todo el styling profesional  
-✅ Fácil de mantener  
-✅ Responsive  
+ Diseño consistente con supervisores  
+ No hay conflictos CSS  
+ Hereda todo el styling profesional  
+ Fácil de mantener  
+ Responsive  
 
 ---
 
@@ -135,10 +135,10 @@ js/cartera-pedidos/app.js
 
 | Elemento | Supervisores | Cartera |
 |----------|--------------|---------|
-| Layout | ✅ | ✅ (igual) |
-| Sidebar | ✅ | ✅ (igual) |
-| Header | ✅ | ✅ (igual) |
-| CSS | ✅ | ✅ (heredado) |
+| Layout |  |  (igual) |
+| Sidebar |  |  (igual) |
+| Header |  |  (igual) |
+| CSS |  |  (heredado) |
 | Tabla | Pedidos en orden | Pedidos pendiente cartera |
 | Acciones | Ver detalles | Aprobar/Rechazar |
 
@@ -167,6 +167,6 @@ js/cartera-pedidos/app.js
 
 ---
 
-**Estado:** ✅ PRODUCCIÓN LISTA  
+**Estado:**  PRODUCCIÓN LISTA  
 **Diseño:** 100% Igual a Supervisores  
 **Funcionalidad:** Cartera Específica
