@@ -90,7 +90,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
             $prendaPedido = PrendaPedido::create([
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'nombre_prenda' => $prendaData['nombre_prenda'] ?? $prendaData['nombre_producto'] ?? 'Sin nombre',
-                'cantidad' => $cantidadTotal,
+
                 'descripcion' => $prendaData['descripcion'] ?? '',
                 'descripcion_variaciones' => $this->armarDescripcionVariaciones($variantes),
                 'cantidad_talla' => json_encode($cantidadesPorTalla),
@@ -126,22 +126,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
                 ]);
             }
 
-            // ===== PASO 5: CREAR VARIANTES Y RELACIÃ“N COLOR-TELA =====
-            // Crear registro en prenda_pedido_colores_telas si hay color o tela
-            if ($variantes['color_id'] || $variantes['tela_id']) {
-                \App\Models\PrendaPedidoColorTela::create([
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'color_id' => $variantes['color_id'],
-                    'tela_id' => $variantes['tela_id'],
-                ]);
-
-                Log::info(' [CreacionPrendaSinCtaStrategy] RelaciÃ³n color-tela creada', [
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'color_id' => $variantes['color_id'],
-                    'tela_id' => $variantes['tela_id'],
-                ]);
-            }
-
+            // ===== PASO 5: CREAR VARIANTES =====
             // Crear registro en prenda_pedido_variantes si hay tipo_manga, tipo_broche o bolsillos
             if ($variantes['tipo_manga_id'] || $variantes['tipo_broche_id'] || $variantes['tiene_bolsillos']) {
                 \App\Models\PrendaVariante::create([
@@ -569,6 +554,15 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     private function guardarProcesos(int $prendaPedidoId, string $numeroPedido, array $procesos): void
     {
+        // Mapeo de nombres de proceso a IDs en tipos_procesos
+        $tipoProcesoMap = [
+            'reflectivo' => 1,
+            'bordado' => 2,
+            'estampado' => 3,
+            'dtf' => 4,
+            'sublimado' => 5,
+        ];
+
         foreach ($procesos as $tipoProceso => $procesoData) {
             // Verificar que el proceso tenga datos válidos
             if (empty($procesoData) || !isset($procesoData['datos'])) {
@@ -576,11 +570,24 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
             }
 
             $datos = $procesoData['datos'];
+            $tipoProcesoNormalizado = strtolower($tipoProceso);
+
+            // Obtener ID del tipo de proceso
+            $tipoProcesoId = $tipoProcesoMap[$tipoProcesoNormalizado] ?? null;
+            
+            if (!$tipoProcesoId) {
+                Log::warning(' [guardarProcesos] Tipo de proceso desconocido', [
+                    'tipo' => $tipoProceso,
+                    'prenda_id' => $prendaPedidoId,
+                ]);
+                continue;
+            }
 
             // Crear registro en pedidos_procesos_prenda_detalle
             $proceso = \App\Models\PedidosProcesosPrendaDetalle::create([
                 'numero_pedido' => $numeroPedido,
                 'prenda_pedido_id' => $prendaPedidoId,
+                'tipo_proceso_id' => $tipoProcesoId,
                 'proceso' => ucfirst($tipoProceso),
                 'estado_proceso' => 'Pendiente',
                 'fecha_inicio' => null,
@@ -595,6 +602,27 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
                 'tipo' => $tipoProceso,
                 'prenda_id' => $prendaPedidoId,
             ]);
+
+            // Guardar tallas del proceso si las hay
+            if (!empty($datos['tallas'])) {
+                foreach ($datos['tallas'] as $genero => $tallas) {
+                    if (is_array($tallas)) {
+                        foreach ($tallas as $talla => $cantidad) {
+                            if ($cantidad > 0) {
+                                \App\Models\PedidosProcesosPrendaTalla::create([
+                                    'proceso_prenda_detalle_id' => $proceso->id,
+                                    'genero' => strtoupper($genero),
+                                    'talla' => strtoupper($talla),
+                                    'cantidad' => (int)$cantidad,
+                                ]);
+                            }
+                        }
+                    }
+                }
+                Log::info('   [guardarProcesos] Tallas de proceso guardadas', [
+                    'proceso_id' => $proceso->id,
+                ]);
+            }
 
             // Guardar imágenes del proceso si las hay
             if (!empty($datos['imagenes'])) {
@@ -611,11 +639,19 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     private function guardarImagenesPrenda(int $prendaPedidoId, array $imagenes): void
     {
+        $orden = 1;
         foreach ($imagenes as $imagen) {
             // Si es un array anidado (ej: [[]], [[], []])
             if (is_array($imagen)) {
-                if (!empty($imagen)) {
-                    $this->guardarImagenesPrenda($prendaPedidoId, $imagen);
+                foreach ($imagen as $imgNested) {
+                    if (is_string($imgNested) && !empty($imgNested)) {
+                        \App\Models\PrendaFotoPedido::create([
+                            'prenda_pedido_id' => $prendaPedidoId,
+                            'ruta_original' => $imgNested,
+                            'ruta_webp' => str_replace(['.jpg', '.png', '.jpeg'], '.webp', $imgNested),
+                            'orden' => $orden++,
+                        ]);
+                    }
                 }
                 continue;
             }
@@ -624,12 +660,15 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
             if (is_string($imagen) && !empty($imagen)) {
                 \App\Models\PrendaFotoPedido::create([
                     'prenda_pedido_id' => $prendaPedidoId,
-                    'ruta' => $imagen,
+                    'ruta_original' => $imagen,
+                    'ruta_webp' => str_replace(['.jpg', '.png', '.jpeg'], '.webp', $imagen),
+                    'orden' => $orden++,
                 ]);
 
                 Log::debug(' [guardarImagenesPrenda] Imagen guardada', [
                     'prenda_id' => $prendaPedidoId,
                     'ruta' => $imagen,
+                    'orden' => $orden - 1,
                 ]);
             }
         }
@@ -643,40 +682,54 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     private function guardarImagenesTelas(int $prendaPedidoId, array $telas): void
     {
-        foreach ($telas as $tela) {
-            if (empty($tela['imagenes'])) {
+        foreach ($telas as $telaData) {
+            // Crear registro color-tela si no existe
+            $colorTela = \App\Models\PrendaPedidoColorTela::create([
+                'prenda_pedido_id' => $prendaPedidoId,
+                'color_id' => $telaData['color_id'] ?? null,
+                'tela_id' => $telaData['tela_id'] ?? null,
+            ]);
+
+            Log::debug(' [guardarImagenesTelas] Color-Tela creado', [
+                'id' => $colorTela->id,
+                'color_id' => $telaData['color_id'] ?? null,
+                'tela_id' => $telaData['tela_id'] ?? null,
+            ]);
+
+            if (empty($telaData['imagenes'])) {
                 continue;
             }
 
-            // Obtener el registro prenda_pedido_colores_telas para esta tela
-            $colorTela = \App\Models\PrendaPedidoColorTela::where('prenda_pedido_id', $prendaPedidoId)
-                ->latest()
-                ->first();
-
-            if (!$colorTela) {
-                continue;
-            }
-
-            foreach ($tela['imagenes'] as $imagen) {
-                // Si es un array anidado
+            $orden = 1;
+            foreach ($telaData['imagenes'] as $imagen) {
+                // Si es un array anidado (ej: [[]])
                 if (is_array($imagen)) {
-                    if (!empty($imagen)) {
-                        $this->guardarImagenesTelas($prendaPedidoId, [$tela]);
+                    foreach ($imagen as $imgNested) {
+                        if (is_string($imgNested) && !empty($imgNested)) {
+                            \App\Models\PrendaFotoTelaPedido::create([
+                                'prenda_pedido_colores_telas_id' => $colorTela->id,
+                                'ruta_original' => $imgNested,
+                                'ruta_webp' => str_replace(['.jpg', '.png', '.jpeg'], '.webp', $imgNested),
+                                'orden' => $orden++,
+                            ]);
+                        }
                     }
                     continue;
                 }
 
-                // Si es una ruta válida
+                // Si es una ruta válida directa
                 if (is_string($imagen) && !empty($imagen)) {
                     \App\Models\PrendaFotoTelaPedido::create([
                         'prenda_pedido_colores_telas_id' => $colorTela->id,
-                        'ruta' => $imagen,
+                        'ruta_original' => $imagen,
+                        'ruta_webp' => str_replace(['.jpg', '.png', '.jpeg'], '.webp', $imagen),
+                        'orden' => $orden++,
                     ]);
 
-                    Log::debug(' [guardarImagenesTelas] Imagen de tela guardada', [
-                        'prenda_id' => $prendaPedidoId,
+                    Log::debug('   [guardarImagenesTelas] Imagen de tela guardada', [
                         'color_tela_id' => $colorTela->id,
                         'ruta' => $imagen,
+                        'orden' => $orden - 1,
                     ]);
                 }
             }
@@ -691,6 +744,7 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
      */
     private function guardarImagenesProceso(int $procesoId, array $imagenes): void
     {
+        $orden = 1;
         foreach ($imagenes as $imagen) {
             // Si es un array anidado
             if (is_array($imagen)) {
@@ -702,6 +756,20 @@ class CreacionPrendaSinCtaStrategy implements CreacionPrendaStrategy
 
             // Si es una ruta válida
             if (is_string($imagen) && !empty($imagen)) {
+                \App\Models\PedidosProcessImagenes::create([
+                    'proceso_prenda_detalle_id' => $procesoId,
+                    'ruta_original' => $imagen,
+                    'ruta_webp' => str_replace(['.jpg', '.png', '.jpeg'], '.webp', $imagen),
+                    'orden' => $orden,
+                    'es_principal' => $orden === 1,
+                ]);
+                $orden++;
+
+                Log::debug(' [guardarImagenesProceso] Imagen de proceso guardada', [
+                    'proceso_id' => $procesoId,
+                    'ruta' => $imagen,
+                    'orden' => $orden - 1,
+                ]);
                 \App\Models\ProcesosPrendaImagen::create([
                     'proceso_prenda_detalle_id' => $procesoId,
                     'ruta' => $imagen,

@@ -4,7 +4,6 @@ namespace App\Domain\Pedidos\Services;
 
 use App\Domain\Pedidos\Strategies\CreacionPrendaStrategy;
 use App\Domain\Pedidos\Strategies\CreacionPrendaSinCtaStrategy;
-use App\Domain\Pedidos\Strategies\CreacionPrendaReflectivoStrategy;
 use App\Domain\Pedidos\Events\PrendaPedidoAgregada;
 use App\Domain\Shared\DomainEventDispatcher;
 use App\Models\PrendaPedido;
@@ -21,9 +20,9 @@ use Illuminate\Support\Facades\Log;
  * PatrÃ³n: Strategy + Factory
  * 
  * Encapsula la lÃ³gica de orquestaciÃ³n que estaba repartida en el controller
- * MÃ©todos refactorizados:
+ * MÃ©todos:
  * - crearPrendaSinCotizacion() -> Usa CreacionPrendaSinCtaStrategy
- * - crearPrendaReflectivo() -> Usa CreacionPrendaReflectivoStrategy
+ *   Los procesos (reflectivo, bordado, estampado, etc.) se manejan dentro de la estrategia
  */
 class PrendaCreationService
 {
@@ -117,10 +116,10 @@ class PrendaCreationService
     }
 
     /**
-     * Crear prenda reflectivo sin cotizaciÃ³n usando estrategia
+     * OBSOLETO: Usar crearPrendaSinCotizacion() 
+     * Reflectivo es un PROCESO, no un tipo de prenda
      * 
-     * Encapsula la lÃ³gica de controller::crearReflectivoSinCotizacion() (~300 lÃ­neas)
-     * 
+     * @deprecated Usar crearPrendaSinCotizacion()
      * @param array $prendaData Datos de la prenda del request
      * @param int $pedidoProduccionId ID del pedido
      * @return PrendaPedido Prenda creada
@@ -130,18 +129,19 @@ class PrendaCreationService
         array $prendaData,
         int $pedidoProduccionId
     ): PrendaPedido {
-        Log::info(' [PrendaCreationService::crearPrendaReflectivo] Iniciando con estrategia', [
+        Log::info(' [PrendaCreationService::crearPrendaReflectivo] Iniciando - reflectivo es un PROCESO', [
             'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
             'pedido_produccion_id' => $pedidoProduccionId,
         ]);
 
-        // Usar estrategia para reflectivo
-        $strategy = new CreacionPrendaReflectivoStrategy();
+        // REFLECTIVO ES UN PROCESO, NO UN TIPO DE PRENDA
+        // Usar CreacionPrendaSinCtaStrategy que crea la prenda y sus procesos
+        $strategy = new CreacionPrendaSinCtaStrategy();
 
-        // Inyectar servicios
+        // Inyectar servicios (CreacionPrendaSinCtaStrategy requiere descripcionService)
         $servicios = [
+            'descripcionService' => $this->descripcionService,
             'imagenService' => $this->imagenService,
-            'utilitariosService' => $this->utilitariosService,
         ];
 
         try {

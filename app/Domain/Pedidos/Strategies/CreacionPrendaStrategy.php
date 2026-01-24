@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
  * 
  * Implementaciones:
  * - CreacionPrendaSinCtaStrategy: Para prendas sin cotizaciÃ³n (con tallas/gÃ©neros)
- * - CreacionPrendaReflectivoStrategy: Para reflectivos sin cotizaciÃ³n
+ * NOTA: Reflectivo NO es un tipo de prenda, es un PROCESO. Usar CreacionPrendaSinCtaStrategy
  */
 interface CreacionPrendaStrategy
 {

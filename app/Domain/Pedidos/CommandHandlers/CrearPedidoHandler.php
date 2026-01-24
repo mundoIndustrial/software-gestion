@@ -60,34 +60,32 @@ class CrearPedidoHandler implements CommandHandler
                 'cantidad_inicial' => $command->getCantidadInicial(),
             ]);
 
-            Log::info(' [CrearPedidoHandler] Validaciones pasadas', []);
+            Log::info('✅ [CrearPedidoHandler] Validaciones pasadas', []);
 
+            // Persistir en base de datos PRIMERO para obtener el ID
+            $pedido = $this->pedidoModel->create([
+                'numero_pedido' => $command->getNumeroPedido(),
+                'cliente' => $command->getCliente(),
+                'forma_pago' => strtolower(trim($command->getFormaPago())), // Normalizar a minúsculas
+                'asesor_id' => $command->getAsesorId(),
+                'cantidad_total' => $command->getCantidadInicial(),
+                'estado' => 'Pendiente',
+            ]);
 
+            Log::info('✅ [CrearPedidoHandler] Pedido creado en BD', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
 
-            // Crear el agregado (maneja invariantes)
+            // Crear el agregado (maneja invariantes) CON el ID ya generado
             $agregado = PedidoProduccionAggregate::crear(
-                id: null, // Se asignarÃ¡ en BD
+                id: $pedido->id, // ID obtenido de la BD
                 numeroPedido: $command->getNumeroPedido(),
                 cliente: $command->getCliente(),
                 formaPago: $command->getFormaPago(),
                 asesorId: $command->getAsesorId(),
-                estado: 'activo',
+                estado: 'Pendiente',
             );
-
-            // Persistir en base de datos
-            $pedido = $this->pedidoModel->create([
-                'numero_pedido' => $command->getNumeroPedido(),
-                'cliente' => $command->getCliente(),
-                'forma_pago' => $command->getFormaPago(),
-                'asesor_id' => $command->getAsesorId(),
-                'cantidad_total' => $command->getCantidadInicial(),
-                'estado' => 'activo',
-            ]);
-
-            Log::info(' [CrearPedidoHandler] Pedido creado en BD', [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
-            ]);
 
             // Emitir eventos del agregado
             foreach ($agregado->getUncommittedEvents() as $event) {

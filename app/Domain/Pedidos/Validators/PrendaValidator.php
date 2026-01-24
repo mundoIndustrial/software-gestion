@@ -225,9 +225,24 @@ class PrendaValidator implements Validator
     {
         $this->validateTipo($tipo);
         
-        // Validar campos bÃ¡sicos
+        // Validar campos básicos
         $this->validateNombrePrenda($prendaData['nombre_prenda'] ?? null);
-        $this->validateCantidad($prendaData['cantidad'] ?? null);
+        
+        // Calcular cantidad total desde cantidad_talla si existe
+        $cantidad = null;
+        if (isset($prendaData['cantidad'])) {
+            $cantidad = $prendaData['cantidad'];
+        } elseif (isset($prendaData['cantidad_talla']) && is_array($prendaData['cantidad_talla'])) {
+            // Sumar todas las cantidades de las tallas
+            $cantidad = 0;
+            foreach ($prendaData['cantidad_talla'] as $genero => $tallas) {
+                if (is_array($tallas)) {
+                    $cantidad += array_sum($tallas);
+                }
+            }
+        }
+        
+        $this->validateCantidad($cantidad);
         $this->validateTipoManga($prendaData['tipo_manga'] ?? null);
         $this->validateTipoBrocheBoton($prendaData['tipo_broche'] ?? null);
         $this->validateColor($prendaData['color_id'] ?? null);

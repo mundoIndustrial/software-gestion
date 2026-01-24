@@ -83,8 +83,6 @@ class PedidoValidator implements Validator
     /**
      * Validar cliente
      * 
-     * - No vacÃ­o
-     * - MÃ¡ximo 255 caracteres
      * 
      * @throws InvalidArgumentException
      */
@@ -102,8 +100,8 @@ class PedidoValidator implements Validator
     /**
      * Validar forma de pago
      * 
-     * - No vacÃ­o
      * - Debe ser uno de los valores permitidos
+     * - Case-insensitive (normaliza a minúsculas)
      * 
      * @throws InvalidArgumentException
      */
@@ -113,9 +111,12 @@ class PedidoValidator implements Validator
             throw new InvalidArgumentException('La forma de pago es requerida');
         }
 
+        // Normalizar a minúsculas para validación case-insensitive
+        $formaPagoNormalizada = strtolower(trim($formaPago));
+        
         $formasPagoPermitidas = ['contado', 'credito', 'transferencia', 'cheque'];
         
-        if (!in_array($formaPago, $formasPagoPermitidas)) {
+        if (!in_array($formaPagoNormalizada, $formasPagoPermitidas)) {
             throw new InvalidArgumentException(
                 "Forma de pago invÃ¡lida: {$formaPago}. Permitidas: " . implode(', ', $formasPagoPermitidas)
             );

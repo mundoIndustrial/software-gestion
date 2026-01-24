@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  * 1. Genera número de pedido
  * 2. Crea pedido raíz (usando CrearPedidoCommand)
  * 3. Itera items y agrega cada prenda (usando AgregarPrendaAlPedidoCommand)
- * 4. Cada prenda se procesa con Strategy (CreacionPrendaSinCtaStrategy o CreacionPrendaReflectivoStrategy)
+ * 4. Cada prenda se procesa con Strategy (CreacionPrendaSinCtaStrategy)
  * 5. Strategy guarda: prenda base, tallas, variantes, colores/telas, procesos, imágenes
  * 
  * Responsabilidades:

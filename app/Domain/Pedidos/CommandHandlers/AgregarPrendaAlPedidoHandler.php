@@ -63,21 +63,16 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
                 'pedido_id' => $command->getPedidoId(),
             ]);
 
-            // Crear la prenda usando el servicio apropiado
-            $prenda = match ($command->getTipo()) {
-                'sin_cotizacion' => $this->prendaService->crearPrendaSinCotizacion(
-                    $prendaData,
-                    $command->getPedidoId()
-                ),
-                'reflectivo' => $this->prendaService->crearPrendaReflectivo(
-                    $prendaData,
-                    $command->getPedidoId()
-                ),
-                default => throw new \Exception("Tipo de prenda no soportado: {$command->getTipo()}"),
-            };
+            // Crear la prenda usando CreacionPrendaSinCtaStrategy
+            // Los procesos (reflectivo, bordado, etc.) se manejan dentro de la estrategia
+            $prenda = $this->prendaService->crearPrendaSinCotizacion(
+                $prendaData,
+                $command->getPedidoId()
+            );
 
-            // Actualizar cantidad total del pedido
-            $pedido->increment('cantidad_total', $prendaData['cantidad_inicial'] ?? 1);
+            // Actualizar cantidad total del pedido con la suma de todas las tallas
+            $cantidadTotal = $this->calcularCantidadTotal($prendaData['cantidad_talla'] ?? []);
+            $pedido->increment('cantidad_total', $cantidadTotal);
 
             Log::info(' [AgregarPrendaAlPedidoHandler] Prenda agregada', [
                 'pedido_id' => $pedido->id,
@@ -99,6 +94,27 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
 
             throw $e;
         }
+    }
+
+    /**
+     * Calcular cantidad total sumando todas las tallas de todos los géneros
+     * 
+     * @param array $cantidadTalla Estructura {DAMA: {S: 20, M: 10}, CABALLERO: {}, UNISEX: {}}
+     * @return int Suma total de todas las tallas
+     */
+    private function calcularCantidadTotal(array $cantidadTalla): int
+    {
+        $total = 0;
+        
+        foreach ($cantidadTalla as $genero => $tallas) {
+            if (is_array($tallas)) {
+                foreach ($tallas as $talla => $cantidad) {
+                    $total += (int) $cantidad;
+                }
+            }
+        }
+        
+        return $total;
     }
 }
 

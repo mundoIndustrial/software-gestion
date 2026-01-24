@@ -137,6 +137,15 @@
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
     <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
     
+    <!-- ✅ API SERVICE - Manejo centralizado de API -->
+    <script type="module" src="{{ asset('js/services/api-service.js') }}"></script>
+    
+    <!-- ✅ BUILDER UNIFICADO - Sanitización y estructura única -->
+    <script type="module" src="{{ asset('js/pedidos-produccion/PedidoCompletoUnificado.js') }}"></script>
+    
+    <!-- ✅ INICIALIZADOR - Puente entre módulos ES6 y código global -->
+    <script type="module" src="{{ asset('js/pedidos-produccion/inicializador-pedido-completo.js') }}"></script>
+    
     <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>

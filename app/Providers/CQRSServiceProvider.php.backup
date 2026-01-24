@@ -11,19 +11,18 @@ use App\Domain\Shared\CQRS\CommandBus;
 // Validators
 use App\Domain\Pedidos\Validators\PedidoValidator;
 use App\Domain\Pedidos\Validators\PrendaValidator;
-use App\Domain\Pedidos\Validators\EstadoValidator;
 
 // Queries
 use App\Domain\Pedidos\Queries\ObtenerPedidoQuery;
 use App\Domain\Pedidos\Queries\ListarPedidosQuery;
-use App\Domain\Pedidos\Queries\FiltrarPedidosPorEstadoQuery;
-use App\Domain\Pedidos\Queries\BuscarPedidoPorNumeroQuery;
+use App\Domain\Pedidos\Queries\FiltrarPorEstadoQuery;
+use App\Domain\Pedidos\Queries\BuscarPorNumeroQuery;
 
 // Query Handlers
 use App\Domain\Pedidos\QueryHandlers\ObtenerPedidoHandler;
 use App\Domain\Pedidos\QueryHandlers\ListarPedidosHandler;
-use App\Domain\Pedidos\QueryHandlers\FiltrarPedidosPorEstadoHandler;
-use App\Domain\Pedidos\QueryHandlers\BuscarPedidoPorNumeroHandler;
+use App\Domain\Pedidos\QueryHandlers\FiltrarPorEstadoHandler;
+use App\Domain\Pedidos\QueryHandlers\BuscarPorNumeroHandler;
 
 // Commands
 use App\Domain\Pedidos\Commands\CrearPedidoCommand;
@@ -42,14 +41,8 @@ use App\Domain\Pedidos\CommandHandlers\CambiarEstadoPedidoHandler;
 use App\Domain\Pedidos\CommandHandlers\EliminarPedidoHandler;
 
 // ===== EPP DOMAIN =====
-
-// EPP Queries
-use App\Domain\Epp\Queries\BuscarEppQuery;
-use App\Domain\Epp\Queries\ObtenerEppPorIdQuery;
-use App\Domain\Epp\Queries\ObtenerEppPorCategoriaQuery;
-use App\Domain\Epp\Queries\ListarEppActivosQuery;
-use App\Domain\Epp\Queries\ListarCategoriasEppQuery;
-use App\Domain\Epp\Queries\ObtenerEppDelPedidoQuery;
+use App\Domain\Epp\Commands\AgregarEppAlPedidoCommand;
+use App\Domain\Epp\Commands\EliminarEppDelPedidoCommand;
 
 // EPP Query Handlers
 use App\Domain\Epp\QueryHandlers\BuscarEppHandler;
@@ -59,30 +52,24 @@ use App\Domain\Epp\QueryHandlers\ListarEppActivosHandler;
 use App\Domain\Epp\QueryHandlers\ListarCategoriasEppHandler;
 use App\Domain\Epp\QueryHandlers\ObtenerEppDelPedidoHandler;
 
-// EPP Commands
-use App\Domain\Epp\Commands\AgregarEppAlPedidoCommand;
-use App\Domain\Epp\Commands\EliminarEppDelPedidoCommand;
-
 // EPP Command Handlers
 use App\Domain\Epp\CommandHandlers\AgregarEppAlPedidoHandler;
 use App\Domain\Epp\CommandHandlers\EliminarEppDelPedidoHandler;
 
-// ===== APPLICATION LAYER =====
+// Application Commands
 use App\Application\Commands\CrearEppCommand;
 use App\Application\Handlers\CrearEppHandler;
 
 /**
  * CQRSServiceProvider
  * 
- * Provider unificado para CQRS con dominio Pedidos único
- * 
- * Responsabilidades:
+ * Responsabilidad:
  * - Registrar QueryBus y CommandBus como singletons
- * - Registrar todos los Query/Command Handlers del dominio Pedidos
- * - Registrar Validators
- * - Configurar service locator pattern para resolución de handlers
+ * - Registrar todos los Query/Command Handlers
+ * - Registrar todos los Validators
+ * - Configurar el service locator pattern para resolución de handlers
  * 
- * Patrón: Service Provider (Laravel) + CQRS
+ * Patrón: Service Provider (Laravel)
  * SRP: Solo gestiona inyección de dependencias para CQRS
  */
 class CQRSServiceProvider extends ServiceProvider
@@ -92,7 +79,7 @@ class CQRSServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Registrar Validators
+        // Registrar Validators como singletons
         $this->registerValidators();
 
         // Registrar QueryBus como singleton
@@ -121,7 +108,7 @@ class CQRSServiceProvider extends ServiceProvider
      */
     public function boot(QueryBus $queryBus, CommandBus $commandBus): void
     {
-        // Guard para evitar que boot() se ejecute múltiples veces
+        // ARREGLO: Guard para evitar que boot() se ejecute múltiples veces
         if ($this->app->has('cqrs.booted') && $this->app->get('cqrs.booted')) {
             return;
         }
@@ -132,10 +119,10 @@ class CQRSServiceProvider extends ServiceProvider
         // Registrar Commands
         $this->registerCommands($commandBus);
 
-        // Marcar como booted
+        // Marcar como booted para evitar ejecución múltiple
         $this->app->instance('cqrs.booted', true);
 
-        \Illuminate\Support\Facades\Log::info('✅ [CQRSServiceProvider] CQRS providers registrados');
+        \Illuminate\Support\Facades\Log::info(' [CQRSServiceProvider] CQRS providers registrados');
     }
 
     /**
@@ -143,16 +130,13 @@ class CQRSServiceProvider extends ServiceProvider
      */
     private function registerValidators(): void
     {
+        // Pedidos Validators
         $this->app->singleton(PedidoValidator::class, function ($app) {
             return new PedidoValidator();
         });
 
         $this->app->singleton(PrendaValidator::class, function ($app) {
             return new PrendaValidator();
-        });
-
-        $this->app->singleton(EstadoValidator::class, function ($app) {
-            return new EstadoValidator();
         });
     }
 
@@ -161,7 +145,6 @@ class CQRSServiceProvider extends ServiceProvider
      */
     private function registerQueryHandlers(): void
     {
-        // ===== PEDIDOS QUERY HANDLERS =====
         $this->app->bind(ObtenerPedidoHandler::class, function ($app) {
             return new ObtenerPedidoHandler($app->make(\App\Models\PedidoProduccion::class));
         });
@@ -178,7 +161,11 @@ class CQRSServiceProvider extends ServiceProvider
             return new BuscarPedidoPorNumeroHandler($app->make(\App\Models\PedidoProduccion::class));
         });
 
-        // ===== EPP QUERY HANDLERS =====
+        $this->app->bind(ObtenerPrendasPorPedidoHandler::class, function ($app) {
+            return new ObtenerPrendasPorPedidoHandler($app->make(\App\Models\PedidoProduccion::class));
+        });
+
+        // EPP Query Handlers
         $this->app->bind(BuscarEppHandler::class, function ($app) {
             return new BuscarEppHandler($app->make(\App\Domain\Epp\Services\EppDomainService::class));
         });
@@ -209,9 +196,37 @@ class CQRSServiceProvider extends ServiceProvider
      */
     private function registerCommandHandlers(): void
     {
-        // ===== PEDIDOS COMMAND HANDLERS =====
+        // ===== PEDIDOS COMMAND HANDLERS (NUEVO DOMINIO UNIFICADO) =====
         
-        // CrearPedidoHandler
+        // CrearPedidoHandler - NUEVO namespace Pedidos
+        $this->app->bind(CrearPedidoHandlerNuevo::class, function ($app) {
+            return new CrearPedidoHandlerNuevo(
+                $app->make(\App\Models\PedidoProduccion::class),
+                $app->make(\App\Domain\Shared\DomainEventDispatcher::class),
+                $app->make(\App\Domain\Pedidos\Validators\PedidoValidator::class),
+            );
+        });
+
+        // CrearPedidoCompletoHandler - Orquestador principal
+        $this->app->bind(\App\Domain\Pedidos\CommandHandlers\CrearPedidoCompletoHandler::class, function ($app) {
+            return new \App\Domain\Pedidos\CommandHandlers\CrearPedidoCompletoHandler(
+                $app->make(\App\Domain\Shared\CQRS\CommandBus::class),
+                $app->make(\App\Models\PedidoProduccion::class),
+            );
+        });
+
+        // AgregarPrendaAlPedidoHandler - NUEVO namespace Pedidos
+        $this->app->bind(AgregarPrendaHandlerNuevo::class, function ($app) {
+            return new AgregarPrendaHandlerNuevo(
+                $app->make(\App\Models\PedidoProduccion::class),
+                $app->make(\App\Domain\Pedidos\Services\PrendaCreationService::class),
+                $app->make(\App\Domain\Pedidos\Validators\PrendaValidator::class),
+            );
+        });
+
+        // ===== PEDIDOS COMMAND HANDLERS (LEGACY - PedidoProduccion namespace) =====
+        
+        // CrearPedidoHandler - Legacy namespace PedidoProduccion
         $this->app->bind(CrearPedidoHandler::class, function ($app) {
             return new CrearPedidoHandler(
                 $app->make(\App\Models\PedidoProduccion::class),
@@ -220,24 +235,6 @@ class CQRSServiceProvider extends ServiceProvider
             );
         });
 
-        // CrearPedidoCompletoHandler - Orquestador principal
-        $this->app->bind(CrearPedidoCompletoHandler::class, function ($app) {
-            return new CrearPedidoCompletoHandler(
-                $app->make(CommandBus::class),
-                $app->make(\App\Models\PedidoProduccion::class),
-            );
-        });
-
-        // AgregarPrendaAlPedidoHandler
-        $this->app->bind(AgregarPrendaAlPedidoHandler::class, function ($app) {
-            return new AgregarPrendaAlPedidoHandler(
-                $app->make(\App\Models\PedidoProduccion::class),
-                $app->make(\App\Domain\Pedidos\Services\PrendaCreationService::class),
-                $app->make(PrendaValidator::class),
-            );
-        });
-
-        // ActualizarPedidoHandler
         $this->app->bind(ActualizarPedidoHandler::class, function ($app) {
             return new ActualizarPedidoHandler(
                 $app->make(\App\Models\PedidoProduccion::class),
@@ -245,37 +242,32 @@ class CQRSServiceProvider extends ServiceProvider
             );
         });
 
-        // CambiarEstadoPedidoHandler
         $this->app->bind(CambiarEstadoPedidoHandler::class, function ($app) {
             return new CambiarEstadoPedidoHandler(
                 $app->make(\App\Models\PedidoProduccion::class),
-                $app->make(EstadoValidator::class)
+                $app->make(EstadoValidator::class),
             );
         });
 
-        // EliminarPedidoHandler
+        $this->app->bind(AgregarPrendaAlPedidoHandler::class, function ($app) {
+            return new AgregarPrendaAlPedidoHandler(
+                $app->make(\App\Models\PedidoProduccion::class),
+                $app->make(\App\Domain\PedidoProduccion\Services\PrendaCreationService::class),
+                $app->make(PrendaValidator::class),
+            );
+        });
+
         $this->app->bind(EliminarPedidoHandler::class, function ($app) {
-            return new EliminarPedidoHandler(
-                $app->make(\App\Models\PedidoProduccion::class)
-            );
+            return new EliminarPedidoHandler($app->make(\App\Models\PedidoProduccion::class));
         });
 
-        // ===== EPP COMMAND HANDLERS =====
+        // EPP Command Handlers
         $this->app->bind(AgregarEppAlPedidoHandler::class, function ($app) {
-            return new AgregarEppAlPedidoHandler(
-                $app->make(\App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class)
-            );
+            return new AgregarEppAlPedidoHandler($app->make(\App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class));
         });
 
         $this->app->bind(EliminarEppDelPedidoHandler::class, function ($app) {
-            return new EliminarEppDelPedidoHandler(
-                $app->make(\App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class)
-            );
-        });
-
-        // ===== APPLICATION HANDLERS =====
-        $this->app->bind(CrearEppHandler::class, function ($app) {
-            return new CrearEppHandler();
+            return new EliminarEppDelPedidoHandler($app->make(\App\Domain\Epp\Repositories\PedidoEppRepositoryInterface::class));
         });
     }
 
@@ -284,7 +276,6 @@ class CQRSServiceProvider extends ServiceProvider
      */
     private function registerQueries(QueryBus $queryBus): void
     {
-        // ===== PEDIDOS QUERIES =====
         $queryBus->register(
             ObtenerPedidoQuery::class,
             ObtenerPedidoHandler::class
@@ -305,7 +296,12 @@ class CQRSServiceProvider extends ServiceProvider
             BuscarPedidoPorNumeroHandler::class
         );
 
-        // ===== EPP QUERIES =====
+        $queryBus->register(
+            ObtenerPrendasPorPedidoQuery::class,
+            ObtenerPrendasPorPedidoHandler::class
+        );
+
+        // EPP Queries
         $queryBus->register(
             BuscarEppQuery::class,
             BuscarEppHandler::class
@@ -342,39 +338,49 @@ class CQRSServiceProvider extends ServiceProvider
      */
     private function registerCommands(CommandBus $commandBus): void
     {
-        // ===== PEDIDOS COMMANDS =====
+        // ===== PEDIDOS COMMANDS (NUEVO DOMINIO UNIFICADO) =====
         
-        // CrearPedidoCommand - Comando base para crear pedido
+        // CrearPedidoCommand - NUEVO namespace Pedidos (usado por CrearPedidoCompletoHandler)
         $commandBus->register(
-            CrearPedidoCommand::class,
-            CrearPedidoHandler::class
+            CrearPedidoCommand::class, // App\Domain\Pedidos\Commands\CrearPedidoCommand
+            CrearPedidoHandlerNuevo::class // App\Domain\Pedidos\CommandHandlers\CrearPedidoHandler
         );
 
         // CrearPedidoCompletoCommand - Orquestador principal
         $commandBus->register(
             CrearPedidoCompletoCommand::class,
-            CrearPedidoCompletoHandler::class
+            \App\Domain\Pedidos\CommandHandlers\CrearPedidoCompletoHandler::class
         );
 
-        // AgregarPrendaAlPedidoCommand
+        // AgregarPrendaAlPedidoCommand - NUEVO namespace Pedidos
         $commandBus->register(
-            AgregarPrendaAlPedidoCommand::class,
-            AgregarPrendaAlPedidoHandler::class
+            AgregarPrendaAlPedidoCommand::class, // App\Domain\Pedidos\Commands\AgregarPrendaAlPedidoCommand
+            AgregarPrendaHandlerNuevo::class      // App\Domain\Pedidos\CommandHandlers\AgregarPrendaAlPedidoHandler
         );
 
-        // ActualizarPedidoCommand
+        // ===== PEDIDOS COMMANDS (LEGACY - PedidoProduccion namespace) =====
+        // Mantener temporalmente durante migración
+        $commandBus->register(
+            CrearPedidoCommandLegacy::class, // App\Domain\PedidoProduccion\Commands\CrearPedidoCommand
+            CrearPedidoHandler::class         // App\Domain\PedidoProduccion\CommandHandlers\CrearPedidoHandler
+        );
+
         $commandBus->register(
             ActualizarPedidoCommand::class,
             ActualizarPedidoHandler::class
         );
 
-        // CambiarEstadoPedidoCommand
         $commandBus->register(
             CambiarEstadoPedidoCommand::class,
             CambiarEstadoPedidoHandler::class
         );
 
-        // EliminarPedidoCommand
+        // Legacy AgregarPrendaAlPedidoCommand
+        $commandBus->register(
+            AgregarPrendaCommandLegacy::class, // App\Domain\PedidoProduccion\Commands\AgregarPrendaAlPedidoCommand
+            AgregarPrendaAlPedidoHandler::class // App\Domain\PedidoProduccion\CommandHandlers\AgregarPrendaAlPedidoHandler
+        );
+
         $commandBus->register(
             EliminarPedidoCommand::class,
             EliminarPedidoHandler::class

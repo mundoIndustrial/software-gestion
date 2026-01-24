@@ -244,6 +244,10 @@
     
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
+    
+    <!-- ✅ PAYLOAD SANITIZER - Debe cargarse ANTES de item-api-service -->
+    <script src="{{ asset('js/modulos/crear-pedido/utils/payload-sanitizer.js') }}?v={{ time() }}"></script>
+    
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>

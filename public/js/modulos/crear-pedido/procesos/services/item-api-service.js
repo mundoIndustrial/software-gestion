@@ -142,251 +142,65 @@ class ItemAPIService {
     }
 
     /**
-     * Crear un nuevo pedido con FormData para soportar archivos
+     * Crear un nuevo pedido (JSON)
+     * 
+     * IMPORTANTE: Usa PayloadSanitizer para limpiar datos reactivos antes de enviar
      */
     async crearPedido(pedidoData) {
         try {
-
+            console.log('[item-api-service] 📦 Creando pedido - Datos originales:', pedidoData);
             
-            const formData = new FormData();
-            
-            // Agregar datos básicos
-            formData.append('cliente', pedidoData.cliente || '');
-            formData.append('asesora', pedidoData.asesora || '');
-            formData.append('forma_de_pago', pedidoData.forma_de_pago || '');
-            
-            // Procesar items
-            if (pedidoData.items && Array.isArray(pedidoData.items)) {
-                pedidoData.items.forEach((item, itemIndex) => {
-                    // Agregar datos básicos del item
-                    formData.append(`items[${itemIndex}][tipo]`, item.tipo || '');
-                    formData.append(`items[${itemIndex}][nombre_prenda]`, item.nombre_prenda || item.nombre_producto || '');
-                    formData.append(`items[${itemIndex}][descripcion]`, item.descripcion || '');
-                    formData.append(`items[${itemIndex}][origen]`, item.origen || 'bodega');
-                    
-                    // Agregar cantidad_talla como JSON
-                    if (item.cantidad_talla) {
-                        // Convertir formato relacional { DAMA: { S: 20 } } a array
-                        let tallasArray = [];
-                        if (typeof item.cantidad_talla === 'object' && !Array.isArray(item.cantidad_talla)) {
-                            Object.entries(item.cantidad_talla).forEach(([genero, tallasObj]) => {
-                                if (typeof tallasObj === 'object') {
-                                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
-                                        if (cantidad > 0) {
-                                            tallasArray.push({
-                                                genero: genero,
-                                                talla: talla,
-                                                cantidad: cantidad
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        } else if (Array.isArray(item.cantidad_talla)) {
-                            tallasArray = item.cantidad_talla;
-                        }
-                        
-                        if (tallasArray.length > 0) {
-                            // Enviar cada talla individualmente (no usar JSON.stringify con FormData)
-                            tallasArray.forEach((talla, tallaIdx) => {
-                                formData.append(`items[${itemIndex}][cantidad_talla][${tallaIdx}][genero]`, talla.genero);
-                                formData.append(`items[${itemIndex}][cantidad_talla][${tallaIdx}][talla]`, talla.talla);
-                                formData.append(`items[${itemIndex}][cantidad_talla][${tallaIdx}][cantidad]`, talla.cantidad);
-                            });
-                            console.log(`[item-api-service] 📦 Tallas enviadas para item ${itemIndex}:`, tallasArray);
-                        }
-                    }
-                    
-                    // Agregar variaciones como JSON
-                    if (item.variaciones) {
-                        const variacionesStr = typeof item.variaciones === 'string' 
-                            ? item.variaciones 
-                            : JSON.stringify(item.variaciones);
-                        formData.append(`items[${itemIndex}][variaciones]`, variacionesStr);
-                    }
-                    
-                    // Agregar procesos con sus imágenes
-                    if (item.procesos && typeof item.procesos === 'object') {
-                        Object.keys(item.procesos).forEach(tipoProceso => {
-                            const proceso = item.procesos[tipoProceso];
-                            
-                            // Extraer datos - pueden estar en .datos o directamente
-                            const datosProc = proceso.datos || proceso;
-                            
-                            // Agregar campos individuales del proceso
-                            formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tipo]`, datosProc.tipo || tipoProceso);
-                            
-                            // Agregar ubicaciones como JSON
-                            if (datosProc.ubicaciones) {
-                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][ubicaciones]`, 
-                                    typeof datosProc.ubicaciones === 'string' ? datosProc.ubicaciones : JSON.stringify(datosProc.ubicaciones));
-                            }
-                            
-                            // Agregar observaciones
-                            if (datosProc.observaciones) {
-                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][observaciones]`, datosProc.observaciones);
-                            }
-                            
-                            // Agregar tallas en formato relacional
-                            if (datosProc.tallas) {
-                                formData.append(`items[${itemIndex}][procesos][${tipoProceso}][tallas]`, 
-                                    JSON.stringify(datosProc.tallas));
-                            }
-                            
-                            // Agregar imágenes del proceso
-                            if (datosProc.imagenes && Array.isArray(datosProc.imagenes)) {
-                                datosProc.imagenes.forEach((img, imgIdx) => {
-                                    let archivo = null;
-                                    
-                                    // Caso 1: img es File directo
-                                    if (img instanceof File) {
-                                        archivo = img;
-                                    }
-                                    // Caso 2: img es {file: File, nombre: string}
-                                    else if (img && img.file instanceof File) {
-                                        archivo = img.file;
-                                    }
-                                    
-                                    if (archivo) {
-                                        formData.append(`items_${itemIndex}_procesos_${tipoProceso}_imagenes_files`, archivo);
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    // Agregar imágenes de prenda
-
-
-
-
-                    
-                    if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
-
-                        item.imagenes.forEach((img, imgIdx) => {
-                            let archivo = null;
-                            
-
-                            
-                            // Caso 1: img es File directo
-                            if (img instanceof File) {
-                                archivo = img;
-
-                            }
-                            // Caso 2: img es {file: File, nombre: string, tamaño: number}
-                            else if (img && img.file instanceof File) {
-                                archivo = img.file;
-
-                            }
-                            // Caso 3: img es {archivo: File, nombre: string, ...} (EPP)
-                            else if (img && img.archivo instanceof File) {
-                                archivo = img.archivo;
-
-                            }
-                            
-                            if (archivo) {
-
-                                formData.append(`items_${itemIndex}_imagenes_files`, archivo);
-                            } else {
-
-                            }
-                        });
-                    } else {
-
-                    }
-                    
-                    // Agregar telas con sus imágenes
-                    if (item.telas && Array.isArray(item.telas)) {
-                        item.telas.forEach((tela, telaIdx) => {
-                            formData.append(`items[${itemIndex}][telas][${telaIdx}][tela]`, tela.tela || '');
-                            formData.append(`items[${itemIndex}][telas][${telaIdx}][color]`, tela.color || '');
-                            formData.append(`items[${itemIndex}][telas][${telaIdx}][referencia]`, tela.referencia || '');
-                            
-                            // Agregar imágenes de tela
-                            // Las imágenes vienen como {file: File, nombre: string, tamaño: number}
-                            if (tela.imagenes && Array.isArray(tela.imagenes)) {
-                                tela.imagenes.forEach((img, imgIdx) => {
-                                    let archivo = null;
-                                    
-                                    // Caso 1: img es File directo
-                                    if (img instanceof File) {
-                                        archivo = img;
-                                    }
-                                    // Caso 2: img es {file: File, nombre: string, tamaño: number}
-                                    else if (img && img.file instanceof File) {
-                                        archivo = img.file;
-                                    }
-                                    
-                                    if (archivo) {
-                                        formData.append(`items_${itemIndex}_telas_${telaIdx}_imagenes_files`, archivo);
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    // Para EPPs: agregar campos específicos
-                    if (item.tipo === 'epp') {
-                        formData.append(`items[${itemIndex}][epp_id]`, item.epp_id || '');
-                        formData.append(`items[${itemIndex}][nombre]`, item.nombre || '');
-                        formData.append(`items[${itemIndex}][codigo]`, item.codigo || '');
-                        formData.append(`items[${itemIndex}][categoria]`, item.categoria || '');
-                        formData.append(`items[${itemIndex}][cantidad]`, item.cantidad || 0);
-                        formData.append(`items[${itemIndex}][observaciones]`, item.observaciones || '');
-                        
-                        // Agregar imágenes de EPP con clave plana consistente
-                        if (item.imagenes && Array.isArray(item.imagenes)) {
-                            item.imagenes.forEach((img, imgIdx) => {
-                                let archivo = null;
-                                
-                                // Caso 1: img es File directo
-                                if (img instanceof File) {
-                                    archivo = img;
-                                }
-                                // Caso 2: img es {archivo: File, nombre: string, url: string}
-                                else if (img && img.archivo instanceof File) {
-                                    archivo = img.archivo;
-                                }
-                                
-                                if (archivo) {
-                                    formData.append(`items_${itemIndex}_imagenes_files`, archivo);
-                                }
-                            });
-                        }
-                    }
-                });
-            }
-            
-
-            
-            // Loguear claves de FormData para debugging
-
-            for (let [key, value] of formData.entries()) {
-                if (value instanceof File) {
-
-                } else {
-
+            // ✅ PASO 1: Sanitizar payload (elimina propiedades reactivas, convierte tipos)
+            let payloadLimpio;
+            if (window.PayloadSanitizer) {
+                payloadLimpio = window.PayloadSanitizer.sanitizarPedido(pedidoData);
+                console.log('[item-api-service] ✅ Payload sanitizado correctamente');
+                
+                // Validar payload
+                const { valido, errores } = window.PayloadSanitizer.validarPayload(payloadLimpio);
+                if (!valido) {
+                    console.error('[item-api-service] ❌ Payload inválido:', errores);
+                    throw new Error(`Validación fallida: ${errores.join(', ')}`);
                 }
+            } else {
+                console.warn('[item-api-service] ⚠️ PayloadSanitizer no disponible, usando datos sin sanitizar');
+                payloadLimpio = pedidoData;
             }
             
-            // Realizar petición sin Content-Type (FormData lo establece automáticamente)
+            // ✅ PASO 2: Enviar como JSON (más simple y compatible con CrearPedidoCompletoRequest)
             const respuesta = await fetch(`${this.baseUrl}/crear`, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': this.csrfToken
                 },
-                body: formData
+                body: JSON.stringify(payloadLimpio)
             });
             
+            // ✅ PASO 3: Manejar respuesta
             if (!respuesta.ok) {
-                const textoError = await respuesta.text();
-
-                throw new Error(`HTTP error! status: ${respuesta.status}\n${textoError}`);
+                const errorData = await respuesta.json().catch(() => ({ message: 'Error desconocido' }));
+                console.error('[item-api-service] ❌ Error del servidor:', errorData);
+                
+                if (respuesta.status === 422 && errorData.errors) {
+                    // Validación Laravel fallida
+                    const mensajesError = Object.entries(errorData.errors)
+                        .map(([campo, mensajes]) => `${campo}: ${mensajes.join(', ')}`)
+                        .join('\n');
+                    throw new Error(`Validación fallida:\n${mensajesError}`);
+                }
+                
+                throw new Error(errorData.message || `HTTP error! status: ${respuesta.status}`);
             }
             
-            return await respuesta.json();
+            const resultado = await respuesta.json();
+            console.log('[item-api-service] ✅ Pedido creado exitosamente:', resultado);
+            
+            return resultado;
+            
         } catch (error) {
-
+            console.error('[item-api-service] ❌ Error al crear pedido:', error);
             throw error;
         }
     }

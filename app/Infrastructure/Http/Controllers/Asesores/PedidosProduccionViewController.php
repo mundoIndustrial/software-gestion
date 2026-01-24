@@ -226,11 +226,83 @@ class PedidosProduccionViewController
      */
     public function crearSinCotizacion(Request $request)
     {
-        // Validar y procesar
-        return response()->json([
-            'success' => true,
-            'message' => 'Use la ruta API POST /api/pedidos'
-        ]);
+        try {
+            \Log::info('🚀 [crearSinCotizacion] Request recibido', [
+                'cliente' => $request->input('cliente'),
+                'items_count' => count($request->input('items', [])),
+            ]);
+
+            // Validar usando FormRequest con sanitización automática
+            $validated = app(\App\Http\Requests\CrearPedidoRequest::class)->validate($request->all());
+
+            // Generar número de pedido
+            $secuenciaRow = \DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->lockForUpdate()
+                ->first();
+            
+            $numeroPedido = $secuenciaRow?->siguiente ?? 45696;
+            
+            \DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->increment('siguiente');
+
+            // Obtener o crear cliente
+            $clienteNombre = $validated['cliente'];
+            $clienteModel = \App\Models\Cliente::firstOrCreate(
+                ['nombre' => $clienteNombre],
+                ['estado' => 'activo']
+            );
+
+            // Preparar datos para el Handler
+            $data = [
+                'numero_pedido' => $numeroPedido,
+                'cliente' => $clienteNombre,
+                'cliente_id' => $clienteModel->id,
+                'forma_de_pago' => $validated['forma_de_pago'] ?? $validated['forma_pago'] ?? 'contado',
+                'asesor_id' => auth()->id(),
+                'items' => $validated['items'], // Ya sanitizado por FormRequest
+            ];
+
+            // Ejecutar Handler COMPLETO
+            $handler = app(\App\Domain\Pedidos\CommandHandlers\CrearPedidoProduccionCompletoHandler::class);
+            $pedido = $handler->handle($data);
+
+            \Log::info('✅ [crearSinCotizacion] Pedido creado', [
+                'pedido_id' => $pedido->id,
+                'numero' => $pedido->numero_pedido,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido creado exitosamente',
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cantidad_total' => $pedido->cantidad_total,
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('❌ [crearSinCotizacion] Validación fallida', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ [crearSinCotizacion] Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear pedido: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

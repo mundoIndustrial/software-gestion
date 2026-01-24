@@ -1,0 +1,73 @@
+{
+  "cliente": "rtytryrt",
+  "asesora": "yus2",
+  "forma_de_pago": "contado",
+  "items": [
+    {
+      "tipo": "prenda_nueva",
+      "nombre_prenda": "CAMISA DRILL",
+      "descripcion": "Camisa drill naranja",
+      "origen": "bodega",
+      "de_bodega": 1,
+      "cantidad_talla": {
+        "DAMA": {
+          "S": 20,
+          "M": 10
+        },
+        "CABALLERO": {},
+        "UNISEX": {}
+      },
+      "variaciones": {
+        "tipo_manga": "Larga",
+        "obs_manga": "CHERRETERIA",
+        "tiene_bolsillos": true,
+        "obs_bolsillos": "CON ESPACIO DE 4CM EN EL CENTRO PARA PEGAR VELCRO",
+        "tipo_broche": "boton",
+        "obs_broche": "COLOR BLANCO PLASTICO",
+        "tipo_broche_boton_id": 2,
+        "tipo_manga_id": null,
+        "tiene_reflectivo": false,
+        "obs_reflectivo": null
+      },
+      "telas": [
+        {
+          "tela": "DRILL",
+          "color": "NARANJA",
+          "referencia": "REF232",
+          "tela_id": null,
+          "color_id": null,
+          "imagenes": [
+            "/storage/telas/drill_naranja_1.jpg",
+            "/storage/telas/drill_naranja_2.jpg"
+          ]
+        }
+      ],
+      "imagenes": [
+        "/storage/prendas/camisa_drill_frente.jpg",
+        "/storage/prendas/camisa_drill_espalda.jpg"
+      ],
+      "procesos": {
+        "reflectivo": {
+          "tipo": "reflectivo",
+          "datos": {
+            "tipo": "reflectivo",
+            "ubicaciones": [
+              "2 LINEAS EN EL HOMBRO UNA EN EL LADO DERECHO Y OTRA EN EL IZQ"
+            ],
+            "observaciones": "Reflectivo alta visibilidad",
+            "tallas": {
+              "dama": {
+                "S": 20,
+                "M": 10
+              },
+              "caballero": {}
+            },
+            "imagenes": [
+              "/storage/procesos/reflectivo_ejemplo.jpg"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

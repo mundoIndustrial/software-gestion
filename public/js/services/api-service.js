@@ -3,6 +3,10 @@
  * Centraliza todas las llamadas al backend
  * 
  * @class ApiService
+ * 
+ * NOTA: Este archivo se carga como módulo ES6 pero también mantiene
+ * compatibilidad con window global. PedidoCompletoUnificado se inyecta
+ * desde inicializador-pedido-completo.js
  */
 
 class ApiService {
@@ -105,13 +109,42 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoSinCotizacion(pedidoData) {
-
+        // ✅ NUEVO: Usar builder unificado desde window
+        if (!window.PedidoCompletoUnificado) {
+            console.warn('[ApiService] PedidoCompletoUnificado no disponible, usando payload directo');
+            return await this.request(
+                `${this.baseUrl}/crear-sin-cotizacion`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify(pedidoData)
+                }
+            );
+        }
+        
+        const builder = new window.PedidoCompletoUnificado();
+        
+        // Construir pedido desde datos crudos
+        builder
+            .setCliente(pedidoData.cliente)
+            .setAsesora(pedidoData.asesora || pedidoData.asesor)
+            .setFormaPago(pedidoData.forma_de_pago);
+        
+        // Agregar items (prendas)
+        if (Array.isArray(pedidoData.items)) {
+            pedidoData.items.forEach(item => builder.agregarPrenda(item));
+        }
+        
+        // Validar y construir
+        builder.validate();
+        const pedidoLimpio = builder.build();
+        
+        console.log('[ApiService] Pedido sanitizado con builder:', pedidoLimpio);
         
         const data = await this.request(
             `${this.baseUrl}/crear-sin-cotizacion`,
             {
                 method: 'POST',
-                body: JSON.stringify(pedidoData)
+                body: JSON.stringify(pedidoLimpio)
             }
         );
 
@@ -124,13 +157,40 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoPrendaSinCotizacion(pedidoData) {
-
+        // ✅ NUEVO: Usar builder unificado desde window
+        if (!window.PedidoCompletoUnificado) {
+            console.warn('[ApiService] PedidoCompletoUnificado no disponible, usando payload directo');
+            return await this.request(
+                `${this.baseUrl}/crear-prenda-sin-cotizacion`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify(pedidoData)
+                }
+            );
+        }
+        
+        const builder = new window.PedidoCompletoUnificado();
+        
+        // Construir pedido desde datos crudos
+        builder
+            .setCliente(pedidoData.cliente)
+            .setAsesora(pedidoData.asesora || pedidoData.asesor)
+            .setFormaPago(pedidoData.forma_de_pago);
+        
+        // Agregar la prenda
+        builder.agregarPrenda(pedidoData);
+        
+        // Validar y construir
+        builder.validate();
+        const pedidoLimpio = builder.build();
+        
+        console.log('[ApiService] Prenda sanitizada con builder:', pedidoLimpio);
         
         const data = await this.request(
             `${this.baseUrl}/crear-prenda-sin-cotizacion`,
             {
                 method: 'POST',
-                body: JSON.stringify(pedidoData)
+                body: JSON.stringify(pedidoLimpio)
             }
         );
 
@@ -335,7 +395,179 @@ class ApiService {
             return { online: false };
         }
     }
+
+    /**
+     * ═══════════════════════════════════════════════════════════════════
+     * SANITIZADOR DE PEDIDOS - Limpia JSON antes de enviar
+     * ═══════════════════════════════════════════════════════════════════
+     */
+    sanitizePedido(pedidoData) {
+        return {
+            cliente: pedidoData.cliente,
+            asesora: pedidoData.asesora,
+            forma_de_pago: (pedidoData.forma_de_pago || pedidoData.forma_pago || 'contado').toLowerCase(),
+            items: (pedidoData.items || []).map(item => this._sanitizeItem(item))
+        };
+    }
+
+    _sanitizeItem(item) {
+        return {
+            tipo: item.tipo || 'prenda_nueva',
+            nombre_prenda: item.nombre_prenda || item.nombre_producto || '',
+            descripcion: this._cleanString(item.descripcion),
+            origen: item.origen || 'bodega',
+            de_bodega: item.origen === 'bodega' ? 1 : 0,
+            cantidad_talla: this._sanitizeCantidadTalla(item.cantidad_talla),
+            variaciones: this._sanitizeVariaciones(item.variaciones || item.variantes),
+            telas: this._sanitizeTelas(item.telas),
+            imagenes: this._sanitizeImagenes(item.imagenes),
+            procesos: this._sanitizeProcesos(item.procesos)
+        };
+    }
+
+    _sanitizeCantidadTalla(cantidadTalla) {
+        if (!cantidadTalla || typeof cantidadTalla !== 'object') {
+            return { DAMA: {}, CABALLERO: {}, UNISEX: {} };
+        }
+        const cleaned = {};
+        ['DAMA', 'CABALLERO', 'UNISEX'].forEach(genero => {
+            const tallas = cantidadTalla[genero];
+            if (tallas && typeof tallas === 'object' && !Array.isArray(tallas)) {
+                cleaned[genero] = {};
+                Object.entries(tallas).forEach(([talla, cantidad]) => {
+                    const cant = parseInt(cantidad);
+                    if (!isNaN(cant) && cant > 0) {
+                        cleaned[genero][talla] = cant;
+                    }
+                });
+            } else {
+                cleaned[genero] = {};
+            }
+        });
+        return cleaned;
+    }
+
+    _sanitizeVariaciones(variaciones) {
+        if (!variaciones) return {};
+        return {
+            tipo_manga: this._cleanString(variaciones.tipo_manga),
+            obs_manga: this._cleanString(variaciones.obs_manga),
+            tiene_bolsillos: Boolean(variaciones.tiene_bolsillos),
+            obs_bolsillos: this._cleanString(variaciones.obs_bolsillos),
+            tipo_broche: this._cleanString(variaciones.tipo_broche),
+            obs_broche: this._cleanString(variaciones.obs_broche),
+            tipo_broche_boton_id: this._cleanInt(variaciones.tipo_broche_boton_id),
+            tipo_manga_id: this._cleanInt(variaciones.tipo_manga_id),
+            tiene_reflectivo: Boolean(variaciones.tiene_reflectivo),
+            obs_reflectivo: this._cleanString(variaciones.obs_reflectivo)
+        };
+    }
+
+    _sanitizeTelas(telas) {
+        if (!Array.isArray(telas)) return [];
+        return telas
+            .filter(tela => tela && typeof tela === 'object')
+            .map(tela => ({
+                tela: this._cleanString(tela.tela),
+                color: this._cleanString(tela.color),
+                referencia: this._cleanString(tela.referencia),
+                tela_id: this._cleanInt(tela.tela_id),
+                color_id: this._cleanInt(tela.color_id),
+                imagenes: this._sanitizeImagenes(tela.imagenes)
+            }));
+    }
+
+    _sanitizeImagenes(imagenes) {
+        if (!imagenes) return [];
+        if (!Array.isArray(imagenes)) return [];
+        const flattened = this._flattenImages(imagenes);
+        return flattened.filter(img => img && typeof img === 'string' && img.trim() !== '');
+    }
+
+    _flattenImages(arr, depth = 0) {
+        if (depth > 5) return [];
+        const result = [];
+        for (const item of arr) {
+            if (Array.isArray(item)) {
+                result.push(...this._flattenImages(item, depth + 1));
+            } else if (item && typeof item === 'string') {
+                result.push(item);
+            }
+        }
+        return result;
+    }
+
+    _sanitizeProcesos(procesos) {
+        if (!procesos || typeof procesos !== 'object') return {};
+        const cleaned = {};
+        const tiposProceso = ['reflectivo', 'bordado', 'estampado', 'dtf', 'sublimado'];
+        tiposProceso.forEach(tipo => {
+            if (procesos[tipo]) {
+                cleaned[tipo] = {
+                    tipo: tipo,
+                    datos: this._sanitizeDatosProceso(procesos[tipo].datos || procesos[tipo])
+                };
+            }
+        });
+        return cleaned;
+    }
+
+    _sanitizeDatosProceso(datos) {
+        if (!datos || typeof datos !== 'object') return {};
+        return {
+            tipo: this._cleanString(datos.tipo),
+            ubicaciones: this._sanitizeUbicaciones(datos.ubicaciones),
+            observaciones: this._cleanString(datos.observaciones),
+            tallas: this._sanitizeTallasProceso(datos.tallas),
+            imagenes: this._sanitizeImagenes(datos.imagenes)
+        };
+    }
+
+    _sanitizeUbicaciones(ubicaciones) {
+        if (!ubicaciones) return [];
+        if (typeof ubicaciones === 'string') return [ubicaciones];
+        if (Array.isArray(ubicaciones)) {
+            return ubicaciones.filter(u => u && typeof u === 'string' && u.trim() !== '');
+        }
+        return [];
+    }
+
+    _sanitizeTallasProceso(tallas) {
+        if (!tallas || typeof tallas !== 'object') return { dama: {}, caballero: {} };
+        const cleaned = { dama: {}, caballero: {} };
+        ['dama', 'caballero'].forEach(genero => {
+            const generoTallas = tallas[genero];
+            if (generoTallas && typeof generoTallas === 'object' && !Array.isArray(generoTallas)) {
+                Object.entries(generoTallas).forEach(([talla, cantidad]) => {
+                    const cant = parseInt(cantidad);
+                    if (!isNaN(cant) && cant > 0) {
+                        cleaned[genero][talla] = cant;
+                    }
+                });
+            }
+        });
+        return cleaned;
+    }
+
+    _cleanString(value) {
+        if (value === null || value === undefined) return null;
+        if (typeof value === 'string') return value.trim() || null;
+        return String(value).trim() || null;
+    }
+
+    _cleanInt(value) {
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? null : parsed;
+    }
 }
 
-// Crear instancia global
+// Exportar para módulos ES6
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ApiService;
+}
+
+// Crear instancia global para compatibilidad
 window.ApiService = new ApiService();
+
+// Exportar como módulo ES6
+export default ApiService;

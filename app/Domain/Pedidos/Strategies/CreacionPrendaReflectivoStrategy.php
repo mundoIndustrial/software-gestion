@@ -3,26 +3,28 @@
 namespace App\Domain\Pedidos\Strategies;
 
 use App\Models\PrendaPedido;
-use App\Models\PrendaReflectivo;
 use App\Models\ProcesoPrenda;
+use App\Models\ProcesoPrendaDetalle;
+use App\Models\PrendaPedidoTalla;
 use App\Domain\Pedidos\Services\ImagenService;
 use App\Domain\Pedidos\Services\UtilitariosService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Estrategia de CreaciÃ³n de Prenda REFLECTIVO SIN COTIZACIÃ“N
+ * Estrategia de Creación de Prenda con Proceso REFLECTIVO
  * 
- * Encapsula la lÃ³gica del mÃ©todo controller::crearReflectivoSinCotizacion() (~300 lÃ­neas)
+ * ARQUITECTURA CORRECTA:
+ * 1. PRENDA (prendas_pedido) - La prenda base
+ * 2. TALLAS (prenda_pedido_tallas) - Relacional por género
+ * 3. PROCESO (procesos_prenda) - "Reflectivo" como proceso
+ * 4. DETALLES DEL PROCESO (pedidos_procesos_prenda_detalles) - Ubicaciones, observaciones
  * 
  * Responsabilidades:
- * - Procesar cantidades con estructura gÃ©nero => talla => cantidad
- * - Crear registros en prendas_reflectivo (tabla especializada)
- * - Guardar prenda en prendas_pedido
- * - Procesar fotos de reflectivo
- * - Crear proceso inicial
- * 
- * Nota: Reflectivo tiene tabla especializada prendas_reflectivo con mÃ¡s campos
+ * - Crear prenda base con nombre y descripción
+ * - Guardar tallas de forma relacional
+ * - Crear proceso "Reflectivo" 
+ * - Guardar ubicaciones del reflectivo en detalles del proceso
  */
 class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
 {
@@ -46,60 +48,74 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
         try {
             DB::beginTransaction();
 
-            // Obtener nÃºmero de pedido desde el ID para auditorÃ­a
+            // Obtener número de pedido desde el ID para auditoría
             $pedido = \App\Models\PedidoProduccion::find($pedidoProduccionId);
             if (!$pedido) {
                 throw new \Exception("Pedido no encontrado con ID: {$pedidoProduccionId}");
             }
             $numeroPedido = $pedido->numero_pedido;
 
-            Log::info(' [CreacionPrendaReflectivoStrategy] Procesando prenda reflectivo', [
-                'nombre' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+            Log::info('🔹 [CreacionPrendaReflectivoStrategy] Procesando prenda con proceso reflectivo', [
+                'nombre' => $prendaData['nombre_producto'] ?? $prendaData['nombre_prenda'] ?? 'Sin nombre',
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'numero_pedido' => $numeroPedido,
             ]);
 
-            // ===== PASO 1: PROCESAR CANTIDADES GÃ‰NERO/TALLA (ANTES LÃNEA 1530-1580) =====
+            // ===== PASO 1: PROCESAR CANTIDADES GÉNERO/TALLA =====
             $cantidadTallaGenero = $this->procesarCantidadesReflectivo($prendaData);
             $cantidadTotal = $this->calcularCantidadTotalReflectivo($cantidadTallaGenero);
 
-            Log::debug(' [CreacionPrendaReflectivoStrategy] Cantidades procesadas', [
+            Log::debug('📊 [CreacionPrendaReflectivoStrategy] Cantidades procesadas', [
                 'cantidad_total' => $cantidadTotal,
                 'estructura_generos' => count($cantidadTallaGenero),
             ]);
 
-            // ===== PASO 2: CREAR PRENDA EN prendas_pedido (ANTES LÃNEA 1600-1615) =====
+            // ===== PASO 2: CREAR PRENDA EN prendas_pedido =====
             $prendaPedido = PrendaPedido::create([
                 'pedido_produccion_id' => $pedidoProduccionId,
-                'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-                'cantidad' => $cantidadTotal,
-                // NO guardar descripciÃ³n ni cantidad_talla aquÃ­ (van en prendas_reflectivo)
-            ]);
-
-            Log::info(' [CreacionPrendaReflectivoStrategy] Prenda creada en prendas_pedido', [
-                'prenda_pedido_id' => $prendaPedido->id,
-            ]);
-
-            // ===== PASO 3: CREAR REGISTRO EN prendas_reflectivo (ANTES LÃNEA 1620-1635) =====
-            $prendaReflectivo = PrendaReflectivo::create([
-                'prenda_pedido_id' => $prendaPedido->id,
-                'nombre_producto' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+                'nombre_prenda' => $prendaData['nombre_producto'] ?? $prendaData['nombre_prenda'] ?? 'Sin nombre',
                 'descripcion' => $prendaData['descripcion'] ?? '',
-                'generos' => json_encode($this->utilitariosService->procesarGeneros($prendaData['genero'] ?? '')),
-                'cantidad_talla' => json_encode($cantidadTallaGenero), // Estructura gÃ©nero => talla => cantidad
-                'ubicaciones' => json_encode($prendaData['ubicaciones'] ?? []),
-                'cantidad_total' => $cantidadTotal,
             ]);
 
-            Log::info(' [CreacionPrendaReflectivoStrategy] InformaciÃ³n guardada en prendas_reflectivo', [
-                'prenda_reflectivo_id' => $prendaReflectivo->id,
+            Log::info('✅ [CreacionPrendaReflectivoStrategy] Prenda creada', [
+                'prenda_pedido_id' => $prendaPedido->id,
             ]);
 
-            // ===== PASO 4: CREAR PROCESO INICIAL (ANTES LÃNEA 1640-1650) =====
+            // ===== PASO 3: GUARDAR TALLAS EN prenda_pedido_tallas (RELACIONAL) =====
+            $this->guardarTallasRelacional($prendaPedido->id, $cantidadTallaGenero);
+
+            // ===== PASO 4: CREAR PROCESO "Reflectivo" =====
+            $procesoReflectivo = ProcesoPrenda::create([
+                'numero_pedido' => $numeroPedido,
+                'prenda_pedido_id' => $prendaPedido->id,
+                'proceso' => 'Reflectivo',
+                'estado_proceso' => 'Pendiente',
+                'fecha_inicio' => now(),
+            ]);
+
+            Log::info('🔧 [CreacionPrendaReflectivoStrategy] Proceso Reflectivo creado', [
+                'proceso_id' => $procesoReflectivo->id,
+            ]);
+
+            // ===== PASO 5: GUARDAR DETALLES DEL PROCESO (Ubicaciones, observaciones) =====
+            $detallesProceso = ProcesoPrendaDetalle::create([
+                'prenda_pedido_id' => $prendaPedido->id,
+                'tipo_proceso_id' => $this->obtenerTipoProcesoReflectivo(),
+                'ubicaciones' => $prendaData['ubicaciones'] ?? [],
+                'observaciones' => $prendaData['descripcion'] ?? '',
+                'estado' => 'pendiente',
+            ]);
+
+            Log::info('📝 [CreacionPrendaReflectivoStrategy] Detalles del proceso guardados', [
+                'detalle_id' => $detallesProceso->id,
+                'ubicaciones' => count($prendaData['ubicaciones'] ?? []),
+            ]);
+
+            // ===== PASO 6: CREAR PROCESO INICIAL "Creación Orden" =====
             ProcesoPrenda::create([
                 'numero_pedido' => $numeroPedido,
                 'prenda_pedido_id' => $prendaPedido->id,
-                'proceso' => 'CreaciÃ³n Orden',
+                'proceso' => 'Creación Orden',
                 'estado_proceso' => 'Completado',
                 'fecha_inicio' => now(),
                 'fecha_fin' => now(),
@@ -107,7 +123,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
 
             DB::commit();
 
-            Log::info(' [CreacionPrendaReflectivoStrategy] Prenda reflectivo completamente procesada', [
+            Log::info('✨ [CreacionPrendaReflectivoStrategy] Prenda con proceso reflectivo completada', [
                 'prenda_id' => $prendaPedido->id,
                 'cantidad_total' => $cantidadTotal,
             ]);
@@ -117,7 +133,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error(' [CreacionPrendaReflectivoStrategy] Error al procesar prenda reflectivo', [
+            Log::error('❌ [CreacionPrendaReflectivoStrategy] Error al procesar prenda reflectivo', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -131,12 +147,11 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
      */
     public function validar(array $prendaData): bool
     {
-        if (empty($prendaData['nombre_producto'])) {
-            throw new \InvalidArgumentException('nombre_producto es requerido');
+        // Soportar tanto nombre_producto como nombre_prenda
+        $nombre = $prendaData['nombre_producto'] ?? $prendaData['nombre_prenda'] ?? null;
+        if (empty($nombre)) {
+            throw new \InvalidArgumentException('nombre_prenda es requerido');
         }
-
-        // Para reflectivo es opcional tener cantidades estructuradas
-        // Pero debe tener al menos ubicaciones o descripciÃ³n
 
         return true;
     }
@@ -150,18 +165,16 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
     }
 
     /**
-     * ===== MÃ‰TODOS PRIVADOS =====
+     * ===== MÉTODOS PRIVADOS =====
      */
 
     /**
      * Procesar cantidades para reflectivo
      * Formato esperado: cantidad_talla = {genero: {talla: cantidad}}
-     * 
-     * ANTES: LÃ­nea 1530-1580 en controller (50 lÃ­neas)
      */
     private function procesarCantidadesReflectivo(array $prendaData): array
     {
-        Log::debug(' [procesarCantidadesReflectivo] Buscando estructura de cantidad');
+        Log::debug('🔍 [procesarCantidadesReflectivo] Buscando estructura de cantidad');
 
         $cantidad = $prendaData['cantidad_talla'] ?? [];
 
@@ -175,7 +188,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
             return [];
         }
 
-        // Si estÃ¡ vacÃ­o, intentar otras fuentes
+        // Si está vacío, intentar otras fuentes
         if (empty($cantidad)) {
             // Intentar cantidades_por_genero
             $cantidad = $prendaData['cantidades_por_genero'] ?? [];
@@ -204,6 +217,45 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
         }
 
         return $total;
+    }
+
+    /**
+     * Guardar tallas de forma relacional en prenda_pedido_tallas
+     */
+    private function guardarTallasRelacional(int $prendaPedidoId, array $cantidadTallaGenero): void
+    {
+        Log::debug('💾 [guardarTallasRelacional] Guardando tallas', [
+            'prenda_pedido_id' => $prendaPedidoId,
+            'generos' => array_keys($cantidadTallaGenero),
+        ]);
+
+        foreach ($cantidadTallaGenero as $genero => $tallas) {
+            if (!is_array($tallas)) {
+                continue;
+            }
+
+            foreach ($tallas as $talla => $cantidad) {
+                if ($cantidad > 0) {
+                    PrendaPedidoTalla::create([
+                        'prenda_pedido_id' => $prendaPedidoId,
+                        'genero' => strtoupper($genero),
+                        'talla' => strtoupper($talla),
+                        'cantidad' => (int)$cantidad,
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Obtener el tipo_proceso_id para "Reflectivo"
+     * TODO: Esto debería venir de una tabla tipo_procesos
+     */
+    private function obtenerTipoProcesoReflectivo(): ?int
+    {
+        // Por ahora retornamos null, se debe configurar correctamente
+        // cuando tengamos la tabla tipo_procesos con el ID correcto
+        return null;
     }
 }
 
