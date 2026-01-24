@@ -19,12 +19,26 @@ function inicializarVariantes() {
  */
 function cargarTiposPrenda() {
     fetch('/api/tipos-prenda')
-        .then(res => res.json())
-        .then(tipos => {
-            tiposPrendaCache = tipos;
-
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+            return res.json();
         })
-        .catch(err => console.error(' Error cargando tipos:', err));
+        .then(response => {
+            // Manejar ambos formatos: array directo o response con data/success
+            if (Array.isArray(response)) {
+                tiposPrendaCache = response;
+            } else if (response.data && Array.isArray(response.data)) {
+                tiposPrendaCache = response.data;
+            } else if (response.success === true && Array.isArray(response.data)) {
+                tiposPrendaCache = response.data;
+            } else {
+                console.warn(' Formato inesperado de respuesta de tipos-prenda:', response);
+                tiposPrendaCache = [];
+            }
+        })
+        .catch(err => console.error(' Error cargando tipos de prenda:', err));
 }
 
 /**

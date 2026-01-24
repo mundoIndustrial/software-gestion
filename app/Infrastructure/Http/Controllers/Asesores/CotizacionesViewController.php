@@ -49,6 +49,7 @@ final class CotizacionesViewController extends Controller
             $mapeoTipos = [
                 1 => 'PL',  // Combinada
                 2 => 'L',   // Logo
+                3 => 'P',   // Prenda
                 4 => 'RF',  // Reflectivo
             ];
 

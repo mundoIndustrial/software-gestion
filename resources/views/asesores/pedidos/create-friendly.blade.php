@@ -150,9 +150,26 @@
 <script src="{{ asset('js/paso-tres-cotizacion-combinada.js') }}"></script>
 <script src="{{ asset('js/paso-cuatro-cotizacion-combinada.js') }}"></script>
 
+<!-- 3c. Configuración dinámica del stepper -->
+<script src="{{ asset('js/asesores/cotizaciones/config-stepper.js') }}"></script>
+
 <!-- 4. Configuración global -->
 <script>
-    window.tipoCotizacionGlobal = 'PL'; // Prenda-Logo
+    // Obtener tipo de cotización desde URL
+    const params = new URLSearchParams(window.location.search);
+    const tipoUrl = params.get('tipo') || 'PB';
+    
+    // Mapear tipo URL a tipo_cotizacion para backend
+    const mapeoTipoCotizacion = {
+        'P': 'P',      // Prenda
+        'L': 'L',      // Logo (Bordado)
+        'B': 'L',      // Logo - Alias alternativo
+        'RF': 'RF',    // Reflectivo
+        'PB': 'PL',    // Combinada (Prenda + Bordado / Logo)
+        'PL': 'PL'     // Combinada (Prenda + Logo)
+    };
+    
+    window.tipoCotizacionGlobal = mapeoTipoCotizacion[tipoUrl] || 'PL'; // Default Prenda-Logo
     window.routes = window.routes || {};
     window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.guardar") }}';
     window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';
