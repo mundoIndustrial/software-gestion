@@ -796,10 +796,10 @@ Route::middleware(['auth', 'role:bordado,admin'])->prefix('bordado')->name('bord
 // ========================================
 Route::prefix('api')->name('api.')->group(function () {
     // Rutas públicas para festivos (sin autenticación requerida)
-    Route::get('/festivos', [App\Http\Controllers\Api\FestivosController::class, 'index'])->name('festivos.index');
-    Route::get('/festivos/detailed', [App\Http\Controllers\Api\FestivosController::class, 'detailed'])->name('festivos.detailed');
-    Route::get('/festivos/check', [App\Http\Controllers\Api\FestivosController::class, 'check'])->name('festivos.check');
-    Route::get('/festivos/range', [App\Http\Controllers\Api\FestivosController::class, 'range'])->name('festivos.range');
+    Route::get('/festivos', [App\Http\Controllers\API\FestivosController::class, 'index'])->name('festivos.index');
+    Route::get('/festivos/detailed', [App\Http\Controllers\API\FestivosController::class, 'detailed'])->name('festivos.detailed');
+    Route::get('/festivos/check', [App\Http\Controllers\API\FestivosController::class, 'check'])->name('festivos.check');
+    Route::get('/festivos/range', [App\Http\Controllers\API\FestivosController::class, 'range'])->name('festivos.range');
 });
 
 // ========================================
@@ -924,9 +924,9 @@ Route::prefix('api')->group(function () {
 // API ROUTES - VALOR HORA EXTRA
 // ========================================
 Route::middleware(['auth', 'verified'])->prefix('api')->name('api.')->group(function () {
-    Route::get('valor-hora-extra/{codigoPersona}', [App\Http\Controllers\Api\ValorHoraExtraController::class, 'obtener'])
+    Route::get('valor-hora-extra/{codigoPersona}', [App\Http\Controllers\API\ValorHoraExtraController::class, 'obtener'])
         ->name('valor-hora-extra.obtener');
-    Route::post('valor-hora-extra/guardar', [App\Http\Controllers\Api\ValorHoraExtraController::class, 'guardar'])
+    Route::post('valor-hora-extra/guardar', [App\Http\Controllers\API\ValorHoraExtraController::class, 'guardar'])
         ->name('valor-hora-extra.guardar');
 });
 

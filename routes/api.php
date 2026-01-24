@@ -287,9 +287,9 @@ Route::prefix('asistencias')->name('asistencias.')->middleware(['api'])->group(f
  * Rutas para importación de artículos/EPP
  */
 Route::prefix('articulos')->group(function () {
-    Route::post('guardar', [\App\Http\Controllers\Api\ArticulosImportController::class, 'guardarArticulos']);
-    Route::get('/', [\App\Http\Controllers\Api\ArticulosImportController::class, 'listar']);
-    Route::get('{id}', [\App\Http\Controllers\Api\ArticulosImportController::class, 'obtener']);
+    Route::post('guardar', [\App\Http\Controllers\API\ArticulosImportController::class, 'guardarArticulos']);
+    Route::get('/', [\App\Http\Controllers\API\ArticulosImportController::class, 'listar']);
+    Route::get('{id}', [\App\Http\Controllers\API\ArticulosImportController::class, 'obtener']);
 });
 
 // Test endpoint para procesamiento de imágenes (sin autenticación por ahora)
