@@ -110,20 +110,14 @@ class ModalNovedadEdicion {
             }
             
             // Agregar variantes si existen
-            // Las variantes pueden ser un objeto {manga, obs_manga, etc} OR un array
-            if (this.prendaData.variantes) {
-                const tieneVariantes = Array.isArray(this.prendaData.variantes) 
-                    ? this.prendaData.variantes.length > 0
-                    : Object.keys(this.prendaData.variantes).length > 0;
-                    
-                if (tieneVariantes) {
-                    // Convertir variantes a formato esperado por backend: array de objetos
-                    const variantesArray = this.convertirVariantesAlFormatoBackend(this.prendaData.variantes);
-                    formData.append('variantes', JSON.stringify(variantesArray));
-                    console.log('[modal-novedad-edicion] Variantes enviadas:', variantesArray);
-                } else {
-                    console.log('[modal-novedad-edicion] ⚠️ No hay variantes para enviar');
-                }
+            // Leer variantes ACTUALES del formulario, no de this.prendaData
+            const variantesActuales = await this.obtenerVariantesDelFormulario();
+            
+            if (variantesActuales && Object.keys(variantesActuales).some(key => variantesActuales[key] !== null && variantesActuales[key] !== '')) {
+                // Convertir variantes a formato esperado por backend: array de objetos
+                const variantesArray = this.convertirVariantesAlFormatoBackend(variantesActuales);
+                formData.append('variantes', JSON.stringify(variantesArray));
+                console.log('[modal-novedad-edicion] Variantes enviadas:', variantesArray);
             } else {
                 console.log('[modal-novedad-edicion] ⚠️ No hay variantes para enviar');
             }
@@ -309,6 +303,85 @@ class ModalNovedadEdicion {
         
         // Si está vacío, retornar array vacío
         return [];
+    }
+
+    /**
+     * Obtener variantes actuales del formulario
+     */
+    async obtenerVariantesDelFormulario() {
+        const variante = {};
+
+        // Manga
+        const mangaCheckbox = document.getElementById('aplica-manga');
+        if (mangaCheckbox && mangaCheckbox.checked) {
+            const mangaInput = document.getElementById('manga-input');
+            const mangaObs = document.getElementById('manga-obs');
+            
+            // Procesar el input de manga (crea automáticamente si no existe)
+            if (mangaInput && mangaInput.value && typeof window.procesarMangaInput === 'function') {
+                await window.procesarMangaInput(mangaInput);
+            }
+            
+            // Obtener el ID de la manga seleccionada
+            let tipo_manga_id = null;
+            if (mangaInput && mangaInput.value) {
+                // Buscar el ID en el datalist basado en el nombre seleccionado
+                const datalist = document.getElementById('opciones-manga');
+                if (datalist) {
+                    const option = Array.from(datalist.options).find(opt => opt.value === mangaInput.value);
+                    if (option && option.dataset.id) {
+                        tipo_manga_id = parseInt(option.dataset.id);
+                    }
+                }
+            }
+            
+            variante.tipo_manga_id = tipo_manga_id;
+            variante.manga_obs = mangaObs?.value || '';
+        }
+
+        // Broche/Botón
+        const brocheCheckbox = document.getElementById('aplica-broche');
+        if (brocheCheckbox && brocheCheckbox.checked) {
+            const brocheInput = document.getElementById('broche-input');
+            const brocheObs = document.getElementById('broche-obs');
+            
+            // Mapear valor del select a ID
+            let tipo_broche_boton_id = null;
+            if (brocheInput && brocheInput.value) {
+                if (brocheInput.value === 'broche') {
+                    tipo_broche_boton_id = 1;
+                } else if (brocheInput.value === 'boton') {
+                    tipo_broche_boton_id = 2;
+                }
+            }
+            
+            variante.tipo_broche_boton_id = tipo_broche_boton_id;
+            variante.broche_boton_obs = brocheObs?.value || '';
+        }
+
+        // Bolsillos
+        const bolsillosCheckbox = document.getElementById('aplica-bolsillos');
+        if (bolsillosCheckbox && bolsillosCheckbox.checked) {
+            const bolsillosObs = document.getElementById('bolsillos-obs');
+            variante.tiene_bolsillos = true;
+            variante.bolsillos_obs = bolsillosObs?.value || '';
+        } else {
+            variante.tiene_bolsillos = false;
+            variante.bolsillos_obs = '';
+        }
+
+        // Reflectivo
+        const reflectivoCheckbox = document.getElementById('checkbox-reflectivo');
+        if (reflectivoCheckbox && reflectivoCheckbox.checked) {
+            const reflectivoObs = document.getElementById('obs-reflectivo');
+            variante.tiene_reflectivo = true;
+            variante.reflectivo_obs = reflectivoObs?.value || '';
+        } else {
+            variante.tiene_reflectivo = false;
+            variante.reflectivo_obs = '';
+        }
+
+        return variante;
     }
 }
 

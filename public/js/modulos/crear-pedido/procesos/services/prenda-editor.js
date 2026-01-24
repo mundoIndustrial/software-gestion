@@ -34,6 +34,11 @@ class PrendaEditor {
 
         }
 
+        // Cargar tipos de manga disponibles desde la BD
+        if (typeof window.cargarTiposMangaDisponibles === 'function') {
+            window.cargarTiposMangaDisponibles();
+        }
+
         // Mostrar modal
 
         const modal = document.getElementById(this.modalId);
@@ -466,40 +471,75 @@ class PrendaEditor {
 
 
         // Cargar manga desde obs_manga o variantes.obs_manga
-        if (aplicaManga && (prenda.obs_manga || (prenda.variantes && prenda.variantes.obs_manga))) {
+        // Obtener primera variante si existe
+        const varianteManga = Array.isArray(prenda.variantes) && prenda.variantes.length > 0 ? prenda.variantes[0] : null;
+        
+        if (aplicaManga && (prenda.obs_manga || (varianteManga && varianteManga.obs_manga))) {
             aplicaManga.checked = true;
             aplicaManga.dispatchEvent(new Event('change', { bubbles: true }));
             
             // Cargar valor en manga-input
             const mangaInput = document.getElementById('manga-input');
             if (mangaInput) {
-                mangaInput.value = prenda.obs_manga || prenda.variantes?.obs_manga || '';
+                mangaInput.value = prenda.obs_manga || varianteManga?.obs_manga || '';
                 mangaInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
             // Cargar observaciones en manga-obs
             const mangaObs = document.getElementById('manga-obs');
             if (mangaObs) {
-                mangaObs.value = prenda.obs_manga || prenda.variantes?.obs_manga || '';
+                mangaObs.value = prenda.obs_manga || varianteManga?.obs_manga || '';
                 mangaObs.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
 
         // Cargar bolsillos desde obs_bolsillos o variantes.obs_bolsillos
-        if (aplicaBolsillos && (prenda.obs_bolsillos || (prenda.variantes && prenda.variantes.obs_bolsillos) || prenda.tiene_bolsillos)) {
+        const varianteBolsillos = Array.isArray(prenda.variantes) && prenda.variantes.length > 0 ? prenda.variantes[0] : null;
+        
+        if (aplicaBolsillos && (prenda.obs_bolsillos || (varianteBolsillos && varianteBolsillos.obs_bolsillos) || prenda.tiene_bolsillos)) {
             aplicaBolsillos.checked = true;
             aplicaBolsillos.dispatchEvent(new Event('change', { bubbles: true }));
             
             // Cargar observaciones en bolsillos-obs
             const bolsillosObs = document.getElementById('bolsillos-obs');
             if (bolsillosObs) {
-                bolsillosObs.value = prenda.obs_bolsillos || prenda.variantes?.obs_bolsillos || '';
+                bolsillosObs.value = prenda.obs_bolsillos || varianteBolsillos?.obs_bolsillos || '';
                 bolsillosObs.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
 
-        // Cargar broche desde obs_broche o variantes.obs_broche o tipo_broche_boton_id
-        if (aplicaBroche && (prenda.obs_broche || (prenda.variantes && prenda.variantes.obs_broche) || prenda.tipo_broche_boton_id)) {
+        // Cargar broche desde obs_broche o variante.tipo_broche_boton_id
+        // NOTA: variante es un OBJETO único, no un array
+        const variante = prenda.variante || null;
+        
+        console.log('[prenda-editor] 🔍 DEBUG Broche/Botón - Datos completos de prenda:', {
+            tipo_broche_boton_id: prenda.tipo_broche_boton_id,
+            obs_broche: prenda.obs_broche,
+            variante_completo: variante,
+            es_objeto: variante && typeof variante === 'object',
+            variante_obs_broche: variante?.broche_obs,
+            variante_broche_boton_obs: variante?.broche_boton_obs,
+            variante_tipo_broche_boton_id: variante?.tipo_broche_boton_id,
+            variante_nombre_broche: variante?.nombre_broche,
+            tipo_broche_boton_id_tipo: typeof prenda.tipo_broche_boton_id,
+            aplicaBrocheExists: !!aplicaBroche
+        });
+        
+        console.log('[prenda-editor] 🔍 CONTENIDO COMPLETO variante:', JSON.stringify(variante, null, 2));
+        console.log('[prenda-editor] 🔍 TODAS LAS CLAVES de variante:', variante ? Object.keys(variante) : 'null');
+
+        // Obtener el tipo de broche directamente desde prenda o variante
+        const tipo_broche_boton_id = prenda.tipo_broche_boton_id || variante?.tipo_broche_boton_id || null;
+        const obsBroche = prenda.obs_broche || variante?.broche_obs || variante?.broche_boton_obs || '';
+        
+        console.log('[prenda-editor] 🎯 VALORES FINALES:', {
+            tipo_broche_boton_id: tipo_broche_boton_id,
+            tipo_broche_boton_id_tipo: typeof tipo_broche_boton_id,
+            nombre_broche: variante?.nombre_broche,
+            obsBroche: obsBroche
+        });
+
+        if (aplicaBroche && (obsBroche || tipo_broche_boton_id)) {
             console.log('[prenda-editor] Broche: Checkbox aplica-broche encontrado', { aplicaBroche: !!aplicaBroche });
             aplicaBroche.checked = true;
             console.log('[prenda-editor] Broche: Checkbox marcado como checked=true');
@@ -508,21 +548,57 @@ class PrendaEditor {
             
             // Cargar tipo de broche en dropdown (broche-input)
             const brocheInput = document.getElementById('broche-input');
-            console.log('[prenda-editor] Broche: brocheInput encontrado?', { encontrado: !!brocheInput, disabled: brocheInput?.disabled });
-
+            const brocheObs = document.getElementById('broche-obs');
             
-            if (brocheInput && prenda.tipo_broche_boton_id) {
-                console.log('[prenda-editor] Broche: tipo_broche_boton_id =', prenda.tipo_broche_boton_id);
-                // Mapear ID a valor del dropdown
-                // De la tabla tipos_broche_boton: 1 = Broche, 2 = Botón
+            console.log('[prenda-editor] Broche: brocheInput encontrado?', { 
+                encontrado: !!brocheInput, 
+                disabled: brocheInput?.disabled,
+                currentValue: brocheInput?.value,
+                id: brocheInput?.id 
+            });
+
+            // Habilitar manualmente el input antes de establecer el valor
+            if (brocheInput) {
+                brocheInput.disabled = false;
+                brocheInput.style.opacity = '1';
+            }
+            if (brocheObs) {
+                brocheObs.disabled = false;
+                brocheObs.style.opacity = '1';
+            }
+            
+            if (brocheInput && tipo_broche_boton_id) {
+                console.log('[prenda-editor] 🎯 Broche: tipo_broche_boton_id =', tipo_broche_boton_id, 'Tipo:', typeof tipo_broche_boton_id);
+                
+                // Obtener el nombre desde variante (puede venir como 'broche' o 'nombre_broche')
+                const nombreBroche = variante?.broche || variante?.nombre_broche || '';
+                console.log('[prenda-editor] 🎯 Broche: nombre desde backend =', nombreBroche);
+                
+                // Mapear nombre del backend a valor del dropdown
+                // El backend retorna "Broche" o "Botón" (con acento)
                 let valorSeleccionar = '';
-                if (prenda.tipo_broche_boton_id === 1) {
-                    valorSeleccionar = 'broche';
-                } else if (prenda.tipo_broche_boton_id === 2) {
-                    valorSeleccionar = 'boton';
+                if (nombreBroche) {
+                    // Normalizar el nombre eliminando acentos y convirtiéndolo a minúsculas
+                    const nombreNormalizado = nombreBroche.toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, ''); // Eliminar acentos
+                    
+                    if (nombreNormalizado === 'broche') {
+                        valorSeleccionar = 'broche';
+                    } else if (nombreNormalizado === 'boton') {
+                        valorSeleccionar = 'boton';
+                    }
+                } else {
+                    // Fallback: Mapear ID a valor del dropdown si no viene nombre_broche
+                    // De la tabla tipos_broche_boton: 1 = Broche, 2 = Botón
+                    if (tipo_broche_boton_id === 1 || tipo_broche_boton_id === '1') {
+                        valorSeleccionar = 'broche';
+                    } else if (tipo_broche_boton_id === 2 || tipo_broche_boton_id === '2') {
+                        valorSeleccionar = 'boton';
+                    }
                 }
                 
-                console.log('[prenda-editor] Broche: valorSeleccionar =', valorSeleccionar);
+                console.log('[prenda-editor] 🎯 Broche: valorSeleccionar =', valorSeleccionar);
 
                 
                 // Buscar la opción que coincida
@@ -530,41 +606,49 @@ class PrendaEditor {
                 console.log('[prenda-editor] Broche: Opciones disponibles:', Array.from(brocheInput.options).map(o => ({ value: o.value, text: o.text })));
                 
                 for (let opt of brocheInput.options) {
-                    console.log('[prenda-editor] Broche: Comparando', opt.value.toLowerCase(), '===', valorSeleccionar.toLowerCase(), '?');
+                    console.log('[prenda-editor] Broche: Comparando "' + opt.value.toLowerCase() + '" === "' + valorSeleccionar.toLowerCase() + '" ?');
                     if (opt.value.toLowerCase() === valorSeleccionar.toLowerCase()) {
                         console.log('[prenda-editor] Broche: ✓ Opción encontrada! Estableciendo value =', opt.value);
                         brocheInput.value = opt.value;
                         encontrado = true;
-
+                        console.log('[prenda-editor] Broche: ✓ Value establecido. brocheInput.value ahora es:', brocheInput.value);
                         break;
                     }
                 }
                 
                 if (!encontrado) {
-                    console.log('[prenda-editor] ⚠️ Broche: NO se encontró opción que coincida');
-
+                    console.log('[prenda-editor] ⚠️ Broche: NO se encontró opción que coincida. Valor buscado:', valorSeleccionar);
                 }
                 
+                console.log('[prenda-editor] 🔄 Broche: Disparando evento change...');
                 brocheInput.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('[prenda-editor] ✅ Broche: Evento change disparado. Valor final:', brocheInput.value);
+            } else {
+                console.log('[prenda-editor] ⚠️ Broche: NO se cargará el select porque:', {
+                    brocheInputExists: !!brocheInput,
+                    tipo_broche_boton_id: tipo_broche_boton_id,
+                    condicionFalsa: !brocheInput || !tipo_broche_boton_id
+                });
             }
             
             // Cargar observaciones en broche-obs
-            const brocheObs = document.getElementById('broche-obs');
-            if (brocheObs) {
-                brocheObs.value = prenda.obs_broche || prenda.variantes?.obs_broche || '';
+            if (brocheObs && obsBroche) {
+                brocheObs.value = obsBroche;
                 brocheObs.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
 
         // Cargar reflectivo desde obs_reflectivo o variantes.obs_reflectivo
-        if (aplicaReflectivo && (prenda.obs_reflectivo || (prenda.variantes && prenda.variantes.obs_reflectivo) || prenda.tiene_reflectivo)) {
+        const varianteReflectivo = Array.isArray(prenda.variantes) && prenda.variantes.length > 0 ? prenda.variantes[0] : null;
+        
+        if (aplicaReflectivo && (prenda.obs_reflectivo || (varianteReflectivo && varianteReflectivo.obs_reflectivo) || prenda.tiene_reflectivo)) {
             aplicaReflectivo.checked = true;
             aplicaReflectivo.dispatchEvent(new Event('change', { bubbles: true }));
             
             // Cargar observaciones en reflectivo-obs
             const reflectivoObs = document.getElementById('reflectivo-obs');
             if (reflectivoObs) {
-                reflectivoObs.value = prenda.obs_reflectivo || prenda.variantes?.obs_reflectivo || '';
+                reflectivoObs.value = prenda.obs_reflectivo || varianteReflectivo?.obs_reflectivo || '';
                 reflectivoObs.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
