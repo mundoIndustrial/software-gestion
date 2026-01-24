@@ -688,8 +688,10 @@ final class CotizacionController extends Controller
             $tipoCotizacionId = $cotizacion->tipo_cotizacion_id; // Mantener el actual por defecto
             
             // Mapear tipo a tipo_cotizacion_id
-            // Solo 3 tipos: Logo (L=2), Combinado (PL=1), Reflectivo (RF=4)
-            if ($tipoCotizacionEnviado === 'PL' || $tipoCotizacionEnviado === 'PB') {
+            // Tipos disponibles: Prenda (P=3), Logo (L=2), Combinado (PL/PB=1), Reflectivo (RF=4)
+            if ($tipoCotizacionEnviado === 'P') {
+                $tipoCotizacionId = 3; // Prenda
+            } elseif ($tipoCotizacionEnviado === 'PL' || $tipoCotizacionEnviado === 'PB') {
                 $tipoCotizacionId = 1; // Combinado
             } elseif ($tipoCotizacionEnviado === 'L') {
                 $tipoCotizacionId = 2; // Logo

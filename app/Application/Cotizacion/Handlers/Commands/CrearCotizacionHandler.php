@@ -47,7 +47,13 @@ final class CrearCotizacionHandler
         try {
             // Crear Value Objects
             $usuarioId = UserId::crear($datos->usuarioId);
-            $tipo = TipoCotizacion::tryFrom($datos->tipo) ?? TipoCotizacion::PRENDA;
+            // El tipo debe venir correctamente mapeado desde el controller ('P', 'L', 'PL', 'PB', 'RF')
+            $tipo = TipoCotizacion::tryFrom($datos->tipo);
+            if (!$tipo) {
+                Log::error('CrearCotizacionHandler: Tipo de cotización inválido', ['tipo' => $datos->tipo]);
+                // Fallback a COMBINADO si hay un tipo inválido
+                $tipo = TipoCotizacion::COMBINADO;
+            }
 
             // Crear Aggregate Root
             if ($datos->esBorrador) {
