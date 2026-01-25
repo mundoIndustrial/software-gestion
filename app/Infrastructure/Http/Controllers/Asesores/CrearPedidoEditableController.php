@@ -282,28 +282,32 @@ class CrearPedidoEditableController extends Controller
     /**
      * Validar datos del pedido antes de crear
      * 
-     * @param Request $request
+     * 🔧 CORREGIDO (24 Enero 2026):
+     * - Ahora usa CrearPedidoCompletoRequest en lugar de validate() inline
+     * - Valida y retorna TODOS los campos: variaciones, procesos, telas, imagenes
+     * - Antes solo validaba: cliente, items, cantidad_talla (se perdían los demás)
+     * 
+     * @param CrearPedidoCompletoRequest $request
      * @return JsonResponse
      */
-    public function validarPedido(Request $request): JsonResponse
+    public function validarPedido(CrearPedidoCompletoRequest $request): JsonResponse
     {
         try {
             \Log::info('[CrearPedidoEditableController] validarPedido - Datos recibidos', [
                 'cliente' => $request->input('cliente'),
                 'items_count' => count($request->input('items', [])),
-                'all_input' => $request->all()
             ]);
 
-            // Validación inicial
-            $validated = $request->validate([
-                'cliente' => 'required|string',  // Aceptar nombre del cliente
-                'descripcion' => 'nullable|string|max:1000',
-                'items' => 'required|array|min:1',
-                'items.*.nombre_prenda' => 'required|string',
-                'items.*.cantidad_talla' => 'nullable|array', // Puede ser array vacío o tener items
-            ]);
+            // ✅ CAMBIO: Usar validated() que retorna TODOS los campos validados por FormRequest
+            // Antes: $validated = $request->validate([...]) solo retornaba los campos de las reglas
+            // Ahora: $request->validated() retorna cliente, forma_de_pago, descripcion, items (COMPLETO)
+            $validated = $request->validated();
 
-            \Log::info('[CrearPedidoEditableController] Validación pasada', $validated);
+            \Log::info('[CrearPedidoEditableController] Validación pasada', [
+                'cliente' => $validated['cliente'] ?? null,
+                'items_count' => count($validated['items'] ?? []),
+                'first_item_keys' => count($validated['items'][0] ?? []) ? array_keys($validated['items'][0]) : [],
+            ]);
 
             // Obtener o crear el cliente
             $clienteNombre = trim($request->input('cliente'));
