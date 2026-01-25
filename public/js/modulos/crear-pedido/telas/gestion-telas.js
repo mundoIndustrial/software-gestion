@@ -33,7 +33,7 @@ if (!window.imagenesTelaStorage) {
 }
 
 // ========== AGREGAR NUEVA TELA ==========
-window.agregarTelaNueva = function() {
+window.agregarTelaNueva = async function() {
 
     
     const color = document.getElementById('nueva-prenda-color').value.trim().toUpperCase();
@@ -59,6 +59,92 @@ window.agregarTelaNueva = function() {
         return;
     }
     
+    // ✅ Buscar o crear tela en BD
+    let telaId = null;
+    const datalistTelas = document.getElementById('opciones-telas');
+    if (datalistTelas) {
+        for (let option of datalistTelas.options) {
+            if (option.value.toUpperCase() === tela) {
+                telaId = parseInt(option.dataset.id);
+                break;
+            }
+        }
+    }
+    
+    // Si no existe, crearla
+    if (!telaId) {
+        try {
+            const response = await fetch('/asesores/api/telas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ nombre: tela, referencia: referencia })
+            });
+            const result = await response.json();
+            if (result.success && result.data) {
+                telaId = result.data.id;
+                
+                // Agregar al datalist
+                if (datalistTelas) {
+                    const newOption = document.createElement('option');
+                    newOption.value = result.data.nombre;
+                    newOption.dataset.id = result.data.id;
+                    newOption.dataset.referencia = result.data.referencia || '';
+                    datalistTelas.appendChild(newOption);
+                }
+                
+                console.log('[Telas] ✅ Tela creada:', result.data);
+            }
+        } catch (error) {
+            console.error('[Telas] Error creando tela:', error);
+        }
+    }
+    
+    // ✅ Buscar o crear color en BD
+    let colorId = null;
+    const datalistColores = document.getElementById('opciones-colores');
+    if (datalistColores) {
+        for (let option of datalistColores.options) {
+            if (option.value.toUpperCase() === color) {
+                colorId = parseInt(option.dataset.id);
+                break;
+            }
+        }
+    }
+    
+    // Si no existe, crearlo
+    if (!colorId) {
+        try {
+            const response = await fetch('/asesores/api/colores', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ nombre: color })
+            });
+            const result = await response.json();
+            if (result.success && result.data) {
+                colorId = result.data.id;
+                
+                // Agregar al datalist
+                if (datalistColores) {
+                    const newOption = document.createElement('option');
+                    newOption.value = result.data.nombre;
+                    newOption.dataset.id = result.data.id;
+                    newOption.dataset.codigo = result.data.codigo || '';
+                    datalistColores.appendChild(newOption);
+                }
+                
+                console.log('[Colores] ✅ Color creado:', result.data);
+            }
+        } catch (error) {
+            console.error('[Colores] Error creando color:', error);
+        }
+    }
+    
     // Obtener imágenes del storage temporal - SOLO GUARDAR FILE OBJECTS (no blob URLs)
     const imagenesTemporales = window.imagenesTelaStorage.obtenerImagenes();
 
@@ -76,6 +162,8 @@ window.agregarTelaNueva = function() {
         color, 
         tela, 
         referencia,
+        color_id: colorId,
+        tela_id: telaId,
         imagenes: imagenesCopia
     });
     

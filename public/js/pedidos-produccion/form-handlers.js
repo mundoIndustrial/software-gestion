@@ -935,45 +935,50 @@ class PedidoFormHandlers {
 
         this.isSubmitting = true;
 
-
         try {
             //  TRANSFORMAR ESTADO: Eliminar File objects, mantener solo metadatos
             const stateToSend = this.transformStateForSubmit(state);
 
-            // Preparar FormData con archivos
+            // ✅ USAR HELPER: Construir FormData correctamente
             const formData = new FormData();
             formData.append('pedido_produccion_id', state.pedido_produccion_id);
             
-            //  ENVIAR JSON LIMPIO (sin File objects)
-            formData.append('prendas', JSON.stringify(stateToSend.prendas));
+            // ✅ ENVIAR JSON LIMPIO (sin File objects)
+            formData.append('pedido', JSON.stringify(stateToSend));
 
-            //  ADJUNTAR ARCHIVOS CON ÍNDICES CORRECTOS
+            // ✅ ADJUNTAR ARCHIVOS CON ESTRUCTURA ANIDADA CLARA
             state.prendas.forEach((prenda, prendaIdx) => {
                 // Fotos de prenda
                 (prenda.fotos_prenda || []).forEach((foto, fotoIdx) => {
-                    if (foto.file) {
-                        formData.append(`prenda_${prendaIdx}_foto_${fotoIdx}`, foto.file);
+                    if (foto.file instanceof File) {
+                        formData.append(`prendas[${prendaIdx}][fotos_prenda][${fotoIdx}]`, foto.file);
                     }
                 });
 
                 // Fotos de tela
                 (prenda.fotos_tela || []).forEach((foto, fotoIdx) => {
-                    if (foto.file) {
-                        formData.append(`prenda_${prendaIdx}_tela_${fotoIdx}`, foto.file);
+                    if (foto.file instanceof File) {
+                        formData.append(`prendas[${prendaIdx}][fotos_tela][${fotoIdx}]`, foto.file);
                     }
                 });
 
-                //  CORREGIDO: Usar procesoIdx (no reutilizar prendaIdx)
+                // Procesos - Imágenes
                 (prenda.procesos || []).forEach((proceso, procesoIdx) => {
                     (proceso.imagenes || []).forEach((img, imgIdx) => {
-                        if (img.file) {
+                        if (img.file instanceof File) {
                             formData.append(
-                                `prenda_${prendaIdx}_proceso_${procesoIdx}_img_${imgIdx}`, 
+                                `prendas[${prendaIdx}][procesos][${procesoIdx}][imagenes][${imgIdx}]`, 
                                 img.file
                             );
                         }
                     });
                 });
+            });
+
+            // Log de archivos adjuntos
+            console.info('✅ FormData construido', {
+                total_archivos: contarArchivosEnFormData(formData),
+                prendas: state.prendas.length
             });
 
             // Enviar

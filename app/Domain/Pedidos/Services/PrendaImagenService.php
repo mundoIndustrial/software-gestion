@@ -91,6 +91,31 @@ class PrendaImagenService
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                    
+                    Log::info(' Foto de prenda guardada (String)', [
+                        'prenda_id' => $prendaId,
+                        'index' => $index,
+                        'ruta_absoluta' => $rutaAbsoluta,
+                    ]);
+                }
+                // CASO 4: Array con string
+                elseif (is_array($foto) && isset($foto['ruta'])) {
+                    $rutaAbsoluta = $foto['ruta'] && !str_starts_with($foto['ruta'], '/') ? '/' . $foto['ruta'] : $foto['ruta'];
+                    
+                    DB::table('prenda_fotos_pedido')->insert([
+                        'prenda_pedido_id' => $prendaId,
+                        'ruta_original' => basename($foto['ruta']),
+                        'ruta_webp' => $rutaAbsoluta,
+                        'orden' => $index + 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    Log::info(' Foto de prenda guardada (Array con ruta)', [
+                        'prenda_id' => $prendaId,
+                        'index' => $index,
+                        'ruta_absoluta' => $rutaAbsoluta,
+                    ]);
                 }
             } catch (\Exception $e) {
                 Log::error(' Error guardando foto de prenda', [

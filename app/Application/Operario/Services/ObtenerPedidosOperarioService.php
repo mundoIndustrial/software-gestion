@@ -4,7 +4,7 @@ namespace App\Application\Operario\Services;
 
 use App\Application\Operario\DTOs\ObtenerPedidosOperarioDTO;
 use App\Models\User;
-use App\Models\Pedidos;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Collection;
 
 /**
@@ -204,7 +204,7 @@ class ObtenerPedidosOperarioService
     {
         $usuarioActual = auth()->user();
 
-        return Pedidos::with(['prendas'])
+        return PedidoProduccion::with(['prendas'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->filter(function ($pedido) use ($area, $usuarioActual) {

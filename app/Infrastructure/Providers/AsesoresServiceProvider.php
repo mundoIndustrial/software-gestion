@@ -139,14 +139,14 @@ class AsesoresServiceProvider extends ServiceProvider
         // Obtener Factura
         $this->app->singleton(ObtenerFacturaUseCase::class, function ($app) {
             return new ObtenerFacturaUseCase(
-                $app->make(PedidoRepository::class)
+                $app->make(PedidoProduccionRepository::class)
             );
         });
 
         // Obtener Recibos
         $this->app->singleton(ObtenerRecibosUseCase::class, function ($app) {
             return new ObtenerRecibosUseCase(
-                $app->make(PedidoRepository::class)
+                $app->make(PedidoProduccionRepository::class)
             );
         });
 

@@ -506,20 +506,12 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::delete('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroy'])->name('cotizaciones.destroy');
     
     // ========================================
-    // PEDIDOS DE PRODUCCIÓN - Gestión de pedidos desde cotizaciones
+    // PEDIDOS DE PRODUCCIÓN - Gestión de pedidos
     // ========================================
-    // Rutas de VISTAS - Pedidos de Producción (renderiza HTML)
-    Route::get('/pedidos-produccion/crear-desde-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'crearFormEditable'])->name('pedidos-produccion.crear-desde-cotizacion');
-    Route::get('/pedidos-produccion/crear-nuevo', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'crearFormEditableNuevo'])->name('pedidos-produccion.crear-nuevo');
-    Route::get('/pedidos-produccion/crear', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'crearFormEditable'])->name('pedidos-produccion.crear');
-    Route::get('/pedidos-produccion/{id}/plantilla', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'plantilla'])->name('pedidos-produccion.plantilla');
-    Route::get('/pedidos-produccion/{id}/datos-edicion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerDatosEdicion'])->name('pedidos-produccion.datos-edicion');
-    Route::get('/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerDatosUnaPrenda'])->name('pedidos-produccion.prenda.datos');
-    Route::get('/pedidos-produccion/obtener-datos-cotizacion/{cotizacion_id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerDatosCotizacion'])->name('pedidos-produccion.obtener-datos-cotizacion');
-    Route::post('/pedidos-produccion/crear-desde-cotizacion/{cotizacionId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'crearDesdeCotizacion'])->name('pedidos-produccion.crear-desde-cotizacion-post');
-    Route::post('/pedidos-produccion/crear-sin-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'crearSinCotizacion'])->name('pedidos-produccion.crear-sin-cotizacion');
-    Route::post('/pedidos-produccion/crear-prenda-sin-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'crearPrendaSinCotizacion'])->name('pedidos-produccion.crear-prenda-sin-cotizacion');
-    Route::post('/pedidos-produccion/crear-reflectivo-sin-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'crearReflectivoSinCotizacion'])->name('pedidos-produccion.crear-reflectivo-sin-cotizacion');
+    // MASTER ROUTE: Creación de pedidos centralizada en CrearPedidoEditableController
+    // Rutas antiguas han sido ELIMINADAS (retornan 404)
+    // Ver: app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController
+    // ========================================
     
     // Rutas API CQRS - Pedidos de Producción (retorna JSON)
     Route::get('/pedidos-produccion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
@@ -934,6 +926,19 @@ Route::middleware(['auth', 'verified'])->prefix('api')->name('api.')->group(func
 // RUTAS WEB - PEDIDOS EDITABLES (Arquitectura Web Tradicional)
 // ========================================
 Route::middleware(['auth', 'role:asesor'])->prefix('asesores/pedidos-editable')->name('asesores.pedidos-editable.')->group(function () {
+    // Ruta fallback que redirige a crear-desde-cotizacion
+    Route::get('crear', function() {
+        return redirect()->route('asesores.pedidos-editable.crear-desde-cotizacion');
+    });
+    
+    // Mostrar formulario para crear desde COTIZACIÓN (pre-carga cotizaciones)
+    Route::get('crear-desde-cotizacion', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearDesdeCotizacion'])
+        ->name('crear-desde-cotizacion');
+    
+    // Mostrar formulario para crear PEDIDO NUEVO (vacío)
+    Route::get('crear-nuevo', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearNuevo'])
+        ->name('crear-nuevo');
+    
     // Gestión de ítems (retorna JSON)
     Route::post('items/agregar', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'agregarItem'])
         ->name('agregar-item');

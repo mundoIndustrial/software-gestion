@@ -98,10 +98,16 @@
                                 <!-- Fila para agregar nueva tela -->
                                 <tr style="border-bottom: 1px solid #e5e7eb;">
                                     <td style="padding: 0.5rem; width: 20%;">
-                                        <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                                        <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" list="opciones-telas" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                                        <datalist id="opciones-telas">
+                                            <!-- Opciones cargadas desde /asesores/api/telas -->
+                                        </datalist>
                                     </td>
                                     <td style="padding: 0.5rem; width: 20%;">
-                                        <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                                        <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" list="opciones-colores" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                                        <datalist id="opciones-colores">
+                                            <!-- Opciones cargadas desde /asesores/api/colores -->
+                                        </datalist>
                                     </td>
                                     <td style="padding: 0.5rem; width: 20%;">
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">

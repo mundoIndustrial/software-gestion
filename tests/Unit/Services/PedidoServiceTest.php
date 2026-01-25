@@ -196,7 +196,7 @@ class PedidoServiceTest extends TestCase
         $this->assertCount(1, $prenda->procesos);
         
         $proceso = $prenda->procesos->first();
-        $this->assertEquals('CreaciÃ³n Orden', $proceso->proceso);
+        $this->assertEquals('Creaciación Orden', $proceso->proceso);
         $this->assertEquals('Completado', $proceso->estado_proceso);
     }
 

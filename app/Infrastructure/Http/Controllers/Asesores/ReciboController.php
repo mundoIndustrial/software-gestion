@@ -54,6 +54,29 @@ class ReciboController extends Controller
         try {
             $datos = $this->obtenerRecibosService->obtenerRecibo($id);
 
+            // ===== DEBUG: Verificar procesos justo antes de response()->json() =====
+            if (count($datos['prendas'] ?? []) > 0) {
+                $primeraPrenda = $datos['prendas'][0];
+                $procesosInfo = [];
+                if (is_array($primeraPrenda['procesos'] ?? null)) {
+                    foreach ($primeraPrenda['procesos'] as $proc) {
+                        $procesosInfo[] = [
+                            'nombre' => $proc['nombre'] ?? 'N/A',
+                            'tipo' => $proc['tipo'] ?? 'N/A',
+                            'imagenes' => count($proc['imagenes'] ?? []),
+                        ];
+                    }
+                }
+                
+                Log::info('[RECIBO-CONTROLLER] Datos enviados al frontend', [
+                    'prenda' => $primeraPrenda['nombre'] ?? 'N/A',
+                    'tiene_procesos' => isset($primeraPrenda['procesos']) ? 'SI' : 'NO',
+                    'procesos_count' => count($primeraPrenda['procesos'] ?? []),
+                    'procesos_detalle' => $procesosInfo,
+                ]);
+            }
+            // ===== FIN DEBUG =====
+
             return response()->json($datos);
 
         } catch (\Exception $e) {

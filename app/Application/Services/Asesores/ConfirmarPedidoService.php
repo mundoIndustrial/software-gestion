@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\Pedidos;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

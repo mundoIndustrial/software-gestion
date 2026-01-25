@@ -5,7 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\UseCases\Base\AbstractObtenerUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Application\Pedidos\DTOs\PedidoResponseDTO;
-use App\Models\Pedidos;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 
 /**

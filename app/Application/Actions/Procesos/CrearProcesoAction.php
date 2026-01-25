@@ -65,6 +65,13 @@ class CrearProcesoAction
     private function guardarImagenProceso(int $procesoId, string $imagenBase64, int $prendaId, bool $esPrincipal = false): void
     {
         try {
+            // Obtener el pedido_id desde la prenda
+            $prenda = \App\Models\PrendaPedido::find($prendaId);
+            if (!$prenda) {
+                throw new \Exception("Prenda no encontrada");
+            }
+            $pedidoId = $prenda->pedido_produccion_id;
+
             // Decodificar base64
             $imagenBinaria = base64_decode($imagenBase64);
             if (!$imagenBinaria) {
@@ -93,8 +100,8 @@ class CrearProcesoAction
 
             $nombreArchivo = "proceso-{$procesoId}-prenda-{$prendaId}-" . time() . ".{$extension}";
 
-            // Guardar archivo
-            $ruta = Storage::disk('public')->put("procesos/{$nombreArchivo}", $imagenBinaria);
+            // Guardar archivo en estructura pedidos/{pedido_id}/procesos/
+            $ruta = Storage::disk('public')->put("pedidos/{$pedidoId}/procesos/{$nombreArchivo}", $imagenBinaria);
 
             // Calcular hash MD5 para detectar duplicados
             $hashMd5 = md5($imagenBinaria);
@@ -107,7 +114,7 @@ class CrearProcesoAction
             // Usar domain service para guardar imagen
             $this->subirImagenService->ejecutar(
                 procesoPrendaDetalleId: $procesoId,
-                rutaArchivo: "procesos/{$nombreArchivo}",
+                rutaArchivo: "pedidos/{$pedidoId}/procesos/{$nombreArchivo}",
                 nombreOriginal: $nombreArchivo,
                 tipoMime: $tipoMime,
                 tamaño: strlen($imagenBinaria),

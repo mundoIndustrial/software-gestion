@@ -3,10 +3,13 @@
  * 
  * Maneja los eventos de variaciones en prendas (manga, bolsillos, broche)
  * Habilita/deshabilita inputs según los checkboxes seleccionados
+ * También maneja telas y colores con auto-creación
  */
 
-// Variable global para almacenar tipos de manga cargados
+// Variables globales para almacenar catálogos cargados
 let tiposMangaDisponibles = [];
+let telasDisponibles = [];
+let coloresDisponibles = [];
 
 // Manejar cambio de variaciones (manga, bolsillos, broche)
 window.manejarCheckVariacion = function(checkbox) {
@@ -136,6 +139,70 @@ document.addEventListener('DOMContentLoaded', function() {
             procesarMangaInput(this);
         });
     }
+    
+    // Cargar catálogos de telas y colores al abrir el modal
+    cargarTelasDisponibles();
+    cargarColoresDisponibles();
 });
 
+/**
+ * Cargar telas disponibles desde la BD
+ */
+async function cargarTelasDisponibles() {
+    try {
+        const response = await fetch('/asesores/api/telas');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            telasDisponibles = result.data;
+            
+            // Actualizar datalist
+            const datalist = document.getElementById('opciones-telas');
+            if (datalist) {
+                datalist.innerHTML = '';
+                result.data.forEach(tela => {
+                    const option = document.createElement('option');
+                    option.value = tela.nombre;
+                    option.dataset.id = tela.id;
+                    option.dataset.referencia = tela.referencia || '';
+                    datalist.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.warn('[Telas] Error cargando telas:', error);
+    }
+}
 
+/**
+ * Cargar colores disponibles desde la BD
+ */
+async function cargarColoresDisponibles() {
+    try {
+        const response = await fetch('/asesores/api/colores');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            coloresDisponibles = result.data;
+            
+            // Actualizar datalist
+            const datalist = document.getElementById('opciones-colores');
+            if (datalist) {
+                datalist.innerHTML = '';
+                result.data.forEach(color => {
+                    const option = document.createElement('option');
+                    option.value = color.nombre;
+                    option.dataset.id = color.id;
+                    option.dataset.codigo = color.codigo || '';
+                    datalist.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.warn('[Colores] Error cargando colores:', error);
+    }
+}
+
+// Exportar funciones globales
+window.cargarTelasDisponibles = cargarTelasDisponibles;
+window.cargarColoresDisponibles = cargarColoresDisponibles;

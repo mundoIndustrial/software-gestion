@@ -12,7 +12,7 @@
                     <h1> Crear Pedido de Producción</h1>
                     <p class="text-muted">Formulario complejo para capturar y organizar prendas, variantes, fotos y procesos</p>
                 </div>
-                <a href="{{ route('asesores.pedidos-produccion.index') }}" class="btn btn-secondary">
+                <a href="{{ route('asesores.pedidos.index') }}" class="btn btn-secondary">
                     ← Volver
                 </a>
             </div>

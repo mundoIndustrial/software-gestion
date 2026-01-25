@@ -244,10 +244,10 @@ class PedidoProduccionRepository
                 
                 $fotoTelas = $fotosTelasData->map(fn($f) => [
                     'id' => $f->id,
-                    'url' => $f->ruta_webp ?? $f->ruta_original,
-                    'ruta' => $f->ruta_webp ?? $f->ruta_original,
-                    'ruta_original' => $f->ruta_original,
-                    'ruta_webp' => $f->ruta_webp,
+                    'url' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original),
+                    'ruta' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original),
+                    'ruta_original' => $this->normalizarRutaImagen($f->ruta_original),
+                    'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp),
                 ])->toArray();
             } catch (\Exception $e) {
                 \Log::debug('[FACTURA] Error obteniendo fotos de telas desde prenda_fotos_tela_pedido: ' . $e->getMessage());
@@ -256,10 +256,10 @@ class PedidoProduccionRepository
             // Obtener todas las fotos de prenda
             $fotosPrend = $prenda->fotos->map(fn($f) => [
                 'id' => $f->id,
-                'url' => $f->url,
-                'ruta' => $f->url,
-                'ruta_original' => $f->ruta_original ?? $f->url,
-                'ruta_webp' => $f->ruta_webp ?? $f->url,
+                'url' => $this->normalizarRutaImagen($f->url),
+                'ruta' => $this->normalizarRutaImagen($f->url),
+                'ruta_original' => $this->normalizarRutaImagen($f->ruta_original ?? $f->url),
+                'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
             ])->toArray();
             
             \Log::info('[FACTURA] Fotos de prenda: ' . json_encode([
@@ -302,8 +302,20 @@ class PedidoProduccionRepository
                 // Obtener imÃ¡genes del proceso
                 $imagenesProceso = $proc->imagenes ? $proc->imagenes->map(fn($img) => $img->url)->toArray() : [];
                 
+                // Obtener nombre del tipo de proceso
+                $nombreProceso = 'Proceso';
+                if ($proc->tipoProceso && $proc->tipoProceso->nombre) {
+                    $nombreProceso = $proc->tipoProceso->nombre;
+                }
+                
                 $proc_item = [
-                    'tipo' => $proc->tipo ?? 'Proceso',
+                    // Campos compatibles con frontend
+                    'nombre' => $nombreProceso,
+                    'tipo' => $nombreProceso,
+                    // Campos originales (compatibilidad backwards)
+                    'nombre_proceso' => $nombreProceso,
+                    'tipo_proceso' => $nombreProceso,
+                    // Datos del proceso
                     'tallas' => $procTallas,
                     'observaciones' => $proc->observaciones ?? '',
                     'ubicaciones' => $ubicaciones,
@@ -466,9 +478,9 @@ class PedidoProduccionRepository
             $imagenesPrenda = [];
             $imagenesTela = [];
 
-            // Obtener imÃ¡genes de prenda desde prenda_fotos_pedido
+            // Obtener imágenes de prenda desde prenda_fotos_pedido
             try {
-                \Log::info('[RECIBOS] Buscando imÃ¡genes para prenda_pedido_id: ' . $prenda->id);
+                \Log::info('[RECIBOS] Buscando imágenes para prenda_pedido_id: ' . $prenda->id);
                 
                 $fotosPrenda = \DB::table('prenda_fotos_pedido')
                     ->where('prenda_pedido_id', $prenda->id)
@@ -483,29 +495,14 @@ class PedidoProduccionRepository
                     \Log::debug('[RECIBOS] Rutas de fotos (raw): ' . json_encode($fotosPrenda->pluck('ruta_webp')->toArray()));
                 }
                 
-                $imagenesPrenda = $fotosPrenda->map(function($foto) {
-                    $ruta = str_replace('\\', '/', $foto->ruta_webp);
-                    // Si ya comienza con /storage/, devolverla tal cual
-                    if (strpos($ruta, '/storage/') === 0) {
-                        return $ruta;
-                    }
-                    // Si comienza con storage/ (sin /), agregar / al inicio
-                    if (strpos($ruta, 'storage/') === 0) {
-                        return '/' . $ruta;
-                    }
-                    // Si no comienza con /, agregar /storage/
-                    if (strpos($ruta, '/') !== 0) {
-                        return '/storage/' . $ruta;
-                    }
-                    return $ruta;
-                })->toArray();
+                $imagenesPrenda = $fotosPrenda->map(fn($foto) => $this->normalizarRutaImagen($foto->ruta_webp))->toArray();
                 
-                \Log::info('[RECIBOS] ImÃ¡genes procesadas para prenda ' . $prenda->id . ': ' . count($imagenesPrenda) . ' total');
+                \Log::info('[RECIBOS] Imágenes procesadas para prenda ' . $prenda->id . ': ' . count($imagenesPrenda) . ' total');
                 if (count($imagenesPrenda) > 0) {
                     \Log::debug('[RECIBOS] Rutas procesadas: ' . json_encode($imagenesPrenda));
                 }
             } catch (\Exception $e) {
-                \Log::debug('[RECIBOS] Error obteniendo imÃ¡genes de prenda: ' . $e->getMessage());
+                \Log::debug('[RECIBOS] Error obteniendo imágenes de prenda: ' . $e->getMessage());
             }
 
             // Obtener tela, color, referencia e imÃ¡genes desde prenda_pedido_colores_telas
@@ -533,7 +530,7 @@ class PedidoProduccionRepository
                         $referencias[] = $colorTelaData->referencia;
                     }
                     
-                    // Obtener imÃ¡genes de tela desde prenda_fotos_tela_pedido
+                    // Obtener imágenes de tela desde prenda_fotos_tela_pedido
                     $fotos = \DB::table('prenda_fotos_tela_pedido')
                         ->where('prenda_pedido_colores_telas_id', $colorTelaData->color_tela_id)
                         ->where('deleted_at', null)
@@ -541,22 +538,7 @@ class PedidoProduccionRepository
                         ->select('ruta_webp')
                         ->get();
                     
-                    $imagenesTela = $fotos->map(function($foto) {
-                        $ruta = str_replace('\\', '/', $foto->ruta_webp);
-                        // Si ya comienza con /storage/, devolverla tal cual
-                        if (strpos($ruta, '/storage/') === 0) {
-                            return $ruta;
-                        }
-                        // Si comienza con storage/ (sin /), agregar / al inicio
-                        if (strpos($ruta, 'storage/') === 0) {
-                            return '/' . $ruta;
-                        }
-                        // Si no comienza con /, agregar /storage/
-                        if (strpos($ruta, '/') !== 0) {
-                            return '/storage/' . $ruta;
-                        }
-                        return $ruta;
-                    })->toArray();
+                    $imagenesTela = $fotos->map(fn($foto) => $this->normalizarRutaImagen($foto->ruta_webp))->toArray();
                 }
             } catch (\Exception $e) {
                 \Log::debug('[RECIBOS] Error obteniendo tela/color/imÃ¡genes desde nueva tabla: ' . $e->getMessage());
@@ -652,8 +634,13 @@ class PedidoProduccionRepository
                 }
                 
                 $proc_item = [
+                    // Campos compatibles con frontend (ReceiptManager.js busca estos)
+                    'nombre' => $nombreProceso,
+                    'tipo' => $nombreProceso,
+                    // Campos originales (compatibilidad backwards)
                     'nombre_proceso' => $nombreProceso,
                     'tipo_proceso' => $nombreProceso,
+                    // Datos del proceso
                     'tallas' => $procTallas,
                     'observaciones' => $proc->observaciones ?? '',
                     'ubicaciones' => $ubicaciones,
@@ -680,7 +667,7 @@ class PedidoProduccionRepository
                     ->first();
                 
                 if ($colorTelaData) {
-                    // Obtener imÃ¡genes de tela desde prenda_fotos_tela_pedido
+                    // Obtener imágenes de tela desde prenda_fotos_tela_pedido
                     $fotosTelaDB = \DB::table('prenda_fotos_tela_pedido')
                         ->where('prenda_pedido_colores_telas_id', $colorTelaData->color_tela_id)
                         ->where('deleted_at', null)
@@ -688,22 +675,7 @@ class PedidoProduccionRepository
                         ->select('ruta_webp', 'ruta_original')
                         ->get();
                     
-                    $imagenesTelaFormato = $fotosTelaDB->map(function($foto) {
-                        $ruta = str_replace('\\', '/', $foto->ruta_webp ?? $foto->ruta_original);
-                        // Si ya comienza con /storage/, devolverla tal cual
-                        if (strpos($ruta, '/storage/') === 0) {
-                            return $ruta;
-                        }
-                        // Si comienza con storage/ (sin /), agregar / al inicio
-                        if (strpos($ruta, 'storage/') === 0) {
-                            return '/' . $ruta;
-                        }
-                        // Si no comienza con /, agregar /storage/
-                        if (strpos($ruta, '/') !== 0) {
-                            return '/storage/' . $ruta;
-                        }
-                        return $ruta;
-                    })->toArray();
+                    $imagenesTelaFormato = $fotosTelaDB->map(fn($foto) => $this->normalizarRutaImagen($foto->ruta_webp ?? $foto->ruta_original))->toArray();
                     
                     $telasAgregadas[] = [
                         'tela' => $colorTelaData->tela_nombre,
@@ -894,13 +866,64 @@ class PedidoProduccionRepository
             ]);
         }
 
+        // ===== SUPER DEBUG: Verificar EXACTAMENTE si procesos está en la respuesta final =====
+        $detalleDebug = [];
+        if (count($datos['prendas'] ?? []) > 0) {
+            $primeraPrenda = $datos['prendas'][0];
+            $detalleDebug = [
+                'nombre_prenda' => $primeraPrenda['nombre'] ?? 'SIN_NOMBRE',
+                'tiene_procesos_key' => isset($primeraPrenda['procesos']) ? 'SI' : 'NO',
+                'procesos_es_null' => $primeraPrenda['procesos'] === null ? 'SI' : 'NO',
+                'procesos_es_array' => is_array($primeraPrenda['procesos']) ? 'SI' : 'NO',
+                'procesos_count' => is_array($primeraPrenda['procesos']) ? count($primeraPrenda['procesos']) : 'N/A',
+                'procesos_primero' => is_array($primeraPrenda['procesos']) && count($primeraPrenda['procesos']) > 0 ? [
+                    'nombre' => $primeraPrenda['procesos'][0]['nombre'] ?? 'SIN_NOMBRE',
+                    'tipo' => $primeraPrenda['procesos'][0]['tipo'] ?? 'SIN_TIPO',
+                    'nombre_proceso' => $primeraPrenda['procesos'][0]['nombre_proceso'] ?? 'SIN_NOMBRE',
+                    'tipo_proceso' => $primeraPrenda['procesos'][0]['tipo_proceso'] ?? 'SIN_TIPO',
+                ] : null,
+            ];
+        }
+
         \Log::info(' [RECIBOS-REPO] Datos retornados', [
             'prendas_count' => count($datos['prendas'] ?? []),
             'epps_count' => count($datos['epps'] ?? []),
-            'primera_prenda_keys' => count($datos['prendas'] ?? []) > 0 ? array_keys($datos['prendas'][0]) : []
+            'procesos_debug' => $detalleDebug
         ]);
 
         return $datos;
+    }
+
+    /**
+     * Normalizar ruta de imagen para asegurar que comience con /storage/
+     * Convierte rutas relativas en rutas absolutas con prefijo /storage/
+     */
+    private function normalizarRutaImagen(?string $ruta): ?string
+    {
+        if (!$ruta) {
+            return null;
+        }
+
+        // Reemplazar backslashes con forward slashes
+        $ruta = str_replace('\\', '/', $ruta);
+
+        // Si ya comienza con /storage/, devolverla tal cual
+        if (strpos($ruta, '/storage/') === 0) {
+            return $ruta;
+        }
+
+        // Si comienza con storage/ (sin /), agregar / al inicio
+        if (strpos($ruta, 'storage/') === 0) {
+            return '/' . $ruta;
+        }
+
+        // Si no comienza con /, agregar /storage/
+        if (strpos($ruta, '/') !== 0) {
+            return '/storage/' . $ruta;
+        }
+
+        // Si comienza con / pero no es /storage/, agregar storage antes de la ruta
+        return '/storage' . $ruta;
     }
 }
 

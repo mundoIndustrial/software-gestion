@@ -2,7 +2,7 @@
 
 namespace App\Application\Services;
 
-use App\Models\Pedidos;
+use App\Models\PedidoProduccion;
 use App\Models\LogoPed;
 use App\Models\LogoFotoPed;
 use Illuminate\Support\Facades\DB;

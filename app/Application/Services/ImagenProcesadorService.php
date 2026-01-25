@@ -31,14 +31,14 @@ class ImagenProcesadorService
     /**
      * Procesar imagen de prenda
      */
-    public function procesarImagen(UploadedFile $archivo, int $prendaId): string
+    public function procesarImagen(UploadedFile $archivo, int $prendaId, int $pedidoId = null): string
     {
         try {
             $this->validarFormato($archivo);
 
             $contenidoWebP = $this->convertirAWebP($archivo);
             $nombreArchivo = $this->generarNombreArchivo('foto');
-            $ruta = "{$this->getRutaPrenda($prendaId)}/fotos/{$nombreArchivo}";
+            $ruta = "{$this->getRutaPrenda($prendaId, $pedidoId)}/fotos/{$nombreArchivo}";
 
             Storage::put($ruta, $contenidoWebP);
 
@@ -46,6 +46,7 @@ class ImagenProcesadorService
         } catch (Exception $e) {
             \Log::error('Error procesando imagen de prenda', [
                 'prenda_id' => $prendaId,
+                'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
             ]);
             throw $e;
@@ -55,14 +56,14 @@ class ImagenProcesadorService
     /**
      * Procesar imagen de tela
      */
-    public function procesarImagenTela(UploadedFile $archivo, int $prendaId): string
+    public function procesarImagenTela(UploadedFile $archivo, int $prendaId, int $pedidoId = null): string
     {
         try {
             $this->validarFormato($archivo);
 
             $contenidoWebP = $this->convertirAWebP($archivo);
             $nombreArchivo = $this->generarNombreArchivo('tela');
-            $ruta = "{$this->getRutaPrenda($prendaId)}/telas/{$nombreArchivo}";
+            $ruta = "{$this->getRutaPrenda($prendaId, $pedidoId)}/telas/{$nombreArchivo}";
 
             Storage::put($ruta, $contenidoWebP);
 
@@ -70,6 +71,7 @@ class ImagenProcesadorService
         } catch (Exception $e) {
             \Log::error('Error procesando imagen de tela', [
                 'prenda_id' => $prendaId,
+                'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
             ]);
             throw $e;
@@ -178,8 +180,11 @@ class ImagenProcesadorService
     /**
      * Obtener ruta base de prenda
      */
-    private function getRutaPrenda(int $prendaId): string
+    private function getRutaPrenda(int $prendaId, int $pedidoId = null): string
     {
+        if ($pedidoId) {
+            return "public/pedidos/{$pedidoId}/prendas/{$prendaId}";
+        }
         return self::RUTA_BASE . "/{$prendaId}";
     }
 

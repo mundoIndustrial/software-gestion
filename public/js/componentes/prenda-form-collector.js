@@ -166,6 +166,8 @@ class PrendaFormCollector {
                         tela: tela.tela || '',
                         color: tela.color || '',
                         referencia: tela.referencia || '',
+                        tela_id: tela.tela_id || null,
+                        color_id: tela.color_id || null,
                         // Imágenes de tela copiadas
                         imagenes: imagenesCopia
                     };
@@ -202,11 +204,44 @@ class PrendaFormCollector {
             if (checkManga && checkManga.checked) {
                 const mangaInput = document.getElementById('manga-input');
                 const mangaObs = document.getElementById('manga-obs');
-                variantes.tipo_manga = mangaInput?.value || '';
+                const valorManga = mangaInput?.value?.trim() || '';
+                
+                variantes.tipo_manga = valorManga;
                 variantes.obs_manga = mangaObs?.value || '';
+                
+                // ✅ Buscar ID del tipo de manga en el datalist
+                if (valorManga) {
+                    const datalist = document.getElementById('opciones-manga');
+                    let mangaId = null;
+                    
+                    if (datalist) {
+                        // Buscar en las opciones del datalist
+                        for (let option of datalist.options) {
+                            if (option.value.toLowerCase() === valorManga.toLowerCase()) {
+                                mangaId = option.dataset.id;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Si encontramos el ID, guardarlo
+                    if (mangaId) {
+                        variantes.tipo_manga_id = parseInt(mangaId);
+                        console.log('[prenda-form-collector] ✅ Manga encontrada en datalist:', {
+                            nombre: valorManga,
+                            id: mangaId
+                        });
+                    } else {
+                        // Si no existe, marcar para creación asíncrona
+                        variantes.tipo_manga_id = null;
+                        variantes.tipo_manga_crear = true; // Flag para crear después
+                        console.log('[prenda-form-collector] ⚠️ Manga NO encontrada, se creará:', valorManga);
+                    }
+                }
             } else {
                 variantes.tipo_manga = '';
                 variantes.obs_manga = '';
+                variantes.tipo_manga_id = null;
             }
             
             // Bolsillos

@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Models\Pedidos;
+use App\Models\PedidoProduccion;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;

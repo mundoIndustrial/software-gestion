@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Recibos;
 
-use App\Domain\Pedidos\Repositories\PedidosRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Infrastructure\Repositories\AsesoresRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -10,14 +10,14 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ObtenerRecibosService
 {
-    protected PedidosRepository $PedidosRepository;
+    protected PedidoProduccionRepository $pedidoProduccionRepository;
     protected AsesoresRepository $asesoresRepository;
 
     public function __construct(
-        PedidosRepository $PedidosRepository,
+        PedidoProduccionRepository $pedidoProduccionRepository,
         AsesoresRepository $asesoresRepository
     ) {
-        $this->PedidosRepository = $PedidosRepository;
+        $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->asesoresRepository = $asesoresRepository;
     }
 
@@ -38,7 +38,7 @@ class ObtenerRecibosService
         }
 
         // Obtener datos del recibo
-        $datos = $this->PedidosRepository->obtenerDatosRecibos($pedidoId);
+        $datos = $this->pedidoProduccionRepository->obtenerDatosRecibos($pedidoId);
 
         if (empty($datos)) {
             throw new \Exception('Pedido no encontrado', 404);

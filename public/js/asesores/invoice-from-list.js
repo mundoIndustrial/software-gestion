@@ -539,6 +539,35 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         
         const datos = await response.json();
 
+        // ===== DEBUG: Rastrear estructura completa del backend =====
+        console.group('[DEBUG] Datos recibidos del backend - /asesores/pedidos/{id}/recibos-datos');
+        console.log('Estructura completa:', datos);
+        console.log('Número de prendas:', datos.prendas ? datos.prendas.length : 0);
+        if (datos.prendas && datos.prendas.length > 0) {
+            datos.prendas.forEach((prenda, idx) => {
+                console.group(`Prenda ${idx}: ${prenda.nombre}`);
+                console.log('  - Campos disponibles:', Object.keys(prenda));
+                console.log('  - procesos existe?', 'procesos' in prenda);
+                console.log('  - procesos es array?', Array.isArray(prenda.procesos));
+                console.log('  - procesos count:', (prenda.procesos || []).length);
+                if (prenda.procesos && prenda.procesos.length > 0) {
+                    console.log('  - Procesos:', prenda.procesos);
+                    prenda.procesos.forEach((p, pIdx) => {
+                        console.log(`    Proceso ${pIdx}:`, {
+                            nombre_proceso: p.nombre_proceso,
+                            tipo_proceso: p.tipo_proceso,
+                            tallas: p.tallas,
+                            ubicaciones: p.ubicaciones,
+                            imagenes: p.imagenes,
+                            observaciones: p.observaciones
+                        });
+                    });
+                }
+                console.groupEnd();
+            });
+        }
+        console.groupEnd();
+        // ===== FIN DEBUG =====
         
         // Ocultar spinner
         ocultarCargando();
@@ -562,8 +591,22 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
  * Usa el componente order-detail-modal.blade.php existente
  */
 function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
-
     
+    // ===== DEBUG: Verificar datos al entrar a crearModal =====
+    console.group('[crearModalRecibosDesdeListaPedidos] Datos recibidos en función');
+    console.log('datos completo:', datos);
+    console.log('prendas count:', datos.prendas ? datos.prendas.length : 0);
+    if (datos.prendas && datos.prendas.length > 0) {
+        console.log('Primera prenda estructura:', {
+            nombre: datos.prendas[0].nombre,
+            campos: Object.keys(datos.prendas[0]),
+            procesos_existe: 'procesos' in datos.prendas[0],
+            procesos_valor: datos.prendas[0].procesos,
+            procesos_tipo: typeof datos.prendas[0].procesos
+        });
+    }
+    console.groupEnd();
+    // ===== FIN DEBUG =====
     // Crear overlay
     const overlay = document.createElement('div');
     overlay.id = 'modal-recibos-overlay';
@@ -714,13 +757,30 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
     setTimeout(() => {
         // Los campos de firma se mantienen visibles (ENCARGADO y PRENDAS ENTREGADAS)
         
+        // ===== DEBUG: Verificar datos justo antes de ReceiptManager =====
+        console.group('[cargarComponenteOrderDetailModal] Antes de crear ReceiptManager');
+        console.log('datos parámetro:', datos);
+        console.log('datos.prendas.length:', datos.prendas ? datos.prendas.length : 'UNDEFINED');
+        if (datos.prendas && datos.prendas.length > 0) {
+            console.log('Primera prenda en datos:', {
+                nombre: datos.prendas[0].nombre,
+                procesos_existe: 'procesos' in datos.prendas[0],
+                procesos_valor: datos.prendas[0].procesos,
+                procesos_length: datos.prendas[0].procesos ? datos.prendas[0].procesos.length : 'N/A'
+            });
+        }
+        console.groupEnd();
+        // ===== FIN DEBUG =====
+        
         // Cargar ReceiptManager
         if (typeof ReceiptManager === 'undefined') {
 
             cargarReceiptManager(() => {
+                console.debug('[cargarComponenteOrderDetailModal] Creando ReceiptManager con datos:', datos);
                 window.receiptManager = new ReceiptManager(datos, prendasIndex);
             });
         } else {
+            console.debug('[cargarComponenteOrderDetailModal] ReceiptManager ya cargado, creando instancia');
             window.receiptManager = new ReceiptManager(datos, prendasIndex);
         }
     }, 100);

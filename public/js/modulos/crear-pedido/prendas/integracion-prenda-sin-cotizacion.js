@@ -317,7 +317,7 @@ window.enviarPrendaSinCotizacion = function() {
             // Enviar al servidor
 
             
-            const response = await fetch('/asesores/pedidos-produccion/crear-prenda-sin-cotizacion', {
+            const response = await fetch('/asesores/pedidos-editable/crear', {
                 method: 'POST',
                 body: formData,
                 headers: {

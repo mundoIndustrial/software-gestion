@@ -120,7 +120,7 @@
                 <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
                 Crear Pedido
             </button>
-            <a href="{{ route('asesores.pedidos-produccion.index') }}" class="btn btn-secondary">
+            <a href="{{ route('asesores.pedidos.index') }}" class="btn btn-secondary">
                 ✕ Cancelar
             </a>
         </div>

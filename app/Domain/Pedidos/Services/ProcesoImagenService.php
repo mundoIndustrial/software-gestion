@@ -62,6 +62,50 @@ class ProcesoImagenService
                     $archivo = $imagenData['archivo'];
                     $esPrincipal = $imagenData['principal'] ?? ($index === 0);
                 }
+                // CASO 3: String (ruta existente)
+                elseif (is_string($imagenData)) {
+                    $rutaAbsoluta = $imagenData && !str_starts_with($imagenData, '/') ? '/' . $imagenData : $imagenData;
+                    
+                    DB::table('pedidos_procesos_imagenes')->insert([
+                        'proceso_prenda_detalle_id' => $procesoDetalleId,
+                        'ruta_original' => basename($imagenData),
+                        'ruta_webp' => $rutaAbsoluta,
+                        'orden' => $index,
+                        'es_principal' => $index === 0 ? 1 : 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    Log::info(' Imagen de proceso guardada (String)', [
+                        'proceso_detalle_id' => $procesoDetalleId,
+                        'index' => $index,
+                        'ruta_absoluta' => $rutaAbsoluta,
+                    ]);
+                    continue;
+                }
+                // CASO 4: Array con ruta string
+                elseif (is_array($imagenData) && isset($imagenData['ruta'])) {
+                    $rutaAbsoluta = $imagenData['ruta'] && !str_starts_with($imagenData['ruta'], '/') ? '/' . $imagenData['ruta'] : $imagenData['ruta'];
+                    $esPrincipal = $imagenData['principal'] ?? ($index === 0);
+                    
+                    DB::table('pedidos_procesos_imagenes')->insert([
+                        'proceso_prenda_detalle_id' => $procesoDetalleId,
+                        'ruta_original' => basename($imagenData['ruta']),
+                        'ruta_webp' => $rutaAbsoluta,
+                        'orden' => $index,
+                        'es_principal' => $esPrincipal ? 1 : 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    Log::info(' Imagen de proceso guardada (Array con ruta)', [
+                        'proceso_detalle_id' => $procesoDetalleId,
+                        'index' => $index,
+                        'ruta_absoluta' => $rutaAbsoluta,
+                        'es_principal' => $esPrincipal,
+                    ]);
+                    continue;
+                }
 
                 if ($archivo) {
                     $directorio = storage_path("app/public/pedidos/{$pedidoId}/procesos/{$tipoProcesoNombre}");

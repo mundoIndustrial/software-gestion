@@ -168,18 +168,32 @@ class PrendaProcesoService
                     $cantidad = (int)$cantidad;
                     
                     if ($cantidad > 0) {
-                        DB::table('pedidos_procesos_prenda_tallas')->updateOrCreate(
-                            [
+                        // Verificar si existe
+                        $existe = DB::table('pedidos_procesos_prenda_tallas')
+                            ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                            ->where('genero', $generoEnum)
+                            ->where('talla', $talla)
+                            ->exists();
+                        
+                        if ($existe) {
+                            DB::table('pedidos_procesos_prenda_tallas')
+                                ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                                ->where('genero', $generoEnum)
+                                ->where('talla', $talla)
+                                ->update([
+                                    'cantidad' => $cantidad,
+                                    'updated_at' => now(),
+                                ]);
+                        } else {
+                            DB::table('pedidos_procesos_prenda_tallas')->insert([
                                 'proceso_prenda_detalle_id' => $procesoDetalleId,
                                 'genero' => $generoEnum,
                                 'talla' => $talla,
-                            ],
-                            [
                                 'cantidad' => $cantidad,
                                 'created_at' => now(),
                                 'updated_at' => now(),
-                            ]
-                        );
+                            ]);
+                        }
                     }
                 }
             }

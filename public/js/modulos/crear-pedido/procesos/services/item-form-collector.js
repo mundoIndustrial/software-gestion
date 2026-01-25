@@ -153,15 +153,41 @@ class ItemFormCollector {
                 let procesosParaEnviar = {};
                 if (prenda.procesos && typeof prenda.procesos === 'object') {
                     Object.entries(prenda.procesos).forEach(([key, proceso]) => {
-                        procesosParaEnviar[key] = proceso.datos || proceso;
+                        const datosProceso = proceso.datos || proceso;
+                        
+                        // ✅ EXTRAER ARCHIVOS FILE DE LAS IMÁGENES DE PROCESOS
+                        if (datosProceso.imagenes && Array.isArray(datosProceso.imagenes)) {
+                            datosProceso.imagenes = datosProceso.imagenes.map(img => {
+                                // Si tiene propiedad file (objeto con {nombre, data, file})
+                                if (img.file instanceof File) return img.file;
+                                // Si es un File directo
+                                if (img instanceof File) return img;
+                                // Si es una ruta (foto existente)
+                                if (typeof img === 'string') return img;
+                                // Si tiene data URL
+                                if (img.data) return img.data;
+                                return img;
+                            }).filter(Boolean);
+                        }
+                        
+                        procesosParaEnviar[key] = datosProceso;
                     });
                 }
                 
                 const tallas = Object.keys(cantidadTalla);
                 
+                // ✅ EXTRAER ARCHIVOS FILE DE LAS FOTOS DE PRENDA
                 let fotosParaEnviar = [];
                 if (window.gestorPrendaSinCotizacion?.fotosNuevas?.[prendaIndex]) {
-                    fotosParaEnviar = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
+                    const fotosGestor = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
+                    fotosParaEnviar = fotosGestor.map(foto => {
+                        // Extraer el objeto File real
+                        if (foto.file instanceof File) return foto.file;
+                        // Si es una foto existente con ruta
+                        if (foto.ruta_webp || foto.preview) return foto.ruta_webp || foto.preview;
+                        // Fallback
+                        return foto;
+                    }).filter(Boolean);
                 } else if (prenda.imagenes && prenda.imagenes.length > 0) {
                     fotosParaEnviar = prenda.imagenes;
                 }
@@ -187,10 +213,29 @@ class ItemFormCollector {
                 };
                 
                 if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
-                    itemSinCot.telas = prenda.telasAgregadas.map(tela => ({
-                        nombre: tela.nombre || '',
-                        foto: tela.foto || null
-                    }));
+                    itemSinCot.telas = prenda.telasAgregadas.map((tela, telaIndex) => {
+                        // Extraer fotos de esta tela desde el gestor
+                        let fotosTela = [];
+                        if (window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIndex]?.[telaIndex]) {
+                            const fotosGestor = window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex];
+                            fotosTela = fotosGestor.map(foto => {
+                                if (foto.file instanceof File) return foto.file;
+                                if (foto.ruta_webp || foto.preview) return foto.ruta_webp || foto.preview;
+                                return foto;
+                            }).filter(Boolean);
+                        } else if (tela.fotos && tela.fotos.length > 0) {
+                            fotosTela = tela.fotos;
+                        } else if (tela.imagenes && tela.imagenes.length > 0) {
+                            fotosTela = tela.imagenes;
+                        }
+                        
+                        return {
+                            tela: tela.tela || tela.nombre || '',
+                            color: tela.color || '',
+                            referencia: tela.referencia || '',
+                            imagenes: fotosTela
+                        };
+                    });
                 }
                 
                 itemsFormato.push(itemSinCot);
@@ -205,6 +250,19 @@ class ItemFormCollector {
             items: itemsFormato
         };
         
+        // ✅ DEBUG: Verificar que NO hay File objects en el JSON
+        console.group('🔍 ItemFormCollector - Estructura pedidoFinal:');
+        itemsFormato.forEach((item, idx) => {
+            console.log(`Item ${idx}:`, {
+                nombre: item.nombre_prenda,
+                tiene_imagenes: !!item.imagenes,
+                imagenes_count: item.imagenes?.length,
+                imagenes_es_file: item.imagenes?.[0] instanceof File,
+                imagenes_primero: typeof item.imagenes?.[0],
+                telas_count: item.telas?.length,
+            });
+        });
+        console.groupEnd();
 
         return pedidoFinal;
     }
@@ -245,7 +303,7 @@ class ItemFormCollector {
         const cantidadTalla = this.construirCantidadTalla(prenda);
         const variaciones = this.construirVariaciones(prenda);
         const procesosParaEnviar = this.extraerProcesos(prenda);
-        const telas = this.extraerTelas(prenda);
+        const telas = this.extraerTelas(prenda, prendaIndex);
 
         // Extraer color y tela de la primera tela agregada (si existe)
         let colorPrimera = prenda.color || null;
@@ -318,15 +376,28 @@ class ItemFormCollector {
      */
     construirVariaciones(prenda) {
         const tipoMangaRaw = prenda.variantes?.tipo_manga ?? 'No aplica';
+        const tipoMangaId = prenda.variantes?.tipo_manga_id ?? null;
         const obsMangaRaw = prenda.variantes?.obs_manga ?? '';
         const tieneBolsillosRaw = prenda.variantes?.tiene_bolsillos ?? false;
         const obsBolsillosRaw = prenda.variantes?.obs_bolsillos ?? '';
         const tipoBrocheRaw = prenda.variantes?.tipo_broche ?? 'No aplica';
+        const tipoBrocheBotonId = prenda.variantes?.tipo_broche_boton_id ?? null;
         const obsBrocheRaw = prenda.variantes?.obs_broche ?? '';
         const tieneReflectivoRaw = prenda.variantes?.tiene_reflectivo ?? false;
         const obsReflectivoRaw = prenda.variantes?.obs_reflectivo ?? '';
 
         return {
+            tipo_manga: tipoMangaRaw === 'No aplica' ? '' : (tipoMangaRaw || ''),
+            tipo_manga_id: tipoMangaId,
+            obs_manga: obsMangaRaw?.trim?.() || '',
+            tiene_bolsillos: tieneBolsillosRaw === true,
+            obs_bolsillos: obsBolsillosRaw?.trim?.() || '',
+            tipo_broche: tipoBrocheRaw === 'No aplica' ? '' : (tipoBrocheRaw || ''),
+            tipo_broche_boton_id: tipoBrocheBotonId,
+            obs_broche: obsBrocheRaw?.trim?.() || '',
+            tiene_reflectivo: tieneReflectivoRaw === true,
+            obs_reflectivo: obsReflectivoRaw?.trim?.() || '',
+            // Mantener estructura antigua para compatibilidad
             manga: {
                 tipo: tipoMangaRaw === 'No aplica' ? 'No aplica' : (tipoMangaRaw || 'No aplica'),
                 observacion: obsMangaRaw?.trim?.() || ''
@@ -374,7 +445,21 @@ class ItemFormCollector {
         let fotosParaEnviar = [];
         
         if (window.gestorPrendaSinCotizacion?.fotosNuevas?.[prendaIndex]) {
-            fotosParaEnviar = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
+            const fotosGestor = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
+            
+            // Convertir objetos de foto a File objects o rutas
+            fotosParaEnviar = fotosGestor.map(foto => {
+                // Si tiene File object, usarlo
+                if (foto.file instanceof File) {
+                    return foto.file;
+                }
+                // Si tiene ruta webp (foto existente), usar la ruta
+                if (foto.ruta_webp || foto.preview) {
+                    return foto.ruta_webp || foto.preview;
+                }
+                // Fallback
+                return foto;
+            }).filter(Boolean);
         } else if (prenda.imagenes && prenda.imagenes.length > 0) {
             fotosParaEnviar = prenda.imagenes;
         } else if (prenda.fotos && prenda.fotos.length > 0) {
@@ -385,19 +470,43 @@ class ItemFormCollector {
     }
 
     /**
-     * Extraer telas de prenda
+     * Extraer telas de prenda con sus imágenes
      * @private
      */
-    extraerTelas(prenda) {
+    extraerTelas(prenda, prendaIndex) {
+        let telasBase = [];
+        
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
-            return prenda.telasAgregadas;
+            telasBase = prenda.telasAgregadas;
+        } else if (prenda.telas && prenda.telas.length > 0) {
+            telasBase = prenda.telas;
         }
 
-        if (prenda.telas && prenda.telas.length > 0) {
-            return prenda.telas;
-        }
+        // Enriquecer cada tela con sus imágenes desde el gestor
+        return telasBase.map((tela, telaIndex) => {
+            let imagenesTela = [];
+            
+            // Intentar obtener imágenes del gestor principal
+            if (window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIndex]?.[telaIndex]) {
+                const fotosGestor = window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex];
+                imagenesTela = fotosGestor.map(foto => {
+                    if (foto.file instanceof File) return foto.file;
+                    if (foto.ruta_webp || foto.preview) return foto.ruta_webp || foto.preview;
+                    return foto;
+                }).filter(Boolean);
+            } else if (tela.imagenes && tela.imagenes.length > 0) {
+                imagenesTela = tela.imagenes;
+            } else if (tela.fotos && tela.fotos.length > 0) {
+                imagenesTela = tela.fotos;
+            }
 
-        return [];
+            return {
+                tela: tela.tela || tela.nombre || '',
+                color: tela.color || '',
+                referencia: tela.referencia || '',
+                imagenes: imagenesTela
+            };
+        });
     }
 
     /**

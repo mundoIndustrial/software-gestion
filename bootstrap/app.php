@@ -28,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.despacho.role' => \App\Http\Middleware\CheckDespachoRole::class,
         ]);
         
+        // ⚡ TESTING: Deshabilitar CSRF para Postman
+        $middleware->validateCsrfTokens(except: [
+            'pedidos-produccion/crear-sin-cotizacion',
+        ]);
+        
         // Add security headers middleware globally
         $middleware->append(\App\Http\Middleware\SetSecurityHeaders::class);
         

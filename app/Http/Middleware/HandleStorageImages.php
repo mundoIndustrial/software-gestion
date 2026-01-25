@@ -14,8 +14,8 @@ class HandleStorageImages
      */
     public function handle(Request $request, Closure $next)
     {
-        // Solo interceptar rutas que comienzan con /storage/cotizaciones
-        if (!str_starts_with($request->path(), 'storage/cotizaciones')) {
+        // Solo interceptar rutas que comienzan con /storage/
+        if (!str_starts_with($request->path(), 'storage/')) {
             return $next($request);
         }
 

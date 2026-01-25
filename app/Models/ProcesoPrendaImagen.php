@@ -14,22 +14,14 @@ class ProcesoPrendaImagen extends Model
 
     protected $fillable = [
         'proceso_prenda_detalle_id',
-        'ruta',
-        'nombre_original',
-        'tipo_mime',
-        'tamaño',
-        'ancho',
-        'alto',
-        'hash_md5',
+        'ruta_original',
+        'ruta_webp',
         'orden',
         'es_principal',
-        'descripcion',
     ];
 
     protected $casts = [
-        'tamaño' => 'integer',
-        'ancho' => 'integer',
-        'alto' => 'integer',
+        'orden' => 'integer',
         'es_principal' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

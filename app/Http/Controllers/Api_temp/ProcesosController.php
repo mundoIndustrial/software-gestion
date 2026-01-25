@@ -351,6 +351,18 @@ class ProcesosController extends Controller
                 ], 404);
             }
 
+            // Obtener el pedido_id desde la relación prenda → pedido
+            $prendaPedidoId = $proceso->getPrendaPedidoId();
+            $prenda = \App\Models\PrendaPedido::find($prendaPedidoId);
+            if (!$prenda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada',
+                ], 404);
+            }
+            
+            $pedidoId = $prenda->pedido_produccion_id;
+
             // Validar request
             $validated = $request->validate([
                 'imagen' => 'required|image|mimes:jpeg,png,gif,webp|max:5120', // 5MB
@@ -367,8 +379,8 @@ class ProcesosController extends Controller
             // Generar nombre de archivo
             $nombreArchivo = "proceso-{$procesoId}-" . time() . "." . $archivo->getClientOriginalExtension();
 
-            // Guardar archivo
-            $ruta = Storage::disk('public')->put("procesos/{$nombreArchivo}", $imagenBinaria);
+            // Guardar archivo en estructura pedidos/{pedido_id}/procesos/
+            $ruta = Storage::disk('public')->put("pedidos/{$pedidoId}/procesos/{$nombreArchivo}", $imagenBinaria);
 
             // Calcular hash MD5 para detectar duplicados
             $hashMd5 = md5($imagenBinaria);
@@ -381,7 +393,7 @@ class ProcesosController extends Controller
             // Usar domain service para guardar imagen
             $imagen = $this->subirImagenService->ejecutar(
                 procesoPrendaDetalleId: $procesoId,
-                rutaArchivo: "procesos/{$nombreArchivo}",
+                rutaArchivo: "pedidos/{$pedidoId}/procesos/{$nombreArchivo}",
                 nombreOriginal: $nombreOriginal,
                 tipoMime: $tipoMime,
                 tamaño: strlen($imagenBinaria),

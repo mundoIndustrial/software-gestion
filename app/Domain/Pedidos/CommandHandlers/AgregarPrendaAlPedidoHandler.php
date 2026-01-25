@@ -5,7 +5,7 @@ namespace App\Domain\Pedidos\CommandHandlers;
 use App\Domain\Shared\CQRS\Command;
 use App\Domain\Shared\CQRS\CommandHandler;
 use App\Domain\Pedidos\Commands\AgregarPrendaAlPedidoCommand;
-use App\Domain\Pedidos\Services\PrendaCreationService;
+use App\Application\Services\PedidoPrendaService;
 use App\Domain\Pedidos\Validators\PrendaValidator;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
@@ -15,13 +15,13 @@ use Illuminate\Support\Facades\Log;
  * 
  * Maneja AgregarPrendaAlPedidoCommand
  * Agrega una nueva prenda a un pedido existente
- * Delega a PrendaCreationService
+ * Delega a PedidoPrendaService (fuente única de verdad)
  */
 class AgregarPrendaAlPedidoHandler implements CommandHandler
 {
     public function __construct(
         private PedidoProduccion $pedidoModel,
-        private PrendaCreationService $prendaService,
+        private PedidoPrendaService $pedidoPrendaService,
         private PrendaValidator $validator,
     ) {}
 
@@ -63,12 +63,16 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
                 'pedido_id' => $command->getPedidoId(),
             ]);
 
-            // Crear la prenda usando CreacionPrendaSinCtaStrategy
-            // Los procesos (reflectivo, bordado, etc.) se manejan dentro de la estrategia
-            $prenda = $this->prendaService->crearPrendaSinCotizacion(
-                $prendaData,
-                $command->getPedidoId()
-            );
+            // Guardar prenda usando PedidoPrendaService (fuente única de verdad)
+            // Este servicio usa todos los servicios de dominio probados:
+            // - PrendaBaseCreatorService
+            // - PrendaTallaService  
+            // - PrendaVarianteService
+            // - PrendaImagenService
+            // - TelaImagenService
+            // - PrendaProcesoService
+            // Garantiza que se guarden las 10 tablas correctamente
+            $prenda = $this->pedidoPrendaService->guardarUnaPrendaEnPedido($pedido, $prendaData);
 
             // Actualizar cantidad total del pedido con la suma de todas las tallas
             $cantidadTotal = $this->calcularCantidadTotal($prendaData['cantidad_talla'] ?? []);

@@ -272,6 +272,12 @@ class GestorFotosPrenda extends GestorFotos {
         input.addEventListener('change', async (e) => {
             try {
                 const cantidad = await this.agregarFotos(e.target.files);
+                
+                // ✅ SINCRONIZAR CON GESTOR PRINCIPAL
+                if (window.gestorPrendaSinCotizacion) {
+                    window.gestorPrendaSinCotizacion.agregarFotos(prendaIndex, this.fotos);
+                }
+                
                 this.renderizar(prendaIndex);
                 mostrarExito('Éxito', `Se agregaron ${cantidad} imagen${cantidad !== 1 ? 's' : ''} correctamente`);
             } catch (error) {
@@ -312,6 +318,12 @@ class GestorFotosTela extends GestorFotos {
         input.addEventListener('change', async (e) => {
             try {
                 const cantidad = await this.agregarFotos(e.target.files);
+                
+                // ✅ SINCRONIZAR CON GESTOR PRINCIPAL
+                if (window.gestorPrendaSinCotizacion) {
+                    window.gestorPrendaSinCotizacion.agregarFotosTela(prendaIndex, telaIndex, this.fotos);
+                }
+                
                 mostrarExito('Éxito', `Se agregaron ${cantidad} imagen${cantidad !== 1 ? 's' : ''} correctamente`);
             } catch (error) {
                 mostrarError('Error', error.message);

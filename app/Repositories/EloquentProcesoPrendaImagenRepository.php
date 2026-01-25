@@ -57,16 +57,10 @@ class EloquentProcesoPrendaImagenRepository implements ProcesoPrendaImagenReposi
     {
         $modelo = new ProcesoPrendaImagenModel([
             'proceso_prenda_detalle_id' => $imagen->getProcesoPrendaDetalleId(),
-            'ruta' => $imagen->getRuta(),
-            'nombre_original' => $imagen->getNombreOriginal(),
-            'tipo_mime' => $imagen->getTipoMime(),
-            'tamaño' => $imagen->getTamaño(),
-            'ancho' => $imagen->getAncho(),
-            'alto' => $imagen->getAlto(),
-            'hash_md5' => $imagen->getHashMd5(),
+            'ruta_original' => $imagen->getNombreOriginal(),
+            'ruta_webp' => $imagen->getRuta(),
             'orden' => $imagen->getOrden(),
             'es_principal' => $imagen->getEsPrincipal(),
-            'descripcion' => $imagen->getDescripcion(),
         ]);
 
         $modelo->save();
@@ -81,16 +75,10 @@ class EloquentProcesoPrendaImagenRepository implements ProcesoPrendaImagenReposi
         $modelo = ProcesoPrendaImagenModel::findOrFail($imagen->getId());
 
         $modelo->update([
-            'ruta' => $imagen->getRuta(),
-            'nombre_original' => $imagen->getNombreOriginal(),
-            'tipo_mime' => $imagen->getTipoMime(),
-            'tamaño' => $imagen->getTamaño(),
-            'ancho' => $imagen->getAncho(),
-            'alto' => $imagen->getAlto(),
-            'hash_md5' => $imagen->getHashMd5(),
+            'ruta_original' => $imagen->getNombreOriginal(),
+            'ruta_webp' => $imagen->getRuta(),
             'orden' => $imagen->getOrden(),
             'es_principal' => $imagen->getEsPrincipal(),
-            'descripcion' => $imagen->getDescripcion(),
         ]);
 
         return $imagen;
@@ -129,16 +117,16 @@ class EloquentProcesoPrendaImagenRepository implements ProcesoPrendaImagenReposi
         $entidad = new ProcesoPrendaImagen(
             id: $modelo->id,
             procesoPrendaDetalleId: $modelo->proceso_prenda_detalle_id,
-            ruta: $modelo->ruta,
-            nombreOriginal: $modelo->nombre_original,
-            tipoMime: $modelo->tipo_mime,
-            tamaño: $modelo->tamaño,
-            ancho: $modelo->ancho,
-            alto: $modelo->alto,
-            hashMd5: $modelo->hash_md5,
+            ruta: $modelo->ruta_webp,
+            nombreOriginal: $modelo->ruta_original,
+            tipoMime: null,
+            tamaño: 0,
+            ancho: 0,
+            alto: 0,
+            hashMd5: null,
             orden: $modelo->orden,
             esPrincipal: $modelo->es_principal,
-            descripcion: $modelo->descripcion
+            descripcion: null
         );
 
         return $entidad;

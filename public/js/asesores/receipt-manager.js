@@ -5,6 +5,26 @@
  */
 class ReceiptManager {
     constructor(datosFactura, prendasIndex = null, contenedorId = null) {
+        // ===== DEBUG: Verificar datos de entrada =====
+        console.group('[ReceiptManager] Constructor - Datos recibidos');
+        console.log('datosFactura:', datosFactura);
+        console.log('datosFactura.prendas:', datosFactura.prendas);
+        console.log('Número de prendas:', datosFactura.prendas ? datosFactura.prendas.length : 'UNDEFINED');
+        console.log('prendasIndex filtro:', prendasIndex);
+        
+        if (datosFactura.prendas && datosFactura.prendas.length > 0) {
+            const primeraPrenda = datosFactura.prendas[0];
+            console.group('Primera prenda - Análisis detallado:');
+            console.log('  Campos disponibles:', Object.keys(primeraPrenda));
+            console.log('  Tiene "procesos"?', 'procesos' in primeraPrenda);
+            console.log('  procesos valor:', primeraPrenda.procesos);
+            console.log('  procesos es array?', Array.isArray(primeraPrenda.procesos));
+            console.log('  procesos length:', primeraPrenda.procesos ? primeraPrenda.procesos.length : 'N/A');
+            console.groupEnd();
+        }
+        console.groupEnd();
+        // ===== FIN DEBUG =====
+        
         this.datosFactura = datosFactura;
         this.contenedorId = contenedorId;
         this.prendasIndex = prendasIndex;  // ← Índice de prenda para filtrar (null = todas)
@@ -38,8 +58,12 @@ class ReceiptManager {
      */
     generarRecibos(datosFactura) {
         const recibos = [];
-
+        console.group('[ReceiptManager.generarRecibos] Procesando prendas');
+        console.log('Total de prendas a procesar:', datosFactura.prendas.length);
+        
         datosFactura.prendas.forEach((prenda, prendaIdx) => {
+            console.group(`Procesando Prenda ${prendaIdx}: ${prenda.nombre}`);
+            
             // 1. Agregar recibo de COSTURA para la prenda
             let tituloCostura = "RECIBO DE COSTURA";
             if (prenda.origen && prenda.origen.toLowerCase() === 'bodega') {
@@ -55,26 +79,46 @@ class ReceiptManager {
                 titulo: tituloCostura,
                 subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
             });
+            
+            console.log(`✓ Agregado: "${tituloCostura}"`);
 
             // 2. Agregar recibo para cada PROCESO de la prenda
+            console.log('Verificando procesos:');
+            console.log('  - prenda.procesos existe?', 'procesos' in prenda);
+            console.log('  - prenda.procesos valor:', prenda.procesos);
+            console.log('  - Es array?', Array.isArray(prenda.procesos));
+            
             if (prenda.procesos && Array.isArray(prenda.procesos)) {
+                console.log(`  - Procesando ${prenda.procesos.length} procesos`);
                 prenda.procesos.forEach((proceso, procesoIdx) => {
+                    // Usar nombre_proceso o tipo_proceso como fallback (campos que viene del backend)
+                    const nombreProceso = proceso.nombre_proceso || proceso.tipo_proceso || proceso.nombre || 'Proceso';
+                    console.log(`    Proceso ${procesoIdx}: "${nombreProceso}"`);
+                    
                     recibos.push({
                         numero: recibos.length + 1,
                         prendaIndex: prendaIdx,
                         procesoIndex: procesoIdx,
                         prenda: prenda,
                         proceso: proceso,
-                        titulo: `RECIBO DE ${proceso.nombre.toUpperCase()}`,
+                        titulo: `RECIBO DE ${nombreProceso.toUpperCase()}`,
                         subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
                     });
                 });
+            } else {
+                console.log('  - ⚠️ Sin procesos o procesos no es array');
             }
+            
+            console.groupEnd();
         });
 
         // Actualizar total en cada recibo
         const total = recibos.length;
         recibos.forEach(r => r.total = total);
+        
+        console.log('Total de recibos generados:', total);
+        console.log('Recibos:', recibos);
+        console.groupEnd();
 
         return recibos;
     }
@@ -559,7 +603,10 @@ class ReceiptManager {
      * Generar contenido para recibo de PROCESO
      */
     contenidoProceso(proceso, prenda) {
-        let html = `<strong>${proceso.nombre.toUpperCase()}</strong><br>`;
+        // Usar nombre_proceso o tipo_proceso (campos que vienen del backend), con fallback a nombre
+        const nombreProceso = proceso.nombre_proceso || proceso.tipo_proceso || proceso.nombre || 'Proceso';
+        
+        let html = `<strong>${nombreProceso.toUpperCase()}</strong><br>`;
         html += `<em>${prenda.nombre.toUpperCase()}</em><br><br>`;
 
         if (proceso.observaciones) {

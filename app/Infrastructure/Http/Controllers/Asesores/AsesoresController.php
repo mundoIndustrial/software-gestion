@@ -641,14 +641,27 @@ class AsesoresController extends Controller
     public function obtenerDatosFactura($id)
     {
         try {
+            \Log::info('[CONTROLLER-FACTURA] Obteniendo datos de factura para pedido: ' . $id);
+            
             // Crear DTO para el Use Case
             $dto = ObtenerFacturaDTO::fromRequest((string)$id);
 
             // Usar el nuevo Use Case DDD
             $datos = $this->obtenerFacturaUseCase->ejecutar($dto);
             
+            \Log::info('[CONTROLLER-FACTURA] Datos obtenidos correctamente', [
+                'pedido_id' => $id,
+                'prendas_count' => count($datos['prendas'] ?? []),
+                'procesos_total' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? []))
+            ]);
+            
             return response()->json($datos);
         } catch (\Exception $e) {
+            \Log::error('[CONTROLLER-FACTURA] Error obteniendo datos de factura', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'error' => 'Error obteniendo datos de la factura: ' . $e->getMessage(),
             ], $e->getCode() ?: 500);

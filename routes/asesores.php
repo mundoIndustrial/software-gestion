@@ -119,9 +119,13 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/inventario-telas', [AsesoresController::class, 'inventarioTelas'])->name('inventario.telas');
     
     // ========================================
-    // DATOS DE CATÁLOGOS (tipos de broche, manga, etc)
+    // DATOS DE CATÁLOGOS (tipos de broche, manga, telas, colores, etc)
     // ========================================
     Route::get('/api/tipos-broche-boton', [AsesoresAPIController::class, 'obtenerTiposBrocheBoton'])->name('api.tipos-broche-boton');
     Route::get('/api/tipos-manga', [AsesoresAPIController::class, 'obtenerTiposManga'])->name('api.tipos-manga');
     Route::post('/api/tipos-manga', [AsesoresAPIController::class, 'crearObtenerTipoManga'])->name('api.tipos-manga.create');
+    Route::get('/api/telas', [AsesoresAPIController::class, 'obtenerTelas'])->name('api.telas');
+    Route::post('/api/telas', [AsesoresAPIController::class, 'crearObtenerTela'])->name('api.telas.create');
+    Route::get('/api/colores', [AsesoresAPIController::class, 'obtenerColores'])->name('api.colores');
+    Route::post('/api/colores', [AsesoresAPIController::class, 'crearObtenerColor'])->name('api.colores.create');
 });

@@ -42,8 +42,8 @@ class TelaImagenService
                     continue;
                 }
 
-                // Procesar fotos de la tela
-                $fotos = $tela['fotos'] ?? [];
+                // Procesar fotos de la tela (soportar 'fotos' e 'imagenes')
+                $fotos = $tela['fotos'] ?? $tela['imagenes'] ?? [];
                 if (empty($fotos)) {
                     continue;
                 }

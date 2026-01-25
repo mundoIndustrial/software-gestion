@@ -223,4 +223,186 @@ class AsesoresAPIController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener lista de telas activas
+     * 
+     * Endpoint: GET /asesores/api/telas
+     * Respuesta: { "success": true, "data": [{ "id": 1, "nombre": "Algodón" }, ...] }
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function obtenerTelas()
+    {
+        try {
+            $telas = \App\Models\TelaPrenda::where('activo', true)
+                ->select('id', 'nombre', 'referencia')
+                ->orderBy('nombre')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $telas
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresAPIController] Error obtener telas: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener telas',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Crear o obtener una tela por nombre
+     * Si no existe, la crea automáticamente
+     * 
+     * Endpoint: POST /asesores/api/telas
+     * Request: { "nombre": "Algodón", "referencia": "ALG-001" }
+     * Respuesta: { "success": true, "data": { "id": 5, "nombre": "Algodón" } }
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function crearObtenerTela(Request $request)
+    {
+        try {
+            $nombre = trim($request->input('nombre', ''));
+            $referencia = trim($request->input('referencia', ''));
+            
+            if (empty($nombre)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El nombre de la tela es requerido'
+                ], 400);
+            }
+
+            // Buscar si ya existe (case-insensitive)
+            $tela = \App\Models\TelaPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+                ->first();
+
+            // Si no existe, crearla
+            if (!$tela) {
+                $tela = \App\Models\TelaPrenda::create([
+                    'nombre' => ucfirst(strtolower($nombre)),
+                    'referencia' => $referencia,
+                    'activo' => true
+                ]);
+
+                \Log::info('[AsesoresAPIController] Nueva tela creada', [
+                    'id' => $tela->id,
+                    'nombre' => $tela->nombre,
+                    'referencia' => $tela->referencia
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tela,
+                'mensaje' => $tela->wasRecentlyCreated ? 'Tela creada' : 'Tela existente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresAPIController] Error crear/obtener tela: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear/obtener tela',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener lista de colores activos
+     * 
+     * Endpoint: GET /asesores/api/colores
+     * Respuesta: { "success": true, "data": [{ "id": 1, "nombre": "Rojo", "codigo": "#FF0000" }, ...] }
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function obtenerColores()
+    {
+        try {
+            $colores = \App\Models\ColorPrenda::where('activo', true)
+                ->select('id', 'nombre', 'codigo')
+                ->orderBy('nombre')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $colores
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresAPIController] Error obtener colores: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener colores',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Crear o obtener un color por nombre
+     * Si no existe, lo crea automáticamente
+     * 
+     * Endpoint: POST /asesores/api/colores
+     * Request: { "nombre": "Azul", "codigo": "#0000FF" }
+     * Respuesta: { "success": true, "data": { "id": 5, "nombre": "Azul" } }
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function crearObtenerColor(Request $request)
+    {
+        try {
+            $nombre = trim($request->input('nombre', ''));
+            $codigo = trim($request->input('codigo', ''));
+            
+            if (empty($nombre)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El nombre del color es requerido'
+                ], 400);
+            }
+
+            // Buscar si ya existe (case-insensitive)
+            $color = \App\Models\ColorPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+                ->first();
+
+            // Si no existe, crearlo
+            if (!$color) {
+                $color = \App\Models\ColorPrenda::create([
+                    'nombre' => ucfirst(strtolower($nombre)),
+                    'codigo' => $codigo,
+                    'activo' => true
+                ]);
+
+                \Log::info('[AsesoresAPIController] Nuevo color creado', [
+                    'id' => $color->id,
+                    'nombre' => $color->nombre,
+                    'codigo' => $color->codigo
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $color,
+                'mensaje' => $color->wasRecentlyCreated ? 'Color creado' : 'Color existente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresAPIController] Error crear/obtener color: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear/obtener color',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

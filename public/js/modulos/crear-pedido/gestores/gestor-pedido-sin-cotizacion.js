@@ -300,7 +300,7 @@ class GestorPedidoSinCotizacion {
 
 
 
-            fetch('/asesores/pedidos-produccion/crear-sin-cotizacion', {
+            fetch('/asesores/pedidos-editable/crear', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

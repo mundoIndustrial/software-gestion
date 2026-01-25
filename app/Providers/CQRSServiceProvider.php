@@ -232,8 +232,8 @@ class CQRSServiceProvider extends ServiceProvider
         $this->app->bind(AgregarPrendaAlPedidoHandler::class, function ($app) {
             return new AgregarPrendaAlPedidoHandler(
                 $app->make(\App\Models\PedidoProduccion::class),
-                $app->make(\App\Domain\Pedidos\Services\PrendaCreationService::class),
-                $app->make(PrendaValidator::class),
+                $app->make(\App\Application\Services\PedidoPrendaService::class),
+                $app->make(PrendaValidator::class)
             );
         });
 

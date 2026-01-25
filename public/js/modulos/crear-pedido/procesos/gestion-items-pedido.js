@@ -263,6 +263,52 @@ class GestionItemsUI {
 
             console.log('[gestion-items-pedido]  Validación EXITOSA: Hay tallas, procediendo a guardar');
 
+            // ✅ PROCESAR TIPO DE MANGA: Crear si no existe
+            if (prendaData.variantes?.tipo_manga_crear && prendaData.variantes?.tipo_manga) {
+                console.log('[gestion-items-pedido] 🔄 Creando tipo de manga:', prendaData.variantes.tipo_manga);
+                
+                try {
+                    const response = await fetch('/asesores/api/tipos-manga', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                        },
+                        body: JSON.stringify({ nombre: prendaData.variantes.tipo_manga })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        // Guardar el ID recién creado
+                        prendaData.variantes.tipo_manga_id = result.data.id;
+                        
+                        // Agregar al datalist para futuras búsquedas
+                        const datalist = document.getElementById('opciones-manga');
+                        if (datalist) {
+                            const newOption = document.createElement('option');
+                            newOption.value = result.data.nombre;
+                            newOption.dataset.id = result.data.id;
+                            datalist.appendChild(newOption);
+                        }
+                        
+                        console.log('[gestion-items-pedido] ✅ Tipo de manga creado:', {
+                            id: result.data.id,
+                            nombre: result.data.nombre
+                        });
+                        
+                        // Limpiar flag de creación
+                        delete prendaData.variantes.tipo_manga_crear;
+                    } else {
+                        console.warn('[gestion-items-pedido] ⚠️ No se pudo crear tipo de manga:', result);
+                        this.notificationService?.advertencia('No se pudo crear el tipo de manga, se guardará solo el nombre');
+                    }
+                } catch (error) {
+                    console.error('[gestion-items-pedido] ❌ Error creando tipo de manga:', error);
+                    this.notificationService?.advertencia('Error al crear tipo de manga, se guardará solo el nombre');
+                }
+            }
+
 
             // Verificar si estamos en un pedido existente
             const enPedidoExistente = window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido);

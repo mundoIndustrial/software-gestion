@@ -54,6 +54,7 @@ class CrearPedidoCompletoRequest extends FormRequest
             // 🎯 VARIACIONES - Value Object (UNA configuración por prenda)
             'items.*.variaciones' => 'nullable|array',
             'items.*.variaciones.tipo_manga' => 'nullable|string|max:100',
+            'items.*.variaciones.tipo_manga_id' => 'nullable|integer|exists:tipos_manga,id',
             'items.*.variaciones.obs_manga' => 'nullable|string|max:500',
             'items.*.variaciones.tiene_bolsillos' => 'nullable|boolean',
             'items.*.variaciones.obs_bolsillos' => 'nullable|string|max:500',
@@ -74,12 +75,11 @@ class CrearPedidoCompletoRequest extends FormRequest
             'items.*.telas.*.color' => 'nullable|string|max:100',
             'items.*.telas.*.referencia' => 'nullable|string|max:100',
             'items.*.telas.*.imagenes' => 'nullable|array',
+            'items.*.telas.*.imagenes.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120', // 5MB
             
-            // Imágenes de la prenda
+            // Imágenes de la prenda (aceptar File objects desde FormData)
             'items.*.imagenes' => 'nullable|array',
-            'items.*.imagenes.*.original' => 'nullable|string',
-            'items.*.imagenes.*.webp' => 'nullable|string',
-            'items.*.imagenes.*.thumbnail' => 'nullable|string',
+            'items.*.imagenes.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120', // 5MB
         ];
     }
 
@@ -103,18 +103,56 @@ class CrearPedidoCompletoRequest extends FormRequest
     /**
      * Preparar datos antes de validación
      * 
-     * Normaliza booleanos enviados como strings ("true" -> true)
+     * Deserializa SOLO nivel 1 de JSON strings desde FormData:
+     * - cantidad_talla (JSON string)
+     * - variaciones (JSON string)  
+     * - procesos (JSON string) ← TODO EL ÁRBOL deserializado de una vez
+     * 
+     * Esto evita "Over 9 levels deep" warning porque nunca enviamos
+     * estructuras con más de 1 nivel de FormData keys
      */
     protected function prepareForValidation(): void
     {
         $items = $this->input('items', []);
         
         foreach ($items as $index => $item) {
-            // Normalizar booleanos en variaciones
-            if (isset($item['variaciones'])) {
+            // ============================================================
+            // DESERIALIZAR SOLO NIVEL 1 - JSON strings desde FormData
+            // ============================================================
+            
+            // 1. Deserializar cantidad_talla
+            if (isset($item['cantidad_talla']) && is_string($item['cantidad_talla'])) {
+                try {
+                    $item['cantidad_talla'] = json_decode($item['cantidad_talla'], true) ?? [];
+                } catch (\Exception $e) {
+                    $item['cantidad_talla'] = [];
+                }
+            }
+            
+            // 2. Deserializar variaciones
+            if (isset($item['variaciones']) && is_string($item['variaciones'])) {
+                try {
+                    $item['variaciones'] = json_decode($item['variaciones'], true) ?? [];
+                } catch (\Exception $e) {
+                    $item['variaciones'] = [];
+                }
+            }
+            
+            // 3. Deserializar procesos COMPLETAMENTE
+            // El frontend envía: items[i][procesos] = JSON.stringify(procesos)
+            // Esto trae TODO el árbol en un string, incluyendo todas las tallas
+            if (isset($item['procesos']) && is_string($item['procesos'])) {
+                try {
+                    $item['procesos'] = json_decode($item['procesos'], true) ?? [];
+                } catch (\Exception $e) {
+                    $item['procesos'] = [];
+                }
+            }
+            
+            // 4. Normalizar booleanos en variaciones
+            if (isset($item['variaciones']) && is_array($item['variaciones'])) {
                 $variaciones = $item['variaciones'];
                 
-                // Convertir strings "true"/"false" a booleanos
                 if (isset($variaciones['tiene_bolsillos'])) {
                     $variaciones['tiene_bolsillos'] = filter_var(
                         $variaciones['tiene_bolsillos'], 
@@ -131,8 +169,10 @@ class CrearPedidoCompletoRequest extends FormRequest
                     ) ?? false;
                 }
                 
-                $items[$index]['variaciones'] = $variaciones;
+                $item['variaciones'] = $variaciones;
             }
+            
+            $items[$index] = $item;
         }
         
         $this->merge(['items' => $items]);

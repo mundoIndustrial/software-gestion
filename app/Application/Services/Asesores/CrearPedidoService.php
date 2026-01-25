@@ -2,7 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
-use App\Models\Pedidos;
+use App\Models\PedidoProduccion;
 use App\Models\LogoPedido;
 use App\Enums\EstadoPedido;
 use App\Application\Services\PedidoPrendaService;
@@ -72,7 +72,7 @@ class CrearPedidoService
         );
 
         // Crear pedido base
-        $pedido = Pedidos::create([
+        $pedido = PedidoProduccion::create([
             'numero_pedido' => null,
             'cliente' => $datos['cliente'],
             'asesor_id' => Auth::id(),

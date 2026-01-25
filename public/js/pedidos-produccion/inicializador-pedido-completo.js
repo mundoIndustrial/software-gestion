@@ -93,7 +93,7 @@ window.crearPedidoConBuilderUnificado = async function() {
             });
         }
         
-        const response = await fetch('/asesores/pedidos-produccion/crear-sin-cotizacion', {
+        const response = await fetch('/asesores/pedidos-editable/crear', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

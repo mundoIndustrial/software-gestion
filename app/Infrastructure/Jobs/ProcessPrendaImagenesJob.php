@@ -18,6 +18,7 @@ class ProcessPrendaImagenesJob implements ShouldQueue
 
     public function __construct(
         private int $prendaId,
+        private int $pedidoId,
         private array $imagenesData,
     ) {}
 
@@ -29,6 +30,7 @@ class ProcessPrendaImagenesJob implements ShouldQueue
         try {
             \Log::info('🔄 Iniciando procesamiento de imágenes', [
                 'prenda_id' => $this->prendaId,
+                'pedido_id' => $this->pedidoId,
                 'cantidad_imagenes' => count($this->imagenesData),
             ]);
 
@@ -37,7 +39,7 @@ class ProcessPrendaImagenesJob implements ShouldQueue
             foreach ($this->imagenesData as $index => $imagenData) {
                 try {
                     // Procesar imagen
-                    $ruta = $imagenService->procesarImagen($imagenData['archivo'], $this->prendaId);
+                    $ruta = $imagenService->procesarImagen($imagenData['archivo'], $this->prendaId, $this->pedidoId);
 
                     // Generar miniatura
                     $rutaMiniatura = $imagenService->generarMiniatura($ruta, $this->prendaId);
