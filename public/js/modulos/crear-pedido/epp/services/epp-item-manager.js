@@ -97,9 +97,9 @@ class EppItemManager {
         
         if (item) {
             item.remove();
-            console.log('[EppItemManager] ✅ Item eliminado:', id);
+            console.log('[EppItemManager] Item eliminado:', id);
         } else {
-            console.warn('[EppItemManager] ⚠️ Item no encontrado para eliminar:', id);
+            console.warn('[EppItemManager]  Item no encontrado para eliminar:', id);
         }
     }
 
@@ -125,7 +125,7 @@ class EppItemManager {
     actualizarItem(id, datos) {
         const item = this.obtenerItem(id);
         if (!item) {
-            console.warn('[EppItemManager] ⚠️ Item no encontrado para actualizar:', id);
+            console.warn('[EppItemManager]  Item no encontrado para actualizar:', id);
             return;
         }
 
@@ -141,7 +141,7 @@ class EppItemManager {
                 // Segunda columna: [2] = etiqueta "Observaciones", [3] = valor observaciones
                 if (etiquetas[1]) {
                     etiquetas[1].textContent = datos.cantidad;
-                    console.log('[EppItemManager] ✅ Cantidad actualizada:', datos.cantidad);
+                    console.log('[EppItemManager] Cantidad actualizada:', datos.cantidad);
                 }
             }
         }
@@ -155,7 +155,7 @@ class EppItemManager {
                 // Segunda columna: [2] = etiqueta "Observaciones", [3] = valor observaciones
                 if (etiquetas[3]) {
                     etiquetas[3].textContent = datos.observaciones || 'N/A';
-                    console.log('[EppItemManager] ✅ Observaciones actualizadas:', datos.observaciones);
+                    console.log('[EppItemManager] Observaciones actualizadas:', datos.observaciones);
                 }
             }
         }
@@ -196,7 +196,7 @@ class EppItemManager {
             galeriaDiv.querySelector('div').innerHTML += '</div>';
         }
 
-        console.log('[EppItemManager] ✅ Item actualizado correctamente');
+        console.log('[EppItemManager] Item actualizado correctamente');
     }
 
     /**

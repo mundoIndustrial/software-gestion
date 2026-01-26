@@ -10,7 +10,7 @@ class ObtenerDatosRecibosService
 {
     /**
      * Obtener datos dinÃ¡micos de recibos para un pedido
-     * Incluye informaciÃ³n de procesos de prendas
+     * Incluye información de procesos de prendas
      * 
      * @param int $pedidoId
      * @return array
@@ -137,7 +137,7 @@ class ObtenerDatosRecibosService
     }
 
     /**
-     * Obtener datos para impresiÃ³n de recibos
+     * Obtener datos para impresión de recibos
      */
     public function obtenerParaImpresion(int $pedidoId): array
     {

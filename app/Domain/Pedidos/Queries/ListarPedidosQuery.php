@@ -7,12 +7,12 @@ use App\Domain\Shared\CQRS\Query;
 /**
  * ListarPedidosQuery
  * 
- * Query para listar todos los pedidos con paginaciÃ³n
+ * Query para listar todos los pedidos con paginación
  * 
  * @param int $page NÃºmero de pÃ¡gina (default 1)
  * @param int $perPage Registros por pÃ¡gina (default 15)
  * @param string $ordenar Campo para ordenar (default 'created_at')
- * @param string $direccion DirecciÃ³n (asc/desc, default desc)
+ * @param string $direccion Dirección (asc/desc, default desc)
  */
 class ListarPedidosQuery implements Query
 {

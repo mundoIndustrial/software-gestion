@@ -53,7 +53,7 @@
 </aside>
 
 <script>
-    console.log('🔧 [BORDADO-SIDEBAR] Inicializando sidebar...');
+    console.log(' [BORDADO-SIDEBAR] Inicializando sidebar...');
 
     // Función para alternar submenús
     function toggleSubmenu(event, submenuId) {
@@ -63,11 +63,11 @@
         const arrow = event.currentTarget.querySelector('.submenu-arrow');
         
         if (!submenu) {
-            console.error('❌ [TOGGLESUBMENU] Submenú no encontrado:', submenuId);
+            console.error(' [TOGGLESUBMENU] Submenú no encontrado:', submenuId);
             return;
         }
 
-        console.log('📍 [TOGGLESUBMENU] Estado actual:', submenu.style.display);
+        console.log(' [TOGGLESUBMENU] Estado actual:', submenu.style.display);
         console.log('[TOGGLESUBMENU] Arrow encontrado:', !!arrow);
         
         if (submenu.style.display === 'none') {
@@ -78,7 +78,7 @@
                 console.log('🔄 [TOGGLESUBMENU] Arrow rotado a 180deg');
             }
         } else {
-            console.log('❌ [TOGGLESUBMENU] Cerrando submenú:', submenuId);
+            console.log(' [TOGGLESUBMENU] Cerrando submenú:', submenuId);
             submenu.style.display = 'none';
             if (arrow) {
                 arrow.style.transform = 'rotate(0deg)';
@@ -116,7 +116,7 @@
             console.log(' [SIDEBAR-INIT] Sidebar restaurado como collapsed');
         }
     } else {
-        console.error('❌ [SIDEBAR-INIT] No se pudo inicializar sidebar. sidebarToggle:', !!sidebarToggle, 'sidebar:', !!sidebar);
+        console.error(' [SIDEBAR-INIT] No se pudo inicializar sidebar. sidebarToggle:', !!sidebarToggle, 'sidebar:', !!sidebar);
     }
 
     // Auto-expandir submenú si hay una ruta activa
@@ -128,7 +128,7 @@
         console.log('🔍 [DOM-LOADED] Items de submenú activos encontrados:', activeSubmenuItems.length);
         
         activeSubmenuItems.forEach((link, index) => {
-            console.log(`📍 [DOM-LOADED] Item activo ${index}:`, link.textContent.trim());
+            console.log(` [DOM-LOADED] Item activo ${index}:`, link.textContent.trim());
             const submenu = link.closest('.nav-submenu');
             if (submenu) {
                 console.log(` [DOM-LOADED] Submenú encontrado para item ${index}`);

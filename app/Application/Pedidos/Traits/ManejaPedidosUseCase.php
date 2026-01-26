@@ -7,13 +7,13 @@ use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 /**
  * ManejaPedidosUseCase Trait
  * 
- * Centraliza TODA la lÃ³gica de validaciÃ³n y manejo de errores comunes
+ * Centraliza TODA la lógica de validación y manejo de errores comunes
  * en Use Cases que trabajan con pedidos.
  * 
  * ELIMINA:
- * - 50-60 lÃ­neas de validaciÃ³n duplicada
+ * - 50-60 lÃ­neas de validación duplicada
  * - Mensajes de error inconsistentes (throw new Exception vs InvalidArgumentException vs DomainException)
- * - LÃ³gica de bÃºsqueda/validaciÃ³n esparcida
+ * - Lógica de bÃºsqueda/validación esparcida
  * - if (!$pedido) throw new... (repetida 20+ veces)
  * 
  * ANTES: Cada Use Case tenÃ­a:
@@ -36,7 +36,7 @@ use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
 trait ManejaPedidosUseCase
 {
     /**
-     * Validar que el pedido existe, sino lanza excepciÃ³n
+     * Validar que el pedido existe, sino lanza excepción
      * 
      * @param int|string $pedidoIdentificador ID o nÃºmero del pedido
      * @param mixed $repository Repository a usar (inyectado como propiedad)
@@ -91,7 +91,7 @@ trait ManejaPedidosUseCase
 
         if (!in_array($estadoActual, $estadosPermitidos, true)) {
             throw new \DomainException(
-                "OperaciÃ³n no permitida. Pedido en estado: {$estadoActual}. " .
+                "Operación no permitida. Pedido en estado: {$estadoActual}. " .
                 "Estados permitidos: " . implode(', ', $estadosPermitidos),
                 400
             );
@@ -99,11 +99,11 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar transiciÃ³n de estado
+     * Validar transición de estado
      * 
      * @param string $estadoActual Estado actual
      * @param string $estadoNuevo Estado a cambiar
-     * @throws \DomainException Si transiciÃ³n no es permitida
+     * @throws \DomainException Si transición no es permitida
      */
     protected function validarTransicion(string $estadoActual, string $estadoNuevo): void
     {
@@ -152,7 +152,7 @@ trait ManejaPedidosUseCase
             // Es un agregado con getter totalPrendas()
             $totalPrendas = $pedido->totalPrendas();
         } elseif (method_exists($pedido, 'prendas')) {
-            // Es un modelo Eloquent con relaciÃ³n prendas()
+            // Es un modelo Eloquent con relación prendas()
             $totalPrendas = is_callable([$pedido, 'prendas']) 
                 ? $pedido->prendas()->count() 
                 : count($pedido->prendas ?? []);

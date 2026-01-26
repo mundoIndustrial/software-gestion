@@ -7,7 +7,7 @@ use InvalidArgumentException;
 /**
  * CrearProduccionPedidoDTO
  * 
- * Data Transfer Object para crear un nuevo pedido de producciÃ³n
+ * Data Transfer Object para crear un nuevo pedido de producción
  * Encapsula los datos del request y los valida
  */
 class CrearProduccionPedidoDTO

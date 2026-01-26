@@ -38,24 +38,32 @@ class EppService {
 
     /**
      * Abrir modal para editar EPP
+     * Seguro para datos opcionales (categoria, codigo)
      */
     abrirModalEditarEPP(eppData) {
         console.log('[EppService] 📝 Abriendo modal de edición con datos:', eppData);
 
         // Resetear estado y marcar como edición
-        this.stateManager.iniciarEdicion(eppData.epp_id, false); // false = está en formulario, no en BD
+        this.stateManager.iniciarEdicion(eppData.epp_id || eppData.id, false); // false = está en formulario, no en BD
         
-        // Cargar datos del EPP
+        // Obtener nombre (nombre_completo o nombre)
+        const nombre = eppData.nombre_completo || eppData.nombre || '';
+        
+        // Cargar datos del EPP (tolerante a valores null/undefined)
         this.stateManager.setProductoSeleccionado({
-            id: eppData.epp_id,
-            nombre: eppData.nombre,
-            categoria: eppData.categoria || 'General'
+            id: eppData.epp_id || eppData.id,
+            nombre: nombre,
+            nombre_completo: nombre,
+            codigo: eppData.codigo || null,
+            categoria: eppData.categoria || null
         });
 
-        // Mostrar producto seleccionado
+        // Mostrar producto seleccionado (sin forzar categoría)
         this.modalManager.mostrarProductoSeleccionado({
-            nombre: eppData.nombre,
-            categoria: eppData.categoria || 'General'
+            nombre: nombre,
+            nombre_completo: nombre,
+            codigo: eppData.codigo || undefined,
+            categoria: eppData.categoria || undefined
         });
 
         // Cargar valores en el formulario
@@ -66,7 +74,7 @@ class EppService {
         );
 
         // Mostrar y guardar imágenes si existen
-        if (eppData.imagenes && eppData.imagenes.length > 0) {
+        if (eppData.imagenes && Array.isArray(eppData.imagenes) && eppData.imagenes.length > 0) {
             console.log('[EppService] 📸 Guardando imágenes en estado:', eppData.imagenes);
             this.modalManager.mostrarImagenes(eppData.imagenes);
             
@@ -82,49 +90,86 @@ class EppService {
         // Abrir modal
         this.modalManager.abrirModal();
 
-        console.log('[EppService] ✅ Modal de edición abierto');
+        console.log('[EppService] Modal de edición abierto');
     }
 
     /**
      * Seleccionar producto EPP
      */
     seleccionarProducto(producto) {
-        console.log('✨ [EppService] seleccionarProducto llamado:', producto);
+        console.log(' [EppService] seleccionarProducto llamado:', producto);
         this.stateManager.setProductoSeleccionado(producto);
-        console.log('✨ [EppService] Producto guardado en state');
+        console.log(' [EppService] Producto guardado en state');
         
         this.modalManager.mostrarProductoSeleccionado(producto);
-        console.log('✨ [EppService] Mostrado en modal');
+        console.log(' [EppService] Mostrado en modal');
         
         this.modalManager.habilitarCampos();
-        console.log('✨ [EppService] Campos habilitados');
+        console.log(' [EppService] Campos habilitados');
     }
 
     /**
      * Editar EPP desde formulario (no guardado en BD)
+     * Parámetros: id, nombre, cantidad, observaciones, imagenes
+     * Notas: codigo y categoria son opcionales (null-safe)
      */
-    editarEPPFormulario(id, nombre, cantidad, observaciones, imagenes) {
+    editarEPPFormulario(id, nombre, codigo = null, categoria = null, cantidad, observaciones = '', imagenes = []) {
+        // Manejo defensivo de parámetros para compatibilidad
+        // Si codigo es un número (cantidad), ajustar parámetros
+        if (typeof codigo === 'number' && typeof categoria === 'number') {
+            // Llamada antigua: editarEPPFormulario(id, nombre, codigo, categoria, cantidad, observaciones, imagenes)
+            // codigo es cantidad, categoria es observaciones
+            cantidad = codigo;
+            observaciones = categoria;
+            imagenes = arguments[4] || [];
+            codigo = null;
+            categoria = null;
+        } else if (typeof codigo === 'number') {
+            // Parámetros desalineados: asumir que codigo es cantidad
+            cantidad = codigo;
+            observaciones = categoria || '';
+            imagenes = cantidad || [];
+            codigo = null;
+            categoria = null;
+        }
+
         // Asegurar que el modal existe en el DOM
         if (!document.getElementById('modal-agregar-epp')) {
-
             if (typeof window.EppModalTemplate !== 'undefined') {
                 const modalHTML = window.EppModalTemplate.getHTML();
                 document.body.insertAdjacentHTML('beforeend', modalHTML);
-
             }
         }
 
         this.stateManager.iniciarEdicion(id, false);
-        this.stateManager.setProductoSeleccionado({ id, nombre, codigo, categoria });
-        this.stateManager.guardarDatosItem(id, { id, nombre, codigo, categoria, cantidad, observaciones, imagenes });
+        this.stateManager.setProductoSeleccionado({ 
+            id, 
+            nombre, 
+            nombre_completo: nombre,
+            codigo: codigo || null, 
+            categoria: categoria || null 
+        });
+        this.stateManager.guardarDatosItem(id, { 
+            id, 
+            nombre, 
+            nombre_completo: nombre,
+            codigo: codigo || null, 
+            categoria: categoria || null, 
+            cantidad, 
+            observaciones, 
+            imagenes: imagenes || [] 
+        });
 
-        this.modalManager.mostrarProductoSeleccionado({ nombre, codigo, categoria });
+        // Mostrar solo nombre si codigo/categoria no existen
+        this.modalManager.mostrarProductoSeleccionado({ 
+            nombre,
+            codigo: codigo || undefined,
+            categoria: categoria || undefined
+        });
         this.modalManager.cargarValoresFormulario(null, cantidad, observaciones);
-        this.modalManager.mostrarImagenes(imagenes);
+        this.modalManager.mostrarImagenes(imagenes || []);
         this.modalManager.habilitarCampos();
         this.modalManager.abrirModal();
-
-
     }
 
     /**
@@ -237,7 +282,7 @@ class EppService {
                     }
                 }
 
-                console.log('[EppService] ✅ EPP actualizado correctamente');
+                console.log('[EppService] EPP actualizado correctamente');
             } else {
                 // Si NO estamos editando, crear nuevo item
                 console.log('[EppService] ➕ Creando nuevo EPP');
@@ -261,8 +306,8 @@ class EppService {
             const eppData = {
                 tipo: 'epp',
                 epp_id: producto.id,
-                nombre_epp: producto.nombre_completo || producto.nombre || 'EPP sin nombre',
-                categoria: producto.categoria || 'General',
+                nombre_epp: producto.nombre_completo || producto.nombre || '',
+                categoria: producto.categoria || '',
                 cantidad: valores.cantidad,
                 observaciones: valores.observaciones,
                 imagenes: imagenes
@@ -338,7 +383,7 @@ class EppService {
         console.log('🔎 [EppService] Contenedor encontrado:', !!container);
         
         if (!container) {
-            console.warn('⚠️ [EppService] No se encontró el contenedor resultadosBuscadorEPP');
+            console.warn(' [EppService] No se encontró el contenedor resultadosBuscadorEPP');
             return;
         }
 
@@ -389,7 +434,7 @@ class EppService {
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ [EppService] Error HTTP:', response.status, errorText);
+                console.error(' [EppService] Error HTTP:', response.status, errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
@@ -399,8 +444,8 @@ class EppService {
             
             return result.data && Array.isArray(result.data) ? result.data : [];
         } catch (error) {
-            console.error('❌ [EppService] Error en _buscarEPPDesdeDB:', error.message);
-            console.error('❌ [EppService] Stack:', error.stack);
+            console.error(' [EppService] Error en _buscarEPPDesdeDB:', error.message);
+            console.error(' [EppService] Stack:', error.stack);
             return [];
         }
     }

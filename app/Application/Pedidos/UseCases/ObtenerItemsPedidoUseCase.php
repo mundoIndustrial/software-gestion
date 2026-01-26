@@ -8,7 +8,7 @@ use App\Domain\Pedidos\Services\GestionItemsPedidoService;
  * Use Case: Obtener Items de Pedido
  * 
  * Responsabilidad:
- * - Recuperar items de la sesiÃ³n de construcciÃ³n
+ * - Recuperar items de la sesión de construcción
  * - Retornar en formato API
  */
 class ObtenerItemsPedidoUseCase

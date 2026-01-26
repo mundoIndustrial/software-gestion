@@ -462,7 +462,7 @@
                 <!-- Tabs -->
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('tabla')"> Tabla de Datos</button>
-                    <button class="tab" onclick="switchTab('duplicados')">⚠️ Análisis de Duplicaciones</button>
+                    <button class="tab" onclick="switchTab('duplicados')"> Análisis de Duplicaciones</button>
                 </div>
 
                 <!-- Table Tab -->
@@ -552,7 +552,7 @@
                     console.log('Servidor conectado:', data);
                 })
                 .catch(err => {
-                    showMessage('⚠️ Servidor Python no disponible. Iniciando en modo local...', 'error');
+                    showMessage(' Servidor Python no disponible. Iniciando en modo local...', 'error');
                     console.error('No se puede conectar:', err);
                 });
         }
@@ -1067,7 +1067,7 @@
 
         function displayFilteredTable() {
             if (filteredData.length === 0) {
-                document.getElementById('tableContainer').innerHTML = '<div class="message warning">⚠️ No hay resultados que coincidan con los filtros</div>';
+                document.getElementById('tableContainer').innerHTML = '<div class="message warning"> No hay resultados que coincidan con los filtros</div>';
                 return;
             }
 
@@ -1165,7 +1165,7 @@
 
         function mostrarErroresModal(errores, guardados, total) {
             let html = `<div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                <strong style="color: #856404;">⚠️ Resumen:</strong>
+                <strong style="color: #856404;"> Resumen:</strong>
                 <br>
                 <span style="color: #856404;">
                     ✓ Guardados: <strong>${guardados}</strong> artículos
@@ -1288,7 +1288,7 @@
                 if (duplicateGroups.length === 0) {
                     html = '<div class="message success">✓ No se encontraron duplicaciones</div>';
                 } else {
-                    html += `<div class="message warning">⚠️ Se encontraron ${duplicateGroups.length} grupos de artículos duplicados</div>`;
+                    html += `<div class="message warning"> Se encontraron ${duplicateGroups.length} grupos de artículos duplicados</div>`;
 
                     duplicateGroups.forEach((group, idx) => {
                         const criterios = group.criterios;
@@ -1377,7 +1377,7 @@
                     console.log('AllData asignado:', allData.length, 'artículos');
                     
                     if (allData.length === 0) {
-                        showMessage('⚠️ No se extrajeron artículos del Excel', 'error');
+                        showMessage(' No se extrajeron artículos del Excel', 'error');
                         return;
                     }
                     

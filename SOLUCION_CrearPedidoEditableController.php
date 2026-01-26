@@ -14,7 +14,7 @@ use App\Http\Requests\CrearPedidoCompletoRequest;
  * Maneja la creación de pedidos desde la interfaz editable (gestión de ítems, validación y creación)
  * Este controlador es parte de la arquitectura web tradicional para crear pedidos de manera interactiva
  * 
- * 🔧 CAMBIOS APLICADOS (24 Enero 2026):
+ *  CAMBIOS APLICADOS (24 Enero 2026):
  * - validarPedido() ahora usa CrearPedidoCompletoRequest para VALIDACIÓN COMPLETA
  * - Validación incompleta eliminada (que solo validaba cliente, items, cantidad_talla)
  * - Ahora valida y retorna: variaciones, procesos, telas, imagenes
@@ -104,7 +104,7 @@ class CrearPedidoEditableController extends Controller
     /**
      * Validar datos del pedido antes de crear
      * 
-     * 🔧 CORREGIDO (24 Enero 2026):
+     *  CORREGIDO (24 Enero 2026):
      * - Ahora usa CrearPedidoCompletoRequest en lugar de validate() inline
      * - Valida y retorna TODOS los campos: variaciones, procesos, telas, imagenes
      * - Antes solo validaba: cliente, items, cantidad_talla (se perdían los demás)
@@ -120,7 +120,7 @@ class CrearPedidoEditableController extends Controller
                 'items_count' => count($request->input('items', [])),
             ]);
 
-            // ✅ CAMBIO: Usar validated() que retorna TODOS los campos validados por FormRequest
+            // CAMBIO: Usar validated() que retorna TODOS los campos validados por FormRequest
             // Antes: $validated = $request->validate([...]) solo retornaba los campos de las reglas
             // Ahora: $request->validated() retorna cliente, forma_de_pago, descripcion, items (COMPLETO)
             $validated = $request->validated();

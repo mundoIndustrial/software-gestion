@@ -43,7 +43,7 @@ class PedidoLogoService
                 'observaciones_generales' => $logoData['observaciones_generales'] ?? null,
             ]);
 
-            // 2. Guardar fotos del logo (copiar URLs de cotizaciÃ³n)
+            // 2. Guardar fotos del logo (copiar URLs de cotización)
             if (!empty($logoData['fotos'])) {
                 $this->guardarFotosLogo($logo, $logoData['fotos']);
             }
@@ -64,7 +64,7 @@ class PedidoLogoService
     }
 
     /**
-     * Guardar fotos del logo (copiar URLs de cotizaciÃ³n)
+     * Guardar fotos del logo (copiar URLs de cotización)
      */
     private function guardarFotosLogo(LogoPed $logo, array $fotos): void
     {

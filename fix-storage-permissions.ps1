@@ -36,12 +36,12 @@ function Write-Success {
 
 function Write-Warn {
     param([string]$Message)
-    Write-Host "⚠️  $Message" -ForegroundColor $colors.Warning
+    Write-Host "  $Message" -ForegroundColor $colors.Warning
 }
 
 function Write-Error-Custom {
     param([string]$Message)
-    Write-Host "❌ $Message" -ForegroundColor $colors.Error
+    Write-Host " $Message" -ForegroundColor $colors.Error
 }
 
 function Write-Info {
@@ -65,7 +65,7 @@ function Write-Debug-Info {
 # =========================================================================
 
 Clear-Host
-Write-Host "🔧 REPARADOR DE PERMISOS - STORAGE LARAVEL 10 (WINDOWS)" -ForegroundColor $colors.Info -BackgroundColor Black
+Write-Host " REPARADOR DE PERMISOS - STORAGE LARAVEL 10 (WINDOWS)" -ForegroundColor $colors.Info -BackgroundColor Black
 Write-Host "Ejecutando en modo: $(if ($DryRun) { 'DRY-RUN (solo lectura)' } else { 'ACTIVO (realizará cambios)' })" -ForegroundColor $colors.Warning
 Write-Host ""
 
@@ -128,10 +128,10 @@ if (Test-Path $symlinkFullPath) {
         try {
             # Usar artisan si está disponible
             $result = php artisan storage:link 2>&1
-            Write-Host " ✅" -ForegroundColor $colors.Success
+            Write-Host "" -ForegroundColor $colors.Success
             Write-Debug-Info "$result"
         } catch {
-            Write-Host " ❌" -ForegroundColor $colors.Error
+            Write-Host " " -ForegroundColor $colors.Error
             Write-Error-Custom "Error al crear enlace: $_"
         }
     } else {
@@ -257,9 +257,9 @@ foreach ($cacheCmd in $cacheCommands) {
     if (-not $DryRun) {
         try {
             php artisan $($cacheCmd.Cmd) 2>$null | Out-Null
-            Write-Host " ✅" -ForegroundColor $colors.Success
+            Write-Host "" -ForegroundColor $colors.Success
         } catch {
-            Write-Host " ⚠️" -ForegroundColor $colors.Warning
+            Write-Host " " -ForegroundColor $colors.Warning
             Write-Debug-Info "  (Error: $_)"
         }
     } else {
@@ -350,7 +350,7 @@ Write-Host "  2. Ejecuta: Storage::disk('public')->url('test.jpg')"
 Write-Host "  3. Debería retornar: /storage/test.jpg"
 
 Write-Host ""
-Write-Warn "⚠️  NOTAS IMPORTANTES:"
+Write-Warn "  NOTAS IMPORTANTES:"
 Write-Host "  • Este script debe ejecutarse con permisos de Administrador"
 Write-Host "  • Los cambios afectarán al acceso de archivos"
 Write-Host "  • Realiza un backup antes de cambios en producción"

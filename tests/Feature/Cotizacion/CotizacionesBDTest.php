@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use MySQLi;
 
 /**
- * Tests simples de validaciÃ³n de BD de Cotizaciones
+ * Tests simples de validación de BD de Cotizaciones
  * Uso directo de MySQLi para evitar problemas con PDO
  */
 class CotizacionesBDTest extends TestCase
@@ -25,7 +25,7 @@ class CotizacionesBDTest extends TestCase
         );
 
         if ($this->db->connect_error) {
-            $this->fail("ConexiÃ³n fallida: " . $this->db->connect_error);
+            $this->fail("Conexión fallida: " . $this->db->connect_error);
         }
 
         $this->db->set_charset("utf8mb4");
@@ -40,7 +40,7 @@ class CotizacionesBDTest extends TestCase
     }
 
     /**
-     * Prueba 1: ConexiÃ³n exitosa a BD
+     * Prueba 1: Conexión exitosa a BD
      */
     public function test_database_connected(): void
     {
@@ -62,7 +62,7 @@ class CotizacionesBDTest extends TestCase
     }
 
     /**
-     * Prueba 3: Tipos de cotizaciÃ³n disponibles
+     * Prueba 3: Tipos de cotización disponibles
      */
     public function test_types_count(): void
     {
@@ -71,7 +71,7 @@ class CotizacionesBDTest extends TestCase
         $count = (int)$row['cnt'];
 
         $this->assertGreaterThanOrEqual(3, $count);
-        echo "\nâœ“ Tipos de cotizaciÃ³n: {$count}";
+        echo "\nâœ“ Tipos de cotización: {$count}";
     }
 
     /**

@@ -7,9 +7,9 @@ use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
 
 /**
- * Use Case para agregar combinaciÃ³n color-tela a una prenda
+ * Use Case para agregar combinación color-tela a una prenda
  * 
- * Maneja la creaciÃ³n de registro en prenda_pedido_colores_telas
+ * Maneja la creación de registro en prenda_pedido_colores_telas
  */
 final class AgregarColorTelaUseCase
 {

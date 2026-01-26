@@ -3,14 +3,14 @@
 namespace App\Domain\Pedidos\Services;
 
 /**
- * Servicio de dominio para construcciÃ³n de descripciones de prendas
+ * Servicio de dominio para construcción de descripciones de prendas
  * Responsabilidad Ãºnica: Generar descripciones formateadas
  */
 class DescripcionService
 {
     /**
-     * Construir descripciÃ³n para prenda de pedido
-     * Formato: Un pÃ¡rrafo Ãºnico con descripciÃ³n + todas las variaciones + observaciones
+     * Construir descripción para prenda de pedido
+     * Formato: Un pÃ¡rrafo Ãºnico con descripción + todas las variaciones + observaciones
      */
     public function construirDescripcionPrenda(int $numeroPrenda, array $producto, array $cantidadesPorTalla): string
     {
@@ -19,7 +19,7 @@ class DescripcionService
         // NÃºmero de prenda
         $lineas[] = "PRENDA {$numeroPrenda}";
         
-        // DescripciÃ³n del producto
+        // Descripción del producto
         if (!empty($producto['descripcion'])) {
             $lineas[] = strtoupper($producto['descripcion']);
         }
@@ -34,7 +34,7 @@ class DescripcionService
     }
 
     /**
-     * Construir descripciÃ³n para prenda sin cotizaciÃ³n tipo PRENDA
+     * Construir descripción para prenda sin cotización tipo PRENDA
      */
     public function construirDescripcionPrendaSinCotizacion(array $prenda, array $cantidadesPorTalla): string
     {
@@ -45,7 +45,7 @@ class DescripcionService
             $lineas[] = strtoupper($prenda['nombre_producto']);
         }
         
-        // DescripciÃ³n
+        // Descripción
         if (!empty($prenda['descripcion'])) {
             $lineas[] = strtoupper($prenda['descripcion']);
         }
@@ -77,7 +77,7 @@ class DescripcionService
     }
 
     /**
-     * Construir descripciÃ³n para reflectivo sin cotizaciÃ³n
+     * Construir descripción para reflectivo sin cotización
      */
     public function construirDescripcionReflectivoSinCotizacion(array $prenda, array $cantidadesPorTalla): string
     {
@@ -88,7 +88,7 @@ class DescripcionService
             $lineas[] = strtoupper($prenda['tipo']);
         }
 
-        // DescripciÃ³n
+        // Descripción
         if (!empty($prenda['descripcion'])) {
             $lineas[] = strtoupper($prenda['descripcion']);
         }
@@ -122,7 +122,7 @@ class DescripcionService
     }
 
     /**
-     * Armar descripciÃ³n de variaciones
+     * Armar descripción de variaciones
      */
     private function armarDescripcionVariaciones(array $variantes): ?string
     {
@@ -168,7 +168,7 @@ class DescripcionService
     }
 
     /**
-     * Armar descripciÃ³n de variaciones para prendas sin cotizaciÃ³n
+     * Armar descripción de variaciones para prendas sin cotización
      */
     private function armarDescripcionVariacionesPrendaSinCotizacion(array $variantes): ?string
     {
@@ -188,7 +188,7 @@ class DescripcionService
             $partes[] = 'BOLSILLOS: ' . strtoupper($variantes['bolsillos']);
         }
 
-        // Broche/BotÃ³n
+        // Broche/Botón
         if (!empty($variantes['broche'])) {
             $partes[] = 'BROCHE: ' . strtoupper($variantes['broche']);
         }

@@ -1975,7 +1975,7 @@ function initializePaginationAjax() {
                 section = paginationContainer.dataset.section || 'produccion';
             }
 
-            // ✨ ACTUALIZAR BOTÓN ACTIVO INMEDIATAMENTE (antes del AJAX)
+            //  ACTUALIZAR BOTÓN ACTIVO INMEDIATAMENTE (antes del AJAX)
             updateActiveButtonImmediately(paginationLink, section, page);
             
             // Hacer petición AJAX

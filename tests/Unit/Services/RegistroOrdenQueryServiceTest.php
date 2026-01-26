@@ -26,19 +26,19 @@ class RegistroOrdenQueryServiceTest extends TestCase
     {
         // Crear algunos pedidos de prueba
         PedidoProduccion::factory()->create(['estado' => 'No iniciado']);
-        PedidoProduccion::factory()->create(['estado' => 'En EjecuciÃ³n']);
-        PedidoProduccion::factory()->create(['estado' => 'En EjecuciÃ³n']);
+        PedidoProduccion::factory()->create(['estado' => 'En Ejecución']);
+        PedidoProduccion::factory()->create(['estado' => 'En Ejecución']);
 
         $values = $this->service->getUniqueValues('estado');
 
         $this->assertIsArray($values);
         $this->assertCount(2, $values);
         $this->assertContains('No iniciado', $values);
-        $this->assertContains('En EjecuciÃ³n', $values);
+        $this->assertContains('En Ejecución', $values);
     }
 
     /**
-     * Prueba que lanza excepciÃ³n para columna invÃ¡lida
+     * Prueba que lanza excepción para columna invÃ¡lida
      */
     public function test_get_unique_values_throws_exception_for_invalid_column()
     {
@@ -86,11 +86,11 @@ class RegistroOrdenQueryServiceTest extends TestCase
     {
         PedidoProduccion::factory()->create(['estado' => 'Z - Completado']);
         PedidoProduccion::factory()->create(['estado' => 'A - No iniciado']);
-        PedidoProduccion::factory()->create(['estado' => 'M - En EjecuciÃ³n']);
+        PedidoProduccion::factory()->create(['estado' => 'M - En Ejecución']);
 
         $values = $this->service->getUniqueValues('estado');
 
-        $this->assertEquals(['A - No iniciado', 'M - En EjecuciÃ³n', 'Z - Completado'], $values);
+        $this->assertEquals(['A - No iniciado', 'M - En Ejecución', 'Z - Completado'], $values);
     }
 }
 

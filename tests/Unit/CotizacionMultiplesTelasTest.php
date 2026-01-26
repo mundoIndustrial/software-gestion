@@ -45,13 +45,13 @@ class CotizacionMultiplesTelasTest extends TestCase
         echo "ðŸ§ª TEST: MÃºltiples Telas con ImÃ¡genes\n";
         echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // Crear cotizaciÃ³n de prueba
+        // Crear cotización de prueba
         $cotizacion = Cotizacion::factory()->create([
             'numero_cotizacion' => 'TEST-' . time(),
             'tipo' => 'P',
             'es_borrador' => false
         ]);
-        echo " CotizaciÃ³n creada: {$cotizacion->numero_cotizacion}\n";
+        echo " Cotización creada: {$cotizacion->numero_cotizacion}\n";
 
         // Datos de prenda con mÃºltiples telas
         $prendaData = [
@@ -138,7 +138,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         echo " VERIFICACIONES\n";
         echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // 1. Verificar que la prenda se guardÃ³
+        // 1. Verificar que la prenda se guardó
         $prenda = PrendaCot::where('cotizacion_id', $cotizacion->id)
             ->where('nombre_producto', 'Camiseta Test')
             ->first();
@@ -148,7 +148,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         echo "   - ID: {$prenda->id}\n";
         echo "   - Nombre: {$prenda->nombre_producto}\n";
 
-        // 2. Verificar que la variante se guardÃ³
+        // 2. Verificar que la variante se guardó
         $variante = VarianteCot::where('prenda_cot_id', $prenda->id)->first();
         $this->assertNotNull($variante, "La variante deberÃ­a existir");
         echo "\n VARIANTE GUARDADA\n";
@@ -171,7 +171,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "      - TamaÃ±o: {$foto->tamaÃ±o} bytes\n";
         }
 
-        // 4. VerificaciÃ³n de referencias Ãºnicas
+        // 4. Verificación de referencias Ãºnicas
         $referencias = ['ALG-001', 'POL-002', 'LIN-003'];
         echo "\n REFERENCIAS POR TELA\n";
         
@@ -184,7 +184,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "   - {$ref}: " . count($fotos) . " fotos\n";
         }
 
-        // 5. VerificaciÃ³n de colores
+        // 5. Verificación de colores
         echo "\n COLORES POR TELA\n";
         $colores = [10, 15, 20];
         $telaIdx = 0;
@@ -197,7 +197,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "   - Color ID {$colorId}: " . count($fotosColor) . " fotos\n";
         }
 
-        // 6. VerificaciÃ³n de orden de fotos
+        // 6. Verificación de orden de fotos
         echo "\n ORDEN DE FOTOS POR TELA\n";
         
         $fotoPol = PrendaTelaFotoCot::where('prenda_cot_id', $prenda->id)
@@ -213,7 +213,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "   POL-002 Foto {$foto->orden}: \n";
         }
 
-        // 7. VerificaciÃ³n de timestamps
+        // 7. Verificación de timestamps
         echo "\n TIMESTAMPS\n";
         foreach ($fotosTelas as $foto) {
             $this->assertNotNull($foto->created_at);
@@ -237,7 +237,7 @@ class CotizacionMultiplesTelasTest extends TestCase
         echo "ðŸ§ª TEST: Estructura de Datos en BD\n";
         echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // Crear cotizaciÃ³n
+        // Crear cotización
         $cotizacion = Cotizacion::factory()->create();
 
         $prendaData = [

@@ -112,7 +112,7 @@ class EspecificacionesTest extends TestCase
                 ['valor' => 'Bodega', 'observacion' => 'Stock: 100 unidades'],
                 ['valor' => 'CÃºcuta', 'observacion' => 'Stock: 50 unidades'],
                 ['valor' => 'Lafayette', 'observacion' => 'Stock: 25 unidades'],
-                ['valor' => 'FÃ¡brica', 'observacion' => 'ProducciÃ³n: 2 semanas']
+                ['valor' => 'FÃ¡brica', 'observacion' => 'Producción: 2 semanas']
             ],
             'forma_pago' => [
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%'],
@@ -148,7 +148,7 @@ class EspecificacionesTest extends TestCase
         $json = json_encode($especificaciones);
         $decodificado = json_decode($json, true);
 
-        // Verificar que se preservÃ³ la estructura
+        // Verificar que se preservó la estructura
         $this->assertEquals($especificaciones, $decodificado);
 
         echo "\n TEST PASADO: MÃºltiples valores por categorÃ­a se guardan correctamente\n";

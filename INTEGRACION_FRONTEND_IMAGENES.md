@@ -50,7 +50,7 @@ async function subirImagenesPrenda(archivos) {
     const data = await response.json();
 
     if (data.success) {
-        // ✅ GUARDAR EL TEMP_UUID
+        // GUARDAR EL TEMP_UUID
         sessionStorage.setItem('temp_uuid_prendas', data.temp_uuid);
         
         // Mostrar URLs para preview
@@ -100,10 +100,10 @@ async function subirImagenesPrenda(archivos) {
 async function crearPedido() {
     const datosFormulario = construirDatosFormulario();
     
-    // ✅ Las imágenes ya están en el array del item
-    // ✅ Si vinieron de upload temporal, están como:
+    // Las imágenes ya están en el array del item
+    // Si vinieron de upload temporal, están como:
     //    "prendas/temp/{uuid}/webp/..."
-    // ✅ El backend se encargará de relocalizarlas
+    // El backend se encargará de relocalizarlas
 
     const response = await fetch('/asesores/pedidos-editable/crear', {
         method: 'POST',
@@ -139,7 +139,7 @@ async function crearPedido() {
         
         <input v-model="item.nombre_prenda" placeholder="Nombre de prenda" />
         
-        <!-- ✅ IMÁGENES DE PRENDA -->
+        <!-- IMÁGENES DE PRENDA -->
         <div>
             <label>Imágenes de Prenda</label>
             <input 
@@ -152,7 +152,7 @@ async function crearPedido() {
             <!-- Preview de imágenes -->
             <div v-if="item.imagenes && item.imagenes.length" class="preview-container">
                 <div v-for="(img, imgIdx) in item.imagenes" :key="imgIdx" class="preview">
-                    <!-- ✅ USAR ruta_webp para mostrar -->
+                    <!-- USAR ruta_webp para mostrar -->
                     <img 
                         :src="`/storage/${img}`"
                         alt="Preview prenda"
@@ -172,7 +172,7 @@ async function crearPedido() {
                 <option v-for="t in telas" :key="t.id" :value="t.id">{{ t.nombre }}</option>
             </select>
 
-            <!-- ✅ IMÁGENES DE TELA -->
+            <!-- IMÁGENES DE TELA -->
             <div>
                 <label>Imágenes de Tela</label>
                 <input 
@@ -249,10 +249,10 @@ export default {
                 const data = await response.json();
 
                 if (data.success) {
-                    // ✅ Guardar UUID para este lote
+                    // Guardar UUID para este lote
                     sessionStorage.setItem(`temp_uuid_prendas_${itemIdx}`, data.temp_uuid);
                     
-                    // ✅ Guardar rutas en el formulario
+                    // Guardar rutas en el formulario
                     // El backend espera: ['prendas/temp/{uuid}/webp/...', ...]
                     this.pedido.items[itemIdx].imagenes = data.imagenes.map(img => img.ruta_webp);
                     
@@ -280,10 +280,10 @@ export default {
                 const data = await response.json();
 
                 if (data.success) {
-                    // ✅ Guardar UUID
+                    // Guardar UUID
                     sessionStorage.setItem(`temp_uuid_telas_${itemIdx}_${telaIdx}`, data.temp_uuid);
                     
-                    // ✅ Guardar rutas
+                    // Guardar rutas
                     this.pedido.items[itemIdx].telas[telaIdx].imagenes = 
                         data.imagenes.map(img => img.ruta_webp);
                     
@@ -310,7 +310,7 @@ export default {
                 if (resultado.success) {
                     this.$toast.success('✅ Pedido creado exitosamente');
                     
-                    // ✅ Limpiar sessionStorage
+                    // Limpiar sessionStorage
                     sessionStorage.clear();
                     
                     // Redirigir
@@ -332,12 +332,12 @@ export default {
 
 ## 5️⃣ Cambios Mínimos (CHECKLIST)
 
-### ✅ Frontend NO Necesita Cambios Si:
+### Frontend NO Necesita Cambios Si:
 - [ ] Ya usa el endpoint `/asesores/pedidos-editable/subir-imagenes-prenda`
 - [ ] Ya incluye las rutas de imágenes en `item.imagenes = [...]`
 - [ ] Ya envía el JSON correctamente formado
 
-### ⚠️ Frontend Necesita Cambios Si:
+###  Frontend Necesita Cambios Si:
 - [ ] Construye manualmente rutas como `'prendas/UUID/prenda.webp'` → Ahora viene del servidor
 - [ ] Usa un UUID distinto que el servidor genera → Ahora frontend recibe el correcto en respuesta
 - [ ] No almacena las rutas en el item → Debe hacerlo para enviar al crear pedido
@@ -465,7 +465,7 @@ Response:
 
 ---
 
-## ✅ Validación de Implementación
+## Validación de Implementación
 
 Para verificar que todo funciona:
 
@@ -481,12 +481,12 @@ Para verificar que todo funciona:
 
 ---
 
-## 🚀 ¡Listo para implementar!
+##  ¡Listo para implementar!
 
 No hay cambios complejos. Solo asegúrate de:
-- ✅ Guardar `temp_uuid` si lo necesitas
-- ✅ Incluir las rutas de imágenes en el JSON
-- ✅ Enviar el JSON al crear pedido
+- Guardar `temp_uuid` si lo necesitas
+- Incluir las rutas de imágenes en el JSON
+- Enviar el JSON al crear pedido
 
 **El backend hace todo lo demás automáticamente.** 🎉
 

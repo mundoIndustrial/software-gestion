@@ -143,7 +143,7 @@ async function cargarPedidos() {
         }
         
     } catch (error) {
-        console.error('❌ Error cargando pedidos:', error);
+        console.error(' Error cargando pedidos:', error);
         if (loadingState) loadingState.style.display = 'none';
         mostrarNotificacion('Error al cargar los pedidos', 'danger');
     } finally {
@@ -260,13 +260,13 @@ function verFactura(pedidoId, numeroPedido) {
         if (typeof crearModalPreviewFactura === 'function') {
             crearModalPreviewFactura(datos);
         } else {
-            console.error('❌ crearModalPreviewFactura no está disponible');
+            console.error(' crearModalPreviewFactura no está disponible');
             mostrarNotificacion('Error: Sistema de factura no disponible', 'danger');
         }
     })
     .catch(error => {
         ocultarCargando();
-        console.error('❌ Error cargando factura:', error);
+        console.error(' Error cargando factura:', error);
         mostrarNotificacion('Error al cargar factura: ' + error.message, 'danger');
     });
    
@@ -347,7 +347,7 @@ async function confirmarAprobacion() {
         cargarPedidos();
         
     } catch (error) {
-        console.error('❌ Error aprobando:', error);
+        console.error(' Error aprobando:', error);
         mostrarNotificacion('Error al aprobar: ' + error.message, 'danger');
     } finally {
         if (btnConfirmar) {
@@ -454,7 +454,7 @@ async function confirmarRechazo(event) {
         cargarPedidos();
         
     } catch (error) {
-        console.error('❌ Error rechazando:', error);
+        console.error(' Error rechazando:', error);
         mostrarNotificacion('Error al rechazar: ' + error.message, 'danger');
     } finally {
         if (btnConfirmar) {

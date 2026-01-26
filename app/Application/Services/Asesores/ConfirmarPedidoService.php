@@ -74,7 +74,7 @@ class ConfirmarPedidoService
      * Confirmar mÃºltiples pedidos en lote
      * 
      * @param array $pedidosAConfirmar Array de ['borrador_id' => numeroPedido]
-     * @return array Resultados de la confirmaciÃ³n
+     * @return array Resultados de la confirmación
      */
     public function confirmarLote(array $pedidosAConfirmar): array
     {

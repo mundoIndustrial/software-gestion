@@ -8,7 +8,7 @@ use DateTimeImmutable;
 /**
  * PedidoProduccionCompletado
  * 
- * Se emite cuando un pedido de producciÃ³n ha completado todo su ciclo
+ * Se emite cuando un pedido de producción ha completado todo su ciclo
  * Contiene datos finales del pedido (cantidad total, estado final, etc.)
  */
 class PedidoProduccionCompletado extends DomainEvent

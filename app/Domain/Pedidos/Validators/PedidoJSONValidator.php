@@ -33,7 +33,7 @@ class PedidoJSONValidator
     }
 
     /**
-     * Reglas de validaciÃ³n Larevel
+     * Reglas de validación Larevel
      */
     private static function reglas(): array
     {
@@ -85,7 +85,7 @@ class PedidoJSONValidator
     }
 
     /**
-     * Mensajes de validaciÃ³n personalizados
+     * Mensajes de validación personalizados
      */
     private static function mensajes(): array
     {

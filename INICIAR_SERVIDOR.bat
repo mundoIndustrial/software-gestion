@@ -8,7 +8,7 @@ echo  ANALIZADOR DE ARTICULOS
 echo  Servidor Python Flask
 echo ========================================
 echo.
-echo 📍 URL: http://localhost:5000
+echo  URL: http://localhost:5000
 echo 🌐 Abre el navegador y accede a:
 echo    file:///C:/Users/Usuario/Documents/mundoindustrial/analizador-articulos.html
 echo.

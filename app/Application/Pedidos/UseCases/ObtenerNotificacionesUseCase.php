@@ -9,7 +9,7 @@ use App\Application\Services\Asesores\NotificacionesService;
  * ObtenerNotificacionesUseCase
  * 
  * Use Case para obtener notificaciones del asesor
- * Encapsula la lÃ³gica de obtenciÃ³n de notificaciones
+ * Encapsula la lógica de obtención de notificaciones
  */
 class ObtenerNotificacionesUseCase
 {

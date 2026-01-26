@@ -12,22 +12,22 @@
 
 // ==================== EJEMPLO 1: SANITIZAR VARIACIONES ====================
 
-console.log('🔧 Ejemplo 1: Sanitizar Variaciones');
+console.log(' Ejemplo 1: Sanitizar Variaciones');
 
 // ANTES: Objeto sucio con propiedades reactivas de Vue
 const variacionesSucias = {
     tipo_manga: "LARGA",
     obs_manga: "observación con espacios  ",
-    tiene_bolsillos: "true",           // ❌ String en lugar de boolean
+    tiene_bolsillos: "true",           //  String en lugar de boolean
     obs_bolsillos: null,
     tipo_broche: "boton",
-    tipo_broche_boton_id: "2",         // ❌ String en lugar de number
-    obs_broche: "",                     // ❌ String vacío
+    tipo_broche_boton_id: "2",         //  String en lugar de number
+    obs_broche: "",                     //  String vacío
     tiene_reflectivo: false,
     obs_reflectivo: null,
-    __v_isRef: true,                    // ❌ Propiedad reactiva de Vue
-    __v_isReactive: true,               // ❌ Propiedad reactiva de Vue
-    _value: {/* ... */},                // ❌ Propiedad interna
+    __v_isRef: true,                    //  Propiedad reactiva de Vue
+    __v_isReactive: true,               //  Propiedad reactiva de Vue
+    _value: {/* ... */},                //  Propiedad interna
 };
 
 // DESPUÉS: Objeto limpio para Laravel
@@ -43,15 +43,15 @@ console.log(JSON.stringify(variacionesLimpias, null, 2));
   "tipo_broche": "boton",
   "obs_broche": null,
   "obs_reflectivo": null,
-  "tiene_bolsillos": true,        // ✅ Boolean real
-  "tiene_reflectivo": false,      // ✅ Boolean real
-  "tipo_broche_boton_id": 2       // ✅ Number real
+  "tiene_bolsillos": true,        // Boolean real
+  "tiene_reflectivo": false,      // Boolean real
+  "tipo_broche_boton_id": 2       // Number real
 }
 */
 
 // ==================== EJEMPLO 2: SANITIZAR ITEM COMPLETO ====================
 
-console.log('\n🔧 Ejemplo 2: Sanitizar Item Completo');
+console.log('\n Ejemplo 2: Sanitizar Item Completo');
 
 // ANTES: Item sucio desde formulario reactivo
 const itemSucio = {
@@ -62,22 +62,22 @@ const itemSucio = {
     
     cantidad_talla: {
         DAMA: {
-            S: "10",    // ❌ String
-            M: "20",    // ❌ String
-            __ob__: {/* Observer */}  // ❌ Vue Observer
+            S: "10",    //  String
+            M: "20",    //  String
+            __ob__: {/* Observer */}  //  Vue Observer
         },
         CABALLERO: {
             M: 15,
-            L: "25"     // ❌ String
+            L: "25"     //  String
         },
-        _reactive: {/* ... */}  // ❌ Propiedad reactiva
+        _reactive: {/* ... */}  //  Propiedad reactiva
     },
     
     variaciones: {
         tipo_manga: "larga",
-        tiene_bolsillos: "1",  // ❌ String "1" en lugar de true
+        tiene_bolsillos: "1",  //  String "1" en lugar de true
         tipo_broche: "boton",
-        __v_isRef: true        // ❌ Vue reactivity
+        __v_isRef: true        //  Vue reactivity
     },
     
     procesos: {
@@ -95,13 +95,13 @@ const itemSucio = {
             tela: "DRILL",
             color: "AZUL",
             referencia: "DR-001",
-            imagenes: [[]]  // ❌ Array anidado vacío
+            imagenes: [[]]  //  Array anidado vacío
         }
     ],
     
-    imagenes: [[]],  // ❌ Array anidado vacío
+    imagenes: [[]],  //  Array anidado vacío
     
-    __v_isReactive: true,  // ❌ Propiedad reactiva
+    __v_isReactive: true,  //  Propiedad reactiva
 };
 
 // DESPUÉS: Item limpio
@@ -112,7 +112,7 @@ console.log(JSON.stringify(itemLimpio, null, 2));
 
 // ==================== EJEMPLO 3: SANITIZAR PEDIDO COMPLETO ====================
 
-console.log('\n🔧 Ejemplo 3: Sanitizar Pedido Completo');
+console.log('\n Ejemplo 3: Sanitizar Pedido Completo');
 
 // ANTES: Pedido sucio desde formulario Vue/React
 const pedidoSucio = {
@@ -127,11 +127,11 @@ const pedidoSucio = {
             nombre_prenda: "Camisa",
             variaciones: {
                 tipo_manga: "larga",
-                tiene_bolsillos: "true",  // ❌ String
-                tipo_broche_boton_id: "2"  // ❌ String
+                tiene_bolsillos: "true",  //  String
+                tipo_broche_boton_id: "2"  //  String
             },
             cantidad_talla: {
-                DAMA: { S: "10", M: "20" },  // ❌ Strings
+                DAMA: { S: "10", M: "20" },  //  Strings
                 CABALLERO: []
             }
         },
@@ -148,8 +148,8 @@ const pedidoSucio = {
         }
     ],
     
-    __v_isReactive: true,  // ❌ Vue reactivity
-    _meta: {/* ... */}      // ❌ Metadata interna
+    __v_isReactive: true,  //  Vue reactivity
+    _meta: {/* ... */}      //  Metadata interna
 };
 
 // DESPUÉS: Pedido limpio
@@ -160,7 +160,7 @@ console.log(JSON.stringify(pedidoLimpio, null, 2));
 
 // ==================== EJEMPLO 4: USO CON FETCH ====================
 
-console.log('\n🔧 Ejemplo 4: Uso con Fetch API');
+console.log('\n Ejemplo 4: Uso con Fetch API');
 
 async function crearPedido(pedidoFormulario) {
     try {
@@ -170,7 +170,7 @@ async function crearPedido(pedidoFormulario) {
         // 2. Validar antes de enviar (opcional pero recomendado)
         const validacion = PayloadSanitizer.validarPayload(payloadLimpio);
         if (!validacion.valido) {
-            console.error('❌ Payload inválido:', validacion.errores);
+            console.error(' Payload inválido:', validacion.errores);
             return {
                 success: false,
                 errors: validacion.errores
@@ -190,7 +190,7 @@ async function crearPedido(pedidoFormulario) {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
             },
-            body: JSON.stringify(payloadLimpio)  // ✅ Payload limpio
+            body: JSON.stringify(payloadLimpio)  // Payload limpio
         });
         
         if (!response.ok) {
@@ -204,14 +204,14 @@ async function crearPedido(pedidoFormulario) {
         return resultado;
         
     } catch (error) {
-        console.error('❌ Error al crear pedido:', error);
+        console.error(' Error al crear pedido:', error);
         throw error;
     }
 }
 
 // ==================== EJEMPLO 5: USO CON AXIOS ====================
 
-console.log('\n🔧 Ejemplo 5: Uso con Axios');
+console.log('\n Ejemplo 5: Uso con Axios');
 
 async function crearPedidoConAxios(pedidoFormulario) {
     try {
@@ -232,9 +232,9 @@ async function crearPedidoConAxios(pedidoFormulario) {
         
     } catch (error) {
         if (error.response?.status === 422) {
-            console.error('❌ Validación Laravel fallida:', error.response.data.errors);
+            console.error(' Validación Laravel fallida:', error.response.data.errors);
         } else {
-            console.error('❌ Error:', error.message);
+            console.error(' Error:', error.message);
         }
         throw error;
     }
@@ -242,7 +242,7 @@ async function crearPedidoConAxios(pedidoFormulario) {
 
 // ==================== EJEMPLO 6: INTEGRACIÓN CON VUE 3 ====================
 
-console.log('\n🔧 Ejemplo 6: Integración con Vue 3 Composition API');
+console.log('\n Ejemplo 6: Integración con Vue 3 Composition API');
 
 // En tu componente Vue
 const ejemploVue3 = `
@@ -264,7 +264,7 @@ async function enviarPedido() {
     error.value = null;
     
     try {
-        // ✅ Sanitizar ANTES de enviar (elimina Proxy reactivos de Vue)
+        // Sanitizar ANTES de enviar (elimina Proxy reactivos de Vue)
         const payloadLimpio = PayloadSanitizer.sanitizarPedido(pedido);
         
         // Validar
@@ -294,7 +294,7 @@ async function enviarPedido() {
         
     } catch (err) {
         error.value = err.message;
-        console.error('❌ Error:', err);
+        console.error(' Error:', err);
     } finally {
         isSubmitting.value = false;
     }
@@ -316,7 +316,7 @@ console.log(ejemploVue3);
 
 // ==================== EJEMPLO 7: TESTING ====================
 
-console.log('\n🔧 Ejemplo 7: Testing del Sanitizador');
+console.log('\n Ejemplo 7: Testing del Sanitizador');
 
 function testSanitizador() {
     console.group('🧪 Tests del PayloadSanitizer');
@@ -380,7 +380,7 @@ console.log(`
 ✅ DEBUG en desarrollo:
    PayloadSanitizer.debug(antes, despues);
 
-❌ NUNCA enviar objetos reactivos directamente:
+ NUNCA enviar objetos reactivos directamente:
    fetch('/api', { body: JSON.stringify(reactive(data)) }); // MAL
 
 ✅ USAR siempre el sanitizador:
@@ -389,6 +389,6 @@ console.log(`
 📦 INCLUIR en tu HTML:
    <script src="/js/modulos/crear-pedido/utils/payload-sanitizer.js"></script>
 
-🔧 USAR en cualquier componente:
+ USAR en cualquier componente:
    const limpio = PayloadSanitizer.sanitizarPedido(pedido);
 `);

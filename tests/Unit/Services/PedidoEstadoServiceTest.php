@@ -68,7 +68,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Validar transiciÃ³n de PENDIENTE_SUPERVISOR a APROBADO_SUPERVISOR
+     * Test: Validar transición de PENDIENTE_SUPERVISOR a APROBADO_SUPERVISOR
      */
     public function test_validar_transicion_pendiente_a_aprobado()
     {
@@ -85,7 +85,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Rechazar transiciÃ³n invÃ¡lida
+     * Test: Rechazar transición invÃ¡lida
      */
     public function test_rechazar_transicion_invalida()
     {
@@ -102,7 +102,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Enviar a producciÃ³n
+     * Test: Enviar a producción
      */
     public function test_enviar_a_produccion()
     {
@@ -226,7 +226,7 @@ class PedidoEstadoServiceTest extends TestCase
         $pedido->refresh();
         $this->assertEquals(EstadoPedido::APROBADO_SUPERVISOR->value, $pedido->estado);
 
-        // Paso 2: Enviar a producciÃ³n
+        // Paso 2: Enviar a producción
         $this->service->enviarAProduccion($pedido);
         $pedido->refresh();
         $this->assertEquals(EstadoPedido::EN_PRODUCCION->value, $pedido->estado);
@@ -243,7 +243,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: No permitir transiciÃ³n desde estado final
+     * Test: No permitir transición desde estado final
      */
     public function test_no_permitir_transicion_desde_estado_final()
     {

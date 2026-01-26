@@ -8,7 +8,7 @@ use App\Models\TipoBrocheBoton;
 use Illuminate\Support\Collection;
 
 /**
- * ✅ Servicio para transformar datos de prendas
+ * Servicio para transformar datos de prendas
  * 
  * Responsabilidades:
  * - Traducir IDs a nombres (manga, broche, etc.)
@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
 final class PrendaTransformerService
 {
     /**
-     * ✅ Transformar prenda completa para API/Frontend
+     * Transformar prenda completa para API/Frontend
      * Asegura que todas las relaciones estén cargadas como arrays
      */
     public function transformarPrendaCompleta(PrendaPedido $prenda): array
@@ -44,7 +44,7 @@ final class PrendaTransformerService
             'tallas' => $this->transformarTallas($prenda->tallas),
             'fotos' => $this->transformarFotos($prenda->fotos),
             'colores_telas' => $this->transformarColoresTelas($prenda->coloresTelas),
-            'procesos' => $this->transformarProcesos($prenda->procesos), // ✅ Siempre array
+            'procesos' => $this->transformarProcesos($prenda->procesos), // Siempre array
             'fotos_telas' => $this->transformarFotosTelas($prenda->fotosTelas),
             'created_at' => $prenda->created_at?->toIso8601String(),
             'updated_at' => $prenda->updated_at?->toIso8601String(),
@@ -52,7 +52,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar variantes con traducción de IDs a nombres
+     * Transformar variantes con traducción de IDs a nombres
      */
     private function transformarVariantes(Collection $variantes): array
     {
@@ -81,7 +81,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar tallas agrupadas por género
+     * Transformar tallas agrupadas por género
      */
     private function transformarTallas(Collection $tallas): array
     {
@@ -98,7 +98,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar fotos con rutas correctas
+     * Transformar fotos con rutas correctas
      */
     private function transformarFotos(Collection $fotos): array
     {
@@ -115,7 +115,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar colores y telas
+     * Transformar colores y telas
      */
     private function transformarColoresTelas(Collection $coloresTelas): array
     {
@@ -131,7 +131,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar procesos - SIEMPRE array (incluso vacío)
+     * Transformar procesos - SIEMPRE array (incluso vacío)
      */
     private function transformarProcesos(Collection $procesos): array
     {
@@ -153,7 +153,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar imágenes de procesos
+     * Transformar imágenes de procesos
      */
     private function transformarImagenesProceso(Collection $imagenes): array
     {
@@ -171,7 +171,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar tallas del proceso
+     * Transformar tallas del proceso
      */
     private function transformarTallasProceso(Collection $tallas): array
     {
@@ -183,7 +183,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Transformar fotos de telas
+     * Transformar fotos de telas
      */
     private function transformarFotosTelas(Collection $fotosTelas): array
     {
@@ -201,7 +201,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Generar URL completa para storage
+     * Generar URL completa para storage
      */
     private function generarUrlStorage(string $ruta): string
     {
@@ -223,7 +223,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Preparar prenda para factura/resumen
+     * Preparar prenda para factura/resumen
      * Incluye solo lo necesario con nombres descriptivos
      */
     public function transformarPrendaParaFactura(PrendaPedido $prenda): array
@@ -274,7 +274,7 @@ final class PrendaTransformerService
     }
 
     /**
-     * ✅ Formatear tallas para factura (string legible)
+     * Formatear tallas para factura (string legible)
      */
     private function formatearTallasParaFactura(Collection $tallas): string
     {

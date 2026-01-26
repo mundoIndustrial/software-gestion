@@ -1,4 +1,4 @@
-# 🚀 Referencia Rápida - Comandos para Arreglar Storage 403
+#  Referencia Rápida - Comandos para Arreglar Storage 403
 
 ## 📋 TL;DR (Lo más importante)
 
@@ -19,7 +19,7 @@ php artisan storage:diagnose
 
 ## 🔍 Diagnóstico Rápido
 
-### Comando Artisan (✨ NUEVO)
+### Comando Artisan ( NUEVO)
 ```bash
 # Solo diagnosticar (sin cambios)
 php artisan storage:diagnose
@@ -90,7 +90,7 @@ php artisan tinker
 
 ---
 
-## ✅ Soluciones Rápidas por Problema
+## Soluciones Rápidas por Problema
 
 ### 🔴 Error 403 Forbidden
 
@@ -271,7 +271,7 @@ php artisan route:clear
    → Debería mostrar directorio de carpetas
 
 2. http://localhost:8000/storage/pedidos/2764/imagen.jpg
-   → Si 200 OK: ✅ Imagen se sirve
+   → Si 200 OK: Imagen se sirve
    → Si 403 Forbidden: Permisos incorrectos
    → Si 404 Not Found: Archivo no existe o enlace roto
 
@@ -345,14 +345,14 @@ ausearch -k storage_changes
 | Archivo | Tipo | Descripción |
 |---------|------|-------------|
 | `CHECKLIST_STORAGE_PERMISSIONS.md` | 📄 Guía completa | Checklist detallado de verificación |
-| `fix-storage-permissions.sh` | 🔧 Script Linux | Automatiza todas las correcciones |
-| `fix-storage-permissions.ps1` | 🔧 Script Windows | Automatiza todas las correcciones |
+| `fix-storage-permissions.sh` |  Script Linux | Automatiza todas las correcciones |
+| `fix-storage-permissions.ps1` |  Script Windows | Automatiza todas las correcciones |
 | `StorageDiagnoseCommand.php` | ⚙️ Comando Artisan | `php artisan storage:diagnose [--fix]` |
 | `REFERENCIA_RAPIDA.md` | 📚 Este archivo | Comandos más comunes |
 
 ---
 
-## 🚀 Flujo Recomendado
+##  Flujo Recomendado
 
 1. **Diagnosticar:**
    ```bash

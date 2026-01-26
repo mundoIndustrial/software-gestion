@@ -112,7 +112,7 @@ class ModalNovedadPrenda {
                     
                     if (!novedad) {
                         Swal.fire({
-                            title: '⚠️ Campo requerido',
+                            title: ' Campo requerido',
                             html: '<p style="color: #374151;">Por favor, escribe una novedad para registrar este cambio.</p>',
                             icon: 'warning',
                             confirmButtonText: 'Entendido',

@@ -254,8 +254,8 @@ class EppController extends Controller
             if ($request->hasFile('imagenes')) {
                 foreach ($request->file('imagenes') as $imagen) {
                     if ($imagen->isValid()) {
-                        // Guardar imagen y obtener ruta
-                        $ruta = $imagen->store('pedidos/epp', 'public');
+                        // Guardar imagen en directorio específico del pedido
+                        $ruta = $imagen->store("pedido/{$pedidoId}/epp", 'public');
                         $imagenes[] = $ruta;
                     }
                 }
@@ -398,12 +398,12 @@ class EppController extends Controller
      * DELETE /api/epp/imagenes/{imagenId}
      * 
      * Eliminar imagen de PedidoEpp (tabla pedido_epp_imagenes)
-     * ✅ IGNORADO: tabla epp_imagenes no existe, solo usar pedido_epp_imagenes
+     * IGNORADO: tabla epp_imagenes no existe, solo usar pedido_epp_imagenes
      */
     public function eliminarImagen(int $imagenId): JsonResponse
     {
         try {
-            // ✅ Solo eliminar imagen de PedidoEpp
+            // Solo eliminar imagen de PedidoEpp
             $imagenPedido = \DB::table('pedido_epp_imagenes')->where('id', $imagenId)->first();
             
             if ($imagenPedido) {
@@ -427,8 +427,8 @@ class EppController extends Controller
                 ]);
             }
             
-            // ❌ Tabla epp_imagenes no existe, no intentar cargar
-            \Log::warning('❌ [EppController] Imagen no encontrada en pedido_epp_imagenes', [
+            //  Tabla epp_imagenes no existe, no intentar cargar
+            \Log::warning(' [EppController] Imagen no encontrada en pedido_epp_imagenes', [
                 'imagen_id' => $imagenId,
             ]);
             
@@ -438,7 +438,7 @@ class EppController extends Controller
             ], 404);
             
         } catch (\Exception $e) {
-            \Log::error('❌ [EppController] Error eliminando imagen', [
+            \Log::error(' [EppController] Error eliminando imagen', [
                 'imagen_id' => $imagenId,
                 'error' => $e->getMessage()
             ]);
@@ -454,7 +454,7 @@ class EppController extends Controller
      * Subir imagen de EPP durante creación del pedido
      * POST /api/epp/imagenes/upload
      * 
-     * ✅ DEPRECADO: Las imágenes se envían directamente con FormData al crear el pedido
+     * DEPRECADO: Las imágenes se envían directamente con FormData al crear el pedido
      * No se suben por separado, se procesan junto con epps[] en crearPedido()
      */
     public function subirImagenEpp(Request $request): JsonResponse

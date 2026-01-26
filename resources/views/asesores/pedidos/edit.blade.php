@@ -261,24 +261,28 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
 
 <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
 
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+<!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-v3-definitiva.js') }}?v={{ time() }}"></script>
+
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
+
+<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
 
 <!-- Manejadores de variaciones -->
-<script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}?v={{ time() }}"></script>
 
 <!-- Componente tarjeta readonly (completo - funcional) -->
-<script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
+<script src="{{ asset('js/componentes/prenda-card-readonly.js') }}?v={{ time() }}"></script>
 
 <!-- Componente para editar prendas con procesos desde API -->
-<script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
+<script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}?v={{ time() }}"></script>
 
 <!-- Inicializar storages INMEDIATAMENTE (antes de que se cargue gestion-telas.js) -->
 <script>
@@ -310,7 +314,7 @@
 </script>
 
 <!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
-<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
 
 <!-- Resto de handlers que necesitan DOMContentLoaded -->
 <script>

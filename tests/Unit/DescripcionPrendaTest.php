@@ -9,7 +9,7 @@ use App\Helpers\DescripcionPrendaHelper;
 class DescripcionPrendaTest extends TestCase
 {
     /**
-     * Test: Generar descripciÃ³n con template completo
+     * Test: Generar descripción con template completo
      */
     public function test_generar_descripcion_template_completo()
     {
@@ -51,7 +51,7 @@ class DescripcionPrendaTest extends TestCase
     }
 
     /**
-     * Test: Generar descripciÃ³n sin algunos datos opcionales
+     * Test: Generar descripción sin algunos datos opcionales
      */
     public function test_generar_descripcion_datos_minimos()
     {

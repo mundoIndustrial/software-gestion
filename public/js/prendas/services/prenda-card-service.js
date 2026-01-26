@@ -22,7 +22,7 @@ class PrendaCardService {
             const prenda = PrendaDataTransformer.transformar(prendaRaw);
             console.log('[PrendaCardService.generar]  DESPUÉS TRANSFORMAR - prenda:', prenda);
             if (!prenda) {
-                console.log('[PrendaCardService.generar] ❌ TRANSFORMACIÓN RETORNÓ NULL');
+                console.log('[PrendaCardService.generar]  TRANSFORMACIÓN RETORNÓ NULL');
                 return '';
             }
 
@@ -39,7 +39,7 @@ class PrendaCardService {
             // 4. Generar HTML completo
             return this._generarHTMLTarjeta(prenda, indice, fotoPrincipal, fotoTela, infoTela, variacionesHTML, tallasHTML, procesosHTML);
         } catch (error) {
-            console.error('[PrendaCardService.generar] ❌ ERROR:', error);
+            console.error('[PrendaCardService.generar]  ERROR:', error);
             console.error('[PrendaCardService.generar] Stack:', error.stack);
             return `<div class="error">Error: ${error.message}</div>`;
         }

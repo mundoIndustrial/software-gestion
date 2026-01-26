@@ -24,12 +24,12 @@ function debugElement(selector, name) {
         console.log('---');
         console.groupEnd();
     } else {
-        console.warn(`%c❌ ${name} NO ENCONTRADO: ${selector}`, 'color: #dc2626; font-weight: bold;');
+        console.warn(`%c ${name} NO ENCONTRADO: ${selector}`, 'color: #dc2626; font-weight: bold;');
     }
 }
 
 // Debugear elementos principales
-console.group('%c📍 ESTRUCTURA DEL DOM', 'color: #059669; font-weight: bold; font-size: 13px;');
+console.group('%c ESTRUCTURA DEL DOM', 'color: #059669; font-weight: bold; font-size: 13px;');
 debugElement('body', 'BODY');
 debugElement('.main-content', 'Main Content');
 debugElement('header.top-nav', 'Header (Top Nav)');
@@ -104,12 +104,12 @@ const classes = [
 ];
 classes.forEach(cls => {
     const exists = document.querySelector(`.${cls}`);
-    console.log(`${exists ? '' : '❌'} .${cls}`);
+    console.log(`${exists ? '' : ''} .${cls}`);
 });
 console.groupEnd();
 
 // Verificar si hay conflictos de posición
-console.group('%c⚠️ POSIBLES CONFLICTOS', 'color: #ef4444; font-weight: bold; font-size: 13px;');
+console.group('%c POSIBLES CONFLICTOS', 'color: #ef4444; font-weight: bold; font-size: 13px;');
 const allElements = document.querySelectorAll('*');
 let absoluteCount = 0;
 let fixedCount = 0;

@@ -246,7 +246,7 @@ window.PrendaCardService = {
         // Intentar obtener cantidades desde cantidad_talla (nuevo formato relacional)
         let cantidadesPorTalla = prenda.cantidadesPorTalla || {};
         
-        // ⚠️ Si viene formato relacional, convertirlo
+        //  Si viene formato relacional, convertirlo
         if (cantidadTallaRelacional && typeof cantidadTallaRelacional === 'object' && !Array.isArray(cantidadTallaRelacional)) {
             // Convertir { DAMA: { S: 20, M: 20 } } → { 'dama-S': 20, 'dama-M': 20 }
             Object.entries(cantidadTallaRelacional).forEach(([genero, tallasObj]) => {

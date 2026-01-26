@@ -16,7 +16,7 @@ class CotizacionServiceTest extends TestCase
     }
 
     /**
-     * Test: Determinar tipo de cotizaciÃ³n Prenda/Logo
+     * Test: Determinar tipo de cotización Prenda/Logo
      */
     public function test_determinar_tipo_prenda_logo()
     {
@@ -31,7 +31,7 @@ class CotizacionServiceTest extends TestCase
             'observaciones_generales' => []
         ];
 
-        // Usar reflexiÃ³n para acceder al mÃ©todo privado
+        // Usar reflexión para acceder al mÃ©todo privado
         $reflection = new \ReflectionClass($this->cotizacionService);
         $method = $reflection->getMethod('determinarTipoCotizacion');
         $method->setAccessible(true);
@@ -43,7 +43,7 @@ class CotizacionServiceTest extends TestCase
     }
 
     /**
-     * Test: Determinar tipo de cotizaciÃ³n Solo Logo
+     * Test: Determinar tipo de cotización Solo Logo
      */
     public function test_determinar_tipo_logo()
     {
@@ -67,13 +67,13 @@ class CotizacionServiceTest extends TestCase
     }
 
     /**
-     * Test: Determinar tipo de cotizaciÃ³n General (solo prendas)
+     * Test: Determinar tipo de cotización General (solo prendas)
      */
     public function test_determinar_tipo_general()
     {
         $datos = [
             'productos' => [
-                ['nombre_producto' => 'PantalÃ³n']
+                ['nombre_producto' => 'Pantalón']
             ],
             'tecnicas' => [], // SIN tÃ©cnicas
             'imagenes' => [],
@@ -93,7 +93,7 @@ class CotizacionServiceTest extends TestCase
     }
 
     /**
-     * Test: Determinar tipo de cotizaciÃ³n con imagenes
+     * Test: Determinar tipo de cotización con imagenes
      */
     public function test_determinar_tipo_con_imagenes()
     {
@@ -117,7 +117,7 @@ class CotizacionServiceTest extends TestCase
     }
 
     /**
-     * Test: Determinar tipo de cotizaciÃ³n con observaciones generales
+     * Test: Determinar tipo de cotización con observaciones generales
      */
     public function test_determinar_tipo_con_observaciones()
     {
@@ -128,7 +128,7 @@ class CotizacionServiceTest extends TestCase
             'observaciones_tecnicas' => null,
             'ubicaciones' => [],
             'observaciones_generales' => [
-                ['texto' => 'ObservaciÃ³n importante', 'tipo' => 'texto']
+                ['texto' => 'Observación importante', 'tipo' => 'texto']
             ]
         ];
 

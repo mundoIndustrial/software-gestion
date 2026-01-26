@@ -66,7 +66,7 @@ def extraer_del_pdf(ruta_pdf):
 def procesar_datos(datos):
     """Procesa los datos extraídos"""
     if not datos:
-        print("⚠️ No se encontraron datos en el PDF")
+        print(" No se encontraron datos en el PDF")
         return None
     
     # Si hay encabezados, usarlos

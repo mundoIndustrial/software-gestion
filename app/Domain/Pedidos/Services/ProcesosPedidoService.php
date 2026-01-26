@@ -8,7 +8,7 @@ use App\Models\ProcesoPrenda;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Servicio de dominio para gestiÃ³n de procesos de pedidos
+ * Servicio de dominio para gestión de procesos de pedidos
  * Responsabilidad: Crear y gestionar procesos asociados a pedidos
  */
 class ProcesosPedidoService
@@ -32,19 +32,19 @@ class ProcesosPedidoService
                     'procesos' => $procesosExistentes,
                 ]);
 
-                // Crear proceso de CreaciÃ³n de Orden
-                if (!in_array('CreaciÃ³n de Orden', $procesosExistentes)) {
+                // Crear proceso de Creación de Orden
+                if (!in_array('Creación de Orden', $procesosExistentes)) {
                     $procsCreacion = ProcesoPrenda::create([
                         'numero_pedido' => $pedido->numero_pedido,
                         'prenda_pedido_id' => $prenda->id,
-                        'proceso' => 'CreaciÃ³n de Orden',
+                        'proceso' => 'Creación de Orden',
                         'encargado' => $asesoraLogueada,
                         'estado_proceso' => 'En Progreso',
                         'fecha_inicio' => now(),
-                        'observaciones' => 'Proceso de creaciÃ³n asignado automÃ¡ticamente a la asesora para cotizaciÃ³n reflectivo',
+                        'observaciones' => 'Proceso de creación asignado automÃ¡ticamente a la asesora para cotización reflectivo',
                     ]);
 
-                    \Log::info(' Proceso CreaciÃ³n de Orden creado', [
+                    \Log::info(' Proceso Creación de Orden creado', [
                         'proceso_id' => $procsCreacion->id,
                         'encargado' => $asesoraLogueada,
                     ]);
@@ -59,7 +59,7 @@ class ProcesosPedidoService
                         'encargado' => 'Ramiro',
                         'estado_proceso' => 'En Progreso',
                         'fecha_inicio' => now(),
-                        'observaciones' => 'Asignado automÃ¡ticamente a Ramiro para cotizaciÃ³n reflectivo',
+                        'observaciones' => 'Asignado automÃ¡ticamente a Ramiro para cotización reflectivo',
                     ]);
 
                     \Log::info(' Proceso Costura creado', [
@@ -69,12 +69,12 @@ class ProcesosPedidoService
                 }
             }
 
-            \Log::info(' Procesos de cotizaciÃ³n reflectivo completados', [
+            \Log::info(' Procesos de cotización reflectivo completados', [
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
         } catch (\Exception $e) {
-            \Log::error(' Error al crear procesos para cotizaciÃ³n reflectivo', [
+            \Log::error(' Error al crear procesos para cotización reflectivo', [
                 'error' => $e->getMessage(),
                 'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
                 'trace' => $e->getTraceAsString(),
@@ -86,7 +86,7 @@ class ProcesosPedidoService
     /**
      * Crear proceso inicial para prenda
      */
-    public function crearProcesoInicial(int $numeroPedido, int $prendaPedidoId, string $proceso = 'CreaciÃ³n de Orden'): void
+    public function crearProcesoInicial(int $numeroPedido, int $prendaPedidoId, string $proceso = 'Creación de Orden'): void
     {
         ProcesoPrenda::create([
             'numero_pedido' => $numeroPedido,

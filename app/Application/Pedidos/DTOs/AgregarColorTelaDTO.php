@@ -3,7 +3,7 @@
 namespace App\Application\Pedidos\DTOs;
 
 /**
- * DTO para agregar combinaciÃ³n color-tela a una prenda
+ * DTO para agregar combinación color-tela a una prenda
  * 
  * Maneja campos de prenda_pedido_colores_telas:
  * - color_id: referencia a colores_prenda

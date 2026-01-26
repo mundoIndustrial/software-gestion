@@ -11,10 +11,10 @@
  * 
  *    <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
  *    
- *    ⭐ OPCIÓN A: Usar loader (RECOMENDADO - carga automática):
+ *     OPCIÓN A: Usar loader (RECOMENDADO - carga automática):
  *    <script src="{{ asset('js/componentes/prenda-tarjeta/loader.js') }}"></script>
  * 
- *    ⭐ OPCIÓN B: Incluir módulos manualmente (si necesitas control):
+ *     OPCIÓN B: Incluir módulos manualmente (si necesitas control):
  *    <script src="{{ asset('js/componentes/prenda-tarjeta/secciones.js') }}"></script>
  *    <script src="{{ asset('js/componentes/prenda-tarjeta/galerias.js') }}"></script>
  *    <script src="{{ asset('js/componentes/prenda-tarjeta/interacciones.js') }}"></script>
@@ -130,7 +130,7 @@ SOLUCIÓN:
   * interacciones.js
   * index.js
 - Verificar en DevTools > Console si hay errores de sintaxis
-- Ver console.log con prefijo , , 📷, , , ✨ para ver el proceso de carga
+- Ver console.log con prefijo , , 📷, , ,  para ver el proceso de carga
     `);
 }
 

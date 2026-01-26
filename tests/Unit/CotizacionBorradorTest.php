@@ -21,7 +21,7 @@ class CotizacionBorradorTest extends TestCase
     }
 
     /**
-     * Test: Verificar que PrendaCot permite guardar sin relaciÃ³n a nÃºmero
+     * Test: Verificar que PrendaCot permite guardar sin relación a nÃºmero
      */
     public function test_prenda_cot_modelo_permite_cualquier_cotizacion()
     {
@@ -57,8 +57,8 @@ class CotizacionBorradorTest extends TestCase
         echo "      - es_borrador: true\n";
         echo "      - estado: BORRADOR\n";
         echo "   2. Agregar PrendaCot con:\n";
-        echo "      - cotizacion_id: ID de la cotizaciÃ³n\n";
-        echo "      - nombre_producto, descripciÃ³n, cantidad\n";
+        echo "      - cotizacion_id: ID de la cotización\n";
+        echo "      - nombre_producto, descripción, cantidad\n";
         echo "   3. Agregar PrendaFotoCot con:\n";
         echo "      - prenda_cot_id: ID de la prenda\n";
         echo "      - ruta_original, ruta_webp, orden\n";
@@ -74,7 +74,7 @@ class CotizacionBorradorTest extends TestCase
     }
 
     /**
-     * Test: Resumen de sincronizaciÃ³n para borradores
+     * Test: Resumen de sincronización para borradores
      */
     public function test_resumen_sincronizacion_borradores()
     {
@@ -87,7 +87,7 @@ class CotizacionBorradorTest extends TestCase
         echo "â•‘     - es_borrador: true                                    â•‘\n";
         echo "â•‘     - estado: BORRADOR                                     â•‘\n";
         echo "â•‘   Prendas con todas las relaciones                       â•‘\n";
-        echo "â•‘     - PrendaCot (nombre, descripciÃ³n, cantidad)            â•‘\n";
+        echo "â•‘     - PrendaCot (nombre, descripción, cantidad)            â•‘\n";
         echo "â•‘     - PrendaFotoCot (fotos con rutas)                      â•‘\n";
         echo "â•‘     - PrendaTallaCot (tallas y cantidades)                 â•‘\n";
         echo "â•‘     - PrendaVarianteCot (variantes completas)              â•‘\n";

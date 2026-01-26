@@ -8,6 +8,7 @@
  * - DIP: Puede ser inyectado como dependencia
  * - OCP: Fácil de extender para nuevos endpoints
  */
+
 class ItemAPIService {
     constructor(options = {}) {
         this.baseUrl = options.baseUrl || '/asesores/pedidos-editable';
@@ -26,7 +27,7 @@ class ItemAPIService {
      * @private
      */
     async realizarPeticion(url, opciones = {}) {
-        // ✅ IMPORTANTE: Si el body es FormData, NO establecer Content-Type
+        // IMPORTANTE: Si el body es FormData, NO establecer Content-Type
         // FormData establece su propia cabecera con boundary
         const tieneFormData = opciones.body instanceof FormData;
         
@@ -124,12 +125,12 @@ class ItemAPIService {
             console.log('[validarPedido] 📊 Prendas:', pedidoData.prendas?.length || 0);
             console.log('[validarPedido] 📊 EPPs:', pedidoData.epps?.length || 0);
             
-            // ✅ PASO 1: Serializar JSON directamente (ya viene bien formado desde recolectarDatosPedido)
+            // PASO 1: Serializar JSON directamente (ya viene bien formado desde recolectarDatosPedido)
             const jsonString = JSON.stringify(pedidoData);
-            console.debug(`[validarPedido] ✅ JSON serializado: ${jsonString.length} bytes`);
+            console.debug(`[validarPedido] JSON serializado: ${jsonString.length} bytes`);
             console.log('[validarPedido] 📝 JSON String que se enviará:', jsonString);
             
-            // ✅ PASO 2: Enviar en FormData con campo "pedido"
+            // PASO 2: Enviar en FormData con campo "pedido"
             const formData = new FormData();
             formData.append('pedido', jsonString);
             
@@ -139,11 +140,11 @@ class ItemAPIService {
                 body: formData
             });
             
-            console.debug('[validarPedido] ✅ Respuesta:', respuesta);
+            console.debug('[validarPedido] Respuesta:', respuesta);
             return respuesta;
             
         } catch (error) {
-            console.error('[validarPedido] ❌ Error:', error);
+            console.error('[validarPedido]  Error:', error);
             throw error;
         }
     }
@@ -155,10 +156,10 @@ class ItemAPIService {
         try {
             console.debug('[crearPedido] 📦 INICIO');
 
-            // ✅ PASO 1: Extraer TODOS los Files PRIMERO (antes de cualquier normalización)
+            // PASO 1: Extraer TODOS los Files PRIMERO (antes de cualquier normalización)
             console.debug('[crearPedido] PASO 1: Extrayendo files...');
             const filesExtraidos = this.extraerFilesDelPedido(pedidoData);
-            console.debug('[crearPedido] ✅ PASO 1 completo:', {
+            console.debug('[crearPedido] PASO 1 completo:', {
                 prendas: filesExtraidos.prendas.length,
                 archivos_totales: filesExtraidos.prendas.reduce((sum, p) => 
                     sum + p.imagenes.length + 
@@ -166,23 +167,44 @@ class ItemAPIService {
                     Object.values(p.procesos).reduce((s, proc) => s + proc.length, 0), 0)
             });
 
-            // ✅ PASO 2: Normalizar el pedido (elimina Files del JSON, evita ciclos)
+            // PASO 2: Normalizar el pedido (elimina Files del JSON, evita ciclos)
             console.debug('[crearPedido] PASO 2: Normalizando...');
+            
+            // Validar que PayloadNormalizer esté disponible
+            if (!window.PayloadNormalizer) {
+                console.error('[crearPedido]  window.PayloadNormalizer no existe');
+                throw new Error(' CRITICAL: window.PayloadNormalizer no está disponible. Verifica que payload-normalizer.js se cargó correctamente.');
+            }
+            
+            if (typeof window.PayloadNormalizer.normalizar !== 'function') {
+                console.error('[crearPedido]  window.PayloadNormalizer.normalizar no es una función', {
+                    PayloadNormalizer: window.PayloadNormalizer,
+                    tipo: typeof window.PayloadNormalizer,
+                    metodos: Object.keys(window.PayloadNormalizer || {})
+                });
+                throw new Error(' CRITICAL: window.PayloadNormalizer.normalizar no es una función. PayloadNormalizer cargó incorrectamente.');
+            }
+            
             const pedidoNormalizado = window.PayloadNormalizer.normalizar(pedidoData);
             
             // Log según estructura
             if (pedidoNormalizado.prendas && pedidoNormalizado.epps) {
-                console.debug('[crearPedido] ✅ PASO 2 completo - Prendas:', pedidoNormalizado.prendas.length, '- EPPs:', pedidoNormalizado.epps.length);
+                console.debug('[crearPedido] PASO 2 completo - Prendas:', pedidoNormalizado.prendas.length, '- EPPs:', pedidoNormalizado.epps.length);
             } else {
-                console.debug('[crearPedido] ✅ PASO 2 completo - Items:', pedidoNormalizado.items?.length);
+                console.debug('[crearPedido] PASO 2 completo - Items:', pedidoNormalizado.items?.length);
             }
 
-            // ✅ PASO 3: Construir FormData con JSON limpio + archivos
+            // PASO 3: Construir FormData con JSON limpio + archivos
             console.debug('[crearPedido] PASO 3: Construyendo FormData...');
+            
+            if (typeof window.PayloadNormalizer.buildFormData !== 'function') {
+                throw new Error(' CRITICAL: window.PayloadNormalizer.buildFormData no es una función.');
+            }
+            
             const formData = window.PayloadNormalizer.buildFormData(pedidoNormalizado, filesExtraidos);
-            console.debug('[crearPedido] ✅ PASO 3 completo');
+            console.debug('[crearPedido] PASO 3 completo');
 
-            // ✅ PASO 4: Enviar
+            // PASO 4: Enviar
             console.debug('[crearPedido] PASO 4: Enviando POST a /crear');
             const respuesta = await fetch(`${this.baseUrl}/crear`, {
                 method: 'POST',
@@ -196,7 +218,7 @@ class ItemAPIService {
             // Verificar respuesta
             if (!respuesta.ok) {
                 const errorData = await respuesta.json().catch(() => ({ message: 'Error desconocido' }));
-                console.error('[crearPedido] ❌ Error del servidor:', {
+                console.error('[crearPedido]  Error del servidor:', {
                     status: respuesta.status,
                     errors: errorData.errors
                 });
@@ -212,7 +234,7 @@ class ItemAPIService {
             }
 
             const resultado = await respuesta.json();
-            console.debug('[crearPedido] ✅ ÉXITO:', {
+            console.debug('[crearPedido] ÉXITO:', {
                 pedido_id: resultado.pedido_id,
                 numero_pedido: resultado.numero_pedido
             });
@@ -220,7 +242,7 @@ class ItemAPIService {
             return resultado;
 
         } catch (error) {
-            console.error('[crearPedido] ❌ Error final:', error);
+            console.error('[crearPedido]  Error final:', error);
             throw error;
         }
     }
@@ -413,7 +435,7 @@ class ItemAPIService {
             prenda.imagenes.forEach((file, fileIdx) => {
                 const key = `prendas[${itemIdx}][imagenes][${fileIdx}]`;
                 formData.append(key, file);
-                console.log(`[item-api-service] ✅ Archivo: ${key} (${file.name})`);
+                console.log(`[item-api-service] Archivo: ${key} (${file.name})`);
             });
             
             // Imágenes de telas: prendas[0][telas][0][imagenes][0]
@@ -422,7 +444,7 @@ class ItemAPIService {
                     telaFiles.forEach((file, fileIdx) => {
                         const key = `prendas[${itemIdx}][telas][${telaIdx}][imagenes][${fileIdx}]`;
                         formData.append(key, file);
-                        console.log(`[item-api-service] ✅ Archivo: ${key} (${file.name})`);
+                        console.log(`[item-api-service] Archivo: ${key} (${file.name})`);
                     });
                 }
             });
@@ -433,7 +455,7 @@ class ItemAPIService {
                     procesoFiles.forEach((file, fileIdx) => {
                         const key = `prendas[${itemIdx}][procesos][${procesoKey}][imagenes][${fileIdx}]`;
                         formData.append(key, file);
-                        console.log(`[item-api-service] ✅ Archivo: ${key} (${file.name})`);
+                        console.log(`[item-api-service] Archivo: ${key} (${file.name})`);
                     });
                 }
             });
@@ -493,7 +515,7 @@ class ItemAPIService {
         console.debug('[extraerFilesDelPedido] INICIO');
         const estructura = { prendas: [], epps: [] };
 
-        // ✅ NUEVA ESTRUCTURA: prendas y epps separados
+        // NUEVA ESTRUCTURA: prendas y epps separados
         if (Array.isArray(pedidoData.prendas)) {
             pedidoData.prendas.forEach((item, prendaIdx) => {
                 const prendaData = {
@@ -510,7 +532,7 @@ class ItemAPIService {
                     item.imagenes.forEach((img) => {
                         if (img instanceof File) {
                             prendaData.imagenes.push(img);
-                            console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].imagenes = ${img.name}`);
+                            console.debug(`[extraerFiles] Prenda[${prendaIdx}].imagenes = ${img.name}`);
                         }
                     });
                 }
@@ -528,7 +550,7 @@ class ItemAPIService {
                             tela.imagenes.forEach((img) => {
                                 if (img instanceof File) {
                                     prendaData.telas[telaIdx].push(img);
-                                    console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].telas[${telaIdx}].imagenes = ${img.name}`);
+                                    console.debug(`[extraerFiles] Prenda[${prendaIdx}].telas[${telaIdx}].imagenes = ${img.name}`);
                                 }
                             });
                         }
@@ -556,7 +578,7 @@ class ItemAPIService {
                         imagenes.forEach((img) => {
                             if (img instanceof File) {
                                 prendaData.procesos[procesoKey].push(img);
-                                console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].procesos[${procesoKey}] = ${img.name}`);
+                                console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}] = ${img.name}`);
                             }
                         });
                     });
@@ -566,7 +588,7 @@ class ItemAPIService {
             });
         }
 
-        // ✅ EXTRAER ARCHIVOS DE EPPs
+        // EXTRAER ARCHIVOS DE EPPs
         if (Array.isArray(pedidoData.epps)) {
             pedidoData.epps.forEach((epp, eppIdx) => {
                 const eppData = {
@@ -579,7 +601,7 @@ class ItemAPIService {
                     epp.imagenes.forEach((img) => {
                         if (img instanceof File) {
                             eppData.imagenes.push(img);
-                            console.debug(`[extraerFiles] ✅ EPP[${eppIdx}].imagenes = ${img.name}`);
+                            console.debug(`[extraerFiles] EPP[${eppIdx}].imagenes = ${img.name}`);
                         }
                     });
                 }
@@ -588,7 +610,7 @@ class ItemAPIService {
             });
         }
 
-        // ✅ BACKWARDS COMPATIBILITY: estructura antigua con items[]
+        // BACKWARDS COMPATIBILITY: estructura antigua con items[]
         if (Array.isArray(pedidoData.items) && estructura.prendas.length === 0) {
             pedidoData.items.forEach((item, prendaIdx) => {
                 const prendaData = {
@@ -674,7 +696,7 @@ class ItemAPIService {
             prenda.imagenes.forEach((file, fileIdx) => {
                 const key = `items[${itemIdx}][imagenes][${fileIdx}]`;
                 formData.append(key, file);
-                console.log(`[item-api-service] ✅ Agregado a FormData: ${key}`);
+                console.log(`[item-api-service] Agregado a FormData: ${key}`);
             });
             
             // Agregar imágenes de telas
@@ -683,7 +705,7 @@ class ItemAPIService {
                     telaFiles.forEach((file, fileIdx) => {
                         const key = `items[${itemIdx}][telas][${telaIdx}][imagenes][${fileIdx}]`;
                         formData.append(key, file);
-                        console.log(`[item-api-service] ✅ Agregado a FormData: ${key}`);
+                        console.log(`[item-api-service] Agregado a FormData: ${key}`);
                     });
                 }
             });
@@ -696,7 +718,7 @@ class ItemAPIService {
                         // Usar ruta separada para evitar conflicto con procesos JSON string
                         const key = `items[${itemIdx}][procesos_files][${procesoKey}][${fileIdx}]`;
                         formData.append(key, file);
-                        console.log(`[item-api-service] ✅ Agregado a FormData: ${key}`);
+                        console.log(`[item-api-service] Agregado a FormData: ${key}`);
                     });
                 }
             });

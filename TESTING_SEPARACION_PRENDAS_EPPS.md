@@ -81,8 +81,8 @@
    ```
 2. Enviar pedido y verificar en Network tab (DevTools):
    - Request: POST /asesores/pedidos-editable/crear
-   - Headers: Accept: application/json ✅
-   - Content-Type: multipart/form-data ✅
+   - Headers: Accept: application/json
+   - Content-Type: multipart/form-data
    - Body contiene:
      - `pedido` (JSON string)
      - `prendas[0][imagenes][0]` (si hay)
@@ -218,14 +218,14 @@ SELECT * FROM pedido_epp WHERE pedido_id = 123 \G
   numero_pedido: PED-2026-00123
   prendas_count: 1
 
-[2026-01-26 14:30:02] local.INFO: [CrearPedidoEditableController] ✅ Imágenes de prendas procesadas
+[2026-01-26 14:30:02] local.INFO: [CrearPedidoEditableController] Imágenes de prendas procesadas
   pedido_id: 123
 
 [2026-01-26 14:30:02] local.INFO: [CrearPedidoEditableController] 📦 Procesando EPPs
   pedido_id: 123
   epps_count: 1
 
-[2026-01-26 14:30:02] local.INFO: [CrearPedidoEditableController] ✅ EPP creado
+[2026-01-26 14:30:02] local.INFO: [CrearPedidoEditableController] EPP creado
   pedido_epp_id: 45
   epp_id: 42
   cantidad: 50
@@ -235,7 +235,7 @@ SELECT * FROM pedido_epp WHERE pedido_id = 123 \G
   webp: pedidos/123/epps/epp_42_img_0.webp
   orden: 1
 
-[2026-01-26 14:30:03] local.INFO: [CrearPedidoEditableController] ✅ TRANSACCIÓN EXITOSA
+[2026-01-26 14:30:03] local.INFO: [CrearPedidoEditableController] TRANSACCIÓN EXITOSA
   pedido_id: 123
   numero_pedido: PED-2026-00123
 ```
@@ -268,7 +268,7 @@ SELECT * FROM pedido_epp WHERE pedido_id = 123 \G
 
 ---
 
-## 🔧 Troubleshooting
+##  Troubleshooting
 
 ### Problema: "Unexpected token '<'"
 
@@ -330,10 +330,10 @@ SELECT COUNT(*) FROM epps WHERE id = 42;
 
 **Solución**:
 ```javascript
-// ✅ CORRECTO
+// CORRECTO
 epps[0][imagenes][0] = file
 
-// ❌ INCORRECTO
+//  INCORRECTO
 epp[0][imagenes][0] = file
 epps[0][images][0] = file
 ```
@@ -344,17 +344,17 @@ epps[0][images][0] = file
 
 | Escenario | Frontend | Backend | BD | Archivos | Estado |
 |-----------|----------|---------|----|---------| -------|
-| Prendas solas | ✅ | ✅ | ✅ | ✅ | Existente |
-| EPPs solos | ✅ | ✅ | ✅ | ✅ | Nuevo |
-| Prendas + EPPs | ✅ | ✅ | ✅ | ✅ | Nuevo |
-| Items (antigua) | N/A | ✅ | ✅ | ✅ | Compatible |
-| Sin imagenes EPP | ✅ | ✅ | ✅ | ✅ | Permitido |
-| epp_id inválido | ✅ | ✅ | ✅ | N/A | Error esperado |
-| Imagen corrupta | ✅ | ✅ | Rollback | Limpiado | Error esperado |
+| Prendas solas | | | | | Existente |
+| EPPs solos | | | | | Nuevo |
+| Prendas + EPPs | | | | | Nuevo |
+| Items (antigua) | N/A | | | | Compatible |
+| Sin imagenes EPP | | | | | Permitido |
+| epp_id inválido | | | | N/A | Error esperado |
+| Imagen corrupta | | | Rollback | Limpiado | Error esperado |
 
 ---
 
-## ✅ Checklist Final
+## Checklist Final
 
 - [ ] Frontend ItemFormCollector separa correctamente
 - [ ] Frontend PayloadNormalizer maneja ambas estructuras

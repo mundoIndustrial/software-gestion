@@ -23,8 +23,8 @@
             let htmlListaEPP = `<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">`;
             
             epp.forEach((item, idx) => {
-                // Los campos del backend son: epp_nombre, epp_codigo, epp_categoria, cantidad, observaciones, imagenes
-                const nombre = item.epp_nombre || item.nombre_completo || item.nombre || item.descripcion || 'EPP sin nombre';
+                // Usar campos estandarizados del backend: nombre_completo, nombre, epp_nombre
+                const nombre = item.nombre_completo || item.epp_nombre || item.nombre || '';
                 htmlListaEPP += `
                     <button onclick="abrirEditarEPPEspecifico(${idx})" 
                         style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
@@ -92,10 +92,10 @@
 
                 console.log('[EDITAR-EPP] Todas las claves del EPP:', Object.keys(epp));
                 
-                // Preparar datos del EPP - usar los campos del backend: epp_id, epp_nombre, epp_codigo, epp_categoria
+                // Preparar datos del EPP - usar los campos del backend estandarizados
                 const datosEpp = {
                     id: epp.epp_id || epp.id,
-                    nombre: epp.epp_nombre || epp.nombre || epp.nombre_completo || 'EPP',
+                    nombre: epp.nombre_completo || epp.epp_nombre || epp.nombre || '',
                     codigo: epp.epp_codigo || epp.codigo || '',
                     categoria: epp.epp_categoria || epp.categoria || ''
                 };

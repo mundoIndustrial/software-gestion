@@ -43,11 +43,11 @@ class VerificarEppImagenesIgnorada extends Command
         $existe = Schema::hasTable('epp_imagenes');
 
         if ($existe) {
-            $this->warn('   ⚠️  Tabla encontrada (inesperado)');
+            $this->warn('     Tabla encontrada (inesperado)');
             $this->warn('   📊 Si deseas usar imágenes maestras de EPP, ejecuta: php artisan make:migration');
         } else {
-            $this->info('   ✅ Tabla NO existe (correcto)');
-            $this->info('   ✅ Sistema ignora tabla correctamente');
+            $this->info('   Tabla NO existe (correcto)');
+            $this->info('   Sistema ignora tabla correctamente');
         }
     }
 
@@ -58,7 +58,7 @@ class VerificarEppImagenesIgnorada extends Command
         $existe = Schema::hasTable('pedido_epp_imagenes');
 
         if ($existe) {
-            $this->info('   ✅ Tabla EXISTS (correcto)');
+            $this->info('   Tabla EXISTS (correcto)');
             
             $count = DB::table('pedido_epp_imagenes')->count();
             $this->info("   📊 Total de imágenes de EPP en pedidos: {$count}");
@@ -70,7 +70,7 @@ class VerificarEppImagenesIgnorada extends Command
                 $this->line("      - {$col}");
             }
         } else {
-            $this->error('   ❌ Tabla NO existe (error: debería existir)');
+            $this->error('    Tabla NO existe (error: debería existir)');
         }
     }
 
@@ -79,10 +79,10 @@ class VerificarEppImagenesIgnorada extends Command
         $this->line("\n3️⃣  Contando EPPs...");
 
         $eppCount = DB::table('epps')->where('activo', true)->count();
-        $this->info("   ✅ EPPs activos: {$eppCount}");
+        $this->info("   EPPs activos: {$eppCount}");
 
         $pedidoEppCount = DB::table('pedido_epp')->count();
-        $this->info("   ✅ Relaciones Pedido-EPP: {$pedidoEppCount}");
+        $this->info("   Relaciones Pedido-EPP: {$pedidoEppCount}");
     }
 
     private function verificarConsultasEviadas(): void
@@ -92,7 +92,7 @@ class VerificarEppImagenesIgnorada extends Command
         // Aquí verificamos a través de logs o estadísticas
         // En un verdadero monitoreo, verificaríamos query log
         
-        $this->info('   ✅ Sistema configurado para ignorar epp_imagenes');
+        $this->info('   Sistema configurado para ignorar epp_imagenes');
         $this->info('   📋 Métodos afectados:');
         $this->line('      - EppRepository::obtenerPorId()');
         $this->line('      - EppRepository::obtenerPorCodigo()');
@@ -124,9 +124,9 @@ class VerificarEppImagenesIgnorada extends Command
         $this->info('├─────────────────────────────────────────────────────────┤');
 
         foreach ($tablas as $tabla => $info) {
-            $existe = $info['existe'] ? '✅ Sí' : '❌ No';
+            $existe = $info['existe'] ? '✅ Sí' : ' No';
             $estado = $info['estado'];
-            $activa = $info['consultada'] ? '✅ Sí' : '❌ No';
+            $activa = $info['consultada'] ? '✅ Sí' : ' No';
             
             $line = sprintf('│ %-24s │ %6s │ %-8s │ %-7s │', $tabla, $existe, $estado, $activa);
             $this->info($line);

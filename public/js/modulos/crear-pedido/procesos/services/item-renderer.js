@@ -154,7 +154,7 @@ class ItemRenderer {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
                         <span style="display: inline-block; background: #e0f2fe; color: #0066cc; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">EPP ${numeroItem}</span>
-                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${epp.nombre_epp || epp.nombre || 'EPP sin nombre'}</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${epp.nombre_epp || epp.nombre || ''}</h4>
                     </div>
                     <!-- Contenedor del botón y menú con posicionamiento relativo -->
                     <div style="position: relative;">
@@ -423,11 +423,11 @@ class ItemRenderer {
                     
                     try {
                         procesosHTML = `<span>Procesos: ${nombresProcesos.join(', ')}</span>`;
-                        console.log('[item-renderer]   ✅ HTML generado:', procesosHTML);
+                        console.log('[item-renderer]   HTML generado:', procesosHTML);
                     } catch (joinError) {
-                        console.error('[item-renderer] ❌ ERROR EN JOIN:', joinError);
-                        console.error('[item-renderer] ❌ nombresProcesos era:', nombresProcesos);
-                        console.error('[item-renderer] ❌ Stack:', joinError.stack);
+                        console.error('[item-renderer]  ERROR EN JOIN:', joinError);
+                        console.error('[item-renderer]  nombresProcesos era:', nombresProcesos);
+                        console.error('[item-renderer]  Stack:', joinError.stack);
                         // Fallback
                         procesosHTML = `<span>Procesos: ${procesosArray.join(', ')}</span>`;
                     }

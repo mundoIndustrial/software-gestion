@@ -14,7 +14,7 @@ use App\Models\PedidosProcesosPrendaDetalle;
  * 
  * Responsabilidades:
  * - Validar prenda existe âœ… TRAIT
- * - Actualizar registro en prendas_pedido (nombre, descripciÃ³n, de_bodega)
+ * - Actualizar registro en prendas_pedido (nombre, descripción, de_bodega)
  * - Actualizar fotos de referencia (prenda_fotos_pedido)
  * 
  * Responsabilidades SEPARADAS en otros Use Cases:
@@ -23,7 +23,7 @@ use App\Models\PedidosProcesosPrendaDetalle;
  * - Actualizar tallas â†’ ActualizarTallaPrendaUseCase
  * - Actualizar procesos â†’ ActualizarProcesoPrendaUseCase
  * 
- * Antes: 70 lÃ­neas | DespuÃ©s: ~60 lÃ­neas | ReducciÃ³n: ~14%
+ * Antes: 70 lÃ­neas | DespuÃ©s: ~60 lÃ­neas | Reducción: ~14%
  */
 final class ActualizarPrendaCompletaUseCase
 {
@@ -70,7 +70,7 @@ final class ActualizarPrendaCompletaUseCase
         // 7. Actualizar procesos y sus imÃ¡genes
         $this->actualizarProcesos($prenda, $dto);
 
-        // ✅ CARGAR RELACIONES COMPLETAS PARA EL FRONTEND
+        // CARGAR RELACIONES COMPLETAS PARA EL FRONTEND
         $prenda->refresh();
         
         // Garantizar que procesos sea siempre un array (incluso si estÃ¡ vacÃ­o)
@@ -110,7 +110,7 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         if (empty($dto->fotos)) {
-            // Si viene array vacÃ­o, es intenciÃ³n explÃ­cita de eliminar TODO
+            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
             $prenda->fotos()->delete();
             return;
         }
@@ -223,7 +223,7 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         if (empty($dto->variantes)) {
-            // Si viene array vacÃ­o, es intenciÃ³n explÃ­cita de eliminar TODO
+            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
             $prenda->variantes()->delete();
             return;
         }
@@ -240,7 +240,7 @@ final class ActualizarPrendaCompletaUseCase
         if ($varianteExistente) {
             foreach ($dto->variantes as $variante) {
                 $upd = [];
-                // ✅ SOLO actualizar si el valor NO es null (preservar datos existentes)
+                // SOLO actualizar si el valor NO es null (preservar datos existentes)
                 if (array_key_exists("tipo_manga_id", $variante) && $variante["tipo_manga_id"] !== null) $upd["tipo_manga_id"] = $variante["tipo_manga_id"];
                 if (array_key_exists("tipo_broche_boton_id", $variante) && $variante["tipo_broche_boton_id"] !== null) $upd["tipo_broche_boton_id"] = $variante["tipo_broche_boton_id"];
                 if (array_key_exists("manga_obs", $variante) && $variante["manga_obs"] !== null) $upd["manga_obs"] = $variante["manga_obs"];
@@ -271,7 +271,7 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         if (empty($dto->coloresTelas)) {
-            // Si viene array vacÃ­o, es intenciÃ³n explÃ­cita de eliminar TODO
+            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
             $prenda->coloresTelas()->delete();
             return;
         }
@@ -372,7 +372,7 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         if (empty($dto->fotosTelas)) {
-            // Si viene array vacÃ­o, es intenciÃ³n explÃ­cita de eliminar TODO
+            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
             $prenda->fotosTelas()->delete();
             return;
         }
@@ -395,7 +395,7 @@ final class ActualizarPrendaCompletaUseCase
             
             $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
             
-            // Si no existe el colorTelaId pero sÃ­ vienen color_id y tela_id, buscar o crear la combinaciÃ³n
+            // Si no existe el colorTelaId pero sÃ­ vienen color_id y tela_id, buscar o crear la combinación
             if (!$colorTelaId && isset($foto['color_id']) && isset($foto['tela_id'])) {
                 $colorTelaId = $this->obtenerOCrearColorTela(
                     $prenda,
@@ -435,7 +435,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function obtenerOCrearColorTela(PrendaPedido $prenda, $colorId, $telaId): ?int
     {
-        // Intentar encontrar la combinaciÃ³n existente
+        // Intentar encontrar la combinación existente
         $colorTela = $prenda->coloresTelas()
             ->where('color_id', $colorId)
             ->where('tela_id', $telaId)
@@ -445,7 +445,7 @@ final class ActualizarPrendaCompletaUseCase
             return $colorTela->id;
         }
 
-        // Si no existe, crear la combinaciÃ³n
+        // Si no existe, crear la combinación
         $colorTela = $prenda->coloresTelas()->create([
             'color_id' => $colorId,
             'tela_id' => $telaId,
@@ -456,7 +456,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarProcesos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // ✅ PATTERN MERGE: No eliminar procesos automáticamente
+        // PATTERN MERGE: No eliminar procesos automáticamente
         // Los procesos se preservan hasta que el usuario los elimine explícitamente
         
         // Solo actualizar si se proporcionan procesos
@@ -505,11 +505,11 @@ final class ActualizarPrendaCompletaUseCase
 
     private function generarRutaWebp(string $rutaOriginal): string
     {
-        // Reemplazar extensiÃ³n por .webp
+        // Reemplazar extensión por .webp
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
     /**
-     * ✅ Transformar prenda para factura/resumen
+     * Transformar prenda para factura/resumen
      * Traduce IDs a nombres reales (manga, broche, etc.)
      */
     public function transformarPrendaParaFactura(PrendaPedido $prenda): array

@@ -28,7 +28,7 @@ window.renderizarTarjetasProcesos = function() {
     const container = document.getElementById('contenedor-tarjetas-procesos');
     
     if (!container) {
-        console.error('❌ [RENDER-PROCESOS] No se encontró contenedor');
+        console.error(' [RENDER-PROCESOS] No se encontró contenedor');
         return;
     }
 
@@ -42,7 +42,7 @@ window.renderizarTarjetasProcesos = function() {
     });
 
     if (procesosConDatos.length === 0) {
-        console.log('⚠️ [RENDER-PROCESOS] Sin procesos configurados');
+        console.log(' [RENDER-PROCESOS] Sin procesos configurados');
         container.innerHTML = `
             <div style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;">add_circle</span>
@@ -105,7 +105,7 @@ function generarTarjetaProceso(tipo, datos) {
     
     // Procesar ubicaciones: si es array, convertir a string; si es string JSON, parsear
     let ubicacionesArray = datos.ubicaciones || [];
-    console.log(`📍 [GENERAR-TARJETA] Ubicaciones raw para ${tipo}:`, ubicacionesArray, typeof ubicacionesArray);
+    console.log(` [GENERAR-TARJETA] Ubicaciones raw para ${tipo}:`, ubicacionesArray, typeof ubicacionesArray);
     
     // Función para limpiar y parsear ubicaciones
     const limpiarYparsearUbicaciones = (raw) => {
@@ -273,7 +273,7 @@ function generarTarjetaProceso(tipo, datos) {
  * Editar un proceso existente (desde modal de edición de prenda)
  */
 window.editarProcesoDesdeModal = function(tipo) {
-    console.log('🔧 [EDITAR-PROCESO] Iniciando edición del proceso:', tipo);
+    console.log(' [EDITAR-PROCESO] Iniciando edición del proceso:', tipo);
 
     // Obtener datos del proceso ANTES de abrir el modal
     const proceso = window.procesosSeleccionados[tipo];
@@ -286,7 +286,7 @@ window.editarProcesoDesdeModal = function(tipo) {
     });
 
     if (!proceso?.datos) {
-        console.error('❌ [EDITAR-PROCESO] No hay datos para el proceso:', tipo);
+        console.error(' [EDITAR-PROCESO] No hay datos para el proceso:', tipo);
         return;
     }
     
@@ -300,7 +300,7 @@ window.editarProcesoDesdeModal = function(tipo) {
         console.log('🪟 [EDITAR-PROCESO] Abriendo modal genérico de proceso en modo edición');
         window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
     } else {
-        console.error('❌ [EDITAR-PROCESO] No existe window.abrirModalProcesoGenerico');
+        console.error(' [EDITAR-PROCESO] No existe window.abrirModalProcesoGenerico');
     }
     
     // Re-renderizar
@@ -496,7 +496,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
     });
     
     if (!proceso?.datos?.imagenes || proceso.datos.imagenes.length === 0) {
-        console.error('❌ [GALERIA] No hay imágenes para mostrar en proceso:', tipoProceso);
+        console.error(' [GALERIA] No hay imágenes para mostrar en proceso:', tipoProceso);
         return;
     }
     
@@ -536,7 +536,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
             <button onclick="cerrarGaleriaImagenesProceso()" style="background: #dc2626; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.5rem; cursor: pointer;">×</button>
         </div>
         <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 4rem 2rem 2rem 2rem; width: 100%;">
-            <img id="galeria-imagen-actual" src="${urlPrimeraImagen}" style="max-width: 85vw; max-height: 80vh; border-radius: 8px; object-fit: contain;" onerror="console.error('❌ Error al cargar imagen de galería:', this.src);">
+            <img id="galeria-imagen-actual" src="${urlPrimeraImagen}" style="max-width: 85vw; max-height: 80vh; border-radius: 8px; object-fit: contain;" onerror="console.error(' Error al cargar imagen de galería:', this.src);">
         </div>
         ${imagenes.length > 1 ? `
             <button onclick="navegarGaleriaImagenesProceso(-1)" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 2rem; cursor: pointer;">‹</button>
@@ -544,7 +544,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
             <div style="position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; padding: 0.75rem; background: rgba(0,0,0,0.6); border-radius: 8px;">
                 ${imagenes.map((img, idx) => {
                     const urlMiniatura = procesarUrlImagen(img);
-                    return `<img src="${urlMiniatura}" onclick="irAImagenProceso(${idx})" class="miniatura-galeria-proceso" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid ${idx === 0 ? '#0ea5e9' : 'transparent'}; opacity: ${idx === 0 ? '1' : '0.6'};" onerror="console.error('❌ Error en miniatura:', this.src);">`;
+                    return `<img src="${urlMiniatura}" onclick="irAImagenProceso(${idx})" class="miniatura-galeria-proceso" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid ${idx === 0 ? '#0ea5e9' : 'transparent'}; opacity: ${idx === 0 ? '1' : '0.6'};" onerror="console.error(' Error en miniatura:', this.src);">`;
                 }).join('')}
             </div>
         ` : ''}
@@ -561,12 +561,12 @@ window.navegarGaleriaImagenesProceso = function(direccion) {
     
     const galeria = document.getElementById('galeria-proceso-modal');
     if (!galeria || !window.imagenesGaleriaProceso) {
-        console.error('❌ [GALERIA] Galería o imágenes no encontradas');
+        console.error(' [GALERIA] Galería o imágenes no encontradas');
         return;
     }
     
     let indice = parseInt(galeria.dataset.indiceActual) + direccion;
-    console.log('📍 [GALERIA] Índice calculado:', {
+    console.log(' [GALERIA] Índice calculado:', {
         anterior: parseInt(galeria.dataset.indiceActual),
         direccion: direccion,
         nuevo: indice,
@@ -612,7 +612,7 @@ window.irAImagenProceso = function(indice) {
     
     const galeria = document.getElementById('galeria-proceso-modal');
     if (!galeria) {
-        console.error('❌ [GALERIA] Galería modal no encontrada');
+        console.error(' [GALERIA] Galería modal no encontrada');
         return;
     }
     
@@ -648,7 +648,7 @@ window.irAImagenProceso = function(indice) {
 };
 
 window.cerrarGaleriaImagenesProceso = function() {
-    console.log('❌ [GALERIA] Cerrando galería');
+    console.log(' [GALERIA] Cerrando galería');
     const galeria = document.getElementById('galeria-proceso-modal');
     if (galeria) {
         galeria.remove();
@@ -677,7 +677,7 @@ window.eliminarTarjetaProceso = function(tipo) {
         html: `
             <p>Está a punto de eliminar el proceso <strong>${nombresProcesos[tipo] || tipo}</strong></p>
             <p style="color: #ef4444; font-weight: 600; margin-top: 1rem;">
-                ⚠️ Se eliminará de la base de datos:
+                 Se eliminará de la base de datos:
             </p>
             <ul style="text-align: left; display: inline-block; margin-top: 0.5rem; color: #6b7280;">
                 <li>✓ Configuración del proceso</li>

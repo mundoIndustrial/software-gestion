@@ -104,12 +104,12 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener datos de ediciÃ³n (formulario)
+     * Obtener datos de edición (formulario)
      *  NUEVO: Transforma prendas a la estructura esperada por GestorPrendaSinCotizacion
      */
     public function obtenerParaEdicion($pedidoIdentifier): array
     {
-        Log::info(' [EDICION] Obteniendo datos para ediciÃ³n');
+        Log::info(' [EDICION] Obteniendo datos para edición');
 
         $pedido = $this->obtenerCompleto($pedidoIdentifier);
 
@@ -141,12 +141,12 @@ class ObtenerPedidoDetalleService
             'epps' => $epps,  //  Incluir EPPs
             'estados' => [
                 'No iniciado',
-                'En EjecuciÃ³n',
+                'En Ejecución',
                 'Entregado',
                 'Anulada'
             ],
             'areas' => [
-                'CreaciÃ³n de Orden',
+                'Creación de Orden',
                 'Corte',
                 'Costura',
                 'Bordado',
@@ -371,11 +371,11 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener solo informaciÃ³n bÃ¡sica
+     * Obtener solo información bÃ¡sica
      */
     public function obtenerBasico($pedidoIdentifier): array
     {
-        Log::info(' [BASICO] Obteniendo informaciÃ³n bÃ¡sica');
+        Log::info(' [BASICO] Obteniendo información bÃ¡sica');
 
         $pedido = $this->obtenerPedido($pedidoIdentifier);
 
@@ -502,17 +502,17 @@ class ObtenerPedidoDetalleService
             ->where('pedido_produccion_id', $pedidoId)
             ->with([
                 'procesos' => function ($q) {
-                    $q->withTrashed()  // 🔧 INCLUIR SOFT-DELETED
+                    $q->withTrashed()  //  INCLUIR SOFT-DELETED
                       ->with(['tipoProceso', 'imagenes' => function ($q2) {
-                          $q2->withTrashed();  // 🔧 INCLUIR SOFT-DELETED
+                          $q2->withTrashed();  //  INCLUIR SOFT-DELETED
                       }])
                       ->orderBy('created_at', 'desc');
                 },
                 'fotos' => function ($q) {
-                    $q->withTrashed();  // 🔧 INCLUIR SOFT-DELETED
+                    $q->withTrashed();  //  INCLUIR SOFT-DELETED
                 },
                 'fotosTelas' => function ($q) {
-                    $q->withTrashed();  // 🔧 INCLUIR SOFT-DELETED
+                    $q->withTrashed();  //  INCLUIR SOFT-DELETED
                 },
                 'variantes' => function ($q) {
                     $q->with(['tipoManga', 'tipoBroche']);
@@ -693,7 +693,7 @@ class ObtenerPedidoDetalleService
      */
     private function construirProcesoParaEdicion($proceso, $prendaId): array
     {
-        Log::info('🔧 [PROCESO-DETALLE] Construyendo proceso para edición', [
+        Log::info(' [PROCESO-DETALLE] Construyendo proceso para edición', [
             'proceso_id' => $proceso->id,
             'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'Desconocido',
             'imagenes_count' => $proceso->imagenes->count() ?? 0

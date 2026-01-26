@@ -9,7 +9,7 @@ namespace App\Application\Pedidos\DTOs;
  * - tipo_manga_id: referencia a tipos_manga
  * - tipo_broche_boton_id: referencia a tipos_broche_boton
  * - manga_obs: observaciones de manga
- * - broche_boton_obs: observaciones de broche/botÃ³n
+ * - broche_boton_obs: observaciones de broche/botón
  * - tiene_bolsillos: boolean
  * - bolsillos_obs: observaciones de bolsillos
  */

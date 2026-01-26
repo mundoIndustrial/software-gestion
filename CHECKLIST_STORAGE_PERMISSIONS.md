@@ -1,4 +1,4 @@
-# ✅ Checklist Completo - Problemas de Acceso a Imágenes (Storage 403 Forbidden)
+# Checklist Completo - Problemas de Acceso a Imágenes (Storage 403 Forbidden)
 
 ## 📋 Tabla de Contenidos
 1. [Diagnóstico Rápido](#diagnóstico-rápido)
@@ -11,14 +11,14 @@
 ## 🔍 Diagnóstico Rápido
 
 **Síntomas comunes:**
-- ❌ `GET /storage/pedidos/2764/imagen1.jpg` → 403 Forbidden
-- ❌ Las URLs se generan correctamente pero no sirven las imágenes
-- ❌ `public/storage` no existe o apunta al lugar incorrecto
-- ❌ Permisos incorrectos en `storage/app/public`
+-  `GET /storage/pedidos/2764/imagen1.jpg` → 403 Forbidden
+-  Las URLs se generan correctamente pero no sirven las imágenes
+-  `public/storage` no existe o apunta al lugar incorrecto
+-  Permisos incorrectos en `storage/app/public`
 
 ---
 
-## ✅ Checklist Manual Paso a Paso
+## Checklist Manual Paso a Paso
 
 ### 1️⃣ Verificar que el Enlace Simbólico Existe
 
@@ -34,7 +34,7 @@ ls -la public/storage
 php artisan storage:link
 
 # Verificar que funciona:
-test -L public/storage && echo "✅ Enlace simbólico OK" || echo "❌ Problema"
+test -L public/storage && echo "✅ Enlace simbólico OK" || echo " Problema"
 ```
 
 #### En Windows (PowerShell):
@@ -110,7 +110,7 @@ php artisan tinker
 
 ### 4️⃣ Verificar Configuración del Servidor Web
 
-#### ✅ Si usas Apache:
+#### Si usas Apache:
 ```bash
 # Verificar que mod_rewrite está habilitado
 apache2ctl -M | grep rewrite
@@ -138,7 +138,7 @@ sudo systemctl restart apache2
 </IfModule>
 ```
 
-#### ✅ Si usas Nginx:
+#### Si usas Nginx:
 ```nginx
 # En /etc/nginx/sites-available/tu-sitio.conf o similar:
 
@@ -163,7 +163,7 @@ location ~ ^/storage/(.*)$ {
 sudo systemctl restart nginx
 ```
 
-#### ✅ Si usas PHP Built-in Server (desarrollo):
+#### Si usas PHP Built-in Server (desarrollo):
 ```bash
 php artisan serve
 # Debería servir /storage correctamente
@@ -224,7 +224,7 @@ asset('storage/pedidos/2764/imagen.jpg');
 ### 8️⃣ Prueba en el Navegador
 
 1. Visita: `http://tu-sitio.com/storage/pedidos/2764/imagen.jpg`
-2. Si ves **200 OK** → ✅ **Problema resuelto**
+2. Si ves **200 OK** → **Problema resuelto**
 3. Si ves **403 Forbidden** → Revisa permisos de archivo/carpeta
 4. Si ves **404 Not Found** → El enlace simbólico no funciona
 
@@ -241,7 +241,7 @@ asset('storage/pedidos/2764/imagen.jpg');
 
 set -e  # Salir si hay error
 
-echo "🔧 === ARREGLANDO PERMISOS DE STORAGE ==="
+echo " === ARREGLANDO PERMISOS DE STORAGE ==="
 echo ""
 
 # 1. Crear enlace simbólico
@@ -306,7 +306,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 if [ -L public/storage ]; then
     echo "✅ Enlace simbólico: OK"
 else
-    echo "❌ Enlace simbólico: NO EXISTE"
+    echo " Enlace simbólico: NO EXISTE"
 fi
 
 # Verificar permisos de storage/app/public
@@ -344,7 +344,7 @@ chmod +x fix-storage-permissions.sh
 ```powershell
 # Run as Administrator!
 
-Write-Host "🔧 === ARREGLANDO PERMISOS DE STORAGE (WINDOWS) ===" -ForegroundColor Cyan
+Write-Host " === ARREGLANDO PERMISOS DE STORAGE (WINDOWS) ===" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. Crear enlace simbólico
@@ -361,10 +361,10 @@ if ($symlinkExists) {
     if ($item.LinkType -eq "SymbolicLink") {
         Write-Host "✅ Enlace simbólico válido" -ForegroundColor Green
     } else {
-        Write-Host "⚠️  public\storage existe pero no es un enlace simbólico" -ForegroundColor Yellow
+        Write-Host "  public\storage existe pero no es un enlace simbólico" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "❌ Enlace simbólico no encontrado" -ForegroundColor Red
+    Write-Host " Enlace simbólico no encontrado" -ForegroundColor Red
 }
 Write-Host ""
 
@@ -416,7 +416,7 @@ Write-Host "━━━━━━━━━━━━━━━━━━━━━━�
 if (Test-Path "public\storage") {
     Write-Host "✅ Enlace simbólico: OK" -ForegroundColor Green
 } else {
-    Write-Host "❌ Enlace simbólico: NO EXISTE" -ForegroundColor Red
+    Write-Host " Enlace simbólico: NO EXISTE" -ForegroundColor Red
 }
 
 # Ver carpetas de almacenamiento
@@ -446,7 +446,7 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 
 ---
 
-## ✅ Validación Final
+## Validación Final
 
 ### 1️⃣ Checklist de Verificación
 
@@ -456,25 +456,25 @@ echo "🔍 Checklist de Verificación"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# ✅ 1. Enlace simbólico
-[ -L public/storage ] && echo "✅ Enlace simbólico existe" || echo "❌ Enlace simbólico falta"
+# 1. Enlace simbólico
+[ -L public/storage ] && echo "✅ Enlace simbólico existe" || echo " Enlace simbólico falta"
 
-# ✅ 2. Directorio
-[ -d storage/app/public ] && echo "✅ storage/app/public existe" || echo "❌ Falta storage/app/public"
+# 2. Directorio
+[ -d storage/app/public ] && echo "✅ storage/app/public existe" || echo " Falta storage/app/public"
 
-# ✅ 3. Permisos (debe ser 755 o mejor)
+# 3. Permisos (debe ser 755 o mejor)
 PERMS=$(stat -c "%A" storage/app/public | cut -c2-4)
 if [[ "$PERMS" == "rwx" ]]; then
     echo "✅ Permisos de storage/app/public: CORRECTOS"
 else
-    echo "⚠️  Permisos de storage/app/public: $PERMS (revisá)"
+    echo "  Permisos de storage/app/public: $PERMS (revisá)"
 fi
 
-# ✅ 4. Propietario
+# 4. Propietario
 OWNER=$(stat -c "%U:%G" storage/app/public)
 echo "📁 Propietario: $OWNER"
 
-# ✅ 5. Imágenes
+# 5. Imágenes
 COUNT=$(find storage/app/public -type f | wc -l)
 echo "🖼️  Archivos almacenados: $COUNT"
 

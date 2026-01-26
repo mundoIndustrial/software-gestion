@@ -7,11 +7,11 @@ use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Servicio para copiar imÃ¡genes de cotizaciÃ³n a pedido
+ * Servicio para copiar imÃ¡genes de cotización a pedido
  * 
  * Responsabilidades:
- * - Copiar fotos de prendas de cotizaciÃ³n a pedido
- * - Copiar fotos de telas de cotizaciÃ³n a pedido
+ * - Copiar fotos de prendas de cotización a pedido
+ * - Copiar fotos de telas de cotización a pedido
  * - Mantener orden y referencias correctas
  */
 class CopiarImagenesCotizacionAPedidoService
@@ -28,11 +28,11 @@ class CopiarImagenesCotizacionAPedidoService
         ]);
 
         try {
-            // Obtener el reflectivo de la cotizaciÃ³n
+            // Obtener el reflectivo de la cotización
             $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)->first();
             
             if (!$reflectivo) {
-                \Log::info('No hay reflectivo en la cotizaciÃ³n');
+                \Log::info('No hay reflectivo en la cotización');
                 return;
             }
 
@@ -112,9 +112,9 @@ class CopiarImagenesCotizacionAPedidoService
     }
 
     /**
-     * Copiar todas las imÃ¡genes de una cotizaciÃ³n a sus prendas de pedido
+     * Copiar todas las imÃ¡genes de una cotización a sus prendas de pedido
      * 
-     * Estrategia: Copiar imÃ¡genes de TODAS las prendas de cotizaciÃ³n a TODAS las prendas de pedido
+     * Estrategia: Copiar imÃ¡genes de TODAS las prendas de cotización a TODAS las prendas de pedido
      * Sin depender del orden, ya que ambas se crean en el mismo orden
      */
     public function copiarImagenesCotizacionAPedido(int $cotizacionId, int $pedidoId): void
@@ -125,30 +125,30 @@ class CopiarImagenesCotizacionAPedidoService
         ]);
 
         try {
-            // Obtener todas las prendas de la cotizaciÃ³n con sus fotos
+            // Obtener todas las prendas de la cotización con sus fotos
             $prendasCotizacion = PrendaCot::where('cotizacion_id', $cotizacionId)
                 ->with(['fotos', 'telaFotos'])
                 ->orderBy('id')
                 ->get();
 
-            \Log::info(' [CopiarImagenes] Prendas de cotizaciÃ³n encontradas', [
+            \Log::info(' [CopiarImagenes] Prendas de cotización encontradas', [
                 'total_prendas_cot' => $prendasCotizacion->count()
             ]);
 
-            // Obtener logos de la cotizaciÃ³n
+            // Obtener logos de la cotización
             $logoCotizacion = \App\Models\LogoCotizacion::where('cotizacion_id', $cotizacionId)
                 ->with(['fotos'])
                 ->first();
 
             if ($prendasCotizacion->isEmpty()) {
-                Log::info('No hay prendas en la cotizaciÃ³n para copiar imÃ¡genes', [
+                Log::info('No hay prendas en la cotización para copiar imÃ¡genes', [
                     'cotizacion_id' => $cotizacionId,
                     'pedido_id' => $pedidoId
                 ]);
                 return;
             }
 
-            // Obtener prendas del pedido en el mismo orden de creaciÃ³n
+            // Obtener prendas del pedido en el mismo orden de creación
             // Obtener el numero_pedido desde el pedido_produccion_id
             $pedido = \App\Models\PedidoProduccion::findOrFail($pedidoId);
             $prendasPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
@@ -195,14 +195,14 @@ class CopiarImagenesCotizacionAPedidoService
                 $fotosTelaCopiadas = $this->copiarFotosTela($prendaCot, $prendaPed);
                 $totalImagenesCopiadas += $fotosTelaCopiadas;
 
-                // Copiar logos (una sola vez por cotizaciÃ³n, para la primera prenda)
+                // Copiar logos (una sola vez por cotización, para la primera prenda)
                 if ($index === 0 && $logoCotizacion) {
                     $logosCopiados = $this->copiarLogos($logoCotizacion, $prendaPed);
                     $totalImagenesCopiadas += $logosCopiados;
                 }
             }
 
-            Log::info(' ImÃ¡genes copiadas exitosamente de cotizaciÃ³n a pedido', [
+            Log::info(' ImÃ¡genes copiadas exitosamente de cotización a pedido', [
                 'cotizacion_id' => $cotizacionId,
                 'pedido_id' => $pedidoId,
                 'prendas_procesadas' => $prendasCotizacion->count(),
@@ -210,7 +210,7 @@ class CopiarImagenesCotizacionAPedidoService
             ]);
 
         } catch (\Exception $e) {
-            Log::error(' Error al copiar imÃ¡genes de cotizaciÃ³n a pedido', [
+            Log::error(' Error al copiar imÃ¡genes de cotización a pedido', [
                 'cotizacion_id' => $cotizacionId,
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
@@ -221,7 +221,7 @@ class CopiarImagenesCotizacionAPedidoService
     }
 
     /**
-     * Copiar fotos de prenda de cotizaciÃ³n a pedido
+     * Copiar fotos de prenda de cotización a pedido
      * 
      * @return int Cantidad de fotos copiadas
      */
@@ -270,7 +270,7 @@ class CopiarImagenesCotizacionAPedidoService
     }
 
     /**
-     * Copiar fotos de tela de cotizaciÃ³n a pedido
+     * Copiar fotos de tela de cotización a pedido
      * 
      * @return int Cantidad de fotos de tela copiadas
      */
@@ -289,13 +289,13 @@ class CopiarImagenesCotizacionAPedidoService
 
             // Copiar las fotos de tela a travÃ©s de prenda_pedido_colores_telas
             foreach ($fotosTela as $foto) {
-                // Crear o obtener la combinaciÃ³n color-tela
+                // Crear o obtener la combinación color-tela
                 $colorTela = $prendaPedido->coloresTelas()->firstOrCreate([
                     'color_id' => null,
                     'tela_id' => null,
                 ]);
                 
-                // Crear la foto asociada a la combinaciÃ³n color-tela
+                // Crear la foto asociada a la combinación color-tela
                 \DB::table('prenda_fotos_tela_pedido')->insert([
                     'prenda_pedido_colores_telas_id' => $colorTela->id,
                     'ruta_original' => $foto->ruta_original,
@@ -325,7 +325,7 @@ class CopiarImagenesCotizacionAPedidoService
     }
 
     /**
-     * Copiar logos de cotizaciÃ³n a pedido
+     * Copiar logos de cotización a pedido
      * 
      * @return int Cantidad de logos copiados
      */
@@ -335,7 +335,7 @@ class CopiarImagenesCotizacionAPedidoService
             $fotosLogos = $logoCotizacion->fotos()->orderBy('orden')->get();
 
             if ($fotosLogos->isEmpty()) {
-                Log::debug('CotizaciÃ³n sin fotos de logos', [
+                Log::debug('Cotización sin fotos de logos', [
                     'logo_cotizacion_id' => $logoCotizacion->id,
                     'prenda_pedido_id' => $prendaPedido->id
                 ]);

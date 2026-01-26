@@ -10,7 +10,7 @@ use App\Domain\Shared\CQRS\Command;
  * Command para eliminar un pedido (soft delete)
  * 
  * @param int|string $pedidoId ID del pedido a eliminar
- * @param string $razon RazÃ³n de la eliminaciÃ³n
+ * @param string $razon Razón de la eliminación
  */
 class EliminarPedidoCommand implements Command
 {

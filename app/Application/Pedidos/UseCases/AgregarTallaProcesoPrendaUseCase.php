@@ -11,10 +11,10 @@ use App\Models\ProcesosPrendaDetalle;
  * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
- * Maneja la creaciÃ³n de registro en pedidos_procesos_prenda_tallas
+ * Maneja la creación de registro en pedidos_procesos_prenda_tallas
  * que contiene el desglose de cantidades por talla para cada proceso
  * 
- * Antes: 20 lÃ­neas | DespuÃ©s: ~15 lÃ­neas | ReducciÃ³n: ~25%
+ * Antes: 20 lÃ­neas | DespuÃ©s: ~15 lÃ­neas | Reducción: ~25%
  */
 final class AgregarTallaProcesoPrendaUseCase
 {

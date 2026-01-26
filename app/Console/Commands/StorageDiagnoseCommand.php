@@ -21,7 +21,7 @@ class StorageDiagnoseCommand extends Command
         $fix = $this->option('fix');
 
         if ($fix) {
-            $this->warn('⚠️  Modo REPARACIÓN activo');
+            $this->warn('  Modo REPARACIÓN activo');
         } else {
             $this->info('ℹ️  Modo LECTURA (sin cambios)');
         }
@@ -47,7 +47,7 @@ class StorageDiagnoseCommand extends Command
             if (realpath($publicStoragePath) === realpath($targetPath)) {
                 $this->components->twoColumnDetail('  Destino correcto', '✅');
             } else {
-                $this->components->twoColumnDetail('  Destino correcto', '❌ INCORRECTO');
+                $this->components->twoColumnDetail('  Destino correcto', ' INCORRECTO');
                 if ($fix) {
                     $this->fixSymlink();
                 }
@@ -63,11 +63,17 @@ class StorageDiagnoseCommand extends Command
                 $this->components->twoColumnDetail('  Apunta a', $realPath);
                 $this->components->twoColumnDetail('  Destino correcto', '✅');
             } else {
-                $this->components->twoColumnDetail('❌ Enlace simbólico', 'NO EXISTE o INCORRECTO');
+                $this->components->twoColumnDetail(' Enlace simbólico', 'NO EXISTE o INCORRECTO');
                 if ($fix) {
                     $this->fixSymlink();
                 }
             }
+        } else {
+            $this->components->twoColumnDetail(' Enlace simbólico', 'NO EXISTE o INCORRECTO');
+            if ($fix) {
+                $this->fixSymlink();
+            }
+        }
 
         $this->newLine();
 
@@ -92,7 +98,7 @@ class StorageDiagnoseCommand extends Command
                 $perms = substr(sprintf('%o', fileperms($path)), -4);
                 $this->components->twoColumnDetail("✅ $label", "Existe ($perms)");
             } else {
-                $this->components->twoColumnDetail("❌ $label", 'NO EXISTE');
+                $this->components->twoColumnDetail(" $label", 'NO EXISTE');
             }
         }
 
@@ -109,8 +115,8 @@ class StorageDiagnoseCommand extends Command
         foreach ($directories as $label => $path) {
             if (is_dir($path)) {
                 $perms = substr(sprintf('%o', fileperms($path)), -4);
-                $readable = is_readable($path) ? '✅' : '❌';
-                $writable = is_writable($path) ? '✅' : '❌';
+                $readable = is_readable($path) ? '✅' : '';
+                $writable = is_writable($path) ? '✅' : '';
 
                 $this->components->twoColumnDetail("$label", "R:$readable W:$writable (perms: $perms)");
 
@@ -152,7 +158,7 @@ class StorageDiagnoseCommand extends Command
             $testUrl = Storage::disk('public')->url('test.jpg');
             $this->components->twoColumnDetail('✅ Storage::disk(public)->url()', $testUrl);
         } catch (\Exception $e) {
-            $this->components->twoColumnDetail('❌ Storage::disk(public)->url()', $e->getMessage());
+            $this->components->twoColumnDetail(' Storage::disk(public)->url()', $e->getMessage());
         }
 
         try {
@@ -160,7 +166,7 @@ class StorageDiagnoseCommand extends Command
             $assetUrl = asset('storage/test.jpg');
             $this->components->twoColumnDetail('✅ asset(storage/test.jpg)', $assetUrl);
         } catch (\Exception $e) {
-            $this->components->twoColumnDetail('❌ asset(storage/test.jpg)', $e->getMessage());
+            $this->components->twoColumnDetail(' asset(storage/test.jpg)', $e->getMessage());
         }
 
         $this->newLine();
@@ -209,7 +215,7 @@ class StorageDiagnoseCommand extends Command
         if (function_exists('apache_get_modules')) {
             $modules = apache_get_modules();
             $rewriteEnabled = in_array('mod_rewrite', $modules);
-            $this->components->twoColumnDetail('mod_rewrite', $rewriteEnabled ? '✅' : '❌');
+            $this->components->twoColumnDetail('mod_rewrite', $rewriteEnabled ? '✅' : '');
         }
 
         $this->newLine();
@@ -276,7 +282,7 @@ class StorageDiagnoseCommand extends Command
         try {
             if (PHP_OS_FAMILY === 'Windows') {
                 // En Windows, intentar cambiar atributos
-                $this->warn("⚠️  En Windows no se pueden cambiar permisos automáticamente");
+                $this->warn("  En Windows no se pueden cambiar permisos automáticamente");
             } else {
                 // Linux/Mac
                 @chmod($path, 0755);

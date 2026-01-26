@@ -55,7 +55,7 @@ class FormDataProcessorService
             }
         }
 
-        // Buscar imÃ¡genes en FormData con patrÃ³n items_index_telas_telaIdx_imagenes_files
+        // Buscar imÃ¡genes en FormData con patrón items_index_telas_telaIdx_imagenes_files
         foreach ($telas as $telaIdx => $telaDatos) {
             $patronTela = "items_" . $itemIndex . "_telas_" . $telaIdx . "_imagenes_files";
             $fotosUploadedFiles = $request->file($patronTela) ?? [];
@@ -101,7 +101,7 @@ class FormDataProcessorService
             $procesosConImagenes[$tipoProceso] = $procesoData;
             $procesosConImagenes[$tipoProceso]['imagenes'] = [];
 
-            // Buscar imÃ¡genes en FormData con patrÃ³n items_index_procesos_tipoProceso_imagenes_files
+            // Buscar imÃ¡genes en FormData con patrón items_index_procesos_tipoProceso_imagenes_files
             $patronProceso = "items_" . $itemIndex . "_procesos_" . $tipoProceso . "_imagenes_files";
             $fotosUploadedFiles = $request->file($patronProceso) ?? [];
             
@@ -137,7 +137,7 @@ class FormDataProcessorService
         $allFiles = $request->allFiles();
         $imagenesDelEpp = [];
 
-        // Buscar con patrÃ³n items_index_imagenes_files (clave plana)
+        // Buscar con patrón items_index_imagenes_files (clave plana)
         $patronBuscado = "items_{$itemIndex}_imagenes_files";
 
         foreach ($allFiles as $key => $files) {
@@ -199,7 +199,7 @@ class FormDataProcessorService
 
             // Procesar tallas
             // NOTA: En el nuevo modelo, las tallas se guardan directamente en pedidos_procesos_prenda_tallas
-            // Este cÃ³digo mantiene compatibilidad con datos del formulario (legacy JSON)
+            // Este código mantiene compatibilidad con datos del formulario (legacy JSON)
             $datosProceso['tallas'] = [];
             if (isset($procesoData['tallas_dama'])) {
                 $tallasDama = is_string($procesoData['tallas_dama']) 

@@ -31,11 +31,11 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente nÃºmero de cotizaciÃ³n
+     * Test: Obtener siguiente nÃºmero de cotización
      */
     public function test_obtener_siguiente_numero_cotizacion()
     {
-        // Crear una cotizaciÃ³n con nÃºmero
+        // Crear una cotización con nÃºmero
         Cotizacion::factory()->create(['numero_cotizacion' => 100]);
         
         $siguiente = $this->service->obtenerSiguienteNumeroCotizacion();
@@ -54,7 +54,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Enviar cotizaciÃ³n a contador
+     * Test: Enviar cotización a contador
      */
     public function test_enviar_cotizacion_a_contador()
     {
@@ -71,7 +71,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Validar transiciÃ³n de BORRADOR a ENVIADA_CONTADOR
+     * Test: Validar transición de BORRADOR a ENVIADA_CONTADOR
      */
     public function test_validar_transicion_borrador_a_enviada_contador()
     {
@@ -88,7 +88,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Rechazar transiciÃ³n invÃ¡lida
+     * Test: Rechazar transición invÃ¡lida
      */
     public function test_rechazar_transicion_invalida()
     {
@@ -121,7 +121,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Asignar nÃºmero de cotizaciÃ³n
+     * Test: Asignar nÃºmero de cotización
      */
     public function test_asignar_numero_cotizacion()
     {
@@ -218,7 +218,7 @@ class CotizacionEstadoServiceTest extends TestCase
         $cotizacion->refresh();
         $this->assertEquals(EstadoCotizacion::APROBADA_CONTADOR->value, $cotizacion->estado);
 
-        // Verificar que se asignÃ³ nÃºmero
+        // Verificar que se asignó nÃºmero
         $this->assertNotNull($cotizacion->numero_cotizacion);
 
         // Paso 3: Aprobar como aprobador
@@ -233,7 +233,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: No permitir transiciÃ³n duplicada
+     * Test: No permitir transición duplicada
      */
     public function test_no_permitir_transicion_desde_estado_invalido()
     {

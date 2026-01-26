@@ -43,8 +43,8 @@ class ObtenerProximoPedidoService
     }
 
     /**
-     * Obtener rango de nÃºmeros disponibles (Ãºltimos 10 nÃºmeros usados + prÃ³ximo)
-     * Ãštil para generar opciones de selecciÃ³n en formularios
+     * Obtener rango de nÃºmeros disponibles (Ãºltimos 10 nÃºmeros usados + próximo)
+     * Ãštil para generar opciones de selección en formularios
      * 
      * @param int $cantidad Cantidad de nÃºmeros anteriores a mostrar
      * @return array

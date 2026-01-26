@@ -55,13 +55,13 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
             $modeloEloquent = \App\Models\PedidoProduccion::with([
                 'prendas' => function($q) {
-                    $q->withTrashed() // ✅ INCLUIR SOFT-DELETED
+                    $q->withTrashed() // INCLUIR SOFT-DELETED
                       ->with([
                           'tallas',
-                          'variantes.tipoManga',      // ✅ CARGAR TIPO MANGA
-                          'variantes.tipoBroche',      // ✅ CARGAR TIPO BROCHE
+                          'variantes.tipoManga',      // CARGAR TIPO MANGA
+                          'variantes.tipoBroche',      // CARGAR TIPO BROCHE
                           'fotos' => function($q2) {
-                              // ✅ FOTOS DE PRENDA - ORDENADAS POR ORDEN
+                              // FOTOS DE PRENDA - ORDENADAS POR ORDEN
                               $q2->orderBy('orden', 'asc');
                           },
                           'coloresTelas' => function($q2) {
@@ -69,17 +69,17 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                                   'color', 
                                   'tela',
                                   'fotos' => function($q3) {
-                                      // ✅ FOTOS DE TELA - ORDENADAS POR ORDEN
+                                      // FOTOS DE TELA - ORDENADAS POR ORDEN
                                       $q3->orderBy('orden', 'asc');
                                   }
                               ]);
                           },
                           'procesos' => function($q3) {
-                              $q3->withTrashed() // ✅ INCLUIR SOFT-DELETED
+                              $q3->withTrashed() // INCLUIR SOFT-DELETED
                                  ->with([
                                      'tipoProceso',
                                      'imagenes' => function($q4) {
-                                         // ✅ FOTOS DE PROCESOS - ORDENADAS POR ORDEN
+                                         // FOTOS DE PROCESOS - ORDENADAS POR ORDEN
                                          $q4->orderBy('orden', 'asc');
                                      }
                                  ])
@@ -91,7 +91,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     $q->with([
                         'epp',
                         'imagenes' => function($q2) {
-                            // ✅ FOTOS DE EPP - ORDENADAS POR ORDEN
+                            // FOTOS DE EPP - ORDENADAS POR ORDEN
                             $q2->orderBy('orden', 'asc');
                         }
                     ]);
@@ -147,7 +147,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     /**
      * Obtener prendas completas enriquecidas desde el modelo cargado
      * 
-     * ✅ Incluye:
+     * Incluye:
      * - Fotos de prenda (ruta_webp, ruta_original, orden)
      * - Fotos de tela (ruta_webp, ruta_original, orden)
      * - Procesos con imágenes (ruta_webp, ruta_original, orden, es_principal)
@@ -165,22 +165,22 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             foreach ($modeloEloquent->prendas as $prenda) {
                 Log::info('Procesando prenda', ['prenda_id' => $prenda->id, 'nombre' => $prenda->nombre_prenda]);
 
-                // ✅ Construir estructura de tallas
+                // Construir estructura de tallas
                 $tallasEstructuradas = $this->construirEstructuraTallas($prenda);
                 
-                // ✅ Obtener variantes
+                // Obtener variantes
                 $variantes = $this->obtenerVariantes($prenda);
                 
-                // ✅ Obtener color y tela
+                // Obtener color y tela
                 $colorTela = $this->obtenerColorYTela($prenda);
                 
-                // ✅ OBTENER FOTOS DE PRENDA (ambas rutas)
+                // OBTENER FOTOS DE PRENDA (ambas rutas)
                 $imagenes = $this->obtenerImagenesPrenda($prenda);
                 
-                // ✅ OBTENER FOTOS DE TELAS (ambas rutas, estructuradas por color-tela)
+                // OBTENER FOTOS DE TELAS (ambas rutas, estructuradas por color-tela)
                 $imagenesTela = $this->obtenerImagenesTela($prenda);
                 
-                // ✅ OBTENER PROCESOS CON IMÁGENES ORDENADAS
+                // OBTENER PROCESOS CON IMÁGENES ORDENADAS
                 $procesos = $this->obtenerProcesosDelaPrenda($prenda);
 
                 $prendasArray[] = [
@@ -197,9 +197,9 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'de_bodega' => (bool)$prenda->de_bodega,
                     'tallas' => $tallasEstructuradas,
                     'variantes' => $variantes,
-                    'imagenes' => $imagenes, // ✅ Array con estructura completa
-                    'imagenes_tela' => $imagenesTela, // ✅ Array con estructura completa
-                    'procesos' => $procesos, // ✅ Array con imágenes ordenadas
+                    'imagenes' => $imagenes, // Array con estructura completa
+                    'imagenes_tela' => $imagenesTela, // Array con estructura completa
+                    'procesos' => $procesos, // Array con imágenes ordenadas
                     'manga' => $variantes[0]['manga'] ?? null,
                     'obs_manga' => $variantes[0]['manga_obs'] ?? null,
                     'broche' => $variantes[0]['broche'] ?? null,
@@ -222,7 +222,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return []; // ✅ Retornar array vacío en lugar de null
+            return []; // Retornar array vacío en lugar de null
         }
     }
 
@@ -256,15 +256,15 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     /**
      * Obtener variantes (manga, broche, bolsillos) - Una por cada TALLA
      * 
-     * ✅ CORRECCIÓN: Itera sobre TALLAS (tienen talla y cantidad)
-     * ✅ Obtiene especificaciones de VARIANTES (manga, broche, bolsillos)
+     * CORRECCIÓN: Itera sobre TALLAS (tienen talla y cantidad)
+     * Obtiene especificaciones de VARIANTES (manga, broche, bolsillos)
      */
     private function obtenerVariantes($prenda): array
     {
         $variantes = [];
 
         try {
-            // ✅ Obtener especificaciones globales de la PRIMERA variante
+            // Obtener especificaciones globales de la PRIMERA variante
             $especificaciones = [
                 'manga' => null,
                 'manga_obs' => '',
@@ -308,7 +308,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 Log::debug('[VARIANTES] Especificaciones finales', $especificaciones);
             }
             
-            // ✅ ITERAR SOBRE TALLAS (tienen talla y cantidad)
+            // ITERAR SOBRE TALLAS (tienen talla y cantidad)
             if ($prenda->tallas && $prenda->tallas->count() > 0) {
                 foreach ($prenda->tallas as $talla) {
                     $variantes[] = [
@@ -367,10 +367,10 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     /**
      * MEJORADO: Obtener imágenes de prenda con AMBAS rutas (ruta_webp y ruta_original)
      * 
-     * ✅ Retorna array de objetos con estructura completa para el frontend
-     * ✅ Ordenadas por campo "orden"
-     * ✅ Incluye fallbacks si faltan campos
-     * ✅ Retorna array vacío si no hay fotos (no null)
+     * Retorna array de objetos con estructura completa para el frontend
+     * Ordenadas por campo "orden"
+     * Incluye fallbacks si faltan campos
+     * Retorna array vacío si no hay fotos (no null)
      */
     private function obtenerImagenesPrenda($prenda): array
     {
@@ -378,7 +378,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
 
         try {
             if ($prenda->fotos && $prenda->fotos->count() > 0) {
-                // ✅ Ya viene ordenada por la query, pero aseguramos en caso
+                // Ya viene ordenada por la query, pero aseguramos en caso
                 foreach ($prenda->fotos as $foto) {
                     $imagenes[] = [
                         'id' => $foto->id ?? null,
@@ -388,7 +388,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     ];
                 }
                 
-                // ✅ Ordenar por orden
+                // Ordenar por orden
                 usort($imagenes, function($a, $b) {
                     return $a['orden'] <=> $b['orden'];
                 });
@@ -406,16 +406,16 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             ]);
         }
 
-        return $imagenes; // ✅ Retorna [] si hay error, nunca null
+        return $imagenes; // Retorna [] si hay error, nunca null
     }
 
     /**
      * MEJORADO: Obtener imágenes de telas (color-tela)
      * 
-     * ✅ Retorna array estructurado de imágenes por color-tela
-     * ✅ Cada imagen incluye ruta_webp, ruta_original, orden
-     * ✅ Ordenadas por campo "orden"
-     * ✅ Retorna array vacío si no hay fotos (no null)
+     * Retorna array estructurado de imágenes por color-tela
+     * Cada imagen incluye ruta_webp, ruta_original, orden
+     * Ordenadas por campo "orden"
+     * Retorna array vacío si no hay fotos (no null)
      */
     private function obtenerImagenesTela($prenda): array
     {
@@ -439,7 +439,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     }
                 }
                 
-                // ✅ Ordenar por orden
+                // Ordenar por orden
                 usort($imagenes, function($a, $b) {
                     return $a['orden'] <=> $b['orden'];
                 });
@@ -457,15 +457,15 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             ]);
         }
 
-        return $imagenes; // ✅ Retorna [] si hay error, nunca null
+        return $imagenes; // Retorna [] si hay error, nunca null
     }
 
     /**
      * MEJORADO: Obtener procesos con imágenes
      * 
-     * ✅ Incluye imágenes de cada proceso ordenadas por "orden"
-     * ✅ Cada imagen tiene ruta_webp, ruta_original, orden, es_principal
-     * ✅ Retorna array vacío si no hay procesos (no null)
+     * Incluye imágenes de cada proceso ordenadas por "orden"
+     * Cada imagen tiene ruta_webp, ruta_original, orden, es_principal
+     * Retorna array vacío si no hay procesos (no null)
      */
     private function obtenerProcesosDelaPrenda($prenda): array
     {
@@ -476,7 +476,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 foreach ($prenda->procesos as $proceso) {
                     $imagenes = [];
                     
-                    // ✅ Obtener imágenes del proceso ordenadas
+                    // Obtener imágenes del proceso ordenadas
                     if ($proceso->imagenes && $proceso->imagenes->count() > 0) {
                         foreach ($proceso->imagenes as $imagen) {
                             $imagenes[] = [
@@ -488,7 +488,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                             ];
                         }
                         
-                        // ✅ Ordenar por orden
+                        // Ordenar por orden
                         usort($imagenes, function($a, $b) {
                             return $a['orden'] <=> $b['orden'];
                         });
@@ -501,7 +501,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'descripcion' => $proceso->descripcion,
                         'ubicaciones' => $proceso->ubicaciones ? json_decode($proceso->ubicaciones, true) : [],
                         'observaciones' => $proceso->observaciones,
-                        'imagenes' => $imagenes, // ✅ Array ordenado con estructura completa
+                        'imagenes' => $imagenes, // Array ordenado con estructura completa
                         'estado' => $proceso->estado ?? 'PENDIENTE',
                     ];
                 }
@@ -520,14 +520,14 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             ]);
         }
 
-        return $procesos; // ✅ Retorna [] si hay error, nunca null
+        return $procesos; // Retorna [] si hay error, nunca null
     }
 
     /**
      * Obtener EPPs del pedido enriquecidos
      * 
-     * ✅ Incluye imágenes de EPP ordenadas por "orden"
-     * ✅ Retorna array vacío si no hay EPPs (no null)
+     * Incluye imágenes de EPP ordenadas por "orden"
+     * Retorna array vacío si no hay EPPs (no null)
      */
     private function obtenerEppsCompletos($modeloEloquent): array
     {
@@ -541,7 +541,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             foreach ($modeloEloquent->epps as $epp) {
                 $imagenes = [];
                 
-                // ✅ Obtener imágenes del EPP ordenadas
+                // Obtener imágenes del EPP ordenadas
                 if ($epp->imagenes && $epp->imagenes->count() > 0) {
                     foreach ($epp->imagenes as $imagen) {
                         $imagenes[] = [
@@ -552,7 +552,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         ];
                     }
                     
-                    // ✅ Ordenar por orden
+                    // Ordenar por orden
                     usort($imagenes, function($a, $b) {
                         return $a['orden'] <=> $b['orden'];
                     });
@@ -562,10 +562,12 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'id' => $epp->id,
                     'pedido_epp_id' => $epp->id,
                     'epp_id' => $epp->epp_id,
+                    'nombre' => $epp->epp?->nombre_completo ?? $epp->epp?->nombre ?? '',
+                    'nombre_completo' => $epp->epp?->nombre_completo ?? $epp->epp?->nombre ?? '',
                     'epp_nombre' => $epp->epp?->nombre_completo ?? $epp->epp?->nombre ?? null,
                     'cantidad' => $epp->cantidad,
                     'observaciones' => $epp->observaciones,
-                    'imagenes' => $imagenes, // ✅ Array ordenado con estructura completa
+                    'imagenes' => $imagenes, // Array ordenado con estructura completa
                 ];
             }
 
@@ -581,6 +583,6 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             ]);
         }
 
-        return $epps; // ✅ Retorna [] si hay error, nunca null
+        return $epps; // Retorna [] si hay error, nunca null
     }
 }

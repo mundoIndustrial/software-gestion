@@ -42,13 +42,13 @@ class CambiarEstadoPedidoHandler implements CommandHandler
                 throw new \Exception("Pedido no encontrado: {$command->getPedidoId()}");
             }
 
-            // Validar transiciÃ³n de estado usando EstadoValidator
+            // Validar transición de estado usando EstadoValidator
             $estadoActual = strtolower($pedido->estado);
             $nuevoEstado = $command->getNuevoEstado();
 
             $this->validator->validateTransicion($estadoActual, $nuevoEstado);
             
-            Log::info(' [CambiarEstadoPedidoHandler] ValidaciÃ³n de transiciÃ³n pasada', []);
+            Log::info(' [CambiarEstadoPedidoHandler] Validación de transición pasada', []);
 
             // Cambiar estado
             $pedido->update([
@@ -57,7 +57,7 @@ class CambiarEstadoPedidoHandler implements CommandHandler
 
             // Registrar en historial de cambios
             if ($command->getRazon()) {
-                Log::info(' RazÃ³n del cambio de estado', [
+                Log::info(' Razón del cambio de estado', [
                     'razon' => $command->getRazon(),
                 ]);
             }

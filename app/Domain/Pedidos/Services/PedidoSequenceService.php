@@ -22,7 +22,7 @@ class PedidoSequenceService
         
         $numeroPedido = $secuenciaRow?->siguiente ?? 45709;
         
-        // Incrementar secuencia para el prÃ³ximo pedido
+        // Incrementar secuencia para el próximo pedido
         DB::table('numero_secuencias')
             ->where('tipo', 'pedido_produccion')
             ->increment('siguiente');

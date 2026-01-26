@@ -96,14 +96,14 @@ Deberías ver estos logs en orden:
 │  │  ├─ Es array? true/false ← CLAVE 17
 │  │  └─ Procesando N procesos
 │  │     └─ Proceso 0: "NOMBRE_PROCESO"
-│  └─ ⚠️ Sin procesos o no es array
+│  └─  Sin procesos o no es array
 └─ Total de recibos generados: N
    └─ Recibos: [...]
 ```
 
 ## 🔍 MATRIZ DE DIAGNÓSTICO
 
-| Paso | Clave | Debe ser | Si es ❌ |
+| Paso | Clave | Debe ser | Si es  |
 |------|-------|----------|---------|
 | 1 | Backend retorna procesos | `procesos_count: > 0` | Problema en Backend |
 | 2 | Fetch recibe procesos | `procesos existe? true` | Problema en fetch/response |
@@ -114,7 +114,7 @@ Deberías ver estos logs en orden:
 
 ## 🎯 ESCENARIOS
 
-### ✅ ESCENARIO 1: Todo funciona (procesos se muestran)
+### ESCENARIO 1: Todo funciona (procesos se muestran)
 
 ```
 DEBUG - CLAVE 1,3: procesos existe? true | procesos_count: 2
@@ -122,60 +122,60 @@ crearModal - CLAVE 4,5: procesos_existe: true | procesos_valor: [...]
 ReceiptManager - CLAVE 11,14: Tiene "procesos"? true | procesos_length: 2
 generarRecibos - CLAVE 15,17: prenda.procesos existe? true | Es array? true
 
-RESULTADO: ✅ Modal muestra 3 recibos (1 costura + 2 procesos)
+RESULTADO: Modal muestra 3 recibos (1 costura + 2 procesos)
 ```
 
-### ❌ ESCENARIO 2: Procesos se pierden en BACKEND
+###  ESCENARIO 2: Procesos se pierden en BACKEND
 
 ```
 DEBUG - CLAVE 1,3: procesos existe? false | procesos_count: 0
 (No aparecen en logs posteriores)
 
-RESULTADO: ❌ Problema en endpoint /asesores/pedidos/{id}/recibos-datos
+RESULTADO:  Problema en endpoint /asesores/pedidos/{id}/recibos-datos
 SOLUCIÓN: Revisar PedidoProduccionRepository.php línea 817
 ```
 
-### ❌ ESCENARIO 3: Procesos se pierden en FETCH/JSON
+###  ESCENARIO 3: Procesos se pierden en FETCH/JSON
 
 ```
 DEBUG - CLAVE 1,3: procesos existe? true | procesos_count: 2
 (Siguiente log:)
 crearModal - CLAVE 4,5: procesos_existe: false | procesos_valor: undefined
 
-RESULTADO: ❌ Problema en JSON.parse() o fetch()
+RESULTADO:  Problema en JSON.parse() o fetch()
 SOLUCIÓN: Ver si hay validación/filtro que quita procesos
 ```
 
-### ❌ ESCENARIO 4: Procesos se pierden en crearModal
+###  ESCENARIO 4: Procesos se pierden en crearModal
 
 ```
 crearModal - CLAVE 4,5: procesos_existe: true | procesos_valor: [...]
 (Siguiente log:)
 cargarComponente - CLAVE 7,8: procesos_existe: false | procesos_valor: undefined
 
-RESULTADO: ❌ Problema dentro cargarComponenteOrderDetailModal()
+RESULTADO:  Problema dentro cargarComponenteOrderDetailModal()
 SOLUCIÓN: Revisar código entre líneas 630-730 de invoice-from-list.js
 ```
 
-### ❌ ESCENARIO 5: Procesos se pierden antes de ReceiptManager
+###  ESCENARIO 5: Procesos se pierden antes de ReceiptManager
 
 ```
 cargarComponente - CLAVE 7,8: procesos_existe: true | procesos_valor: [...]
 (Siguiente log:)
 ReceiptManager Constructor - CLAVE 11,12: Tiene "procesos"? false | procesos_valor: undefined
 
-RESULTADO: ❌ Problema en setTimeout() o cargarReceiptManager()
+RESULTADO:  Problema en setTimeout() o cargarReceiptManager()
 SOLUCIÓN: Revisar tiempo de delay (100ms) o carga de script
 ```
 
-### ❌ ESCENARIO 6: Procesos se pierden en generarRecibos
+###  ESCENARIO 6: Procesos se pierden en generarRecibos
 
 ```
 ReceiptManager - CLAVE 11,14: Tiene "procesos"? true | procesos_length: 2
 (Siguiente log:)
 generarRecibos - CLAVE 15,16: prenda.procesos existe? false | prenda.procesos valor: undefined
 
-RESULTADO: ❌ Problema en copia/clonación de objeto prenda
+RESULTADO:  Problema en copia/clonación de objeto prenda
 SOLUCIÓN: Problema con this.datosFactura vs datosFactura
 ```
 
@@ -195,7 +195,7 @@ SOLUCIÓN: Problema con this.datosFactura vs datosFactura
    - ¿Cuántos recibos muestra? (debe ser 3 si hay 1 costura + 2 procesos)
    - ¿Qué mensaje muestra en consola?
 
-## 🔧 PRUEBA RÁPIDA
+##  PRUEBA RÁPIDA
 
 Si quieres verificar manualmente en la consola ahora:
 

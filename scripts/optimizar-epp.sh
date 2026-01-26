@@ -3,7 +3,7 @@
 # Script: Optimizar EPP completamente
 # Ejecutar: bash scripts/optimizar-epp.sh
 
-echo "🚀 INICIANDO OPTIMIZACIÓN DE EPP..."
+echo " INICIANDO OPTIMIZACIÓN DE EPP..."
 echo ""
 
 echo "1️⃣  Ejecutando migración de índices..."

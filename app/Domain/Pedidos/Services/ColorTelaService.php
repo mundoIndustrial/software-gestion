@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * El frontend envÃ­a:
  * - color: "Rojo"
- * - tela: "AlgodÃ³n 100%"
+ * - tela: "Algodón 100%"
  * - referencia: "ALG-ROJO-001"
  * 
  * Este servicio busca en BD o crea si no existen
@@ -115,7 +115,7 @@ class ColorTelaService
     }
 
     /**
-     * Generar cÃ³digo desde nombre
+     * Generar código desde nombre
      */
     private function generarCodigo(string $nombre): string
     {

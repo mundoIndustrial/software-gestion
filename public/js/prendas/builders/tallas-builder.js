@@ -5,7 +5,7 @@
  * Patrón: Builder
  */
 
-console.log('[DEBUG] 🔧 TallasBuilder.js cargado correctamente');
+console.log('[DEBUG]  TallasBuilder.js cargado correctamente');
 
 class TallasBuilder {
     static construir(prenda, indice) {
@@ -36,7 +36,7 @@ class TallasBuilder {
         console.log('[TallasBuilder.construir] 🔍 totalTallas:', totalTallas, 'tallasByGeneroMap:', tallasByGeneroMap);
 
         if (totalTallas === 0) {
-            console.log('[TallasBuilder.construir] ⚠️ SIN TALLAS - RETORNANDO VACÍO');
+            console.log('[TallasBuilder.construir]  SIN TALLAS - RETORNANDO VACÍO');
 
             return '';
         }
@@ -94,7 +94,7 @@ class TallasBuilder {
             </div>
         `;
         
-        console.log('[TallasBuilder.construir] ✅ RETORNANDO HTML CON TALLAS:', htmlCompleto.substring(0, 100) + '...');
+        console.log('[TallasBuilder.construir] RETORNANDO HTML CON TALLAS:', htmlCompleto.substring(0, 100) + '...');
         return htmlCompleto;
     }
 }

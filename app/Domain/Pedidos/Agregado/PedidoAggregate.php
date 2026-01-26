@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 /**
  * Agregado RaÃ­z: PedidoAggregate
  * 
- * Encapsula toda la lÃ³gica del pedido
+ * Encapsula toda la lógica del pedido
  * - Crea pedidos vÃ¡lidos
  * - Gestiona estado
  * - Valida cambios
@@ -61,7 +61,7 @@ class PedidoAggregate extends AggregateRoot
         }
 
         if (empty($descripcion)) {
-            throw new \InvalidArgumentException('DescripciÃ³n es requerida');
+            throw new \InvalidArgumentException('Descripción es requerida');
         }
 
         if (empty($prendasData)) {

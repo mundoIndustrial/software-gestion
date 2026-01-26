@@ -9,7 +9,7 @@ use App\Application\Services\Asesores\DashboardService;
  * ObtenerDatosGraficasDashboardUseCase
  * 
  * Use Case para obtener datos de grÃ¡ficas del dashboard
- * Encapsula la lÃ³gica de cÃ¡lculo y obtenciÃ³n de datos para grÃ¡ficas
+ * Encapsula la lógica de cÃ¡lculo y obtención de datos para grÃ¡ficas
  */
 class ObtenerDatosGraficasDashboardUseCase
 {

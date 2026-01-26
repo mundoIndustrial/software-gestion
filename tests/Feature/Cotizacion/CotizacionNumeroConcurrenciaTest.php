@@ -12,10 +12,10 @@ use App\Models\Cliente;
 use App\Models\User;
 
 /**
- * TEST: Validar que la generaciÃ³n sincrÃ³nica de nÃºmeros funciona con pessimistic lock
+ * TEST: Validar que la generación sincrónica de nÃºmeros funciona con pessimistic lock
  * 
  * Escenarios:
- * 1. GeneraciÃ³n secuencial de nÃºmeros (no hay conflicto)
+ * 1. Generación secuencial de nÃºmeros (no hay conflicto)
  * 2. MÃºltiples transacciones simultÃ¡neas NO generan nÃºmeros duplicados
  * 3. El lock pessimista previene race conditions
  * 4. Los nÃºmeros estÃ¡n en formato correcto (COT-YYYYMMDD-NNN)
@@ -38,7 +38,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     *  TEST 1: GeneraciÃ³n simple de nÃºmero
+     *  TEST 1: Generación simple de nÃºmero
      * 
      * Valida:
      * - El nÃºmero se genera en formato COT-YYYYMMDD-NNN
@@ -96,7 +96,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
 
         $numeros = [];
 
-        // SimulaciÃ³n de 5 transacciones "simultÃ¡neas"
+        // Simulación de 5 transacciones "simultÃ¡neas"
         for ($i = 0; $i < 5; $i++) {
             DB::transaction(function () use (&$numeros) {
                 $numero = $this->generarNumero('cotizaciones_prenda');

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
  * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
- * Antes: 44 lÃ­neas | DespuÃ©s: ~28 lÃ­neas | ReducciÃ³n: ~36%
+ * Antes: 44 lÃ­neas | DespuÃ©s: ~28 lÃ­neas | Reducción: ~36%
  */
 class AgregarPrendaSimpleUseCase
 {
@@ -27,7 +27,7 @@ class AgregarPrendaSimpleUseCase
         // Obtener modelo Eloquent directamente (no Aggregate) porque accede a asesor_id y relaciones
         $pedido = \App\Models\PedidoProduccion::findOrFail($dto->pedidoId);
 
-        // Validar permisos (solo el asesor que creÃ³ puede agregar prendas)
+        // Validar permisos (solo el asesor que creó puede agregar prendas)
         if ($pedido->asesor_id !== Auth::id()) {
             throw new \Exception("No tienes permiso para agregar prendas a este pedido");
         }

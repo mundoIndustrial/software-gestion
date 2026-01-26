@@ -14,6 +14,7 @@ class GestorPedidoSinCotizacion {
      */
     constructor() {
         this.prendas = [];
+        this.prendaIdCounter = 0;  // ← UUID o incremental
         this.cliente = '';
         this.asesora = '';
         this.formaPago = '';
@@ -96,41 +97,137 @@ class GestorPedidoSinCotizacion {
 
     /**
      * Agregar prenda vacía
-     * @returns {number} Índice de la nueva prenda
+     * @returns {string} ID de la nueva prenda
      */
     agregarPrenda() {
-        const index = this.prendas.length;
+        const prendaId = `prenda_${++this.prendaIdCounter}`;
         
         const prenda = {
-            index: index,
+            id: prendaId,
+            index: this.prendas.length,
             nombre_producto: '',
             descripcion: '',
             genero: '',
             cantidadesPorTalla: {},
-            fotos: []
+            fotos: [],
+            procesos: {},
+            telas: [],
+            imagenes: [],
+            variaciones: {}
         };
         
         this.prendas.push(prenda);
+        return prendaId;
+    }
+    
+    /**
+     * Agregar proceso a una prenda (por ID)
+     * @param {string} prendaId - ID de la prenda
+     * @param {Object} procesoData - Datos del proceso
+     */
+    agregarProcesoAPrenda(prendaId, procesoData) {
+        if (!procesoData || !procesoData.tipo) {
+            throw new Error('Proceso debe tener tipo (reflectivo, bordado, etc)');
+        }
         
-        return index;
+        const prenda = this.prendas.find(p => p.id === prendaId);
+        if (!prenda) throw new Error(`Prenda no encontrada: ${prendaId}`);
+        
+        prenda.procesos = prenda.procesos || {};
+        prenda.procesos[procesoData.tipo] = {
+            tipo: procesoData.tipo,
+            ubicaciones: procesoData.ubicaciones || [],
+            observaciones: procesoData.observaciones || null,
+            tallas: procesoData.tallas || {},
+            imagenes: procesoData.imagenes || []
+        };
+    }
+    
+    /**
+     * Agregar tela a una prenda (por ID)
+     * @param {string} prendaId - ID de la prenda
+     * @param {Object} telaData - Datos de la tela
+     */
+    agregarTelaAPrenda(prendaId, telaData) {
+        const prenda = this.prendas.find(p => p.id === prendaId);
+        if (!prenda) throw new Error(`Prenda no encontrada: ${prendaId}`);
+        
+        prenda.telas = prenda.telas || [];
+        prenda.telas.push({
+            tela: telaData.tela || '',
+            color: telaData.color || '',
+            referencia: telaData.referencia || null,
+            tela_id: telaData.tela_id || null,
+            color_id: telaData.color_id || null,
+            imagenes: telaData.imagenes || []
+        });
+    }
+    
+    /**
+     * Agregar imagen a una prenda (por ID)
+     * @param {string} prendaId - ID de la prenda
+     * @param {File} archivo - Archivo de imagen
+     */
+    agregarImagenAPrenda(prendaId, archivo) {
+        const prenda = this.prendas.find(p => p.id === prendaId);
+        if (!prenda) throw new Error(`Prenda no encontrada: ${prendaId}`);
+        
+        prenda.imagenes = prenda.imagenes || [];
+        const nombre = archivo.name || archivo;
+        
+        // Evitar duplicados
+        const yaExiste = prenda.imagenes.some(img => (img.name || img) === nombre);
+        if (!yaExiste) {
+            prenda.imagenes.push(archivo);
+        }
+    }
+    
+    /**
+     * Actualizar variaciones de una prenda (por ID)
+     * @param {string} prendaId - ID de la prenda
+     * @param {Object} variaciones - Datos de variaciones
+     */
+    actualizarVariacionesPrenda(prendaId, variaciones) {
+        const prenda = this.prendas.find(p => p.id === prendaId);
+        if (!prenda) throw new Error(`Prenda no encontrada: ${prendaId}`);
+        
+        prenda.variaciones = { ...prenda.variaciones, ...variaciones };
     }
 
     /**
-     * Eliminar prenda por índice
-     * @param {number} index - Índice de la prenda
+     * Eliminar prenda por ID
+     * @param {string} prendaId - ID de la prenda
      */
-    eliminarPrenda(index) {
-        if (index >= 0 && index < this.prendas.length) {
-            const eliminada = this.prendas.splice(index, 1)[0];
+    eliminarPrenda(prendaId) {
+        const index = this.prendas.findIndex(p => p.id === prendaId);
+        if (index >= 0) {
+            this.prendas.splice(index, 1);
         }
     }
 
     /**
      * Obtener todas las prendas
-     * @returns {Array} Array de prendas
+     * @returns {Array} Array de prendas completo
      */
     obtenerTodas() {
-        return this.prendas;
+        return this.prendas.map(p => ({
+            id: p.id,
+            index: p.index,
+            nombre_producto: p.nombre_producto || '',
+            nombre_prenda: p.nombre_producto || '',
+            descripcion: p.descripcion || '',
+            genero: p.genero || '',
+            cantidadesPorTalla: p.cantidadesPorTalla || {},
+            cantidad_talla: p.cantidadesPorTalla || {},
+            fotos: p.fotos || [],
+            imagenes: p.imagenes || [],
+            procesos: p.procesos || {},
+            telas: p.telas || [],
+            variaciones: p.variaciones || {},
+            tipo: p.tipo || 'prenda_nueva',
+            origen: p.origen || 'bodega',
+            de_bodega: p.de_bodega ? 1 : 0
+        }));
     }
 
     /**
@@ -188,13 +285,30 @@ class GestorPedidoSinCotizacion {
         
         const prendasDelDOM = [];
         
-        prendaCards.forEach((card, index) => {
+        prendaCards.forEach((card) => {
+            // CRITICAL: Usar data-prenda-id, NO índice del forEach
+            const prendaId = card.getAttribute('data-prenda-id');
+            if (!prendaId) {
+                console.error('Tarjeta de prenda sin data-prenda-id:', card);
+                return;
+            }
+            
+            // Buscar prenda existente por ID, NO por índice
+            const prendaExistente = this.prendas.find(p => p.id === prendaId);
+            
             const prenda = {
-                index: index,
+                id: prendaId,
+                index: prendasDelDOM.length,
                 nombre_producto: card.querySelector('.prenda-nombre')?.value || '',
                 descripcion: card.querySelector('.prenda-descripcion')?.value || '',
-                genero: card.querySelector(`select[name="genero[${index}]"]`)?.value || '',
-                cantidadesPorTalla: {}
+                genero: card.querySelector(`select[name="genero"]`)?.value || '',
+                cantidadesPorTalla: {},
+                fotos: prendaExistente?.fotos || [],
+                // CRITICAL: Recuperar por ID, no por índice
+                procesos: prendaExistente?.procesos || {},
+                telas: prendaExistente?.telas || [],
+                imagenes: prendaExistente?.imagenes || [],
+                variaciones: prendaExistente?.variaciones || {}
             };
             
             // Recopilar cantidades

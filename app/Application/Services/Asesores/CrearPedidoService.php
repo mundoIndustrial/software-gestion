@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Auth;
 /**
  * CrearPedidoService
  * 
- * Servicio de aplicaciÃ³n para crear pedidos (producciÃ³n o logo).
- * Encapsula la lÃ³gica de negocio de creaciÃ³n de pedidos separando:
+ * Servicio de aplicación para crear pedidos (producción o logo).
+ * Encapsula la lógica de negocio de creación de pedidos separando:
  * - Pedidos de prendas (Pedidos)
  * - Pedidos de logo (LogoPedido)
  */
@@ -81,6 +81,9 @@ class CrearPedidoService
         ]);
 
         \Log::info('Pedido creado en Pedidos', ['pedido_id' => $pedido->id]);
+
+        //  CREAR ESTRUCTURA DE CARPETAS PARA IMÁGENES
+        $this->crearEstructuraCarpetas($pedido->id);
 
         // Guardar prendas
         $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $productosConTelasProcessadas);
@@ -199,7 +202,7 @@ class CrearPedidoService
                     if (!empty($archivos[$fotosKey])) {
                         foreach ($archivos[$fotosKey] as $fotoIndex => $archivoFoto) {
                             if ($archivoFoto->isValid()) {
-                                $rutaGuardada = $archivoFoto->store('prendas/telas', 'public');
+                                $rutaGuardada = $archivoFoto->store("pedido/{$pedidoId}/telas", 'public');
                                 $fotosProcessadas[$fotoIndex] = [
                                     'nombre_archivo' => $archivoFoto->getClientOriginalName(),
                                     'ruta_original' => Storage::url($rutaGuardada),
@@ -251,6 +254,41 @@ class CrearPedidoService
         }
 
         return $imagenesProcesadas;
+    }
+
+    /**
+     * Crear estructura de carpetas para un pedido
+     * 
+     * Crea:
+     * - storage/app/public/pedido/{pedido_id}/prendas/
+     * - storage/app/public/pedido/{pedido_id}/telas/
+     * - storage/app/public/pedido/{pedido_id}/procesos/
+     * - storage/app/public/pedido/{pedido_id}/epp/
+     */
+    private function crearEstructuraCarpetas(int $pedidoId): void
+    {
+        $basePath = "pedido/{$pedidoId}";
+        $carpetas = ['prendas', 'telas', 'procesos', 'epp'];
+        
+        try {
+            foreach ($carpetas as $carpeta) {
+                $rutaCompleta = "{$basePath}/{$carpeta}";
+                
+                if (!Storage::disk('public')->exists($rutaCompleta)) {
+                    Storage::disk('public')->makeDirectory($rutaCompleta, 0755, true);
+                    \Log::info('[CrearPedidoService] Carpeta creada', [
+                        'pedido_id' => $pedidoId,
+                        'carpeta' => $rutaCompleta,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('[CrearPedidoService] Error creando carpetas', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+            ]);
+            // No fallar si hay error en carpetas
+        }
     }
 }
 

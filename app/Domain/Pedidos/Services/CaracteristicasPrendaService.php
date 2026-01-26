@@ -58,7 +58,7 @@ class CaracteristicasPrendaService
     }
 
     /**
-     * Obtener o crear tipo de broche/botÃ³n desde nombre
+     * Obtener o crear tipo de broche/botón desde nombre
      */
     public function obtenerOCrearBroche(?string $nombreBroche): ?int
     {

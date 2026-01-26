@@ -19,11 +19,11 @@ class ClearEppCache extends Command
         
         // Limpiar caché específico
         \Illuminate\Support\Facades\Cache::forget('epps:activos');
-        $this->line('  ✅ Caché de EPPs activos limpiado');
+        $this->line('  Caché de EPPs activos limpiado');
         
         // Limpiar todas las búsquedas (búsqueda manual)
         // Nota: File cache no soporta tags, así que limpiamos todo
-        $this->line('  ✅ Caché de búsquedas limpiado');
+        $this->line('  Caché de búsquedas limpiado');
         
         $this->newLine();
         $this->info('✅ Caché de EPP limpiado correctamente');

@@ -35,11 +35,11 @@ print_success() {
 }
 
 print_error() {
-    echo -e "${RED}❌ $1${NC}"
+    echo -e "${RED} $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+    echo -e "${YELLOW}  $1${NC}"
 }
 
 print_info() {
@@ -84,7 +84,7 @@ done
 ###########################################################################
 
 clear
-echo -e "${CYAN}🔧 REPARADOR DE PERMISOS - STORAGE LARAVEL 10 (LINUX/MAC)${NC}"
+echo -e "${CYAN} REPARADOR DE PERMISOS - STORAGE LARAVEL 10 (LINUX/MAC)${NC}"
 echo -e "Ejecutando en modo: $([ "$DRY_RUN" = true ] && echo 'DRY-RUN (solo lectura)' || echo 'ACTIVO (realizará cambios)')${YELLOW}"
 echo ""
 
@@ -341,7 +341,7 @@ for cmd in "${CACHE_COMMANDS[@]}"; do
         if php artisan "$cmd" 2>/dev/null | grep -q "cleared\|flushed\|cleared successfully"; then
             echo -e " ${GREEN}✅${NC}"
         else
-            echo -e " ${YELLOW}⚠️${NC}"
+            echo -e " ${YELLOW}${NC}"
             print_debug "  (Puede que ya esté limpio)"
         fi
     else
@@ -432,7 +432,7 @@ echo "  2. Storage::disk('public')->url('test.jpg')"
 echo "  3. Debería retornar: /storage/test.jpg"
 
 echo ""
-print_warning "⚠️  NOTAS IMPORTANTES:"
+print_warning "  NOTAS IMPORTANTES:"
 echo "  • Este script puede requerir sudo para cambiar permisos"
 echo "  • Los cambios afectarán al acceso de archivos"
 echo "  • Realiza un backup antes de cambios en producción"

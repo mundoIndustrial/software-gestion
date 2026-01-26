@@ -38,7 +38,7 @@ class ObtenerPedidosOperarioService
         $pedidos = $this->obtenerPedidosPorArea($areaOperario);
 
         // Contar estados
-        $pedidosEnProceso = $pedidos->where('estado', 'En EjecuciÃ³n')->count();
+        $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
         $pedidosCompletados = $pedidos->where('estado', 'Completada')->count();
 
         return new ObtenerPedidosOperarioDTO(
@@ -59,14 +59,14 @@ class ObtenerPedidosOperarioService
      * Filtra pedidos que:
      * 1. Tengan Ã¡rea "Costura" EN pedidos_produccion
      * 2. Y tengan proceso Costura con encargado "Ramiro"
-     * 3. Y estÃ©n en estado "En EjecuciÃ³n" (campo estado del pedido)
+     * 3. Y estÃ©n en estado "En Ejecución" (campo estado del pedido)
      */
     private function obtenerPedidosCosturaReflectivo(User $usuario): ObtenerPedidosOperarioDTO
     {
         \Log::info('=== INICIO obtenerPedidosCosturaReflectivo ===');
         
         $pedidos = PedidoProduccion::where('area', 'Costura')
-            ->where('estado', 'En EjecuciÃ³n')
+            ->where('estado', 'En Ejecución')
             ->with(['prendas'])
             ->orderBy('fecha_de_creacion_de_orden', 'desc')
             ->orderBy('created_at', 'desc')
@@ -129,7 +129,7 @@ class ObtenerPedidosOperarioService
         ]);
 
         // Contar estados
-        $pedidosEnProceso = $pedidos->where('estado', 'En EjecuciÃ³n')->count();
+        $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
         $pedidosCompletados = $pedidos->where('estado', 'Completada')->count();
 
         return new ObtenerPedidosOperarioDTO(
@@ -279,8 +279,8 @@ class ObtenerPedidosOperarioService
             return [
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
-                'descripcion' => $descripcionPrendas ?: 'Sin descripciÃ³n',
-                'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripciÃ³n',
+                'descripcion' => $descripcionPrendas ?: 'Sin descripción',
+                'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripción',
                 'cantidad' => $totalPrendas,
                 'estado' => $this->obtenerEstadoActual($pedido->numero_pedido),
                 'area' => $this->obtenerAreaActual($pedido->numero_pedido),

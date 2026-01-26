@@ -80,6 +80,6 @@ procesos/
 ✅ Sistema transaccional funcionando
 ✅ NO hay duplicados físicos
 ✅ 1 archivo = 1 webp + 1 thumbnail + 1 original
-⚠️ Faltan carpetas específicas por tipo (están todas en imagenes/)
+ Faltan carpetas específicas por tipo (están todas en imagenes/)
 
 **Próximo paso**: Probar con nuevo pedido después de que los métodos obsoletos sean removidos.

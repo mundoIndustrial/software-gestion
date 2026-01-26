@@ -6,13 +6,13 @@ use App\Models\PrendaPedido;
 use Illuminate\Http\Request;
 
 /**
- * Strategy Pattern para CreaciÃ³n de Prendas
+ * Strategy Pattern para Creación de Prendas
  * 
- * Define el contrato que deben cumplir todas las estrategias de creaciÃ³n de prendas
- * Permite diferentes algoritmos sin cambiar el cÃ³digo cliente
+ * Define el contrato que deben cumplir todas las estrategias de creación de prendas
+ * Permite diferentes algoritmos sin cambiar el código cliente
  * 
  * Implementaciones:
- * - CreacionPrendaSinCtaStrategy: Para prendas sin cotizaciÃ³n (con tallas/gÃ©neros)
+ * - CreacionPrendaSinCtaStrategy: Para prendas sin cotización (con tallas/gÃ©neros)
  * NOTA: Reflectivo NO es un tipo de prenda, es un PROCESO. Usar CreacionPrendaSinCtaStrategy
  */
 interface CreacionPrendaStrategy
@@ -41,7 +41,7 @@ interface CreacionPrendaStrategy
      * 
      * @param array $prendaData Datos a validar
      * @return bool
-     * @throws \InvalidArgumentException Si validaciÃ³n falla
+     * @throws \InvalidArgumentException Si validación falla
      */
     public function validar(array $prendaData): bool;
 

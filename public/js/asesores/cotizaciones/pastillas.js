@@ -130,7 +130,7 @@ function obtenerInfoPastilla(tipo) {
         },
         'prenda-bordado': {
             nombre: 'Prenda/Bordado',
-            icon: '✨',
+            icon: '',
             descripcion: 'Prendas con logo o bordado',
             color: '#ec4899'
         }

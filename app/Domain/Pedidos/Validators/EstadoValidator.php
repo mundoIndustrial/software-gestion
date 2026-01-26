@@ -15,7 +15,7 @@ use InvalidArgumentException;
  * 
  * Estados permitidos:
  * - activo: Pedido reciÃ©n creado, se pueden agregar prendas
- * - pendiente: Esperando aprobaciÃ³n o pago
+ * - pendiente: Esperando aprobación o pago
  * - completado: Pedido finalizado (no se puede cambiar)
  * - cancelado: Pedido cancelado (no se puede cambiar)
  * 
@@ -94,7 +94,7 @@ class EstadoValidator implements Validator
     }
 
     /**
-     * Validar transiciÃ³n de estado
+     * Validar transición de estado
      * 
      * @param string $estadoActual Estado actual del pedido
      * @param string $nuevoEstado Estado al que se quiere transicionar
@@ -111,7 +111,7 @@ class EstadoValidator implements Validator
             return;
         }
 
-        // Verificar si la transiciÃ³n estÃ¡ permitida
+        // Verificar si la transición estÃ¡ permitida
         $transicionesPermitidas = self::TRANSICIONES_PERMITIDAS[$estadoActual] ?? [];
         
         if (!in_array($nuevoEstado, $transicionesPermitidas)) {

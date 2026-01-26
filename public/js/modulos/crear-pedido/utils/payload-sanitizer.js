@@ -270,7 +270,7 @@ class PayloadSanitizer {
 
         // Detectar referencia circular
         if (cache.has(obj)) {
-            console.warn('⚠️ Referencia circular detectada y eliminada');
+            console.warn(' Referencia circular detectada y eliminada');
             return undefined;
         }
 

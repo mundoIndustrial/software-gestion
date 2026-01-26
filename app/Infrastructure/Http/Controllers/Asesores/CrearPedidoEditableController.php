@@ -289,7 +289,7 @@ class CrearPedidoEditableController extends Controller
     /**
      * Validar datos del pedido antes de crear
      * 
-     * 🔧 REFACTORIZADO (26 Enero 2026):
+     *  REFACTORIZADO (26 Enero 2026):
      * - Decodifica JSON del campo "pedido" 
      * - Valida estructura con prendas y/o epps
      * - Permite pedidos con SOLO epps (sin prendas)
@@ -365,7 +365,7 @@ class CrearPedidoEditableController extends Controller
             $clienteNombre = trim($validated['cliente']);
             $cliente = $this->obtenerOCrearCliente($clienteNombre);
 
-            Log::info('[CrearPedidoEditableController] validarPedido - ✅ Validación exitosa', [
+            Log::info('[CrearPedidoEditableController] validarPedido - Validación exitosa', [
                 'cliente_id' => $cliente->id,
                 'prendas' => $tienePrendas ? count($validated['prendas']) : 0,
                 'epps' => $tieneEpps ? count($validated['epps']) : 0,
@@ -431,10 +431,10 @@ class CrearPedidoEditableController extends Controller
      * CREAR PEDIDO CON IMÁGENES - 100% TRANSACCIONAL
      * POST /asesores/pedidos-editable/crear
      * 
-     * ✅ TODO O NADA: Si falla algo, rollback completo (DB + archivos)
-     * ✅ NO carpetas temporales
-     * ✅ NO relocalización
-     * ✅ Pedido + imágenes en una sola operación atómica
+     * TODO O NADA: Si falla algo, rollback completo (DB + archivos)
+     * NO carpetas temporales
+     * NO relocalización
+     * Pedido + imágenes en una sola operación atómica
      * 
      * Soporta DOS estructuras:
      * 
@@ -517,7 +517,7 @@ class CrearPedidoEditableController extends Controller
             // PASO 5: Procesar imágenes de prendas
             $this->procesarYAsignarImagenes($request, $pedidoId, $validated['items'] ?? []);
 
-            Log::info('[CrearPedidoEditableController] ✅ Imágenes de prendas procesadas', [
+            Log::info('[CrearPedidoEditableController] Imágenes de prendas procesadas', [
                 'pedido_id' => $pedidoId,
             ]);
 
@@ -525,7 +525,7 @@ class CrearPedidoEditableController extends Controller
             if ($esEstructuraNueva && !empty($validated['epps'])) {
                 $this->procesarYAsignarEpps($request, $pedidoId, $validated['epps']);
 
-                Log::info('[CrearPedidoEditableController] ✅ EPPs procesados', [
+                Log::info('[CrearPedidoEditableController] EPPs procesados', [
                     'pedido_id' => $pedidoId,
                     'epps_count' => count($validated['epps']),
                 ]);
@@ -549,7 +549,7 @@ class CrearPedidoEditableController extends Controller
             // PASO 8: Todo OK → COMMIT
             DB::commit();
 
-            Log::info('[CrearPedidoEditableController] ✅ TRANSACCIÓN EXITOSA', [
+            Log::info('[CrearPedidoEditableController] TRANSACCIÓN EXITOSA', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
@@ -566,7 +566,7 @@ class CrearPedidoEditableController extends Controller
             // ROLLBACK DB
             DB::rollBack();
 
-            Log::error('[CrearPedidoEditableController] ❌ ERROR - Iniciando rollback', [
+            Log::error('[CrearPedidoEditableController]  ERROR - Iniciando rollback', [
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
             ]);
@@ -599,9 +599,9 @@ class CrearPedidoEditableController extends Controller
     /**
      * Procesar y asignar imágenes directamente a carpetas finales
      * 
-     * ✅ 1 archivo = 1 webp en su carpeta final
-     * ✅ NO temp, NO relocalización
-     * ✅ Carpetas específicas por tipo:
+     * 1 archivo = 1 webp en su carpeta final
+     * NO temp, NO relocalización
+     * Carpetas específicas por tipo:
      *    - pedidos/{id}/prendas/
      *    - pedidos/{id}/telas/
      *    - pedidos/{id}/procesos/{TIPO}/
@@ -742,15 +742,15 @@ class CrearPedidoEditableController extends Controller
             }
         }
 
-        Log::info('[CrearPedidoEditableController] ✅ Todas las imágenes procesadas y asignadas');
+        Log::info('[CrearPedidoEditableController] Todas las imágenes procesadas y asignadas');
     }
 
     /**
      * Procesar y asignar EPPs al pedido
      * 
-     * ✅ 1 archivo EPP = 1 webp en su carpeta final
-     * ✅ Carpeta: pedidos/{id}/epps/{epp_id}/
-     * ✅ Crea registros en pedido_epp e pedido_epp_imagenes
+     * 1 archivo EPP = 1 webp en su carpeta final
+     * Carpeta: pedidos/{id}/epps/{epp_id}/
+     * Crea registros en pedido_epp e pedido_epp_imagenes
      * 
      * Estructura esperada:
      * - epps[i][epp_id]: ID del EPP catálogo
@@ -793,7 +793,7 @@ class CrearPedidoEditableController extends Controller
             }
 
             // Crear registro en pedido_epp
-            // ⚠️ NOTA: La tabla pedido_epp NO tiene columna nombre_epp
+            //  NOTA: La tabla pedido_epp NO tiene columna nombre_epp
             // Solo guarda: pedido_produccion_id, epp_id, cantidad, observaciones
             $pedidoEpp = PedidoEpp::create([
                 'pedido_produccion_id' => $pedidoId,
@@ -802,7 +802,7 @@ class CrearPedidoEditableController extends Controller
                 'observaciones' => $eppData['observaciones'] ?? null,
             ]);
 
-            Log::info('[CrearPedidoEditableController] ✅ EPP creado', [
+            Log::info('[CrearPedidoEditableController] EPP creado', [
                 'pedido_epp_id' => $pedidoEpp->id,
                 'epp_id' => $eppData['epp_id'],
                 'cantidad' => $eppData['cantidad'] ?? 1,
@@ -829,7 +829,7 @@ class CrearPedidoEditableController extends Controller
                     );
 
                     // Crear registro en pedido_epp_imagenes
-                    // ⚠️ NOTA: La columna se llama ruta_web (no ruta_webp)
+                    //  NOTA: La columna se llama ruta_web (no ruta_webp)
                     // y principal (no es_principal)
                     PedidoEppImagen::create([
                         'pedido_epp_id' => $pedidoEpp->id,
@@ -861,14 +861,14 @@ class CrearPedidoEditableController extends Controller
                     'epp_id' => $eppData['epp_id'],
                 ]);
             } else {
-                Log::info('[CrearPedidoEditableController] ✅ Imágenes EPP procesadas', [
+                Log::info('[CrearPedidoEditableController] Imágenes EPP procesadas', [
                     'pedido_epp_id' => $pedidoEpp->id,
                     'imagenes_count' => $imgIdx,
                 ]);
             }
         }
 
-        Log::info('[CrearPedidoEditableController] ✅ Todos los EPPs procesados exitosamente', [
+        Log::info('[CrearPedidoEditableController] Todos los EPPs procesados exitosamente', [
             'pedido_id' => $pedidoId,
             'epps_count' => count($epps),
         ]);
@@ -993,7 +993,7 @@ class CrearPedidoEditableController extends Controller
             }
         }
 
-        Log::info('[CrearPedidoEditableController] ✅ Archivos procesados', [
+        Log::info('[CrearPedidoEditableController] Archivos procesados', [
             'total_archivos' => count($mapaImagenes),
             'tipos' => array_count_values(array_column($mapaImagenes, 'tipo')),
         ]);
@@ -1094,7 +1094,7 @@ class CrearPedidoEditableController extends Controller
         // Eliminar carpeta temp/
         Storage::disk('public')->deleteDirectory('pedidos/0');
 
-        Log::info('[CrearPedidoEditableController] ✅ Imágenes relocalizadas exitosamente');
+        Log::info('[CrearPedidoEditableController] Imágenes relocalizadas exitosamente');
     }
 
     /**
@@ -1111,7 +1111,7 @@ class CrearPedidoEditableController extends Controller
      */
     private function procesarArchivosYValidar(Request $request): array
     {
-        // ✅ PASO 1: Decodificar metadata JSON
+        // PASO 1: Decodificar metadata JSON
         $pedidoJSON = $request->input('pedido');
         if (!$pedidoJSON) {
             throw new \Exception('Campo "pedido" JSON requerido en FormData');
@@ -1122,13 +1122,13 @@ class CrearPedidoEditableController extends Controller
             throw new \Exception('JSON inválido en campo "pedido"');
         }
 
-        \Log::info('[CrearPedidoEditableController] ✅ Metadata decodificada', [
+        \Log::info('[CrearPedidoEditableController] Metadata decodificada', [
             'cliente' => $pedido['cliente'],
             'items_count' => count($pedido['items'] ?? []),
             'all_files' => array_keys($request->allFiles()),
         ]);
 
-        // ✅ PASO 2: Procesar archivos e inyectarlos en pedido
+        // PASO 2: Procesar archivos e inyectarlos en pedido
         if (!isset($pedido['items']) || !is_array($pedido['items'])) {
             $pedido['items'] = [];
         }
@@ -1195,12 +1195,12 @@ class CrearPedidoEditableController extends Controller
             }
         }
 
-        \Log::info('[CrearPedidoEditableController] ✅ Archivos procesados', [
+        \Log::info('[CrearPedidoEditableController] Archivos procesados', [
             'items_with_images' => count(array_filter($pedido['items'], fn($i) => isset($i['imagenes']))),
             'archivos_totales' => count($request->allFiles()),
         ]);
 
-        // ✅ VERIFICACIÓN CRÍTICA: Verificar estructura de items
+        // VERIFICACIÓN CRÍTICA: Verificar estructura de items
         foreach ($pedido['items'] as $itemIdx => $item) {
             $telaCount = isset($item['telas']) && is_array($item['telas']) ? count($item['telas']) : 0;
             $procesosKeys = isset($item['procesos']) && is_array($item['procesos']) ? array_keys($item['procesos']) : [];
@@ -1215,7 +1215,7 @@ class CrearPedidoEditableController extends Controller
             ]);
         }
 
-        // ✅ PASO 3: Retornar pedido con archivos inyectados
+        // PASO 3: Retornar pedido con archivos inyectados
         return [
             'cliente' => $pedido['cliente'],
             'asesora' => $pedido['asesora'],
@@ -1257,9 +1257,9 @@ class CrearPedidoEditableController extends Controller
      * NUEVO ENDPOINT: Subir imagen directamente a pedidos/{pedido_id}/{tipo}/
      * POST /asesores/pedidos-editable/subir-imagen
      * 
-     * ✅ Requiere pedido_id existente
-     * ✅ Guarda directamente sin pasos intermedios
-     * ✅ Soporta subcarpetas (para procesos)
+     * Requiere pedido_id existente
+     * Guarda directamente sin pasos intermedios
+     * Soporta subcarpetas (para procesos)
      * 
      * Body:
      * - imagen: file (required)
@@ -1384,25 +1384,23 @@ class CrearPedidoEditableController extends Controller
     private function calcularCantidadTotalPrendas(int $pedidoId): int
     {
         try {
-            // Primero verificar si existen prendas para este pedido
-            $prendasCount = DB::table('prendas_pedido')
-                ->where('pedido_produccion_id', $pedidoId)
-                ->count();
+            // SOLUCIÓN: Usar tabla actual pedidos_procesos_prenda_tallas
+            // Relación: pedido → prenda → proceso → tallas
             
-            // Si no hay prendas, retornar 0 sin hacer query a prendas_pedido_tallas
-            if ($prendasCount === 0) {
-                return 0;
-            }
-            
-            $cantidad = DB::table('prendas_pedido_tallas')
-                ->whereIn('prenda_pedido_id', function($query) use ($pedidoId) {
-                    $query->select('id')
-                        ->from('prendas_pedido')
-                        ->where('pedido_produccion_id', $pedidoId);
-                })
-                ->sum('cantidad');
+            $cantidad = DB::table('pedidos_procesos_prenda_tallas as pppt')
+                ->selectRaw('COALESCE(SUM(pppt.cantidad), 0) as total')
+                ->join('procesos_prenda_detalle as ppd', 'pppt.proceso_prenda_detalle_id', '=', 'ppd.id')
+                ->join('prendas_pedido as pp', 'ppd.prenda_pedido_id', '=', 'pp.id')
+                ->where('pp.pedido_produccion_id', $pedidoId)
+                ->value('total');
 
-            return (int) $cantidad;
+            Log::debug('[CrearPedidoEditableController] calcularCantidadTotalPrendas - Éxito', [
+                'pedido_id' => $pedidoId,
+                'cantidad_total' => (int)$cantidad,
+                'metodo' => 'pedidos_procesos_prenda_tallas',
+            ]);
+
+            return (int) $cantidad ?? 0;
         } catch (\Exception $e) {
             Log::warning('[CrearPedidoEditableController] calcularCantidadTotalPrendas - Error', [
                 'pedido_id' => $pedidoId,

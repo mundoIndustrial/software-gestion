@@ -79,14 +79,14 @@ class PrendaEditor {
             this.cargarTallasYCantidades(prenda);
             this.cargarVariaciones(prenda);
             
-            console.log('🔧 [CARGAR-PRENDA] Sobre de cargar procesos...');
+            console.log(' [CARGAR-PRENDA] Sobre de cargar procesos...');
             this.cargarProcesos(prenda);
             
             this.cambiarBotonAGuardarCambios();
             console.log('✅ [CARGAR-PRENDA] Prenda cargada completamente');
             this.mostrarNotificacion('Prenda cargada para editar', 'success');
         } catch (error) {
-            console.error('❌ [CARGAR-PRENDA] Error:', error);
+            console.error(' [CARGAR-PRENDA] Error:', error);
             this.mostrarNotificacion(`Error al cargar prenda: ${error.message}`, 'error');
         }
     }
@@ -184,7 +184,7 @@ class PrendaEditor {
 
         // Si no hay imágenes, retornar
         if (!imagenesACargar || imagenesACargar.length === 0) {
-            console.log('⚠️ [CARGAR-IMAGENES] No hay imágenes para cargar');
+            console.log(' [CARGAR-IMAGENES] No hay imágenes para cargar');
             return;
         }
 
@@ -199,7 +199,7 @@ class PrendaEditor {
             this.actualizarPreviewImagenes(imagenesACargar);
             console.log(`✅ [CARGAR-IMAGENES] ${imagenesACargar.length} imágenes cargadas desde ${origen}`);
         } else {
-            console.warn('⚠️ [CARGAR-IMAGENES] imagenesPrendaStorage no disponible');
+            console.warn(' [CARGAR-IMAGENES] imagenesPrendaStorage no disponible');
         }
     }
 
@@ -209,24 +209,24 @@ class PrendaEditor {
      */
     procesarImagen(img, idx = 0) {
         if (!img) {
-            console.log(`  ⚠️ [PROCESAR-IMAGEN] Imagen ${idx} es null/undefined`);
+            console.log(`   [PROCESAR-IMAGEN] Imagen ${idx} es null/undefined`);
             return;
         }
 
         // CASO 1: img es un File directamente (formulario)
         if (img instanceof File) {
-            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: File object detectado`);
+            console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: File object detectado`);
             window.imagenesPrendaStorage.agregarImagen(img);
         }
         // CASO 2: img es objeto con .file que es un File (wrapper)
         else if (img.file instanceof File) {
-            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: Wrapper con File detectado`);
+            console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: Wrapper con File detectado`);
             window.imagenesPrendaStorage.agregarImagen(img.file);
         }
         // CASO 3: img es objeto con URL (BD)
         else if (img.url || img.ruta || img.ruta_webp || img.ruta_original) {
             const urlImagen = img.url || img.ruta || img.ruta_webp || img.ruta_original;
-            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: URL de BD:`, urlImagen);
+            console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: URL de BD:`, urlImagen);
             if (!window.imagenesPrendaStorage.images) {
                 window.imagenesPrendaStorage.images = [];
             }
@@ -240,7 +240,7 @@ class PrendaEditor {
         }
         // CASO 4: img es string URL (BD alternativo)
         else if (typeof img === 'string') {
-            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: String URL:`, img);
+            console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: String URL:`, img);
             if (!window.imagenesPrendaStorage.images) {
                 window.imagenesPrendaStorage.images = [];
             }
@@ -254,11 +254,11 @@ class PrendaEditor {
         }
         // CASO 5: Blob (también formulario)
         else if (img instanceof Blob) {
-            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: Blob object detectado`);
+            console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: Blob object detectado`);
             window.imagenesPrendaStorage.agregarImagen(img);
         }
         else {
-            console.warn(`  ❌ [PROCESAR-IMAGEN] Imagen ${idx}: Formato desconocido:`, typeof img, img);
+            console.warn(`   [PROCESAR-IMAGEN] Imagen ${idx}: Formato desconocido:`, typeof img, img);
         }
     }
 
@@ -651,7 +651,7 @@ class PrendaEditor {
         const procesosNormalizados = this.normalizarProcesos(prenda.procesos);
         
         if (!procesosNormalizados || procesosNormalizados.length === 0) {
-            console.log('⚠️ [CARGAR-PROCESOS] Sin procesos en la prenda');
+            console.log(' [CARGAR-PROCESOS] Sin procesos en la prenda');
             return;
         }
 
@@ -702,19 +702,19 @@ class PrendaEditor {
                     if (Array.isArray(datosReales.ubicaciones)) {
                         // Ya es array, usarlo directamente (puede venir del formulario o BD)
                         ubicacionesFormato = datosReales.ubicaciones;
-                        console.log(`  📍 [UBICACIONES] Detectado ARRAY:`, ubicacionesFormato);
+                        console.log(`   [UBICACIONES] Detectado ARRAY:`, ubicacionesFormato);
                     } else if (typeof datosReales.ubicaciones === 'string') {
                         // String separado por comas, convertir a array
                         ubicacionesFormato = datosReales.ubicaciones
                             .split(',')
                             .map(u => u.trim())
                             .filter(u => u && u.length > 0);
-                        console.log(`  📍 [UBICACIONES] Detectado STRING, convertido a ARRAY:`, ubicacionesFormato);
+                        console.log(`   [UBICACIONES] Detectado STRING, convertido a ARRAY:`, ubicacionesFormato);
                     } else if (typeof datosReales.ubicaciones === 'object') {
                         // Objeto (unlikely but defensive), extraer valores
                         ubicacionesFormato = Object.values(datosReales.ubicaciones)
                             .filter(u => u && (typeof u === 'string' || typeof u === 'object'));
-                        console.log(`  📍 [UBICACIONES] Detectado OBJETO, extraído:`, ubicacionesFormato);
+                        console.log(`   [UBICACIONES] Detectado OBJETO, extraído:`, ubicacionesFormato);
                     }
                 }
 
@@ -768,7 +768,7 @@ class PrendaEditor {
                     checkboxProceso.dispatchEvent(new Event('change', { bubbles: true }));
                     checkboxProceso._ignorarOnclick = false;
                 } else {
-                    console.warn(`⚠️ [CARGAR-PROCESOS] No se encontró checkbox para "${tipoProceso}". Buscando por data-tipo...`);
+                    console.warn(` [CARGAR-PROCESOS] No se encontró checkbox para "${tipoProceso}". Buscando por data-tipo...`);
                     // Intentar encontrar por data-tipo
                     const checkboxPorTipo = document.querySelector(`[data-tipo="${tipoProceso}"]`);
                     if (checkboxPorTipo) {
@@ -778,7 +778,7 @@ class PrendaEditor {
                         checkboxPorTipo.dispatchEvent(new Event('change', { bubbles: true }));
                         checkboxPorTipo._ignorarOnclick = false;
                     } else {
-                        console.warn(`⚠️ [CARGAR-PROCESOS] Tampoco encontrado checkbox por data-tipo="${tipoProceso}"`);
+                        console.warn(` [CARGAR-PROCESOS] Tampoco encontrado checkbox por data-tipo="${tipoProceso}"`);
                     }
                 }
             }
@@ -791,7 +791,7 @@ class PrendaEditor {
             console.log('🎨 [CARGAR-PROCESOS] Renderizando tarjetas...');
             window.renderizarTarjetasProcesos();
         } else {
-            console.error('❌ [CARGAR-PROCESOS] window.renderizarTarjetasProcesos no existe');
+            console.error(' [CARGAR-PROCESOS] window.renderizarTarjetasProcesos no existe');
         }
     }
 

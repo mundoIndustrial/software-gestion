@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * Caso de uso para obtener el historial de procesos de una orden
  * Responsabilidad: Retornar procesos actuales e historial de cambios
  * 
- * PatrÃ³n: Use Case (Application Layer - DDD)
+ * Patrón: Use Case (Application Layer - DDD)
  */
 class ObtenerHistorialProcesosUseCase
 {

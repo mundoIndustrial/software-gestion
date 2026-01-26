@@ -18,7 +18,7 @@ Las imágenes se guardan en múltiples servicios con rutas INCORRECTAS:
 
 **Línea 202 - PROBLEMA:**
 ```php
-// ❌ MALO
+//  MALO
 $rutaGuardada = $archivoFoto->store('prendas/telas', 'public');
 // Resultado: storage/app/public/prendas/telas/{archivo}
 // FALTA: {pedido_id}
@@ -26,7 +26,7 @@ $rutaGuardada = $archivoFoto->store('prendas/telas', 'public');
 
 **Línea 235 - PROBLEMA:**
 ```php
-// ❌ MALO
+//  MALO
 $rutaGuardada = $imagen->store('logos/pedidos', 'public');
 // Resultado: storage/app/public/logos/pedidos/{archivo}
 // FALTA: {pedido_id} en la ruta
@@ -34,7 +34,7 @@ $rutaGuardada = $imagen->store('logos/pedidos', 'public');
 
 **SOLUCIÓN:**
 ```php
-// ✅ CORRECTO
+// CORRECTO
 // Se relocaliza automáticamente por ImagenRelocalizadorService
 // No guardar aquí, solo pasar rutas al PedidoWebService
 ```
@@ -46,7 +46,7 @@ $rutaGuardada = $imagen->store('logos/pedidos', 'public');
 
 **Línea 98 - PROBLEMA:**
 ```php
-// ❌ MALO
+//  MALO
 $rutaGuardada = $archivoFoto->store('telas/pedidos', 'public');
 // Resultado: storage/app/public/telas/pedidos/{archivo}
 // FALTA: {pedido_id}
@@ -54,7 +54,7 @@ $rutaGuardada = $archivoFoto->store('telas/pedidos', 'public');
 
 **Línea 139 - PROBLEMA:**
 ```php
-// ❌ MALO
+//  MALO
 $rutaGuardada = $imagen->store('logos/pedidos', 'public');
 // Resultado: storage/app/public/logos/pedidos/{archivo}
 // FALTA: {pedido_id}
@@ -62,7 +62,7 @@ $rutaGuardada = $imagen->store('logos/pedidos', 'public');
 
 **SOLUCIÓN:**
 ```php
-// ✅ CORRECTO
+// CORRECTO
 // Mismo patrón: solo pasar rutas, ImagenRelocalizadorService se encarga
 ```
 
@@ -73,7 +73,7 @@ $rutaGuardada = $imagen->store('logos/pedidos', 'public');
 
 **Línea 722 - PROBLEMA:**
 ```php
-// ❌ MALO
+//  MALO
 $path = $imagen->store('prendas', 'public');
 // Resultado: storage/app/public/prendas/{archivo}
 // FALTA COMPLETAMENTE: {pedido_id}
@@ -81,7 +81,7 @@ $path = $imagen->store('prendas', 'public');
 
 **SOLUCIÓN:**
 ```php
-// ✅ CORRECTO
+// CORRECTO
 // Usar ImageUploadService o pasar a ImagenRelocalizadorService
 ```
 
@@ -92,10 +92,10 @@ $path = $imagen->store('prendas', 'public');
 
 **PROBLEMA:**
 ```php
-// ❌ MALO (ANTIGUO)
+//  MALO (ANTIGUO)
 $path = $imagen->store('prendas/temp', 'public');
 // Resultado: storage/app/public/prendas/temp/{archivo}
-// ✅ CORRECTO (NUEVO - ya implementado)
+// CORRECTO (NUEVO - ya implementado)
 // Usa ImageUploadService que guarda en prendas/temp/{uuid}/
 ```
 
@@ -103,7 +103,7 @@ $path = $imagen->store('prendas/temp', 'public');
 
 ## 🔄 COMPARATIVA: VIEJO vs NUEVO
 
-### Flujo VIEJO (❌ Incorrecto)
+### Flujo VIEJO ( Incorrecto)
 ```
 CrearPedidoService::crear()
   ↓
@@ -113,9 +113,9 @@ CrearPedidoService::crear()
   ↓
   BD persiste: prendas/telas/archivo.jpg
   ↓
-  ❌ SIN relación con pedido_id
-  ❌ SIN estructura /pedidos/
-  ❌ Duplicadas entre pedidos
+   SIN relación con pedido_id
+   SIN estructura /pedidos/
+   Duplicadas entre pedidos
 ```
 
 ### Flujo NUEVO (✅ Correcto)
@@ -138,27 +138,27 @@ CrearPedidoEditableController::subirImagenesPrenda()
   ↓
   BD persiste: pedidos/{id}/prendas/archivo.jpg
   ↓
-  ✅ Relación clara con pedido_id
-  ✅ Estructura organizada por pedido
-  ✅ Fácil identificar qué archivos pertenecen a cada pedido
+  Relación clara con pedido_id
+  Estructura organizada por pedido
+  Fácil identificar qué archivos pertenecen a cada pedido
 ```
 
 ---
 
 ## 📋 CHECKLIST DE CAMBIOS NECESARIOS
 
-### ⚠️ SERVICIOS QUE GUARDAN IMÁGENES
+###  SERVICIOS QUE GUARDAN IMÁGENES
 
 ```
-❌ CrearPedidoService.php (línea 202, 235)
+ CrearPedidoService.php (línea 202, 235)
    Problema: store('prendas/telas'), store('logos/pedidos')
    Solución: Usar ImagenRelocalizadorService o PedidoWebService
 
-❌ ProcesarFotosTelasService.php (línea 98, 139)
+ ProcesarFotosTelasService.php (línea 98, 139)
    Problema: store('telas/pedidos'), store('logos/pedidos')
    Solución: Usar ImagenRelocalizadorService o PedidoWebService
 
-❌ PedidosProduccionController.php (línea 722)
+ PedidosProduccionController.php (línea 722)
    Problema: store('prendas')
    Solución: Usar ImageUploadService + ImagenRelocalizadorService
 
@@ -174,11 +174,11 @@ CrearPedidoEditableController::subirImagenesPrenda()
 
 ---
 
-## 🔧 CAMBIOS POR ARCHIVO
+##  CAMBIOS POR ARCHIVO
 
 ### **CrearPedidoService.php**
 
-**ANTES (❌):**
+**ANTES ():**
 ```php
 // Línea 202
 private function guardarFotos($tela, $archivos): array
@@ -187,7 +187,7 @@ private function guardarFotos($tela, $archivos): array
 
     foreach ($archivos as $archivo) {
         if ($archivo && $archivo->isValid()) {
-            // ❌ SIN {pedido_id}
+            //  SIN {pedido_id}
             $rutaGuardada = $archivo->store('prendas/telas', 'public');
             
             $fotosGuardadas[] = [
@@ -222,7 +222,7 @@ public function __construct(ImagenRelocalizadorService $relocalizador)
 
 ### **ProcesarFotosTelasService.php**
 
-**ANTES (❌):**
+**ANTES ():**
 ```php
 // Línea 98
 private function guardarFotos(array $archivos): array
@@ -231,7 +231,7 @@ private function guardarFotos(array $archivos): array
 
     foreach ($archivos as $archivoFoto) {
         if ($archivoFoto && $archivoFoto->isValid()) {
-            // ❌ SIN {pedido_id}
+            //  SIN {pedido_id}
             $rutaGuardada = $archivoFoto->store('telas/pedidos', 'public');
             
             $fotosGuardadas[] = [
@@ -280,13 +280,13 @@ private function guardarFotos(array $archivos): array
 
 ### **PedidosProduccionController.php**
 
-**ANTES (❌):**
+**ANTES ():**
 ```php
 // Línea 722
 public function subirImagenes(Request $request)
 {
     foreach ($request->file('imagenes') as $imagen) {
-        // ❌ SIN estructura, SIN {pedido_id}
+        //  SIN estructura, SIN {pedido_id}
         $path = $imagen->store('prendas', 'public');
         
         $uploadedPaths[] = [
@@ -306,7 +306,7 @@ public function subirImagenes(Request $request)
     $uploadedPaths = [];
     
     foreach ($request->file('imagenes') as $imagen) {
-        // ✅ Guarda en temp/{uuid}/ con estructura correcta
+        // Guarda en temp/{uuid}/ con estructura correcta
         $result = $this->imageUploadService->uploadPrendaImage(
             $imagen,
             0,
@@ -336,9 +336,9 @@ public function subirImagenes(Request $request)
 
 ### **Opción 1: Gradual (RECOMENDADO)**
 ```
-Fase 1: Implementar ImagenRelocalizadorService ✅ (HECHO)
-Fase 2: Actualizar PedidoWebService para usar relocalizador ✅ (HECHO)
-Fase 3: Nuevos uploads usan ImageUploadService ✅ (HECHO)
+Fase 1: Implementar ImagenRelocalizadorService (HECHO)
+Fase 2: Actualizar PedidoWebService para usar relocalizador (HECHO)
+Fase 3: Nuevos uploads usan ImageUploadService (HECHO)
 Fase 4: Migrar servicios antiguos (PENDIENTE)
 ```
 
@@ -352,7 +352,7 @@ Cambiar todos los servicios ahora para usar:
 
 ---
 
-## ✅ LO QUE YA ESTÁ HECHO
+## LO QUE YA ESTÁ HECHO
 
 ```
 ✅ ImagenRelocalizadorService.php - CREADO
@@ -364,24 +364,24 @@ Cambiar todos los servicios ahora para usar:
 
 ---
 
-## ❌ LO QUE FALTA
+##  LO QUE FALTA
 
 ```
-❌ CrearPedidoService.php - LÍNEAS 202, 235
+ CrearPedidoService.php - LÍNEAS 202, 235
    Cambiar: store('prendas/telas') → Usar ImagenRelocalizadorService
    Cambiar: store('logos/pedidos') → Usar ImagenRelocalizadorService
 
-❌ ProcesarFotosTelasService.php - LÍNEAS 98, 139
+ ProcesarFotosTelasService.php - LÍNEAS 98, 139
    Cambiar: store('telas/pedidos') → Usar ImagenRelocalizadorService
    Cambiar: store('logos/pedidos') → Usar ImagenRelocalizadorService
 
-❌ PedidosProduccionController.php - LÍNEA 722
+ PedidosProduccionController.php - LÍNEA 722
    Cambiar: store('prendas') → Usar ImageUploadService
 ```
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 ### PASO 1: Actualizar CrearPedidoService.php
 ```php
@@ -417,9 +417,9 @@ php artisan test --filter=ImagenesFlujoPedidoTest
 | Métrica | Antes | Después |
 |---------|-------|---------|
 | **Ubicación imágenes** | `prendas/2026/01/...` | `pedidos/{id}/prendas/...` |
-| **Relación pedido-imagen** | ❌ Ninguna | ✅ Clara |
+| **Relación pedido-imagen** |  Ninguna | Clara |
 | **Organización** | Caótica | Jerárquica |
-| **Limpieza posible** | ❌ Difícil | ✅ Trivial |
+| **Limpieza posible** |  Difícil | Trivial |
 | **Rendimiento BD** | Lento (busca global) | Rápido (por pedido) |
 | **Mantenibilidad** | Baja | Alta |
 

@@ -25,7 +25,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
     console.log('[generarTarjetaPrendaReadOnly] 🔍 ¿TallasBuilder existe?', !!window.TallasBuilder);
     
     if (!window.PrendaCardService) {
-        console.log('[generarTarjetaPrendaReadOnly] ❌ ERROR: PrendaCardService NO está disponible');
+        console.log('[generarTarjetaPrendaReadOnly]  ERROR: PrendaCardService NO está disponible');
         return `<div class="error">Error: servicios no cargados</div>`;
     }
 
@@ -36,7 +36,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
         console.log('[generarTarjetaPrendaReadOnly]  HTML generado exitosamente');
         return htmlTarjeta;
     } catch (error) {
-        console.error('[generarTarjetaPrendaReadOnly] ❌ ERROR en PrendaCardService:', error);
+        console.error('[generarTarjetaPrendaReadOnly]  ERROR en PrendaCardService:', error);
         return `<div class="error">Error generando tarjeta: ${error.message}</div>`;
     }
 }

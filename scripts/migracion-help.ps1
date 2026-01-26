@@ -28,7 +28,7 @@ foreach ($carpeta in $carpetas) {
         New-Item -ItemType Directory -Path $path -Force | Out-Null
         Write-Host " Creada: $path" -ForegroundColor Green
     } else {
-        Write-Host "⚠️  Existe: $path" -ForegroundColor Yellow
+        Write-Host "  Existe: $path" -ForegroundColor Yellow
     }
 }
 
@@ -76,7 +76,7 @@ if (Test-Path $sourceDir) {
         Write-Host "  📂 $carpeta/ ($archivos archivos)" -ForegroundColor Cyan
     }
 } else {
-    Write-Host "⚠️  No existe: $sourceDir" -ForegroundColor Yellow
+    Write-Host "  No existe: $sourceDir" -ForegroundColor Yellow
 }
 
 # ============================================================
@@ -96,7 +96,7 @@ foreach ($check in $checks) {
     if (Test-Path $check.Path) {
         Write-Host "   $($check.Name)" -ForegroundColor Green
     } else {
-        Write-Host "  ❌ $($check.Name) - NO ENCONTRADO" -ForegroundColor Red
+        Write-Host "   $($check.Name) - NO ENCONTRADO" -ForegroundColor Red
     }
 }
 

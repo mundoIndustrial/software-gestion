@@ -800,7 +800,7 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
             
             if (!nombrePrendaBase || nombrePrendaBase === '' || selectPrenda.selectedIndex === 0) {
-                Swal.showValidationMessage('⚠️ Debes seleccionar una prenda del dropdown (Paso 2)');
+                Swal.showValidationMessage(' Debes seleccionar una prenda del dropdown (Paso 2)');
                 return false;
             }
             
@@ -1045,10 +1045,10 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
         tieneInformacionValida
     });
     
-    // ⚠️ SI NO HAY INFORMACIÓN VÁLIDA, MOSTRAR ADVERTENCIA Y NO GUARDAR
+    //  SI NO HAY INFORMACIÓN VÁLIDA, MOSTRAR ADVERTENCIA Y NO GUARDAR
     if (!tieneInformacionValida) {
         Swal.fire({
-            title: '⚠️ Información incompleta en PASO 3',
+            title: ' Información incompleta en PASO 3',
             html: `
                 <div style="text-align: left; margin: 15px 0;">
                     <p style="margin: 0 0 12px 0; font-size: 0.95rem; color: #666;">

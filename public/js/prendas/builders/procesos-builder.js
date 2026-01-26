@@ -5,7 +5,7 @@
  * Patrón: Builder + Template Method
  */
 
-console.log('[DEBUG] 🔧 ProcesosBuilder.js cargado correctamente');
+console.log('[DEBUG]  ProcesosBuilder.js cargado correctamente');
 
 class ProcesosBuilder {
     static ICONOS = {
@@ -44,7 +44,7 @@ class ProcesosBuilder {
         console.log('[ProcesosBuilder]   - Procesos válidos:', procesosConDatos.length);
 
         if (procesosConDatos.length === 0) {
-            console.log('[ProcesosBuilder]   ⚠️ No hay procesos válidos, retornando vacío');
+            console.log('[ProcesosBuilder]    No hay procesos válidos, retornando vacío');
             return '';
         }
 
@@ -61,11 +61,11 @@ class ProcesosBuilder {
         
         try {
             const htmlUnido = itemsHTML.join('');
-            console.log('[ProcesosBuilder]   ✅ HTML unido exitosamente');
+            console.log('[ProcesosBuilder]   HTML unido exitosamente');
         } catch (joinError) {
-            console.error('[ProcesosBuilder] ❌ ERROR EN JOIN:', joinError);
-            console.error('[ProcesosBuilder] ❌ itemsHTML era:', itemsHTML);
-            console.error('[ProcesosBuilder] ❌ Stack:', joinError.stack);
+            console.error('[ProcesosBuilder]  ERROR EN JOIN:', joinError);
+            console.error('[ProcesosBuilder]  itemsHTML era:', itemsHTML);
+            console.error('[ProcesosBuilder]  Stack:', joinError.stack);
             throw joinError; // Re-lanzar para ver el error completo
         }
 

@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 class DescripcionPrendaHelperTest extends TestCase
 {
     /**
-     * Test que verifica la generaciÃ³n completa de descripciÃ³n con todos los datos
+     * Test que verifica la generación completa de descripción con todos los datos
      */
     public function test_generar_descripcion_completa()
     {
@@ -37,10 +37,10 @@ class DescripcionPrendaHelperTest extends TestCase
             ]
         ];
 
-        // Generar descripciÃ³n
+        // Generar descripción
         $descripcion = DescripcionPrendaHelper::generarDescripcion($datos);
 
-        // Verificar que la descripciÃ³n contiene todos los elementos
+        // Verificar que la descripción contiene todos los elementos
         $this->assertStringContainsString('PRENDA 1: CAMISA DRILL', $descripcion);
         $this->assertStringContainsString('Color:', $descripcion);
         $this->assertStringContainsString('NARANJA', $descripcion);
@@ -58,7 +58,7 @@ class DescripcionPrendaHelperTest extends TestCase
         // Verificar que NO contiene "SI" como item
         $this->assertStringNotContainsString('â€¢ SI', $descripcion);
 
-        echo "\n DescripciÃ³n generada correctamente:\n";
+        echo "\n Descripción generada correctamente:\n";
         echo $descripcion;
     }
 

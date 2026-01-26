@@ -48,7 +48,7 @@ class CrearPedidoUseCaseTest extends TestCase
                     'tallas' => ['DAMA' => ['S' => 5, 'M' => 5]],
                 ]
             ],
-            observaciones: 'ObservaciÃ³n'
+            observaciones: 'Observación'
         );
 
         $response = $this->useCase->ejecutar($dto);

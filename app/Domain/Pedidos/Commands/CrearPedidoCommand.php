@@ -7,7 +7,7 @@ use App\Domain\Shared\CQRS\Command;
 /**
  * CrearPedidoCommand
  * 
- * Command para crear un nuevo pedido de producciÃ³n
+ * Command para crear un nuevo pedido de producción
  * 
  * ParÃ¡metros:
  * - numero_pedido: NÃºmero Ãºnico del pedido

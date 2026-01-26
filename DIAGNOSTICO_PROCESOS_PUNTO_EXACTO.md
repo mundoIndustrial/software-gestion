@@ -7,7 +7,7 @@ Hemos rastreado completamente el flujo:
 ✅ **Backend devuelve procesos** - Verificado en línea 814 de `PedidoProduccionRepository.php`
 ✅ **Eager loading correcto** - Se cargan relaciones en línea 30 de `obtenerPorId()`  
 ✅ **Frontend NO transforma datos** - Verificado: No hay normalizador entre fetch y ReceiptManager
-❌ **Falta en navegador** - El usuario ve procesos vacío en la modal
+ **Falta en navegador** - El usuario ve procesos vacío en la modal
 
 ---
 

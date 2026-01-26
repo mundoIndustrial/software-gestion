@@ -9,7 +9,7 @@ use App\Models\PedidoProduccion;
 /**
  * Use Case para agregar EPP a un pedido
  * 
- * Maneja la creaciÃ³n de registro en pedido_epp
+ * Maneja la creación de registro en pedido_epp
  */
 final class AgregarEppUseCase
 {

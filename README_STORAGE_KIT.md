@@ -12,11 +12,11 @@ Este es un **conjunto completo de herramientas, scripts y documentación** para 
 
 #### `CHECKLIST_STORAGE_PERMISSIONS.md`
 **Contenido:** Guía paso a paso completa con:
-- ✅ Checklist manual en 8 pasos
-- ✅ Verificación de enlace simbólico
-- ✅ Revisión de permisos (Linux y Windows)
-- ✅ Configuración de Apache/Nginx
-- ✅ Troubleshooting de problemas comunes
+- Checklist manual en 8 pasos
+- Verificación de enlace simbólico
+- Revisión de permisos (Linux y Windows)
+- Configuración de Apache/Nginx
+- Troubleshooting de problemas comunes
 
 **Cuándo usarlo:** Cuando necesitas entender qué está pasando o cuando prefieres hacer cambios manualmente.
 
@@ -90,7 +90,7 @@ chmod +x fix-storage-permissions.sh
 **Qué hace:**
 - 🔍 Diagnóstico completo de storage
 - 📊 Reporte visual en terminal
-- 🔧 Reparación automática (--fix)
+-  Reparación automática (--fix)
 - 📈 Estadísticas de almacenamiento
 
 **Cómo usar:**
@@ -104,7 +104,7 @@ php artisan storage:diagnose --fix
 
 ---
 
-## 🚀 Guía de Uso Rápida
+##  Guía de Uso Rápida
 
 ### Escenario 1: "Tengo errores 403"
 
@@ -205,7 +205,7 @@ php artisan storage:diagnose
 
 ---
 
-## ⚠️ Precauciones Importantes
+##  Precauciones Importantes
 
 ### Antes de Ejecutar los Scripts
 
@@ -216,10 +216,10 @@ php artisan storage:diagnose
 
 ### En Producción
 
-- ⚠️ **Ejecuta en horario de baja actividad**
-- ⚠️ **Ten a mano los backups**
-- ⚠️ **Prueba primero en desarrollo**
-- ⚠️ **Monitorea después de cambios**
+-  **Ejecuta en horario de baja actividad**
+-  **Ten a mano los backups**
+-  **Prueba primero en desarrollo**
+-  **Monitorea después de cambios**
 
 ---
 
@@ -249,16 +249,16 @@ php artisan storage:diagnose
 
 | Método | Velocidad | Seguridad | Recomendado |
 |--------|-----------|-----------|-------------|
-| **Comando Artisan** | ⚡⚡⚡ | ✅✅✅ | **SÍ - Comienza aquí** |
-| **Script Automático** | ⚡⚡ | ✅✅ | **SÍ - Si Artisan no funciona** |
-| **Manual (Checklist)** | ⚡ | ✅ | **Para aprender** |
-| **Comandos individuales** | ⚡⚡⚡ | ✅ | **Para casos específicos** |
+| **Comando Artisan** | ⚡⚡⚡ |✅✅ | **SÍ - Comienza aquí** |
+| **Script Automático** | ⚡⚡ |✅ | **SÍ - Si Artisan no funciona** |
+| **Manual (Checklist)** | ⚡ | | **Para aprender** |
+| **Comandos individuales** | ⚡⚡⚡ | | **Para casos específicos** |
 
 ---
 
 ## 🆘 Si Algo Falla
 
-### El diagnóstico dice "❌"
+### El diagnóstico dice ""
 
 1. **Lee la sección específica** en `CHECKLIST_STORAGE_PERMISSIONS.md`
 2. **Intenta reparar con --fix:**
@@ -353,15 +353,15 @@ php artisan tinker                               # Consola interactiva
 
 ---
 
-## ✨ Características del Kit
+##  Características del Kit
 
-- ✅ **Seguro:** Modo dry-run para verificar sin cambios
-- ✅ **Inteligente:** Detecta SO y servidor web automáticamente
-- ✅ **Completo:** Cubre Linux, Mac y Windows
-- ✅ **Educativo:** Explica cada paso
-- ✅ **Flexible:** Manual o automático, según prefieras
-- ✅ **Probado:** Funciona en producción
-- ✅ **Sin pérdida:** No elimina archivos, solo ajusta permisos
+- **Seguro:** Modo dry-run para verificar sin cambios
+- **Inteligente:** Detecta SO y servidor web automáticamente
+- **Completo:** Cubre Linux, Mac y Windows
+- **Educativo:** Explica cada paso
+- **Flexible:** Manual o automático, según prefieras
+- **Probado:** Funciona en producción
+- **Sin pérdida:** No elimina archivos, solo ajusta permisos
 
 ---
 

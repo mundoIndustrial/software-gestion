@@ -3,7 +3,7 @@
 namespace App\Application\Pedidos\DTOs;
 
 /**
- * DTO para agregar imagen de tela a una combinaciÃ³n color-tela
+ * DTO para agregar imagen de tela a una combinación color-tela
  * 
  * Maneja campos de prenda_fotos_tela_pedido:
  * - ruta_original: ruta de la imagen original

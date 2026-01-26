@@ -295,7 +295,7 @@ Anterior: 1,618 líneas (monolítica, difícil de mantener)
 
 ---
 
-## ✨ Conclusión
+##  Conclusión
 
 La refactorización ha transformado el código de:
 -  **Monolito difícil de mantener** 

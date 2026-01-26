@@ -90,8 +90,8 @@ AND proceso = 'Creación de Orden';
       "numero_pedido": 9999,
       "prenda_pedido_id": null,
       "proceso": "Creación de Orden",
-      "nombre": "Creación de Orden",           ✅ Campo importante
-      "tipo": "Creación de Orden",             ✅ Campo importante
+      "nombre": "Creación de Orden",           Campo importante
+      "tipo": "Creación de Orden",             Campo importante
       "estado_proceso": "Pendiente",
       "fecha_inicio": "2024-01-15T10:30:45",
       "fecha_fin": null,
@@ -164,7 +164,7 @@ tail -f storage/logs/laravel.log | grep "REGISTRO-ORDEN"
 
 ---
 
-## ✅ Checklist de Verificación Rápida
+## Checklist de Verificación Rápida
 
 - [ ] Test 1: `test_proceso_creacion_orden_se_crea_automaticamente` - PASS
 - [ ] Test 2: `test_proceso_inicial_tiene_datos_correctos` - PASS
@@ -268,7 +268,7 @@ php artisan test tests/Feature/ProcesosAutomaticosTest.php --no-ansi
 if [ $? -eq 0 ]; then
     echo "✅ Todos los tests pasaron!"
 else
-    echo "❌ Algunos tests fallaron"
+    echo " Algunos tests fallaron"
     exit 1
 fi
 
@@ -284,7 +284,7 @@ echo "Total de pedidos: $pedidos\n";
 return true;
 EOF
 
-echo "3️⃣  ✅ Prueba completada con éxito!"
+echo "3️⃣  Prueba completada con éxito!"
 ```
 
 ---

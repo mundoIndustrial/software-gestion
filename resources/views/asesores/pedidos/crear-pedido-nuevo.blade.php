@@ -168,19 +168,19 @@
 
 @push('scripts')
     <!-- IMPORTANTE: Cargar PRIMERO el protector de datos principales -->
-    <script src="{{ asset('js/modulos/crear-pedido/seguridad/protector-datos-principales.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/seguridad/protector-datos-principales.js') }}?v={{ time() }}"></script>
     
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
-    <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
+    <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}?v={{ time() }}"></script>
     
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}?v={{ time() }}"></script>
     
     <!-- SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
-    <script src="{{ asset('js/services/epp/EppHttpService.js') }}"></script>
+    <script src="{{ asset('js/services/epp/EppHttpService.js') }}?v={{ time() }}"></script>
 
     <!--  CRÍTICO: Cargar image-storage-service ANTES de gestion-telas.js -->
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ time() }}"></script>
     
     <!--  Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
     <script>
@@ -196,29 +196,29 @@
     </script>
     
     <!-- EPP Services - Deben cargarse ANTES del modal -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}?v={{ time() }}"></script>
     
     <!-- EPP Services SOLID - Mejoras de refactorización -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}?v={{ time() }}"></script>
     
     <!-- EPP Templates e Interfaces -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}?v={{ time() }}"></script>
     
     <!-- EPP Initialization -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}?v={{ time() }}"></script>
     
     <!-- Modal EPP (refactorizado) - Carga DESPUÉS de los servicios -->
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
     
     <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
@@ -226,30 +226,30 @@
     <link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
     
     <!-- Constantes y helpers -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}?v={{ time() }}"></script>
     
     <!-- UTILIDADES (Helpers de DOM y Limpieza) -->
-    <script src="{{ asset('js/utilidades/dom-utils.js') }}"></script>
-    <script src="{{ asset('js/utilidades/modal-cleanup.js') }}"></script>
+    <script src="{{ asset('js/utilidades/dom-utils.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/utilidades/modal-cleanup.js') }}?v={{ time() }}"></script>
     
     <!-- UTILIDADES (Procesamiento de datos de prenda) -->
-    <script src="{{ asset('js/utilidades/tela-processor.js') }}"></script>
-    <script src="{{ asset('js/utilidades/prenda-data-builder.js') }}"></script>
+    <script src="{{ asset('js/utilidades/tela-processor.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/utilidades/prenda-data-builder.js') }}?v={{ time() }}"></script>
     
     <!-- UTILIDADES (Validación y Logging - Phase 3) -->
-    <script src="{{ asset('js/utilidades/logger-app.js') }}"></script>
-    <script src="{{ asset('js/utilidades/validador-prenda.js') }}"></script>
+    <script src="{{ asset('js/utilidades/logger-app.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/utilidades/validador-prenda.js') }}?v={{ time() }}"></script>
     
     <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ time() }}"></script>
     
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
     
-    <!-- ✅ PAYLOAD SANITIZER - Debe cargarse ANTES de item-api-service -->
-    <script src="{{ asset('js/modulos/crear-pedido/utils/payload-sanitizer.js') }}?v={{ time() }}"></script>
+    <!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-v3-definitiva.js') }}?v={{ time() }}"></script>
     
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
@@ -262,18 +262,18 @@
     <script src="{{ asset('js/componentes/prenda-form-collector.js') }}?v={{ time() }}"></script>
     
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
     
     <!-- Wrappers delegadores para prendas -->
-    <script src="{{ asset('js/componentes/prendas-wrappers.js') }}"></script>
+    <script src="{{ asset('js/componentes/prendas-wrappers.js') }}?v={{ time() }}"></script>
     
     <!-- Componente: Reflectivo -->
-    <script src="{{ asset('js/componentes/reflectivo.js') }}"></script>
+    <script src="{{ asset('js/componentes/reflectivo.js') }}?v={{ time() }}"></script>
     
     <!-- Cargar módulos de gestión de pedidos -->
-    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}?v={{ time() }}"></script>
     
     <!-- Gestor base (necesario para la clase GestorPrendaSinCotizacion) -->
     <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}"></script>

@@ -23,7 +23,7 @@ use App\Models\PrendaPedido;
  * - Agregar colores y telas â†’ AgregarColorTelaUseCase
  * - Agregar procesos â†’ AgregarProcesoPrendaUseCase
  * 
- * Antes: 58 lÃ­neas | DespuÃ©s: ~45 lÃ­neas | ReducciÃ³n: ~22%
+ * Antes: 58 lÃ­neas | DespuÃ©s: ~45 lÃ­neas | Reducción: ~22%
  */
 final class AgregarPrendaCompletaUseCase
 {

@@ -57,7 +57,7 @@ class ObtenerPedidoUseCaseTest extends TestCase
     }
 
     /**
-     * Test: Lanzar excepciÃ³n si pedido no existe
+     * Test: Lanzar excepción si pedido no existe
      */
     public function test_error_si_pedido_no_existe()
     {

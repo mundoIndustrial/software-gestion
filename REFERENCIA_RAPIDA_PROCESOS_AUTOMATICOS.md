@@ -21,7 +21,7 @@
 
 ---
 
-## 🔧 Cambios Realizados
+##  Cambios Realizados
 
 ### Archivo: `app/Services/RegistroOrdenCreationService.php`
 
@@ -52,14 +52,14 @@ VALUES
 
 ---
 
-## ✅ Tests
+## Tests
 
 ```bash
 # Ejecutar todos (7 tests)
 php artisan test tests/Feature/ProcesosAutomaticosTest.php
 
 # Resultado esperado
-# 7 PASSED ✅
+# 7 PASSED
 ```
 
 ---
@@ -84,13 +84,13 @@ $service->createAdditionalProcesso(
 
 | Antes | Después |
 |-------|---------|
-| ❌ Sin procesos | ✅ Proceso automático |
-| ❌ Manual | ✅ Automático |
-| ❌ Error posible | ✅ Garantizado |
+|  Sin procesos | Proceso automático |
+|  Manual | Automático |
+|  Error posible | Garantizado |
 
 ---
 
-## 🚀 Próximos Pasos
+##  Próximos Pasos
 
 1. Ejecutar tests: `php artisan test tests/Feature/ProcesosAutomaticosTest.php`
 2. Leer documentación (5 minutos)
@@ -119,7 +119,7 @@ $service->createAdditionalProcesso(
 
 ---
 
-## ✨ Status
+##  Status
 
 ```
 ✅ Implementado
@@ -131,5 +131,5 @@ $service->createAdditionalProcesso(
 ---
 
 **Tiempo total de lectura:** 5 minutos  
-**Tiempo total de implementación:** Completado ✅  
+**Tiempo total de implementación:** Completado  
 **Estado:** LISTO

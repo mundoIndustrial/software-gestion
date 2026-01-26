@@ -71,7 +71,7 @@ function mostrarNotificacionTipoCotizacion(tipo) {
     const info = {
         'prenda': '👕 Prendas Sin Logo',
         'logo': '🎨 Solo Logos',
-        'prenda-bordado': '✨ Prendas Con Bordado/Logo'
+        'prenda-bordado': ' Prendas Con Bordado/Logo'
     };
     
     const mensaje = info[tipo] || 'Tipo desconocido';
@@ -1184,8 +1184,8 @@ function recopilarDatos() {
             '👖 Obs Bolsillos': variantes.obs_bolsillos || '(vacío)',
             '🔗 Tipo Broche ID': variantes.tipo_broche_id || '(vacío)',
             '🔗 Obs Broche': variantes.obs_broche || '(vacío)',
-            '⭐ Tiene Reflectivo': variantes.tiene_reflectivo || false,
-            '⭐ Obs Reflectivo': variantes.obs_reflectivo || '(vacío)',
+            ' Tiene Reflectivo': variantes.tiene_reflectivo || false,
+            ' Obs Reflectivo': variantes.obs_reflectivo || '(vacío)',
             '📝 Descripción Adicional': variantes.descripcion_adicional || '(vacío)',
             ' Prenda de Bodega': variantes.prenda_bodega || false,
             'Todas las keys': Object.keys(variantes)

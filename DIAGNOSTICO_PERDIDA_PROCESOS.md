@@ -1,14 +1,14 @@
 # DIAGNÓSTICO: Pérdida de Procesos en Modal de Recibos
 
 **FECHA:** 2024-01-25
-**ESTADO:** ⚠️ EN DIAGNÓSTICO - Logging agregado, necesita ejecución
+**ESTADO:**  EN DIAGNÓSTICO - Logging agregado, necesita ejecución
 
 ## Síntomas
 
-- ❌ Modal "Recibo del Pedido" solo muestra "RECIBO DE COSTURA"
-- ❌ `prenda.procesos` llega undefined/vacío en receipt-manager.js
-- ✅ Backend retorna procesos correctamente
-- ✅ No hay errores en consola
+-  Modal "Recibo del Pedido" solo muestra "RECIBO DE COSTURA"
+-  `prenda.procesos` llega undefined/vacío en receipt-manager.js
+- Backend retorna procesos correctamente
+- No hay errores en consola
 
 ## Cadena de Flujo Auditada
 
@@ -58,7 +58,7 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
 **Razón:** Aquí se recibe datos, pero se pasa intacto a cargarComponente()
 **Debug:** Logs agregados en línea ~590-605
 
-### 3. **cargarComponenteOrderDetailModal() (HIGH RISK) ⚠️**
+### 3. **cargarComponenteOrderDetailModal() (HIGH RISK) **
 ```javascript
 // invoice-from-list.js línea ~700
 function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null) {
@@ -160,8 +160,8 @@ contenedor.innerHTML = `...`  // ← No debería afectar datos
    ```
 
 4. **Buscar indicadores:**
-   - ✅ `procesos existe?` → `true` significa se transmite
-   - ❌ `procesos existe?` → `false` significa se pierde antes
+   - `procesos existe?` → `true` significa se transmite
+   -  `procesos existe?` → `false` significa se pierde antes
    - `procesos_count` → cuántos procesos tiene
 
 ## Puntos de Verificación Esperados
@@ -174,16 +174,16 @@ contenedor.innerHTML = `...`  // ← No debería afectar datos
 ✅ ReceiptManager constructor: procesos: [{...}, {...}]
 ✅ generarRecibos: Procesando 2 procesos
 
-RESULTADO: ✅ Modal muestra todos los recibos
+RESULTADO: Modal muestra todos los recibos
 ```
 
 ### ESCENARIO 2: Procesos se pierden en fetch
 ```
-❌ Backend: procesos_count: 2
-❌ invoice-from-list fetch: procesos: undefined
-❌ crearModal: procesos_existe: false
+ Backend: procesos_count: 2
+ invoice-from-list fetch: procesos: undefined
+ crearModal: procesos_existe: false
 
-RESULTADO: ❌ Problema en respuesta del endpoint o transformación JSON
+RESULTADO:  Problema en respuesta del endpoint o transformación JSON
 ```
 
 ### ESCENARIO 3: Procesos se pierden entre crearModal y ReceiptManager
@@ -191,10 +191,10 @@ RESULTADO: ❌ Problema en respuesta del endpoint o transformación JSON
 ✅ Backend: procesos_count: 2
 ✅ invoice-from-list fetch: procesos: [{...}, {...}]
 ✅ crearModal: procesos_existe: true
-❌ ReceiptManager constructor: procesos: undefined
-❌ generarRecibos: Sin procesos o no es array
+ ReceiptManager constructor: procesos: undefined
+ generarRecibos: Sin procesos o no es array
 
-RESULTADO: ❌ Problema en transformación de datos dentro de crearModalRecibosDesdeListaPedidos()
+RESULTADO:  Problema en transformación de datos dentro de crearModalRecibosDesdeListaPedidos()
 ```
 
 ## Próximos Pasos Después del Diagnóstico
@@ -219,9 +219,9 @@ RESULTADO: ❌ Problema en transformación de datos dentro de crearModalRecibosD
 
 ## Archivos Auditados
 
-- ✅ invoice-from-list.js (líneas 520-610)
-- ✅ receipt-manager.js (líneas 1-110)
-- ✅ PedidoProduccionRepository.php (línea 817) - Backend retorna correctamente
+- invoice-from-list.js (líneas 520-610)
+- receipt-manager.js (líneas 1-110)
+- PedidoProduccionRepository.php (línea 817) - Backend retorna correctamente
 
 ## Estado de Ejecución
 

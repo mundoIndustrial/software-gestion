@@ -34,7 +34,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
             $cliente = \App\Models\Cliente::firstOrCreate(
                 ['nombre' => 'TEST CLIENTE COMPLETO SA']
             );
-            echo "   ✅ Cliente ID: {$cliente->id}\n\n";
+            echo "   Cliente ID: {$cliente->id}\n\n";
 
             // 1.5️⃣ OBTENER UN ASESOR VÁLIDO
             $asesor = \App\Models\User::first();
@@ -55,7 +55,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                 ->where('tipo', 'pedido_produccion')
                 ->increment('siguiente');
             
-            echo "   ✅ Número de pedido: {$numeroPedido}\n\n";
+            echo "   Número de pedido: {$numeroPedido}\n\n";
 
             // 3️⃣ CREAR PEDIDO PRINCIPAL
             echo "3️⃣  Creando pedido principal...\n";
@@ -69,9 +69,9 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                 'fecha_de_creacion_de_orden' => now(),
                 'cantidad_total' => 0,
             ]);
-            echo "   ✅ Pedido ID: {$pedido->id}\n";
-            echo "   ✅ Número: {$pedido->numero_pedido}\n";
-            echo "   ✅ Asesor: {$asesor->name}\n\n";
+            echo "   Pedido ID: {$pedido->id}\n";
+            echo "   Número: {$pedido->numero_pedido}\n";
+            echo "   Asesor: {$asesor->name}\n\n";
 
             // 4️⃣ PREPARAR DATOS DE PRENDAS COMPLETAS
             echo "4️⃣  Preparando datos de prendas con TODO incluido...\n";
@@ -84,7 +84,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                     'genero' => 'dama',
                     'variaciones' => [], // Requerido por PedidoPrendaService
                     
-                    // ✅ TALLAS (CRÍTICO)
+                    // TALLAS (CRÍTICO)
                     'cantidad_talla' => [
                         'dama' => [
                             'S' => 10,
@@ -93,7 +93,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                         ]
                     ],
                     
-                    // ✅ VARIANTES
+                    // VARIANTES
                     'color_id' => $this->obtenerOCrearColor('AZUL MARINO TEST'),
                     'tela_id' => $this->obtenerOCrearTela('DRILL TEST'),
                     'tipo_manga_id' => $this->obtenerOCrearManga('MANGA LARGA'),
@@ -105,13 +105,13 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                     'obs_broche' => 'Botones blancos',
                     'obs_reflectivo' => '',
                     
-                    // ✅ IMÁGENES DE PRENDA
+                    // IMÁGENES DE PRENDA
                     'imagenes' => [
                         'test/camisa-frontal.jpg',
                         'test/camisa-posterior.jpg',
                     ],
                     
-                    // ✅ TELAS CON FOTOS
+                    // TELAS CON FOTOS
                     'telas' => [
                         [
                             'color_id' => $this->obtenerOCrearColor('AZUL MARINO TEST'),
@@ -134,7 +134,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                         ]
                     ],
                     
-                    // ✅ PROCESOS CON TALLAS E IMÁGENES
+                    // PROCESOS CON TALLAS E IMÁGENES
                     'procesos' => [
                         [
                             'tipo_proceso_id' => $this->obtenerOCrearTipoProceso('BORDADO'),
@@ -231,13 +231,13 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                 ]
             ];
 
-            echo "   ✅ Preparadas 2 prendas con TODOS los datos\n\n";
+            echo "   Preparadas 2 prendas con TODOS los datos\n\n";
 
             // 5️⃣ GUARDAR PRENDAS USANDO PedidoPrendaService
             echo "5️⃣  Guardando prendas con PedidoPrendaService...\n";
             $pedidoPrendaService = app(PedidoPrendaService::class);
             $pedidoPrendaService->guardarPrendasEnPedido($pedido, $prendas);
-            echo "   ✅ Prendas guardadas\n\n";
+            echo "   Prendas guardadas\n\n";
 
             // 6️⃣ ACTUALIZAR CANTIDAD TOTAL
             echo "6️⃣  Calculando cantidad total...\n";
@@ -246,7 +246,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                 ->sum('cantidad');
             
             $pedido->update(['cantidad_total' => $cantidadTotal]);
-            echo "   ✅ Cantidad total: {$cantidadTotal}\n\n";
+            echo "   Cantidad total: {$cantidadTotal}\n\n";
 
             DB::commit();
 
@@ -301,7 +301,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
             $errores = [];
             foreach ($verificacion as $tabla => $cantidad) {
                 $esperado = $this->cantidadEsperada($tabla);
-                $icono = $cantidad > 0 ? '✅' : '❌';
+                $icono = $cantidad > 0 ? '✅' : '';
                 $estado = $cantidad >= $esperado ? 'OK' : 'FALTA';
                 
                 echo "   {$icono} {$tabla}: {$cantidad} registros [{$estado}]\n";
@@ -321,10 +321,10 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
                 echo "🔍 Ejecuta para ver detalles:\n";
                 echo "   php verificar-guardado-pedido.php {$pedido->numero_pedido}\n\n";
             } else {
-                echo "❌ TEST FALLIDO - TABLAS SIN DATOS:\n";
+                echo " TEST FALLIDO - TABLAS SIN DATOS:\n";
                 echo "═══════════════════════════════════════════════════════\n\n";
                 foreach ($errores as $error) {
-                    echo "   ❌ {$error}\n";
+                    echo "    {$error}\n";
                 }
                 echo "\n";
             }
@@ -332,7 +332,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
         } catch (\Exception $e) {
             DB::rollBack();
             echo "\n";
-            echo "❌ ERROR EN TEST:\n";
+            echo " ERROR EN TEST:\n";
             echo "   {$e->getMessage()}\n";
             echo "   Archivo: {$e->getFile()}:{$e->getLine()}\n\n";
             throw $e;

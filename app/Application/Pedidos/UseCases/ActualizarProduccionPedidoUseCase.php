@@ -13,14 +13,14 @@ use Exception;
  * 
  * COMPLETADO: Fue refactorizado en FASE 1
  * 
- * Use Case para actualizar un pedido de producciÃ³n existente
+ * Use Case para actualizar un pedido de producción existente
  * 
  * Cambios de FASE 1:
  * - Agregadas dependencias inyectadas (antes faltaban)
  * - Implementada actualizacion de cliente âœ…
  * - Implementada actualizacion de prendas âœ…
  * - Implementada persistencia de cambios âœ…
- * - Implementada publicaciÃ³n de eventos âœ…
+ * - Implementada publicación de eventos âœ…
  */
 class ActualizarProduccionPedidoUseCase
 {

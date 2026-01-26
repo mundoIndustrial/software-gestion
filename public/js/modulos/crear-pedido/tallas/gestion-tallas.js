@@ -70,14 +70,14 @@ window.cargarCatálogoTallas = async function() {
         }
 
     } catch (error) {
-        console.error('[gestion-tallas] ❌ Error al cargar catálogo:', error);
+        console.error('[gestion-tallas]  Error al cargar catálogo:', error);
         // Fallback a constantes hardcodeadas si falla el fetch
         window.catálogoTallasDisponibles = {
             DAMA: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
             CABALLERO: ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46'],
             UNISEX: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
         };
-        console.warn('[gestion-tallas] ⚠️ Usando catálogo hardcodeado como fallback');
+        console.warn('[gestion-tallas]  Usando catálogo hardcodeado como fallback');
     }
 };
 
@@ -130,7 +130,7 @@ window.mostrarTallasDisponibles = function(tipo) {
     
     // Usar catálogo cargado desde BD, con fallback a constantes
     if (!window.catálogoTallasDisponibles) {
-        console.warn('[gestion-tallas] ⚠️ Catálogo no cargado, usando constantes');
+        console.warn('[gestion-tallas]  Catálogo no cargado, usando constantes');
         // Fallback a constantes si no se cargó el catálogo
         if (tipo === 'letra') {
             tallasAMostrar = TALLAS_LETRAS || [];
@@ -187,7 +187,7 @@ window.mostrarTallasDisponibles = function(tipo) {
             if (isCurrentlySelected) {
                 // Deseleccionar: eliminar talla
                 delete window.tallasRelacionales[window.generoActualModal][talla];
-                console.log(`[gestion-tallas] ❌ Talla deseleccionada: ${window.generoActualModal} - ${talla}`);
+                console.log(`[gestion-tallas]  Talla deseleccionada: ${window.generoActualModal} - ${talla}`);
                 btn.style.borderColor = '#d1d5db';
                 btn.style.background = 'white';
                 btn.style.color = '#1f2937';
@@ -441,7 +441,7 @@ window.abrirModalSeleccionarTallas = async function(genero) {
         }
         
         if (Object.keys(window.tallasRelacionales[genero]).length === 0) {
-            console.warn('[gestion-tallas] ⚠️ No hay tallas seleccionadas para', genero);
+            console.warn('[gestion-tallas]  No hay tallas seleccionadas para', genero);
             alert(' Debes seleccionar al menos una talla');
             return;
         }

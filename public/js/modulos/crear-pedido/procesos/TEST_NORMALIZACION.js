@@ -58,7 +58,7 @@ console.log(JSON.stringify(payloadLimpio, null, 2));
 
 // STEP 3: Normalizar
 const payloadNormalizado = PayloadNormalizer.normalizar(payloadLimpio);
-console.log('\n✨ PASO 3: Payload NORMALIZADO (después de normalizar)');
+console.log('\n PASO 3: Payload NORMALIZADO (después de normalizar)');
 console.log(JSON.stringify(payloadNormalizado, null, 2));
 
 // STEP 4: Validar
@@ -67,7 +67,7 @@ try {
     PayloadNormalizer.validarNoHayFiles(jsonString);
     console.log('\n✅ VALIDACIÓN: NO hay Files en el JSON');
 } catch (e) {
-    console.error('\n❌ VALIDACIÓN FALLIDA:', e.message);
+    console.error('\n VALIDACIÓN FALLIDA:', e.message);
 }
 
 // Verificaciones específicas
@@ -77,15 +77,15 @@ const item = payloadNormalizado.items[0];
 const tela = item.telas[0];
 const proceso = item.procesos.reflectivo;
 
-console.log('1. ¿Telas sin imagenes key?', !('imagenes' in tela) ? '✅ SÍ' : '❌ NO');
-console.log('2. ¿Procesos sin imagenes key?', !('imagenes' in proceso) ? '✅ SÍ' : '❌ NO');
+console.log('1. ¿Telas sin imagenes key?', !('imagenes' in tela) ? '✅ SÍ' : ' NO');
+console.log('2. ¿Procesos sin imagenes key?', !('imagenes' in proceso) ? '✅ SÍ' : ' NO');
 console.log('3. ¿Tallas son números?', 
     typeof item.cantidad_talla.DAMA.S === 'number' && 
     typeof proceso.tallas.dama.S === 'number' 
-    ? '✅ SÍ' : '❌ NO');
+    ? '✅ SÍ' : ' NO');
 console.log('4. ¿Valores de tallas correctos?',
     item.cantidad_talla.DAMA.S === 20 &&
     proceso.tallas.dama.S === 20
-    ? '✅ SÍ' : '❌ NO');
+    ? '✅ SÍ' : ' NO');
 
 console.log('\n✅ TEST COMPLETADO');

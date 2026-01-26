@@ -74,7 +74,7 @@ class CotizacionTest extends TestCase
             $this->asesora
         );
 
-        $prenda = PrendaCotizacion::crear('Camiseta', 'Camiseta de algodÃ³n', 100);
+        $prenda = PrendaCotizacion::crear('Camiseta', 'Camiseta de algodón', 100);
         $cotizacion->agregarPrenda($prenda);
 
         $this->assertCount(1, $cotizacion->prendas());

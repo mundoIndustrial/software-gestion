@@ -77,7 +77,7 @@ class EppModalManager {
             nombreElement.textContent = producto.nombre_completo || producto.nombre;
             console.log('🎯 [ModalManager] Nombre mostrado:', producto.nombre_completo || producto.nombre);
         } else {
-            console.warn('❌ [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO');
+            console.warn(' [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO');
         }
         
         // Mostrar imagen si existe
@@ -94,7 +94,7 @@ class EppModalManager {
             productoCard.style.display = 'flex';
             console.log('✅ [ModalManager] Tarjeta de producto mostrada');
         } else {
-            console.warn('❌ [ModalManager] Elemento productoCardEPP NO ENCONTRADO');
+            console.warn(' [ModalManager] Elemento productoCardEPP NO ENCONTRADO');
         }
     }
 
@@ -170,7 +170,7 @@ class EppModalManager {
                 `);
                 console.log(`✅ [ModalManager] Campo ${id} habilitado`);
             } else {
-                console.warn(`❌ [ModalManager] Campo ${id} NO ENCONTRADO en el DOM`);
+                console.warn(` [ModalManager] Campo ${id} NO ENCONTRADO en el DOM`);
             }
         });
 
@@ -192,7 +192,7 @@ class EppModalManager {
             `);
             console.log('✅ [ModalManager] Área de imágenes habilitada');
         } else {
-            console.warn('❌ [ModalManager] Área de imágenes NO ENCONTRADA en el DOM');
+            console.warn(' [ModalManager] Área de imágenes NO ENCONTRADA en el DOM');
         }
 
         const mensajeSeleccionar = document.getElementById('mensajeSelecccionarEPP');
@@ -201,7 +201,7 @@ class EppModalManager {
             mensajeSeleccionar.style.display = 'none';
             console.log('✅ [ModalManager] Mensaje de selección ocultado');
         } else {
-            console.warn('❌ [ModalManager] Mensaje de selección NO ENCONTRADO en el DOM');
+            console.warn(' [ModalManager] Mensaje de selección NO ENCONTRADO en el DOM');
         }
     }
 

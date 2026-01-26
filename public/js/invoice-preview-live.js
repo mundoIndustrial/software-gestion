@@ -859,13 +859,13 @@ function generarHTMLFactura(datos) {
     // Validar que datos y prendas existan
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
 
-        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;">❌ Error: No se pudieron cargar las prendas del pedido. Estructura de datos inválida.</div>';
+        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido. Estructura de datos inválida.</div>';
     }
 
     // Si no hay prendas, mostrar mensaje
     if (datos.prendas.length === 0) {
 
-        return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;">⚠️ Advertencia: El pedido no contiene prendas.</div>';
+        return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;"> Advertencia: El pedido no contiene prendas.</div>';
     }
     
     // Generar las tarjetas de prendas con todos los detalles
@@ -881,7 +881,7 @@ function generarHTMLFactura(datos) {
         let variantesHTML = '';
         
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            console.log(`[FACTURA-PRENDA-${idx}] ✅ Usando variantes del servidor`);
+            console.log(`[FACTURA-PRENDA-${idx}] Usando variantes del servidor`);
             console.log(`[FACTURA-PRENDA-${idx}] Variantes completas:`, prenda.variantes);
             
             // Variantes desde el servidor (tienen estructura completa)
@@ -949,7 +949,7 @@ function generarHTMLFactura(datos) {
                 </div>
             `;
         } else if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            console.log(`[FACTURA-PRENDA-${idx}] ✅ Usando tallas locales del formulario`);
+            console.log(`[FACTURA-PRENDA-${idx}] Usando tallas locales del formulario`);
             // Datos desde el formulario local (estructura relacional de tallas por género)
             // Crear variantes simplificadas con el manga/broche/bolsillos de la prenda
             let variantesSimples = [];
@@ -1011,10 +1011,10 @@ function generarHTMLFactura(datos) {
                     </div>
                 `;
             } else {
-                console.log(`[FACTURA-PRENDA-${idx}] ⚠️ No hay variantes simples`);
+                console.log(`[FACTURA-PRENDA-${idx}]  No hay variantes simples`);
             }
         } else {
-            console.log(`[FACTURA-PRENDA-${idx}] ⚠️ No hay variantes ni tallas`);
+            console.log(`[FACTURA-PRENDA-${idx}]  No hay variantes ni tallas`);
         }
         
         // Especificaciones principales (Tabla compacta) - MANTENER PARA COMPATIBILIDAD
@@ -1302,7 +1302,7 @@ function generarHTMLFactura(datos) {
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                                 <!-- COLUMNA 1: Nombre -->
                                 <div style="font-size: 11px;">
-                                    <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">${epp.epp_nombre || 'Sin nombre'}</div>
+                                    <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">${epp.nombre_completo || epp.nombre || ''}</div>
                                 </div>
                                 
                                 <!-- COLUMNA 2: Cantidad -->

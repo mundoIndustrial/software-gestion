@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
  * PrendaProcesoService
  * 
  * Responsabilidad: Guardar procesos de prendas en la BD
- * Maneja la creaciÃ³n de procesos y sus detalles
+ * Maneja la creación de procesos y sus detalles
  */
 class PrendaProcesoService
 {
@@ -38,6 +38,7 @@ class PrendaProcesoService
             'prenda_id' => $prendaId,
             'pedido_id' => $pedidoId,
             'cantidad_procesos' => count($procesos),
+            'procesos_debug' => json_encode($procesos, JSON_PRETTY_PRINT),  // ← VER EXACTAMENTE QUÉ LLEGA
         ]);
 
         foreach ($procesos as $procesoIndex => $proceso) {
@@ -45,33 +46,47 @@ class PrendaProcesoService
                 // Obtener tipo_proceso_id
                 $tipoProcesoId = $proceso['tipo_proceso_id'] ?? $proceso['id'] ?? null;
                 
-                // Si viene como nombre (string), buscar o crear
+                //  PROHIBIR: NO crear tipos dinámicamente
+                // Solo buscar en tabla precargada tipos_procesos
                 if (!$tipoProcesoId && !empty($proceso['tipo'])) {
-                    $tipoNombre = $proceso['tipo'];
+                    $tipoNombre = strtolower(trim($proceso['tipo']));
+                    
+                    // Buscar EXACTO o por similitud
                     $tipoProcesoObj = DB::table('tipos_procesos')
-                        ->where('nombre', 'like', "%{$tipoNombre}%")
+                        ->where(DB::raw('LOWER(nombre)'), 'like', "%{$tipoNombre}%")
+                        ->orWhere(DB::raw('LOWER(descripcion)'), 'like', "%{$tipoNombre}%")
                         ->first();
                     
                     if ($tipoProcesoObj) {
                         $tipoProcesoId = $tipoProcesoObj->id;
                     } else {
-                        $tipoProcesoId = DB::table('tipos_procesos')->insertGetId([
-                            'nombre' => $tipoNombre,
-                            'descripcion' => "Proceso: {$tipoNombre}",
-                            'activo' => 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
+                        //  Tipo no precargado → Lanzar excepción (NO silenciar)
+                        throw new \DomainException(
+                            "Tipo de proceso '{$tipoNombre}' no existe en tabla tipos_procesos. "
+                            . "Debe ser precargado. Tipos válidos: reflectivo, serigrafía, bordado, tejido."
+                        );
                     }
                 }
                 
                 if (!$tipoProcesoId) {
-                    Log::warning(' [PrendaProcesoService] Tipo de proceso no especificado', [
-                        'prenda_id' => $prendaId,
-                        'proceso_index' => $procesoIndex,
-                        'proceso_data' => $proceso,
-                    ]);
-                    continue;
+                    throw new \DomainException(
+                        "Proceso en posición {$procesoIndex} no tiene tipo_proceso_id ni campo 'tipo'. "
+                        . "Estructura requerida: {tipo_proceso_id: int} o {tipo: 'reflectivo', ...}"
+                    );
+                }
+
+                // Validar que proceso tenga DATOS
+                // Si ubicaciones y tallas están vacíos → RECHAZAR
+                $tieneUbicaciones = !empty($proceso['ubicaciones']) && is_array($proceso['ubicaciones']) && count($proceso['ubicaciones']) > 0;
+                $tieneTallas = !empty($proceso['tallas']) && is_array($proceso['tallas']);
+                
+                if (!$tieneUbicaciones && !$tieneTallas) {
+                    throw new \DomainException(
+                        "Proceso '{$tipoProcesoId}' NO PUEDE ESTAR VACÍO. "
+                        . "Debe tener ubicaciones O tallas. "
+                        . "Recibido: ubicaciones=[], tallas={}. "
+                        . "Abortar guardar proceso vacío para evitar datos inconsistentes."
+                    );
                 }
 
                 // Crear detalle de proceso

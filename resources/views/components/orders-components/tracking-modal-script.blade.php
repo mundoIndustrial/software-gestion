@@ -23,7 +23,7 @@ const processoIconMap = {
     'Entrega': '',
     'Despacho': '🚚',
     'Despachos': '🚚',
-    'Reflectivo': '✨',
+    'Reflectivo': '',
     'Marras': ''
 };
 

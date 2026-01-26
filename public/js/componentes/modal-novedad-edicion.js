@@ -59,7 +59,7 @@ class ModalNovedadEdicion {
                     const novedad = document.getElementById('modalNovedadEdicion').value.trim();
                     if (!novedad) {
                         Swal.fire({
-                            title: '⚠️ Campo requerido',
+                            title: ' Campo requerido',
                             html: '<p>Por favor escribe una novedad</p>',
                             icon: 'warning',
                             confirmButtonText: 'Entendido'
@@ -119,7 +119,7 @@ class ModalNovedadEdicion {
                 formData.append('variantes', JSON.stringify(variantesArray));
                 console.log('[modal-novedad-edicion] Variantes enviadas:', variantesArray);
             } else {
-                console.log('[modal-novedad-edicion] ⚠️ No hay variantes para enviar');
+                console.log('[modal-novedad-edicion]  No hay variantes para enviar');
             }
             
             // IMPORTANTE: Transformar procesos de estructura de objeto a array

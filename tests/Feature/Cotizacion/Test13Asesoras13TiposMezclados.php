@@ -17,7 +17,7 @@ use Tests\TestCase;
  * - Tipos mezclados: Prenda (3), Bordado (2), Reflectivo (4)
  * - Verificar que numero_cotizacion sigue consecutivo sin duplicados
  * 
- * PatrÃ³n esperado:
+ * Patrón esperado:
  * COT-000001 â†’ Prenda
  * COT-000002 â†’ Bordado
  * COT-000003 â†’ Reflectivo
@@ -37,7 +37,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
     {
         parent::setUp();
 
-        // Crear tipos de cotizaciÃ³n
+        // Crear tipos de cotización
         TipoCotizacion::firstOrCreate(['id' => 2], ['codigo' => 'L', 'nombre' => 'Bordado/Logo']);
         TipoCotizacion::firstOrCreate(['id' => 3], ['codigo' => 'P', 'nombre' => 'Prenda']);
         TipoCotizacion::firstOrCreate(['id' => 4], ['codigo' => 'RF', 'nombre' => 'Reflectivo']);
@@ -58,7 +58,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "\nðŸ”¬ INICIANDO TEST: 13 Asesoras - Tipos Mezclados";
         echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
-        // Definir patrÃ³n de 13 asesoras con tipos mezclados
+        // Definir patrón de 13 asesoras con tipos mezclados
         $asesoras = [
             1  => ['nombre' => 'Asesor1',  'tipo_id' => 3],  // Prenda
             2  => ['nombre' => 'Asesor2',  'tipo_id' => 2],  // Bordado
@@ -92,7 +92,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n";
 
         // Simular 13 asesoras creando cotizaciones secuencialmente
-        // (Los locks del DB harÃ¡n la serializaciÃ³n)
+        // (Los locks del DB harÃ¡n la serialización)
         foreach ($asesoras as $i => $config) {
             $usuario = $usuarios[$i];
             $tipo_id = $config['tipo_id'];
@@ -171,7 +171,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
         $this->assertEquals($esperado, $numeros_int, "Debe ser consecutivo del 1 al 13");
         echo "    CONSECUTIVO PERFECTO\n";
 
-        // VERIFICACIÃ“N 4: DistribuciÃ³n por tipo
+        // VERIFICACIÃ“N 4: Distribución por tipo
         echo "\n4ï¸âƒ£  DISTRIBUCIÃ“N POR TIPO\n";
         $por_tipo = array_reduce($resultados, function($carry, $item) {
             if (!isset($carry[$item['tipo_id']])) {
@@ -214,15 +214,15 @@ class Test13Asesoras13TiposMezclados extends TestCase
         echo "\n RESUMEN:\n";
         echo "   â€¢ 13 cotizaciones creadas \n";
         echo "   â€¢ 0 duplicados \n";
-        echo "   â€¢ NumeraciÃ³n consecutiva (1-13) \n";
+        echo "   â€¢ Numeración consecutiva (1-13) \n";
         echo "   â€¢ Tipos mezclados registrados \n";
         echo "   â€¢ Secuencia actualizada correctamente \n";
         echo "   â€¢ Datos persistidos en BD \n";
-        echo "\n CONCLUSIÃ“N: Sistema listo para producciÃ³n con 13+ asesoras simultÃ¡neas\n\n";
+        echo "\n CONCLUSIÃ“N: Sistema listo para producción con 13+ asesoras simultÃ¡neas\n\n";
     }
 
     /**
-     * Generar nÃºmero de cotizaciÃ³n sin lock para evitar bloqueos en test
+     * Generar nÃºmero de cotización sin lock para evitar bloqueos en test
      */
     private function generarNumeroCotizacionComoDBC(): string
     {
@@ -267,7 +267,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
     public function test_secuencia_es_realmente_universal(): void
     {
         echo "\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•";
-        echo "\nðŸ”¬ TEST: VerificaciÃ³n que secuencia es universal";
+        echo "\nðŸ”¬ TEST: Verificación que secuencia es universal";
         echo "\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
         // Obtener valor actual de secuencia

@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Log;
 /**
  * ImagenTransformadorService
  * 
- * Responsabilidad: Transformar imÃ¡genes a WebP con compresiÃ³n y redimensionamiento
- * Centraliza la lÃ³gica de conversiÃ³n de imÃ¡genes para toda la aplicaciÃ³n
+ * Responsabilidad: Transformar imÃ¡genes a WebP con compresión y redimensionamiento
+ * Centraliza la lógica de conversión de imÃ¡genes para toda la aplicación
  */
 class ImagenTransformadorService
 {

@@ -7,7 +7,7 @@ use InvalidArgumentException;
 /**
  * AnularProduccionPedidoDTO
  * 
- * DTO para anular un pedido de producciÃ³n
+ * DTO para anular un pedido de producción
  */
 class AnularProduccionPedidoDTO
 {
@@ -39,11 +39,11 @@ class AnularProduccionPedidoDTO
         }
 
         if (empty($this->razon)) {
-            throw new InvalidArgumentException("RazÃ³n de anulaciÃ³n es requerida");
+            throw new InvalidArgumentException("Razón de anulación es requerida");
         }
 
         if (strlen($this->razon) > 500) {
-            throw new InvalidArgumentException("RazÃ³n no puede exceder 500 caracteres");
+            throw new InvalidArgumentException("Razón no puede exceder 500 caracteres");
         }
     }
 }

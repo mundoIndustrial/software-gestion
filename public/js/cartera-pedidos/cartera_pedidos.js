@@ -16,7 +16,7 @@ const ESTADO_FILTRO = 'pendiente_cartera';
 function getElement(selector) {
   const el = document.querySelector(selector);
   if (!el) {
-    console.warn(`⚠️ Elemento no encontrado: ${selector}`);
+    console.warn(` Elemento no encontrado: ${selector}`);
   }
   return el;
 }
@@ -25,7 +25,7 @@ function getElement(selector) {
 function getElementById(id) {
   const el = document.getElementById(id);
   if (!el) {
-    console.warn(`⚠️ Elemento con ID no encontrado: #${id}`);
+    console.warn(` Elemento con ID no encontrado: #${id}`);
   }
   return el;
 }
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Validar que los elementos críticos existan
   if (!getElement('#tablaPedidosBody')) {
-    console.error('❌ Tabla no encontrada. La página aún no está lista.');
+    console.error(' Tabla no encontrada. La página aún no está lista.');
     return;
   }
   
@@ -62,7 +62,7 @@ async function cargarPedidos() {
   
   // Si algún elemento crítico no existe, abortar
   if (!tablaPedidosBody) {
-    console.error('❌ No se puede cargar: tabla no existe');
+    console.error(' No se puede cargar: tabla no existe');
     return;
   }
   
@@ -126,7 +126,7 @@ async function cargarPedidos() {
     }
     
   } catch (error) {
-    console.error('❌ Error cargando pedidos:', error);
+    console.error(' Error cargando pedidos:', error);
     mostrarNotificacion('Error al cargar los pedidos: ' + error.message, 'error');
     mostrarEstadoError(tablaPedidosBody);
   } finally {
@@ -247,7 +247,7 @@ function abrirModalAprobacion(pedidoId, numeroPedido) {
   const resumen = getElement('#pedidoResumen');
   
   if (!modal || !aprobacionNumero) {
-    console.error('❌ Modal o elementos no encontrados');
+    console.error(' Modal o elementos no encontrados');
     return;
   }
   
@@ -368,7 +368,7 @@ async function confirmarAprobacion(event) {
     setTimeout(() => cargarPedidos(), 1000);
     
   } catch (error) {
-    console.error('❌ Error aprobando pedido:', error);
+    console.error(' Error aprobando pedido:', error);
     mostrarNotificacion('Error al aprobar: ' + error.message, 'error');
   } finally {
     if (btnConfirmar) {
@@ -383,7 +383,7 @@ async function confirmarAprobacion(event) {
  * Abre el modal de rechazo
  */
 function abrirModalRechazo(pedidoId, numeroPedido) {
-  console.log('❌ Abrir modal rechazo - Pedido:', numeroPedido);
+  console.log(' Abrir modal rechazo - Pedido:', numeroPedido);
   
   const modal = getElement('#modalRechazo');
   const rechazoPedidoNumero = getElement('#rechazoPedidoNumero');
@@ -391,7 +391,7 @@ function abrirModalRechazo(pedidoId, numeroPedido) {
   const contadorRechazo = getElement('#contadorRechazo');
   
   if (!modal || !rechazoPedidoNumero || !formRechazo) {
-    console.error('❌ Modal o elementos no encontrados');
+    console.error(' Modal o elementos no encontrados');
     return;
   }
   
@@ -451,7 +451,7 @@ async function confirmarRechazo(event) {
   
   const motivoElement = getElement('#motivoRechazo');
   if (!motivoElement) {
-    console.error('❌ Textarea de motivo no encontrado');
+    console.error(' Textarea de motivo no encontrado');
     return;
   }
   
@@ -513,7 +513,7 @@ async function confirmarRechazo(event) {
     setTimeout(() => cargarPedidos(), 1000);
     
   } catch (error) {
-    console.error('❌ Error rechazando pedido:', error);
+    console.error(' Error rechazando pedido:', error);
     mostrarNotificacion('Error al rechazar: ' + error.message, 'error');
   } finally {
     if (btnConfirmar) {

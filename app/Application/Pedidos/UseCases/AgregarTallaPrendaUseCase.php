@@ -11,9 +11,9 @@ use App\Models\PrendaPedido;
  * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
- * Maneja la creaciÃ³n de registro en prenda_pedido_tallas
+ * Maneja la creación de registro en prenda_pedido_tallas
  * 
- * Antes: 26 lÃ­neas | DespuÃ©s: ~17 lÃ­neas | ReducciÃ³n: ~35%
+ * Antes: 26 lÃ­neas | DespuÃ©s: ~17 lÃ­neas | Reducción: ~35%
  */
 final class AgregarTallaPrendaUseCase
 {

@@ -151,9 +151,9 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     // Si no viene pedidoId, intentar obtenerlo
     if (!pedidoId) {
-        console.warn('⚠️ [OBTENER-ID] pedidoId vacío, buscando...');
+        console.warn(' [OBTENER-ID] pedidoId vacío, buscando...');
         pedidoId = obtenerPedidoId();
-        console.log('⚠️ [OBTENER-ID] Después de obtenerPedidoId():', pedidoId);
+        console.log(' [OBTENER-ID] Después de obtenerPedidoId():', pedidoId);
     }
 
     console.log('✅ [PEDIDO-ID-FINAL] pedidoId usado será:', pedidoId);
@@ -235,25 +235,25 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                         };
                         console.log('✅ [DATOS-FACTURA-ACTUALIZADO]:', datosParaFactura);
                     } else {
-                        console.warn('⚠️ [PEDIDO-VACIO] Sin datos del pedido en respuesta');
+                        console.warn(' [PEDIDO-VACIO] Sin datos del pedido en respuesta');
                         datosParaFactura.prendas = [prendaEditable];
                     }
                 } else {
-                    console.warn('⚠️ [ERROR-SUCCESS] Respuesta sin success:', resultado);
+                    console.warn(' [ERROR-SUCCESS] Respuesta sin success:', resultado);
                     datosParaFactura.prendas = [prendaEditable];
                 }
             } else {
-                console.error('❌ [ERROR-FETCH] Status no OK:', response.status);
+                console.error(' [ERROR-FETCH] Status no OK:', response.status);
                 const texto = await response.text();
                 console.error('Respuesta:', texto);
                 datosParaFactura.prendas = [prendaEditable];
             }
         } catch (error) {
-            console.error('❌ [ERROR-EXCEPTION] Error en fetch:', error);
+            console.error(' [ERROR-EXCEPTION] Error en fetch:', error);
             datosParaFactura.prendas = [prendaEditable];
         }
     } else {
-        console.warn('⚠️ [NO-FETCH] No se ejecuta fetch - pedidoId o prenda.id faltante');
+        console.warn(' [NO-FETCH] No se ejecuta fetch - pedidoId o prenda.id faltante');
         datosParaFactura.prendas = [prendaEditable];
     }
     
@@ -261,7 +261,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     // Obtener HTML de factura
     if (typeof generarHTMLFactura !== 'function') {
-        console.error('❌ [ERROR-FUNCIONES] generarHTMLFactura no está definida');
+        console.error(' [ERROR-FUNCIONES] generarHTMLFactura no está definida');
         Swal.fire('Error', 'No se puede generar el formulario', 'error');
         return;
     }

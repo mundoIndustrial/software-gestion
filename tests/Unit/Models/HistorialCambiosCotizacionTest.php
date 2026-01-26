@@ -41,7 +41,7 @@ class HistorialCambiosCotizacionTest extends TestCase
     }
 
     /**
-     * Test: RelaciÃ³n con cotizaciÃ³n
+     * Test: Relación con cotización
      */
     public function test_relacion_con_cotizacion()
     {
@@ -54,7 +54,7 @@ class HistorialCambiosCotizacionTest extends TestCase
     }
 
     /**
-     * Test: RelaciÃ³n con usuario
+     * Test: Relación con usuario
      */
     public function test_relacion_con_usuario()
     {

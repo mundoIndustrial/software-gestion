@@ -22,14 +22,14 @@ class RepararImagenesPrendas extends Command
         $fix = $this->option('fix');
 
         if (!$pedidoId) {
-            $this->error('❌ Usa: php artisan reparar:imagenes-prendas --pedido-id=2765 [--fix]');
+            $this->error(' Usa: php artisan reparar:imagenes-prendas --pedido-id=2765 [--fix]');
             return 1;
         }
 
         // Obtener pedido
         $pedido = PedidoProduccion::with('prendas')->find($pedidoId);
         if (!$pedido) {
-            $this->error("❌ Pedido #{$pedidoId} no encontrado");
+            $this->error(" Pedido #{$pedidoId} no encontrado");
             return 1;
         }
 
@@ -51,7 +51,7 @@ class RepararImagenesPrendas extends Command
             $this->line("├─ Fotos registradas: {$fotos->count()}");
 
             if ($fotos->isEmpty()) {
-                $this->line("└─ ✅ Sin fotos");
+                $this->line("└─ Sin fotos");
                 continue;
             }
 
@@ -72,9 +72,9 @@ class RepararImagenesPrendas extends Command
         } else {
             if ($fix) {
                 $this->info("✅ REPARACIÓN COMPLETADA");
-                $this->info("🔧 Se ejecutaron las correcciones automáticas");
+                $this->info(" Se ejecutaron las correcciones automáticas");
             } else {
-                $this->warn("⚠️ Se encontraron {$totalProblemas} problemas");
+                $this->warn(" Se encontraron {$totalProblemas} problemas");
                 $this->info("   Usa --fix para reparar automáticamente");
                 $this->info("   php artisan reparar:imagenes-prendas --pedido-id={$pedidoId} --fix");
             }
@@ -94,29 +94,29 @@ class RepararImagenesPrendas extends Command
         $this->line("   ├─ ruta_webp: " . ($foto->ruta_webp ?? '(vacío)'));
         $this->line("   └─ ruta_original: " . ($foto->ruta_original ?? '(vacío)'));
 
-        // ❌ PROBLEMA 1: ruta_original no está registrada
+        //  PROBLEMA 1: ruta_original no está registrada
         if (empty($foto->ruta_original)) {
             $problemas[] = "ruta_original_vacia";
-            $this->line("      ❌ ruta_original ESTÁ VACÍA");
+            $this->line("       ruta_original ESTÁ VACÍA");
         }
 
-        // ❌ PROBLEMA 2: Archivo WebP no existe
+        //  PROBLEMA 2: Archivo WebP no existe
         if (!empty($foto->ruta_webp)) {
             $existeWebp = Storage::disk('public')->exists($foto->ruta_webp);
             $existeConStorage = Storage::disk('public')->exists(str_replace('/storage/', '', $foto->ruta_webp));
 
             if (!$existeWebp && !$existeConStorage) {
                 $problemas[] = "archivo_webp_no_existe";
-                $this->line("      ❌ Archivo WebP NO EXISTE");
+                $this->line("       Archivo WebP NO EXISTE");
             } else {
-                $this->line("      ✅ Archivo WebP existe");
+                $this->line("      Archivo WebP existe");
             }
         }
 
-        // ❌ PROBLEMA 3: ruta_webp contiene /storage/
+        //  PROBLEMA 3: ruta_webp contiene /storage/
         if (!empty($foto->ruta_webp) && str_contains($foto->ruta_webp, '/storage/')) {
             $problemas[] = "ruta_webp_con_storage";
-            $this->line("      ❌ ruta_webp contiene /storage/");
+            $this->line("       ruta_webp contiene /storage/");
         }
 
         return $problemas;
@@ -127,7 +127,7 @@ class RepararImagenesPrendas extends Command
      */
     private function repararFoto(PrendaFotoPedido $foto, int $pedidoId): void
     {
-        $this->line("      🔧 REPARANDO...");
+        $this->line("       REPARANDO...");
 
         // Caso 1: Limpiar /storage/ de la ruta
         $rutaWebpLimpia = str_replace('/storage/', '', $foto->ruta_webp);
@@ -138,13 +138,13 @@ class RepararImagenesPrendas extends Command
                 'ruta_webp' => $rutaWebpLimpia,
                 'ruta_original' => $rutaWebpLimpia,
             ]);
-            $this->line("      ✅ ruta_original completada desde WebP");
+            $this->line("      ruta_original completada desde WebP");
         } else {
             // Solo limpiar /storage/ si existe
             $foto->update([
                 'ruta_webp' => $rutaWebpLimpia,
             ]);
-            $this->line("      ✅ ruta_webp limpiada");
+            $this->line("      ruta_webp limpiada");
         }
     }
 }

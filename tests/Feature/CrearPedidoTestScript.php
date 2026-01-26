@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * Script de prueba para verificar que se guarde toda la informaciÃ³n del pedido
+ * Script de prueba para verificar que se guarde toda la información del pedido
  * Ejecutar: php artisan tinker
  * Luego: include 'tests/Feature/CrearPedidoTestScript.php'; (new CrearPedidoTestScript())->ejecutarPrueba();
  */
@@ -90,7 +90,7 @@ class CrearPedidoTestScript extends TestCase
             'Forma de Pago' => $pedido->forma_de_pago,
             'Estado' => $pedido->estado,
             'Cantidad Total' => $pedido->cantidad_total,
-            'Fecha CreaciÃ³n' => $pedido->fecha_de_creacion_de_orden,
+            'Fecha Creación' => $pedido->fecha_de_creacion_de_orden,
         ];
 
         foreach ($datos as $campo => $valor) {
@@ -101,20 +101,20 @@ class CrearPedidoTestScript extends TestCase
 
     private function verificarRelaciones(PedidoProduccion $pedido): void
     {
-        // Verificar relaciÃ³n con cliente
+        // Verificar relación con cliente
         $cliente = $pedido->cliente()->first();
         if ($cliente) {
-            echo "  RelaciÃ³n con Cliente: {$cliente->nombre}\n";
+            echo "  Relación con Cliente: {$cliente->nombre}\n";
         } else {
-            echo "    No se encontrÃ³ relaciÃ³n con Cliente\n";
+            echo "    No se encontró relación con Cliente\n";
         }
 
-        // Verificar relaciÃ³n con asesor
+        // Verificar relación con asesor
         $asesor = $pedido->asesor()->first();
         if ($asesor) {
-            echo "  RelaciÃ³n con Asesor: {$asesor->name}\n";
+            echo "  Relación con Asesor: {$asesor->name}\n";
         } else {
-            echo "    No se encontrÃ³ relaciÃ³n con Asesor\n";
+            echo "    No se encontró relación con Asesor\n";
         }
 
         // Verificar que el pedido existe en BD

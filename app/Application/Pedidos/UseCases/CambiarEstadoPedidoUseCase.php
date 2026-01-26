@@ -13,15 +13,15 @@ use Illuminate\Support\Facades\Log;
  * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait + EstadoPedidoCatalog
  * 
- * Antes: 58 lÃ­neas (15 lÃ­neas de lÃ³gica + 43 de validaciÃ³n y transiciones hardcodeadas)
- * DespuÃ©s: 28 lÃ­neas (solo lÃ³gica de negocio)
- * ReducciÃ³n: 52%
+ * Antes: 58 lÃ­neas (15 lÃ­neas de lógica + 43 de validación y transiciones hardcodeadas)
+ * DespuÃ©s: 28 lÃ­neas (solo lógica de negocio)
+ * Reducción: 52%
  * 
  * Beneficios:
  * - Validaciones centralizadas
  * - Transiciones en Ãºnico lugar (EstadoPedidoCatalog)
  * - Mensajes de error consistentes
- * - Menos cÃ³digo repetido
+ * - Menos código repetido
  */
 final class CambiarEstadoPedidoUseCase
 {
@@ -44,7 +44,7 @@ final class CambiarEstadoPedidoUseCase
         // CENTRALIZADO: Validar estado es vÃ¡lido (trait + catalog)
         $this->validarEstadoValido($dto->nuevoEstado);
 
-        // CENTRALIZADO: Validar transiciÃ³n es permitida (trait + catalog)
+        // CENTRALIZADO: Validar transición es permitida (trait + catalog)
         $this->validarTransicion($pedido->estado ?? 'PENDIENTE_SUPERVISOR', $dto->nuevoEstado);
 
         // Actualizar estado

@@ -215,7 +215,7 @@ PRÓXIMOS PASOS
 7. Agregar validación async (backend)
 
 
-✨ CONCLUSIÓN
+ CONCLUSIÓN
 ════════════════════════════════════════════════════════════════════════════════
 
 Transformación exitosa de:

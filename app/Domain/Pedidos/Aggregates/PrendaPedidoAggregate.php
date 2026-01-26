@@ -100,7 +100,7 @@ class PrendaPedidoAggregate
 
         $agregado = new self($id, $pedidoId, $nombrePrenda, $cantidad, $genero);
 
-        // Registrar evento de creaciÃ³n
+        // Registrar evento de creación
         $agregado->recordEvent(
             new PrendaPedidoAgregada(
                 $pedidoId,

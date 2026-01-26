@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Log;
 /**
  * Use Case: Obtener Prendas del Pedido
  * 
- * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicaciÃ³n
+ * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
  * 
- * Antes: 33 lÃ­neas (10 lÃ­neas de lÃ³gica actual + 23 lÃ­neas duplicadas)
- * DespuÃ©s: 18 lÃ­neas (solo implementa personalizaciÃ³n)
- * ReducciÃ³n: 45%
+ * Antes: 33 lÃ­neas (10 lÃ­neas de lógica actual + 23 lÃ­neas duplicadas)
+ * DespuÃ©s: 18 lÃ­neas (solo implementa personalización)
+ * Reducción: 45%
  */
 final class ObtenerPrendasPedidoUseCase extends AbstractObtenerUseCase
 {
@@ -28,7 +28,7 @@ final class ObtenerPrendasPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * PersonalizaciÃ³n: Incluir solo prendas
+     * Personalización: Incluir solo prendas
      */
     protected function obtenerOpciones(): array
     {
@@ -41,7 +41,7 @@ final class ObtenerPrendasPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * PersonalizaciÃ³n: Retornar solo array de prendas
+     * Personalización: Retornar solo array de prendas
      */
     protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {

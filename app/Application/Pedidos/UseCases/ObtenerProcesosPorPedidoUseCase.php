@@ -11,9 +11,9 @@ use Carbon\Carbon;
  * ObtenerProcesosPorPedidoUseCase
  * 
  * Caso de uso para obtener todos los procesos de un pedido con cÃ¡lculo de dÃ­as hÃ¡biles
- * Responsabilidad: Orquestar la obtenciÃ³n de procesos e informaciÃ³n relacionada
+ * Responsabilidad: Orquestar la obtención de procesos e información relacionada
  * 
- * PatrÃ³n: Use Case (Application Layer - DDD)
+ * Patrón: Use Case (Application Layer - DDD)
  */
 class ObtenerProcesosPorPedidoUseCase
 {

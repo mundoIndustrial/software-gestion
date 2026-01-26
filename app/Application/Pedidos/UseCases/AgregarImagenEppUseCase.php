@@ -9,7 +9,7 @@ use App\Models\PedidoEpp;
 /**
  * Use Case para agregar imagen a un EPP
  * 
- * Maneja la creaciÃ³n de registro en pedido_epp_imagenes
+ * Maneja la creación de registro en pedido_epp_imagenes
  */
 final class AgregarImagenEppUseCase
 {

@@ -15,7 +15,7 @@ class MarcarNotificacionLeidaDTO
     ) {}
 
     /**
-     * Crear para marcar una notificaciÃ³n especÃ­fica
+     * Crear para marcar una notificación especÃ­fica
      */
     public static function fromRequest(string $notificacionId): self
     {

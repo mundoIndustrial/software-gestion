@@ -7,7 +7,7 @@ use InvalidArgumentException;
 /**
  * ActualizarProduccionPedidoDTO
  * 
- * DTO para actualizar un pedido de producciÃ³n existente
+ * DTO para actualizar un pedido de producción existente
  */
 class ActualizarProduccionPedidoDTO
 {

@@ -30,7 +30,7 @@ class CotizacionesConcurrencyTest extends TestCase
     /**
      * TEST 1: Simular 100 creaciones secuenciales - verificar secuencialidad perfecta
      * 
-     * Este test verificar que sin importar cÃ³mo se creen las cotizaciones,
+     * Este test verificar que sin importar cómo se creen las cotizaciones,
      * el numero_cotizacion siempre sea secuencial y Ãºnico.
      */
     public function test_100_cotizaciones_secuenciales_sin_duplicados(): void
@@ -71,7 +71,7 @@ class CotizacionesConcurrencyTest extends TestCase
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
-                $this->fail("Error en cotizaciÃ³n $i: " . $e->getMessage());
+                $this->fail("Error en cotización $i: " . $e->getMessage());
             }
         }
 
@@ -162,7 +162,7 @@ class CotizacionesConcurrencyTest extends TestCase
     /**
      * TEST 3: Validar que transacciones no permiten estados inconsistentes
      * 
-     * Si una cotizaciÃ³n se crea pero falla al crear prendas, se debe revertir todo.
+     * Si una cotización se crea pero falla al crear prendas, se debe revertir todo.
      */
     public function test_rollback_si_falla_creacion_prendas(): void
     {
@@ -195,11 +195,11 @@ class CotizacionesConcurrencyTest extends TestCase
             DB::rollBack();
         }
 
-        // Verificar que la cotizaciÃ³n NO fue creada
+        // Verificar que la cotización NO fue creada
         $cotizacionesCount = Cotizacion::where('numero_cotizacion', 'COT-ROLLBACK-001')->count();
         $this->assertEquals(0, $cotizacionesCount);
 
-        echo "\n Rollback funcionÃ³ correctamente\n";
+        echo "\n Rollback funcionó correctamente\n";
     }
 
     /**
@@ -237,12 +237,12 @@ class CotizacionesConcurrencyTest extends TestCase
         // Recargar desde BD
         $cotRefresco = Cotizacion::find($cot->id);
 
-        // El nÃºmero deberÃ­a haber cambiado (o estar protegido dependiendo de implementaciÃ³n)
+        // El nÃºmero deberÃ­a haber cambiado (o estar protegido dependiendo de implementación)
         // Para este test, verificamos que se registra el cambio
-        // En producciÃ³n, deberÃ­as implementar protecciÃ³n en el modelo
+        // En producción, deberÃ­as implementar protección en el modelo
         $this->assertNotNull($cotRefresco->numero_cotizacion);
 
-        echo "\n NÃºmero de cotizaciÃ³n actualizado correctamente\n";
+        echo "\n NÃºmero de cotización actualizado correctamente\n";
     }
 
     /**
@@ -280,7 +280,7 @@ class CotizacionesConcurrencyTest extends TestCase
             $prenda = PrendaCot::create([
                 'cotizacion_id' => $cot->id,
                 'nombre_producto' => "Prenda $p",
-                'descripcion' => "DescripciÃ³n de prenda $p",
+                'descripcion' => "Descripción de prenda $p",
                 'cantidad' => 100,
             ]);
 
@@ -320,12 +320,12 @@ class CotizacionesConcurrencyTest extends TestCase
         $cotRefresco = Cotizacion::with('prendas.fotos.tallas')->find($cot->id);
         $this->assertCount(10, $cotRefresco->prendas);
 
-        echo "\n CotizaciÃ³n con mÃ¡ximas prendas/fotos creada correctamente\n";
+        echo "\n Cotización con mÃ¡ximas prendas/fotos creada correctamente\n";
         echo "Prendas: $prendasCount, Fotos: $fotosCount\n";
     }
 
     /**
-     * TEST 6: Validar que diferentes tipos de cotizaciÃ³n funcionan juntos
+     * TEST 6: Validar que diferentes tipos de cotización funcionan juntos
      * 
      * Crear mÃºltiples cotizaciones de tipos M, P, G sin conflictos.
      */
@@ -379,14 +379,14 @@ class CotizacionesConcurrencyTest extends TestCase
         $totalCots = Cotizacion::count();
         $this->assertGreaterThanOrEqual(15, $totalCots);
 
-        echo "\n MÃºltiples tipos de cotizaciÃ³n funcionan correctamente\n";
+        echo "\n MÃºltiples tipos de cotización funcionan correctamente\n";
         echo "Tipo M: 5, Tipo P: 5, Tipo G: 5 = 15 Total\n";
     }
 
     /**
      * TEST 7: Validar performance con 50 cotizaciones
      * 
-     * Medir que la creaciÃ³n de 50 cotizaciones completas toma tiempo aceptable
+     * Medir que la creación de 50 cotizaciones completas toma tiempo aceptable
      */
     public function test_performance_50_cotizaciones_completas(): void
     {
@@ -442,13 +442,13 @@ class CotizacionesConcurrencyTest extends TestCase
 
         $tiempoFormato = number_format($tiempoTotal, 2);
         echo "\n 50 Cotizaciones completas creadas en {$tiempoFormato} segundos\n";
-        echo "Promedio: " . number_format($tiempoTotal / 50, 2) . " segundos por cotizaciÃ³n\n";
+        echo "Promedio: " . number_format($tiempoTotal / 50, 2) . " segundos por cotización\n";
     }
 
     /**
      * TEST 8: Validar que soft delete funciona correctamente
      * 
-     * Eliminar cotizaciÃ³n y verificar que no aparece en consultas normales
+     * Eliminar cotización y verificar que no aparece en consultas normales
      */
     public function test_soft_delete_cotizaciones(): void
     {
@@ -488,7 +488,7 @@ class CotizacionesConcurrencyTest extends TestCase
         // Debe estar marcado como eliminado
         $this->assertNotNull(Cotizacion::withTrashed()->find($cotId)->deleted_at);
 
-        echo "\n Soft delete funcionÃ³ correctamente\n";
+        echo "\n Soft delete funcionó correctamente\n";
     }
 }
 

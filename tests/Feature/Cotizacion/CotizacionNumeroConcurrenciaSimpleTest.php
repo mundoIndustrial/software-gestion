@@ -6,7 +6,7 @@ use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
 /**
- * TEST: Validar que la generaciÃ³n sincrÃ³nica de nÃºmeros funciona con pessimistic lock
+ * TEST: Validar que la generación sincrónica de nÃºmeros funciona con pessimistic lock
  * 
  * Este test NO usa RefreshDatabase porque MySQL estÃ¡ causando timeout
  * En su lugar, usa directamente MySQLi para testing de BD
@@ -61,7 +61,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         
         echo "\n SECUENCIAS ENCONTRADAS:\n";
         foreach ($secuencias as $sec) {
-            echo "  - {$sec->tipo}: prÃ³ximo_numero = {$sec->proximo_numero}\n";
+            echo "  - {$sec->tipo}: próximo_numero = {$sec->proximo_numero}\n";
         }
     }
 

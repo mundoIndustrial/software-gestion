@@ -43,9 +43,9 @@ class ObtenerPedidosService
      */
     private function obtenerLogoPedidos(string $userName, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginaciÃ³n vacÃ­a');
+        \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginación vacÃ­a');
         
-        // Retornar paginaciÃ³n vacÃ­a
+        // Retornar paginación vacÃ­a
         return PedidoProduccion::where('id', '=', null)
             ->paginate($perPage);
     }
@@ -93,14 +93,14 @@ class ObtenerPedidosService
 
         $estado = $filtros['estado'];
 
-        // Si el estado es "No iniciado", filtrar por pendientes de aprobaciÃ³n
+        // Si el estado es "No iniciado", filtrar por pendientes de aprobación
         if ($estado === 'No iniciado') {
             $query->where('estado', 'No iniciado')
                 ->whereNull('aprobado_por_supervisor_en');
         }
-        // Si el estado es "En EjecuciÃ³n", mostrar "No iniciado" y "En EjecuciÃ³n"
-        elseif ($estado === 'En EjecuciÃ³n') {
-            $query->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n']);
+        // Si el estado es "En Ejecución", mostrar "No iniciado" y "En Ejecución"
+        elseif ($estado === 'En Ejecución') {
+            $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
         }
         // Otros estados exactos
         else {

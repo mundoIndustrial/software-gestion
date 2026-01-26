@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Servicio de Dominio para transformar datos de items
- * Convierte datos del frontend al formato esperado por los servicios de aplicaciÃ³n
+ * Convierte datos del frontend al formato esperado por los servicios de aplicación
  */
 class ItemTransformerService
 {

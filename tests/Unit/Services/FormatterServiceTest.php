@@ -174,7 +174,7 @@ class FormatterServiceTest extends TestCase
     public function test_procesar_especificaciones_no_array(): void
     {
         // Actuar
-        $resultado = $this->service->procesarEspecificaciones('especificaciÃ³n simple');
+        $resultado = $this->service->procesarEspecificaciones('especificación simple');
 
         // Afirmar
         $this->assertIsArray($resultado);
@@ -190,7 +190,7 @@ class FormatterServiceTest extends TestCase
         $request->expects($this->any())
             ->method('input')
             ->willReturnMap([
-                ['observaciones_generales', [], ['ObservaciÃ³n 1', 'ObservaciÃ³n 2']],
+                ['observaciones_generales', [], ['Observación 1', 'Observación 2']],
                 ['observaciones_check', [], [null, null]],
                 ['observaciones_valor', [], ['', '']]
             ]);
@@ -200,7 +200,7 @@ class FormatterServiceTest extends TestCase
 
         // Afirmar
         $this->assertCount(2, $resultado);
-        $this->assertEquals('ObservaciÃ³n 1', $resultado[0]['texto']);
+        $this->assertEquals('Observación 1', $resultado[0]['texto']);
         $this->assertEquals('texto', $resultado[0]['tipo']);
     }
 

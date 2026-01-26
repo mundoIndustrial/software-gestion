@@ -70,7 +70,7 @@ Se han agregado logs detallados en 4 capas de la aplicación para trackear el fl
 **Método:** `construirProcesoParaEdicion($proceso, $prendaId)`
 
 ```
-🔧 [PROCESO-DETALLE] Construyendo proceso para edición
+ [PROCESO-DETALLE] Construyendo proceso para edición
     - proceso_id
     - tipo_proceso
     - imagenes_count
@@ -102,7 +102,7 @@ Se han agregado logs detallados en 4 capas de la aplicación para trackear el fl
     - imagenes_count
     - prenda_keys (array de propiedades)
 
-⚠️ [PRENDA-DATOS-VACIA] La prenda retornó datos vacíos (si aplica)
+ [PRENDA-DATOS-VACIA] La prenda retornó datos vacíos (si aplica)
 ```
 
 ### 3️⃣ modal-prendas-lista.blade.php (Frontend - Button Click)
@@ -126,7 +126,7 @@ Se han agregado logs detallados en 4 capas de la aplicación para trackear el fl
 
 ✅ [ONCLICK-EJECUTANDO] abrirEditarPrendaModal encontrada, ejecutando...
 
-❌ [ONCLICK-ERROR] abrirEditarPrendaModal NO ES FUNCIÓN
+ [ONCLICK-ERROR] abrirEditarPrendaModal NO ES FUNCIÓN
     - Tipo actual: {tipo}
     - Valor: {valor}
     - Funciones disponibles: [lista de funciones abrirEditar*]
@@ -144,9 +144,9 @@ Se han agregado logs detallados en 4 capas de la aplicación para trackear el fl
     - pedidoId_RECIBIDO
     - tipo_pedidoId
 
-⚠️ [OBTENER-ID] pedidoId vacío, buscando...
+ [OBTENER-ID] pedidoId vacío, buscando...
 
-⚠️ [OBTENER-ID] Después de obtenerPedidoId(): {id}
+ [OBTENER-ID] Después de obtenerPedidoId(): {id}
 
 ✅ [PEDIDO-ID-FINAL] pedidoId usado será: {id}
 
@@ -189,11 +189,11 @@ Se han agregado logs detallados en 4 capas de la aplicación para trackear el fl
 
 ✅ [COLORES-TELAS]: {array}
 
-⚠️ [NO-FETCH] No se ejecuta fetch - pedidoId o prenda.id faltante
+ [NO-FETCH] No se ejecuta fetch - pedidoId o prenda.id faltante
 
 ✅ [FINAL-DATOS-FACTURA] Datos finales para generar HTML
 
-❌ [ERROR-FUNCIONES] generarHTMLFactura no está definida
+ [ERROR-FUNCIONES] generarHTMLFactura no está definida
 
 🎨 [HTML-INICIO] Iniciando generación de HTML
 
@@ -239,7 +239,7 @@ Usuario clickea botón "Editar"
     ↓
 ✅ [TRANSFORMAR-COMPLETO]
     ↓
-🔧 [PROCESO-DETALLE] (para cada proceso)
+ [PROCESO-DETALLE] (para cada proceso)
     ↓
 ✅ [PRENDA-TRANSFORMADA]
     ↓
@@ -276,8 +276,8 @@ Usuario clickea botón "Editar"
 3. Filtra por los prefijos:
    - `🔥` = Critical events
    - `✅` = Success
-   - `⚠️` = Warnings
-   - `❌` = Errors
+   - `` = Warnings
+   - `` = Errors
    - `📡` = Network/Fetch
    - `📊` = Data
    - `🎨` = HTML Rendering

@@ -1,4 +1,4 @@
-# 🚀 SCRIPT AUTO-DIAGNÓSTICO - COPIA Y EJECUTA EN LA CONSOLE
+#  SCRIPT AUTO-DIAGNÓSTICO - COPIA Y EJECUTA EN LA CONSOLE
 
 ## INSTRUCCIONES
 
@@ -50,15 +50,15 @@ if (typeof window.receiptManager !== 'undefined') {
             
             // Procesos
             console.group('%c🔹 PROCESOS', 'color: #f59e0b; font-weight: bold;');
-            console.log('¿Tiene clave "procesos"?', 'procesos' in prenda ? '✅ SÍ' : '❌ NO');
+            console.log('¿Tiene clave "procesos"?', 'procesos' in prenda ? '✅ SÍ' : ' NO');
             console.log('Valor de procesos:', prenda.procesos);
-            console.log('¿Es array?', Array.isArray(prenda.procesos) ? '✅ SÍ' : '❌ NO');
+            console.log('¿Es array?', Array.isArray(prenda.procesos) ? '✅ SÍ' : ' NO');
             console.log('Tipo de datos:', typeof prenda.procesos);
             
             if (prenda.procesos === null) {
-                console.log('%c⚠️ PROCESOS ES NULL', 'color: red; font-weight: bold;');
+                console.log('%c PROCESOS ES NULL', 'color: red; font-weight: bold;');
             } else if (prenda.procesos === undefined) {
-                console.log('%c⚠️ PROCESOS ES UNDEFINED', 'color: red; font-weight: bold;');
+                console.log('%c PROCESOS ES UNDEFINED', 'color: red; font-weight: bold;');
             } else if (Array.isArray(prenda.procesos)) {
                 console.log(`%c✅ PROCESOS ES ARRAY CON ${prenda.procesos.length} ITEMS`, 'color: green; font-weight: bold;');
                 
@@ -70,7 +70,7 @@ if (typeof window.receiptManager !== 'undefined') {
                     console.table(prenda.procesos);
                 }
             } else if (typeof prenda.procesos === 'object') {
-                console.log('%c⚠️ PROCESOS ES OBJETO (NO ARRAY)', 'color: orange; font-weight: bold;');
+                console.log('%c PROCESOS ES OBJETO (NO ARRAY)', 'color: orange; font-weight: bold;');
                 console.log('Claves del objeto:', Object.keys(prenda.procesos));
                 console.table(prenda.procesos);
             }
@@ -85,13 +85,13 @@ if (typeof window.receiptManager !== 'undefined') {
             
             console.groupEnd();
         } else {
-            console.log('❌ No hay prendas en los datos');
+            console.log(' No hay prendas en los datos');
         }
     } else {
-        console.log('❌ datosFactura no disponible en ReceiptManager');
+        console.log(' datosFactura no disponible en ReceiptManager');
     }
 } else {
-    console.log('❌ ReceiptManager NO está cargado');
+    console.log(' ReceiptManager NO está cargado');
     console.log('   Posible causa: El script de ReceiptManager no se ha cargado aún');
     console.log('   Solución: Espera 2-3 segundos más y vuelve a ejecutar');
 }
@@ -115,11 +115,11 @@ if (typeof window.receiptManager !== 'undefined' && window.receiptManager.recibo
     console.log(`  • Total: ${costura + procesos}`);
     
     if (procesos === 0) {
-        console.log('%c⚠️ ADVERTENCIA: No hay recibos de procesos', 'color: red; font-weight: bold;');
+        console.log('%c ADVERTENCIA: No hay recibos de procesos', 'color: red; font-weight: bold;');
         console.log('   Esto sugiere que procesos está vacío o undefined');
     }
 } else {
-    console.log('❌ No hay recibos disponibles');
+    console.log(' No hay recibos disponibles');
 }
 
 console.groupEnd();
@@ -140,20 +140,20 @@ if (window.receiptManager && window.receiptManager.datosFactura) {
         
         console.log(`
 Prenda: ${prenda.nombre}
-├─ ¿Procesos existe? ${tieneProc ? '✅' : '❌'}
-├─ ¿Es nulo/undefined? ${esMal ? '⚠️ SÍ' : '✅ NO'}
-├─ ¿Es array? ${esArray ? '✅' : '❌'}
-└─ ¿Tiene items? ${tieneItems ? `✅ (${prenda.procesos.length})` : '❌'}
+├─ ¿Procesos existe? ${tieneProc ? '✅' : ''}
+├─ ¿Es nulo/undefined? ${esMal ? ' SÍ' : '✅ NO'}
+├─ ¿Es array? ${esArray ? '✅' : ''}
+└─ ¿Tiene items? ${tieneItems ? `✅ (${prenda.procesos.length})` : ''}
         `.trim());
         
         if (!tieneProc) {
-            console.log('%c❌ PROBLEMA IDENTIFICADO: procesos NO existe en la prenda', 'color: red; font-weight: bold; font-size: 12px;');
+            console.log('%c PROBLEMA IDENTIFICADO: procesos NO existe en la prenda', 'color: red; font-weight: bold; font-size: 12px;');
         } else if (esMal) {
-            console.log('%c⚠️ PROBLEMA IDENTIFICADO: procesos es null o undefined', 'color: orange; font-weight: bold; font-size: 12px;');
+            console.log('%c PROBLEMA IDENTIFICADO: procesos es null o undefined', 'color: orange; font-weight: bold; font-size: 12px;');
         } else if (!esArray) {
-            console.log('%c⚠️ PROBLEMA IDENTIFICADO: procesos NO es un array', 'color: orange; font-weight: bold; font-size: 12px;');
+            console.log('%c PROBLEMA IDENTIFICADO: procesos NO es un array', 'color: orange; font-weight: bold; font-size: 12px;');
         } else if (!tieneItems) {
-            console.log('%c⚠️ PROBLEMA IDENTIFICADO: procesos es array vacío', 'color: orange; font-weight: bold; font-size: 12px;');
+            console.log('%c PROBLEMA IDENTIFICADO: procesos es array vacío', 'color: orange; font-weight: bold; font-size: 12px;');
         } else {
             console.log('%c✅ TODO CORRECTO: procesos está cargado correctamente', 'color: green; font-weight: bold; font-size: 12px;');
         }
@@ -175,20 +175,20 @@ console.log('📋 Copia TODO el output de arriba y comparte conmigo');
 ```
 ✅ TODO CORRECTO: procesos está cargado correctamente
 Prenda: CAMISETA XYZ
-├─ ¿Procesos existe? ✅
-├─ ¿Es nulo/undefined? ✅ NO
-├─ ¿Es array? ✅
-└─ ¿Tiene items? ✅ (3)
+├─ ¿Procesos existe?
+├─ ¿Es nulo/undefined? NO
+├─ ¿Es array?
+└─ ¿Tiene items? (3)
 ```
 
 ### Si procesos no existe:
 ```
-❌ PROBLEMA IDENTIFICADO: procesos NO existe en la prenda
+ PROBLEMA IDENTIFICADO: procesos NO existe en la prenda
 ```
 
 ### Si procesos es null:
 ```
-⚠️ PROBLEMA IDENTIFICADO: procesos es null o undefined
+ PROBLEMA IDENTIFICADO: procesos es null o undefined
 ```
 
 ---

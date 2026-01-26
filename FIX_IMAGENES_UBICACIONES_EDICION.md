@@ -2,10 +2,10 @@
 
 ## Problema Reportado
 Cuando se edita una prenda que fue creada desde el formulario:
-- ❌ Las imágenes de la prenda desaparecen
-- ❌ Las imágenes de los procesos desaparecen  
-- ❌ Las ubicaciones de los procesos desaparecen
-- ✅ Las tallas se cargan correctamente (fix anterior)
+-  Las imágenes de la prenda desaparecen
+-  Las imágenes de los procesos desaparecen  
+-  Las ubicaciones de los procesos desaparecen
+- Las tallas se cargan correctamente (fix anterior)
 
 ## Causa Raíz
 Los datos vienen en diferentes formatos según su origen:
@@ -147,14 +147,14 @@ proceso.ubicaciones = 'pecho, espalda, manga'
 🖼️ [CARGAR-IMAGENES] Iniciando carga de imágenes
 ✅ [CARGAR-IMAGENES] Detectado: imagenes de FORMULARIO (File objects)
 🔄 [CARGAR-IMAGENES] Limpiando y cargando 2 imágenes (origen: formulario)
-  ✅ [PROCESAR-IMAGEN] Imagen 0: File object detectado
-  ✅ [PROCESAR-IMAGEN] Imagen 1: File object detectado
+  [PROCESAR-IMAGEN] Imagen 0: File object detectado
+  [PROCESAR-IMAGEN] Imagen 1: File object detectado
 ✅ [CARGAR-IMAGENES] 2 imágenes cargadas desde formulario
 ```
 
 ### Para Ubicaciones de Proceso
 ```
-📍 [UBICACIONES] Detectado ARRAY: ['pecho', 'espalda']
+ [UBICACIONES] Detectado ARRAY: ['pecho', 'espalda']
 ```
 
 ## Validación
@@ -178,9 +178,9 @@ proceso.ubicaciones = 'pecho, espalda, manga'
 
 2. **Editar prenda del paso 1**
    - Abrir modal de edición
-   - ✅ Verificar imágenes presentes
-   - ✅ Verificar ubicaciones presentes
-   - ✅ Verificar tallas presentes
+   - Verificar imágenes presentes
+   - Verificar ubicaciones presentes
+   - Verificar tallas presentes
 
 3. **Crear proceso con ubicaciones**
    - Agregar proceso con 2+ ubicaciones
@@ -188,5 +188,5 @@ proceso.ubicaciones = 'pecho, espalda, manga'
 
 4. **Editar proceso del paso 3**
    - Abrir modal para editar proceso
-   - ✅ Verificar ubicaciones cargadas
-   - ✅ Verificar imágenes cargadas
+   - Verificar ubicaciones cargadas
+   - Verificar imágenes cargadas

@@ -13,7 +13,7 @@ use InvalidArgumentException;
  * - Validar tipos de prenda (sin_cotizacion, reflectivo)
  * - Validar cantidades y dimensiones
  * 
- * PatrÃ³n: Strategy (implementa Validator)
+ * Patrón: Strategy (implementa Validator)
  * SRP: Solo valida prendas
  */
 class PrendaValidator implements Validator
@@ -144,7 +144,7 @@ class PrendaValidator implements Validator
     }
 
     /**
-     * Validar tipo de broche/botÃ³n
+     * Validar tipo de broche/botón
      * 
      * - Opcional (puede ser null)
      * - MÃ¡ximo 100 caracteres si se especifica
@@ -159,7 +159,7 @@ class PrendaValidator implements Validator
         }
 
         if (strlen($tipoBrocheBoton) > 100) {
-            throw new InvalidArgumentException('El tipo de broche/botÃ³n no puede exceder 100 caracteres');
+            throw new InvalidArgumentException('El tipo de broche/botón no puede exceder 100 caracteres');
         }
     }
 

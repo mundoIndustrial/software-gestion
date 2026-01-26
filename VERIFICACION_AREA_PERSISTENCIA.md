@@ -5,7 +5,7 @@ El campo `area` no se estaba guardando cuando se creaban nuevos pedidos. El valo
 
 ## Cambios Realizados
 
-### 1. ✅ Controller - PedidosProduccionController.php (Line 219)
+### 1. Controller - PedidosProduccionController.php (Line 219)
 **Antes:**
 ```php
 $dto = CrearProduccionPedidoDTO::fromRequest(null, $validated);
@@ -20,7 +20,7 @@ $dto = CrearProduccionPedidoDTO::fromRequest($validated);
 
 ---
 
-### 2. ✅ DTO - CrearProduccionPedidoDTO.php
+### 2. DTO - CrearProduccionPedidoDTO.php
 **Propiedades Agregadas:**
 - `public ?string $area;`
 - `public ?string $estado;`
@@ -45,7 +45,7 @@ $datos['forma_pago'] ?? null
 
 ---
 
-### 3. ✅ Use Case - CrearProduccionPedidoUseCase.php
+### 3. Use Case - CrearProduccionPedidoUseCase.php
 **Antes:**
 - Usaba `PedidoRepository::guardar()` (que no existe)
 - No persistía `area` ni `estado`
@@ -85,7 +85,7 @@ $agregado = PedidoProduccionAggregate::crear(
 
 ---
 
-### 4. ✅ Agregado - PedidoProduccionAggregate.php
+### 4. Agregado - PedidoProduccionAggregate.php
 
 **Propiedades Agregadas:**
 ```php
@@ -186,20 +186,20 @@ Si el cliente envía estos campos en el request, se usan esos valores en lugar d
 
 ## Archivos Modificados
 
-1. ✅ `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionController.php`
+1. `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionController.php`
    - Line 219: Corregir llamada a fromRequest()
 
-2. ✅ `app/Application/Pedidos/DTOs/CrearProduccionPedidoDTO.php`
+2. `app/Application/Pedidos/DTOs/CrearProduccionPedidoDTO.php`
    - Lines 14-21: Agregar propiedades
    - Lines 35-37: Setear defaults
    - Lines 47-57: Actualizar fromRequest()
 
-3. ✅ `app/Application/Pedidos/UseCases/CrearProduccionPedidoUseCase.php`
+3. `app/Application/Pedidos/UseCases/CrearProduccionPedidoUseCase.php`
    - Completamente refactorizado
    - Ahora crea en BD primero, luego crea agregado
    - Persiste todos los campos incluyendo `area`
 
-4. ✅ `app/Domain/Pedidos/Aggregates/PedidoProduccionAggregate.php`
+4. `app/Domain/Pedidos/Aggregates/PedidoProduccionAggregate.php`
    - Lines 37-40: Agregar propiedad `area`
    - Lines 75-77: Agregar parámetro al constructor
    - Lines 92-99: Agregar parámetro a factory method
@@ -248,11 +248,11 @@ echo $pedido->estado; // 'Pendiente'
 
 ✅ **COMPLETADO**
 
-- ✅ DTO captura y defaultea `area`
-- ✅ UseCase persiste `area` en BD
-- ✅ Agregado acepta y almacena `area`
-- ✅ Sintaxis PHP validada
-- ✅ Caches limpios
+- DTO captura y defaultea `area`
+- UseCase persiste `area` en BD
+- Agregado acepta y almacena `area`
+- Sintaxis PHP validada
+- Caches limpios
 
 ---
 

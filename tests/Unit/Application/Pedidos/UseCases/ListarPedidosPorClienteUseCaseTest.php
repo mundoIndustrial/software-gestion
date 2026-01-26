@@ -49,7 +49,7 @@ class ListarPedidosPorClienteUseCaseTest extends TestCase
             prendasData: [
                 [
                     'prenda_id' => 2,
-                    'descripcion' => 'PantalÃ³n',
+                    'descripcion' => 'Pantalón',
                     'cantidad' => 5,
                     'tallas' => ['DAMA' => ['S' => 5]],
                 ]

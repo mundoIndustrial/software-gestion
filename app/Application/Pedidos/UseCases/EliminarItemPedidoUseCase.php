@@ -9,7 +9,7 @@ use App\Domain\Pedidos\Services\GestionItemsPedidoService;
  * 
  * Responsabilidad:
  * - Validar Ã­ndice del item
- * - Eliminar item de la sesiÃ³n
+ * - Eliminar item de la sesión
  * - Retornar estado actualizado
  */
 class EliminarItemPedidoUseCase

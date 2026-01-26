@@ -14,7 +14,7 @@ use App\Models\PrendaFotoCot;
 use Tests\TestCase;
 
 /**
- * Test Suite: ValidaciÃ³n de Campos e Integridad
+ * Test Suite: Validación de Campos e Integridad
  * 
  *  NOTA: No usa RefreshDatabase para preservar datos existentes
  * 
@@ -44,13 +44,13 @@ class CotizacionesIntegrityTest extends TestCase
      * TEST 1: Validar que numero_cotizacion es UNIQUE
      * 
      * Crea dos cotizaciones e intenta asignar el mismo nÃºmero.
-     * Debe fallar o generar excepciÃ³n.
+     * Debe fallar o generar excepción.
      */
     public function test_numero_cotizacion_debe_ser_unico(): void
     {
         $this->actingAs($this->asesor);
 
-        // Crear primera cotizaciÃ³n
+        // Crear primera cotización
         $cot1 = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
@@ -64,7 +64,7 @@ class CotizacionesIntegrityTest extends TestCase
 
         $this->assertNotNull($cot1->id);
 
-        // Intentar crear segunda cotizaciÃ³n con el mismo nÃºmero
+        // Intentar crear segunda cotización con el mismo nÃºmero
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         $cot2 = Cotizacion::create([
@@ -150,10 +150,10 @@ class CotizacionesIntegrityTest extends TestCase
         // Verificar que existe
         $this->assertNotNull(PrendaCot::find($prendaId));
 
-        // Eliminar cotizaciÃ³n
+        // Eliminar cotización
         $cot->delete();
 
-        // Verificar que la prenda se eliminÃ³ (soft delete o cascada)
+        // Verificar que la prenda se eliminó (soft delete o cascada)
         $this->assertNull(PrendaCot::withoutTrashed()->find($prendaId));
     }
 
@@ -173,7 +173,7 @@ class CotizacionesIntegrityTest extends TestCase
             'es_borrador' => false,
             'estado' => 'enviada',
             'especificaciones' => [
-                'material' => 'algodÃ³n',
+                'material' => 'algodón',
                 'calidad' => 'premium',
             ],
             'imagenes' => [
@@ -190,7 +190,7 @@ class CotizacionesIntegrityTest extends TestCase
         $this->assertIsArray($cot->especificaciones);
         $this->assertIsArray($cot->imagenes);
         $this->assertIsArray($cot->ubicaciones);
-        $this->assertEquals('algodÃ³n', $cot->especificaciones['material']);
+        $this->assertEquals('algodón', $cot->especificaciones['material']);
         $this->assertCount(2, $cot->imagenes);
     }
 
@@ -318,7 +318,7 @@ class CotizacionesIntegrityTest extends TestCase
             'telas_multiples' => [
                 [
                     'color' => 'Azul Marino',
-                    'nombre_tela' => 'AlgodÃ³n 100%',
+                    'nombre_tela' => 'Algodón 100%',
                     'referencia' => 'ALG-001',
                     'url_imagen' => 'storage/telas/algodon.jpg',
                 ],
@@ -339,7 +339,7 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 9: Validar estado enum de cotizaciÃ³n
+     * TEST 9: Validar estado enum de cotización
      */
     public function test_estado_cotizacion_valores_validos(): void
     {
@@ -401,7 +401,7 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 11: Validar relaciÃ³n One-to-Many: CotizaciÃ³n -> Prendas
+     * TEST 11: Validar relación One-to-Many: Cotización -> Prendas
      */
     public function test_relacion_cotizacion_prendas(): void
     {
@@ -422,12 +422,12 @@ class CotizacionesIntegrityTest extends TestCase
             PrendaCot::create([
                 'cotizacion_id' => $cot->id,
                 'nombre_producto' => "Prenda $i",
-                'descripcion' => "DescripciÃ³n $i",
+                'descripcion' => "Descripción $i",
                 'cantidad' => 100 * $i,
             ]);
         }
 
-        // Verificar relaciÃ³n
+        // Verificar relación
         $this->assertCount(3, $cot->prendas);
         $this->assertEquals('Prenda 1', $cot->prendas[0]->nombre_producto);
         $this->assertEquals(100, $cot->prendas[0]->cantidad);

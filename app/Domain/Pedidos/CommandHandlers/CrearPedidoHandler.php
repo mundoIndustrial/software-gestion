@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  * CrearPedidoHandler
  * 
  * Maneja el command CrearPedidoCommand
- * Crea un nuevo pedido de producciÃ³n con eventos
+ * Crea un nuevo pedido de producción con eventos
  * 
  * Responsabilidades:
  * - Validar datos del command
@@ -45,7 +45,7 @@ class CrearPedidoHandler implements CommandHandler
         }
 
         try {
-            Log::info('âš¡ [CrearPedidoHandler] Iniciando creaciÃ³n de pedido', [
+            Log::info('âš¡ [CrearPedidoHandler] Iniciando creación de pedido', [
                 'numero_pedido' => $command->getNumeroPedido(),
                 'cliente' => $command->getCliente(),
                 'asesor_id' => $command->getAsesorId(),

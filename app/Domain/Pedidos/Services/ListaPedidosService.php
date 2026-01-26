@@ -13,7 +13,7 @@ use Illuminate\Pagination\Paginator;
 class ListaPedidosService
 {
     /**
-     * Obtener pedidos de producciÃ³n del asesor autenticado
+     * Obtener pedidos de producción del asesor autenticado
      */
     public function obtenerPedidosProduccion(array $filtros = []): Paginator
     {
@@ -34,9 +34,9 @@ class ListaPedidosService
         if (!empty($filtros['estado'])) {
             $estado = $filtros['estado'];
             
-            // Para "En ProducciÃ³n", filtrar por mÃºltiples estados
-            if ($estado === 'En ProducciÃ³n') {
-                $query->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n']);
+            // Para "En Producción", filtrar por mÃºltiples estados
+            if ($estado === 'En Producción') {
+                $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
             } else {
                 $query->where('estado', $estado);
             }
@@ -85,7 +85,7 @@ class ListaPedidosService
     }
 
     /**
-     * Obtener detalle completo de un pedido de producciÃ³n
+     * Obtener detalle completo de un pedido de producción
      */
     public function obtenerDetallePedido(int $pedidoId)
     {

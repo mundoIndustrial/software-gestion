@@ -256,14 +256,14 @@ class GestionItemsUI {
             console.log('[gestion-items-pedido]   - tieneTallas:', tieneTallas);
 
             if (!tieneTallas) {
-                this.notificationService?.advertencia('⚠️ Por favor selecciona al menos una talla para la prenda');
-                console.log('[gestion-items-pedido] ❌ Validación FALLIDA: No hay tallas');
+                this.notificationService?.advertencia(' Por favor selecciona al menos una talla para la prenda');
+                console.log('[gestion-items-pedido]  Validación FALLIDA: No hay tallas');
                 return;
             }
 
             console.log('[gestion-items-pedido]  Validación EXITOSA: Hay tallas, procediendo a guardar');
 
-            // ✅ PROCESAR TIPO DE MANGA: Crear si no existe
+            // PROCESAR TIPO DE MANGA: Crear si no existe
             if (prendaData.variantes?.tipo_manga_crear && prendaData.variantes?.tipo_manga) {
                 console.log('[gestion-items-pedido] 🔄 Creando tipo de manga:', prendaData.variantes.tipo_manga);
                 
@@ -292,7 +292,7 @@ class GestionItemsUI {
                             datalist.appendChild(newOption);
                         }
                         
-                        console.log('[gestion-items-pedido] ✅ Tipo de manga creado:', {
+                        console.log('[gestion-items-pedido] Tipo de manga creado:', {
                             id: result.data.id,
                             nombre: result.data.nombre
                         });
@@ -300,11 +300,11 @@ class GestionItemsUI {
                         // Limpiar flag de creación
                         delete prendaData.variantes.tipo_manga_crear;
                     } else {
-                        console.warn('[gestion-items-pedido] ⚠️ No se pudo crear tipo de manga:', result);
+                        console.warn('[gestion-items-pedido]  No se pudo crear tipo de manga:', result);
                         this.notificationService?.advertencia('No se pudo crear el tipo de manga, se guardará solo el nombre');
                     }
                 } catch (error) {
-                    console.error('[gestion-items-pedido] ❌ Error creando tipo de manga:', error);
+                    console.error('[gestion-items-pedido]  Error creando tipo de manga:', error);
                     this.notificationService?.advertencia('Error al crear tipo de manga, se guardará solo el nombre');
                 }
             }
@@ -451,7 +451,7 @@ class GestionItemsUI {
             // El backend retorna "success", no "valid"
             if (!validacion.success) {
                 this.ocultarCargando();
-                console.log('[gestion-items-pedido] ❌ Validación falló:', validacion.errores);
+                console.log('[gestion-items-pedido]  Validación falló:', validacion.errores);
                 const errores = validacion.errores || [];
                 if (Array.isArray(errores) && errores.length > 0) {
                     alert('Errores en el pedido:\n' + errores.join('\n'));
@@ -461,7 +461,7 @@ class GestionItemsUI {
                 return;
             }
             
-            console.log('[gestion-items-pedido] ✅ Validación exitosa, procediendo a crear pedido');
+            console.log('[gestion-items-pedido] Validación exitosa, procediendo a crear pedido');
 
             this.mostrarCargando('Creando pedido...');
             const resultado = await this.apiService.crearPedido(pedidoData);
@@ -477,9 +477,9 @@ class GestionItemsUI {
                 setTimeout(() => this.mostrarModalExito(), 300);
             }
         } catch (error) {
-            console.error('[gestion-items-pedido] ❌ ERROR CAPTURADO:', error);
-            console.error('[gestion-items-pedido] ❌ Stack:', error.stack);
-            console.error('[gestion-items-pedido] ❌ Message:', error.message);
+            console.error('[gestion-items-pedido]  ERROR CAPTURADO:', error);
+            console.error('[gestion-items-pedido]  Stack:', error.stack);
+            console.error('[gestion-items-pedido]  Message:', error.message);
             
             this.ocultarCargando();
             if (this.notificationService) {

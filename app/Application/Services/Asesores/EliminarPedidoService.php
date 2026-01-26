@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * EliminarPedidoService
  * 
- * Servicio para eliminar pedidos de producciÃ³n y todas sus relaciones.
- * Encapsula la lÃ³gica compleja de cascada de eliminaciÃ³n.
+ * Servicio para eliminar pedidos de producción y todas sus relaciones.
+ * Encapsula la lógica compleja de cascada de eliminación.
  */
 class EliminarPedidoService
 {
@@ -21,7 +21,7 @@ class EliminarPedidoService
      * Eliminar un pedido completamente (incluyendo todas sus relaciones)
      * 
      * Elimina:
-     * - El pedido de producciÃ³n
+     * - El pedido de producción
      * - Todas las prendas asociadas
      * - Todos los procesos de prenda
      * - Todos los materiales de insumos
@@ -49,7 +49,7 @@ class EliminarPedidoService
             $numeroPedidoGuardado = $pedidoData->numero_pedido;
             $pedidoId = $pedidoData->id;
             
-            \Log::info('ðŸ—‘ï¸ Iniciando eliminaciÃ³n de pedido', [
+            \Log::info('ðŸ—‘ï¸ Iniciando eliminación de pedido', [
                 'numero_pedido' => $numeroPedidoGuardado,
                 'pedido_id' => $pedidoId,
             ]);
@@ -93,7 +93,7 @@ class EliminarPedidoService
             // 6. Eliminar materiales de insumos (relacionados por numero_pedido)
             MaterialesOrdenInsumos::where('numero_pedido', $numeroPedidoGuardado)->delete();
             
-            // 7. Eliminar pedido(s) de LOGO si esta es una cotizaciÃ³n combinada
+            // 7. Eliminar pedido(s) de LOGO si esta es una cotización combinada
             $logoPedidos = DB::table('logo_pedidos')
                 ->where('pedido_id', $pedidoId)
                 ->get();

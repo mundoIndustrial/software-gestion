@@ -49,7 +49,7 @@ class TestImagenRelocalizador extends Command
                 }
             }
         } else {
-            $this->error('❌ NO se relocalizaron archivos');
+            $this->error(' NO se relocalizaron archivos');
         }
 
         $this->info('');
@@ -83,7 +83,7 @@ class TestImagenRelocalizador extends Command
                 }
             }
         } else {
-            $this->error('❌ NO se relocalizaron archivos');
+            $this->error(' NO se relocalizaron archivos');
         }
 
         $this->info('');

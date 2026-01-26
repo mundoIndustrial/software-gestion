@@ -17,7 +17,7 @@
 
     // Verificar si Pusher está disponible
     if (typeof window.Pusher === 'undefined') {
-        console.warn('⚠️ Pusher no está disponible, no se puede inicializar Echo');
+        console.warn(' Pusher no está disponible, no se puede inicializar Echo');
         return;
     }
 
@@ -51,7 +51,7 @@
     const scheme = document.querySelector('meta[name="reverb-scheme"]')?.content || env.scheme;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
-    console.log('🔧 echo-init.js - Environment Detection:');
+    console.log(' echo-init.js - Environment Detection:');
     console.log('Hostname:', window.location.hostname);
     console.log('isProduction:', isProduction);
     console.log('');
@@ -89,17 +89,17 @@
         });
 
         window.Echo.connector.pusher.connection.bind('disconnected', () => {
-            console.warn('⚠️ WebSocket desconectado');
+            console.warn(' WebSocket desconectado');
             updateConnectionStatus(false);
         });
 
         window.Echo.connector.pusher.connection.bind('error', (error) => {
-            console.error('❌ Error de conexión WebSocket:', error);
+            console.error(' Error de conexión WebSocket:', error);
             updateConnectionStatus(false);
         });
 
         window.Echo.connector.pusher.connection.bind('unavailable', () => {
-            console.warn('⚠️ WebSocket no disponible');
+            console.warn(' WebSocket no disponible');
             updateConnectionStatus(false);
         });
 
@@ -107,7 +107,7 @@
         addConnectionIndicator();
 
     } catch (error) {
-        console.error('❌ Error al inicializar Echo:', error);
+        console.error(' Error al inicializar Echo:', error);
     }
 
     /**

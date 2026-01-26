@@ -11,7 +11,7 @@ use App\Domain\Pedidos\Services\GestionItemsPedidoService;
  * 
  * Responsabilidad:
  * - Validar datos del item
- * - Agregar item a la sesiÃ³n de construcciÃ³n
+ * - Agregar item a la sesión de construcción
  * - Retornar estado actualizado
  */
 class AgregarItemPedidoUseCase

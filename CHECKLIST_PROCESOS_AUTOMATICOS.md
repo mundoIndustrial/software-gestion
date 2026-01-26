@@ -1,4 +1,4 @@
-# ✅ Checklist: Creación Automática de Procesos
+# Checklist: Creación Automática de Procesos
 
 ## 🎯 Verificación de Implementación
 
@@ -143,7 +143,7 @@ INSERT INTO procesos_prenda (...) VALUES (...)
 
 ---
 
-## 🚀 Deployment Checklist
+##  Deployment Checklist
 
 ### Pre-Production
 - [ ] Código revisado por otro desarrollador
@@ -206,7 +206,7 @@ id | numero_pedido | prenda_pedido_id | proceso              | estado_proceso | 
 
 ---
 
-## ✨ Próximas Mejoras (Opcional)
+##  Próximas Mejoras (Opcional)
 
 - [ ] Agregar más procesos iniciales automáticamente
 - [ ] Crear procesos específicos según tipo de prenda
@@ -226,4 +226,4 @@ id | numero_pedido | prenda_pedido_id | proceso              | estado_proceso | 
 
 ---
 
-**Estado:** ✅ LISTO PARA TESTING
+**Estado:** LISTO PARA TESTING

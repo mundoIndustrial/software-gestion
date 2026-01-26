@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  * Responsabilidad: Crear prenda base en BD
  * - Crear registro en tabla prenda_pedido
  * - Mantener logs exactamente igual
- * - Verificar que la prenda se guardÃ³ correctamente
+ * - Verificar que la prenda se guardó correctamente
  * 
  * NO TOCAR - Mantener logs exactamente igual
  */

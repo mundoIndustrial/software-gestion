@@ -59,7 +59,7 @@ class ImageUploadHelper {
                 url: data.url
             };
         } catch (error) {
-            console.error('❌ Error subiendo imagen:', error);
+            console.error(' Error subiendo imagen:', error);
             throw error;
         }
     }
@@ -82,7 +82,7 @@ class ImageUploadHelper {
             const resultados = await Promise.all(promesas);
             return resultados;
         } catch (error) {
-            console.error('❌ Error subiendo imágenes múltiples:', error);
+            console.error(' Error subiendo imágenes múltiples:', error);
             throw error;
         }
     }

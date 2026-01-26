@@ -1,7 +1,7 @@
 # 🔍 AUDITORÍA SENIOR - PÉRDIDA DE DATOS EN PEDIDOS
 
 **Fecha:** 24 de Enero 2026  
-**Estado:** ✅ PROBLEMA IDENTIFICADO Y SOLUCIONADO  
+**Estado:** PROBLEMA IDENTIFICADO Y SOLUCIONADO  
 **Severidad:** 🔴 CRÍTICA (Datos silenciosos no persistidos)  
 
 ---
@@ -20,8 +20,8 @@
 ## 🎯 RESUMEN EJECUTIVO
 
 ### Síntomas Reportados
-- ✅ Se guardan: `pedidos_produccion`, `prendas_pedido`, `prenda_pedido_tallas`
-- ❌ NO se guardan: `prenda_pedido_variantes`, `prenda_pedido_colores_telas`, `prenda_fotos_tela_pedido`, `prenda_fotos_pedido`, `pedidos_procesos_prenda_detalles`, `pedidos_procesos_prenda_tallas`, `pedidos_procesos_imagenes`
+- Se guardan: `pedidos_produccion`, `prendas_pedido`, `prenda_pedido_tallas`
+-  NO se guardan: `prenda_pedido_variantes`, `prenda_pedido_colores_telas`, `prenda_fotos_tela_pedido`, `prenda_fotos_pedido`, `pedidos_procesos_prenda_detalles`, `pedidos_procesos_prenda_tallas`, `pedidos_procesos_imagenes`
 - Frontend muestra logs exitosos sin errores 422
 
 ### Causa Raíz
@@ -99,7 +99,7 @@ public function crearSinCotizacion(Request $request)
 ```
 ┌─────────────────────┐
 │ Frontend            │
-│ Payload completo ✅ │
+│ Payload completo │
 └──────────┬──────────┘
            │
            │ fetch POST
@@ -109,11 +109,11 @@ public function crearSinCotizacion(Request $request)
 │ PedidosProduccionViewController          │
 │ crearSinCotizacion()                    │
 ├─────────────────────────────────────────┤
-│ ✅ Recibe request                       │
-│ ❌ No valida                            │
-│ ❌ No procesa                           │
-│ ❌ No invoca Handler                    │
-│ ✅ Retorna {"success": true}  ← FALSO  │
+│ Recibe request                       │
+│  No valida                            │
+│  No procesa                           │
+│  No invoca Handler                    │
+│ Retorna {"success": true}  ← FALSO  │
 └─────────────────────────────────────────┘
            │
            │ Respuesta engañosa
@@ -121,8 +121,8 @@ public function crearSinCotizacion(Request $request)
            ▼
 ┌──────────────────────┐
 │ Frontend             │
-│ Muestra "Éxito" ✅  │
-│ Datos perdidos ❌   │
+│ Muestra "Éxito"  │
+│ Datos perdidos    │
 └──────────────────────┘
 
 
@@ -133,16 +133,16 @@ CrearPedidoProduccionCompletoHandler existe pero NUNCA SE LLAMA
 
 ## 🔍 AUDITORÍA POR CAPAS
 
-### 1️⃣ CAPA FRONTEND ✅ SIN PROBLEMAS
+### 1️⃣ CAPA FRONTEND SIN PROBLEMAS
 
 **Archivo:** `public/js/pedidos-produccion/PedidoCompletoUnificado.js`
 
 **Validación:**
-- ✅ Arma estructura JSON válida
-- ✅ Sanitiza valores recursivamente
-- ✅ Elimina propiedades reactivas de Vue/React
-- ✅ Aplanar arrays profundos `[[[]]]` 
-- ✅ Valida tallas, variaciones, procesos antes de enviar
+- Arma estructura JSON válida
+- Sanitiza valores recursivamente
+- Elimina propiedades reactivas de Vue/React
+- Aplanar arrays profundos `[[[]]]` 
+- Valida tallas, variaciones, procesos antes de enviar
 
 **Ejemplo de armado correcto:**
 ```javascript
@@ -203,11 +203,11 @@ class PedidoCompletoUnificado {
 }
 ```
 
-**Conclusión:** Frontend FUNCIONA CORRECTAMENTE ✅
+**Conclusión:** Frontend FUNCIONA CORRECTAMENTE
 
 ---
 
-### 2️⃣ CAPA REQUEST/VALIDATION ✅ SIN PROBLEMAS
+### 2️⃣ CAPA REQUEST/VALIDATION SIN PROBLEMAS
 
 **Archivo:** `app/Http/Requests/CrearPedidoRequest.php`
 
@@ -218,11 +218,11 @@ class PedidoCompletoUnificado {
 - Normalizador de keys inconsistentes
 
 **Validación:**
-- ✅ Implementa `prepareForValidation()` que limpia ANTES de validar
-- ✅ Sanitiza cada item del array `items`
-- ✅ Limpia tallas, variaciones, telas, procesos
-- ✅ Previene arrays profundos >5 niveles
-- ✅ Elimina nulls, strings vacíos, arrays vacíos
+- Implementa `prepareForValidation()` que limpia ANTES de validar
+- Sanitiza cada item del array `items`
+- Limpia tallas, variaciones, telas, procesos
+- Previene arrays profundos >5 niveles
+- Elimina nulls, strings vacíos, arrays vacíos
 
 **Código de sanitización:**
 ```php
@@ -302,11 +302,11 @@ private function sanitizeProcesos($procesos): array
 }
 ```
 
-**Conclusión:** FormRequest FUNCIONA CORRECTAMENTE ✅
+**Conclusión:** FormRequest FUNCIONA CORRECTAMENTE
 
 ---
 
-### 3️⃣ CAPA HANDLER/PERSISTENCIA ✅ SIN PROBLEMAS
+### 3️⃣ CAPA HANDLER/PERSISTENCIA SIN PROBLEMAS
 
 **Archivo:** `app/Domain/Pedidos/CommandHandlers/CrearPedidoProduccionCompletoHandler.php`
 
@@ -317,27 +317,27 @@ private function sanitizeProcesos($procesos): array
 - Manejar relaciones 1:N correctamente
 
 **Validación:**
-- ✅ Usa `DB::transaction()` para integridad
-- ✅ Crea `pedidos_produccion` (raíz)
-- ✅ Para cada prenda:
-  - ✅ Crea `prendas_pedido`
-  - ✅ Crea `prenda_pedido_variantes` (manga, broche, bolsillos)
-  - ✅ Crea `prenda_pedido_tallas` (todas las tallas)
-  - ✅ Para cada tela:
-    - ✅ Crea `prenda_pedido_colores_telas`
-    - ✅ Crea `prenda_fotos_tela_pedido` (una por imagen)
-  - ✅ Crea `prenda_fotos_pedido` (fotos de la prenda)
-  - ✅ Para cada proceso (reflectivo, bordado, etc):
-    - ✅ Crea `pedidos_procesos_prenda_detalles`
-    - ✅ Crea `pedidos_procesos_prenda_tallas` (tallas del proceso)
-    - ✅ Crea `pedidos_procesos_imagenes` (imágenes del proceso)
+- Usa `DB::transaction()` para integridad
+- Crea `pedidos_produccion` (raíz)
+- Para cada prenda:
+  - Crea `prendas_pedido`
+  - Crea `prenda_pedido_variantes` (manga, broche, bolsillos)
+  - Crea `prenda_pedido_tallas` (todas las tallas)
+  - Para cada tela:
+    - Crea `prenda_pedido_colores_telas`
+    - Crea `prenda_fotos_tela_pedido` (una por imagen)
+  - Crea `prenda_fotos_pedido` (fotos de la prenda)
+  - Para cada proceso (reflectivo, bordado, etc):
+    - Crea `pedidos_procesos_prenda_detalles`
+    - Crea `pedidos_procesos_prenda_tallas` (tallas del proceso)
+    - Crea `pedidos_procesos_imagenes` (imágenes del proceso)
 
 **Código de persistencia completa:**
 ```php
 public function handle(array $data): PedidoProduccion
 {
     return DB::transaction(function () use ($data) {
-        Log::info('🚀 [CrearPedidoCompletoHandler] Iniciando transacción', [
+        Log::info(' [CrearPedidoCompletoHandler] Iniciando transacción', [
             'cliente' => $data['cliente'],
             'items_count' => count($data['items'] ?? []),
         ]);
@@ -379,7 +379,7 @@ public function handle(array $data): PedidoProduccion
                     'bolsillos_obs' => $variaciones['bolsillos_obs'] ?? $variaciones['obs_bolsillos'] ?? '',
                 ]);
 
-                Log::info('  ✅ Variantes guardadas');
+                Log::info('  Variantes guardadas');
             }
 
             // 2.3 GUARDAR TALLAS (prenda_pedido_tallas)
@@ -549,11 +549,11 @@ public function handle(array $data): PedidoProduccion
 }
 ```
 
-**Conclusión:** Handler FUNCIONA CORRECTAMENTE ✅ pero NUNCA SE EJECUTA ❌
+**Conclusión:** Handler FUNCIONA CORRECTAMENTE pero NUNCA SE EJECUTA 
 
 ---
 
-### 4️⃣ CAPA CONTROLLER ❌ PROBLEMA CRÍTICO
+### 4️⃣ CAPA CONTROLLER  PROBLEMA CRÍTICO
 
 **Archivo:** `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionViewController.php`  
 **Método:** `crearSinCotizacion()`  
@@ -572,17 +572,17 @@ public function crearSinCotizacion(Request $request)
 ```
 
 **Problemas:**
-- ❌ No valida datos
-- ❌ No invoca FormRequest
-- ❌ No invoca Handler
-- ❌ No guarda nada
-- ✅ Retorna éxito FALSO que engaña al usuario
+-  No valida datos
+-  No invoca FormRequest
+-  No invoca Handler
+-  No guarda nada
+- Retorna éxito FALSO que engaña al usuario
 
-**Conclusión:** Endpoint VACÍO es el culpable ❌
+**Conclusión:** Endpoint VACÍO es el culpable 
 
 ---
 
-## ✅ SOLUCIÓN IMPLEMENTADA
+## SOLUCIÓN IMPLEMENTADA
 
 ### Cambio: Conectar Controller con el Handler que YA existe
 
@@ -596,7 +596,7 @@ public function crearSinCotizacion(Request $request)
 public function crearSinCotizacion(Request $request)
 {
     try {
-        \Log::info('🚀 [crearSinCotizacion] Request recibido', [
+        \Log::info(' [crearSinCotizacion] Request recibido', [
             'cliente' => $request->input('cliente'),
             'items_count' => count($request->input('items', [])),
         ]);
@@ -651,7 +651,7 @@ public function crearSinCotizacion(Request $request)
         ], 201);
 
     } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('❌ [crearSinCotizacion] Validación fallida', [
+        \Log::error(' [crearSinCotizacion] Validación fallida', [
             'errors' => $e->errors(),
         ]);
 
@@ -662,7 +662,7 @@ public function crearSinCotizacion(Request $request)
         ], 422);
 
     } catch (\Exception $e) {
-        \Log::error('❌ [crearSinCotizacion] Error', [
+        \Log::error(' [crearSinCotizacion] Error', [
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
         ]);
@@ -679,14 +679,14 @@ public function crearSinCotizacion(Request $request)
 
 | Aspecto | Antes | Después |
 |--------|-------|---------|
-| **Validación** | ❌ Ninguna | ✅ FormRequest + prepareForValidation |
-| **Sanitización** | ❌ Ninguna | ✅ Limpia arrays, referencias circulares, profundidad |
-| **Generación de ID** | ❌ No usa | ✅ Secuencial + lockForUpdate |
-| **Cliente** | ❌ No maneja | ✅ firstOrCreate para consitencia |
-| **Mapeo de datos** | ❌ No mapea | ✅ Estructura correcta para Handler |
-| **Persistencia** | ❌ Ninguna | ✅ Invoca Handler que persiste 10 tablas |
-| **Manejo de errores** | ❌ Retorna éxito falso | ✅ Captura ValidationException y genéricos |
-| **Logging** | ❌ Ninguno | ✅ Trazabilidad completa |
+| **Validación** |  Ninguna | FormRequest + prepareForValidation |
+| **Sanitización** |  Ninguna | Limpia arrays, referencias circulares, profundidad |
+| **Generación de ID** |  No usa | Secuencial + lockForUpdate |
+| **Cliente** |  No maneja | firstOrCreate para consitencia |
+| **Mapeo de datos** |  No mapea | Estructura correcta para Handler |
+| **Persistencia** |  Ninguna | Invoca Handler que persiste 10 tablas |
+| **Manejo de errores** |  Retorna éxito falso | Captura ValidationException y genéricos |
+| **Logging** |  Ninguno | Trazabilidad completa |
 
 ---
 
@@ -696,10 +696,10 @@ public function crearSinCotizacion(Request $request)
 ┌──────────────────────────────────────────┐
 │ Frontend (PedidoCompletoUnificado.js)     │
 ├──────────────────────────────────────────┤
-│ ✅ Arma payload completo                 │
-│ ✅ Sanitiza valores                      │
-│ ✅ Valida estructura                     │
-│ ✅ Envía JSON al backend                │
+│ Arma payload completo                 │
+│ Sanitiza valores                      │
+│ Valida estructura                     │
+│ Envía JSON al backend                │
 └──────────────────┬───────────────────────┘
                    │
                    │ fetch POST /crear-sin-cotizacion
@@ -710,14 +710,14 @@ public function crearSinCotizacion(Request $request)
 │ Backend (PedidosProduccionViewController) │
 │ crearSinCotizacion() - NUEVO             │
 ├──────────────────────────────────────────┤
-│ ✅ Recibe request                        │
-│ ✅ Invoca CrearPedidoRequest             │
+│ Recibe request                        │
+│ Invoca CrearPedidoRequest             │
 │    ├─ Valida estructura básica           │
 │    └─ Sanitiza valores profundos         │
-│ ✅ Genera número pedido (thread-safe)   │
-│ ✅ Obtiene o crea cliente                │
-│ ✅ Mapea datos para Handler              │
-│ ✅ INVOCA Handler completo ← CLAVE      │
+│ Genera número pedido (thread-safe)   │
+│ Obtiene o crea cliente                │
+│ Mapea datos para Handler              │
+│ INVOCA Handler completo ← CLAVE      │
 └──────────────────┬───────────────────────┘
                    │
                    ▼
@@ -725,37 +725,37 @@ public function crearSinCotizacion(Request $request)
 │ Handler (CrearPedidoProduccionCompleto)    │
 │ handle() - YA EXISTÍA, AHORA SE USA       │
 ├────────────────────────────────────────────┤
-│ ✅ DB::transaction() - Integridad         │
-│ ✅ Crea pedidos_produccion                │
-│ ✅ Para cada prenda:                      │
-│    ✅ Crea prendas_pedido                 │
-│    ✅ Crea prenda_pedido_variantes        │
-│    ✅ Crea prenda_pedido_tallas           │
-│    ✅ Para cada tela:                     │
-│       ✅ Crea prenda_pedido_colores_telas │
-│       ✅ Crea prenda_fotos_tela_pedido    │
-│    ✅ Crea prenda_fotos_pedido            │
-│    ✅ Para cada proceso:                  │
-│       ✅ Crea pedidos_procesos_prenda...  │
-│       ✅ Crea pedidos_procesos_prenda...  │
-│       ✅ Crea pedidos_procesos_imagenes   │
-│ ✅ Devuelve pedido con ID                 │
+│ DB::transaction() - Integridad         │
+│ Crea pedidos_produccion                │
+│ Para cada prenda:                      │
+│    Crea prendas_pedido                 │
+│    Crea prenda_pedido_variantes        │
+│    Crea prenda_pedido_tallas           │
+│    Para cada tela:                     │
+│       Crea prenda_pedido_colores_telas │
+│       Crea prenda_fotos_tela_pedido    │
+│    Crea prenda_fotos_pedido            │
+│    Para cada proceso:                  │
+│       Crea pedidos_procesos_prenda...  │
+│       Crea pedidos_procesos_prenda...  │
+│       Crea pedidos_procesos_imagenes   │
+│ Devuelve pedido con ID                 │
 └──────────────────┬───────────────────────┘
                    │
                    ▼
 ┌──────────────────────────────────────────┐
 │ Base de Datos                            │
 ├──────────────────────────────────────────┤
-│ ✅ pedidos_produccion                    │
-│ ✅ prendas_pedido                        │
-│ ✅ prenda_pedido_variantes              │
-│ ✅ prenda_pedido_tallas                 │
-│ ✅ prenda_pedido_colores_telas          │
-│ ✅ prenda_fotos_tela_pedido              │
-│ ✅ prenda_fotos_pedido                   │
-│ ✅ pedidos_procesos_prenda_detalles      │
-│ ✅ pedidos_procesos_prenda_tallas        │
-│ ✅ pedidos_procesos_imagenes             │
+│ pedidos_produccion                    │
+│ prendas_pedido                        │
+│ prenda_pedido_variantes              │
+│ prenda_pedido_tallas                 │
+│ prenda_pedido_colores_telas          │
+│ prenda_fotos_tela_pedido              │
+│ prenda_fotos_pedido                   │
+│ pedidos_procesos_prenda_detalles      │
+│ pedidos_procesos_prenda_tallas        │
+│ pedidos_procesos_imagenes             │
 └──────────────────┬───────────────────────┘
                    │
                    ▼
@@ -774,9 +774,9 @@ public function crearSinCotizacion(Request $request)
 ┌──────────────────────────────────────────┐
 │ Frontend                                 │
 ├──────────────────────────────────────────┤
-│ ✅ Muestra éxito REAL                    │
-│ ✅ Todos los datos persistidos           │
-│ ✅ Sin pérdida silenciosa                │
+│ Muestra éxito REAL                    │
+│ Todos los datos persistidos           │
+│ Sin pérdida silenciosa                │
 └──────────────────────────────────────────┘
 ```
 
@@ -787,31 +787,31 @@ public function crearSinCotizacion(Request $request)
 ### Antes del Fix
 | Tabla | Estado |
 |-------|--------|
-| `pedidos_produccion` | ✅ Se guardaba |
-| `prendas_pedido` | ✅ Se guardaba |
-| `prenda_pedido_tallas` | ✅ Se guardaba |
-| `prenda_pedido_variantes` | ❌ NO se guardaba |
-| `prenda_pedido_colores_telas` | ❌ NO se guardaba |
-| `prenda_fotos_tela_pedido` | ❌ NO se guardaba |
-| `prenda_fotos_pedido` | ❌ NO se guardaba |
-| `pedidos_procesos_prenda_detalles` | ❌ NO se guardaba |
-| `pedidos_procesos_prenda_tallas` | ❌ NO se guardaba |
-| `pedidos_procesos_imagenes` | ❌ NO se guardaba |
+| `pedidos_produccion` | Se guardaba |
+| `prendas_pedido` | Se guardaba |
+| `prenda_pedido_tallas` | Se guardaba |
+| `prenda_pedido_variantes` |  NO se guardaba |
+| `prenda_pedido_colores_telas` |  NO se guardaba |
+| `prenda_fotos_tela_pedido` |  NO se guardaba |
+| `prenda_fotos_pedido` |  NO se guardaba |
+| `pedidos_procesos_prenda_detalles` |  NO se guardaba |
+| `pedidos_procesos_prenda_tallas` |  NO se guardaba |
+| `pedidos_procesos_imagenes` |  NO se guardaba |
 | **Cobertura** | **30%** |
 
 ### Después del Fix
 | Tabla | Estado |
 |-------|--------|
-| `pedidos_produccion` | ✅ Se guarda |
-| `prendas_pedido` | ✅ Se guarda |
-| `prenda_pedido_tallas` | ✅ Se guarda |
-| `prenda_pedido_variantes` | ✅ Se guarda |
-| `prenda_pedido_colores_telas` | ✅ Se guarda |
-| `prenda_fotos_tela_pedido` | ✅ Se guarda |
-| `prenda_fotos_pedido` | ✅ Se guarda |
-| `pedidos_procesos_prenda_detalles` | ✅ Se guarda |
-| `pedidos_procesos_prenda_tallas` | ✅ Se guarda |
-| `pedidos_procesos_imagenes` | ✅ Se guarda |
+| `pedidos_produccion` | Se guarda |
+| `prendas_pedido` | Se guarda |
+| `prenda_pedido_tallas` | Se guarda |
+| `prenda_pedido_variantes` | Se guarda |
+| `prenda_pedido_colores_telas` | Se guarda |
+| `prenda_fotos_tela_pedido` | Se guarda |
+| `prenda_fotos_pedido` | Se guarda |
+| `pedidos_procesos_prenda_detalles` | Se guarda |
+| `pedidos_procesos_prenda_tallas` | Se guarda |
+| `pedidos_procesos_imagenes` | Se guarda |
 | **Cobertura** | **100%** |
 
 ---
@@ -1080,25 +1080,25 @@ public function crearSinCotizacion(Request $request)
 
 ### Hallazgos Clave
 
-1. **Frontend funciona correctamente** ✅
+1. **Frontend funciona correctamente**
    - Arma payload completo
    - Sanitiza valores profundos
    - Valida estructura
    - Envía datos correctamente
 
-2. **FormRequest funciona correctamente** ✅
+2. **FormRequest funciona correctamente**
    - Valida estructura HTTP
    - Sanitiza datos profundos
    - Limpia arrays anidados
    - Previene ataques
 
-3. **Handler funciona correctamente** ✅
+3. **Handler funciona correctamente**
    - Persiste en TODAS las tablas
    - Usa transacciones
    - Maneja relaciones 1:N
    - Existe desde el inicio
 
-4. **Controller ERA EL ÚNICO PROBLEMA** ❌
+4. **Controller ERA EL ÚNICO PROBLEMA** 
    - Endpoint vacío
    - No invocaba Handler
    - Retornaba éxito falso
@@ -1106,12 +1106,12 @@ public function crearSinCotizacion(Request $request)
 
 ### Solución Implementada
 
-- ✅ 1 archivo modificado
-- ✅ 1 método actualizado
-- ✅ 0 refactorización
-- ✅ 100% compatible con código existente
-- ✅ Persistencia completa en 10 tablas
-- ✅ Validación y sanitización en todas las capas
+- 1 archivo modificado
+- 1 método actualizado
+- 0 refactorización
+- 100% compatible con código existente
+- Persistencia completa en 10 tablas
+- Validación y sanitización en todas las capas
 
 ### Impacto
 
@@ -1141,9 +1141,9 @@ public function crearSinCotizacion(Request $request)
 ### Logs a monitorear
 
 ```
-grep "🚀 \[crearSinCotizacion\]" storage/logs/laravel.log  # Request entrada
+grep " \[crearSinCotizacion\]" storage/logs/laravel.log  # Request entrada
 grep "✅ \[crearSinCotizacion\]" storage/logs/laravel.log  # Éxito
-grep "❌ \[crearSinCotizacion\]" storage/logs/laravel.log  # Errores
+grep " \[crearSinCotizacion\]" storage/logs/laravel.log  # Errores
 ```
 
 ### Queries útiles para validar
@@ -1169,4 +1169,4 @@ ORDER BY p.created_at DESC;
 
 **Documento generado:** 24/01/2026  
 **Auditor:** Sistema Senior DDD/CQRS/Laravel  
-**Estado:** ✅ LISTO PARA PRODUCCIÓN
+**Estado:** LISTO PARA PRODUCCIÓN

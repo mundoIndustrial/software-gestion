@@ -59,7 +59,7 @@ window.agregarTelaNueva = async function() {
         return;
     }
     
-    // ✅ Buscar o crear tela en BD
+    // Buscar o crear tela en BD
     let telaId = null;
     const datalistTelas = document.getElementById('opciones-telas');
     if (datalistTelas) {
@@ -95,14 +95,14 @@ window.agregarTelaNueva = async function() {
                     datalistTelas.appendChild(newOption);
                 }
                 
-                console.log('[Telas] ✅ Tela creada:', result.data);
+                console.log('[Telas] Tela creada:', result.data);
             }
         } catch (error) {
             console.error('[Telas] Error creando tela:', error);
         }
     }
     
-    // ✅ Buscar o crear color en BD
+    // Buscar o crear color en BD
     let colorId = null;
     const datalistColores = document.getElementById('opciones-colores');
     if (datalistColores) {
@@ -138,7 +138,7 @@ window.agregarTelaNueva = async function() {
                     datalistColores.appendChild(newOption);
                 }
                 
-                console.log('[Colores] ✅ Color creado:', result.data);
+                console.log('[Colores] Color creado:', result.data);
             }
         } catch (error) {
             console.error('[Colores] Error creando color:', error);

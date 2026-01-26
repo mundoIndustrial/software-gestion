@@ -12,7 +12,7 @@ class TodosTiposCotizacionesTest extends TestCase
 
     public function test_todos_tipos_cotizaciones_numeracion_global()
     {
-        echo "\nðŸ”µ TEST: Todos los tipos de cotizaciones - NumeraciÃ³n Global\n";
+        echo "\nðŸ”µ TEST: Todos los tipos de cotizaciones - Numeración Global\n";
         echo "===========================================================\n\n";
 
         $servicio = app(GenerarNumeroCotizacionService::class);
@@ -63,7 +63,7 @@ class TodosTiposCotizacionesTest extends TestCase
         echo " PRUEBA EXITOSA\n";
         echo "=================\n";
         echo "Todos los tipos de cotizaciones comparten la MISMA secuencia global.\n";
-        echo "â†’ Normal, Prenda, Bordado, Reflectivo todos en la MISMA numeraciÃ³n\n";
+        echo "â†’ Normal, Prenda, Bordado, Reflectivo todos en la MISMA numeración\n";
         echo "â†’ Sin duplicados, consecutivos, independiente del asesor o tipo\n\n";
     }
 }

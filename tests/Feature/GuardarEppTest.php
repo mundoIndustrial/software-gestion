@@ -56,7 +56,7 @@ class GuardarEppTest extends TestCase
         // Guardar EPP
         $resultado = $service->guardarEppsDelPedido($pedido, $eppsData);
 
-        // Verificar que se guardÃ³
+        // Verificar que se guardó
         $this->assertCount(1, $resultado);
         $pedidoEpp = $resultado[0];
 

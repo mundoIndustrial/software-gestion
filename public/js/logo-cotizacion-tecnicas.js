@@ -149,7 +149,7 @@ function abrirModalTecnicaCombinada(tecnicas) {
                     <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
                         <input type="radio" name="opcion-tecnicas" value="iguales" checked style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
                         <div>
-                            <strong style="color: #333; display: block; font-size: 0.9rem;">✨ Datos iguales</strong>
+                            <strong style="color: #333; display: block; font-size: 0.9rem;"> Datos iguales</strong>
                             <small style="color: #666; font-size: 0.8rem;">Una misma prenda para todas</small>
                         </div>
                     </label>

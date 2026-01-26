@@ -114,7 +114,7 @@ class CrearPedidoCompletoHandler implements CommandHandler
                     ]);
                     
                 } catch (\Exception $e) {
-                    Log::error("❌ [CrearPedidoCompletoHandler] Error en item #{$index}", [
+                    Log::error(" [CrearPedidoCompletoHandler] Error en item #{$index}", [
                         'error' => $e->getMessage(),
                         'item_data' => $itemData,
                     ]);
@@ -141,7 +141,7 @@ class CrearPedidoCompletoHandler implements CommandHandler
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('❌ [CrearPedidoCompletoHandler] Error al crear pedido completo', [
+            Log::error(' [CrearPedidoCompletoHandler] Error al crear pedido completo', [
                 'cliente' => $command->getCliente(),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

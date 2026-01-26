@@ -23,26 +23,26 @@ class CotizacionesTest extends TestCase
         config(['database.default' => 'mysql']);
         
         // Deshabilitar TODOS los middlewares para tests
-        // Solo estamos probando la funcionalidad, no la autenticaciÃ³n
+        // Solo estamos probando la funcionalidad, no la autenticación
         $this->withoutMiddleware();
         
         // Crear usuario asesor
         $this->user = User::factory()->create([
-            'name' => 'MarÃ­a LÃ³pez',
+            'name' => 'MarÃ­a López',
             'email' => 'maria@example.com'
         ]);
         
         // Autenticar el usuario para que Auth::user() funcione
         $this->actingAs($this->user);
 
-        // Crear tipos de cotizaciÃ³n (o usar existentes)
+        // Crear tipos de cotización (o usar existentes)
         TipoCotizacion::firstOrCreate(['codigo' => 'M'], ['nombre' => 'Muestra']);
         TipoCotizacion::firstOrCreate(['codigo' => 'D'], ['nombre' => 'Desarrollo']);
         TipoCotizacion::firstOrCreate(['codigo' => 'X'], ['nombre' => 'Especial']);
     }
 
     /**
-     * Test: Crear una cotizaciÃ³n en borradores
+     * Test: Crear una cotización en borradores
      */
     public function test_crear_cotizacion_en_borradores()
     {
@@ -54,7 +54,7 @@ class CotizacionesTest extends TestCase
             'productos' => [
                 [
                     'nombre_producto' => 'Camisa',
-                    'descripcion' => 'Camisa de algodÃ³n',
+                    'descripcion' => 'Camisa de algodón',
                     'cantidad' => 100,
                     'tallas' => ['S', 'M', 'L'],
                     'disponibilidad' => 'Inmediata',
@@ -62,30 +62,30 @@ class CotizacionesTest extends TestCase
                     'regimen' => 'ComÃºn',
                     'se_ha_vendido' => 'SÃ­',
                     'ultima_venta' => '2025-11-20',
-                    'observacion' => 'ObservaciÃ³n de prueba'
+                    'observacion' => 'Observación de prueba'
                 ]
             ],
             'imagenes' => [],
             'tecnicas' => ['BORDADO'],
             'observaciones_tecnicas' => 'Observaciones tÃ©cnicas',
             'ubicaciones' => ['CAMISA' => 'Pecho izquierdo'],
-            'observaciones_generales' => ['ObservaciÃ³n 1', 'ObservaciÃ³n 2']
+            'observaciones_generales' => ['Observación 1', 'Observación 2']
         ];
 
         $response = $this->postJson('/asesores/cotizaciones/guardar', $datos);
 
         $response->assertStatus(200)
             ->assertJson(['success' => true])
-            ->assertJsonPath('message', 'CotizaciÃ³n guardada en borradores');
+            ->assertJsonPath('message', 'Cotización guardada en borradores');
 
-        // Verificar que se creÃ³ la cotizaciÃ³n
+        // Verificar que se creó la cotización
         $cotizacion = Cotizacion::where('numero_cotizacion', 'COT-001')->first();
         $this->assertNotNull($cotizacion);
         $this->assertTrue($cotizacion->es_borrador);
         $this->assertNull($cotizacion->fecha_envio);
         $this->assertNotNull($cotizacion->fecha_inicio);
 
-        // Verificar que se guardÃ³ el tipo de cotizaciÃ³n
+        // Verificar que se guardó el tipo de cotización
         $this->assertNotNull($cotizacion->tipo_cotizacion_id);
         $this->assertEquals('M', $cotizacion->tipoCotizacion->codigo);
 
@@ -100,11 +100,11 @@ class CotizacionesTest extends TestCase
         $this->assertEquals('Camisa', $cotizacion->especificaciones[0]['nombre_producto']);
         $this->assertEquals('Contado', $cotizacion->especificaciones[0]['forma_pago']);
 
-        // Verificar que se registrÃ³ en el historial
+        // Verificar que se registró en el historial
         $historial = HistorialCotizacion::where('cotizacion_id', $cotizacion->id)->first();
         $this->assertNotNull($historial);
         $this->assertEquals('creacion', $historial->tipo_cambio);
-        $this->assertEquals('MarÃ­a LÃ³pez', $historial->usuario_nombre);
+        $this->assertEquals('MarÃ­a López', $historial->usuario_nombre);
     }
 
     /**
@@ -114,13 +114,13 @@ class CotizacionesTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        // Crear cotizaciÃ³n inicial
+        // Crear cotización inicial
         $cotizacion = Cotizacion::create([
             'user_id' => $this->user->id,
             'numero_cotizacion' => 'COT-002',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
             'cliente' => 'Juan PÃ©rez',
-            'asesora' => 'MarÃ­a LÃ³pez',
+            'asesora' => 'MarÃ­a López',
             'es_borrador' => true,
             'estado' => 'enviada',
             'fecha_inicio' => now(),
@@ -132,7 +132,7 @@ class CotizacionesTest extends TestCase
         // Esperar un segundo para que sea diferente
         sleep(1);
 
-        // Editar la cotizaciÃ³n
+        // Editar la cotización
         $datosActualizados = [
             'cotizacion_id' => $cotizacion->id,
             'numero_cotizacion' => 'COT-002-ACTUALIZADO',
@@ -141,8 +141,8 @@ class CotizacionesTest extends TestCase
             'tipo' => 'borrador',
             'productos' => [
                 [
-                    'nombre_producto' => 'PantalÃ³n',
-                    'descripcion' => 'PantalÃ³n de denim',
+                    'nombre_producto' => 'Pantalón',
+                    'descripcion' => 'Pantalón de denim',
                     'cantidad' => 50,
                     'tallas' => ['28', '30', '32'],
                     'disponibilidad' => '15 dÃ­as',
@@ -150,7 +150,7 @@ class CotizacionesTest extends TestCase
                     'regimen' => 'Especial',
                     'se_ha_vendido' => 'No',
                     'ultima_venta' => null,
-                    'observacion' => 'Nueva observaciÃ³n'
+                    'observacion' => 'Nueva observación'
                 ]
             ],
             'imagenes' => [],
@@ -166,44 +166,44 @@ class CotizacionesTest extends TestCase
             ->assertJson(['success' => true])
             ->assertJsonPath('message', 'Borrador actualizado correctamente');
 
-        // Recargar cotizaciÃ³n
+        // Recargar cotización
         $cotizacion->refresh();
 
-        // Verificar que se actualizÃ³ el contenido
+        // Verificar que se actualizó el contenido
         $this->assertEquals('COT-002-ACTUALIZADO', $cotizacion->numero_cotizacion);
         $this->assertEquals('Juan PÃ©rez Actualizado', $cotizacion->cliente);
         $this->assertEquals('D', $cotizacion->tipoCotizacion->codigo);
 
-        // Verificar que fecha_inicio NO cambiÃ³
+        // Verificar que fecha_inicio NO cambió
         $this->assertEquals($fechaInicioOriginal->toDateTimeString(), $cotizacion->fecha_inicio->toDateTimeString());
 
         // Verificar que se actualizaron las prendas
         $this->assertCount(1, $cotizacion->prendasCotizaciones);
         $prenda = $cotizacion->prendasCotizaciones->first();
-        $this->assertEquals('PantalÃ³n', $prenda->nombre_producto);
+        $this->assertEquals('Pantalón', $prenda->nombre_producto);
 
-        // Verificar que se registrÃ³ la actualizacion en el historial
+        // Verificar que se registró la actualizacion en el historial
         $historialActualizacion = HistorialCotizacion::where('cotizacion_id', $cotizacion->id)
             ->where('tipo_cambio', 'actualizacion')
             ->first();
         $this->assertNotNull($historialActualizacion);
-        $this->assertEquals('MarÃ­a LÃ³pez', $historialActualizacion->usuario_nombre);
+        $this->assertEquals('MarÃ­a López', $historialActualizacion->usuario_nombre);
     }
 
     /**
-     * Test: Enviar cotizaciÃ³n (cambiar estado)
+     * Test: Enviar cotización (cambiar estado)
      */
     public function test_enviar_cotizacion()
     {
         $this->actingAs($this->user);
 
-        // Crear cotizaciÃ³n en borradores
+        // Crear cotización en borradores
         $cotizacion = Cotizacion::create([
             'user_id' => $this->user->id,
             'numero_cotizacion' => 'COT-003',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
             'cliente' => 'Juan PÃ©rez',
-            'asesora' => 'MarÃ­a LÃ³pez',
+            'asesora' => 'MarÃ­a López',
             'es_borrador' => true,
             'estado' => 'enviada',
             'fecha_inicio' => now(),
@@ -212,21 +212,21 @@ class CotizacionesTest extends TestCase
 
         $this->assertNull($cotizacion->fecha_envio);
 
-        // Enviar cotizaciÃ³n
+        // Enviar cotización
         $response = $this->patchJson("/asesores/cotizaciones/{$cotizacion->id}/estado/enviada");
 
         $response->assertStatus(200)
             ->assertJson(['success' => true])
             ->assertJsonPath('message', 'Estado actualizado');
 
-        // Recargar cotizaciÃ³n
+        // Recargar cotización
         $cotizacion->refresh();
 
-        // Verificar que se guardÃ³ fecha_envio
+        // Verificar que se guardó fecha_envio
         $this->assertNotNull($cotizacion->fecha_envio);
         $this->assertFalse($cotizacion->es_borrador);
 
-        // Verificar que se registrÃ³ el envÃ­o en el historial
+        // Verificar que se registró el envÃ­o en el historial
         $historialEnvio = HistorialCotizacion::where('cotizacion_id', $cotizacion->id)
             ->where('tipo_cambio', 'envio')
             ->first();
@@ -241,7 +241,7 @@ class CotizacionesTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        // PASO 1: Crear cotizaciÃ³n
+        // PASO 1: Crear cotización
         $datosCreacion = [
             'numero_cotizacion' => 'COT-COMPLETA',
             'tipo_cotizacion' => 'M',
@@ -258,7 +258,7 @@ class CotizacionesTest extends TestCase
                     'regimen' => 'ComÃºn',
                     'se_ha_vendido' => 'SÃ­',
                     'ultima_venta' => '2025-11-20',
-                    'observacion' => 'ObservaciÃ³n inicial'
+                    'observacion' => 'Observación inicial'
                 ]
             ],
             'imagenes' => [],
@@ -276,7 +276,7 @@ class CotizacionesTest extends TestCase
         $this->assertNull($cotizacion->fecha_envio);
         $this->assertNotNull($cotizacion->fecha_inicio);
 
-        // PASO 2: Editar cotizaciÃ³n
+        // PASO 2: Editar cotización
         sleep(1);
         $datosEdicion = $datosCreacion;
         $datosEdicion['cotizacion_id'] = $cotizacionId;
@@ -291,7 +291,7 @@ class CotizacionesTest extends TestCase
         $this->assertEquals('D', $cotizacion->tipoCotizacion->codigo);
         $this->assertTrue($cotizacion->es_borrador); // Sigue siendo borrador
 
-        // PASO 3: Enviar cotizaciÃ³n
+        // PASO 3: Enviar cotización
         $responseEnvio = $this->patchJson("/asesores/cotizaciones/{$cotizacionId}/estado/enviada");
         $responseEnvio->assertStatus(200);
 
@@ -317,13 +317,13 @@ class CotizacionesTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        // Crear cotizaciÃ³n
+        // Crear cotización
         $cotizacion = Cotizacion::create([
             'user_id' => $this->user->id,
             'numero_cotizacion' => 'COT-FECHA',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
             'cliente' => 'Test',
-            'asesora' => 'MarÃ­a LÃ³pez',
+            'asesora' => 'MarÃ­a López',
             'es_borrador' => true,
             'estado' => 'enviada',
             'fecha_inicio' => now()->subHours(2),
@@ -340,7 +340,7 @@ class CotizacionesTest extends TestCase
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => 'COT-FECHA',
                 'tipo_cotizacion' => 'M',
-                'cliente' => "Test EdiciÃ³n $i",
+                'cliente' => "Test Edición $i",
                 'tipo' => 'borrador',
                 'productos' => [],
                 'imagenes' => [],
@@ -353,7 +353,7 @@ class CotizacionesTest extends TestCase
             $this->postJson('/asesores/cotizaciones/guardar', $datos);
             $cotizacion->refresh();
 
-            // Verificar que fecha_inicio no cambiÃ³
+            // Verificar que fecha_inicio no cambió
             $this->assertEquals($fechaInicial->toDateTimeString(), $cotizacion->fecha_inicio->toDateTimeString());
         }
 

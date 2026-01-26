@@ -28,7 +28,7 @@ class ListarProduccionPedidosUseCase
         return [
             'PENDIENTE_SUPERVISOR' => 'Pendiente Supervisor',
             'Pendiente' => 'Pendiente',
-            'En EjecuciÃ³n' => 'En EjecuciÃ³n',
+            'En Ejecución' => 'En Ejecución',
             'Entregado' => 'Entregado',
             'Anulada' => 'Anulada',
             'No iniciado' => 'No iniciado'

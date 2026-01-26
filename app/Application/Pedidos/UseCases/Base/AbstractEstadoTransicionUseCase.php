@@ -13,10 +13,10 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
  * PATRÃ“N: Template Method + Strategy
  * 
  * Ventajas:
- * - Elimina duplicaciÃ³n en validaciÃ³n y obtenciÃ³n (4 lineas)
+ * - Elimina duplicación en validación y obtención (4 lineas)
  * - Centraliza respuesta estÃ¡ndar (10 lineas)
  * - Cada subclase solo implementa aplicarTransicion() (1 lÃ­nea)
- * - Reduces LOC de 28 a 8 por Use Case (71% menos cÃ³digo)
+ * - Reduces LOC de 28 a 8 por Use Case (71% menos código)
  * 
  * Uso:
  *   class ConfirmarPedidoUseCase extends AbstractEstadoTransicionUseCase {
@@ -39,7 +39,7 @@ abstract class AbstractEstadoTransicionUseCase
      * Flujo:
      * 1. Obtener pedido
      * 2. Validar existencia
-     * 3. Aplicar transiciÃ³n (strategy especÃ­fica)
+     * 3. Aplicar transición (strategy especÃ­fica)
      * 4. Persistir
      * 5. Retornar respuesta
      */
@@ -53,7 +53,7 @@ abstract class AbstractEstadoTransicionUseCase
             throw new \DomainException("Pedido $pedidoId no encontrado");
         }
 
-        // LINEA VARIABLE 3: Aplicar transiciÃ³n (strategy especÃ­fica por subclase)
+        // LINEA VARIABLE 3: Aplicar transición (strategy especÃ­fica por subclase)
         $this->aplicarTransicion($pedido);
         
         // LINEA COMÃšN 4: Persistir
@@ -64,7 +64,7 @@ abstract class AbstractEstadoTransicionUseCase
     }
 
     /**
-     * MÃ©todo abstracto - Cada subclase implementa su transiciÃ³n de estado
+     * MÃ©todo abstracto - Cada subclase implementa su transición de estado
      * 
      * Ejemplos:
      * - $pedido->confirmar()
@@ -87,7 +87,7 @@ abstract class AbstractEstadoTransicionUseCase
     /**
      * MÃ©todo reutilizable - Construye respuesta estÃ¡ndar
      * 
-     * Encapsula la construcciÃ³n del DTO de respuesta
+     * Encapsula la construcción del DTO de respuesta
      * Consistente en todas las transiciones
      */
     protected function crearRespuesta($pedido): PedidoResponseDTO

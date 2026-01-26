@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Log;
  * Responsabilidades:
  * - Registrar en tabla de auditorÃ­a
  * - Registrar cambios de estado
- * - Mantener histÃ³rico para compliance
+ * - Mantener histórico para compliance
  * 
  * Importante: No es un side effect destructivo, es informativo.
- * Se puede ejecutar asincronicamente sin afectar la operaciÃ³n principal.
+ * Se puede ejecutar asincronicamente sin afectar la operación principal.
  */
 class RegistrarAuditoriaPedido
 {

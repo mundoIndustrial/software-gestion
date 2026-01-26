@@ -20,7 +20,7 @@ use App\Models\PrendaPedido;
  * 
  * Tabla: pedidos_procesos_prenda_detalles
  * 
- * Antes: 69 lÃ­neas | DespuÃ©s: ~59 lÃ­neas | ReducciÃ³n: ~14%
+ * Antes: 69 lÃ­neas | DespuÃ©s: ~59 lÃ­neas | Reducción: ~14%
  */
 final class AgregarProcesoPrendaUseCase
 {

@@ -71,7 +71,7 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertCount(1, $pedidosEpp);
         $pedidoEpp = $pedidosEpp[0];
 
-        // Verificar que se guardÃ³ en BD
+        // Verificar que se guardó en BD
         $this->assertDatabaseHas('pedido_epp', [
             'id' => $pedidoEpp->id,
             'pedido_produccion_id' => $this->pedido->id,
@@ -375,7 +375,7 @@ class GuardarEppPedidoTest extends TestCase
      *  Registra el EPP en la BD
      *  Guarda las imÃ¡genes asociadas
      *  No borra la BD
-     *  Verifica que todo se guardÃ³ correctamente
+     *  Verifica que todo se guardó correctamente
      */
     public function test_guardar_epp_sin_refresh()
     {

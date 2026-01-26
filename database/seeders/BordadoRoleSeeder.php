@@ -27,7 +27,7 @@ class BordadoRoleSeeder extends Seeder
 
             $this->command->info(' Rol "bordado" creado exitosamente.');
         } else {
-            $this->command->warn('⚠️  El rol "bordado" ya existe.');
+            $this->command->warn('  El rol "bordado" ya existe.');
         }
     }
 }

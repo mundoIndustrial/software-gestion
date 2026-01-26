@@ -25,8 +25,8 @@ use Intervention\Image\ImageManagerStatic as Image;
  * Responsabilidad:
  * - Recibir JSON del frontend (estado temporal)
  * - Descomponer JSON en tablas relacionales normalizadas
- * - Guardar todo dentro de transacciÃ³n DB
- * - Procesamiento de imÃ¡genes (conversiÃ³n a WebP)
+ * - Guardar todo dentro de transacción DB
+ * - Procesamiento de imÃ¡genes (conversión a WebP)
  * 
  * Arquitectura:
  * - SRP: Solo responsable de persistencia de pedidos
@@ -61,7 +61,7 @@ class GuardarPedidoDesdeJSONService
      *   ]
      * }
      * 
-     * @param int $pedidoId - ID del pedido de producciÃ³n
+     * @param int $pedidoId - ID del pedido de producción
      * @param array $prendas - Array de prendas desde JSON
      * @return array - Resultado del guardado
      * @throws \Exception
@@ -95,7 +95,7 @@ class GuardarPedidoDesdeJSONService
     }
 
     /**
-     * Guardar una prenda completa dentro de una transacciÃ³n
+     * Guardar una prenda completa dentro de una transacción
      */
     private function guardarPrenda(PedidoProduccion $pedido, array $prendaData): array
     {
@@ -189,11 +189,11 @@ class GuardarPedidoDesdeJSONService
             }
 
             try {
-                // Obtener o crear la combinaciÃ³n color-tela
+                // Obtener o crear la combinación color-tela
                 $colorTelaId = $fotoData['color_tela_id'] ?? null;
                 
                 if (!$colorTelaId) {
-                    // Si no viene el ID, crear la combinaciÃ³n
+                    // Si no viene el ID, crear la combinación
                     $colorTela = $prendaPedido->coloresTelas()->firstOrCreate([
                         'color_id' => $fotoData['color_id'] ?? null,
                         'tela_id' => $fotoData['tela_id'] ?? null,
@@ -208,7 +208,7 @@ class GuardarPedidoDesdeJSONService
                 );
 
                 if ($rutasGuardadas) {
-                    // Crear foto asociada a la combinaciÃ³n color-tela
+                    // Crear foto asociada a la combinación color-tela
                     \DB::table('prenda_fotos_tela_pedido')->insert([
                         'prenda_pedido_colores_telas_id' => $colorTelaId,
                         'ruta_original' => $rutasGuardadas['original'] ?? null,
@@ -328,7 +328,7 @@ class GuardarPedidoDesdeJSONService
     }
 
     /**
-     * Obtener pedido o lanzar excepciÃ³n
+     * Obtener pedido o lanzar excepción
      */
     private function obtenerPedido(int $pedidoId): PedidoProduccion
     {

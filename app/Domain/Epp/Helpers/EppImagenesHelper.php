@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * Helper para gestión de imágenes EPP
  * 
- * ✅ IMPORTANTE: Tabla epp_imagenes NO EXISTE
+ * IMPORTANTE: Tabla epp_imagenes NO EXISTE
  * 
  * Las imágenes de EPP se almacenan en:
  * - pedido_epp_imagenes (cuando está asociada a un pedido)
@@ -120,7 +120,7 @@ class EppImagenesHelper
      */
     public static function logImagenNoEncontrada(int $imagenId): void
     {
-        Log::warning('❌ [EPP-IMAGENES] Imagen no encontrada en pedido_epp_imagenes', [
+        Log::warning(' [EPP-IMAGENES] Imagen no encontrada en pedido_epp_imagenes', [
             'imagen_id' => $imagenId,
             'tabla' => 'epp_imagenes no existe (ignorada)',
         ]);

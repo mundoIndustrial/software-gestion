@@ -38,7 +38,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
     }
 
     /**
-     * Test: Guardar cotizaciÃ³n reflectivo exitosamente
+     * Test: Guardar cotización reflectivo exitosamente
      */
     public function test_guardar_cotizacion_reflectivo_exitosamente()
     {
@@ -79,7 +79,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
         $response->assertStatus(201)
             ->assertJson([
                 'success' => true,
-                'message' => 'CotizaciÃ³n de reflectivo guardada exitosamente'
+                'message' => 'Cotización de reflectivo guardada exitosamente'
             ]);
 
         // Verificar datos en respuesta
@@ -105,7 +105,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
             ]
         ]);
 
-        // Verificar que se guardÃ³ en base de datos
+        // Verificar que se guardó en base de datos
         $cotizacion = Cotizacion::latest()->first();
         $this->assertNotNull($cotizacion);
         $this->assertEquals('Cliente Test', $cotizacion->cliente->nombre ?? $cotizacion->cliente_id);
@@ -136,7 +136,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
     }
 
     /**
-     * Test: Guardar cotizaciÃ³n reflectivo y enviar
+     * Test: Guardar cotización reflectivo y enviar
      */
     public function test_guardar_y_enviar_cotizacion_reflectivo()
     {
@@ -158,7 +158,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
 
         $response->assertStatus(201);
 
-        // Verificar que se guardÃ³ como NO borrador
+        // Verificar que se guardó como NO borrador
         $cotizacion = Cotizacion::latest()->first();
         $this->assertFalse($cotizacion->es_borrador);
         $this->assertEquals('ENVIADA_CONTADOR', $cotizacion->estado);
@@ -218,7 +218,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
     }
 
     /**
-     * Test: Verificar nÃºmero de cotizaciÃ³n Ãºnico
+     * Test: Verificar nÃºmero de cotización Ãºnico
      */
     public function test_numero_cotizacion_es_unico()
     {
@@ -229,16 +229,16 @@ class GuardarReflectivoCotizacionTest extends TestCase
             'asesora' => 'Asesor Test',
             'fecha' => '2025-12-15',
             'action' => 'borrador',
-            'descripcion_reflectivo' => 'Primera cotizaciÃ³n',
+            'descripcion_reflectivo' => 'Primera cotización',
             'ubicaciones_reflectivo' => json_encode([]),
             'observaciones_generales' => json_encode([]),
         ];
 
-        // Primera cotizaciÃ³n
+        // Primera cotización
         $response1 = $this->postJson(route('cotizaciones.reflectivo.guardar'), $data);
         $numero1 = $response1->json('data.cotizacion.numero_cotizacion');
 
-        // Segunda cotizaciÃ³n
+        // Segunda cotización
         $response2 = $this->postJson(route('cotizaciones.reflectivo.guardar'), $data);
         $numero2 = $response2->json('data.cotizacion.numero_cotizacion');
 
@@ -248,14 +248,14 @@ class GuardarReflectivoCotizacionTest extends TestCase
     }
 
     /**
-     * Test: RelaciÃ³n entre Cotizacion y ReflectivoCotizacion
+     * Test: Relación entre Cotizacion y ReflectivoCotizacion
      */
     public function test_relacion_cotizacion_reflectivo()
     {
         $this->actingAs($this->usuario);
 
         $data = [
-            'cliente' => 'Cliente RelaciÃ³n',
+            'cliente' => 'Cliente Relación',
             'asesora' => 'Asesor Test',
             'fecha' => '2025-12-15',
             'action' => 'borrador',
@@ -272,7 +272,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
         $this->assertNotNull($reflectivo);
         $this->assertEquals($cotizacion->id, $reflectivo->cotizacion_id);
         
-        // Verificar relaciÃ³n inversa
+        // Verificar relación inversa
         $cotizacionDesdeReflectivo = $reflectivo->cotizacion;
         $this->assertEquals($cotizacion->id, $cotizacionDesdeReflectivo->id);
     }
@@ -285,14 +285,14 @@ class GuardarReflectivoCotizacionTest extends TestCase
         // Crear otro usuario
         $otroUsuario = User::factory()->create();
 
-        // Crear cotizaciÃ³n con primer usuario
+        // Crear cotización con primer usuario
         $this->actingAs($this->usuario);
         $data = [
             'cliente' => 'Cliente Test',
             'asesora' => 'Asesor Test',
             'fecha' => '2025-12-15',
             'action' => 'borrador',
-            'descripcion_reflectivo' => 'CotizaciÃ³n del primer usuario',
+            'descripcion_reflectivo' => 'Cotización del primer usuario',
             'ubicaciones_reflectivo' => json_encode([]),
             'observaciones_generales' => json_encode([]),
         ];
@@ -304,7 +304,7 @@ class GuardarReflectivoCotizacionTest extends TestCase
         $this->actingAs($otroUsuario);
         $response = $this->getJson(route('cotizaciones.api', $cotizacionId));
         
-        // DeberÃ­a no tener permiso (si hay verificaciÃ³n)
+        // DeberÃ­a no tener permiso (si hay verificación)
         // $response->assertStatus(403);
 
         // Pero el propietario sÃ­ puede ver

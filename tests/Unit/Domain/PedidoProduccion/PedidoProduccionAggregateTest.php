@@ -7,7 +7,7 @@ class PedidoProduccionAggregateTest extends TestCase
 {
     /**
      * @test
-     * Validar que se puede crear un agregado de producciÃ³n
+     * Validar que se puede crear un agregado de producción
      */
     public function puede_crear_pedido_produccion()
     {
@@ -68,10 +68,10 @@ class PedidoProduccionAggregateTest extends TestCase
             'numero_pedido' => 'PED-2024-001',
         ]);
 
-        $pedido->anular('Cliente solicitÃ³ cancelaciÃ³n');
+        $pedido->anular('Cliente solicitó cancelación');
 
         $this->assertEquals('anulado', $pedido->getEstado());
-        $this->assertEquals('Cliente solicitÃ³ cancelaciÃ³n', $pedido->getRazonAnulacion());
+        $this->assertEquals('Cliente solicitó cancelación', $pedido->getRazonAnulacion());
     }
 }
 

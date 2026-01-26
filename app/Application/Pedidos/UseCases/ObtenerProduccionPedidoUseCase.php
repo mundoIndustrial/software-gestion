@@ -8,13 +8,13 @@ use App\Domain\Pedidos\Repositories\PedidoRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Use Case: Obtener ProducciÃ³n Pedido
+ * Use Case: Obtener Producción Pedido
  * 
- * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicaciÃ³n
+ * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
  * 
- * Antes: 22 lÃ­neas (7 lÃ­neas de lÃ³gica actual + 15 lÃ­neas duplicadas)
- * DespuÃ©s: 12 lÃ­neas (solo implementa personalizaciÃ³n)
- * ReducciÃ³n: 45%
+ * Antes: 22 lÃ­neas (7 lÃ­neas de lógica actual + 15 lÃ­neas duplicadas)
+ * DespuÃ©s: 12 lÃ­neas (solo implementa personalización)
+ * Reducción: 45%
  */
 class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
 {
@@ -33,7 +33,7 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * PersonalizaciÃ³n: Obtener solo el modelo sin enriquecimiento
+     * Personalización: Obtener solo el modelo sin enriquecimiento
      */
     protected function obtenerOpciones(): array
     {
@@ -48,7 +48,7 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * PersonalizaciÃ³n: Retornar modelo directamente
+     * Personalización: Retornar modelo directamente
      */
     protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {

@@ -8,13 +8,13 @@ use App\Domain\Pedidos\Events\PedidoProduccionCreado;
 /**
  * PedidoProduccionAggregate
  * 
- * RaÃ­z de agregado para Pedido de ProducciÃ³n
+ * RaÃ­z de agregado para Pedido de Producción
  * Encapsula:
  * - Todos los datos del pedido
  * - Invariantes del negocio
  * - Eventos de dominio que genera
  * 
- * Un agregado es una agrupaciÃ³n de objetos de dominio relacionados
+ * Un agregado es una agrupación de objetos de dominio relacionados
  * que tratamos como una unidad de cambio. PedidoProduccion es la raÃ­z.
  */
 class PedidoProduccionAggregate

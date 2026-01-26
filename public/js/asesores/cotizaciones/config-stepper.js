@@ -19,7 +19,7 @@
      * Configurar el stepper según el tipo de cotización
      */
     function configurarStepperPorTipo(tipo) {
-        console.log('🔧 Configurando stepper para tipo:', tipo);
+        console.log(' Configurando stepper para tipo:', tipo);
 
         const step3 = document.getElementById('step-3');
         const step4 = document.getElementById('step-4');

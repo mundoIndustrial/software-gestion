@@ -14,10 +14,10 @@ FRONTEND                      BACKEND
    │   items: [{                │ ├─ $request->validate([
    │     nombre_prenda: "X"     │ │  'cliente' => 'required',
    │     cantidad_talla: {..}   │ │  'items.*.nombre_prenda',
-   │     variaciones: {..}  ✅  │ │  'items.*.cantidad_talla',
-   │     procesos: {..}     ✅  │ │  // ❌ FALTA: variaciones, procesos, telas, imagenes
-   │     telas: [..]       ✅   │ │  ])
-   │     imagenes: []      ✅   │ ├─ $validated = SOLO {cliente, nombre, cantidad} ❌
+   │     variaciones: {..}   │ │  'items.*.cantidad_talla',
+   │     procesos: {..}      │ │  //  FALTA: variaciones, procesos, telas, imagenes
+   │     telas: [..]         │ │  ])
+   │     imagenes: []        │ ├─ $validated = SOLO {cliente, nombre, cantidad} 
    │   }]                       │ │
    │ }                          │ └─ return {success: true}
    │ ───────────────────────┐  │
@@ -27,17 +27,17 @@ FRONTEND                      BACKEND
    │ POST /crear               │
    │ ─────────────────────────→ │ crearPedido(FormRequest)
    │ {...}  (Sin variaciones)  │ ├─ $validated = $request->validated()
-   │         ❌ Ya se perdieron  │ │  // Mismo resultado: SOLO {cliente, nombre, cantidad}
+   │          Ya se perdieron  │ │  // Mismo resultado: SOLO {cliente, nombre, cantidad}
    │                           │ ├─ CommandBus→Handler→Strategy
-   │                           │ │  if (!empty(procesos)) { // ❌ SIEMPRE FALSO
+   │                           │ │  if (!empty(procesos)) { //  SIEMPRE FALSO
    │                           │ │    // Nunca se ejecuta
    │                           │ │  }
    │                           │ │
    │                           │ ├─ BD: Guarda incompleto
-   │                           │ │  - prenda_pedido ✅
-   │                           │ │  - variantes ❌
-   │                           │ │  - procesos ❌
-   │                           │ │  - telas ❌
+   │                           │ │  - prenda_pedido
+   │                           │ │  - variantes 
+   │                           │ │  - procesos 
+   │                           │ │  - telas 
    │←────────────────────────   │
    │                           │
 ```
@@ -48,48 +48,48 @@ FRONTEND                      BACKEND
 [CrearPedidoEditableController] validarPedido - Datos recibidos
 ├─ cliente: "rty"
 ├─ all_input: {
-│  ├─ cliente: "rty"           ✅ VE
-│  ├─ asesora: "yus2"         ✅ VE
-│  ├─ forma_de_pago: "Contado"  ✅ VE
+│  ├─ cliente: "rty"           VE
+│  ├─ asesora: "yus2"         VE
+│  ├─ forma_de_pago: "Contado"  VE
 │  └─ items: [{
-│     ├─ nombre_prenda: "RTYtr"  ✅ VE
-│     ├─ variaciones: {...}    ✅ VE
-│     ├─ procesos: {...}       ✅ VE
-│     ├─ telas: [...]          ✅ VE
-│     └─ imagenes: [..]        ✅ VE
+│     ├─ nombre_prenda: "RTYtr"  VE
+│     ├─ variaciones: {...}    VE
+│     ├─ procesos: {...}       VE
+│     ├─ telas: [...]          VE
+│     └─ imagenes: [..]        VE
 │  }]
 └─ OK
 
 [CrearPedidoEditableController] Validación pasada
-├─ cliente: "rty"           ✅
+├─ cliente: "rty"          
 ├─ items: [{
-│  ├─ nombre_prenda: "RTYtr"  ✅
-│  └─ cantidad_talla: {...}   ✅
-│  ❌ FALTA: variaciones
-│  ❌ FALTA: procesos
-│  ❌ FALTA: telas
-│  ❌ FALTA: imagenes
+│  ├─ nombre_prenda: "RTYtr" 
+│  └─ cantidad_talla: {...}  
+│   FALTA: variaciones
+│   FALTA: procesos
+│   FALTA: telas
+│   FALTA: imagenes
 └─ }]
 ```
 
 ### Base de Datos - Antes
 
 ```sql
--- prenda_pedido: 1 registro ✅
+-- prenda_pedido: 1 registro
 id | nombre_prenda | cantidad_talla
 1  | "RTYtr"       | {"DAMA":{"S":20,"M":10}}
 
--- prenda_pedido_variantes: 0 registros ❌
+-- prenda_pedido_variantes: 0 registros 
 (vacía)
 
--- proceso_prenda: 1 registro ⚠️
+-- proceso_prenda: 1 registro 
 id | prenda_pedido_id | proceso | estado_proceso
 1  | 1                | "Creación Orden" | "Completado"
 
--- prenda_color_tela: 0 registros ❌
+-- prenda_color_tela: 0 registros 
 (vacía)
 
--- imagen_prenda: 0 registros ❌
+-- imagen_prenda: 0 registros 
 (vacía)
 ```
 
@@ -109,37 +109,37 @@ FRONTEND                      BACKEND
    │   items: [{                │ ├─ $request->validated() ← CAMBIO
    │     nombre_prenda: "X"     │ │  // Retorna TODOS los campos validados
    │     cantidad_talla: {..}   │ │  // por las reglas del FormRequest
-   │     variaciones: {..}  ✅  │ ├─ $validated = {
-   │     procesos: {..}     ✅  │ │    cliente,
-   │     telas: [..]       ✅   │ │    forma_de_pago,
-   │     imagenes: []      ✅   │ │    items[].{
+   │     variaciones: {..}   │ ├─ $validated = {
+   │     procesos: {..}      │ │    cliente,
+   │     telas: [..]         │ │    forma_de_pago,
+   │     imagenes: []        │ │    items[].{
    │   }]                       │ │      nombre_prenda,
    │ }                          │ │      cantidad_talla,
-   │ ───────────────────────┐  │ │      variaciones,  ✅ AHORA SÍ
-   │←────────────────────────  │ │      procesos,      ✅ AHORA SÍ
-   │ {success: true}           │ │      telas,         ✅ AHORA SÍ
-   │                           │ │      imagenes       ✅ AHORA SÍ
+   │ ───────────────────────┐  │ │      variaciones,  AHORA SÍ
+   │←────────────────────────  │ │      procesos,      AHORA SÍ
+   │ {success: true}           │ │      telas,         AHORA SÍ
+   │                           │ │      imagenes       AHORA SÍ
    │ POST /crear               │ │    }
    │ ─────────────────────────→ │ │  }
-   │ {...}  ✅ CON TODO         │ │
-   │         ✅ Ya están todos  │ │
+   │ {...}  CON TODO         │ │
+   │         Ya están todos  │ │
    │                           │ crearPedido(FormRequest)
    │                           │ ├─ $validated = $request->validated()
    │                           │ │  // Contiene TODOS los datos
    │                           │ ├─ CommandBus→Handler→Strategy
-   │                           │ │  if (!empty(procesos)) { ✅ AHORA VERDADERO
-   │                           │ │    guardarProcesos()  ✅
+   │                           │ │  if (!empty(procesos)) { AHORA VERDADERO
+   │                           │ │    guardarProcesos() 
    │                           │ │  }
-   │                           │ │  if (!empty(telas)) {  ✅ AHORA VERDADERO
-   │                           │ │    guardarImagenesTelas() ✅
+   │                           │ │  if (!empty(telas)) {  AHORA VERDADERO
+   │                           │ │    guardarImagenesTelas()
    │                           │ │  }
    │                           │ │
    │                           │ ├─ BD: Guarda COMPLETO
-   │                           │ │  - prenda_pedido ✅
-   │                           │ │  - variantes ✅ ← AHORA
-   │                           │ │  - procesos ✅ ← AHORA
-   │                           │ │  - telas ✅ ← AHORA
-   │                           │ │  - imagenes ✅ ← AHORA
+   │                           │ │  - prenda_pedido
+   │                           │ │  - variantes ← AHORA
+   │                           │ │  - procesos ← AHORA
+   │                           │ │  - telas ← AHORA
+   │                           │ │  - imagenes ← AHORA
    │←────────────────────────   │
    │                           │
 ```
@@ -153,16 +153,16 @@ FRONTEND                      BACKEND
 └─ OK
 
 [CrearPedidoEditableController] Validación pasada
-├─ cliente: "rty"                    ✅
-├─ items_count: 1                    ✅
-├─ first_item_keys: [                ✅ DEMUESTRA QUE ESTÁN TODOS
+├─ cliente: "rty"                   
+├─ items_count: 1                   
+├─ first_item_keys: [                DEMUESTRA QUE ESTÁN TODOS
 │  "tipo",
 │  "nombre_prenda",
 │  "descripcion",
-│  "variaciones",     ✅ AHORA AQUÍ
-│  "procesos",        ✅ AHORA AQUÍ
-│  "telas",           ✅ AHORA AQUÍ
-│  "imagenes",        ✅ AHORA AQUÍ
+│  "variaciones",     AHORA AQUÍ
+│  "procesos",        AHORA AQUÍ
+│  "telas",           AHORA AQUÍ
+│  "imagenes",        AHORA AQUÍ
 │  "cantidad_talla",
 │  "origen"
 │  ]
@@ -175,18 +175,18 @@ FRONTEND                      BACKEND
 [CreacionPrendaSinCtaStrategy] Tallas guardadas
 └─ OK
 
-[CreacionPrendaSinCtaStrategy] Variante de prenda creada  ✅ ← AHORA APARECE
+[CreacionPrendaSinCtaStrategy] Variante de prenda creada  ← AHORA APARECE
 ├─ prenda_pedido_id: 1
 ├─ tipo_manga_id: 5
 ├─ tiene_bolsillos: true
 └─ OK
 
-[guardarProcesos] Proceso guardado  ✅ ← AHORA APARECE
+[guardarProcesos] Proceso guardado  ← AHORA APARECE
 ├─ proceso_id: 68
 ├─ tipo: "reflectivo"
 └─ OK
 
-[guardarImagenesTelas] Color-Tela creado  ✅ ← AHORA APARECE
+[guardarImagenesTelas] Color-Tela creado  ← AHORA APARECE
 ├─ id: 50
 ├─ color_id: 12
 ├─ tela_id: 8
@@ -196,24 +196,24 @@ FRONTEND                      BACKEND
 ### Base de Datos - Después
 
 ```sql
--- prenda_pedido: 1 registro ✅
+-- prenda_pedido: 1 registro
 id | nombre_prenda | cantidad_talla
 1  | "RTYtr"       | {"DAMA":{"S":20,"M":10}}
 
--- prenda_pedido_variantes: 1 registro ✅ ← AHORA GUARDADO
+-- prenda_pedido_variantes: 1 registro ← AHORA GUARDADO
 id | prenda_pedido_id | tipo_manga_id | tiene_bolsillos | bolsillos_obs
 1  | 1                | 5             | true            | "..."
 
--- proceso_prenda: 2 registros ✅ ← AHORA MÚLTIPLES
+-- proceso_prenda: 2 registros ← AHORA MÚLTIPLES
 id | prenda_pedido_id | proceso | estado_proceso
 1  | 1                | "Creación Orden" | "Completado"
 2  | 1                | "Reflectivo" | "Pendiente"  ← AHORA GUARDADO
 
--- prenda_color_tela: 1 registro ✅ ← AHORA GUARDADO
+-- prenda_color_tela: 1 registro ← AHORA GUARDADO
 id | prenda_pedido_id | color_id | tela_id | imagenes
 1  | 1                | 12       | 8       | []
 
--- imagen_prenda: N registros ✅ ← AHORA GUARDADAS
+-- imagen_prenda: N registros ← AHORA GUARDADAS
 id | prenda_pedido_id | ruta | tipo
 1  | 1                | "..." | "prenda"
 2  | 1                | "..." | "tela"
@@ -259,7 +259,7 @@ id | prenda_pedido_id | ruta | tipo
 ### Resultado en $validated
 
 ```php
-// ❌ ANTES
+//  ANTES
 [
     'cliente' => 'rty',
     'items' => [
@@ -270,7 +270,7 @@ id | prenda_pedido_id | ruta | tipo
     ]
 ]
 
-// ✅ DESPUÉS
+// DESPUÉS
 [
     'cliente' => 'rty',
     'forma_de_pago' => 'Contado',
@@ -320,28 +320,28 @@ id | prenda_pedido_id | ruta | tipo
 
 ```
 ANTES:
-├─ cliente              100% ✅
-├─ forma_de_pago        0%   ❌
-├─ descripcion          0%   ❌
-├─ items[].nombre       100% ✅
-├─ items[].cantidad     100% ✅
-├─ items[].variaciones  0%   ❌
-├─ items[].procesos     0%   ❌
-├─ items[].telas        0%   ❌
-└─ items[].imagenes     0%   ❌
+├─ cliente              100%
+├─ forma_de_pago        0%   
+├─ descripcion          0%   
+├─ items[].nombre       100%
+├─ items[].cantidad     100%
+├─ items[].variaciones  0%   
+├─ items[].procesos     0%   
+├─ items[].telas        0%   
+└─ items[].imagenes     0%   
    TOTAL: 37.5%
 
 DESPUÉS:
-├─ cliente              100% ✅
-├─ forma_de_pago        100% ✅
-├─ descripcion          100% ✅
-├─ items[].nombre       100% ✅
-├─ items[].cantidad     100% ✅
-├─ items[].variaciones  100% ✅
-├─ items[].procesos     100% ✅
-├─ items[].telas        100% ✅
-└─ items[].imagenes     100% ✅
-   TOTAL: 100% ✅
+├─ cliente              100%
+├─ forma_de_pago        100%
+├─ descripcion          100%
+├─ items[].nombre       100%
+├─ items[].cantidad     100%
+├─ items[].variaciones  100%
+├─ items[].procesos     100%
+├─ items[].telas        100%
+└─ items[].imagenes     100%
+   TOTAL: 100%
 ```
 
 ### Registros Guardados en BD

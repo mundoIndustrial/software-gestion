@@ -75,7 +75,7 @@ async function manejarSubmitFormulario(event) {
         const flujo = new window.EppFlujoCreacion('/api');
         const resultado = await flujo.crearPedidoCompleto(pedidoData);
 
-        // ✅ Éxito
+        // Éxito
         alert(`✅ Pedido creado exitosamente\n` +
               `Número: ${resultado.numero_pedido}\n` +
               `Imágenes subidas: ${resultado.imagenes_resultado.imagenes_subidas}`);
@@ -87,7 +87,7 @@ async function manejarSubmitFormulario(event) {
         window.location.href = `/asesores/pedidos/${resultado.pedido_id}`;
 
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error(' Error:', error);
         alert(`Error: ${error.message}`);
     } finally {
         mostrarCargando(false);
@@ -107,7 +107,7 @@ async function crearPedidoPaso1(pedidoData) {
         
         return resultado.pedido_id;
     } catch (error) {
-        console.error('❌ Fallo crear pedido:', error);
+        console.error(' Fallo crear pedido:', error);
         throw error;
     }
 }
@@ -121,7 +121,7 @@ async function subirImagenesPaso2(pedidoId, pedidoData) {
         
         return resultado;
     } catch (error) {
-        console.error('❌ Fallo subir imágenes:', error);
+        console.error(' Fallo subir imágenes:', error);
         // El pedido ya existe, no es crítico que fallen las imágenes
         return {
             success: false,
@@ -146,11 +146,11 @@ async function flujoManual() {
         if (imagenesSubidas.success) {
             console.log('✅ Todo perfecto');
         } else {
-            console.warn('⚠️ Pedido OK pero imágenes fallaron');
+            console.warn(' Pedido OK pero imágenes fallaron');
         }
         
     } catch (error) {
-        console.error('❌ Fatal:', error);
+        console.error(' Fatal:', error);
     }
 }
 
@@ -178,7 +178,7 @@ async function crearPedidoConManejErrors(pedidoData) {
         const imagenesSubidas = await flujo.subirImagenesPedido(pedidoId, pedidoData);
 
         if (!imagenesSubidas.success) {
-            console.warn('⚠️ Las imágenes no se subieron:', imagenesSubidas.error);
+            console.warn(' Las imágenes no se subieron:', imagenesSubidas.error);
             // Pero el pedido existe, así que continuamos
             return {
                 success: true,
@@ -196,7 +196,7 @@ async function crearPedidoConManejErrors(pedidoData) {
         };
 
     } catch (error) {
-        console.error('❌ Error fatal:', error.message);
+        console.error(' Error fatal:', error.message);
         
         // Decidir qué hacer según el tipo de error
         if (error.message.includes('crear pedido')) {

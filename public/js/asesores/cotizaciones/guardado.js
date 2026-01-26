@@ -582,7 +582,7 @@ async function guardarCotizacion() {
                                             (tieneDescripcionReflectivo && tieneImagenesReflectivo) ||
                                             tienePrendasP4ConDatos;  //  Agregar esta condición
             
-            console.log('✨ Reflectivo capturado (PASO GUARDADO):', {
+            console.log(' Reflectivo capturado (PASO GUARDADO):', {
                 elemento_existe: !!reflectivoElement,
                 valor_raw: reflectivoElement?.value,
                 valor_final: reflectivoDescripcion,
@@ -1405,7 +1405,7 @@ async function procederEnviarCotizacion() {
                                             (tieneDescripcionReflectivo && tieneImagenesReflectivo) ||
                                             tienePrendasP4ConDatos;  //  Agregar esta condición
             
-            console.log('✨ Reflectivo capturado (PASO GUARDADO):', {
+            console.log(' Reflectivo capturado (PASO GUARDADO):', {
                 elemento_existe: !!reflectivoElement,
                 valor_raw: reflectivoElement?.value,
                 valor_final: reflectivoDescripcion,

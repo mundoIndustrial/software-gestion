@@ -8,8 +8,8 @@ use DateTimeImmutable;
 /**
  * PedidoProduccionCreado
  * 
- * Se emite cuando se crea un nuevo pedido de producciÃ³n
- * Contiene toda la informaciÃ³n necesaria para notificar del nuevo pedido
+ * Se emite cuando se crea un nuevo pedido de producción
+ * Contiene toda la información necesaria para notificar del nuevo pedido
  */
 class PedidoProduccionCreado extends DomainEvent
 {

@@ -10,7 +10,7 @@ use App\Events\OrdenUpdated;
  * AnularPedidoService
  * 
  * Servicio para anular pedidos con registro de novedad.
- * Encapsula la lÃ³gica de negocio de anulaciÃ³n.
+ * Encapsula la lógica de negocio de anulación.
  */
 class AnularPedidoService
 {

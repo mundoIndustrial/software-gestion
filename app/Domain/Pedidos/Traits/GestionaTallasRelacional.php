@@ -6,7 +6,7 @@ use App\Models\PrendaPedidoTalla;
 
 /**
  * Trait para gestionar tallas de prendas
- * Reemplaza la lÃ³gica de JSON cantidad_talla con queries a prenda_pedido_tallas
+ * Reemplaza la lógica de JSON cantidad_talla con queries a prenda_pedido_tallas
  */
 trait GestionaTallasRelacional
 {

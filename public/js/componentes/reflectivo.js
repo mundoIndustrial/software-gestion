@@ -184,7 +184,7 @@ window.manejarImagenReflectivo = function(input) {
     
     const reader = new FileReader();
     reader.onload = function(e) {
-        // ✅ GUARDAR EL ARCHIVO FILE REAL, NO SOLO EL DATA URL
+        // GUARDAR EL ARCHIVO FILE REAL, NO SOLO EL DATA URL
         window.datosReflectivo.imagenes.push({
             nombre: file.name,
             data: e.target.result,

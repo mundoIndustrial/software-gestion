@@ -35,7 +35,7 @@ class CrearPedidoDTO
         }
 
         if (empty($this->descripcion)) {
-            throw new \InvalidArgumentException('DescripciÃ³n requerida');
+            throw new \InvalidArgumentException('Descripción requerida');
         }
 
         if (empty($this->prendas)) {

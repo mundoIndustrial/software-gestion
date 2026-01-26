@@ -38,12 +38,12 @@ class CotizacionesMySQLiTest extends BaseTestCase
     }
 
     /**
-     * Test: ConexiÃ³n a BD
+     * Test: Conexión a BD
      */
     public function test_database_connection(): void
     {
         $this->assertFalse($this->db->connect_error);
-        echo "\nâœ“ ConexiÃ³n a BD exitosa";
+        echo "\nâœ“ Conexión a BD exitosa";
     }
 
     /**
@@ -60,7 +60,7 @@ class CotizacionesMySQLiTest extends BaseTestCase
     }
 
     /**
-     * Test: Verificar tipos de cotizaciÃ³n
+     * Test: Verificar tipos de cotización
      */
     public function test_quotation_types_exist(): void
     {
@@ -69,11 +69,11 @@ class CotizacionesMySQLiTest extends BaseTestCase
         $count = $row['total'];
 
         $this->assertGreater(0, $count);
-        echo "\nâœ“ Tipos de cotizaciÃ³n: {$count}";
+        echo "\nâœ“ Tipos de cotización: {$count}";
     }
 
     /**
-     * Test: Crear cotizaciÃ³n simple
+     * Test: Crear cotización simple
      */
     public function test_create_simple_quotation(): void
     {
@@ -86,7 +86,7 @@ class CotizacionesMySQLiTest extends BaseTestCase
         $asesorId = $this->db->insert_id;
         echo "\nâœ“ Asesor creado: {$asesorId}";
 
-        // Crear cotizaciÃ³n
+        // Crear cotización
         $this->db->query("
             INSERT INTO cotizaciones 
             (numero_cotizacion, id_tipo_cotizacion, id_cliente, id_asesor, estado, created_at, updated_at)
@@ -96,7 +96,7 @@ class CotizacionesMySQLiTest extends BaseTestCase
 
         $cotizacionId = $this->db->insert_id;
         $this->assertGreater(0, $cotizacionId);
-        echo "\nâœ“ CotizaciÃ³n creada: {$cotizacionId}";
+        echo "\nâœ“ Cotización creada: {$cotizacionId}";
     }
 
     /**

@@ -21,7 +21,7 @@ php artisan config:clear
 - Tallas del proceso
 - Ubicaciones
 
-❌ Si no aparecen:
+ Si no aparecen:
 - Abre DevTools (F12)
 - Ve a **Console**
 - Ejecuta:
@@ -166,7 +166,7 @@ tail -f storage/logs/laravel.log | grep "RECIBOS-REPO\|RECIBO-CONTROLLER"
 
 ---
 
-## ✅ CHECKLIST DE VERIFICACIÓN
+## CHECKLIST DE VERIFICACIÓN
 
 - [ ] Los procesos aparecen en la modal de recibos
 - [ ] Los títulos de procesos son visibles (BORDADO, ESTAMPADO, etc.)

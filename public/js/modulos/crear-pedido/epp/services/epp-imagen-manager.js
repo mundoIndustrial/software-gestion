@@ -52,7 +52,7 @@ class EppImagenManager {
                 return;
             }
 
-            // ✅ Guardar archivo directamente en el estado (sin subir)
+            // Guardar archivo directamente en el estado (sin subir)
             // Se enviará como FormData cuando se cree el pedido
             const imagenData = {
                 id: Date.now(), // ID temporal basado en timestamp
@@ -67,7 +67,7 @@ class EppImagenManager {
                 imagenData.preview = e.target.result; // Data URL para preview
                 this.stateManager.agregarImagenSubida(imagenData);
                 this.modalManager.agregarImagenUI(imagenData);
-                console.log('[EppImagenManager] ✅ Imagen cargada en memoria:', imagenData);
+                console.log('[EppImagenManager] Imagen cargada en memoria:', imagenData);
             };
 
             reader.readAsDataURL(archivo);
@@ -82,7 +82,7 @@ class EppImagenManager {
     async eliminarImagen(imagenId) {
         // Mostrar confirmación elegante con SweetAlert
         const result = await Swal.fire({
-            title: '⚠️ Eliminar Imagen',
+            title: ' Eliminar Imagen',
             text: '¿Estás seguro de que deseas eliminar esta imagen? Se eliminará de la base de datos y del servidor.',
             icon: 'warning',
             showCancelButton: true,

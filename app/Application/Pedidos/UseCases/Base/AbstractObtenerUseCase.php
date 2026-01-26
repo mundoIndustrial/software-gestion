@@ -11,15 +11,15 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
  * Clase base reutilizable para todos los Use Cases de OBTENCIÃ“N (queries)
  * 
  * PATRÃ“N: Template Method para estandarizar:
- * - ObtenciÃ³n y validaciÃ³n del pedido
+ * - Obtención y validación del pedido
  * - Enriquecimiento condicional de datos
  * - Respuesta estandarizada
  * 
- * Reduce ~70 lÃ­neas de cÃ³digo duplicado en cada Use Case
+ * Reduce ~70 lÃ­neas de código duplicado en cada Use Case
  * 
  * Antes: 4 Use Cases Ã— 80 lÃ­neas = 320 lÃ­neas
  * DespuÃ©s: 1 base + 4 concretas Ã— 15 lÃ­neas = 80 lÃ­neas
- * ReducciÃ³n: 75% menos cÃ³digo
+ * Reducción: 75% menos código
  */
 abstract class AbstractObtenerUseCase
 {
@@ -31,7 +31,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * Template Method - Define el flujo de obtenciÃ³n
+     * Template Method - Define el flujo de obtención
      * 
      * Cada subclase solo necesita sobrescribir:
      * - obtenerOpciones() - QuÃ© datos incluir (prendas, epps, etc)

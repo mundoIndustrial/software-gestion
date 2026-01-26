@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\DB;
 use App\Application\Services\ColorTelaService;
 
 /**
- * Servicio para herencia de variantes de cotizaciÃ³n a pedido
- * Responsabilidad: Mapear datos de variantes de cotizaciÃ³n a prenda de pedido
+ * Servicio para herencia de variantes de cotización a pedido
+ * Responsabilidad: Mapear datos de variantes de cotización a prenda de pedido
  */
 class VariantesService
 {
@@ -19,7 +19,7 @@ class VariantesService
     }
 
     /**
-     * Heredar variantes de una prenda de cotizaciÃ³n a pedido
+     * Heredar variantes de una prenda de cotización a pedido
      */
     public function heredarVariantesDePrenda($cotizacion, $prendaPedido, int $index): void
     {
@@ -30,13 +30,13 @@ class VariantesService
                 'index' => $index,
             ]);
 
-            // Obtener prendas de cotizaciÃ³n
+            // Obtener prendas de cotización
             $prendasCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)
                 ->orderBy('id')
                 ->get();
             
             if (!isset($prendasCot[$index])) {
-                \Log::warning(' No se encontrÃ³ prenda de cotizaciÃ³n en Ã­ndice', [
+                \Log::warning(' No se encontró prenda de cotización en Ã­ndice', [
                     'index' => $index,
                     'total_prendas_cot' => $prendasCot->count()
                 ]);
@@ -95,7 +95,7 @@ class VariantesService
 
     /**
      * Obtener tela desde JSON de telas mÃºltiples
-     * Extrae la primera tela del JSON y obtiene/crea la combinaciÃ³n
+     * Extrae la primera tela del JSON y obtiene/crea la combinación
      */
     private function obtenerTelaDeVariante(?string $telasJson): ?int
     {

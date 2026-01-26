@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  * - Procesar manga (crear/obtener ID si viene como nombre)
  * - Procesar broche (crear/obtener ID si viene como nombre)
  * 
- * Mantiene EXACTAMENTE los mismos logs que el cÃ³digo original
+ * Mantiene EXACTAMENTE los mismos logs que el código original
  */
 class VariacionesPrendaProcessorService
 {
@@ -171,7 +171,7 @@ class VariacionesPrendaProcessorService
             $broche = $this->colorGeneroService->obtenerOCrearBroche($prendaData['broche']);
             if ($broche) {
                 $prendaData['tipo_broche_boton_id'] = $broche->id;
-                Log::info(' [PedidoPrendaService] Broche/BotÃ³n creado/obtenido', [
+                Log::info(' [PedidoPrendaService] Broche/Botón creado/obtenido', [
                     'nombre' => $prendaData['broche'],
                     'id' => $broche->id,
                 ]);

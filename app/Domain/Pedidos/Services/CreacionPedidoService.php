@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Servicio de dominio para creaciÃ³n de pedidos de producciÃ³n
- * Responsabilidad: Orquestar la creaciÃ³n completa de pedidos desde cotizaciones o sin ellas
+ * Servicio de dominio para creación de pedidos de producción
+ * Responsabilidad: Orquestar la creación completa de pedidos desde cotizaciones o sin ellas
  */
 class CreacionPedidoService
 {
@@ -23,17 +23,17 @@ class CreacionPedidoService
     ) {}
 
     /**
-     * Crear pedido desde cotizaciÃ³n (mÃ©todo principal)
+     * Crear pedido desde cotización (mÃ©todo principal)
      */
     public function crearDesdeCotizacion(int $cotizacionId): array
     {
         $cotizacion = $this->cotizacionRepository->obtenerCotizacionCompleta($cotizacionId);
 
         if (!$cotizacion) {
-            throw new \RuntimeException('CotizaciÃ³n no encontrada');
+            throw new \RuntimeException('Cotización no encontrada');
         }
 
-        // Detectar tipo de cotizaciÃ³n
+        // Detectar tipo de cotización
         $esLogo = $this->cotizacionRepository->esCotizacionLogo($cotizacion);
         $esReflectivo = $this->cotizacionRepository->esCotizacionReflectivo($cotizacion);
 
@@ -79,7 +79,8 @@ class CreacionPedidoService
                 'cliente' => $cotizacion->cliente->nombre ?? 'Sin nombre',
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $formaPago,
-                'estado' => 'PENDIENTE_SUPERVISOR',
+                'estado' => 'Pendiente',  // ← Estado por defecto
+                'area' => 'Creación de Orden',
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 
@@ -102,7 +103,7 @@ class CreacionPedidoService
     }
 
     /**
-     * Crear pedido sin cotizaciÃ³n (PRENDA)
+     * Crear pedido sin cotización (PRENDA)
      */
     public function crearPrendaSinCotizacion(array $data): array
     {
@@ -116,7 +117,8 @@ class CreacionPedidoService
                 'cliente' => $data['cliente'] ?? '',
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $data['forma_de_pago'] ?? '',
-                'estado' => 'PENDIENTE_SUPERVISOR',
+                'estado' => 'Pendiente',  // ← Estado por defecto
+                'area' => 'Creación de Orden',
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 
@@ -133,7 +135,7 @@ class CreacionPedidoService
     }
 
     /**
-     * Crear pedido sin cotizaciÃ³n (REFLECTIVO)
+     * Crear pedido sin cotización (REFLECTIVO)
      */
     public function crearReflectivoSinCotizacion(array $data): array
     {
@@ -147,7 +149,8 @@ class CreacionPedidoService
                 'cliente' => $data['cliente'] ?? '',
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $data['forma_de_pago'] ?? '',
-                'estado' => 'PENDIENTE_SUPERVISOR',
+                'estado' => 'Pendiente',  // ← Estado por defecto
+                'area' => 'Creación de Orden',
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 
@@ -164,7 +167,7 @@ class CreacionPedidoService
     }
 
     /**
-     * Extraer forma de pago de cotizaciÃ³n
+     * Extraer forma de pago de cotización
      */
     private function extraerFormaPago(Cotizacion $cotizacion): string
     {
@@ -180,7 +183,7 @@ class CreacionPedidoService
     }
 
     /**
-     * Procesar prendas de cotizaciÃ³n
+     * Procesar prendas de cotización
      */
     private function procesarPrendasDeCotizacion(PedidoProduccion $pedido, Cotizacion $cotizacion): void
     {
@@ -208,7 +211,7 @@ class CreacionPedidoService
     }
 
     /**
-     * Procesar prendas nuevas (sin cotizaciÃ³n)
+     * Procesar prendas nuevas (sin cotización)
      */
     private function procesarPrendasNuevas(PedidoProduccion $pedido, array $prendas): void
     {
@@ -266,8 +269,8 @@ class CreacionPedidoService
      */
     private function crearProcesosReflectivo(PedidoProduccion $pedido, Cotizacion $cotizacion): void
     {
-        // LÃ³gica de creaciÃ³n de procesos para reflectivo
-        // (Mantener la lÃ³gica existente del controlador)
+        // Lógica de creación de procesos para reflectivo
+        // (Mantener la lógica existente del controlador)
     }
 }
 

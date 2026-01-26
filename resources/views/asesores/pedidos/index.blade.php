@@ -626,6 +626,13 @@
 
 <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
+
+<!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-v3-definitiva.js') }}?v={{ time() }}"></script>
+
+<!-- PAYLOAD NORMALIZER INITIALIZER (Opcional - para debugging) -->
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-init.js') }}?v={{ time() }}"></script>
+
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
@@ -757,7 +764,7 @@
         
         // Alternativa: Si por algún motivo pasa mucho tiempo, ocultar después de X segundos
         const maxLoadTime = setTimeout(function() {
-            console.warn('[PageLoading] ⚠️ Timeout - Ocultando overlay por seguridad');
+            console.warn('[PageLoading]  Timeout - Ocultando overlay por seguridad');
             const overlay = document.getElementById('page-loading-overlay');
             if (overlay && !overlay.classList.contains('hidden')) {
                 overlay.classList.add('hidden');

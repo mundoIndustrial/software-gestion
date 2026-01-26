@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Log;
 /**
  * NotificarClientePedidoCreado
  * 
- * Listener que se dispara cuando se crea un nuevo pedido de producciÃ³n
+ * Listener que se dispara cuando se crea un nuevo pedido de producción
  * Responsabilidades:
  * - Notificar al cliente via email
  * - Notificar al asesor
- * - Registrar la notificaciÃ³n en logs
+ * - Registrar la notificación en logs
  * 
  * Este es un ejemplo de un side effect de dominio.
  * Los side effects no deben estar en el agregado, sino en listeners.
@@ -37,7 +37,7 @@ class NotificarClientePedidoCreado
             $asesor = User::find($event->getAseoreId());
             
             if (!$asesor) {
-                Log::warning(' Asesor no encontrado para notificaciÃ³n', [
+                Log::warning(' Asesor no encontrado para notificación', [
                     'asesor_id' => $event->getAseoreId(),
                 ]);
                 return;
@@ -45,7 +45,7 @@ class NotificarClientePedidoCreado
 
             // AquÃ­ irÃ­an las notificaciones via email/SMS
             // Por ahora, solo logging
-            Log::info(' NotificaciÃ³n de pedido enviada', [
+            Log::info(' Notificación de pedido enviada', [
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
                 'cliente' => $event->getCliente(),
@@ -58,7 +58,7 @@ class NotificarClientePedidoCreado
                 'error' => $e->getMessage(),
                 'pedido_id' => $event->getPedidoId(),
             ]);
-            // No re-lanzar excepciÃ³n para no interrumpir el flujo principal
+            // No re-lanzar excepción para no interrumpir el flujo principal
         }
     }
 }

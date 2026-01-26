@@ -269,7 +269,7 @@ class PedidoPrendaService
                 $variacionesParsed = json_decode($variacionesParsed, true) ?? [];
             }
             
-            // ✅ Obtener tipo_manga_id desde variaciones.tipo_manga_id o raíz
+            // Obtener tipo_manga_id desde variaciones.tipo_manga_id o raíz
             $tipoMangaId = $variacionesParsed['tipo_manga_id'] ?? $prendaData['tipo_manga_id'] ?? null;
             
             // Si no hay ID pero hay nombre, obtener/crear
@@ -280,7 +280,7 @@ class PedidoPrendaService
                 }
             }
             
-            // ✅ Obtener tipo_broche_boton_id desde variaciones o raíz
+            // Obtener tipo_broche_boton_id desde variaciones o raíz
             $tipoBrocheBotonId = $variacionesParsed['tipo_broche_boton_id'] ?? $prendaData['tipo_broche_boton_id'] ?? null;
             
             // Si no hay ID pero hay nombre, obtener/crear
@@ -291,7 +291,7 @@ class PedidoPrendaService
                 }
             }
             
-            // ✅ Obtener observaciones desde variaciones o raíz
+            // Obtener observaciones desde variaciones o raíz
             $obsManga = $variacionesParsed['obs_manga'] ?? $prendaData['obs_manga'] ?? $prendaData['manga_obs'] ?? '';
             $obsBroche = $variacionesParsed['obs_broche'] ?? $prendaData['obs_broche'] ?? $prendaData['broche_obs'] ?? '';
             $tieneBolsillos = (bool)($variacionesParsed['tiene_bolsillos'] ?? $prendaData['tiene_bolsillos'] ?? false);
@@ -311,7 +311,7 @@ class PedidoPrendaService
             );
         }
 
-        // 2b. ✅ TALLAS YA GUARDADAS en PrendaBaseCreatorService->crearPrendaBase()
+        // 2b. TALLAS YA GUARDADAS en PrendaBaseCreatorService->crearPrendaBase()
         // NO volver a guardar aquí (causa duplicación)
         // Las tallas se guardan automáticamente en prenda_pedido_tallas cuando se crea la prenda base
 
@@ -396,7 +396,7 @@ class PedidoPrendaService
 
 
     /**
-     * Armar descripciÃ³n de variaciones a partir de los datos
+     * Armar descripción de variaciones a partir de los datos
      */
     private function armarDescripcionVariaciones(array $prendaData): ?string
     {

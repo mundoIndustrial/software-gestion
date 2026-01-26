@@ -32,7 +32,7 @@ class CotizacionRepository
     }
 
     /**
-     * Obtener cotizaciÃ³n por ID con relaciones completas
+     * Obtener cotización por ID con relaciones completas
      */
     public function obtenerCotizacionCompleta(int $cotizacionId): ?Cotizacion
     {
@@ -63,7 +63,7 @@ class CotizacionRepository
     }
 
     /**
-     * Verificar si una cotizaciÃ³n es de tipo LOGO
+     * Verificar si una cotización es de tipo LOGO
      */
     public function esCotizacionLogo(Cotizacion $cotizacion): bool
     {
@@ -72,7 +72,7 @@ class CotizacionRepository
     }
 
     /**
-     * Verificar si una cotizaciÃ³n es de tipo REFLECTIVO
+     * Verificar si una cotización es de tipo REFLECTIVO
      */
     public function esCotizacionReflectivo(Cotizacion $cotizacion): bool
     {
@@ -81,7 +81,7 @@ class CotizacionRepository
     }
 
     /**
-     * Obtener prendas de una cotizaciÃ³n con sus relaciones
+     * Obtener prendas de una cotización con sus relaciones
      */
     public function obtenerPrendasCotizacion(int $cotizacionId): Collection
     {
@@ -95,7 +95,7 @@ class CotizacionRepository
     }
 
     /**
-     * Obtener especificaciones de una cotizaciÃ³n
+     * Obtener especificaciones de una cotización
      */
     public function obtenerEspecificaciones(Cotizacion $cotizacion): array
     {
@@ -103,7 +103,7 @@ class CotizacionRepository
     }
 
     /**
-     * Obtener datos completos de una cotizaciÃ³n para AJAX
+     * Obtener datos completos de una cotización para AJAX
      * Incluye todas las relaciones necesarias
      */
     public function obtenerDatosCompletosParaAjax(int $cotizacionId): array

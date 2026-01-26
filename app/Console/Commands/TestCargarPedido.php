@@ -68,7 +68,7 @@ class TestCargarPedido extends Command
                         $this->line("    broche_boton_obs: " . $var->broche_boton_obs);
                     }
                 } else {
-                    $this->warn("  ⚠️  Sin variantes");
+                    $this->warn("    Sin variantes");
                 }
                 
                 // Colores-Telas
@@ -80,7 +80,7 @@ class TestCargarPedido extends Command
                         $this->line("    Tela: " . ($ct->tela?->nombre ?? 'N/A'));
                     }
                 } else {
-                    $this->warn("  ⚠️  Sin colores-telas");
+                    $this->warn("    Sin colores-telas");
                 }
                 
                 // Telas
@@ -90,7 +90,7 @@ class TestCargarPedido extends Command
                         $this->line("  ✓ Ruta: " . $tela->ruta_webp);
                     }
                 } else {
-                    $this->warn("  ⚠️  Sin telas");
+                    $this->warn("    Sin telas");
                 }
                 
                 // Fotos de prenda
@@ -100,7 +100,7 @@ class TestCargarPedido extends Command
                         $this->line("  ✓ Ruta: " . $foto->ruta_foto);
                     }
                 } else {
-                    $this->warn("  ⚠️  Sin fotos");
+                    $this->warn("    Sin fotos");
                 }
                 
                 // Logos (si existen)
@@ -111,7 +111,7 @@ class TestCargarPedido extends Command
                         $this->line("  ✓ Ruta: " . $logo->ruta_foto);
                     }
                 } else {
-                    $this->warn("  ⚠️  Sin logos");
+                    $this->warn("    Sin logos");
                 }
                 
                 // Procesos
@@ -138,7 +138,7 @@ class TestCargarPedido extends Command
                         }
                     }
                 } else {
-                    $this->warn("  ⚠️  Sin procesos");
+                    $this->warn("    Sin procesos");
                 }
                 
                 $this->line("");

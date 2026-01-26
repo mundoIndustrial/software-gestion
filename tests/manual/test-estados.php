@@ -80,7 +80,7 @@ try {
     
     // Obtener siguiente nÃºmero
     $siguienteCot = $servicioC->obtenerSiguienteNumeroCotizacion();
-    echo "  âœ“ Siguiente nÃºmero cotizaciÃ³n: " . $siguienteCot . "\n";
+    echo "  âœ“ Siguiente nÃºmero cotización: " . $siguienteCot . "\n";
     
     $siguientePed = $servicioP->obtenerSiguienteNumeroPedido();
     echo "  âœ“ Siguiente nÃºmero pedido: " . $siguientePed . "\n";
@@ -98,7 +98,7 @@ try {
         echo "    - Estado: " . ($cot->estado ?? 'NULL') . "\n";
         echo "    - NÃºmero: " . ($cot->numero_cotizacion ?? 'NULL') . "\n";
         
-        // Prueba relaciÃ³n historialCambios
+        // Prueba relación historialCambios
         $historial = $cot->historialCambios()->count();
         echo "    - Historial cambios: " . $historial . " registros\n";
     } else {
@@ -112,7 +112,7 @@ try {
         echo "    - Estado: " . ($ped->estado ?? 'NULL') . "\n";
         echo "    - NÃºmero: " . ($ped->numero_pedido ?? 'NULL') . "\n";
         
-        // Prueba relaciÃ³n historialCambios
+        // Prueba relación historialCambios
         $historial = $ped->historialCambios()->count();
         echo "    - Historial cambios: " . $historial . " registros\n";
     } else {
@@ -125,7 +125,7 @@ try {
 // TEST 6: Probar flujo completo (simulado)
 echo "\nâœ“ TEST 6: Flujo de Estados Simulado\n";
 try {
-    // Crear una cotizaciÃ³n de prueba
+    // Crear una cotización de prueba
     $cotTest = Cotizacion::create([
         'user_id' => 1,
         'cliente' => 'TEST CLIENTE',
@@ -133,20 +133,20 @@ try {
         'es_borrador' => true,
         'tipo_cotizacion' => 'P',
     ]);
-    echo "  âœ“ CotizaciÃ³n de prueba creada (ID: " . $cotTest->id . ")\n";
+    echo "  âœ“ Cotización de prueba creada (ID: " . $cotTest->id . ")\n";
     echo "    - Estado inicial: " . $cotTest->estado . "\n";
     
     // Servicio debe estar disponible
     $service = app(CotizacionEstadoService::class);
     echo "  âœ“ Servicio listo para pruebas\n";
     
-    // Validar transiciÃ³n
+    // Validar transición
     $puede = $service->validarTransicion($cotTest, EstadoCotizacion::ENVIADA_CONTADOR);
-    echo "  âœ“ ValidaciÃ³n de transiciÃ³n: " . ($puede ? "PERMITIDA" : "NO PERMITIDA") . "\n";
+    echo "  âœ“ Validación de transición: " . ($puede ? "PERMITIDA" : "NO PERMITIDA") . "\n";
     
     // Limpiar
     $cotTest->delete();
-    echo "  âœ“ CotizaciÃ³n de prueba eliminada\n";
+    echo "  âœ“ Cotización de prueba eliminada\n";
 } catch (\Exception $e) {
     echo "  âœ— Error en flujo simulado: " . $e->getMessage() . "\n";
 }
@@ -189,7 +189,7 @@ try {
 echo "\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—\n";
 echo "â•‘  âœ“ TODOS LOS TESTS COMPLETADOS EXITOSAMENTE â•‘\n";
 echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
-echo "\nPrÃ³ximos pasos:\n";
+echo "\nPróximos pasos:\n";
 echo "  1. Ejecutar: php artisan queue:work\n";
 echo "  2. Probar endpoints con Postman/curl\n";
 echo "  3. Crear vistas y componentes Blade\n";

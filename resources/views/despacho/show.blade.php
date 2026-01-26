@@ -400,14 +400,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.reload();
                 }, 1000);
             } else {
-                alert('❌ Error: ' + data.message);
+                alert(' Error: ' + data.message);
                 if (data.errors) {
                     console.error('Errores:', data.errors);
                 }
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ Error al guardar: ' + error.message);
+            alert(' Error al guardar: ' + error.message);
         } finally {
             btnGuardar.disabled = false;
             btnGuardar.innerHTML = '💾 Guardar Despacho';

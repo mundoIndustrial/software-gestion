@@ -4,7 +4,7 @@
  * Este archivo es SOLO REFERENCIA. El código ha sido migrado a estructura modular.
  * 
  *  NUEVA ESTRUCTURA (prenda-tarjeta/):
- * - prenda-tarjeta/loader.js (⭐ USA ESTO - carga automática)
+ * - prenda-tarjeta/loader.js ( USA ESTO - carga automática)
  * - prenda-tarjeta/index.js (función principal)
  * - prenda-tarjeta/secciones.js (secciones expandibles)
  * - prenda-tarjeta/galerias.js (modales de galerías)

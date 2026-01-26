@@ -1307,7 +1307,7 @@ class PedidosProduccionController
 
             // Validar que los datos no estén vacíos
             if (empty($prendaData)) {
-                Log::warning('⚠️ [PRENDA-DATOS-VACIA] La prenda retornó datos vacíos');
+                Log::warning(' [PRENDA-DATOS-VACIA] La prenda retornó datos vacíos');
             }
 
             // Obtener también datos del pedido para la factura de edición
@@ -1333,7 +1333,7 @@ class PedidosProduccionController
             ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::warning('❌ [PRENDA-DATOS] Prenda no encontrada', [
+            Log::warning(' [PRENDA-DATOS] Prenda no encontrada', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId
             ]);
@@ -1344,7 +1344,7 @@ class PedidosProduccionController
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('❌ [PRENDA-DATOS] Error obteniendo datos de prenda', [
+            Log::error(' [PRENDA-DATOS] Error obteniendo datos de prenda', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,

@@ -10,8 +10,8 @@ namespace App\Application\Pedidos\DTOs;
  * - ubicaciones: JSON con array de ubicaciones ['pecho', 'espalda', etc]
  * - observaciones: notas sobre el proceso
  * - estado: estado del proceso (enum: PENDIENTE, EN_REVISION, APROBADO, etc)
- * - aprobado_por: ID del usuario que aprobÃ³
- * - notas_rechazo: razÃ³n de rechazo si aplica
+ * - aprobado_por: ID del usuario que aprobó
+ * - notas_rechazo: razón de rechazo si aplica
  * - datos_adicionales: JSON con datos extra
  * - tallas: Array de tallas para poblar tallas_dama y tallas_caballero
  *   Estructura: [{ genero: 'DAMA'|'CABALLERO'|'UNISEX', talla: 'S'|'M'|'L'|'XL', cantidad: 5 }, ...]

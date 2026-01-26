@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\DB;
  * Caso de uso para eliminar un proceso de un pedido
  * Responsabilidad: Eliminar proceso y su historial asociado
  * 
- * PatrÃ³n: Use Case (Application Layer - DDD)
- * RestricciÃ³n: No se puede eliminar el Ãºnico proceso de una orden
+ * Patrón: Use Case (Application Layer - DDD)
+ * Restricción: No se puede eliminar el Ãºnico proceso de una orden
  */
 class EliminarProcesoUseCase
 {
@@ -23,7 +23,7 @@ class EliminarProcesoUseCase
      * Ejecutar caso de uso
      * 
      * @param int $id - ID del proceso a eliminar
-     * @param int $numeroPedido - NÃºmero de pedido para validaciÃ³n
+     * @param int $numeroPedido - NÃºmero de pedido para validación
      * @return array - Respuesta del resultado
      * @throws \Exception
      */

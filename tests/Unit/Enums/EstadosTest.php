@@ -27,7 +27,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: TransiciÃ³n vÃ¡lida BORRADOR â†’ ENVIADA_CONTADOR
+     * Test: Transición vÃ¡lida BORRADOR â†’ ENVIADA_CONTADOR
      */
     public function test_transicion_valida_borrador_a_enviada_contador()
     {
@@ -36,7 +36,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: TransiciÃ³n invÃ¡lida BORRADOR â†’ FINALIZADA
+     * Test: Transición invÃ¡lida BORRADOR â†’ FINALIZADA
      */
     public function test_transicion_invalida_borrador_a_finalizada()
     {
@@ -45,7 +45,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: TransiciÃ³n vÃ¡lida completa de cotizaciÃ³n
+     * Test: Transición vÃ¡lida completa de cotización
      */
     public function test_transiciones_validas_completas_cotizacion()
     {
@@ -76,7 +76,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Labels de cotizaciÃ³n
+     * Test: Labels de cotización
      */
     public function test_labels_cotizacion()
     {
@@ -95,12 +95,12 @@ class EstadosTest extends TestCase
     {
         $this->assertEquals('Pendiente de Supervisor', EstadoPedido::PENDIENTE_SUPERVISOR->label());
         $this->assertEquals('Aprobado por Supervisor', EstadoPedido::APROBADO_SUPERVISOR->label());
-        $this->assertEquals('En ProducciÃ³n', EstadoPedido::EN_PRODUCCION->label());
+        $this->assertEquals('En Producción', EstadoPedido::EN_PRODUCCION->label());
         $this->assertEquals('Finalizado', EstadoPedido::FINALIZADO->label());
     }
 
     /**
-     * Test: Colores de cotizaciÃ³n
+     * Test: Colores de cotización
      */
     public function test_colores_cotizacion()
     {
@@ -124,7 +124,7 @@ class EstadosTest extends TestCase
     }
 
     /**
-     * Test: Iconos de cotizaciÃ³n
+     * Test: Iconos de cotización
      */
     public function test_iconos_cotizacion()
     {

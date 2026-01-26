@@ -17,8 +17,8 @@ use App\Enums\EstadoPedido;
  * - FÃ¡cil testing
  * 
  * ELIMINA:
- * - DuplicaciÃ³n de constantes en mÃºltiples clases
- * - Validaciones de estados esparcidas en el cÃ³digo
+ * - Duplicación de constantes en mÃºltiples clases
+ * - Validaciones de estados esparcidas en el código
  * - Mensajes de error inconsistentes
  * 
  * Uso:
@@ -57,7 +57,7 @@ final class EstadoPedidoCatalog
         'transicion_no_permitida' => "No se puede cambiar de estado {estado_actual} a {estado_nuevo}",
         'pedido_no_tiene_prendas' => 'Pedido {identificador} no tiene prendas agregadas',
         'prenda_no_encontrada' => 'Prenda {identificador} no encontrada en el pedido',
-        'validacion_fallida' => 'ValidaciÃ³n fallida: {razon}',
+        'validacion_fallida' => 'Validación fallida: {razon}',
     ];
 
     /**
@@ -76,7 +76,7 @@ final class EstadoPedidoCatalog
     private const ETIQUETAS = [
         'PENDIENTE_SUPERVISOR' => 'Pendiente de Supervisor',
         'APROBADO_SUPERVISOR' => 'Aprobado por Supervisor',
-        'EN_PRODUCCION' => 'En ProducciÃ³n',
+        'EN_PRODUCCION' => 'En Producción',
         'FINALIZADO' => 'Finalizado',
     ];
 
@@ -89,7 +89,7 @@ final class EstadoPedidoCatalog
     }
 
     /**
-     * Validar si una transiciÃ³n es permitida
+     * Validar si una transición es permitida
      */
     public static function esTransicionPermitida(string $estadoActual, string $estadoNuevo): bool
     {

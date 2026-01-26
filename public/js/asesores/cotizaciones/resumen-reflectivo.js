@@ -99,7 +99,7 @@ function actualizarResumenCompleto() {
             const mapeoTipo = {
                 'M': ' Prendas',
                 'D': ' Logos',
-                'X': '✨ Prendas con Bordado'
+                'X': ' Prendas con Bordado'
             };
             resumenTipo.textContent = mapeoTipo[tipoVentaInput.value] || '-';
         }

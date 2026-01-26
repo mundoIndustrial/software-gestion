@@ -12,7 +12,7 @@ use App\Domain\Pedidos\Events\LogoPedidoCreado;
  * Encapsula:
  * - Todos los datos del logo
  * - Cantidades de logos
- * - Referencias a cotizaciÃ³n
+ * - Referencias a cotización
  * - Invariantes de negocio
  * 
  * Un logo es una entidad dentro del agregado del pedido.
@@ -30,7 +30,7 @@ class LogoPedidoAggregate
     private int|string $pedidoId;
 
     /**
-     * Referencia a logo_cotizaciÃ³n (si viene de cotizaciÃ³n)
+     * Referencia a logo_cotización (si viene de cotización)
      */
     private ?int $logoCotizacionId;
 
@@ -40,7 +40,7 @@ class LogoPedidoAggregate
     private int $cantidad;
 
     /**
-     * Referencia a cotizaciÃ³n (si aplica)
+     * Referencia a cotización (si aplica)
      */
     private ?int $cotizacionId;
 
@@ -80,7 +80,7 @@ class LogoPedidoAggregate
         $agregado->logoCotizacionId = $logoCotizacionId;
         $agregado->cotizacionId = $cotizacionId;
 
-        // Registrar evento de creaciÃ³n
+        // Registrar evento de creación
         $agregado->recordEvent(
             new LogoPedidoCreado(
                 $pedidoId,

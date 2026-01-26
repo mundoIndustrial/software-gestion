@@ -1,6 +1,6 @@
 # ⚡ OPTIMIZACIÓN: Queries Rápidas de EPP
 
-## 🚀 Cambios de Performance Implementados
+##  Cambios de Performance Implementados
 
 ### 1️⃣ Caché Inteligente
 
@@ -69,7 +69,7 @@ CREATE INDEX idx_epps_categoria ON epps(categoria_id);
 
 ---
 
-## 🔧 Comandos Disponibles
+##  Comandos Disponibles
 
 ### Ejecutar migración de índices
 ```bash
@@ -145,17 +145,17 @@ php artisan tinker
 
 ## 📋 Checklist de Performance
 
-- ✅ Caché implementado en 3 métodos principales
-- ✅ Eager loading de categorías
-- ✅ Límite de resultados (50 máximo)
-- ✅ Migración de índices creada
-- ✅ Comando para limpiar caché
-- ✅ Logging para monitoreo
-- ✅ Sin tabla `epp_imagenes` que ralentiza
+- Caché implementado en 3 métodos principales
+- Eager loading de categorías
+- Límite de resultados (50 máximo)
+- Migración de índices creada
+- Comando para limpiar caché
+- Logging para monitoreo
+- Sin tabla `epp_imagenes` que ralentiza
 
 ---
 
-## 🚀 Próximas Optimizaciones Opcionales
+##  Próximas Optimizaciones Opcionales
 
 1. **Redis en lugar de File Cache**
    ```bash
@@ -177,7 +177,7 @@ php artisan tinker
 
 ---
 
-## ✅ Verificación
+## Verificación
 
 Después de ejecutar la migración de índices, deberías ver:
 

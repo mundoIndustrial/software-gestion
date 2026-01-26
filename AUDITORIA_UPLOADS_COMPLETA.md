@@ -1,6 +1,6 @@
-# 🔒 AUDITORÍA COMPLETA DE UPLOADS - SISTEMA CENTRALIZADO
+#  AUDITORÍA COMPLETA DE UPLOADS - SISTEMA CENTRALIZADO
 
-## ✅ OBJETIVO CUMPLIDO
+## OBJETIVO CUMPLIDO
 
 **NINGÚN archivo se guarda ahora en carpetas globales.**
 
@@ -15,25 +15,25 @@ Todos los uploads siguen estrictamente este flujo:
 
 ## 📋 ARCHIVOS CORREGIDOS
 
-### 1. ✅ ImageUploadService.php
+### 1. ImageUploadService.php
 **Ubicación**: `app/Application/Services/ImageUploadService.php`
 
 **Cambio (Línea 39)**:
 ```php
-// ❌ ANTES
+//  ANTES
 $basePath = "{$folder}/temp/{$tempUuid}";
-// Creaba: prendas/temp/abc-123/ ❌
+// Creaba: prendas/temp/abc-123/ 
 
-// ✅ AHORA
+// AHORA
 $basePath = "temp/{$tempUuid}/{$folder}";
-// Crea: temp/abc-123/prendas/ ✅
+// Crea: temp/abc-123/prendas/
 ```
 
-**Estado**: ✅ CORREGIDO
+**Estado**: CORREGIDO
 
 ---
 
-### 2. ✅ ImagenRelocalizadorService.php
+### 2. ImagenRelocalizadorService.php
 **Ubicación**: `app/Domain/Pedidos/Services/ImagenRelocalizadorService.php`
 
 **Cambios**:
@@ -41,11 +41,11 @@ $basePath = "temp/{$tempUuid}/{$folder}";
 - `limpiarCarpetaTempSiVacia()`: Limpieza recursiva hasta `temp/{uuid}/`
 - `limpiarCarpetaTempPorUuid()`: Elimina directamente `temp/{uuid}/` completo
 
-**Estado**: ✅ CORREGIDO
+**Estado**: CORREGIDO
 
 ---
 
-### 3. ✅ PedidoWebService.php
+### 3. PedidoWebService.php
 **Ubicación**: `app/Domain/Pedidos/Services/PedidoWebService.php`
 
 **Cambios**:
@@ -63,7 +63,7 @@ private function guardarArchivo(UploadedFile $archivo, string $carpeta): string
     $nombreArchivo = time() . '_' . uniqid() . '.' . $archivo->getClientOriginalExtension();
     $tempUuid = \Illuminate\Support\Str::uuid()->toString();
     $ruta = $archivo->storeAs("{$carpeta}/temp/{$tempUuid}", $nombreArchivo, self::STORAGE_DISK);
-    //                        ↑ prendas/temp/uuid/ ❌
+    //                        ↑ prendas/temp/uuid/ 
     return $ruta;
 }
 ```
@@ -80,7 +80,7 @@ private function guardarArchivo(UploadedFile $archivo, string $carpeta): string
     
     // Formato centralizado temp/{uuid}/{carpeta}/
     $ruta = $archivo->storeAs("temp/{$tempUuid}/{$carpeta}", $nombreArchivo, self::STORAGE_DISK);
-    //                         ↑ temp/uuid/prendas/ ✅
+    //                         ↑ temp/uuid/prendas/
     
     Log::warning('[PedidoWebService] Usando método guardarArchivo() deprecado', [
         'carpeta' => $carpeta,
@@ -92,29 +92,29 @@ private function guardarArchivo(UploadedFile $archivo, string $carpeta): string
 }
 ```
 
-**Estado**: ✅ CORREGIDO + DEPRECADO
+**Estado**: CORREGIDO + DEPRECADO
 
 ---
 
-### 4. ✅ CrearPedidoEditableController.php
+### 4. CrearPedidoEditableController.php
 **Ubicación**: `app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController.php`
 
 **Cambio**:
 - `guardarImagen()`: Usa `ImageUploadService::processAndSaveImage()` para WebP + temp centralizado
 
-**Estado**: ✅ CORREGIDO
+**Estado**: CORREGIDO
 
 ---
 
-### 5. ✅ PedidosProduccionController.php
+### 5. PedidosProduccionController.php
 **Ubicación**: `app/Infrastructure/Http/Controllers/Asesores/PedidosProduccionController.php`
 
 **Problema ANTES (Línea 722)**:
 ```php
-// ❌ GUARDABA DIRECTO A CARPETA GLOBAL
+//  GUARDABA DIRECTO A CARPETA GLOBAL
 if ($request->hasFile('imagenes')) {
     foreach ($request->file('imagenes') as $imagen) {
-        $path = $imagen->store('prendas', 'public'); // ❌ prendas/ global
+        $path = $imagen->store('prendas', 'public'); //  prendas/ global
         $imagenesGuardadas[] = $path;
     }
 }
@@ -122,7 +122,7 @@ if ($request->hasFile('imagenes')) {
 
 **Solución AHORA**:
 ```php
-// ✅ USA SISTEMA CENTRALIZADO
+// USA SISTEMA CENTRALIZADO
 $imagenesGuardadas = [];
 $tempUuid = \Illuminate\Support\Str::uuid()->toString();
 
@@ -138,11 +138,11 @@ if ($request->hasFile('imagenes')) {
 }
 ```
 
-**Estado**: ✅ CORREGIDO
+**Estado**: CORREGIDO
 
 ---
 
-### 6. ✅ ImagenProcesadorService.php
+### 6. ImagenProcesadorService.php
 **Ubicación**: `app/Application/Services/ImagenProcesadorService.php`
 
 **Problema**: Tenía fallback a carpeta global `public/prendas/{prendaId}` si no había `pedidoId`
@@ -156,7 +156,7 @@ private function getRutaPrenda(int $prendaId, int $pedidoId = null): string
         return "public/pedidos/{$pedidoId}/prendas/{$prendaId}";
     }
     
-    // ❌ PROHIBIDO: No permitir guardado en carpeta global
+    //  PROHIBIDO: No permitir guardado en carpeta global
     throw new Exception(
         "ImagenProcesadorService: Se requiere pedido_id para guardar imágenes. " .
         "No se permite guardar en carpeta global. " .
@@ -165,16 +165,16 @@ private function getRutaPrenda(int $prendaId, int $pedidoId = null): string
 }
 ```
 
-**Estado**: ✅ PROTEGIDO CON EXCEPCIÓN
+**Estado**: PROTEGIDO CON EXCEPCIÓN
 
 ---
 
-### 7. ⚠️ PrendaFotoService.php (DEPRECADO)
+### 7.  PrendaFotoService.php (DEPRECADO)
 **Ubicación**: `app/Domain/Pedidos/Services/PrendaFotoService.php`
 
 **Problema**: Guarda directo en `/prendas/` (línea 18):
 ```php
-private const STORAGE_PATH = 'prendas'; // ❌ Carpeta global
+private const STORAGE_PATH = 'prendas'; //  Carpeta global
 ```
 
 **Solución**: Marcado como `@deprecated` en documentación
@@ -183,33 +183,33 @@ private const STORAGE_PATH = 'prendas'; // ❌ Carpeta global
 /**
  * @deprecated Este servicio NO usa el sistema centralizado de uploads
  * 
- * ❌ PROBLEMA: Guarda directamente en /prendas/ (carpeta global)
- * ✅ USAR EN SU LUGAR: ImageUploadService con sistema temp/{uuid}/{tipo}/
+ *  PROBLEMA: Guarda directamente en /prendas/ (carpeta global)
+ * USAR EN SU LUGAR: ImageUploadService con sistema temp/{uuid}/{tipo}/
  */
 class PrendaFotoService
 {
-    private const STORAGE_PATH = 'prendas'; // ❌ PROBLEMA: Carpeta global
+    private const STORAGE_PATH = 'prendas'; //  PROBLEMA: Carpeta global
 ```
 
-**Verificación**: NO se usa en ninguna parte del código ✅
+**Verificación**: NO se usa en ninguna parte del código
 
-**Estado**: ⚠️ DEPRECADO (no se usa, seguro ignorar)
+**Estado**:  DEPRECADO (no se usa, seguro ignorar)
 
 ---
 
 ## 🔍 ARCHIVOS VERIFICADOS (YA CORRECTOS)
 
-### ✅ PrendaImagenService.php
+### PrendaImagenService.php
 - Guarda en: `storage_path("app/public/pedidos/{$pedidoId}/prendas")`
-- Estado: ✅ YA CORRECTO
+- Estado: YA CORRECTO
 
-### ✅ TelaImagenService.php
+### TelaImagenService.php
 - Guarda en: `storage_path("app/public/pedidos/{$pedidoId}/telas")`
-- Estado: ✅ YA CORRECTO
+- Estado: YA CORRECTO
 
-### ✅ ProcesoImagenService.php
+### ProcesoImagenService.php
 - Guarda en: `storage_path("app/public/pedidos/{$pedidoId}/procesos/{$tipoProcesoNombre}")`
-- Estado: ✅ YA CORRECTO
+- Estado: YA CORRECTO
 
 ---
 
@@ -261,14 +261,14 @@ Patrones buscados:
 - 'telas/' . ...
 - storage_path('..../prendas')
 
-Resultados: 0 matches ✅
+Resultados: 0 matches
 ```
 
 ---
 
 ## 🎯 GARANTÍAS DEL SISTEMA
 
-### ✅ Garantía 1: Uploads Temporales
+### Garantía 1: Uploads Temporales
 **TODOS** los uploads iniciales van a:
 ```
 temp/{uuid}/{tipo}/webp/archivo.webp
@@ -276,7 +276,7 @@ temp/{uuid}/{tipo}/original/archivo.jpg
 temp/{uuid}/{tipo}/thumbnails/archivo.webp
 ```
 
-### ✅ Garantía 2: Almacenamiento Final
+### Garantía 2: Almacenamiento Final
 **TODOS** los archivos finales van a:
 ```
 pedidos/{pedido_id}/prendas/archivo.webp
@@ -284,20 +284,20 @@ pedidos/{pedido_id}/telas/archivo.webp
 pedidos/{pedido_id}/procesos/{tipo}/archivo.webp
 ```
 
-### ✅ Garantía 3: Carpetas Prohibidas
+### Garantía 3: Carpetas Prohibidas
 **NINGÚN** archivo puede crearse en:
 ```
-❌ prendas/
-❌ telas/
-❌ procesos/
-❌ epps/
-❌ logos/
-❌ reflectivos/
+ prendas/
+ telas/
+ procesos/
+ epps/
+ logos/
+ reflectivos/
 ```
 
 Si un servicio intenta usar carpeta global sin `pedido_id`, lanzará `Exception`.
 
-### ✅ Garantía 4: Limpieza Automática
+### Garantía 4: Limpieza Automática
 Cuando se relocaliza una imagen:
 ```
 1. Copia: temp/{uuid}/prendas/webp/img.webp → pedidos/2754/prendas/img.webp
@@ -322,7 +322,7 @@ ls storage/app/public/temp/abc-123/prendas/webp/
 ✅ Debe existir: imagen.webp
 
 ls storage/app/public/prendas/
-❌ NO debe existir esta carpeta
+ NO debe existir esta carpeta
 ```
 
 ### Test 2: Creación de Pedido
@@ -340,10 +340,10 @@ ls storage/app/public/pedidos/2754/prendas/
 ✅ Debe existir: imagen.webp
 
 ls storage/app/public/temp/abc-123/
-❌ NO debe existir (limpiado)
+ NO debe existir (limpiado)
 
 ls storage/app/public/prendas/
-❌ NO debe existir esta carpeta
+ NO debe existir esta carpeta
 ```
 
 ### Test 3: Verificar Base de Datos
@@ -354,14 +354,14 @@ WHERE pedido_id = 2754;
 
 -- Resultado esperado:
 -- ruta_webp: "pedidos/2754/prendas/imagen.webp"
--- ✅ NO debe empezar con "prendas/" ni "temp/"
+-- NO debe empezar con "prendas/" ni "temp/"
 ```
 
 ### Test 4: Validar Excepción
 ```php
 // Intentar usar ImagenProcesadorService sin pedido_id
 $service = app(ImagenProcesadorService::class);
-$service->procesarImagen($file, $prendaId, null); // ❌ Sin pedido_id
+$service->procesarImagen($file, $prendaId, null); //  Sin pedido_id
 
 // Debe lanzar:
 // Exception: "ImagenProcesadorService: Se requiere pedido_id..."
@@ -432,51 +432,51 @@ $service->procesarImagen($file, $prendaId, null); // ❌ Sin pedido_id
 
 ---
 
-## ✅ CHECKLIST FINAL
+## CHECKLIST FINAL
 
-- [x] `ImageUploadService` guarda en `temp/{uuid}/{tipo}/` ✅
-- [x] `ImagenRelocalizadorService` soporta 3 formatos de rutas ✅
-- [x] `ImagenRelocalizadorService` limpieza recursiva de temp ✅
-- [x] `PedidoWebService::guardarArchivo()` usa formato centralizado ✅
-- [x] `PedidoWebService::guardarImagenesTela()` recibe `$pedidoId` ✅
-- [x] `PedidoWebService::guardarImagenesProceso()` llama relocalizador ✅
-- [x] `CrearPedidoEditableController::guardarImagen()` usa `ImageUploadService` ✅
-- [x] `PedidosProduccionController` usa sistema centralizado ✅
-- [x] `ImagenProcesadorService` protegido con excepción ✅
-- [x] `PrendaFotoService` marcado como deprecado ✅
-- [x] Verificado: NO quedan `->store('prendas')` problemáticos ✅
-- [x] Verificado: NO quedan rutas hardcodeadas a carpetas globales ✅
-- [x] Auditado: Todos los `Storage::put()` revisados ✅
+- [x] `ImageUploadService` guarda en `temp/{uuid}/{tipo}/`
+- [x] `ImagenRelocalizadorService` soporta 3 formatos de rutas
+- [x] `ImagenRelocalizadorService` limpieza recursiva de temp
+- [x] `PedidoWebService::guardarArchivo()` usa formato centralizado
+- [x] `PedidoWebService::guardarImagenesTela()` recibe `$pedidoId`
+- [x] `PedidoWebService::guardarImagenesProceso()` llama relocalizador
+- [x] `CrearPedidoEditableController::guardarImagen()` usa `ImageUploadService`
+- [x] `PedidosProduccionController` usa sistema centralizado
+- [x] `ImagenProcesadorService` protegido con excepción
+- [x] `PrendaFotoService` marcado como deprecado
+- [x] Verificado: NO quedan `->store('prendas')` problemáticos
+- [x] Verificado: NO quedan rutas hardcodeadas a carpetas globales
+- [x] Auditado: Todos los `Storage::put()` revisados
 
 ---
 
 ## 🎯 RESULTADO FINAL
 
-### ❌ ANTES (Sistema Roto)
+###  ANTES (Sistema Roto)
 ```
 storage/app/public/
-├── prendas/                       ← ❌ Carpeta global problemática
+├── prendas/                       ←  Carpeta global problemática
 │   ├── 2026/01/imagen1.jfif
 │   ├── temp/abc-123/imagen2.webp
-│   └── imagen3.jpg                ← ❌ Huérfana sin pedido
-├── telas/                         ← ❌ Carpeta global problemática
+│   └── imagen3.jpg                ←  Huérfana sin pedido
+├── telas/                         ←  Carpeta global problemática
 │   └── 2026/01/tela1.jpg
-├── procesos/                      ← ❌ Carpeta global problemática
+├── procesos/                      ←  Carpeta global problemática
 └── pedidos/
     └── 2754/                      ← Solo algunos archivos aquí
         └── prendas/
 ```
 
-### ✅ AHORA (Sistema Correcto)
+### AHORA (Sistema Correcto)
 ```
 storage/app/public/
-├── temp/                          ← ✅ Temporal controlado
+├── temp/                          ← Temporal controlado
 │   └── abc-123/                   ← Se elimina automáticamente
 │       ├── prendas/
 │       ├── telas/
 │       └── procesos/
 │
-├── pedidos/                       ← ✅ TODO aquí (permanente)
+├── pedidos/                       ← TODO aquí (permanente)
 │   ├── 2754/
 │   │   ├── prendas/
 │   │   │   ├── imagen1.webp
@@ -489,14 +489,14 @@ storage/app/public/
 │   │       └── BORDADO/
 │   └── 2755/
 │
-├── cotizaciones/                  ← ✅ Sistema separado (OK)
-├── avatars/                       ← ✅ Sistema separado (OK)
-└── epp/                           ← ✅ Catálogo (OK)
+├── cotizaciones/                  ← Sistema separado (OK)
+├── avatars/                       ← Sistema separado (OK)
+└── epp/                           ← Catálogo (OK)
 ```
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 ### 1. Testing End-to-End
 ```bash
@@ -530,7 +530,7 @@ Remove-Item -Path storage\app\public\procesos -Recurse -Force
 ---
 
 **Fecha auditoría**: 2025-01-25  
-**Estado**: ✅ SISTEMA 100% CENTRALIZADO  
-**Carpetas globales**: ❌ NINGUNA  
-**Excepciones lanzadas**: ✅ SI se intenta usar carpetas globales  
-**Backward compatibility**: ✅ Soporta 3 formatos de rutas antiguas
+**Estado**: SISTEMA 100% CENTRALIZADO  
+**Carpetas globales**:  NINGUNA  
+**Excepciones lanzadas**: SI se intenta usar carpetas globales  
+**Backward compatibility**: Soporta 3 formatos de rutas antiguas

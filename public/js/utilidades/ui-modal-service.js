@@ -57,7 +57,7 @@ function _ensureSwal(callback, maxWaitTime = 5000) {
                 }
                 resolve(true);
             } else if (Date.now() - startTime > maxWaitTime) {
-                // ❌ Timeout: Swal no se cargó
+                //  Timeout: Swal no se cargó
                 clearInterval(checkInterval);
                 console.error('[_ensureSwal] Timeout esperando a Swal después de', maxWaitTime, 'ms');
                 resolve(false);  // Resolver con false para indicar timeout

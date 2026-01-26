@@ -106,7 +106,7 @@ class ReceiptManager {
                     });
                 });
             } else {
-                console.log('  - ⚠️ Sin procesos o procesos no es array');
+                console.log('  -  Sin procesos o procesos no es array');
             }
             
             console.groupEnd();

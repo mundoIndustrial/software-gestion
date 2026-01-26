@@ -939,14 +939,14 @@ class PedidoFormHandlers {
             //  TRANSFORMAR ESTADO: Eliminar File objects, mantener solo metadatos
             const stateToSend = this.transformStateForSubmit(state);
 
-            // ✅ USAR HELPER: Construir FormData correctamente
+            // USAR HELPER: Construir FormData correctamente
             const formData = new FormData();
             formData.append('pedido_produccion_id', state.pedido_produccion_id);
             
-            // ✅ ENVIAR JSON LIMPIO (sin File objects)
+            // ENVIAR JSON LIMPIO (sin File objects)
             formData.append('pedido', JSON.stringify(stateToSend));
 
-            // ✅ ADJUNTAR ARCHIVOS CON ESTRUCTURA ANIDADA CLARA
+            // ADJUNTAR ARCHIVOS CON ESTRUCTURA ANIDADA CLARA
             state.prendas.forEach((prenda, prendaIdx) => {
                 // Fotos de prenda
                 (prenda.fotos_prenda || []).forEach((foto, fotoIdx) => {

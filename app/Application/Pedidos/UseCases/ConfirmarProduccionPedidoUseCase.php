@@ -11,8 +11,8 @@ use Exception;
 /**
  * ConfirmarProduccionPedidoUseCase
  * 
- * Use Case para confirmar un pedido de producciÃ³n
- * TransiciÃ³n: pendiente â†’ confirmado
+ * Use Case para confirmar un pedido de producción
+ * Transición: pendiente â†’ confirmado
  */
 class ConfirmarProduccionPedidoUseCase
 {

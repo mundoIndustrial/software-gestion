@@ -44,7 +44,7 @@ class UtilitariosService
             'flete' => []
         ];
 
-        // Mapeos de nombres para conversiÃ³n
+        // Mapeos de nombres para conversión
         $mapeoFormaPago = [
             'tabla_orden[contado]' => 'Contado',
             'tabla_orden[credito]' => 'CrÃ©dito',

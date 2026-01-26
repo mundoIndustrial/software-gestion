@@ -17,31 +17,64 @@ class PedidoEppService
     /**
      * Guardar EPP agregados al pedido
      * 
+     * Dentro de transacción
+     * Deduplicación por epp_id (suma cantidades)
+     * 
      * @param PedidoProduccion $pedido
      * @param array $epps Array con EPP a guardar
      * @return array Array con los PedidoEpp creados
      */
     public function guardarEppsDelPedido(PedidoProduccion $pedido, array $epps): array
     {
-        $pedidosEpp = [];
+        return DB::transaction(function () use ($pedido, $epps) {
+            $pedidosEpp = [];
 
-        foreach ($epps as $eppData) {
-            $pedidoEpp = PedidoEpp::create([
-                'pedido_produccion_id' => $pedido->id,
-                'epp_id' => $eppData['epp_id'] ?? $eppData['id'],
-                'cantidad' => $eppData['cantidad'] ?? 1,
-                'observaciones' => $eppData['observaciones'] ?? null,
-            ]);
-
-            // Guardar imágenes si existen
-            if (isset($eppData['imagenes']) && is_array($eppData['imagenes'])) {
-                $this->guardarImagenesDelEpp($pedidoEpp, $eppData['imagenes']);
+            // PASO 1: Agrupar EPP por epp_id (deduplicación)
+            $eppAgrupados = [];
+            foreach ($epps as $eppData) {
+                $eppId = $eppData['epp_id'] ?? $eppData['id'];
+                $cantidad = (int)($eppData['cantidad'] ?? 1);
+                
+                if (!isset($eppAgrupados[$eppId])) {
+                    $eppAgrupados[$eppId] = [
+                        'epp_id' => $eppId,
+                        'cantidad' => 0,
+                        'observaciones' => $eppData['observaciones'] ?? null,
+                        'imagenes' => [],
+                    ];
+                }
+                
+                // Sumar cantidad para duplicados
+                $eppAgrupados[$eppId]['cantidad'] += $cantidad;
+                
+                // Agregar imágenes
+                if (isset($eppData['imagenes']) && is_array($eppData['imagenes'])) {
+                    $eppAgrupados[$eppId]['imagenes'] = array_merge(
+                        $eppAgrupados[$eppId]['imagenes'],
+                        $eppData['imagenes']
+                    );
+                }
             }
 
-            $pedidosEpp[] = $pedidoEpp;
-        }
+            // PASO 2: Crear registros deduplicados
+            foreach ($eppAgrupados as $eppData) {
+                $pedidoEpp = PedidoEpp::create([
+                    'pedido_produccion_id' => $pedido->id,
+                    'epp_id' => $eppData['epp_id'],
+                    'cantidad' => $eppData['cantidad'],
+                    'observaciones' => $eppData['observaciones'],
+                ]);
 
-        return $pedidosEpp;
+                // Guardar imágenes si existen
+                if (!empty($eppData['imagenes'])) {
+                    $this->guardarImagenesDelEpp($pedidoEpp, $eppData['imagenes']);
+                }
+
+                $pedidosEpp[] = $pedidoEpp;
+            }
+
+            return $pedidosEpp;
+        });
     }
 
     /**
@@ -145,9 +178,11 @@ class PedidoEppService
                 return [
                     'id' => $pedidoEpp->id,
                     'epp_id' => $pedidoEpp->epp_id,
-                    'epp_nombre' => $pedidoEpp->epp->nombre,
-                    'epp_codigo' => $pedidoEpp->epp->codigo,
-                    'epp_categoria' => $pedidoEpp->epp->categoria->nombre,
+                    'nombre' => $pedidoEpp->epp->nombre_completo ?? $pedidoEpp->epp->nombre ?? '',
+                    'nombre_completo' => $pedidoEpp->epp->nombre_completo ?? $pedidoEpp->epp->nombre ?? '',
+                    'epp_nombre' => $pedidoEpp->epp->nombre_completo ?? $pedidoEpp->epp->nombre ?? '',
+                    'epp_codigo' => $pedidoEpp->epp->codigo ?? '',
+                    'epp_categoria' => $pedidoEpp->epp->categoria?->nombre ?? '',
                     'cantidad' => $pedidoEpp->cantidad,
                     'tallas_medidas' => $pedidoEpp->tallas_medidas,
                     'observaciones' => $pedidoEpp->observaciones,

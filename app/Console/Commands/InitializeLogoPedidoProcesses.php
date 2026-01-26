@@ -45,6 +45,6 @@ class InitializeLogoPedidoProcesses extends Command
             }
         }
 
-        $this->info("✨ Proceso completado. Se crearon {$procesosCreados} procesos iniciales.");
+        $this->info(" Proceso completado. Se crearon {$procesosCreados} procesos iniciales.");
     }
 }

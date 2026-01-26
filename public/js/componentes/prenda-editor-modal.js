@@ -106,7 +106,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
     console.log('🔥 [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
     
     if (!window.prendasEdicion) {
-        console.error('❌ No hay datos de prendas disponibles');
+        console.error(' No hay datos de prendas disponibles');
         Swal.fire('Error', 'No hay datos de prendas disponibles', 'error');
         return;
     }
@@ -115,7 +115,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
     const pedidoId = window.prendasEdicion.pedidoId;
     
     if (!prenda) {
-        console.error('❌ Prenda no encontrada en índice:', prendasIndex);
+        console.error(' Prenda no encontrada en índice:', prendasIndex);
         Swal.fire('Error', 'Prenda no encontrada', 'error');
         return;
     }
@@ -267,7 +267,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             tallas: tallasArray,
             generosConTallas: generosConTallasEstructura,
             procesos: (prendaCompleta.procesos || []).map(proc => {
-                console.log('🔧 [EDITAR-PRENDA-PROCESOS] Proceso bruto del servidor:', {
+                console.log(' [EDITAR-PRENDA-PROCESOS] Proceso bruto del servidor:', {
                     ...proc,
                     imagenes: `Array(${proc.imagenes?.length || 0})`
                 });
@@ -275,7 +275,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 // El backend retorna 'tipo' directamente (ej: 'Reflectivo')
                 const tipoProcesoBackend = proc.tipo || proc.tipo_proceso || '';
                 
-                console.log('🔧 [EDITAR-PRENDA-PROCESOS] Transformando proceso:', {
+                console.log(' [EDITAR-PRENDA-PROCESOS] Transformando proceso:', {
                     procesoId: proc.id,
                     tipoBackend: tipoProcesoBackend,
                     nombre: proc.nombre,
@@ -314,7 +314,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                     })
                 };
                 
-                console.log('  ✅ Proceso transformado:', procesoTransformado);
+                console.log('  Proceso transformado:', procesoTransformado);
                 return procesoTransformado;
             }),
             variantes: variantes
@@ -358,11 +358,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             return;
         }
         
-        console.error('❌ GestionItemsUI no disponible');
+        console.error(' GestionItemsUI no disponible');
         Swal.fire('Error', 'No se pudo abrir el modal de edición', 'error');
         
     } catch (error) {
-        console.error('❌ [EDITAR-PRENDA] Error:', error);
+        console.error(' [EDITAR-PRENDA] Error:', error);
         Swal.fire('Error', `No se pudieron cargar los datos: ${error.message}`, 'error');
     }
 }

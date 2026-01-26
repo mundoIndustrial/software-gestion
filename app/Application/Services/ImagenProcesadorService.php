@@ -187,7 +187,7 @@ class ImagenProcesadorService
             return "public/pedidos/{$pedidoId}/prendas/{$prendaId}";
         }
         
-        // ❌ PROHIBIDO: No permitir guardado en carpeta global /prendas/
+        //  PROHIBIDO: No permitir guardado en carpeta global /prendas/
         throw new Exception(
             "ImagenProcesadorService: Se requiere pedido_id para guardar imágenes. " .
             "No se permite guardar en carpeta global '{$prendaId}'. " .

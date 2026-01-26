@@ -135,7 +135,7 @@ function agregarPrendaReflectivoPaso4() {
             
             <!-- UBICACIÓN CON MODAL -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.95rem;">📍 UBICACIONES</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.95rem;"> UBICACIONES</label>
                 <div style="margin-bottom: 12px; display: flex; gap: 6px;">
                     <input type="text" class="seccion-ubicacion-reflectivo-input" list="opciones_seccion_reflectivo" placeholder="PECHO, ESPALDA, MANGA..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; text-transform: uppercase;">
                     <button type="button" class="btn-agregar-ubicacion-modal-reflectivo" style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem; white-space: nowrap;">
@@ -412,7 +412,7 @@ function procesarImagenesReflectivo(archivos, prendasIndex, fila, previewContain
     
     const maxImagenes = 3;
     if (prenda.imagenes.length + archivos.length > maxImagenes) {
-        Swal.fire('⚠️', `Máximo ${maxImagenes} imágenes permitidas`, 'warning');
+        Swal.fire('', `Máximo ${maxImagenes} imágenes permitidas`, 'warning');
         return;
     }
     
@@ -724,7 +724,7 @@ function abrirModalUbicacionReflectivoPaso4(prendasIndex, fila) {
     const seccion = inputSeccion.value.trim().toUpperCase();
 
     if (!seccion) {
-        Swal.fire('⚠️', 'Por favor escribe una sección (ej: PECHO, ESPALDA, MANGA...)', 'warning');
+        Swal.fire('', 'Por favor escribe una sección (ej: PECHO, ESPALDA, MANGA...)', 'warning');
         return;
     }
 
@@ -772,7 +772,7 @@ function guardarUbicacionReflectivoPaso4(prendasIndex) {
     const desc = document.getElementById(`descUbicacionReflectivoPaso4-${prendasIndex}`).value.trim();
     
     if (!desc) {
-        Swal.fire('⚠️', 'Por favor escribe una descripción', 'warning');
+        Swal.fire('', 'Por favor escribe una descripción', 'warning');
         return;
     }
     
@@ -784,7 +784,7 @@ function guardarUbicacionReflectivoPaso4(prendasIndex) {
     // Verificar que no exista duplicada
     const existe = prenda.ubicaciones.some(u => u.ubicacion === seccion && u.descripcion === desc);
     if (existe) {
-        Swal.fire('⚠️', 'Esta ubicación ya fue agregada', 'warning');
+        Swal.fire('', 'Esta ubicación ya fue agregada', 'warning');
         return;
     }
     

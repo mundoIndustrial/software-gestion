@@ -576,7 +576,7 @@ function showNotificationDetails(newsId, eventType) {
         detailsHTML += '</div>';
     } else if (eventType === 'record_created' && metadata.data) {
         // Mostrar datos del registro creado
-        detailsHTML = '<h3>✨ Datos del nuevo registro:</h3><div class="details-grid">';
+        detailsHTML = '<h3> Datos del nuevo registro:</h3><div class="details-grid">';
         for (const [key, value] of Object.entries(metadata.data)) {
             const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             detailsHTML += `

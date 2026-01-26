@@ -274,7 +274,7 @@ function cargarPrendas(prendas) {
             }
         }
         
-        // ⭐ NUEVO: Esperar a que se carguen los módulos de prenda-tarjeta
+        //  NUEVO: Esperar a que se carguen los módulos de prenda-tarjeta
 
         
         function intentarRenderizarPrendas() {
@@ -482,7 +482,7 @@ function inicializarEventListenersEpp() {
                 // Por ahora solo log
                 alert(`Editar EPP: ${epp.nombre} (ID: ${epp.id || 'nuevo'})`);
             } else {
-                console.warn('[EPP] ❌ EPP no encontrado en índice:', eppIndex);
+                console.warn('[EPP]  EPP no encontrado en índice:', eppIndex);
                 alert('EPP no encontrado');
             }
         }
@@ -501,7 +501,7 @@ function inicializarEventListenersEpp() {
                 if (window.eppsPedido) {
                     // Eliminar del array
                     window.eppsPedido.splice(eppIndex, 1);
-                    console.log('[EPP] ✅ EPP eliminado. Eppspedido ahora:', window.eppsPedido);
+                    console.log('[EPP] EPP eliminado. Eppspedido ahora:', window.eppsPedido);
                     
                     // Recargar la lista de EPPs
                     cargarEPPs(window.eppsPedido);

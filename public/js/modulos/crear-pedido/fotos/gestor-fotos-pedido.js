@@ -273,7 +273,7 @@ class GestorFotosPrenda extends GestorFotos {
             try {
                 const cantidad = await this.agregarFotos(e.target.files);
                 
-                // ✅ SINCRONIZAR CON GESTOR PRINCIPAL
+                // SINCRONIZAR CON GESTOR PRINCIPAL
                 if (window.gestorPrendaSinCotizacion) {
                     window.gestorPrendaSinCotizacion.agregarFotos(prendaIndex, this.fotos);
                 }
@@ -319,7 +319,7 @@ class GestorFotosTela extends GestorFotos {
             try {
                 const cantidad = await this.agregarFotos(e.target.files);
                 
-                // ✅ SINCRONIZAR CON GESTOR PRINCIPAL
+                // SINCRONIZAR CON GESTOR PRINCIPAL
                 if (window.gestorPrendaSinCotizacion) {
                     window.gestorPrendaSinCotizacion.agregarFotosTela(prendaIndex, telaIndex, this.fotos);
                 }

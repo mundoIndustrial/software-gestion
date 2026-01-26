@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\Log;
  * - Invalidar cache de reportes
  * - Mantener contadores en Redis
  * 
- * PatrÃ³n: Observer
- * Tipo: SincrÃ³nico (se ejecuta inmediatamente)
+ * Patrón: Observer
+ * Tipo: Sincrónico (se ejecuta inmediatamente)
  * Criticidad: Baja (si falla no rompe el flujo principal)
  * 
  * Ejemplo de uso:
@@ -67,7 +67,7 @@ class ActualizarEstadisticasPrendas
                 'error' => $e->getMessage(),
                 'prenda_id' => $event->getPrendaId(),
             ]);
-            // No relanzar: esto es una operaciÃ³n no crÃ­tica
+            // No relanzar: esto es una operación no crÃ­tica
         }
     }
 }

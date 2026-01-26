@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 /**
- * Repositorio para acceso a datos de Pedidos de ProducciÃ³n
+ * Repositorio para acceso a datos de Pedidos de Producción
  * Responsabilidad: Encapsular todas las queries de pedidos
  */
 class PedidoProduccionRepository
@@ -30,8 +30,7 @@ class PedidoProduccionRepository
             'prendas.procesos',
             'prendas.procesos.tipoProceso',  //  NUEVO: Cargar el nombre del tipo de proceso
             'prendas.procesos.imagenes',
-            'epps.epp.categoria',  //  Cargar la categorÃ­a del EPP
-            'epps.imagenes',
+            'epps.imagenes',  // NO cargar categoria: es opcional
         ])->find($id);
     }
 
@@ -94,7 +93,7 @@ class PedidoProduccionRepository
     /**
      * MEJORADO: Obtener datos completos de factura de un pedido
      * 
-     * ✅ Incluye:
+     * Incluye:
      * - Manga con nombre (desde tipos_manga)
      * - Broche con nombre (desde tipos_broche_boton)
      * - Bolsillos (boolean y observaciones)
@@ -136,7 +135,7 @@ class PedidoProduccionRepository
                 $referencias = [];
                 $variantes_formateadas = [];
 
-                // ✅ Obtener especificaciones de la PRIMERA variante (manga, broche, bolsillos son globales por prenda)
+                // Obtener especificaciones de la PRIMERA variante (manga, broche, bolsillos son globales por prenda)
                 $especificaciones = [
                     'manga' => null,
                     'manga_obs' => '',
@@ -149,7 +148,7 @@ class PedidoProduccionRepository
                 if ($prenda->variantes && $prenda->variantes->count() > 0) {
                     $primeraVariante = $prenda->variantes->first();
                     
-                    // ✅ OBTENER MANGA CON NOMBRE
+                    // OBTENER MANGA CON NOMBRE
                     if ($primeraVariante->tipo_manga_id) {
                         try {
                             $manga = \DB::table('tipos_manga')
@@ -165,7 +164,7 @@ class PedidoProduccionRepository
                         }
                     }
                     
-                    // ✅ OBTENER BROCHE CON NOMBRE
+                    // OBTENER BROCHE CON NOMBRE
                     if ($primeraVariante->tipo_broche_boton_id) {
                         try {
                             $broche = \DB::table('tipos_broche_boton')
@@ -177,19 +176,19 @@ class PedidoProduccionRepository
                         }
                     }
                     
-                    // ✅ OBTENER ESPECIFICACIONES DE BOLSILLOS Y OBSERVACIONES
+                    // OBTENER ESPECIFICACIONES DE BOLSILLOS Y OBSERVACIONES
                     $especificaciones['manga_obs'] = $primeraVariante->manga_obs ?? '';
                     $especificaciones['broche_obs'] = $primeraVariante->broche_boton_obs ?? '';
                     $especificaciones['bolsillos'] = (bool)($primeraVariante->tiene_bolsillos ?? false);
                     $especificaciones['bolsillos_obs'] = $primeraVariante->bolsillos_obs ?? '';
                 }
 
-                // ✅ Procesar TALLAS (no variantes) - Cada talla es una fila en la factura
+                // Procesar TALLAS (no variantes) - Cada talla es una fila en la factura
                 if ($prenda->tallas && $prenda->tallas->count() > 0) {
                     foreach ($prenda->tallas as $talla) {
                         $cantidadTotal += $talla->cantidad ?? 0;
                         
-                        // ✅ CREAR ITEM DE TALLA CON ESPECIFICACIONES
+                        // CREAR ITEM DE TALLA CON ESPECIFICACIONES
                         $talla_item = [
                             'talla' => $talla->talla ?? '',
                             'cantidad' => $talla->cantidad ?? 0,
@@ -213,10 +212,10 @@ class PedidoProduccionRepository
                     }
                 }
 
-                // ✅ Extraer telas y colores de variantes (si existen en colores/telas)
+                // Extraer telas y colores de variantes (si existen en colores/telas)
                 if ($prenda->variantes) {
                     foreach ($prenda->variantes as $variante) {
-                        // ✅ Extraer telas y colores de variante si existen
+                        // Extraer telas y colores de variante si existen
                         if ($variante->tela_id) {
                             try {
                                 $telaData = \DB::table('telas_prenda')
@@ -252,10 +251,10 @@ class PedidoProduccionRepository
                     }
                 }
 
-                // ✅ Obtener foto principal de prenda
+                // Obtener foto principal de prenda
                 $foto = $prenda->fotos ? $prenda->fotos->first() : null;
                 
-                // ✅ Obtener fotos de telas
+                // Obtener fotos de telas
                 $fotoTelas = [];
                 try {
                     if ($prenda->fotosTelas) {
@@ -271,7 +270,7 @@ class PedidoProduccionRepository
                     \Log::debug('[FACTURA] Error fotos telas', ['error' => $e->getMessage()]);
                 }
                 
-                // ✅ Obtener todas las fotos de prenda
+                // Obtener todas las fotos de prenda
                 $fotosPrend = [];
                 try {
                     if ($prenda->fotos) {
@@ -287,7 +286,7 @@ class PedidoProduccionRepository
                     \Log::debug('[FACTURA] Error fotos prenda', ['error' => $e->getMessage()]);
                 }
                 
-                // ✅ Construir array simple de tallas agrupado por género: {DAMA: {M: 20, S: 10}, CABALLERO: {...}}
+                // Construir array simple de tallas agrupado por género: {DAMA: {M: 20, S: 10}, CABALLERO: {...}}
                 $tallasSimples = [];
                 if ($prenda->tallas && $prenda->tallas->count() > 0) {
                     foreach ($prenda->tallas as $t) {
@@ -299,7 +298,7 @@ class PedidoProduccionRepository
                     }
                 }
                 
-                // ✅ Obtener procesos con imágenes
+                // Obtener procesos con imágenes
                 $procesos = [];
                 try {
                     if ($prenda->procesos) {
@@ -351,7 +350,7 @@ class PedidoProduccionRepository
                     \Log::debug('[FACTURA] Error procesos', ['error' => $e->getMessage()]);
                 }
                 
-                // ✅ Construir prenda formateada CON TODAS LAS ESPECIFICACIONES
+                // Construir prenda formateada CON TODAS LAS ESPECIFICACIONES
                 $prendasFormato = [
                     'nombre' => $prenda->nombre_prenda,
                     'descripcion' => $prenda->descripcion,
@@ -362,8 +361,8 @@ class PedidoProduccionRepository
                     'tela' => !empty($telas) ? implode(', ', $telas) : null,
                     'color' => !empty($colores) ? implode(', ', $colores) : null,
                     'ref' => !empty($referencias) ? implode(', ', $referencias) : null,
-                    'tallas' => $tallasSimples, // ✅ SOLO TALLA Y CANTIDAD (para vistas simples)
-                    'variantes' => $variantes_formateadas, // ✅ CON TODO (talla, cantidad, manga, broche, bolsillos, obs) para factura
+                    'tallas' => $tallasSimples, // SOLO TALLA Y CANTIDAD (para vistas simples)
+                    'variantes' => $variantes_formateadas, // CON TODO (talla, cantidad, manga, broche, bolsillos, obs) para factura
                     'procesos' => $procesos,
                 ];
                 
@@ -378,86 +377,90 @@ class PedidoProduccionRepository
                 ]);
             }
 
-            // ✅ AGREGAR EPPs A LOS DATOS DE FACTURA
+            // AGREGAR EPPs A LOS DATOS DE FACTURA CON VALIDACIÓN DEFENSIVA
             $datos['epps'] = [];
             try {
                 if ($pedido->epps) {
                     foreach ($pedido->epps as $pedidoEpp) {
-            // $pedidoEpp es el modelo PedidoEpp que contiene los datos del EPP agregado al pedido
-            $epp = $pedidoEpp->epp;  // Obtener el modelo Epp relacionado
-            
-            // Obtener la talla de tallas_medidas (es un JSON que puede ser un string o array)
-            $talla = '';
-            if ($pedidoEpp->tallas_medidas) {
-                if (is_array($pedidoEpp->tallas_medidas)) {
-                    // Si es array, unir los elementos
-                    $talla = implode(', ', $pedidoEpp->tallas_medidas);
-                } else if (is_string($pedidoEpp->tallas_medidas)) {
-                    // Si es string, usarlo directamente (ej: "S", "M", "L")
-                    $talla = $pedidoEpp->tallas_medidas;
-                }
-            }
-            
-            $eppFormato = [
-                'id' => $pedidoEpp->id,  // ID del registro PedidoEpp
-                'epp_id' => $pedidoEpp->epp_id,  // ID del EPP
-                'nombre' => $epp->nombre_completo ?? '',
-                'nombre_completo' => $epp->nombre_completo ?? '',
-                'categoria' => $epp->categoria?->nombre ?? $epp->categoria ?? '',  // Acceder al nombre de la categorÃ­a
-                'talla' => $talla,  // Datos especÃ­ficos del pedido
-                'cantidad' => $pedidoEpp->cantidad ?? 0,
-                'observaciones' => $pedidoEpp->observaciones ?? '',
-                'imagen' => null,
-                'imagenes' => [],
-            ];
-            
-            // Obtener imÃ¡genes del PedidoEpp desde la tabla pedido_epp_imagenes
-            try {
-                $imagenesData = \DB::table('pedido_epp_imagenes')
-                    ->where('pedido_epp_id', $pedidoEpp->id)
-                    ->where('deleted_at', null)
-                    ->orderBy('orden', 'asc')
-                    ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
-                
-                if ($imagenesData->count() > 0) {
-                    $imagenes = $imagenesData->pluck('ruta_web')->filter()->toArray();
-                    $eppFormato['imagenes'] = $imagenes;
-                    $eppFormato['imagen'] = $imagenes[0] ?? null;
-                    
-                    \Log::info('[RECIBOS-REPO] ImÃ¡genes encontradas:', [
-                        'pedido_epp_id' => $pedidoEpp->id,
-                        'cantidad' => count($imagenes),
-                        'imagenes' => $imagenes,
-                        'data_completa' => $imagenesData->toArray()
-                    ]);
-                } else {
-                    \Log::info('[RECIBOS-REPO] Sin imágenes para EPP:', [
-                        'pedido_epp_id' => $pedidoEpp->id
-                    ]);
-                }
-            } catch (\Exception $e) {
-                \Log::error('[RECIBOS-REPO] Error obteniendo imágenes de EPP:', [
-                    'pedido_epp_id' => $pedidoEpp->id,
-                    'error' => $e->getMessage()
-                ]);
-            }
-            
-            $datos['epps'][] = $eppFormato;
-            $datos['total_items'] += ($pedidoEpp->cantidad ?? 0);
-            
-            \Log::info('[RECIBOS-REPO] EPP formateado:', [
-                'id' => $eppFormato['id'] ?? $pedidoEpp->id,
-                'nombre' => $eppFormato['nombre'],
-                'cantidad' => $eppFormato['cantidad'],
-                'observaciones' => $eppFormato['observaciones'],
-                'imagenes_count' => count($eppFormato['imagenes']),
-                'estructura_keys' => array_keys($eppFormato)
-            ]);
+                        // VALIDACIÓN: Verificar que el EPP tenga relación válida
+                        $epp = $pedidoEpp->epp;
+                        
+                        if (!$epp) {
+                            \Log::warning('[FACTURA] EPP sin relación válida, saltando', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'pedido_id' => $pedidoId,
+                            ]);
+                            continue;
+                        }
+                        
+                        // Obtener la talla de tallas_medidas (es un JSON que puede ser un string o array)
+                        $talla = '';
+                        if ($pedidoEpp->tallas_medidas) {
+                            if (is_array($pedidoEpp->tallas_medidas)) {
+                                // Si es array, unir los elementos
+                                $talla = implode(', ', $pedidoEpp->tallas_medidas);
+                            } else if (is_string($pedidoEpp->tallas_medidas)) {
+                                // Si es string, usarlo directamente (ej: "S", "M", "L")
+                                $talla = $pedidoEpp->tallas_medidas;
+                            }
+                        }
+                        
+                        // Construir datos del EPP con valores seguros
+                        // NOTA: No incluimos 'codigo' ni 'categoria' ya que no son obligatorios en DB
+                        $eppFormato = [
+                            'id' => $pedidoEpp->id,
+                            'epp_id' => $pedidoEpp->epp_id,
+                            'nombre' => $epp->nombre_completo ?? $epp->nombre ?? '',
+                            'nombre_completo' => $epp->nombre_completo ?? $epp->nombre ?? '',
+                            'talla' => $talla,
+                            'cantidad' => $pedidoEpp->cantidad ?? 0,
+                            'observaciones' => $pedidoEpp->observaciones ?? '',
+                            'imagen' => null,
+                            'imagenes' => [],
+                        ];
+                        
+                        // Obtener imágenes del PedidoEpp desde la tabla pedido_epp_imagenes
+                        // NOTA: La tabla no tiene soft deletes, así que no verificamos deleted_at
+                        try {
+                            $imagenesData = \DB::table('pedido_epp_imagenes')
+                                ->where('pedido_epp_id', $pedidoEpp->id)
+                                ->orderBy('orden', 'asc')
+                                ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
+                            
+                            if ($imagenesData->count() > 0) {
+                                $imagenes = $imagenesData->pluck('ruta_web')->filter()->toArray();
+                                $eppFormato['imagenes'] = $imagenes;
+                                $eppFormato['imagen'] = $imagenes[0] ?? null;
+                                
+                                \Log::info('[FACTURA] Imágenes encontradas para EPP', [
+                                    'pedido_epp_id' => $pedidoEpp->id,
+                                    'cantidad' => count($imagenes),
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::warning('[FACTURA] Error obteniendo imágenes de EPP', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                        
+                        $datos['epps'][] = $eppFormato;
+                        $datos['total_items'] += ($pedidoEpp->cantidad ?? 0);
+                        
+                        \Log::debug('[FACTURA] EPP procesado', [
+                            'id' => $eppFormato['id'],
+                            'nombre' => $eppFormato['nombre'],
+                            'cantidad' => $eppFormato['cantidad'],
+                            'observaciones' => $eppFormato['observaciones'],
+                            'imagenes_count' => count($eppFormato['imagenes']),
+                        ]);
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error('[FACTURA] Error obteniendo datos', ['error' => $e->getMessage()]);
-                throw $e;
+                \Log::error('[FACTURA] Error procesando EPPs', [
+                    'pedido_id' => $pedidoId,
+                    'error' => $e->getMessage(),
+                ]);
             }
 
             return $datos;
@@ -610,7 +613,7 @@ class PedidoProduccionRepository
                     }
                 }
                 
-                // Obtener tipo de broche/botÃ³n
+                // Obtener tipo de broche/botón
                 if ($variante->tipo_broche_boton_id) {
                     try {
                         $broche = \DB::table('tipos_broche_boton')
@@ -666,7 +669,7 @@ class PedidoProduccionRepository
                 // ImÃ¡genes del proceso
                 $imagenesProceso = $proc->imagenes ? $proc->imagenes->map(fn($img) => $img->url)->toArray() : [];
                 
-                //  Obtener nombre del tipo de proceso (desde la relaciÃ³n cargada)
+                //  Obtener nombre del tipo de proceso (desde la relación cargada)
                 $nombreProceso = 'Proceso';
                 if ($proc->tipoProceso && $proc->tipoProceso->nombre) {
                     $nombreProceso = $proc->tipoProceso->nombre;
@@ -690,7 +693,7 @@ class PedidoProduccionRepository
                 $procesos[] = $proc_item;
             }
 
-            // Preparar telas agregadas (estructura para ediciÃ³n)
+            // Preparar telas agregadas (estructura para edición)
             $telasAgregadas = [];
             try {
                 $colorTelaData = \DB::table('prenda_pedido_colores_telas')
@@ -780,7 +783,7 @@ class PedidoProduccionRepository
                     $obsVariaciones['tipo_manga'] = $primerVariante->tipoManga->nombre;
                 }
                 
-                // Obtener nombre del tipo de broche/botÃ³n - siempre cargar desde BD usando tipo_broche_boton_id
+                // Obtener nombre del tipo de broche/botón - siempre cargar desde BD usando tipo_broche_boton_id
                 if ($primerVariante->tipo_broche_boton_id) {
                     $tipoBroche = \DB::table('tipos_broche_boton')
                         ->where('id', $primerVariante->tipo_broche_boton_id)
@@ -794,8 +797,8 @@ class PedidoProduccionRepository
             \Log::info('[RECIBOS] Variaciones extraÃ­das para prenda ' . $prendaIndex, ['obsVariaciones' => $obsVariaciones, 'tiene_variantes' => !empty($prenda->variantes)]);
 
             // Construir prenda para recibos
-            // Determinar origen desde de_bodega: 1 = bodega, 0 = confecciÃ³n
-            $origen = ($prenda->de_bodega == 1) ? 'bodega' : 'confecciÃ³n';
+            // Determinar origen desde de_bodega: 1 = bodega, 0 = confección
+            $origen = ($prenda->de_bodega == 1) ? 'bodega' : 'confección';
             
             // Obtener tipo_broche_boton_id desde la primera variante
             $tipo_broche_boton_id = null;
@@ -840,7 +843,7 @@ class PedidoProduccionRepository
 
         // Cargar EPP del pedido
         try {
-            \Log::debug('[RECIBOS-REPO] Intentando cargar EPP con relaciÃ³n epps()');
+            \Log::debug('[RECIBOS-REPO] Intentando cargar EPP con relación epps()');
             $epps = $pedido->epps()->get();
             
             \Log::info('[RECIBOS-REPO] EPP encontrados:', ['count' => $epps->count()]);

@@ -93,7 +93,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
                 'fecha_inicio' => now(),
             ]);
 
-            Log::info('🔧 [CreacionPrendaReflectivoStrategy] Proceso Reflectivo creado', [
+            Log::info(' [CreacionPrendaReflectivoStrategy] Proceso Reflectivo creado', [
                 'proceso_id' => $procesoReflectivo->id,
             ]);
 
@@ -123,7 +123,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
 
             DB::commit();
 
-            Log::info('✨ [CreacionPrendaReflectivoStrategy] Prenda con proceso reflectivo completada', [
+            Log::info(' [CreacionPrendaReflectivoStrategy] Prenda con proceso reflectivo completada', [
                 'prenda_id' => $prendaPedido->id,
                 'cantidad_total' => $cantidadTotal,
             ]);
@@ -133,7 +133,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('❌ [CreacionPrendaReflectivoStrategy] Error al procesar prenda reflectivo', [
+            Log::error(' [CreacionPrendaReflectivoStrategy] Error al procesar prenda reflectivo', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

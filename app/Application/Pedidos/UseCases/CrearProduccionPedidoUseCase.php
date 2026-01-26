@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\Log;
  * Responsabilidades:
  * - Validar datos de entrada (delegado a agregado)
  * - Crear agregado de dominio
- * - Persistir en base de datos ✅
- * - Publicar domain events ✅
+ * - Persistir en base de datos
+ * - Publicar domain events
  * - Retornar resultado
  * 
  * Patrón: Command Handler
@@ -73,7 +73,7 @@ class CrearProduccionPedidoUseCase
             return $agregado;
 
         } catch (Exception $e) {
-            Log::error('❌ [CrearProduccionPedidoUseCase] Error', [
+            Log::error(' [CrearProduccionPedidoUseCase] Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  * DashboardService
  * 
  * Servicio para obtener datos del dashboard del asesor.
- * Encapsula la lÃ³gica de estadÃ­sticas y grÃ¡ficas.
+ * Encapsula la lógica de estadÃ­sticas y grÃ¡ficas.
  */
 class DashboardService
 {
@@ -30,7 +30,7 @@ class DashboardService
             'pedidos_anio' => PedidoProduccion::where('asesor_id', $userId)
                 ->whereYear('created_at', now()->year)->count(),
             'pedidos_pendientes' => PedidoProduccion::where('asesor_id', $userId)
-                ->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n'])
+                ->whereIn('estado', ['No iniciado', 'En Ejecución'])
                 ->count(),
         ];
     }

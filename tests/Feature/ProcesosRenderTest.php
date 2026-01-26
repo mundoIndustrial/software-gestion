@@ -37,21 +37,21 @@ class ProcesosRenderTest extends TestCase
 
         $primerProceso = $datos['prendas'][0]['procesos'][0];
 
-        // ✅ Campos esperados para frontend
+        // Campos esperados para frontend
         $this->assertArrayHasKey('nombre', $primerProceso, 'Debe tener campo "nombre" para ReceiptManager');
         $this->assertArrayHasKey('tipo', $primerProceso, 'Debe tener campo "tipo" para ReceiptManager');
 
-        // ✅ Campos originales para compatibilidad backwards
+        // Campos originales para compatibilidad backwards
         $this->assertArrayHasKey('nombre_proceso', $primerProceso, 'Debe tener "nombre_proceso" para compatibilidad');
         $this->assertArrayHasKey('tipo_proceso', $primerProceso, 'Debe tener "tipo_proceso" para compatibilidad');
 
-        // ✅ Otros campos necesarios
+        // Otros campos necesarios
         $this->assertArrayHasKey('tallas', $primerProceso, 'Debe tener "tallas"');
         $this->assertArrayHasKey('imagenes', $primerProceso, 'Debe tener "imagenes"');
         $this->assertArrayHasKey('ubicaciones', $primerProceso, 'Debe tener "ubicaciones"');
         $this->assertArrayHasKey('observaciones', $primerProceso, 'Debe tener "observaciones"');
 
-        // ✅ Valores no vacíos (si tiene procesos, debe tener nombre)
+        // Valores no vacíos (si tiene procesos, debe tener nombre)
         $this->assertNotEmpty($primerProceso['nombre'], 'Campo "nombre" no debe estar vacío');
         $this->assertNotEmpty($primerProceso['tipo'], 'Campo "tipo" no debe estar vacío');
     }
@@ -83,7 +83,7 @@ class ProcesosRenderTest extends TestCase
         if (count($datos['prendas'][0]['procesos'] ?? []) > 0) {
             $primerProceso = $datos['prendas'][0]['procesos'][0];
 
-            // ✅ Verificar campos existentes
+            // Verificar campos existentes
             $this->assertArrayHasKey('nombre', $primerProceso, 'Debe tener "nombre" para ReceiptManager');
             $this->assertArrayHasKey('tipo', $primerProceso, 'Debe tener "tipo" para ReceiptManager');
         }

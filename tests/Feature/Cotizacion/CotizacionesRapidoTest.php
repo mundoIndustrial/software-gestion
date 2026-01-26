@@ -28,12 +28,12 @@ class CotizacionesRapidoTest extends TestCase
         $this->cliente = Cliente::factory()->create(['nombre' => 'Cliente Test']);
         $this->tipo = TipoCotizacion::firstOrCreate(
             ['codigo' => 'M'],
-            ['nombre' => 'Muestra', 'descripcion' => 'CotizaciÃ³n de muestra']
+            ['nombre' => 'Muestra', 'descripcion' => 'Cotización de muestra']
         );
     }
 
     /**
-     * TEST 1: Crear 1 cotizaciÃ³n simple
+     * TEST 1: Crear 1 cotización simple
      */
     public function test_crear_cotizacion_simple(): void
     {
@@ -54,7 +54,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertEquals('COT-TEST-001', $cot->numero_cotizacion);
         $this->assertEquals($this->asesor->id, $cot->asesor_id);
 
-        echo "\n CotizaciÃ³n creada: COT-TEST-001\n";
+        echo "\n Cotización creada: COT-TEST-001\n";
     }
 
     /**
@@ -64,7 +64,7 @@ class CotizacionesRapidoTest extends TestCase
     {
         $this->actingAs($this->asesor);
 
-        // Primera cotizaciÃ³n
+        // Primera cotización
         Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
@@ -150,7 +150,7 @@ class CotizacionesRapidoTest extends TestCase
     }
 
     /**
-     * TEST 5: Tipos de cotizaciÃ³n existen
+     * TEST 5: Tipos de cotización existen
      */
     public function test_tipos_cotizacion_existen(): void
     {
@@ -167,7 +167,7 @@ class CotizacionesRapidoTest extends TestCase
             $this->assertNotNull($tipo->nombre);
         }
 
-        echo "\n 3 Tipos de cotizaciÃ³n disponibles (M, P, G)\n";
+        echo "\n 3 Tipos de cotización disponibles (M, P, G)\n";
     }
 
     /**

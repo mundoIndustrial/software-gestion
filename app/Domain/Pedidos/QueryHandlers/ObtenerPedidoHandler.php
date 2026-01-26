@@ -59,11 +59,11 @@ class ObtenerPedidoHandler implements QueryHandler
                     'prendas.coloresTelas.tela',        // âœ… Detalles de la tela
                     'prendas.coloresTelas.fotos',       // âœ… Fotos de cada color-tela
                     'prendas.fotos',                    // âœ… Fotos de referencia de cada prenda
-                    'prendas.procesos',                 // âœ… Procesos de producciÃ³n
+                    'prendas.procesos',                 // âœ… Procesos de producción
                     'prendas.procesos.tipoProceso',     // âœ… Tipo de proceso
                     'prendas.procesos.imagenes',        // âœ… ImÃ¡genes de los procesos
-                    'asesor',                           // âœ… InformaciÃ³n del asesor
-                    'cliente',                          // âœ… InformaciÃ³n del cliente
+                    'asesor',                           // âœ… Información del asesor
+                    'cliente',                          // âœ… Información del cliente
                 ])
                 ->first();
 

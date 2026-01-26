@@ -95,7 +95,7 @@ class ProcesarFotosTelasService
         foreach ($archivos as $archivoFoto) {
             if ($archivoFoto && $archivoFoto->isValid()) {
                 try {
-                    $rutaGuardada = $archivoFoto->store('telas/pedidos', 'public');
+                    $rutaGuardada = $archivoFoto->store('pedido/telas', 'public');
                     
                     Log::info(' [FOTOS-TELAS] Foto guardada', [
                         'nombre' => $archivoFoto->getClientOriginalName(),

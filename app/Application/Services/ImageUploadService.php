@@ -17,9 +17,9 @@ use Intervention\Image\Drivers\Gd\Driver;
  * 2. Frontend sube imágenes → guardarImagenDirecta(file, pedido_id, tipo)
  * 3. Backend guarda directamente en: pedidos/{pedido_id}/{tipo}/
  * 
- * ❌ NO usa carpetas temporales
- * ❌ NO usa relocalización
- * ✅ TODO se guarda directamente con pedido_id
+ *  NO usa carpetas temporales
+ *  NO usa relocalización
+ * TODO se guarda directamente con pedido_id
  */
 class ImageUploadService
 {
@@ -31,9 +31,9 @@ class ImageUploadService
     /**
      * MÉTODO PRINCIPAL: Guardar imagen directamente en pedidos/{pedido_id}/{tipo}/
      * 
-     * ✅ Guarda en ubicación final sin pasos intermedios
-     * ✅ Genera SOLO versión WebP optimizada (1 archivo)
-     * ✅ Retorna ruta relativa para guardar en BD
+     * Guarda en ubicación final sin pasos intermedios
+     * Genera SOLO versión WebP optimizada (1 archivo)
+     * Retorna ruta relativa para guardar en BD
      * 
      * @param UploadedFile $file Archivo subido
      * @param int $pedidoId ID del pedido (REQUERIDO)

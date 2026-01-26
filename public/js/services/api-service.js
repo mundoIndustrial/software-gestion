@@ -109,7 +109,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoSinCotizacion(pedidoData) {
-        // ✅ NUEVO: Usar builder unificado desde window
+        // NUEVO: Usar builder unificado desde window
         if (!window.PedidoCompletoUnificado) {
             console.warn('[ApiService] PedidoCompletoUnificado no disponible, usando payload directo');
             return await this.request(
@@ -157,7 +157,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async crearPedidoPrendaSinCotizacion(pedidoData) {
-        // ✅ NUEVO: Usar builder unificado desde window
+        // NUEVO: Usar builder unificado desde window
         if (!window.PedidoCompletoUnificado) {
             console.warn('[ApiService] PedidoCompletoUnificado no disponible, usando payload directo');
             return await this.request(

@@ -1,4 +1,4 @@
-# ✅ PLAN DE ACCIÓN - DIAGNÓSTICO DE PROCESOS FALTANTES
+# PLAN DE ACCIÓN - DIAGNÓSTICO DE PROCESOS FALTANTES
 
 ## 🎯 OBJETIVO
 
@@ -32,11 +32,11 @@ Las relaciones ESTÁN siendo cargadas.
 - Línea 614: Itera procesos
 - El código ESTÁ listo para recibir procesos
 
-❌ **EL PROBLEMA:** Entre línea 540 y línea 88, procesos desaparece
+ **EL PROBLEMA:** Entre línea 540 y línea 88, procesos desaparece
 
 ---
 
-## 🔧 CAMBIOS QUE REALICÉ
+##  CAMBIOS QUE REALICÉ
 
 ### 1. Backend - Agregué logging super detallado
 
@@ -82,7 +82,7 @@ Las relaciones ESTÁN siendo cargadas.
 
 ---
 
-## 🚀 QUÉ NECESITAS HACER
+##  QUÉ NECESITAS HACER
 
 ### PASO 1: Ver los logs del backend
 
@@ -129,7 +129,7 @@ Las relaciones ESTÁN siendo cargadas.
 **Síntomas:**
 - Logs backend: `[RECIBOS-REPO] tiene_procesos_key: SI`, `procesos_count: 3`
 - Network Response: `"procesos": [...]`
-- Console: `¿Tiene clave "procesos"? ❌ NO`
+- Console: `¿Tiene clave "procesos"?  NO`
 
 **Causa:** Hay un transformador/normalizador frontend quitando procesos
 

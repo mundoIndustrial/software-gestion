@@ -47,39 +47,43 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
     
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
+    
+    <!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-v3-definitiva.js') }}?v={{ time() }}"></script>
+    
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
     
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes y servicios -->
     <!-- Módulos para COTIZACIONES (crear pedido desde cotización) -->
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
-    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
-    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-pedido.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-pedido.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
     
     <!-- Módulos para NUEVO PEDIDO (sin cotización) -->
-    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-tallas-sin-cotizacion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/funciones-prenda-sin-cotizacion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/integracion-prenda-sin-cotizacion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/reflectivo/funciones-reflectivo-sin-cotizacion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/reflectivo/gestor-reflectivo-sin-cotizacion.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-tallas-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/funciones-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/integracion-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/reflectivo/funciones-reflectivo-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/reflectivo/gestor-reflectivo-sin-cotizacion.js') }}?v={{ time() }}"></script>
     
     <!-- Componentes compartidos -->
-    <script src="{{ asset('js/componentes/reflectivo.js') }}"></script>
+    <script src="{{ asset('js/componentes/reflectivo.js') }}?v={{ time() }}"></script>
     
     <!-- API y Servicios -->
-    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ time() }}"></script>
 
     <script>
         // Ocultar loading screen al terminar

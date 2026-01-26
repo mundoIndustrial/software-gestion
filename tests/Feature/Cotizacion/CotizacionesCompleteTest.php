@@ -71,20 +71,20 @@ class CotizacionesCompleteTest extends TestCase
         // Crear cliente
         $this->cliente = Cliente::factory()->create(['nombre' => 'Cliente Test']);
 
-        // Crear tipos de cotizaciÃ³n
+        // Crear tipos de cotización
         $this->tipoM = TipoCotizacion::firstOrCreate(
             ['codigo' => 'M'],
-            ['nombre' => 'Muestra', 'descripcion' => 'CotizaciÃ³n de muestra']
+            ['nombre' => 'Muestra', 'descripcion' => 'Cotización de muestra']
         );
 
         $this->tipoP = TipoCotizacion::firstOrCreate(
             ['codigo' => 'P'],
-            ['nombre' => 'Prototipo', 'descripcion' => 'CotizaciÃ³n de prototipo']
+            ['nombre' => 'Prototipo', 'descripcion' => 'Cotización de prototipo']
         );
 
         $this->tipoG = TipoCotizacion::firstOrCreate(
             ['codigo' => 'G'],
-            ['nombre' => 'Grande', 'descripcion' => 'CotizaciÃ³n grande']
+            ['nombre' => 'Grande', 'descripcion' => 'Cotización grande']
         );
     }
 
@@ -113,8 +113,8 @@ class CotizacionesCompleteTest extends TestCase
 
         // Telas
         $this->telas['algodon'] = Tela::firstOrCreate(
-            ['nombre' => 'AlgodÃ³n'],
-            ['descripcion' => 'AlgodÃ³n 100%', 'codigo' => 'ALG']
+            ['nombre' => 'Algodón'],
+            ['descripcion' => 'Algodón 100%', 'codigo' => 'ALG']
         );
         $this->telas['polyester'] = Tela::firstOrCreate(
             ['nombre' => 'PoliÃ©ster'],
@@ -275,7 +275,7 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * TEST 5: Validar NÃºmero de CotizaciÃ³n Secuencial Global
+     * TEST 5: Validar NÃºmero de Cotización Secuencial Global
      */
     public function test_numero_cotizacion_secuencial_global(): void
     {
@@ -319,7 +319,7 @@ class CotizacionesCompleteTest extends TestCase
     /**
      * TEST 6: CONCURRENCIA - 3 Asesores creando 11 cotizaciones cada uno simultÃ¡neamente
      * 
-     *  NOTA: Este test simula concurrencia. En producciÃ³n, se deberÃ­a usar
+     *  NOTA: Este test simula concurrencia. En producción, se deberÃ­a usar
      * herramientas como Guzzle HTTP con promesas para verdadera concurrencia.
      */
     public function test_concurrencia_multiples_asesores(): void
@@ -328,7 +328,7 @@ class CotizacionesCompleteTest extends TestCase
         $cotizacionesPorAsesor = [];
         $numerosGlobales = [];
 
-        // Simular creaciÃ³n simultÃ¡nea (secuencial, pero validar integridad)
+        // Simular creación simultÃ¡nea (secuencial, pero validar integridad)
         foreach ($asesores as $indiceAsesor => $asesor) {
             $this->actingAs($asesor);
             $cotizacionesPorAsesor[$asesor->id] = [];
@@ -366,7 +366,7 @@ class CotizacionesCompleteTest extends TestCase
      */
 
     /**
-     * Crear cotizaciÃ³n TIPO MUESTRA (M)
+     * Crear cotización TIPO MUESTRA (M)
      * - 1 Prenda (Camisa)
      * - 3 Fotos
      * - 2 Telas
@@ -387,7 +387,7 @@ class CotizacionesCompleteTest extends TestCase
             'especificaciones' => [],
         ]);
 
-        // Asignar nÃºmero de cotizaciÃ³n (simulando el servicio)
+        // Asignar nÃºmero de cotización (simulando el servicio)
         $cotizacion->numero_cotizacion = $this->generarNumeroCotizacion($cotizacion);
         $cotizacion->save();
 
@@ -406,8 +406,8 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Crear cotizaciÃ³n TIPO PROTOTIPO (P)
-     * - 2 Prendas (Camisa + PantalÃ³n)
+     * Crear cotización TIPO PROTOTIPO (P)
+     * - 2 Prendas (Camisa + Pantalón)
      * - 4 Fotos por prenda
      * - 3 Telas por prenda
      * - 4 Tallas (XS, S, M, L)
@@ -440,11 +440,11 @@ class CotizacionesCompleteTest extends TestCase
             ['XS', 'S', 'M', 'L']
         );
 
-        // Prenda 2: PantalÃ³n
+        // Prenda 2: Pantalón
         $this->crearPrendaCompleta(
             $cotizacion,
-            "PantalÃ³n Prototipo $numero",
-            "PantalÃ³n de prototipo con bolsillos $numero",
+            "Pantalón Prototipo $numero",
+            "Pantalón de prototipo con bolsillos $numero",
             50,
             4,
             3,
@@ -455,8 +455,8 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Crear cotizaciÃ³n TIPO GRANDE (G)
-     * - 3 Prendas (Camisa + PantalÃ³n + Chaqueta)
+     * Crear cotización TIPO GRANDE (G)
+     * - 3 Prendas (Camisa + Pantalón + Chaqueta)
      * - 5 Fotos por prenda
      * - 4 Telas por prenda
      * - 6 Tallas (XS-2XL)
@@ -489,11 +489,11 @@ class CotizacionesCompleteTest extends TestCase
             ['XS', 'S', 'M', 'L', 'XL', '2XL']
         );
 
-        // Prenda 2: PantalÃ³n
+        // Prenda 2: Pantalón
         $this->crearPrendaCompleta(
             $cotizacion,
-            "PantalÃ³n Grande $numero",
-            "PantalÃ³n jean premium $numero",
+            "Pantalón Grande $numero",
+            "Pantalón jean premium $numero",
             30,
             5,
             4,
@@ -515,7 +515,7 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Crear cotizaciÃ³n TIPO BORDADO
+     * Crear cotización TIPO BORDADO
      * - Logo principal
      * - 4 Fotos de logo
      * - 3 Ubicaciones (pecho, espalda, manga)
@@ -642,7 +642,7 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Generar nÃºmero de cotizaciÃ³n Ãºnico
+     * Generar nÃºmero de cotización Ãºnico
      * Formato: COT-YYYYMMDD-XXXXXXXX (timestamp based)
      */
     private function generarNumeroCotizacion(Cotizacion $cotizacion): string
@@ -673,7 +673,7 @@ class CotizacionesCompleteTest extends TestCase
      */
 
     /**
-     * Verificar que la cotizaciÃ³n tiene estructura completa
+     * Verificar que la cotización tiene estructura completa
      */
     private function verificarEstructuraCotizacion(Cotizacion $cotizacion): void
     {

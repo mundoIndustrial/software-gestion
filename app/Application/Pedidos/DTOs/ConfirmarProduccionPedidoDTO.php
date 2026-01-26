@@ -7,7 +7,7 @@ use InvalidArgumentException;
 /**
  * ConfirmarProduccionPedidoDTO
  * 
- * DTO para confirmar un pedido de producciÃ³n
+ * DTO para confirmar un pedido de producción
  */
 class ConfirmarProduccionPedidoDTO
 {

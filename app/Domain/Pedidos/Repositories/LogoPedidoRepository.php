@@ -27,7 +27,7 @@ class LogoPedidoRepository
     }
 
     /**
-     * Obtener logo_pedido por pedido_id (relaciÃ³n FK)
+     * Obtener logo_pedido por pedido_id (relación FK)
      * 
      * @param int $pedidoId ID del pedido_produccion
      * @return array|null

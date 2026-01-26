@@ -276,7 +276,7 @@ class AnalizadorArticulos:
             return
         
         print("\n" + "="*80)
-        print("⚠️  DUPLICACIONES DETECTADAS")
+        print("  DUPLICACIONES DETECTADAS")
         print("="*80)
         
         for idx, (criterios, articulos) in enumerate(self.duplicaciones.items(), 1):
@@ -386,7 +386,7 @@ class AnalizadorArticulos:
             </tbody>
         </table>
         
-        <h2>⚠️ Duplicaciones Detectadas</h2>
+        <h2> Duplicaciones Detectadas</h2>
 """
         
         if not self.duplicaciones:

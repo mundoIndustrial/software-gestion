@@ -5,13 +5,13 @@ namespace App\Domain\Pedidos\Services;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Servicio de dominio para generaciÃ³n de nÃºmeros de pedido
+ * Servicio de dominio para generación de nÃºmeros de pedido
  * Responsabilidad Ãºnica: Generar nÃºmeros secuenciales Ãºnicos
  */
 class NumeracionService
 {
     /**
-     * Generar nÃºmero Ãºnico para pedido de producciÃ³n
+     * Generar nÃºmero Ãºnico para pedido de producción
      * Retorna solo el nÃºmero entero (sin prefijo PEP-)
      * Usa DB lock para prevenir race conditions
      */

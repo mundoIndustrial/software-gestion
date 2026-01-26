@@ -6,10 +6,10 @@
  * 2. Subir imágenes (FormData multipart/form-data)
  * 
  * Reglas:
- * ✅ Pedido se crea sin imágenes
- * ✅ Imágenes se envían DESPUÉS de que existe pedido_id
- * ✅ Imágenes como multipart/form-data (NO Base64)
- * ✅ Cada imagen asociada a pedido_id + epp_id
+ * Pedido se crea sin imágenes
+ * Imágenes se envían DESPUÉS de que existe pedido_id
+ * Imágenes como multipart/form-data (NO Base64)
+ * Cada imagen asociada a pedido_id + epp_id
  */
 
 class EppFlujoCreacion {
@@ -52,7 +52,7 @@ class EppFlujoCreacion {
 
             const resultado = await response.json();
             
-            console.log('[EppFlujoCreacion] ✅ PASO 1 EXITOSO:', {
+            console.log('[EppFlujoCreacion] PASO 1 EXITOSO:', {
                 pedido_id: resultado.pedido_id,
                 numero_pedido: resultado.numero_pedido
             });
@@ -60,7 +60,7 @@ class EppFlujoCreacion {
             return resultado;
 
         } catch (error) {
-            console.error('[EppFlujoCreacion] ❌ Error en PASO 1:', error.message);
+            console.error('[EppFlujoCreacion]  Error en PASO 1:', error.message);
             throw error;
         }
     }
@@ -149,7 +149,7 @@ class EppFlujoCreacion {
 
             const resultado = await response.json();
 
-            console.log('[EppFlujoCreacion] ✅ PASO 2 EXITOSO:', {
+            console.log('[EppFlujoCreacion] PASO 2 EXITOSO:', {
                 imagenes_subidas: resultado.imagenes_subidas || totalImagenes,
                 message: resultado.message
             });
@@ -157,7 +157,7 @@ class EppFlujoCreacion {
             return resultado;
 
         } catch (error) {
-            console.error('[EppFlujoCreacion] ❌ Error en PASO 2:', error.message);
+            console.error('[EppFlujoCreacion]  Error en PASO 2:', error.message);
             // NO lanzar error aquí - el pedido ya existe, solo falta subir imágenes
             return {
                 success: false,
@@ -177,7 +177,7 @@ class EppFlujoCreacion {
      */
     async crearPedidoCompleto(pedidoData) {
         try {
-            console.log('[EppFlujoCreacion] 🚀 INICIANDO FLUJO COMPLETO');
+            console.log('[EppFlujoCreacion]  INICIANDO FLUJO COMPLETO');
 
             // PASO 1: Crear pedido
             const pedidoCreado = await this.crearPedido(pedidoData);
@@ -191,7 +191,7 @@ class EppFlujoCreacion {
             // PASO 2: Subir imágenes
             const imagenesResultado = await this.subirImagenesPedido(pedidoId, pedidoData);
 
-            console.log('[EppFlujoCreacion] ✅ FLUJO COMPLETO EXITOSO');
+            console.log('[EppFlujoCreacion] FLUJO COMPLETO EXITOSO');
 
             return {
                 success: true,
@@ -202,7 +202,7 @@ class EppFlujoCreacion {
             };
 
         } catch (error) {
-            console.error('[EppFlujoCreacion] ❌ FLUJO COMPLETO FALLIDO:', error.message);
+            console.error('[EppFlujoCreacion]  FLUJO COMPLETO FALLIDO:', error.message);
             throw error;
         }
     }
@@ -227,7 +227,7 @@ class EppFlujoCreacion {
                 categoria: e.categoria,
                 cantidad: e.cantidad,
                 observaciones: e.observaciones
-                // ❌ NO incluir imagenes
+                //  NO incluir imagenes
             }))
         };
 

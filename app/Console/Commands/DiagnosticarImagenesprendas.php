@@ -24,14 +24,14 @@ class DiagnosticarImagenesPrendas extends Command
         $reparar = $this->option('reparar');
 
         if (!$pedidoId) {
-            $this->error('❌ Debes proporcionar --pedido-id');
+            $this->error(' Debes proporcionar --pedido-id');
             return 1;
         }
 
         // Obtener pedido
         $pedido = PedidoProduccion::with('prendas.fotos')->find($pedidoId);
         if (!$pedido) {
-            $this->error("❌ Pedido #{$pedidoId} no encontrado");
+            $this->error(" Pedido #{$pedidoId} no encontrado");
             return 1;
         }
 
@@ -58,7 +58,7 @@ class DiagnosticarImagenesPrendas extends Command
         $this->info("\n═════════════════════════════════════════════════");
         $this->info("✅ DIAGNÓSTICO COMPLETADO");
         if ($reparar) {
-            $this->info("🔧 Reparaciones ejecutadas");
+            $this->info(" Reparaciones ejecutadas");
         }
 
         return 0;
@@ -77,35 +77,35 @@ class DiagnosticarImagenesPrendas extends Command
         // Diagnosticar
         $problemas = [];
 
-        // ❌ PROBLEMA 1: Rutas undefined
+        //  PROBLEMA 1: Rutas undefined
         if (empty($rutaWebp) && empty($rutaOriginal)) {
-            $problemas[] = "❌ Ambas rutas están VACÍAS";
+            $problemas[] = " Ambas rutas están VACÍAS";
         }
 
-        // ❌ PROBLEMA 2: Rutas con /storage/ duplicado
+        //  PROBLEMA 2: Rutas con /storage/ duplicado
         if (str_contains($rutaWebp, '/storage/storage/') || str_contains($rutaOriginal, '/storage/storage/')) {
-            $problemas[] = "❌ Duplicación de /storage/";
+            $problemas[] = " Duplicación de /storage/";
         }
 
-        // ✅ PROBLEMA 3: Verificar si archivo existe
+        // PROBLEMA 3: Verificar si archivo existe
         $archivoWebpExiste = Storage::disk('public')->exists($rutaWebp);
         $archivoOriginalExiste = Storage::disk('public')->exists($rutaOriginal);
 
-        $this->line("   ├─ WebP existe: " . ($archivoWebpExiste ? '✅' : '❌'));
-        $this->line("   └─ Original existe: " . ($archivoOriginalExiste ? '✅' : '❌'));
+        $this->line("   ├─ WebP existe: " . ($archivoWebpExiste ? '✅' : ''));
+        $this->line("   └─ Original existe: " . ($archivoOriginalExiste ? '✅' : ''));
 
         if (!$archivoWebpExiste && !empty($rutaWebp)) {
-            $problemas[] = "❌ Archivo WebP NO EXISTE: {$rutaWebp}";
+            $problemas[] = " Archivo WebP NO EXISTE: {$rutaWebp}";
         }
 
         if (!$archivoOriginalExiste && !empty($rutaOriginal)) {
-            $problemas[] = "❌ Archivo Original NO EXISTE: {$rutaOriginal}";
+            $problemas[] = " Archivo Original NO EXISTE: {$rutaOriginal}";
         }
 
-        // ❌ PROBLEMA 4: Buscar en temp/
+        //  PROBLEMA 4: Buscar en temp/
         $rutaEnTemp = $this->buscarEnTemp($rutaWebp, $rutaOriginal);
         if ($rutaEnTemp) {
-            $problemas[] = "⚠️ Archivo ENCONTRADO EN TEMP: {$rutaEnTemp}";
+            $problemas[] = " Archivo ENCONTRADO EN TEMP: {$rutaEnTemp}";
         }
 
         if (!empty($problemas)) {
@@ -118,7 +118,7 @@ class DiagnosticarImagenesPrendas extends Command
                 $this->repararFoto($foto, $rutaWebp, $rutaOriginal, $pedidoId);
             }
         } else {
-            $this->line("   ✅ SIN PROBLEMAS");
+            $this->line("   SIN PROBLEMAS");
         }
     }
 
@@ -141,7 +141,7 @@ class DiagnosticarImagenesPrendas extends Command
 
     private function repararFoto($foto, $rutaWebp, $rutaOriginal, $pedidoId)
     {
-        $this->line("\n      🔧 REPARANDO FOTO #{$foto->id}...");
+        $this->line("\n       REPARANDO FOTO #{$foto->id}...");
 
         // Caso 1: Rutas vacías - buscar en temp
         if (empty($rutaWebp) && empty($rutaOriginal)) {
@@ -166,10 +166,10 @@ class DiagnosticarImagenesPrendas extends Command
             // Mover archivo
             if (Storage::disk('public')->move($rutaTemp, $rutaNueva)) {
                 $foto->update(['ruta_webp' => $rutaNueva]);
-                $this->line("      ├─ ✅ Archivo movido a: {$rutaNueva}");
-                $this->line("      └─ ✅ BD actualizada");
+                $this->line("      ├─ Archivo movido a: {$rutaNueva}");
+                $this->line("      └─ BD actualizada");
             } else {
-                $this->error("      └─ ❌ Error al mover archivo");
+                $this->error("      └─  Error al mover archivo");
             }
             return;
         }
@@ -187,13 +187,13 @@ class DiagnosticarImagenesPrendas extends Command
             foreach ($variaciones as $ruta) {
                 if (Storage::disk('public')->exists($ruta)) {
                     $foto->update(['ruta_webp' => $ruta]);
-                    $this->line("      ├─ ✅ Ruta corregida: {$ruta}");
-                    $this->line("      └─ ✅ BD actualizada");
+                    $this->line("      ├─ Ruta corregida: {$ruta}");
+                    $this->line("      └─ BD actualizada");
                     return;
                 }
             }
 
-            $this->error("      └─ ❌ No se encontró archivo en variaciones");
+            $this->error("      └─  No se encontró archivo en variaciones");
         }
     }
 }

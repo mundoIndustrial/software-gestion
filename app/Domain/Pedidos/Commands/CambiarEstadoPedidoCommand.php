@@ -12,7 +12,7 @@ use App\Domain\Shared\CQRS\Command;
  * 
  * @param int|string $pedidoId ID del pedido
  * @param string $nuevoEstado Nuevo estado
- * @param string $razon RazÃ³n del cambio de estado (opcional)
+ * @param string $razon Razón del cambio de estado (opcional)
  */
 class CambiarEstadoPedidoCommand implements Command
 {

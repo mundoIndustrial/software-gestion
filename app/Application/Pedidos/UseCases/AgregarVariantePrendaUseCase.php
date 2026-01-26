@@ -8,7 +8,7 @@ use App\Models\PrendaPedido;
 /**
  * Use Case para agregar variantes a una prenda
  * 
- * Maneja la creaciÃ³n de registro en prenda_pedido_variantes
+ * Maneja la creación de registro en prenda_pedido_variantes
  * con todos los detalles de manga, broche y bolsillos
  */
 final class AgregarVariantePrendaUseCase

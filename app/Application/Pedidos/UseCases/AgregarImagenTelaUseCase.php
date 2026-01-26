@@ -7,13 +7,13 @@ use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedidoColorTela;
 
 /**
- * Use Case para agregar imagen de tela a una combinaciÃ³n color-tela
+ * Use Case para agregar imagen de tela a una combinación color-tela
  * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
- * Maneja la creaciÃ³n de registro en prenda_fotos_tela_pedido
+ * Maneja la creación de registro en prenda_fotos_tela_pedido
  * 
- * Antes: 28 lÃ­neas | DespuÃ©s: ~20 lÃ­neas | ReducciÃ³n: ~28%
+ * Antes: 28 lÃ­neas | DespuÃ©s: ~20 lÃ­neas | Reducción: ~28%
  */
 final class AgregarImagenTelaUseCase
 {

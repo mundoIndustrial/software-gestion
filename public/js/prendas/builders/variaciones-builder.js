@@ -5,7 +5,7 @@
  * Patrón: Builder + Strategy
  */
 
-console.log('[DEBUG] 🔧 VariacionesBuilder.js cargado correctamente');
+console.log('[DEBUG]  VariacionesBuilder.js cargado correctamente');
 
 class VariacionesBuilder {
     static construir(prenda, indice) {

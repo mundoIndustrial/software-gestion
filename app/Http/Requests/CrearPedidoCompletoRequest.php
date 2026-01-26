@@ -53,11 +53,11 @@ class CrearPedidoCompletoRequest extends FormRequest
             'forma_de_pago' => 'nullable|string|max:100',
             'descripcion' => 'nullable|string|max:1000',
             
-            // ⭐ NUEVA ESTRUCTURA: prendas y epps separados
+            //  NUEVA ESTRUCTURA: prendas y epps separados
             'prendas' => 'nullable|array',
             'epps' => 'nullable|array',
             
-            // ⭐ BACKWARDS COMPATIBILITY: items (antiguo)
+            //  BACKWARDS COMPATIBILITY: items (antiguo)
             'items' => 'nullable|array|min:1',
             
             // Reglas para prendas (en nuevo array)
@@ -104,7 +104,7 @@ class CrearPedidoCompletoRequest extends FormRequest
             'prendas.*.imagenes' => 'nullable|array',
             'prendas.*.imagenes.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120', // 5MB
             
-            // ⭐ REGLAS PARA EPPs (tabla separada)
+            //  REGLAS PARA EPPs (tabla separada)
             // NOTA: nombre_epp es informativo, se toma de tabla epps.nombre
             'epps.*.epp_id' => 'required|integer|exists:epps,id',
             'epps.*.nombre_epp' => 'nullable|string|max:255',  // Informativo, no obligatorio

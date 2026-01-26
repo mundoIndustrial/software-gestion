@@ -9,7 +9,7 @@ use DateTimeImmutable;
  * PrendaPedidoAgregada
  * 
  * Se emite cuando se agrega una nueva prenda a un pedido
- * Contiene detalles de la prenda y su configuraciÃ³n
+ * Contiene detalles de la prenda y su configuración
  */
 class PrendaPedidoAgregada extends DomainEvent
 {

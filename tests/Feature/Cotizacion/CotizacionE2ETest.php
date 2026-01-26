@@ -9,7 +9,7 @@ use Tests\TestCase;
 /**
  * CotizacionE2ETest - Tests E2E para flujo completo de cotizaciones
  *
- * Verifica el flujo completo desde creaciÃ³n hasta aceptaciÃ³n
+ * Verifica el flujo completo desde creación hasta aceptación
  */
 class CotizacionE2ETest extends TestCase
 {
@@ -29,7 +29,7 @@ class CotizacionE2ETest extends TestCase
      */
     public function flujo_completo_cotizacion(): void
     {
-        // 1. Crear cotizaciÃ³n como borrador
+        // 1. Crear cotización como borrador
         $response = $this->actingAs($this->usuario)->postJson('/asesores/cotizaciones', [
             'tipo' => 'P',
             'cliente' => 'Acme Corporation',
@@ -42,7 +42,7 @@ class CotizacionE2ETest extends TestCase
         $response->assertJsonPath('success', true);
         $cotizacionId = $response->json('data.id');
 
-        // 2. Obtener cotizaciÃ³n
+        // 2. Obtener cotización
         $response = $this->actingAs($this->usuario)->getJson("/asesores/cotizaciones/{$cotizacionId}");
 
         $response->assertStatus(200);
@@ -71,7 +71,7 @@ class CotizacionE2ETest extends TestCase
             "/asesores/cotizaciones/{$cotizacionId}/estado/APROBADA_APROBADOR"
         );
 
-        // 6. Aceptar cotizaciÃ³n
+        // 6. Aceptar cotización
         $response = $this->actingAs($this->usuario)->postJson(
             "/asesores/cotizaciones/{$cotizacionId}/aceptar"
         );
@@ -113,13 +113,13 @@ class CotizacionE2ETest extends TestCase
 
     /**
      * @test
-     * Verificar autorizaciÃ³n - usuario no propietario no puede acceder
+     * Verificar autorización - usuario no propietario no puede acceder
      */
     public function usuario_no_propietario_no_puede_acceder(): void
     {
         $otroUsuario = User::factory()->create(['role' => 'asesor']);
 
-        // Crear cotizaciÃ³n
+        // Crear cotización
         $response = $this->actingAs($this->usuario)->postJson('/asesores/cotizaciones', [
             'tipo' => 'P',
             'cliente' => 'Test Client',
@@ -151,13 +151,13 @@ class CotizacionE2ETest extends TestCase
 
         $cotizacionId = $response->json('data.id');
 
-        // TransiciÃ³n vÃ¡lida: BORRADOR â†’ ENVIADA_CONTADOR
+        // Transición vÃ¡lida: BORRADOR â†’ ENVIADA_CONTADOR
         $response = $this->actingAs($this->usuario)->patchJson(
             "/asesores/cotizaciones/{$cotizacionId}/estado/ENVIADA_CONTADOR"
         );
         $this->assertTrue($response->json('success'));
 
-        // TransiciÃ³n invÃ¡lida: ENVIADA_CONTADOR â†’ BORRADOR (no permitida)
+        // Transición invÃ¡lida: ENVIADA_CONTADOR â†’ BORRADOR (no permitida)
         $response = $this->actingAs($this->usuario)->patchJson(
             "/asesores/cotizaciones/{$cotizacionId}/estado/BORRADOR"
         );

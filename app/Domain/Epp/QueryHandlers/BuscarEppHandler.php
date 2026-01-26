@@ -31,7 +31,7 @@ class BuscarEppHandler implements QueryHandler
                 'termino' => $query->getTermino(),
             ]);
 
-            // ✅ Llamar al método actualizado (sin epp_imagenes)
+            // Llamar al método actualizado (sin epp_imagenes)
             $epps = $this->eppService->buscarEpp($query->getTermino());
 
             Log::info(' [BuscarEppHandler] EPP encontrados', [

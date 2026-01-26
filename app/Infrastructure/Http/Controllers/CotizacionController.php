@@ -1608,7 +1608,7 @@ final class CotizacionController extends Controller
                     ]);
                 }
             } else {
-                Log::warning('⚠️ Logo (PASO 3) sin información válida - No se creará logo_cotizacion', [
+                Log::warning(' Logo (PASO 3) sin información válida - No se creará logo_cotizacion', [
                     'cotizacion_id' => $cotizacionId,
                 ]);
             }
@@ -1745,7 +1745,7 @@ final class CotizacionController extends Controller
                     ]);
                 }
             } else {
-                Log::info('⚠️ Logo_cotizacion no fue creado - No se guardarán fotos de logo', [
+                Log::info(' Logo_cotizacion no fue creado - No se guardarán fotos de logo', [
                     'cotizacion_id' => $cotizacionId,
                 ]);
             }
@@ -1781,7 +1781,7 @@ final class CotizacionController extends Controller
                             $tipoLogoId = $tecnicaData['tipo_logo']['id'] ?? null;
                             
                             if (!$tipoLogoId) {
-                                Log::warning('⚠️ tipo_logo_id no encontrado en técnica', ['tecnica_index' => $tecnicaIndex]);
+                                Log::warning(' tipo_logo_id no encontrado en técnica', ['tecnica_index' => $tecnicaIndex]);
                                 continue;
                             }
                         
@@ -1795,7 +1795,7 @@ final class CotizacionController extends Controller
                                 //  VALIDAR: nombre_prenda no puede estar vacío
                                 $nombrePrendaCompleto = $prendaData['nombre_prenda'] ?? '';
                                 if (empty($nombrePrendaCompleto) || trim($nombrePrendaCompleto) === '') {
-                                    Log::warning('⚠️ Prenda ignorada: nombre_prenda vacío', [
+                                    Log::warning(' Prenda ignorada: nombre_prenda vacío', [
                                         'tecnica_index' => $tecnicaIndex,
                                         'prendaIndex' => $prendaIndex,
                                         'nombre_raw' => $prendaData['nombre_prenda'] ?? 'NULL'
@@ -1814,7 +1814,7 @@ final class CotizacionController extends Controller
                                 
                                 // Si ya procesamos esta prenda exacta, saltar
                                 if (in_array($prendaKey, $prendasKeys)) {
-                                    Log::warning('⚠️ Prenda duplicada detectada y saltada', [
+                                    Log::warning(' Prenda duplicada detectada y saltada', [
                                         'nombre' => $nombrePrendaCompleto,
                                         'prendaKey' => $prendaKey,
                                         'tecnica_index' => $tecnicaIndex
@@ -1875,7 +1875,7 @@ final class CotizacionController extends Controller
                                     ->first();
                                 
                                 if ($logoCotizacionTecnicaPrendaExistente) {
-                                    Log::info('⚠️ Registro duplicado detectado en logo_cotizacion_tecnica_prendas, no se crea nuevo', [
+                                    Log::info(' Registro duplicado detectado en logo_cotizacion_tecnica_prendas, no se crea nuevo', [
                                         'tecnica_id' => $logoCotizacionTecnicaPrendaExistente->id,
                                         'prenda_cot_id' => $prendaCot->id
                                     ]);
@@ -2037,7 +2037,7 @@ final class CotizacionController extends Controller
                                                 $ordenFoto = $logoCotizacionTecnicaPrenda->fotos()->count() + 1;
                                                 
                                                 if ($ordenFoto > 5) {
-                                                    Log::warning('⚠️ Máximo de imágenes alcanzado (5)', [
+                                                    Log::warning(' Máximo de imágenes alcanzado (5)', [
                                                         'prenda_id' => $logoCotizacionTecnicaPrenda->id
                                                     ]);
                                                     continue;
@@ -2070,20 +2070,20 @@ final class CotizacionController extends Controller
                                                     'orden' => $ordenFoto
                                                 ]);
                                             } else {
-                                                Log::warning('⚠️ No se encontró registro de técnica para guardar imagen', [
+                                                Log::warning(' No se encontró registro de técnica para guardar imagen', [
                                                     'logo_cotizacion_id' => $logoCotizacion->id,
                                                     'tipo_logo_id' => $tipoLogoId,
                                                     'prenda_cot_id' => $prendaCot->id
                                                 ]);
                                             }
                                         } else {
-                                            Log::warning('⚠️ No se encontró prenda en BD para guardar imagen', [
+                                            Log::warning(' No se encontró prenda en BD para guardar imagen', [
                                                 'nombre_prenda_base' => $nombrePrendaBase,
                                                 'cotizacion_id' => $cotizacionId
                                             ]);
                                         }
                                     } else {
-                                        Log::warning('⚠️ Índices fuera de rango', [
+                                        Log::warning(' Índices fuera de rango', [
                                             'tecnica_index' => $tecnicaIndex,
                                             'prenda_index' => $prendaIndex,
                                             'tecnicas_count' => count($tecnicasAgregadas),
@@ -2091,7 +2091,7 @@ final class CotizacionController extends Controller
                                         ]);
                                     }
                                 } catch (\Exception $e) {
-                                    Log::error('❌ Error procesando imagen del PASO 3', [
+                                    Log::error(' Error procesando imagen del PASO 3', [
                                         'error' => $e->getMessage(),
                                         'fieldName' => $fieldName,
                                         'file' => $e->getFile(),
@@ -2105,7 +2105,7 @@ final class CotizacionController extends Controller
                             'total_procesadas' => count($imagenesP3Archivos)
                         ]);
                     } else {
-                        Log::info('⚠️ No hay imágenes del PASO 3 para procesar');
+                        Log::info(' No hay imágenes del PASO 3 para procesar');
                     }
                     
                 } catch (\Exception $e) {
@@ -2116,10 +2116,10 @@ final class CotizacionController extends Controller
                         ]);
                     }
                 } else {
-                    Log::info('⚠️ No hay técnicas agregadas para procesar');
+                    Log::info(' No hay técnicas agregadas para procesar');
                 }
             } else {
-                Log::info('⚠️ Logo_cotizacion no existe - No se procesarán técnicas de logo', [
+                Log::info(' Logo_cotizacion no existe - No se procesarán técnicas de logo', [
                     'cotizacion_id' => $cotizacionId
                 ]);
             }
@@ -2236,7 +2236,7 @@ final class CotizacionController extends Controller
             if ($prendas->count() > 0 && $reflectivoTieneInfoValida) {
                 try {
                     foreach ($prendas as $prenda) {
-                        \Log::info('✨ Guardando reflectivo para prenda', [
+                        \Log::info(' Guardando reflectivo para prenda', [
                             'prenda_id' => $prenda->id,
                             'cotizacion_id' => $cotizacionId,
                             'descripcion' => $reflectivoDescripcion,
@@ -2296,7 +2296,7 @@ final class CotizacionController extends Controller
                             'cotizacion_id' => $cotizacionId,
                         ]);
                         
-                        // 📍 BUSCAR UBICACIONES ESPECÍFICAS DE ESTA PRENDA desde prendas_reflectivo_paso4
+                        //  BUSCAR UBICACIONES ESPECÍFICAS DE ESTA PRENDA desde prendas_reflectivo_paso4
                         // Cada prenda puede tener sus propias ubicaciones
                         $ubicacionesEspecificasPrenda = [];
                         
@@ -2310,12 +2310,12 @@ final class CotizacionController extends Controller
                             }
                         }
                         
-                        // 📍 Asegurar que ubicaciones sea JSON válido
+                        //  Asegurar que ubicaciones sea JSON válido
                         $ubicacionesFinal = !empty($ubicacionesEspecificasPrenda) 
                             ? json_encode($ubicacionesEspecificasPrenda)
                             : json_encode([]);
                         
-                        \Log::info('📍 Ubicaciones específicas para prenda:', [
+                        \Log::info(' Ubicaciones específicas para prenda:', [
                             'prenda_nombre' => $prenda->nombre_producto,
                             'ubicaciones_encontradas' => $ubicacionesEspecificasPrenda,
                             'ubicaciones_json' => $ubicacionesFinal,
@@ -2493,14 +2493,14 @@ final class CotizacionController extends Controller
 ╚════════════════════════════════════════════════════════════════╝
                                                 ');
                                             } else {
-                                                Log::warning('⚠️ No se encontró reflectivo_cotizacion', ['prenda' => $nombrePrendaBase]);
+                                                Log::warning(' No se encontró reflectivo_cotizacion', ['prenda' => $nombrePrendaBase]);
                                             }
                                         } else {
-                                            Log::warning('⚠️ No se encontró prenda en BD', ['nombre_prenda' => $nombrePrendaBase]);
+                                            Log::warning(' No se encontró prenda en BD', ['nombre_prenda' => $nombrePrendaBase]);
                                         }
                                     }
                                 } catch (\Exception $e) {
-                                    Log::error('❌ Error procesando imagen reflectivo PASO 4', ['error' => $e->getMessage()]);
+                                    Log::error(' Error procesando imagen reflectivo PASO 4', ['error' => $e->getMessage()]);
                                 }
                             }
                         }
@@ -2511,7 +2511,7 @@ final class CotizacionController extends Controller
                         
                         foreach ($reflectivoArchivos as $foto) {
                             if ($ordenFoto > $maxImagenes) {
-                                \Log::warning('⚠️ Se alcanzó el límite de 3 imágenes para reflectivo', [
+                                \Log::warning(' Se alcanzó el límite de 3 imágenes para reflectivo', [
                                     'cotizacion_id' => $cotizacionId,
                                 ]);
                                 break;
@@ -2554,7 +2554,7 @@ final class CotizacionController extends Controller
                     ]);
                 }
             } else {
-                \Log::warning('⚠️ Reflectivo NO será guardado - Validación falló', [
+                \Log::warning(' Reflectivo NO será guardado - Validación falló', [
                     'cotizacion_id' => $cotizacionId,
                     'prendas_count' => $prendas->count(),
                     'reflectivoTieneInfoValida' => $reflectivoTieneInfoValida,

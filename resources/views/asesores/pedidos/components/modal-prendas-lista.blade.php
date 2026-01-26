@@ -51,7 +51,7 @@
                                     console.log('✅ [ONCLICK-EJECUTANDO] abrirEditarPrendaModal encontrada, ejecutando...');
                                     window.abrirEditarPrendaModal(item, idx, pedidoId);
                                 } else {
-                                    console.error('❌ [ONCLICK-ERROR] abrirEditarPrendaModal NO ES FUNCIÓN');
+                                    console.error(' [ONCLICK-ERROR] abrirEditarPrendaModal NO ES FUNCIÓN');
                                     console.error('Tipo actual:', typeof window.abrirEditarPrendaModal);
                                     console.error('Valor:', window.abrirEditarPrendaModal);
                                     console.error('Funciones disponibles:', Object.keys(window).filter(k => k.includes('abrirEditar')).slice(0, 10));

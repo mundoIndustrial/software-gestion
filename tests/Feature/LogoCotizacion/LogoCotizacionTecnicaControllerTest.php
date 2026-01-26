@@ -221,7 +221,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
         $payload = [
             'logoCotizacionId' => $this->logoCotizacion->id,
             'tipoTecnicaId' => $tipoTecnica->id,
-            'observaciones' => 'ObservaciÃ³n original',
+            'observaciones' => 'Observación original',
             'prendas' => [
                 [
                     'nombre_prenda' => 'CAMISETA',
@@ -237,7 +237,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
 
         // Act
         $updatePayload = [
-            'observaciones' => 'ObservaciÃ³n actualizada',
+            'observaciones' => 'Observación actualizada',
         ];
         
         $response = $this->patchJson(

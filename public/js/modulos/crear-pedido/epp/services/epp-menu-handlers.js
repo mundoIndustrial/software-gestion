@@ -8,7 +8,7 @@ window.EppMenuHandlers = {
      * Inicializar event listeners para menús de EPP
      */
     inicializar() {
-        console.log('[EppMenuHandlers] 🔧 Inicializando handlers de menú EPP');
+        console.log('[EppMenuHandlers]  Inicializando handlers de menú EPP');
         
         // Usar event delegation para que funcione con elementos agregados dinámicamente
         document.addEventListener('click', (e) => {
@@ -20,7 +20,7 @@ window.EppMenuHandlers = {
             // Clic en botón de 3 puntos
             if (btnMenu) {
                 e.stopPropagation();
-                console.log('[EppMenuHandlers] 📍 Clic detectado en btn-menu-epp');
+                console.log('[EppMenuHandlers]  Clic detectado en btn-menu-epp');
                 this._toggleMenu(btnMenu);
                 return; // Importante: evitar que se ejecute el cierre de menús
             }
@@ -28,7 +28,7 @@ window.EppMenuHandlers = {
             // Clic en botón EDITAR
             if (btnEditar) {
                 e.stopPropagation();
-                console.log('[EppMenuHandlers] 📍 Clic detectado en btn-editar-epp');
+                console.log('[EppMenuHandlers]  Clic detectado en btn-editar-epp');
                 this._editarEpp(btnEditar);
                 return; // Importante: evitar que se ejecute el cierre de menús
             }
@@ -36,23 +36,20 @@ window.EppMenuHandlers = {
             // Clic en botón ELIMINAR
             if (btnEliminar) {
                 e.stopPropagation();
-                console.log('[EppMenuHandlers] 📍 Clic detectado en btn-eliminar-epp');
+                console.log('[EppMenuHandlers]  Clic detectado en btn-eliminar-epp');
                 this._eliminarEpp(btnEliminar);
                 return; // Importante: evitar que se ejecute el cierre de menús
             }
 
             // Si se hace clic en el submenu, no cerrar
             if (esSubmenu) {
-                console.log('[EppMenuHandlers] 📍 Clic dentro del submenu, manteniéndolo abierto');
                 return;
             }
 
             // Cerrar menú si se hace clic en cualquier otro lugar
-            console.log('[EppMenuHandlers] 📍 Clic fuera del menú, cerrando todos');
             this._cerrarTodosLosMenus();
         });
 
-        console.log('[EppMenuHandlers] ✅ Event listeners inicializados');
     },
 
     /**
@@ -67,7 +64,7 @@ window.EppMenuHandlers = {
         const submenu = itemCard ? itemCard.querySelector('.submenu-epp') : null;
         
         if (!submenu) {
-            console.warn('[EppMenuHandlers] ⚠️ No se encontró submenu');
+            console.warn('[EppMenuHandlers]  No se encontró submenu');
             console.log('[EppMenuHandlers] Item card:', itemCard);
             console.log('[EppMenuHandlers] HTML:', itemCard?.innerHTML);
             return;
@@ -121,7 +118,7 @@ window.EppMenuHandlers = {
             // Log después de mostrar
             setTimeout(() => {
                 const submenuRectAfter = submenu.getBoundingClientRect();
-                console.log('[EppMenuHandlers] ✅ Menú mostrado');
+                console.log('[EppMenuHandlers] Menú mostrado');
                 console.log('[EppMenuHandlers] 📐 Submenu después de mostrar:', {
                     position: window.getComputedStyle(submenu).position,
                     top: submenuRectAfter.top,
@@ -136,7 +133,7 @@ window.EppMenuHandlers = {
             }, 0);
         } else {
             submenu.style.display = 'none';
-            console.log('[EppMenuHandlers] ✅ Menú ocultado');
+            console.log('[EppMenuHandlers] Menú ocultado');
         }
     },
 
@@ -150,7 +147,7 @@ window.EppMenuHandlers = {
         // Obtener el item EPP
         const item = btn.closest('.item-epp') || btn.closest('.item-epp-card');
         if (!item) {
-            console.warn('[EppMenuHandlers] ⚠️ No se encontró item para editar');
+            console.warn('[EppMenuHandlers]  No se encontró item para editar');
             return;
         }
 
@@ -172,7 +169,7 @@ window.EppMenuHandlers = {
         }
 
         // Si ya tenemos los datos, proceder a editar
-        console.log('[EppMenuHandlers] ✅ eppData final:', eppData);
+        console.log('[EppMenuHandlers] eppData final:', eppData);
         this._procederAEditarEPP(eppData, itemId, item);
     },
 
@@ -232,10 +229,10 @@ window.EppMenuHandlers = {
                 esEdicion: true  // Indicador de que es edición
             };
             
-            console.log('[EppMenuHandlers] ✅ Datos del DOM:', datos);
+            console.log('[EppMenuHandlers] Datos del DOM:', datos);
             return datos;
         } catch (error) {
-            console.warn('[EppMenuHandlers] ⚠️ Error extrayendo del DOM:', error);
+            console.warn('[EppMenuHandlers]  Error extrayendo del DOM:', error);
             return null;
         }
     },
@@ -246,7 +243,7 @@ window.EppMenuHandlers = {
     _extraerDatosDelGestionItemsUI(itemId) {
         try {
             if (!window.gestionItemsUI || !window.gestionItemsUI.ordenItems) {
-                console.warn('[EppMenuHandlers] ⚠️ window.gestionItemsUI no disponible');
+                console.warn('[EppMenuHandlers]  window.gestionItemsUI no disponible');
                 return null;
             }
 
@@ -254,13 +251,13 @@ window.EppMenuHandlers = {
             const item = window.gestionItemsUI.ordenItems.find(i => i.epp_id === parseInt(itemId));
             
             if (item) {
-                console.log('[EppMenuHandlers] ✅ Datos de gestionItemsUI:', item);
+                console.log('[EppMenuHandlers] Datos de gestionItemsUI:', item);
                 return item;
             }
             
             return null;
         } catch (error) {
-            console.warn('[EppMenuHandlers] ⚠️ Error en gestionItemsUI:', error);
+            console.warn('[EppMenuHandlers]  Error en gestionItemsUI:', error);
             return null;
         }
     },
@@ -275,19 +272,19 @@ window.EppMenuHandlers = {
             const response = await fetch(`/api/epp/${itemId}`);
             
             if (!response.ok) {
-                console.warn('[EppMenuHandlers] ⚠️ Error en la API:', response.status);
+                console.warn('[EppMenuHandlers]  Error en la API:', response.status);
                 return;
             }
 
             const data = await response.json();
-            console.log('[EppMenuHandlers] ✅ Datos de la BD:', data);
+            console.log('[EppMenuHandlers] Datos de la BD:', data);
             
             // Proceder con los datos de la BD
             const eppData = data.data || data;
             this._procederAEditarEPP(eppData, itemId, item);
             
         } catch (error) {
-            console.error('[EppMenuHandlers] ❌ Error obteniendo EPP de la BD:', error);
+            console.error('[EppMenuHandlers]  Error obteniendo EPP de la BD:', error);
             alert('Error al cargar los datos del EPP');
         }
     },
@@ -313,7 +310,7 @@ window.EppMenuHandlers = {
             console.log('[EppMenuHandlers] 🔓 Abriendo modal de edición');
             window.eppService.abrirModalEditarEPP(eppData);
         } else {
-            console.warn('[EppMenuHandlers] ⚠️ eppService no disponible');
+            console.warn('[EppMenuHandlers]  eppService no disponible');
         }
 
         // Cerrar menú
@@ -331,7 +328,7 @@ window.EppMenuHandlers = {
         // Obtener el item
         const item = btn.closest('.item-epp') || btn.closest('.item-epp-card');
         if (!item) {
-            console.warn('[EppMenuHandlers] ⚠️ No se encontró item para eliminar');
+            console.warn('[EppMenuHandlers]  No se encontró item para eliminar');
             return;
         }
 
@@ -373,7 +370,7 @@ window.EppMenuHandlers = {
 
         modal.innerHTML = `
             <div style="text-align: center;">
-                <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #dc2626;">⚠️</div>
+                <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #dc2626;"></div>
                 <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">Eliminar EPP</h3>
                 <p style="margin: 0 0 1.5rem 0; font-size: 0.95rem; color: #6b7280; line-height: 1.5;">¿Deseas eliminar este EPP del pedido? Esta acción no se puede deshacer.</p>
                 
@@ -435,7 +432,7 @@ window.EppMenuHandlers = {
      * Confirmar eliminación de EPP
      */
     _confirmarEliminacion(item, itemId) {
-        console.log('[EppMenuHandlers] ✅ Confirmando eliminación de EPP:', itemId);
+        console.log('[EppMenuHandlers] Confirmando eliminación de EPP:', itemId);
 
         // Disparar evento personalizado
         const evento = new CustomEvent('epp:eliminar', {
@@ -448,7 +445,7 @@ window.EppMenuHandlers = {
 
         // Eliminar del DOM
         item.remove();
-        console.log('[EppMenuHandlers] ✅ EPP eliminado del DOM');
+        console.log('[EppMenuHandlers] EPP eliminado del DOM');
 
         // Actualizar contador si existe
         if (window.eppItemManager) {
@@ -464,7 +461,6 @@ window.EppMenuHandlers = {
         document.querySelectorAll('.submenu-epp').forEach(menu => {
             menu.style.display = 'none';
         });
-        console.log('[EppMenuHandlers] 🔒 Todos los menús cerrados');
     }
 };
 

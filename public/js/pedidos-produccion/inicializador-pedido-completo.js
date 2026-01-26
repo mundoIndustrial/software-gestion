@@ -29,119 +29,77 @@ console.log('✅ [PedidoCompletoUnificado] Builder cargado y disponible globalme
 
 /**
  * Crear pedido sin cotización usando el builder unificado
- * Esta función reemplaza la lógica anterior y garantiza sanitización completa
+ * ENVÍA COMO FormData (NO JSON puro)
  */
 window.crearPedidoConBuilderUnificado = async function() {
     try {
         console.log('[Builder] Iniciando creación de pedido unificado');
         
-        // 1. Obtener datos del gestor existente
+        // 1. Obtener datos del gestor
         const gestor = window.gestorPedidoSinCotizacion;
-        if (!gestor) {
-            throw new Error('Gestor no inicializado');
-        }
+        if (!gestor) throw new Error('Gestor no inicializado');
         
         const prendas = gestor.obtenerTodas();
-        if (prendas.length === 0) {
-            throw new Error('No hay prendas agregadas al pedido');
-        }
+        if (prendas.length === 0) throw new Error('No hay prendas agregadas');
         
-        // 2. Obtener datos generales del formulario
+        // 2. Datos generales
         const cliente = document.getElementById('cliente_editable')?.value;
         const asesora = document.getElementById('asesora_editable')?.value;
         const formaPago = document.getElementById('forma_de_pago_editable')?.value;
         
-        if (!cliente) {
-            throw new Error('Cliente es requerido');
-        }
+        if (!cliente) throw new Error('Cliente es requerido');
         
-        // 3. Construir pedido con builder
+        // 3. Construir con builder
         const builder = new PedidoCompletoUnificado();
-        
         builder
             .setCliente(cliente)
             .setAsesora(asesora)
             .setFormaPago(formaPago);
         
-        // Agregar cada prenda
-        prendas.forEach(prenda => {
-            console.log('[Builder] Agregando prenda:', prenda.nombre_producto || prenda.nombre_prenda);
+        console.log('[Builder] Estado ANTES:', {
+            procesos_totales: prendas.reduce((sum, p) => sum + Object.keys(p.procesos || {}).length, 0),
+            telas_totales: prendas.reduce((sum, p) => sum + (p.telas || []).length, 0),
+            imagenes_totales: prendas.reduce((sum, p) => sum + (p.imagenes || []).length, 0),
+        });
+        
+        // Agregar prendas
+        prendas.forEach((prenda) => {
+            console.log(`[Builder] Agregando prenda: ${prenda.nombre_producto}`, {
+                procesos: Object.keys(prenda.procesos || {}),
+                telas: (prenda.telas || []).length,
+                imagenes: (prenda.imagenes || []).length
+            });
             builder.agregarPrenda(prenda);
         });
         
-        // 4. Validar antes de enviar
+        // 4. Validar y construir
         builder.validate();
-        
-        // 5. Construir payload limpio
         const payloadLimpio = builder.build();
         
-        console.log('[Builder] Payload construido:', {
-            cliente: payloadLimpio.cliente,
-            items_count: payloadLimpio.items.length,
-            forma_pago: payloadLimpio.forma_de_pago
+        console.log('[Builder] Payload FINAL:', {
+            procesos: payloadLimpio.items.reduce((sum, i) => sum + Object.keys(i.procesos || {}).length, 0),
+            telas: payloadLimpio.items.reduce((sum, i) => sum + (i.telas || []).length, 0),
+            imagenes: payloadLimpio.items.reduce((sum, i) => sum + (i.imagenes || []).length, 0),
         });
         
-        // 6. Enviar al backend
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Creando pedido...',
-                text: 'Por favor espera',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+        // 5. CONSTRUIR FormData (no JSON puro)
+        const formData = window.FormDataBuilder.build(payloadLimpio);
+        
+        console.log('[Builder] FormData construido, enviando...');
+        
+        // 6. ENVIAR
+        const response = await window.FormDataBuilder.send(
+            formData,
+            '/asesores/pedidos-editable/crear'
+        );
+        
+        if (response.success) {
+            window.location.href = `/asesores/pedidos-editable/${response.pedido_id}`;
         }
-        
-        const response = await fetch('/asesores/pedidos-editable/crear', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            },
-            body: JSON.stringify(payloadLimpio)
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Error al crear pedido');
-        }
-        
-        // 7. Éxito
-        console.log('✅ [Builder] Pedido creado exitosamente:', data);
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Éxito!',
-                text: 'Pedido creado correctamente',
-                confirmButtonColor: '#10b981'
-            }).then(() => {
-                // Redirigir o limpiar formulario
-                if (data.pedido_id) {
-                    window.location.href = `/asesores/pedidos-produccion/${data.pedido_id}`;
-                } else {
-                    window.location.reload();
-                }
-            });
-        }
-        
-        return data;
         
     } catch (error) {
-        console.error('[Builder] Error:', error);
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message || 'No se pudo crear el pedido',
-                confirmButtonColor: '#dc3545'
-            });
-        }
-        
-        throw error;
+        console.error('[Builder]  Error:', error);
+        alert('Error: ' + error.message);
     }
 };
 
@@ -233,7 +191,7 @@ if (window.ApiService) {
     };
     
 } else {
-    console.warn('⚠️ [Builder] ApiService no detectado, funcionalidad limitada');
+    console.warn(' [Builder] ApiService no detectado, funcionalidad limitada');
 }
 
 console.log('✅ [PedidoCompletoUnificado] Inicializador cargado completamente');

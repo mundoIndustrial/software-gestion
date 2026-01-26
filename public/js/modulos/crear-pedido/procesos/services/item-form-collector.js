@@ -51,7 +51,7 @@ class ItemFormCollector {
                 origen: item.origen || 'bodega',
                 procesos: item.procesos || {},
                 tallas: item.tallas || [],
-                cantidad_talla: item.cantidad_talla || {}, // ⭐ AGREGAR cantidad_talla aquí
+                cantidad_talla: item.cantidad_talla || {}, //  AGREGAR cantidad_talla aquí
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
             };
@@ -136,7 +136,7 @@ class ItemFormCollector {
                     Object.entries(prenda.procesos).forEach(([key, proceso]) => {
                         const datosProceso = proceso.datos || proceso;
                         
-                        // ✅ EXTRAER ARCHIVOS FILE DE LAS IMÁGENES DE PROCESOS
+                        // EXTRAER ARCHIVOS FILE DE LAS IMÁGENES DE PROCESOS
                         if (datosProceso.imagenes && Array.isArray(datosProceso.imagenes)) {
                             datosProceso.imagenes = datosProceso.imagenes.map(img => {
                                 // Si tiene propiedad file (objeto con {nombre, data, file})
@@ -157,7 +157,7 @@ class ItemFormCollector {
                 
                 const tallas = Object.keys(cantidadTalla);
                 
-                // ✅ EXTRAER ARCHIVOS FILE DE LAS FOTOS DE PRENDA
+                // EXTRAER ARCHIVOS FILE DE LAS FOTOS DE PRENDA
                 let fotosParaEnviar = [];
                 if (window.gestorPrendaSinCotizacion?.fotosNuevas?.[prendaIndex]) {
                     const fotosGestor = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
@@ -179,7 +179,7 @@ class ItemFormCollector {
                     descripcion: prenda.descripcion || '',
                     genero: prenda.genero || [],
                     tallas: tallas,
-                    cantidad_talla: cantidadTalla,  // ⚠️ AÑADIDO: Incluir cantidad por talla
+                    cantidad_talla: cantidadTalla,  //  AÑADIDO: Incluir cantidad por talla
                     variaciones: variaciones,
                     origen: prenda.origen || 'bodega',
                     de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
@@ -224,12 +224,12 @@ class ItemFormCollector {
             });
         }
         
-        // ⭐ SEPARAR EPPs de prendas
+        //  SEPARAR EPPs de prendas
         const prendas = itemsFormato.filter(item => item !== null && item.tipo !== 'epp');
         const epps = items.filter(item => item.tipo === 'epp').map(epp => ({
             epp_id: epp.epp_id,
-            nombre_epp: epp.nombre_epp || epp.nombre_prenda || epp.nombre_completo || epp.nombre || 'EPP sin nombre',
-            categoria: epp.categoria || 'General',
+            nombre_epp: epp.nombre_epp || epp.nombre_prenda || epp.nombre_completo || epp.nombre || '',
+            categoria: epp.categoria || '',
             cantidad: epp.cantidad,
             observaciones: epp.observaciones || null,
             imagenes: epp.imagenes || []
@@ -243,7 +243,7 @@ class ItemFormCollector {
             epps: epps
         };
         
-        // ✅ DEBUG: Verificar estructura
+        // DEBUG: Verificar estructura
         console.group('🔍 ItemFormCollector - Estructura pedidoFinal:');
         console.log('📦 Prendas:', prendas.length);
         prendas.forEach((item, idx) => {

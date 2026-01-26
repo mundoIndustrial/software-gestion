@@ -47,7 +47,7 @@ class AnalizarImagenesEppSeeder extends Seeder
                 
                 if ($fotosEpp->isEmpty()) {
                     echo "           NO HAY FOTOS DE EPP\n";
-                    echo "          ⚠️  PROBLEMA: Las imágenes de EPP NO se guardaron\n";
+                    echo "            PROBLEMA: Las imágenes de EPP NO se guardaron\n";
                 } else {
                     foreach ($fotosEpp as $foto) {
                         echo "           ID: {$foto->id}\n";

@@ -50,7 +50,7 @@ class ActualizarPedidoService
                 $this->actualizarPrendas($pedido, $prendas);
             }
 
-            // Actualizar EPP si se enviÃ³
+            // Actualizar EPP si se envió
             if (!empty($epp)) {
                 $this->actualizarEpp($pedido, $epp);
             }

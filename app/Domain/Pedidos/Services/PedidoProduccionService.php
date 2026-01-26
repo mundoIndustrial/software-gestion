@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Servicio de dominio para lÃ³gica de negocio de Pedidos de ProducciÃ³n
- * Responsabilidad: Orquestar la creaciÃ³n y gestiÃ³n de pedidos
+ * Servicio de dominio para lógica de negocio de Pedidos de Producción
+ * Responsabilidad: Orquestar la creación y gestión de pedidos
  */
 class PedidoProduccionService
 {
@@ -21,19 +21,19 @@ class PedidoProduccionService
     ) {}
 
     /**
-     * Crear pedido de producciÃ³n desde cotizaciÃ³n
+     * Crear pedido de producción desde cotización
      */
     public function crearDesdeCotizacion(int $cotizacionId): PedidoProduccion
     {
         $cotizacion = $this->cotizacionRepository->obtenerCotizacionCompleta($cotizacionId);
 
         if (!$cotizacion) {
-            throw new \RuntimeException('CotizaciÃ³n no encontrada');
+            throw new \RuntimeException('Cotización no encontrada');
         }
 
-        // Verificar que la cotizaciÃ³n estÃ© aprobada
+        // Verificar que la cotización estÃ© aprobada
         if (!in_array($cotizacion->estado, ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])) {
-            throw new \RuntimeException('La cotizaciÃ³n debe estar aprobada para crear un pedido');
+            throw new \RuntimeException('La cotización debe estar aprobada para crear un pedido');
         }
 
         return DB::transaction(function () use ($cotizacion) {
@@ -51,13 +51,13 @@ class PedidoProduccionService
                 'especificaciones' => $this->cotizacionRepository->obtenerEspecificaciones($cotizacion),
             ]);
 
-            // Procesar prendas de la cotizaciÃ³n
+            // Procesar prendas de la cotización
             $this->procesarPrendasDeCotizacion($pedido, $cotizacion);
 
-            // Actualizar estado de cotizaciÃ³n
+            // Actualizar estado de cotización
             $cotizacion->update(['estado' => 'PEDIDO_CREADO']);
 
-            \Log::info('Pedido de producciÃ³n creado exitosamente', [
+            \Log::info('Pedido de producción creado exitosamente', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $numeroPedido,
                 'cotizacion_id' => $cotizacion->id
@@ -68,7 +68,7 @@ class PedidoProduccionService
     }
 
     /**
-     * Procesar prendas de la cotizaciÃ³n y agregarlas al pedido
+     * Procesar prendas de la cotización y agregarlas al pedido
      */
     private function procesarPrendasDeCotizacion(PedidoProduccion $pedido, Cotizacion $cotizacion): void
     {
@@ -78,7 +78,7 @@ class PedidoProduccionService
             // Calcular cantidades por talla
             $cantidadesPorTalla = $this->calcularCantidadesPorTalla($prendaCotizacion);
 
-            // Construir descripciÃ³n
+            // Construir descripción
             $descripcion = $this->descripcionService->construirDescripcionPrenda(
                 $index + 1,
                 [

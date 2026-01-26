@@ -10,10 +10,10 @@ Se han agregado logs extensos en los servicios de EPP para debuggear por qué lo
 🔍 [EppService] _buscarEPPDesdeDB iniciado con término: {valor}
 🔍 [EppService] Realizando fetch a: {url}
 🔍 [EppService] Response status: {status}
-❌ [EppService] Error HTTP: {status} {errorText}
+ [EppService] Error HTTP: {status} {errorText}
 ✅ [EppService] Resultado JSON recibido: {result}
 ✅ [EppService] Total EPPs encontrados: {length}
-❌ [EppService] Error en _buscarEPPDesdeDB: {error}
+ [EppService] Error en _buscarEPPDesdeDB: {error}
 ```
 
 **Qué buscar:**
@@ -25,7 +25,7 @@ Se han agregado logs extensos en los servicios de EPP para debuggear por qué lo
 ```javascript
 🔎 [EppService] filtrarEPP iniciado con valor: {valor}
 🔎 [EppService] Contenedor encontrado: {bool}
-⚠️ [EppService] No se encontró el contenedor resultadosBuscadorEPP
+ [EppService] No se encontró el contenedor resultadosBuscadorEPP
 🔎 [EppService] Valor vacío, ocultando resultados
 🔎 [EppService] Llamando a _buscarEPPDesdeDB
 🔎 [EppService] EPPs retornados: {length}
@@ -37,10 +37,10 @@ Se han agregado logs extensos en los servicios de EPP para debuggear por qué lo
 
 ### 3. **epp-service.js - seleccionarProducto()** (Línea 43)
 ```javascript
-✨ [EppService] seleccionarProducto llamado: {producto}
-✨ [EppService] Producto guardado en state
-✨ [EppService] Mostrado en modal
-✨ [EppService] Campos habilitados
+ [EppService] seleccionarProducto llamado: {producto}
+ [EppService] Producto guardado en state
+ [EppService] Mostrado en modal
+ [EppService] Campos habilitados
 ```
 
 **Qué buscar:**
@@ -51,11 +51,11 @@ Se han agregado logs extensos en los servicios de EPP para debuggear por qué lo
 ```javascript
 🎯 [ModalManager] mostrarProductoSeleccionado: {producto}
 🎯 [ModalManager] Elemento nombreProductoEPP encontrado: {bool}
-❌ [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO
+ [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO
 🎯 [ModalManager] Nombre mostrado: {nombre}
 🎯 [ModalManager] Elemento imagenProductoEPP encontrado: {bool}
 🎯 [ModalManager] Elemento productoCardEPP encontrado: {bool}
-❌ [ModalManager] Elemento productoCardEPP NO ENCONTRADO
+ [ModalManager] Elemento productoCardEPP NO ENCONTRADO
 ✅ [ModalManager] Tarjeta de producto mostrada
 ```
 
@@ -67,10 +67,10 @@ Se han agregado logs extensos en los servicios de EPP para debuggear por qué lo
 ```javascript
 🔓 [ModalManager] habilitarCampos() iniciado
 🔓 [ModalManager] Buscando campo: cantidadEPP, encontrado: {bool}
-❌ [ModalManager] Campo cantidadEPP NO ENCONTRADO en el DOM
+ [ModalManager] Campo cantidadEPP NO ENCONTRADO en el DOM
 ✅ [ModalManager] Campo cantidadEPP habilitado
 🖼️ [ModalManager] Buscando areaCargarImagenes, encontrada: {bool}
-❌ [ModalManager] Área de imágenes NO ENCONTRADA en el DOM
+ [ModalManager] Área de imágenes NO ENCONTRADA en el DOM
 ✅ [ModalManager] Área de imágenes habilitada
 📝 [ModalManager] Buscando mensajeSelecccionarEPP, encontrado: {bool}
 ✅ [ModalManager] Mensaje de selección ocultado

@@ -1,19 +1,19 @@
 # 🔄 SISTEMA REFACTORIZADO - SIN CARPETAS TEMPORALES
 
-## ✅ CAMBIOS IMPLEMENTADOS
+## CAMBIOS IMPLEMENTADOS
 
 ### 🎯 Objetivo Logrado
 
-❌ **ELIMINADO**: Sistema de carpetas temporales `temp/{uuid}/`  
-❌ **ELIMINADO**: `ImagenRelocalizadorService` (ya no se usa)  
-❌ **ELIMINADO**: Flujo de relocalización  
+ **ELIMINADO**: Sistema de carpetas temporales `temp/{uuid}/`  
+ **ELIMINADO**: `ImagenRelocalizadorService` (ya no se usa)  
+ **ELIMINADO**: Flujo de relocalización  
 ✅ **NUEVO**: Guardado directo en `pedidos/{pedido_id}/{tipo}/`
 
 ---
 
 ## 📋 NUEVO FLUJO
 
-### Antes (❌ Complejo)
+### Antes ( Complejo)
 ```
 1. Frontend → Upload imagen → temp/{uuid}/prendas/
 2. Frontend → Crear pedido
@@ -30,7 +30,7 @@
 
 ---
 
-## 🔧 ARCHIVOS MODIFICADOS
+##  ARCHIVOS MODIFICADOS
 
 ### 1. ImageUploadService.php
 
@@ -160,9 +160,9 @@ const responseImagen = await fetch('/asesores/pedidos-editable/subir-imagen', {
 /**
  * Guardar imágenes de proceso directamente
  * 
- * ✅ Si recibe UploadedFile → guarda con ImageUploadService
- * ✅ Si recibe string (ruta ya guardada) → guarda solo en BD
- * ❌ Ya NO usa ImagenRelocalizadorService
+ * Si recibe UploadedFile → guarda con ImageUploadService
+ * Si recibe string (ruta ya guardada) → guarda solo en BD
+ *  Ya NO usa ImagenRelocalizadorService
  */
 private function guardarImagenesProceso(
     PedidosProcesosPrendaDetalle $proceso,
@@ -171,10 +171,10 @@ private function guardarImagenesProceso(
 ```
 
 **Cambios**:
-- ❌ Eliminada dependencia de `ImagenRelocalizadorService`
-- ✅ Inyecta `ImageUploadService` en constructor
-- ✅ Usa `guardarImagenDirecta()` si recibe `UploadedFile`
-- ✅ Guarda directo en `pedidos/{id}/procesos/{nombre_proceso}/`
+-  Eliminada dependencia de `ImagenRelocalizadorService`
+- Inyecta `ImageUploadService` en constructor
+- Usa `guardarImagenDirecta()` si recibe `UploadedFile`
+- Guarda directo en `pedidos/{id}/procesos/{nombre_proceso}/`
 
 **Constructor actualizado**:
 ```php
@@ -197,10 +197,10 @@ public function __construct(
 
 ### Carpetas que YA NO EXISTEN
 ```
-❌ temp/
-❌ prendas/ (global)
-❌ telas/ (global)
-❌ procesos/ (global)
+ temp/
+ prendas/ (global)
+ telas/ (global)
+ procesos/ (global)
 ```
 
 ### Carpetas que SÍ EXISTEN
@@ -274,8 +274,8 @@ $relocalizador->relocalizarImagenes($pedidoId, $rutas, 'prendas');
 
 **DESPUÉS**:
 ```php
-// ❌ NO hacer esto
-// ✅ Subir directamente con pedido_id desde el inicio
+//  NO hacer esto
+// Subir directamente con pedido_id desde el inicio
 
 $resultado = $imageUploadService->guardarImagenDirecta(
     $file,
@@ -338,7 +338,7 @@ ls storage/app/public/pedidos/2754/procesos/ESTAMPADO/
 
 ---
 
-## ⚠️ PUNTOS IMPORTANTES
+##  PUNTOS IMPORTANTES
 
 ### 1. Crear Pedido PRIMERO
 El frontend DEBE crear el pedido (aunque sea vacío) antes de subir imágenes.
@@ -391,7 +391,7 @@ Route::prefix('pedidos-editable')->name('pedidos-editable.')->group(function () 
 
 ---
 
-## ✅ CHECKLIST DE IMPLEMENTACIÓN
+## CHECKLIST DE IMPLEMENTACIÓN
 
 - [x] `ImageUploadService::guardarImagenDirecta()` creado
 - [x] `CrearPedidoEditableController::subirImagen()` creado
@@ -405,7 +405,7 @@ Route::prefix('pedidos-editable')->name('pedidos-editable.')->group(function () 
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 ### 1. Frontend (JavaScript)
 Actualizar flujo:
@@ -446,7 +446,7 @@ Route::post('/pedidos-editable/subir-imagen',
 ---
 
 **Fecha**: 2025-01-25  
-**Estado**: ✅ CÓDIGO LISTO - Pendiente testing  
+**Estado**: CÓDIGO LISTO - Pendiente testing  
 **Sistema**: Sin carpetas temporales  
-**Relocalización**: ❌ Eliminada  
-**Guardado directo**: ✅ Implementado
+**Relocalización**:  Eliminada  
+**Guardado directo**: Implementado

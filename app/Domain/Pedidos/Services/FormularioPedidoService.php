@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * Servicio para cargar datos de formularios
- * Responsabilidad: Obtener y preparar datos para formularios de creaciÃ³n de pedidos
+ * Responsabilidad: Obtener y preparar datos para formularios de creación de pedidos
  */
 class FormularioPedidoService
 {
@@ -16,7 +16,7 @@ class FormularioPedidoService
     ) {}
 
     /**
-     * Obtener datos para formulario de creaciÃ³n desde cotizaciÃ³n
+     * Obtener datos para formulario de creación desde cotización
      */
     public function obtenerDatosFormularioCrearDesdeCotizacion()
     {
@@ -38,7 +38,7 @@ class FormularioPedidoService
     }
 
     /**
-     * Obtener datos para router de creaciÃ³n (soporta mÃºltiples flujos)
+     * Obtener datos para router de creación (soporta mÃºltiples flujos)
      */
     public function obtenerDatosRouter(string $tipo = 'cotizacion'): array
     {

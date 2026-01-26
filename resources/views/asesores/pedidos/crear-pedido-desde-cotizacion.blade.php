@@ -139,13 +139,13 @@
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
     <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
     
-    <!-- ✅ API SERVICE - Manejo centralizado de API -->
+    <!-- API SERVICE - Manejo centralizado de API -->
     <script type="module" src="{{ asset('js/services/api-service.js') }}"></script>
     
-    <!-- ✅ BUILDER UNIFICADO - Sanitización y estructura única -->
+    <!-- BUILDER UNIFICADO - Sanitización y estructura única -->
     <script type="module" src="{{ asset('js/pedidos-produccion/PedidoCompletoUnificado.js') }}"></script>
     
-    <!-- ✅ INICIALIZADOR - Puente entre módulos ES6 y código global -->
+    <!-- INICIALIZADOR - Puente entre módulos ES6 y código global -->
     <script type="module" src="{{ asset('js/pedidos-produccion/inicializador-pedido-completo.js') }}"></script>
     
     <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
@@ -159,37 +159,41 @@
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
     
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
     
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}"></script>
+    <!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-v3-definitiva.js') }}?v={{ time() }}"></script>
+    
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
+    
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
     
     <!-- Componente: Reflectivo -->
-    <script src="{{ asset('js/componentes/reflectivo.js') }}"></script>
+    <script src="{{ asset('js/componentes/reflectivo.js') }}?v={{ time() }}"></script>
     
     <!-- Cargar módulos de gestión de pedidos -->
-    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}?v={{ time() }}"></script>
     
     <!-- Gestor base (necesario para la clase GestorPrendaSinCotizacion) -->
-    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
     
     <!-- Inicializador del gestor -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/inicializar-gestor.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/inicializar-gestor.js') }}?v={{ time() }}"></script>
     
     <!-- Manejadores de variaciones -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}?v={{ time() }}"></script>
     
     <!-- Componente: Editor de Prendas (para editar desde listado de pedidos) -->
-    <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}"></script>
+    <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
     
     <!-- Componente para editar prendas con procesos desde API -->
     <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>

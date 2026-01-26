@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 /**
  * AsesoresAPIController
  * 
- * ⚠️ DEPRECADO: Este controller está siendo migrado completamente a DDD
+ *  DEPRECADO: Este controller está siendo migrado completamente a DDD
  * 
  * Migración completada:
  * - Todos los métodos de catálogos (tipos-manga, tipos-broche, telas, colores) → PedidoController
@@ -18,8 +18,8 @@ use Illuminate\Http\Request;
  * Este archivo se puede eliminar una vez que todas las rutas sean miradas.
  * 
  * PLAN:
- * - Fase 1: Migrar métodos útiles ✅ COMPLETADO
- * - Fase 2: Actualizar todas las rutas ✅ COMPLETADO
+ * - Fase 1: Migrar métodos útiles COMPLETADO
+ * - Fase 2: Actualizar todas las rutas COMPLETADO
  * - Fase 3: Eliminar este archivo ⏳ PRÓXIMO
  */
 class AsesoresAPIController extends Controller

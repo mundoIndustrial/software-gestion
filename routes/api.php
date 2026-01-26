@@ -144,7 +144,7 @@ Route::middleware('api')->group(function () {
             ->name('subir');
     });
 
-    // ✅ Subir imagen de EPP durante creación del pedido
+    // Subir imagen de EPP durante creación del pedido
     Route::post('epp/imagenes/upload', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'subirImagenEpp'])
         ->name('epp.imagenes.upload');
 

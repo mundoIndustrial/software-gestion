@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Storage;
  * Servicio unificado para crear pedidos completos con todas sus relaciones
  * Guarda en todas las tablas: prendas, tallas, variantes, procesos, imágenes
  * 
- * ✅ REFACTORIZADO: Ahora usa guardarImagenDirecta() sin carpetas temporales
+ * REFACTORIZADO: Ahora usa guardarImagenDirecta() sin carpetas temporales
  */
 class PedidoWebService
 {
@@ -60,6 +60,8 @@ class PedidoWebService
             Log::info('[PedidoWebService] Pedido base creado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
+                'area_guardada' => $pedido->area,
+                'estado' => $pedido->estado,
             ]);
 
             // 2. Crear prendas con todas sus relaciones
@@ -72,6 +74,7 @@ class PedidoWebService
             Log::info('[PedidoWebService] Pedido completo creado', [
                 'pedido_id' => $pedido->id,
                 'cantidad_prendas' => $pedido->prendas()->count(),
+                'area_final' => $pedido->area,
             ]);
 
             return $pedido;
@@ -85,6 +88,15 @@ class PedidoWebService
     {
         $numeroPedido = $this->generarNumeroPedido();
 
+        //  EXTRAER ÁREA CON DEFAULT
+        $area = $datos['area'] ?? $datos['estado_area'] ?? 'Creación Orden';
+        if (is_string($area)) {
+            $area = trim($area);
+            $area = empty($area) ? 'Creación Orden' : $area;
+        } else {
+            $area = 'creacion de pedido';
+        }
+
         return PedidoProduccion::create([
             'numero_pedido' => $numeroPedido,
             'cliente' => $datos['cliente'] ?? 'SIN NOMBRE',
@@ -94,7 +106,7 @@ class PedidoWebService
             'novedades' => $datos['descripcion'] ?? null,
             'estado' => 'Pendiente',
             'cantidad_total' => 0,
-            'area' => null,
+            'area' => $area,  // AHORA SE GUARDA EL ÁREA CORRECTAMENTE
         ]);
     }
 
@@ -136,7 +148,7 @@ class PedidoWebService
                 'tipo' => $tieneTelasAntiguo ? 'ANTIGUO' : 'NUEVO',
             ]);
         } else {
-            \Log::warning('[PedidoWebService] ⚠️ SIN TELAS para prenda ' . $prenda->id);
+            \Log::warning('[PedidoWebService]  SIN TELAS para prenda ' . $prenda->id);
         }
 
         // Crear colores y telas - intenta tanto del formulario antiguo como del nuevo
@@ -146,7 +158,7 @@ class PedidoWebService
             $this->crearTelasDesdeFormulario($prenda, $itemData['telas']);
         }
 
-        // ❌ DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
+        //  DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
         // Las imágenes YA NO se procesan aquí para evitar duplicación
         // if (isset($itemData['imagenes']) && is_array($itemData['imagenes'])) {
         //     $this->guardarImagenesPrenda($prenda, $itemData['imagenes']);
@@ -161,7 +173,7 @@ class PedidoWebService
                 'procesos_keys' => array_keys($itemData['procesos']),
             ]);
         } else {
-            \Log::warning('[PedidoWebService] ⚠️ SIN PROCESOS para prenda ' . $prenda->id);
+            \Log::warning('[PedidoWebService]  SIN PROCESOS para prenda ' . $prenda->id);
         }
 
         // Crear procesos
@@ -257,14 +269,14 @@ class PedidoWebService
                 ]);
                 $telasCreadasCount++;
 
-                \Log::info('[PedidoWebService] ✅ Tela creada (directo)', [
+                \Log::info('[PedidoWebService] Tela creada (directo)', [
                     'prenda_id' => $prenda->id,
                     'tela_id' => $telaData['tela_id'],
                     'color_id' => $telaData['color_id'],
                     'color_tela_id' => $colorTela->id,
                 ]);
 
-                // ❌ DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
+                //  DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
                 // Guardar imágenes de tela si existen
                 // if (isset($telaData['imagenes']) && is_array($telaData['imagenes'])) {
                 //     $this->guardarImagenesTela($colorTela, $telaData['imagenes'], $prenda->pedido_produccion_id);
@@ -296,7 +308,7 @@ class PedidoWebService
                     ]);
                     $telasCreadasCount++;
 
-                    \Log::info('[PedidoWebService] ✅ Tela creada (búsqueda)', [
+                    \Log::info('[PedidoWebService] Tela creada (búsqueda)', [
                         'prenda_id' => $prenda->id,
                         'tela_nombre' => $telaData['tela'] ?? 'N/A',
                         'color_nombre' => $telaData['color'] ?? 'N/A',
@@ -304,7 +316,7 @@ class PedidoWebService
                         'color_id' => $colorId,
                     ]);
 
-                    // ❌ DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
+                    //  DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
                     // Guardar imágenes de tela si existen
                     // if (isset($telaData['imagenes']) && is_array($telaData['imagenes'])) {
                     //     $this->guardarImagenesTela($colorTela, $telaData['imagenes'], $prenda->pedido_produccion_id);
@@ -358,7 +370,7 @@ class PedidoWebService
                 [$telaData]
             );
 
-            Log::info('[PedidoWebService] ✅ Imágenes tela relocalizadas y guardadas', [
+            Log::info('[PedidoWebService] Imágenes tela relocalizadas y guardadas', [
                 'color_tela_id' => $colorTela->id,
                 'pedido_id' => $pedidoId,
                 'cantidad_originales' => count($imagenes),
@@ -406,7 +418,7 @@ class PedidoWebService
                 $rutasFinales
             );
 
-            Log::info('[PedidoWebService] ✅ Imágenes prenda relocalizadas y guardadas', [
+            Log::info('[PedidoWebService] Imágenes prenda relocalizadas y guardadas', [
                 'prenda_id' => $prenda->id,
                 'pedido_id' => $prenda->pedido_produccion_id,
                 'cantidad_originales' => count($imagenes),
@@ -472,19 +484,36 @@ class PedidoWebService
                 continue;
             }
 
+            //  EXTRACCIÓN ROBUSTA DE UBICACIONES Y OBSERVACIONES
+            // Buscar en múltiples niveles de anidación
+            $ubicaciones = $datosProceso['ubicaciones'] ?? $procesoData['ubicaciones'] ?? [];
+            $observaciones = $datosProceso['observaciones'] ?? $procesoData['observaciones'] ?? null;
+            
+            // Validar que ubicaciones sea array
+            if (!is_array($ubicaciones)) {
+                $ubicaciones = is_string($ubicaciones) ? [$ubicaciones] : [];
+            }
+            
+            // Limpiar string de observaciones
+            if (is_string($observaciones)) {
+                $observaciones = trim($observaciones);
+                $observaciones = empty($observaciones) ? null : $observaciones;
+            }
+
             Log::debug('[PedidoWebService] Creando proceso', [
                 'tipo' => $tipoProceso,
-                'ubicaciones' => $datosProceso['ubicaciones'] ?? null,
+                'ubicaciones_raw' => $ubicaciones,
+                'observaciones_raw' => $observaciones,
                 'tallas_count' => isset($datosProceso['tallas']) ? count($datosProceso['tallas']) : 0,
                 'imagenes_count' => isset($datosProceso['imagenes']) ? count($datosProceso['imagenes']) : 0,
             ]);
 
-            // Crear detalle del proceso
+            // CREAR CON DATOS EXTRACTADOS Y VALIDADOS
             $procesoPrenda = PedidosProcesosPrendaDetalle::create([
                 'prenda_pedido_id' => $prenda->id,
                 'tipo_proceso_id' => $tipoProcesoId,
-                'ubicaciones' => json_encode($datosProceso['ubicaciones'] ?? []),
-                'observaciones' => $datosProceso['observaciones'] ?? null,
+                'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
+                'observaciones' => $observaciones,
                 'datos_adicionales' => json_encode($datosProceso),
                 'estado' => 'PENDIENTE',
             ]);
@@ -492,6 +521,8 @@ class PedidoWebService
             Log::info('[PedidoWebService] Proceso creado', [
                 'proceso_id' => $procesoPrenda->id,
                 'tipo' => $tipoProceso,
+                'ubicaciones_guardadas' => $procesoPrenda->ubicaciones,
+                'observaciones_guardadas' => $procesoPrenda->observaciones,
             ]);
 
             // Crear tallas del proceso
@@ -502,7 +533,7 @@ class PedidoWebService
                 ]);
                 $this->crearTallasProceso($procesoPrenda, $datosProceso['tallas']);
             } else {
-                \Log::warning('[PedidoWebService] ⚠️ NO HAY TALLAS para proceso ' . $tipoProceso, [
+                \Log::warning('[PedidoWebService]  NO HAY TALLAS para proceso ' . $tipoProceso, [
                     'tiene_tallas_key' => isset($datosProceso['tallas']) ? 'SÍ' : 'NO',
                     'es_array' => is_array($datosProceso['tallas'] ?? null) ? 'SÍ' : 'NO',
                 ]);
@@ -510,7 +541,7 @@ class PedidoWebService
 
             // Crear imágenes del proceso
             if (isset($datosProceso['imagenes']) && is_array($datosProceso['imagenes'])) {
-                // ❌ NO LLAMAR: Imágenes ya procesadas en controller
+                //  NO LLAMAR: Imágenes ya procesadas en controller
                 // $this->guardarImagenesProceso($procesoPrenda, $datosProceso['imagenes']);
             }
         }
@@ -557,9 +588,9 @@ class PedidoWebService
     /**
      * Guardar imágenes de proceso usando sistema directo (sin relocalización)
      * 
-     * ✅ REFACTORIZADO: Ya no usa relocalización
-     * ✅ Si recibe UploadedFile, guarda directo con ImageUploadService
-     * ✅ Si recibe strings (rutas ya guardadas), las guarda en BD
+     * REFACTORIZADO: Ya no usa relocalización
+     * Si recibe UploadedFile, guarda directo con ImageUploadService
+     * Si recibe strings (rutas ya guardadas), las guarda en BD
      * 
      * @param PedidosProcesosPrendaDetalle $proceso
      * @param array $imagenes Array de UploadedFile o strings (rutas)
@@ -580,16 +611,31 @@ class PedidoWebService
             $pedidoId = $prenda->pedido_produccion_id;
             $nombreProceso = $proceso->proceso->nombre ?? 'proceso';
 
-            // ❌ NO PROCESAR ARCHIVOS AQUÍ - Ya fueron procesados en controller
-            Log::debug('[PedidoWebService] guardarImagenesProceso: SKIP processing', [
+            Log::debug('[PedidoWebService] guardarImagenesProceso: processing', [
                 'proceso_id' => $proceso->id,
                 'pedido_id' => $pedidoId,
                 'imagenes_count' => count($imagenes),
             ]);
 
+            // Procesar y guardar imágenes en directorio específico del pedido
+            foreach ($imagenes as $imagen) {
+                if ($imagen instanceof \Illuminate\Http\UploadedFile && $imagen->isValid()) {
+                    $rutaGuardada = $imagen->store("pedido/{$pedidoId}/procesos/{$nombreProceso}", 'public');
+                    
+                    Log::info('[PedidoWebService] Imagen proceso guardada', [
+                        'nombre' => $imagen->getClientOriginalName(),
+                        'ruta' => $rutaGuardada,
+                        'tamaño' => $imagen->getSize(),
+                    ]);
+                } elseif (is_string($imagen)) {
+                    // Si es ya una ruta guardada, solo registrar
+                    Log::debug('[PedidoWebService] Imagen proceso (ruta string)', ['ruta' => $imagen]);
+                }
+            }
+
             return;
             
-            // ⚠️ CÓDIGO OBSOLETO COMENTADO - NO USAR
+            //  CÓDIGO OBSOLETO COMENTADO - NO USAR
             // Procesar cada imagen
             /*
             foreach ($imagenes as $index => $imagen) {
@@ -625,7 +671,7 @@ class PedidoWebService
                 }
             }
 
-            Log::info('[PedidoWebService] ✅ Imágenes proceso guardadas directamente', [
+            Log::info('[PedidoWebService] Imágenes proceso guardadas directamente', [
                 'proceso_id' => $proceso->id,
                 'pedido_id' => $pedidoId,
                 'nombre_proceso' => $nombreProceso,

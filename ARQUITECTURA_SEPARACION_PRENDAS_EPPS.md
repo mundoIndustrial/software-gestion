@@ -1,7 +1,7 @@
 # Arquitectura: Separación de Prendas y EPPs
 
 **Fecha**: 26 Enero 2026  
-**Estado**: ✅ IMPLEMENTACIÓN COMPLETA (Frontend + Backend)  
+**Estado**: IMPLEMENTACIÓN COMPLETA (Frontend + Backend)  
 **Cambio Principal**: Separación de pedidos en dos estructuras: `prendas[]` y `epps[]`
 
 ---
@@ -374,7 +374,7 @@ Para cada prenda en items[]:
       → Crear PedidosProcessImagenes
 ```
 
-### Paso 7: Backend - Procesar EPPs (procesarYAsignarEpps) ✅ NUEVO
+### Paso 7: Backend - Procesar EPPs (procesarYAsignarEpps) NUEVO
 
 ```
 Para cada epp en epps[]:
@@ -439,7 +439,7 @@ FormData {
 pedido_id: 123
 epps_count: 2
 
-[CrearPedidoEditableController] ✅ EPP creado
+[CrearPedidoEditableController] EPP creado
 pedido_epp_id: 45
 epp_id: 42
 cantidad: 50
@@ -465,34 +465,34 @@ webp: pedidos/123/epps/epp_42_img_0.webp
 - Detector reconoce como `items[]` (antigua)
 - Procesa como antes
 - No intenta procesar `epps[]`
-- ✅ Funciona sin cambios
+- Funciona sin cambios
 
 ---
 
 ## 📝 Cambios Implementados
 
 ### Frontend Changes
-- ✅ `ItemFormCollector.js` - Separa EPPs en array distinct
-- ✅ `PayloadNormalizer.js` - Normaliza ambas estructuras
-- ✅ `ItemAPIService.js` - Logging mejorado
+- `ItemFormCollector.js` - Separa EPPs en array distinct
+- `PayloadNormalizer.js` - Normaliza ambas estructuras
+- `ItemAPIService.js` - Logging mejorado
 
 ### Backend Changes
-- ✅ `CrearPedidoCompletoRequest.php` - Validación dual (prendas + epps)
-- ✅ `CrearPedidoEditableController.php`:
-  - ✅ Detección de estructura
-  - ✅ Normalización para compatibilidad
-  - ✅ Método `procesarYAsignarEpps()` nuevo
-  - ✅ Imágenes EPP → WebP
-  - ✅ Registros `PedidoEpp` + `PedidoEppImagen`
+- `CrearPedidoCompletoRequest.php` - Validación dual (prendas + epps)
+- `CrearPedidoEditableController.php`:
+  - Detección de estructura
+  - Normalización para compatibilidad
+  - Método `procesarYAsignarEpps()` nuevo
+  - Imágenes EPP → WebP
+  - Registros `PedidoEpp` + `PedidoEppImagen`
 
 ### Database (Asumido - verificar)
-- ✅ Tabla `pedido_epp` existe
-- ✅ Tabla `pedido_epp_imagenes` existe
-- ✅ Tabla `epps` existe (catálogo)
+- Tabla `pedido_epp` existe
+- Tabla `pedido_epp_imagenes` existe
+- Tabla `epps` existe (catálogo)
 
 ---
 
-## 🚀 Próximos Pasos
+##  Próximos Pasos
 
 ### 1. Testing Integral
 - [ ] Test con prendas SOLAS (sin EPPs)
@@ -548,7 +548,7 @@ Log::info('[CrearPedidoEditableController] 📦 Procesando EPPs', [
 
 | Problema | Causa | Solución |
 |----------|-------|----------|
-| "Unexpected token '<'" | HTML error response | Agregar `Accept: application/json` header ✅ |
+| "Unexpected token '<'" | HTML error response | Agregar `Accept: application/json` header |
 | "El epp_id es obligatorio" | Validación fallando | Verificar epps[].epp_id existe |
 | "epp_id... does not exist" | No existe en tabla epps | Verificar ID en tabla epps |
 | Imagen no guardada | FormData key incorrecto | Usar `epps[i][imagenes][j]` |
@@ -569,9 +569,9 @@ Log::info('[CrearPedidoEditableController] 📦 Procesando EPPs', [
 - `prenda_fotos_tela_pedido` - imágenes de telas
 - `pedidos_procesos_prenda_detalles` - procesos (bordado, estampado)
 - `pedidos_procesos_imagenes` - imágenes de procesos
-- `epps` - catálogo de equipos ✨ NUEVA RELACIÓN
-- `pedido_epp` - items EPP por pedido ✨ NUEVA TABLA
-- `pedido_epp_imagenes` - imágenes de EPPs ✨ NUEVA TABLA
+- `epps` - catálogo de equipos  NUEVA RELACIÓN
+- `pedido_epp` - items EPP por pedido  NUEVA TABLA
+- `pedido_epp_imagenes` - imágenes de EPPs  NUEVA TABLA
 
 **Servicios Clave**:
 - `PedidoWebService` - Crear pedido completo
@@ -580,7 +580,7 @@ Log::info('[CrearPedidoEditableController] 📦 Procesando EPPs', [
 
 ---
 
-## ✅ Checklist de Finalización
+## Checklist de Finalización
 
 - [x] Frontend separa prendas y epps
 - [x] Frontend normaliza ambas estructuras  

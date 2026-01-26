@@ -396,6 +396,7 @@ class PedidoCompletoUnificado {
 
     /**
      * Sanitizar prenda completa
+     *  CRÍTICO: NO hacer JSON.stringify en imagenes (File objects)
      * @private
      */
     _sanitizarPrenda(raw) {
@@ -412,13 +413,13 @@ class PedidoCompletoUnificado {
             // Variaciones (manga, broche, bolsillos)
             variaciones: this._sanitizarVariaciones(raw.variaciones || raw.variantes),
             
-            // Telas con imágenes
+            // Telas con imágenes (NO stringify, mantener como están)
             telas: this._sanitizarTelas(raw.telas),
             
-            // Imágenes de la prenda
-            imagenes: SanitizadorDefensivo.cleanStringArray(raw.imagenes || []),
+            // Imágenes de la prenda - PRESERVAR File objects
+            imagenes: Array.isArray(raw.imagenes) ? raw.imagenes : [],
             
-            // Procesos productivos
+            // Procesos productivos (manejar array como object)
             procesos: this._sanitizarProcesos(raw.procesos)
         };
     }
@@ -532,12 +533,30 @@ class PedidoCompletoUnificado {
      * @private
      */
     _sanitizarProcesos(raw) {
-        if (!raw || typeof raw !== 'object') {
+        if (!raw) {
+            return {};
+        }
+
+        // Detectar si procesos llega como ARRAY (convertir a object)
+        if (Array.isArray(raw)) {
+            console.warn('[Builder] Procesos llegó como array, convirtiendo a object...');
+            const procesosObj = {};
+            raw.forEach((proc, idx) => {
+                if (proc && proc.tipo) {
+                    procesosObj[proc.tipo] = proc;
+                } else if (proc) {
+                    procesosObj[`proceso_${idx}`] = proc;
+                }
+            });
+            raw = procesosObj;
+        }
+
+        if (typeof raw !== 'object' || raw === null) {
             return {};
         }
 
         const cleaned = {};
-        const tiposProceso = ['reflectivo', 'bordado', 'estampado', 'dtf', 'sublimado'];
+        const tiposProceso = ['reflectivo', 'bordado', 'estampado', 'dtf', 'sublimado', 'tejido', 'serigrafía'];
 
         tiposProceso.forEach(tipo => {
             if (raw[tipo]) {
@@ -592,6 +611,7 @@ class PedidoCompletoUnificado {
     /**
      * Sanitizar tallas de proceso
      * Mapea a: pedidos_procesos_prenda_tallas
+     * Soporta: object, array, string
      * @private
      */
     _sanitizarTallasProceso(raw) {
@@ -599,23 +619,41 @@ class PedidoCompletoUnificado {
             return { dama: {}, caballero: {} };
         }
 
-        const cleaned = { dama: {}, caballero: {} };
+        const cleaned = { dama: {}, caballero: {}, unisex: {} };
 
-        ['dama', 'caballero'].forEach(genero => {
+        ['dama', 'caballero', 'unisex'].forEach(genero => {
             const tallas = raw[genero];
             
-            if (!tallas || typeof tallas !== 'object' || Array.isArray(tallas)) {
+            if (!tallas) {
                 cleaned[genero] = {};
                 return;
             }
 
-            Object.entries(tallas).forEach(([talla, cantidad]) => {
-                const cant = SanitizadorDefensivo.cleanInt(cantidad);
-                
-                if (cant && cant > 0) {
-                    cleaned[genero][talla.toUpperCase()] = cant;
-                }
-            });
+            // Convertir ARRAY a OBJECT si es necesario
+            let tallasObj = tallas;
+            if (Array.isArray(tallas)) {
+                tallasObj = {};
+                tallas.forEach((talla) => {
+                    if (talla && typeof talla === 'object') {
+                        const nombreTalla = talla.talla || talla.nombre || talla.size;
+                        const cantidad = talla.cantidad || talla.count || 0;
+                        if (nombreTalla) {
+                            tallasObj[nombreTalla.toUpperCase()] = cantidad;
+                        }
+                    }
+                });
+            }
+
+            // Procesar OBJECT normalmente
+            if (typeof tallasObj === 'object' && !Array.isArray(tallasObj)) {
+                Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                    const cant = SanitizadorDefensivo.cleanInt(cantidad);
+                    
+                    if (cant && cant > 0) {
+                        cleaned[genero][talla.toUpperCase()] = cant;
+                    }
+                });
+            }
         });
 
         return cleaned;
@@ -818,7 +856,7 @@ try {
     console.log('✅ Pedido creado:', resultado.pedido_id);
     
 } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error(' Error:', error.message);
 }
 
 // CASO 3: Múltiples prendas

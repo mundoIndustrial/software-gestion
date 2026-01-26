@@ -20,7 +20,7 @@ class CotizacionesMinimoTest extends TestCase
             DB::connection()->getPdo();
             $this->assertTrue(true, "Base de datos conectada");
         } catch (\Exception $e) {
-            $this->fail("No hay conexiÃ³n a BD: " . $e->getMessage());
+            $this->fail("No hay conexión a BD: " . $e->getMessage());
         }
     }
 
@@ -54,13 +54,13 @@ class CotizacionesMinimoTest extends TestCase
     }
 
     /**
-     * Test: Verificar tipos de cotizaciÃ³n
+     * Test: Verificar tipos de cotización
      */
     public function test_quotation_types_exist()
     {
         $tipos = TipoCotizacion::all();
         $this->assertNotEmpty($tipos);
-        echo "\n[INFO] Tipos de cotizaciÃ³n: " . $tipos->count();
+        echo "\n[INFO] Tipos de cotización: " . $tipos->count();
     }
 
     /**

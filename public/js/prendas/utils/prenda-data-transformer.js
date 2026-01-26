@@ -5,7 +5,7 @@
  * Patrón: Adapter + Factory
  */
 
-console.log('[DEBUG] 🔧 PrendaDataTransformer.js cargado correctamente');
+console.log('[DEBUG]  PrendaDataTransformer.js cargado correctamente');
 
 class PrendaDataTransformer {
     /**

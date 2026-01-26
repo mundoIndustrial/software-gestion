@@ -3,10 +3,10 @@
 ## Resumen
 Se han agregado logs detallados en **4 archivos críticos** para rastrear los problemas reportados:
 
-1. ❌ **Nombre del proceso no se muestra**
-2. ❌ **Click en tarjeta de proceso no funciona**
-3. ❌ **Ubicaciones muestran JSON**
-4. ❌ **Imágenes no cargan en galería**
+1.  **Nombre del proceso no se muestra**
+2.  **Click en tarjeta de proceso no funciona**
+3.  **Ubicaciones muestran JSON**
+4.  **Imágenes no cargan en galería**
 
 ---
 
@@ -19,9 +19,9 @@ Se han agregado logs detallados en **4 archivos críticos** para rastrear los pr
 ✅ Logs agregados:
 - 🎨 [RENDER-PROCESOS] Renderizando tarjetas de procesos...
 - 📊 [RENDER-PROCESOS] Procesos encontrados
-- ⚠️ [RENDER-PROCESOS] Sin procesos configurados
+-  [RENDER-PROCESOS] Sin procesos configurados
 - 📝 [RENDER-PROCESOS] Renderizando {tipo}
-- ✅ [RENDER-PROCESOS] Renderizado completado
+- [RENDER-PROCESOS] Renderizado completado
 ```
 
 #### Función: `generarTarjetaProceso(tipo, datos)`
@@ -30,9 +30,9 @@ Se han agregado logs detallados en **4 archivos críticos** para rastrear los pr
 - 🎯 [GENERAR-TARJETA] Generando tarjeta para tipo
 - 📛 [GENERAR-TARJETA] Nombre resuelto
 - 📏 [GENERAR-TARJETA] Tallas para {tipo}
-- 📍 [GENERAR-TARJETA] Ubicaciones raw
-- ✅ [GENERAR-TARJETA] Ubicaciones parseadas como JSON
-- ⚠️ [GENERAR-TARJETA] No es JSON, tratando como string
+-  [GENERAR-TARJETA] Ubicaciones raw
+- [GENERAR-TARJETA] Ubicaciones parseadas como JSON
+-  [GENERAR-TARJETA] No es JSON, tratando como string
 - 📄 [GENERAR-TARJETA] Ubicaciones texto final
 ```
 
@@ -44,11 +44,11 @@ const nombre = nombresProcesos[tipo] || datos.nombre || datos.nombre_proceso || 
 #### Función: `window.editarProcesoDesdeModal(tipo)`
 ```javascript
 ✅ Logs agregados:
-- 🔧 [EDITAR-PROCESO] Iniciando edición del proceso
+-  [EDITAR-PROCESO] Iniciando edición del proceso
 - 📦 [EDITAR-PROCESO] Datos del proceso
-- ✅ [EDITAR-PROCESO] Datos encontrados, cargando en modal
+- [EDITAR-PROCESO] Datos encontrados, cargando en modal
 - 🪟 [EDITAR-PROCESO] Abriendo modal genérico de proceso en modo edición
-- ❌ [EDITAR-PROCESO] No existe window.abrirModalProcesoGenerico
+-  [EDITAR-PROCESO] No existe window.abrirModalProcesoGenerico
 ```
 
 #### Función: `window.abrirGaleriaImagenesProceso(tipoProceso)`
@@ -80,15 +80,15 @@ function procesarUrlImagen(img) {
 ```javascript
 ✅ Logs agregados en cada función:
 - 🔄 [GALERIA] Navegando galería en dirección
-- 📍 [GALERIA] Índice calculado
+-  [GALERIA] Índice calculado
 - 🖼️ [GALERIA] Cambiando imagen a índice
-- ✅ [GALERIA] Navegación completada
+- [GALERIA] Navegación completada
 
 - 👉 [GALERIA] Ir a imagen
 - 🖼️ [GALERIA] Mostrando imagen en índice
 
-- ❌ [GALERIA] Cerrando galería
-- ✅ [GALERIA] Galería removida del DOM
+-  [GALERIA] Cerrando galería
+- [GALERIA] Galería removida del DOM
 ```
 
 ---
@@ -100,9 +100,9 @@ function procesarUrlImagen(img) {
 ✅ Logs de transformación de procesos:
 
 En la sección de transformación de procesos se agregó:
-- 🔧 [EDITAR-PRENDA-PROCESOS] Transformando proceso
+-  [EDITAR-PRENDA-PROCESOS] Transformando proceso
 - 📸 Imagen transformada
-- ✅ Proceso transformado
+- Proceso transformado
 - 🔬 [EDITAR-PRENDA] Procesos para modal
 
 Cada proceso muestra:
@@ -126,15 +126,15 @@ Cada proceso muestra:
 ```javascript
 ✅ Logs agregados:
 - 🔄 [CARGAR-PRENDA] Iniciando carga de prenda en modal
-- 🔧 [CARGAR-PRENDA] Sobre de cargar procesos...
-- ✅ [CARGAR-PRENDA] Prenda cargada completamente
-- ❌ [CARGAR-PRENDA] Error
+-  [CARGAR-PRENDA] Sobre de cargar procesos...
+- [CARGAR-PRENDA] Prenda cargada completamente
+-  [CARGAR-PRENDA] Error
 ```
 
 #### Función: `cargarProcesos(prenda)` - **IMPORTANTE**
 ```javascript
 ✅ Logs detallados agregados:
-- ⚠️ [CARGAR-PROCESOS] Sin procesos en la prenda
+-  [CARGAR-PROCESOS] Sin procesos en la prenda
 - 📋 [CARGAR-PROCESOS] Cargando procesos (total y detalles)
 - 📌 [CARGAR-PROCESOS] Procesando cada proceso por índice
   * nombreProceso
@@ -142,12 +142,12 @@ Cada proceso muestra:
   * tieneImagenes
   * countImagenes
 - 🖼️ [CARGAR-PROCESOS] Imagen procesada (para cada imagen)
-- ✅ [CARGAR-PROCESOS] Proceso cargado
+- [CARGAR-PROCESOS] Proceso cargado
 - ☑️ [CARGAR-PROCESOS] Marcando checkbox
-- ⚠️ [CARGAR-PROCESOS] No se encontró checkbox
+-  [CARGAR-PROCESOS] No se encontró checkbox
 - 📊 [CARGAR-PROCESOS] Procesos seleccionados finales
 - 🎨 [CARGAR-PROCESOS] Renderizando tarjetas
-- ❌ [CARGAR-PROCESOS] window.renderizarTarjetasProcesos no existe
+-  [CARGAR-PROCESOS] window.renderizarTarjetasProcesos no existe
 ```
 
 ---
@@ -158,7 +158,7 @@ Cuando hagas click en "Editar Prenda", deberías ver una secuencia como:
 
 ```
 🔄 [CARGAR-PRENDA] Iniciando carga de prenda en modal: {...}
-🔧 [CARGAR-PRENDA] Sobre de cargar procesos...
+ [CARGAR-PRENDA] Sobre de cargar procesos...
 📋 [CARGAR-PROCESOS] Cargando procesos: {...}
 📌 [CARGAR-PROCESOS] Procesando [0] tipo="reflectivo"
 ✅ [CARGAR-PROCESOS] Proceso "reflectivo" cargado: {...}
@@ -185,11 +185,11 @@ Cuando hagas click en "Editar Prenda", deberías ver una secuencia como:
 4. Si dice "reflectivo" o "settings", hay un problema en la resolución
 
 ### Para Ubicaciones:
-1. Busca el log: `📍 [GENERAR-TARJETA] Ubicaciones raw`
+1. Busca el log: ` [GENERAR-TARJETA] Ubicaciones raw`
 2. Verifica el tipo de datos:
    - Si es string JSON: `✅ Ubicaciones parseadas como JSON`
    - Si es array: El log lo dirá
-   - Si falla: `⚠️ No es JSON, tratando como string`
+   - Si falla: ` No es JSON, tratando como string`
 
 ### Para Imágenes de Proceso:
 1. Busca: `🖼️ [GALERIA] Abriendo galería`
@@ -198,7 +198,7 @@ Cuando hagas click en "Editar Prenda", deberías ver una secuencia como:
 4. Verifica la URL tenga `/storage/` si es necesario
 
 ### Para Click en Tarjeta:
-1. Busca: `🔧 [EDITAR-PROCESO] Iniciando edición`
+1. Busca: ` [EDITAR-PROCESO] Iniciando edición`
 2. Si ves logs de "No existe window.abrirModalProcesoGenerico", ese es el problema
 3. Verifica que `📦 [EDITAR-PROCESO] Datos del proceso` muestre datos válidos
 

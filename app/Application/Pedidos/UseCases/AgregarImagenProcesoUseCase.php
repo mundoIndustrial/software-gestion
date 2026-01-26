@@ -9,7 +9,7 @@ use App\Models\ProcesosPrendaDetalle;
 /**
  * Use Case para agregar imagen de referencia a un proceso de prenda
  * 
- * Maneja la creaciÃ³n de registro en pedidos_procesos_imagenes
+ * Maneja la creación de registro en pedidos_procesos_imagenes
  */
 final class AgregarImagenProcesoUseCase
 {

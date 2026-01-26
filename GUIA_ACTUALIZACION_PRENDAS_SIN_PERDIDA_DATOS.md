@@ -1,6 +1,6 @@
 # 📋 Guía Completa: Actualización de Prendas sin Pérdida de Datos
 
-## ✅ Flujo General
+## Flujo General
 
 ```
 Frontend (envia datos parciales)
@@ -43,7 +43,7 @@ $varianteExistente = $prenda->variantes()->first();
 if ($varianteExistente) {
     foreach ($dto->variantes as $variante) {
         $upd = [];
-        // ✅ SOLO actualizar si NO es null
+        // SOLO actualizar si NO es null
         if (array_key_exists("tipo_manga_id", $variante) && $variante["tipo_manga_id"] !== null) 
             $upd["tipo_manga_id"] = $variante["tipo_manga_id"];
         if (!empty($upd)) $varianteExistente->update($upd);
@@ -64,7 +64,7 @@ if ($varianteExistente) {
 ```php
 private function actualizarProcesos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
 {
-    // ✅ PATTERN MERGE: No eliminar procesos automáticamente
+    // PATTERN MERGE: No eliminar procesos automáticamente
     if (is_null($dto->procesos) || empty($dto->procesos)) {
         return;  // NO TOCAR
     }
@@ -124,7 +124,7 @@ private function actualizarProcesos(PrendaPedido $prenda, ActualizarPrendaComple
 }
 ```
 
-### ✅ Garantía: `procesos` SIEMPRE es array (nunca undefined)
+### Garantía: `procesos` SIEMPRE es array (nunca undefined)
 
 ```php
 // En ActualizarPrendaCompletaUseCase::ejecutar()
@@ -273,12 +273,12 @@ DB::transaction(function() {
    
 6. Frontend: Recibe prenda completa
    ├─ Actualiza UI
-   └─ prenda.procesos.map() ✅ FUNCIONA (siempre es array)
+   └─ prenda.procesos.map() FUNCIONA (siempre es array)
 ```
 
 ---
 
-## 🚀 Uso en Controller
+##  Uso en Controller
 
 ```php
 use App\Application\Pedidos\Services\PrendaTransformerService;
@@ -305,7 +305,7 @@ public function actualizarPrenda(Request $request, int $id)
 
 ---
 
-## ✨ Beneficios del Sistema
+##  Beneficios del Sistema
 
 ✅ **No pierde datos** - MERGE pattern preserva lo no enviado  
 ✅ **Null-safe** - Ignora valores null, no sobrescribe  
@@ -321,13 +321,13 @@ public function actualizarPrenda(Request $request, int $id)
 
 | Campo | Llega null | Llega vacío | Llega valor |
 |-------|-----------|-----------|-----------|
-| tipo_manga_id | ✅ Preserva | N/A | ✅ Actualiza |
-| tipo_broche_boton_id | ✅ Preserva | N/A | ✅ Actualiza |
-| manga_obs | ✅ Preserva | ✅ Actualiza a "" | ✅ Actualiza |
-| variantes[] | ✅ No toca | ✅ Crea | ✅ Crea |
-| procesos[] | ✅ No toca | ✅ No toca | ✅ Crea (sin borrar) |
-| tallas | ✅ No toca | ✅ Borra todas | ✅ MERGE |
-| fotos | ✅ No toca | ✅ Borra todas | ✅ MERGE |
+| tipo_manga_id | Preserva | N/A | Actualiza |
+| tipo_broche_boton_id | Preserva | N/A | Actualiza |
+| manga_obs | Preserva | Actualiza a "" | Actualiza |
+| variantes[] | No toca | Crea | Crea |
+| procesos[] | No toca | No toca | Crea (sin borrar) |
+| tallas | No toca | Borra todas | MERGE |
+| fotos | No toca | Borra todas | MERGE |
 
 ---
 

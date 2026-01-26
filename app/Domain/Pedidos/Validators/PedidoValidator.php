@@ -13,9 +13,9 @@ use InvalidArgumentException;
  * - Validar nÃºmero de pedido Ãºnico
  * - Validar campos requeridos
  * - Validar cantidades y formatos
- * - IntegraciÃ³n con BD para verificaciones
+ * - Integración con BD para verificaciones
  * 
- * PatrÃ³n: Strategy (implementa Validator)
+ * Patrón: Strategy (implementa Validator)
  * SRP: Solo valida pedidos
  */
 class PedidoValidator implements Validator

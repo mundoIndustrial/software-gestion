@@ -103,7 +103,7 @@ class CotizacionSincronizacionTest extends TestCase
     {
         $tela = new PrendaTelaCot();
         
-        // Verificar que los mÃ©todos de relaciÃ³n existen
+        // Verificar que los mÃ©todos de relación existen
         $this->assertTrue(method_exists($tela, 'prenda'), 'Debe tener mÃ©todo prenda()');
         $this->assertTrue(method_exists($tela, 'variante'), 'Debe tener mÃ©todo variante()');
         $this->assertTrue(method_exists($tela, 'color'), 'Debe tener mÃ©todo color()');
@@ -190,7 +190,7 @@ class CotizacionSincronizacionTest extends TestCase
     }
 
     /**
-     * Test: Resumen de sincronizaciÃ³n
+     * Test: Resumen de sincronización
      */
     public function test_resumen_sincronizacion_completa()
     {

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  * ListarPedidosHandler
  * 
  * Maneja ListarPedidosQuery
- * Lista pedidos con paginaciÃ³n
+ * Lista pedidos con paginación
  */
 class ListarPedidosHandler implements QueryHandler
 {

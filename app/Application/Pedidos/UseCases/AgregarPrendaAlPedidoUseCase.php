@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Log;
 /**
  * Use Case: Agregar Prenda al Pedido
  * 
- * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validaciÃ³n
+ * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validación
  * 
- * Antes: 45 lÃ­neas (7 lÃ­neas de lÃ³gica + 38 de validaciÃ³n)
- * DespuÃ©s: 32 lÃ­neas (solo lÃ³gica de negocio)
- * ReducciÃ³n: 29%
+ * Antes: 45 lÃ­neas (7 lÃ­neas de lógica + 38 de validación)
+ * DespuÃ©s: 32 lÃ­neas (solo lógica de negocio)
+ * Reducción: 29%
  */
 final class AgregarPrendaAlPedidoUseCase
 {
@@ -26,7 +26,7 @@ final class AgregarPrendaAlPedidoUseCase
 
     public function ejecutar(AgregarPrendaAlPedidoDTO $dto)
     {
-        Log::info('[AgregarPrendaAlPedidoUseCase] Iniciando agregaciÃ³n de prenda', [
+        Log::info('[AgregarPrendaAlPedidoUseCase] Iniciando agregación de prenda', [
             'pedido_id' => $dto->pedidoId,
             'nombre_prenda' => $dto->nombrePrenda,
         ]);
