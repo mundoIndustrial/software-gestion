@@ -2869,6 +2869,31 @@ final class CotizacionController extends Controller
                                 }
                             }
 
+                            // 2c.  GUARDAR VARIACIONES Y UBICACIONES EN prenda_cot_reflectivo
+                            $variacionesDePrenda = $prenda['variaciones'] ?? [];
+                            if (is_string($variacionesDePrenda)) {
+                                $variacionesDePrenda = json_decode($variacionesDePrenda, true) ?? [];
+                            }
+
+                            $ubicacionesDePrenda = $prenda['ubicaciones'] ?? [];
+                            if (is_string($ubicacionesDePrenda)) {
+                                $ubicacionesDePrenda = json_decode($ubicacionesDePrenda, true) ?? [];
+                            }
+
+                            // Crear registro en prenda_cot_reflectivo con variaciones y ubicaciones
+                            \App\Models\PrendaCotReflectivo::create([
+                                'cotizacion_id' => $cotizacion->id,
+                                'prenda_cot_id' => $prendaCot->id,
+                                'variaciones' => !empty($variacionesDePrenda) ? json_encode($variacionesDePrenda) : json_encode([]),
+                                'ubicaciones' => !empty($ubicacionesDePrenda) ? json_encode($ubicacionesDePrenda) : json_encode([]),
+                            ]);
+
+                            Log::info(' PrendaCotReflectivo creado con variaciones y ubicaciones', [
+                                'prenda_cot_id' => $prendaCot->id,
+                                'variaciones_count' => count($variacionesDePrenda),
+                                'ubicaciones_count' => count($ubicacionesDePrenda),
+                            ]);
+
                             // 3.  CREAR REFLECTIVO ESPECÍFICO PARA ESTA PRENDA
                             // Obtener ubicaciones de esta prenda
                             $ubicacionesDePrenda = $prenda['ubicaciones'] ?? [];

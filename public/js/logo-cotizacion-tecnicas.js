@@ -625,6 +625,9 @@ function abrirModalDatosIguales(tecnicas) {
         }
     }).then((result) => {
         if (result.isConfirmed && result.value) {
+            // Cerrar el modal inmediatamente
+            Swal.close();
+            // Guardar después de cerrar
             guardarTecnicaCombinada(result.value);
         }
     });

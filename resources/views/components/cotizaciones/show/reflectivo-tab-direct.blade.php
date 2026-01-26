@@ -35,6 +35,9 @@
                 
                 {{-- Contenido de cada prenda --}}
                 @foreach($cotizacion->prendas as $index => $prenda)
+                    @php
+                        $reflectivoPrenda = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
+                    @endphp
                     <div id="content-prenda-{{ $index }}" 
                          style="display: {{ $index === 0 ? 'block' : 'none' }}; background: white; border-radius: 0 8px 8px 8px; padding: 2rem; border: 1px solid #e2e8f0; border-top: none;">
                         
@@ -74,15 +77,16 @@
                             </div>
                         </div>
                         
-                        {{-- Ubicaciones del Reflectivo --}}
+                        {{-- Ubicaciones del Reflectivo (desde prenda_cot_reflectivo) --}}
                         @php
-                            // Obtener ubicaciones del reflectivo de ESTA prenda específica
-                            $reflectivoPrenda = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
+                            $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::where('prenda_cot_id', $prenda->id)->first();
                             $ubicacionesPrenda = [];
-                            if ($reflectivoPrenda && $reflectivoPrenda->ubicacion) {
-                                $ubicacionesPrenda = is_string($reflectivoPrenda->ubicacion) 
-                                    ? json_decode($reflectivoPrenda->ubicacion, true) ?? [] 
-                                    : ($reflectivoPrenda->ubicacion ?? []);
+                            if ($prendaCotReflectivo) {
+                                if (is_array($prendaCotReflectivo->ubicaciones)) {
+                                    $ubicacionesPrenda = $prendaCotReflectivo->ubicaciones;
+                                } elseif (is_string($prendaCotReflectivo->ubicaciones)) {
+                                    $ubicacionesPrenda = json_decode($prendaCotReflectivo->ubicaciones, true) ?? [];
+                                }
                             }
                         @endphp
                         @if(!empty($ubicacionesPrenda))
@@ -109,6 +113,71 @@
                                 <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Ubicaciones del Reflectivo</h4>
                                 <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
                                     <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin ubicaciones definidas</p>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Variaciones del Reflectivo (desde prenda_cot_reflectivo) --}}
+                        @php
+                            $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::where('prenda_cot_id', $prenda->id)->first();
+                            $variaciones = [];
+                            if ($prendaCotReflectivo) {
+                                if (is_array($prendaCotReflectivo->variaciones)) {
+                                    $variaciones = $prendaCotReflectivo->variaciones;
+                                } elseif (is_string($prendaCotReflectivo->variaciones)) {
+                                    $variaciones = json_decode($prendaCotReflectivo->variaciones, true) ?? [];
+                                }
+                            }
+                        @endphp
+                        @if(!empty($variaciones))
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">
+                                    <i class="fas fa-list-check" style="margin-right: 0.5rem;"></i>Variaciones
+                                </h4>
+                                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #1e40af; font-size: 0.9rem;">Variación</th>
+                                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #1e40af; font-size: 0.9rem;">Observación</th>
+                                                <th style="padding: 1rem; text-align: center; font-weight: 600; color: #1e40af; font-size: 0.9rem;">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($variaciones as $variacion)
+                                                <tr style="border-bottom: 1px solid #e5e7eb; transition: background 0.2s;"
+                                                    onmouseover="this.style.background='#f9fafb'"
+                                                    onmouseout="this.style.background='transparent'">
+                                                    <td style="padding: 1rem; color: #1f2937; font-weight: 600;">
+                                                        {{ $variacion['variacion'] ?? 'N/A' }}
+                                                    </td>
+                                                    <td style="padding: 1rem; color: #64748b;">
+                                                        {{ $variacion['observacion'] ?? '-' }}
+                                                    </td>
+                                                    <td style="padding: 1rem; text-align: center;">
+                                                        @if($variacion['checked'] ?? false)
+                                                            <span style="background: #d1fae5; color: #065f46; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                                                <i class="fas fa-check" style="margin-right: 0.3rem;"></i>Activo
+                                                            </span>
+                                                        @else
+                                                            <span style="background: #fee2e2; color: #7f1d1d; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                                                <i class="fas fa-times" style="margin-right: 0.3rem;"></i>Inactivo
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @else
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">
+                                    <i class="fas fa-list-check" style="margin-right: 0.5rem;"></i>Variaciones
+                                </h4>
+                                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
+                                    <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin variaciones definidas</p>
                                 </div>
                             </div>
                         @endif
