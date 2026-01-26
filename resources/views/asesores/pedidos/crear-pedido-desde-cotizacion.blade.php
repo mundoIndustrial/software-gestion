@@ -74,7 +74,7 @@
                             Cotización
                         </label>
                         <div style="position: relative;">
-                            <input type="text" id="cotizacion_search_editable" placeholder=" Buscar por número, cliente o asesora..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off">
+                            <input type="text" id="cotizacion_search_editable" placeholder="Buscar por número de cotización o cliente..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off">
                             <input type="hidden" id="cotizacion_id_editable" name="cotizacion_id">
                             <input type="hidden" id="logoCotizacionId" name="logoCotizacionId">
                             <div id="cotizacion_dropdown_editable" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
@@ -93,6 +93,14 @@
             <h2>
                 <span>3</span> Ítems del Pedido
             </h2>
+
+            <!-- Botón para agregar prenda -->
+            <div style="margin-bottom: 1.5rem;">
+                <button type="button" id="btn-agregar-prenda" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.2)'">
+                    <span class="material-symbols-rounded" style="font-size: 1.1rem; margin-right: 0.5rem; vertical-align: middle;">add_circle</span>
+                    Agregar Prenda
+                </button>
+            </div>
 
             <!-- Lista de ítems -->
             <div id="lista-items-pedido" style="display: flex; flex-direction: column; gap: 0.75rem;">
@@ -129,7 +137,7 @@
 </div>
 
 @include('asesores.pedidos.modals.modal-seleccionar-prendas')
-@include('asesores.pedidos.modals.modal-prendas-lista')
+@include('asesores.pedidos.components.modal-prendas-lista')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-agregar-reflectivo')
@@ -198,129 +206,14 @@
     <!-- Componente para editar prendas con procesos desde API -->
     <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
 
+    <!-- Datos globales del servidor -->
     <script>
-        // Datos del servidor
         window.cotizacionesData = @json($cotizacionesData ?? []);
         window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar storages de imágenes
-            window.imagenesPrendaStorage = new ImageStorageService(3);
-            window.imagenesTelaStorage = new ImageStorageService(3);
-            window.imagenesReflectivoStorage = new ImageStorageService(3);
-            
-            // Configurar asesora
-            document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';
-            
-            // Mostrar botones
-            const btnSubmit = document.getElementById('btn-submit');
-            btnSubmit.textContent = '✓ Crear Pedido';
-            btnSubmit.style.display = 'block';
-            
-            const btnVistaPrevio = document.getElementById('btn-vista-previa');
-            btnVistaPrevio.style.display = 'block';
-
-            // ========== BUSCADOR DE COTIZACIONES ==========
-            const searchInput = document.getElementById('cotizacion_search_editable');
-            const dropdown = document.getElementById('cotizacion_dropdown_editable');
-            const selectedDiv = document.getElementById('cotizacion_selected_editable');
-            const selectedText = document.getElementById('cotizacion_selected_text_editable');
-            const hiddenInput = document.getElementById('cotizacion_id_editable');
-            
-            if (!searchInput) {
-                return;
-            }
-            
-            let cotizacionSeleccionada = null;
-            
-            // Mostrar todas las cotizaciones al hacer focus
-            searchInput.addEventListener('focus', function() {
-                mostrarCotizaciones('');
-            });
-            
-            // Filtrar cotizaciones al escribir
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase().trim();
-                mostrarCotizaciones(searchTerm);
-            });
-            
-            // Función para mostrar cotizaciones filtradas
-            function mostrarCotizaciones(searchTerm) {
-                if (searchTerm.length === 0) {
-                    renderizarDropdown(window.cotizacionesData);
-                    return;
-                }
-                
-                const filtered = window.cotizacionesData.filter(cot => {
-                    return cot.numero_cotizacion.toLowerCase().includes(searchTerm) ||
-                           cot.cliente.toLowerCase().includes(searchTerm) ||
-                           cot.asesora.toLowerCase().includes(searchTerm);
-                });
-                
-                renderizarDropdown(filtered);
-            }
-            
-            // Función para renderizar el dropdown
-            function renderizarDropdown(cotizaciones) {
-                if (cotizaciones.length === 0) {
-                    dropdown.innerHTML = '<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron cotizaciones</div>';
-                    dropdown.style.display = 'block';
-                    return;
-                }
-                
-                dropdown.innerHTML = cotizaciones.map(cot => `
-                    <div class="cotizacion-item" data-id="${cot.id}" style="padding: 0.75rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
-                        <div style="font-weight: 600; color: #1e40af;">${cot.numero_cotizacion}</div>
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
-                            Cliente: ${cot.cliente} | Asesora: ${cot.asesora}
-                        </div>
-                    </div>
-                `).join('');
-                
-                dropdown.style.display = 'block';
-                
-                // Agregar event listeners a los items
-                dropdown.querySelectorAll('.cotizacion-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        const cotId = parseInt(this.dataset.id);
-                        const cotizacion = window.cotizacionesData.find(c => c.id === cotId);
-                        seleccionarCotizacion(cotizacion);
-                    });
-                });
-            }
-            
-            // Función para seleccionar cotización
-            function seleccionarCotizacion(cotizacion) {
-                cotizacionSeleccionada = cotizacion;
-                hiddenInput.value = cotizacion.id;
-                searchInput.value = cotizacion.numero_cotizacion;
-                selectedText.textContent = `${cotizacion.numero_cotizacion} - ${cotizacion.cliente}`;
-                selectedDiv.style.display = 'block';
-                dropdown.style.display = 'none';
-                
-                // Guardar para usar en agregar prendas
-                window.cotizacionSeleccionadaActual = cotizacion;
-                // Abrir modal de selección de prendas
-                if (typeof window.abrirModalSeleccionPrendas === 'function') {
-                    window.abrirModalSeleccionPrendas(cotizacion);
-                }
-            }
-            
-            // Cerrar dropdown al hacer click fuera
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            });
-
-            // ========== GESTIÓN DE ÍTEMS ==========
-            const seccionItems = document.getElementById('seccion-items-pedido');
-            if (seccionItems) {
-                seccionItems.style.display = 'block';
-            }
-
-        });
     </script>
+
+    <!-- Inicializador del buscador de cotizaciones -->
+    <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-buscador-cotizacion.js') }}"></script>
 @endpush
 
 @endsection

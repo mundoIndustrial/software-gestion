@@ -788,6 +788,9 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
+// Export ES6 para import statements
+export { PedidoCompletoUnificado, SanitizadorDefensivo };
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * EJEMPLO DE USO COMPLETO
