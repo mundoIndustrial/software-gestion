@@ -163,8 +163,10 @@ class EppService {
         // Mostrar solo nombre si codigo/categoria no existen
         this.modalManager.mostrarProductoSeleccionado({ 
             nombre,
+            nombre_completo: nombre,
             codigo: codigo || undefined,
-            categoria: categoria || undefined
+            categoria: categoria || undefined,
+            imagen: imagenes && imagenes.length > 0 ? imagenes[0].ruta_webp || imagenes[0].ruta_original || imagenes[0] : undefined
         });
         this.modalManager.cargarValoresFormulario(null, cantidad, observaciones);
         this.modalManager.mostrarImagenes(imagenes || []);
@@ -188,7 +190,9 @@ class EppService {
             });
 
             this.modalManager.mostrarProductoSeleccionado({
-                nombre: epp.nombre_completo || epp.nombre
+                nombre: epp.nombre_completo || epp.nombre,
+                nombre_completo: epp.nombre_completo || epp.nombre,
+                imagen: epp.imagenes && epp.imagenes.length > 0 ? epp.imagenes[0].ruta_webp || epp.imagenes[0].ruta_original || epp.imagenes[0] : undefined
             });
             this.modalManager.cargarValoresFormulario(null, epp.cantidad, epp.observaciones);
             this.modalManager.mostrarImagenes(epp.imagenes || []);

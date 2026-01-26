@@ -742,7 +742,7 @@ class ItemAPIService {
                             eppData.imagenes.push({
                                 file: img,
                                 formdata_key: formdataKey,
-                                uid: epp.uid || null  // ← AGREGADO: Capturar UID del EPP
+                                uid: epp.uid || null
                             });
                             estructura.archivosMap[formdataKey] = img;
                             console.debug(`[extraerFiles] EPP[${eppIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${epp.uid || 'N/A'})`);

@@ -95,8 +95,11 @@ class EppModalTemplate {
                     </div>
 
                     <div id="productoCardEPP" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; animation: slideDown 0.3s ease;">
-                        <div style="display: flex; flex-direction: column; justify-content: center;">
-                            <h3 id="nombreProductoEPP" style="margin: 0; font-size: 0.95rem; font-weight: 600; color: #1f2937; line-height: 1.4; margin-bottom: 0.25rem;"></h3>
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <img id="imagenProductoEPP" src="" alt="EPP" style="width: 80px; height: 80px; border-radius: 6px; object-fit: cover; border: 2px solid #bfdbfe; flex-shrink: 0;">
+                            <div style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
+                                <h3 id="nombreProductoEPP" style="margin: 0; font-size: 0.95rem; font-weight: 600; color: #1f2937; line-height: 1.4; margin-bottom: 0.25rem;"></h3>
+                            </div>
                         </div>
                     </div>
 

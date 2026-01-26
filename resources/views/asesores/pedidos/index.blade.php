@@ -327,7 +327,7 @@
                 fecha_creacion: datos.fecha_creacion || datos.created_at || new Date().toLocaleDateString('es-ES'),
                 forma_de_pago: datos.forma_pago || datos.forma_de_pago || 'No especificada',
                 prendas: datos.prendas || [],
-                epps: datos.epps || [],
+                epps: datos.epps_transformados || datos.epps || [],
                 procesos: datos.procesos || [],
                 // Copiar todas las otras propiedades
                 ...datos

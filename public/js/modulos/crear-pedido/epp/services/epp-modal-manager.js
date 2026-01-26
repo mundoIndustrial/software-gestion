@@ -83,9 +83,26 @@ class EppModalManager {
         // Mostrar imagen si existe
         const imagenElemento = document.getElementById('imagenProductoEPP');
         console.log('🎯 [ModalManager] Elemento imagenProductoEPP encontrado:', !!imagenElemento);
-        if (imagenElemento && producto.imagen) {
-            imagenElemento.src = producto.imagen;
-            console.log('🎯 [ModalManager] Imagen mostrada:', producto.imagen);
+        if (imagenElemento) {
+            // Si viene en producto.imagen directamente
+            if (producto.imagen) {
+                imagenElemento.src = producto.imagen;
+                imagenElemento.style.display = 'block';
+                console.log('🎯 [ModalManager] Imagen mostrada (producto.imagen):', producto.imagen);
+            }
+            // Si viene en producto.imagenes como array
+            else if (producto.imagenes && Array.isArray(producto.imagenes) && producto.imagenes.length > 0) {
+                const firstImage = producto.imagenes[0];
+                const imagenSrc = firstImage.ruta_webp || firstImage.ruta_original || firstImage;
+                imagenElemento.src = imagenSrc;
+                imagenElemento.style.display = 'block';
+                console.log('🎯 [ModalManager] Imagen mostrada (producto.imagenes):', imagenSrc);
+            }
+            // Si no hay imagen
+            else {
+                imagenElemento.style.display = 'none';
+                console.log('⚠️ [ModalManager] Sin imagen disponible');
+            }
         }
         
         const productoCard = document.getElementById('productoCardEPP');

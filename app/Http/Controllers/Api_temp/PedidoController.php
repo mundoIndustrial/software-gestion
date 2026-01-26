@@ -171,10 +171,107 @@ class PedidoController extends Controller
     {
         try {
             $response = $this->obtenerPedidoUseCase->ejecutar($id);
+            
+            // Transformar datos a array
+            $datos = $response->toArray();
+            
+            // Agregar EPPs transformados con imágenes
+            $eppsList = [];
+            try {
+                $pedido = \App\Models\PedidoProduccion::find($id);
+                \Log::info('[PedidoController::show] Buscando EPPs', [
+                    'pedido_id' => $id,
+                    'tiene_epps' => $pedido && $pedido->epps ? $pedido->epps->count() : 0,
+                ]);
+                
+                if ($pedido && $pedido->epps) {
+                    foreach ($pedido->epps as $pedidoEpp) {
+                        $epp = $pedidoEpp->epp;
+                        
+                        if (!$epp) {
+                            \Log::warning('[PedidoController::show] EPP sin relación válida', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                            ]);
+                            continue;
+                        }
+                        
+                        // Obtener imágenes del EPP
+                        $imagenes = [];
+                        try {
+                            $imagenesData = \DB::table('pedido_epp_imagenes')
+                                ->where('pedido_epp_id', $pedidoEpp->id)
+                                ->orderBy('orden', 'asc')
+                                ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
+                            
+                            \Log::info('[PedidoController::show] Buscando imágenes de EPP', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'imagenes_encontradas' => $imagenesData->count(),
+                            ]);
+                            
+                            if ($imagenesData->count() > 0) {
+                                foreach ($imagenesData as $img) {
+                                    $ruta = $img->ruta_web ?? $img->ruta_original;
+                                    \Log::debug('[PedidoController::show] Procesando imagen', [
+                                        'ruta_original' => $ruta,
+                                    ]);
+                                    
+                                    // Normalizar ruta
+                                    if (!str_starts_with($ruta, '/storage/')) {
+                                        if (str_starts_with($ruta, 'storage/')) {
+                                            $ruta = '/' . $ruta;
+                                        } else {
+                                            $ruta = '/storage/' . $ruta;
+                                        }
+                                    }
+                                    
+                                    $imagenes[] = [
+                                        'ruta_webp' => $ruta,
+                                        'ruta_original' => $ruta,
+                                        'ruta_web' => $ruta,
+                                        'principal' => $img->principal ?? false,
+                                        'orden' => $img->orden ?? 0,
+                                    ];
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('[PedidoController::show] Error obtener imágenes de EPP', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                        
+                        $eppsList[] = [
+                            'id' => $pedidoEpp->id,
+                            'epp_id' => $pedidoEpp->epp_id,
+                            'nombre' => $epp->nombre_completo ?? $epp->nombre ?? '',
+                            'nombre_completo' => $epp->nombre_completo ?? $epp->nombre ?? '',
+                            'cantidad' => $pedidoEpp->cantidad ?? 0,
+                            'observaciones' => $pedidoEpp->observaciones ?? '',
+                            'imagen' => !empty($imagenes) ? $imagenes[0] : null,
+                            'imagenes' => $imagenes,
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('[PedidoController::show] Error procesando EPPs', [
+                    'pedido_id' => $id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+            
+            \Log::info('[PedidoController::show] EPPs transformados', [
+                'pedido_id' => $id,
+                'epps_count' => count($eppsList),
+                'primer_epp_imagenes' => !empty($eppsList) ? count($eppsList[0]['imagenes']) : 0,
+            ]);
+            
+            // Agregar EPPs transformados
+            $datos['epps_transformados'] = $eppsList;
 
             return response()->json([
                 'success' => true,
-                'data' => $response->toArray()
+                'data' => $datos
             ], 200);
 
         } catch (\DomainException $e) {
@@ -260,6 +357,7 @@ class PedidoController extends Controller
                 'prendas.procesos',
                 'prendas.fotos',
                 'prendas.telaFotos',
+                'epps.epp',
                 'asesor:id,name',
                 'cliente:id,nombre'
             ])->findOrFail($id);
@@ -293,9 +391,69 @@ class PedidoController extends Controller
                 }
             }
 
+            // Transformar EPPs para incluir imágenes con rutas normalizadas
+            $eppsList = [];
+            if ($pedido->epps) {
+                foreach ($pedido->epps as $pedidoEpp) {
+                    $epp = $pedidoEpp->epp;
+                    
+                    if (!$epp) {
+                        continue;
+                    }
+                    
+                    // Obtener imágenes del EPP
+                    $imagenes = [];
+                    try {
+                        $imagenesData = \DB::table('pedido_epp_imagenes')
+                            ->where('pedido_epp_id', $pedidoEpp->id)
+                            ->orderBy('orden', 'asc')
+                            ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
+                        
+                        if ($imagenesData->count() > 0) {
+                            foreach ($imagenesData as $img) {
+                                $ruta = $img->ruta_web ?? $img->ruta_original;
+                                // Normalizar ruta
+                                if (!str_starts_with($ruta, '/storage/')) {
+                                    if (str_starts_with($ruta, 'storage/')) {
+                                        $ruta = '/' . $ruta;
+                                    } else {
+                                        $ruta = '/storage/' . $ruta;
+                                    }
+                                }
+                                
+                                $imagenes[] = [
+                                    'ruta_webp' => $ruta,
+                                    'ruta_original' => $ruta,
+                                    'ruta_web' => $ruta,
+                                    'principal' => $img->principal ?? false,
+                                    'orden' => $img->orden ?? 0,
+                                ];
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::debug('[PedidoController] Error obtener imágenes de EPP', ['error' => $e->getMessage()]);
+                    }
+                    
+                    $eppsList[] = [
+                        'id' => $pedidoEpp->id,
+                        'epp_id' => $pedidoEpp->epp_id,
+                        'nombre' => $epp->nombre_completo ?? $epp->nombre ?? '',
+                        'nombre_completo' => $epp->nombre_completo ?? $epp->nombre ?? '',
+                        'cantidad' => $pedidoEpp->cantidad ?? 0,
+                        'observaciones' => $pedidoEpp->observaciones ?? '',
+                        'imagen' => !empty($imagenes) ? $imagenes[0] : null,
+                        'imagenes' => $imagenes,
+                    ];
+                }
+            }
+
+            // Agregar EPPs a los datos de respuesta
+            $datosRespuesta = $pedido->toArray();
+            $datosRespuesta['epps_transformados'] = $eppsList;
+
             return response()->json([
                 'success' => true,
-                'data' => $pedido
+                'data' => $datosRespuesta
             ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

@@ -428,13 +428,22 @@ class PedidoProduccionRepository
                                 ->get(['ruta_web', 'ruta_original', 'principal', 'orden']);
                             
                             if ($imagenesData->count() > 0) {
-                                $imagenes = $imagenesData->pluck('ruta_web')->filter()->toArray();
+                                // Normalizar rutas para EPP con formato correcto de objeto imagen
+                                $imagenes = $imagenesData->map(fn($img) => [
+                                    'ruta_webp' => $this->normalizarRutaImagen($img->ruta_web ?? $img->ruta_original),
+                                    'ruta_original' => $this->normalizarRutaImagen($img->ruta_original),
+                                    'ruta_web' => $this->normalizarRutaImagen($img->ruta_web ?? $img->ruta_original),
+                                    'principal' => $img->principal ?? false,
+                                    'orden' => $img->orden ?? 0,
+                                ])->toArray();
+                                
                                 $eppFormato['imagenes'] = $imagenes;
                                 $eppFormato['imagen'] = $imagenes[0] ?? null;
                                 
                                 \Log::info('[FACTURA] Imágenes encontradas para EPP', [
                                     'pedido_epp_id' => $pedidoEpp->id,
                                     'cantidad' => count($imagenes),
+                                    'primera_imagen' => $imagenes[0]['ruta_webp'] ?? 'sin imagen',
                                 ]);
                             }
                         } catch (\Exception $e) {

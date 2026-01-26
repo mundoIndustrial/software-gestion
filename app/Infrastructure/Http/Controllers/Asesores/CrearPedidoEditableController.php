@@ -560,6 +560,16 @@ class CrearPedidoEditableController extends Controller
                 'imagenes_mapeadas' => count($dtoPedido->imagen_uid_a_ruta)
             ]);
 
+            // ====== PASO 7B: CRÍTICO - Procesar imágenes de EPPs ======
+            if (!empty($dtoPedido->epps)) {
+                $this->procesarYAsignarEpps($request, $pedidoId, $dtoPedido->epps);
+                
+                Log::info('[CrearPedidoEditableController] Imágenes de EPPs procesadas', [
+                    'pedido_id' => $pedidoId,
+                    'epps_count' => count($dtoPedido->epps)
+                ]);
+            }
+
             // ====== PASO 8: Calcular cantidades y commit ======
             $cantidadTotalPrendas = $this->calcularCantidadTotalPrendas($pedidoId);
             $cantidadTotalEpps = $this->calcularCantidadTotalEpps($pedidoId);
@@ -921,13 +931,16 @@ class CrearPedidoEditableController extends Controller
                     );
 
                     // Crear registro en pedido_epp_imagenes
-                    //  NOTA: La columna se llama ruta_web (no ruta_webp)
-                    // y principal (no es_principal)
+                    // NOTAS:
+                    // - ruta_original: ruta sin procesar (en este caso es la misma WebP)
+                    // - ruta_web: ruta accesible desde el navegador (también WebP)
+                    // - principal: 1 si es la primera imagen, 0 si no
                     PedidoEppImagen::create([
                         'pedido_epp_id' => $pedidoEpp->id,
-                        'ruta_web' => $resultado['webp'],  // Convertida a WebP
+                        'ruta_original' => $resultado['webp'],  // Convertida a WebP
+                        'ruta_web' => $resultado['webp'],       // Convertida a WebP
                         'orden' => $imgIdx + 1,
-                        'principal' => $imgIdx === 0 ? 1 : 0,  // Primera imagen es principal
+                        'principal' => $imgIdx === 0 ? 1 : 0,   // Primera imagen es principal
                     ]);
 
                     Log::debug('[CrearPedidoEditableController] 📸 Imagen EPP guardada (WebP)', [

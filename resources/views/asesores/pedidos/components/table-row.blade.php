@@ -292,31 +292,19 @@
     @endphp
 </div>
 
-<!-- Cantidad (solo si no es logo) -->
+<!-- Novedades (solo si no es logo) -->
 @if(request('tipo') !== 'logo')
-<div style="color: #374151; font-weight: 600; font-size: 0.8rem; text-align: center; white-space: nowrap;">
+<div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: normal; word-wrap: break-word; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
     @php
         if (get_class($pedido) === 'App\Models\LogoPedido') {
             echo '<span style="color: #3b82f6;">LOGO</span>';
-        } elseif ($pedido->prendas->count() > 0) {
-            // Calcular cantidad real desde cantidad_talla de prendas
-            $cantidadReal = 0;
-            foreach ($pedido->prendas as $prenda) {
-                $cantidadReal += $prenda->cantidad_total;
-            }
-            
-            // Si la cantidad real difiere de cantidad_total, mostrar la real
-            $cantidadMostrada = $cantidadReal;
-            
-            // Agregar indicador visual si hay discrepancia
-            $indicador = '';
-            if ($cantidadMostrada !== $pedido->cantidad_total && $pedido->cantidad_total > 0) {
-                $indicador = ' <span style="color: #ef4444; font-weight: bold; cursor: help;" title="Ajustada de ' . $pedido->cantidad_total . '">*</span>';
-            }
-            
-            echo '<span>' . $cantidadMostrada . ' und' . $indicador . '</span>';
         } else {
-            echo '<span style="color: #d1d5db;">-</span>';
+            $novedades = $pedido->novedades ?? null;
+            if (!empty($novedades)) {
+                echo $novedades;
+            } else {
+                echo '<span style="color: #d1d5db;">-</span>';
+            }
         }
     @endphp
 </div>

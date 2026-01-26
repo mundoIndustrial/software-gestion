@@ -1299,16 +1299,24 @@ function generarHTMLFactura(datos) {
                     ${datos.epps.map((epp, idx) => `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
                             <!-- HEADER EPP -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                                <!-- COLUMNA 1: Nombre -->
+                            <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 12px; align-items: start;">
+                                <!-- COLUMNA 1: Imagen -->
                                 <div style="font-size: 11px;">
-                                    <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">${epp.nombre_completo || epp.nombre || ''}</div>
+                                    ${epp.imagen && epp.imagen.ruta_webp ? `
+                                        <img src="${window._extraerURLImagen(epp.imagen)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(epp.imagenes || [], 'Imágenes de EPP: ' + (epp.nombre_completo || epp.nombre))})" title="Click para ver todas las imágenes de EPP">
+                                    ` : '<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 4px; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 9px;">Sin imagen</div>'}
                                 </div>
                                 
-                                <!-- COLUMNA 2: Cantidad -->
+                                <!-- COLUMNA 2: Nombre y Datos -->
                                 <div style="font-size: 11px;">
+                                    <div style="font-weight: 700; color: #374151; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre || ''}</div>
+                                    ${epp.talla ? `<div style="color: #6b7280; font-size: 9px; margin-bottom: 2px;"><strong>Talla:</strong> ${epp.talla}</div>` : ''}
+                                </div>
+                                
+                                <!-- COLUMNA 3: Cantidad -->
+                                <div style="font-size: 11px; text-align: right;">
                                     <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Cantidad</div>
-                                    <div style="font-weight: 600; color: #374151;"><strong>${epp.cantidad || 0}</strong></div>
+                                    <div style="font-weight: 600; color: #374151; font-size: 12px;"><strong>${epp.cantidad || 0}</strong></div>
                                 </div>
                             </div>
                             

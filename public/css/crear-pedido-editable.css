@@ -474,6 +474,11 @@ table textarea {
     z-index: 10000 !important;
 }
 
+/* Modal de agregar/editar EPP debe estar encima de TODO (incluso por encima de Swal z-index: 999999) */
+#modal-agregar-epp {
+    z-index: 1000000 !important;
+}
+
 .modal-container {
     background: white;
     border-radius: 12px;

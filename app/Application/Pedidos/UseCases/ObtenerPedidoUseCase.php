@@ -380,10 +380,13 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             if ($prenda->fotos && $prenda->fotos->count() > 0) {
                 // Ya viene ordenada por la query, pero aseguramos en caso
                 foreach ($prenda->fotos as $foto) {
+                    $rutaWebp = $foto->ruta_webp ?? $foto->url ?? null;
+                    $rutaOriginal = $foto->ruta_original ?? $rutaWebp ?? null;
+                    
                     $imagenes[] = [
                         'id' => $foto->id ?? null,
-                        'ruta_webp' => $foto->ruta_webp ?? $foto->url ?? null,
-                        'ruta_original' => $foto->ruta_original ?? $foto->ruta_webp ?? $foto->url ?? null,
+                        'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
+                        'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
                         'orden' => (int)($foto->orden ?? 0),
                     ];
                 }
@@ -426,13 +429,16 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 foreach ($prenda->coloresTelas as $ct) {
                     if ($ct->fotos && $ct->fotos->count() > 0) {
                         foreach ($ct->fotos as $foto) {
+                            $rutaWebp = $foto->ruta_webp ?? $foto->url ?? null;
+                            $rutaOriginal = $foto->ruta_original ?? $rutaWebp ?? null;
+                            
                             $imagenes[] = [
                                 'id' => $foto->id ?? null,
                                 'color_tela_id' => $ct->id ?? null,
                                 'color' => $ct->color?->nombre ?? null,
                                 'tela' => $ct->tela?->nombre ?? null,
-                                'ruta_webp' => $foto->ruta_webp ?? $foto->url ?? null,
-                                'ruta_original' => $foto->ruta_original ?? $foto->ruta_webp ?? $foto->url ?? null,
+                                'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
+                                'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
                                 'orden' => (int)($foto->orden ?? 0),
                             ];
                         }
@@ -479,10 +485,13 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     // Obtener imágenes del proceso ordenadas
                     if ($proceso->imagenes && $proceso->imagenes->count() > 0) {
                         foreach ($proceso->imagenes as $imagen) {
+                            $rutaWebp = $imagen->ruta_webp ?? $imagen->url ?? null;
+                            $rutaOriginal = $imagen->ruta_original ?? $rutaWebp ?? null;
+                            
                             $imagenes[] = [
                                 'id' => $imagen->id ?? null,
-                                'ruta_webp' => $imagen->ruta_webp ?? $imagen->url ?? null,
-                                'ruta_original' => $imagen->ruta_original ?? $imagen->ruta_webp ?? $imagen->url ?? null,
+                                'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
+                                'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
                                 'orden' => (int)($imagen->orden ?? 0),
                                 'es_principal' => (bool)($imagen->es_principal ?? false),
                             ];
@@ -524,6 +533,29 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
+     * Normalizar ruta de imagen para asegurar que siempre comience con /storage/
+     */
+    private function normalizarRutaImagen(?string $ruta): ?string
+    {
+        if (!$ruta) {
+            return null;
+        }
+
+        // Si ya comienza con /storage/, retornar tal cual
+        if (str_starts_with($ruta, '/storage/')) {
+            return $ruta;
+        }
+        // Si comienza con storage/ (sin /), agregar / al inicio
+        else if (str_starts_with($ruta, 'storage/')) {
+            return '/' . $ruta;
+        }
+        // Si no comienza con ninguno, agregar /storage/
+        else {
+            return '/storage/' . $ruta;
+        }
+    }
+
+    /**
      * Obtener EPPs del pedido enriquecidos
      * 
      * Incluye imágenes de EPP ordenadas por "orden"
@@ -544,10 +576,13 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 // Obtener imágenes del EPP ordenadas
                 if ($epp->imagenes && $epp->imagenes->count() > 0) {
                     foreach ($epp->imagenes as $imagen) {
+                        $rutaWebp = $imagen->ruta_webp ?? $imagen->ruta_web ?? $imagen->url ?? null;
+                        $rutaOriginal = $imagen->ruta_original ?? $rutaWebp ?? null;
+                        
                         $imagenes[] = [
                             'id' => $imagen->id ?? null,
-                            'ruta_webp' => $imagen->ruta_webp ?? $imagen->ruta_web ?? $imagen->url ?? null,
-                            'ruta_original' => $imagen->ruta_original ?? $imagen->ruta_webp ?? $imagen->ruta_web ?? $imagen->url ?? null,
+                            'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
+                            'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
                             'orden' => (int)($imagen->orden ?? 0),
                         ];
                     }

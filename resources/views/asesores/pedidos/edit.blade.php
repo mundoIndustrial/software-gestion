@@ -335,5 +335,83 @@
         }
     });
 </script>
+
+<!-- Script para renderizar factura editable - Para mostrar prendas con imágenes -->
+<script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}"></script>
+<script>
+    window.addEventListener('load', function() {
+        console.log('🔥 [FACTURA-EDITABLE-EDIT] Página cargada, renderizando factura...');
+        
+        // Esperar un poco para que todo esté listo
+        setTimeout(function() {
+            console.log('🔍 [FACTURA-EDITABLE-EDIT] Buscando datos del pedido...');
+            
+            // Los datos vienen en $pedidoData desde el servidor
+            // Necesito obtener los datos del formulario
+            const formElement = document.getElementById('formEditarPedido');
+            if (!formElement) {
+                console.log('❌ [FACTURA-EDITABLE-EDIT] Formulario no encontrado');
+                return;
+            }
+            
+            // Obtener ID del pedido del atributo data-pedido
+            const pedidoId = formElement.getAttribute('data-pedido');
+            console.log('📋 [FACTURA-EDITABLE-EDIT] Pedido ID:', pedidoId);
+            
+            // Hacer fetch para obtener los datos del pedido desde la API
+            fetch(`/api/pedidos/${pedidoId}`)
+                .then(response => response.json())
+                .then(resultado => {
+                    console.log('✅ [FACTURA-EDITABLE-EDIT] Datos obtenidos de API:', resultado);
+                    
+                    if (resultado.success && resultado.data && typeof generarHTMLFactura === 'function') {
+                        const datos = {
+                            numero_pedido: resultado.data.pedido?.numero_pedido || pedidoId,
+                            numero_pedido_temporal: resultado.data.pedido?.numero_pedido_temporal,
+                            cliente: resultado.data.pedido?.cliente || '',
+                            asesora: resultado.data.pedido?.asesora || '',
+                            forma_de_pago: resultado.data.pedido?.forma_de_pago || '',
+                            prendas: resultado.data.pedido?.prendas || [],
+                            procesos: resultado.data.pedido?.procesos || [],
+                            epps: resultado.data['epps_transformados'] || resultado.data.pedido?.epps || []
+                        };
+                        
+                        console.log('📦 [FACTURA-EDITABLE-EDIT] Datos preparados:', {
+                            prendas: datos.prendas.length,
+                            epps: datos.epps.length
+                        });
+                        
+                        try {
+                            const htmlFactura = generarHTMLFactura(datos);
+                            
+                            // Crear contenedor si no existe
+                            let contenedor = document.getElementById('factura-container-editable');
+                            if (!contenedor) {
+                                contenedor = document.createElement('div');
+                                contenedor.id = 'factura-container-editable';
+                                contenedor.style.cssText = 'margin: 1rem 0; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; position: relative; z-index: 1;';
+                                
+                                // Insertar antes del formulario
+                                const pedidosContainer = document.querySelector('.pedidos-container');
+                                if (pedidosContainer) {
+                                    pedidosContainer.insertBefore(contenedor, pedidosContainer.firstChild);
+                                }
+                            }
+                            
+                            contenedor.innerHTML = htmlFactura;
+                            console.log('✅✅ [FACTURA-EDITABLE-EDIT] FACTURA RENDERIZADA EXITOSAMENTE');
+                        } catch (e) {
+                            console.error('❌ [FACTURA-EDITABLE-EDIT] Error al renderizar factura:', e);
+                        }
+                    } else {
+                        console.log('⚠️ [FACTURA-EDITABLE-EDIT] No se pudieron obtener datos o generarHTMLFactura no está disponible');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ [FACTURA-EDITABLE-EDIT] Error en fetch:', error);
+                });
+        }, 500);
+    });
+</script>
 @endpush
 

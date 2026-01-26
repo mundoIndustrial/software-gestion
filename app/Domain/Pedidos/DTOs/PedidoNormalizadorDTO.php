@@ -194,8 +194,10 @@ class PedidoNormalizadorDTO
         return array_map(function ($epp) {
             return [
                 'uid' => $epp['uid'] ?? null,
-                'nombre' => trim($epp['nombre'] ?? ''),
+                'epp_id' => intval($epp['epp_id'] ?? 0),
+                'nombre' => trim($epp['nombre'] ?? $epp['nombre_epp'] ?? ''),
                 'cantidad' => intval($epp['cantidad'] ?? 1),
+                'observaciones' => trim($epp['observaciones'] ?? ''),
                 'descripcion' => trim($epp['descripcion'] ?? ''),
                 'imagenes' => self::normalizarImagenes($epp['imagenes'] ?? [])
             ];

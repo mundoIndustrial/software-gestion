@@ -243,12 +243,25 @@ class ItemFormCollector {
         //  SEPARAR EPPs de prendas
         const prendas = itemsFormato.filter(item => item !== null && item.tipo !== 'epp');
         const epps = items.filter(item => item.tipo === 'epp').map(epp => ({
+            uid: epp.uid || null,
             epp_id: epp.epp_id,
             nombre_epp: epp.nombre_epp || epp.nombre_prenda || epp.nombre_completo || epp.nombre || '',
             categoria: epp.categoria || '',
             cantidad: epp.cantidad,
             observaciones: epp.observaciones || null,
-            imagenes: epp.imagenes || []
+            // IMPORTANTE: Pasar archivo File object, no el objeto con preview
+            imagenes: Array.isArray(epp.imagenes) ? epp.imagenes.map(img => {
+                // Si tiene archivo (File object), devolverlo directamente
+                if (img.archivo instanceof File) {
+                    return img.archivo;
+                }
+                // Si es un File directamente, devolverlo
+                if (img instanceof File) {
+                    return img;
+                }
+                // Sino, devolver como está (por compatibilidad con otros formatos)
+                return img;
+            }) : []
         }));
         
         const pedidoFinal = {

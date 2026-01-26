@@ -55,8 +55,8 @@
             </div>
             @if(request('tipo') !== 'logo')
             <div class="th-wrapper">
-                <span>Cantidad</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Cantidad">
+                <span>Novedades</span>
+                <button type="button" class="btn-filter-column" title="Filtrar Novedades">
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>

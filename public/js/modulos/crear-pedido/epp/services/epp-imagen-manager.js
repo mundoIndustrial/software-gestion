@@ -80,6 +80,8 @@ class EppImagenManager {
      * Eliminar imagen
      */
     async eliminarImagen(imagenId) {
+        console.log('🗑️ [EppImagenManager] eliminarImagen() llamado con imagenId:', imagenId);
+        
         // Mostrar confirmación elegante con SweetAlert
         const result = await Swal.fire({
             title: ' Eliminar Imagen',
@@ -92,22 +94,26 @@ class EppImagenManager {
             cancelButtonText: 'Cancelar',
             allowOutsideClick: false,
             allowEscapeKey: false,
-            zIndex: 99999,
             didOpen: (modal) => {
-                // Asegurar que el modal esté bien posicionado
+                console.log('🗑️ [EppImagenManager] Modal de confirmación abierto');
+                // Asegurar que el modal esté encima de todo (incluso por encima del modal-agregar-epp z-index: 1000000)
+                const container = modal.closest('.swal2-container');
+                if (container) {
+                    container.style.zIndex = '1000001';
+                }
                 const popup = modal.querySelector('.swal2-popup');
                 if (popup) {
-                    popup.style.zIndex = '99999';
+                    popup.style.zIndex = '1000001';
                 }
                 const backdrop = document.querySelector('.swal2-backdrop-show');
                 if (backdrop) {
-                    backdrop.style.zIndex = '99998';
+                    backdrop.style.zIndex = '1000000';
                 }
             }
         });
 
         if (!result.isConfirmed) {
-
+            console.log('🗑️ [EppImagenManager] Eliminación cancelada por usuario');
             return;
         }
 
@@ -125,7 +131,13 @@ class EppImagenManager {
                 icon: 'success',
                 confirmButtonColor: '#10b981',
                 confirmButtonText: 'OK',
-                zIndex: 99999
+                didOpen: (modal) => {
+                    // Asegurar que el modal de éxito también esté encima
+                    const container = modal.closest('.swal2-container');
+                    if (container) {
+                        container.style.zIndex = '1000001';
+                    }
+                }
             });
 
 
