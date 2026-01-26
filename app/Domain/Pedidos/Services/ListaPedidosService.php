@@ -91,7 +91,9 @@ class ListaPedidosService
     {
         $pedido = PedidoProduccion::with([
             'prendas' => function($q) {
-                $q->with('procesos');
+                $q->with(['procesos' => function ($q2) {
+                    $q2->withTrashed();
+                }]);
             },
             'cotizacion' => function($q) {
                 $q->with('prendasCotizaciones');

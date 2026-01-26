@@ -147,22 +147,42 @@ class ModalNovedadPrenda {
         this.mostrarCargando();
 
         try {
+            // IMPORTANTE: Transformar procesos de estructura de objeto a array
+            // De: { 'reflectivo': { datos: {...} }, 'estampado': { datos: {...} } }
+            // A:  [ { tipo_proceso_id: 1, ubicaciones: [...], ... }, { tipo_proceso_id: 2, ... } ]
+            const procesosArray = this._transformarProcesosAArray(this.prendaData.procesos || {});
+            
             // Crear FormData para enviar archivos
             const formData = new FormData();
             formData.append('nombre_prenda', this.prendaData.nombre_prenda);
             formData.append('descripcion', this.prendaData.descripcion);
             formData.append('origen', this.prendaData.origen);
             formData.append('cantidad_talla', JSON.stringify(this.prendaData.cantidad_talla || {}));
-            formData.append('procesos', JSON.stringify(this.prendaData.procesos || {}));
+            formData.append('procesos', JSON.stringify(procesosArray)); // Usar array transformado
             formData.append('novedad', novedad);  // AGREGAR NOVEDAD
             
-            // Agregar imágenes de prenda
+            // Agregar imágenes de prenda - separar nuevas de existentes
+            const imagenesNuevas = [];
+            const imagenesDB = [];
+            
             if (this.prendaData.imagenes && this.prendaData.imagenes.length > 0) {
                 this.prendaData.imagenes.forEach((img, idx) => {
                     if (img instanceof File) {
-                        formData.append(`imagenes[${idx}]`, img);
+                        imagenesNuevas.push(img);
+                        formData.append(`imagenes[${imagenesNuevas.length - 1}]`, img);
+                    } else if (img && img.urlDesdeDB) {
+                        // Imagen existente de la BD - guardar URL para preservarla
+                        imagenesDB.push({
+                            previewUrl: img.previewUrl,
+                            nombre: img.nombre
+                        });
                     }
                 });
+            }
+            
+            // Enviar imágenes existentes como JSON para que backend las preserve
+            if (imagenesDB.length > 0) {
+                formData.append('imagenes_existentes', JSON.stringify(imagenesDB));
             }
             
             // Agregar telas
@@ -292,6 +312,30 @@ class ModalNovedadPrenda {
                 this.forzarZIndexMaximo();
             }
         });
+    }
+
+    /**
+     * Transformar procesos de estructura de objeto a array
+     * De: { 'reflectivo': { datos: {...} }, 'estampado': { datos: {...} } }
+     * A:  [ { tipo_proceso_id: 1, ubicaciones: [...], ... }, { tipo_proceso_id: 2, ... } ]
+     */
+    _transformarProcesosAArray(procesosObj) {
+        if (!procesosObj || typeof procesosObj !== 'object' || Array.isArray(procesosObj)) {
+            return Array.isArray(procesosObj) ? procesosObj : [];
+        }
+
+        return Object.entries(procesosObj).map(([tipoProceso, procInfo]) => {
+            const datosProc = procInfo?.datos || procInfo || {};
+            return {
+                id: datosProc.id || undefined,
+                tipo_proceso_id: datosProc.tipo_proceso_id || undefined,
+                tipo: datosProc.tipo || tipoProceso,
+                nombre: datosProc.nombre || tipoProceso,
+                ubicaciones: datosProc.ubicaciones || [],
+                observaciones: datosProc.observaciones || '',
+                estado: datosProc.estado || 'PENDIENTE'
+            };
+        }).filter(proc => proc.tipo_proceso_id); // Solo retornar procesos con tipo_proceso_id válido
     }
 }
 

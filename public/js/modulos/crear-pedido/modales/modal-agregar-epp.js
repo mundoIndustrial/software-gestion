@@ -200,7 +200,7 @@ function mostrarFormularioCrearEPPNuevo() {
 
 function ocultarFormularioCrearEPP() {
     document.getElementById('formularioEPPNuevo').style.display = 'none';
-    ['nuevoEPPNombre', 'nuevoEPPCategoria', 'nuevoEPPCodigo', 'nuevoEPPDescripcion'].forEach(id => {
+    ['nuevoEPPNombre', 'nuevoEPPDescripcion'].forEach(id => {
         const elem = document.getElementById(id);
         if (elem) elem.value = '';
     });
@@ -208,24 +208,12 @@ function ocultarFormularioCrearEPP() {
 
 async function crearEPPNuevoYAgregar() {
     const nombre = document.getElementById('nuevoEPPNombre').value.trim();
-    const categoria = document.getElementById('nuevoEPPCategoria').value.trim();
-    const codigo = document.getElementById('nuevoEPPCodigo').value.trim();
     const descripcion = document.getElementById('nuevoEPPDescripcion').value.trim();
 
     // Validar campos obligatorios
     if (!nombre) {
         alert('Por favor ingresa el nombre del EPP');
         document.getElementById('nuevoEPPNombre').focus();
-        return;
-    }
-    if (!categoria) {
-        alert('Por favor selecciona la categoría');
-        document.getElementById('nuevoEPPCategoria').focus();
-        return;
-    }
-    if (!codigo) {
-        alert('Por favor ingresa el código del EPP');
-        document.getElementById('nuevoEPPCodigo').focus();
         return;
     }
 
@@ -242,8 +230,6 @@ async function crearEPPNuevoYAgregar() {
             },
             body: JSON.stringify({
                 nombre: nombre,
-                categoria: categoria,
-                codigo: codigo,
                 descripcion: descripcion
             })
         });
@@ -261,15 +247,11 @@ async function crearEPPNuevoYAgregar() {
         // Establecer como producto seleccionado
         productoSeleccionadoEPP = {
             id: eppNuevo.id || eppNuevo.data?.id,
-            nombre: nombre,
-            codigo: codigo,
-            categoria: categoria
+            nombre: nombre
         };
 
         // Actualizar tarjeta
         document.getElementById('nombreProductoEPP').textContent = nombre;
-        document.getElementById('categoriaProductoEPP').textContent = categoria;
-        document.getElementById('codigoProductoEPP').textContent = codigo;
         document.getElementById('productoCardEPP').style.display = 'flex';
 
         // Limpiar y ocultar formulario

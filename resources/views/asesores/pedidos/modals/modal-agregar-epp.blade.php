@@ -32,9 +32,7 @@
             <div id="productoCardEPP" class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-4 animate-in fade-in" style="display: none;">
                 <img id="imagenProductoEPP" src="" alt="EPP" class="w-20 h-20 rounded bg-white border border-blue-200 object-cover flex-shrink-0">
                 <div class="flex-1">
-                    <span id="categoriaProductoEPP" class="text-xs font-bold text-blue-600 uppercase block mb-1"></span>
                     <h3 id="nombreProductoEPP" class="font-semibold text-gray-900 text-sm mb-1 leading-snug"></h3>
-                    <code id="codigoProductoEPP" class="text-xs text-gray-600"></code>
                 </div>
             </div>
 
@@ -86,48 +84,6 @@
 <script>
 // Variables globales
 let productoSeleccionadoEPP = null;
-const eppDatos = [
-    {
-        id: 1,
-        nombre: 'Casco de Seguridad ABS con Suspensión',
-        categoria: 'PROTECCIÓN CABEZA',
-        codigo: 'EPP-CAB-001',
-        imagen: 'https://via.placeholder.com/80?text=Casco',
-        referencia: 'Casco'
-    },
-    {
-        id: 2,
-        nombre: 'Guantes Nitrilo Anti Resbalón',
-        categoria: 'PROTECCIÓN MANOS',
-        codigo: 'EPP-MAO-002',
-        imagen: 'https://via.placeholder.com/80?text=Guantes',
-        referencia: 'Nitrilo'
-    },
-    {
-        id: 3,
-        nombre: 'Botas de Seguridad Punta de Acero',
-        categoria: 'PROTECCIÓN PIES',
-        codigo: 'EPP-PIE-003',
-        imagen: 'https://via.placeholder.com/80?text=Botas',
-        referencia: 'Botas'
-    },
-    {
-        id: 4,
-        nombre: 'Chalecos Reflectivos Alta Visibilidad',
-        categoria: 'VISIBILIDAD',
-        codigo: 'EPP-VIS-004',
-        imagen: 'https://via.placeholder.com/80?text=Chaleco',
-        referencia: 'Chaleco'
-    },
-    {
-        id: 5,
-        nombre: 'Mascarillas FFP2 Protección Respiratoria',
-        categoria: 'PROTECCIÓN RESPIRATORIA',
-        codigo: 'EPP-RES-005',
-        imagen: 'https://via.placeholder.com/80?text=Mascarilla',
-        referencia: 'Mascarilla'
-    }
-];
 
 function abrirModalAgregarEPP() {
     const modal = document.getElementById('modalAgregarEPP');
@@ -157,7 +113,7 @@ function resetearModalAgregarEPP() {
 }
 
 function filtrarEPPBuscador(valor) {
-    const busqueda = valor.toLowerCase();
+    const busqueda = valor.toLowerCase().trim();
     
     if (!busqueda) {
         document.getElementById('productoCardEPP').style.display = 'none';
@@ -165,17 +121,20 @@ function filtrarEPPBuscador(valor) {
         return;
     }
 
-    const producto = eppDatos.find(epp => 
-        epp.nombre.toLowerCase().includes(busqueda) ||
-        epp.referencia.toLowerCase().includes(busqueda) ||
-        epp.codigo.toLowerCase().includes(busqueda)
-    );
-
-    if (producto) {
-        mostrarProductoEPP(producto);
-    } else {
-        document.getElementById('productoCardEPP').style.display = 'none';
-        resetearFormularioEPP();
+    // Buscar desde el servicio EPP que obtiene datos de la BD
+    if (window.eppService && typeof window.eppService.buscarEPP === 'function') {
+        window.eppService.buscarEPP(busqueda).then(productos => {
+            if (productos && productos.length > 0) {
+                mostrarProductoEPP(productos[0]);
+            } else {
+                document.getElementById('productoCardEPP').style.display = 'none';
+                resetearFormularioEPP();
+            }
+        }).catch(error => {
+            console.error('Error al buscar EPP:', error);
+            document.getElementById('productoCardEPP').style.display = 'none';
+            resetearFormularioEPP();
+        });
     }
 }
 
@@ -185,9 +144,7 @@ function mostrarProductoEPP(producto) {
     // Mostrar tarjeta
     document.getElementById('productoCardEPP').style.display = 'flex';
     document.getElementById('imagenProductoEPP').src = producto.imagen;
-    document.getElementById('categoriaProductoEPP').textContent = producto.categoria;
     document.getElementById('nombreProductoEPP').textContent = producto.nombre;
-    document.getElementById('codigoProductoEPP').textContent = producto.codigo;
 
     // Habilitar campos
     document.getElementById('cantidadEPP').disabled = false;

@@ -40,15 +40,21 @@ class EppService {
      * Seleccionar producto EPP
      */
     seleccionarProducto(producto) {
+        console.log('✨ [EppService] seleccionarProducto llamado:', producto);
         this.stateManager.setProductoSeleccionado(producto);
+        console.log('✨ [EppService] Producto guardado en state');
+        
         this.modalManager.mostrarProductoSeleccionado(producto);
+        console.log('✨ [EppService] Mostrado en modal');
+        
         this.modalManager.habilitarCampos();
+        console.log('✨ [EppService] Campos habilitados');
     }
 
     /**
      * Editar EPP desde formulario (no guardado en BD)
      */
-    editarEPPFormulario(id, nombre, codigo, categoria, cantidad, observaciones, imagenes) {
+    editarEPPFormulario(id, nombre, cantidad, observaciones, imagenes) {
         // Asegurar que el modal existe en el DOM
         if (!document.getElementById('modal-agregar-epp')) {
 
@@ -84,15 +90,11 @@ class EppService {
             this.stateManager.iniciarEdicion(eppId, true);
             this.stateManager.setProductoSeleccionado({
                 id: epp.id,
-                nombre: epp.nombre,
-                codigo: epp.codigo,
-                categoria: epp.categoria
+                nombre: epp.nombre
             });
 
             this.modalManager.mostrarProductoSeleccionado({
-                nombre: epp.nombre,
-                codigo: epp.codigo,
-                categoria: epp.categoria
+                nombre: epp.nombre
             });
             this.modalManager.cargarValoresFormulario(null, epp.cantidad, epp.observaciones);
             this.modalManager.mostrarImagenes(epp.imagenes || []);
@@ -130,15 +132,20 @@ class EppService {
      */
     async _guardarEPPDesdeDB(valores) {
         try {
-            const eppId = this.stateManager.getEditandoId();
+            const eppId = this.stateManager.getEppIdSeleccionado();
+            const pedidoId = this.stateManager.getPedidoId();
+            const imagenes = this.stateManager.getImagenesSubidas();
 
+            // Agregar EPP al pedido
+            const resultado = await this.apiService.agregarEPPAlPedido(
+                pedidoId,
+                eppId,
+                valores.cantidad,
+                valores.observaciones,
+                imagenes
+            );
 
-            await this.apiService.actualizarEPP(eppId, {
-                cantidad: valores.cantidad,
-                observaciones: valores.observaciones
-            });
-
-            alert('EPP actualizado correctamente');
+            alert('EPP agregado al pedido correctamente');
             this.cerrarModal();
             this.stateManager.finalizarEdicion();
 
@@ -174,7 +181,6 @@ class EppService {
             this.itemManager.crearItem(
                 producto.id,
                 producto.nombre,
-                producto.codigo,
                 producto.categoria,
                 valores.cantidad,
                 valores.observaciones,
@@ -191,7 +197,6 @@ class EppService {
                 tipo: 'epp',
                 epp_id: producto.id,
                 nombre: producto.nombre,
-                codigo: producto.codigo,
                 categoria: producto.categoria,
                 cantidad: valores.cantidad,
                 observaciones: valores.observaciones,
@@ -258,28 +263,36 @@ class EppService {
      * Filtrar EPP por término de búsqueda
      */
     async filtrarEPP(valor) {
+        console.log('🔎 [EppService] filtrarEPP iniciado con valor:', valor);
         const container = document.getElementById('resultadosBuscadorEPP');
-        if (!container) return;
+        console.log('🔎 [EppService] Contenedor encontrado:', !!container);
+        
+        if (!container) {
+            console.warn('⚠️ [EppService] No se encontró el contenedor resultadosBuscadorEPP');
+            return;
+        }
 
         if (!valor || valor.trim() === '') {
+            console.log('🔎 [EppService] Valor vacío, ocultando resultados');
             container.style.display = 'none';
             return;
         }
 
         try {
+            console.log('🔎 [EppService] Llamando a _buscarEPPDesdeDB');
             // Buscar EPP desde la base de datos
             const epps = await this._buscarEPPDesdeDB(valor);
+            console.log('🔎 [EppService] EPPs retornados:', epps.length);
 
             if (epps.length === 0) {
                 container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
             } else {
                 container.innerHTML = epps.map(epp => `
-                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre}', codigo: '${epp.codigo}', categoria: '${epp.categoria}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
+                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre}', imagen: '${epp.imagen || 'https://via.placeholder.com/80?text=EPP'}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
                          style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
                          onmouseover="this.style.background = '#f3f4f6';"
                          onmouseout="this.style.background = 'white';">
                         <div style="font-weight: 500; color: #1f2937;">${epp.nombre}</div>
-                        <div style="font-size: 0.8rem; color: #6b7280;">${epp.codigo} - ${epp.categoria}</div>
                     </div>
                 `).join('');
             }
@@ -296,15 +309,28 @@ class EppService {
      * Búsqueda de EPP desde la base de datos
      */
     async _buscarEPPDesdeDB(valor) {
+        console.log('🔍 [EppService] _buscarEPPDesdeDB iniciado con término:', valor);
         try {
-            const response = await fetch(`/api/epp?q=${encodeURIComponent(valor)}`);
+            const url = `/api/epp?q=${encodeURIComponent(valor)}`;
+            console.log('🔍 [EppService] Realizando fetch a:', url);
+            
+            const response = await fetch(url);
+            console.log('🔍 [EppService] Response status:', response.status, response.statusText);
+            
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ [EppService] Error HTTP:', response.status, errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+            
             const result = await response.json();
+            console.log('✅ [EppService] Resultado JSON recibido:', result);
+            console.log('✅ [EppService] Total EPPs encontrados:', result.data?.length || 0);
+            
             return result.data && Array.isArray(result.data) ? result.data : [];
         } catch (error) {
-
+            console.error('❌ [EppService] Error en _buscarEPPDesdeDB:', error.message);
+            console.error('❌ [EppService] Stack:', error.stack);
             return [];
         }
     }

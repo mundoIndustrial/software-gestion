@@ -17,15 +17,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Epp extends Model
 {
-    use HasFactory, SoftDeletes;
-
-    protected $table = 'epps';
+        use HasFactory;
 
     protected $fillable = [
-        'codigo',
         'nombre_completo',
         'marca',
-        'categoria_id',
         'tipo',
         'talla',
         'color',
@@ -42,20 +38,19 @@ class Epp extends Model
     ];
 
     /**
-     * Relación: Un EPP pertenece a una categoría
+     * NOTA: Los campos 'codigo' y 'categoria_id' NO existen en la tabla
+     * La tabla solo tiene: id, nombre_completo, marca, tipo, talla, color, descripcion, activo, created_at, updated_at
      */
-    public function categoria(): BelongsTo
-    {
-        return $this->belongsTo(EppCategoria::class, 'categoria_id');
-    }
 
     /**
-     * Relación: Un EPP tiene muchas imágenes
+     * Relación: Un EPP tiene muchas imágenes (DESACTIVADA: tabla epp_imagenes no existe)
+     * Esta relación está comentada para evitar errores SQL
+     * Las imágenes de EPP se almacenan en pedido_epp_imagenes
      */
-    public function imagenes(): HasMany
-    {
-        return $this->hasMany(EppImagen::class, 'epp_id');
-    }
+    // public function imagenes(): HasMany
+    // {
+    //     return $this->hasMany(EppImagen::class, 'epp_id');
+    // }
 
     /**
      * Relación: Un EPP puede estar en muchos pedidos (a través de PedidoEpp)
@@ -81,12 +76,12 @@ class Epp extends Model
     }
 
     /**
-     * Obtener la imagen principal
+     * Obtener la imagen principal (DESACTIVADA: tabla epp_imagenes no existe)
      */
-    public function imagenPrincipal(): ?EppImagen
-    {
-        return $this->imagenes()->where('principal', true)->first();
-    }
+    // public function imagenPrincipal(): ?EppImagen
+    // {
+    //     return $this->imagenes()->where('principal', true)->first();
+    // }
 
     /**
      * Scope: EPP activos

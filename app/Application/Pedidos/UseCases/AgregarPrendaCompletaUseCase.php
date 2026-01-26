@@ -46,14 +46,40 @@ final class AgregarPrendaCompletaUseCase
             'de_bodega' => $dto->de_bodega,
         ]);
 
-        // 2. Agregar fotos si existen
+        // 2. Agregar fotos: nuevas + existentes
+        $fotos = [];
+        
+        // Agregar fotos nuevas
         if (!empty($dto->imagenes)) {
             foreach ($dto->imagenes as $orden => $rutaOriginal) {
-                $prenda->fotos()->create([
+                $fotos[$rutaOriginal] = [
                     'ruta_original' => $rutaOriginal,
                     'ruta_webp' => $this->generarRutaWebp($rutaOriginal),
                     'orden' => $orden + 1,
-                ]);
+                ];
+            }
+        }
+        
+        // Agregar imágenes existentes que deben preservarse
+        if (!empty($dto->imagenesExistentes)) {
+            foreach ($dto->imagenesExistentes as $imagenExistente) {
+                if (is_array($imagenExistente) && isset($imagenExistente['previewUrl'])) {
+                    $ruta = $imagenExistente['previewUrl'];
+                    if (!isset($fotos[$ruta])) {
+                        $fotos[$ruta] = [
+                            'ruta_original' => $ruta,
+                            'ruta_webp' => $this->generarRutaWebp($ruta),
+                            'orden' => count($fotos) + 1,
+                        ];
+                    }
+                }
+            }
+        }
+        
+        // Guardar todas las fotos combinadas
+        if (!empty($fotos)) {
+            foreach ($fotos as $datosFoto) {
+                $prenda->fotos()->create($datosFoto);
             }
         }
 

@@ -2,11 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\Ordenes\Entities\Orden;
+use App\Models\PedidoProduccion;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
+    private PedidoProduccionRepository $repository;
+
+    public function __construct(PedidoProduccionRepository $repository)
+    {
+        $this->repository = $repository;
+    }
+
     /**
      * Muestra la factura de una orden
      * 
@@ -15,12 +23,31 @@ class InvoiceController extends Controller
      */
     public function show($numeroPedido)
     {
-        // Buscar la orden por número de pedido
-        $orden = Orden::where('numero_pedido', $numeroPedido)
-            ->with(['prendas', 'asesor', 'supervisor'])
+        // Buscar el pedido por número de pedido
+        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+            ->with(['asesor', 'prendas'])
             ->firstOrFail();
 
-        return view('invoices.show', ['orden' => $orden]);
+        // Obtener datos completos de la factura con variantes
+        $datosFactura = $this->repository->obtenerDatosFactura($pedido->id);
+        
+        // Convertir array a objeto compatible con la vista
+        $datosFactura = (object) $datosFactura;
+        if (isset($datosFactura->prendas)) {
+            $datosFactura->prendas = collect($datosFactura->prendas)->map(fn($p) => (object)$p)->all();
+        }
+        if (isset($datosFactura->prendas)) {
+            foreach ($datosFactura->prendas as $prenda) {
+                if (isset($prenda->variantes)) {
+                    $prenda->variantes = collect($prenda->variantes)->map(fn($v) => (object)$v)->all();
+                }
+            }
+        }
+
+        return view('invoices.show', [
+            'orden' => $datosFactura,
+            'pedido' => $pedido
+        ]);
     }
 
     /**
@@ -31,15 +58,35 @@ class InvoiceController extends Controller
      */
     public function download($numeroPedido)
     {
-        $orden = Orden::where('numero_pedido', $numeroPedido)
-            ->with(['prendas', 'asesor', 'supervisor'])
+        // Buscar el pedido por número de pedido
+        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+            ->with(['asesor', 'prendas'])
             ->firstOrFail();
 
+        // Obtener datos completos de la factura con variantes
+        $datosFactura = $this->repository->obtenerDatosFactura($pedido->id);
+        
+        // Convertir array a objeto compatible con la vista
+        $datosFactura = (object) $datosFactura;
+        if (isset($datosFactura->prendas)) {
+            $datosFactura->prendas = collect($datosFactura->prendas)->map(fn($p) => (object)$p)->all();
+        }
+        if (isset($datosFactura->prendas)) {
+            foreach ($datosFactura->prendas as $prenda) {
+                if (isset($prenda->variantes)) {
+                    $prenda->variantes = collect($prenda->variantes)->map(fn($v) => (object)$v)->all();
+                }
+            }
+        }
+
         // Aquí puedes usar Dompdf o similar para generar PDF
-        // return PDF::loadView('invoices.pdf', ['orden' => $orden])->download("factura-{$numeroPedido}.pdf");
+        // return PDF::loadView('invoices.pdf', ['orden' => $datosFactura])->download("factura-{$numeroPedido}.pdf");
         
         // Por ahora retornamos la vista
-        return view('invoices.show', ['orden' => $orden]);
+        return view('invoices.show', [
+            'orden' => $datosFactura,
+            'pedido' => $pedido
+        ]);
     }
 
     /**
@@ -50,10 +97,30 @@ class InvoiceController extends Controller
      */
     public function preview($numeroPedido)
     {
-        $orden = Orden::where('numero_pedido', $numeroPedido)
-            ->with(['prendas', 'asesor', 'supervisor'])
+        // Buscar el pedido por número de pedido
+        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+            ->with(['asesor', 'prendas'])
             ->firstOrFail();
 
-        return view('invoices.preview', ['orden' => $orden]);
+        // Obtener datos completos de la factura con variantes
+        $datosFactura = $this->repository->obtenerDatosFactura($pedido->id);
+        
+        // Convertir array a objeto compatible con la vista
+        $datosFactura = (object) $datosFactura;
+        if (isset($datosFactura->prendas)) {
+            $datosFactura->prendas = collect($datosFactura->prendas)->map(fn($p) => (object)$p)->all();
+        }
+        if (isset($datosFactura->prendas)) {
+            foreach ($datosFactura->prendas as $prenda) {
+                if (isset($prenda->variantes)) {
+                    $prenda->variantes = collect($prenda->variantes)->map(fn($v) => (object)$v)->all();
+                }
+            }
+        }
+
+        return view('invoices.preview', [
+            'orden' => $datosFactura,
+            'pedido' => $pedido
+        ]);
     }
 }

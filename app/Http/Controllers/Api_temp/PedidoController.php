@@ -243,4 +243,402 @@ class PedidoController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * GET /asesores/pedidos/{id}/editar-datos
+     * 
+     * Obtener datos de un pedido para edición
+     * Incluye prendas con variantes, telas, colores, procesos e imágenes
+     * Usado por el formulario de edición de pedidos
+     */
+    public function obtenerDatosEdicion(int $id): JsonResponse
+    {
+        try {
+            $pedido = \App\Models\PedidoProduccion::with([
+                'prendas.variantes',
+                'prendas.coloresTelas',
+                'prendas.procesos',
+                'prendas.fotos',
+                'prendas.telaFotos',
+                'asesor:id,name',
+                'cliente:id,nombre'
+            ])->findOrFail($id);
+
+            // Transformar variantes para incluir nombres de tipos
+            if ($pedido->prendas) {
+                foreach ($pedido->prendas as $prenda) {
+                    if ($prenda->variantes) {
+                        foreach ($prenda->variantes as $variante) {
+                            // Obtener nombre de manga
+                            if ($variante->tipo_manga_id) {
+                                try {
+                                    $manga = \App\Models\TipoManga::find($variante->tipo_manga_id);
+                                    $variante->manga_nombre = $manga ? $manga->nombre : null;
+                                } catch (\Exception $e) {
+                                    \Log::debug('[PedidoController] Error obtener manga', ['error' => $e->getMessage()]);
+                                }
+                            }
+                            
+                            // Obtener nombre de broche
+                            if ($variante->tipo_broche_boton_id) {
+                                try {
+                                    $broche = \App\Models\TipoBrocheBoton::find($variante->tipo_broche_boton_id);
+                                    $variante->broche_nombre = $broche ? $broche->nombre : null;
+                                } catch (\Exception $e) {
+                                    \Log::debug('[PedidoController] Error obtener broche', ['error' => $e->getMessage()]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $pedido
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::warning('[PedidoController] Pedido no encontrado para edición', ['pedido_id' => $id]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error obtener datos para edición: ' . $e->getMessage(), [
+                'pedido_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos del pedido',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/api/tipos-broche-boton
+     * 
+     * Obtener tipos de broche/botón disponibles
+     * Array de tipos de broche/botón con su ID
+     */
+    public function obtenerTiposBrocheBoton(): JsonResponse
+    {
+        try {
+            $tipos = \App\Models\TipoBrocheBoton::where('activo', true)
+                ->select('id', 'nombre')
+                ->orderBy('id')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $tipos
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error obtener tipos broche/botón: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener tipos de broche/botón',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/api/tipos-manga
+     * 
+     * Obtener tipos de manga disponibles
+     * Array de tipos de manga con su ID
+     */
+    public function obtenerTiposManga(): JsonResponse
+    {
+        try {
+            $tipos = \App\Models\TipoManga::where('activo', true)
+                ->select('id', 'nombre')
+                ->orderBy('id')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $tipos
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error obtener tipos manga: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener tipos de manga',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /asesores/api/tipos-manga
+     * 
+     * Crear o obtener un tipo de manga por nombre
+     * Si no existe, lo crea automáticamente
+     */
+    public function crearObtenerTipoManga(Request $request): JsonResponse
+    {
+        try {
+            $nombre = trim($request->input('nombre', ''));
+            
+            if (empty($nombre)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El nombre del tipo de manga es requerido'
+                ], 400);
+            }
+
+            // Buscar si ya existe (case-insensitive)
+            $tipo = \App\Models\TipoManga::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+                ->first();
+
+            // Si no existe, crearlo
+            if (!$tipo) {
+                $tipo = \App\Models\TipoManga::create([
+                    'nombre' => ucfirst(strtolower($nombre)),
+                    'activo' => true
+                ]);
+
+                \Log::info('[PedidoController] Nuevo tipo de manga creado', [
+                    'id' => $tipo->id,
+                    'nombre' => $tipo->nombre
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tipo,
+                'mensaje' => $tipo->wasRecentlyCreated ? 'Tipo creado' : 'Tipo existente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error crear/obtener tipo manga: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear/obtener tipo de manga',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/api/telas
+     * 
+     * Obtener lista de telas activas
+     * Array de { id, nombre, referencia }
+     */
+    public function obtenerTelas(): JsonResponse
+    {
+        try {
+            $telas = \App\Models\TelaPrenda::where('activo', true)
+                ->select('id', 'nombre', 'referencia')
+                ->orderBy('nombre')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $telas
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error obtener telas: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener telas',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /asesores/api/telas
+     * 
+     * Crear o obtener una tela por nombre
+     * Si no existe, la crea automáticamente
+     */
+    public function crearObtenerTela(Request $request): JsonResponse
+    {
+        try {
+            $nombre = trim($request->input('nombre', ''));
+            $referencia = trim($request->input('referencia', ''));
+            
+            if (empty($nombre)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El nombre de la tela es requerido'
+                ], 400);
+            }
+
+            // Buscar si ya existe (case-insensitive)
+            $tela = \App\Models\TelaPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+                ->first();
+
+            // Si no existe, crearla
+            if (!$tela) {
+                $tela = \App\Models\TelaPrenda::create([
+                    'nombre' => ucfirst(strtolower($nombre)),
+                    'referencia' => $referencia,
+                    'activo' => true
+                ]);
+
+                \Log::info('[PedidoController] Nueva tela creada', [
+                    'id' => $tela->id,
+                    'nombre' => $tela->nombre,
+                    'referencia' => $tela->referencia
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tela,
+                'mensaje' => $tela->wasRecentlyCreated ? 'Tela creada' : 'Tela existente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error crear/obtener tela: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear/obtener tela',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/api/colores
+     * 
+     * Obtener lista de colores activos
+     * Array de { id, nombre, codigo }
+     */
+    public function obtenerColores(): JsonResponse
+    {
+        try {
+            $colores = \App\Models\ColorPrenda::where('activo', true)
+                ->select('id', 'nombre', 'codigo')
+                ->orderBy('nombre')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $colores
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error obtener colores: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener colores',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /asesores/api/colores
+     * 
+     * Crear o obtener un color por nombre
+     * Si no existe, lo crea automáticamente
+     */
+    public function crearObtenerColor(Request $request): JsonResponse
+    {
+        try {
+            $nombre = trim($request->input('nombre', ''));
+            $codigo = trim($request->input('codigo', ''));
+            
+            if (empty($nombre)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El nombre del color es requerido'
+                ], 400);
+            }
+
+            // Buscar si ya existe (case-insensitive)
+            $color = \App\Models\ColorPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+                ->first();
+
+            // Si no existe, crearlo
+            if (!$color) {
+                $color = \App\Models\ColorPrenda::create([
+                    'nombre' => ucfirst(strtolower($nombre)),
+                    'codigo' => $codigo,
+                    'activo' => true
+                ]);
+
+                \Log::info('[PedidoController] Nuevo color creado', [
+                    'id' => $color->id,
+                    'nombre' => $color->nombre,
+                    'codigo' => $color->codigo
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $color,
+                'mensaje' => $color->wasRecentlyCreated ? 'Color creado' : 'Color existente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error crear/obtener color: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear/obtener color',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/prendas-pedido/{prendaPedidoId}/fotos
+     * 
+     * DEPRECADO: Obtener fotos de una prenda del pedido
+     * Requiere refactorización a DDD
+     */
+    public function obtenerFotosPrendaPedido($prendaPedidoId): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Esta funcionalidad está siendo refactorizada a DDD'
+        ], 501);
+    }
+
+    /**
+     * POST /asesores/pedidos/confirm
+     * 
+     * DEPRECADO: Alias para confirmar pedido
+     * Usa: PATCH /api/pedidos/{id}/confirmar
+     */
+    public function confirm(Request $request): JsonResponse
+    {
+        $id = $request->input('pedido_id') ?: $request->route('id');
+        
+        if (!$id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Se requiere el ID del pedido'
+            ], 400);
+        }
+
+        return $this->confirmar($id);
+    }
+
+    /**
+     * POST /asesores/pedidos/{id}/anular
+     * 
+     * DEPRECADO: Alias para cancelar pedido
+     * Usa: DELETE /api/pedidos/{id}/cancelar
+     */
+    public function anularPedido(Request $request, $id): JsonResponse
+    {
+        return $this->cancelar($id);
+    }
 }

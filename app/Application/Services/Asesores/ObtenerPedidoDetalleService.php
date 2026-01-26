@@ -114,7 +114,7 @@ class ObtenerPedidoDetalleService
         $pedido = $this->obtenerCompleto($pedidoIdentifier);
 
         //  Transformar prendas a estructura del gestor
-        $prendasTransformadas = $this->transformarPrendasParaEdicion($pedido->prendas);
+        $prendasTransformadas = $pedido->prendas->map(fn($prenda) => $this->transformarPrendaParaEdicion($prenda))->toArray();
 
         //  Clonar el pedido y reemplazar prendas
         $pedidoData = $pedido->toArray();
@@ -169,82 +169,6 @@ class ObtenerPedidoDetalleService
         ]);
 
         return $datos;
-    }
-
-    /**
-     *  NUEVO: Transformar prendas de Eloquent a estructura del gestor
-     */
-    private function transformarPrendasParaEdicion($prendas)
-    {
-        return $prendas->map(function ($prenda) {
-            // Obtener cantidades por talla desde generosConTallas
-            $generosConTallas = $this->construirGenerosConTallas($prenda);
-            $variantes = $this->construirVariantes($prenda);
-            $procesos = $this->construirProcesos($prenda);
-            
-            //  Extraer datos de variaciÃ³n de las variantes (tomar del primer variante)
-            $primerVariante = $prenda->variantes && $prenda->variantes->count() > 0 
-                ? $prenda->variantes->first() 
-                : null;
-            
-            $tipo_manga = 'No aplica';
-            $obs_manga = '';
-            $tipo_broche = 'No aplica';
-            $obs_broche = '';
-            $tiene_bolsillos = false;
-            $obs_bolsillos = '';
-            $tiene_reflectivo = false;
-            $obs_reflectivo = '';
-            
-            if ($primerVariante) {
-                // Obtener nombre del tipo de manga si existe la relaciÃ³n
-                if ($primerVariante->tipoManga) {
-                    $tipo_manga = $primerVariante->tipoManga->nombre ?? 'No aplica';
-                }
-                $obs_manga = $primerVariante->manga_obs ?? '';
-                
-                // Obtener nombre del tipo de broche si existe la relaciÃ³n
-                if ($primerVariante->tipoBrocheBoton) {
-                    $tipo_broche = $primerVariante->tipoBrocheBoton->nombre ?? 'No aplica';
-                }
-                $obs_broche = $primerVariante->broche_boton_obs ?? '';
-                
-                // Bolsillos
-                $tiene_bolsillos = (bool)($primerVariante->tiene_bolsillos ?? false);
-                $obs_bolsillos = $primerVariante->bolsillos_obs ?? '';
-                
-                // Reflectivo (si existe en tabla, sino serÃ¡ false)
-                $tiene_reflectivo = (bool)($primerVariante->tiene_reflectivo ?? false);
-                $obs_reflectivo = $primerVariante->reflectivo_obs ?? '';
-            }
-
-            return [
-                'nombre_prenda' => $prenda->nombre_prenda,
-                'descripcion' => $prenda->descripcion,
-                'genero' => [], // Se llenarÃ¡ desde generosConTallas
-                'generosConTallas' => $generosConTallas, //  Dejar como objeto, Blade hace @json()
-                'tipo_manga' => $tipo_manga,
-                'obs_manga' => $obs_manga,
-                'tipo_broche' => $tipo_broche,
-                'obs_broche' => $obs_broche,
-                'tiene_bolsillos' => $tiene_bolsillos,
-                'obs_bolsillos' => $obs_bolsillos,
-                'tiene_reflectivo' => $tiene_reflectivo,
-                'obs_reflectivo' => $obs_reflectivo,
-                'tallas' => $this->obtenerTallasDelPrenda($prenda),
-                'cantidadesPorTalla' => $this->obtenerCantidadesPorTalla($prenda),
-                'variantes' => $variantes, //  Dejar como objeto
-                'telas' => $prenda->telas ?? [],
-                'telasAgregadas' => $this->construirTelasAgregadas($prenda),
-                'fotos' => $this->obtenerFotosPrenda($prenda),  //  Convertir con URLs
-                'telaFotos' => $this->obtenerFotosTelas($prenda),
-                'imagenes' => $this->obtenerFotosPrenda($prenda),  //  Convertir con URLs
-                'origen' => $prenda->origen ?? 'bodega',
-                'de_bodega' => (int)($prenda->de_bodega ?? 1),
-                'procesos' => $procesos, //  Dejar como objeto
-                'variaciones' => $variantes, //  Dejar como objeto
-            ];
-        })->toArray();
     }
 
     /**
@@ -428,92 +352,6 @@ class ObtenerPedidoDetalleService
     /**
      * Construir procesos en estructura esperada
      */
-    private function construirProcesos($prenda)
-    {
-        $procesos = [];
-        
-        if (isset($prenda->procesos) && is_iterable($prenda->procesos)) {
-            foreach ($prenda->procesos as $proceso) {
-                //  Obtener el SLUG del tipo de proceso (para usar como clave)
-                $slugTipoProceso = 'proceso';  // default
-                $nombreTipoProceso = 'Proceso';
-                
-                if ($proceso->tipoProceso) {
-                    $slugTipoProceso = $proceso->tipoProceso->slug ?? $proceso->tipoProceso->tipo ?? 'proceso';
-                    $nombreTipoProceso = $proceso->tipoProceso->nombre ?? $proceso->tipoProceso->tipo ?? 'Proceso';
-                }
-                
-                //  Obtener imÃ¡genes transformadas a URLs
-                $imagenes = [];
-                if ($proceso->imagenes && $proceso->imagenes->count() > 0) {
-                    $imagenes = $proceso->imagenes->map(function ($img) {
-                        return [
-                            'url' => $img->ruta_webp ?? $img->ruta_original,
-                            'ruta_original' => $img->ruta_original,
-                            'ruta_webp' => $img->ruta_webp,
-                            'es_principal' => $img->es_principal ?? false,
-                        ];
-                    })->toArray();
-                }
-                
-                //  Parsear ubicaciones (pueden ser array o JSON)
-                $ubicaciones = [];
-                if ($proceso->ubicaciones) {
-                    if (is_string($proceso->ubicaciones)) {
-                        $ubicaciones = json_decode($proceso->ubicaciones, true) ?? [];
-                    } else {
-                        $ubicaciones = (array)$proceso->ubicaciones;
-                    }
-                }
-                
-                //  Construir estructura de tallas DESDE LA TABLA RELACIONAL
-                $tallas = $this->construirTallasProcesoRelacional($proceso->id);
-                
-                //  Usar el SLUG como clave para agrupar (reflectivo, bordado, estampado, dtf, sublimado)
-                if (!isset($procesos[$slugTipoProceso])) {
-                    $procesos[$slugTipoProceso] = [
-                        'id' => $proceso->tipo_proceso_id,
-                        'tipo' => $nombreTipoProceso,  //  Nombre del tipo de proceso
-                        'slug' => $slugTipoProceso,    //  Slug del tipo de proceso
-                        'nombre' => $nombreTipoProceso,  //  Nombre para compatibilidad
-                        'datos' => [
-                            'ubicaciones' => $ubicaciones,  //  Ubicaciones parseadas
-                            'observaciones' => $proceso->observaciones ?? '',
-                            'tallas' => $tallas,  //  Tallas parseadas
-                            'imagenes' => $imagenes,  //  ImÃ¡genes con URLs
-                        ]
-                    ];
-                }
-            }
-        }
-        
-        return $procesos;
-    }
-
-    /**
-     * Construir tallas del proceso
-     * 
-     * Estructura del proceso cantidad_talla es igual a la prenda:
-     * {genero: {talla: cantidad}}
-     */
-    private function construirTallasProceso($proceso)
-    {
-        $tallas = [];
-        
-        //  cantidad_talla viene como JSON string
-        $cantidadTalla = $proceso->cantidad_talla ?? null;
-        if (is_string($cantidadTalla)) {
-            $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
-        }
-        
-        // La estructura en BD ya es correcta: {genero: {talla: cantidad}}
-        if ($cantidadTalla && is_array($cantidadTalla)) {
-            $tallas = $cantidadTalla;
-        }
-        
-        return $tallas;
-    }
-
     /**
      * Construir variantes
      */
@@ -664,11 +502,18 @@ class ObtenerPedidoDetalleService
             ->where('pedido_produccion_id', $pedidoId)
             ->with([
                 'procesos' => function ($q) {
-                    $q->with(['tipoProceso', 'imagenes'])
+                    $q->withTrashed()  // 🔧 INCLUIR SOFT-DELETED
+                      ->with(['tipoProceso', 'imagenes' => function ($q2) {
+                          $q2->withTrashed();  // 🔧 INCLUIR SOFT-DELETED
+                      }])
                       ->orderBy('created_at', 'desc');
                 },
-                'fotos',
-                'fotosTelas',
+                'fotos' => function ($q) {
+                    $q->withTrashed();  // 🔧 INCLUIR SOFT-DELETED
+                },
+                'fotosTelas' => function ($q) {
+                    $q->withTrashed();  // 🔧 INCLUIR SOFT-DELETED
+                },
                 'variantes' => function ($q) {
                     $q->with(['tipoManga', 'tipoBroche']);
                 }
@@ -705,7 +550,10 @@ class ObtenerPedidoDetalleService
     {
         Log::info('🔄 [TRANSFORMAR-INICIO] Iniciando transformación de prenda', [
             'prenda_id' => $prenda->id,
-            'prenda_nombre' => $prenda->nombre_prenda
+            'prenda_nombre' => $prenda->nombre_prenda,
+            'has_fotos_relation' => isset($prenda->fotos),
+            'fotos_loaded' => $prenda->relationLoaded('fotos'),
+            'fotos_count' => $prenda->fotos ? $prenda->fotos->count() : 'NO CARGADA'
         ]);
 
         $prendaArray = $prenda->toArray();
@@ -722,15 +570,31 @@ class ObtenerPedidoDetalleService
         Log::info('📦 [PROCESOS-TRANSFORMADOS] ' . count($procesos) . ' procesos transformados');
 
         // Fotos - usar ruta_webp (o ruta_original si no existe)
-        $prendaArray['imagenes'] = $prenda->fotos->map(function($foto) {
-            return $foto->ruta_webp ?? $foto->ruta_original ?? '';
-        })->filter()->toArray() ?? [];
+        Log::info('🔍 [FOTOS-DEBUG] Intentando acceder a fotos', [
+            'has_fotos_in_model' => isset($prenda->fotos),
+            'fotos_count' => $prenda->fotos ? $prenda->fotos->count() : 0,
+            'has_fotos_in_array' => isset($prendaArray['fotos']),
+            'array_fotos_count' => isset($prendaArray['fotos']) ? count($prendaArray['fotos']) : 0
+        ]);
+
+        $prendaArray['imagenes'] = ($prenda->fotos && $prenda->fotos->count() > 0) 
+            ? $prenda->fotos->map(function($foto) {
+                Log::debug('🖼️ [FOTO-MAP] Procesando foto', [
+                    'ruta_webp' => $foto->ruta_webp,
+                    'ruta_original' => $foto->ruta_original
+                ]);
+                return $foto->ruta_webp ?? $foto->ruta_original ?? '';
+            })->filter()->toArray() 
+            : [];
         
-        $prendaArray['imagenes_tela'] = $prenda->fotosTelas->map(function($foto) {
-            return $foto->ruta_webp ?? $foto->ruta_original ?? '';
-        })->filter()->toArray() ?? [];
+        $prendaArray['imagenes_tela'] = ($prenda->fotosTelas && $prenda->fotosTelas->count() > 0)
+            ? $prenda->fotosTelas->map(function($foto) {
+                return $foto->ruta_webp ?? $foto->ruta_original ?? '';
+            })->filter()->toArray() 
+            : [];
 
         Log::info('📸 [IMAGENES-TRANSFORMADAS] ' . count($prendaArray['imagenes']) . ' imagenes, ' . count($prendaArray['imagenes_tela']) . ' imagenes de tela');
+
 
         // Tallas por género - Extraer de tabla prenda_pedido_tallas
         $tallasDama = DB::table('prenda_pedido_tallas')

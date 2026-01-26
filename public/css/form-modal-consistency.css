@@ -187,3 +187,29 @@ textarea::placeholder {
 button[style*="font-size"] {
     font-size: 0.875rem !important;
 }
+/* ============================================================
+   ESTILOS SWEETALERT2 - Z-INDEX Y OVERLAY
+   ============================================================ */
+
+/* Contenedor del modal Swal */
+.swal2-container {
+    z-index: 999998 !important;
+}
+
+.swal2-popup {
+    z-index: 999999 !important;
+    position: fixed !important;
+}
+
+.swal-container-top {
+    z-index: 999998 !important;
+}
+
+.swal-popup-top {
+    z-index: 999999 !important;
+}
+
+/* Asegurar que backdrop esté encima de todo */
+.swal2-backdrop {
+    z-index: 999997 !important;
+}

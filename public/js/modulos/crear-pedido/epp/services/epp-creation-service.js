@@ -81,7 +81,6 @@ class EppCreationService {
         try {
             document.getElementById('nombreProductoEPP').textContent = producto.nombre;
             document.getElementById('categoriaProductoEPP').textContent = producto.categoria;
-            document.getElementById('codigoProductoEPP').textContent = producto.codigo;
             document.getElementById('productoCardEPP').style.display = 'flex';
 
             // Habilitar campos de cantidad y observaciones

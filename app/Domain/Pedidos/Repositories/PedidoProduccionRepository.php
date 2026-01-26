@@ -92,266 +92,297 @@ class PedidoProduccionRepository
     }
 
     /**
-     * Obtener datos completos de factura de un pedido
-     * Incluye prendas con variantes, colores, telas e imÃ¡genes
+     * MEJORADO: Obtener datos completos de factura de un pedido
+     * 
+     * ✅ Incluye:
+     * - Manga con nombre (desde tipos_manga)
+     * - Broche con nombre (desde tipos_broche_boton)
+     * - Bolsillos (boolean y observaciones)
+     * - Todas las observaciones (manga_obs, broche_boton_obs, bolsillos_obs)
+     * - Prendas con colores, telas e imágenes
+     * - Procesos con imágenes
      */
     public function obtenerDatosFactura(int $pedidoId): array
     {
-        $pedido = $this->obtenerPorId($pedidoId);
-        
-        if (!$pedido) {
-            throw new \Exception('Pedido no encontrado');
-        }
-
-        // Construir datos base
-        $datos = [
-            'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
-            'numero_pedido_temporal' => $pedido->numero_pedido ?? 0,
-            'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
-            'asesora' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
-            'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
-            'fecha' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
-            'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
-            'observaciones' => $pedido->observaciones ?? '',
-            'prendas' => [],
-            'total_items' => 0,
-        ];
-
-        // Procesar prendas
-        foreach ($pedido->prendas as $prenda) {
-            $cantidadTotal = 0;
-            $colores = [];
-            $telas = [];
-            $referencias = [];
-            $especificaciones = [];  // Nuevas especificaciones
-
-            // Obtener telas desde prenda_pedido_colores_telas (nueva tabla)
-            try {
-                $telasColorData = \DB::table('prenda_pedido_colores_telas')
-                    ->where('prenda_pedido_id', $prenda->id)
-                    ->join('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
-                    ->join('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
-                    ->select('telas_prenda.nombre as tela_nombre', 'telas_prenda.referencia', 'colores_prenda.nombre as color_nombre')
-                    ->get();
-                
-                foreach ($telasColorData as $tc) {
-                    if ($tc->tela_nombre && !in_array($tc->tela_nombre, $telas)) {
-                        $telas[] = $tc->tela_nombre;
-                    }
-                    if ($tc->referencia && !in_array($tc->referencia, $referencias)) {
-                        $referencias[] = $tc->referencia;
-                    }
-                    if ($tc->color_nombre && !in_array($tc->color_nombre, $colores)) {
-                        $colores[] = $tc->color_nombre;
-                    }
-                }
-            } catch (\Exception $e) {
-                \Log::debug('[FACTURA] Error obteniendo telas desde prenda_pedido_colores_telas: ' . $e->getMessage());
+        try {
+            $pedido = $this->obtenerPorId($pedidoId);
+            
+            if (!$pedido) {
+                \Log::warning('[FACTURA] Pedido no encontrado', ['pedido_id' => $pedidoId]);
+                throw new \Exception('Pedido no encontrado');
             }
 
-            // Contar cantidad total desde variantes y extraer especificaciones
-            foreach ($prenda->variantes as $variante) {
-                $cantidadTotal += $variante->cantidad ?? 0;
-                
-                // Extraer especificaciones de la variante
-                $spec = [
-                    'talla' => $variante->talla ?? '',
-                    'cantidad' => $variante->cantidad ?? 0,
-                    'manga' => null,
-                    'manga_obs' => $variante->manga_obs ?? '',
-                    'broche' => null,
-                    'broche_obs' => $variante->broche_boton_obs ?? '',
-                    'bolsillos' => $variante->tiene_bolsillos ?? false,
-                    'bolsillos_obs' => $variante->bolsillos_obs ?? '',
-                ];
-                
-                // Obtener nombre del tipo de manga
-                if ($variante->tipo_manga_id) {
-                    try {
-                        $manga = \DB::table('tipos_manga')
-                            ->where('id', $variante->tipo_manga_id)
-                            ->value('nombre');
-                        $spec['manga'] = $manga;
-                    } catch (\Exception $e) {
-                        \Log::debug('[FACTURA] Error obteniendo tipo de manga: ' . $e->getMessage());
-                    }
-                }
-                
-                // Obtener nombre del tipo de broche/botÃ³n
-                if ($variante->tipo_broche_boton_id) {
-                    try {
-                        $broche = \DB::table('tipos_broche_boton')
-                            ->where('id', $variante->tipo_broche_boton_id)
-                            ->value('nombre');
-                        $spec['broche'] = $broche;
-                    } catch (\Exception $e) {
-                        \Log::debug('[FACTURA] Error obteniendo tipo de broche: ' . $e->getMessage());
-                    }
-                }
-                
-                $especificaciones[] = $spec;
-                
-                // Obtener tela y referencia
-                if ($variante->tela_id) {
-                    try {
-                        $telaData = \DB::table('telas_prenda')
-                            ->where('id', $variante->tela_id)
-                            ->select('nombre', 'referencia')
-                            ->first();
-                        
-                        if ($telaData) {
-                            if ($telaData->nombre && !in_array($telaData->nombre, $telas)) {
-                                $telas[] = $telaData->nombre;
-                            }
-                            if ($telaData->referencia && !in_array($telaData->referencia, $referencias)) {
-                                $referencias[] = $telaData->referencia;
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        \Log::debug('[FACTURA] Error obteniendo tela y referencia: ' . $e->getMessage());
-                    }
-                }
-                
-                // Obtener color
-                if ($variante->color_id) {
-                    try {
-                        $color = \DB::table('colores_prenda')
-                            ->where('id', $variante->color_id)
-                            ->value('nombre');
-                        if ($color && !in_array($color, $colores)) {
-                            $colores[] = $color;
-                        }
-                    } catch (\Exception $e) {
-                        \Log::debug('[FACTURA] Error obteniendo color: ' . $e->getMessage());
-                    }
-                }
-            }
-
-            // Obtener foto principal
-            $foto = $prenda->fotos->first();
-            
-            // Obtener fotos de telas desde prenda_fotos_tela_pedido (nueva relaciÃ³n)
-            $fotoTelas = [];
-            try {
-                $fotosTelasData = \DB::table('prenda_fotos_tela_pedido')
-                    ->whereIn('prenda_pedido_colores_telas_id', 
-                        \DB::table('prenda_pedido_colores_telas')
-                            ->where('prenda_pedido_id', $prenda->id)
-                            ->pluck('id')
-                    )
-                    ->orderBy('orden', 'asc')
-                    ->get();
-                
-                $fotoTelas = $fotosTelasData->map(fn($f) => [
-                    'id' => $f->id,
-                    'url' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original),
-                    'ruta' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original),
-                    'ruta_original' => $this->normalizarRutaImagen($f->ruta_original),
-                    'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp),
-                ])->toArray();
-            } catch (\Exception $e) {
-                \Log::debug('[FACTURA] Error obteniendo fotos de telas desde prenda_fotos_tela_pedido: ' . $e->getMessage());
-            }
-            
-            // Obtener todas las fotos de prenda
-            $fotosPrend = $prenda->fotos->map(fn($f) => [
-                'id' => $f->id,
-                'url' => $this->normalizarRutaImagen($f->url),
-                'ruta' => $this->normalizarRutaImagen($f->url),
-                'ruta_original' => $this->normalizarRutaImagen($f->ruta_original ?? $f->url),
-                'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
-            ])->toArray();
-            
-            \Log::info('[FACTURA] Fotos de prenda: ' . json_encode([
-                'nombre_prenda' => $prenda->nombre_prenda,
-                'fotos_prenda_count' => $prenda->fotos->count(),
-                'fotos_telas_count' => $prenda->fotosTelas ? $prenda->fotosTelas->count() : 0,
-                'fotos_telas' => $fotoTelas,
-            ]));
-
-            // Tallas desde tabla relacional (prenda_pedido_tallas)
-            $tallas = $this->obtenerTallas($prenda->id);
-            
-            \Log::info('[FACTURA] Tallas de prenda: ' . json_encode([
-                'nombre_prenda' => $prenda->nombre_prenda,
-                'tallas_final' => $tallas,
-            ]));
-
-            // Obtener procesos
-            $procesos = [];
-            foreach ($prenda->procesos as $proc) {
-                // Construir tallas desde tallas_dama y tallas_caballero (campos reales)
-                $procTallas = [];
-                if (is_array($proc->tallas_dama)) {
-                    $procTallas['dama'] = $proc->tallas_dama;
-                }
-                if (is_array($proc->tallas_caballero)) {
-                    $procTallas['caballero'] = $proc->tallas_caballero;
-                }
-                
-                // Ubicaciones puede ser array o string JSON
-                $ubicaciones = [];
-                if ($proc->ubicaciones) {
-                    if (is_array($proc->ubicaciones)) {
-                        $ubicaciones = $proc->ubicaciones;
-                    } else if (is_string($proc->ubicaciones)) {
-                        $ubicaciones = json_decode($proc->ubicaciones, true) ?? [];
-                    }
-                }
-                
-                // Obtener imÃ¡genes del proceso
-                $imagenesProceso = $proc->imagenes ? $proc->imagenes->map(fn($img) => $img->url)->toArray() : [];
-                
-                // Obtener nombre del tipo de proceso
-                $nombreProceso = 'Proceso';
-                if ($proc->tipoProceso && $proc->tipoProceso->nombre) {
-                    $nombreProceso = $proc->tipoProceso->nombre;
-                }
-                
-                $proc_item = [
-                    // Campos compatibles con frontend
-                    'nombre' => $nombreProceso,
-                    'tipo' => $nombreProceso,
-                    // Campos originales (compatibilidad backwards)
-                    'nombre_proceso' => $nombreProceso,
-                    'tipo_proceso' => $nombreProceso,
-                    // Datos del proceso
-                    'tallas' => $procTallas,
-                    'observaciones' => $proc->observaciones ?? '',
-                    'ubicaciones' => $ubicaciones,
-                    'imagenes' => $imagenesProceso,  // Agregar imÃ¡genes del proceso
-                ];
-                
-                $procesos[] = $proc_item;
-                
-                \Log::info('[FACTURA] Proceso de prenda: ' . json_encode($proc_item));
-            }
-
-            // Construir array de prenda
-            $prendasFormato = [
-                'nombre' => $prenda->nombre_prenda,
-                'descripcion' => $prenda->descripcion,
-                'imagen' => $foto ? $foto->url : null,  // Usar el accessor 'url' del modelo
-                'imagen_tela' => !empty($fotoTelas) ? $fotoTelas[0] : null,  // Primera foto de tela
-                'imagenes' => $fotosPrend,  // Todas las fotos de prenda
-                'imagenes_tela' => $fotoTelas,  // Todas las fotos de tela
-                'tela' => !empty($telas) ? implode(', ', $telas) : null,
-                'color' => !empty($colores) ? implode(', ', $colores) : null,
-                'ref' => !empty($referencias) ? implode(', ', $referencias) : null,
-                'tallas' => $tallas,
-                'variantes' => $especificaciones,  // NUEVAS ESPECIFICACIONES
-                'procesos' => $procesos,
+            // Construir datos base
+            $datos = [
+                'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
+                'numero_pedido_temporal' => $pedido->numero_pedido ?? 0,
+                'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
+                'asesora' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
+                'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
+                'fecha' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+                'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+                'observaciones' => $pedido->observaciones ?? '',
+                'prendas' => [],
+                'total_items' => 0,
             ];
-            
-            \Log::info('[FACTURA] Prenda formateada: ' . json_encode($prendasFormato));
 
-            $datos['prendas'][] = $prendasFormato;
-            $datos['total_items'] += $cantidadTotal;
-        }
+            // Procesar prendas
+            foreach ($pedido->prendas as $prenda) {
+                \Log::info('[FACTURA] Procesando prenda', ['prenda_id' => $prenda->id, 'nombre' => $prenda->nombre_prenda]);
+                
+                $cantidadTotal = 0;
+                $colores = [];
+                $telas = [];
+                $referencias = [];
+                $variantes_formateadas = [];
 
-        //  AGREGAR EPP A LOS DATOS DE FACTURA
-        $datos['epps'] = [];
-        foreach ($pedido->epps as $pedidoEpp) {
+                // ✅ Obtener especificaciones de la PRIMERA variante (manga, broche, bolsillos son globales por prenda)
+                $especificaciones = [
+                    'manga' => null,
+                    'manga_obs' => '',
+                    'broche' => null,
+                    'broche_obs' => '',
+                    'bolsillos' => false,
+                    'bolsillos_obs' => '',
+                ];
+                
+                if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                    $primeraVariante = $prenda->variantes->first();
+                    
+                    // ✅ OBTENER MANGA CON NOMBRE
+                    if ($primeraVariante->tipo_manga_id) {
+                        try {
+                            $manga = \DB::table('tipos_manga')
+                                ->where('id', $primeraVariante->tipo_manga_id)
+                                ->value('nombre');
+                            $especificaciones['manga'] = $manga;
+                            \Log::debug('[FACTURA] Manga obtenida', [
+                                'tipo_manga_id' => $primeraVariante->tipo_manga_id,
+                                'manga_nombre' => $manga
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::debug('[FACTURA] Error manga', ['error' => $e->getMessage()]);
+                        }
+                    }
+                    
+                    // ✅ OBTENER BROCHE CON NOMBRE
+                    if ($primeraVariante->tipo_broche_boton_id) {
+                        try {
+                            $broche = \DB::table('tipos_broche_boton')
+                                ->where('id', $primeraVariante->tipo_broche_boton_id)
+                                ->value('nombre');
+                            $especificaciones['broche'] = $broche;
+                        } catch (\Exception $e) {
+                            \Log::debug('[FACTURA] Error broche', ['error' => $e->getMessage()]);
+                        }
+                    }
+                    
+                    // ✅ OBTENER ESPECIFICACIONES DE BOLSILLOS Y OBSERVACIONES
+                    $especificaciones['manga_obs'] = $primeraVariante->manga_obs ?? '';
+                    $especificaciones['broche_obs'] = $primeraVariante->broche_boton_obs ?? '';
+                    $especificaciones['bolsillos'] = (bool)($primeraVariante->tiene_bolsillos ?? false);
+                    $especificaciones['bolsillos_obs'] = $primeraVariante->bolsillos_obs ?? '';
+                }
+
+                // ✅ Procesar TALLAS (no variantes) - Cada talla es una fila en la factura
+                if ($prenda->tallas && $prenda->tallas->count() > 0) {
+                    foreach ($prenda->tallas as $talla) {
+                        $cantidadTotal += $talla->cantidad ?? 0;
+                        
+                        // ✅ CREAR ITEM DE TALLA CON ESPECIFICACIONES
+                        $talla_item = [
+                            'talla' => $talla->talla ?? '',
+                            'cantidad' => $talla->cantidad ?? 0,
+                            'manga' => $especificaciones['manga'],
+                            'manga_obs' => $especificaciones['manga_obs'],
+                            'broche' => $especificaciones['broche'],
+                            'broche_obs' => $especificaciones['broche_obs'],
+                            'bolsillos' => $especificaciones['bolsillos'],
+                            'bolsillos_obs' => $especificaciones['bolsillos_obs'],
+                        ];
+                        
+                        $variantes_formateadas[] = $talla_item;
+                        
+                        \Log::debug('[FACTURA] Talla formateada', [
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'manga' => $especificaciones['manga'],
+                            'broche' => $especificaciones['broche'],
+                            'bolsillos' => $especificaciones['bolsillos'],
+                        ]);
+                    }
+                }
+
+                // ✅ Extraer telas y colores de variantes (si existen en colores/telas)
+                if ($prenda->variantes) {
+                    foreach ($prenda->variantes as $variante) {
+                        // ✅ Extraer telas y colores de variante si existen
+                        if ($variante->tela_id) {
+                            try {
+                                $telaData = \DB::table('telas_prenda')
+                                    ->where('id', $variante->tela_id)
+                                    ->select('nombre', 'referencia')
+                                    ->first();
+                                
+                                if ($telaData) {
+                                    if ($telaData->nombre && !in_array($telaData->nombre, $telas)) {
+                                        $telas[] = $telaData->nombre;
+                                    }
+                                    if ($telaData->referencia && !in_array($telaData->referencia, $referencias)) {
+                                        $referencias[] = $telaData->referencia;
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                \Log::debug('[FACTURA] Error tela', ['error' => $e->getMessage()]);
+                            }
+                        }
+                        
+                        if ($variante->color_id) {
+                            try {
+                                $color = \DB::table('colores_prenda')
+                                    ->where('id', $variante->color_id)
+                                    ->value('nombre');
+                                if ($color && !in_array($color, $colores)) {
+                                    $colores[] = $color;
+                                }
+                            } catch (\Exception $e) {
+                                \Log::debug('[FACTURA] Error color', ['error' => $e->getMessage()]);
+                            }
+                        }
+                    }
+                }
+
+                // ✅ Obtener foto principal de prenda
+                $foto = $prenda->fotos ? $prenda->fotos->first() : null;
+                
+                // ✅ Obtener fotos de telas
+                $fotoTelas = [];
+                try {
+                    if ($prenda->fotosTelas) {
+                        $fotoTelas = $prenda->fotosTelas->map(fn($f) => [
+                            'id' => $f->id,
+                            'url' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original ?? $f->url),
+                            'ruta' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original ?? $f->url),
+                            'ruta_original' => $this->normalizarRutaImagen($f->ruta_original ?? $f->url),
+                            'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
+                        ])->toArray();
+                    }
+                } catch (\Exception $e) {
+                    \Log::debug('[FACTURA] Error fotos telas', ['error' => $e->getMessage()]);
+                }
+                
+                // ✅ Obtener todas las fotos de prenda
+                $fotosPrend = [];
+                try {
+                    if ($prenda->fotos) {
+                        $fotosPrend = $prenda->fotos->map(fn($f) => [
+                            'id' => $f->id,
+                            'url' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
+                            'ruta' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
+                            'ruta_original' => $this->normalizarRutaImagen($f->ruta_original ?? $f->url),
+                            'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
+                        ])->toArray();
+                    }
+                } catch (\Exception $e) {
+                    \Log::debug('[FACTURA] Error fotos prenda', ['error' => $e->getMessage()]);
+                }
+                
+                // ✅ Construir array simple de tallas agrupado por género: {DAMA: {M: 20, S: 10}, CABALLERO: {...}}
+                $tallasSimples = [];
+                if ($prenda->tallas && $prenda->tallas->count() > 0) {
+                    foreach ($prenda->tallas as $t) {
+                        $genero = $t->genero ?? 'GENERAL';
+                        if (!isset($tallasSimples[$genero])) {
+                            $tallasSimples[$genero] = [];
+                        }
+                        $tallasSimples[$genero][$t->talla] = (int)$t->cantidad;
+                    }
+                }
+                
+                // ✅ Obtener procesos con imágenes
+                $procesos = [];
+                try {
+                    if ($prenda->procesos) {
+                        foreach ($prenda->procesos as $proc) {
+                            // Construir tallas del proceso
+                            $procTallas = [];
+                            if (is_array($proc->tallas_dama)) {
+                                $procTallas['dama'] = $proc->tallas_dama;
+                            }
+                            if (is_array($proc->tallas_caballero)) {
+                                $procTallas['caballero'] = $proc->tallas_caballero;
+                            }
+                            
+                            // Ubicaciones puede ser array o string JSON
+                            $ubicaciones = [];
+                            if ($proc->ubicaciones) {
+                                if (is_array($proc->ubicaciones)) {
+                                    $ubicaciones = $proc->ubicaciones;
+                                } else if (is_string($proc->ubicaciones)) {
+                                    $ubicaciones = json_decode($proc->ubicaciones, true) ?? [];
+                                }
+                            }
+                            
+                            // Obtener imágenes del proceso
+                            $imagenesProceso = [];
+                            if ($proc->imagenes) {
+                                $imagenesProceso = $proc->imagenes->map(fn($img) => $img->url ?? $img->ruta_webp)->toArray();
+                            }
+                            
+                            // Obtener nombre del tipo de proceso
+                            $nombreProceso = 'Proceso';
+                            if ($proc->tipoProceso && $proc->tipoProceso->nombre) {
+                                $nombreProceso = $proc->tipoProceso->nombre;
+                            }
+                            
+                            $procesos[] = [
+                                'nombre' => $nombreProceso,
+                                'tipo' => $nombreProceso,
+                                'nombre_proceso' => $nombreProceso,
+                                'tipo_proceso' => $nombreProceso,
+                                'tallas' => $procTallas,
+                                'observaciones' => $proc->observaciones ?? '',
+                                'ubicaciones' => $ubicaciones,
+                                'imagenes' => $imagenesProceso,
+                            ];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::debug('[FACTURA] Error procesos', ['error' => $e->getMessage()]);
+                }
+                
+                // ✅ Construir prenda formateada CON TODAS LAS ESPECIFICACIONES
+                $prendasFormato = [
+                    'nombre' => $prenda->nombre_prenda,
+                    'descripcion' => $prenda->descripcion,
+                    'imagen' => $foto ? ($foto->url ?? $foto->ruta_webp) : null,
+                    'imagen_tela' => !empty($fotoTelas) ? $fotoTelas[0] : null,
+                    'imagenes' => $fotosPrend,
+                    'imagenes_tela' => $fotoTelas,
+                    'tela' => !empty($telas) ? implode(', ', $telas) : null,
+                    'color' => !empty($colores) ? implode(', ', $colores) : null,
+                    'ref' => !empty($referencias) ? implode(', ', $referencias) : null,
+                    'tallas' => $tallasSimples, // ✅ SOLO TALLA Y CANTIDAD (para vistas simples)
+                    'variantes' => $variantes_formateadas, // ✅ CON TODO (talla, cantidad, manga, broche, bolsillos, obs) para factura
+                    'procesos' => $procesos,
+                ];
+                
+                $datos['prendas'][] = $prendasFormato;
+                $datos['total_items'] += $cantidadTotal;
+                
+                \Log::info('[FACTURA] Prenda procesada', [
+                    'nombre' => $prenda->nombre_prenda,
+                    'variantes_count' => count($variantes_formateadas),
+                    'has_manga' => count(array_filter(array_column($variantes_formateadas, 'manga'))) > 0,
+                    'has_broche' => count(array_filter(array_column($variantes_formateadas, 'broche'))) > 0,
+                ]);
+            }
+
+            // ✅ AGREGAR EPPs A LOS DATOS DE FACTURA
+            $datos['epps'] = [];
+            try {
+                if ($pedido->epps) {
+                    foreach ($pedido->epps as $pedidoEpp) {
             // $pedidoEpp es el modelo PedidoEpp que contiene los datos del EPP agregado al pedido
             $epp = $pedidoEpp->epp;  // Obtener el modelo Epp relacionado
             
@@ -372,7 +403,6 @@ class PedidoProduccionRepository
                 'epp_id' => $pedidoEpp->epp_id,  // ID del EPP
                 'nombre' => $epp->nombre_completo ?? '',
                 'nombre_completo' => $epp->nombre_completo ?? '',
-                'codigo' => $epp->codigo ?? '',
                 'categoria' => $epp->categoria?->nombre ?? $epp->categoria ?? '',  // Acceder al nombre de la categorÃ­a
                 'talla' => $talla,  // Datos especÃ­ficos del pedido
                 'cantidad' => $pedidoEpp->cantidad ?? 0,
@@ -401,12 +431,12 @@ class PedidoProduccionRepository
                         'data_completa' => $imagenesData->toArray()
                     ]);
                 } else {
-                    \Log::info('[RECIBOS-REPO] Sin imÃ¡genes para EPP:', [
+                    \Log::info('[RECIBOS-REPO] Sin imágenes para EPP:', [
                         'pedido_epp_id' => $pedidoEpp->id
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::error('[RECIBOS-REPO] Error obteniendo imÃ¡genes de EPP:', [
+                \Log::error('[RECIBOS-REPO] Error obteniendo imágenes de EPP:', [
                     'pedido_epp_id' => $pedidoEpp->id,
                     'error' => $e->getMessage()
                 ]);
@@ -423,9 +453,18 @@ class PedidoProduccionRepository
                 'imagenes_count' => count($eppFormato['imagenes']),
                 'estructura_keys' => array_keys($eppFormato)
             ]);
-        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('[FACTURA] Error obteniendo datos', ['error' => $e->getMessage()]);
+                throw $e;
+            }
 
-        return $datos;
+            return $datos;
+        } catch (\Exception $e) {
+            \Log::error('[FACTURA] Error fatal', ['error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     /**
@@ -820,7 +859,6 @@ class PedidoProduccionRepository
                     'nombre' => $pedidoEpp->epp->nombre_completo ?? '',
                     'nombre_completo' => $pedidoEpp->epp->nombre_completo ?? '',
                     'epp_nombre' => $pedidoEpp->epp->nombre_completo ?? '',
-                    'epp_codigo' => $pedidoEpp->epp->codigo ?? '',
                     'epp_categoria' => $pedidoEpp->epp->categoria->nombre ?? '',
                     'cantidad' => $pedidoEpp->cantidad ?? 0,
                     'observaciones' => $pedidoEpp->observaciones ?? '',

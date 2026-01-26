@@ -40,7 +40,7 @@ final class ActualizarPrendaCompletaUseCase
             $dto->prendaId
         );
 
-        \Log::info('[ActualizarPrendaCompletaUseCase] Iniciando actualizaciÃ³n', [
+        \Log::info('[ActualizarPrendaCompletaUseCase] Iniciando actualizacion', [
             'prenda_id' => $dto->prendaId,
             'tiene_variantes' => !is_null($dto->variantes),
             'tiene_colores_telas' => !is_null($dto->coloresTelas),
@@ -70,7 +70,15 @@ final class ActualizarPrendaCompletaUseCase
         // 7. Actualizar procesos y sus imÃ¡genes
         $this->actualizarProcesos($prenda, $dto);
 
-        return $prenda->refresh();
+        // ✅ CARGAR RELACIONES COMPLETAS PARA EL FRONTEND
+        $prenda->refresh();
+        
+        // Garantizar que procesos sea siempre un array (incluso si estÃ¡ vacÃ­o)
+        if (!$prenda->relationLoaded('procesos')) {
+            $prenda->load('procesos');
+        }
+        
+        return $prenda;
     }
 
     private function actualizarCamposBasicos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
@@ -96,7 +104,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarFotos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizaciÃ³n parcial)
+        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->fotos)) {
             return;
         }
@@ -209,7 +217,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarVariantes(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizaciÃ³n parcial)
+        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->variantes)) {
             return;
         }
@@ -228,9 +236,22 @@ final class ActualizarPrendaCompletaUseCase
         // âœ… ACTUALIZACIÃ“N SELECTIVA
         // Si hay variantes nuevas, reemplazar TODAS (no hay ID Ãºnico para actualizar parcialmente)
         // Pero solo si explÃ­citamente se envÃ­a el array con datos
-        $prenda->variantes()->delete();
-        foreach ($dto->variantes as $variante) {
-            $creada = $prenda->variantes()->create([
+        $varianteExistente = $prenda->variantes()->first();
+        if ($varianteExistente) {
+            foreach ($dto->variantes as $variante) {
+                $upd = [];
+                // ✅ SOLO actualizar si el valor NO es null (preservar datos existentes)
+                if (array_key_exists("tipo_manga_id", $variante) && $variante["tipo_manga_id"] !== null) $upd["tipo_manga_id"] = $variante["tipo_manga_id"];
+                if (array_key_exists("tipo_broche_boton_id", $variante) && $variante["tipo_broche_boton_id"] !== null) $upd["tipo_broche_boton_id"] = $variante["tipo_broche_boton_id"];
+                if (array_key_exists("manga_obs", $variante) && $variante["manga_obs"] !== null) $upd["manga_obs"] = $variante["manga_obs"];
+                if (array_key_exists("broche_boton_obs", $variante) && $variante["broche_boton_obs"] !== null) $upd["broche_boton_obs"] = $variante["broche_boton_obs"];
+                if (array_key_exists("tiene_bolsillos", $variante) && $variante["tiene_bolsillos"] !== null) $upd["tiene_bolsillos"] = $variante["tiene_bolsillos"];
+                if (array_key_exists("bolsillos_obs", $variante) && $variante["bolsillos_obs"] !== null) $upd["bolsillos_obs"] = $variante["bolsillos_obs"];
+                if (!empty($upd)) $varianteExistente->update($upd);
+            }
+        } else {
+            foreach ($dto->variantes as $variante) {
+                $creada = $prenda->variantes()->create([
                 'tipo_manga_id' => $variante['tipo_manga_id'] ?? null,
                 'tipo_broche_boton_id' => $variante['tipo_broche_boton_id'] ?? null,
                 'manga_obs' => $variante['manga_obs'] ?? null,
@@ -238,18 +259,13 @@ final class ActualizarPrendaCompletaUseCase
                 'tiene_bolsillos' => $variante['tiene_bolsillos'] ?? false,
                 'bolsillos_obs' => $variante['bolsillos_obs'] ?? null,
             ]);
-            
-            \Log::info('[ActualizarPrendaCompletaUseCase] Variante guardada', [
-                'id' => $creada->id,
-                'tipo_manga_id' => $creada->tipo_manga_id,
-                'tipo_broche_boton_id' => $creada->tipo_broche_boton_id,
-            ]);
+            }
         }
     }
 
     private function actualizarColoresTelas(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizaciÃ³n parcial)
+        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->coloresTelas)) {
             return;
         }
@@ -350,7 +366,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarFotosTelas(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizaciÃ³n parcial)
+        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->fotosTelas)) {
             return;
         }
@@ -440,21 +456,15 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarProcesos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
+        // ✅ PATTERN MERGE: No eliminar procesos automáticamente
+        // Los procesos se preservan hasta que el usuario los elimine explícitamente
+        
         // Solo actualizar si se proporcionan procesos
-        if (is_null($dto->procesos)) {
+        if (is_null($dto->procesos) || empty($dto->procesos)) {
             return;
         }
 
-        if (empty($dto->procesos)) {
-            // Si viene vacÃ­o, eliminar todos (imÃ¡genes se eliminan en cascada)
-            $prenda->procesos()->delete();
-            return;
-        }
-
-        // Eliminar procesos antiguos (y sus imÃ¡genes se eliminarÃ¡n en cascada)
-        $prenda->procesos()->delete();
-
-        // Crear nuevos procesos
+        // Crear NUEVOS procesos si se envían (sin eliminar los existentes)
         foreach ($dto->procesos as $proceso) {
             $procesoCreado = $prenda->procesos()->create([
                 'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
@@ -498,5 +508,58 @@ final class ActualizarPrendaCompletaUseCase
         // Reemplazar extensiÃ³n por .webp
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
     }
-}
+    /**
+     * ✅ Transformar prenda para factura/resumen
+     * Traduce IDs a nombres reales (manga, broche, etc.)
+     */
+    public function transformarPrendaParaFactura(PrendaPedido $prenda): array
+    {
+        $prenda->load(['variantes', 'tallas', 'coloresTelas.color', 'coloresTelas.tela']);
+        
+        $variantes = $prenda->variantes->map(function($variante) {
+            $mangaNombre = null;
+            if ($variante->tipo_manga_id) {
+                $manga = \App\Models\TipoManga::find($variante->tipo_manga_id);
+                $mangaNombre = $manga?->nombre;
+            }
+            
+            $brocheBotoNombre = null;
+            if ($variante->tipo_broche_boton_id) {
+                $broche = \App\Models\TipoBrocheBoton::find($variante->tipo_broche_boton_id);
+                $brocheBotoNombre = $broche?->nombre;
+            }
+            
+            return [
+                'id' => $variante->id,
+                'tipo_manga_id' => $variante->tipo_manga_id,
+                'tipo_manga_nombre' => $mangaNombre,
+                'manga_obs' => $variante->manga_obs,
+                'tipo_broche_boton_id' => $variante->tipo_broche_boton_id,
+                'tipo_broche_boton_nombre' => $brocheBotoNombre,
+                'broche_boton_obs' => $variante->broche_boton_obs,
+                'tiene_bolsillos' => (bool) $variante->tiene_bolsillos,
+                'bolsillos_obs' => $variante->bolsillos_obs,
+            ];
+        })->toArray();
+        
+        return [
+            'id' => $prenda->id,
+            'nombre_prenda' => $prenda->nombre_prenda,
+            'descripcion' => $prenda->descripcion,
+            'de_bodega' => (bool) $prenda->de_bodega,
+            'variantes' => $variantes,
+            'tallas' => $prenda->tallas->groupBy('genero')->map(function($tallasPorGenero) {
+                return $tallasPorGenero->mapWithKeys(function($talla) {
+                    return [$talla->talla => $talla->cantidad];
+                })->toArray();
+            })->toArray(),
+            'colores_telas' => $prenda->coloresTelas->map(function($ct) {
+                return [
+                    'color' => $ct->color?->nombre,
+                    'tela' => $ct->tela?->nombre,
+                ];
+            })->toArray(),
+        ];
+    }}
+
 

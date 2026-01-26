@@ -168,7 +168,7 @@ class PedidoValidator implements Validator
     }
 
     /**
-     * Validar actualizaciÃ³n de pedido
+     * Validar actualizacion de pedido
      * 
      * @param array $data Campos a actualizar
      * @return void

@@ -36,8 +36,6 @@ class EppFormManager {
     limpiarFormularioCrear() {
         const campos = [
             'nuevoEPPNombre',
-            'nuevoEPPCategoria',
-            'nuevoEPPCodigo',
             'nuevoEPPDescripcion'
         ];
 
@@ -51,12 +49,11 @@ class EppFormManager {
 
     /**
      * Obtener datos del formulario de crear EPP
+     * Solo retorna nombre y descripción
      */
     obtenerDatosFormularioCrear() {
         return {
             nombre: document.getElementById('nuevoEPPNombre').value.trim(),
-            categoria: document.getElementById('nuevoEPPCategoria').value.trim(),
-            codigo: document.getElementById('nuevoEPPCodigo').value.trim(),
             descripcion: document.getElementById('nuevoEPPDescripcion').value.trim()
         };
     }

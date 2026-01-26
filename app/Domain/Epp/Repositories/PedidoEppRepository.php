@@ -27,26 +27,50 @@ class PedidoEppRepository implements PedidoEppRepositoryInterface
     public function agregarEppAlPedido(
         int $pedidoId,
         int $eppId,
-        string $talla,
         int $cantidad,
-        ?string $observaciones = null
-    ): void {
+        ?string $observaciones = null,
+        array $imagenes = []
+    ): array {
         if ($cantidad < 1) {
             throw new \InvalidArgumentException('La cantidad debe ser al menos 1');
         }
 
-        // Usar firstOrCreate para evitar duplicados por el unique index
-        PedidoEpp::firstOrCreate(
+        // Crear o actualizar relación pedido-epp
+        $pedidoEpp = PedidoEpp::updateOrCreate(
             [
-                'pedido_id' => $pedidoId,
+                'pedido_produccion_id' => $pedidoId,
                 'epp_id' => $eppId,
             ],
             [
-                'talla' => $talla,
                 'cantidad' => $cantidad,
                 'observaciones' => $observaciones,
             ]
         );
+
+        // Procesar imágenes si existen
+        if (!empty($imagenes) && is_array($imagenes)) {
+            foreach ($imagenes as $index => $imagen) {
+                // Aquí irá la lógica para guardar las imágenes en pedido_epp_imagenes
+                // Por ahora solo guardamos la metadata
+                \DB::table('pedido_epp_imagenes')->updateOrCreate(
+                    [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'orden' => $index + 1,
+                    ],
+                    [
+                        'ruta_original' => $imagen,
+                        'ruta_web' => $imagen,
+                        'principal' => $index === 0 ? 1 : 0,
+                    ]
+                );
+            }
+        }
+
+        return [
+            'id' => $pedidoEpp->id,
+            'pedido_id' => $pedidoId,
+            'epp_id' => $eppId,
+        ];
     }
 
     /**

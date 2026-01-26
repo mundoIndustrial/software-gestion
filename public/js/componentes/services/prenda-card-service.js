@@ -495,9 +495,7 @@ window.PrendaCardService = {
                             `;
                             }).join('')}
                         </div>
-                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280;">
-                            <i class="fas fa-search-plus"></i> Click en las imágenes para ampliar
-                        </p>
+                  
                     </div>
                 `;
             }

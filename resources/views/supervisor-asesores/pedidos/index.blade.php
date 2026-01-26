@@ -1171,7 +1171,8 @@
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
-<script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}"></script>
+<script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
+<script src="{{ asset('js/orders/order-detail-modal-manager.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>

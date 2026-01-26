@@ -15,15 +15,30 @@ class CrearProduccionPedidoDTO
     public string $numeroPedido;
     public string $cliente;
     public array $prendas;
+    public ?string $area;
+    public ?string $estado;
+    public ?int $asesorId;
+    public ?int $clienteId;
+    public ?string $formaDePago;
 
     public function __construct(
         string $numeroPedido,
         string $cliente,
-        array $prendas = []
+        array $prendas = [],
+        ?string $area = null,
+        ?string $estado = null,
+        ?int $asesorId = null,
+        ?int $clienteId = null,
+        ?string $formaDePago = null
     ) {
         $this->numeroPedido = trim($numeroPedido);
         $this->cliente = trim($cliente);
         $this->prendas = $prendas;
+        $this->area = $area ?? 'creacion de pedido';
+        $this->estado = $estado ?? 'Pendiente';
+        $this->asesorId = $asesorId;
+        $this->clienteId = $clienteId;
+        $this->formaDePago = $formaDePago;
 
         $this->validar();
     }
@@ -36,7 +51,12 @@ class CrearProduccionPedidoDTO
         return new self(
             $datos['numero_pedido'] ?? '',
             $datos['cliente'] ?? '',
-            $datos['prendas'] ?? []
+            $datos['prendas'] ?? [],
+            $datos['area'] ?? 'creacion de pedido',
+            $datos['estado'] ?? 'Pendiente',
+            $datos['asesor_id'] ?? null,
+            $datos['cliente_id'] ?? null,
+            $datos['forma_pago'] ?? null
         );
     }
 

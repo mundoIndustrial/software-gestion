@@ -323,6 +323,11 @@ class ModalCleanup {
         // Resetear estado de edición
         window.prendaEditIndex = null;
         
+        // Cambiar título del modal a "Agregar Prenda Nueva"
+        const modalTitle = document.querySelector('.modal-title');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<span class="material-symbols-rounded">add_box</span>Agregar Prenda Nueva';
+        }
 
     }
 
@@ -344,6 +349,11 @@ class ModalCleanup {
         // Establecer índice de edición
         window.prendaEditIndex = prendaIndex;
         
+        // Cambiar título del modal a "Edición de Prenda"
+        const modalTitle = document.querySelector('.modal-title');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<span class="material-symbols-rounded">edit</span>Edición de Prenda';
+        }
 
     }
 

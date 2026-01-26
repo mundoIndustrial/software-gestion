@@ -6,8 +6,8 @@
  */
 
 let procesoActual = null;
-let tallasSeleccionadasProceso = { dama: [], caballero: [] };
-let ubicacionesProcesoSeleccionadas = [];
+window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
+window.ubicacionesProcesoSeleccionadas = [];
 
 // Configuración por tipo de proceso
 const procesosConfig = {
@@ -73,21 +73,23 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         if (iconEl) iconEl.textContent = config.icon;
         if (btnTextoEl) btnTextoEl.textContent = config.btnTexto;
         
-        // Limpiar formulario
-        const form = document.getElementById('form-proceso-generico');
-        if (form) form.reset();
+        // SOLO limpiar formulario si NO es edición
+        if (!esEdicion) {
+            const form = document.getElementById('form-proceso-generico');
+            if (form) form.reset();
+        }
         
         // SOLO limpiar variables si NO es edición
         if (!esEdicion) {
 
-            tallasSeleccionadasProceso = { dama: [], caballero: [] };
+            window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
             
             // Limpiar resumen
             const resumenTallas = document.getElementById('proceso-tallas-resumen');
             if (resumenTallas) resumenTallas.innerHTML = '';
             
             // Limpiar ubicaciones
-            ubicacionesProcesoSeleccionadas = [];
+            window.ubicacionesProcesoSeleccionadas = [];
             const listaUbicaciones = document.getElementById('lista-ubicaciones-proceso');
             if (listaUbicaciones) listaUbicaciones.innerHTML = '';
             const inputUbicacion = document.getElementById('input-ubicacion-nueva');
@@ -260,13 +262,13 @@ window.agregarUbicacionProceso = function() {
     }
     
     // Evitar duplicados
-    if (ubicacionesProcesoSeleccionadas.includes(ubicacion)) {
+    if (window.ubicacionesProcesoSeleccionadas.includes(ubicacion)) {
 
         return;
     }
     
     // Agregar a la lista
-    ubicacionesProcesoSeleccionadas.push(ubicacion);
+    window.ubicacionesProcesoSeleccionadas.push(ubicacion);
 
     
     // Limpiar input
@@ -278,7 +280,7 @@ window.agregarUbicacionProceso = function() {
 
 // Remover ubicación de la lista
 window.removerUbicacionProceso = function(ubicacion) {
-    ubicacionesProcesoSeleccionadas = ubicacionesProcesoSeleccionadas.filter(u => u !== ubicacion);
+    window.ubicacionesProcesoSeleccionadas = window.ubicacionesProcesoSeleccionadas.filter(u => u !== ubicacion);
 
     window.renderizarListaUbicaciones();
 };
@@ -290,12 +292,12 @@ window.renderizarListaUbicaciones = function() {
     
     container.innerHTML = '';
     
-    if (ubicacionesProcesoSeleccionadas.length === 0) {
+    if (window.ubicacionesProcesoSeleccionadas.length === 0) {
         container.innerHTML = '<small style="color: #9ca3af;">Escribe una ubicación y haz click en "+" para agregarla</small>';
         return;
     }
     
-    ubicacionesProcesoSeleccionadas.forEach(ubicacion => {
+    window.ubicacionesProcesoSeleccionadas.forEach(ubicacion => {
         const tag = document.createElement('div');
         tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
         tag.innerHTML = `
@@ -328,7 +330,7 @@ window.aplicarProcesoParaTodasTallas = function() {
     }
     
     // Para UI, usamos arrays (nombres de tallas)
-    tallasSeleccionadasProceso = {
+    window.tallasSeleccionadasProceso = {
         dama: tallasPrendaArrays.dama,
         caballero: tallasPrendaArrays.caballero
     };
@@ -457,7 +459,7 @@ window.abrirEditorTallasEspecificas = function() {
             containerDama.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas DAMA seleccionadas en la prenda</p>';
         } else {
             tallasDamaArray.forEach(talla => {
-                const isSelected = tallasSeleccionadasProceso.dama.includes(talla);
+                const isSelected = window.tallasSeleccionadasProceso.dama.includes(talla);
                 const cantidad = tallasPrenda.dama[talla] || 0;
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
@@ -487,7 +489,7 @@ window.abrirEditorTallasEspecificas = function() {
             containerCaballero.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas CABALLERO seleccionadas en la prenda</p>';
         } else {
             tallasCaballeroArray.forEach(talla => {
-                const isSelected = tallasSeleccionadasProceso.caballero.includes(talla);
+                const isSelected = window.tallasSeleccionadasProceso.caballero.includes(talla);
                 const cantidad = tallasPrenda.caballero[talla] || 0;
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
@@ -548,11 +550,11 @@ window.guardarTallasSeleccionadas = function() {
     
     // Recopilar tallas DAMA
     const checksDama = document.querySelectorAll('input[data-genero="dama"]:checked');
-    tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
+    window.tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
     
     // Recopilar tallas CABALLERO
     const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
-    tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
+    window.tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
     
 
     
@@ -566,7 +568,7 @@ window.actualizarResumenTallasProceso = function() {
     const resumen = document.getElementById('proceso-tallas-resumen');
     if (!resumen) return;
     
-    const totalTallas = tallasSeleccionadasProceso.dama.length + tallasSeleccionadasProceso.caballero.length;
+    const totalTallas = window.tallasSeleccionadasProceso.dama.length + window.tallasSeleccionadasProceso.caballero.length;
     
     if (totalTallas === 0) {
         resumen.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
@@ -578,8 +580,8 @@ window.actualizarResumenTallasProceso = function() {
     // Obtener cantidades desde relacional (DAMA y CABALLERO separados)
     const tallasRel = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
     
-    if (tallasSeleccionadasProceso.dama.length > 0) {
-        const tallasDamaHTML = tallasSeleccionadasProceso.dama.map(t => {
+    if (window.tallasSeleccionadasProceso.dama.length > 0) {
+        const tallasDamaHTML = window.tallasSeleccionadasProceso.dama.map(t => {
             const cantidad = tallasRel.DAMA[t] || 0;
             return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${t}
@@ -590,7 +592,7 @@ window.actualizarResumenTallasProceso = function() {
         html += `
             <div>
                 <strong style="color: #be185d; margin-bottom: 0.5rem; display: block;">
-                    <i class="fas fa-female"></i> DAMA (${tallasSeleccionadasProceso.dama.length})
+                    <i class="fas fa-female"></i> DAMA (${window.tallasSeleccionadasProceso.dama.length})
                 </strong>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
                     ${tallasDamaHTML}
@@ -599,8 +601,8 @@ window.actualizarResumenTallasProceso = function() {
         `;
     }
     
-    if (tallasSeleccionadasProceso.caballero.length > 0) {
-        const tallasCaballeroHTML = tallasSeleccionadasProceso.caballero.map(t => {
+    if (window.tallasSeleccionadasProceso.caballero.length > 0) {
+        const tallasCaballeroHTML = window.tallasSeleccionadasProceso.caballero.map(t => {
             const cantidad = tallasRel.CABALLERO[t] || 0;
             return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${t}
@@ -611,7 +613,7 @@ window.actualizarResumenTallasProceso = function() {
         html += `
             <div>
                 <strong style="color: #1d4ed8; margin-bottom: 0.5rem; display: block;">
-                    <i class="fas fa-male"></i> CABALLERO (${tallasSeleccionadasProceso.caballero.length})
+                    <i class="fas fa-male"></i> CABALLERO (${window.tallasSeleccionadasProceso.caballero.length})
                 </strong>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
                     ${tallasCaballeroHTML}

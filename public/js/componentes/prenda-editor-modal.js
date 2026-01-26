@@ -78,7 +78,23 @@ function abrirEditarPrendas() {
         showConfirmButton: false,
         confirmButtonText: 'Cerrar',
         showCancelButton: true,
-        cancelButtonText: 'Volver'
+        cancelButtonText: 'Volver',
+        customClass: {
+            container: 'swal-centered-container',
+            popup: 'swal-centered-popup'
+        },
+        didOpen: (modal) => {
+            const container = modal.closest('.swal2-container');
+            if (container) {
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+                container.style.height = '100vh';
+                container.style.zIndex = '999998';
+            }
+            modal.style.marginTop = '0';
+            modal.style.marginBottom = '0';
+        }
     });
 }
 
@@ -306,12 +322,18 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         console.log('✅ [EDITAR-PRENDA] Datos listos para cargar en modal:', Object.keys(prendaParaEditar));
         console.log('🔬 [EDITAR-PRENDA] Procesos para modal:', prendaParaEditar.procesos);
+        console.log('🖼️ [EDITAR-PRENDA] Imágenes para modal:', prendaParaEditar.imagenes);
+        console.log('📊 [EDITAR-PRENDA] Respuesta completa del servidor:', resultado.prenda);
+        
+        // Cerrar el modal de seleccionar prenda
+        Swal.close();
         
         // Guardar en global
         window.prendaEnEdicion = {
             pedidoId: pedidoId,
             prendasIndex: prendasIndex,
-            prendaOriginal: JSON.parse(JSON.stringify(prenda))
+            prendaOriginal: JSON.parse(JSON.stringify(prenda)),
+            esEdicion: true
         };
         
         // Abrir modal con datos transformados
@@ -324,6 +346,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             }
             
             window.gestionItemsUI.prendaEditIndex = prendasIndex;
+            window.gestionItemsUI.prendaEnModoEdicion = true;
             window.gestionItemsUI.abrirModalAgregarPrendaNueva();
             
             if (typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
@@ -412,7 +435,23 @@ function abrirEditarProcesoEspecifico(prendasIndex, procesoIndex) {
         showCancelButton: true,
         confirmButtonText: ' Guardar Cambios',
         confirmButtonColor: '#7c3aed',
-        cancelButtonText: 'Volver'
+        cancelButtonText: 'Volver',
+        customClass: {
+            container: 'swal-centered-container',
+            popup: 'swal-centered-popup'
+        },
+        didOpen: (modal) => {
+            const container = modal.closest('.swal2-container');
+            if (container) {
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+                container.style.height = '100vh';
+                container.style.zIndex = '999998';
+            }
+            modal.style.marginTop = '0';
+            modal.style.marginBottom = '0';
+        }
     }).then((result) => {
         if (result.isConfirmed) {
             // Recopilar imágenes modificadas

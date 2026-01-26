@@ -102,7 +102,7 @@ class ObtenerDatosRecibosService
         // Contar procesos por estado
         $procesos = $pedido->prendas()
             ->with(['procesos' => function ($q) {
-                $q->groupBy('estado');
+                $q->withTrashed()->groupBy('estado');
             }])
             ->get()
             ->flatMap->procesos
@@ -111,7 +111,9 @@ class ObtenerDatosRecibosService
 
         $totalPrendas = $pedido->prendas()->count();
         $totalProcesos = $pedido->prendas()
-            ->with('procesos')
+            ->with(['procesos' => function ($q) {
+                $q->withTrashed();
+            }])
             ->get()
             ->flatMap->procesos
             ->count();

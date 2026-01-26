@@ -21,10 +21,11 @@ final class AgregarPrendaCompletaDTO
         public readonly ?string $descripcion = null,
         public readonly bool $de_bodega = false,
         public readonly ?array $imagenes = null,
+        public readonly ?array $imagenesExistentes = null,  // URLs de imágenes existentes a preservar
         public readonly ?array $tallas = null,
     ) {}
 
-    public static function fromRequest(int|string $pedidoId, array $data, ?array $imagenes = null): self
+    public static function fromRequest(int|string $pedidoId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null): self
     {
         return new self(
             pedidoId: $pedidoId,
@@ -32,6 +33,7 @@ final class AgregarPrendaCompletaDTO
             descripcion: $data['descripcion'] ?? null,
             de_bodega: $data['de_bodega'] ?? false,
             imagenes: $imagenes,
+            imagenesExistentes: $imagenesExistentes,
             tallas: $data['tallas'] ?? null,
         );
     }

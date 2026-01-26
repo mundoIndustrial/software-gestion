@@ -56,9 +56,8 @@ class ObtenerDatosFacturaService
     {
         Log::info('[FACTURA] Procesando Pedidos', ['id' => $pedido->id]);
 
-        // Usar inyección de dependencias para resolver el repository
-        // Usar obtenerDatosRecibos() que retorna la estructura completa con telasAgregadas, generosConTallas, etc.
-        $datos = $this->pedidoProduccionRepository->obtenerDatosRecibos($pedido->id);
+        // Usar obtenerDatosFactura() que incluye manga, broche, bolsillos con todas las observaciones
+        $datos = $this->pedidoProduccionRepository->obtenerDatosFactura($pedido->id);
         
         // Agregar el ID del pedido para poder usarlo en el frontend
         $datos['id'] = $pedido->id;

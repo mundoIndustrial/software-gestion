@@ -625,43 +625,54 @@ function capturarPrendas() {
                     return rutaFinal;
                 }) : (imagenCapturada ? [imagenCapturada] : []),
                 imagen_tela: imagenTelaCapturada,
-                imagenes_tela: prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela) ? prenda.imagenes_tela.map(img => {
-                    console.log('[INVOICE-PREVIEW] Procesando imagen de tela:', {
-                        tipo: typeof img,
-                        esFile: img instanceof File,
-                        propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
-                        url: img?.url,
-                        ruta: img?.ruta,
-                        blobUrl: img?.blobUrl,
-                        previewUrl: img?.previewUrl,
-                        src: img?.src,
-                        stringValue: typeof img === 'string' ? img : 'N/A'
-                    });
-                    if (img instanceof File) {
-                        return URL.createObjectURL(img);
+                // Extraer imagenes_tela sin ternarios anidados
+                imagenes_tela: (() => {
+                    let imagenesTelaArr = [];
+                    if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
+                        imagenesTelaArr = prenda.imagenes_tela.map(img => {
+                            console.log('[INVOICE-PREVIEW] Procesando imagen de tela:', {
+                                tipo: typeof img,
+                                esFile: img instanceof File,
+                                propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
+                                url: img?.url,
+                                ruta: img?.ruta,
+                                blobUrl: img?.blobUrl,
+                                previewUrl: img?.previewUrl,
+                                src: img?.src,
+                                stringValue: typeof img === 'string' ? img : 'N/A'
+                            });
+                            if (img instanceof File) {
+                                return URL.createObjectURL(img);
+                            }
+                            const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
+                            return rutaFinal;
+                        });
+                    } else if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
+                        imagenesTelaArr = prenda.telasAgregadas
+                            .filter(t => t.imagenes && t.imagenes.length > 0)
+                            .flatMap(t => t.imagenes.map(img => {
+                                console.log('[INVOICE-PREVIEW] Procesando imagen de tela agregada:', {
+                                    tipo: typeof img,
+                                    esFile: img instanceof File,
+                                    propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
+                                    url: img?.url,
+                                    ruta: img?.ruta,
+                                    blobUrl: img?.blobUrl,
+                                    previewUrl: img?.previewUrl,
+                                    src: img?.src,
+                                    stringValue: typeof img === 'string' ? img : 'N/A'
+                                });
+                                if (img instanceof File) {
+                                    return URL.createObjectURL(img);
+                                }
+                                const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
+                                return rutaFinal;
+                            }));
+                    } else if (imagenTelaCapturada) {
+                        imagenesTelaArr = [imagenTelaCapturada];
                     }
-                    const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
-
-                    return rutaFinal;
-                }) : (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas.filter(t => t.imagenes && t.imagenes.length > 0).flatMap(t => t.imagenes.map(img => {
-                    console.log('[INVOICE-PREVIEW] Procesando imagen de tela agregada:', {
-                        tipo: typeof img,
-                        esFile: img instanceof File,
-                        propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
-                        url: img?.url,
-                        ruta: img?.ruta,
-                        blobUrl: img?.blobUrl,
-                        previewUrl: img?.previewUrl,
-                        src: img?.src,
-                        stringValue: typeof img === 'string' ? img : 'N/A'
-                    });
-                    if (img instanceof File) {
-                        return URL.createObjectURL(img);
-                    }
-                    const rutaFinal = img.blobUrl || img.previewUrl || img.src || img.url || img.ruta || img;
-
-                    return rutaFinal;
-                })) : (imagenTelaCapturada ? [imagenTelaCapturada] : [])),
+                    return imagenesTelaArr;
+                })(),
                 manga: tipoManga && tipoManga !== 'No aplica' ? tipoManga : '',
                 obs_manga: obsManga,
                 broche: tipoBroche && tipoBroche !== 'No aplica' ? tipoBroche : '',
@@ -859,13 +870,35 @@ function generarHTMLFactura(datos) {
     
     // Generar las tarjetas de prendas con todos los detalles
     const prendasHTML = datos.prendas.map((prenda, idx) => {
+        console.log(`[FACTURA-PRENDA-${idx}] Prenda:`, prenda);
+        console.log(`[FACTURA-PRENDA-${idx}] Tiene variantes array?`, Array.isArray(prenda.variantes), prenda.variantes?.length);
+        console.log(`[FACTURA-PRENDA-${idx}] Tiene tallas?`, prenda.tallas ? Object.keys(prenda.tallas) : 'NO');
+        console.log(`[FACTURA-PRENDA-${idx}] Manga:`, prenda.manga);
+        console.log(`[FACTURA-PRENDA-${idx}] Broche:`, prenda.broche);
+        console.log(`[FACTURA-PRENDA-${idx}] Bolsillos:`, prenda.tiene_bolsillos);
+        
         // Tabla de Variantes (Tallas con especificaciones)
         let variantesHTML = '';
         
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            console.log(`[FACTURA-PRENDA-${idx}] ✅ Usando variantes del servidor`);
+            console.log(`[FACTURA-PRENDA-${idx}] Variantes completas:`, prenda.variantes);
+            
+            // Variantes desde el servidor (tienen estructura completa)
             // Agrupar variantes por talla para crear tabla
             const variantesAgrupadas = {};
             prenda.variantes.forEach(var_item => {
+                console.log(`[FACTURA-PRENDA-${idx}] Procesando variante:`, {
+                    talla: var_item.talla,
+                    cantidad: var_item.cantidad,
+                    manga: var_item.manga,
+                    manga_obs: var_item.manga_obs,
+                    broche: var_item.broche,
+                    broche_obs: var_item.broche_obs,
+                    bolsillos: var_item.bolsillos,
+                    bolsillos_obs: var_item.bolsillos_obs
+                });
+                
                 if (!variantesAgrupadas[var_item.talla]) {
                     variantesAgrupadas[var_item.talla] = {
                         cantidad_total: 0,
@@ -915,6 +948,73 @@ function generarHTMLFactura(datos) {
                     </table>
                 </div>
             `;
+        } else if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
+            console.log(`[FACTURA-PRENDA-${idx}] ✅ Usando tallas locales del formulario`);
+            // Datos desde el formulario local (estructura relacional de tallas por género)
+            // Crear variantes simplificadas con el manga/broche/bolsillos de la prenda
+            let variantesSimples = [];
+            
+            Object.entries(prenda.tallas).forEach(([genero, tallasObj]) => {
+                if (typeof tallasObj === 'object') {
+                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                        variantesSimples.push({
+                            talla: talla,
+                            cantidad: cantidad,
+                            manga: prenda.manga || '',
+                            manga_obs: prenda.obs_manga || '',
+                            broche: prenda.broche || '',
+                            broche_obs: prenda.obs_broche || '',
+                            bolsillos: prenda.tiene_bolsillos || false,
+                            bolsillos_obs: prenda.obs_bolsillos || ''
+                        });
+                    });
+                }
+            });
+            
+            console.log(`[FACTURA-PRENDA-${idx}] Variantes simples creadas:`, variantesSimples);
+            
+            if (variantesSimples.length > 0) {
+                variantesHTML = `
+                    <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
+                        <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> VARIANTES (Tallas con Especificaciones)</div>
+                        <table style="width: 100%; font-size: 10px !important; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f0f9ff; border-bottom: 2px solid #bfdbfe;">
+                                    <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Talla</th>
+                                    <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #1e40af;">Cantidad</th>
+                                    <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Manga</th>
+                                    <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Broche</th>
+                                    <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Bolsillos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${variantesSimples.map((var_item, idx) => `
+                                    <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e0e7ff;">
+                                        <td style="padding: 8px 12px; font-weight: 600; color: #334155;">${var_item.talla}</td>
+                                        <td style="padding: 8px 12px; text-align: center; color: #475569;">${var_item.cantidad}</td>
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                            ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
+                                            ${var_item.manga_obs ? `<br><em style="color: #64748b;">${var_item.manga_obs}</em>` : ''}
+                                        </td>
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                            ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
+                                            ${var_item.broche_obs ? `<br><em style="color: #64748b;">${var_item.broche_obs}</em>` : ''}
+                                        </td>
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                            ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
+                                            ${var_item.bolsillos_obs ? `<br><em style="color: #64748b;">${var_item.bolsillos_obs}</em>` : ''}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                console.log(`[FACTURA-PRENDA-${idx}] ⚠️ No hay variantes simples`);
+            }
+        } else {
+            console.log(`[FACTURA-PRENDA-${idx}] ⚠️ No hay variantes ni tallas`);
         }
         
         // Especificaciones principales (Tabla compacta) - MANTENER PARA COMPATIBILIDAD
@@ -1200,19 +1300,12 @@ function generarHTMLFactura(datos) {
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
                             <!-- HEADER EPP -->
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                                <!-- COLUMNA 1: Nombre + Código -->
+                                <!-- COLUMNA 1: Nombre -->
                                 <div style="font-size: 11px;">
                                     <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">${epp.epp_nombre || 'Sin nombre'}</div>
-                                    ${epp.epp_codigo ? `<div style="color: #9ca3af; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Código: ${epp.epp_codigo}</div>` : ''}
                                 </div>
                                 
-                                <!-- COLUMNA 2: Categoría -->
-                                <div style="font-size: 11px;">
-                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Categoría</div>
-                                    <div style="font-weight: 600; color: #374151;">${epp.epp_categoria || '—'}</div>
-                                </div>
-                                
-                                <!-- COLUMNA 3: Cantidad -->
+                                <!-- COLUMNA 2: Cantidad -->
                                 <div style="font-size: 11px;">
                                     <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Cantidad</div>
                                     <div style="font-weight: 600; color: #374151;"><strong>${epp.cantidad || 0}</strong></div>
@@ -1261,63 +1354,3 @@ function guardarComoHTML(nombreArchivo) {
 /**
  * Agregar botón de vista previa al formulario
  */
-document.addEventListener('DOMContentLoaded', function() {
-
-    
-    // Esperar a que el formulario esté completamente cargado
-    setTimeout(() => {
-        const form = document.getElementById('formCrearPedidoEditable') || document.querySelector('form');
-        
-        if (form) {
-            // Crear botón de vista previa
-            const btnPreview = document.createElement('button');
-            btnPreview.type = 'button';
-            btnPreview.innerHTML = 'Vista Previa del Pedido';
-            btnPreview.style.cssText = `
-                padding: 10px 16px;
-                background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-weight: 600;
-                font-size: 0.9rem;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 0.5rem;
-                transition: all 0.3s;
-                box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
-            `;
-            
-            btnPreview.onmouseover = function() {
-                this.style.transform = 'translateY(-2px)';
-                this.style.boxShadow = '0 4px 8px rgba(107, 114, 128, 0.3)';
-            };
-            
-            btnPreview.onmouseout = function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '0 2px 4px rgba(107, 114, 128, 0.2)';
-            };
-            
-            btnPreview.onclick = function(e) {
-                e.preventDefault();
-                abrirPreviewFacturaEnVivo();
-            };
-            
-            // Buscar dónde insertar el botón (buscar un contenedor de botones o insertar antes del submit)
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn && submitBtn.parentElement) {
-                submitBtn.parentElement.insertBefore(btnPreview, submitBtn);
-            } else {
-                form.appendChild(btnPreview);
-            }
-            
-
-        } else {
-
-        }
-    }, 500);
-});
-
-

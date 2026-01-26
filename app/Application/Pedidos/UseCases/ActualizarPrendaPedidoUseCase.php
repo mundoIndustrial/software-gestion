@@ -13,7 +13,7 @@ final class ActualizarPrendaPedidoUseCase
 
     public function ejecutar(ActualizarPrendaPedidoDTO $dto)
     {
-        Log::info('[ActualizarPrendaPedidoUseCase] Iniciando actualizaciÃ³n de prenda', [
+        Log::info('[ActualizarPrendaPedidoUseCase] Iniciando actualizacion de prenda', [
             'prenda_id' => $dto->prendaId,
         ]);
 

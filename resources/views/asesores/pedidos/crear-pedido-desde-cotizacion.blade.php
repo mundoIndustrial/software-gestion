@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
     <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
 @endsection

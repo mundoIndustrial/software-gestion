@@ -402,17 +402,120 @@ function generarTarjetaEpp(epp, index) {
     card.className = 'epp-item-card';
     card.innerHTML = `
         <div class="epp-header">
-            <h5>${epp.nombre || 'EPP Desconocido'}</h5>
-            <span class="epp-qty">Cantidad: ${epp.cantidad || 0}</span>
-        </div>
-        ${epp.descripcion ? `<p class="epp-description">${epp.descripcion}</p>` : ''}
-        ${epp.observaciones ? `<p class="epp-observations"><strong>Observaciones:</strong> ${epp.observaciones}</p>` : ''}
-        ${epp.imagenes && epp.imagenes.length > 0 ? `
-            <div class="epp-images">
-                ${epp.imagenes.map(img => `<img src="${img.url || img}" alt="Imagen EPP" class="epp-img" />`).join('')}
+            <div class="epp-title-section">
+                <span class="epp-label">EPP ${index + 1}</span>
+                <h5>${epp.nombre || 'EPP Desconocido'}</h5>
             </div>
-        ` : ''}
+            
+            <div class="epp-menu-contextual">
+                <button class="btn-menu-tres-puntos-epp" type="button" data-epp-index="${index}">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div class="submenu-epp" style="display: none;">
+                    <button class="submenu-option btn-editar-epp" type="button" data-epp-index="${index}">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="submenu-option btn-eliminar-epp" type="button" data-epp-index="${index}">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="epp-content">
+            <div class="epp-info">
+                <span class="epp-qty"><strong>Cantidad:</strong> ${epp.cantidad || 0}</span>
+                ${epp.descripcion ? `<p class="epp-description">${epp.descripcion}</p>` : ''}
+                ${epp.observaciones ? `<p class="epp-observations"><strong>Observaciones:</strong> ${epp.observaciones}</p>` : ''}
+            </div>
+            ${epp.imagenes && epp.imagenes.length > 0 ? `
+                <div class="epp-images">
+                    ${epp.imagenes.map(img => `<img src="${img.url || img}" alt="Imagen EPP" class="epp-img" />`).join('')}
+                </div>
+            ` : ''}
+        </div>
     `;
     return card;
 }
+
+/**
+ * Inicializar event listeners para el menú de EPP
+ */
+function inicializarEventListenersEpp() {
+    // Menú de 3 puntos
+    document.addEventListener('click', (e) => {
+        // Toggle del menú
+        if (e.target.closest('.btn-menu-tres-puntos-epp')) {
+            e.stopPropagation();
+            const btn = e.target.closest('.btn-menu-tres-puntos-epp');
+            const submenu = btn.nextElementSibling;
+            
+            // Cerrar otros submenús
+            document.querySelectorAll('.submenu-epp').forEach(menu => {
+                if (menu !== submenu) menu.style.display = 'none';
+            });
+            
+            // Toggle del menú actual
+            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+        }
+        // Cerrar menú si se hace clic fuera
+        else {
+            document.querySelectorAll('.submenu-epp').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+        
+        // Botón EDITAR EPP
+        if (e.target.closest('.btn-editar-epp')) {
+            e.stopPropagation();
+            const btn = e.target.closest('.btn-editar-epp');
+            const eppIndex = parseInt(btn.dataset.eppIndex);
+            
+            console.log('[EPP] 📝 Editando EPP con índice:', eppIndex);
+            
+            // Obtener EPP desde window.eppsPedido (donde se almacenan)
+            if (window.eppsPedido && window.eppsPedido[eppIndex]) {
+                const epp = window.eppsPedido[eppIndex];
+                console.log('[EPP] 📋 EPP encontrado:', epp);
+                
+                // TODO: Abrir modal para editar EPP
+                // Por ahora solo log
+                alert(`Editar EPP: ${epp.nombre} (ID: ${epp.id || 'nuevo'})`);
+            } else {
+                console.warn('[EPP] ❌ EPP no encontrado en índice:', eppIndex);
+                alert('EPP no encontrado');
+            }
+        }
+        
+        // Botón ELIMINAR EPP
+        if (e.target.closest('.btn-eliminar-epp')) {
+            e.stopPropagation();
+            const btn = e.target.closest('.btn-eliminar-epp');
+            const eppIndex = parseInt(btn.dataset.eppIndex);
+            
+            console.log('[EPP] 🗑️ Eliminando EPP con índice:', eppIndex);
+            
+            // Confirmar eliminación
+            if (confirm('¿Estás seguro de que deseas eliminar este EPP?')) {
+                // Obtener EPP desde window.eppsPedido
+                if (window.eppsPedido) {
+                    // Eliminar del array
+                    window.eppsPedido.splice(eppIndex, 1);
+                    console.log('[EPP] ✅ EPP eliminado. Eppspedido ahora:', window.eppsPedido);
+                    
+                    // Recargar la lista de EPPs
+                    cargarEPPs(window.eppsPedido);
+                } else {
+                    alert('Error: No se puede eliminar el EPP');
+                }
+            }
+        }
+    });
+}
+
+// Inicializar event listeners cuando el documento esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarEventListenersEpp();
+});
+
 

@@ -51,7 +51,7 @@ class PrendaFormCollector {
             
 
             
-            // Copiar SOLO los File objects (NO blobs ni previewUrl)
+            // Procesar imágenes: nuevas File objects Y imágenes de base de datos
             const imagenesCopia = imagenesTemporales.map(img => {
 
                 
@@ -65,15 +65,19 @@ class PrendaFormCollector {
 
                     return img.file;
                 }
-                // Si es un objeto con previewUrl (desde BD), ignorar - no es un File nuevo
+                // Si es un objeto con previewUrl (desde BD), PRESERVARLO para edición
                 if (img && img.previewUrl && !img.file) {
-
-                    return null;
+                    // Retornar objeto con la URL para que el backend sepa que es imagen existente
+                    return {
+                        previewUrl: img.previewUrl,
+                        urlDesdeDB: true,
+                        nombre: img.nombre
+                    };
                 }
                 // Fallback: retornar img tal cual si es File
 
                 return img;
-            }).filter(img => img !== null && img instanceof File);
+            }).filter(img => img !== null && (img instanceof File || (img && img.urlDesdeDB)));
 
             // ============================================
             // 3. CONSTRUIR OBJETO BASE DE PRENDA

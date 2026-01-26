@@ -1,0 +1,93 @@
+/**
+ * SWEETALERT2 Z-INDEX FIX
+ * Asegura que todos los modales Swal salgan encima de todo
+ * 
+ * Z-Index Strategy:
+ * - 999997: Backdrop (fondo oscuro)
+ * - 999998: Contenedor
+ * - 999999: Popup (modal)
+ */
+
+/* Contenedor del modal */
+.swal2-container {
+    z-index: 999998 !important;
+    position: fixed !important;
+}
+
+/* Popup/Modal */
+.swal2-popup {
+    z-index: 999999 !important;
+    position: fixed !important;
+}
+
+/* Backdrop (fondo oscuro) */
+.swal2-backdrop {
+    z-index: 999997 !important;
+}
+
+/* Asegurar que el contenedor esté encima de todos los modales */
+.swal2-shown {
+    z-index: 999998 !important;
+}
+
+/* Clases personalizadas */
+.swal-container-top {
+    z-index: 999998 !important;
+}
+
+.swal-popup-top {
+    z-index: 999999 !important;
+}
+
+/* ============================================================
+   CENTRADO VERTICAL Y HORIZONTAL DEL MODAL
+   ============================================================ */
+
+.swal-centered-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    z-index: 999998 !important;
+}
+
+.swal-centered-popup {
+    position: relative !important;
+    margin: auto !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    top: auto !important;
+    left: auto !important;
+    z-index: 999999 !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+}
+
+/* Responsive - asegurar que funciona en todas las resoluciones */
+@media (max-width: 768px) {
+    .swal-centered-container,
+    .swal2-container {
+        padding: 0.5rem !important;
+    }
+    
+    .swal-centered-popup,
+    .swal2-popup {
+        width: 95vw !important;
+        max-width: 95vw !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .swal-centered-popup,
+    .swal2-popup {
+        width: 98vw !important;
+        max-width: 98vw !important;
+        max-height: 90vh !important;
+    }
+}
+

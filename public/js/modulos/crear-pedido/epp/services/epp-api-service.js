@@ -109,6 +109,47 @@ class EppApiService {
     }
 
     /**
+     * Agregar EPP a un pedido
+     */
+    async agregarEPPAlPedido(pedidoId, eppId, cantidad, observaciones, imagenes = []) {
+        try {
+            const formData = new FormData();
+            formData.append('epp_id', eppId);
+            formData.append('cantidad', cantidad);
+            if (observaciones) {
+                formData.append('observaciones', observaciones);
+            }
+
+            // Agregar imágenes si existen
+            if (imagenes && Array.isArray(imagenes)) {
+                imagenes.forEach((imagen, index) => {
+                    if (imagen instanceof File) {
+                        formData.append(`imagenes[${index}]`, imagen);
+                    }
+                });
+            }
+
+            const response = await fetch(`${this.baseUrl}/pedidos/${pedidoId}/epp/agregar`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': this._obtenerCsrfToken()
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Error al agregar EPP: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+
+            throw error;
+        }
+    }
+
+    /**
      * Obtener token CSRF
      */
     _obtenerCsrfToken() {

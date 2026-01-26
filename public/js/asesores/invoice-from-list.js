@@ -31,6 +31,12 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         
         const datos = await response.json();
 
+        console.log('[FACTURA-DEBUG] Datos completos del servidor:', datos);
+        console.log('[FACTURA-DEBUG] Prendas recibidas:', datos.prendas);
+        if (datos.prendas && datos.prendas[0]) {
+            console.log('[FACTURA-DEBUG] Primera prenda:', datos.prendas[0]);
+            console.log('[FACTURA-DEBUG] Variantes de primera prenda:', datos.prendas[0].variantes);
+        }
         
         // Ocultar spinner
         ocultarCargando();

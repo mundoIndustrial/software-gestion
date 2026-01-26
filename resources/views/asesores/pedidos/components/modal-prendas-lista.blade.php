@@ -117,9 +117,21 @@
                 allowOutsideClick: true,
                 allowEscapeKey: true,
                 customClass: {
-                    container: 'prendas-modal-container',
-                    popup: 'prendas-modal-popup',
+                    container: 'swal-centered-container prendas-modal-container',
+                    popup: 'swal-centered-popup prendas-modal-popup',
                     htmlContainer: 'prendas-modal-html'
+                },
+                didOpen: (modal) => {
+                    const container = modal.closest('.swal2-container');
+                    if (container) {
+                        container.style.display = 'flex';
+                        container.style.alignItems = 'center';
+                        container.style.justifyContent = 'center';
+                        container.style.height = '100vh';
+                        container.style.zIndex = '999998';
+                    }
+                    modal.style.marginTop = '0';
+                    modal.style.marginBottom = '0';
                 }
             });
         });

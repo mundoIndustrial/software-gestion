@@ -41,12 +41,12 @@ class AgregarEppAlPedidoHandler implements CommandHandler
             }
 
             // Agregar EPP al pedido
-            $this->pedidoEppRepository->agregarEppAlPedido(
+            $resultado = $this->pedidoEppRepository->agregarEppAlPedido(
                 $command->getPedidoId(),
                 $command->getEppId(),
-                $command->getTalla(),
                 $command->getCantidad(),
-                $command->getObservaciones()
+                $command->getObservaciones(),
+                $command->getImagenes()
             );
 
             Log::info(' [AgregarEppAlPedidoHandler] EPP agregado correctamente', [
@@ -57,8 +57,7 @@ class AgregarEppAlPedidoHandler implements CommandHandler
             return [
                 'success' => true,
                 'message' => 'EPP agregado al pedido correctamente',
-                'pedido_id' => $command->getPedidoId(),
-                'epp_id' => $command->getEppId(),
+                'data' => $resultado,
             ];
 
         } catch (\InvalidArgumentException $e) {

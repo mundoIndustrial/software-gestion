@@ -147,29 +147,59 @@ class PrendaEditor {
      * @private
      */
     cargarImagenes(prenda) {
+        console.log('🖼️ [CARGAR-IMAGENES] Iniciando carga de imágenes:', {
+            tieneImagenes: !!prenda.imagenes,
+            count: prenda.imagenes?.length || 0,
+            tienefotos: !!prenda.fotos,
+            countFotos: prenda.fotos?.length || 0
+        });
 
+        // PRIORIDAD 0: imagenes (formulario con archivos)
+        let imagenesACargar = null;
+        let origen = 'desconocido';
 
+        if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
+            // Verificar si son File/Blob o URL (formulario vs BD)
+            const primerItem = prenda.imagenes[0];
+            
+            if (primerItem instanceof File || primerItem.file instanceof File) {
+                // Formulario: archivos File
+                console.log('✅ [CARGAR-IMAGENES] Detectado: imagenes de FORMULARIO (File objects)');
+                imagenesACargar = prenda.imagenes;
+                origen = 'formulario';
+            } else if (typeof primerItem === 'string' || (primerItem && (primerItem.url || primerItem.ruta))) {
+                // BD: URLs/strings
+                console.log('✅ [CARGAR-IMAGENES] Detectado: imagenes de BD (URLs)');
+                imagenesACargar = prenda.imagenes;
+                origen = 'bd-urls';
+            }
+        }
 
-        
-        if (!prenda.imagenes || prenda.imagenes.length === 0) {
+        // PRIORIDAD 1: fotos (BD alternativo)
+        if (!imagenesACargar && prenda.fotos && Array.isArray(prenda.fotos) && prenda.fotos.length > 0) {
+            console.log('✅ [CARGAR-IMAGENES] Detectado: fotos de BD (alternativo)');
+            imagenesACargar = prenda.fotos;
+            origen = 'bd-fotos';
+        }
 
+        // Si no hay imágenes, retornar
+        if (!imagenesACargar || imagenesACargar.length === 0) {
+            console.log('⚠️ [CARGAR-IMAGENES] No hay imágenes para cargar');
             return;
         }
 
         if (window.imagenesPrendaStorage) {
-
+            console.log(`🔄 [CARGAR-IMAGENES] Limpiando y cargando ${imagenesACargar.length} imágenes (origen: ${origen})`);
             window.imagenesPrendaStorage.limpiar();
 
-
-            prenda.imagenes.forEach((img, idx) => {
-
+            imagenesACargar.forEach((img, idx) => {
                 this.procesarImagen(img, idx);
             });
 
-
-            this.actualizarPreviewImagenes(prenda.imagenes);
+            this.actualizarPreviewImagenes(imagenesACargar);
+            console.log(`✅ [CARGAR-IMAGENES] ${imagenesACargar.length} imágenes cargadas desde ${origen}`);
         } else {
-
+            console.warn('⚠️ [CARGAR-IMAGENES] imagenesPrendaStorage no disponible');
         }
     }
 
@@ -178,12 +208,25 @@ class PrendaEditor {
      * @private
      */
     procesarImagen(img, idx = 0) {
-        if (!img) return;
+        if (!img) {
+            console.log(`  ⚠️ [PROCESAR-IMAGEN] Imagen ${idx} es null/undefined`);
+            return;
+        }
 
-        if (img.file instanceof File) {
+        // CASO 1: img es un File directamente (formulario)
+        if (img instanceof File) {
+            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: File object detectado`);
+            window.imagenesPrendaStorage.agregarImagen(img);
+        }
+        // CASO 2: img es objeto con .file que es un File (wrapper)
+        else if (img.file instanceof File) {
+            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: Wrapper con File detectado`);
             window.imagenesPrendaStorage.agregarImagen(img.file);
-        } else if (img.url || img.ruta) {
-            const urlImagen = img.url || img.ruta;
+        }
+        // CASO 3: img es objeto con URL (BD)
+        else if (img.url || img.ruta || img.ruta_webp || img.ruta_original) {
+            const urlImagen = img.url || img.ruta || img.ruta_webp || img.ruta_original;
+            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: URL de BD:`, urlImagen);
             if (!window.imagenesPrendaStorage.images) {
                 window.imagenesPrendaStorage.images = [];
             }
@@ -194,7 +237,10 @@ class PrendaEditor {
                 file: null,
                 urlDesdeDB: true
             });
-        } else if (typeof img === 'string') {
+        }
+        // CASO 4: img es string URL (BD alternativo)
+        else if (typeof img === 'string') {
+            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: String URL:`, img);
             if (!window.imagenesPrendaStorage.images) {
                 window.imagenesPrendaStorage.images = [];
             }
@@ -205,6 +251,14 @@ class PrendaEditor {
                 file: null,
                 urlDesdeDB: true
             });
+        }
+        // CASO 5: Blob (también formulario)
+        else if (img instanceof Blob) {
+            console.log(`  ✅ [PROCESAR-IMAGEN] Imagen ${idx}: Blob object detectado`);
+            window.imagenesPrendaStorage.agregarImagen(img);
+        }
+        else {
+            console.warn(`  ❌ [PROCESAR-IMAGEN] Imagen ${idx}: Formato desconocido:`, typeof img, img);
         }
     }
 
@@ -347,12 +401,22 @@ class PrendaEditor {
         window.tallasRelacionales.CABALLERO = {};
         window.tallasRelacionales.UNISEX = {};
 
-
-
-
-
+        // PRIORIDAD 0: Usar cantidad_talla (estructura desde formulario: {DAMA: {S: 10, M: 20}})
+        if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && !Array.isArray(prenda.cantidad_talla)) {
+            Object.entries(prenda.cantidad_talla).forEach(([genero, tallasObj]) => {
+                const generoUp = genero.toUpperCase();
+                if (window.tallasRelacionales[generoUp] && typeof tallasObj === 'object') {
+                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                        if (cantidad > 0) {
+                            window.tallasRelacionales[generoUp][talla] = cantidad;
+                        }
+                    });
+                }
+            });
+            console.log('✅ [CARGAR-TALLAS] Tallas cargadas desde cantidad_talla (formulario)', window.tallasRelacionales);
+        }
         // PRIORIDAD 1: Usar array relacional {genero, talla, cantidad} de prenda_pedido_tallas
-        if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+        else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
 
             const generosMap = {};
             
@@ -374,6 +438,7 @@ class PrendaEditor {
                     }
                 }
             });
+            console.log('✅ [CARGAR-TALLAS] Tallas cargadas desde array (BD)', window.tallasRelacionales);
             
             // Convertir a estructura esperada
 
@@ -395,6 +460,7 @@ class PrendaEditor {
                     }
                 }
             });
+            console.log('✅ [CARGAR-TALLAS] Tallas cargadas desde generosConTallas (BD alternativo)', window.tallasRelacionales);
         }
         
 
@@ -553,25 +619,53 @@ class PrendaEditor {
     }
 
     /**
+     * Normalizar procesos: convierte objeto a array si es necesario
+     * Maneja ambos formatos: objeto {tipo: {...}} y array [{...}]
+     * @private
+     */
+    normalizarProcesos(procesos) {
+        if (!procesos) return [];
+        
+        // Si ya es un array (viene de BD), retornarlo tal cual
+        if (Array.isArray(procesos)) {
+            return procesos;
+        }
+        
+        // Si es un objeto (viene de frontend nuevo), convertir a array
+        if (typeof procesos === 'object') {
+            return Object.values(procesos).filter(p => p !== null && p !== undefined);
+        }
+        
+        return [];
+    }
+
+    /**
      * Cargar procesos de la prenda
+     * IMPORTANTE: Maneja tanto procesos del formulario como de BD
+     * Formulario: estructura puede tener ubicaciones como array
+     * BD: puede venir con ubicaciones como array o string
      * @private
      */
     cargarProcesos(prenda) {
-        if (!prenda.procesos || prenda.procesos.length === 0) {
+        // Normalizar procesos: maneja tanto array como objeto
+        const procesosNormalizados = this.normalizarProcesos(prenda.procesos);
+        
+        if (!procesosNormalizados || procesosNormalizados.length === 0) {
             console.log('⚠️ [CARGAR-PROCESOS] Sin procesos en la prenda');
             return;
         }
 
         console.log('📋 [CARGAR-PROCESOS] Cargando procesos:', {
-            total: prenda.procesos.length,
-            procesos: prenda.procesos.map(p => ({
+            total: procesosNormalizados.length,
+            procesos: procesosNormalizados.map(p => ({
                 id: p.id,
                 tipo: p.tipo_proceso,
                 nombre: p.nombre,
                 nombre_proceso: p.nombre_proceso,
                 tieneImagenes: !!p.imagenes,
                 countImagenes: p.imagenes?.length || 0,
-                tieneUbicaciones: !!p.ubicaciones
+                tieneUbicaciones: !!p.ubicaciones,
+                countUbicaciones: Array.isArray(p.ubicaciones) ? p.ubicaciones.length : 0
             }))
         });
 
@@ -579,38 +673,68 @@ class PrendaEditor {
         window.procesosSeleccionados = {};
         
         // Los procesos vienen como array desde el backend
-        prenda.procesos.forEach((proceso, idx) => {
+        procesosNormalizados.forEach((proceso, idx) => {
             if (proceso) {
+                // IMPORTANTE: Si viene del formulario, proceso es {datos: {...}}
+                // Si viene de BD, proceso es {...}
+                const datosReales = proceso.datos ? proceso.datos : proceso;
+                
                 // El backend retorna 'tipo' directamente (ej: 'Reflectivo')
-                const tipoBackend = proceso.tipo || proceso.tipo_proceso || proceso.nombre || `Proceso ${idx}`;
+                const tipoBackend = datosReales.tipo || datosReales.tipo_proceso || datosReales.nombre || `Proceso ${idx}`;
                 const tipoProceso = tipoBackend.toLowerCase().replace(/\s+/g, '-');
                 
                 console.log(`📌 [CARGAR-PROCESOS] Procesando [${idx}] tipo="${tipoProceso}"`, {
                     tipoBackend: tipoBackend,
-                    nombreProceso: proceso.nombre_proceso,
-                    tipoProceso: proceso.tipo_proceso,
-                    nombre: proceso.nombre,
-                    tieneImagenes: !!proceso.imagenes,
-                    countImagenes: proceso.imagenes?.length || 0,
-                    procesoId: proceso.id
+                    nombreProceso: datosReales.nombre_proceso,
+                    tipoProceso: datosReales.tipo_proceso,
+                    nombre: datosReales.nombre,
+                    tieneImagenes: !!datosReales.imagenes,
+                    countImagenes: datosReales.imagenes?.length || 0,
+                    tieneUbicaciones: !!datosReales.ubicaciones,
+                    procesoId: datosReales.id,
+                    tipo_proceso_id: datosReales.tipo_proceso_id || 'N/A'
                 });
 
+                // Detectar y cargar ubicaciones de forma adaptativa
+                let ubicacionesFormato = [];
+                
+                if (datosReales.ubicaciones) {
+                    if (Array.isArray(datosReales.ubicaciones)) {
+                        // Ya es array, usarlo directamente (puede venir del formulario o BD)
+                        ubicacionesFormato = datosReales.ubicaciones;
+                        console.log(`  📍 [UBICACIONES] Detectado ARRAY:`, ubicacionesFormato);
+                    } else if (typeof datosReales.ubicaciones === 'string') {
+                        // String separado por comas, convertir a array
+                        ubicacionesFormato = datosReales.ubicaciones
+                            .split(',')
+                            .map(u => u.trim())
+                            .filter(u => u && u.length > 0);
+                        console.log(`  📍 [UBICACIONES] Detectado STRING, convertido a ARRAY:`, ubicacionesFormato);
+                    } else if (typeof datosReales.ubicaciones === 'object') {
+                        // Objeto (unlikely but defensive), extraer valores
+                        ubicacionesFormato = Object.values(datosReales.ubicaciones)
+                            .filter(u => u && (typeof u === 'string' || typeof u === 'object'));
+                        console.log(`  📍 [UBICACIONES] Detectado OBJETO, extraído:`, ubicacionesFormato);
+                    }
+                }
+
                 // Convertir tallas si es necesario
-                let tallasFormato = proceso.tallas || { dama: {}, caballero: {} };
+                let tallasFormato = datosReales.tallas || { dama: {}, caballero: {} };
                 if (Array.isArray(tallasFormato) && tallasFormato.length === 0) {
                     tallasFormato = { dama: {}, caballero: {} };
                 }
                 
                 const datosProces = {
-                    id: proceso.id,
+                    id: datosReales.id,
                     tipo: tipoProceso,
                     nombre: tipoBackend,
-                    nombre_proceso: proceso.nombre_proceso,
-                    tipo_proceso: proceso.tipo_proceso,
-                    ubicaciones: proceso.ubicaciones || [],
-                    observaciones: proceso.observaciones || '',
+                    nombre_proceso: datosReales.nombre_proceso,
+                    tipo_proceso: datosReales.tipo_proceso,
+                    tipo_proceso_id: datosReales.tipo_proceso_id, // 🔴 IMPORTANTE: Guardar el ID para enviar al servidor
+                    ubicaciones: ubicacionesFormato,
+                    observaciones: datosReales.observaciones || '',
                     tallas: tallasFormato,
-                    imagenes: (proceso.imagenes || []).map(img => {
+                    imagenes: (datosReales.imagenes || []).map(img => {
                         // Extraer URL de imagen, manejando distintos formatos
                         if (typeof img === 'string') {
                             return img;

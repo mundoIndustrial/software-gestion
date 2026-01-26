@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
     <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
@@ -206,6 +207,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}"></script>
     
     <!-- EPP Templates e Interfaces -->
     <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}"></script>
@@ -221,6 +223,7 @@
     
     <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
     <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
     
     <!-- Constantes y helpers -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}"></script>

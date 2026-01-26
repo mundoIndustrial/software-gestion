@@ -407,6 +407,23 @@ class UIModalService {
             showCancelButton: showCancel,
             confirmButtonText: confirmText,
             cancelButtonText: cancelText,
+            customClass: {
+                container: 'swal-centered-container',
+                popup: 'swal-centered-popup'
+            },
+            didOpen: (modal) => {
+                // Centrar el modal verticalmente en la pantalla
+                const container = modal.closest('.swal2-container');
+                if (container) {
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    container.style.height = '100vh';
+                    container.style.zIndex = '999998';
+                }
+                modal.style.marginTop = '0';
+                modal.style.marginBottom = '0';
+            },
             ...swalConfig
         });
     }

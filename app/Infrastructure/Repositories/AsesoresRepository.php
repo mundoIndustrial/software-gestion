@@ -69,7 +69,9 @@ class AsesoresRepository
                 $q->where('asesora', $userName)
                   ->orWhereNull('asesora');
             })
-            ->with('procesos');
+            ->with(['procesos' => function ($q) {
+                $q->withTrashed();
+            }]);
 
         if (!empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);

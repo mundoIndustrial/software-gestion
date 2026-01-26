@@ -32,6 +32,7 @@ use App\Domain\Pedidos\Commands\AgregarPrendaAlPedidoCommand;
 use App\Domain\Pedidos\Commands\ActualizarPedidoCommand;
 use App\Domain\Pedidos\Commands\CambiarEstadoPedidoCommand;
 use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
+use App\Domain\Pedidos\Commands\ActualizarVariantePrendaCommand;
 
 // Command Handlers
 use App\Domain\Pedidos\CommandHandlers\CrearPedidoHandler;
@@ -40,6 +41,7 @@ use App\Domain\Pedidos\CommandHandlers\AgregarPrendaAlPedidoHandler;
 use App\Domain\Pedidos\CommandHandlers\ActualizarPedidoHandler;
 use App\Domain\Pedidos\CommandHandlers\CambiarEstadoPedidoHandler;
 use App\Domain\Pedidos\CommandHandlers\EliminarPedidoHandler;
+use App\Domain\Pedidos\CommandHandlers\ActualizarVariantePrendaHandler;
 
 // ===== EPP DOMAIN =====
 
@@ -260,6 +262,11 @@ class CQRSServiceProvider extends ServiceProvider
             );
         });
 
+        // ActualizarVariantePrendaHandler - Actualiza variantes con merge de datos
+        $this->app->bind(ActualizarVariantePrendaHandler::class, function ($app) {
+            return new ActualizarVariantePrendaHandler();
+        });
+
         // ===== EPP COMMAND HANDLERS =====
         $this->app->bind(AgregarEppAlPedidoHandler::class, function ($app) {
             return new AgregarEppAlPedidoHandler(
@@ -378,6 +385,12 @@ class CQRSServiceProvider extends ServiceProvider
         $commandBus->register(
             EliminarPedidoCommand::class,
             EliminarPedidoHandler::class
+        );
+
+        // ActualizarVariantePrendaCommand - Actualización con merge de datos
+        $commandBus->register(
+            ActualizarVariantePrendaCommand::class,
+            ActualizarVariantePrendaHandler::class
         );
 
         // ===== EPP COMMANDS =====

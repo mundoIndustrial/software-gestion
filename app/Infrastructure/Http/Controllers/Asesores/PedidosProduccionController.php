@@ -45,6 +45,7 @@ use App\Application\Pedidos\UseCases\EditarProcesoUseCase;
 use App\Application\Pedidos\UseCases\EliminarProcesoUseCase;
 use App\Application\Pedidos\UseCases\CrearProcesoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
+use App\Application\Pedidos\UseCases\ActualizarVariantePrendaUseCase;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
@@ -104,6 +105,7 @@ class PedidosProduccionController
         private EliminarProcesoUseCase $eliminarProcesoUseCase,
         private CrearProcesoUseCase $crearProcesoUseCase,
         private ObtenerHistorialProcesosUseCase $obtenerHistorialProcesosUseCase,
+        private ActualizarVariantePrendaUseCase $actualizarVariantePrendaUseCase,
     ) {}
 
     /**
@@ -212,7 +214,7 @@ class PedidosProduccionController
             ]);
 
             // Usar Use Case DDD
-            $dto = CrearProduccionPedidoDTO::fromRequest(null, $validated);
+            $dto = CrearProduccionPedidoDTO::fromRequest($validated);
             $pedido = $this->crearPedidoUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Pedido creado', [
@@ -712,6 +714,7 @@ class PedidosProduccionController
                 'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
+                'imagenes_existentes' => 'nullable|json', // Imágenes existentes de BD a preservar
                 'telas' => 'nullable|array',
             ]);
 
@@ -730,8 +733,18 @@ class PedidosProduccionController
                 }
             }
 
+            // Procesar imágenes existentes que deben preservarse
+            $imagenesExistentes = [];
+            if ($request->input('imagenes_existentes')) {
+                try {
+                    $imagenesExistentes = json_decode($request->input('imagenes_existentes'), true) ?? [];
+                } catch (\Exception $e) {
+                    Log::warning('[PedidosProduccionController] Error decodificando imagenes_existentes', ['error' => $e->getMessage()]);
+                }
+            }
+
             // Usar Use Case DDD
-            $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas);
+            $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas, $imagenesExistentes);
             $prenda = $this->agregarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa agregada exitosamente', [
@@ -792,6 +805,7 @@ class PedidosProduccionController
                 'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
+                'imagenes_existentes' => 'nullable|json', // Imágenes existentes de BD a preservar
             ]);
 
             // Procesar imágenes de prenda (convertir a WebP)
@@ -804,16 +818,27 @@ class PedidosProduccionController
                 }
             }
 
+            // Procesar imágenes existentes que deben preservarse
+            $imagenesExistentes = [];
+            if ($request->input('imagenes_existentes')) {
+                try {
+                    $imagenesExistentes = json_decode($request->input('imagenes_existentes'), true) ?? [];
+                } catch (\Exception $e) {
+                    Log::warning('[PedidosProduccionController] Error decodificando imagenes_existentes', ['error' => $e->getMessage()]);
+                }
+            }
+
             // Usar Use Case DDD
             Log::info('[PedidosProduccionController] Datos validados para actualizar prenda', [
                 'tallas_recibidas' => $validated['tallas'] ?? 'NO ENVIADAS',
                 'variantes_recibidas' => $validated['variantes'] ?? 'NO ENVIADAS',
                 'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
                 'imagenes_procesadas' => count($imagenesGuardadas),
+                'imagenes_existentes' => count($imagenesExistentes),
             ]);
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)
-            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas);
+            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes);
             $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa actualizada exitosamente', [
@@ -1329,6 +1354,189 @@ class PedidosProduccionController
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener datos de prenda: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/pedidos-produccion/{pedidoId}/datos-edicion
+     * Obtener datos del pedido para edición general (sin prenda específica)
+     * 
+     * Response:
+     * {
+     *   "success": true,
+     *   "pedido_id": 2765,
+     *   "numero_pedido": "100034",
+     *   "cliente": "Cliente Name",
+     *   "prendas_count": 1,
+     *   "data": { ... }
+     * }
+     * 
+     * @param int $pedidoId
+     * @return JsonResponse
+     */
+    public function obtenerDatosEdicion(int $pedidoId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] GET /pedidos-produccion/{pedidoId}/datos-edicion', [
+                'pedido_id' => $pedidoId,
+            ]);
+
+            // Obtener el pedido completo
+            $dto = ObtenerProduccionPedidoDTO::fromRequest($pedidoId);
+            $pedido = $this->obtenerPedidoUseCase->ejecutar($dto);
+
+            if (!$pedido) {
+                Log::warning('[PedidosProduccionController] Pedido no encontrado para edición', [
+                    'pedido_id' => $pedidoId,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            Log::info('[PedidosProduccionController] Datos de edición obtenidos', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido['numero_pedido'] ?? null,
+                'prendas_count' => count($pedido['prendas'] ?? []),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido['numero_pedido'] ?? null,
+                'cliente' => $pedido['cliente'] ?? null,
+                'prendas_count' => count($pedido['prendas'] ?? []),
+                'data' => $pedido,
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error obteniendo datos de edición', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos de edición: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * PUT /asesores/pedidos/{pedidoId}/prendas/{prendaId}/variante
+     * Actualizar SOLO la variante de una prenda (manga, broche, bolsillos)
+     * 
+     * IMPORTANTE: Realiza MERGE de datos - solo actualiza campos enviados, preserva el resto
+     * 
+     * Body:
+     * {
+     *   "tipo_manga_id": 2,
+     *   "manga_obs": "Observación de manga",
+     *   "tipo_broche_boton_id": 1,
+     *   "broche_boton_obs": "Observación de broche",
+     *   "tiene_bolsillos": true,
+     *   "bolsillos_obs": "Con bolsillos laterales"
+     * }
+     * 
+     * Response exitosa:
+     * {
+     *   "success": true,
+     *   "data": {
+     *     "id": 7438,
+     *     "prenda_pedido_id": 3477,
+     *     "tipo_manga_id": 2,
+     *     "tipo_manga_nombre": "Corta",
+     *     "manga_obs": "Observación de manga",
+     *     ...
+     *   },
+     *   "message": "Variante actualizada correctamente"
+     * }
+     * 
+     * @param Request $request
+     * @param int $pedidoId - ID del pedido
+     * @param int $prendaId - ID de la prenda
+     * @return JsonResponse
+     */
+    public function actualizarVariantePrend(Request $request, int $pedidoId, int $prendaId): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] PUT /pedidos/{pedidoId}/prendas/{prendaId}/variante', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'has_body' => $request->getContent() !== '',
+            ]);
+
+            // Validación básica de HTTP
+            $validated = $request->validate([
+                'tipo_manga_id' => 'sometimes|nullable|integer|min:1',
+                'manga_obs' => 'sometimes|nullable|string|max:500',
+                'tipo_broche_boton_id' => 'sometimes|nullable|integer|min:1',
+                'broche_boton_obs' => 'sometimes|nullable|string|max:500',
+                'tiene_bolsillos' => 'sometimes|nullable|boolean',
+                'bolsillos_obs' => 'sometimes|nullable|string|max:500',
+            ]);
+
+            // Crear DTO con datos del request
+            $data = array_merge($validated, [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+            ]);
+            $dto = \App\Application\Pedidos\DTOs\ActualizarVariantePrendaDTO::fromRequest($data);
+
+            // Ejecutar UseCase que orquesta el comando
+            $resultado = $this->actualizarVariantePrendaUseCase->ejecutar($dto);
+
+            Log::info('[PedidosProduccionController] Variante actualizada exitosamente', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'variante_id' => $resultado['id'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado,
+                'message' => 'Variante actualizada correctamente',
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[PedidosProduccionController] Validación HTTP fallida', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación de datos fallida',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('[PedidosProduccionController] Validación de negocio fallida', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error actualizando variante de prenda', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar variante: ' . $e->getMessage(),
             ], 500);
         }
     }

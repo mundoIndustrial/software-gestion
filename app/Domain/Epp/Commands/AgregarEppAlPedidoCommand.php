@@ -11,12 +11,19 @@ use App\Domain\Shared\CQRS\Command;
  */
 class AgregarEppAlPedidoCommand implements Command
 {
+    /**
+     * @param int $pedidoId ID del pedido
+     * @param int $eppId ID del EPP
+     * @param int $cantidad Cantidad de EPP
+     * @param string|null $observaciones Observaciones adicionales
+     * @param array $imagenes Array de archivos de imágenes (opcional)
+     */
     public function __construct(
         private int $pedidoId,
         private int $eppId,
-        private string $talla,
         private int $cantidad,
         private ?string $observaciones = null,
+        private array $imagenes = [],
     ) {}
 
     public function getPedidoId(): int
@@ -29,11 +36,6 @@ class AgregarEppAlPedidoCommand implements Command
         return $this->eppId;
     }
 
-    public function getTalla(): string
-    {
-        return $this->talla;
-    }
-
     public function getCantidad(): int
     {
         return $this->cantidad;
@@ -42,5 +44,10 @@ class AgregarEppAlPedidoCommand implements Command
     public function getObservaciones(): ?string
     {
         return $this->observaciones;
+    }
+
+    public function getImagenes(): array
+    {
+        return $this->imagenes;
     }
 }

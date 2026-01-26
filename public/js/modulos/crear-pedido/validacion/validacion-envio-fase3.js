@@ -257,16 +257,19 @@
                         formData.append(`items[${itemIndex}][cantidad]`, item.cantidad || 0);
                         formData.append(`items[${itemIndex}][observaciones]`, item.observaciones || '');
                         
-                        // Imágenes de EPP
-                        if (item.imagenes && Array.isArray(item.imagenes)) {
-                            item.imagenes.forEach((img) => {
-                                if (img instanceof File) {
-                                    formData.append(`items[${itemIndex}][epp_imagenes][]`, img);
-                                } else if (img && img.file instanceof File) {
-                                    formData.append(`items[${itemIndex}][epp_imagenes][]`, img.file);
-                                }
-                            });
-                        }
+                        // ✅ IGNORADO: tabla epp_imagenes no existe, usar pedido_epp_imagenes
+                        // Las imágenes se guardan en pedido_epp_imagenes después de crear el pedido
+                        console.debug('📋 [FORMULARIO] EPP sin enviar imágenes de epp_imagenes');
+                        
+                        // if (item.imagenes && Array.isArray(item.imagenes)) {
+                        //     item.imagenes.forEach((img) => {
+                        //         if (img instanceof File) {
+                        //             formData.append(`items[${itemIndex}][epp_imagenes][]`, img);
+                        //         } else if (img && img.file instanceof File) {
+                        //             formData.append(`items[${itemIndex}][epp_imagenes][]`, img.file);
+                        //         }
+                        //     });
+                        // }
                     }
                 });
             }

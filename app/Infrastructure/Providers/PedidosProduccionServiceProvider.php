@@ -58,6 +58,13 @@ class PedidosProduccionServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // ===== SERVICES =====
+        
+        // ColorTelaService
+        $this->app->singleton(\App\Application\Services\ColorTelaService::class, function ($app) {
+            return new \App\Application\Services\ColorTelaService();
+        });
+
         // ===== USE CASES (DDD) =====
 
         // Listar Pedidos
@@ -77,7 +84,6 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
             return new CrearProduccionPedidoUseCase(
-                $app->make(PedidoRepository::class),
                 $app->make('events')
             );
         });
@@ -149,7 +155,7 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Actualizar Prenda Completa
         $this->app->singleton(ActualizarPrendaCompletaUseCase::class, function ($app) {
             return new ActualizarPrendaCompletaUseCase(
-                $app->make(PedidoRepository::class)
+                $app->make(\App\Application\Services\ColorTelaService::class)
             );
         });
 

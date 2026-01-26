@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
     <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
     <!-- CSS del modal EPP -->
@@ -665,6 +666,7 @@
 <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}"></script>
 
 <!-- EPP Templates e Interfaces -->
 <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}"></script>
@@ -771,6 +773,114 @@
             clearTimeout(maxLoadTime);  // Cancelar timeout si aún está activo
         });
     })();
+
+    /**
+     * abrirModalCelda()
+     * Abre modal para mostrar contenido completo de celda truncada
+     */
+    function abrirModalCelda(titulo, contenido) {
+        let contenidoLimpio = contenido || '-';
+        contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
+        contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
+        
+        let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
+        let htmlContenido = '';
+        
+        prendas.forEach((prenda) => {
+            let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
+            htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
+            lineas.forEach((linea) => {
+                if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i)) {
+                    htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
+                } else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
+                } else if (linea.match(/^DESCRIPCIÓN:/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                } else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal):/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                } else if (linea.startsWith('•') || linea.startsWith('-')) {
+                    htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
+                } else if (linea.match(/^Tallas:/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                } else if (linea) {
+                    htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
+                }
+            });
+            htmlContenido += '</div>';
+        });
+        
+        const modalHTML = `
+            <div id="celdaModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: fadeIn 0.3s ease;
+            " onclick="if(event.target.id === 'celdaModal') cerrarModalCelda()">
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    max-width: 600px;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                    animation: slideUp 0.3s ease;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">${titulo}</h2>
+                        <button onclick="cerrarModalCelda()" style="
+                            background: #f3f4f6;
+                            border: none;
+                            border-radius: 6px;
+                            padding: 0.5rem 0.75rem;
+                            cursor: pointer;
+                            font-size: 1.25rem;
+                            color: #6b7280;
+                            transition: all 0.2s;
+                        " onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                            ✕
+                        </button>
+                    </div>
+                    <div style="color: #374151; line-height: 1.6;">
+                        ${htmlContenido || contenidoLimpio}
+                    </div>
+                </div>
+            </div>
+            <style>
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(20px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            </style>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * cerrarModalCelda()
+     * Cierra el modal de celda
+     */
+    function cerrarModalCelda() {
+        const modal = document.getElementById('celdaModal');
+        if (modal) {
+            modal.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        }
+    }
 </script>
 
 @endpush

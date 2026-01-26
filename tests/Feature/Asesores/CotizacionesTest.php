@@ -108,7 +108,7 @@ class CotizacionesTest extends TestCase
     }
 
     /**
-     * Test: Editar un borrador (actualizaciÃ³n)
+     * Test: Editar un borrador (actualizacion)
      */
     public function test_editar_borrador()
     {
@@ -182,7 +182,7 @@ class CotizacionesTest extends TestCase
         $prenda = $cotizacion->prendasCotizaciones->first();
         $this->assertEquals('PantalÃ³n', $prenda->nombre_producto);
 
-        // Verificar que se registrÃ³ la actualizaciÃ³n en el historial
+        // Verificar que se registrÃ³ la actualizacion en el historial
         $historialActualizacion = HistorialCotizacion::where('cotizacion_id', $cotizacion->id)
             ->where('tipo_cambio', 'actualizacion')
             ->first();
@@ -357,7 +357,7 @@ class CotizacionesTest extends TestCase
             $this->assertEquals($fechaInicial->toDateTimeString(), $cotizacion->fecha_inicio->toDateTimeString());
         }
 
-        // Verificar que hay 3 registros de actualizaciÃ³n en el historial
+        // Verificar que hay 3 registros de actualizacion en el historial
         $actualizaciones = HistorialCotizacion::where('cotizacion_id', $cotizacion->id)
             ->where('tipo_cambio', 'actualizacion')
             ->count();

@@ -253,6 +253,7 @@
 
 <!--  ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
 <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+<link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
 
 <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
 <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>

@@ -23,6 +23,7 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?string $descripcion = null,
         public readonly ?bool $deBodega = null,
         public readonly ?array $imagenes = null,
+        public readonly ?array $imagenesExistentes = null,  // URLs de imágenes existentes a preservar
         public readonly ?array $cantidadTalla = null,                  // { GENERO: { TALLA: CANTIDAD } }
         public readonly ?array $variantes = null,                      // [ { manga_id, broche_id, bolsillos, obs } ]
         public readonly ?array $coloresTelas = null,                   // [ { color_id, tela_id } ]
@@ -32,7 +33,7 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?array $fotosProcesosPorProceso = null,         // [ { proceso_id, imagenes: [ ruta ] } ]
     ) {}
 
-    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null): self
+    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null): self
     {
         // Parsear tallas (nuevo formato: array de objetos con genero, talla, cantidad)
         $tallasArray = null;
@@ -132,8 +133,7 @@ final class ActualizarPrendaCompletaDTO
             nombrePrenda: $data['nombre_prenda'] ?? null,
             descripcion: $data['descripcion'] ?? null,
             deBodega: isset($data['de_bodega']) ? (bool) $data['de_bodega'] : null,
-            imagenes: $imagenes,
-            cantidadTalla: $cantidadTalla,
+            imagenes: $imagenes,            imagenesExistentes: $imagenesExistentes,            cantidadTalla: $cantidadTalla,
             variantes: $variantes,
             coloresTelas: $coloresTelas,
             fotosTelas: $fotosTelas,

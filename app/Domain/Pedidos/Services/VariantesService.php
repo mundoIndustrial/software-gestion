@@ -3,6 +3,7 @@
 namespace App\Domain\Pedidos\Services;
 
 use Illuminate\Support\Facades\DB;
+use App\Application\Services\ColorTelaService;
 
 /**
  * Servicio para herencia de variantes de cotizaciÃ³n a pedido
@@ -10,6 +11,13 @@ use Illuminate\Support\Facades\DB;
  */
 class VariantesService
 {
+    private ColorTelaService $colorTelaService;
+
+    public function __construct(ColorTelaService $colorTelaService)
+    {
+        $this->colorTelaService = $colorTelaService;
+    }
+
     /**
      * Heredar variantes de una prenda de cotizaciÃ³n a pedido
      */
@@ -58,8 +66,8 @@ class VariantesService
             // Copiar primera variante
             $variante = $variantes->first();
             
-            $colorId = $this->obtenerOCrearColor($variante->color);
-            $telaId = $this->obtenerOCrearTela($variante->telas_multiples ?? null);
+            $colorId = $this->colorTelaService->obtenerOCrearColor($variante->color);
+            $telaId = $this->obtenerTelaDeVariante($variante->telas_multiples ?? null);
             
             $prendaPedido->update([
                 'color_id' => $colorId,
@@ -86,34 +94,10 @@ class VariantesService
     }
 
     /**
-     * Obtener o crear color
+     * Obtener tela desde JSON de telas mÃºltiples
+     * Extrae la primera tela del JSON y obtiene/crea la combinaciÃ³n
      */
-    private function obtenerOCrearColor(?string $nombreColor): ?int
-    {
-        if (empty($nombreColor)) {
-            return null;
-        }
-
-        $color = DB::table('colores_prenda')
-            ->where('nombre', 'LIKE', '%' . $nombreColor . '%')
-            ->first();
-        
-        if ($color) {
-            return $color->id;
-        }
-
-        return DB::table('colores_prenda')->insertGetId([
-            'nombre' => $nombreColor,
-            'activo' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Obtener o crear tela desde JSON de telas mÃºltiples
-     */
-    private function obtenerOCrearTela(?string $telasJson): ?int
+    private function obtenerTelaDeVariante(?string $telasJson): ?int
     {
         if (empty($telasJson)) {
             return null;
@@ -129,20 +113,7 @@ class VariantesService
             return null;
         }
 
-        $tela = DB::table('telas_prenda')
-            ->where('nombre', 'LIKE', '%' . $primeraTela['tela'] . '%')
-            ->first();
-        
-        if ($tela) {
-            return $tela->id;
-        }
-
-        return DB::table('telas_prenda')->insertGetId([
-            'nombre' => $primeraTela['tela'],
-            'activo' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        return $this->colorTelaService->obtenerOCrearTela($primeraTela['tela']);
     }
 }
 

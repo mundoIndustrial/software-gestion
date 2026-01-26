@@ -11,14 +11,18 @@ use Illuminate\Support\Facades\Log;
 /**
  * Use Case: Obtener Pedido
  * 
- * REFACTORIZADO: Utiliza AbstractObtenerUseCase para obtenciÃ³n y validaciÃ³n
+ * REFACTORIZADO: Utiliza AbstractObtenerUseCase para obtención y validación
+ * MEJORADO: Carga completa de imágenes con ambas rutas (ruta_webp y ruta_original)
  * 
- * Antes: 316 lÃ­neas (185 lÃ­neas de lÃ³gica + 131 de obtenciÃ³n/validaciÃ³n)
- * DespuÃ©s: 250 lÃ­neas (solo lÃ³gica de enriquecimiento de datos)
- * ReducciÃ³n: 21% (la lÃ³gica de enriquecimiento es compleja y especÃ­fica)
+ * Responsabilidades:
+ * - Obtener pedido por ID con todas sus relaciones
+ * - Cargar fotos de prendas, telas y procesos
+ * - Ordenar todas las fotos por campo "orden"
+ * - Transformar datos a JSON para frontend
+ * - Retornar arrays vacíos en lugar de null
+ * - Evitar errores 500 con try-catch completos
  * 
- * Query Side - CQRS bÃ¡sico
- * Obtiene un pedido existente por ID con todas sus prendas y detalles enriquecidos
+ * Query Side - CQRS básico
  */
 class ObtenerPedidoUseCase extends AbstractObtenerUseCase
 {
@@ -28,7 +32,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * PersonalizaciÃ³n: Obtener todas las opciones de enriquecimiento
+     * Personalización: Obtener todas las opciones de enriquecimiento
      */
     protected function obtenerOpciones(): array
     {
@@ -41,44 +45,112 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * PersonalizaciÃ³n: Construir respuesta DTO con lÃ³gica de enriquecimiento compleja
+     * Personalización: Construir respuesta DTO con lógica de enriquecimiento compleja
      * 
-     * Nota: $pedidoId es el ID del pedido. Cargamos el modelo Eloquent aquÃ­ con relaciones
+     * Nota: $pedidoId es el ID del pedido. Cargamos el modelo Eloquent aquí con relaciones
      */
     protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {
-        // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
-        $modeloEloquent = \App\Models\PedidoProduccion::with(['prendas' => function($q) {
-            $q->with(['tallas', 'variantes', 'coloresTelas' => function($q2) {
-                $q2->with(['color', 'tela', 'fotos']);
-            }, 'fotos', 'procesos' => function($q3) {
-                $q3->with(['tipoProceso', 'imagenes'])->orderBy('created_at', 'desc');
-            }]);
-        }, 'epps' => function($q) {
-            $q->with(['epp', 'imagenes']);
-        }])->find($pedidoId);
+        try {
+            // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
+            $modeloEloquent = \App\Models\PedidoProduccion::with([
+                'prendas' => function($q) {
+                    $q->withTrashed() // ✅ INCLUIR SOFT-DELETED
+                      ->with([
+                          'tallas',
+                          'variantes.tipoManga',      // ✅ CARGAR TIPO MANGA
+                          'variantes.tipoBroche',      // ✅ CARGAR TIPO BROCHE
+                          'fotos' => function($q2) {
+                              // ✅ FOTOS DE PRENDA - ORDENADAS POR ORDEN
+                              $q2->orderBy('orden', 'asc');
+                          },
+                          'coloresTelas' => function($q2) {
+                              $q2->with([
+                                  'color', 
+                                  'tela',
+                                  'fotos' => function($q3) {
+                                      // ✅ FOTOS DE TELA - ORDENADAS POR ORDEN
+                                      $q3->orderBy('orden', 'asc');
+                                  }
+                              ]);
+                          },
+                          'procesos' => function($q3) {
+                              $q3->withTrashed() // ✅ INCLUIR SOFT-DELETED
+                                 ->with([
+                                     'tipoProceso',
+                                     'imagenes' => function($q4) {
+                                         // ✅ FOTOS DE PROCESOS - ORDENADAS POR ORDEN
+                                         $q4->orderBy('orden', 'asc');
+                                     }
+                                 ])
+                                 ->orderBy('created_at', 'desc');
+                          }
+                      ]);
+                },
+                'epps' => function($q) {
+                    $q->with([
+                        'epp',
+                        'imagenes' => function($q2) {
+                            // ✅ FOTOS DE EPP - ORDENADAS POR ORDEN
+                            $q2->orderBy('orden', 'asc');
+                        }
+                    ]);
+                }
+            ])->find($pedidoId);
 
-        $prendasCompletas = $this->obtenerPrendasCompletas($modeloEloquent);
-        $eppsCompletos = $this->obtenerEppsCompletos($modeloEloquent);
+            if (!$modeloEloquent) {
+                Log::warning('Pedido no encontrado', ['pedido_id' => $pedidoId]);
+                return new PedidoResponseDTO(
+                    id: null,
+                    numero: null,
+                    clienteId: null,
+                    cliente: null,
+                    asesor: null,
+                    estado: null,
+                    descripcion: null,
+                    totalPrendas: 0,
+                    totalArticulos: 0,
+                    prendas: [],
+                    epps: [],
+                    mensaje: 'Pedido no encontrado'
+                );
+            }
 
-        return new PedidoResponseDTO(
-            id: $datosEnriquecidos['id'],
-            numero: $datosEnriquecidos['numero'],
-            clienteId: $datosEnriquecidos['clienteId'],
-            cliente: $modeloEloquent->cliente,
-            asesor: $modeloEloquent->asesor?->name,
-            estado: $datosEnriquecidos['estado'],
-            descripcion: $datosEnriquecidos['descripcion'],
-            totalPrendas: $datosEnriquecidos['totalPrendas'],
-            totalArticulos: $datosEnriquecidos['totalArticulos'],
-            prendas: $prendasCompletas,
-            epps: $eppsCompletos,
-            mensaje: 'Pedido obtenido exitosamente'
-        );
+            $prendasCompletas = $this->obtenerPrendasCompletas($modeloEloquent);
+            $eppsCompletos = $this->obtenerEppsCompletos($modeloEloquent);
+
+            return new PedidoResponseDTO(
+                id: $datosEnriquecidos['id'],
+                numero: $datosEnriquecidos['numero'],
+                clienteId: $datosEnriquecidos['clienteId'],
+                cliente: $modeloEloquent->cliente,
+                asesor: $modeloEloquent->asesor?->name,
+                estado: $datosEnriquecidos['estado'],
+                descripcion: $datosEnriquecidos['descripcion'],
+                totalPrendas: $datosEnriquecidos['totalPrendas'],
+                totalArticulos: $datosEnriquecidos['totalArticulos'],
+                prendas: $prendasCompletas,
+                epps: $eppsCompletos,
+                mensaje: 'Pedido obtenido exitosamente'
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Error construyendo respuesta de pedido', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     /**
      * Obtener prendas completas enriquecidas desde el modelo cargado
+     * 
+     * ✅ Incluye:
+     * - Fotos de prenda (ruta_webp, ruta_original, orden)
+     * - Fotos de tela (ruta_webp, ruta_original, orden)
+     * - Procesos con imágenes (ruta_webp, ruta_original, orden, es_principal)
      */
     private function obtenerPrendasCompletas($modeloEloquent): array
     {
@@ -93,11 +165,22 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             foreach ($modeloEloquent->prendas as $prenda) {
                 Log::info('Procesando prenda', ['prenda_id' => $prenda->id, 'nombre' => $prenda->nombre_prenda]);
 
+                // ✅ Construir estructura de tallas
                 $tallasEstructuradas = $this->construirEstructuraTallas($prenda);
+                
+                // ✅ Obtener variantes
                 $variantes = $this->obtenerVariantes($prenda);
+                
+                // ✅ Obtener color y tela
                 $colorTela = $this->obtenerColorYTela($prenda);
-                $imagenes = $prenda->fotos ? $prenda->fotos->pluck('ruta_webp')->toArray() : [];
+                
+                // ✅ OBTENER FOTOS DE PRENDA (ambas rutas)
+                $imagenes = $this->obtenerImagenesPrenda($prenda);
+                
+                // ✅ OBTENER FOTOS DE TELAS (ambas rutas, estructuradas por color-tela)
                 $imagenesTela = $this->obtenerImagenesTela($prenda);
+                
+                // ✅ OBTENER PROCESOS CON IMÁGENES ORDENADAS
                 $procesos = $this->obtenerProcesosDelaPrenda($prenda);
 
                 $prendasArray[] = [
@@ -114,9 +197,9 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'de_bodega' => (bool)$prenda->de_bodega,
                     'tallas' => $tallasEstructuradas,
                     'variantes' => $variantes,
-                    'imagenes' => $imagenes,
-                    'imagenes_tela' => $imagenesTela,
-                    'procesos' => $procesos,
+                    'imagenes' => $imagenes, // ✅ Array con estructura completa
+                    'imagenes_tela' => $imagenesTela, // ✅ Array con estructura completa
+                    'procesos' => $procesos, // ✅ Array con imágenes ordenadas
                     'manga' => $variantes[0]['manga'] ?? null,
                     'obs_manga' => $variantes[0]['manga_obs'] ?? null,
                     'broche' => $variantes[0]['broche'] ?? null,
@@ -127,15 +210,19 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 ];
             }
 
-            Log::info('Prendas procesadas exitosamente', ['pedido_id' => $modeloEloquent->id, 'cantidad' => count($prendasArray)]);
+            Log::info('Prendas procesadas exitosamente', [
+                'pedido_id' => $modeloEloquent->id,
+                'cantidad' => count($prendasArray)
+            ]);
             return $prendasArray;
 
         } catch (\Exception $e) {
             Log::error('Error obteniendo prendas completas', [
                 'pedido_id' => $modeloEloquent?->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-            return [];
+            return []; // ✅ Retornar array vacío en lugar de null
         }
     }
 
@@ -167,41 +254,80 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Obtener variantes (manga, broche, bolsillos)
+     * Obtener variantes (manga, broche, bolsillos) - Una por cada TALLA
+     * 
+     * ✅ CORRECCIÓN: Itera sobre TALLAS (tienen talla y cantidad)
+     * ✅ Obtiene especificaciones de VARIANTES (manga, broche, bolsillos)
      */
     private function obtenerVariantes($prenda): array
     {
         $variantes = [];
 
         try {
-            if ($prenda->variantes) {
-                foreach ($prenda->variantes as $var) {
-                    $mangaNombre = null;
-                    if ($var->tipo_manga_id && $var->tipoManga) {
-                        $mangaNombre = $var->tipoManga->nombre;
-                    }
+            // ✅ Obtener especificaciones globales de la PRIMERA variante
+            $especificaciones = [
+                'manga' => null,
+                'manga_obs' => '',
+                'broche' => null,
+                'broche_obs' => '',
+                'bolsillos' => false,
+                'bolsillos_obs' => '',
+            ];
+            
+            Log::debug('[VARIANTES] Prenda inicio', [
+                'prenda_id' => $prenda->id,
+                'tiene_variantes' => $prenda->variantes ? $prenda->variantes->count() : 0,
+            ]);
+            
+            if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                $primeraVariante = $prenda->variantes->first();
+                
+                Log::debug('[VARIANTES] Primera variante', [
+                    'variante_id' => $primeraVariante->id,
+                    'tipo_manga_id' => $primeraVariante->tipo_manga_id,
+                    'tipoManga_exists' => $primeraVariante->tipoManga ? true : false,
+                    'tipoManga_value' => $primeraVariante->tipoManga ? $primeraVariante->tipoManga->nombre : 'NULL',
+                    'tipo_broche_id' => $primeraVariante->tipo_broche_boton_id,
+                    'tipoBroche_exists' => $primeraVariante->tipoBroche ? true : false,
+                    'tipoBroche_value' => $primeraVariante->tipoBroche ? $primeraVariante->tipoBroche->nombre : 'NULL',
+                ]);
+                
+                if ($primeraVariante->tipo_manga_id && $primeraVariante->tipoManga) {
+                    $especificaciones['manga'] = $primeraVariante->tipoManga->nombre;
+                }
 
-                    $broqueNombre = null;
-                    if ($var->tipo_broche_boton_id && $var->tipoBroche) {
-                        $broqueNombre = $var->tipoBroche->nombre;
-                    }
-
+                if ($primeraVariante->tipo_broche_boton_id && $primeraVariante->tipoBroche) {
+                    $especificaciones['broche'] = $primeraVariante->tipoBroche->nombre;
+                }
+                
+                $especificaciones['manga_obs'] = $primeraVariante->manga_obs ?? '';
+                $especificaciones['broche_obs'] = $primeraVariante->broche_boton_obs ?? '';
+                $especificaciones['bolsillos'] = (bool)($primeraVariante->tiene_bolsillos ?? false);
+                $especificaciones['bolsillos_obs'] = $primeraVariante->bolsillos_obs ?? '';
+                
+                Log::debug('[VARIANTES] Especificaciones finales', $especificaciones);
+            }
+            
+            // ✅ ITERAR SOBRE TALLAS (tienen talla y cantidad)
+            if ($prenda->tallas && $prenda->tallas->count() > 0) {
+                foreach ($prenda->tallas as $talla) {
                     $variantes[] = [
-                        'talla' => null,
-                        'cantidad' => 0,
-                        'manga' => $mangaNombre,
-                        'manga_obs' => $var->manga_obs,
-                        'broche' => $broqueNombre,
-                        'broche_obs' => $var->broche_boton_obs,
-                        'bolsillos' => (bool)$var->tiene_bolsillos,
-                        'bolsillos_obs' => $var->bolsillos_obs,
+                        'talla' => $talla->talla,
+                        'cantidad' => (int)$talla->cantidad,
+                        'manga' => $especificaciones['manga'],
+                        'manga_obs' => $especificaciones['manga_obs'],
+                        'broche' => $especificaciones['broche'],
+                        'broche_obs' => $especificaciones['broche_obs'],
+                        'bolsillos' => $especificaciones['bolsillos'],
+                        'bolsillos_obs' => $especificaciones['bolsillos_obs'],
                     ];
                 }
             }
         } catch (\Exception $e) {
             Log::warning('Error obteniendo variantes', [
                 'prenda_id' => $prenda->id ?? null,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
 
@@ -209,7 +335,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Obtener color y tela de la prenda
+     * Obtener color y tela de la prenda (primera combinación)
      */
     private function obtenerColorYTela($prenda): array
     {
@@ -239,7 +365,57 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Obtener imÃ¡genes de tela
+     * MEJORADO: Obtener imágenes de prenda con AMBAS rutas (ruta_webp y ruta_original)
+     * 
+     * ✅ Retorna array de objetos con estructura completa para el frontend
+     * ✅ Ordenadas por campo "orden"
+     * ✅ Incluye fallbacks si faltan campos
+     * ✅ Retorna array vacío si no hay fotos (no null)
+     */
+    private function obtenerImagenesPrenda($prenda): array
+    {
+        $imagenes = [];
+
+        try {
+            if ($prenda->fotos && $prenda->fotos->count() > 0) {
+                // ✅ Ya viene ordenada por la query, pero aseguramos en caso
+                foreach ($prenda->fotos as $foto) {
+                    $imagenes[] = [
+                        'id' => $foto->id ?? null,
+                        'ruta_webp' => $foto->ruta_webp ?? $foto->url ?? null,
+                        'ruta_original' => $foto->ruta_original ?? $foto->ruta_webp ?? $foto->url ?? null,
+                        'orden' => (int)($foto->orden ?? 0),
+                    ];
+                }
+                
+                // ✅ Ordenar por orden
+                usort($imagenes, function($a, $b) {
+                    return $a['orden'] <=> $b['orden'];
+                });
+            }
+
+            Log::debug('[ObtenerPedidoUseCase] Imágenes de prenda obtenidas', [
+                'prenda_id' => $prenda->id,
+                'total_imagenes' => count($imagenes),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::warning('Error obteniendo imágenes de prenda', [
+                'prenda_id' => $prenda->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $imagenes; // ✅ Retorna [] si hay error, nunca null
+    }
+
+    /**
+     * MEJORADO: Obtener imágenes de telas (color-tela)
+     * 
+     * ✅ Retorna array estructurado de imágenes por color-tela
+     * ✅ Cada imagen incluye ruta_webp, ruta_original, orden
+     * ✅ Ordenadas por campo "orden"
+     * ✅ Retorna array vacío si no hay fotos (no null)
      */
     private function obtenerImagenesTela($prenda): array
     {
@@ -248,25 +424,110 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         try {
             if ($prenda->coloresTelas) {
                 foreach ($prenda->coloresTelas as $ct) {
-                    if ($ct->fotos) {
+                    if ($ct->fotos && $ct->fotos->count() > 0) {
                         foreach ($ct->fotos as $foto) {
-                            $imagenes[] = $foto->ruta_webp;
+                            $imagenes[] = [
+                                'id' => $foto->id ?? null,
+                                'color_tela_id' => $ct->id ?? null,
+                                'color' => $ct->color?->nombre ?? null,
+                                'tela' => $ct->tela?->nombre ?? null,
+                                'ruta_webp' => $foto->ruta_webp ?? $foto->url ?? null,
+                                'ruta_original' => $foto->ruta_original ?? $foto->ruta_webp ?? $foto->url ?? null,
+                                'orden' => (int)($foto->orden ?? 0),
+                            ];
                         }
                     }
                 }
+                
+                // ✅ Ordenar por orden
+                usort($imagenes, function($a, $b) {
+                    return $a['orden'] <=> $b['orden'];
+                });
             }
+
+            Log::debug('[ObtenerPedidoUseCase] Imágenes de tela obtenidas', [
+                'prenda_id' => $prenda->id,
+                'total_imagenes' => count($imagenes),
+            ]);
+
         } catch (\Exception $e) {
-            Log::warning('Error obteniendo imÃ¡genes de tela', [
+            Log::warning('Error obteniendo imágenes de tela', [
                 'prenda_id' => $prenda->id ?? null,
                 'error' => $e->getMessage()
             ]);
         }
 
-        return $imagenes;
+        return $imagenes; // ✅ Retorna [] si hay error, nunca null
+    }
+
+    /**
+     * MEJORADO: Obtener procesos con imágenes
+     * 
+     * ✅ Incluye imágenes de cada proceso ordenadas por "orden"
+     * ✅ Cada imagen tiene ruta_webp, ruta_original, orden, es_principal
+     * ✅ Retorna array vacío si no hay procesos (no null)
+     */
+    private function obtenerProcesosDelaPrenda($prenda): array
+    {
+        $procesos = [];
+
+        try {
+            if ($prenda->procesos && $prenda->procesos->count() > 0) {
+                foreach ($prenda->procesos as $proceso) {
+                    $imagenes = [];
+                    
+                    // ✅ Obtener imágenes del proceso ordenadas
+                    if ($proceso->imagenes && $proceso->imagenes->count() > 0) {
+                        foreach ($proceso->imagenes as $imagen) {
+                            $imagenes[] = [
+                                'id' => $imagen->id ?? null,
+                                'ruta_webp' => $imagen->ruta_webp ?? $imagen->url ?? null,
+                                'ruta_original' => $imagen->ruta_original ?? $imagen->ruta_webp ?? $imagen->url ?? null,
+                                'orden' => (int)($imagen->orden ?? 0),
+                                'es_principal' => (bool)($imagen->es_principal ?? false),
+                            ];
+                        }
+                        
+                        // ✅ Ordenar por orden
+                        usort($imagenes, function($a, $b) {
+                            return $a['orden'] <=> $b['orden'];
+                        });
+                    }
+
+                    $procesos[] = [
+                        'id' => $proceso->id,
+                        'tipo_proceso' => $proceso->tipoProceso?->nombre ?? null,
+                        'tipo_proceso_id' => $proceso->tipo_proceso_id ?? null,
+                        'descripcion' => $proceso->descripcion,
+                        'ubicaciones' => $proceso->ubicaciones ? json_decode($proceso->ubicaciones, true) : [],
+                        'observaciones' => $proceso->observaciones,
+                        'imagenes' => $imagenes, // ✅ Array ordenado con estructura completa
+                        'estado' => $proceso->estado ?? 'PENDIENTE',
+                    ];
+                }
+            }
+
+            Log::info('Procesos obtenidos', [
+                'prenda_id' => $prenda->id,
+                'cantidad' => count($procesos)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::warning('Error obteniendo procesos', [
+                'prenda_id' => $prenda->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+
+        return $procesos; // ✅ Retorna [] si hay error, nunca null
     }
 
     /**
      * Obtener EPPs del pedido enriquecidos
+     * 
+     * ✅ Incluye imágenes de EPP ordenadas por "orden"
+     * ✅ Retorna array vacío si no hay EPPs (no null)
      */
     private function obtenerEppsCompletos($modeloEloquent): array
     {
@@ -278,7 +539,24 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             }
 
             foreach ($modeloEloquent->epps as $epp) {
-                $imagenes = $epp->imagenes ? $epp->imagenes->pluck('ruta_web')->toArray() : [];
+                $imagenes = [];
+                
+                // ✅ Obtener imágenes del EPP ordenadas
+                if ($epp->imagenes && $epp->imagenes->count() > 0) {
+                    foreach ($epp->imagenes as $imagen) {
+                        $imagenes[] = [
+                            'id' => $imagen->id ?? null,
+                            'ruta_webp' => $imagen->ruta_webp ?? $imagen->ruta_web ?? $imagen->url ?? null,
+                            'ruta_original' => $imagen->ruta_original ?? $imagen->ruta_webp ?? $imagen->ruta_web ?? $imagen->url ?? null,
+                            'orden' => (int)($imagen->orden ?? 0),
+                        ];
+                    }
+                    
+                    // ✅ Ordenar por orden
+                    usort($imagenes, function($a, $b) {
+                        return $a['orden'] <=> $b['orden'];
+                    });
+                }
 
                 $epps[] = [
                     'id' => $epp->id,
@@ -287,79 +565,22 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'epp_nombre' => $epp->epp?->nombre_completo ?? $epp->epp?->nombre ?? null,
                     'cantidad' => $epp->cantidad,
                     'observaciones' => $epp->observaciones,
-                    'imagenes' => $imagenes,
+                    'imagenes' => $imagenes, // ✅ Array ordenado con estructura completa
                 ];
             }
 
-            Log::info('EPPs procesados exitosamente', ['pedido_id' => $modeloEloquent->id, 'cantidad' => count($epps)]);
+            Log::info('EPPs procesados exitosamente', [
+                'pedido_id' => $modeloEloquent->id,
+                'cantidad' => count($epps)
+            ]);
+
         } catch (\Exception $e) {
             Log::warning('Error obteniendo EPPs', [
-                'pedido_id' => $modeloEloquent?->id,
+                'pedido_id' => $modeloEloquent?->id ?? null,
                 'error' => $e->getMessage()
             ]);
         }
 
-        return $epps;
-    }
-
-    /**
-     * Obtener procesos de una prenda
-     */
-    private function obtenerProcesosDelaPrenda($prenda): array
-    {
-        $procesos = [];
-
-        try {
-            if ($prenda->procesos) {
-                foreach ($prenda->procesos as $proceso) {
-                    $imagenes = [];
-                    if ($proceso->imagenes && count($proceso->imagenes) > 0) {
-                        foreach ($proceso->imagenes as $img) {
-                            $imagenes[] = [
-                                'id' => $img->id ?? null,
-                                'ruta_webp' => $img->ruta_webp ?? null,
-                                'ruta_original' => $img->ruta_original ?? null,
-                                'orden' => $img->orden ?? 0,
-                                'es_principal' => $img->es_principal ?? false,
-                            ];
-                        }
-                    }
-
-                    $ubicaciones = [];
-                    if ($proceso->ubicaciones) {
-                        if (is_string($proceso->ubicaciones)) {
-                            $ubicaciones = json_decode($proceso->ubicaciones, true) ?? [];
-                        } elseif (is_array($proceso->ubicaciones)) {
-                            $ubicaciones = $proceso->ubicaciones;
-                        }
-                    }
-
-                    $procesos[] = [
-                        'id' => $proceso->id,
-                        'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'Sin tipo',
-                        'tipo_proceso_id' => $proceso->tipo_proceso_id,
-                        'descripcion' => $proceso->descripcion,
-                        'ubicaciones' => $ubicaciones,
-                        'observaciones' => $proceso->observaciones,
-                        'imagenes' => $imagenes,
-                        'estado' => $proceso->estado ?? 'pendiente',
-                    ];
-                }
-            }
-
-            Log::info('Procesos obtenidos', ['prenda_id' => $prenda->id, 'cantidad' => count($procesos), 'procesos' => $procesos]);
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo procesos', [
-                'prenda_id' => $prenda->id ?? null,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-
-        return $procesos;
+        return $epps; // ✅ Retorna [] si hay error, nunca null
     }
 }
-
-
-
-

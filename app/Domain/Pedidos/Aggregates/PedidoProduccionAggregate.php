@@ -20,12 +20,12 @@ use App\Domain\Pedidos\Events\PedidoProduccionCreado;
 class PedidoProduccionAggregate
 {
     /**
-     * Identificador Ãºnico del agregado
+     * Identificador único del agregado
      */
     private int|string $id;
 
     /**
-     * NÃºmero Ãºnico del pedido
+     * Número único del pedido
      */
     private string $numeroPedido;
 
@@ -55,6 +55,11 @@ class PedidoProduccionAggregate
     private string $estado;
 
     /**
+     * Área del pedido
+     */
+    private ?string $area = null;
+
+    /**
      * Eventos de dominio pendientes de publicar
      * 
      * @var array<DomainEvent>
@@ -68,6 +73,7 @@ class PedidoProduccionAggregate
         string $formaPago,
         int $asesorId,
         string $estado,
+        ?string $area = null,
     ) {
         $this->id = $id;
         $this->numeroPedido = $numeroPedido;
@@ -75,10 +81,11 @@ class PedidoProduccionAggregate
         $this->formaPago = $formaPago;
         $this->asesorId = $asesorId;
         $this->estado = $estado;
+        $this->area = $area;
     }
 
     /**
-     * Factory method: Crear nuevo pedido de producciÃ³n
+     * Factory method: Crear nuevo pedido de producción
      * Esto emite el evento PedidoProduccionCreado
      */
     public static function crear(
@@ -88,6 +95,7 @@ class PedidoProduccionAggregate
         string $formaPago,
         int $asesorId,
         string $estado,
+        ?string $area = null,
     ): self {
         $agregado = new self(
             $id,
@@ -96,9 +104,10 @@ class PedidoProduccionAggregate
             $formaPago,
             $asesorId,
             $estado,
+            $area,
         );
 
-        // Registrar evento de creaciÃ³n
+        // Registrar evento de creación
         $agregado->recordEvent(
             new PedidoProduccionCreado(
                 $id,
@@ -207,6 +216,16 @@ class PedidoProduccionAggregate
     public function getEstado(): string
     {
         return $this->estado;
+    }
+
+    public function getArea(): ?string
+    {
+        return $this->area;
+    }
+
+    public function setArea(?string $area): void
+    {
+        $this->area = $area;
     }
 }
 

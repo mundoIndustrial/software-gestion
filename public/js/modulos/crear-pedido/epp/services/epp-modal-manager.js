@@ -49,6 +49,17 @@ class EppModalManager {
             }
         });
 
+        // Ocultar formulario de crear EPP y mostrar búsqueda
+        const formularioCrear = document.getElementById('formularioEPPNuevo');
+        const inputBuscador = document.getElementById('inputBuscadorEPP');
+        if (formularioCrear) {
+            formularioCrear.style.display = 'none';
+        }
+        if (inputBuscador) {
+            inputBuscador.value = '';
+            inputBuscador.focus();
+        }
+
         this.limpiarProductoCard();
         this.limpiarImagenes();
 
@@ -58,11 +69,33 @@ class EppModalManager {
      * Mostrar producto seleccionado
      */
     mostrarProductoSeleccionado(producto) {
-        document.getElementById('nombreProductoEPP').textContent = producto.nombre;
-        document.getElementById('categoriaProductoEPP').textContent = producto.categoria;
-        document.getElementById('codigoProductoEPP').textContent = producto.codigo;
-        document.getElementById('productoCardEPP').style.display = 'flex';
-
+        console.log('🎯 [ModalManager] mostrarProductoSeleccionado:', producto);
+        
+        const nombreElement = document.getElementById('nombreProductoEPP');
+        console.log('🎯 [ModalManager] Elemento nombreProductoEPP encontrado:', !!nombreElement);
+        if (nombreElement) {
+            nombreElement.textContent = producto.nombre;
+            console.log('🎯 [ModalManager] Nombre mostrado:', producto.nombre);
+        } else {
+            console.warn('❌ [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO');
+        }
+        
+        // Mostrar imagen si existe
+        const imagenElemento = document.getElementById('imagenProductoEPP');
+        console.log('🎯 [ModalManager] Elemento imagenProductoEPP encontrado:', !!imagenElemento);
+        if (imagenElemento && producto.imagen) {
+            imagenElemento.src = producto.imagen;
+            console.log('🎯 [ModalManager] Imagen mostrada:', producto.imagen);
+        }
+        
+        const productoCard = document.getElementById('productoCardEPP');
+        console.log('🎯 [ModalManager] Elemento productoCardEPP encontrado:', !!productoCard);
+        if (productoCard) {
+            productoCard.style.display = 'flex';
+            console.log('✅ [ModalManager] Tarjeta de producto mostrada');
+        } else {
+            console.warn('❌ [ModalManager] Elemento productoCardEPP NO ENCONTRADO');
+        }
     }
 
     /**
@@ -110,6 +143,7 @@ class EppModalManager {
      * Habilitar campos de edición
      */
     habilitarCampos() {
+        console.log('🔓 [ModalManager] habilitarCampos() iniciado');
         const campos = [
             'cantidadEPP',
             'observacionesEPP'
@@ -117,6 +151,7 @@ class EppModalManager {
 
         campos.forEach(id => {
             const elemento = document.getElementById(id);
+            console.log(`🔓 [ModalManager] Buscando campo: ${id}, encontrado:`, !!elemento);
             if (elemento) {
                 elemento.disabled = false;
                 // Remover el atributo disabled
@@ -133,12 +168,41 @@ class EppModalManager {
                     color: #1f2937 !important; 
                     cursor: text !important;
                 `);
+                console.log(`✅ [ModalManager] Campo ${id} habilitado`);
+            } else {
+                console.warn(`❌ [ModalManager] Campo ${id} NO ENCONTRADO en el DOM`);
             }
         });
 
-        document.getElementById('areaCargarImagenes').style.display = 'block';
-        document.getElementById('mensajeSelecccionarEPP').style.display = 'none';
+        // Habilitar área de imágenes
+        const areaImagenes = document.getElementById('areaCargarImagenes');
+        console.log('🖼️ [ModalManager] Buscando areaCargarImagenes, encontrada:', !!areaImagenes);
+        if (areaImagenes) {
+            areaImagenes.setAttribute('style', `
+                display: block; 
+                margin-bottom: 1rem; 
+                padding: 1.5rem; 
+                background: white; 
+                border: 2px dashed #0066cc; 
+                border-radius: 8px; 
+                text-align: center; 
+                cursor: pointer; 
+                transition: all 0.3s ease;
+                opacity: 1;
+            `);
+            console.log('✅ [ModalManager] Área de imágenes habilitada');
+        } else {
+            console.warn('❌ [ModalManager] Área de imágenes NO ENCONTRADA en el DOM');
+        }
 
+        const mensajeSeleccionar = document.getElementById('mensajeSelecccionarEPP');
+        console.log('📝 [ModalManager] Buscando mensajeSelecccionarEPP, encontrado:', !!mensajeSeleccionar);
+        if (mensajeSeleccionar) {
+            mensajeSeleccionar.style.display = 'none';
+            console.log('✅ [ModalManager] Mensaje de selección ocultado');
+        } else {
+            console.warn('❌ [ModalManager] Mensaje de selección NO ENCONTRADO en el DOM');
+        }
     }
 
     /**

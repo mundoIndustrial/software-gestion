@@ -550,35 +550,69 @@
                     </div>
                     
                     <div class="prenda-detalles">
-                        @if($prenda->tipo_manga)
-                            <p><strong>Manga:</strong> {{ $prenda->tipo_manga }}</p>
-                        @endif
-                        @if($prenda->tipo_broche)
-                            <p><strong>Broche:</strong> {{ $prenda->tipo_broche }}</p>
-                        @endif
                         @if($prenda->color)
                             <p><strong>Color:</strong> {{ $prenda->color }}</p>
                         @endif
                         @if($prenda->tela)
                             <p><strong>Tela:</strong> {{ $prenda->tela }}</p>
                         @endif
-                        @if($prenda->tiene_bolsillos)
-                            <p><strong>✓ Incluye Bolsillos</strong></p>
-                        @endif
-                        @if($prenda->tiene_reflectivo)
-                            <p><strong>✓ Incluye Reflectivo</strong></p>
-                        @endif
                     </div>
 
-                    <!-- Tallas -->
-                    @if($prenda->tallas && $prenda->tallas->count() > 0)
-                        <div class="prenda-tallas">
-                            <strong style="color: #dc2626; font-size: 11px;">Tallas:</strong>
-                            @foreach($prenda->tallas as $tallaRecord)
-                                @if($tallaRecord->cantidad > 0)
-                                    <span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; margin: 2px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: 600; border: 2px solid #dc2626;">{{ $tallaRecord->genero }}-{{ $tallaRecord->talla }}: {{ $tallaRecord->cantidad }}</span>
-                                @endif
-                            @endforeach
+                    <!-- Variantes con Especificaciones (Manga, Broche, Bolsillos) -->
+                    @if($prenda->variantes && is_array($prenda->variantes) && count($prenda->variantes) > 0)
+                        <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
+                            <div style="font-size: 11px; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;">
+                                VARIANTES (ESPECIFICACIONES)
+                            </div>
+                            <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f0f9ff; border-bottom: 2px solid #bfdbfe;">
+                                        <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Talla</th>
+                                        <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #1e40af;">Cantidad</th>
+                                        <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Manga</th>
+                                        <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Broche</th>
+                                        <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Bolsillos</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($prenda->variantes as $idx => $variante)
+                                        <tr style="background: {{ $idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}; border-bottom: 1px solid #e0e7ff;">
+                                            <td style="padding: 8px 12px; font-weight: 600; color: #334155;">{{ $variante->talla ?? '—' }}</td>
+                                            <td style="padding: 8px 12px; text-align: center; color: #475569;">{{ $variante->cantidad ?? 0 }}</td>
+                                            <td style="padding: 8px 12px; color: #475569; font-size: 9px;">
+                                                @if($variante->manga)
+                                                    <strong>{{ $variante->manga }}</strong>
+                                                    @if($variante->manga_obs)
+                                                        <br><em style="color: #64748b; font-size: 8px;">{{ $variante->manga_obs }}</em>
+                                                    @endif
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
+                                            <td style="padding: 8px 12px; color: #475569; font-size: 9px;">
+                                                @if($variante->broche)
+                                                    <strong>{{ $variante->broche }}</strong>
+                                                    @if($variante->broche_obs)
+                                                        <br><em style="color: #64748b; font-size: 8px;">{{ $variante->broche_obs }}</em>
+                                                    @endif
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
+                                            <td style="padding: 8px 12px; color: #475569; font-size: 9px;">
+                                                @if($variante->bolsillos)
+                                                    <strong>Sí</strong>
+                                                    @if($variante->bolsillos_obs)
+                                                        <br><em style="color: #64748b; font-size: 8px;">{{ $variante->bolsillos_obs }}</em>
+                                                    @endif
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     @endif
 

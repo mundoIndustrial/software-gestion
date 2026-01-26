@@ -11,7 +11,7 @@ class EppItemManager {
     /**
      * Crear item visual de EPP
      */
-    crearItem(id, nombre, codigo, categoria, cantidad, observaciones, imagenes = []) {
+    crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = []) {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
 
@@ -21,14 +21,43 @@ class EppItemManager {
         const galeriaHTML = this._crearGaleriaHTML(nombre, imagenes);
         
         const itemHTML = `
-            <div class="item-epp" data-item-id="${id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; position: relative;">
-                <!-- Header -->
+            <div class="item-epp" data-item-id="${id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+                <!-- Header con menú contextual -->
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                    <div>
+                    <div style="flex: 1;">
                         <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${nombre}</h4>
-                        <p style="margin: 0; font-size: 0.875rem; color: #6b7280;">Código: ${codigo} | Categoría: ${categoria}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: #6b7280;">Categoría: ${categoria}</p>
                     </div>
-                    <button class="btn-menu-epp" data-item-id="${id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
+                    <!-- Menú contextual (posicionado como en prenda) -->
+                    <div style="position: relative;">
+                        <button class="btn-menu-epp" data-item-id="${id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;" 
+                            onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937';"
+                            onmouseout="this.style.background='none'; this.style.color='#6b7280';">
+                            ⋮
+                        </button>
+                        <div class="submenu-epp" data-item-id="${id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; min-width: 140px;">
+                            <button 
+                                type="button"
+                                class="btn-editar-epp"
+                                data-item-id="${id}"
+                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
+                                onmouseover="this.style.background = '#f3f4f6';"
+                                onmouseout="this.style.background = 'transparent';"
+                            >
+                                Editar
+                            </button>
+                            <button 
+                                type="button"
+                                class="btn-eliminar-epp"
+                                data-item-id="${id}"
+                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
+                                onmouseover="this.style.background = '#fef2f2';"
+                                onmouseout="this.style.background = 'transparent';"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Detalles -->
@@ -44,30 +73,6 @@ class EppItemManager {
                 </div>
 
                 ${galeriaHTML}
-
-                <!-- Menú -->
-                <div class="submenu-epp" data-item-id="${id}" style="display: none; position: absolute; top: 2rem; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 100;">
-                    <button 
-                        type="button"
-                        class="btn-editar-epp"
-                        data-item-id="${id}"
-                        style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
-                        onmouseover="this.style.background = '#f9fafb';"
-                        onmouseout="this.style.background = 'transparent';"
-                    >
-                        Editar
-                    </button>
-                    <button 
-                        type="button"
-                        class="btn-eliminar-epp"
-                        data-item-id="${id}"
-                        style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
-                        onmouseover="this.style.background = '#fef2f2';"
-                        onmouseout="this.style.background = 'transparent';"
-                    >
-                        Eliminar
-                    </button>
-                </div>
             </div>
         `;
 

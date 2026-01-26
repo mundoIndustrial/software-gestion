@@ -60,7 +60,8 @@ class EliminarProcesoUseCase
 
         return [
             'success' => true,
-            'message' => 'Proceso eliminado correctamente'
+            'message' => 'Proceso eliminado correctamente',
+            'proceso_id' => $id
         ];
     }
 }

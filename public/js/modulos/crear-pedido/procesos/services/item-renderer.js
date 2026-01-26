@@ -157,7 +157,6 @@ class ItemRenderer {
                     <div>
                         <span style="display: inline-block; background: #e0f2fe; color: #0066cc; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">EPP ${numeroItem}</span>
                         <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${epp.nombre}</h4>
-                        <p style="margin: 0; font-size: 0.875rem; color: #6b7280;">Código: ${epp.codigo} | Categoría: ${epp.categoria}</p>
                     </div>
                     <button class="btn-menu-epp" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
                 </div>
@@ -177,7 +176,7 @@ class ItemRenderer {
                 ${galeriaHTML}
 
                 <!-- Menú -->
-                <div class="submenu-epp" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 2rem; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 100;">
+                <div class="submenu-epp" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 1000; flex-direction: column;">
                     <button 
                         type="button"
                         class="btn-editar-epp"

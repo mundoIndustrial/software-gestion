@@ -5,6 +5,7 @@ namespace App\Domain\Pedidos\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Application\Services\ColorTelaService;
 
 /**
  * TelaImagenService
@@ -16,10 +17,12 @@ use Illuminate\Support\Facades\Log;
 class TelaImagenService
 {
     private ImagenTransformadorService $transformador;
+    private ColorTelaService $colorTelaService;
 
-    public function __construct(ImagenTransformadorService $transformador = null)
+    public function __construct(ImagenTransformadorService $transformador = null, ColorTelaService $colorTelaService = null)
     {
         $this->transformador = $transformador ?? app(ImagenTransformadorService::class);
+        $this->colorTelaService = $colorTelaService ?? app(ColorTelaService::class);
     }
 
     /**
@@ -134,44 +137,14 @@ class TelaImagenService
     {
         $colorId = $tela['color_id'] ?? null;
         $telaId = $tela['tela_id'] ?? null;
-        $referencia = $tela['referencia'] ?? '';
 
-        // Si vienen como nombres (strings), buscar o crear los IDs
+        // Si vienen como nombres (strings), obtener o crear usando el servicio centralizado
         if (!$colorId && !empty($tela['color'])) {
-            $colorNombre = $tela['color'];
-            $colorObj = DB::table('colores_prenda')
-                ->where('nombre', $colorNombre)
-                ->first();
-            
-            if ($colorObj) {
-                $colorId = $colorObj->id;
-            } else {
-                $colorId = DB::table('colores_prenda')->insertGetId([
-                    'nombre' => $colorNombre,
-                    'activo' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $colorId = $this->colorTelaService->obtenerOCrearColor($tela['color']);
         }
 
         if (!$telaId && !empty($tela['tela'])) {
-            $telaNombre = $tela['tela'];
-            $telaObj = DB::table('telas_prenda')
-                ->where('nombre', $telaNombre)
-                ->first();
-            
-            if ($telaObj) {
-                $telaId = $telaObj->id;
-            } else {
-                $telaId = DB::table('telas_prenda')->insertGetId([
-                    'nombre' => $telaNombre,
-                    'referencia' => $referencia,
-                    'activo' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $telaId = $this->colorTelaService->obtenerOCrearTela($tela['tela']);
         }
 
         if (!$colorId || !$telaId) {
@@ -184,25 +157,8 @@ class TelaImagenService
             return null;
         }
 
-        // Buscar si ya existe
-        $colorTela = DB::table('prenda_pedido_colores_telas')
-            ->where('prenda_pedido_id', $prendaId)
-            ->where('color_id', $colorId)
-            ->where('tela_id', $telaId)
-            ->first();
-
-        if ($colorTela) {
-            return $colorTela->id;
-        }
-
-        // Crear nuevo
-        return DB::table('prenda_pedido_colores_telas')->insertGetId([
-            'prenda_pedido_id' => $prendaId,
-            'color_id' => $colorId,
-            'tela_id' => $telaId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Usar el servicio para obtener o crear la combinación color-tela
+        return $this->colorTelaService->obtenerOCrearColorTela($prendaId, $colorId, $telaId);
     }
 }
 

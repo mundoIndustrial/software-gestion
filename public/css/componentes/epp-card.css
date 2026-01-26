@@ -1,0 +1,293 @@
+/**
+ * ESTILOS TARJETA DE EPP
+ * Basado en estructura de prenda-card-readonly.css
+ * Incluye menú contextual con opciones editar/eliminar
+ */
+
+/* ============================================
+   TARJETA PRINCIPAL
+   ============================================ */
+.epp-item-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease;
+}
+
+.epp-item-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================
+   HEADER - Título y Menú
+   ============================================ */
+.epp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.epp-title-section {
+    flex: 1;
+}
+
+.epp-label {
+    display: inline-block;
+    background: #dcfce7;
+    color: #166534;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.epp-header h5 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* ============================================
+   MENÚ CONTEXTUAL (3 PUNTOS)
+   ============================================ */
+.epp-menu-contextual {
+    position: relative;
+}
+
+.btn-menu-tres-puntos-epp {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-menu-tres-puntos-epp:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.submenu-epp {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+}
+
+.submenu-epp .submenu-option {
+    background: none;
+    border: none;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    cursor: pointer;
+    color: #374151;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.submenu-epp .submenu-option:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.submenu-epp .submenu-option:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.submenu-epp .submenu-option:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.submenu-epp .btn-eliminar-epp:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ============================================
+   CONTENIDO
+   ============================================ */
+.epp-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.epp-info {
+    flex: 1;
+}
+
+.epp-qty {
+    display: block;
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.epp-description {
+    margin: 0.5rem 0 0 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.epp-observations {
+    margin: 0.5rem 0 0 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    font-style: italic;
+}
+
+/* ============================================
+   IMÁGENES
+   ============================================ */
+.epp-images {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.epp-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.epp-img:hover {
+    border-color: #0ea5e9;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .epp-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .epp-content {
+        flex-direction: column;
+    }
+    
+    .epp-images {
+        justify-content: flex-start;
+    }
+}
+/* ============================================
+   ESTILOS PARA item-epp Y item-epp-card
+   (Generados por EppItemManager y ItemRenderer)
+   ============================================ */
+
+.item-epp,
+.item-epp-card {
+    position: relative;
+}
+
+/* Botón de menú 3 puntos */
+.btn-menu-epp {
+    background: none !important;
+    border: none !important;
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #6b7280;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-menu-epp:hover {
+    background: #f3f4f6 !important;
+    color: #1f2937;
+}
+
+/* Submenu de EPP */
+.submenu-epp {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 140px;
+    z-index: 1000;
+}
+
+.submenu-epp[style*="display: none"],
+.submenu-epp[style="display: none"] {
+    display: none !important;
+}
+
+.submenu-epp[style*="display: flex"],
+.submenu-epp[style="display: flex"],
+.submenu-epp.show {
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Opciones del submenu */
+.btn-editar-epp,
+.btn-eliminar-epp {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #1f2937;
+    transition: background 0.2s ease;
+}
+
+.btn-editar-epp {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.btn-editar-epp:hover {
+    background: #f9fafb;
+}
+
+.btn-eliminar-epp {
+    color: #dc2626;
+}
+
+.btn-eliminar-epp:hover {
+    background: #fef2f2;
+}
+
+.btn-editar-epp:first-child {
+    border-radius: 6px 6px 0 0;
+}
+
+.btn-eliminar-epp:last-child {
+    border-radius: 0 0 6px 6px;
+}

@@ -11,7 +11,7 @@ class EppModalTemplate {
     static getHTML() {
         return `
         <div id="modal-agregar-epp" class="modal-overlay" style="display: none;">
-            <div class="modal-container" style="max-width: 500px;">
+            <div class="modal-container" style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header modal-header-primary">
                     <h3 class="modal-title">
                         <span class="material-symbols-rounded">shield</span>EPP
@@ -21,8 +21,8 @@ class EppModalTemplate {
                     </button>
                 </div>
                 
-                <div class="modal-body">
-                    <div style="margin-bottom: 1.5rem; position: relative;">
+                <div class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 0.5rem;">
+                    <div style="padding-right: 0.5rem;">
                         <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #1f2937; margin-bottom: 0.75rem;">Buscar por Referencia o Nombre</label>
                         <div style="position: relative; display: flex; align-items: center;">
                             <span class="material-symbols-rounded" style="position: absolute; left: 12px; color: #9ca3af; font-size: 20px; pointer-events: none;">search</span>
@@ -52,55 +52,24 @@ class EppModalTemplate {
                     <div id="formularioEPPNuevo" style="display: none; background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
                         <h4 style="margin: 0 0 1rem 0; color: #1d4ed8; font-size: 0.95rem;">Crear EPP Nuevo</h4>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Nombre *</label>
-                                <input 
-                                    type="text"
-                                    id="nuevoEPPNombre"
-                                    placeholder="Ej. Casco de Seguridad"
-                                    style="width: 100%; padding: 0.75rem; border: 2px solid #bfdbfe; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
-                                >
-                            </div>
-                            <div>
-                                <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Categoría *</label>
-                                <select 
-                                    id="nuevoEPPCategoria"
-                                    style="width: 100%; padding: 0.75rem; border: 2px solid #bfdbfe; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
-                                >
-                                    <option value="">Selecciona categoría</option>
-                                    <option value="Cabeza">Cabeza</option>
-                                    <option value="Manos">Manos</option>
-                                    <option value="Pies">Pies</option>
-                                    <option value="Cuerpo">Cuerpo</option>
-                                    <option value="Oidos">Oídos</option>
-                                    <option value="Ojos">Ojos</option>
-                                    <option value="Respiratorio">Respiratorio</option>
-                                    <option value="Otros">Otros</option>
-                                </select>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Nombre *</label>
+                            <input 
+                                type="text"
+                                id="nuevoEPPNombre"
+                                placeholder="Ej. Casco de Seguridad"
+                                style="width: 100%; padding: 0.75rem; border: 2px solid #bfdbfe; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
+                            >
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Código *</label>
-                                <input 
-                                    type="text"
-                                    id="nuevoEPPCodigo"
-                                    placeholder="Ej. EPP-CAB-001"
-                                    style="width: 100%; padding: 0.75rem; border: 2px solid #bfdbfe; border-radius: 6px; font-size: 0.95rem; font-family: inherit; text-transform: uppercase;"
-                                    onkeyup="this.value = this.value.toUpperCase();"
-                                >
-                            </div>
-                            <div>
-                                <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Descripción</label>
-                                <input 
-                                    type="text"
-                                    id="nuevoEPPDescripcion"
-                                    placeholder="Ej. Casco de protección ABS"
-                                    style="width: 100%; padding: 0.75rem; border: 2px solid #bfdbfe; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
-                                >
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Descripción</label>
+                            <input 
+                                type="text"
+                                id="nuevoEPPDescripcion"
+                                placeholder="Ej. Casco de protección ABS"
+                                style="width: 100%; padding: 0.75rem; border: 2px solid #bfdbfe; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
+                            >
                         </div>
 
                         <div style="display: flex; gap: 0.75rem;">
@@ -111,7 +80,7 @@ class EppModalTemplate {
                                 onmouseover="this.style.background = '#1d4ed8';"
                                 onmouseout="this.style.background = '#3b82f6';"
                             >
-                                Crear y Usar
+                                Crear
                             </button>
                             <button 
                                 type="button"
@@ -125,11 +94,9 @@ class EppModalTemplate {
                         </div>
                     </div>
 
-                    <div id="productoCardEPP" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; animation: slideDown 0.3s ease;">
-                        <div style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
-                            <span id="categoriaProductoEPP" style="display: inline-block; font-size: 0.7rem; font-weight: 700; color: #0066cc; letter-spacing: 0.5px; margin-bottom: 0.25rem; text-transform: uppercase;"></span>
+                    <div id="productoCardEPP" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; animation: slideDown 0.3s ease;">
+                        <div style="display: flex; flex-direction: column; justify-content: center;">
                             <h3 id="nombreProductoEPP" style="margin: 0; font-size: 0.95rem; font-weight: 600; color: #1f2937; line-height: 1.4; margin-bottom: 0.25rem;"></h3>
-                            <code id="codigoProductoEPP" style="font-size: 0.8rem; color: #6b7280;"></code>
                         </div>
                     </div>
 
@@ -139,7 +106,7 @@ class EppModalTemplate {
                             type="number"
                             id="cantidadEPP"
                             min="1"
-                            value=""
+                            value="1"
                             placeholder="0"
                             oninput="actualizarEstilosBotonEPP();"
                             disabled
@@ -162,9 +129,9 @@ class EppModalTemplate {
                             <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 18px; margin-right: 0.5rem;">image</span>Imágenes (Opcional)
                         </label>
                         
-                        <div id="areaCargarImagenes" style="display: none; margin-bottom: 1rem; padding: 1.5rem; background: white; border: 2px dashed #0066cc; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.borderColor = '#0052a3'; this.style.background = '#f0f7ff';" onmouseout="this.style.borderColor = '#0066cc'; this.style.background = 'white';" onclick="document.getElementById('inputCargaImagenesEPP').click();">
-                            <span class="material-symbols-rounded" style="font-size: 32px; color: #0066cc; margin-bottom: 0.5rem; display: block;">cloud_upload</span>
-                            <p style="margin: 0; font-size: 0.95rem; font-weight: 500; color: #1f2937; margin-bottom: 0.25rem;">Arrastra imágenes o haz clic para seleccionar</p>
+                        <div id="areaCargarImagenes" style="display: block; margin-bottom: 1rem; padding: 1.5rem; background: white; border: 2px dashed #ccc; border-radius: 8px; text-align: center; cursor: not-allowed; transition: all 0.3s ease; opacity: 0.5;" onmouseover="this.style.borderColor = '#0052a3'; this.style.background = '#f0f7ff';" onmouseout="this.style.borderColor = '#ccc'; this.style.background = 'white';" onclick="document.getElementById('inputCargaImagenesEPP').click();">
+                            <span class="material-symbols-rounded" style="font-size: 32px; color: #9ca3af; margin-bottom: 0.5rem; display: block;">cloud_upload</span>
+                            <p style="margin: 0; font-size: 0.95rem; font-weight: 500; color: #6b7280; margin-bottom: 0.25rem;">Selecciona un EPP primero</p>
                             <p style="margin: 0; font-size: 0.8rem; color: #9ca3af;">JPG, PNG, WebP - Máximo 5MB</p>
                         </div>
                         
@@ -204,6 +171,7 @@ class EppModalTemplate {
                         >
                             Guardar
                         </button>
+                    </div>
                     </div>
             </div>
         </div>

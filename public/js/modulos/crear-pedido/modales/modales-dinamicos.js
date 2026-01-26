@@ -141,7 +141,7 @@ function mostrarGaleriaPrenda(imagenes, indiceInicial = 0) {
  */
 function mostrarConfirmacionEliminarImagen(indiceActual, galeriaModal, actualizarImagen, contador) {
     const confirmModal = document.createElement('div');
-    confirmModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10002;';
+    confirmModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999999;';
     
     const confirmBox = document.createElement('div');
     confirmBox.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';

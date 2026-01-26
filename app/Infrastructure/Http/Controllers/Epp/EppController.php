@@ -51,6 +51,8 @@ class EppController extends Controller
             \Log::info('[EppController] Búsqueda iniciada', [
                 'termino' => $termino,
                 'categoria' => $categoria,
+                'url' => $request->url(),
+                'query_string' => $request->getQueryString(),
             ]);
 
             if ($termino) {
@@ -64,13 +66,15 @@ class EppController extends Controller
             $epps = $this->queryBus->execute($query);
 
             \Log::info('[EppController] Búsqueda completada', [
-                'total' => count($epps),
+                'total' => is_countable($epps) ? count($epps) : 0,
+                'tipo_respuesta' => gettype($epps),
+                'datos' => $epps,
             ]);
 
             return response()->json([
                 'success' => true,
                 'data' => $epps,
-                'total' => count($epps),
+                'total' => is_countable($epps) ? count($epps) : 0,
             ]);
         } catch (\DomainException $e) {
             \Log::warning('  [EppController] DomainException:', [
@@ -132,21 +136,24 @@ class EppController extends Controller
      * POST /api/epp
      * 
      * Crear nuevo EPP
+     * Solo requiere: nombre y descripción
+     * Los campos adicionales (categoría, cantidad, observaciones, imágenes) se agregan después en la edición
      */
     public function store(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
                 'nombre' => 'required|string|max:255',
-                'categoria' => 'required|string|max:255',
-                'codigo' => 'required|string|max:100',
                 'descripcion' => 'nullable|string',
             ]);
 
+            // Generar código único automáticamente
+            $codigo = 'EPP-' . strtoupper(substr(md5(time()), 0, 8));
+
             $command = new CrearEppCommand(
                 nombre: $validated['nombre'],
-                categoria: $validated['categoria'],
-                codigo: $validated['codigo'],
+                categoria: 'General', // Categoría por defecto
+                codigo: $codigo,
                 descripcion: $validated['descripcion'] ?? null
             );
 
@@ -229,24 +236,37 @@ class EppController extends Controller
     /**
      * POST /api/pedidos/{pedidoId}/epp/agregar
      * 
-     * Agregar EPP a un pedido
+     * Agregar EPP a un pedido con imágenes opcionales
      */
     public function agregar(int $pedidoId, Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
                 'epp_id' => 'required|integer|exists:epps,id',
-                'talla' => 'required|string|max:20',
                 'cantidad' => 'required|integer|min:1',
-                'observaciones' => 'nullable|string',
+                'observaciones' => 'nullable|string|max:1000',
+                'imagenes' => 'nullable|array|max:5',
+                'imagenes.*' => 'nullable|string',
             ]);
+
+            // Procesar imágenes si existen
+            $imagenes = [];
+            if ($request->hasFile('imagenes')) {
+                foreach ($request->file('imagenes') as $imagen) {
+                    if ($imagen->isValid()) {
+                        // Guardar imagen y obtener ruta
+                        $ruta = $imagen->store('pedidos/epp', 'public');
+                        $imagenes[] = $ruta;
+                    }
+                }
+            }
 
             $command = new AgregarEppAlPedidoCommand(
                 pedidoId: $pedidoId,
                 eppId: $validated['epp_id'],
-                talla: $validated['talla'],
                 cantidad: $validated['cantidad'],
                 observaciones: $validated['observaciones'] ?? null,
+                imagenes: $imagenes,
             );
 
             $resultado = $this->commandBus->execute($command);
@@ -377,12 +397,13 @@ class EppController extends Controller
     /**
      * DELETE /api/epp/imagenes/{imagenId}
      * 
-     * Eliminar imagen de un EPP (tanto del maestro como de PedidoEpp)
+     * Eliminar imagen de PedidoEpp (tabla pedido_epp_imagenes)
+     * ✅ IGNORADO: tabla epp_imagenes no existe, solo usar pedido_epp_imagenes
      */
     public function eliminarImagen(int $imagenId): JsonResponse
     {
         try {
-            // Primero intentar eliminar imagen de PedidoEpp
+            // ✅ Solo eliminar imagen de PedidoEpp
             $imagenPedido = \DB::table('pedido_epp_imagenes')->where('id', $imagenId)->first();
             
             if ($imagenPedido) {
@@ -395,7 +416,7 @@ class EppController extends Controller
                 // Eliminar registro de la base de datos
                 \DB::table('pedido_epp_imagenes')->where('id', $imagenId)->delete();
                 
-                \Log::info('[EppController] Imagen de PedidoEpp eliminada', [
+                \Log::info('✅ [EppController] Imagen de PedidoEpp eliminada', [
                     'imagen_id' => $imagenId,
                     'ruta' => $imagenPedido->ruta_web
                 ]);
@@ -406,30 +427,18 @@ class EppController extends Controller
                 ]);
             }
             
-            // Si no está en PedidoEpp, intentar en EppImagen (maestro)
-            $imagen = EppImagen::findOrFail($imagenId);
-            $epp = $imagen->epp;
-
-            // Eliminar archivo
-            $rutaArchivo = "epp/{$epp->codigo}/{$imagen->archivo}";
-            if (Storage::disk('public')->exists($rutaArchivo)) {
-                Storage::disk('public')->delete($rutaArchivo);
-            }
-
-            // Eliminar registro
-            $imagen->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Imagen eliminada correctamente',
+            // ❌ Tabla epp_imagenes no existe, no intentar cargar
+            \Log::warning('❌ [EppController] Imagen no encontrada en pedido_epp_imagenes', [
+                'imagen_id' => $imagenId,
             ]);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Imagen no encontrada',
             ], 404);
+            
         } catch (\Exception $e) {
-            \Log::error('[EppController] Error eliminando imagen', [
+            \Log::error('❌ [EppController] Error eliminando imagen', [
                 'imagen_id' => $imagenId,
                 'error' => $e->getMessage()
             ]);

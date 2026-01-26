@@ -369,9 +369,60 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     
     // Cargar ubicaciones
     if (datos.ubicaciones && window.ubicacionesProcesoSeleccionadas) {
+        
+        // Función para limpiar ubicaciones
+        const limpiarUbicaciones = (raw) => {
+            if (!raw) return [];
+            
+            // Si es string, tratar como JSON
+            if (typeof raw === 'string') {
+                try {
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [parsed];
+                } catch (e) {
+                    return [raw];
+                }
+            }
+            
+            // Si es array
+            if (Array.isArray(raw)) {
+                // Intentar reconstruir un array JSON válido si está fragmentado
+                const joined = raw.join('');
+                if (joined.startsWith('[') && joined.endsWith(']')) {
+                    try {
+                        const parsed = JSON.parse(joined);
+                        return Array.isArray(parsed) ? parsed : [parsed];
+                    } catch (e) {
+                        // Si falla, parsear elemento por elemento
+                        return raw.map(ub => {
+                            if (typeof ub === 'string') {
+                                try {
+                                    const parsed = JSON.parse(ub);
+                                    return typeof parsed === 'string' ? parsed : String(parsed);
+                                } catch (e) {
+                                    return ub.replace(/^["'\[\]\{\}]+|["'\[\]\{\}]+$/g, '').trim();
+                                }
+                            }
+                            return String(ub);
+                        });
+                    }
+                } else {
+                    return raw.map(ub => {
+                        if (typeof ub === 'string') {
+                            return ub.replace(/^["'\[\]\{\}]+|["'\[\]\{\}]+$/g, '').trim();
+                        }
+                        return String(ub);
+                    });
+                }
+            }
+            
+            return [String(raw)];
+        };
+        
+        const ubicacionesLimpias = limpiarUbicaciones(datos.ubicaciones);
 
         window.ubicacionesProcesoSeleccionadas.length = 0;
-        window.ubicacionesProcesoSeleccionadas.push(...datos.ubicaciones);
+        window.ubicacionesProcesoSeleccionadas.push(...ubicacionesLimpias);
 
         if (window.renderizarListaUbicaciones) {
 
@@ -605,6 +656,154 @@ window.cerrarGaleriaImagenesProceso = function() {
     }
     window.imagenesGaleriaProceso = null;
 };
+
+// Eliminar proceso con confirmación
+window.eliminarTarjetaProceso = function(tipo) {
+    const proceso = window.procesosSeleccionados?.[tipo];
+    
+    if (!proceso) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se encontró el proceso para eliminar'
+        });
+        return;
+    }
+    
+    // Mostrar modal de confirmación
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar proceso?',
+        html: `
+            <p>Está a punto de eliminar el proceso <strong>${nombresProcesos[tipo] || tipo}</strong></p>
+            <p style="color: #ef4444; font-weight: 600; margin-top: 1rem;">
+                ⚠️ Se eliminará de la base de datos:
+            </p>
+            <ul style="text-align: left; display: inline-block; margin-top: 0.5rem; color: #6b7280;">
+                <li>✓ Configuración del proceso</li>
+                <li>✓ Ubicaciones</li>
+                <li>✓ Observaciones</li>
+                <li>✓ Tallas configuradas</li>
+                <li>✓ Imágenes asociadas</li>
+            </ul>
+            <p style="color: #ef4444; font-weight: 600; margin-top: 1rem;">
+                Esta acción no se puede deshacer.
+            </p>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        confirmButtonColor: '#ef4444',
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#6b7280',
+        customClass: {
+            container: 'swal-container-top',
+            popup: 'swal-popup-top'
+        },
+        didOpen: (modal) => {
+            // Asegurar z-index máximo
+            modal.style.zIndex = '999999';
+            const backdrop = document.querySelector('.swal2-container');
+            if (backdrop) {
+                backdrop.style.zIndex = '999998';
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Si el proceso tiene ID (ya fue guardado), eliminar de la DB
+            if (proceso.datos?.id) {
+                eliminarProcesoDelBackend(proceso.datos.id);
+            } else {
+                // Solo está en el estado local, eliminar localmente
+                eliminarProcesoLocalmente(tipo);
+            }
+        }
+    });
+};
+
+// Eliminar proceso del backend
+function eliminarProcesoDelBackend(procesoId) {
+    // Obtener el número de pedido del estado global o del DOM
+    const numeroPedido = window.numeroPedidoActual || 
+                         document.querySelector('[data-numero-pedido]')?.getAttribute('data-numero-pedido');
+    
+    if (!numeroPedido) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo identificar el pedido'
+        });
+        return;
+    }
+    
+    // Llamada al endpoint
+    fetch(`/api/procesos/${procesoId}/eliminar`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            numero_pedido: numeroPedido
+        })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Error en la solicitud');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success || data.message?.includes('éxito')) {
+            // Encontrar el tipo de proceso y eliminarlo localmente
+            const tipo = Object.keys(window.procesosSeleccionados).find(
+                t => window.procesosSeleccionados[t].datos?.id === procesoId
+            );
+            
+            if (tipo) {
+                eliminarProcesoLocalmente(tipo);
+            }
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Eliminado',
+                text: 'El proceso ha sido eliminado correctamente',
+                timer: 1500
+            });
+        } else {
+            throw new Error(data.message || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error('Error al eliminar proceso:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo eliminar el proceso. ' + error.message
+        });
+    });
+}
+
+// Eliminar proceso localmente (UI)
+function eliminarProcesoLocalmente(tipo) {
+    // Eliminar del estado
+    if (window.procesosSeleccionados && window.procesosSeleccionados[tipo]) {
+        delete window.procesosSeleccionados[tipo];
+    }
+    
+    // Desmarcar checkbox
+    const checkbox = document.getElementById(`checkbox-${tipo}`);
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+    
+    // Re-renderizar
+    window.renderizarTarjetasProcesos();
+    
+    // Actualizar resumen
+    if (window.actualizarResumenProcesos) {
+        window.actualizarResumenProcesos();
+    }
+}
+
 
 
 

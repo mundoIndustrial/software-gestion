@@ -29,7 +29,18 @@ class TelaComponent {
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#ef4444'
+            confirmButtonColor: '#ef4444',
+            customClass: {
+                container: 'swal-container-top',
+                popup: 'swal-popup-top'
+            },
+            didOpen: (modal) => {
+                modal.style.zIndex = '999999';
+                const backdrop = document.querySelector('.swal2-container');
+                if (backdrop) {
+                    backdrop.style.zIndex = '999998';
+                }
+            }
         });
         if (!result.isConfirmed) return;
         if (!window.prendasCargadas || !window.prendasCargadas[prendaIndex]) return;

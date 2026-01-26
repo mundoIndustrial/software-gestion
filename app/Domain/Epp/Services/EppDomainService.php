@@ -22,35 +22,46 @@ class EppDomainService
 
     /**
      * Buscar EPP y construir DTO para respuesta
+     * Nota: epp_imagenes no existe, se ignorará tabla
      * 
      * @return Collection<array>
      */
-    public function buscarEppConImagenes(string $termino): Collection
+    public function buscarEpp(string $termino): Collection
     {
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Buscando EPP sin epp_imagenes', [
+            'termino' => $termino,
+        ]);
+        
         $epps = $this->eppRepository->buscar($termino);
 
         return $epps->map(fn($epp) => $this->formatearEppParaApi($epp));
     }
 
     /**
-     * Obtener todos los EPP activos con imágenes
+     * Obtener todos los EPP activos (sin tabla epp_imagenes)
      * 
      * @return Collection<array>
      */
     public function obtenerEppActivos(): Collection
     {
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Obteniendo EPPs activos sin epp_imagenes');
+        
         $epps = $this->eppRepository->obtenerActivos();
 
         return $epps->map(fn($epp) => $this->formatearEppParaApi($epp));
     }
 
     /**
-     * Obtener EPP por categoría
+     * Obtener EPP por categoría (sin tabla epp_imagenes)
      * 
      * @return Collection<array>
      */
     public function obtenerEppPorCategoria(string $categoria): Collection
     {
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Obteniendo EPPs por categoría sin epp_imagenes', [
+            'categoria' => $categoria,
+        ]);
+        
         // Validar que sea una categoría válida
         try {
             new CategoriaEpp($categoria);
@@ -64,10 +75,14 @@ class EppDomainService
     }
 
     /**
-     * Obtener EPP por ID
+     * Obtener EPP por ID (sin tabla epp_imagenes)
      */
     public function obtenerEppPorId(int $id): ?array
     {
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Obteniendo EPP por ID sin epp_imagenes', [
+            'epp_id' => $id,
+        ]);
+        
         $epp = $this->eppRepository->obtenerPorId($id);
 
         if (!$epp) {
@@ -89,55 +104,21 @@ class EppDomainService
 
     /**
      * Formatear agregado EPP para respuesta de API
-     * Construye URLs de imágenes
+     * Sin imágenes (van en pedido_epp_imagenes, no en epps)
+     * NOTA: categoria fue removida de la tabla epps
      * 
      * @return array
      */
     private function formatearEppParaApi(EppAggregate $epp): array
     {
-        $codigo = (string)$epp->codigo();
-        $imagenPrincipal = $epp->imagenPrincipal();
-        $urlImagenPrincipal = null;
-
-        if ($imagenPrincipal) {
-            try {
-                $urlObj = $imagenPrincipal->construirUrl($codigo);
-                $urlImagenPrincipal = (string)$urlObj;
-            } catch (\Exception $e) {
-                // Si hay error, usar ruta directa
-                $urlImagenPrincipal = '/storage/epp/' . $codigo . '/' . $imagenPrincipal->archivo();
-            }
-        }
-
-        $imagenes = [];
-        try {
-            $imagenes = array_map(
-                fn($img) => [
-                    'id' => $img->id(),
-                    'archivo' => $img->archivo(),
-                    'principal' => $img->esPrincipal(),
-                    'orden' => $img->orden(),
-                    'url' => '/storage/epp/' . $codigo . '/' . $img->archivo(),
-                ],
-                $epp->imagenes()
-            );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error(' Error formatando imágenes EPP', [
-                'epp_id' => $epp->id(),
-                'error' => $e->getMessage(),
-            ]);
-        }
-
         return [
             'id' => $epp->id(),
-            'codigo' => $codigo,
             'nombre' => $epp->nombre(),
             'nombre_completo' => $epp->nombre(),
-            'categoria' => (string)$epp->categoria(),
+            'marca' => $epp->marca(),
             'descripcion' => $epp->descripcion(),
             'activo' => $epp->estaActivo(),
-            'imagen_principal_url' => $urlImagenPrincipal,
-            'imagenes' => $imagenes,
+            'imagen' => null, // Las imágenes van en pedido_epp_imagenes
         ];
     }
 }

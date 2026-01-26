@@ -24,15 +24,70 @@ class EppRepository implements EppRepositoryInterface
             return null;
         }
 
-        try {
-            $modelo->load('imagenes');
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
-                'error' => $e->getMessage(),
-            ]);
-        }
+        // ✅ Ignorar tabla epp_imagenes (no existe)
+        // Las imágenes se obtienen de pedido_epp_imagenes en el contexto de pedidos
+        
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Cargando EPP sin tabla epp_imagenes', [
+            'epp_id' => $id,
+            'nombre' => $modelo->nombre_completo,
+        ]);
 
         return $this->mapearModeloAAgregado($modelo);
+    }
+
+
+    /**
+     * Obtener todos los EPP activos
+     */
+    public function obtenerActivos(): Collection
+    {
+        // ✅ Caché por 1 hora
+        return \Illuminate\Support\Facades\Cache::remember('epps:activos', 3600, function() {
+            $epps = EppModel::where('activo', true)
+                ->orderBy('categoria_id')
+                ->orderBy('nombre_completo')
+                ->get();
+
+            // ✅ Ignorar tabla epp_imagenes (no existe)
+            \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Obteniendo EPPs activos sin epp_imagenes', [
+                'total' => $epps->count(),
+            ]);
+
+            return $epps->map(function($modelo) {
+                return $this->mapearModeloAAgregado($modelo);
+            });
+        });
+    }
+
+
+    /**
+     * Buscar EPP por término
+     */
+    public function buscar(string $termino): Collection
+    {
+        // 🔥 DESACTIVADO CACHÉ TEMPORALMENTE PARA DEBUG
+        $epps = EppModel::where('activo', true)
+            ->where(function ($query) use ($termino) {
+                $query->where('nombre_completo', 'like', "%{$termino}%")
+                    ->orWhere('marca', 'like', "%{$termino}%");
+            })
+            ->orderBy('nombre_completo')
+            ->limit(50)  // ⚡ Limitar a 50 resultados
+            ->get();
+
+        // ✅ Ignorar tabla epp_imagenes (no existe)
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Buscando EPPs sin caché', [
+            'termino' => $termino,
+            'total' => $epps->count(),
+            'sql' => EppModel::where('activo', true)->where(function ($query) use ($termino) {
+                $query->where('nombre_completo', 'like', "%{$termino}%")
+                    ->orWhere('marca', 'like', "%{$termino}%");
+            })->toSql(),
+        ]);
+
+        return $epps->map(function($modelo) {
+            return $this->mapearModeloAAgregado($modelo);
+        });
     }
 
     /**
@@ -40,43 +95,13 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerPorCodigo(string $codigo): ?EppAggregate
     {
-        $modelo = EppModel::where('codigo', $codigo)->first();
-
-        if (!$modelo) {
-            return null;
-        }
-
-        try {
-            $modelo->load('imagenes');
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        return $this->mapearModeloAAgregado($modelo);
-    }
-
-    /**
-     * Obtener todos los EPP activos
-     */
-    public function obtenerActivos(): Collection
-    {
-        $epps = EppModel::where('activo', true)
-            ->orderBy('categoria_id')
-            ->orderBy('nombre_completo')
-            ->get();
-
-        return $epps->map(function($modelo) {
-            try {
-                $modelo->load('imagenes');
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-            return $this->mapearModeloAAgregado($modelo);
-        });
+        // 🔥 NOTA: El campo 'codigo' NO existe en la tabla epps después de la migración
+        // Esta función devuelve null ya que no hay datos de código disponibles
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] obtenerPorCodigo IGNORADA - campo codigo no existe', [
+            'codigo' => $codigo,
+        ]);
+        
+        return null;
     }
 
     /**
@@ -84,62 +109,21 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerPorCategoria(string $categoria): Collection
     {
-        $epps = EppModel::where('activo', true)
-            ->whereHas('categoria', fn($q) => $q->where('codigo', $categoria))
-            ->orderBy('nombre_completo')
-            ->get();
-
-        return $epps->map(function($modelo) {
-            try {
-                $modelo->load('imagenes');
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-            return $this->mapearModeloAAgregado($modelo);
-        });
+        // 🔥 NOTA: El campo 'categoria_id' NO existe en la tabla epps después de la migración
+        // Devolvemos una colección vacía
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] obtenerPorCategoria IGNORADA - campo categoria_id no existe', [
+            'categoria' => $categoria,
+        ]);
+        
+        return collect([]);
     }
 
-    /**
-     * Buscar EPP por término
-     */
-    public function buscar(string $termino): Collection
-    {
-        $epps = EppModel::where('activo', true)
-            ->where(function ($query) use ($termino) {
-                $query->where('nombre_completo', 'like', "%{$termino}%")
-                    ->orWhere('codigo', 'like', "%{$termino}%")
-                    ->orWhere('marca', 'like', "%{$termino}%");
-            })
-            ->orderBy('nombre_completo')
-            ->get();
-
-        return $epps->map(function($modelo) {
-            // Cargar imágenes manualmente si la tabla existe
-            try {
-                $modelo->load('imagenes');
-            } catch (\Exception $e) {
-                // Si la tabla no existe, continuar sin imágenes
-                \Illuminate\Support\Facades\Log::warning('Tabla epp_imagenes no existe', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-            return $this->mapearModeloAAgregado($modelo);
-        });
-    }
-
-    /**
-     * Guardar un EPP
-     */
     public function guardar(EppAggregate $epp): void
     {
         $modelo = EppModel::updateOrCreate(
             ['id' => $epp->id()],
             [
-                'codigo' => (string)$epp->codigo(),
-                'nombre' => $epp->nombre(),
-                'categoria' => (string)$epp->categoria(),
+                'nombre_completo' => $epp->nombre(),
                 'descripcion' => $epp->descripcion(),
                 'activo' => $epp->estaActivo(),
             ]
@@ -173,76 +157,42 @@ class EppRepository implements EppRepositoryInterface
      */
     private function mapearModeloAAgregado(EppModel $modelo): EppAggregate
     {
-        // Obtener código de categoría
-        $codigoCategoria = $modelo->categoria?->codigo ?? 'OTRA';
-        
-        // Usar nombre_completo si existe, sino nombre
-        $nombre = $modelo->nombre_completo ?? $modelo->nombre ?? '';
+        // Usar nombre_completo (único campo disponible)
+        $nombre = $modelo->nombre_completo ?? '';
 
         $agregado = EppAggregate::reconstruir(
             $modelo->id,
-            $modelo->codigo,
             $nombre,
-            $codigoCategoria,
+            $modelo->marca,
+            $modelo->tipo,
+            $modelo->talla,
+            $modelo->color,
             $modelo->descripcion,
             $modelo->activo,
             $modelo->created_at,
-            $modelo->updated_at,
-            $modelo->deleted_at
+            $modelo->updated_at
         );
 
-        // Agregar imágenes
-        try {
-            foreach ($modelo->imagenes as $imagen) {
-                $imagenValue = new EppImagenValue(
-                    $imagen->id,
-                    $imagen->archivo,
-                    $imagen->principal,
-                    $imagen->orden
-                );
-                $agregado->agregarImagen($imagenValue);
-            }
-        } catch (\Exception $e) {
-            // Log del error pero no detener el mapeo
-            \Illuminate\Support\Facades\Log::warning('  Error mapeando imágenes EPP', [
-                'epp_id' => $modelo->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Mapeando EPP desde tabla', [
+            'epp_id' => $modelo->id,
+            'nombre' => $nombre,
+        ]);
 
         return $agregado;
     }
 
     /**
-     * Sincronizar imágenes del agregado con el modelo
+     * Sincronizar imágenes del agregado con el modelo (DESACTIVADA)
+     * ✅ IGNORADA: tabla epp_imagenes no existe
      *
      * @param EppModel $modelo
      * @param array<EppImagenValue> $imagenes
      */
     private function sincronizarImagenes(EppModel $modelo, array $imagenes): void
     {
-        // Obtener IDs de las imágenes existentes
-        $imagenesExistentes = $modelo->imagenes->pluck('id')->toArray();
-
-        // Obtener IDs de las imágenes del agregado
-        $imagenesAgregado = array_map(fn($img) => $img->id(), $imagenes);
-
-        // Eliminar imágenes que no están en el agregado
-        $paraEliminar = array_diff($imagenesExistentes, $imagenesAgregado);
-        if (!empty($paraEliminar)) {
-            $modelo->imagenes()->whereIn('id', $paraEliminar)->delete();
-        }
-
-        // Actualizar imágenes existentes e insertar nuevas
-        foreach ($imagenes as $imagen) {
-            $modelo->imagenes()->updateOrCreate(
-                ['id' => $imagen->id()],
-                [
-                    'archivo' => $imagen->archivo(),
-                    'principal' => $imagen->esPrincipal(),
-                    'orden' => $imagen->orden(),
-                ]
-            );
-        }
+        // ✅ Esta función no hace nada, tabla epp_imagenes no existe
+        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] sincronizarImagenes IGNORADA - tabla epp_imagenes no existe', [
+            'epp_id' => $modelo->id,
+        ]);
     }
 }
