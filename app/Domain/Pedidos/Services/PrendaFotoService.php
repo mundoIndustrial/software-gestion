@@ -7,7 +7,12 @@ use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
 /**
- * Servicio para gestionar fotos de prendas
+ * @deprecated Este servicio NO usa el sistema centralizado de uploads
+ * 
+ * ❌ PROBLEMA: Guarda directamente en /prendas/ (carpeta global)
+ * ✅ USAR EN SU LUGAR: ImageUploadService con sistema temp/{uuid}/{tipo}/
+ * 
+ * Servicio para gestionar fotos de prendas (OBSOLETO)
  * 
  * Responsabilidades:
  * - Guardar imagen original
@@ -16,7 +21,7 @@ use Intervention\Image\Drivers\Gd\Driver;
  */
 class PrendaFotoService
 {
-    private const STORAGE_PATH = 'prendas';
+    private const STORAGE_PATH = 'prendas'; // ❌ PROBLEMA: Carpeta global
     private const WEBP_QUALITY = 80;
 
     /**

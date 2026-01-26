@@ -276,6 +276,9 @@
 <!-- Componente tarjeta readonly (completo - funcional) -->
 <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
 
+<!-- Componente para editar prendas con procesos desde API -->
+<script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
+
 <!-- Inicializar storages INMEDIATAMENTE (antes de que se cargue gestion-telas.js) -->
 <script>
     //  CRÍTICO: Esto se ejecuta INMEDIATAMENTE, NO en DOMContentLoaded

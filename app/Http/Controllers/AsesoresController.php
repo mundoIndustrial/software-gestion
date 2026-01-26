@@ -269,10 +269,10 @@ class AsesoresController extends Controller
     /**
      * Mostrar un pedido específico - DELEGADO A SERVICIO
      */
-    public function show($pedido)
+    public function show($id)
     {
         try {
-            $pedidoData = $this->asesoresService->obtenerPedidoDetalle->obtenerConPrendas($pedido);
+            $pedidoData = $this->asesoresService->obtenerPedidoDetalle->obtenerConPrendas($id);
             return view('asesores.pedidos.plantilla-erp-antigua', compact('pedidoData'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -282,10 +282,10 @@ class AsesoresController extends Controller
     /**
      * Mostrar formulario de edición - DELEGADO A SERVICIO
      */
-    public function edit($pedido)
+    public function edit($id)
     {
         try {
-            $datos = $this->asesoresService->obtenerPedidoDetalle->obtenerParaEdicion($pedido);
+            $datos = $this->asesoresService->obtenerPedidoDetalle->obtenerParaEdicion($id);
             return view('asesores.pedidos.edit', $datos);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -295,7 +295,7 @@ class AsesoresController extends Controller
     /**
      * Actualizar pedido - DELEGADO A SERVICIO
      */
-    public function update(Request $request, $pedido)
+    public function update(Request $request, $id)
     {
         $validated = $request->validate([
             'cliente' => 'sometimes|required|string|max:255',
@@ -313,7 +313,7 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            $pedidoActualizado = $this->asesoresService->actualizarPedido->actualizar($pedido, $validated);
+            $pedidoActualizado = $this->asesoresService->actualizarPedido->actualizar($id, $validated);
 
             return response()->json([
                 'success' => true,
@@ -334,10 +334,10 @@ class AsesoresController extends Controller
     /**
      * Eliminar un pedido completamente (incluyendo todas sus relaciones)
      */
-    public function destroy($pedido)
+    public function destroy($id)
     {
         try {
-            $resultado = $this->asesoresService->eliminarPedido->eliminarPedido($pedido);
+            $resultado = $this->asesoresService->eliminarPedido->eliminarPedido($id);
             return response()->json($resultado);
         } catch (\Exception $e) {
             return response()->json([

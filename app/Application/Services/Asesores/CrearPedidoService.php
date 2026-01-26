@@ -35,7 +35,7 @@ class CrearPedidoService
     /**
      * Crear pedido (identificar tipo y delegar)
      */
-    public function crear(array $datos, $tipoCotizacion = null): Pedidos|int
+    public function crear(array $datos, $tipoCotizacion = null): PedidoProduccion|int
     {
         DB::beginTransaction();
         try {
@@ -63,7 +63,7 @@ class CrearPedidoService
     /**
      * Crear pedido de prendas (Pedidos)
      */
-    protected function crearPedidos(array $datos): Pedidos
+    protected function crearPedidos(array $datos): PedidoProduccion
     {
         $productosKey = isset($datos['productos']) ? 'productos' : 'productos_friendly';
         $productosConTelasProcessadas = $this->procesarFotosTelas(

@@ -128,6 +128,7 @@
 </div>
 
 @include('asesores.pedidos.modals.modal-seleccionar-prendas')
+@include('asesores.pedidos.modals.modal-prendas-lista')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-agregar-reflectivo')
@@ -188,6 +189,9 @@
     
     <!-- Componente: Editor de Prendas (para editar desde listado de pedidos) -->
     <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}"></script>
+    
+    <!-- Componente para editar prendas con procesos desde API -->
+    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
 
     <script>
         // Datos del servidor

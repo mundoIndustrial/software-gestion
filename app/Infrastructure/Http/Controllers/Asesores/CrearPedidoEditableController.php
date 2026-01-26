@@ -6,13 +6,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\Cliente;
 use App\Models\PedidoProduccion;
 use App\Models\Cotizacion;
 use App\Models\Talla;
 use App\Http\Requests\CrearPedidoCompletoRequest;
 use App\Domain\Pedidos\Services\PedidoWebService;
-use Illuminate\Support\Facades\Auth;
+use App\Application\Services\ImageUploadService;
 
 /**
  * CrearPedidoEditableController
@@ -28,7 +32,8 @@ use Illuminate\Support\Facades\Auth;
 class CrearPedidoEditableController extends Controller
 {
     public function __construct(
-        private PedidoWebService $pedidoWebService
+        private PedidoWebService $pedidoWebService,
+        private ImageUploadService $imageUploadService
     ) {}
 
     /**
@@ -380,64 +385,490 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
-     * Crear el pedido completo con todas sus prendas e imágenes
+     * CREAR PEDIDO CON IMÁGENES - 100% TRANSACCIONAL
+     * POST /asesores/pedidos-editable/crear
+     * 
+     * ✅ TODO O NADA: Si falla algo, rollback completo (DB + archivos)
+     * ✅ NO carpetas temporales
+     * ✅ NO relocalización
+     * ✅ Pedido + imágenes en una sola operación atómica
+     * 
+     * Request multipart/form-data:
+     * - pedido: JSON string con estructura completa del pedido
+     * - prendas[i][imagenes][j]: archivos de imágenes
+     * - prendas[i][telas][k][imagenes][l]: archivos de telas
+     * - prendas[i][procesos][m][imagenes][n]: archivos de procesos
      * 
      * @param Request $request
      * @return JsonResponse
      */
     public function crearPedido(Request $request): JsonResponse
     {
+        $pedidoId = null;
+        
         try {
-            \Log::info('[CrearPedidoEditableController] crearPedido - Inicio', [
+            Log::info('[CrearPedidoEditableController] Iniciando creación transaccional', [
                 'has_pedido_json' => !!$request->input('pedido'),
-                'all_files' => count($request->allFiles()),
+                'archivos_count' => count($request->allFiles()),
             ]);
 
-            // 1. Procesar archivos y decodificar JSON
-            $validated = $this->procesarArchivosYValidar($request);
+            // PASO 1: Decodificar JSON metadata
+            $pedidoJSON = $request->input('pedido');
+            if (!$pedidoJSON) {
+                throw new \Exception('Campo "pedido" JSON requerido en FormData');
+            }
 
-            // 2. Obtener o crear cliente
+            $validated = json_decode($pedidoJSON, true);
+            if (!$validated) {
+                throw new \Exception('JSON inválido en campo "pedido"');
+            }
+
+            // PASO 2: Obtener o crear cliente
             $clienteNombre = trim($validated['cliente']);
             $cliente = $this->obtenerOCrearCliente($clienteNombre);
-
             $validated['cliente_id'] = $cliente->id;
 
-            \Log::info('[CrearPedidoEditableController] Cliente obtenido', [
-                'cliente_id' => $cliente->id,
-                'nombre' => $cliente->nombre,
-            ]);
+            // ========================================
+            // INICIO TRANSACCIÓN ATÓMICA
+            // ========================================
+            DB::beginTransaction();
 
-            // 3. Crear pedido completo usando PedidoWebService
+            // PASO 3: Crear pedido PRIMERO (para obtener pedido_id)
             $pedido = $this->pedidoWebService->crearPedidoCompleto(
                 $validated,
-                \Illuminate\Support\Facades\Auth::id()
+                Auth::id()
             );
+            
+            $pedidoId = $pedido->id;
 
-            \Log::info('[CrearPedidoEditableController] ✅ Pedido creado exitosamente', [
-                'pedido_id' => $pedido->id,
+            Log::info('[CrearPedidoEditableController] Pedido creado en transacción', [
+                'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
-                'cantidad_prendas' => $pedido->prendas()->count(),
+            ]);
+
+            // PASO 4: Procesar imágenes UNA VEZ y guardar en carpetas finales específicas
+            $this->procesarYAsignarImagenes($request, $pedidoId, $validated['items'] ?? []);
+
+            // PASO 5: Todo OK → COMMIT
+            DB::commit();
+
+            Log::info('[CrearPedidoEditableController] ✅ TRANSACCIÓN EXITOSA', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido creado exitosamente',
-                'pedido_id' => $pedido->id,
+                'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente_id' => $cliente->id,
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('[CrearPedidoEditableController] Error al crear pedido', [
+            // ROLLBACK DB
+            DB::rollBack();
+
+            Log::error('[CrearPedidoEditableController] ❌ ERROR - Iniciando rollback', [
+                'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
+
+            // LIMPIAR ARCHIVOS: Borrar carpeta completa del pedido si se creó
+            if ($pedidoId) {
+                try {
+                    $carpetaPedido = "pedidos/{$pedidoId}";
+                    if (Storage::disk('public')->exists($carpetaPedido)) {
+                        Storage::disk('public')->deleteDirectory($carpetaPedido);
+                        Log::info('[CrearPedidoEditableController] 🗑️ Carpeta eliminada', [
+                            'carpeta' => $carpetaPedido,
+                        ]);
+                    }
+                } catch (\Exception $cleanupError) {
+                    Log::error('[CrearPedidoEditableController] Error limpiando archivos', [
+                        'pedido_id' => $pedidoId,
+                        'error' => $cleanupError->getMessage(),
+                    ]);
+                }
+            }
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error al crear pedido: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Procesar y asignar imágenes directamente a carpetas finales
+     * 
+     * ✅ 1 archivo = 1 webp en su carpeta final
+     * ✅ NO temp, NO relocalización
+     * ✅ Carpetas específicas por tipo:
+     *    - pedidos/{id}/prendas/
+     *    - pedidos/{id}/telas/
+     *    - pedidos/{id}/procesos/{TIPO}/
+     * 
+     * @param Request $request
+     * @param int $pedidoId
+     * @param array $items
+     */
+    private function procesarYAsignarImagenes(Request $request, int $pedidoId, array $items): void
+    {
+        Log::info('[CrearPedidoEditableController] 📸 Procesando imágenes en carpetas finales', [
+            'pedido_id' => $pedidoId,
+            'items_count' => count($items),
+        ]);
+
+        // Obtener pedido con relaciones
+        $pedido = \App\Models\PedidoProduccion::with('prendas.procesos.tipoProceso', 'prendas.coloresTelas')->findOrFail($pedidoId);
+        $prendas = $pedido->prendas;
+
+        foreach ($items as $itemIdx => $item) {
+            if (!isset($prendas[$itemIdx])) {
+                Log::warning('[CrearPedidoEditableController] Prenda no encontrada', ['prenda_idx' => $itemIdx]);
+                continue;
+            }
+
+            $prenda = $prendas[$itemIdx];
+
+            // ==================== PRENDAS ====================
+            $imgIdx = 0;
+            while (true) {
+                $formKey = "prendas.{$itemIdx}.imagenes.{$imgIdx}";
+                if (!$request->hasFile($formKey)) {
+                    break;
+                }
+
+                $archivo = $request->file($formKey);
+                $resultado = $this->imageUploadService->guardarImagenDirecta(
+                    $archivo, $pedidoId, 'prendas', null, null
+                );
+
+                \App\Models\PrendaFotoPedido::create([
+                    'prenda_pedido_id' => $prenda->id,
+                    'ruta_webp' => $resultado['webp'],
+                    'orden' => $imgIdx + 1,
+                ]);
+
+                Log::debug('[CrearPedidoEditableController] 📸 Imagen prenda guardada', [
+                    'prenda_id' => $prenda->id,
+                    'webp' => $resultado['webp'],
+                ]);
+
+                $imgIdx++;
+            }
+
+            // ==================== TELAS ====================
+            if (isset($item['telas']) && is_array($item['telas'])) {
+                $telasRelacion = $prenda->coloresTelas;
+                
+                foreach ($item['telas'] as $telaIdx => $tela) {
+                    if (!isset($telasRelacion[$telaIdx])) {
+                        continue;
+                    }
+
+                    $imgIdx = 0;
+                    while (true) {
+                        $formKey = "prendas.{$itemIdx}.telas.{$telaIdx}.imagenes.{$imgIdx}";
+                        if (!$request->hasFile($formKey)) {
+                            break;
+                        }
+
+                        $archivo = $request->file($formKey);
+                        $resultado = $this->imageUploadService->guardarImagenDirecta(
+                            $archivo, $pedidoId, 'telas', null, null
+                        );
+
+                        \App\Models\PrendaFotoTelaPedido::create([
+                            'prenda_pedido_colores_telas_id' => $telasRelacion[$telaIdx]->id,
+                            'ruta_webp' => $resultado['webp'],
+                            'orden' => $imgIdx + 1,
+                        ]);
+
+                        Log::debug('[CrearPedidoEditableController] 📸 Imagen tela guardada', [
+                            'tela_relacion_id' => $telasRelacion[$telaIdx]->id,
+                            'webp' => $resultado['webp'],
+                        ]);
+
+                        $imgIdx++;
+                    }
+                }
+            }
+
+            // ==================== PROCESOS ====================
+            if (isset($item['procesos']) && is_array($item['procesos'])) {
+                foreach ($item['procesos'] as $procesoKey => $proceso) {
+                    $nombreProceso = strtoupper($proceso['nombre'] ?? $procesoKey);
+                    
+                    // Buscar proceso en BD
+                    $procesoDetalle = $prenda->procesos()->whereHas('tipoProceso', function($q) use ($nombreProceso) {
+                        $q->where('nombre', $nombreProceso);
+                    })->first();
+
+                    if (!$procesoDetalle) {
+                        Log::warning('[CrearPedidoEditableController] Proceso no encontrado', [
+                            'prenda_id' => $prenda->id,
+                            'proceso' => $nombreProceso,
+                        ]);
+                        continue;
+                    }
+
+                    $imgIdx = 0;
+                    while (true) {
+                        $formKey = "prendas.{$itemIdx}.procesos.{$procesoKey}.imagenes.{$imgIdx}";
+                        if (!$request->hasFile($formKey)) {
+                            break;
+                        }
+
+                        $archivo = $request->file($formKey);
+                        $resultado = $this->imageUploadService->guardarImagenDirecta(
+                            $archivo, $pedidoId, 'procesos', $nombreProceso, null
+                        );
+
+                        \App\Models\PedidosProcessImagenes::create([
+                            'proceso_prenda_detalle_id' => $procesoDetalle->id,
+                            'ruta_webp' => $resultado['webp'],
+                            'orden' => $imgIdx + 1,
+                            'es_principal' => $imgIdx === 0 ? 1 : 0,
+                        ]);
+
+                        Log::debug('[CrearPedidoEditableController] 📸 Imagen proceso guardada', [
+                            'proceso_id' => $procesoDetalle->id,
+                            'tipo' => $nombreProceso,
+                            'webp' => $resultado['webp'],
+                        ]);
+
+                        $imgIdx++;
+                    }
+                }
+            }
+        }
+
+        Log::info('[CrearPedidoEditableController] ✅ Todas las imágenes procesadas y asignadas');
+    }
+
+    /**
+     * @deprecated Método obsoleto - usar procesarYAsignarImagenes()
+     */
+    private function procesarArchivosUnaVez(Request $request, ?int $pedidoId, array $items): array
+    {
+        $mapaImagenes = [];
+        $carpetaBase = $pedidoId ? "pedidos/{$pedidoId}" : "temp/" . uniqid('upload_');
+
+        Log::info('[CrearPedidoEditableController] 📸 Procesando archivos físicos UNA SOLA VEZ', [
+            'carpeta' => $carpetaBase,
+            'items_count' => count($items),
+        ]);
+
+        foreach ($items as $itemIdx => $item) {
+            // ==================== PRENDAS ====================
+            $imgIdx = 0;
+            while (true) {
+                $formKey = "prendas.{$itemIdx}.imagenes.{$imgIdx}";
+                if (!$request->hasFile($formKey)) {
+                    break;
+                }
+
+                $archivo = $request->file($formKey);
+                $resultado = $this->imageUploadService->guardarImagenDirecta(
+                    $archivo, $pedidoId ?? 0, 'imagenes', null, null
+                );
+
+                $mapaImagenes[$formKey] = [
+                    'tipo' => 'prenda',
+                    'prenda_idx' => $itemIdx,
+                    'ruta_original' => $resultado['original'],
+                    'ruta_webp' => $resultado['webp'],
+                    'ruta_thumb' => $resultado['thumbnail'],
+                ];
+
+                Log::debug('[CrearPedidoEditableController] 📸 Archivo procesado', [
+                    'form_key' => $formKey,
+                    'tipo' => 'prenda',
+                    'webp' => $resultado['webp'],
+                ]);
+
+                $imgIdx++;
+            }
+
+            // ==================== TELAS ====================
+            if (isset($item['telas']) && is_array($item['telas'])) {
+                foreach ($item['telas'] as $telaIdx => $tela) {
+                    $imgIdx = 0;
+                    while (true) {
+                        $formKey = "prendas.{$itemIdx}.telas.{$telaIdx}.imagenes.{$imgIdx}";
+                        if (!$request->hasFile($formKey)) {
+                            break;
+                        }
+
+                        $archivo = $request->file($formKey);
+                        $resultado = $this->imageUploadService->guardarImagenDirecta(
+                            $archivo, $pedidoId ?? 0, 'imagenes', null, null
+                        );
+
+                        $mapaImagenes[$formKey] = [
+                            'tipo' => 'tela',
+                            'prenda_idx' => $itemIdx,
+                            'tela_idx' => $telaIdx,
+                            'ruta_original' => $resultado['original'],
+                            'ruta_webp' => $resultado['webp'],
+                            'ruta_thumb' => $resultado['thumbnail'],
+                        ];
+
+                        Log::debug('[CrearPedidoEditableController] 📸 Archivo procesado', [
+                            'form_key' => $formKey,
+                            'tipo' => 'tela',
+                            'webp' => $resultado['webp'],
+                        ]);
+
+                        $imgIdx++;
+                    }
+                }
+            }
+
+            // ==================== PROCESOS ====================
+            if (isset($item['procesos']) && is_array($item['procesos'])) {
+                foreach ($item['procesos'] as $procesoKey => $proceso) {
+                    $nombreProceso = $proceso['nombre'] ?? $procesoKey;
+                    $imgIdx = 0;
+                    
+                    while (true) {
+                        $formKey = "prendas.{$itemIdx}.procesos.{$procesoKey}.imagenes.{$imgIdx}";
+                        if (!$request->hasFile($formKey)) {
+                            break;
+                        }
+
+                        $archivo = $request->file($formKey);
+                        $resultado = $this->imageUploadService->guardarImagenDirecta(
+                            $archivo, $pedidoId ?? 0, 'imagenes', null, null
+                        );
+
+                        $mapaImagenes[$formKey] = [
+                            'tipo' => 'proceso',
+                            'prenda_idx' => $itemIdx,
+                            'proceso_key' => $procesoKey,
+                            'proceso_nombre' => strtoupper($nombreProceso),
+                            'ruta_original' => $resultado['original'],
+                            'ruta_webp' => $resultado['webp'],
+                            'ruta_thumb' => $resultado['thumbnail'],
+                        ];
+
+                        Log::debug('[CrearPedidoEditableController] 📸 Archivo procesado', [
+                            'form_key' => $formKey,
+                            'tipo' => 'proceso',
+                            'nombre' => $nombreProceso,
+                            'webp' => $resultado['webp'],
+                        ]);
+
+                        $imgIdx++;
+                    }
+                }
+            }
+        }
+
+        Log::info('[CrearPedidoEditableController] ✅ Archivos procesados', [
+            'total_archivos' => count($mapaImagenes),
+            'tipos' => array_count_values(array_column($mapaImagenes, 'tipo')),
+        ]);
+
+        return $mapaImagenes;
+    }
+
+    /**
+     * Mover imágenes de temp/ a pedidos/{id}/ y actualizar BD
+     * 
+     * @param int $pedidoId
+     * @param array $mapaImagenes
+     */
+    private function relocalizarImagenesAPedido(int $pedidoId, array $mapaImagenes): void
+    {
+        if (empty($mapaImagenes)) {
+            return;
+        }
+
+        Log::info('[CrearPedidoEditableController] 🚚 Relocalizando imágenes', [
+            'pedido_id' => $pedidoId,
+            'imagenes_count' => count($mapaImagenes),
+        ]);
+
+        // Obtener pedido y prendas
+        $pedido = \App\Models\PedidoProduccion::with('prendas.procesos', 'prendas.coloresTelas')->findOrFail($pedidoId);
+        $prendas = $pedido->prendas;
+
+        foreach ($mapaImagenes as $formKey => $info) {
+            $prendaIdx = $info['prenda_idx'];
+            
+            if (!isset($prendas[$prendaIdx])) {
+                Log::warning('[CrearPedidoEditableController] Prenda no encontrada', [
+                    'prenda_idx' => $prendaIdx,
+                    'form_key' => $formKey,
+                ]);
+                continue;
+            }
+
+            $prenda = $prendas[$prendaIdx];
+
+            // Mover archivos de pedidos/0/ a pedidos/{pedidoId}/
+            $rutaOriginalOld = $info['ruta_original'];
+            $rutaWebpOld = $info['ruta_webp'];
+            $rutaThumbOld = $info['ruta_thumb'];
+
+            $rutaOriginalNew = str_replace('pedidos/0/', "pedidos/{$pedidoId}/", $rutaOriginalOld);
+            $rutaWebpNew = str_replace('pedidos/0/', "pedidos/{$pedidoId}/", $rutaWebpOld);
+            $rutaThumbNew = str_replace('pedidos/0/', "pedidos/{$pedidoId}/", $rutaThumbOld);
+
+            // Crear directorio destino
+            $dirDestino = dirname(storage_path("app/public/{$rutaWebpNew}"));
+            if (!file_exists($dirDestino)) {
+                mkdir($dirDestino, 0755, true);
+            }
+
+            // Mover archivos
+            Storage::disk('public')->move($rutaOriginalOld, $rutaOriginalNew);
+            Storage::disk('public')->move($rutaWebpOld, $rutaWebpNew);
+            Storage::disk('public')->move($rutaThumbOld, $rutaThumbNew);
+
+            // Asignar según tipo
+            if ($info['tipo'] === 'prenda') {
+                \App\Models\PrendaFotoPedido::create([
+                    'prenda_pedido_id' => $prenda->id,
+                    'ruta_original' => $rutaOriginalNew,
+                    'ruta_webp' => $rutaWebpNew,
+                ]);
+            }
+            elseif ($info['tipo'] === 'tela') {
+                $telaIdx = $info['tela_idx'] ?? 0;
+                $telasRelacion = $prenda->coloresTelas;
+                
+                if (isset($telasRelacion[$telaIdx])) {
+                    \App\Models\PrendaFotoTelaPedido::create([
+                        'prenda_pedido_colores_telas_id' => $telasRelacion[$telaIdx]->id,
+                        'ruta_original' => $rutaOriginalNew,
+                        'ruta_webp' => $rutaWebpNew,
+                    ]);
+                }
+            }
+            elseif ($info['tipo'] === 'proceso') {
+                $procesoNombre = $info['proceso_nombre'];
+                $proceso = $prenda->procesos()->whereHas('tipoProceso', function($q) use ($procesoNombre) {
+                    $q->where('nombre', $procesoNombre);
+                })->first();
+
+                if ($proceso) {
+                    \App\Models\PedidosProcessImagenes::create([
+                        'proceso_prenda_detalle_id' => $proceso->id,
+                        'ruta_original' => $rutaOriginalNew,
+                        'ruta_webp' => $rutaWebpNew,
+                    ]);
+                }
+            }
+        }
+
+        // Eliminar carpeta temp/
+        Storage::disk('public')->deleteDirectory('pedidos/0');
+
+        Log::info('[CrearPedidoEditableController] ✅ Imágenes relocalizadas exitosamente');
     }
 
     /**
@@ -569,28 +1000,104 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
-     * Guardar imagen y retornar ruta
+     * Guardar imagen y retornar ruta webp
+     * Procesa imagen a WebP y guarda en temp
      * 
      * @param \Illuminate\Http\UploadedFile $archivo
      * @param string $carpeta
-     * @return string
+     * @return string Ruta webp para relocalizar después
      */
     private function guardarImagen($archivo, string $carpeta): string
     {
+        // Generar UUID para agrupar uploads temporales
+        $tempUuid = \Illuminate\Support\Str::uuid()->toString();
+        
         // Generar nombre único
-        $nombreArchivo = time() . '_' . uniqid() . '.' . $archivo->getClientOriginalExtension();
+        $filename = time() . '_' . uniqid();
         
-        // Guardar en storage/app/public/{carpeta}
-        $ruta = $archivo->storeAs("{$carpeta}/" . date('Y/m'), $nombreArchivo, 'public');
+        // Procesar imagen (original + WebP + thumbnail)
+        $resultado = $this->imageUploadService->processAndSaveImage(
+            $archivo,
+            $filename,
+            $carpeta,
+            $tempUuid
+        );
         
-        return $ruta;
+        // Retornar ruta WebP (será relocalizada después)
+        return $resultado['webp'];
     }
 
     /**
-     * Subir imágenes de prenda
+     * NUEVO ENDPOINT: Subir imagen directamente a pedidos/{pedido_id}/{tipo}/
+     * POST /asesores/pedidos-editable/subir-imagen
+     * 
+     * ✅ Requiere pedido_id existente
+     * ✅ Guarda directamente sin pasos intermedios
+     * ✅ Soporta subcarpetas (para procesos)
+     * 
+     * Body:
+     * - imagen: file (required)
+     * - pedido_id: int (required)
+     * - tipo: string (required) - 'prendas', 'telas', 'procesos'
+     * - subcarpeta: string (optional) - ej: 'ESTAMPADO' para procesos
+     * - filename: string (optional) - nombre personalizado
      * 
      * @param Request $request
      * @return JsonResponse
+     */
+    public function subirImagen(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'imagen' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240', // 10MB
+                'pedido_id' => 'required|integer|exists:pedidos,id',
+                'tipo' => 'required|string|in:prendas,telas,procesos,logos,reflectivos',
+                'subcarpeta' => 'nullable|string|max:100',
+                'filename' => 'nullable|string|max:100',
+            ]);
+
+            // Guardar imagen directamente en pedidos/{pedido_id}/{tipo}/
+            $resultado = $this->imageUploadService->guardarImagenDirecta(
+                $request->file('imagen'),
+                $validated['pedido_id'],
+                $validated['tipo'],
+                $validated['subcarpeta'] ?? null,
+                $validated['filename'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen guardada exitosamente',
+                'data' => [
+                    'ruta_original' => $resultado['original'],
+                    'ruta_webp' => $resultado['webp'],
+                    'thumbnail' => $resultado['thumbnail'],
+                    'url_webp' => Storage::url($resultado['webp']),
+                    'url_original' => Storage::url($resultado['original']),
+                ],
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('[CrearPedidoEditableController] Error subiendo imagen directa', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al subir imagen: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * @deprecated Usar subirImagen() con pedido_id en su lugar
      */
     public function subirImagenesPrenda(Request $request): JsonResponse
     {
@@ -598,22 +1105,40 @@ class CrearPedidoEditableController extends Controller
             $request->validate([
                 'imagenes' => 'required|array|min:1',
                 'imagenes.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB
+                'temp_uuid' => 'nullable|string',
             ]);
 
+            // Generar UUID si no está presente (agrupa uploads del mismo lote)
+            $tempUuid = $request->input('temp_uuid') ?? \Illuminate\Support\Str::uuid()->toString();
+            
             $uploadedPaths = [];
+            $prendaIndex = 0; // Se usa para generar nombre única
 
             foreach ($request->file('imagenes') as $imagen) {
-                $path = $imagen->store('prendas/temp', 'public');
+                $this->imageUploadService->validateImage($imagen);
+                
+                $result = $this->imageUploadService->uploadPrendaImage(
+                    $imagen,
+                    $prendaIndex,
+                    null,
+                    $tempUuid
+                );
+
                 $uploadedPaths[] = [
-                    'path' => $path,
-                    'url' => asset('storage/' . $path),
+                    'ruta_webp' => $result['ruta_webp'],
+                    'ruta_original' => $result['ruta_original'],
+                    'url' => $result['url'],
+                    'thumbnail' => $result['thumbnail'],
                 ];
+
+                $prendaIndex++;
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Imágenes subidas correctamente',
+                'message' => count($uploadedPaths) . ' imagen(es) subida(s) temporalmente',
                 'imagenes' => $uploadedPaths,
+                'temp_uuid' => $tempUuid,
             ]);
         } catch (\Exception $e) {
             return response()->json([

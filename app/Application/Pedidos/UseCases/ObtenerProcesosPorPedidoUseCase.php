@@ -27,7 +27,7 @@ class ObtenerProcesosPorPedidoUseCase
     public function ejecutar($id): array
     {
         // Buscar por numero_pedido o id
-        $orden = Pedidos::where('numero_pedido', $id)
+        $orden = PedidoProduccion::where('numero_pedido', $id)
             ->orWhere('id', $id)
             ->firstOrFail();
 

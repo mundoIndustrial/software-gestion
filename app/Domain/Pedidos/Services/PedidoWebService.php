@@ -14,6 +14,7 @@ use App\Models\PedidosProcesosPrendaTalla;
 use App\Models\PedidosProcessImagenes;
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
+use App\Application\Services\ImageUploadService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,14 +25,28 @@ use Illuminate\Support\Facades\Storage;
  * 
  * Servicio unificado para crear pedidos completos con todas sus relaciones
  * Guarda en todas las tablas: prendas, tallas, variantes, procesos, imágenes
+ * 
+ * ✅ REFACTORIZADO: Ahora usa guardarImagenDirecta() sin carpetas temporales
  */
 class PedidoWebService
 {
     private const STORAGE_DISK = 'public';
-    private const IMAGEN_PATH_PRENDA = 'prendas/fotos';
-    private const IMAGEN_PATH_TELA = 'telas/fotos';
-    private const IMAGEN_PATH_PROCESOS = 'procesos/fotos';
-    private const IMAGEN_PATH_EPP = 'epp/fotos';
+    private PrendaImagenService $prendaImagenService;
+    private TelaImagenService $telaImagenService;
+    private ProcesoImagenService $procesoImagenService;
+    private ImageUploadService $imageUploadService;
+
+    public function __construct(
+        PrendaImagenService $prendaImagenService = null,
+        TelaImagenService $telaImagenService = null,
+        ProcesoImagenService $procesoImagenService = null,
+        ImageUploadService $imageUploadService = null
+    ) {
+        $this->prendaImagenService = $prendaImagenService ?? app(PrendaImagenService::class);
+        $this->telaImagenService = $telaImagenService ?? app(TelaImagenService::class);
+        $this->procesoImagenService = $procesoImagenService ?? app(ProcesoImagenService::class);
+        $this->imageUploadService = $imageUploadService ?? app(ImageUploadService::class);
+    }
 
     /**
      * Crear pedido completo con todas sus prendas, procesos e imágenes
@@ -131,10 +146,11 @@ class PedidoWebService
             $this->crearTelasDesdeFormulario($prenda, $itemData['telas']);
         }
 
-        // Crear imágenes de prenda
-        if (isset($itemData['imagenes']) && is_array($itemData['imagenes'])) {
-            $this->guardarImagenesPrenda($prenda, $itemData['imagenes']);
-        }
+        // ❌ DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
+        // Las imágenes YA NO se procesan aquí para evitar duplicación
+        // if (isset($itemData['imagenes']) && is_array($itemData['imagenes'])) {
+        //     $this->guardarImagenesPrenda($prenda, $itemData['imagenes']);
+        // }
 
         // 🔍 DEBUG: Verificar procesos
         $tieneProc = isset($itemData['procesos']) && is_array($itemData['procesos']) && count($itemData['procesos']) > 0;
@@ -248,10 +264,11 @@ class PedidoWebService
                     'color_tela_id' => $colorTela->id,
                 ]);
 
+                // ❌ DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
                 // Guardar imágenes de tela si existen
-                if (isset($telaData['imagenes']) && is_array($telaData['imagenes'])) {
-                    $this->guardarImagenesTela($colorTela, $telaData['imagenes']);
-                }
+                // if (isset($telaData['imagenes']) && is_array($telaData['imagenes'])) {
+                //     $this->guardarImagenesTela($colorTela, $telaData['imagenes'], $prenda->pedido_produccion_id);
+                // }
             } else {
                 // Buscar por nombre/referencia si solo hay nombres
                 $telaId = null;
@@ -287,10 +304,11 @@ class PedidoWebService
                         'color_id' => $colorId,
                     ]);
 
+                    // ❌ DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
                     // Guardar imágenes de tela si existen
-                    if (isset($telaData['imagenes']) && is_array($telaData['imagenes'])) {
-                        $this->guardarImagenesTela($colorTela, $telaData['imagenes']);
-                    }
+                    // if (isset($telaData['imagenes']) && is_array($telaData['imagenes'])) {
+                    //     $this->guardarImagenesTela($colorTela, $telaData['imagenes'], $prenda->pedido_produccion_id);
+                    // }
                 }
             }
         }
@@ -305,47 +323,100 @@ class PedidoWebService
      * Guardar imágenes de tela
      * Nota: imagenes son rutas guardadas (strings), no UploadedFile
      */
-    private function guardarImagenesTela(PrendaPedidoColorTela $colorTela, array $imagenes): void
+    private function guardarImagenesTela(PrendaPedidoColorTela $colorTela, array $imagenes, int $pedidoId): void
     {
-        foreach ($imagenes as $index => $imagen) {
-            if (is_string($imagen)) {
-                $rutaWebp = $this->convertirAWebp($imagen);
-                PrendaFotoTelaPedido::create([
-                    'prenda_pedido_colores_telas_id' => $colorTela->id,
-                    'ruta_original' => $imagen,
-                    'ruta_webp' => $rutaWebp,
-                    'orden' => $index + 1,
-                ]);
-                Log::info('[PedidoWebService] ✅ Imagen tela guardada', [
+        if (empty($imagenes)) {
+            return;
+        }
+
+        try {
+            // 1. Relocalizar imágenes de temp a estructura final
+            $rutasFinales = $this->imagenRelocalizadorService->relocalizarImagenes(
+                $pedidoId,
+                $imagenes,
+                'telas'
+            );
+
+            if (empty($rutasFinales)) {
+                Log::warning('[PedidoWebService] No se pudieron relocalizar imágenes de tela', [
                     'color_tela_id' => $colorTela->id,
-                    'ruta' => $imagen,
-                    'index' => $index,
+                    'cantidad_originales' => count($imagenes),
                 ]);
+                return;
             }
+
+            // 2. Guardar referencias en BD usando TelaImagenService
+            $telaData = [
+                'color_id' => $colorTela->color_id,
+                'tela_id' => $colorTela->tela_id,
+                'fotos' => $rutasFinales,
+            ];
+
+            $this->telaImagenService->guardarFotosTelas(
+                $colorTela->prenda_pedido_id,
+                $pedidoId,
+                [$telaData]
+            );
+
+            Log::info('[PedidoWebService] ✅ Imágenes tela relocalizadas y guardadas', [
+                'color_tela_id' => $colorTela->id,
+                'pedido_id' => $pedidoId,
+                'cantidad_originales' => count($imagenes),
+                'cantidad_finales' => count($rutasFinales),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[PedidoWebService] Error guardando imágenes tela', [
+                'color_tela_id' => $colorTela->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
     /**
      * Guardar imágenes de prenda
-     * Nota: imagenes son rutas guardadas (strings), no UploadedFile
+     * Nota: imagenes son rutas guardadas (strings), pueden estar en temp o finales
+     * 1. Relocaliza desde temp a pedidos/{pedido_id}/prendas/
+     * 2. Usa PrendaImagenService para guardar referencias en BD
      */
     private function guardarImagenesPrenda(PrendaPedido $prenda, array $imagenes): void
     {
-        foreach ($imagenes as $index => $imagen) {
-            if (is_string($imagen)) {
-                $rutaWebp = $this->convertirAWebp($imagen);
-                PrendaFotoPedido::create([
-                    'prenda_pedido_id' => $prenda->id,
-                    'ruta_original' => $imagen,
-                    'ruta_webp' => $rutaWebp,
-                    'orden' => $index + 1,
-                ]);
-                Log::info('[PedidoWebService] ✅ Imagen prenda guardada', [
+        if (empty($imagenes)) {
+            return;
+        }
+
+        try {
+            // 1. Relocalizar imágenes de temp a estructura final
+            $rutasFinales = $this->imagenRelocalizadorService->relocalizarImagenes(
+                $prenda->pedido_produccion_id,
+                $imagenes
+            );
+
+            if (empty($rutasFinales)) {
+                Log::warning('[PedidoWebService] No se pudieron relocalizar imágenes de prenda', [
                     'prenda_id' => $prenda->id,
-                    'ruta' => $imagen,
-                    'index' => $index,
+                    'cantidad_originales' => count($imagenes),
                 ]);
+                return;
             }
+
+            // 2. Guardar referencias en BD usando PrendaImagenService
+            $this->prendaImagenService->guardarFotosPrenda(
+                $prenda->id,
+                $prenda->pedido_produccion_id,
+                $rutasFinales
+            );
+
+            Log::info('[PedidoWebService] ✅ Imágenes prenda relocalizadas y guardadas', [
+                'prenda_id' => $prenda->id,
+                'pedido_id' => $prenda->pedido_produccion_id,
+                'cantidad_originales' => count($imagenes),
+                'cantidad_finales' => count($rutasFinales),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[PedidoWebService] Error guardando imágenes prenda', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -439,7 +510,8 @@ class PedidoWebService
 
             // Crear imágenes del proceso
             if (isset($datosProceso['imagenes']) && is_array($datosProceso['imagenes'])) {
-                $this->guardarImagenesProceso($procesoPrenda, $datosProceso['imagenes']);
+                // ❌ NO LLAMAR: Imágenes ya procesadas en controller
+                // $this->guardarImagenesProceso($procesoPrenda, $datosProceso['imagenes']);
             }
         }
 
@@ -483,36 +555,109 @@ class PedidoWebService
     }
 
     /**
-     * Guardar imágenes de proceso
-     * Nota: imagenes son rutas guardadas (strings), no UploadedFile
+     * Guardar imágenes de proceso usando sistema directo (sin relocalización)
+     * 
+     * ✅ REFACTORIZADO: Ya no usa relocalización
+     * ✅ Si recibe UploadedFile, guarda directo con ImageUploadService
+     * ✅ Si recibe strings (rutas ya guardadas), las guarda en BD
+     * 
+     * @param PedidosProcesosPrendaDetalle $proceso
+     * @param array $imagenes Array de UploadedFile o strings (rutas)
      */
     private function guardarImagenesProceso(PedidosProcesosPrendaDetalle $proceso, array $imagenes): void
     {
-        foreach ($imagenes as $index => $imagen) {
-            if (is_string($imagen)) {
-                $rutaWebp = $this->convertirAWebp($imagen);
-                PedidosProcessImagenes::create([
-                    'proceso_prenda_detalle_id' => $proceso->id,
-                    'ruta_original' => $imagen,
-                    'ruta_webp' => $rutaWebp,
-                    'orden' => $index + 1,
-                    'es_principal' => $index === 0 ? 1 : 0,
-                ]);
-                Log::info('[PedidoWebService] ✅ Imagen proceso guardada', [
-                    'proceso_id' => $proceso->id,
-                    'ruta' => $imagen,
-                ]);
+        if (empty($imagenes)) {
+            return;
+        }
+
+        try {
+            $prenda = $proceso->prenda;
+            if (!$prenda) {
+                Log::warning('[PedidoWebService] No se pudo obtener prenda para guardar imágenes proceso');
+                return;
             }
+
+            $pedidoId = $prenda->pedido_produccion_id;
+            $nombreProceso = $proceso->proceso->nombre ?? 'proceso';
+
+            // ❌ NO PROCESAR ARCHIVOS AQUÍ - Ya fueron procesados en controller
+            Log::debug('[PedidoWebService] guardarImagenesProceso: SKIP processing', [
+                'proceso_id' => $proceso->id,
+                'pedido_id' => $pedidoId,
+                'imagenes_count' => count($imagenes),
+            ]);
+
+            return;
+            
+            // ⚠️ CÓDIGO OBSOLETO COMENTADO - NO USAR
+            // Procesar cada imagen
+            /*
+            foreach ($imagenes as $index => $imagen) {
+                // Si es UploadedFile, guardar directamente
+                if ($imagen instanceof UploadedFile) {
+                    $resultado = $this->imageUploadService->guardarImagenDirecta(
+                        $imagen,
+                        $pedidoId,
+                        'procesos',
+                        $nombreProceso, // subcarpeta: ESTAMPADO, BORDADO, etc.
+                        null // filename autogenerado
+                    );
+
+                    PedidosProcessImagenes::create([
+                        'proceso_prenda_detalle_id' => $proceso->id,
+                        'ruta_original' => $resultado['original'],
+                        'ruta_webp' => $resultado['webp'],
+                        'orden' => $index + 1,
+                        'es_principal' => $index === 0 ? 1 : 0,
+                    ]);
+                }
+                // Si es string (ruta ya guardada), solo guardar en BD
+                elseif (is_string($imagen)) {
+                    $rutaWebp = str_replace(['.jpg', '.png', '.jpeg'], '.webp', $imagen);
+                    
+                    PedidosProcessImagenes::create([
+                        'proceso_prenda_detalle_id' => $proceso->id,
+                        'ruta_original' => $imagen,
+                        'ruta_webp' => $rutaWebp,
+                        'orden' => $index + 1,
+                        'es_principal' => $index === 0 ? 1 : 0,
+                    ]);
+                }
+            }
+
+            Log::info('[PedidoWebService] ✅ Imágenes proceso guardadas directamente', [
+                'proceso_id' => $proceso->id,
+                'pedido_id' => $pedidoId,
+                'nombre_proceso' => $nombreProceso,
+                'cantidad' => count($imagenes),
+            ]);
+            */
+        } catch (\Exception $e) {
+            Log::error('[PedidoWebService] Error guardando imágenes proceso', [
+                'proceso_id' => $proceso->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
     /**
-     * Guardar archivo en storage
+     * Guardar archivo en storage con formato centralizado
+     * @deprecated Usar ImageUploadService::processAndSaveImage() en su lugar
      */
     private function guardarArchivo(UploadedFile $archivo, string $carpeta): string
     {
         $nombreArchivo = time() . '_' . uniqid() . '.' . $archivo->getClientOriginalExtension();
-        $ruta = $archivo->storeAs("{$carpeta}/" . date('Y/m'), $nombreArchivo, self::STORAGE_DISK);
+        $tempUuid = \Illuminate\Support\Str::uuid()->toString();
+        
+        // NUEVO: Formato centralizado temp/{uuid}/{carpeta}/
+        $ruta = $archivo->storeAs("temp/{$tempUuid}/{$carpeta}", $nombreArchivo, self::STORAGE_DISK);
+
+        Log::warning('[PedidoWebService] Usando método guardarArchivo() deprecado', [
+            'carpeta' => $carpeta,
+            'ruta' => $ruta,
+            'sugerencia' => 'Usar ImageUploadService::processAndSaveImage() para WebP y mejor estructura',
+        ]);
 
         return $ruta;
     }

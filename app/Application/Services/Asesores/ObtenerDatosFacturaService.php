@@ -28,7 +28,7 @@ class ObtenerDatosFacturaService
         Log::info('[FACTURA] Obteniendo datos para pedido: ' . $pedidoId);
 
         // Intentar obtener como Pedidos
-        $pedido = Pedidos::find($pedidoId);
+        $pedido = PedidoProduccion::find($pedidoId);
         
         if ($pedido) {
             // Verificar permisos
@@ -52,7 +52,7 @@ class ObtenerDatosFacturaService
     /**
      * Obtener datos de factura para Pedidos
      */
-    private function obtenerDatosPedidos(Pedidos $pedido): array
+    private function obtenerDatosPedidos(PedidoProduccion $pedido): array
     {
         Log::info('[FACTURA] Procesando Pedidos', ['id' => $pedido->id]);
 
@@ -112,7 +112,7 @@ class ObtenerDatosFacturaService
     {
         Log::info('[FACTURA-RESUMEN] Obteniendo resumen para: ' . $pedidoId);
 
-        $pedido = Pedidos::find($pedidoId);
+        $pedido = PedidoProduccion::find($pedidoId);
         
         if (!$pedido) {
             $pedido = LogoPedido::find($pedidoId);

@@ -36,7 +36,7 @@ class EliminarPedidoService
         $userId = Auth::id();
         
         // Obtener el pedido con mayor tolerancia
-        $pedidoData = Pedidos::where('numero_pedido', $numeroPedido)
+        $pedidoData = PedidoProduccion::where('numero_pedido', $numeroPedido)
             ->where('asesor_id', $userId)
             ->first();
 

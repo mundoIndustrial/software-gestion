@@ -60,7 +60,7 @@ class CopiarImagenesCotizacionAPedidoService
             }
 
             // Obtener el pedido y su primera prenda
-            $pedido = \App\Models\Pedidos::findOrFail($pedidoId);
+            $pedido = \App\Models\PedidoProduccion::findOrFail($pedidoId);
             $primeraPrenda = \App\Models\PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
                 ->orderBy('id')
                 ->first();
@@ -150,7 +150,7 @@ class CopiarImagenesCotizacionAPedidoService
 
             // Obtener prendas del pedido en el mismo orden de creaciÃ³n
             // Obtener el numero_pedido desde el pedido_produccion_id
-            $pedido = \App\Models\Pedidos::findOrFail($pedidoId);
+            $pedido = \App\Models\PedidoProduccion::findOrFail($pedidoId);
             $prendasPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
                 ->orderBy('id')
                 ->get();

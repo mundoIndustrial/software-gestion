@@ -5,6 +5,7 @@ namespace App\Application\Services\Asesores;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ObtenerPedidoDetalleService
 {
@@ -12,10 +13,10 @@ class ObtenerPedidoDetalleService
      * Obtener un pedido con todos sus detalles y relaciones
      * 
      * @param int|string $pedidoIdentifier NÃºmero de pedido o ID
-     * @return Pedidos
+     * @return PedidoProduccion
      * @throws \Exception
      */
-    public function obtener($pedidoIdentifier): Pedidos
+    public function obtener($pedidoIdentifier): PedidoProduccion
     {
         Log::info('ðŸ“– [DETALLE] Obteniendo detalles del pedido', [
             'identificador' => $pedidoIdentifier
@@ -39,11 +40,11 @@ class ObtenerPedidoDetalleService
     /**
      * Obtener un pedido con prendas
      */
-    public function obtenerConPrendas($pedidoIdentifier): Pedidos
+    public function obtenerConPrendas($pedidoIdentifier): PedidoProduccion
     {
         Log::info(' [DETALLE-PRENDAS] Obteniendo con prendas');
 
-        $pedido = Pedidos::findOrFail($this->obtenerPedido($pedidoIdentifier)->id);
+        $pedido = PedidoProduccion::findOrFail($this->obtenerPedido($pedidoIdentifier)->id);
         $pedido->load(['prendas' => function ($q) {
             $q->with(['procesos' => function ($q2) {
                 $q2->orderBy('created_at', 'desc');
@@ -60,7 +61,7 @@ class ObtenerPedidoDetalleService
     /**
      * Obtener un pedido con todos sus datos
      */
-    public function obtenerCompleto($pedidoIdentifier): Pedidos
+    public function obtenerCompleto($pedidoIdentifier): PedidoProduccion
     {
         Log::info(' [DETALLE-COMPLETO] Obteniendo datos completos');
 
@@ -557,18 +558,18 @@ class ObtenerPedidoDetalleService
     /**
      * Obtener el pedido (por nÃºmero o ID)
      */
-    private function obtenerPedido($pedidoIdentifier): Pedidos
+    private function obtenerPedido($pedidoIdentifier): PedidoProduccion
     {
         // Si es nÃºmero (numÃ©rico > 100)
         if (is_numeric($pedidoIdentifier) && $pedidoIdentifier > 100) {
-            $pedido = Pedidos::where('numero_pedido', $pedidoIdentifier)->first();
+            $pedido = PedidoProduccion::where('numero_pedido', $pedidoIdentifier)->first();
             if ($pedido) {
                 return $pedido;
             }
         }
 
         // Intentar por ID
-        $pedido = Pedidos::find($pedidoIdentifier);
+        $pedido = PedidoProduccion::find($pedidoIdentifier);
         if ($pedido) {
             return $pedido;
         }
@@ -643,6 +644,215 @@ class ObtenerPedidoDetalleService
             ->get()
             ->flatMap->procesos
             ->count();
+    }
+
+    /**
+     * Obtener una prenda específica del pedido con todos sus procesos
+     * 
+     * @param int $pedidoId
+     * @param int $prendaId
+     * @return array
+     */
+    public function obtenerPrendaConProcesos($pedidoId, $prendaId): array
+    {
+        Log::info('🔍 [PRENDA-DETALLE] Obteniendo prenda con procesos', [
+            'pedido_id' => $pedidoId,
+            'prenda_id' => $prendaId
+        ]);
+
+        $prenda = \App\Models\PrendaPedido::where('id', $prendaId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->with([
+                'procesos' => function ($q) {
+                    $q->with(['tipoProceso', 'imagenes'])
+                      ->orderBy('created_at', 'desc');
+                },
+                'fotos',
+                'fotosTelas',
+                'variantes' => function ($q) {
+                    $q->with(['tipoManga', 'tipoBroche']);
+                }
+            ])
+            ->firstOrFail();
+
+        Log::info('✅ [PRENDA-ENCONTRADA] Prenda básica cargada', [
+            'prenda_id' => $prenda->id,
+            'prenda_nombre' => $prenda->nombre_prenda,
+            'procesos_count' => $prenda->procesos->count(),
+            'fotos_count' => $prenda->fotos->count(),
+            'variantes_count' => $prenda->variantes->count()
+        ]);
+
+        // Transformar prenda a estructura esperada por el frontend
+        $prendaTransformada = $this->transformarPrendaParaEdicion($prenda);
+
+        Log::info('✅ [PRENDA-TRANSFORMADA] Prenda transformada completamente', [
+            'prenda_id' => $prenda->id,
+            'procesos_count' => count($prendaTransformada['procesos'] ?? []),
+            'tallas_dama_count' => count($prendaTransformada['tallas_dama'] ?? []),
+            'tallas_caballero_count' => count($prendaTransformada['tallas_caballero'] ?? []),
+            'variantes_count' => count($prendaTransformada['variantes'] ?? []),
+            'colores_telas_count' => count($prendaTransformada['colores_telas'] ?? [])
+        ]);
+
+        return $prendaTransformada;
+    }
+
+    /**
+     * Transformar una prenda individual para edición (sin array)
+     */
+    private function transformarPrendaParaEdicion($prenda): array
+    {
+        Log::info('🔄 [TRANSFORMAR-INICIO] Iniciando transformación de prenda', [
+            'prenda_id' => $prenda->id,
+            'prenda_nombre' => $prenda->nombre_prenda
+        ]);
+
+        $prendaArray = $prenda->toArray();
+
+        // Procesos
+        $procesos = [];
+        if ($prenda->procesos) {
+            foreach ($prenda->procesos as $proceso) {
+                $procesos[] = $this->construirProcesoParaEdicion($proceso, $prenda->id);
+            }
+        }
+        $prendaArray['procesos'] = $procesos;
+
+        Log::info('📦 [PROCESOS-TRANSFORMADOS] ' . count($procesos) . ' procesos transformados');
+
+        // Fotos - usar ruta_webp (o ruta_original si no existe)
+        $prendaArray['imagenes'] = $prenda->fotos->map(function($foto) {
+            return $foto->ruta_webp ?? $foto->ruta_original ?? '';
+        })->filter()->toArray() ?? [];
+        
+        $prendaArray['imagenes_tela'] = $prenda->fotosTelas->map(function($foto) {
+            return $foto->ruta_webp ?? $foto->ruta_original ?? '';
+        })->filter()->toArray() ?? [];
+
+        Log::info('📸 [IMAGENES-TRANSFORMADAS] ' . count($prendaArray['imagenes']) . ' imagenes, ' . count($prendaArray['imagenes_tela']) . ' imagenes de tela');
+
+        // Tallas por género - Extraer de tabla prenda_pedido_tallas
+        $tallasDama = DB::table('prenda_pedido_tallas')
+            ->where('prenda_pedido_id', $prenda->id)
+            ->where('genero', 'DAMA')
+            ->get(['talla', 'cantidad'])
+            ->toArray();
+        
+        $tallasCaballero = DB::table('prenda_pedido_tallas')
+            ->where('prenda_pedido_id', $prenda->id)
+            ->where('genero', 'CABALLERO')
+            ->get(['talla', 'cantidad'])
+            ->toArray();
+
+        $prendaArray['tallas_dama'] = $tallasDama;
+        $prendaArray['tallas_caballero'] = $tallasCaballero;
+
+        Log::info('👗 [TALLAS-TRANSFORMADAS] Dama: ' . count($tallasDama) . ', Caballero: ' . count($tallasCaballero));
+
+        // Variantes (mangas, broches, bolsillos)
+        $variantes = [];
+        if ($prenda->variantes) {
+            foreach ($prenda->variantes as $var) {
+                $variantes[] = [
+                    'id' => $var->id,
+                    'tipo_manga' => $var->tipoManga?->nombre ?? 'Sin especificar',
+                    'tipo_manga_id' => $var->tipo_manga_id,
+                    'tipo_broche_boton' => $var->tipoBroche?->nombre ?? 'Sin especificar',
+                    'tipo_broche_boton_id' => $var->tipo_broche_boton_id,
+                    'tiene_bolsillos' => (bool)$var->tiene_bolsillos,
+                    'manga_obs' => $var->manga_obs,
+                    'broche_boton_obs' => $var->broche_boton_obs,
+                    'bolsillos_obs' => $var->bolsillos_obs
+                ];
+            }
+        }
+        $prendaArray['variantes'] = $variantes;
+
+        Log::info('⚙️ [VARIANTES-TRANSFORMADAS] ' . count($variantes) . ' variantes transformadas');
+
+        // Colores y Telas (prenda_pedido_colores_telas)
+        $coloresTelas = [];
+        $relaciones = DB::table('prenda_pedido_colores_telas')
+            ->where('prenda_pedido_id', $prenda->id)
+            ->get(['id', 'color_id', 'tela_id'])
+            ->toArray();
+
+        Log::info('🎨 [COLORES-TELAS-INICIO] Encontradas ' . count($relaciones) . ' relaciones color-tela');
+
+        foreach ($relaciones as $rel) {
+            $color = DB::table('colores_prenda')->find($rel->color_id);
+            $tela = DB::table('telas_prenda')->find($rel->tela_id);
+            
+            // Obtener fotos de esta combinación color-tela
+            $fotos = DB::table('prenda_fotos_tela_pedido')
+                ->where('prenda_pedido_colores_telas_id', $rel->id)
+                ->get(['ruta_original', 'ruta_webp', 'orden'])
+                ->toArray();
+
+            Log::info('🎨 [COLOR-TELA] Color: ' . ($color->nombre ?? 'N/A') . ', Tela: ' . ($tela->nombre ?? 'N/A') . ', Fotos: ' . count($fotos));
+
+            $coloresTelas[] = [
+                'id' => $rel->id,
+                'color_id' => $rel->color_id,
+                'color_nombre' => $color->nombre ?? 'Color desconocido',
+                'color_codigo' => $color->codigo ?? '',
+                'tela_id' => $rel->tela_id,
+                'tela_nombre' => $tela->nombre ?? 'Tela desconocida',
+                'tela_referencia' => $tela->referencia ?? '',
+                'fotos_tela' => array_map(function($f) {
+                    return [
+                        'ruta_original' => $f->ruta_original,
+                        'ruta_webp' => $f->ruta_webp,
+                        'url' => $f->ruta_webp ?? $f->ruta_original
+                    ];
+                }, $fotos)
+            ];
+        }
+        $prendaArray['colores_telas'] = $coloresTelas;
+
+        Log::info('✅ [COLORES-TELAS-COMPLETADAS] ' . count($coloresTelas) . ' combinaciones procesadas');
+        Log::info('✅ [TRANSFORMAR-COMPLETO] Transformación finalizada exitosamente', [
+            'prenda_id' => $prenda->id,
+            'tallas_dama' => count($tallasDama),
+            'tallas_caballero' => count($tallasCaballero),
+            'variantes' => count($variantes),
+            'colores_telas' => count($coloresTelas),
+            'procesos' => count($procesos)
+        ]);
+
+        return $prendaArray;
+    }
+
+    /**
+     * Construir un proceso para edición
+     */
+    private function construirProcesoParaEdicion($proceso, $prendaId): array
+    {
+        Log::info('🔧 [PROCESO-DETALLE] Construyendo proceso para edición', [
+            'proceso_id' => $proceso->id,
+            'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'Desconocido',
+            'imagenes_count' => $proceso->imagenes->count() ?? 0
+        ]);
+
+        $tallasProceso = $this->construirTallasProcesoRelacional($proceso->id);
+
+        Log::info('✅ [PROCESO-CONSTRUIDO] Proceso construido', [
+            'proceso_id' => $proceso->id,
+            'tallas_count' => count($tallasProceso),
+            'imagenes_count' => $proceso->imagenes->count() ?? 0
+        ]);
+
+        return [
+            'id' => $proceso->id,
+            'tipo' => $proceso->tipoProceso?->nombre ?? 'Tipo desconocido',
+            'ubicaciones' => $proceso->ubicaciones ? (is_array($proceso->ubicaciones) ? $proceso->ubicaciones : explode(',', $proceso->ubicaciones)) : [],
+            'observaciones' => $proceso->observaciones ?? '',
+            'tallas' => $tallasProceso,
+            'imagenes' => $proceso->imagenes->map(function($img) {
+                return $img->ruta_webp ?? $img->ruta_original ?? '';
+            })->filter()->toArray() ?? [],
+        ];
     }
 }
 

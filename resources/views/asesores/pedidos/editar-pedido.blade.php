@@ -15,6 +15,31 @@
         $esModoEdicion = true;
         $pedidoEdicion = $pedido ?? null;
     @endphp
+    
+    <!-- CRÍTICO: Definir datos del pedido ANTES de que se cargue crear-pedido-desde-cotizacion -->
+    <script>
+        console.log('🔥 [editar-pedido] Definiendo datos del pedido ANTES de todo...');
+        
+        window.modoEdicion = true;
+        window.pedidoEdicionId = {{ $pedido->id }};
+        window.pedidoEdicionData = @json($pedidoData);
+        
+        console.log('🔥 [editar-pedido] pedidoData recibido:', window.pedidoEdicionData);
+        console.log('🔥 [editar-pedido] ¿Tiene procesos?', 'procesos' in window.pedidoEdicionData);
+        
+        // IMPORTANTE: Para que abrirEditarPrendaModal() funcione correctamente
+        // Establecer datosEdicionPedido con la estructura que espera
+        window.datosEdicionPedido = {
+            numero_pedido: {{ $pedido->id }},
+            id: {{ $pedido->id }},
+            ...(window.pedidoEdicionData && window.pedidoEdicionData.pedido ? window.pedidoEdicionData.pedido : {})
+        };
+        
+        // Establecer en body para que obtenerPedidoId() lo encuentre
+        document.body.dataset.pedidoIdEdicion = {{ $pedido->id }};
+        
+        console.log('🔥 [editar-pedido] window.datosEdicionPedido =', window.datosEdicionPedido);
+    </script>
 
     <!-- Loading Overlay de Página Completa -->
     <div id="page-loading-overlay">
@@ -29,47 +54,11 @@
 @endsection
 
 @push('scripts')
-    <!-- Pasar datos del pedido a JavaScript (ANTES de otros scripts) -->
-    <script>
-        window.modoEdicion = true;
-        window.pedidoEdicionId = {{ $pedido->id }};
-        window.pedidoEdicionData = @json($pedidoData);
-
-        // Loguear las rutas exactas que se están pasando
-        if (window.pedidoEdicionData && window.pedidoEdicionData.pedido && window.pedidoEdicionData.pedido.prendas) {
-            window.pedidoEdicionData.pedido.prendas.forEach((prenda, idx) => {
-                if (prenda.fotos && prenda.fotos.length > 0) {
-                    prenda.fotos.forEach((foto, fIdx) => {
-                    });
-                }
-                
-                if (prenda.fotos_tela && prenda.fotos_tela.length > 0) {
-                    prenda.fotos_tela.forEach((foto, fIdx) => {
-                    });
-                }
-            });
-        }
-        
-        // Loguear las rutas de las imágenes de prendas
-        if (window.pedidoEdicionData && window.pedidoEdicionData.pedido && window.pedidoEdicionData.pedido.prendas) {
-            window.pedidoEdicionData.pedido.prendas.forEach((prenda, idx) => {
-                // Loguear fotos de prenda
-                if (prenda.fotos && prenda.fotos.length > 0) {
-                    prenda.fotos.forEach((foto, fIdx) => {
-                    });
-                }
-                
-                // Loguear fotos de tela
-                if (prenda.fotos_tela && prenda.fotos_tela.length > 0) {
-                    prenda.fotos_tela.forEach((foto, fIdx) => {
-                    });
-                }
-            });
-        }
-    </script>
-    
     <!-- Script de edición - carga DESPUÉS de todos los demás módulos -->
     <script src="{{ asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion.js') }}"></script>
+    
+    <!-- Componente para editar prendas con procesos desde API -->
+    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
 @endpush
 
 

@@ -357,11 +357,11 @@ class AsesoresController extends Controller
     /**
      * Mostrar un pedido específico - DELEGADO A SERVICIO
      */
-    public function show($pedido)
+    public function show($id)
     {
         try {
             // Crear DTO para el Use Case
-            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$pedido);
+            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$id);
 
             // Usar el nuevo Use Case DDD
             $pedidoData = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
@@ -375,21 +375,28 @@ class AsesoresController extends Controller
     /**
      * Mostrar formulario de edición - DELEGADO A SERVICIO
      */
-    public function edit($pedido)
+    public function edit($id)
     {
         try {
             // Crear DTO para el Use Case
-            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$pedido);
+            $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$id);
 
             // Usar el nuevo Use Case DDD
             $pedidoModel = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
             $datos = $pedidoModel; // Ya obtenemos los datos del Use Case
+            
+            \Log::info('[AsesoresController.edit] Datos obtenidos para editar', [
+                'pedidoId' => $id,
+                'tipo_dato' => gettype($datos),
+                'tiene_procesos' => isset($datos['procesos']) ? count($datos['procesos']) : 0
+            ]);
 
             return view('asesores.pedidos.editar-pedido', [
                 'pedido' => $pedidoModel,
                 'pedidoData' => $datos,
             ]);
         } catch (\Exception $e) {
+            \Log::error('[AsesoresController.edit] Error', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
@@ -397,7 +404,7 @@ class AsesoresController extends Controller
     /**
      * Actualizar pedido - DELEGADO A USE CASE
      */
-    public function update(Request $request, $pedido)
+    public function update(Request $request, $id)
     {
         $validated = $request->validate([
             'cliente' => 'sometimes|required|string|max:255',
@@ -420,7 +427,7 @@ class AsesoresController extends Controller
 
         try {
             // Crear DTO para el Use Case
-            $dto = ActualizarProduccionPedidoDTO::fromRequest((string)$pedido, $validated);
+            $dto = ActualizarProduccionPedidoDTO::fromRequest((string)$id, $validated);
 
             // Usar el nuevo Use Case DDD
             $pedidoActualizado = $this->actualizarProduccionPedidoUseCase->ejecutar($dto);
@@ -441,7 +448,7 @@ class AsesoresController extends Controller
     /**
      * Anular pedido - DELEGADO A USE CASE
      */
-    public function destroy(Request $request, $pedido)
+    public function destroy(Request $request, $id)
     {
         try {
             $validated = $request->validate([
@@ -449,7 +456,7 @@ class AsesoresController extends Controller
             ]);
 
             // Crear DTO para el Use Case
-            $dto = AnularProduccionPedidoDTO::fromRequest((string)$pedido, $validated);
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, $validated);
 
             // Usar el nuevo Use Case DDD
             $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutar($dto);

@@ -24,7 +24,7 @@ class PedidoLogoService
     /**
      * Guardar logo en pedido
      */
-    public function guardarLogoEnPedido(Pedidos $pedido, array $logoData): void
+    public function guardarLogoEnPedido(PedidoProduccion $pedido, array $logoData): void
     {
         if (empty($logoData)) {
             Log::warning('PedidoLogoService: No hay datos de logo para guardar', [

@@ -34,9 +34,28 @@
                     const cantidad = item.cantidad || 0;
                     htmlListaPrendas += `
                         <button onclick="(function() {
+                            console.log('🔥 [ONCLICK-INICIO] Botón prenda clickeado');
+                            console.log('🔥 [ONCLICK-DATOS] item:', item);
+                            console.log('🔥 [ONCLICK-DATOS] idx:', idx);
+                            console.log('🔥 [ONCLICK-DATOS] datosEdicionPedido:', window.datosEdicionPedido);
+                            
+                            const pedidoId = window.datosEdicionPedido?.id || window.datosEdicionPedido?.numero_pedido;
+                            console.log('🔥 [ONCLICK-PEDIDO-ID] Usando pedidoId:', pedidoId);
+                            
                             Swal.close();
                             setTimeout(() => {
-                                abrirEditarPrendaEspecifica(${idx});
+                                console.log('🔥 [ONCLICK-POST-SWAL] Después de Swal.close()');
+                                console.log('🔥 [ONCLICK-CHECK-FUNC] Verificando si abrirEditarPrendaModal existe:', typeof window.abrirEditarPrendaModal);
+                                
+                                if (typeof window.abrirEditarPrendaModal === 'function') {
+                                    console.log('✅ [ONCLICK-EJECUTANDO] abrirEditarPrendaModal encontrada, ejecutando...');
+                                    window.abrirEditarPrendaModal(item, idx, pedidoId);
+                                } else {
+                                    console.error('❌ [ONCLICK-ERROR] abrirEditarPrendaModal NO ES FUNCIÓN');
+                                    console.error('Tipo actual:', typeof window.abrirEditarPrendaModal);
+                                    console.error('Valor:', window.abrirEditarPrendaModal);
+                                    console.error('Funciones disponibles:', Object.keys(window).filter(k => k.includes('abrirEditar')).slice(0, 10));
+                                }
                             }, 100);
                         })()" 
                             style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"

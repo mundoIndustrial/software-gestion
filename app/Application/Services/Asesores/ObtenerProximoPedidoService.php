@@ -16,7 +16,7 @@ class ObtenerProximoPedidoService
     {
         Log::info('ðŸ”¢ [PRÃ“XIMO PEDIDO] Buscando siguiente nÃºmero disponible');
 
-        $ultimoPedido = Pedidos::max('numero_pedido');
+        $ultimoPedido = PedidoProduccion::max('numero_pedido');
         $siguientePedido = $ultimoPedido ? $ultimoPedido + 1 : 1;
 
         Log::info('ðŸ”¢ [PRÃ“XIMO PEDIDO] Encontrado', [
@@ -35,7 +35,7 @@ class ObtenerProximoPedidoService
      */
     public function existeNumeroPedido(int $numeroPedido): bool
     {
-        $existe = Pedidos::where('numero_pedido', $numeroPedido)->exists();
+        $existe = PedidoProduccion::where('numero_pedido', $numeroPedido)->exists();
         
         Log::info('ðŸ”¢ [VALIDAR PEDIDO] NÃºmero ' . $numeroPedido . ' existe: ' . ($existe ? 'SÃ' : 'NO'));
 
@@ -51,11 +51,11 @@ class ObtenerProximoPedidoService
      */
     public function obtenerRangoDisponible(int $cantidad = 10): array
     {
-        $ultimoPedido = Pedidos::max('numero_pedido') ?? 0;
+        $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
         $proximoPedido = $ultimoPedido + 1;
 
         // Obtener los Ãºltimos nÃºmeros usados
-        $ultimosUsados = Pedidos::select('numero_pedido')
+        $ultimosUsados = PedidoProduccion::select('numero_pedido')
             ->orderBy('numero_pedido', 'desc')
             ->limit($cantidad)
             ->pluck('numero_pedido')

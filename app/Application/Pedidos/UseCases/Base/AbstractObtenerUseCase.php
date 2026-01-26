@@ -163,6 +163,8 @@ abstract class AbstractObtenerUseCase
      */
     protected function obtenerProcesos(int $pedidoId): array
     {
+        \Log::info('[AbstractObtenerUseCase] Buscando procesos del pedido', ['pedidoId' => $pedidoId]);
+        
         $procesos = \App\Models\PedidosProcesosPrendaDetalle::whereHas('prenda', function ($q) use ($pedidoId) {
             $q->where('pedido_produccion_id', $pedidoId);
         })
@@ -170,6 +172,11 @@ abstract class AbstractObtenerUseCase
             ->orderBy('created_at', 'desc')
             ->get()
             ->toArray();
+
+        \Log::info('[AbstractObtenerUseCase] Procesos encontrados', [
+            'pedidoId' => $pedidoId,
+            'cantidad' => count($procesos)
+        ]);
 
         return $procesos;
     }

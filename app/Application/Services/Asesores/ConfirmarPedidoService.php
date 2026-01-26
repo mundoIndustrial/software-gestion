@@ -13,10 +13,10 @@ class ConfirmarPedidoService
      * 
      * @param int $borradorId ID del pedido borrador
      * @param int $numeroPedido NÃºmero de pedido a asignar
-     * @return Pedidos
+     * @return PedidoProduccion
      * @throws \Exception
      */
-    public function confirmar(int $borradorId, int $numeroPedido): Pedidos
+    public function confirmar(int $borradorId, int $numeroPedido): PedidoProduccion
     {
         Log::info('ðŸ” [CONFIRMAR] Confirmando pedido borrador', [
             'borrador_id' => $borradorId,
@@ -26,7 +26,7 @@ class ConfirmarPedidoService
         DB::beginTransaction();
         try {
             // Obtener el pedido borrador
-            $pedido = Pedidos::findOrFail($borradorId);
+            $pedido = PedidoProduccion::findOrFail($borradorId);
 
             // Verificar que no tenga ya un nÃºmero asignado
             if ($pedido->numero_pedido !== null) {
@@ -67,7 +67,7 @@ class ConfirmarPedidoService
      */
     private function existeNumeroPedido(int $numeroPedido): bool
     {
-        return Pedidos::where('numero_pedido', $numeroPedido)->exists();
+        return PedidoProduccion::where('numero_pedido', $numeroPedido)->exists();
     }
 
     /**
@@ -110,7 +110,7 @@ class ConfirmarPedidoService
      */
     public function puedeConfirmarse(int $borradorId): bool
     {
-        $pedido = Pedidos::find($borradorId);
+        $pedido = PedidoProduccion::find($borradorId);
 
         if (!$pedido) {
             Log::warning(' [PUEDE-CONFIRMAR] Pedido no encontrado: ' . $borradorId);

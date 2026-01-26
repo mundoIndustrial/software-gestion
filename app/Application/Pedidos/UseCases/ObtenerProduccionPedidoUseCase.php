@@ -5,6 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\UseCases\Base\AbstractObtenerUseCase;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Use Case: Obtener ProducciÃ³n Pedido
@@ -19,7 +20,16 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
 {
     public function ejecutar(ObtenerProduccionPedidoDTO $dto)
     {
-        return $this->obtenerYEnriquecer($dto->pedidoId);
+        Log::info('[ObtenerProduccionPedidoUseCase] Iniciando obtención de pedido', ['pedidoId' => $dto->pedidoId]);
+        
+        $resultado = $this->obtenerYEnriquecer($dto->pedidoId);
+        
+        Log::info('[ObtenerProduccionPedidoUseCase] Pedido obtenido', [
+            'id' => $resultado->id ?? 'N/A',
+            'tiene_procesos' => isset($resultado->procesos) ? count($resultado->procesos) : 0
+        ]);
+        
+        return $resultado;
     }
 
     /**
@@ -27,10 +37,12 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
      */
     protected function obtenerOpciones(): array
     {
+        Log::debug('[ObtenerProduccionPedidoUseCase] Opciones: incluirProcesos = true');
+        
         return [
             'incluirPrendas' => false,
             'incluirEpps' => false,
-            'incluirProcesos' => false,
+            'incluirProcesos' => true,
             'incluirImagenes' => false,
         ];
     }

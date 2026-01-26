@@ -179,13 +179,20 @@ class ImagenProcesadorService
 
     /**
      * Obtener ruta base de prenda
+     * @throws Exception Si no se proporciona pedidoId (evita carpetas globales)
      */
     private function getRutaPrenda(int $prendaId, int $pedidoId = null): string
     {
         if ($pedidoId) {
             return "public/pedidos/{$pedidoId}/prendas/{$prendaId}";
         }
-        return self::RUTA_BASE . "/{$prendaId}";
+        
+        // ❌ PROHIBIDO: No permitir guardado en carpeta global /prendas/
+        throw new Exception(
+            "ImagenProcesadorService: Se requiere pedido_id para guardar imágenes. " .
+            "No se permite guardar en carpeta global '{$prendaId}'. " .
+            "Todas las imágenes deben ir a pedidos/{pedido_id}/prendas/"
+        );
     }
 
     /**

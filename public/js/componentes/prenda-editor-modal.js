@@ -84,13 +84,13 @@ function abrirEditarPrendas() {
 
 /**
  * Abrir modal de edición para una prenda específica
- * Usa modal dinámico para evitar conflictos CSS
+ * USA EL MODAL DE "AGREGAR PRENDA NUEVA" para la edición
  */
-function abrirEditarPrendaEspecifica(prendasIndex) {
-
+async function abrirEditarPrendaEspecifica(prendasIndex) {
+    console.log('🔥 [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
     
     if (!window.prendasEdicion) {
-
+        console.error('❌ No hay datos de prendas disponibles');
         Swal.fire('Error', 'No hay datos de prendas disponibles', 'error');
         return;
     }
@@ -99,168 +99,249 @@ function abrirEditarPrendaEspecifica(prendasIndex) {
     const pedidoId = window.prendasEdicion.pedidoId;
     
     if (!prenda) {
-
+        console.error('❌ Prenda no encontrada en índice:', prendasIndex);
         Swal.fire('Error', 'Prenda no encontrada', 'error');
         return;
     }
     
-
-
-
-
+    console.log('✅ [EDITAR-PRENDA] Prenda encontrada:', {
+        nombre: prenda.nombre_prenda,
+        id: prenda.id,
+        pedidoId: pedidoId
+    });
     
-    //  USAR MODAL DINÁMICO (sin conflictos CSS)
-    if (window.modalPrendaDinamico) {
-
-        window.modalPrendaDinamico.abrir();
-    } else {
-
-        Swal.fire('Error', 'Modal no disponible', 'error');
-        return;
-    }
-    
-    // Preparar datos en formato compatible con el modal
-    // IMPORTANTE: Usar telasAgregadas que viene del backend con estructura correcta
-    const telasAgregadas = prenda.telasAgregadas || [];
-
-    
-    // Mapear variantes del nuevo endpoint a formato esperado por el frontend
-    // Manejar tanto estructuras de array como de objeto
-    let variantesFormateadas = [];
-    
-    if (Array.isArray(prenda.variantes)) {
-        // Si es array (del backend de pedidos)
-        variantesFormateadas = prenda.variantes.map(v => ({
-            id: v.id,
-            talla: v.talla || '',
-            cantidad: v.cantidad || 0,
-            genero: v.genero || '',
-            color_id: v.color_id,
-            color_nombre: v.color_nombre,
-            tela_id: v.tela_id,
-            tela_nombre: v.tela_nombre,
-            tipo_manga_id: v.tipo_manga_id,
-            tipo_manga_nombre: v.tipo_manga_nombre,
-            tipo_broche_id: v.tipo_broche_id,
-            tipo_broche_nombre: v.tipo_broche_nombre,
-            manga_obs: v.manga_obs || '',
-            broche_boton_obs: v.broche_boton_obs || '',
-            bolsillos_obs: v.bolsillos_obs || '',
-            tiene_bolsillos: v.tiene_bolsillos || false
-        }));
-    } else if (prenda.variantes && typeof prenda.variantes === 'object') {
-        // Si es objeto (de prenda nueva creada en memoria)
-        variantesFormateadas = [{
-            manga: prenda.variantes.manga || '',
-            obs_manga: prenda.variantes.obs_manga || '',
-            tiene_bolsillos: prenda.variantes.tiene_bolsillos || false,
-            obs_bolsillos: prenda.variantes.obs_bolsillos || '',
-            broche: prenda.variantes.broche || '',
-            obs_broche: prenda.variantes.obs_broche || ''
-        }];
-    }
-    
-    const prendaParaEditar = {
-        nombre_prenda: prenda.nombre_prenda || prenda.nombre_producto || prenda.nombre || '',
-        nombre_producto: prenda.nombre_prenda || prenda.nombre_producto || prenda.nombre || '',
-        descripcion: prenda.descripcion || '',
-        origen: prenda.origen || 'bodega',
-        imagenes: prenda.imagenes || [],
-        telasAgregadas: telasAgregadas,
-        tallas: prenda.generosConTallas || prenda.tallas || prenda.tallas_estructura || {},
-        procesos: prenda.procesos || [],
-        //  Datos de tela
-        tela: prenda.tela || '',
-        color: prenda.color || '',
-        ref: prenda.ref || '',
-        referencia: prenda.referencia || '',
-        imagen_tela: prenda.imagen_tela || null,
-        imagenes_tela: prenda.imagenes_tela || [],
-        //  Variantes formateadas
-        variantes: variantesFormateadas,
-        tallas_estructura: prenda.tallas || prenda.tallas_estructura || null,
-        //  Datos de variaciones
-        obs_manga: prenda.obs_manga || '',
-        obs_bolsillos: prenda.obs_bolsillos || '',
-        obs_broche: prenda.obs_broche || '',
-        obs_reflectivo: prenda.obs_reflectivo || '',
-        tiene_reflectivo: prenda.tiene_reflectivo || false
-    };
-    
-
-
-
-
-    
-    // Guardar datos de edición en global
-    window.prendaEnEdicion = {
-        pedidoId: pedidoId,
-        prendasIndex: prendasIndex,
-        prendaOriginal: JSON.parse(JSON.stringify(prenda))
-    };
-    
-    // ESTRATEGIA 1: Usar GestionItemsUI si existe (mejor opción - misma apariencia que crear-nuevo)
-
-    if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
-
+    try {
+        // OBTENER DATOS FRESCOS DE LA BD
+        console.log('📡 [EDITAR-PRENDA] Obteniendo datos frescos del servidor...');
+        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prenda/${prenda.id}/datos`);
         
-        // Mover el modal al body para evitar que se vea clipeado
-        const modal = document.getElementById('modal-agregar-prenda-nueva');
-        if (modal && modal.parentElement !== document.body) {
-
-            document.body.appendChild(modal);
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: No se pudieron obtener los datos`);
         }
         
-        // Indicar que estamos editando
-        window.gestionItemsUI.prendaEditIndex = prendasIndex;
+        const resultado = await response.json();
         
-        // Abrir el modal
-        window.gestionItemsUI.abrirModalAgregarPrendaNueva();
-        
-        // Cargar datos en el modal
-        if (typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
-
-            window.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
+        if (!resultado.success || !resultado.prenda) {
+            throw new Error('No se recibieron datos válidos del servidor');
         }
         
+        const prendaCompleta = resultado.prenda;
+        console.log('✅ [EDITAR-PRENDA] Datos del servidor recibidos:', {
+            tallas_dama: prendaCompleta.tallas_dama?.length || 0,
+            tallas_caballero: prendaCompleta.tallas_caballero?.length || 0,
+            colores_telas: prendaCompleta.colores_telas?.length || 0,
+            variantes: prendaCompleta.variantes?.length || 0,
+            procesos: prendaCompleta.procesos?.length || 0
+        });
+        
+        // TRANSFORMAR DATOS PARA EL MODAL
+        console.log('🔄 [EDITAR-PRENDA] Transformando datos para el modal...');
+        
+        // Función auxiliar para agregar /storage/ a URLs
+        const agregarStorage = (url) => {
+            if (!url) return '';
+            if (url.startsWith('/')) return url;
+            if (url.startsWith('http')) return url;
+            return '/storage/' + url;
+        };
 
-        return;
+        // Transformar colores/telas a telasAgregadas
+        const telasAgregadas = [];
+        if (prendaCompleta.colores_telas && Array.isArray(prendaCompleta.colores_telas)) {
+            prendaCompleta.colores_telas.forEach((ct) => {
+                telasAgregadas.push({
+                    id: ct.id,
+                    color_id: ct.color_id,
+                    color: ct.color_nombre || '',
+                    codigo_color: ct.color_codigo || '',
+                    tela_id: ct.tela_id,
+                    tela: ct.tela_nombre || '',
+                    referencia: ct.tela_referencia || '',
+                    imagenes: (ct.fotos_tela || []).map(f => {
+                        const urlConStorage = agregarStorage(f.ruta_webp || f.ruta_original);
+                        return {
+                            url: urlConStorage,
+                            ruta: urlConStorage,
+                            urlDesdeDB: true
+                        };
+                    })
+                });
+            });
+        }
+        
+        console.log('✅ [EDITAR-PRENDA] telasAgregadas:', telasAgregadas.length, 'items');
+        
+        // Transformar tallas
+        const tallasPorGenero = {};
+        
+        if (prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) {
+            tallasPorGenero.DAMA = {};
+            prendaCompleta.tallas_dama.forEach(t => {
+                tallasPorGenero.DAMA[t.talla] = t.cantidad || 0;
+            });
+        }
+        
+        if (prendaCompleta.tallas_caballero && Array.isArray(prendaCompleta.tallas_caballero)) {
+            tallasPorGenero.CABALLERO = {};
+            prendaCompleta.tallas_caballero.forEach(t => {
+                tallasPorGenero.CABALLERO[t.talla] = t.cantidad || 0;
+            });
+        }
+        
+        console.log('✅ [EDITAR-PRENDA] Tallas por género:', tallasPorGenero);
+        
+        // Transformar tallas a array para compatibilidad con el modal
+        const tallasArray = [];
+        Object.entries(tallasPorGenero).forEach(([genero, tallas]) => {
+            Object.entries(tallas).forEach(([talla, cantidad]) => {
+                if (cantidad > 0) {
+                    tallasArray.push({
+                        genero: genero,
+                        talla: talla,
+                        cantidad: cantidad
+                    });
+                }
+            });
+        });
+        
+        // Transformar a estructura con cantidades para generosConTallas
+        const generosConTallasEstructura = {};
+        Object.entries(tallasPorGenero).forEach(([genero, tallas]) => {
+            const tieneTallas = Object.values(tallas).some(cant => cant > 0);
+            if (tieneTallas) {
+                generosConTallasEstructura[genero.toLowerCase()] = {
+                    cantidades: tallas
+                };
+            }
+        });
+        
+        console.log('✅ [EDITAR-PRENDA] Tallas como array:', tallasArray);
+        let variantes = {};
+        if (prendaCompleta.variantes && Array.isArray(prendaCompleta.variantes) && prendaCompleta.variantes.length > 0) {
+            const v = prendaCompleta.variantes[0]; // Primera variante (si hay múltiples)
+            variantes = {
+                tipo_manga: v.tipo_manga || '',
+                tipo_manga_id: v.tipo_manga_id,
+                obs_manga: v.manga_obs || '',
+                tiene_bolsillos: v.tiene_bolsillos || false,
+                obs_bolsillos: v.bolsillos_obs || '',
+                tipo_broche: v.tipo_broche_boton || '',
+                tipo_broche_id: v.tipo_broche_boton_id,
+                obs_broche: v.broche_boton_obs || ''
+            };
+        }
+        
+        console.log('✅ [EDITAR-PRENDA] Variantes transformadas:', variantes);
+        
+        // Preparar datos para el modal
+        const prendaParaEditar = {
+            nombre_prenda: prendaCompleta.nombre_prenda || '',
+            nombre_producto: prendaCompleta.nombre_prenda || '',
+            descripcion: prendaCompleta.descripcion || '',
+            origen: prenda.origen || 'bodega',
+            imagenes: (prendaCompleta.imagenes || []).map(img => {
+                const url = typeof img === 'string' ? img : (img.ruta_webp || img.ruta_original || img.url);
+                return {
+                    url: agregarStorage(url),
+                    ruta: agregarStorage(url),
+                    urlDesdeDB: true
+                };
+            }),
+            telasAgregadas: telasAgregadas,
+            tallas: tallasArray,
+            generosConTallas: generosConTallasEstructura,
+            procesos: (prendaCompleta.procesos || []).map(proc => {
+                console.log('🔧 [EDITAR-PRENDA-PROCESOS] Proceso bruto del servidor:', {
+                    ...proc,
+                    imagenes: `Array(${proc.imagenes?.length || 0})`
+                });
+                
+                // El backend retorna 'tipo' directamente (ej: 'Reflectivo')
+                const tipoProcesoBackend = proc.tipo || proc.tipo_proceso || '';
+                
+                console.log('🔧 [EDITAR-PRENDA-PROCESOS] Transformando proceso:', {
+                    procesoId: proc.id,
+                    tipoBackend: tipoProcesoBackend,
+                    nombre: proc.nombre,
+                    nombre_proceso: proc.nombre_proceso,
+                    tieneImagenes: !!proc.imagenes,
+                    countImagenes: proc.imagenes?.length || 0,
+                    tieneUbicaciones: !!proc.ubicaciones,
+                    ubicaciones: proc.ubicaciones
+                });
+                
+                const procesoTransformado = {
+                    ...proc,
+                    imagenes: (proc.imagenes || []).map(img => {
+                        // Manejar tanto strings como objetos
+                        let url = '';
+                        if (typeof img === 'string') {
+                            // Es un string directo (ruta)
+                            url = img;
+                        } else if (typeof img === 'object' && img) {
+                            // Es un objeto, extraer ruta
+                            url = img.ruta_webp || img.ruta_original || img.url || img.ruta || '';
+                        }
+                        
+                        console.log('  📸 Imagen transformada:', {
+                            original: img,
+                            urlExtraida: url,
+                            urlConStorage: agregarStorage(url)
+                        });
+                        
+                        return {
+                            ...(typeof img === 'object' ? img : {}),
+                            ruta_webp: agregarStorage(url),
+                            ruta_original: agregarStorage(url),
+                            url: agregarStorage(url)
+                        };
+                    })
+                };
+                
+                console.log('  ✅ Proceso transformado:', procesoTransformado);
+                return procesoTransformado;
+            }),
+            variantes: variantes
+        };
+        
+        console.log('✅ [EDITAR-PRENDA] Datos listos para cargar en modal:', Object.keys(prendaParaEditar));
+        console.log('🔬 [EDITAR-PRENDA] Procesos para modal:', prendaParaEditar.procesos);
+        
+        // Guardar en global
+        window.prendaEnEdicion = {
+            pedidoId: pedidoId,
+            prendasIndex: prendasIndex,
+            prendaOriginal: JSON.parse(JSON.stringify(prenda))
+        };
+        
+        // Abrir modal con datos transformados
+        if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
+            console.log('✅ [EDITAR-PRENDA] Abriendo modal con GestionItemsUI');
+            
+            const modal = document.getElementById('modal-agregar-prenda-nueva');
+            if (modal && modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+            
+            window.gestionItemsUI.prendaEditIndex = prendasIndex;
+            window.gestionItemsUI.abrirModalAgregarPrendaNueva();
+            
+            if (typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
+                console.log('✅ [EDITAR-PRENDA] Cargando datos en modal');
+                window.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
+            }
+            
+            console.log('✅ [EDITAR-PRENDA] Modal abierto exitosamente');
+            return;
+        }
+        
+        console.error('❌ GestionItemsUI no disponible');
+        Swal.fire('Error', 'No se pudo abrir el modal de edición', 'error');
+        
+    } catch (error) {
+        console.error('❌ [EDITAR-PRENDA] Error:', error);
+        Swal.fire('Error', `No se pudieron cargar los datos: ${error.message}`, 'error');
     }
-    
-
-
-    
-    // ESTRATEGIA 2: Fallback manual si GestionItemsUI no está disponible
-    const modal = window.obtenerModalPrendaNueva();
-    if (!modal) {
-
-        Swal.fire('Error', 'No se pudo abrir el modal de edición. Por favor, intenta nuevamente.', 'error');
-        return;
-    }
-    
-
-    
-    // PASO 1: Limpiar formulario
-    limpiarFormularioPrendaNueva();
-    
-    // PASO 2: Cargar datos en el formulario
-    cargarPrendaEnFormularioModal(prendaParaEditar);
-    
-    // PASO 3: Mostrar modal
-    modal.style.display = 'flex';
-    modal.style.position = 'fixed';
-    modal.style.zIndex = '999999';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.right = '0';
-    modal.style.bottom = '0';
-    modal.style.width = '100vw';
-    modal.style.height = '100vh';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
-    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-    
-
 }
 
 function abrirEditarProcesoEspecifico(prendasIndex, procesoIndex) {

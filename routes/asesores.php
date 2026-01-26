@@ -46,10 +46,10 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/pedidos', [AsesoresController::class, 'index'])->name('pedidos.index');
     Route::get('/pedidos/create', [AsesoresController::class, 'create'])->name('pedidos.create');
     Route::get('/pedidos/next-pedido', [AsesoresController::class, 'getNextPedido'])->name('next-pedido');
-    Route::get('/pedidos/{pedido}', [AsesoresController::class, 'show'])->name('pedidos.show');
-    Route::get('/pedidos/{pedido}/edit', [AsesoresController::class, 'edit'])->name('pedidos.edit');
-    Route::put('/pedidos/{pedido}', [AsesoresController::class, 'update'])->name('pedidos.update');
-    Route::delete('/pedidos/{pedido}', [AsesoresController::class, 'destroy'])->name('pedidos.destroy');
+    Route::get('/pedidos/{id}', [AsesoresController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
+    Route::get('/pedidos/{id}/edit', [AsesoresController::class, 'edit'])->where('id', '[0-9]+')->name('pedidos.edit');
+    Route::put('/pedidos/{id}', [AsesoresController::class, 'update'])->where('id', '[0-9]+')->name('pedidos.update');
+    Route::delete('/pedidos/{id}', [AsesoresController::class, 'destroy'])->where('id', '[0-9]+')->name('pedidos.destroy');
 
     // ========================================
     // PEDIDOS - APIs DDD
@@ -62,6 +62,9 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     
     // Cargar datos de pedido para edición
     Route::get('/pedidos/{id}/editar-datos', [AsesoresAPIController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('pedidos.api.editar-datos');
+    
+    // Obtener datos de una prenda específica con procesos para edición modal
+    Route::get('/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('pedidos.prenda-datos');
     
     // Agregar prenda simple al pedido
     Route::post('/pedidos/{pedidoId}/agregar-prenda-simple', [AsesoresController::class, 'agregarPrendaSimple'])->where('pedidoId', '[0-9]+')->name('pedidos.agregar-prenda-simple');

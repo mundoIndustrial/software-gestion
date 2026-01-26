@@ -51,7 +51,7 @@ class NotificacionesService
         // ============================================
         // NUEVO: Pedidos/Cotizaciones de OTROS asesores
         // ============================================
-        $pedidosOtrosAsesores = Pedidos::where('asesor_id', '!=', $userId)
+        $pedidosOtrosAsesores = PedidoProduccion::where('asesor_id', '!=', $userId)
             ->whereNotNull('asesor_id')
             ->where('created_at', '>=', now()->subHours(24))
             ->orderBy('created_at', 'desc')
@@ -73,7 +73,7 @@ class NotificacionesService
         // ============================================
         // ANTERIOR: Pedidos propios prÃ³ximos a vencer
         // ============================================
-        $pedidosProximosEntregar = Pedidos::where('asesor_id', $userId)
+        $pedidosProximosEntregar = PedidoProduccion::where('asesor_id', $userId)
             ->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n'])
             ->where('created_at', '<=', now()->addDays(7))
             ->whereNotIn('id', $viewedPedidoIds)
@@ -81,7 +81,7 @@ class NotificacionesService
             ->get();
 
         // Pedidos propios en ejecuciÃ³n
-        $pedidosEnEjecucion = Pedidos::where('asesor_id', $userId)
+        $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
             ->where('estado', 'En EjecuciÃ³n')
             ->whereNotIn('id', $viewedPedidoIds)
             ->count();
@@ -116,13 +116,13 @@ class NotificacionesService
             ->update(['read_at' => now()]);
         
         // Obtener todos los pedidos que generan notificaciones
-        $pedidosProximos = Pedidos::where('asesor_id', $userId)
+        $pedidosProximos = PedidoProduccion::where('asesor_id', $userId)
             ->whereIn('estado', ['No iniciado', 'En EjecuciÃ³n'])
             ->where('created_at', '<=', now()->addDays(7))
             ->pluck('id')
             ->toArray();
         
-        $pedidosEnEjecucion = Pedidos::where('asesor_id', $userId)
+        $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
             ->where('estado', 'En EjecuciÃ³n')
             ->pluck('id')
             ->toArray();

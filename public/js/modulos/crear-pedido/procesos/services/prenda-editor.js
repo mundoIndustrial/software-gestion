@@ -58,6 +58,13 @@ class PrendaEditor {
      * Cargar prenda en el modal para edición
      */
     cargarPrendaEnModal(prenda, prendaIndex) {
+        console.log('🔄 [CARGAR-PRENDA] Iniciando carga de prenda en modal:', {
+            prendaIndex,
+            nombre: prenda.nombre_prenda,
+            tieneProcesos: !!prenda.procesos,
+            countProcesos: prenda.procesos?.length || 0
+        });
+        
         if (!prenda) {
             this.mostrarNotificacion('Prenda no válida', 'error');
             return;
@@ -71,13 +78,16 @@ class PrendaEditor {
             this.cargarTelas(prenda);
             this.cargarTallasYCantidades(prenda);
             this.cargarVariaciones(prenda);
+            
+            console.log('🔧 [CARGAR-PRENDA] Sobre de cargar procesos...');
             this.cargarProcesos(prenda);
+            
             this.cambiarBotonAGuardarCambios();
-
+            console.log('✅ [CARGAR-PRENDA] Prenda cargada completamente');
             this.mostrarNotificacion('Prenda cargada para editar', 'success');
         } catch (error) {
+            console.error('❌ [CARGAR-PRENDA] Error:', error);
             this.mostrarNotificacion(`Error al cargar prenda: ${error.message}`, 'error');
-
         }
     }
 
@@ -470,7 +480,16 @@ class PrendaEditor {
             
             const mangaInput = document.getElementById('manga-input');
             if (mangaInput) {
-                mangaInput.value = variantes.tipo_manga || variantes.manga || '';
+                // Normalizar el valor: convertir a minúscula y sin acentos
+                let valorManga = variantes.tipo_manga || variantes.manga || '';
+                valorManga = valorManga.toLowerCase()
+                    .replace(/á/g, 'a')
+                    .replace(/é/g, 'e')
+                    .replace(/í/g, 'i')
+                    .replace(/ó/g, 'o')
+                    .replace(/ú/g, 'u');
+                
+                mangaInput.value = valorManga;
                 mangaInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
@@ -500,7 +519,16 @@ class PrendaEditor {
             
             const brocheInput = document.getElementById('broche-input');
             if (brocheInput) {
-                brocheInput.value = variantes.tipo_broche || variantes.broche || '';
+                // Normalizar el valor: convertir a minúscula y sin acentos
+                let valorBroche = variantes.tipo_broche || variantes.broche || '';
+                valorBroche = valorBroche.toLowerCase()
+                    .replace(/á/g, 'a')
+                    .replace(/é/g, 'e')
+                    .replace(/í/g, 'i')
+                    .replace(/ó/g, 'o')
+                    .replace(/ú/g, 'u');
+                
+                brocheInput.value = valorBroche;
                 brocheInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
@@ -530,73 +558,116 @@ class PrendaEditor {
      */
     cargarProcesos(prenda) {
         if (!prenda.procesos || prenda.procesos.length === 0) {
-
+            console.log('⚠️ [CARGAR-PROCESOS] Sin procesos en la prenda');
             return;
         }
 
-
+        console.log('📋 [CARGAR-PROCESOS] Cargando procesos:', {
+            total: prenda.procesos.length,
+            procesos: prenda.procesos.map(p => ({
+                id: p.id,
+                tipo: p.tipo_proceso,
+                nombre: p.nombre,
+                nombre_proceso: p.nombre_proceso,
+                tieneImagenes: !!p.imagenes,
+                countImagenes: p.imagenes?.length || 0,
+                tieneUbicaciones: !!p.ubicaciones
+            }))
+        });
 
         // Copiar procesos completos con todos sus datos
         window.procesosSeleccionados = {};
         
         // Los procesos vienen como array desde el backend
-        prenda.procesos.forEach(proceso => {
+        prenda.procesos.forEach((proceso, idx) => {
             if (proceso) {
-                // Obtener tipo de proceso desde nombre_proceso o tipo_proceso
-                const tipoProceso = (proceso.nombre_proceso || proceso.tipo_proceso || 'proceso').toLowerCase();
-
+                // El backend retorna 'tipo' directamente (ej: 'Reflectivo')
+                const tipoBackend = proceso.tipo || proceso.tipo_proceso || proceso.nombre || `Proceso ${idx}`;
+                const tipoProceso = tipoBackend.toLowerCase().replace(/\s+/g, '-');
                 
-                // Copiar datos completos del proceso
+                console.log(`📌 [CARGAR-PROCESOS] Procesando [${idx}] tipo="${tipoProceso}"`, {
+                    tipoBackend: tipoBackend,
+                    nombreProceso: proceso.nombre_proceso,
+                    tipoProceso: proceso.tipo_proceso,
+                    nombre: proceso.nombre,
+                    tieneImagenes: !!proceso.imagenes,
+                    countImagenes: proceso.imagenes?.length || 0,
+                    procesoId: proceso.id
+                });
 
-
-
-                
                 // Convertir tallas si es necesario
                 let tallasFormato = proceso.tallas || { dama: {}, caballero: {} };
                 if (Array.isArray(tallasFormato) && tallasFormato.length === 0) {
-
                     tallasFormato = { dama: {}, caballero: {} };
                 }
                 
-                window.procesosSeleccionados[tipoProceso] = {
-                    datos: {
-                        tipo: tipoProceso,
-                        nombre: proceso.nombre_proceso || proceso.tipo_proceso || tipoProceso,
-                        ubicaciones: proceso.ubicaciones || [],
-                        observaciones: proceso.observaciones || '',
-                        tallas: tallasFormato,
-                        imagenes: proceso.imagenes || []
-                    }
+                const datosProces = {
+                    id: proceso.id,
+                    tipo: tipoProceso,
+                    nombre: tipoBackend,
+                    nombre_proceso: proceso.nombre_proceso,
+                    tipo_proceso: proceso.tipo_proceso,
+                    ubicaciones: proceso.ubicaciones || [],
+                    observaciones: proceso.observaciones || '',
+                    tallas: tallasFormato,
+                    imagenes: (proceso.imagenes || []).map(img => {
+                        // Extraer URL de imagen, manejando distintos formatos
+                        if (typeof img === 'string') {
+                            return img;
+                        }
+                        if (img instanceof File) {
+                            return img;
+                        }
+                        // Si es objeto, obtener la URL correcta
+                        const urlExtraida = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
+                        console.log(`    🖼️ Imagen procesada:`, {
+                            original: img,
+                            urlExtraida: urlExtraida
+                        });
+                        return urlExtraida;
+                    })
                 };
                 
-
-
+                window.procesosSeleccionados[tipoProceso] = {
+                    datos: datosProces
+                };
                 
+                console.log(`✅ [CARGAR-PROCESOS] Proceso "${tipoProceso}" cargado:`, datosProces);
+
                 // Marcar checkbox del proceso
                 const checkboxProceso = document.getElementById(`checkbox-${tipoProceso}`);
                 if (checkboxProceso) {
+                    console.log(`☑️ [CARGAR-PROCESOS] Marcando checkbox para "${tipoProceso}"`);
                     checkboxProceso.checked = true;
                     // Evitar que el onclick se dispare automáticamente
                     checkboxProceso._ignorarOnclick = true;
                     checkboxProceso.dispatchEvent(new Event('change', { bubbles: true }));
                     checkboxProceso._ignorarOnclick = false;
-
                 } else {
-
+                    console.warn(`⚠️ [CARGAR-PROCESOS] No se encontró checkbox para "${tipoProceso}". Buscando por data-tipo...`);
+                    // Intentar encontrar por data-tipo
+                    const checkboxPorTipo = document.querySelector(`[data-tipo="${tipoProceso}"]`);
+                    if (checkboxPorTipo) {
+                        console.log(`☑️ [CARGAR-PROCESOS] Encontrado por data-tipo, marcando...`);
+                        checkboxPorTipo.checked = true;
+                        checkboxPorTipo._ignorarOnclick = true;
+                        checkboxPorTipo.dispatchEvent(new Event('change', { bubbles: true }));
+                        checkboxPorTipo._ignorarOnclick = false;
+                    } else {
+                        console.warn(`⚠️ [CARGAR-PROCESOS] Tampoco encontrado checkbox por data-tipo="${tipoProceso}"`);
+                    }
                 }
             }
         });
         
+        console.log('📊 [CARGAR-PROCESOS] Procesos seleccionados finales:', window.procesosSeleccionados);
 
-
-        
         // Renderizar tarjetas de procesos
         if (window.renderizarTarjetasProcesos) {
-
+            console.log('🎨 [CARGAR-PROCESOS] Renderizando tarjetas...');
             window.renderizarTarjetasProcesos();
-
         } else {
-
+            console.error('❌ [CARGAR-PROCESOS] window.renderizarTarjetasProcesos no existe');
         }
     }
 

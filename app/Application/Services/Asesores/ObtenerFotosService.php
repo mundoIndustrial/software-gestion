@@ -58,7 +58,7 @@ class ObtenerFotosService
             throw new \Exception('Prenda no encontrada', 404);
         }
 
-        $pedido = Pedidos::find($prendaPedido->pedido_produccion_id);
+        $pedido = PedidoProduccion::find($prendaPedido->pedido_produccion_id);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);

@@ -9,6 +9,112 @@
  */
 
 /**
+ * Generar HTML con datos completos de la prenda (tallas, colores, telas, variantes)
+ */
+function generarHTMLDatosPrenda(prenda) {
+    let html = '';
+    
+    // ===== TALLAS POR GÉNERO =====
+    if ((prenda.tallas_dama && prenda.tallas_dama.length > 0) || (prenda.tallas_caballero && prenda.tallas_caballero.length > 0)) {
+        html += '<div style="margin: 20px 0; padding: 15px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #3b82f6;">';
+        html += '<h4 style="margin: 0 0 12px 0; color: #1e40af; font-size: 12px; font-weight: 700; text-transform: uppercase;">📏 Tallas por Género</h4>';
+        html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">';
+        
+        // Tallas Dama
+        if (prenda.tallas_dama && prenda.tallas_dama.length > 0) {
+            html += '<div>';
+            html += '<strong style="color: #1e40af; font-size: 11px;">👗 DAMA</strong><br>';
+            prenda.tallas_dama.forEach(t => {
+                html += `<div style="font-size: 10px; color: #475569; padding: 4px 0;">• ${t.talla}: <strong>${t.cantidad}</strong> prendas</div>`;
+            });
+            html += '</div>';
+        }
+        
+        // Tallas Caballero
+        if (prenda.tallas_caballero && prenda.tallas_caballero.length > 0) {
+            html += '<div>';
+            html += '<strong style="color: #1e40af; font-size: 11px;">👔 CABALLERO</strong><br>';
+            prenda.tallas_caballero.forEach(t => {
+                html += `<div style="font-size: 10px; color: #475569; padding: 4px 0;">• ${t.talla}: <strong>${t.cantidad}</strong> prendas</div>`;
+            });
+            html += '</div>';
+        }
+        
+        html += '</div></div>';
+    }
+    
+    // ===== COLORES Y TELAS =====
+    if (prenda.colores_telas && prenda.colores_telas.length > 0) {
+        html += '<div style="margin: 20px 0; padding: 15px; background: #fef3f2; border-radius: 8px; border-left: 4px solid #ef4444;">';
+        html += '<h4 style="margin: 0 0 12px 0; color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;">🎨 Colores y Telas</h4>';
+        
+        prenda.colores_telas.forEach((ct, idx) => {
+            html += '<div style="margin-bottom: 12px; padding: 10px; background: white; border-radius: 6px;">';
+            html += `<div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">`;
+            
+            // Cuadro de color
+            const colorCodigo = ct.color_codigo || '#cccccc';
+            html += `<div style="width: 24px; height: 24px; background-color: ${colorCodigo}; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>`;
+            
+            // Nombre color y tela
+            html += '<div>';
+            html += `<strong style="color: #334155; font-size: 11px;">🎨 ${ct.color_nombre}</strong><br>`;
+            html += `<span style="color: #64748b; font-size: 10px;">Tela: <strong>${ct.tela_nombre}</strong></span>`;
+            if (ct.tela_referencia) {
+                html += `<br><span style="color: #94a3b8; font-size: 9px;">Ref: ${ct.tela_referencia}</span>`;
+            }
+            html += '</div></div>';
+            
+            // Fotos de tela
+            if (ct.fotos_tela && ct.fotos_tela.length > 0) {
+                html += '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">';
+                ct.fotos_tela.forEach(foto => {
+                    if (foto.url) {
+                        html += `<img src="${foto.url}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid #e5e7eb; cursor: pointer;" onclick="window.open('${foto.url}', '_blank')" title="Ver foto">`;
+                    }
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+        });
+        
+        html += '</div>';
+    }
+    
+    // ===== VARIANTES =====
+    if (prenda.variantes && prenda.variantes.length > 0) {
+        html += '<div style="margin: 20px 0; padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">';
+        html += '<h4 style="margin: 0 0 12px 0; color: #166534; font-size: 12px; font-weight: 700; text-transform: uppercase;">⚙️ Variantes</h4>';
+        
+        prenda.variantes.forEach(v => {
+            html += '<div style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #dbeafe;">';
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px;">';
+            
+            if (v.tipo_manga) {
+                html += `<div><strong>👕 Manga:</strong> ${v.tipo_manga}${v.manga_obs ? ' <em style="color: #64748b;">(' + v.manga_obs + ')</em>' : ''}</div>`;
+            }
+            
+            if (v.tipo_broche_boton) {
+                html += `<div><strong>🔘 Broche:</strong> ${v.tipo_broche_boton}${v.broche_boton_obs ? ' <em style="color: #64748b;">(' + v.broche_boton_obs + ')</em>' : ''}</div>`;
+            }
+            
+            if (v.tiene_bolsillos) {
+                html += `<div><strong>👜 Bolsillos:</strong> Sí${v.bolsillos_obs ? ' <em style="color: #64748b;">(' + v.bolsillos_obs + ')</em>' : ''}</div>`;
+            }
+            
+            html += '</div></div>';
+        });
+        
+        html += '</div>';
+    }
+    
+    return html;
+}
+
+// Exponer en window para acceso global
+window.generarHTMLDatosPrenda = generarHTMLDatosPrenda;
+
+/**
  * Obtener pedidoId del contexto (varias fuentes)
  */
 function obtenerPedidoId() {
@@ -35,61 +141,152 @@ function obtenerPedidoId() {
  * @param {number} pedidoId - ID del pedido en BD (para guardar)
  */
 async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
-
-
-
+    console.log('🔥🔥🔥 [INIT] abrirEditarPrendaModal - Valores recibidos:', {
+        prenda_nombre: prenda?.nombre_prenda || prenda?.nombre,
+        prenda_id: prenda?.id,
+        prendaIndex: prendaIndex,
+        pedidoId_RECIBIDO: pedidoId,
+        tipo_pedidoId: typeof pedidoId
+    });
     
     // Si no viene pedidoId, intentar obtenerlo
     if (!pedidoId) {
+        console.warn('⚠️ [OBTENER-ID] pedidoId vacío, buscando...');
         pedidoId = obtenerPedidoId();
-
+        console.log('⚠️ [OBTENER-ID] Después de obtenerPedidoId():', pedidoId);
     }
 
-    //  NUEVO: Si tenemos pedidoId y prenda.id, obtener datos frescos de la BD
+    console.log('✅ [PEDIDO-ID-FINAL] pedidoId usado será:', pedidoId);
+
+    // Obtener datos frescos de la BD
     let prendaEditable = JSON.parse(JSON.stringify(prenda));
-    if (pedidoId && prenda.id) {
-        try {
-
-            const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prenda/${prenda.id}/datos`);
-            if (response.ok) {
-                const resultado = await response.json();
-                if (resultado.success && resultado.prenda) {
-
-                    prendaEditable = resultado.prenda;
-                } else {
-
-                }
-            } else {
-
-            }
-        } catch (error) {
-
-
-        }
-    } else {
-
-    }
-    
-    // Preparar datos para generarHTMLFactura
-    const datosParaFactura = {
-        numero_pedido: pedidoId || 'EDICIÓN',
-        cliente: 'Edición',
+    let datosParaFactura = {
+        numero_pedido: 'Cargando...',
+        numero: 'Cargando...',
+        cliente: 'Cargando...',
+        asesor: 'Cargando...',
+        estado: 'Cargando...',
+        fecha_creacion: 'Cargando...',
         prendas: [prendaEditable]
     };
     
+    console.log('🔥 [FETCH-INICIO] Condiciones:', {
+        tiene_pedidoId: !!pedidoId,
+        tiene_prenda_id: !!prenda?.id,
+        ejecutara_fetch: !!(pedidoId && prenda?.id)
+    });
+    
+    if (pedidoId && prenda.id) {
+        try {
+            const url = `/asesores/pedidos-produccion/${pedidoId}/prenda/${prenda.id}/datos`;
+            console.log('🔥 [FETCH] Llamando a URL:', url);
+            console.log('📊 [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId, 'prenda.id:', prenda.id);
+
+            const response = await fetch(url);
+            console.log('✅ [FETCH-RESPONSE] Status:', response.status, 'OK:', response.ok);
+            
+            if (response.ok) {
+                const resultado = await response.json();
+                console.log('✅ [FETCH-JSON] Respuesta completa:', {
+                    success: resultado.success,
+                    tiene_prenda: !!resultado.prenda,
+                    tiene_pedido: !!resultado.pedido,
+                    prenda_keys: resultado.prenda ? Object.keys(resultado.prenda) : 'sin prenda'
+                });
+                
+                console.log('📦 [DATOS-RECIBIDOS]', {
+                    procesos: resultado.prenda?.procesos?.length ?? 0,
+                    tallas_dama: resultado.prenda?.tallas_dama?.length ?? 0,
+                    tallas_caballero: resultado.prenda?.tallas_caballero?.length ?? 0,
+                    variantes: resultado.prenda?.variantes?.length ?? 0,
+                    colores_telas: resultado.prenda?.colores_telas?.length ?? 0,
+                    imagenes: resultado.prenda?.imagenes?.length ?? 0
+                });
+                
+                if (resultado.success) {
+                    if (resultado.prenda) {
+                        console.log('✅ [PRENDA-ACTUALIZADA] Procesos:', resultado.prenda.procesos?.length ?? 0);
+                        console.log('✅ [TALLAS-DAMA]:', resultado.prenda.tallas_dama);
+                        console.log('✅ [TALLAS-CABALLERO]:', resultado.prenda.tallas_caballero);
+                        console.log('✅ [VARIANTES]:', resultado.prenda.variantes);
+                        console.log('✅ [COLORES-TELAS]:', resultado.prenda.colores_telas);
+                        prendaEditable = resultado.prenda;
+                    }
+                    
+                    if (resultado.pedido) {
+                        const ped = resultado.pedido;
+                        console.log('🎯 [PEDIDO-ENCONTRADO] Datos:', {
+                            numero_pedido: ped.numero_pedido,
+                            cliente: ped.cliente,
+                            asesor_nombre: ped.asesor_nombre,
+                            estado: ped.estado,
+                            fecha_creacion: ped.fecha_creacion
+                        });
+                        
+                        // Construir datosParaFactura con datos del pedido
+                        datosParaFactura = {
+                            numero_pedido: ped.numero_pedido || ped.numero || ped.id || pedidoId,
+                            numero: ped.numero || ped.numero_pedido || pedidoId,
+                            cliente: ped.cliente || ped.cliente_nombre || 'Cliente sin especificar',
+                            asesor: ped.asesor_nombre || ped.asesor || 'Asesor sin especificar',
+                            estado: ped.estado || 'Pendiente',
+                            fecha_creacion: ped.fecha_creacion || ped.created_at || new Date().toLocaleDateString(),
+                            prendas: [prendaEditable]
+                        };
+                        console.log('✅ [DATOS-FACTURA-ACTUALIZADO]:', datosParaFactura);
+                    } else {
+                        console.warn('⚠️ [PEDIDO-VACIO] Sin datos del pedido en respuesta');
+                        datosParaFactura.prendas = [prendaEditable];
+                    }
+                } else {
+                    console.warn('⚠️ [ERROR-SUCCESS] Respuesta sin success:', resultado);
+                    datosParaFactura.prendas = [prendaEditable];
+                }
+            } else {
+                console.error('❌ [ERROR-FETCH] Status no OK:', response.status);
+                const texto = await response.text();
+                console.error('Respuesta:', texto);
+                datosParaFactura.prendas = [prendaEditable];
+            }
+        } catch (error) {
+            console.error('❌ [ERROR-EXCEPTION] Error en fetch:', error);
+            datosParaFactura.prendas = [prendaEditable];
+        }
+    } else {
+        console.warn('⚠️ [NO-FETCH] No se ejecuta fetch - pedidoId o prenda.id faltante');
+        datosParaFactura.prendas = [prendaEditable];
+    }
+    
+    console.log('✅ [FINAL-DATOS-FACTURA] Datos finales para generar HTML:', datosParaFactura);
+    
     // Obtener HTML de factura
     if (typeof generarHTMLFactura !== 'function') {
-
+        console.error('❌ [ERROR-FUNCIONES] generarHTMLFactura no está definida');
         Swal.fire('Error', 'No se puede generar el formulario', 'error');
         return;
     }
     
+    console.log('🎨 [HTML-INICIO] Iniciando generación de HTML');
     let htmlFactura = generarHTMLFactura(datosParaFactura);
+    console.log('🎨 [HTML-FACTURA] HTML de factura generado, largo:', htmlFactura.length);
+    
+    // Agregar sección de datos de la prenda (tallas, colores, telas, variantes)
+    console.log('🎨 [HTML-DATOS] Agregando datos de prenda:', {
+        tallas_dama: prendaEditable.tallas_dama?.length ?? 0,
+        tallas_caballero: prendaEditable.tallas_caballero?.length ?? 0,
+        variantes: prendaEditable.variantes?.length ?? 0,
+        colores_telas: prendaEditable.colores_telas?.length ?? 0
+    });
+    htmlFactura += generarHTMLDatosPrenda(prendaEditable);
+    console.log('🎨 [HTML-DATOS-COMPLETADO] HTML actualizado, largo total:', htmlFactura.length);
     
     // Convertir a editable: inputs en campos importantes
+    console.log('🎨 [HTML-EDITABLE] Iniciando conversión a editable');
     htmlFactura = hacerFacturaEditable(htmlFactura, prendaEditable);
+    console.log('🎨 [HTML-EDITABLE-COMPLETADO] HTML editable completado, largo:', htmlFactura.length);
     
     // Mostrar modal
+    console.log('📱 [MODAL-MOSTRAR] Mostrando modal SweetAlert2');
     Swal.fire({
         title: ` Editar: ${prenda.nombre_producto || 'Prenda'}`,
         html: `<div style="text-align: left; max-height: 600px; overflow-y: auto; background: white; padding: 1rem; border-radius: 8px;">${htmlFactura}</div>`,
@@ -143,6 +340,9 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         }
     });
 }
+
+// Exponer en window para acceso global
+window.abrirEditarPrendaModal = abrirEditarPrendaModal;
 
 /**
  * Convertir factura a editable

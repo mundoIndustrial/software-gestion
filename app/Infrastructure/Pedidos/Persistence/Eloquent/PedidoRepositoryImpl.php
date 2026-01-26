@@ -7,7 +7,7 @@ use App\Domain\Pedidos\Agregado\PedidoAggregate;
 use App\Domain\Pedidos\ValueObjects\NumeroPedido;
 use App\Domain\Pedidos\ValueObjects\Estado;
 use App\Domain\Pedidos\Entities\PrendaPedido;
-use App\Models\Pedido as PedidoModel;
+use App\Models\PedidoProduccion as PedidoModel;
 use App\Models\PrendaPedido as PrendaPedidoModel;
 
 /**

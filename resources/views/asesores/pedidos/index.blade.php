@@ -315,8 +315,31 @@
             const datos = respuesta.data || respuesta.datos;
             console.log('[editarPedido] Datos obtenidos:', datos.numero_pedido || datos.id);
             
-            //  PASO 6: Abrir modal de edición
-            abrirModalEditarPedido(pedidoId, datos, 'editar');
+            //  TRANSFORMAR datos al formato que espera generarHTMLFactura
+            const datosTransformados = {
+                id: datos.id || datos.numero_pedido,
+                numero_pedido: datos.numero_pedido || datos.numero || datos.id,
+                numero: datos.numero || datos.numero_pedido || datos.id,
+                cliente: datos.cliente || datos.clienteNombre || 'Cliente sin especificar',
+                asesora: datos.asesor || datos.asesora || datos.asesor_nombre || 'Asesor sin especificar',
+                estado: datos.estado || 'Pendiente',
+                fecha_creacion: datos.fecha_creacion || datos.created_at || new Date().toLocaleDateString('es-ES'),
+                forma_de_pago: datos.forma_pago || datos.forma_de_pago || 'No especificada',
+                prendas: datos.prendas || [],
+                epps: datos.epps || [],
+                procesos: datos.procesos || [],
+                // Copiar todas las otras propiedades
+                ...datos
+            };
+            
+            console.log('[editarPedido] Datos transformados:', {
+                numero_pedido: datosTransformados.numero_pedido,
+                cliente: datosTransformados.cliente,
+                asesora: datosTransformados.asesora
+            });
+            
+            //  PASO 6: Abrir modal de edición con datos transformados
+            abrirModalEditarPedido(pedidoId, datosTransformados, 'editar');
             
         } catch (err) {
             console.error('[editarPedido] Error:', err.message);
@@ -584,6 +607,9 @@
 
 <!-- Manejadores de variaciones (manga, bolsillos, broche) -->
 <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
+
+<!-- Editar prenda modal con procesos -->
+<script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
 
 <!-- Wrappers de prendas -->
 <script src="{{ asset('js/componentes/prendas-wrappers.js') }}"></script>

@@ -14,10 +14,10 @@ class ActualizarPedidoService
      * 
      * @param int|string $pedidoIdentifier NÃºmero de pedido o ID
      * @param array $datos Datos a actualizar
-     * @return Pedidos
+     * @return PedidoProduccion
      * @throws \Exception
      */
-    public function actualizar($pedidoIdentifier, array $datos): Pedidos
+    public function actualizar($pedidoIdentifier, array $datos): PedidoProduccion
     {
         Log::info(' [ACTUALIZAR] Actualizando pedido', [
             'identificador' => $pedidoIdentifier,
@@ -74,7 +74,7 @@ class ActualizarPedidoService
     /**
      * Actualizar solo campos especÃ­ficos
      */
-    public function actualizarCampos($pedidoIdentifier, array $campos): Pedidos
+    public function actualizarCampos($pedidoIdentifier, array $campos): PedidoProduccion
     {
         Log::info(' [ACTUALIZAR-CAMPOS] Actualizando campos especÃ­ficos', [
             'campos' => array_keys($campos)
@@ -99,7 +99,7 @@ class ActualizarPedidoService
     /**
      * Actualizar prendas de un pedido
      */
-    private function actualizarPrendas(Pedidos $pedido, array $prendas): void
+    private function actualizarPrendas(PedidoProduccion $pedido, array $prendas): void
     {
         Log::info(' [ACTUALIZAR-PRENDAS] Actualizando ' . count($prendas) . ' prendas');
 
@@ -127,7 +127,7 @@ class ActualizarPedidoService
     /**
      * Actualizar EPP de un pedido
      */
-    private function actualizarEpp(Pedidos $pedido, array $epp): void
+    private function actualizarEpp(PedidoProduccion $pedido, array $epp): void
     {
         Log::info(' [ACTUALIZAR-EPP] Actualizando ' . count($epp) . ' items de EPP');
 
@@ -156,18 +156,18 @@ class ActualizarPedidoService
     /**
      * Obtener el pedido (por nÃºmero o ID)
      */
-    private function obtenerPedido($pedidoIdentifier): Pedidos
+    private function obtenerPedido($pedidoIdentifier): PedidoProduccion
     {
         // Si es nÃºmero (numÃ©rico > 1000 usualmente)
         if (is_numeric($pedidoIdentifier) && $pedidoIdentifier > 100) {
-            $pedido = Pedidos::where('numero_pedido', $pedidoIdentifier)->first();
+            $pedido = PedidoProduccion::where('numero_pedido', $pedidoIdentifier)->first();
             if ($pedido) {
                 return $pedido;
             }
         }
 
         // Intentar por ID
-        $pedido = Pedidos::find($pedidoIdentifier);
+        $pedido = PedidoProduccion::find($pedidoIdentifier);
         if ($pedido) {
             return $pedido;
         }

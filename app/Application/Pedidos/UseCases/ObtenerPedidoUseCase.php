@@ -35,7 +35,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         return [
             'incluirPrendas' => true,
             'incluirEpps' => true,
-            'incluirProcesos' => false,
+            'incluirProcesos' => true,
             'incluirImagenes' => true,
         ];
     }
@@ -48,10 +48,12 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {
         // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
-        $modeloEloquent = \App\Models\Pedido::with(['prendas' => function($q) {
+        $modeloEloquent = \App\Models\PedidoProduccion::with(['prendas' => function($q) {
             $q->with(['tallas', 'variantes', 'coloresTelas' => function($q2) {
                 $q2->with(['color', 'tela', 'fotos']);
-            }, 'fotos']);
+            }, 'fotos', 'procesos' => function($q3) {
+                $q3->with(['tipoProceso', 'imagenes'])->orderBy('created_at', 'desc');
+            }]);
         }, 'epps' => function($q) {
             $q->with(['epp', 'imagenes']);
         }])->find($pedidoId);
@@ -63,6 +65,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             id: $datosEnriquecidos['id'],
             numero: $datosEnriquecidos['numero'],
             clienteId: $datosEnriquecidos['clienteId'],
+            cliente: $modeloEloquent->cliente,
+            asesor: $modeloEloquent->asesor?->name,
             estado: $datosEnriquecidos['estado'],
             descripcion: $datosEnriquecidos['descripcion'],
             totalPrendas: $datosEnriquecidos['totalPrendas'],
@@ -94,6 +98,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 $colorTela = $this->obtenerColorYTela($prenda);
                 $imagenes = $prenda->fotos ? $prenda->fotos->pluck('ruta_webp')->toArray() : [];
                 $imagenesTela = $this->obtenerImagenesTela($prenda);
+                $procesos = $this->obtenerProcesosDelaPrenda($prenda);
 
                 $prendasArray[] = [
                     'id' => $prenda->id,
@@ -111,6 +116,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'variantes' => $variantes,
                     'imagenes' => $imagenes,
                     'imagenes_tela' => $imagenesTela,
+                    'procesos' => $procesos,
                     'manga' => $variantes[0]['manga'] ?? null,
                     'obs_manga' => $variantes[0]['manga_obs'] ?? null,
                     'broche' => $variantes[0]['broche'] ?? null,
@@ -294,6 +300,63 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         }
 
         return $epps;
+    }
+
+    /**
+     * Obtener procesos de una prenda
+     */
+    private function obtenerProcesosDelaPrenda($prenda): array
+    {
+        $procesos = [];
+
+        try {
+            if ($prenda->procesos) {
+                foreach ($prenda->procesos as $proceso) {
+                    $imagenes = [];
+                    if ($proceso->imagenes && count($proceso->imagenes) > 0) {
+                        foreach ($proceso->imagenes as $img) {
+                            $imagenes[] = [
+                                'id' => $img->id ?? null,
+                                'ruta_webp' => $img->ruta_webp ?? null,
+                                'ruta_original' => $img->ruta_original ?? null,
+                                'orden' => $img->orden ?? 0,
+                                'es_principal' => $img->es_principal ?? false,
+                            ];
+                        }
+                    }
+
+                    $ubicaciones = [];
+                    if ($proceso->ubicaciones) {
+                        if (is_string($proceso->ubicaciones)) {
+                            $ubicaciones = json_decode($proceso->ubicaciones, true) ?? [];
+                        } elseif (is_array($proceso->ubicaciones)) {
+                            $ubicaciones = $proceso->ubicaciones;
+                        }
+                    }
+
+                    $procesos[] = [
+                        'id' => $proceso->id,
+                        'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'Sin tipo',
+                        'tipo_proceso_id' => $proceso->tipo_proceso_id,
+                        'descripcion' => $proceso->descripcion,
+                        'ubicaciones' => $ubicaciones,
+                        'observaciones' => $proceso->observaciones,
+                        'imagenes' => $imagenes,
+                        'estado' => $proceso->estado ?? 'pendiente',
+                    ];
+                }
+            }
+
+            Log::info('Procesos obtenidos', ['prenda_id' => $prenda->id, 'cantidad' => count($procesos), 'procesos' => $procesos]);
+        } catch (\Exception $e) {
+            Log::warning('Error obteniendo procesos', [
+                'prenda_id' => $prenda->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+
+        return $procesos;
     }
 }
 

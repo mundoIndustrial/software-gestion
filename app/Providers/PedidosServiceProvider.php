@@ -10,6 +10,7 @@ use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
 use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
+use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use Illuminate\Support\ServiceProvider;
@@ -62,6 +63,11 @@ class PedidosServiceProvider extends ServiceProvider
         // SERVICIOS DE DESPACHO (DOMAIN LAYER)
         // ========================================
 
+        // Registrar ImagenRelocalizadorService como singleton
+        $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
+            return new ImagenRelocalizadorService();
+        });
+
         // Registrar DespachoGeneradorService como singleton
         $this->app->singleton(DespachoGeneradorService::class, function ($app) {
             return new DespachoGeneradorService();
@@ -88,6 +94,11 @@ class PedidosServiceProvider extends ServiceProvider
             return new GuardarDespachoUseCase(
                 $app->make(DespachoValidadorService::class)
             );
+        });
+
+        // Registrar ImagenRelocalizadorService como singleton
+        $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
+            return new ImagenRelocalizadorService();
         });
     }
 

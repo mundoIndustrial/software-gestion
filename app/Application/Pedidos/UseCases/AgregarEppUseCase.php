@@ -4,7 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\AgregarEppDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Models\Pedidos;
+use App\Models\PedidoProduccion;
 
 /**
  * Use Case para agregar EPP a un pedido
@@ -18,7 +18,7 @@ final class AgregarEppUseCase
     public function execute(AgregarEppDTO $dto)
     {
         $pedido = $this->validarObjetoExiste(
-            Pedidos::find($dto->pedidoId),
+            PedidoProduccion::find($dto->pedidoId),
             'Pedido',
             $dto->pedidoId
         );

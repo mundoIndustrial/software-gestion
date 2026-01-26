@@ -535,29 +535,18 @@ class ItemAPIService {
                         return;
                     }
 
-                    // Búsqueda exhaustiva de imagenes en proceso
+                    // Búsqueda de imagenes en proceso (prioridad: datos.imagenes > imagenes)
                     let imagenes = [];
 
-                    // UBICACIÓN 1: proceso.imagenes
-                    if (Array.isArray(proceso.imagenes)) {
-                        console.debug(`[extraerFiles] 🔍 Encontrado: proceso.imagenes`);
-                        imagenes = [...proceso.imagenes];
-                    }
-
-                    // UBICACIÓN 2: proceso.datos.imagenes
+                    // UBICACIÓN 1: proceso.datos.imagenes (prioridad)
                     if (proceso.datos && Array.isArray(proceso.datos.imagenes)) {
                         console.debug(`[extraerFiles] 🔍 Encontrado: proceso.datos.imagenes`);
-                        imagenes = [...imagenes, ...proceso.datos.imagenes];
+                        imagenes = proceso.datos.imagenes;
                     }
-
-                    // UBICACIÓN 3: Buscar en arrays de datos
-                    if (proceso.datos && typeof proceso.datos === 'object') {
-                        Object.values(proceso.datos).forEach((val) => {
-                            if (Array.isArray(val) && val.some(v => v instanceof File)) {
-                                console.debug(`[extraerFiles] 🔍 Encontrado: array de Files en datos`);
-                                imagenes = [...imagenes, ...val.filter(v => v instanceof File)];
-                            }
-                        });
+                    // UBICACIÓN 2: proceso.imagenes (fallback)
+                    else if (Array.isArray(proceso.imagenes)) {
+                        console.debug(`[extraerFiles] 🔍 Encontrado: proceso.imagenes`);
+                        imagenes = proceso.imagenes;
                     }
 
                     // Agregar solo Files a la estructura

@@ -46,7 +46,7 @@ class ObtenerPedidosService
         \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginaciÃ³n vacÃ­a');
         
         // Retornar paginaciÃ³n vacÃ­a
-        return Pedidos::where('id', '=', null)
+        return PedidoProduccion::where('id', '=', null)
             ->paginate($perPage);
     }
 
@@ -55,7 +55,7 @@ class ObtenerPedidosService
      */
     private function obtenerPedidosProduccion(int $userId, ?string $tipo, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        $query = Pedidos::where('asesor_id', $userId)
+        $query = PedidoProduccion::where('asesor_id', $userId)
             ->with([
                 'prendas' => function ($q) {
                     $q->with(['procesos' => function ($q2) {
@@ -126,7 +126,7 @@ class ObtenerPedidosService
     {
         \Log::info(' [ESTADOS] Obteniendo estados Ãºnicos');
 
-        $estados = Pedidos::select('estado')
+        $estados = PedidoProduccion::select('estado')
             ->whereNotNull('estado')
             ->distinct()
             ->pluck('estado')
@@ -152,19 +152,19 @@ class ObtenerPedidosService
         $inicioHoy = $ahora->clone()->startOfDay();
 
         $estadisticas = [
-            'pedidos_dia' => Pedidos::where('asesor_id', $userId)
+            'pedidos_dia' => PedidoProduccion::where('asesor_id', $userId)
                 ->whereDate('created_at', $inicioHoy)
                 ->count(),
             
-            'pedidos_mes' => Pedidos::where('asesor_id', $userId)
+            'pedidos_mes' => PedidoProduccion::where('asesor_id', $userId)
                 ->whereBetween('created_at', [$inicioMes, $ahora])
                 ->count(),
             
-            'pedidos_anio' => Pedidos::where('asesor_id', $userId)
+            'pedidos_anio' => PedidoProduccion::where('asesor_id', $userId)
                 ->whereBetween('created_at', [$inicioAÃ±o, $ahora])
                 ->count(),
             
-            'pedidos_pendientes' => Pedidos::where('asesor_id', $userId)
+            'pedidos_pendientes' => PedidoProduccion::where('asesor_id', $userId)
                 ->where('estado', 'No iniciado')
                 ->whereNull('aprobado_por_supervisor_en')
                 ->count(),

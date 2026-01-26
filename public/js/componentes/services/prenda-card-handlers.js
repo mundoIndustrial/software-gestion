@@ -90,8 +90,28 @@ window.PrendaCardHandlers = {
                     }
                     // Si es pedido guardado, abrir modal simple de edición
                     else if (window.abrirEditarPrendaModal) {
-                        const pedidoId = document.querySelector('[data-pedido-id]')?.dataset.pedidoId || null;
+                        // Obtener pedidoId de múltiples fuentes
+                        let pedidoId = null;
+                        
+                        // 1. Desde body dataset (establecido en editar-pedido.blade.php)
+                        if (document.body.dataset.pedidoIdEdicion) {
+                            pedidoId = document.body.dataset.pedidoIdEdicion;
+                        }
+                        // 2. Desde window global (editar-pedido.blade.php)
+                        else if (window.pedidoEdicionId) {
+                            pedidoId = window.pedidoEdicionId;
+                        }
+                        // 3. Desde elemento con data-pedido-id
+                        else {
+                            pedidoId = document.querySelector('[data-pedido-id]')?.dataset.pedidoId || null;
+                        }
 
+                        console.log('🔥 [btn-editar-prenda] Llamando abrirEditarPrendaModal:', {
+                            prendaIndex,
+                            prendaId: prenda.id,
+                            pedidoId
+                        });
+                        
                         window.abrirEditarPrendaModal(prenda, prendaIndex, pedidoId);
                     }
                 }

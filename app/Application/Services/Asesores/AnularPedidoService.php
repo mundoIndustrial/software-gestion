@@ -17,9 +17,9 @@ class AnularPedidoService
     /**
      * Anular un pedido
      */
-    public function anular(int $numeroPedido, string $novedad): Pedidos
+    public function anular(int $numeroPedido, string $novedad): PedidoProduccion
     {
-        $pedido = Pedidos::where('numero_pedido', $numeroPedido)
+        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
             ->firstOrFail();
 
         // Verificar permisos

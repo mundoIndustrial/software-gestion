@@ -65,7 +65,7 @@ class ObtenerPedidosOperarioService
     {
         \Log::info('=== INICIO obtenerPedidosCosturaReflectivo ===');
         
-        $pedidos = Pedidos::where('area', 'Costura')
+        $pedidos = PedidoProduccion::where('area', 'Costura')
             ->where('estado', 'En EjecuciÃ³n')
             ->with(['prendas'])
             ->orderBy('fecha_de_creacion_de_orden', 'desc')

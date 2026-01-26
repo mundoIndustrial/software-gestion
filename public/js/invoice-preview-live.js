@@ -38,10 +38,18 @@ window._extraerURLImagen = function(img) {
             path: img.path,
             src: img.src,
             blobUrl: img.blobUrl,
-            previewUrl: img.previewUrl
+            previewUrl: img.previewUrl,
+            ruta_webp: img.ruta_webp,
+            ruta_original: img.ruta_original
         });
         
-        if (img.url) {
+        if (img.ruta_webp) {
+            url = img.ruta_webp;
+            origen = 'img.ruta_webp';
+        } else if (img.ruta_original) {
+            url = img.ruta_original;
+            origen = 'img.ruta_original';
+        } else if (img.url) {
             url = img.url;
             origen = 'img.url';
         } else if (img.ruta) {
@@ -68,24 +76,24 @@ window._extraerURLImagen = function(img) {
     if (url) {
         // Si comienza con /storage/, devolverla tal cual
         if (url.startsWith('/storage/')) {
-
+            console.log('[EXTRAER-URL-IMAGEN] Ya tiene /storage/, retornando:', url);
             return url;
         }
         // Si comienza con storage/ (sin /), agregar / al inicio
-        else if (url.startsWith('storage/') && !url.startsWith('/storage/')) {
+        else if (url.startsWith('storage/')) {
             url = '/' + url;
-
+            console.log('[EXTRAER-URL-IMAGEN] Agregado / inicial, retornando:', url);
+            return url;
         }
         // Si no comienza con / ni con storage/, agregar /storage/
-        else if (!url.startsWith('/') && !url.startsWith('storage/')) {
+        else {
             url = '/storage/' + url;
-
+            console.log('[EXTRAER-URL-IMAGEN] Agregado /storage/, retornando:', url);
+            return url;
         }
     }
     
-
-    
-    return url;
+    return '';
 };
 
 /**
@@ -120,10 +128,16 @@ window._abrirGaleriaImagenesDesdeID = function(galeriaId) {
 window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
     if (!Array.isArray(imagenes) || imagenes.length === 0) return;
     
-    // Normalizar imagenes - convertir objetos a URLs
-    const imagenesNormalizadas = imagenes.map(img => 
-        typeof img === 'string' ? img : (img.url || img.ruta || img.path || '')
-    );
+    // Normalizar imagenes - convertir objetos a URLs usando la misma función que el renderizado
+    const imagenesNormalizadas = imagenes.map(img => {
+        if (typeof img === 'string') {
+            // Si es string, aplicar la misma lógica de extracción de URL
+            return window._extraerURLImagen(img);
+        } else {
+            // Si es objeto, usar la función de extracción que maneja ruta_webp, ruta_original, etc.
+            return window._extraerURLImagen(img);
+        }
+    });
     
     // Crear modal de galería
     const modalGaleria = document.createElement('div');
@@ -427,9 +441,15 @@ function capturarPrendas() {
                             } else if (img?.blobUrl) {
                                 // Si ya tiene blobUrl
                                 return img.blobUrl;
+                            } else if (img?.ruta_webp) {
+                                // Si es un objeto con propiedad ruta_webp (desde API)
+                                return '/storage/' + img.ruta_webp;
+                            } else if (img?.ruta_original) {
+                                // Si es un objeto con propiedad ruta_original (desde API)
+                                return '/storage/' + img.ruta_original;
                             } else if (typeof img === 'string') {
                                 // Si es una string URL
-                                return img;
+                                return img.startsWith('/storage/') ? img : '/storage/' + img;
                             } else if (img?.url) {
                                 // Si es un objeto con propiedad url
                                 return img.url;
@@ -444,7 +464,6 @@ function capturarPrendas() {
                                 return img.src;
                             } else {
                                 // Fallback: si es un objeto vacío o desconocido, retorna string vacío
-
                                 return '';
                             }
                         }).filter(url => url); // Filtrar URLs vacías
@@ -785,7 +804,7 @@ function crearModalPreviewFactura(datos) {
             <!-- Header -->
             <div style="padding: 8px 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;">
                 <h3 style="margin: 0; color: #333; font-size: 12px; font-weight: 700;">
-                     Pedido #${datos.numero_pedido_temporal} | ${datos.cliente}
+                     Pedido #${datos.numero_pedido || datos.numero_pedido_temporal} | ${datos.cliente}
                 </h3>
                 <button onclick="document.getElementById('invoice-preview-modal-wrapper').remove();" 
                         style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999; padding: 0; line-height: 1;">
@@ -1160,7 +1179,7 @@ function generarHTMLFactura(datos) {
                 <!-- Lado Derecho: Recibo de Pedido -->
                 <div style="text-align: right; font-size: 10px;">
                     <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">
-                        RECIBO DE PEDIDO #2026-${String(datos.numero_pedido_temporal).padStart(5, '0')}
+                        RECIBO DE PEDIDO #${datos.numero_pedido || datos.numero_pedido_temporal}
                     </div>
                     <div style="color: #666; font-size: 9px;">${datos.fecha_creacion}</div>
                 </div>

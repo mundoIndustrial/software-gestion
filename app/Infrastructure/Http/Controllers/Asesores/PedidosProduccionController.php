@@ -715,12 +715,18 @@ class PedidosProduccionController
                 'telas' => 'nullable|array',
             ]);
 
-            // Procesar imágenes de prenda
+            // Procesar imágenes de prenda con sistema centralizado
             $imagenesGuardadas = [];
+            $tempUuid = \Illuminate\Support\Str::uuid()->toString();
+            
             if ($request->hasFile('imagenes')) {
+                $imageUploadService = app(\App\Application\Services\ImageUploadService::class);
+                
                 foreach ($request->file('imagenes') as $imagen) {
-                    $path = $imagen->store('prendas', 'public');
-                    $imagenesGuardadas[] = $path;
+                    // Usar ImageUploadService para guardar en temp/{uuid}/prendas/
+                    $rutas = $imageUploadService->processAndSaveImage($imagen, 'prendas', $tempUuid);
+                    // Guardar ruta WebP para relocalizar después
+                    $imagenesGuardadas[] = $rutas['webp'] ?? $rutas[0];
                 }
             }
 
@@ -1242,6 +1248,87 @@ class PedidosProduccionController
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener los colores y telas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /asesores/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos
+     * Obtener datos completos de una prenda con procesos para edición en modal
+     */
+    public function obtenerDatosPrendaEdicion(int|string $pedidoId, int|string $prendaId): JsonResponse
+    {
+        try {
+            Log::info('🔥 [PRENDA-DATOS-INICIO] Endpoint llamado', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'timestamp' => now()
+            ]);
+
+            $service = app(\App\Application\Services\Asesores\ObtenerPedidoDetalleService::class);
+            
+            Log::info('📡 [PRENDA-DATOS] Llamando al servicio...');
+            $prendaData = $service->obtenerPrendaConProcesos((int)$pedidoId, (int)$prendaId);
+
+            Log::info('✅ [PRENDA-DATOS-RECIBIDOS] Datos obtenidos del servicio', [
+                'procesos_count' => count($prendaData['procesos'] ?? []),
+                'tallas_dama_count' => count($prendaData['tallas_dama'] ?? []),
+                'tallas_caballero_count' => count($prendaData['tallas_caballero'] ?? []),
+                'variantes_count' => count($prendaData['variantes'] ?? []),
+                'colores_telas_count' => count($prendaData['colores_telas'] ?? []),
+                'imagenes_count' => count($prendaData['imagenes'] ?? []),
+                'prenda_keys' => array_keys($prendaData)
+            ]);
+
+            // Validar que los datos no estén vacíos
+            if (empty($prendaData)) {
+                Log::warning('⚠️ [PRENDA-DATOS-VACIA] La prenda retornó datos vacíos');
+            }
+
+            // Obtener también datos del pedido para la factura de edición
+            $pedido = \App\Models\PedidoProduccion::find((int)$pedidoId);
+            $pedidoData = [];
+            if ($pedido) {
+                $pedidoData = [
+                    'id' => $pedido->id,
+                    'numero' => $pedido->numero_pedido,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'cliente_nombre' => $pedido->cliente,
+                    'asesor_nombre' => $pedido->asesor?->name ?? 'Sin asesor',
+                    'estado' => $pedido->estado,
+                    'fecha_creacion' => $pedido->created_at?->format('d/m/Y') ?? '',
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'prenda' => $prendaData,
+                'pedido' => $pedidoData
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('❌ [PRENDA-DATOS] Prenda no encontrada', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Prenda no encontrada'
+            ], 404);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [PRENDA-DATOS] Error obteniendo datos de prenda', [
+                'error' => $e->getMessage(),
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos de prenda: ' . $e->getMessage()
             ], 500);
         }
     }

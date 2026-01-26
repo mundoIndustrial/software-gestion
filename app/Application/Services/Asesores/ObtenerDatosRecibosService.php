@@ -21,7 +21,7 @@ class ObtenerDatosRecibosService
         Log::info('[RECIBOS] Obteniendo datos para pedido: ' . $pedidoId);
 
         // Obtener el pedido (solo Pedidos tiene recibos de procesos)
-        $pedido = Pedidos::find($pedidoId);
+        $pedido = PedidoProduccion::find($pedidoId);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);
@@ -53,7 +53,7 @@ class ObtenerDatosRecibosService
     {
         Log::info('[RECIBOS-PRENDA] Obteniendo para pedido: ' . $pedidoId . ', prenda: ' . $prendaId);
 
-        $pedido = Pedidos::find($pedidoId);
+        $pedido = PedidoProduccion::find($pedidoId);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);
@@ -93,7 +93,7 @@ class ObtenerDatosRecibosService
     {
         Log::info('[RECIBOS-RESUMEN] Generando resumen para: ' . $pedidoId);
 
-        $pedido = Pedidos::find($pedidoId);
+        $pedido = PedidoProduccion::find($pedidoId);
 
         if (!$pedido) {
             throw new \Exception('Pedido no encontrado', 404);
