@@ -99,8 +99,10 @@
             numero_cotizacion: esSinCotizacion ? null : cotizacionId,
             es_sin_cotizacion: esSinCotizacion,
             
-            // Datos de prendas
+            // Datos de prendas Y epps - unificados en items
             prendas: [],
+            items: [],  // ✅ AGREGADO: array unificado con prendas + epps
+            epps: [],
             fotos_nuevas: {},
             
             // Datos de logo (si aplica)
@@ -110,38 +112,108 @@
             reflectivo: null
         };
 
-        // Recopilación de prendas del DOM
-        const prendasContainer = document.getElementById('prendas-container-editable');
-        const prendaCards = prendasContainer?.querySelectorAll('.prenda-card-editable') || [];
+        // ========== RECOPILACIÓN DE PRENDAS DEL GESTOR ==========
+        // Usar gestor si existe, sino usar DOM
+        if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.prendas) {
+            const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
+            const fotosNuevasGestor = window.gestorPrendaSinCotizacion.fotosNuevas || {};
+            const telasNuevasGestor = window.gestorPrendaSinCotizacion.telasFotosNuevas || {};
 
-        prendaCards.forEach((card, index) => {
-            // Saltar si fue eliminada
-            if (window.prendasEliminadas && window.prendasEliminadas.has(index)) {
-                return;
-            }
+            prendas.forEach((prenda, index) => {
+                const prendaParaEnviar = {
+                    tipo: 'prenda',  // ✅ AGREGADO: identificador de tipo
+                    nombre_producto: prenda.nombre_producto || '',
+                    descripcion: prenda.descripcion || '',
+                    genero: prenda.genero || '',
+                    cantidades: prenda.cantidadesPorTalla || {},
+                    // ✅ AGREGADO: recolectar imágenes desde gestor
+                    imagenes: fotosNuevasGestor[index] || prenda.imagenes || [],
+                    // ✅ AGREGADO: recolectar telas desde prenda
+                    telas: (prenda.telasAgregadas || []).map((tela, telaIdx) => ({
+                        tela: tela.tela || '',
+                        color: tela.color || '',
+                        referencia: tela.referencia || '',
+                        // ✅ Imágenes de tela
+                        imagenes: telasNuevasGestor?.[index]?.[telaIdx] || tela.imagenes || []
+                    }))
+                };
 
-            const prenda = {
-                index: index,
-                nombre_producto: card.querySelector('.prenda-nombre')?.value || '',
-                descripcion: card.querySelector('.prenda-descripcion')?.value || '',
-                genero: card.querySelector(`select[name="genero[${index}]"]`)?.value || '',
-                cantidades: {}
-            };
-
-            // Recopilar cantidades por talla
-            card.querySelectorAll('.talla-cantidad').forEach(input => {
-                const talla = input.getAttribute('data-talla');
-                const cantidad = parseInt(input.value) || 0;
-                if (talla && cantidad > 0) {
-                    prenda.cantidades[talla] = cantidad;
+                // Solo agregar si tiene cantidades
+                if (Object.keys(prendaParaEnviar.cantidades).length > 0) {
+                    datos.prendas.push(prendaParaEnviar);
+                    datos.items.push(prendaParaEnviar);  // ✅ AGREGADO: también en items
                 }
             });
+        } else {
+            // Fallback: usar DOM si gestor no existe
+            const prendasContainer = document.getElementById('prendas-container-editable');
+            const prendaCards = prendasContainer?.querySelectorAll('.prenda-card-editable') || [];
 
-            // Solo agregar si tiene cantidades
-            if (Object.keys(prenda.cantidades).length > 0) {
-                datos.prendas.push(prenda);
-            }
-        });
+            prendaCards.forEach((card, index) => {
+                // Saltar si fue eliminada
+                if (window.prendasEliminadas && window.prendasEliminadas.has(index)) {
+                    return;
+                }
+
+                const prenda = {
+                    index: index,
+                    tipo: 'prenda',  // ✅ AGREGADO: identificador de tipo
+                    nombre_producto: card.querySelector('.prenda-nombre')?.value || '',
+                    descripcion: card.querySelector('.prenda-descripcion')?.value || '',
+                    genero: card.querySelector(`select[name="genero[${index}]"]`)?.value || '',
+                    cantidades: {},
+                    // ✅ AGREGADO: recolectar imágenes de prenda - extrayendo File objects del input
+                    imagenes: [],
+                    // ✅ AGREGADO: recolectar telas
+                    telas: []
+                };
+
+                // ✅ Extraer imágenes de prenda desde input file (si existen archivos en el input)
+                const inputImagenPrenda = card.querySelector(`input[type="file"][data-prenda-imagenes="${index}"]`);
+                if (inputImagenPrenda && inputImagenPrenda.files && inputImagenPrenda.files.length > 0) {
+                    prenda.imagenes = Array.from(inputImagenPrenda.files);
+                }
+                
+                // ✅ Extraer telas con sus imágenes
+                const telasContainer = card.querySelector('.telas-container');
+                if (telasContainer) {
+                    const telaElements = telasContainer.querySelectorAll('.tela-item');
+                    telaElements.forEach((telaEl) => {
+                        const tela = {
+                            tela: telaEl.querySelector('.tela-nombre')?.value || '',
+                            color: telaEl.querySelector('.tela-color')?.value || '',
+                            referencia: telaEl.querySelector('.tela-referencia')?.value || '',
+                            imagenes: []
+                        };
+                        
+                        // ✅ Extraer imágenes de tela
+                        const inputImagenTela = telaEl.querySelector(`input[type="file"][data-tela-imagenes]`);
+                        if (inputImagenTela && inputImagenTela.files && inputImagenTela.files.length > 0) {
+                            tela.imagenes = Array.from(inputImagenTela.files);
+                        }
+                        
+                        if (tela.tela || tela.color || tela.imagenes.length > 0) {
+                            prenda.telas.push(tela);
+                        }
+                    });
+                }
+
+                // Recopilar cantidades por talla
+                card.querySelectorAll('.talla-cantidad').forEach(input => {
+                    const talla = input.getAttribute('data-talla');
+                    const cantidad = parseInt(input.value) || 0;
+                    if (talla && cantidad > 0) {
+                        prenda.cantidades[talla] = cantidad;
+                    }
+                });
+
+                // Solo agregar si tiene cantidades
+                if (Object.keys(prenda.cantidades).length > 0) {
+                    datos.prendas.push(prenda);
+                    datos.items.push(prenda);  // ✅ AGREGADO: también en items
+                }
+            });
+        }
 
         // Agregar datos de logo si existen
         if (window.gestorLogo) {
@@ -155,6 +227,24 @@
         if (!esSinCotizacion) {
             const tipoCotizacionElement = document.querySelector('[data-tipo-cotizacion]');
             datos.tipo_cotizacion = tipoCotizacionElement?.dataset.tipoCotizacion || 'P';
+        }
+
+        // ========== RECOPILACIÓN DE EPPs ==========
+        if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+            const eppsDelPedido = window.itemsPedido.filter(item => item.tipo === 'epp');
+            if (eppsDelPedido.length > 0) {
+                datos.epps = eppsDelPedido.map(epp => ({
+                    tipo: 'epp',  // ✅ AGREGADO: identificador de tipo
+                    epp_id: epp.epp_id,
+                    cantidad: epp.cantidad || 1,
+                    observaciones: epp.observaciones || null,
+                    // ✅ Incluir imágenes desde el objeto EPP del itemsPedido
+                    imagenes: epp.imagenes || []
+                }));
+                // ✅ AGREGADO: también agregar EPPs a items para procesamiento unificado
+                datos.items.push(...datos.epps);
+                console.debug('[prepararDatosParaEnvio] EPPs a enviar:', datos.epps);
+            }
         }
 
         return datos;
@@ -184,6 +274,29 @@
 
             // Usar FormData para enviar archivos correctamente
             const formData = new FormData();
+            
+            // ========== AGREGAR JSON DEL PEDIDO SIN LAS IMÁGENES ==========
+            const pedidoLimpio = {
+                cliente: datos.cliente || '',
+                asesora: datos.asesora || '',
+                forma_de_pago: datos.forma_de_pago || '',
+                numero_cotizacion: datos.numero_cotizacion,
+                es_sin_cotizacion: datos.es_sin_cotizacion,
+                tipo_cotizacion: datos.tipo_cotizacion || null,
+                logo: datos.logo || null,
+                reflectivo: datos.reflectivo || null,
+                prendas: (datos.prendas || []).map(p => ({
+                    tipo: p.tipo,
+                    nombre_producto: p.nombre_producto,
+                    descripcion: p.descripcion,
+                    genero: p.genero,
+                    cantidades: p.cantidades,
+                    telas: (p.telas || []).map(t => ({tela: t.tela, color: t.color, referencia: t.referencia}))
+                })),
+                epps: (datos.epps || []).map(e => ({epp_id: e.epp_id, cantidad: e.cantidad, observaciones: e.observaciones}))
+            };
+            formData.append('pedido', JSON.stringify(pedidoLimpio));
+            console.debug('[enviarDatosAlServidor] JSON del pedido:', pedidoLimpio);
             
             // Agregar datos principales
             formData.append('cliente', datos.cliente || '');
@@ -248,6 +361,24 @@
                         });
                     }
                     
+                    // ✅ Procesos con imágenes (NUEVO)
+                    if (item.procesos && Array.isArray(item.procesos)) {
+                        item.procesos.forEach((proceso, procesoIdx) => {
+                            formData.append(`items[${itemIndex}][procesos][${procesoIdx}][nombre]`, proceso.nombre || '');
+                            
+                            // Imágenes de proceso
+                            if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
+                                proceso.imagenes.forEach((img) => {
+                                    if (img instanceof File) {
+                                        formData.append(`items[${itemIndex}][procesos][${procesoIdx}][imagenes][]`, img);
+                                    } else if (img && img.file instanceof File) {
+                                        formData.append(`items[${itemIndex}][procesos][${procesoIdx}][imagenes][]`, img.file);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
                     // EPP específico
                     if (item.tipo === 'epp') {
                         formData.append(`items[${itemIndex}][epp_id]`, item.epp_id || '');
@@ -272,6 +403,31 @@
                         // }
                     }
                 });
+            }
+
+            // Agregar EPPs al FormData
+            if (datos.epps && Array.isArray(datos.epps)) {
+                datos.epps.forEach((epp, eppIndex) => {
+                    formData.append(`epps[${eppIndex}][epp_id]`, epp.epp_id || '');
+                    formData.append(`epps[${eppIndex}][cantidad]`, epp.cantidad || 1);
+                    if (epp.observaciones) {
+                        formData.append(`epps[${eppIndex}][observaciones]`, epp.observaciones);
+                    }
+                    
+                    // ✅ Agregar imágenes de EPP al FormData
+                    if (epp.imagenes && Array.isArray(epp.imagenes)) {
+                        epp.imagenes.forEach((img, imgIdx) => {
+                            if (img instanceof File) {
+                                formData.append(`epps[${eppIndex}][imagenes][${imgIdx}]`, img);
+                                console.debug(`[enviarDatosAlServidor] Imagen EPP agregada: epps[${eppIndex}][imagenes][${imgIdx}]`, img.name);
+                            } else if (img && img.file instanceof File) {
+                                formData.append(`epps[${eppIndex}][imagenes][${imgIdx}]`, img.file);
+                                console.debug(`[enviarDatosAlServidor] Imagen EPP agregada: epps[${eppIndex}][imagenes][${imgIdx}]`, img.file.name);
+                            }
+                        });
+                    }
+                });
+                console.debug('[enviarDatosAlServidor] EPPs agregados al FormData:', datos.epps);
             }
 
             fetch(endpoint, {

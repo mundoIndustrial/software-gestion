@@ -35,6 +35,9 @@ use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Domain\Shared\CQRS\QueryBus;
 use App\Domain\Shared\CQRS\CommandBus;
 
+// Services
+use App\Services\PedidoEppService;
+
 /**
  * PedidosProduccionServiceProvider
  * 
@@ -84,7 +87,8 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Crear Pedido
         $this->app->singleton(CrearProduccionPedidoUseCase::class, function ($app) {
             return new CrearProduccionPedidoUseCase(
-                $app->make('events')
+                $app->make('events'),
+                $app->make(PedidoEppService::class)
             );
         });
 

@@ -40,23 +40,39 @@ class FormDataBuilder {
     }
     
     /**
-     * Extraer archivos del payload, dejar rutas en metadata
+     * Extraer archivos del payload, dejar UIDs en metadata
      * @private
      */
     static _extractFilesFromPayload(payload) {
         const files = {};
         const metadata = JSON.parse(JSON.stringify(payload)); // Deep clone metadata
+        const uuidToFormKey = {}; // Mapeo: uuid → key en FormData
         
         // Procesar prendas
         if (metadata.items && Array.isArray(metadata.items)) {
             metadata.items.forEach((item, prendaIdx) => {
+                // Generar UID único para la prenda si no existe
+                if (!item.uid) {
+                    item.uid = this._generateUUID();
+                }
+                
                 // Imágenes de la prenda
                 if (item.imagenes && Array.isArray(item.imagenes)) {
                     item.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
-                            const fileKey = `files_prenda_${prendaIdx}_${imgIdx}`;
-                            files[fileKey] = img;
-                            item.imagenes[imgIdx] = fileKey; // ← Guardar referencia
+                            // Generar UID para imagen
+                            const imgUID = this._generateUUID();
+                            const formKey = `files_prenda_${prendaIdx}_${imgIdx}`;
+                            
+                            files[formKey] = img;
+                            uuidToFormKey[imgUID] = formKey;
+                            
+                            // Guardar: {uid, nombre_archivo} (NO el File)
+                            item.imagenes[imgIdx] = {
+                                uid: imgUID,
+                                nombre_archivo: img.name,
+                                formdata_key: formKey  // Para resolver luego
+                            };
                         }
                     });
                 }
@@ -64,12 +80,54 @@ class FormDataBuilder {
                 // Imágenes de telas
                 if (item.telas && Array.isArray(item.telas)) {
                     item.telas.forEach((tela, telaIdx) => {
+                        // Generar UID para tela si no existe
+                        if (!tela.uid) {
+                            tela.uid = this._generateUUID();
+                        }
+                        
                         if (tela.imagenes && Array.isArray(tela.imagenes)) {
                             tela.imagenes.forEach((img, imgIdx) => {
                                 if (img instanceof File) {
-                                    const fileKey = `files_tela_${prendaIdx}_${telaIdx}_${imgIdx}`;
-                                    files[fileKey] = img;
-                                    tela.imagenes[imgIdx] = fileKey; // ← Guardar referencia
+                                    const imgUID = this._generateUUID();
+                                    const formKey = `files_tela_${prendaIdx}_${telaIdx}_${imgIdx}`;
+                                    
+                                    files[formKey] = img;
+                                    uuidToFormKey[imgUID] = formKey;
+                                    
+                                    tela.imagenes[imgIdx] = {
+                                        uid: imgUID,
+                                        nombre_archivo: img.name,
+                                        formdata_key: formKey
+                                    };
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // Imágenes de procesos
+                if (item.procesos && typeof item.procesos === 'object') {
+                    Object.keys(item.procesos).forEach((procesoIdx) => {
+                        const proceso = item.procesos[procesoIdx];
+                        
+                        if (!proceso.uid) {
+                            proceso.uid = this._generateUUID();
+                        }
+                        
+                        if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
+                            proceso.imagenes.forEach((img, imgIdx) => {
+                                if (img instanceof File) {
+                                    const imgUID = this._generateUUID();
+                                    const formKey = `files_proceso_${prendaIdx}_${procesoIdx}_${imgIdx}`;
+                                    
+                                    files[formKey] = img;
+                                    uuidToFormKey[imgUID] = formKey;
+                                    
+                                    proceso.imagenes[imgIdx] = {
+                                        uid: imgUID,
+                                        nombre_archivo: img.name,
+                                        formdata_key: formKey
+                                    };
                                 }
                             });
                         }
@@ -81,19 +139,42 @@ class FormDataBuilder {
         // Procesar EPPs
         if (metadata.epps && Array.isArray(metadata.epps)) {
             metadata.epps.forEach((epp, eppIdx) => {
+                if (!epp.uid) {
+                    epp.uid = this._generateUUID();
+                }
+                
                 if (epp.imagenes && Array.isArray(epp.imagenes)) {
                     epp.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
-                            const fileKey = `files_epp_${eppIdx}_${imgIdx}`;
-                            files[fileKey] = img;
-                            epp.imagenes[imgIdx] = fileKey; // ← Guardar referencia
+                            const imgUID = this._generateUUID();
+                            const formKey = `files_epp_${eppIdx}_${imgIdx}`;
+                            
+                            files[formKey] = img;
+                            uuidToFormKey[imgUID] = formKey;
+                            
+                            epp.imagenes[imgIdx] = {
+                                uid: imgUID,
+                                nombre_archivo: img.name,
+                                formdata_key: formKey
+                            };
                         }
                     });
                 }
             });
         }
         
+        // Guardar mapeo en metadata para backend
+        metadata._uuid_to_formkey = uuidToFormKey;
+        
         return { metadata, files };
+    }
+    
+    /**
+     * Generar UUID v4 simple
+     * @private
+     */
+    static _generateUUID() {
+        return 'uuid-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
     }
     
     /**

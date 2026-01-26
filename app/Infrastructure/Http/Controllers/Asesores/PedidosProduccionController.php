@@ -211,6 +211,10 @@ class PedidosProduccionController
                 'forma_pago' => 'required|string|in:contado,credito,transferencia,cheque',
                 'asesor_id' => 'required|integer|min:1',
                 'cantidad_inicial' => 'sometimes|integer|min:0|default:0',
+                'epps' => 'sometimes|array',
+                'epps.*.epp_id' => 'required_with:epps|integer|min:1',
+                'epps.*.cantidad' => 'sometimes|integer|min:1',
+                'epps.*.observaciones' => 'sometimes|nullable|string|max:1000',
             ]);
 
             // Usar Use Case DDD
@@ -218,7 +222,8 @@ class PedidosProduccionController
             $pedido = $this->crearPedidoUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Pedido creado', [
-                'pedido_id' => $pedido->id,
+                'pedido_id' => is_array($pedido) ? ($pedido['id'] ?? null) : (method_exists($pedido, 'getId') ? $pedido->getId() : null),
+                'epps_procesados' => count($validated['epps'] ?? []),
             ]);
 
             return response()->json($pedido, 201);

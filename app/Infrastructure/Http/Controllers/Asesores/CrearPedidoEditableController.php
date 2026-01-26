@@ -19,11 +19,20 @@ use App\Models\PedidoEppImagen;
 use App\Http\Requests\CrearPedidoCompletoRequest;
 use App\Domain\Pedidos\Services\PedidoWebService;
 use App\Application\Services\ImageUploadService;
+use App\Application\Services\ColorTelaService;
+use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
+use App\Domain\Pedidos\Services\ResolutorImagenesService;
+use App\Domain\Pedidos\Services\MapeoImagenesService;
 
 /**
  * CrearPedidoEditableController
  * 
  * MASTER Controller para CREACIÓN DE PEDIDOS
+ * 
+ * REFACTORIZADO (26 Enero 2026):
+ * - Separación clara de modelos DOM ↔ Backend
+ * - Manejo correcto de imágenes usando UIDs
+ * - Normalización y mapeo de referencias
  * 
  * Maneja:
  * 1. Mostrar formulario con todos los datos necesarios (GET /crear)
@@ -35,7 +44,10 @@ class CrearPedidoEditableController extends Controller
 {
     public function __construct(
         private PedidoWebService $pedidoWebService,
-        private ImageUploadService $imageUploadService
+        private ImageUploadService $imageUploadService,
+        private ColorTelaService $colorTelaService,
+        private ResolutorImagenesService $resolutorImagenes,
+        private MapeoImagenesService $mapeoImagenes
     ) {}
 
     /**
@@ -428,26 +440,18 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
-     * CREAR PEDIDO CON IMÁGENES - 100% TRANSACCIONAL
+     * CREAR PEDIDO CON IMÁGENES - 100% TRANSACCIONAL (REFACTORIZADO)
      * POST /asesores/pedidos-editable/crear
      * 
+     * FLUJO NUEVO (26 Enero 2026):
+     * 1. Decodificar JSON del frontend
+     * 2. Normalizar usando PedidoNormalizadorDTO (extrae UIDs)
+     * 3. Crear pedido base en BD
+     * 4. Usar MapeoImagenesService para:
+     *    - Resolver imágenes (UIDs → rutas)
+     *    - Crear registros de fotos
+     * 
      * TODO O NADA: Si falla algo, rollback completo (DB + archivos)
-     * NO carpetas temporales
-     * NO relocalización
-     * Pedido + imágenes en una sola operación atómica
-     * 
-     * Soporta DOS estructuras:
-     * 
-     * NUEVA ESTRUCTURA (separada):
-     * - pedido: JSON con estructura {cliente, asesora, forma_de_pago, prendas[], epps[]}
-     * - prendas[i][imagenes][j]: archivos de imágenes de prendas
-     * - prendas[i][telas][k][imagenes][l]: archivos de imágenes de telas
-     * - prendas[i][procesos][m][imagenes][n]: archivos de imágenes de procesos
-     * - epps[i][imagenes][j]: archivos de imágenes de epps (convertirán a WebP)
-     * 
-     * ESTRUCTURA ANTIGUA (compatibilidad):
-     * - pedido: JSON con estructura {cliente, asesora, forma_de_pago, items[]}
-     * - prendas[i][imagenes][j]: archivos de imágenes
      * 
      * @param Request $request
      * @return JsonResponse
@@ -455,103 +459,121 @@ class CrearPedidoEditableController extends Controller
     public function crearPedido(Request $request): JsonResponse
     {
         $pedidoId = null;
-        
+
         try {
             Log::info('[CrearPedidoEditableController] Iniciando creación transaccional', [
                 'has_pedido_json' => !!$request->input('pedido'),
                 'archivos_count' => count($request->allFiles()),
             ]);
+            
+            // DEBUG: Mostrar qué archivos se recibieron en FormData
+            $archivosRecibidos = [];
+            foreach ($request->allFiles() as $key => $file) {
+                $archivosRecibidos[] = [
+                    'key' => $key,
+                    'name' => $file instanceof \Illuminate\Http\UploadedFile ? $file->getClientOriginalName() : 'unknown',
+                    'size' => $file instanceof \Illuminate\Http\UploadedFile ? $file->getSize() : 0
+                ];
+            }
+            
+            Log::debug('[CrearPedidoEditableController] Archivos en FormData', [
+                'archivos' => $archivosRecibidos
+            ]);
 
-            // PASO 1: Decodificar JSON metadata
+            // ====== PASO 1: Decodificar JSON del frontend ======
             $pedidoJSON = $request->input('pedido');
             if (!$pedidoJSON) {
-                throw new \Exception('Campo "pedido" JSON requerido en FormData');
+                throw new \Exception('Campo "pedido" JSON requerido');
             }
 
-            $validated = json_decode($pedidoJSON, true);
-            if (!$validated) {
+            $datosFrontend = json_decode($pedidoJSON, true);
+            if (!$datosFrontend) {
                 throw new \Exception('JSON inválido en campo "pedido"');
             }
+            
+            // DEBUG: Validar que no hay File objects en el JSON
+            $this->validarJsonSinFiles($datosFrontend);
 
-            // Detectar estructura: nueva (prendas/epps) o antigua (items)
-            $esEstructuraNueva = isset($validated['prendas']) || isset($validated['epps']);
-            $esEstructuraAntiga = isset($validated['items']);
+            // ====== PASO 2: Obtener/crear cliente ======
+            $clienteNombre = trim($datosFrontend['cliente'] ?? '');
+            $cliente = $this->obtenerOCrearCliente($clienteNombre);
 
-            Log::info('[CrearPedidoEditableController] Estructura detectada', [
-                'nueva' => $esEstructuraNueva ? 'SÍ (prendas/epps)' : 'NO',
-                'antigua' => $esEstructuraAntiga ? 'SÍ (items)' : 'NO',
+            Log::info('[CrearPedidoEditableController] Cliente obtenido/creado', [
+                'cliente_id' => $cliente->id,
+                'nombre' => $cliente->nombre
             ]);
 
-            // PASO 2: Normalizar para compatibilidad con PedidoWebService
-            // Si es estructura nueva, convertir a formato esperado por servicio
-            if ($esEstructuraNueva && !$esEstructuraAntiga) {
-                $validated['items'] = $validated['prendas'] ?? [];
-                $validated['epps'] = $validated['epps'] ?? [];
-            }
+            // ====== PASO 3: Normalizar usando DTO ======
+            $dtoPedido = PedidoNormalizadorDTO::fromFrontendJSON(
+                $datosFrontend,
+                $cliente->id
+            );
 
-            // PASO 3: Obtener o crear cliente
-            $clienteNombre = trim($validated['cliente']);
-            $cliente = $this->obtenerOCrearCliente($clienteNombre);
-            $validated['cliente_id'] = $cliente->id;
+            Log::info('[CrearPedidoEditableController] Pedido normalizado', [
+                'cliente_id' => $dtoPedido->cliente_id,
+                'prendas' => count($dtoPedido->prendas),
+                'epps' => count($dtoPedido->epps),
+            ]);
 
-            // ========================================
-            // INICIO TRANSACCIÓN ATÓMICA
-            // ========================================
+            // ====== PASO 4: Iniciar transacción ======
             DB::beginTransaction();
 
-            // PASO 4: Crear pedido PRIMERO (para obtener pedido_id)
-            // El servicio solo procesa prendas (items), los epps se procesan después
+            // ====== PASO 5: Crear pedido base ======
+            // Convertir DTO a array para compatibilidad con PedidoWebService
+            $datosParaServicio = [
+                'cliente' => $dtoPedido->cliente,
+                'asesora' => $dtoPedido->asesora,
+                'forma_de_pago' => $dtoPedido->forma_de_pago,
+                'cliente_id' => $dtoPedido->cliente_id,
+                'items' => $dtoPedido->prendas,
+                'epps' => $dtoPedido->epps,
+            ];
+
             $pedido = $this->pedidoWebService->crearPedidoCompleto(
-                $validated,
+                $datosParaServicio,
                 Auth::id()
             );
-            
+
             $pedidoId = $pedido->id;
 
-            Log::info('[CrearPedidoEditableController] Pedido creado en transacción', [
+            Log::info('[CrearPedidoEditableController] Pedido base creado', [
                 'pedido_id' => $pedidoId,
-                'numero_pedido' => $pedido->numero_pedido,
-                'prendas_count' => count($validated['items'] ?? []),
+                'numero_pedido' => $pedido->numero_pedido
             ]);
 
-            // PASO 5: Procesar imágenes de prendas
-            $this->procesarYAsignarImagenes($request, $pedidoId, $validated['items'] ?? []);
+            // ====== PASO 6: Crear carpetas ======
+            $this->crearCarpetasPedido($pedidoId);
 
-            Log::info('[CrearPedidoEditableController] Imágenes de prendas procesadas', [
+            Log::info('[CrearPedidoEditableController] Carpetas creadas', [
                 'pedido_id' => $pedidoId,
             ]);
 
-            // PASO 6: Procesar EPPs si existen en estructura nueva
-            if ($esEstructuraNueva && !empty($validated['epps'])) {
-                $this->procesarYAsignarEpps($request, $pedidoId, $validated['epps']);
+            // ====== PASO 7: CRÍTICO - Mapear y procesar imágenes ======
+            $this->mapeoImagenes->mapearYCrearFotos(
+                $dtoPedido,      // DTO con prendas normalizadas
+                $pedidoId,       // ID del pedido
+                $request         // Request con archivos
+            );
 
-                Log::info('[CrearPedidoEditableController] EPPs procesados', [
-                    'pedido_id' => $pedidoId,
-                    'epps_count' => count($validated['epps']),
-                ]);
-            }
+            Log::info('[CrearPedidoEditableController] Imágenes mapeadas', [
+                'pedido_id' => $pedidoId,
+                'imagenes_mapeadas' => count($dtoPedido->imagen_uid_a_ruta)
+            ]);
 
-            // PASO 7: Actualizar cantidad_total del pedido
-            // cantidad_total = suma de cantidades de prendas + suma de cantidades de EPPs
-            $cantidadPrendas = $this->calcularCantidadTotalPrendas($pedidoId);
-            $cantidadEpps = $this->calcularCantidadTotalEpps($pedidoId);
-            $cantidadTotal = $cantidadPrendas + $cantidadEpps;
-
+            // ====== PASO 8: Calcular cantidades y commit ======
+            $cantidadTotalPrendas = $this->calcularCantidadTotalPrendas($pedidoId);
+            $cantidadTotalEpps = $this->calcularCantidadTotalEpps($pedidoId);
+            $cantidadTotal = $cantidadTotalPrendas + $cantidadTotalEpps;
             $pedido->update(['cantidad_total' => $cantidadTotal]);
 
-            Log::info('[CrearPedidoEditableController] 📊 Cantidad total actualizada', [
-                'pedido_id' => $pedidoId,
-                'cantidad_prendas' => $cantidadPrendas,
-                'cantidad_epps' => $cantidadEpps,
-                'cantidad_total' => $cantidadTotal,
-            ]);
-
-            // PASO 8: Todo OK → COMMIT
             DB::commit();
 
             Log::info('[CrearPedidoEditableController] TRANSACCIÓN EXITOSA', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
+                'cantidad_total_prendas' => $cantidadTotalPrendas,
+                'cantidad_total_epps' => $cantidadTotalEpps,
+                'cantidad_total' => $cantidadTotal
             ]);
 
             return response()->json([
@@ -563,27 +585,26 @@ class CrearPedidoEditableController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            // ROLLBACK DB
             DB::rollBack();
 
-            Log::error('[CrearPedidoEditableController]  ERROR - Iniciando rollback', [
+            Log::error('[CrearPedidoEditableController] ERROR - Rollback iniciado', [
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
-            // LIMPIAR ARCHIVOS: Borrar carpeta completa del pedido si se creó
+            // Limpiar archivos si se creó carpeta
             if ($pedidoId) {
                 try {
                     $carpetaPedido = "pedidos/{$pedidoId}";
                     if (Storage::disk('public')->exists($carpetaPedido)) {
                         Storage::disk('public')->deleteDirectory($carpetaPedido);
-                        Log::info('[CrearPedidoEditableController] 🗑️ Carpeta eliminada', [
+                        Log::info('[CrearPedidoEditableController] Carpeta eliminada', [
                             'carpeta' => $carpetaPedido,
                         ]);
                     }
                 } catch (\Exception $cleanupError) {
-                    Log::error('[CrearPedidoEditableController] Error limpiando archivos', [
-                        'pedido_id' => $pedidoId,
+                    Log::error('[CrearPedidoEditableController] Error al limpiar archivos', [
                         'error' => $cleanupError->getMessage(),
                     ]);
                 }
@@ -591,7 +612,7 @@ class CrearPedidoEditableController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear pedido: ' . $e->getMessage(),
+                'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -658,14 +679,72 @@ class CrearPedidoEditableController extends Controller
 
             // ==================== TELAS ====================
             if (isset($item['telas']) && is_array($item['telas'])) {
-                $telasRelacion = $prenda->coloresTelas;
+                Log::info('[CrearPedidoEditableController] 🧵 Procesando telas', [
+                    'prenda_id' => $prenda->id,
+                    'cantidad_telas' => count($item['telas']),
+                ]);
+
+                // Recargar relaciones de telas para asegurar que están actualizadas
+                $telasRelacion = $prenda->coloresTelas()->get();
+                
+                Log::debug('[CrearPedidoEditableController] Telas existentes en BD', [
+                    'cantidad' => $telasRelacion->count(),
+                    'ids' => $telasRelacion->pluck('id')->toArray(),
+                ]);
                 
                 foreach ($item['telas'] as $telaIdx => $tela) {
-                    if (!isset($telasRelacion[$telaIdx])) {
+                    // ✅ MEJORADO: Obtener o crear la relación de tela
+                    $telaRelacion = $telasRelacion->get($telaIdx);
+                    
+                    if (!$telaRelacion) {
+                        Log::warning('[CrearPedidoEditableController] ⚠️ Tela no encontrada en índice', [
+                            'prenda_id' => $prenda->id,
+                            'tela_idx' => $telaIdx,
+                            'datos_tela' => $tela,
+                        ]);
+                        
+                        // INTENTAR OBTENER O CREAR USANDO ColorTelaService
+                        if (!empty($tela) && isset($tela['color_id']) && isset($tela['tela_id'])) {
+                            try {
+                                $colorTelaId = $this->colorTelaService->obtenerOCrearColorTela(
+                                    $prenda->id,
+                                    $tela['color_id'],
+                                    $tela['tela_id']
+                                );
+                                
+                                if ($colorTelaId) {
+                                    $telaRelacion = \App\Models\PrendaPedidoColorTela::find($colorTelaId);
+                                    
+                                    Log::info('[CrearPedidoEditableController] ✅ Tela obtenida/creada', [
+                                        'color_tela_id' => $colorTelaId,
+                                        'color_id' => $tela['color_id'],
+                                        'tela_id' => $tela['tela_id'],
+                                    ]);
+                                }
+                            } catch (\Exception $e) {
+                                Log::error('[CrearPedidoEditableController] ❌ Error al obtener/crear tela', [
+                                    'error' => $e->getMessage(),
+                                    'tela_data' => $tela,
+                                ]);
+                                continue;
+                            }
+                        } else {
+                            Log::debug('[CrearPedidoEditableController] ⚠️ Datos de tela incompletos', [
+                                'tela_data' => $tela,
+                            ]);
+                            continue;
+                        }
+                    }
+
+                    // ==================== PROCESAR IMÁGENES DE TELA ====================
+                    if (!$telaRelacion) {
+                        Log::warning('[CrearPedidoEditableController] ⚠️ No se pudo obtener/crear relación de tela');
                         continue;
                     }
 
                     $imgIdx = 0;
+                    $imagenesGuardadas = 0;
+                    
                     while (true) {
                         $formKey = "prendas.{$itemIdx}.telas.{$telaIdx}.imagenes.{$imgIdx}";
                         if (!$request->hasFile($formKey)) {
@@ -678,17 +757,30 @@ class CrearPedidoEditableController extends Controller
                         );
 
                         \App\Models\PrendaFotoTelaPedido::create([
-                            'prenda_pedido_colores_telas_id' => $telasRelacion[$telaIdx]->id,
+                            'prenda_pedido_colores_telas_id' => $telaRelacion->id,
                             'ruta_webp' => $resultado['webp'],
                             'orden' => $imgIdx + 1,
                         ]);
 
                         Log::debug('[CrearPedidoEditableController] 📸 Imagen tela guardada', [
-                            'tela_relacion_id' => $telasRelacion[$telaIdx]->id,
+                            'tela_relacion_id' => $telaRelacion->id,
                             'webp' => $resultado['webp'],
+                            'orden' => $imgIdx + 1,
                         ]);
 
+                        $imagenesGuardadas++;
                         $imgIdx++;
+                    }
+                    
+                    if ($imagenesGuardadas > 0) {
+                        Log::info('[CrearPedidoEditableController] ✅ Imágenes de tela procesadas', [
+                            'tela_id' => $telaRelacion->id,
+                            'cantidad_imagenes' => $imagenesGuardadas,
+                        ]);
+                    } else {
+                        Log::debug('[CrearPedidoEditableController] ℹ️ Sin imágenes para esta tela', [
+                            'tela_id' => $telaRelacion->id,
+                        ]);
                     }
                 }
             }
@@ -1065,13 +1157,22 @@ class CrearPedidoEditableController extends Controller
             }
             elseif ($info['tipo'] === 'tela') {
                 $telaIdx = $info['tela_idx'] ?? 0;
-                $telasRelacion = $prenda->coloresTelas;
                 
-                if (isset($telasRelacion[$telaIdx])) {
+                // ✅ MEJORADO: Recargar y verificar relaciones de telas
+                $telasRelacion = $prenda->coloresTelas()->get();
+                $telaRelacion = $telasRelacion->get($telaIdx);
+                
+                if ($telaRelacion) {
                     \App\Models\PrendaFotoTelaPedido::create([
-                        'prenda_pedido_colores_telas_id' => $telasRelacion[$telaIdx]->id,
+                        'prenda_pedido_colores_telas_id' => $telaRelacion->id,
                         'ruta_original' => $rutaOriginalNew,
                         'ruta_webp' => $rutaWebpNew,
+                    ]);
+                } else {
+                    Log::warning('[CrearPedidoEditableController] Tela no encontrada para foto', [
+                        'prenda_id' => $prenda->id,
+                        'tela_idx' => $telaIdx,
+                        'tela_relacion_count' => $telasRelacion->count(),
                     ]);
                 }
             }
@@ -1424,4 +1525,95 @@ class CrearPedidoEditableController extends Controller
             ->sum('cantidad');
 
         return (int) $cantidad;
-    }}
+    }
+
+    /**
+     * ✅ Crear estructura de carpetas para un pedido
+     * 
+     * Crea:
+     * - storage/app/public/pedidos/{pedido_id}/prendas/
+     * - storage/app/public/pedidos/{pedido_id}/telas/
+     * - storage/app/public/pedidos/{pedido_id}/procesos/
+     * - storage/app/public/pedidos/{pedido_id}/epps/
+     * 
+     * @param int $pedidoId
+     * @return void
+     */
+    private function crearCarpetasPedido(int $pedidoId): void
+    {
+        $basePath = "pedidos/{$pedidoId}";
+        $carpetas = ['prendas', 'telas', 'procesos', 'epps'];
+
+        foreach ($carpetas as $carpeta) {
+            $rutaCompleta = "{$basePath}/{$carpeta}";
+            
+            if (!Storage::disk('public')->exists($rutaCompleta)) {
+                try {
+                    Storage::disk('public')->makeDirectory($rutaCompleta, 0755, true);
+                    Log::info('[CrearPedidoEditableController] Carpeta creada', [
+                        'pedido_id' => $pedidoId,
+                        'carpeta' => $rutaCompleta
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('[CrearPedidoEditableController] Error creando carpeta', [
+                        'pedido_id' => $pedidoId,
+                        'carpeta' => $rutaCompleta,
+                        'error' => $e->getMessage()
+                    ]);
+                    // No fallar por carpetas
+                }
+            }
+        }
+    }
+    
+    /**
+     * Validar que el JSON del frontend NO contiene objetos File (indicaría error de serialización)
+     */
+    private function validarJsonSinFiles(array $datos, $ruta = ''): void
+    {
+        foreach ($datos as $key => $valor) {
+            $rutaActual = $ruta ? "{$ruta}.{$key}" : $key;
+            
+            // Si es un array, recursivamente validar
+            if (is_array($valor)) {
+                $this->validarJsonSinFiles($valor, $rutaActual);
+            }
+            
+            // Si es un objeto (que no sea array), es sospechoso
+            if (is_object($valor)) {
+                Log::error('[CrearPedidoEditableController] ERROR: Objeto en JSON (File no serializado)', [
+                    'ruta' => $rutaActual,
+                    'tipo' => get_class($valor)
+                ]);
+                
+                throw new \Exception(
+                    "Objeto no serializable en JSON en ruta: {$rutaActual}. " .
+                    "Las imágenes deben enviarse por FormData, no por JSON."
+                );
+            }
+            
+            // Validación: Si la ruta contiene 'imagenes' y el valor es array vacío []
+            // pero esperamos archivos, avisar
+            if (strpos($rutaActual, 'imagenes') !== false && 
+                is_array($valor) && 
+                count($valor) > 0) {
+                
+                // Validar que cada imagen tiene uid y formdata_key
+                foreach ($valor as $idx => $img) {
+                    if (is_array($img) && !empty($img)) {
+                        if (!isset($img['uid'])) {
+                            Log::warning('[CrearPedidoEditableController] Imagen sin UID', [
+                                'ruta' => "{$rutaActual}.{$idx}"
+                            ]);
+                        }
+                        if (!isset($img['formdata_key'])) {
+                            Log::warning('[CrearPedidoEditableController] Imagen sin formdata_key', [
+                                'ruta' => "{$rutaActual}.{$idx}"
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

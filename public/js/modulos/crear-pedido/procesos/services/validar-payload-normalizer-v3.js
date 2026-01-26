@@ -62,19 +62,6 @@
         return;
     }
 
-    console.log('\n✅ Todos los 7 métodos están presentes');
-
-    // ========================================================================
-    // 3. VERIFICAR QUE NORMALIZAR ES UNA FUNCIÓN
-    // ========================================================================
-    console.log('\n PASO 3: Verificar normalizar específicamente');
-    const tipo = typeof window.PayloadNormalizer.normalizar;
-    if (tipo !== 'function') {
-        console.error(' CRÍTICO: normalizar NO es una función, es:', tipo);
-        console.error('   Contenido:', window.PayloadNormalizer.normalizar);
-        return;
-    }
-    console.log('✅ normalizar es una función');
 
     // ========================================================================
     // 4. VERIFICAR FLAG DE INICIALIZACIÓN
@@ -157,17 +144,5 @@
     // ========================================================================
     // 7. RESUMEN FINAL
     // ========================================================================
-    console.log('\n╔════════════════════════════════════════════════════════════╗');
-    console.log('║  VALIDACIÓN COMPLETADA EXITOSAMENTE                    ║');
-    console.log('╚════════════════════════════════════════════════════════════╝');
-    console.log('\n🎉 PayloadNormalizer v3 está LISTO para usar');
-    console.log('   - Todos los 7 métodos públicos disponibles');
-    console.log('   - normalizar es una función');
-    console.log('   - Pruebas básicas exitosas');
-    console.log('\n💡 Próximos pasos:');
-    console.log('   1. Limpia el caché del navegador (Ctrl+Shift+Delete)');
-    console.log('   2. Recarga la página (Ctrl+Shift+R)');
-    console.log('   3. Intenta crear un pedido');
-    console.log('   4. Si hay errores, verifica el panel de Errores (rojo)');
 
 })();

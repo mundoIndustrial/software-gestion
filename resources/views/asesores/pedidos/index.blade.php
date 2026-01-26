@@ -742,11 +742,9 @@
         
         //  Cuando el DOM esté completamente cargado
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[PageLoading] DOMContentLoaded - Inicios scripts de la página');
             
             // Dar un pequeño delay para que todos los scripts se inicialicen
             setTimeout(function() {
-                console.log('[PageLoading] Ocultando overlay...');
                 const overlay = document.getElementById('page-loading-overlay');
                 
                 if (overlay) {
@@ -756,7 +754,6 @@
                     // Remover del DOM después de la animación
                     setTimeout(function() {
                         overlay.remove();
-                        console.log('[PageLoading]  Overlay removido del DOM');
                     }, 400);  // Coincide con duración de transición CSS
                 }
             }, 500);  // Pequeño delay para sincronización

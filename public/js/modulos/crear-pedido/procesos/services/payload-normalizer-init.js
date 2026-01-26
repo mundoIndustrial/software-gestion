@@ -11,9 +11,7 @@ if (window.PayloadNormalizer) {
     console.log('[PayloadNormalizer-Init] Métodos disponibles:', Object.keys(window.PayloadNormalizer));
     
     if (typeof window.PayloadNormalizer.normalizar === 'function') {
-        console.log('[PayloadNormalizer-Init] normalizar es una función');
     } else {
-        console.warn('[PayloadNormalizer-Init]  normalizar NO es una función, es:', typeof window.PayloadNormalizer.normalizar);
     }
 } else {
     console.error('[PayloadNormalizer-Init]  PayloadNormalizer NO existe en window');

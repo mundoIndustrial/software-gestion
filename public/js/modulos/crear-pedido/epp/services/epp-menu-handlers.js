@@ -8,7 +8,6 @@ window.EppMenuHandlers = {
      * Inicializar event listeners para menús de EPP
      */
     inicializar() {
-        console.log('[EppMenuHandlers]  Inicializando handlers de menú EPP');
         
         // Usar event delegation para que funcione con elementos agregados dinámicamente
         document.addEventListener('click', (e) => {

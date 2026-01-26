@@ -262,15 +262,10 @@
  
         if (metodosValidos.length < 7) {
             console.error('[PayloadNormalizer v3]  ERROR: Solo ' + metodosValidos.length + ' métodos, se esperaban 7');
-        } else {
-            console.log('[PayloadNormalizer v3] ÉXITO: Todos los 7 métodos disponibles');
-        }
+       }
 
         // Validación de función critical
         if (typeof window.PayloadNormalizer.normalizar === 'function') {
-            console.log('[PayloadNormalizer v3] normalizar es una función');
-        } else {
-            console.error('[PayloadNormalizer v3]  normalizar NO es una función');
         }
     }, 100);
 

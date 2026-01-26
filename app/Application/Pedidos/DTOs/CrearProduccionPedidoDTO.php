@@ -15,6 +15,7 @@ class CrearProduccionPedidoDTO
     public string $numeroPedido;
     public string $cliente;
     public array $prendas;
+    public array $epps;
     public ?string $area;
     public ?string $estado;
     public ?int $asesorId;
@@ -25,6 +26,7 @@ class CrearProduccionPedidoDTO
         string $numeroPedido,
         string $cliente,
         array $prendas = [],
+        array $epps = [],
         ?string $area = null,
         ?string $estado = null,
         ?int $asesorId = null,
@@ -34,6 +36,7 @@ class CrearProduccionPedidoDTO
         $this->numeroPedido = trim($numeroPedido);
         $this->cliente = trim($cliente);
         $this->prendas = $prendas;
+        $this->epps = $epps;
         $this->area = $area ?? 'creacion de pedido';
         $this->estado = $estado ?? 'Pendiente';
         $this->asesorId = $asesorId;
@@ -52,6 +55,7 @@ class CrearProduccionPedidoDTO
             $datos['numero_pedido'] ?? '',
             $datos['cliente'] ?? '',
             $datos['prendas'] ?? [],
+            $datos['epps'] ?? [],
             $datos['area'] ?? 'creacion de pedido',
             $datos['estado'] ?? 'Pendiente',
             $datos['asesor_id'] ?? null,

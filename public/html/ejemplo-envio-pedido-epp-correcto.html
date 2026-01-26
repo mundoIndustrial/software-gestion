@@ -1,0 +1,529 @@
+/**
+ * ejemplo-envio-pedido-epp-correcto.html
+ * 
+ * ✅ EJEMPLO HTML + JAVASCRIPT COMPLETO
+ * Cómo usar FormData correctamente para enviar EPP con imágenes
+ */
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="token-aqui">
+    <title>Crear Pedido con EPP - FormData Correcto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .epp-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .imagenes-preview {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .imagen-preview {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .imagen-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .imagen-preview .remove-btn {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button.secondary {
+            background: #6c757d;
+        }
+        
+        button.secondary:hover {
+            background: #5a6268;
+        }
+        
+        .debug-section {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 3px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 3px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ Crear Pedido con EPP - Ejemplo Correcto</h1>
+
+    <div id="status"></div>
+
+    <!-- DATOS BÁSICOS DEL PEDIDO -->
+    <form id="form-pedido">
+        <div class="section">
+            <h2>1. Datos del Pedido</h2>
+            
+            <div class="form-group">
+                <label for="cliente">Cliente:</label>
+                <input type="text" id="cliente" name="cliente" required value="Mi Cliente">
+            </div>
+            
+            <div class="form-group">
+                <label for="asesora">Asesora:</label>
+                <input type="text" id="asesora" name="asesora" required value="María López">
+            </div>
+            
+            <div class="form-group">
+                <label for="forma_pago">Forma de Pago:</label>
+                <select id="forma_pago" name="forma_pago" required>
+                    <option value="Contado">Contado</option>
+                    <option value="Crédito">Crédito</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- EPPs -->
+        <div class="section">
+            <h2>2. Agregar EPP con Imágenes</h2>
+            
+            <div id="lista-epps"></div>
+            
+            <button type="button" id="btn-agregar-epp" class="secondary">+ Agregar EPP</button>
+        </div>
+
+        <!-- ENVÍO -->
+        <div class="section">
+            <button type="submit" id="btn-enviar">Crear Pedido</button>
+            <button type="button" id="btn-debug" class="secondary">Debug: Ver FormData</button>
+        </div>
+    </form>
+
+    <!-- DEBUG -->
+    <div class="section">
+        <h2>Debug</h2>
+        <button type="button" id="btn-mostrar-debug" class="secondary">Mostrar Detalles</button>
+        <div id="debug-output"></div>
+    </div>
+
+    <script>
+        // =====================================================
+        // ESTADO GLOBAL
+        // =====================================================
+        
+        const state = {
+            epps: [],
+            nextEppId: 1
+        };
+
+        // =====================================================
+        // MOSTRAR MENSAJES
+        // =====================================================
+        
+        function mostrarStatus(mensaje, tipo = 'info') {
+            const el = document.getElementById('status');
+            el.textContent = mensaje;
+            el.className = `status ${tipo}`;
+            
+            if (tipo === 'success') {
+                setTimeout(() => {
+                    el.className = '';
+                }, 5000);
+            }
+        }
+
+        // =====================================================
+        // AGREGAR EPP
+        // =====================================================
+        
+        function agregarEpp() {
+            const eppId = state.nextEppId++;
+            
+            const epp = {
+                id: eppId,
+                epp_id: '',
+                cantidad: 1,
+                observaciones: '',
+                imagenes: []
+            };
+            
+            state.epps.push(epp);
+            renderEpps();
+        }
+
+        // =====================================================
+        // RENDERIZAR EPPs
+        // =====================================================
+        
+        function renderEpps() {
+            const container = document.getElementById('lista-epps');
+            
+            if (state.epps.length === 0) {
+                container.innerHTML = '<p>No hay EPPs agregados</p>';
+                return;
+            }
+            
+            container.innerHTML = state.epps.map((epp, idx) => `
+                <div class="epp-item" data-epp-id="${epp.id}">
+                    <h4>EPP #${idx + 1}</h4>
+                    
+                    <div class="form-group">
+                        <label>ID del EPP:</label>
+                        <input type="number" 
+                               value="${epp.epp_id}" 
+                               placeholder="Ej: 849"
+                               onchange="actualizarEpp(${epp.id}, 'epp_id', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cantidad:</label>
+                        <input type="number" 
+                               value="${epp.cantidad}"
+                               min="1"
+                               onchange="actualizarEpp(${epp.id}, 'cantidad', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Observaciones:</label>
+                        <textarea onchange="actualizarEpp(${epp.id}, 'observaciones', this.value)">${epp.observaciones}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Imágenes (máx 5):</label>
+                        <input type="file" 
+                               multiple 
+                               accept="image/*"
+                               onchange="agregarImagenesBatch(${epp.id}, this.files)">
+                        <div class="imagenes-preview" data-epp-id="${epp.id}">
+                            ${epp.imagenes.map((img, imgIdx) => `
+                                <div class="imagen-preview">
+                                    <img src="${img.preview}" alt="imagen">
+                                    <button type="button" class="remove-btn" onclick="quitarImagen(${epp.id}, ${imgIdx})">×</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <button type="button" onclick="quitarEpp(${epp.id})" class="secondary">Quitar EPP</button>
+                </div>
+            `).join('');
+        }
+
+        function actualizarEpp(eppId, campo, valor) {
+            const epp = state.epps.find(e => e.id === eppId);
+            if (epp) {
+                epp[campo] = valor;
+            }
+        }
+
+        // =====================================================
+        // GESTIONAR IMÁGENES
+        // =====================================================
+        
+        function agregarImagenesBatch(eppId, files) {
+            const epp = state.epps.find(e => e.id === eppId);
+            if (!epp) return;
+            
+            // Máximo 5 imágenes por EPP
+            const restantes = 5 - epp.imagenes.length;
+            
+            Array.from(files).slice(0, restantes).forEach(file => {
+                const preview = URL.createObjectURL(file);
+                
+                epp.imagenes.push({
+                    file: file,
+                    preview: preview,
+                    nombre: file.name
+                });
+            });
+            
+            renderEpps();
+            mostrarStatus(`✅ ${Array.from(files).length} imagen(es) agregada(s)`, 'success');
+        }
+
+        function quitarImagen(eppId, imgIdx) {
+            const epp = state.epps.find(e => e.id === eppId);
+            if (epp) {
+                // Liberar URL object
+                URL.revokeObjectURL(epp.imagenes[imgIdx].preview);
+                epp.imagenes.splice(imgIdx, 1);
+                renderEpps();
+            }
+        }
+
+        function quitarEpp(eppId) {
+            state.epps = state.epps.filter(e => e.id !== eppId);
+            renderEpps();
+        }
+
+        // =====================================================
+        // ✅ EXTRAER ARCHIVOS Y CONSTRUIR FormData
+        // =====================================================
+        
+        function recolectarDatos() {
+            return {
+                cliente: document.getElementById('cliente').value,
+                asesora: document.getElementById('asesora').value,
+                forma_de_pago: document.getElementById('forma_pago').value,
+                prendas: [],
+                epps: state.epps.map(epp => ({
+                    epp_id: parseInt(epp.epp_id) || 0,
+                    cantidad: parseInt(epp.cantidad) || 1,
+                    observaciones: epp.observaciones,
+                    imagenes: epp.imagenes  // ✅ Aquí van File objects
+                }))
+            };
+        }
+
+        function construirFormData(pedidoData) {
+            const formData = new FormData();
+            
+            // 1. Pedido como JSON (SIN imágenes)
+            const pedidoLimpio = {
+                cliente: pedidoData.cliente,
+                asesora: pedidoData.asesora,
+                forma_de_pago: pedidoData.forma_de_pago,
+                prendas: pedidoData.prendas,
+                epps: pedidoData.epps.map(epp => ({
+                    epp_id: epp.epp_id,
+                    cantidad: epp.cantidad,
+                    observaciones: epp.observaciones,
+                    // ⚠️ NO incluir imagenes aquí
+                }))
+            };
+
+            formData.append('pedido', JSON.stringify(pedidoLimpio));
+
+            console.log('📝 Pedido JSON:', pedidoLimpio);
+
+            // 2. ✅ Agregar archivos de EPP
+            pedidoData.epps.forEach((epp, eppIdx) => {
+                if (epp.imagenes && Array.isArray(epp.imagenes)) {
+                    epp.imagenes.forEach((img, imgIdx) => {
+                        if (img.file instanceof File) {
+                            formData.append(
+                                `epps[${eppIdx}][imagenes][${imgIdx}]`,
+                                img.file,
+                                `epp_${epp.epp_id}_img_${imgIdx}.${img.file.name.split('.').pop()}`
+                            );
+                            
+                            console.log(`📸 Agregando imagen EPP: epps[${eppIdx}][imagenes][${imgIdx}]`);
+                        }
+                    });
+                }
+            });
+
+            return formData;
+        }
+
+        // =====================================================
+        // ENVIAR PEDIDO
+        // =====================================================
+        
+        async function enviarPedido(event) {
+            event.preventDefault();
+            
+            try {
+                mostrarStatus('Validando datos...', 'info');
+                
+                const pedidoData = recolectarDatos();
+                console.log('📊 Datos recolectados:', pedidoData);
+                
+                // Validar
+                if (!pedidoData.cliente) {
+                    throw new Error('Falta cliente');
+                }
+                if (pedidoData.epps.length === 0) {
+                    throw new Error('Debe agregar al menos un EPP');
+                }
+                
+                // Construir FormData
+                const formData = construirFormData(pedidoData);
+                
+                mostrarStatus('Enviando pedido...', 'info');
+                console.log('📤 Enviando FormData...');
+                
+                // Enviar
+                const response = await fetch('/asesores/pedidos-editable/crear', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: formData
+                });
+
+                const resultado = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(resultado.message || `Error HTTP ${response.status}`);
+                }
+
+                mostrarStatus(
+                    `✅ Pedido #${resultado.numero_pedido} creado exitosamente`,
+                    'success'
+                );
+
+                console.log('✅ Respuesta:', resultado);
+                document.getElementById('form-pedido').reset();
+                state.epps = [];
+                renderEpps();
+
+            } catch (error) {
+                mostrarStatus(`❌ Error: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        // =====================================================
+        // DEBUG: Ver contenido FormData
+        // =====================================================
+        
+        function debugFormData() {
+            const pedidoData = recolectarDatos();
+            const formData = construirFormData(pedidoData);
+            
+            let debug = '=== FormData Contents ===\n\n';
+            
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    debug += `${key}: [File] ${value.name} (${value.size} bytes)\n`;
+                } else if (typeof value === 'string' && value.length > 100) {
+                    debug += `${key}: [String] ${value.substring(0, 80)}...\n`;
+                } else {
+                    debug += `${key}: ${value}\n`;
+                }
+            }
+
+            document.getElementById('debug-output').textContent = debug;
+            mostrarStatus('Ver sección Debug abajo', 'info');
+        }
+
+        // =====================================================
+        // EVENT LISTENERS
+        // =====================================================
+        
+        document.getElementById('form-pedido').addEventListener('submit', enviarPedido);
+        document.getElementById('btn-agregar-epp').addEventListener('click', agregarEpp);
+        document.getElementById('btn-debug').addEventListener('click', debugFormData);
+        document.getElementById('btn-mostrar-debug').addEventListener('click', () => {
+            const output = document.getElementById('debug-output');
+            output.style.display = output.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // =====================================================
+        // INICIALIZAR
+        // =====================================================
+        
+        console.log('✅ Script cargado');
+        renderEpps();
+    </script>
+</body>
+</html>

@@ -65,13 +65,7 @@ class CrearPedidoService
      */
     protected function crearPedidos(array $datos): PedidoProduccion
     {
-        $productosKey = isset($datos['productos']) ? 'productos' : 'productos_friendly';
-        $productosConTelasProcessadas = $this->procesarFotosTelas(
-            $datos[$productosKey] ?? [],
-            $datos['archivos'] ?? []
-        );
-
-        // Crear pedido base
+        // Crear pedido base PRIMERO para obtener ID
         $pedido = PedidoProduccion::create([
             'numero_pedido' => null,
             'cliente' => $datos['cliente'],
@@ -85,6 +79,14 @@ class CrearPedidoService
         //  CREAR ESTRUCTURA DE CARPETAS PARA IMÁGENES
         $this->crearEstructuraCarpetas($pedido->id);
 
+        // Procesar imágenes de telas CON el ID del pedido
+        $productosKey = isset($datos['productos']) ? 'productos' : 'productos_friendly';
+        $productosConTelasProcessadas = $this->procesarFotosTelas(
+            $datos[$productosKey] ?? [],
+            $datos['archivos'] ?? [],
+            $pedido->id
+        );
+
         // Guardar prendas
         $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $productosConTelasProcessadas);
 
@@ -96,7 +98,7 @@ class CrearPedidoService
             || !empty($datos['logo']['observaciones_generales']);
 
         if ($tieneDataLogo) {
-            $imagenesProcesadas = $this->procesarImagenesLogo($datos['logo']['imagenes'] ?? []);
+            $imagenesProcesadas = $this->procesarImagenesLogo($datos['logo']['imagenes'] ?? [], $pedido->id);
             $this->pedidoLogoService->guardarLogoEnPedido($pedido, [
                 'descripcion' => $datos['logo']['descripcion'] ?? null,
                 'ubicacion' => null,
@@ -183,7 +185,7 @@ class CrearPedidoService
     /**
      * Procesar fotos de telas
      */
-    protected function procesarFotosTelas(array $productos, array $archivos): array
+    protected function procesarFotosTelas(array $productos, array $archivos, int $pedidoId): array
     {
         $productosProcessados = [];
 
@@ -227,15 +229,17 @@ class CrearPedidoService
     }
 
     /**
-     * Procesar imÃ¡genes del logo
+     * Procesar imágenes del logo
      */
-    protected function procesarImagenesLogo(array $imagenes): array
+    protected function procesarImagenesLogo(array $imagenes, int $pedidoId = null): array
     {
         $imagenesProcesadas = [];
 
         foreach ($imagenes as $imagen) {
             if ($imagen->isValid()) {
-                $rutaGuardada = $imagen->store('logos/pedidos', 'public');
+                // Si hay pedidoId, guardar en pedido/{id}/logo, sino en logos/pedidos
+                $rutaBase = $pedidoId ? "pedido/{$pedidoId}/logo" : 'logos/pedidos';
+                $rutaGuardada = $imagen->store($rutaBase, 'public');
                 $rutaWebp = str_replace(
                     ['.' . $imagen->getClientOriginalExtension()],
                     ['.webp'],
