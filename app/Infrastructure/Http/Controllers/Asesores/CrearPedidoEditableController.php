@@ -129,8 +129,8 @@ class CrearPedidoEditableController extends Controller
         // RETORNAR VIEW CON TODOS LOS DATOS
         // ========================================
         
-        return view('asesores.pedidos.crear-pedido-nuevo', [
-            'cotizaciones' => $cotizaciones,
+        return view('asesores.pedidos.crear-pedido-desde-cotizacion', [
+            'cotizacionesData' => $cotizaciones,
             'pedidos' => $pedidos,
             'clientes' => $clientes,
             'tallas' => $tallas,

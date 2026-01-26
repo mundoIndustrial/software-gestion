@@ -28,28 +28,98 @@ class PedidosProduccionViewController
     public function obtenerDatosCotizacion($cotizacionId)
     {
         try {
-            // Obtener cotización con sus relaciones
+            // Obtener cotización con sus relaciones COMPLETAS
             $cotizacion = Cotizacion::with([
                 'tipoCotizacion:id,nombre',
-                'prendas:id,cotizacion_id,prenda_id,cantidad',
-                'prendas.prenda:id,nombre',
-                'reflectivo:id,cotizacion_id,tipo_reflectivo,cantidad',
-                'logoCotizacion:id,cotizacion_id,tipo_logo'
+                'prendas' => function($query) {
+                    $query->with([
+                        'telas' => function($q) {
+                            $q->with(['color:id,nombre', 'tela:id,nombre']);
+                        },
+                        'fotos:id,prenda_cot_id,ruta_original,ruta_webp,ruta_miniatura',
+                        'telaFotos:id,prenda_tela_cot_id,ruta_original,ruta_webp,ruta_miniatura',
+                        'variantes:id,prenda_cot_id,tipo_manga_id,tipo_broche_id,tiene_bolsillos,aplica_manga,aplica_broche,tiene_reflectivo,obs_manga,obs_bolsillos,obs_broche,obs_reflectivo',
+                        'variantes.manga:id,nombre',
+                        'variantes.broche:id,nombre'
+                    ]);
+                },
+                'reflectivo',
+                'logoCotizacion'
             ])->find($cotizacionId);
 
             if (!$cotizacion) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Cotización no encontrada'
+                    'error' => 'Cotización no encontrada'
                 ], 404);
             }
 
-            // Formatear datos para el frontend
+            // Formatear datos COMPLETOS para el frontend
             $prendas = $cotizacion->prendas->map(function($prenda) {
+                // Telas con fotos
+                $telas = [];
+                if ($prenda->telas) {
+                    $telas = $prenda->telas->map(function($tela) use ($prenda) {
+                        // Obtener fotos de esta tela desde telaFotos
+                        $fotosTela = [];
+                        if ($prenda->telaFotos) {
+                            $fotosTela = $prenda->telaFotos
+                                ->where('prenda_tela_cot_id', $tela->id)
+                                ->pluck('ruta_webp')
+                                ->toArray();
+                        }
+                        
+                        return [
+                            'id' => $tela->id,
+                            'color' => $tela->color ? [
+                                'id' => $tela->color->id,
+                                'nombre' => $tela->color->nombre
+                            ] : null,
+                            'tela' => $tela->tela ? [
+                                'id' => $tela->tela->id,
+                                'nombre' => $tela->tela->nombre
+                            ] : null,
+                            'referencia' => $tela->referencia ?? '',
+                            'fotos' => $fotosTela
+                        ];
+                    })->toArray();
+                }
+
+                // Fotos de la prenda (principal)
+                $fotos = [];
+                if ($prenda->fotos) {
+                    $fotos = $prenda->fotos->pluck('ruta_webp')->toArray();
+                }
+
+                // Variantes (especificaciones)
+                $variantes = $prenda->variantes ? $prenda->variantes->map(function($var) {
+                    return [
+                        'id' => $var->id,
+                        'tipo_manga_id' => $var->tipo_manga_id,
+                        'tipo_manga_nombre' => $var->manga ? $var->manga->nombre : null,
+                        'tipo_broche_id' => $var->tipo_broche_id,
+                        'tipo_broche_nombre' => $var->broche ? $var->broche->nombre : null,
+                        'tiene_bolsillos' => $var->tiene_bolsillos ?? false,
+                        'aplica_manga' => $var->aplica_manga ?? false,
+                        'aplica_broche' => $var->aplica_broche ?? false,
+                        'tiene_reflectivo' => $var->tiene_reflectivo ?? false,
+                        'obs_manga' => $var->obs_manga,
+                        'obs_bolsillos' => $var->obs_bolsillos,
+                        'obs_broche' => $var->obs_broche,
+                        'obs_reflectivo' => $var->obs_reflectivo
+                    ];
+                })->toArray() : [];
+
                 return [
                     'id' => $prenda->id,
-                    'nombre' => $prenda->prenda?->nombre ?? 'Prenda',
-                    'cantidad' => $prenda->cantidad,
+                    'nombre' => $prenda->nombre_producto ?? 'Prenda sin nombre',
+                    'nombre_producto' => $prenda->nombre_producto,
+                    'descripcion' => $prenda->descripcion ?? '',
+                    'cantidad' => $prenda->cantidad ?? 1,
+                    'texto_personalizado_tallas' => $prenda->texto_personalizado_tallas,
+                    'prenda_bodega' => $prenda->prenda_bodega ?? 0,
+                    'telas' => $telas,
+                    'fotos' => $fotos,
+                    'variantes' => $variantes,
                     'tipo' => 'prenda'
                 ];
             })->toArray();
@@ -58,8 +128,8 @@ class PedidosProduccionViewController
             if ($cotizacion->reflectivo) {
                 $reflectivo = [
                     'id' => $cotizacion->reflectivo->id,
-                    'tipo' => $cotizacion->reflectivo->tipo_reflectivo,
-                    'cantidad' => $cotizacion->reflectivo->cantidad,
+                    'tipo_reflectivo' => $cotizacion->reflectivo->tipo_reflectivo ?? 'N/A',
+                    'cantidad' => $cotizacion->reflectivo->cantidad ?? 1,
                     'tipo' => 'reflectivo'
                 ];
             }
@@ -68,27 +138,32 @@ class PedidosProduccionViewController
             if ($cotizacion->logoCotizacion) {
                 $logo = [
                     'id' => $cotizacion->logoCotizacion->id,
-                    'tipo' => $cotizacion->logoCotizacion->tipo_logo,
+                    'tipo_logo' => $cotizacion->logoCotizacion->tipo_logo ?? 'N/A',
                     'tipo' => 'logo'
                 ];
             }
 
             return response()->json([
-                'success' => true,
-                'data' => [
-                    'tipo_cotizacion' => $cotizacion->tipoCotizacion?->nombre ?? 'Desconocido',
-                    'prendas' => $prendas,
-                    'reflectivo' => $reflectivo,
-                    'logo' => $logo,
-                    'tiene_prendas' => count($prendas) > 0,
-                    'tiene_reflectivo' => $reflectivo !== null,
-                    'tiene_logo' => $logo !== null
-                ]
+                'error' => null,
+                'prendas' => $prendas,
+                'reflectivo' => $reflectivo,
+                'logo' => $logo,
+                'tiene_prendas' => count($prendas) > 0,
+                'tiene_reflectivo' => $reflectivo !== null,
+                'tiene_logo' => $logo !== null
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error en obtenerDatosCotizacion:', [
+                'cotizacion_id' => $cotizacionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos de cotización: ' . $e->getMessage()
+                'error' => 'Error al obtener datos de cotización: ' . $e->getMessage(),
+                'prendas' => [],
+                'reflectivo' => null,
+                'logo' => null
             ], 500);
         }
     }

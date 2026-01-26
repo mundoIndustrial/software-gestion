@@ -516,6 +516,10 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // Rutas API CQRS - Pedidos de Producción (retorna JSON)
     Route::get('/pedidos-produccion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
     Route::get('/pedidos-produccion/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
+    
+    // Obtener datos de cotización para crear pedido
+    Route::get('/pedidos-produccion/obtener-datos-cotizacion/{cotizacionId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerDatosCotizacion'])->name('pedidos-produccion.obtener-datos-cotizacion');
+    
     Route::post('/api/pedidos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'store'])->name('api.pedidos.store');
     Route::put('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'update'])->name('api.pedidos.update');
     Route::put('/api/pedidos/{id}/estado', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'cambiarEstado'])->name('api.pedidos.cambiar-estado');
