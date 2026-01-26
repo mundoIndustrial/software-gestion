@@ -476,7 +476,7 @@ def main():
     analizador.mostrar_duplicados()
     
     # Exportar
-    print("\n💾 Exportando resultados...")
+    print("\n Exportando resultados...")
     analizador.exportar_csv(str(ruta_csv_salida))
     analizador.exportar_excel(str(ruta_excel_salida))
     analizador.exportar_reporte_html(str(ruta_html_salida))

@@ -13,6 +13,42 @@
 window.telasAgregadas = [];
 window.imagenesTelaModalNueva = [];
 
+// Función para limpiar errores en campos de tela
+window.limpiarErrorTela = function(campo) {
+    if (campo && campo.classList.contains('campo-error-tela')) {
+        campo.classList.remove('campo-error-tela');
+        campo.style.borderColor = '';
+        campo.style.backgroundColor = '';
+        const mensajeError = campo.nextElementSibling;
+        if (mensajeError && mensajeError.classList.contains('error-mensaje-tela')) {
+            mensajeError.remove();
+        }
+    }
+}
+
+// Agregar event listeners a los campos de tela cuando estén listos
+window.inicializarEventosTela = function() {
+    const campos = ['nueva-prenda-color', 'nueva-prenda-tela', 'nueva-prenda-referencia'];
+    campos.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.addEventListener('input', function() {
+                window.limpiarErrorTela(this);
+            });
+            campo.addEventListener('focus', function() {
+                window.limpiarErrorTela(this);
+            });
+        }
+    });
+}
+
+// Llamar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.inicializarEventosTela);
+} else {
+    window.inicializarEventosTela();
+}
+
 //  GUARD: Asegurar que imagenesTelaStorage existe
 if (!window.imagenesTelaStorage) {
 
@@ -41,21 +77,47 @@ window.agregarTelaNueva = async function() {
     const referencia = document.getElementById('nueva-prenda-referencia').value.trim().toUpperCase();
     
 
+    // Limpiar errores anteriores
+    ['nueva-prenda-color', 'nueva-prenda-tela', 'nueva-prenda-referencia'].forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.classList.remove('campo-error-tela');
+            campo.style.borderColor = '';
+            campo.style.backgroundColor = '';
+            const mensajeError = campo.nextElementSibling;
+            if (mensajeError && mensajeError.classList.contains('error-mensaje-tela')) {
+                mensajeError.remove();
+            }
+        }
+    });
     
-    // Validación
+    // Validación con mensajes en rojo
+    let errores = [];
     if (!color) {
-        alert('Por favor completa el campo Color');
-        document.getElementById('nueva-prenda-color').focus();
-        return;
+        errores.push({ campo: 'nueva-prenda-color', mensaje: '⚠️ Color es requerido' });
     }
     if (!tela) {
-        alert('Por favor completa el campo Tela');
-        document.getElementById('nueva-prenda-tela').focus();
-        return;
+        errores.push({ campo: 'nueva-prenda-tela', mensaje: '⚠️ Tela es requerida' });
     }
-    if (!referencia) {
-        alert('Por favor completa el campo Referencia');
-        document.getElementById('nueva-prenda-referencia').focus();
+    // Referencia es opcional - no se valida
+    
+    if (errores.length > 0) {
+        errores.forEach(error => {
+            const campo = document.getElementById(error.campo);
+            if (campo) {
+                campo.classList.add('campo-error-tela');
+                campo.style.borderColor = '#ef4444';
+                campo.style.backgroundColor = '#fee2e2';
+                const mensajeDiv = document.createElement('div');
+                mensajeDiv.classList.add('error-mensaje-tela');
+                mensajeDiv.style.color = '#dc2626';
+                mensajeDiv.style.fontSize = '0.85rem';
+                mensajeDiv.style.marginTop = '4px';
+                mensajeDiv.style.fontWeight = '500';
+                mensajeDiv.textContent = error.mensaje;
+                campo.parentNode.insertBefore(mensajeDiv, campo.nextSibling);
+            }
+        });
         return;
     }
     

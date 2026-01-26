@@ -100,7 +100,7 @@
                         </div>
                         <!-- Select (oculto inicialmente) -->
                         <select id="tipo_pedido_nuevo" name="tipo_pedido_nuevo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="manejarCambiaTipoPedido()" style="display: none;" disabled>
-                            <option value="">-- Selecciona un tipo de pedido --</option>
+                            <option value="">-- Selecciona un ítem --</option>
                             <option value="P">PRENDA</option>
                             <option value="EPP">EPP</option>
                         </select>
@@ -350,7 +350,13 @@
                 const tipoPedido = selectTipoPedidoNuevo.value;
                 
                 if (!tipoPedido) {
-                    alert('Por favor selecciona un tipo de pedido primero');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '⚠️ Tipo de Ítem Requerido',
+                        text: 'Por favor selecciona un ítem primero',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#0066cc'
+                    });
                     return;
                 }
                 // Manejar diferentes tipos de pedido
@@ -361,7 +367,13 @@
                     // EPP - Equipo de Protección Personal
                     window.abrirModalAgregarEPP();
                 } else {
-                    alert('Tipo de pedido "' + tipoPedido + '" desconocido');
+                    Swal.fire({
+                        icon: 'error',
+                        title: '❌ Tipo Desconocido',
+                        text: 'Tipo de pedido "' + tipoPedido + '" desconocido',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#ef4444'
+                    });
                 }
             });
         }

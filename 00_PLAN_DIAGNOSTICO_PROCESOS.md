@@ -1,6 +1,6 @@
 # PLAN DE ACCIÓN - DIAGNÓSTICO DE PROCESOS FALTANTES
 
-## 🎯 OBJETIVO
+##  OBJETIVO
 
 Identificar el punto EXACTO donde `prenda.procesos` desaparece entre el backend y la modal de recibos.
 

@@ -425,14 +425,8 @@ function generarTarjetaEpp(epp, index) {
         <div class="epp-content">
             <div class="epp-info">
                 <span class="epp-qty"><strong>Cantidad:</strong> ${epp.cantidad || 0}</span>
-                ${epp.descripcion ? `<p class="epp-description">${epp.descripcion}</p>` : ''}
                 ${epp.observaciones ? `<p class="epp-observations"><strong>Observaciones:</strong> ${epp.observaciones}</p>` : ''}
             </div>
-            ${epp.imagenes && epp.imagenes.length > 0 ? `
-                <div class="epp-images">
-                    ${epp.imagenes.map(img => `<img src="${img.url || img}" alt="Imagen EPP" class="epp-img" />`).join('')}
-                </div>
-            ` : ''}
         </div>
     `;
     return card;

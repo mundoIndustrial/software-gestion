@@ -39,7 +39,7 @@ php artisan diagnostico:telas
 📊 RESUMEN
 Total de telas (color-tela): 3
 📸 Total de imágenes en BD: 5
-💾 Total de imágenes en disco: 5
+ Total de imágenes en disco: 5
 ✅ TODAS las imágenes están en disco
 ```
 

@@ -332,7 +332,7 @@ public function subirImagenes(Request $request)
 
 ---
 
-## 🎯 ESTRATEGIA DE IMPLEMENTACIÓN
+##  ESTRATEGIA DE IMPLEMENTACIÓN
 
 ### **Opción 1: Gradual (RECOMENDADO)**
 ```

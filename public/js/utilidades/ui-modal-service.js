@@ -221,6 +221,12 @@ class UIModalService {
             cancelButtonColor: '#6c757d',
             confirmButtonText: confirmText,
             cancelButtonText: cancelText,
+            didOpen: () => {
+                document.body.style.overflow = 'hidden';
+            },
+            willClose: () => {
+                document.body.style.overflow = '';
+            },
             ...config
         });
     }
@@ -269,7 +275,13 @@ class UIModalService {
             timerProgressBar: true,
             showConfirmButton: false,
             allowOutsideClick: true,
-            allowEscapeKey: true
+            allowEscapeKey: true,
+            didOpen: () => {
+                document.body.style.overflow = 'hidden';
+            },
+            willClose: () => {
+                document.body.style.overflow = '';
+            }
         });
     }
 
@@ -289,7 +301,13 @@ class UIModalService {
             title: titulo,
             text: mensaje,
             confirmButtonColor: '#ef4444',
-            confirmButtonText: 'Entendido'
+            confirmButtonText: 'Entendido',
+            didOpen: () => {
+                document.body.style.overflow = 'hidden';
+            },
+            willClose: () => {
+                document.body.style.overflow = '';
+            }
         });
     }
 
@@ -313,7 +331,13 @@ class UIModalService {
             timerProgressBar: true,
             showConfirmButton: false,
             allowOutsideClick: true,
-            allowEscapeKey: true
+            allowEscapeKey: true,
+            didOpen: () => {
+                document.body.style.overflow = 'hidden';
+            },
+            willClose: () => {
+                document.body.style.overflow = '';
+            }
         });
     }
 
@@ -337,7 +361,13 @@ class UIModalService {
             timerProgressBar: true,
             showConfirmButton: false,
             allowOutsideClick: true,
-            allowEscapeKey: true
+            allowEscapeKey: true,
+            didOpen: () => {
+                document.body.style.overflow = 'hidden';
+            },
+            willClose: () => {
+                document.body.style.overflow = '';
+            }
         });
     }
 
@@ -368,7 +398,11 @@ class UIModalService {
             allowOutsideClick: false,
             allowEscapeKey: false,
             didOpen: () => {
+                document.body.style.overflow = 'hidden';
                 Swal.showLoading();
+            },
+            willClose: () => {
+                document.body.style.overflow = '';
             }
         });
     }
@@ -399,6 +433,12 @@ class UIModalService {
         const swalConfig = { ...config };
         delete swalConfig.titulo;
         delete swalConfig.ancho;
+        
+        // Guardar callbacks personalizados si existen
+        const customDidOpen = swalConfig.didOpen;
+        const customWillClose = swalConfig.willClose;
+        delete swalConfig.didOpen;
+        delete swalConfig.willClose;
 
         return Swal.fire({
             title: titulo,
@@ -423,6 +463,22 @@ class UIModalService {
                 }
                 modal.style.marginTop = '0';
                 modal.style.marginBottom = '0';
+                // Prevenir scroll del body cuando se abre el modal
+                document.body.style.overflow = 'hidden';
+                
+                // Ejecutar callback personalizado si existe
+                if (typeof customDidOpen === 'function') {
+                    customDidOpen(modal);
+                }
+            },
+            willClose: () => {
+                // Restaurar scroll del body cuando se cierra el modal
+                document.body.style.overflow = '';
+                
+                // Ejecutar callback personalizado si existe
+                if (typeof customWillClose === 'function') {
+                    customWillClose();
+                }
             },
             ...swalConfig
         });

@@ -68,7 +68,7 @@ foreach ($carpetas as $rel => $desc) {
 echo "\n";
 
 // ===== 3. ANALIZAR CARPETA DE PEDIDOS =====
-echo "💾 3. CONTENIDO DE CARPETA PEDIDOS\n";
+echo " 3. CONTENIDO DE CARPETA PEDIDOS\n";
 echo str_repeat("─", 70) . "\n";
 
 $pedidosDir = BASE_PATH . '/storage/app/public/pedidos';

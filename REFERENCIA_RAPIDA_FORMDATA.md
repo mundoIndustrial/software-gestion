@@ -1,4 +1,4 @@
-# 🎯 REFERENCIA RÁPIDA - Solución FormData
+#  REFERENCIA RÁPIDA - Solución FormData
 
 ## Problema Original
 ```

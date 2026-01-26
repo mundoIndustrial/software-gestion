@@ -386,7 +386,7 @@
         UI.contenido({
             titulo: ' Editar Datos Generales',
             html: html,
-            confirmButtonText: '💾 Guardar',
+            confirmButtonText: ' Guardar',
             confirmButtonColor: '#10b981',
             showCancelButton: true
         }).then((result) => {
@@ -788,7 +788,6 @@
 <!-- 🔄 SCRIPT: Ocultar loading cuando la página está lista -->
 <script>
     (function() {
-        console.log('[PageLoading] Script inicializado');
         
         //  Cuando el DOM esté completamente cargado
         document.addEventListener('DOMContentLoaded', function() {
@@ -811,7 +810,6 @@
         
         // Alternativa: Si por algún motivo pasa mucho tiempo, ocultar después de X segundos
         const maxLoadTime = setTimeout(function() {
-            console.warn('[PageLoading]  Timeout - Ocultando overlay por seguridad');
             const overlay = document.getElementById('page-loading-overlay');
             if (overlay && !overlay.classList.contains('hidden')) {
                 overlay.classList.add('hidden');
@@ -823,7 +821,6 @@
         
         // Cuando la ventana cargue completamente (incluyendo imágenes)
         window.addEventListener('load', function() {
-            console.log('[PageLoading] Evento load disparado - Página completamente cargada');
             clearTimeout(maxLoadTime);  // Cancelar timeout si aún está activo
         });
     })();

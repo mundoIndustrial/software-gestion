@@ -142,22 +142,32 @@ class EppController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            \Log::info('[EppController] === INICIANDO CREACIÓN DE EPP ===');
+            \Log::info('[EppController] Request data:', $request->all());
+            
             $validated = $request->validate([
                 'nombre' => 'required|string|max:255',
-                'descripcion' => 'nullable|string',
+                'categoria' => 'nullable|string|max:255',
             ]);
 
-            // Generar código único automáticamente
-            $codigo = 'EPP-' . strtoupper(substr(md5(time()), 0, 8));
+            \Log::info('[EppController] Validación exitosa:', $validated);
 
             $command = new CrearEppCommand(
                 nombre: $validated['nombre'],
-                categoria: 'General', // Categoría por defecto
-                codigo: $codigo,
-                descripcion: $validated['descripcion'] ?? null
+                categoria: $validated['categoria'] ?? 'General',
+                codigo: null,
+                descripcion: null
             );
 
+            \Log::info('[EppController] Comando creado:', [
+                'command' => class_basename($command),
+                'nombre' => $validated['nombre'],
+                'categoria' => $validated['categoria'] ?? 'General',
+            ]);
+
             $epp = $this->commandBus->execute($command);
+
+            \Log::info('[EppController] EPP creado exitosamente:', ['epp' => $epp]);
 
             return response()->json([
                 'success' => true,
@@ -165,14 +175,14 @@ class EppController extends Controller
                 'data' => $epp,
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Illuminate\Support\Facades\Log::error('Validation error in store', ['errors' => $e->errors()]);
+            \Log::error('[EppController] ❌ Validation error:', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Validación fallida',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error creating EPP', [
+            \Log::error('[EppController] ❌ Error creating EPP', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

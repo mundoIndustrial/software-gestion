@@ -422,7 +422,7 @@ Ya están en tu workspace:
 
 ---
 
-## 🎯 PRÓXIMOS PASOS RECOMENDADOS
+##  PRÓXIMOS PASOS RECOMENDADOS
 
 1. **Semana 1:**
    - [ ] Fases 1-2 (Frontend + Backend prep)

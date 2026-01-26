@@ -56,8 +56,20 @@ class EppStateManager {
      * Eliminar imagen subida por ID
      */
     eliminarImagenSubida(imagenId) {
-        this.estado.imagenesSubidas = this.estado.imagenesSubidas.filter(img => img.id !== imagenId);
-
+        console.log('🗑️ [EppStateManager] eliminarImagenSubida() llamado con ID:', imagenId, 'tipo:', typeof imagenId);
+        console.log('🗑️ [EppStateManager] Imágenes en estado ANTES:', this.estado.imagenesSubidas.map(img => ({id: img.id, tipo: typeof img.id})));
+        
+        const imagenesAntes = this.estado.imagenesSubidas.length;
+        
+        this.estado.imagenesSubidas = this.estado.imagenesSubidas.filter(img => {
+            const coincide = String(img.id) !== String(imagenId);
+            console.log(`   Comparando: img.id=${img.id} (${typeof img.id}) vs imagenId=${imagenId} (${typeof imagenId}) => ${coincide ? 'MANTIENE' : 'ELIMINA'}`);
+            return coincide;
+        });
+        
+        const imagenesDepues = this.estado.imagenesSubidas.length;
+        console.log(`✅ [EppStateManager] Eliminadas: ${imagenesAntes - imagenesDepues} imagen(es)`);
+        console.log('✅ [EppStateManager] Imágenes en estado DESPUÉS:', this.estado.imagenesSubidas.map(img => ({id: img.id, nombre: img.nombre})));
     }
 
     /**

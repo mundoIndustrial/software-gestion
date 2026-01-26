@@ -339,7 +339,7 @@ agregarArchivosAFormData(formData, filesExtraidos) {
 
 ---
 
-## 🎯 RESUMEN DE CAMBIOS
+##  RESUMEN DE CAMBIOS
 
 | Función | Cambio | Por qué |
 |---------|--------|--------|

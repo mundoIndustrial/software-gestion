@@ -405,13 +405,11 @@
 
     if (window.PayloadNormalizer && !window.PayloadNormalizer._initialized) {
         // Si existe pero no está inicializado, limpiarlo y reemplazar
-        console.log('[PayloadNormalizer v3]   Limpiando versión anterior incompleta...');
         delete window.PayloadNormalizer;
     }
 
     if (!window.PayloadNormalizer) {
         window.PayloadNormalizer = PayloadNormalizerPublic;
-        console.log('[PayloadNormalizer v3] ASIGNADO A window');
     }
 
     // ========================================================================
@@ -425,7 +423,6 @@
         configurable: false,
         enumerable: true
     });
-    console.log('[PayloadNormalizer v3]  PROTEGIDO CONTRA SOBRESCRITURAS');
     */
 
     // ========================================================================
@@ -440,7 +437,6 @@
 
  
         if (metodosValidos.length < 7) {
-            console.error('[PayloadNormalizer v3]  ERROR: Solo ' + metodosValidos.length + ' métodos, se esperaban 7');
        }
 
         // Validación de función critical

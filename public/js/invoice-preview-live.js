@@ -18,7 +18,6 @@ window._idGaleriaPreview = 0;
  */
 window._extraerURLImagen = function(img) {
     if (!img) {
-
         return '';
     }
     
@@ -28,7 +27,7 @@ window._extraerURLImagen = function(img) {
     if (typeof img === 'string') {
         url = img;
         origen = 'string directo';
-    } else {
+    } else if (typeof img === 'object') {
         // Loguear todas las propiedades disponibles
         console.log('[EXTRAER-URL-IMAGEN] Objeto imagen recibido:', {
             tipo: typeof img,
@@ -40,12 +39,16 @@ window._extraerURLImagen = function(img) {
             blobUrl: img.blobUrl,
             previewUrl: img.previewUrl,
             ruta_webp: img.ruta_webp,
-            ruta_original: img.ruta_original
+            ruta_original: img.ruta_original,
+            ruta_web: img.ruta_web
         });
         
         if (img.ruta_webp) {
             url = img.ruta_webp;
             origen = 'img.ruta_webp';
+        } else if (img.ruta_web) {
+            url = img.ruta_web;
+            origen = 'img.ruta_web';
         } else if (img.ruta_original) {
             url = img.ruta_original;
             origen = 'img.ruta_original';
@@ -67,13 +70,13 @@ window._extraerURLImagen = function(img) {
     console.log('[EXTRAER-URL-IMAGEN] URL extraída:', {
         origen: origen,
         url_original: url,
-        comienza_con_storage: url.startsWith('/storage/'),
-        comienza_con_storage_sin_slash: url.startsWith('storage/'),
-        comienza_con_slash: url.startsWith('/')
+        comienza_con_storage: url && url.startsWith ? url.startsWith('/storage/') : false,
+        comienza_con_storage_sin_slash: url && url.startsWith ? url.startsWith('storage/') : false,
+        comienza_con_slash: url && url.startsWith ? url.startsWith('/') : false
     });
     
     // Procesar la URL para evitar duplicación de /storage/
-    if (url) {
+    if (url && typeof url === 'string') {
         // Si comienza con /storage/, devolverla tal cual
         if (url.startsWith('/storage/')) {
             console.log('[EXTRAER-URL-IMAGEN] Ya tiene /storage/, retornando:', url);
@@ -1293,6 +1296,7 @@ function generarHTMLFactura(datos) {
                 <div style="font-size: 10px;">
                     <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">${datos.cliente}</div>
                     <div style="color: #666; font-size: 9px;">Asesor: ${datos.asesora}</div>
+                    <div style="color: #666; font-size: 9px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datos.forma_de_pago || 'No especificada'}</span></div>
                 </div>
                 
                 <!-- Lado Derecho: Recibo de Pedido -->
@@ -1315,15 +1319,22 @@ function generarHTMLFactura(datos) {
                     <div style="font-weight: 700; color: #374151; font-size: 11px; margin-bottom: 8px;">
                         EQUIPO DE PROTECCIÓN PERSONAL (${datos.epps.length})
                     </div>
-                    ${datos.epps.map((epp, idx) => `
+                    ${datos.epps.map((epp, idx) => {
+                        // Estandarizar: crear propiedad 'imagen' si no existe pero hay 'imagenes'
+                        if (!epp.imagen && epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) {
+                            epp.imagen = epp.imagenes[0];
+                        }
+                        return `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
                             <!-- HEADER EPP -->
                             <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 12px; align-items: start;">
                                 <!-- COLUMNA 1: Imagen -->
                                 <div style="font-size: 11px;">
-                                    ${epp.imagen && epp.imagen.ruta_webp ? `
+                                    ${epp.imagen && (epp.imagen.ruta_webp || epp.imagen.ruta_original || epp.imagen.ruta_web) ? `
                                         <img src="${window._extraerURLImagen(epp.imagen)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(epp.imagenes || [], 'Imágenes de EPP: ' + (epp.nombre_completo || epp.nombre))})" title="Click para ver todas las imágenes de EPP">
-                                    ` : '<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 4px; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 9px;">Sin imagen</div>'}
+                                    ` : (epp.imagenes && epp.imagenes.length > 0 ? `
+                                        <img src="${window._extraerURLImagen(epp.imagenes[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(epp.imagenes, 'Imágenes de EPP: ' + (epp.nombre_completo || epp.nombre))})" title="Click para ver todas las imágenes de EPP">
+                                    ` : '<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 4px; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 9px;">Sin imagen</div>')}
                                 </div>
                                 
                                 <!-- COLUMNA 2: Nombre y Datos -->
@@ -1347,7 +1358,8 @@ function generarHTMLFactura(datos) {
                                 </div>
                             ` : ''}
                         </div>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </div>
             ` : ''}
         </div>

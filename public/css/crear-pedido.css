@@ -406,3 +406,24 @@
     max-width: 1400px;
     margin: 0 auto;
 }
+
+/* Estilos para errores en campos de tela */
+.campo-error-tela {
+    border-color: #ef4444 !important;
+    background-color: #fee2e2 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    transition: all 0.3s ease !important;
+}
+
+.campo-error-tela:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+}
+
+.error-mensaje-tela {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    font-weight: 500;
+    display: block;
+}

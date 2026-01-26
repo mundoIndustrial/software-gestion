@@ -75,6 +75,25 @@
                     container: 'epp-modal-container',
                     popup: 'epp-modal-popup',
                     htmlContainer: 'epp-modal-html'
+                },
+                didOpen: (modal) => {
+                    // Centrar el modal verticalmente en la pantalla
+                    const container = modal.closest('.swal2-container');
+                    if (container) {
+                        container.style.display = 'flex';
+                        container.style.alignItems = 'center';
+                        container.style.justifyContent = 'center';
+                        container.style.height = '100vh';
+                        container.style.zIndex = '999998';
+                    }
+                    modal.style.marginTop = '0';
+                    modal.style.marginBottom = '0';
+                    // Prevenir scroll del body cuando se abre el modal
+                    document.body.style.overflow = 'hidden';
+                },
+                willClose: () => {
+                    // Restaurar scroll del body cuando se cierra el modal
+                    document.body.style.overflow = '';
                 }
             });
         });

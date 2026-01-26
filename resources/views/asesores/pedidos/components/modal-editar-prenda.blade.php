@@ -32,7 +32,7 @@
         UI.contenido({
             titulo: `✏️ Editar Prenda: ${prenda.nombre_prenda}`,
             html: html,
-            confirmButtonText: '💾 Guardar',
+            confirmButtonText: ' Guardar',
             confirmButtonColor: '#10b981',
             showCancelButton: true
         }).then((result) => {

@@ -287,6 +287,15 @@ class PedidoController extends Controller
                             if ($imagenesData->count() > 0) {
                                 foreach ($imagenesData as $img) {
                                     $ruta = $img->ruta_web ?? $img->ruta_original;
+                                    
+                                    // Saltar si la ruta está vacía
+                                    if (empty($ruta)) {
+                                        \Log::warning('[PedidoController::show] Imagen sin ruta', [
+                                            'pedido_epp_id' => $pedidoEpp->id,
+                                        ]);
+                                        continue;
+                                    }
+                                    
                                     \Log::debug('[PedidoController::show] Procesando imagen', [
                                         'ruta_original' => $ruta,
                                     ]);

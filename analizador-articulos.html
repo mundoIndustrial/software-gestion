@@ -455,7 +455,7 @@
                 <!-- Action Buttons -->
                 <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button onclick="clearFilters()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Limpiar Filtros</button>
-                    <button onclick="guardarEnBD()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">💾 Guardar en BD</button>
+                    <button onclick="guardarEnBD()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;"> Guardar en BD</button>
                     <span id="filterStats" style="margin-left: auto; font-size: 13px; color: #666; font-weight: 500; align-self: center;">Mostrando 0 de 0 artículos</span>
                 </div>
 
@@ -1115,7 +1115,7 @@
                 return;
             }
 
-            showMessage('💾 Guardando artículos en BD...', 'info');
+            showMessage(' Guardando artículos en BD...', 'info');
 
             fetch(`${API_URL}/api/guardar-articulos`, {
                 method: 'POST',

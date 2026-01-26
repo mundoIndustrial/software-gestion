@@ -72,9 +72,8 @@ class CrearEppHandler
             Log::info('CrearEppHandler - Creando EPP con categoria_id: ' . $categoria->id);
             
             $epp = Epp::create([
-                'nombre' => $command->nombre,
+                'nombre_completo' => $command->nombre,
                 'categoria_id' => $categoria->id,
-                'codigo' => $command->codigo,
                 'descripcion' => $command->descripcion,
                 'activo' => true
             ]);
@@ -83,9 +82,9 @@ class CrearEppHandler
 
             return [
                 'id' => $epp->id,
-                'nombre' => $epp->nombre,
+                'nombre' => $epp->nombre_completo,
+                'nombre_completo' => $epp->nombre_completo,
                 'categoria' => $command->categoria,
-                'codigo' => $epp->codigo,
                 'descripcion' => $epp->descripcion,
                 'activo' => $epp->activo,
                 'imagenes' => []

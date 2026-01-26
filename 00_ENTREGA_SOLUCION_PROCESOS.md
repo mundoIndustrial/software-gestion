@@ -1,6 +1,6 @@
 # 📦 ENTREGA FINAL - BUG DE PROCESOS SOLUCIONADO
 
-## 🎯 Resumen de la Solución
+##  Resumen de la Solución
 
 **Problema:** Procesos, imágenes y telas no se renderizaban en la modal de recibos  
 **Causa:** Mismatch de nombres de campos entre backend y frontend  

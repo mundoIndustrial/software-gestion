@@ -104,7 +104,7 @@
             
             // Guardar estado
             localStorage.setItem('bordado-sidebar-collapsed', newState);
-            console.log('💾 [SIDEBAR-TOGGLE] Estado guardado en localStorage');
+            console.log(' [SIDEBAR-TOGGLE] Estado guardado en localStorage');
         });
 
         // Restaurar estado

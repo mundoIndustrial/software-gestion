@@ -511,6 +511,8 @@ class PedidoWebService
             Log::debug('[PedidoWebService] Creando proceso', [
                 'tipo' => $tipoProceso,
                 'uid' => $procesoUID,
+                'uid_en_procesoData' => isset($procesoData['uid']),
+                'uid_en_datosProceso_antes' => isset($datosProceso['uid']),
                 'ubicaciones_raw' => $ubicaciones,
                 'observaciones_raw' => $observaciones,
                 'tallas_count' => isset($datosProceso['tallas']) ? count($datosProceso['tallas']) : 0,
@@ -525,6 +527,17 @@ class PedidoWebService
                 'observaciones' => $observaciones,
                 'datos_adicionales' => json_encode($datosProceso),
                 'estado' => 'PENDIENTE',
+            ]);
+
+            // Recargar para que Eloquent aplique los casts correctamente
+            $procesoPrenda = $procesoPrenda->fresh();
+
+            // Verificar que UID se guardó correctamente
+            $datosGuardados = $procesoPrenda->datos_adicionales ?? [];
+            \Log::info('[PedidoWebService] Verificación de UID guardado', [
+                'proceso_id' => $procesoPrenda->id,
+                'uid_solicitado' => $procesoUID,
+                'uid_en_datos_adicionales' => $datosGuardados['uid'] ?? 'NO ENCONTRADO',
             ]);
 
             Log::info('[PedidoWebService] Proceso creado', [
@@ -741,6 +754,8 @@ class PedidoWebService
             'reflectivo' => 1,
             'bordado' => 2,
             'estampado' => 3,
+            'dtf' => 4,
+            'sublimado' => 5,
         ];
 
         return $tipos[strtolower($tipoProceso)] ?? null;

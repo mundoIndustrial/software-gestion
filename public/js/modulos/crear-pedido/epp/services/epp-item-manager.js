@@ -161,39 +161,55 @@ class EppItemManager {
         }
 
         // Actualizar imágenes si existen
-        if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0) {
-            console.log('[EppItemManager] 🖼️ Actualizando imágenes:', datos.imagenes.length);
+        if (datos.imagenes !== undefined) {
+            console.log('[EppItemManager] 🖼️ Procesando imágenes:', datos.imagenes.length);
             
-            // Buscar o crear el contenedor de galería
+            // Buscar el contenedor de galería existente
             let galeriaDiv = item.querySelector('div[style*="padding-top"]');
             
-            if (!galeriaDiv) {
-                // Si no existe, crear el contenedor de galería
-                const ultimoDiv = item.lastElementChild;
-                galeriaDiv = document.createElement('div');
-                galeriaDiv.style.cssText = 'margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;';
-                item.appendChild(galeriaDiv);
-            }
-
-            // Limpiar galería anterior
-            galeriaDiv.innerHTML = `
-                <p style="margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;">Imágenes</p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 0.5rem;">
-            `;
-            
-            // Agregar nuevas imágenes
-            datos.imagenes.forEach((img, idx) => {
-                const imgUrl = typeof img === 'string' ? img : (img.url || img.ruta_web || '');
-                if (imgUrl && !imgUrl.includes('placeholder')) {
-                    const imgDiv = document.createElement('div');
-                    imgDiv.style.cssText = 'border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb;';
-                    imgDiv.innerHTML = `<img src="${imgUrl}" alt="Imagen" style="width: 100%; height: 60px; object-fit: cover;">`;
-                    galeriaDiv.querySelector('div').appendChild(imgDiv);
-                    console.log('[EppItemManager] 📷 Imagen agregada:', idx + 1);
+            // Si hay imágenes, mostrar/actualizar galería
+            if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0) {
+                if (!galeriaDiv) {
+                    // Si no existe, crear el contenedor de galería
+                    galeriaDiv = document.createElement('div');
+                    galeriaDiv.style.cssText = 'margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;';
+                    item.appendChild(galeriaDiv);
                 }
-            });
-            
-            galeriaDiv.querySelector('div').innerHTML += '</div>';
+
+                // Limpiar completamente la galería anterior
+                galeriaDiv.innerHTML = '';
+                
+                // Crear titulo
+                const titulo = document.createElement('p');
+                titulo.style.cssText = 'margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;';
+                titulo.textContent = 'Imágenes';
+                galeriaDiv.appendChild(titulo);
+                
+                // Crear contenedor de grid
+                const gridDiv = document.createElement('div');
+                gridDiv.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 0.5rem;';
+                
+                // Agregar nuevas imágenes
+                datos.imagenes.forEach((img, idx) => {
+                    // Soportar múltiples formatos de imagen (BD, stateManager local)
+                    const imgUrl = typeof img === 'string' ? img : (img.url || img.ruta_web || img.preview || '');
+                    if (imgUrl && !imgUrl.includes('placeholder')) {
+                        const imgDiv = document.createElement('div');
+                        imgDiv.style.cssText = 'border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;';
+                        imgDiv.innerHTML = `<img src="${imgUrl}" alt="Imagen" style="width: 100%; height: 100%; object-fit: cover;">`;
+                        gridDiv.appendChild(imgDiv);
+                        console.log('[EppItemManager] 📷 Imagen agregada:', idx + 1, 'URL:', imgUrl.substring(0, 50) + '...');
+                    }
+                });
+                
+                galeriaDiv.appendChild(gridDiv);
+            } else {
+                // Si NO hay imágenes, ELIMINAR la galería
+                if (galeriaDiv) {
+                    galeriaDiv.remove();
+                    console.log('[EppItemManager] 🗑️ Galería eliminada - sin imágenes');
+                }
+            }
         }
 
         console.log('[EppItemManager] Item actualizado correctamente');

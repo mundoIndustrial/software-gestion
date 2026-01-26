@@ -587,7 +587,7 @@ const AsistenciaTotalHorasExtras = (() => {
             inputValor.style.padding = '5px';
             
             const btnGuardar = document.createElement('button');
-            btnGuardar.textContent = '💾';
+            btnGuardar.textContent = '';
             btnGuardar.style.marginLeft = '5px';
             btnGuardar.style.padding = '8px 12px';
             btnGuardar.style.backgroundColor = '#3498db';

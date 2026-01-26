@@ -7,7 +7,7 @@
      * @param {string} modo - 'editar' (con botones) o 'ver' (solo lectura)
      */
     function abrirModalEditarPedido(pedidoId, datosCompletos, modo = 'editar') {
-        console.log('🎯 [MODAL-EDITAR-PEDIDO] ABIERTO:', {
+        console.log(' [MODAL-EDITAR-PEDIDO] ABIERTO:', {
             pedidoId: pedidoId,
             numeroPedido: datosCompletos.numero_pedido,
             cliente: datosCompletos.cliente,
@@ -49,7 +49,7 @@
                 
                 <!-- Content -->
                 <div style="flex: 1; overflow: auto; padding: 8px 10px; background: #fafafa;">
-                    ${htmlBotones + `<div style="max-height: 600px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">
+                    ${htmlBotones + `<div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; background: white;">
                         ${htmlFactura}
                         <div id="lista-items-pedido" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem;"></div>
                     </div>`}
@@ -63,7 +63,7 @@
             showConfirmButton: false,
             allowOutsideClick: true,
             allowEscapeKey: true,
-            didOpen: () => {
+            didOpen: (modal) => {
                 const swalPopup = document.querySelector('.swal2-popup');
                 if (swalPopup) {
                     swalPopup.style.padding = '0';

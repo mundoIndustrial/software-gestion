@@ -192,6 +192,57 @@ class EppNotificationService {
             document.head.appendChild(style);
         }
     }
+
+    /**
+     * Mostrar validación como modal (advertencia)
+     */
+    mostrarValidacion(titulo, mensaje) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: titulo,
+                text: mensaje,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#f59e0b'
+            });
+        } else {
+            alert(titulo + '\n\n' + mensaje);
+        }
+    }
+
+    /**
+     * Mostrar error como modal
+     */
+    mostrarErrorModal(titulo, mensaje) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: titulo,
+                text: mensaje,
+                confirmButtonText: 'Cerrar',
+                confirmButtonColor: '#ef4444'
+            });
+        } else {
+            alert('ERROR: ' + titulo + '\n\n' + mensaje);
+        }
+    }
+
+    /**
+     * Mostrar éxito como modal
+     */
+    mostrarExitoModal(titulo, mensaje) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: titulo,
+                text: mensaje,
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#10b981'
+            });
+        } else {
+            alert('✓ ' + titulo + '\n\n' + mensaje);
+        }
+    }
 }
 
 // Exportar instancia global

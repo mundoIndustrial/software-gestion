@@ -199,7 +199,7 @@ tail -f storage/logs/laravel.log | grep "TELA\|tela"
 
 ---
 
-## 💾 Servicios Utilizados
+##  Servicios Utilizados
 
 ### 1. ColorTelaService
 **Métodos:**

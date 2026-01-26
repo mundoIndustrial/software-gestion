@@ -479,7 +479,7 @@ class CotizacionPrendaController extends Controller
                     }
 
                     // GUARDAR REGISTRO EN prenda_telas_cot
-                    \Log::info('💾 Intentando guardar en prenda_telas_cot', [
+                    \Log::info(' Intentando guardar en prenda_telas_cot', [
                         'colorId' => $colorId,
                         'telaId' => $telaId,
                         'variante' => $variante ? $variante->id : null,
@@ -658,7 +658,7 @@ class CotizacionPrendaController extends Controller
                                     // Obtener prenda_tela_cot_id del mapeo
                                     $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
                                     
-                                    \Log::info('💾 Guardando foto en prenda_tela_fotos_cot', [
+                                    \Log::info(' Guardando foto en prenda_tela_fotos_cot', [
                                         'prenda_id' => $prenda->id,
                                         'tela_index' => $telaIndex,
                                         'prenda_tela_cot_id' => $prendaTelaCotId,

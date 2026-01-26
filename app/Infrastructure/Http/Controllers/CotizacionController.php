@@ -3180,7 +3180,7 @@ final class CotizacionController extends Controller
                                 ];
                             })->toArray();
                             
-                            Log::info('💾 Preservando fotos de prenda', [
+                            Log::info(' Preservando fotos de prenda', [
                                 'prenda_index' => $index,
                                 'fotos_count' => count($fotosExistentesPorPrenda[$index])
                             ]);

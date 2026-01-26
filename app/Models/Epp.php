@@ -27,6 +27,7 @@ class Epp extends Model
         'color',
         'descripcion',
         'activo',
+        'categoria_id',
     ];
 
     protected $casts = [

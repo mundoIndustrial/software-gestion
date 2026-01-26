@@ -108,7 +108,7 @@ class VerificarImagenesTelas extends Command
 
         $this->line("📊 Total de telas (color-tela): {$totalTelas}");
         $this->line("📸 Total de imágenes en BD: {$totalImagenes}");
-        $this->line("💾 Total de imágenes en disco: {$imagenesEnDisco}");
+        $this->line(" Total de imágenes en disco: {$imagenesEnDisco}");
 
         if ($totalImagenes === $imagenesEnDisco) {
             $this->info("✅ TODAS las imágenes están en disco");

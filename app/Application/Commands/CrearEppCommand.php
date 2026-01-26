@@ -27,7 +27,7 @@ class CrearEppCommand implements Command
     /**
      * Código único del EPP
      */
-    public string $codigo;
+    public ?string $codigo;
 
     /**
      * Descripción del EPP
@@ -37,7 +37,7 @@ class CrearEppCommand implements Command
     /**
      * Constructor
      */
-    public function __construct(string $nombre, string $categoria, string $codigo, ?string $descripcion = null)
+    public function __construct(string $nombre, string $categoria, ?string $codigo = null, ?string $descripcion = null)
     {
         $this->nombre = $nombre;
         $this->categoria = $categoria;

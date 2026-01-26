@@ -125,7 +125,7 @@
                 <!-- Backup de Base de Datos -->
                 <div class="col-lg-7">
                     <div class="config-card h-100">
-                        <div class="config-card-header text-center">💾 Backup de Base de Datos</div>
+                        <div class="config-card-header text-center"> Backup de Base de Datos</div>
                         <p class="backup-description">Base de datos: <strong style="color: #f97316;">{{ $currentDatabase }}</strong></p>
                         
                         <div class="row g-2 px-3">

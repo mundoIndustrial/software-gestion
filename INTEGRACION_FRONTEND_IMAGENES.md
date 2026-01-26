@@ -1,6 +1,6 @@
 # 📱 Guía de Integración Frontend - Sistema de Imágenes
 
-## 🎯 Cambios Necesarios en Frontend
+##  Cambios Necesarios en Frontend
 
 El flujo es **casi idéntico** al anterior, con **un pequeño cambio**: almacenar el `temp_uuid` devuelto por el servidor.
 

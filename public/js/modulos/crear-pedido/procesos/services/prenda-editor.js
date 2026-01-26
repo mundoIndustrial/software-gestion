@@ -608,12 +608,12 @@ class PrendaEditor {
         // REFLECTIVO
         if (aplicaReflectivo && (variantes.tiene_reflectivo === true || variantes.obs_reflectivo)) {
             aplicaReflectivo.checked = true;
-            aplicaReflectivo.dispatchEvent(new Event('change', { bubbles: true }));
+            // No disparar evento change para evitar abrir el modal automáticamente
             
             const reflectivoObs = document.getElementById('reflectivo-obs');
             if (reflectivoObs) {
                 reflectivoObs.value = variantes.obs_reflectivo || '';
-                reflectivoObs.dispatchEvent(new Event('change', { bubbles: true }));
+                // No disparar evento change aquí tampoco
             }
         }
     }
@@ -802,7 +802,7 @@ class PrendaEditor {
     cambiarBotonAGuardarCambios() {
         const btnGuardar = document.getElementById('btn-guardar-prenda');
         if (btnGuardar) {
-            btnGuardar.innerHTML = '💾 Guardar Cambios';
+            btnGuardar.innerHTML = ' Guardar Cambios';
             btnGuardar.setAttribute('data-editing', 'true');
         }
     }

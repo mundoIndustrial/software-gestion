@@ -31,6 +31,8 @@ class EppService {
      */
     abrirModalAgregar() {
         this.stateManager.resetear();
+        // Asegurar que el modalManager también limpia el estado de imágenes
+        this.stateManager.limpiarImagenesSubidas();
         this.modalManager.limpiarFormulario();
         this.modalManager.abrirModal();
 
@@ -42,6 +44,12 @@ class EppService {
      */
     abrirModalEditarEPP(eppData) {
         console.log('[EppService] 📝 Abriendo modal de edición con datos:', eppData);
+
+        // Estandarizar datos: crear propiedad 'imagen' si no existe pero hay 'imagenes'
+        if (!eppData.imagen && eppData.imagenes && Array.isArray(eppData.imagenes) && eppData.imagenes.length > 0) {
+            eppData.imagen = eppData.imagenes[0];
+            console.log('[EppService] 📸 Estandarizando: creada propiedad imagen desde imagenes[0]');
+        }
 
         // Resetear estado y marcar como edición
         this.stateManager.iniciarEdicion(eppData.epp_id || eppData.id, false); // false = está en formulario, no en BD
@@ -63,7 +71,8 @@ class EppService {
             nombre: nombre,
             nombre_completo: nombre,
             codigo: eppData.codigo || undefined,
-            categoria: eppData.categoria || undefined
+            categoria: eppData.categoria || undefined,
+            imagen: eppData.imagen ? (eppData.imagen.ruta_webp || eppData.imagen.ruta_web || eppData.imagen.url || eppData.imagen) : undefined
         });
 
         // Cargar valores en el formulario
@@ -78,10 +87,33 @@ class EppService {
             console.log('[EppService] 📸 Guardando imágenes en estado:', eppData.imagenes);
             this.modalManager.mostrarImagenes(eppData.imagenes);
             
-            // Guardar imágenes en el estado para que se incluyan al guardar
+            // Cargar imágenes en el stateManager para que se puedan eliminar correctamente
+            console.log('[EppService] 📸 Limpiando imágenes previas en stateManager');
+            this.stateManager.limpiarImagenesSubidas();
+            
+            // Agregar cada imagen al estado
+            eppData.imagenes.forEach((img, idx) => {
+                const imagenParaEstado = {
+                    id: img.id || `${eppData.epp_id}-img-${idx}`,
+                    nombre: img.nombre || `imagen-${idx}`,
+                    preview: img.url || img.ruta_web || img.preview || '',
+                    url: img.url || img.ruta_web || img.preview || '',
+                    ruta_web: img.ruta_web || img.url || img.preview || '',
+                    archivo: null // No es un File, es una imagen existente
+                };
+                console.log('[EppService] 📸 Agregando imagen al estado:', imagenParaEstado);
+                this.stateManager.agregarImagenSubida(imagenParaEstado);
+            });
+            
+            // Guardar imágenes en el estado para que se incluyan al guardar (versión legacy)
             if (this.stateManager.cargarImagenesExistentes) {
                 this.stateManager.cargarImagenesExistentes(eppData.imagenes);
             }
+        } else {
+            // Si no hay imágenes, limpiar estado pero MOSTRAR el contenedor para agregar nuevas
+            console.log('[EppService] 📸 Sin imágenes existentes, limpiando estado');
+            this.stateManager.limpiarImagenesSubidas();
+            this.modalManager.mostrarImagenes([]); // Mostrar contenedor vacío para poder agregar
         }
 
         // Habilitar campos
@@ -106,6 +138,18 @@ class EppService {
         
         this.modalManager.habilitarCampos();
         console.log(' [EppService] Campos habilitados');
+        
+        // Cerrar lista de búsqueda automáticamente
+        const resultados = document.getElementById('resultadosBuscadorEPP');
+        if (resultados) {
+            resultados.style.display = 'none';
+            console.log('[EppService] ✅ Lista de búsqueda cerrada');
+        }
+        const inputBuscador = document.getElementById('inputBuscadorEPP');
+        if (inputBuscador) {
+            inputBuscador.value = '';
+            console.log('[EppService] ✅ Buscador limpiado');
+        }
     }
 
     /**
@@ -243,15 +287,27 @@ class EppService {
                 imagenes
             );
 
-            alert('EPP agregado al pedido correctamente');
+            if (window.eppNotificationService) {
+                window.eppNotificationService.mostrarExitoModal(
+                    '✅ EPP Agregado',
+                    'EPP agregado al pedido correctamente'
+                );
+            }
             this.cerrarModal();
             this.stateManager.finalizarEdicion();
 
             // Recargar página
-            location.reload();
+            setTimeout(() => location.reload(), 1500);
         } catch (error) {
 
-            alert('Error al guardar: ' + error.message);
+            if (window.eppNotificationService) {
+                window.eppNotificationService.mostrarErrorModal(
+                    '❌ Error al Guardar',
+                    error.message
+                );
+            } else {
+                alert('Error al guardar: ' + error.message);
+            }
         }
     }
 
@@ -301,11 +357,6 @@ class EppService {
                 );
             }
 
-            // Configurar event listeners para el item
-            if (typeof configurarEventListenersItem === 'function') {
-                configurarEventListenersItem(producto.id);
-            }
-
             // Crear objeto EPP (solo campos necesarios)
             const eppData = {
                 tipo: 'epp',
@@ -317,7 +368,7 @@ class EppService {
                 imagenes: imagenes
             };
             
-            console.log('[EppService] 💾 Objeto EPP a guardar:', eppData);
+            console.log('[EppService]  Objeto EPP a guardar:', eppData);
 
             // Solo agregar a GestionItemsUI o itemsPedido si es NUEVO (no editando)
             if (!eppId) {
@@ -349,19 +400,52 @@ class EppService {
      * Eliminar EPP
      */
     eliminarEPP(eppId) {
-        if (!confirm('¿Eliminar este EPP?')) return;
+        this._mostrarModalConfirmacion(
+            '¿Eliminar este EPP?',
+            'Esta acción no se puede deshacer.',
+            () => {
+                this.itemManager.eliminarItem(eppId);
 
-        this.itemManager.eliminarItem(eppId);
-
-        // Eliminar de window.itemsPedido
-        if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
-            const index = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
-            if (index !== -1) {
-                window.itemsPedido.splice(index, 1);
+                // Eliminar de window.itemsPedido
+                if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+                    const index = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
+                    if (index !== -1) {
+                        window.itemsPedido.splice(index, 1);
+                    }
+                }
             }
-        }
+        );
+    }
 
+    /**
+     * Mostrar modal de confirmación
+     */
+    _mostrarModalConfirmacion(titulo, mensaje, onConfirmar) {
+        const modalHTML = `
+            <div id="modalConfirmacion" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+                <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-width: 400px; text-align: center;">
+                    <h2 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.25rem;">${titulo}</h2>
+                    <p style="margin: 0 0 1.5rem 0; color: #6b7280; font-size: 0.95rem;">${mensaje}</p>
+                    <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                        <button onclick="document.getElementById('modalConfirmacion').remove();" style="padding: 0.75rem 1.5rem; background: #e5e7eb; color: #1f2937; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
+                            Cancelar
+                        </button>
+                        <button id="btnConfirmarEliminar" style="padding: 0.75rem 1.5rem; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: background 0.2s;">
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
 
+        // Inyectar modal
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Asignar evento
+        document.getElementById('btnConfirmarEliminar').addEventListener('click', () => {
+            document.getElementById('modalConfirmacion').remove();
+            onConfirmar();
+        });
     }
 
     /**
@@ -407,7 +491,7 @@ class EppService {
                 container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
             } else {
                 container.innerHTML = epps.map(epp => `
-                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre_completo || epp.nombre}', imagen: '${epp.imagen || 'https://via.placeholder.com/80?text=EPP'}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
+                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre_completo || epp.nombre}', imagen: '${epp.imagen || ''}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
                          style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
                          onmouseover="this.style.background = '#f3f4f6';"
                          onmouseout="this.style.background = 'white';">
@@ -494,6 +578,39 @@ class EppService {
             state: this.stateManager.getEstado(),
             itemsCount: this.itemManager.contarItems()
         };
+    }
+
+    /**
+     * Mostrar validación
+     */
+    mostrarValidacion(titulo, mensaje) {
+        if (window.eppNotificationService) {
+            window.eppNotificationService.mostrarValidacion(titulo, mensaje);
+        } else {
+            alert(titulo + '\n\n' + mensaje);
+        }
+    }
+
+    /**
+     * Mostrar error
+     */
+    mostrarError(titulo, mensaje) {
+        if (window.eppNotificationService) {
+            window.eppNotificationService.mostrarErrorModal(titulo, mensaje);
+        } else {
+            alert('ERROR: ' + titulo + '\n\n' + mensaje);
+        }
+    }
+
+    /**
+     * Mostrar éxito
+     */
+    mostrarExito(titulo, mensaje) {
+        if (window.eppNotificationService) {
+            window.eppNotificationService.mostrarExitoModal(titulo, mensaje);
+        } else {
+            alert('✓ ' + titulo + '\n\n' + mensaje);
+        }
     }
 }
 

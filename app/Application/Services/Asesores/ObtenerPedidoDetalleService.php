@@ -47,7 +47,8 @@ class ObtenerPedidoDetalleService
         $pedido = PedidoProduccion::findOrFail($this->obtenerPedido($pedidoIdentifier)->id);
         $pedido->load(['prendas' => function ($q) {
             $q->with(['procesos' => function ($q2) {
-                $q2->orderBy('created_at', 'desc');
+                $q2->with(['tipoProceso', 'imagenes'])  // 📦 Cargar tipoProceso e imagenes de procesos
+                   ->orderBy('created_at', 'desc');
             }]);
         }]);
 

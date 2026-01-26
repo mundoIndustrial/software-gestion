@@ -8,7 +8,7 @@ function cargarBorrador(cotizacion) {
     
 
     
-    // 💾 GUARDAR COTIZACIÓN EN MEMORIA PARA PASO 3
+    //  GUARDAR COTIZACIÓN EN MEMORIA PARA PASO 3
     window.cotizacionData = cotizacion;
 
     

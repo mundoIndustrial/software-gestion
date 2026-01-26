@@ -322,10 +322,40 @@ class PedidoProduccionRepository
                                 }
                             }
                             
-                            // Obtener imágenes del proceso
+                            // Obtener imágenes del proceso - Asegurarse de que está cargada
                             $imagenesProceso = [];
-                            if ($proc->imagenes) {
-                                $imagenesProceso = $proc->imagenes->map(fn($img) => $img->url ?? $img->ruta_webp)->toArray();
+                            if ($proc->imagenes && $proc->imagenes->count() > 0) {
+                                \Log::debug('[FACTURA-IMAGENES] Imágenes encontradas para proceso', [
+                                    'proceso_id' => $proc->id,
+                                    'cantidad_imagenes' => $proc->imagenes->count(),
+                                ]);
+                                $imagenesProceso = $proc->imagenes->map(function($img) {
+                                    $url = $img->ruta_webp ?? $img->url ?? $img->ruta_original ?? '';
+                                    return $this->normalizarRutaImagen($url);
+                                })->toArray();
+                            } else {
+                                // Si no está cargada, obtenerla con query directo
+                                \Log::debug('[FACTURA-IMAGENES] Intento de carga directo para proceso', [
+                                    'proceso_id' => $proc->id,
+                                ]);
+                                try {
+                                    $imagenesDirectas = \DB::table('pedidos_procesos_imagenes')
+                                        ->where('proceso_prenda_detalle_id', $proc->id)
+                                        ->get();
+                                    
+                                    if ($imagenesDirectas->count() > 0) {
+                                        \Log::debug('[FACTURA-IMAGENES] Imágenes obtenidas via query directo', [
+                                            'proceso_id' => $proc->id,
+                                            'cantidad' => $imagenesDirectas->count(),
+                                        ]);
+                                        $imagenesProceso = $imagenesDirectas->map(function($img) {
+                                            $url = $img->ruta_webp ?? $img->ruta_original ?? '';
+                                            return $this->normalizarRutaImagen($url);
+                                        })->toArray();
+                                    }
+                                } catch (\Exception $e) {
+                                    \Log::debug('[FACTURA-IMAGENES] Error en carga directa', ['error' => $e->getMessage()]);
+                                }
                             }
                             
                             // Obtener nombre del tipo de proceso
@@ -347,7 +377,7 @@ class PedidoProduccionRepository
                         }
                     }
                 } catch (\Exception $e) {
-                    \Log::debug('[FACTURA] Error procesos', ['error' => $e->getMessage()]);
+                    \Log::error('[FACTURA] Error procesos', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
                 }
                 
                 // Construir prenda formateada CON TODAS LAS ESPECIFICACIONES

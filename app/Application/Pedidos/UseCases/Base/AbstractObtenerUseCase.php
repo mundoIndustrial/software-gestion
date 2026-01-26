@@ -94,6 +94,7 @@ abstract class AbstractObtenerUseCase
             'descripcion' => (string)($pedido->descripcion() ?? ''),
             'totalPrendas' => $pedido->totalPrendas(),
             'totalArticulos' => $pedido->totalArticulos(),
+            'forma_de_pago' => $this->obtenerFormaDePago($pedido->id()),
         ];
 
         // Enriquecimiento condicional - Solo si se especifica
@@ -193,6 +194,15 @@ abstract class AbstractObtenerUseCase
             ->toArray();
 
         return $imagenes;
+    }
+
+    /**
+     * Obtener forma de pago del pedido desde el modelo Eloquent
+     */
+    protected function obtenerFormaDePago(int $pedidoId): ?string
+    {
+        $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+        return $pedido ? ($pedido->forma_de_pago ?? null) : null;
     }
 }
 

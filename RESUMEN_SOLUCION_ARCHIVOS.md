@@ -57,7 +57,7 @@ formData.append(formdataKey, file);  // Agregar con clave correcta
 
 ---
 
-## 🎯 Cambios Realizados (3 archivos modificados)
+##  Cambios Realizados (3 archivos modificados)
 
 ### 1. `public/js/modulos/crear-pedido/procesos/services/item-api-service.js`
 

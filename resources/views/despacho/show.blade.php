@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(' Error al guardar: ' + error.message);
         } finally {
             btnGuardar.disabled = false;
-            btnGuardar.innerHTML = '💾 Guardar Despacho';
+            btnGuardar.innerHTML = ' Guardar Despacho';
         }
     }
 

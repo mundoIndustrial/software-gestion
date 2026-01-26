@@ -437,7 +437,7 @@ function applyFilters() {
         }
     }
     
-    saveFiltersToLocalStorage();  // 💾 Guardar en localStorage
+    saveFiltersToLocalStorage();  //  Guardar en localStorage
     closeFilterModal();
     
     // Redirigir con parámetros de filtro en la URL para mantener con paginación

@@ -21,12 +21,6 @@ class EppCreationService {
             if (!datos.nombre?.trim()) {
                 throw new Error('Por favor ingresa el nombre del EPP');
             }
-            if (!datos.categoria?.trim()) {
-                throw new Error('Por favor selecciona la categoría');
-            }
-            if (!datos.codigo?.trim()) {
-                throw new Error('Por favor ingresa el código del EPP');
-            }
 
             // Mostrar modal de cargando
             this.notificationService.mostrarCargando('Creando EPP', 'Por favor espera...');
@@ -40,9 +34,7 @@ class EppCreationService {
                 },
                 body: JSON.stringify({
                     nombre: datos.nombre,
-                    categoria: datos.categoria,
-                    codigo: datos.codigo,
-                    descripcion: datos.descripcion || ''
+                    categoria: datos.categoria || 'General'
                 })
             });
 

@@ -18,8 +18,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         const checkboxReflectivo = document.getElementById('checkbox-reflectivo');
         if (checkboxReflectivo) {
-            checkboxReflectivo.addEventListener('change', function() {
-                if (this.checked) {
+            checkboxReflectivo.addEventListener('change', function(e) {
+                // Solo abrir modal si fue un cambio manual del usuario (no programático)
+                if (e.isTrusted && this.checked) {
                     // Abre el modal de configuración de reflectivo
                     window.abrirModalReflectivo();
                 }

@@ -81,7 +81,7 @@ class GenerarPDFRecibosService
      */
     public function guardarPDF(array $datosRecibo, int $pedidoId, string $disco = 'local'): string
     {
-        Log::info('💾 [PDF-GUARDAR] Guardando PDF en storage');
+        Log::info(' [PDF-GUARDAR] Guardando PDF en storage');
 
         try {
             $nombreArchivo = 'recibos/recibo_' . $pedidoId . '_' . now()->format('YmdHis') . '.pdf';
@@ -90,7 +90,7 @@ class GenerarPDFRecibosService
             if (!class_exists('\PDF')) {
                 $contenido = json_encode($datosRecibo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                 Storage::disk($disco)->put($nombreArchivo . '.json', $contenido);
-                Log::info('💾 [PDF-GUARDAR] Datos guardados como JSON', ['ruta' => $nombreArchivo]);
+                Log::info(' [PDF-GUARDAR] Datos guardados como JSON', ['ruta' => $nombreArchivo]);
                 return $nombreArchivo . '.json';
             }
 

@@ -215,7 +215,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                     
                     if (resultado.pedido) {
                         const ped = resultado.pedido;
-                        console.log('🎯 [PEDIDO-ENCONTRADO] Datos:', {
+                        console.log(' [PEDIDO-ENCONTRADO] Datos:', {
                             numero_pedido: ped.numero_pedido,
                             cliente: ped.cliente,
                             asesor_nombre: ped.asesor_nombre,

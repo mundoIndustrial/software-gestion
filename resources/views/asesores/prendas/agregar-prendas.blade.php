@@ -27,8 +27,9 @@
                             id="nombre-prenda"
                             placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)"
                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                            onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);"
+                            onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this); limpiarError(this);"
                             onchange="if(typeof actualizarResumenFriendly === 'function') { actualizarResumenFriendly(); } mostrarSelectorVariantes(this);"
+                            onfocus="limpiarError(this);"
                         >
                         <div class="prenda-suggestions mt-2 space-y-1">
                             <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>
@@ -110,10 +111,10 @@
                             <tbody>
                                 <tr style="border-bottom: 1px solid #ddd;">
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
-                                        <input type="text" id="color" placeholder="Buscar o crear color..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white" onkeyup="buscarColor(this)">
+                                        <input type="text" id="color" placeholder="Buscar o crear color..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white" onkeyup="buscarColor(this)" onfocus="limpiarError(this);">
                                     </td>
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
-                                        <input type="text" id="tela" placeholder="Buscar o crear tela..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white" onkeyup="buscarTela(this)">
+                                        <input type="text" id="tela" placeholder="Buscar o crear tela..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white" onkeyup="buscarTela(this)" onfocus="limpiarError(this);">
                                     </td>
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
                                         <input type="text" id="referencia" placeholder="Ej: REF-NAP-001" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
@@ -319,19 +320,19 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
                             <label class="text-xs text-gray-600 dark:text-gray-400">S</label>
-                            <input type="number" id="talla-s" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                            <input type="number" id="talla-s" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" onchange="limpiarErrorTallas()" oninput="limpiarErrorTallas()">
                         </div>
                         <div>
                             <label class="text-xs text-gray-600 dark:text-gray-400">M</label>
-                            <input type="number" id="talla-m" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                            <input type="number" id="talla-m" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" onchange="limpiarErrorTallas()" oninput="limpiarErrorTallas()">
                         </div>
                         <div>
                             <label class="text-xs text-gray-600 dark:text-gray-400">L</label>
-                            <input type="number" id="talla-l" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                            <input type="number" id="talla-l" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" onchange="limpiarErrorTallas()" oninput="limpiarErrorTallas()">
                         </div>
                         <div>
                             <label class="text-xs text-gray-600 dark:text-gray-400">XL</label>
-                            <input type="number" id="talla-xl" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                            <input type="number" id="talla-xl" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" onchange="limpiarErrorTallas()" oninput="limpiarErrorTallas()">
                         </div>
                     </div>
                 </div>
@@ -363,7 +364,7 @@
             <!-- Botones de Acción -->
             <div id="botones-accion" class="hidden mt-6 flex gap-3">
                 <button class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition-colors">
-                    💾 Guardar Cotización
+                     Guardar Cotización
                 </button>
                 <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors">
                     📤 Enviar Cotización
@@ -629,7 +630,38 @@ function manejarDrop(event) {
     event.stopPropagation();
 }
 
+function limpiarErrorTallas() {
+    const campo = document.getElementById('talla-s');
+    if (campo && campo.classList.contains('campo-error')) {
+        campo.classList.remove('campo-error');
+        campo.style.borderColor = '';
+        campo.style.backgroundColor = '';
+        const mensajeError = campo.parentNode.nextElementSibling;
+        if (mensajeError && mensajeError.style.color === 'rgb(220, 38, 38)') {
+            mensajeError.remove();
+        }
+    }
+}
+
+function limpiarError(campo) {
+    if (campo.classList.contains('campo-error')) {
+        campo.classList.remove('campo-error');
+        campo.style.borderColor = '';
+        campo.style.backgroundColor = '';
+        const mensajeError = campo.nextElementSibling;
+        if (mensajeError && mensajeError.style.color === 'rgb(220, 38, 38)') {
+            mensajeError.remove();
+        }
+    }
+}
+
 function agregarPrenda() {
+    // Limpiar errores anteriores
+    document.querySelectorAll('.campo-error').forEach(el => {
+        el.classList.remove('campo-error');
+        el.nextElementSibling?.remove();
+    });
+
     const nombre = document.getElementById('nombre-prenda').value.trim();
     const descripcion = document.getElementById('descripcion').value.trim();
     const color = document.getElementById('color').value.trim();
@@ -644,8 +676,42 @@ function agregarPrenda() {
         XL: parseInt(document.getElementById('talla-xl').value) || 0
     };
 
-    if (!nombre || !color || !tela) {
-        alert('Por favor completa los campos obligatorios (Prenda, Color, Tela)');
+    let errores = [];
+    
+    // Validar campos OBLIGATORIOS
+    if (!nombre) {
+        errores.push({ campo: 'nombre-prenda', mensaje: '⚠️ Tipo de prenda es requerido' });
+    }
+    if (!color) {
+        errores.push({ campo: 'color', mensaje: '⚠️ Color es requerido' });
+    }
+    if (!tela) {
+        errores.push({ campo: 'tela', mensaje: '⚠️ Tela es requerida' });
+    }
+    
+    // Validar que al menos una talla tenga cantidad
+    const totalTallas = Object.values(tallas).reduce((a, b) => a + b, 0);
+    if (totalTallas === 0) {
+        errores.push({ campo: 'talla-s', mensaje: '⚠️ Debe agregar al menos una talla con cantidad' });
+    }
+    
+    // Si hay errores, mostrarlos en rojo
+    if (errores.length > 0) {
+        errores.forEach(error => {
+            const campo = document.getElementById(error.campo);
+            if (campo) {
+                campo.classList.add('campo-error');
+                campo.style.borderColor = '#ef4444';
+                campo.style.backgroundColor = '#fee2e2';
+                const mensajeDiv = document.createElement('div');
+                mensajeDiv.style.color = '#dc2626';
+                mensajeDiv.style.fontSize = '0.85rem';
+                mensajeDiv.style.marginTop = '4px';
+                mensajeDiv.style.fontWeight = '500';
+                mensajeDiv.textContent = error.mensaje;
+                campo.parentNode.insertBefore(mensajeDiv, campo.nextSibling);
+            }
+        });
         return;
     }
 
@@ -754,4 +820,16 @@ function limpiarFormulario() {
     document.getElementById('nombre-prenda').focus();
 }
 </script>
+
+<style>
+    .campo-error {
+        transition: all 0.3s ease !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    }
+    
+    .campo-error:focus {
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+    }
+</style>
 @endsection

@@ -41,7 +41,7 @@ class CrearPrendaRequest extends FormRequest
             // Telas
             'telas' => 'required|array|min:1',
             'telas.*.nombre' => 'required|string|max:255',
-            'telas.*.referencia' => 'required|string|max:100',
+            'telas.*.referencia' => 'nullable|string|max:100',
             'telas.*.color' => 'required|string|max:100',
             'telas.*.foto' => 'nullable|image|mimes:jpeg,png,webp|max:5120',
 
@@ -69,7 +69,6 @@ class CrearPrendaRequest extends FormRequest
             'variantes.required' => 'Debe agregar al menos una variante',
             'telas.required' => 'Debe agregar al menos una tela',
             'telas.*.nombre.required' => 'El nombre de la tela es requerido',
-            'telas.*.referencia.required' => 'La referencia de la tela es requerida',
             'telas.*.color.required' => 'El color es requerido',
             'fotos.*.archivo.image' => 'El archivo debe ser una imagen válida',
             'fotos.*.archivo.mimes' => 'La imagen debe ser JPEG, PNG o WebP',

@@ -20,7 +20,7 @@ class GuardarPedidoLogoService
      */
     public function guardar(array $validated, array $imagenesProcesadas = []): int
     {
-        Log::info('💾 [LOGO] Guardando pedido tipo LOGO en logo_pedidos');
+        Log::info(' [LOGO] Guardando pedido tipo LOGO en logo_pedidos');
 
         DB::beginTransaction();
         try {

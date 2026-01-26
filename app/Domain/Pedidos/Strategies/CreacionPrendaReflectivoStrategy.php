@@ -224,7 +224,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
      */
     private function guardarTallasRelacional(int $prendaPedidoId, array $cantidadTallaGenero): void
     {
-        Log::debug('💾 [guardarTallasRelacional] Guardando tallas', [
+        Log::debug(' [guardarTallasRelacional] Guardando tallas', [
             'prenda_pedido_id' => $prendaPedidoId,
             'generos' => array_keys($cantidadTallaGenero),
         ]);

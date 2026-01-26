@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 Resumen de Cambios
+##  Resumen de Cambios
 
 | Archivo | Descripción | Líneas |
 |---------|-------------|--------|
@@ -376,7 +376,7 @@ $resultado = $this->dedupService->guardarConDeduplicacion($file, $carpeta);
 
 ---
 
-## 🎯 Resultado Final
+##  Resultado Final
 
 **Antes:**
 ```

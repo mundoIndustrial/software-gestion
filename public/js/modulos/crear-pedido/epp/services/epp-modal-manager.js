@@ -30,6 +30,8 @@ class EppModalManager {
         if (!modal) return;
         modal.style.display = 'none';
         this.limpiarFormulario();
+        // IMPORTANTE: Limpiar estado de imágenes para evitar "imágenes fantasma"
+        this.stateManager.limpiarImagenesSubidas();
 
     }
 
@@ -69,44 +71,31 @@ class EppModalManager {
      * Mostrar producto seleccionado
      */
     mostrarProductoSeleccionado(producto) {
-        console.log('🎯 [ModalManager] mostrarProductoSeleccionado:', producto);
+        console.log(' [ModalManager] mostrarProductoSeleccionado:', producto);
         
         const nombreElement = document.getElementById('nombreProductoEPP');
-        console.log('🎯 [ModalManager] Elemento nombreProductoEPP encontrado:', !!nombreElement);
+        console.log(' [ModalManager] Elemento nombreProductoEPP encontrado:', !!nombreElement);
         if (nombreElement) {
             nombreElement.textContent = producto.nombre_completo || producto.nombre;
-            console.log('🎯 [ModalManager] Nombre mostrado:', producto.nombre_completo || producto.nombre);
+            console.log(' [ModalManager] Nombre mostrado:', producto.nombre_completo || producto.nombre);
         } else {
             console.warn(' [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO');
         }
         
         // Mostrar imagen si existe
-        const imagenElemento = document.getElementById('imagenProductoEPP');
-        console.log('🎯 [ModalManager] Elemento imagenProductoEPP encontrado:', !!imagenElemento);
-        if (imagenElemento) {
-            // Si viene en producto.imagen directamente
-            if (producto.imagen) {
-                imagenElemento.src = producto.imagen;
-                imagenElemento.style.display = 'block';
-                console.log('🎯 [ModalManager] Imagen mostrada (producto.imagen):', producto.imagen);
-            }
-            // Si viene en producto.imagenes como array
-            else if (producto.imagenes && Array.isArray(producto.imagenes) && producto.imagenes.length > 0) {
-                const firstImage = producto.imagenes[0];
-                const imagenSrc = firstImage.ruta_webp || firstImage.ruta_original || firstImage;
-                imagenElemento.src = imagenSrc;
-                imagenElemento.style.display = 'block';
-                console.log('🎯 [ModalManager] Imagen mostrada (producto.imagenes):', imagenSrc);
-            }
-            // Si no hay imagen
-            else {
-                imagenElemento.style.display = 'none';
-                console.log('⚠️ [ModalManager] Sin imagen disponible');
-            }
+        const imagenElement = document.getElementById('imagenProductoEPP');
+        console.log(' [ModalManager] Elemento imagenProductoEPP encontrado:', !!imagenElement);
+        if (imagenElement && producto.imagen) {
+            imagenElement.src = producto.imagen;
+            console.log(' [ModalManager] Imagen establecida:', producto.imagen);
+        } else if (imagenElement) {
+            // Mostrar placeholder si no hay imagen
+            imagenElement.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23e5e7eb" width="100" height="100"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3ESin imagen%3C/text%3E%3C/svg%3E';
+            console.log(' [ModalManager] Mostrando placeholder (sin imagen)');
         }
         
         const productoCard = document.getElementById('productoCardEPP');
-        console.log('🎯 [ModalManager] Elemento productoCardEPP encontrado:', !!productoCard);
+        console.log(' [ModalManager] Elemento productoCardEPP encontrado:', !!productoCard);
         if (productoCard) {
             productoCard.style.display = 'flex';
             console.log('✅ [ModalManager] Tarjeta de producto mostrada');
@@ -251,8 +240,11 @@ class EppModalManager {
             });
 
         } else {
-            listaImagenes.style.display = 'none';
-
+            // IMPORTANTE: No ocultar el contenedor cuando está vacío
+            // para permitir agregar nuevas imágenes después
+            // Solo ocultar si explícitamente se llama a limpiarImagenes()
+            console.log('📸 [ModalManager] mostrarImagenes: sin imágenes, preparando contenedor');
+            // listaImagenes.style.display = 'none'; // ELIMINADO - esto bloqueaba agregar nuevas
         }
     }
 
@@ -260,32 +252,91 @@ class EppModalManager {
      * Agregar imagen a la UI
      */
     agregarImagenUI(imagen) {
+        console.log('📸 [ModalManager] agregarImagenUI() llamado con imagen:', imagen.id);
+        
         const contenedor = document.getElementById('contenedorImagenesSubidas');
+        const listaImagenes = document.getElementById('listaImagenesSubidas');
+        
+        if (!contenedor || !listaImagenes) {
+            console.warn('⚠️ [ModalManager] Contenedor o listaImagenes no encontrado');
+            return;
+        }
+        
         const card = this._crearCardImagen(imagen);
         contenedor.appendChild(card);
+        console.log('📸 [ModalManager] Carta agregada al contenedor');
 
-        if (contenedor.children.length > 0) {
-            document.getElementById('listaImagenesSubidas').style.display = 'block';
-        }
-
-
+        // IMPORTANTE: Asegurar que el contenedor sea visible
+        listaImagenes.style.display = 'block';
+        console.log('📸 [ModalManager] listaImagenesSubidas hecha visible');
     }
 
     /**
      * Eliminar imagen de la UI
      */
     eliminarImagenUI(imagenId) {
-        const card = document.getElementById(`imagen-${imagenId}`);
+        console.log('🖼️ [ModalManager] eliminarImagenUI() buscando imagen con ID:', imagenId);
+        
+        // Intentar búsqueda con prefijo "imagen-"
+        let card = document.getElementById(`imagen-${imagenId}`);
+        console.log('🖼️ [ModalManager] Búsqueda 1 (imagen-${imagenId}):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
+        
+        // Si no encuentra, intentar búsqueda sin prefijo
+        if (!card) {
+            card = document.getElementById(imagenId);
+            console.log('🖼️ [ModalManager] Búsqueda 2 (solo imagenId):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
+        }
+        
+        // Si no encuentra, intentar buscar por atributo data-imagen-id
+        if (!card) {
+            card = document.querySelector(`[data-imagen-id="${imagenId}"]`);
+            console.log('🖼️ [ModalManager] Búsqueda 3 (data-imagen-id):', card ? 'ENCONTRADO' : 'NO ENCONTRADO');
+        }
+        
+        // Si aún no encuentra, buscar todos los elementos del contenedor
+        if (!card) {
+            const contenedor = document.getElementById('contenedorImagenesSubidas');
+            if (contenedor) {
+                const todasLasCartas = contenedor.querySelectorAll('div[id^="imagen-"]');
+                console.log('🖼️ [ModalManager] Total de cartas en contenedor:', todasLasCartas.length);
+                todasLasCartas.forEach((carta, idx) => {
+                    console.log(`   Carta ${idx}: ID=${carta.id}`);
+                    if (carta.id.includes(imagenId) || carta.id.endsWith(imagenId)) {
+                        card = carta;
+                        console.log('🖼️ [ModalManager] Búsqueda 4: ENCONTRADO por coincidencia parcial:', card.id);
+                    }
+                });
+            }
+        }
+        
         if (card) {
-            card.remove();
+            console.log('✅ [ModalManager] Removiendo carta:', card.id);
+            console.log('   Antes de remove - card.parentNode:', !!card.parentNode);
+            // Asegurar que se oculte primero por si acaso
+            card.style.display = 'none';
+            // Luego remover del DOM
+            setTimeout(() => {
+                if (card.parentNode) {
+                    card.remove();
+                    console.log('   Después de remove (async) - eliminado del DOM');
+                }
+            }, 10);
+        } else {
+            console.warn('⚠️ [ModalManager] No se encontró elemento para eliminar. ImagenId buscado:', imagenId);
         }
 
         const contenedor = document.getElementById('contenedorImagenesSubidas');
-        if (contenedor.children.length === 0) {
-            document.getElementById('listaImagenesSubidas').style.display = 'none';
+        const listaImagenes = document.getElementById('listaImagenesSubidas');
+        
+        // IMPORTANTE: NO ocultar el contenedor cuando está vacío
+        // Esto permite que el usuario pueda agregar nuevas imágenes después de eliminar
+        if (contenedor && contenedor.children.length === 0) {
+            console.log('✅ [ModalManager] Contenedor vacío pero VISIBLE para agregar nuevas imágenes');
+            // Asegurar que está visible para agregar nuevas
+            if (listaImagenes) {
+                listaImagenes.style.display = 'block';
+            }
         }
-
-
     }
 
     /**
@@ -318,8 +369,13 @@ class EppModalManager {
      * Limpiar imágenes
      */
     limpiarImagenes() {
-        document.getElementById('contenedorImagenesSubidas').innerHTML = '';
-        document.getElementById('listaImagenesSubidas').style.display = 'none';
+        const contenedor = document.getElementById('contenedorImagenesSubidas');
+        if (contenedor) {
+            contenedor.innerHTML = '';
+        }
+        // IMPORTANTE: NO ocultar listaImagenesSubidas aquí
+        // Solo vaciar el contenedor. habilitarCampos() lo mostrará cuando sea necesario
+        console.log('🗑️ [ModalManager] limpiarImagenes() completado');
     }
 
     /**
@@ -339,7 +395,14 @@ class EppModalManager {
         const valores = this.obtenerValoresFormulario();
 
         if (valores.cantidad <= 0) {
-            alert('Cantidad debe ser mayor a 0');
+            if (window.eppNotificationService) {
+                window.eppNotificationService.mostrarValidacion(
+                    '⚠️ Cantidad Requerida',
+                    'La cantidad debe ser mayor a 0'
+                );
+            } else {
+                alert('Cantidad debe ser mayor a 0');
+            }
             return false;
         }
 

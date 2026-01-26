@@ -209,6 +209,23 @@ class MapeoImagenesService
             // IMÁGENES DE PROCESOS
             // ========================================
             $procesosEnPrenda = $prenda->procesos()->get();
+            
+            // DEBUG: Verificar qué se guardó en datos_adicionales
+            Log::debug('[MapeoImagenesService] Procesos cargados', [
+                'prenda_id' => $prenda->id,
+                'procesos' => $procesosEnPrenda->map(function ($p) {
+                    $datos = $p->datos_adicionales;
+                    return [
+                        'id' => $p->id,
+                        'datos_adicionales_raw' => $datos,
+                        'es_null' => is_null($datos),
+                        'es_string' => is_string($datos),
+                        'es_array' => is_array($datos),
+                        'uid_value' => $datos['uid'] ?? 'NO_ENCONTRADO',
+                    ];
+                })->toArray(),
+            ]);
+            
             foreach ($prendaDTO['procesos'] as $procesoIdx => $procesoDTO) {
                 $procesoUID = $procesoDTO['uid'];
                 
@@ -223,7 +240,13 @@ class MapeoImagenesService
                 if (!$procesoEnBD) {
                     // Si no encuentra por UID, intentar búsqueda alternativa por tipo de proceso
                     // (Por si el UID no se guardó correctamente)
-                    $nombreProcesoDTO = strtoupper($procesoDTO['nombre'] ?? '');
+                    // Usar el índice del DTO como nombre del tipo (ej: "reflectivo", "bordado")
+                    $nombreProcesoDTO = strtoupper($procesoIdx);
+                    Log::debug('[MapeoImagenesService] Búsqueda alternativa por tipo', [
+                        'procesoIdx' => $procesoIdx,
+                        'nombreProcesoDTO' => $nombreProcesoDTO,
+                        'tipos_disponibles' => $procesosEnPrenda->map(fn($p) => strtoupper($p->tipoProceso->nombre ?? ''))->unique()->toArray(),
+                    ]);
                     if ($nombreProcesoDTO) {
                         $procesoEnBD = $procesosEnPrenda
                             ->first(function ($p) use ($nombreProcesoDTO) {
@@ -257,15 +280,18 @@ class MapeoImagenesService
 
                     if (!$rutaFinal) continue;
 
-                    \App\Models\ProcesoPrendaFoto::create([
+                    \App\Models\PedidosProcessImagenes::create([
                         'proceso_prenda_detalle_id' => $procesoEnBD->id,
+                        'ruta_original' => $rutaFinal,
                         'ruta_webp' => $rutaFinal,
                         'orden' => $imgIdx + 1,
+                        'es_principal' => $imgIdx === 0,
                     ]);
 
-                    Log::debug('[MapeoImagenesService] ProcesoPrendaFoto creado', [
+                    Log::debug('[MapeoImagenesService] PedidosProcessImagenes creado', [
                         'proceso_id' => $procesoEnBD->id,
                         'ruta' => $rutaFinal,
+                        'es_principal' => $imgIdx === 0,
                     ]);
                 }
             }

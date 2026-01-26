@@ -532,7 +532,7 @@ formData.append('pedido', json);
 
 ---
 
-## 🎯 Casos de Uso
+##  Casos de Uso
 
 ### Caso 1: Crear pedido con solo prendas (sin telas ni procesos)
 

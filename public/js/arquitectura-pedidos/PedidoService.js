@@ -124,7 +124,6 @@ export class PedidoService {
                 uid: eppUI.uid || this.generarUID(),
                 nombre: eppUI.nombre,
                 cantidad: eppUI.cantidad,
-                descripcion: eppUI.descripcion,
                 imagenes: eppUI.imagenes || []
             }));
         }

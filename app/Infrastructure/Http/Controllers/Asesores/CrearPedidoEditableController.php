@@ -1503,7 +1503,7 @@ class CrearPedidoEditableController extends Controller
             
             $cantidad = DB::table('pedidos_procesos_prenda_tallas as pppt')
                 ->selectRaw('COALESCE(SUM(pppt.cantidad), 0) as total')
-                ->join('procesos_prenda_detalle as ppd', 'pppt.proceso_prenda_detalle_id', '=', 'ppd.id')
+                ->join('pedidos_procesos_prenda_detalles as ppd', 'pppt.proceso_prenda_detalle_id', '=', 'ppd.id')
                 ->join('prendas_pedido as pp', 'ppd.prenda_pedido_id', '=', 'pp.id')
                 ->where('pp.pedido_produccion_id', $pedidoId)
                 ->value('total');

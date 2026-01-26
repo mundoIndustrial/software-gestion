@@ -70,7 +70,7 @@ window.renderizarTarjetasProcesos = function() {
  * Generar HTML de una tarjeta de proceso
  */
 function generarTarjetaProceso(tipo, datos) {
-    console.log('🎯 [GENERAR-TARJETA] Generando tarjeta para tipo:', tipo, {
+    console.log(' [GENERAR-TARJETA] Generando tarjeta para tipo:', tipo, {
         datos: datos,
         tieneNombre: !!datos.nombre,
         tieneNombreProceso: !!datos.nombre_proceso,

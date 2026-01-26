@@ -11,7 +11,7 @@ class EppModalTemplate {
     static getHTML() {
         return `
         <div id="modal-agregar-epp" class="modal-overlay" style="display: none;">
-            <div class="modal-container" style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-container" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header modal-header-primary">
                     <h3 class="modal-title">
                         <span class="material-symbols-rounded">shield</span>EPP
@@ -62,16 +62,6 @@ class EppModalTemplate {
                             >
                         </div>
 
-                        <div style="margin-bottom: 1rem;">
-                            <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Descripción</label>
-                            <input 
-                                type="text"
-                                id="nuevoEPPDescripcion"
-                                placeholder="Ej. Casco de protección ABS"
-                                style="width: 100%; padding: 0.75rem; border: 2px solid #bfdbfe; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
-                            >
-                        </div>
-
                         <div style="display: flex; gap: 0.75rem;">
                             <button 
                                 type="button"
@@ -96,7 +86,6 @@ class EppModalTemplate {
 
                     <div id="productoCardEPP" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; animation: slideDown 0.3s ease;">
                         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                            <img id="imagenProductoEPP" src="" alt="EPP" style="width: 80px; height: 80px; border-radius: 6px; object-fit: cover; border: 2px solid #bfdbfe; flex-shrink: 0;">
                             <div style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
                                 <h3 id="nombreProductoEPP" style="margin: 0; font-size: 0.95rem; font-weight: 600; color: #1f2937; line-height: 1.4; margin-bottom: 0.25rem;"></h3>
                             </div>

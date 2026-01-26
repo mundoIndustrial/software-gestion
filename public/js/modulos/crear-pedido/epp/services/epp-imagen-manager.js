@@ -81,11 +81,12 @@ class EppImagenManager {
      */
     async eliminarImagen(imagenId) {
         console.log('🗑️ [EppImagenManager] eliminarImagen() llamado con imagenId:', imagenId);
+        console.log('📊 [EppImagenManager] Modal EPP z-index:', document.getElementById('modal-agregar-epp')?.style.zIndex);
         
         // Mostrar confirmación elegante con SweetAlert
         const result = await Swal.fire({
-            title: ' Eliminar Imagen',
-            text: '¿Estás seguro de que deseas eliminar esta imagen? Se eliminará de la base de datos y del servidor.',
+            title: '🗑️ Eliminar Imagen',
+            text: '¿Estás seguro de que deseas eliminar esta imagen?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc2626',
@@ -94,20 +95,62 @@ class EppImagenManager {
             cancelButtonText: 'Cancelar',
             allowOutsideClick: false,
             allowEscapeKey: false,
+            willOpen: (modal) => {
+                console.log('🗑️ [EppImagenManager] willOpen - preparando z-index');
+                console.log('   Modal element:', modal);
+                // Preparar el z-index ANTES de que aparezca
+                setTimeout(() => {
+                    const container = document.querySelector('.swal2-container');
+                    const backdrop = document.querySelector('.swal2-backdrop-show');
+                    const popup = document.querySelector('.swal2-popup');
+                    
+                    console.log('✅ [EppImagenManager] Elementos encontrados:');
+                    console.log('   - Container:', container);
+                    console.log('   - Backdrop:', backdrop);
+                    console.log('   - Popup:', popup);
+                    
+                    if (container) {
+                        container.style.setProperty('z-index', '1000005', 'important');
+                        container.style.setProperty('position', 'fixed', 'important');
+                        console.log('   Container z-index aplicado: 1000005 con setProperty');
+                    }
+                    if (backdrop) {
+                        backdrop.style.setProperty('z-index', '1000000', 'important');
+                        console.log('   Backdrop z-index aplicado: 1000000 con setProperty');
+                    }
+                    if (popup) {
+                        popup.style.setProperty('z-index', '1000005', 'important');
+                        popup.style.setProperty('position', 'relative', 'important');
+                        console.log('   Popup z-index aplicado: 1000005 con setProperty');
+                    }
+                }, 0);
+            },
             didOpen: (modal) => {
-                console.log('🗑️ [EppImagenManager] Modal de confirmación abierto');
-                // Asegurar que el modal esté encima de todo (incluso por encima del modal-agregar-epp z-index: 1000000)
-                const container = modal.closest('.swal2-container');
-                if (container) {
-                    container.style.zIndex = '1000001';
-                }
-                const popup = modal.querySelector('.swal2-popup');
-                if (popup) {
-                    popup.style.zIndex = '1000001';
-                }
+                console.log('🗑️ [EppImagenManager] didOpen - asegurando z-index');
+                // Asegurar nuevamente después de renderizar
+                const container = document.querySelector('.swal2-container');
                 const backdrop = document.querySelector('.swal2-backdrop-show');
+                const popup = document.querySelector('.swal2-popup');
+                
+                console.log('✅ [EppImagenManager] didOpen - verificando elementos:');
+                if (container) {
+                    const zIndexAntes = window.getComputedStyle(container).zIndex;
+                    console.log('   Container z-index antes:', zIndexAntes);
+                    container.style.setProperty('z-index', '1000005', 'important');
+                    container.style.setProperty('position', 'fixed', 'important');
+                    const zIndexDespues = window.getComputedStyle(container).zIndex;
+                    console.log('   Container z-index después:', zIndexDespues);
+                }
                 if (backdrop) {
-                    backdrop.style.zIndex = '1000000';
+                    backdrop.style.setProperty('z-index', '1000000', 'important');
+                    console.log('   Backdrop z-index:', window.getComputedStyle(backdrop).zIndex);
+                }
+                if (popup) {
+                    const zIndexAntes = window.getComputedStyle(popup).zIndex;
+                    console.log('   Popup z-index antes:', zIndexAntes);
+                    popup.style.setProperty('z-index', '1000005', 'important');
+                    const zIndexDespues = window.getComputedStyle(popup).zIndex;
+                    console.log('   Popup z-index después:', zIndexDespues);
                 }
             }
         });
@@ -118,40 +161,97 @@ class EppImagenManager {
         }
 
         try {
-            // Llamar al API para eliminar del servidor y base de datos
-            await this.apiService.eliminarImagen(imagenId);
+            // Detectar si la imagen es local o de BD
+            // IDs locales: números grandes (timestamps: 13+ dígitos) o formato EPP-img-X (1670-img-1)
+            // IDs de BD: números pequeños
+            const esTimestamp = typeof imagenId === 'number' || (typeof imagenId === 'string' && imagenId.match(/^\d{13,}$/));
+            const esDOMFormat = typeof imagenId === 'string' && imagenId.includes('-img-');
+            const esIdTemporal = esTimestamp || esDOMFormat;
+            
+            console.log('🗑️ [EppImagenManager] Analizando imagenId:', imagenId);
+            console.log('🗑️ [EppImagenManager] - Es timestamp?:', esTimestamp);
+            console.log('🗑️ [EppImagenManager] - Es DOM format (XXX-img-X)?:', esDOMFormat);
+            console.log('🗑️ [EppImagenManager] - Es temporal?:', esIdTemporal);
+            
+            if (!esIdTemporal) {
+                // Solo llamar al API si es una imagen guardada en BD
+                console.log('🗑️ [EppImagenManager] Imagen de BD, eliminando del servidor');
+                try {
+                    await this.apiService.eliminarImagen(imagenId);
+                } catch (apiError) {
+                    console.warn('⚠️ [EppImagenManager] Error al eliminar de BD, pero continuando con UI:', apiError.message);
+                }
+            } else {
+                console.log('🗑️ [EppImagenManager] Imagen local/temporal, eliminando solo del cliente');
+            }
 
+            console.log('🗑️ [EppImagenManager] Llamando a stateManager.eliminarImagenSubida con ID:', imagenId);
             this.stateManager.eliminarImagenSubida(imagenId);
+            
+            console.log('🗑️ [EppImagenManager] Llamando a modalManager.eliminarImagenUI con ID:', imagenId);
             this.modalManager.eliminarImagenUI(imagenId);
 
+            console.log('✅ [EppImagenManager] Imagen eliminada correctamente del UI');
+
             // Mostrar confirmación de éxito
-            Swal.fire({
+            await Swal.fire({
                 title: '✓ Eliminada',
-                text: 'La imagen ha sido eliminada correctamente',
+                text: 'La imagen ha sido eliminada',
                 icon: 'success',
                 confirmButtonColor: '#10b981',
                 confirmButtonText: 'OK',
-                didOpen: (modal) => {
-                    // Asegurar que el modal de éxito también esté encima
-                    const container = modal.closest('.swal2-container');
-                    if (container) {
-                        container.style.zIndex = '1000001';
-                    }
+                willOpen: (modal) => {
+                    console.log('✅ [EppImagenManager] willOpen success modal');
+                    setTimeout(() => {
+                        const container = document.querySelector('.swal2-container');
+                        const backdrop = document.querySelector('.swal2-backdrop-show');
+                        const popup = document.querySelector('.swal2-popup');
+                        
+                        if (container) {
+                            container.style.setProperty('z-index', '1000005', 'important');
+                            container.style.setProperty('position', 'fixed', 'important');
+                        }
+                        if (backdrop) {
+                            backdrop.style.setProperty('z-index', '1000000', 'important');
+                        }
+                        if (popup) {
+                            popup.style.setProperty('z-index', '1000005', 'important');
+                        }
+                    }, 0);
                 }
             });
 
-
         } catch (error) {
-
+            console.error('🗑️ [EppImagenManager] Error al eliminar imagen:', error);
+            console.error('   Error message:', error.message);
+            console.error('   Error stack:', error.stack);
             
             // Mostrar error
-            Swal.fire({
-                title: ' Error',
+            await Swal.fire({
+                title: '❌ Error',
                 text: 'No se pudo eliminar la imagen: ' + error.message,
                 icon: 'error',
                 confirmButtonColor: '#ef4444',
                 confirmButtonText: 'OK',
-                zIndex: 99999
+                willOpen: (modal) => {
+                    console.log('❌ [EppImagenManager] willOpen error modal');
+                    setTimeout(() => {
+                        const container = document.querySelector('.swal2-container');
+                        const backdrop = document.querySelector('.swal2-backdrop-show');
+                        const popup = document.querySelector('.swal2-popup');
+                        
+                        if (container) {
+                            container.style.setProperty('z-index', '1000005', 'important');
+                            container.style.setProperty('position', 'fixed', 'important');
+                        }
+                        if (backdrop) {
+                            backdrop.style.setProperty('z-index', '1000000', 'important');
+                        }
+                        if (popup) {
+                            popup.style.setProperty('z-index', '1000005', 'important');
+                        }
+                    }, 0);
+                }
             });
         }
     }

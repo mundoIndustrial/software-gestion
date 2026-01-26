@@ -285,6 +285,13 @@ class GuardarPedidoDesdeJSONService
                     : null,
             ]);
 
+            \Log::info('[GuardarPedidoDesdeJSONService] Proceso creado, ahora guardando imágenes', [
+                'proceso_id' => $proceso->id,
+                'tipo_proceso_id' => $procesoData['tipo_proceso_id'],
+                'cantidad_imagenes_en_array' => count($procesoData['imagenes'] ?? []),
+                'has_imagenes_key' => isset($procesoData['imagenes']),
+            ]);
+
             // Guardar imÃ¡genes del proceso
             $this->guardarImagenesProceso($proceso, $procesoData['imagenes'] ?? []);
 
@@ -299,32 +306,94 @@ class GuardarPedidoDesdeJSONService
      */
     private function guardarImagenesProceso(PedidosProcesosPrendaDetalle $proceso, array $archivos): void
     {
+        \Log::info('[GuardarPedidoDesdeJSONService] guardarImagenesProceso INICIADO', [
+            'proceso_id' => $proceso->id,
+            'cantidad_archivos' => count($archivos),
+            'tipo_proceso_id' => $proceso->tipo_proceso_id,
+        ]);
+
+        if (empty($archivos)) {
+            \Log::info('[GuardarPedidoDesdeJSONService] No hay archivos para guardar', [
+                'proceso_id' => $proceso->id,
+            ]);
+            return;
+        }
+
         $orden = 1;
 
-        foreach ($archivos as $archivo) {
+        foreach ($archivos as $indice => $archivo) {
+            \Log::debug('[GuardarPedidoDesdeJSONService] Procesando archivo', [
+                'proceso_id' => $proceso->id,
+                'indice' => $indice,
+                'archivo_class' => get_class($archivo ?? 'null'),
+                'es_null' => $archivo === null,
+                'tiene_isValid' => method_exists($archivo, 'isValid'),
+            ]);
+
             if (!$archivo || !method_exists($archivo, 'isValid') || !$archivo->isValid()) {
+                \Log::warning('[GuardarPedidoDesdeJSONService] Archivo inválido saltado', [
+                    'proceso_id' => $proceso->id,
+                    'indice' => $indice,
+                ]);
                 continue;
             }
 
             try {
+                \Log::info('[GuardarPedidoDesdeJSONService] Guardando imagen WebP', [
+                    'proceso_id' => $proceso->id,
+                    'nombre_archivo' => $archivo->getClientOriginalName(),
+                ]);
+
                 $rutasGuardadas = $this->imagenService->guardarImagenComoWebp(
                     $archivo,
                     "procesos/{$proceso->id}",
                     $proceso->id
                 );
 
+                \Log::info('[GuardarPedidoDesdeJSONService] Imagen guardada en storage', [
+                    'proceso_id' => $proceso->id,
+                    'rutas_guardadas' => $rutasGuardadas,
+                ]);
+
                 if ($rutasGuardadas) {
-                    $proceso->imagenes()->create([
+                    $esImagenPrincipal = $orden === 1; // Primera imagen es principal
+                    
+                    \Log::info('[GuardarPedidoDesdeJSONService] Creando registro en DB', [
+                        'proceso_id' => $proceso->id,
+                        'orden' => $orden,
+                        'es_principal' => $esImagenPrincipal,
+                        'ruta_original' => $rutasGuardadas['original'] ?? null,
+                        'ruta_webp' => $rutasGuardadas['webp'],
+                    ]);
+
+                    $registro = $proceso->imagenes()->create([
                         'ruta_original' => $rutasGuardadas['original'] ?? null,
                         'ruta_webp' => $rutasGuardadas['webp'],
                         'orden' => $orden++,
-                        'es_principal' => $orden === 2, // Primera imagen es principal
+                        'es_principal' => $esImagenPrincipal,
+                    ]);
+
+                    \Log::info('[GuardarPedidoDesdeJSONService] Registro creado exitosamente en DB', [
+                        'proceso_id' => $proceso->id,
+                        'imagen_id' => $registro->id ?? null,
+                    ]);
+                } else {
+                    \Log::warning('[GuardarPedidoDesdeJSONService] guardarImagenComoWebp retornó null', [
+                        'proceso_id' => $proceso->id,
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::warning(" Error al guardar imagen de proceso: {$e->getMessage()}");
+                \Log::error('[GuardarPedidoDesdeJSONService] Error al guardar imagen de proceso', [
+                    'proceso_id' => $proceso->id,
+                    'error' => $e->getMessage(),
+                    'exception' => $e,
+                ]);
             }
         }
+
+        \Log::info('[GuardarPedidoDesdeJSONService] guardarImagenesProceso COMPLETADO', [
+            'proceso_id' => $proceso->id,
+        ]);
     }
 
     /**

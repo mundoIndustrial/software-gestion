@@ -28,7 +28,7 @@ class LoggerApp {
             PrendaDataBuilder: '🏗️',
             ValidadorPrenda: '✔️',
             Modal: '🪟',
-            Gestor: '💾'
+            Gestor: ''
         }
     };
 

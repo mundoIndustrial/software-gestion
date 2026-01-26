@@ -74,7 +74,7 @@ class CrearPedidoCompletoRequest extends FormRequest
             'prendas.*.cantidad_talla.UNISEX' => 'nullable|array',
             'prendas.*.cantidad_talla.UNISEX.*' => 'nullable|integer|min:0',
             
-            // 🎯 VARIACIONES - Value Object (UNA configuración por prenda)
+            //  VARIACIONES - Value Object (UNA configuración por prenda)
             'prendas.*.variaciones' => 'nullable|array',
             'prendas.*.variaciones.tipo_manga' => 'nullable|string|max:100',
             'prendas.*.variaciones.tipo_manga_id' => 'nullable|integer|exists:tipos_manga,id',
@@ -127,7 +127,7 @@ class CrearPedidoCompletoRequest extends FormRequest
             'items.*.cantidad_talla.UNISEX' => 'nullable|array',
             'items.*.cantidad_talla.UNISEX.*' => 'nullable|integer|min:0',
             
-            // 🎯 VARIACIONES - Value Object (UNA configuración por prenda)
+            //  VARIACIONES - Value Object (UNA configuración por prenda)
             'items.*.variaciones' => 'nullable|array',
             'items.*.variaciones.tipo_manga' => 'nullable|string|max:100',
             'items.*.variaciones.tipo_manga_id' => 'nullable|integer|exists:tipos_manga,id',
