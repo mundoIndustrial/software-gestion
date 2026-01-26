@@ -762,27 +762,78 @@ class PDFCotizacionController extends Controller
             
             //  INFORMACIÓN DE REFLECTIVO POR PRENDA (si existe)
             $reflectivoPrenda = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
-            if ($reflectivoPrenda) {
+            
+            // También obtener ubicaciones y variaciones desde prenda_cot_reflectivo
+            $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::where('prenda_cot_id', $prenda->id)->first();
+            $ubicacionesPrendaCot = [];
+            $variacionesPrendaCot = [];
+            
+            if ($prendaCotReflectivo) {
+                // Ubicaciones desde prenda_cot_reflectivo
+                if ($prendaCotReflectivo->ubicaciones) {
+                    $ubicacionesData = is_string($prendaCotReflectivo->ubicaciones) 
+                        ? json_decode($prendaCotReflectivo->ubicaciones, true) 
+                        : $prendaCotReflectivo->ubicaciones;
+                    if (is_array($ubicacionesData)) {
+                        $ubicacionesPrendaCot = $ubicacionesData;
+                    }
+                }
+                
+                // Variaciones desde prenda_cot_reflectivo
+                if ($prendaCotReflectivo->variaciones) {
+                    $variacionesData = is_string($prendaCotReflectivo->variaciones) 
+                        ? json_decode($prendaCotReflectivo->variaciones, true) 
+                        : $prendaCotReflectivo->variaciones;
+                    if (is_array($variacionesData)) {
+                        $variacionesPrendaCot = $variacionesData;
+                    }
+                }
+            }
+            
+            if ($reflectivoPrenda || !empty($ubicacionesPrendaCot) || !empty($variacionesPrendaCot)) {
                 $html .= '<div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">';
                 $html .= '<div style="font-size: 10px; font-weight: bold; color: #1976d2; margin-bottom: 6px;"> INFORMACIÓN DE REFLECTIVO</div>';
                 
-                // Descripción
-                if ($reflectivoPrenda->descripcion) {
-                    $html .= '<div style="font-size: 9px; margin-bottom: 4px; color: #333;"><strong>Descripción:</strong> ' . htmlspecialchars($reflectivoPrenda->descripcion) . '</div>';
+                // Variaciones
+                if (!empty($variacionesPrendaCot)) {
+                    $html .= '<div style="font-size: 9px; margin-bottom: 4px; color: #333;"><strong>Variaciones:</strong></div>';
+                    $html .= '<table style="font-size: 8px; width: 100%; border-collapse: collapse; margin-bottom: 8px; margin-left: 10px;">';
+                    $html .= '<thead style="background: #90caf9;">';
+                    $html .= '<tr>';
+                    $html .= '<th style="border: 1px solid #ccc; padding: 3px; text-align: left;">Variación</th>';
+                    $html .= '<th style="border: 1px solid #ccc; padding: 3px; text-align: left;">Observación</th>';
+                    $html .= '</tr>';
+                    $html .= '</thead>';
+                    $html .= '<tbody>';
+                    
+                    foreach ($variacionesPrendaCot as $var) {
+                        if (is_array($var)) {
+                            $html .= '<tr style="border: 1px solid #ccc;">';
+                            $html .= '<td style="border: 1px solid #ccc; padding: 3px; color: #333;">' . htmlspecialchars($var['variacion'] ?? 'N/A') . '</td>';
+                            $html .= '<td style="border: 1px solid #ccc; padding: 3px; color: #666;">' . htmlspecialchars($var['observacion'] ?? '-') . '</td>';
+                            $html .= '</tr>';
+                        }
+                    }
+                    
+                    $html .= '</tbody>';
+                    $html .= '</table>';
                 }
                 
                 // Ubicaciones
                 $ubicacionesReflectivo = [];
-                if ($reflectivoPrenda->ubicacion) {
+                if ($reflectivoPrenda && $reflectivoPrenda->ubicacion) {
                     $ubicacionesData = is_string($reflectivoPrenda->ubicacion) ? json_decode($reflectivoPrenda->ubicacion, true) : $reflectivoPrenda->ubicacion;
                     if (is_array($ubicacionesData)) {
                         $ubicacionesReflectivo = $ubicacionesData;
                     }
                 }
                 
-                if (count($ubicacionesReflectivo) > 0) {
+                // Usar ubicaciones de prenda_cot_reflectivo si existen, sino usar las del reflectivo_cotizacion
+                $ubicacionesMostrar = !empty($ubicacionesPrendaCot) ? $ubicacionesPrendaCot : $ubicacionesReflectivo;
+                
+                if (count($ubicacionesMostrar) > 0) {
                     $html .= '<div style="font-size: 9px; margin-bottom: 4px; color: #333;"><strong>Ubicaciones:</strong></div>';
-                    foreach ($ubicacionesReflectivo as $ubi) {
+                    foreach ($ubicacionesMostrar as $ubi) {
                         if (is_array($ubi) && isset($ubi['ubicacion'])) {
                             $html .= '<div style="font-size: 8px; margin-left: 15px; margin-bottom: 2px; color: #555;">• ' . htmlspecialchars($ubi['ubicacion']);
                             if (!empty($ubi['descripcion'])) {
@@ -876,7 +927,7 @@ class PDFCotizacionController extends Controller
                     if ($rutaImagen) {
                         // Verificar si es una URL completa (http/https)
                         if (strpos($rutaImagen, 'http') === 0) {
-                            $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Reflectivo" style="width: 100px; height: 100px; border: 2px solid #2196f3; object-fit: cover; flex-shrink: 0;">';
+                            $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Reflectivo" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
                         } else {
                             // Es una ruta local, asegurar que tenga /storage/
                             if (!str_starts_with($rutaImagen, '/')) {
@@ -894,7 +945,7 @@ class PDFCotizacionController extends Controller
                             }
                             
                             if (file_exists($rutaAbsoluta)) {
-                                $html .= '<img src="' . $rutaAbsoluta . '" alt="Reflectivo" style="width: 100px; height: 100px; border: 2px solid #2196f3; object-fit: cover; flex-shrink: 0;">';
+                                $html .= '<img src="' . $rutaAbsoluta . '" alt="Reflectivo" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
                             }
                         }
                     }
