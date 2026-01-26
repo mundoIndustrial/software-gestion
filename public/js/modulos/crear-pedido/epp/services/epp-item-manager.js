@@ -40,7 +40,7 @@ class EppItemManager {
                                 type="button"
                                 class="btn-editar-epp"
                                 data-item-id="${id}"
-                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
+                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #e5e7eb;"
                                 onmouseover="this.style.background = '#f3f4f6';"
                                 onmouseout="this.style.background = 'transparent';"
                             >
@@ -50,7 +50,7 @@ class EppItemManager {
                                 type="button"
                                 class="btn-eliminar-epp"
                                 data-item-id="${id}"
-                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
+                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease; border-radius: 0 0 8px 8px;"
                                 onmouseover="this.style.background = '#fef2f2';"
                                 onmouseout="this.style.background = 'transparent';"
                             >
@@ -87,18 +87,36 @@ class EppItemManager {
      * Eliminar item visual
      */
     eliminarItem(id) {
-        const item = document.querySelector(`.item-epp[data-item-id="${id}"]`);
+        // Intentar primero con .item-epp[data-item-id]
+        let item = document.querySelector(`.item-epp[data-item-id="${id}"]`);
+        
+        // Si no encuentra, intentar con .item-epp-card[data-epp-id]
+        if (!item) {
+            item = document.querySelector(`.item-epp-card[data-epp-id="${id}"]`);
+        }
+        
         if (item) {
             item.remove();
-
+            console.log('[EppItemManager] ✅ Item eliminado:', id);
+        } else {
+            console.warn('[EppItemManager] ⚠️ Item no encontrado para eliminar:', id);
         }
     }
 
     /**
-     * Obtener item por ID
+     * Obtener item por ID - intenta múltiples selectores
      */
     obtenerItem(id) {
-        return document.querySelector(`.item-epp[data-item-id="${id}"]`);
+        // Intentar primero con .item-epp[data-item-id]
+        let item = document.querySelector(`.item-epp[data-item-id="${id}"]`);
+        
+        // Si no encuentra, intentar con .item-epp-card[data-epp-id]
+        if (!item) {
+            item = document.querySelector(`.item-epp-card[data-epp-id="${id}"]`);
+        }
+        
+        console.log('[EppItemManager] 🔍 obtenerItem buscando ID:', id, 'encontrado:', !!item);
+        return item;
     }
 
     /**
@@ -106,14 +124,79 @@ class EppItemManager {
      */
     actualizarItem(id, datos) {
         const item = this.obtenerItem(id);
-        if (!item) return;
+        if (!item) {
+            console.warn('[EppItemManager] ⚠️ Item no encontrado para actualizar:', id);
+            return;
+        }
 
-        // Actualizar valores en el DOM
-        const detalles = item.querySelectorAll('div > p');
-        if (detalles[1]) detalles[1].textContent = datos.cantidad;
-        if (detalles[3]) detalles[3].textContent = datos.observaciones || 'N/A';
+        console.log('[EppItemManager] 🔄 Actualizando item:', id, datos);
 
+        // Actualizar cantidad
+        if (datos.cantidad !== undefined) {
+            // Buscar el div de detalles que contiene cantidad
+            const detallesDiv = item.querySelector('div[style*="grid-template-columns"]');
+            if (detallesDiv) {
+                const etiquetas = detallesDiv.querySelectorAll('p');
+                // Primera columna: [0] = etiqueta "Cantidad", [1] = valor cantidad
+                // Segunda columna: [2] = etiqueta "Observaciones", [3] = valor observaciones
+                if (etiquetas[1]) {
+                    etiquetas[1].textContent = datos.cantidad;
+                    console.log('[EppItemManager] ✅ Cantidad actualizada:', datos.cantidad);
+                }
+            }
+        }
 
+        // Actualizar observaciones
+        if (datos.observaciones !== undefined) {
+            const detallesDiv = item.querySelector('div[style*="grid-template-columns"]');
+            if (detallesDiv) {
+                const etiquetas = detallesDiv.querySelectorAll('p');
+                // Primera columna: [0] = etiqueta "Cantidad", [1] = valor cantidad
+                // Segunda columna: [2] = etiqueta "Observaciones", [3] = valor observaciones
+                if (etiquetas[3]) {
+                    etiquetas[3].textContent = datos.observaciones || 'N/A';
+                    console.log('[EppItemManager] ✅ Observaciones actualizadas:', datos.observaciones);
+                }
+            }
+        }
+
+        // Actualizar imágenes si existen
+        if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0) {
+            console.log('[EppItemManager] 🖼️ Actualizando imágenes:', datos.imagenes.length);
+            
+            // Buscar o crear el contenedor de galería
+            let galeriaDiv = item.querySelector('div[style*="padding-top"]');
+            
+            if (!galeriaDiv) {
+                // Si no existe, crear el contenedor de galería
+                const ultimoDiv = item.lastElementChild;
+                galeriaDiv = document.createElement('div');
+                galeriaDiv.style.cssText = 'margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;';
+                item.appendChild(galeriaDiv);
+            }
+
+            // Limpiar galería anterior
+            galeriaDiv.innerHTML = `
+                <p style="margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;">Imágenes</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 0.5rem;">
+            `;
+            
+            // Agregar nuevas imágenes
+            datos.imagenes.forEach((img, idx) => {
+                const imgUrl = typeof img === 'string' ? img : (img.url || img.ruta_web || '');
+                if (imgUrl && !imgUrl.includes('placeholder')) {
+                    const imgDiv = document.createElement('div');
+                    imgDiv.style.cssText = 'border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb;';
+                    imgDiv.innerHTML = `<img src="${imgUrl}" alt="Imagen" style="width: 100%; height: 60px; object-fit: cover;">`;
+                    galeriaDiv.querySelector('div').appendChild(imgDiv);
+                    console.log('[EppItemManager] 📷 Imagen agregada:', idx + 1);
+                }
+            });
+            
+            galeriaDiv.querySelector('div').innerHTML += '</div>';
+        }
+
+        console.log('[EppItemManager] ✅ Item actualizado correctamente');
     }
 
     /**

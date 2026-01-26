@@ -144,21 +144,46 @@ class ItemRenderer {
     _generarTarjetaEPP(epp, index) {
         const galeriaHTML = this._generarGaleriaEPP(epp.imagenes || []);
         
-        // Calcular número de item global (considerando prendas y EPPs)
-        let numeroItem = 1;
-        if (window.gestionItemsUI && window.gestionItemsUI.ordenItems) {
-            numeroItem = window.gestionItemsUI.ordenItems.length;
-        }
+        // Calcular número de EPP (contar solo items-epp-card, no prendas)
+        const eppCount = document.querySelectorAll('.item-epp-card').length;
+        const numeroItem = eppCount + 1;
         
         return `
-            <div class="item-epp-card" data-epp-index="${index}" data-epp-id="${epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; position: relative;">
+            <div class="item-epp-card" data-epp-index="${index}" data-epp-id="${epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
                         <span style="display: inline-block; background: #e0f2fe; color: #0066cc; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">EPP ${numeroItem}</span>
                         <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${epp.nombre}</h4>
                     </div>
-                    <button class="btn-menu-epp" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
+                    <!-- Contenedor del botón y menú con posicionamiento relativo -->
+                    <div style="position: relative;">
+                        <button class="btn-menu-epp" data-item-id="${epp.epp_id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280;">⋮</button>
+                        
+                        <!-- Menú -->
+                        <div class="submenu-epp" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 1000; flex-direction: column;">
+                            <button 
+                                type="button"
+                                class="btn-editar-epp"
+                                data-item-id="${epp.epp_id}"
+                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
+                                onmouseover="this.style.background = '#f9fafb';"
+                                onmouseout="this.style.background = 'transparent';"
+                            >
+                                Editar
+                            </button>
+                            <button 
+                                type="button"
+                                class="btn-eliminar-epp"
+                                data-item-id="${epp.epp_id}"
+                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
+                                onmouseover="this.style.background = '#fef2f2';"
+                                onmouseout="this.style.background = 'transparent';"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Detalles -->
@@ -174,30 +199,6 @@ class ItemRenderer {
                 </div>
 
                 ${galeriaHTML}
-
-                <!-- Menú -->
-                <div class="submenu-epp" data-item-id="${epp.epp_id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; z-index: 1000; flex-direction: column;">
-                    <button 
-                        type="button"
-                        class="btn-editar-epp"
-                        data-item-id="${epp.epp_id}"
-                        style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #f3f4f6;"
-                        onmouseover="this.style.background = '#f9fafb';"
-                        onmouseout="this.style.background = 'transparent';"
-                    >
-                        Editar
-                    </button>
-                    <button 
-                        type="button"
-                        class="btn-eliminar-epp"
-                        data-item-id="${epp.epp_id}"
-                        style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease;"
-                        onmouseover="this.style.background = '#fef2f2';"
-                        onmouseout="this.style.background = 'transparent';"
-                    >
-                        Eliminar
-                    </button>
-                </div>
             </div>
         `;
     }

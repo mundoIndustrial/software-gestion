@@ -12,28 +12,44 @@ window.EppMenuHandlers = {
         
         // Usar event delegation para que funcione con elementos agregados dinámicamente
         document.addEventListener('click', (e) => {
+            const btnMenu = e.target.closest('.btn-menu-epp');
+            const btnEditar = e.target.closest('.btn-editar-epp');
+            const btnEliminar = e.target.closest('.btn-eliminar-epp');
+            const esSubmenu = e.target.closest('.submenu-epp');
+
             // Clic en botón de 3 puntos
-            if (e.target.closest('.btn-menu-epp')) {
+            if (btnMenu) {
                 e.stopPropagation();
-                this._toggleMenu(e.target.closest('.btn-menu-epp'));
+                console.log('[EppMenuHandlers] 📍 Clic detectado en btn-menu-epp');
+                this._toggleMenu(btnMenu);
+                return; // Importante: evitar que se ejecute el cierre de menús
             }
 
             // Clic en botón EDITAR
-            if (e.target.closest('.btn-editar-epp')) {
+            if (btnEditar) {
                 e.stopPropagation();
-                this._editarEpp(e.target.closest('.btn-editar-epp'));
+                console.log('[EppMenuHandlers] 📍 Clic detectado en btn-editar-epp');
+                this._editarEpp(btnEditar);
+                return; // Importante: evitar que se ejecute el cierre de menús
             }
 
             // Clic en botón ELIMINAR
-            if (e.target.closest('.btn-eliminar-epp')) {
+            if (btnEliminar) {
                 e.stopPropagation();
-                this._eliminarEpp(e.target.closest('.btn-eliminar-epp'));
+                console.log('[EppMenuHandlers] 📍 Clic detectado en btn-eliminar-epp');
+                this._eliminarEpp(btnEliminar);
+                return; // Importante: evitar que se ejecute el cierre de menús
             }
 
-            // Cerrar menú si se hace clic en otro lugar
-            if (!e.target.closest('.btn-menu-epp') && !e.target.closest('.submenu-epp')) {
-                this._cerrarTodosLosMenus();
+            // Si se hace clic en el submenu, no cerrar
+            if (esSubmenu) {
+                console.log('[EppMenuHandlers] 📍 Clic dentro del submenu, manteniéndolo abierto');
+                return;
             }
+
+            // Cerrar menú si se hace clic en cualquier otro lugar
+            console.log('[EppMenuHandlers] 📍 Clic fuera del menú, cerrando todos');
+            this._cerrarTodosLosMenus();
         });
 
         console.log('[EppMenuHandlers] ✅ Event listeners inicializados');
@@ -46,14 +62,48 @@ window.EppMenuHandlers = {
         const itemId = btn.dataset.itemId;
         console.log('[EppMenuHandlers] 📋 Toggle menú para item:', itemId);
 
-        // Obtener el submenu hermano
-        const submenu = btn.nextElementSibling;
-        if (!submenu || !submenu.classList.contains('submenu-epp')) {
-            console.warn('[EppMenuHandlers] ⚠️ No se encontró submenu hermano');
+        // Obtener el submenu desde el item-epp-card (contenedor principal)
+        const itemCard = btn.closest('.item-epp-card') || btn.closest('.item-epp');
+        const submenu = itemCard ? itemCard.querySelector('.submenu-epp') : null;
+        
+        if (!submenu) {
+            console.warn('[EppMenuHandlers] ⚠️ No se encontró submenu');
+            console.log('[EppMenuHandlers] Item card:', itemCard);
+            console.log('[EppMenuHandlers] HTML:', itemCard?.innerHTML);
             return;
         }
 
         console.log('[EppMenuHandlers] 🔍 Submenu encontrado');
+
+        // Log de posicionamiento
+        const btnRect = btn.getBoundingClientRect();
+        const submenuRect = submenu.getBoundingClientRect();
+        const btnParent = btn.parentElement;
+        const btnParentRect = btnParent.getBoundingClientRect();
+        
+        console.log('[EppMenuHandlers] 📐 Botón:', {
+            top: btnRect.top,
+            left: btnRect.left,
+            right: btnRect.right,
+            bottom: btnRect.bottom
+        });
+        
+        console.log('[EppMenuHandlers] 📐 Parent del botón:', {
+            position: window.getComputedStyle(btnParent).position,
+            top: btnParentRect.top,
+            left: btnParentRect.left,
+            right: btnParentRect.right,
+            bottom: btnParentRect.bottom
+        });
+        
+        console.log('[EppMenuHandlers] 📐 Submenu antes de mostrar:', {
+            position: window.getComputedStyle(submenu).position,
+            top: submenuRect.top,
+            left: submenuRect.left,
+            right: submenuRect.right,
+            bottom: submenuRect.bottom,
+            display: window.getComputedStyle(submenu).display
+        });
 
         // Cerrar otros menús primero
         document.querySelectorAll('.submenu-epp').forEach(menu => {
@@ -67,7 +117,23 @@ window.EppMenuHandlers = {
         if (isHidden) {
             submenu.style.display = 'flex';
             submenu.style.flexDirection = 'column';
-            console.log('[EppMenuHandlers] ✅ Menú mostrado');
+            
+            // Log después de mostrar
+            setTimeout(() => {
+                const submenuRectAfter = submenu.getBoundingClientRect();
+                console.log('[EppMenuHandlers] ✅ Menú mostrado');
+                console.log('[EppMenuHandlers] 📐 Submenu después de mostrar:', {
+                    position: window.getComputedStyle(submenu).position,
+                    top: submenuRectAfter.top,
+                    left: submenuRectAfter.left,
+                    right: submenuRectAfter.right,
+                    bottom: submenuRectAfter.bottom,
+                    display: window.getComputedStyle(submenu).display,
+                    offsetTop: submenu.offsetTop,
+                    offsetLeft: submenu.offsetLeft,
+                    offsetParent: submenu.offsetParent?.className
+                });
+            }, 0);
         } else {
             submenu.style.display = 'none';
             console.log('[EppMenuHandlers] ✅ Menú ocultado');
@@ -75,7 +141,7 @@ window.EppMenuHandlers = {
     },
 
     /**
-     * Editar EPP
+     * Editar EPP - Intenta obtener datos del DOM, gestionItemsUI o BD
      */
     _editarEpp(btn) {
         const itemId = btn.dataset.itemId;
@@ -88,19 +154,149 @@ window.EppMenuHandlers = {
             return;
         }
 
-        // Buscar los datos del EPP en window.itemsPedido
-        let eppData = null;
-        if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
-            eppData = window.itemsPedido.find(item => item.tipo === 'epp' && item.epp_id === parseInt(itemId));
+        // OPCIÓN 1: Intentar obtener del DOM (tarjeta)
+        console.log('[EppMenuHandlers] 🔍 OPCIÓN 1: Extrayendo datos del DOM');
+        let eppData = this._extraerDatosDelDOM(item, itemId);
+        
+        // OPCIÓN 2: Si no está completo, buscar en window.gestionItemsUI
+        if (!eppData || Object.keys(eppData).length < 3) {
+            console.log('[EppMenuHandlers] 🔍 OPCIÓN 2: Buscando en window.gestionItemsUI');
+            eppData = this._extraerDatosDelGestionItemsUI(itemId) || eppData;
         }
 
-        if (!eppData) {
-            console.warn('[EppMenuHandlers] ⚠️ No se encontraron datos del EPP');
-            alert('No se pudieron cargar los datos del EPP');
-            return;
+        // OPCIÓN 3: Si aún no tiene datos, traer de la DB
+        if (!eppData || Object.keys(eppData).length < 3) {
+            console.log('[EppMenuHandlers] 🔍 OPCIÓN 3: Traer de la DB');
+            this._traerEPPDelaBD(itemId, item);
+            return; // El resto de la lógica se ejecutará cuando lleguen los datos de la DB
         }
 
-        console.log('[EppMenuHandlers] 📦 Datos del EPP encontrados:', eppData);
+        // Si ya tenemos los datos, proceder a editar
+        console.log('[EppMenuHandlers] ✅ eppData final:', eppData);
+        this._procederAEditarEPP(eppData, itemId, item);
+    },
+
+    /**
+     * Extraer datos del DOM (tarjeta renderizada)
+     */
+    _extraerDatosDelDOM(item, itemId) {
+        try {
+            const nombre = item.querySelector('h4')?.textContent?.trim() || '';
+            
+            // Buscar cantidad - puede estar en diferentes lugares
+            let cantidad = 0;
+            const cantidadSpans = item.querySelectorAll('p');
+            for (let span of cantidadSpans) {
+                const text = span.textContent.toLowerCase();
+                if (text.includes('cantidad')) {
+                    cantidad = parseInt(span.nextElementSibling?.textContent) || 0;
+                    break;
+                }
+            }
+            
+            // Buscar observaciones
+            let observaciones = '';
+            for (let span of cantidadSpans) {
+                const text = span.textContent.toLowerCase();
+                if (text.includes('observaciones')) {
+                    observaciones = span.nextElementSibling?.textContent?.trim() || '';
+                    break;
+                }
+            }
+
+            // Extraer imágenes del DOM
+            const imagenes = [];
+            // Buscar en galerías, contenedores de imágenes, o cualquier img dentro del item
+            const todosLosImg = item.querySelectorAll('img');
+            todosLosImg.forEach((img, idx) => {
+                // Ignorar imágenes de placeholder
+                if (img.src && !img.src.includes('placeholder')) {
+                    imagenes.push({
+                        id: `${itemId}-img-${idx}`,
+                        url: img.src,
+                        ruta_web: img.src,
+                        nombre: img.alt || `imagen-${idx}`
+                    });
+                    console.log('[EppMenuHandlers] 📷 Imagen extraída:', img.src);
+                }
+            });
+
+            console.log('[EppMenuHandlers] 🖼️ Total imágenes encontradas:', imagenes.length);
+
+            const datos = {
+                epp_id: parseInt(itemId),
+                nombre,
+                cantidad,
+                observaciones,
+                imagenes: imagenes,
+                esEdicion: true  // Indicador de que es edición
+            };
+            
+            console.log('[EppMenuHandlers] ✅ Datos del DOM:', datos);
+            return datos;
+        } catch (error) {
+            console.warn('[EppMenuHandlers] ⚠️ Error extrayendo del DOM:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Extraer datos de window.gestionItemsUI
+     */
+    _extraerDatosDelGestionItemsUI(itemId) {
+        try {
+            if (!window.gestionItemsUI || !window.gestionItemsUI.ordenItems) {
+                console.warn('[EppMenuHandlers] ⚠️ window.gestionItemsUI no disponible');
+                return null;
+            }
+
+            // Buscar el EPP en los items ordenados
+            const item = window.gestionItemsUI.ordenItems.find(i => i.epp_id === parseInt(itemId));
+            
+            if (item) {
+                console.log('[EppMenuHandlers] ✅ Datos de gestionItemsUI:', item);
+                return item;
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('[EppMenuHandlers] ⚠️ Error en gestionItemsUI:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Traer datos del EPP desde la BD
+     */
+    async _traerEPPDelaBD(itemId, item) {
+        try {
+            console.log('[EppMenuHandlers] 🌐 Llamando a API para obtener EPP:', itemId);
+            
+            const response = await fetch(`/api/epp/${itemId}`);
+            
+            if (!response.ok) {
+                console.warn('[EppMenuHandlers] ⚠️ Error en la API:', response.status);
+                return;
+            }
+
+            const data = await response.json();
+            console.log('[EppMenuHandlers] ✅ Datos de la BD:', data);
+            
+            // Proceder con los datos de la BD
+            const eppData = data.data || data;
+            this._procederAEditarEPP(eppData, itemId, item);
+            
+        } catch (error) {
+            console.error('[EppMenuHandlers] ❌ Error obteniendo EPP de la BD:', error);
+            alert('Error al cargar los datos del EPP');
+        }
+    },
+
+    /**
+     * Proceder a editar el EPP con los datos obtenidos
+     */
+    _procederAEditarEPP(eppData, itemId, item) {
+        console.log('[EppMenuHandlers] 📋 Procesando edición con datos:', eppData);
 
         // Crear evento personalizado con los datos
         const evento = new CustomEvent('epp:editar', {
@@ -114,14 +310,14 @@ window.EppMenuHandlers = {
 
         // Abrir modal de edición con los datos
         if (window.eppService && typeof window.eppService.abrirModalEditarEPP === 'function') {
-            console.log('[EppMenuHandlers] 🔓 Abriendo modal de edición con datos');
+            console.log('[EppMenuHandlers] 🔓 Abriendo modal de edición');
             window.eppService.abrirModalEditarEPP(eppData);
         } else {
-            console.warn('[EppMenuHandlers] ⚠️ Función abrirModalEditarEPP no disponible');
+            console.warn('[EppMenuHandlers] ⚠️ eppService no disponible');
         }
 
         // Cerrar menú
-        const submenu = btn.closest('.submenu-epp');
+        const submenu = item.querySelector('.submenu-epp');
         if (submenu) submenu.style.display = 'none';
     },
 

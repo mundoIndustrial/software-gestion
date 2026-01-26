@@ -37,6 +37,55 @@ class EppService {
     }
 
     /**
+     * Abrir modal para editar EPP
+     */
+    abrirModalEditarEPP(eppData) {
+        console.log('[EppService] 📝 Abriendo modal de edición con datos:', eppData);
+
+        // Resetear estado y marcar como edición
+        this.stateManager.iniciarEdicion(eppData.epp_id, false); // false = está en formulario, no en BD
+        
+        // Cargar datos del EPP
+        this.stateManager.setProductoSeleccionado({
+            id: eppData.epp_id,
+            nombre: eppData.nombre,
+            categoria: eppData.categoria || 'General'
+        });
+
+        // Mostrar producto seleccionado
+        this.modalManager.mostrarProductoSeleccionado({
+            nombre: eppData.nombre,
+            categoria: eppData.categoria || 'General'
+        });
+
+        // Cargar valores en el formulario
+        this.modalManager.cargarValoresFormulario(
+            null,
+            eppData.cantidad || 1,
+            eppData.observaciones || ''
+        );
+
+        // Mostrar y guardar imágenes si existen
+        if (eppData.imagenes && eppData.imagenes.length > 0) {
+            console.log('[EppService] 📸 Guardando imágenes en estado:', eppData.imagenes);
+            this.modalManager.mostrarImagenes(eppData.imagenes);
+            
+            // Guardar imágenes en el estado para que se incluyan al guardar
+            if (this.stateManager.cargarImagenesExistentes) {
+                this.stateManager.cargarImagenesExistentes(eppData.imagenes);
+            }
+        }
+
+        // Habilitar campos
+        this.modalManager.habilitarCampos();
+
+        // Abrir modal
+        this.modalManager.abrirModal();
+
+        console.log('[EppService] ✅ Modal de edición abierto');
+    }
+
+    /**
      * Seleccionar producto EPP
      */
     seleccionarProducto(producto) {
@@ -164,59 +213,80 @@ class EppService {
         try {
             const eppId = this.stateManager.getEditandoId();
 
-            // Si estamos editando, eliminar item anterior
+            // Si estamos editando, actualizar item existente
             if (eppId) {
-                this.itemManager.eliminarItem(eppId);
+                console.log('[EppService] 🔄 Actualizando EPP existente:', eppId);
+                
+                // Actualizar la tarjeta en el DOM
+                this.itemManager.actualizarItem(eppId, {
+                    cantidad: valores.cantidad,
+                    observaciones: valores.observaciones,
+                    imagenes: imagenes
+                });
 
-                // Eliminar de window.itemsPedido
+                // Actualizar en window.itemsPedido si existe
                 if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
                     const index = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
                     if (index !== -1) {
-                        window.itemsPedido.splice(index, 1);
+                        window.itemsPedido[index] = {
+                            ...window.itemsPedido[index],
+                            cantidad: valores.cantidad,
+                            observaciones: valores.observaciones,
+                            imagenes: imagenes
+                        };
                     }
                 }
-            }
 
-            // Crear nuevo item
-            this.itemManager.crearItem(
-                producto.id,
-                producto.nombre,
-                producto.categoria,
-                valores.cantidad,
-                valores.observaciones,
-                imagenes
-            );
+                console.log('[EppService] ✅ EPP actualizado correctamente');
+            } else {
+                // Si NO estamos editando, crear nuevo item
+                console.log('[EppService] ➕ Creando nuevo EPP');
+                
+                this.itemManager.crearItem(
+                    producto.id,
+                    producto.nombre,
+                    producto.categoria,
+                    valores.cantidad,
+                    valores.observaciones,
+                    imagenes
+                );
+            }
 
             // Configurar event listeners para el item
             if (typeof configurarEventListenersItem === 'function') {
                 configurarEventListenersItem(producto.id);
             }
 
-            // Crear objeto EPP
+            // Crear objeto EPP (solo campos necesarios)
             const eppData = {
                 tipo: 'epp',
                 epp_id: producto.id,
-                nombre: producto.nombre,
-                categoria: producto.categoria,
+                nombre: producto.nombre || 'EPP sin nombre',
+                categoria: producto.categoria || 'General',
                 cantidad: valores.cantidad,
                 observaciones: valores.observaciones,
                 imagenes: imagenes
             };
+            
+            console.log('[EppService] 💾 Objeto EPP a guardar:', eppData);
 
-            // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
-            if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {
-                window.gestionItemsUI.agregarEPPDesdeModal(eppData);
-
-            } else {
-                // Fallback: agregar a window.itemsPedido si GestionItemsUI no está disponible
-                if (!window.itemsPedido) {
-                    window.itemsPedido = [];
+            // Solo agregar a GestionItemsUI o itemsPedido si es NUEVO (no editando)
+            if (!eppId) {
+                console.log('[EppService] 📝 Agregando EPP nuevo a estado');
+                
+                // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
+                if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {
+                    window.gestionItemsUI.agregarEPPDesdeModal(eppData);
+                } else {
+                    // Fallback: agregar a window.itemsPedido si GestionItemsUI no está disponible
+                    if (!window.itemsPedido) {
+                        window.itemsPedido = [];
+                    }
+                    window.itemsPedido.push(eppData);
                 }
-                window.itemsPedido.push(eppData);
-
+            } else {
+                console.log('[EppService] 🔄 EPP en edición - no se agrega a estado');
             }
-
-
 
             this.cerrarModal();
             this.stateManager.finalizarEdicion();

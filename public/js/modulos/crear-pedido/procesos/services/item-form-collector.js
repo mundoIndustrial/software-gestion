@@ -44,21 +44,16 @@ class ItemFormCollector {
                 const epp = {
                     tipo: 'epp',
                     epp_id: item.epp_id,
-                    nombre: item.nombre,
-                    codigo: item.codigo,
-                    categoria: item.categoria,
-                    talla: item.talla,
+                    nombre: item.nombre || 'EPP sin nombre',
+                    categoria: item.categoria || 'General',
                     cantidad: item.cantidad,
                     observaciones: item.observaciones || null,
-                    tallas_medidas: item.tallas_medidas,
                 };
                 
                 // Incluir imágenes de EPP para que se envíen en FormData
                 if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
                     epp.imagenes = item.imagenes;
-
                 }
-                
 
                 return epp;
             }
@@ -253,8 +248,10 @@ class ItemFormCollector {
         // ✅ DEBUG: Verificar que NO hay File objects en el JSON
         console.group('🔍 ItemFormCollector - Estructura pedidoFinal:');
         itemsFormato.forEach((item, idx) => {
+            const nombreItem = item.tipo === 'epp' ? item.nombre : item.nombre_prenda;
             console.log(`Item ${idx}:`, {
-                nombre: item.nombre_prenda,
+                tipo: item.tipo,
+                nombre: nombreItem,
                 tiene_imagenes: !!item.imagenes,
                 imagenes_count: item.imagenes?.length,
                 imagenes_es_file: item.imagenes?.[0] instanceof File,
