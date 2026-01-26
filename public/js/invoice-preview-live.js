@@ -28,21 +28,6 @@ window._extraerURLImagen = function(img) {
         url = img;
         origen = 'string directo';
     } else if (typeof img === 'object') {
-        // Loguear todas las propiedades disponibles
-        console.log('[EXTRAER-URL-IMAGEN] Objeto imagen recibido:', {
-            tipo: typeof img,
-            propiedades: Object.keys(img),
-            url: img.url,
-            ruta: img.ruta,
-            path: img.path,
-            src: img.src,
-            blobUrl: img.blobUrl,
-            previewUrl: img.previewUrl,
-            ruta_webp: img.ruta_webp,
-            ruta_original: img.ruta_original,
-            ruta_web: img.ruta_web
-        });
-        
         if (img.ruta_webp) {
             url = img.ruta_webp;
             origen = 'img.ruta_webp';
@@ -67,31 +52,20 @@ window._extraerURLImagen = function(img) {
         }
     }
     
-    console.log('[EXTRAER-URL-IMAGEN] URL extraída:', {
-        origen: origen,
-        url_original: url,
-        comienza_con_storage: url && url.startsWith ? url.startsWith('/storage/') : false,
-        comienza_con_storage_sin_slash: url && url.startsWith ? url.startsWith('storage/') : false,
-        comienza_con_slash: url && url.startsWith ? url.startsWith('/') : false
-    });
-    
     // Procesar la URL para evitar duplicación de /storage/
     if (url && typeof url === 'string') {
         // Si comienza con /storage/, devolverla tal cual
         if (url.startsWith('/storage/')) {
-            console.log('[EXTRAER-URL-IMAGEN] Ya tiene /storage/, retornando:', url);
             return url;
         }
         // Si comienza con storage/ (sin /), agregar / al inicio
         else if (url.startsWith('storage/')) {
             url = '/' + url;
-            console.log('[EXTRAER-URL-IMAGEN] Agregado / inicial, retornando:', url);
             return url;
         }
         // Si no comienza con / ni con storage/, agregar /storage/
         else {
             url = '/storage/' + url;
-            console.log('[EXTRAER-URL-IMAGEN] Agregado /storage/, retornando:', url);
             return url;
         }
     }
@@ -609,17 +583,6 @@ function capturarPrendas() {
                 ref: refCapturada,
                 imagen: imagenCapturada,
                 imagenes: prenda.imagenes && Array.isArray(prenda.imagenes) ? prenda.imagenes.map(img => {
-                    console.log('[INVOICE-PREVIEW] Procesando imagen de prenda:', {
-                        tipo: typeof img,
-                        esFile: img instanceof File,
-                        propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
-                        url: img?.url,
-                        ruta: img?.ruta,
-                        blobUrl: img?.blobUrl,
-                        previewUrl: img?.previewUrl,
-                        src: img?.src,
-                        stringValue: typeof img === 'string' ? img : 'N/A'
-                    });
                     if (img instanceof File) {
                         return URL.createObjectURL(img);
                     }
@@ -633,17 +596,6 @@ function capturarPrendas() {
                     let imagenesTelaArr = [];
                     if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
                         imagenesTelaArr = prenda.imagenes_tela.map(img => {
-                            console.log('[INVOICE-PREVIEW] Procesando imagen de tela:', {
-                                tipo: typeof img,
-                                esFile: img instanceof File,
-                                propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
-                                url: img?.url,
-                                ruta: img?.ruta,
-                                blobUrl: img?.blobUrl,
-                                previewUrl: img?.previewUrl,
-                                src: img?.src,
-                                stringValue: typeof img === 'string' ? img : 'N/A'
-                            });
                             if (img instanceof File) {
                                 return URL.createObjectURL(img);
                             }
@@ -654,17 +606,6 @@ function capturarPrendas() {
                         imagenesTelaArr = prenda.telasAgregadas
                             .filter(t => t.imagenes && t.imagenes.length > 0)
                             .flatMap(t => t.imagenes.map(img => {
-                                console.log('[INVOICE-PREVIEW] Procesando imagen de tela agregada:', {
-                                    tipo: typeof img,
-                                    esFile: img instanceof File,
-                                    propiedades: typeof img === 'object' ? Object.keys(img) : 'N/A',
-                                    url: img?.url,
-                                    ruta: img?.ruta,
-                                    blobUrl: img?.blobUrl,
-                                    previewUrl: img?.previewUrl,
-                                    src: img?.src,
-                                    stringValue: typeof img === 'string' ? img : 'N/A'
-                                });
                                 if (img instanceof File) {
                                     return URL.createObjectURL(img);
                                 }
@@ -857,13 +798,6 @@ function crearModalPreviewFactura(datos) {
  * Genera el HTML de la factura con los datos en tiempo real
  */
 function generarHTMLFactura(datos) {
-    console.log('📋 [GENERAR-FACTURA] Generando HTML de factura:', {
-        numeroPedido: datos.numero_pedido,
-        cliente: datos.cliente,
-        prendas: datos.prendas?.length || 0,
-        epps: datos.epps?.length || 0
-    });
-    
     // Validar que datos y prendas existan
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
 
@@ -878,35 +812,14 @@ function generarHTMLFactura(datos) {
     
     // Generar las tarjetas de prendas con todos los detalles
     const prendasHTML = datos.prendas.map((prenda, idx) => {
-        console.log(`[FACTURA-PRENDA-${idx}] Prenda:`, prenda);
-        console.log(`[FACTURA-PRENDA-${idx}] Tiene variantes array?`, Array.isArray(prenda.variantes), prenda.variantes?.length);
-        console.log(`[FACTURA-PRENDA-${idx}] Tiene tallas?`, prenda.tallas ? Object.keys(prenda.tallas) : 'NO');
-        console.log(`[FACTURA-PRENDA-${idx}] Manga:`, prenda.manga);
-        console.log(`[FACTURA-PRENDA-${idx}] Broche:`, prenda.broche);
-        console.log(`[FACTURA-PRENDA-${idx}] Bolsillos:`, prenda.tiene_bolsillos);
-        
         // Tabla de Variantes (Tallas con especificaciones)
         let variantesHTML = '';
         
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            console.log(`[FACTURA-PRENDA-${idx}] Usando variantes del servidor`);
-            console.log(`[FACTURA-PRENDA-${idx}] Variantes completas:`, prenda.variantes);
-            
             // Variantes desde el servidor (tienen estructura completa)
             // Agrupar variantes por talla para crear tabla
             const variantesAgrupadas = {};
             prenda.variantes.forEach(var_item => {
-                console.log(`[FACTURA-PRENDA-${idx}] Procesando variante:`, {
-                    talla: var_item.talla,
-                    cantidad: var_item.cantidad,
-                    manga: var_item.manga,
-                    manga_obs: var_item.manga_obs,
-                    broche: var_item.broche,
-                    broche_obs: var_item.broche_obs,
-                    bolsillos: var_item.bolsillos,
-                    bolsillos_obs: var_item.bolsillos_obs
-                });
-                
                 if (!variantesAgrupadas[var_item.talla]) {
                     variantesAgrupadas[var_item.talla] = {
                         cantidad_total: 0,
@@ -957,7 +870,6 @@ function generarHTMLFactura(datos) {
                 </div>
             `;
         } else if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            console.log(`[FACTURA-PRENDA-${idx}] Usando tallas locales del formulario`);
             // Datos desde el formulario local (estructura relacional de tallas por género)
             // Crear variantes simplificadas con el manga/broche/bolsillos de la prenda
             let variantesSimples = [];
@@ -978,8 +890,6 @@ function generarHTMLFactura(datos) {
                     });
                 }
             });
-            
-            console.log(`[FACTURA-PRENDA-${idx}] Variantes simples creadas:`, variantesSimples);
             
             if (variantesSimples.length > 0) {
                 variantesHTML = `
@@ -1019,10 +929,8 @@ function generarHTMLFactura(datos) {
                     </div>
                 `;
             } else {
-                console.log(`[FACTURA-PRENDA-${idx}]  No hay variantes simples`);
             }
         } else {
-            console.log(`[FACTURA-PRENDA-${idx}]  No hay variantes ni tallas`);
         }
         
         // Especificaciones principales (Tabla compacta) - MANTENER PARA COMPATIBILIDAD
@@ -1114,17 +1022,8 @@ function generarHTMLFactura(datos) {
             generosTallasHTML = '<span style="color: #999; font-size: 9px;">Sin tallas</span>';
         }
         // Procesos
-        console.log(`[FACTURA-PRENDA-${idx}] Procesos encontrados:`, prenda.procesos?.length || 0);
-        if (prenda.procesos && prenda.procesos.length > 0) {
-            console.log(`[FACTURA-PRENDA-${idx}] Primer proceso estructura:`, JSON.stringify(prenda.procesos[0], null, 2));
-        }
         const procesosListaHTML = prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0
             ? prenda.procesos.map(proc => {
-                console.log(`[FACTURA-PRENDA-${idx}] Renderizando proceso:`, {
-                    tipoProceso: proc.tipo_proceso || proc.tipoProceso,
-                    nombre: proc.tipo_proceso?.nombre || proc.tipoProceso?.nombre,
-                    tipo_proceso_id: proc.tipo_proceso_id
-                });
                 // Renderizar tallas del proceso (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
                 let tallasProcHTML = '';
                 if (proc.tallas && Object.keys(proc.tallas).length > 0) {

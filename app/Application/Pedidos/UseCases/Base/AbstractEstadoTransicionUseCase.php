@@ -100,6 +100,7 @@ abstract class AbstractEstadoTransicionUseCase
             descripcion: $pedido->descripcion(),
             totalPrendas: $pedido->totalPrendas(),
             totalArticulos: $pedido->totalArticulos(),
+            formaDePago: null,
             mensaje: $this->obtenerMensaje()
         );
     }

@@ -67,7 +67,6 @@ class EppImagenManager {
                 imagenData.preview = e.target.result; // Data URL para preview
                 this.stateManager.agregarImagenSubida(imagenData);
                 this.modalManager.agregarImagenUI(imagenData);
-                console.log('[EppImagenManager] Imagen cargada en memoria:', imagenData);
             };
 
             reader.readAsDataURL(archivo);
@@ -80,9 +79,6 @@ class EppImagenManager {
      * Eliminar imagen
      */
     async eliminarImagen(imagenId) {
-        console.log('🗑️ [EppImagenManager] eliminarImagen() llamado con imagenId:', imagenId);
-        console.log('📊 [EppImagenManager] Modal EPP z-index:', document.getElementById('modal-agregar-epp')?.style.zIndex);
-        
         // Mostrar confirmación elegante con SweetAlert
         const result = await Swal.fire({
             title: '🗑️ Eliminar Imagen',
@@ -96,67 +92,45 @@ class EppImagenManager {
             allowOutsideClick: false,
             allowEscapeKey: false,
             willOpen: (modal) => {
-                console.log('🗑️ [EppImagenManager] willOpen - preparando z-index');
-                console.log('   Modal element:', modal);
                 // Preparar el z-index ANTES de que aparezca
                 setTimeout(() => {
                     const container = document.querySelector('.swal2-container');
                     const backdrop = document.querySelector('.swal2-backdrop-show');
                     const popup = document.querySelector('.swal2-popup');
                     
-                    console.log('✅ [EppImagenManager] Elementos encontrados:');
-                    console.log('   - Container:', container);
-                    console.log('   - Backdrop:', backdrop);
-                    console.log('   - Popup:', popup);
-                    
                     if (container) {
                         container.style.setProperty('z-index', '1000005', 'important');
                         container.style.setProperty('position', 'fixed', 'important');
-                        console.log('   Container z-index aplicado: 1000005 con setProperty');
                     }
                     if (backdrop) {
                         backdrop.style.setProperty('z-index', '1000000', 'important');
-                        console.log('   Backdrop z-index aplicado: 1000000 con setProperty');
                     }
                     if (popup) {
                         popup.style.setProperty('z-index', '1000005', 'important');
                         popup.style.setProperty('position', 'relative', 'important');
-                        console.log('   Popup z-index aplicado: 1000005 con setProperty');
                     }
                 }, 0);
             },
             didOpen: (modal) => {
-                console.log('🗑️ [EppImagenManager] didOpen - asegurando z-index');
                 // Asegurar nuevamente después de renderizar
                 const container = document.querySelector('.swal2-container');
                 const backdrop = document.querySelector('.swal2-backdrop-show');
                 const popup = document.querySelector('.swal2-popup');
                 
-                console.log('✅ [EppImagenManager] didOpen - verificando elementos:');
                 if (container) {
-                    const zIndexAntes = window.getComputedStyle(container).zIndex;
-                    console.log('   Container z-index antes:', zIndexAntes);
                     container.style.setProperty('z-index', '1000005', 'important');
                     container.style.setProperty('position', 'fixed', 'important');
-                    const zIndexDespues = window.getComputedStyle(container).zIndex;
-                    console.log('   Container z-index después:', zIndexDespues);
                 }
                 if (backdrop) {
                     backdrop.style.setProperty('z-index', '1000000', 'important');
-                    console.log('   Backdrop z-index:', window.getComputedStyle(backdrop).zIndex);
                 }
                 if (popup) {
-                    const zIndexAntes = window.getComputedStyle(popup).zIndex;
-                    console.log('   Popup z-index antes:', zIndexAntes);
                     popup.style.setProperty('z-index', '1000005', 'important');
-                    const zIndexDespues = window.getComputedStyle(popup).zIndex;
-                    console.log('   Popup z-index después:', zIndexDespues);
                 }
             }
         });
 
         if (!result.isConfirmed) {
-            console.log('🗑️ [EppImagenManager] Eliminación cancelada por usuario');
             return;
         }
 
@@ -185,13 +159,9 @@ class EppImagenManager {
                 console.log('🗑️ [EppImagenManager] Imagen local/temporal, eliminando solo del cliente');
             }
 
-            console.log('🗑️ [EppImagenManager] Llamando a stateManager.eliminarImagenSubida con ID:', imagenId);
             this.stateManager.eliminarImagenSubida(imagenId);
             
-            console.log('🗑️ [EppImagenManager] Llamando a modalManager.eliminarImagenUI con ID:', imagenId);
             this.modalManager.eliminarImagenUI(imagenId);
-
-            console.log('✅ [EppImagenManager] Imagen eliminada correctamente del UI');
 
             // Mostrar confirmación de éxito
             await Swal.fire({
@@ -201,7 +171,6 @@ class EppImagenManager {
                 confirmButtonColor: '#10b981',
                 confirmButtonText: 'OK',
                 willOpen: (modal) => {
-                    console.log('✅ [EppImagenManager] willOpen success modal');
                     setTimeout(() => {
                         const container = document.querySelector('.swal2-container');
                         const backdrop = document.querySelector('.swal2-backdrop-show');
@@ -222,10 +191,6 @@ class EppImagenManager {
             });
 
         } catch (error) {
-            console.error('🗑️ [EppImagenManager] Error al eliminar imagen:', error);
-            console.error('   Error message:', error.message);
-            console.error('   Error stack:', error.stack);
-            
             // Mostrar error
             await Swal.fire({
                 title: '❌ Error',
@@ -234,7 +199,6 @@ class EppImagenManager {
                 confirmButtonColor: '#ef4444',
                 confirmButtonText: 'OK',
                 willOpen: (modal) => {
-                    console.log('❌ [EppImagenManager] willOpen error modal');
                     setTimeout(() => {
                         const container = document.querySelector('.swal2-container');
                         const backdrop = document.querySelector('.swal2-backdrop-show');

@@ -43,6 +43,7 @@ class CrearPedidoUseCase
                 descripcion: $pedido->descripcion(),
                 totalPrendas: $pedido->totalPrendas(),
                 totalArticulos: $pedido->totalArticulos(),
+                formaDePago: null,
                 mensaje: 'Pedido creado exitosamente'
             );
 

@@ -294,7 +294,7 @@
 
 <!-- Novedades (solo si no es logo) -->
 @if(request('tipo') !== 'logo')
-<div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: normal; word-wrap: break-word; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+<div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: normal; word-wrap: break-word; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; cursor: pointer;" onclick="abrirModalNovedades('{{ $pedido->numero_pedido }}', `{{ addslashes($pedido->novedades ?? '') }}`)" title="Click para ver completo">
     @php
         if (get_class($pedido) === 'App\Models\LogoPedido') {
             echo '<span style="color: #3b82f6;">LOGO</span>';

@@ -112,6 +112,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     totalArticulos: 0,
                     prendas: [],
                     epps: [],
+                    formaDePago: null,
                     mensaje: 'Pedido no encontrado'
                 );
             }
@@ -131,6 +132,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 totalArticulos: $datosEnriquecidos['totalArticulos'],
                 prendas: $prendasCompletas,
                 epps: $eppsCompletos,
+                formaDePago: $datosEnriquecidos['forma_de_pago'] ?? null,
                 mensaje: 'Pedido obtenido exitosamente'
             );
 

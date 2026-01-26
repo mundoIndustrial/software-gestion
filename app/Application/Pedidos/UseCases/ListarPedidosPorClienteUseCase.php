@@ -30,6 +30,7 @@ class ListarPedidosPorClienteUseCase
                 descripcion: $pedido->descripcion(),
                 totalPrendas: $pedido->totalPrendas(),
                 totalArticulos: $pedido->totalArticulos(),
+                formaDePago: null,
                 mensaje: 'Pedidos obtenidos exitosamente'
             ),
             $pedidos

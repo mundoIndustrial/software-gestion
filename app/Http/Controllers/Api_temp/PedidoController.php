@@ -170,6 +170,12 @@ class PedidoController extends Controller
     public function actualizarDescripcion(Request $request, int $id): JsonResponse
     {
         try {
+            \Log::info('[actualizarDescripcion] Iniciando', [
+                'pedido_id' => $id,
+                'metodo' => $request->method(),
+                'ruta' => $request->path(),
+            ]);
+            
             $request->validate([
                 'descripcion' => 'nullable|string|max:2000',
                 'cliente' => 'nullable|string|max:500',
@@ -201,11 +207,50 @@ class PedidoController extends Controller
                 $justificacion = $request->input('justificacion');
                 $novedadesActuales = $pedido->novedades ?: '';
                 
+                // Obtener información del usuario
+                $usuario = auth()->user();
+                
+                \Log::info('[actualizarDescripcion] Usuario autenticado:', [
+                    'usuario' => $usuario ? $usuario->toArray() : null,
+                    'auth_check' => auth()->check(),
+                    'usuario_id' => auth()->id(),
+                ]);
+                
+                $nombreUsuario = 'Sistema';
+                $rolUsuario = 'Sin rol';
+                
+                if ($usuario) {
+                    $nombreUsuario = $usuario->name ?: 'Usuario';
+                    \Log::info('[actualizarDescripcion] Nombre del usuario:', ['nombre' => $nombreUsuario]);
+                    
+                    // Obtener el rol principal
+                    $rolesUsuario = $usuario->roles();
+                    \Log::info('[actualizarDescripcion] Roles del usuario:', [
+                        'roles_ids' => $usuario->roles_ids,
+                        'roles_count' => $rolesUsuario->count(),
+                        'roles_data' => $rolesUsuario->toArray(),
+                    ]);
+                    
+                    if ($rolesUsuario && $rolesUsuario->count() > 0) {
+                        $rolUsuario = $rolesUsuario->first()->name ?? 'Sin rol';
+                    }
+                }
+                
+                \Log::info('[actualizarDescripcion] Registro de novedad:', [
+                    'usuario_final' => $nombreUsuario,
+                    'rol_final' => $rolUsuario,
+                ]);
+                
+                $fechaActual = now()->format('d/m/Y H:i');
+                
+                // Construir registro con información completa
+                $registroNovedad = "📝 [{$nombreUsuario} - {$rolUsuario} - {$fechaActual}]\n{$justificacion}";
+                
                 // Si ya hay novedades, agregar con separador
                 if (!empty($novedadesActuales)) {
-                    $pedido->novedades = $novedadesActuales . "\n\n📝 Cambio realizado: " . $justificacion;
+                    $pedido->novedades = $novedadesActuales . "\n\n" . $registroNovedad;
                 } else {
-                    $pedido->novedades = "📝 Cambio realizado: " . $justificacion;
+                    $pedido->novedades = $registroNovedad;
                 }
             }
 

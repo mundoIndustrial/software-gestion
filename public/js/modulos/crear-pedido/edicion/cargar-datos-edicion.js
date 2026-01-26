@@ -140,6 +140,7 @@ function cargarInformacionGeneral(datos) {
                 `select[name="${nombre}"]`,
                 `textarea[name="${nombre}"]`,
                 `#${nombre}`,
+                `#${nombre}_editable`,  // Agregar búsqueda con sufijo _editable
             ];
 
             const elemento = buscarElemento(selectores);

@@ -62,21 +62,33 @@ Route::middleware('api')->prefix('api/v1')->name('api.v1.')->group(function () {
  * API Routes for Prendas (Nueva Arquitectura)
  * 
  * Prefix: /api
- * Auth: bearer token
+ * Auth: session-based (web guard) - Solo para rutas que modifican
  * Controller: App\Http\Controllers\PrendaController
  */
+// Rutas PUBLIC - Lectura (GET)
 Route::middleware('api')->group(function () {
-    // Rutas de prendas
-    Route::apiResource('prendas', PrendaController::class);
+    Route::apiResource('prendas', PrendaController::class, ['only' => ['show', 'index']]);
     Route::get('prendas/search', [PrendaController::class, 'search'])->name('prendas.search');
     
-    // Rutas de Pedidos (DDD)
+    Route::prefix('pedidos')->name('pedidos.')->group(function () {
+        Route::get('{id}', [PedidoController::class, 'show'])
+            ->name('mostrar');
+        
+        Route::get('cliente/{clienteId}', [PedidoController::class, 'listarPorCliente'])
+            ->name('listar-por-cliente');
+    });
+});
+
+// Rutas PROTECTED - Escritura (POST, PATCH, DELETE)
+// ⚠️ Usando web,auth porque necesitamos sesión + autenticación
+Route::withoutMiddleware(['api']) // Remover el middleware api global
+    ->middleware(['web', 'auth'])
+    ->group(function () {
+    Route::apiResource('prendas', PrendaController::class, ['only' => ['store', 'update', 'destroy']]);
+    
     Route::prefix('pedidos')->name('pedidos.')->group(function () {
         Route::post('/', [PedidoController::class, 'store'])
             ->name('crear');
-        
-        Route::get('{id}', [PedidoController::class, 'show'])
-            ->name('mostrar');
         
         Route::patch('{id}/confirmar', [PedidoController::class, 'confirmar'])
             ->name('confirmar');
@@ -86,18 +98,16 @@ Route::middleware('api')->group(function () {
         
         Route::delete('{id}/cancelar', [PedidoController::class, 'cancelar'])
             ->name('cancelar');
-        
-        Route::get('cliente/{clienteId}', [PedidoController::class, 'listarPorCliente'])
-            ->name('listar-por-cliente');
     });
     
     // Rutas de cotizaciones
     Route::apiResource('cotizaciones', CotizacionPrendaController::class);
+});
 
-    // Rutas de procesos (DDD)
-    Route::prefix('procesos')->name('procesos.')->group(function () {
-        // Obtener tipos de procesos disponibles
-        Route::get('tipos', [ProcesosController::class, 'tipos'])
+// Rutas de procesos (DDD)
+Route::middleware('api')->prefix('procesos')->name('procesos.')->group(function () {
+    // Obtener tipos de procesos disponibles
+    Route::get('tipos', [ProcesosController::class, 'tipos'])
             ->name('tipos');
 
         // Procesos de una prenda
@@ -139,86 +149,85 @@ Route::middleware('api')->group(function () {
                     ->name('eliminar');
             });
         });
-    });
-
-    // Gestión de imágenes de EPP
-    Route::prefix('epp/{eppId}/imagenes')->name('epp.imagenes.')->group(function () {
-        Route::post('/', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'subirImagen'])
-            ->name('subir');
-    });
-
-    // Subir imagen de EPP durante creación del pedido
-    Route::post('epp/imagenes/upload', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'subirImagenEpp'])
-        ->name('epp.imagenes.upload');
-
-    Route::delete('epp/imagenes/{imagenId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarImagen'])
-        ->name('epp.imagenes.eliminar');
-
-    // Búsqueda y listado de EPP
-    Route::get('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'index'])
-        ->name('epp.index');
-    
-    // Debug: Prueba simple de EPP
-    Route::get('epp-debug', function() {
-        try {
-            $epps = \App\Models\Epp::where('activo', true)->limit(5)->get();
-            return response()->json([
-                'success' => true,
-                'count' => $epps->count(),
-                'data' => $epps->map(fn($e) => [
-                    'id' => $e->id,
-                    'codigo' => $e->codigo,
-                    'nombre_completo' => $e->nombre_completo,
-                    'activo' => $e->activo,
-                ])->toArray(),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ], 500);
-        }
-    })->name('epp.debug');
-
-    Route::get('epp/categorias/all', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'categorias'])
-        ->name('epp.categorias');
-
-    Route::post('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'store'])
-        ->name('epp.store');
-
-    Route::get('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'show'])
-        ->name('epp.show');
-
-    // Gestión de EPP en pedidos - Rutas RESTful
-    Route::prefix('pedidos/{pedido}/epps')->name('pedidos.epps.')->group(function () {
-        Route::get('/', [PedidoEppController::class, 'index'])
-            ->name('index');
-        
-        Route::post('/', [PedidoEppController::class, 'store'])
-            ->name('store');
-        
-        Route::patch('{pedidoEpp}', [PedidoEppController::class, 'update'])
-            ->name('update');
-        
-        Route::delete('{pedidoEpp}', [PedidoEppController::class, 'destroy'])
-            ->name('destroy');
-        
-        Route::get('/exportar/json', [PedidoEppController::class, 'exportarJson'])
-            ->name('exportar-json');
-    });
-
-    // Gestión de EPP en pedidos (rutas antiguas - mantenerlas para compatibilidad)
-    Route::get('pedidos/{pedidoId}/epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'obtenerDelPedido'])
-        ->name('pedidos.epp.obtener');
-
-    Route::post('pedidos/{pedidoId}/epp/agregar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'agregar'])
-        ->name('pedidos.epp.agregar');
-
-    Route::delete('pedidos/{pedidoId}/epp/{eppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminar'])
-        ->name('pedidos.epp.eliminar');
 });
+
+// Gestión de imágenes de EPP
+Route::middleware('api')->prefix('epp/{eppId}/imagenes')->name('epp.imagenes.')->group(function () {
+    Route::post('/', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'subirImagen'])
+        ->name('subir');
+});
+
+// Subir imagen de EPP durante creación del pedido
+Route::middleware('api')->post('epp/imagenes/upload', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'subirImagenEpp'])
+    ->name('epp.imagenes.upload');
+
+Route::middleware('api')->delete('epp/imagenes/{imagenId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarImagen'])
+    ->name('epp.imagenes.eliminar');
+
+// Búsqueda y listado de EPP
+Route::middleware('api')->get('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'index'])
+    ->name('epp.index');
+
+// Debug: Prueba simple de EPP
+Route::middleware('api')->get('epp-debug', function() {
+    try {
+        $epps = \App\Models\Epp::where('activo', true)->limit(5)->get();
+        return response()->json([
+            'success' => true,
+            'count' => $epps->count(),
+            'data' => $epps->map(fn($e) => [
+                'id' => $e->id,
+                'codigo' => $e->codigo,
+                'nombre_completo' => $e->nombre_completo,
+                'activo' => $e->activo,
+            ])->toArray(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ], 500);
+    }
+})->name('epp.debug');
+
+Route::middleware('api')->get('epp/categorias/all', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'categorias'])
+    ->name('epp.categorias');
+
+Route::middleware('api')->post('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'store'])
+    ->name('epp.store');
+
+Route::middleware('api')->get('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'show'])
+    ->name('epp.show');
+
+// Gestión de EPP en pedidos - Rutas RESTful
+Route::middleware('api')->prefix('pedidos/{pedido}/epps')->name('pedidos.epps.')->group(function () {
+    Route::get('/', [PedidoEppController::class, 'index'])
+        ->name('index');
+    
+    Route::post('/', [PedidoEppController::class, 'store'])
+        ->name('store');
+    
+    Route::patch('{pedidoEpp}', [PedidoEppController::class, 'update'])
+        ->name('update');
+    
+    Route::delete('{pedidoEpp}', [PedidoEppController::class, 'destroy'])
+        ->name('destroy');
+    
+    Route::get('/exportar/json', [PedidoEppController::class, 'exportarJson'])
+        ->name('exportar-json');
+});
+
+// Gestión de EPP en pedidos (rutas antiguas - mantenerlas para compatibilidad)
+Route::middleware('api')->get('pedidos/{pedidoId}/epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'obtenerDelPedido'])
+    ->name('pedidos.epp.obtener');
+
+Route::middleware('api')->post('pedidos/{pedidoId}/epp/agregar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'agregar'])
+    ->name('pedidos.epp.agregar');
+
+Route::middleware('api')->delete('pedidos/{pedidoId}/epp/{eppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminar'])
+    ->name('pedidos.epp.eliminar');
 
 /**
  * API Routes for Pedidos Editables (DDD - Gestión de Ítems)

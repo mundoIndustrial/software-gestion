@@ -33,6 +33,9 @@
         window.datosEdicionPedido = {
             numero_pedido: {{ $pedido->id }},
             id: {{ $pedido->id }},
+            cliente: window.pedidoEdicionData.cliente || '{{ $pedido->cliente }}',
+            forma_de_pago: window.pedidoEdicionData.forma_de_pago || '{{ $pedido->forma_de_pago }}',
+            novedades: window.pedidoEdicionData.descripcion || '{{ $pedido->novedades }}',
             ...(window.pedidoEdicionData && window.pedidoEdicionData.pedido ? window.pedidoEdicionData.pedido : {})
         };
         
