@@ -552,8 +552,13 @@ class PedidoCompletoUnificado {
             console.warn('[Builder] Procesos llegó como array, convirtiendo a object...');
             const procesosObj = {};
             raw.forEach((proc, idx) => {
-                if (proc && proc.tipo) {
-                    procesosObj[proc.tipo] = proc;
+                // Intentar obtener el slug del tipo de proceso - puede venir como:
+                // 1. proc.tipo (string directo)
+                // 2. proc.tipoProceso.slug (relación del backend)
+                const tipoProcesoSlug = proc.tipo || proc.tipoProceso?.slug;
+                
+                if (proc && tipoProcesoSlug) {
+                    procesosObj[tipoProcesoSlug] = proc;
                 } else if (proc) {
                     procesosObj[`proceso_${idx}`] = proc;
                 }

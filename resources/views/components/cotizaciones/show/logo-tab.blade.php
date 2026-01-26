@@ -199,7 +199,7 @@
                                                     'BORDADO' => ['bg' => '#0ea5e9', 'text' => 'white'],
                                                     'ESTAMPADO' => ['bg' => '#10b981', 'text' => 'white'],
                                                     'SUBLIMACIÓN' => ['bg' => '#f59e0b', 'text' => 'white'],
-                                                    'SERIGRAFÍA' => ['bg' => '#8b5cf6', 'text' => 'white'],
+                                                    'SERIGRAFÍA' => ['bg' => '#1e40af', 'text' => 'white'],
                                                 ];
                                                 $color = $colores[$tipoLogo->nombre] ?? ['bg' => '#6b7280', 'text' => 'white'];
                                             @endphp

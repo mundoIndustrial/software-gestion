@@ -5,7 +5,7 @@
 /* Evitar herencias conflictivas de asesores */
 .sidebar {
     width: 280px !important;
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+    background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%) !important;
     color: white !important;
     display: flex !important;
     flex-direction: column !important;

@@ -81,6 +81,9 @@ Route::middleware('api')->group(function () {
         Route::patch('{id}/confirmar', [PedidoController::class, 'confirmar'])
             ->name('confirmar');
         
+        Route::patch('{id}/actualizar-descripcion', [PedidoController::class, 'actualizarDescripcion'])
+            ->name('actualizar-descripcion');
+        
         Route::delete('{id}/cancelar', [PedidoController::class, 'cancelar'])
             ->name('cancelar');
         

@@ -5,7 +5,7 @@
 
 const iconosProcesos = {
     reflectivo: '<span class="material-symbols-rounded" style="color: #f59e0b;">wb_twilight</span>',
-    bordado: '<span class="material-symbols-rounded" style="color: #8b5cf6;">auto_awesome</span>',
+    bordado: '<span class="material-symbols-rounded" style="color: #1e40af;">auto_awesome</span>',
     estampado: '<span class="material-symbols-rounded" style="color: #ec4899;">format_paint</span>',
     dtf: '<span class="material-symbols-rounded" style="color: #06b6d4;">print</span>',
     sublimado: '<span class="material-symbols-rounded" style="color: #3b82f6;">water_drop</span>'

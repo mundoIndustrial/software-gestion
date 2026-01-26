@@ -13,13 +13,14 @@ class EloquentProcesoPrendaDetalleRepository implements ProcesoPrendaDetalleRepo
 {
     public function obtenerPorId(int $id): ?ProcesoPrendaDetalle
     {
-        $model = ProcesoPrendaDetalleModel::find($id);
+        $model = ProcesoPrendaDetalleModel::with('tipoProceso')->find($id);
         return $model ? $this->mapToDomain($model) : null;
     }
 
     public function obtenerPorPrenda(int $prendaId): array
     {
-        return ProcesoPrendaDetalleModel::where('prenda_pedido_id', $prendaId)
+        return ProcesoPrendaDetalleModel::with('tipoProceso')
+            ->where('prenda_pedido_id', $prendaId)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($model) => $this->mapToDomain($model))
@@ -28,9 +29,10 @@ class EloquentProcesoPrendaDetalleRepository implements ProcesoPrendaDetalleRepo
 
     public function obtenerPorPedido(int $numeroPedido): array
     {
-        return ProcesoPrendaDetalleModel::whereHas('prendaPedido', function ($q) use ($numeroPedido) {
-            $q->where('numero_pedido', $numeroPedido);
-        })
+        return ProcesoPrendaDetalleModel::with('tipoProceso')
+            ->whereHas('prendaPedido', function ($q) use ($numeroPedido) {
+                $q->where('numero_pedido', $numeroPedido);
+            })
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($model) => $this->mapToDomain($model))

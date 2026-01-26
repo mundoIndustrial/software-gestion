@@ -10,7 +10,7 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
  * 
  * Clase base reutilizable para todos los Use Cases de OBTENCIÃ“N (queries)
  * 
- * PATRÃ“N: Template Method para estandarizar:
+ * Patrón: Template Method para estandarizar:
  * - Obtención y validación del pedido
  * - Enriquecimiento condicional de datos
  * - Respuesta estandarizada

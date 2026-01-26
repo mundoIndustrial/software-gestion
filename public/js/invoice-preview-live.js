@@ -854,7 +854,12 @@ function crearModalPreviewFactura(datos) {
  * Genera el HTML de la factura con los datos en tiempo real
  */
 function generarHTMLFactura(datos) {
-
+    console.log('📋 [GENERAR-FACTURA] Generando HTML de factura:', {
+        numeroPedido: datos.numero_pedido,
+        cliente: datos.cliente,
+        prendas: datos.prendas?.length || 0,
+        epps: datos.epps?.length || 0
+    });
     
     // Validar que datos y prendas existan
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
@@ -1105,10 +1110,18 @@ function generarHTMLFactura(datos) {
         } else {
             generosTallasHTML = '<span style="color: #999; font-size: 9px;">Sin tallas</span>';
         }
-        
         // Procesos
+        console.log(`[FACTURA-PRENDA-${idx}] Procesos encontrados:`, prenda.procesos?.length || 0);
+        if (prenda.procesos && prenda.procesos.length > 0) {
+            console.log(`[FACTURA-PRENDA-${idx}] Primer proceso estructura:`, JSON.stringify(prenda.procesos[0], null, 2));
+        }
         const procesosListaHTML = prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0
             ? prenda.procesos.map(proc => {
+                console.log(`[FACTURA-PRENDA-${idx}] Renderizando proceso:`, {
+                    tipoProceso: proc.tipo_proceso || proc.tipoProceso,
+                    nombre: proc.tipo_proceso?.nombre || proc.tipoProceso?.nombre,
+                    tipo_proceso_id: proc.tipo_proceso_id
+                });
                 // Renderizar tallas del proceso (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
                 let tallasProcHTML = '';
                 if (proc.tallas && Object.keys(proc.tallas).length > 0) {
@@ -1130,7 +1143,13 @@ function generarHTMLFactura(datos) {
                 
                 return `
                     <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 10px;">
-                        <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase;">Reflectivo: ${proc.tipo || 'Proceso sin tipo'}</div>
+                        <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase;">Proceso: ${
+                            // Si tipo_proceso es un string directo (del backend toArray())
+                            (typeof proc.tipo_proceso === 'string' && proc.tipo_proceso) 
+                            ? proc.tipo_proceso
+                            // Si es un objeto con propiedades (camelCase o snake_case)
+                            : (proc.tipoProceso?.nombre || proc.tipo_proceso?.nombre || proc.tipo || proc.nombre_proceso || `(ID: ${proc.tipo_proceso_id})`)
+                        }</div>
                         
                         ${(proc.ubicaciones?.length > 0 || proc.observaciones) ? `
                             <table style="width: 100%; font-size: 10px; margin-bottom: 4px; border-collapse: collapse;">
@@ -1154,7 +1173,7 @@ function generarHTMLFactura(datos) {
                         ${proc.imagenes && proc.imagenes.length > 0 ? `
                             <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #eee; display: flex; gap: 4px; position: relative;">
                                 ${Array.isArray(proc.imagenes) ? 
-                                    `<div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipo}')">
+                                    `<div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipoProceso?.nombre || proc.tipo_proceso?.nombre || proc.tipo || 'Proceso'}')">
                                         <img src="${window._extraerURLImagen(proc.imagenes[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd;">
                                         ${proc.imagenes.length > 1 ? `
                                             <div style="position: absolute; top: 0; right: 0; background: #3b82f6; color: white; font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 0 2px 0 2px; cursor: pointer;">

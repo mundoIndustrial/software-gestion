@@ -112,13 +112,13 @@
 
 /* Logo - PÚRPURA */
 .tab-logo.cotizacion-tab-btn:hover:not(.active) {
-    border-color: #8b5cf6 !important;
-    color: #8b5cf6 !important;
+    border-color: #1e40af !important;
+    color: #1e40af !important;
 }
 
 .tab-logo.cotizacion-tab-btn.active {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
-    border-color: #8b5cf6 !important;
+    background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%) !important;
+    border-color: #1e40af !important;
 }
 
 /* Prenda/Bordado - ROSA */

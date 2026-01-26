@@ -31,7 +31,7 @@ class ProcesoPrendaDetalleRepositoryImpl implements ProcesoPrendaDetalleReposito
 {
     public function obtenerPorId(int $id): ?ProcesoPrendaDetalle
     {
-        $modelo = ProcesoPrendaDetalleModel::find($id);
+        $modelo = ProcesoPrendaDetalleModel::with('tipoProceso')->find($id);
 
         if (!$modelo) {
             return null;
@@ -42,7 +42,8 @@ class ProcesoPrendaDetalleRepositoryImpl implements ProcesoPrendaDetalleReposito
 
     public function obtenerPorPrenda(int $prendaId): array
     {
-        return ProcesoPrendaDetalleModel::where('prenda_pedido_id', $prendaId)
+        return ProcesoPrendaDetalleModel::with('tipoProceso')
+            ->where('prenda_pedido_id', $prendaId)
             ->get()
             ->map(fn($modelo) => $this->reconstituir($modelo))
             ->toArray();
@@ -50,9 +51,10 @@ class ProcesoPrendaDetalleRepositoryImpl implements ProcesoPrendaDetalleReposito
 
     public function obtenerPorPedido(int $numeroPedido): array
     {
-        return ProcesoPrendaDetalleModel::whereHas('prendaPedido', function ($query) use ($numeroPedido) {
-            $query->where('numero', $numeroPedido);
-        })
+        return ProcesoPrendaDetalleModel::with('tipoProceso')
+            ->whereHas('prendaPedido', function ($query) use ($numeroPedido) {
+                $query->where('numero', $numeroPedido);
+            })
             ->get()
             ->map(fn($modelo) => $this->reconstituir($modelo))
             ->toArray();

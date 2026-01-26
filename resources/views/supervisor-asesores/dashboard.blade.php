@@ -373,7 +373,7 @@
 
         if (charts.estados) charts.estados.destroy();
 
-        const colores = ['#667eea', '#f5576c', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6'];
+        const colores = ['#667eea', '#f5576c', '#f59e0b', '#10b981', '#06b6d4', '#1e40af'];
 
         // Asegurar que tenemos datos
         const labels = data.estados_labels || [];

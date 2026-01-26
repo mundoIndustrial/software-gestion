@@ -133,11 +133,16 @@ final class ActualizarPrendaCompletaDTO
             nombrePrenda: $data['nombre_prenda'] ?? null,
             descripcion: $data['descripcion'] ?? null,
             deBodega: isset($data['de_bodega']) ? (bool) $data['de_bodega'] : null,
-            imagenes: $imagenes,            imagenesExistentes: $imagenesExistentes,            cantidadTalla: $cantidadTalla,
+            imagenes: $imagenes,
+            imagenesExistentes: $imagenesExistentes,
+            cantidadTalla: $cantidadTalla,
             variantes: $variantes,
             coloresTelas: $coloresTelas,
             fotosTelas: $fotosTelas,
-            fotos: $imagenes ?? $fotos,  // Usar $imagenes del parÃ¡metro si existen
+            // 🔧 FIX: Si NO hay imágenes nuevas, NO pasar 'fotos' para evitar soft delete
+            // Solo pasar $imagenes si hay nuevas imágenes subidas
+            // Si está vacío, dejar null para que no toque las imágenes existentes
+            fotos: (!empty($imagenes) ? array_merge($imagenesExistentes ?? [], $imagenes) : null),
             procesos: $procesos,
             fotosProcesosPorProceso: $fotosProcesosPorProceso,
         );

@@ -163,7 +163,7 @@ function convertDashboardNotifications(newsItems) {
         'record_deleted': { icon: 'delete', color: '#ef4444', title: 'Registro Eliminado' },
         'order_created': { icon: 'shopping_cart', color: '#10b981', title: 'Nueva Orden' },
         'status_changed': { icon: 'update', color: '#f59e0b', title: 'Cambio de Estado' },
-        'area_changed': { icon: 'location_on', color: '#8b5cf6', title: 'Cambio de Área' },
+        'area_changed': { icon: 'location_on', color: '#1e40af', title: 'Cambio de Área' },
         'delivery_registered': { icon: 'local_shipping', color: '#06b6d4', title: 'Entrega Registrada' },
         'order_deleted': { icon: 'delete_outline', color: '#ef4444', title: 'Orden Eliminada' },
         'cotizacion_created': { icon: 'description', color: '#3b82f6', title: 'Nueva Cotización' },

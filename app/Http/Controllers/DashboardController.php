@@ -284,7 +284,7 @@ class DashboardController extends Controller
             'entrega_bodega_costura' => '#f59e0b',
             'entrega_bodega_corte' => '#f59e0b',
             'registro_piso_produccion' => '#667eea',
-            'registro_piso_corte' => '#8b5cf6',
+            'registro_piso_corte' => '#1e40af',
             'registro_piso_polo' => '#ec4899',
         ];
         

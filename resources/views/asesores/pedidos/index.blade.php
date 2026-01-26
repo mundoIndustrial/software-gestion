@@ -289,6 +289,8 @@
             return;
         }
         
+        console.log('🔧 [EDITAR-PEDIDO] Botón Editar presionado - Pedido ID:', pedidoId);
+        
         edicionEnProgreso = true;
         
         try {
@@ -340,6 +342,7 @@
             });
             
             //  PASO 6: Abrir modal de edición con datos transformados
+            console.log('📄 [EDITAR-PEDIDO] Abriendo modal de edición para pedido:', datosTransformados.numero_pedido);
             abrirModalEditarPedido(pedidoId, datosTransformados, 'editar');
             
         } catch (err) {
@@ -394,9 +397,52 @@
                     novedades: document.getElementById('editNovedades').value
                 };
                 
-                guardarCambiosPedido(datos.id || datos.numero_pedido, datosActualizados);
+                // Abrir modal de justificación ANTES de guardar
+                abrirModalJustificacionCambio(datos.id || datos.numero_pedido, datosActualizados);
             }
         });
+        });
+    }
+    
+    /**
+     * Abre un modal para justificar los cambios del pedido
+     */
+    function abrirModalJustificacionCambio(pedidoId, datosActualizados) {
+        const html = `
+            <div style="text-align: left;">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">¿Por qué hiciste este cambio?</label>
+                    <textarea id="justificacionCambio" 
+                        placeholder="Explica brevemente el motivo de los cambios..." 
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px; resize: vertical;">
+                    </textarea>
+                </div>
+            </div>
+        `;
+        
+        UI.contenido({
+            titulo: '❓ Justificación del Cambio',
+            html: html,
+            confirmButtonText: '✅ Confirmar y Guardar',
+            confirmButtonColor: '#10b981',
+            showCancelButton: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const justificacion = document.getElementById('justificacionCambio').value.trim();
+                
+                if (!justificacion) {
+                    showNotification('Debes ingresar una justificación del cambio', 'warning');
+                    // Reabrir modal si no hay justificación
+                    setTimeout(() => abrirModalJustificacionCambio(pedidoId, datosActualizados), 300);
+                    return;
+                }
+                
+                // Agregar justificación a los datos
+                datosActualizados.justificacion = justificacion;
+                
+                // Ahora sí guardar
+                guardarCambiosPedido(pedidoId, datosActualizados);
+            }
         });
     }
     
@@ -420,7 +466,11 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify({
-                    descripcion: datosActualizados.novedades || ''
+                    descripcion: datosActualizados.novedades || '',
+                    cliente: datosActualizados.cliente || '',
+                    forma_de_pago: datosActualizados.forma_de_pago || '',
+                    novedades: datosActualizados.novedades || '',
+                    justificacion: datosActualizados.justificacion || ''
                 })
             });
             

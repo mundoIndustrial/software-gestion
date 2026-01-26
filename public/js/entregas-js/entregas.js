@@ -1,4 +1,4 @@
-const COLORS = ['#ff9d58', '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = ['#ff9d58', '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#1e40af', '#ec4899'];
 let TIPO = '';
 let costuraChart, corteChart;
 let editingCell = null;
@@ -203,7 +203,7 @@ function updateCharts(costuraData, corteData) {
     const labels = ['Piezas', 'Pasadas', 'Etiquetadas'];
     const keys = Object.keys(corteGrouped);
     const colorPalette = [
-        '#ff9d58', '#f97316', '#ef4444', '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#db2777'
+        '#ff9d58', '#f97316', '#ef4444', '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#1e40af', '#ec4899', '#db2777'
     ];
 
     // Crear datasets para cada cortador-etiquetador con colores únicos

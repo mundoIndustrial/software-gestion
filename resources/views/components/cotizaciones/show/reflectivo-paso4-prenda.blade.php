@@ -243,15 +243,15 @@
                             @if(!empty($obsGenerales))
                                 <div style="margin-bottom: 2rem;">
                                     <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fas fa-sticky-note" style="color: #8b5cf6;"></i> Observaciones
+                                        <i class="fas fa-sticky-note" style="color: #1e40af;"></i> Observaciones
                                     </h4>
                                     <div style="background: #f3e8ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 1.5rem;">
                                         <ul style="list-style: none; padding: 0; margin: 0;">
                                             @foreach($obsGenerales as $obs)
-                                                <li style="padding: 0.75rem; background: white; border-left: 4px solid #8b5cf6; margin-bottom: 0.75rem; border-radius: 4px;">
+                                                <li style="padding: 0.75rem; background: white; border-left: 4px solid #1e40af; margin-bottom: 0.75rem; border-radius: 4px;">
                                                     @if(is_array($obs) && $obs['tipo'] === 'checkbox' && $obs['valor'] === true)
                                                         <strong style="color: #6b21a8;">{{ $obs['texto'] }}</strong>
-                                                        <span style="color: #8b5cf6; font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">✓</span>
+                                                        <span style="color: #1e40af; font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">✓</span>
                                                     @elseif(is_array($obs) && isset($obs['valor']))
                                                         <strong style="color: #6b21a8;">{{ $obs['texto'] }}</strong>: <span style="color: #7c3aed;">{{ $obs['valor'] }}</span>
                                                     @else

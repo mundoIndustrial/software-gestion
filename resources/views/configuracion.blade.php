@@ -194,7 +194,7 @@
                             </div>
 
                             <div class="col-12">
-                                <button type="button" class="backup-btn" id="backupFlexibleAdvBtn" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white;">
+                                <button type="button" class="backup-btn" id="backupFlexibleAdvBtn" style="background: linear-gradient(135deg, #ec4899 0%, #1e40af 100%); color: white;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path>
                                     </svg>
@@ -208,7 +208,7 @@
                 <!-- Modal para seleccionar BD Destino -->
                 <div id="selectDbModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
                     <div style="background-color: #fefefe; margin: 10% auto; padding: 0; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        <div style="background-color: #8b5cf6; color: white; padding: 20px; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="background-color: #1e40af; color: white; padding: 20px; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center;">
                             <h5 style="margin: 0; font-size: 18px; font-weight: bold;">
                                 Seleccionar Base de Datos Destino
                             </h5>
@@ -226,7 +226,7 @@
                                     @endforeach
                                 </select>
                             </label>
-                            <button onclick="downloadFlexibleAdv()" style="background-color: #8b5cf6; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 10px;">Descargar Backup</button>
+                            <button onclick="downloadFlexibleAdv()" style="background-color: #1e40af; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 10px;">Descargar Backup</button>
                             <button onclick="closeSelectDbModal()" style="background-color: #e5e7eb; color: #374151; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">Cancelar</button>
                         </div>
                     </div>

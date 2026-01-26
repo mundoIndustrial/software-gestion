@@ -675,7 +675,7 @@ body:not(.dark-theme) .filter-date {
 }
 
 .pedido-badge {
-    color: #8b5cf6;
+    color: #1e40af;
     font-weight: 600;
 }
 
@@ -746,7 +746,7 @@ body:not(.dark-theme) .filter-date {
 
 .news-item[data-type="order_created"] {
     border-left-width: 3px;
-    border-left-color: #8b5cf6;
+    border-left-color: #1e40af;
 }
 
 .news-item[data-type="status_changed"] {

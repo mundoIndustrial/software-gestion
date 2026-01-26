@@ -178,7 +178,7 @@ const TrackingUI = (() => {
             'Completado': '#059669',
             'En Progreso': '#d97706',
             'Pendiente': '#6b7280',
-            'Pausado': '#8b5cf6'
+            'Pausado': '#1e40af'
         };
         return colors[estado] || '#6b7280';
     }

@@ -435,7 +435,7 @@ function obtenerColorTecnica(tipoLogoId) {
         2: '#ef4444',     // Sublimado - rojo
         3: '#f59e0b',     // Estampado - naranja
         4: '#10b981',     // Puff/3D - verde
-        5: '#8b5cf6',     // Fotoprendas - púrpura
+        5: '#1e40af',     // Fotoprendas - púrpura
         6: '#ec4899'      // Otros - rosa
     };
     

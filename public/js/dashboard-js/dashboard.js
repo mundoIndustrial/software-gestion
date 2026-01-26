@@ -2,7 +2,7 @@
 const CONFIG = {
     colors: [
         '#38bdf8', // Cyan brillante
-        '#8b5cf6', // Púrpura vibrante
+        '#1e40af', // Púrpura vibrante
         '#ec4899', // Rosa fucsia
         '#f97316', // Naranja intenso
         '#10b981', // Verde esmeralda

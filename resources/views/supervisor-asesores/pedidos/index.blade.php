@@ -592,6 +592,23 @@
                         if (empty($descripcionConTallas)) {
                             $descripcionConTallas = $descripcionBase;
                         }
+                        
+                        // AGREGAR EPP ENUMERADOS AL FINAL
+                        if ($pedido->epps && $pedido->epps->count() > 0) {
+                            $descripcionConTallas .= "\n\n=== EPP ===";
+                            $eppNumero = 1;
+                            foreach ($pedido->epps as $pedidoEpp) {
+                                $eppNombre = $pedidoEpp->epp->nombre ?? 'EPP desconocido';
+                                $eppCantidad = $pedidoEpp->cantidad ?? 1;
+                                $eppObservaciones = $pedidoEpp->observaciones ?? '';
+                                
+                                $descripcionConTallas .= "\n" . $eppNumero . ". " . $eppNombre . " - Cantidad: " . $eppCantidad;
+                                if (!empty($eppObservaciones)) {
+                                    $descripcionConTallas .= " - " . $eppObservaciones;
+                                }
+                                $eppNumero++;
+                            }
+                        }
                     @endphp
                     <div style="
                         display: grid;

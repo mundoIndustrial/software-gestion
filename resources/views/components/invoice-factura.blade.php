@@ -48,16 +48,17 @@
     .invoice-wrapper {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background-color: #f5f5f5;
-        padding: 20px;
+        padding: 0;
+        margin: 0;
     }
 
     .invoice-container {
-        max-width: 1000px;
-        margin: 0 auto;
+        max-width: 100%;
+        margin: 0;
         background: white;
         padding: 40px;
         box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
+        border-radius: 0;
     }
 
     /* Header */

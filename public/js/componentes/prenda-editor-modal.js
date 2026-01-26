@@ -53,7 +53,7 @@ function abrirEditarPrendas() {
                 <button onclick="abrirEditarPrendaEspecifica(${idx})" 
                     style="background: white; border: 2px solid #3b82f6; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
                     onmouseover="this.style.background='#f5f3ff'; this.style.borderColor='#7c3aed';"
-                    onmouseout="this.style.background='white'; this.style.borderColor='#8b5cf6';">
+                    onmouseout="this.style.background='white'; this.style.borderColor='#1e40af';">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">PRENDA ${idx + 1}: ${nombrePrenda.toUpperCase()}</h4>
@@ -62,7 +62,7 @@ function abrirEditarPrendas() {
                                 📏 Tallas: ${cantTallas} |  Procesos: ${cantProcesos}
                             </div>
                         </div>
-                        <span style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
+                        <span style="background: #1e40af; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
                     </div>
                 </button>
             `;

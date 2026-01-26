@@ -10,7 +10,7 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
  * 
  * Clase base reutilizable para todos los Use Cases que realizan transiciones de estado
  * 
- * PATRÃ“N: Template Method + Strategy
+ * Patrón: Template Method + Strategy
  * 
  * Ventajas:
  * - Elimina duplicación en validación y obtención (4 lineas)

@@ -1280,7 +1280,7 @@ function renderizarTecnicasAgregadasPaso3() {
         datosPrenda.tecnicas.forEach(t => {
             const colorsTec = {
                 'BORDADO': '#ec4899',
-                'DTF': '#8b5cf6',
+                'DTF': '#1e40af',
                 'ESTAMPADO': '#f97316',
                 'SUBLIMADO': '#06b6d4'
             };

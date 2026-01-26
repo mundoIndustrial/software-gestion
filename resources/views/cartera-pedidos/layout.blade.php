@@ -441,7 +441,7 @@
                 userBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const isActive = userMenu.classList.toggle('active');
-                    console.log('%c👤 Usuario Menú Dropdown:', 'color: #8b5cf6; font-weight: bold;', isActive ? ' ABIERTO' : ' CERRADO');
+                    console.log('%c👤 Usuario Menú Dropdown:', 'color: #1e40af; font-weight: bold;', isActive ? ' ABIERTO' : ' CERRADO');
                     console.log('   Classes:', userMenu.className);
                     console.log('   Display:', window.getComputedStyle(userMenu).display);
                     console.log('   Opacity:', window.getComputedStyle(userMenu).opacity);

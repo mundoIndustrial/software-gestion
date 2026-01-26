@@ -397,7 +397,7 @@ window.PrendaCardService = {
 
         const iconosProcesos = {
             'reflectivo': '<i class="fas fa-lightbulb" style="color: #f59e0b;"></i>',
-            'bordado': '<i class="fas fa-gem" style="color: #8b5cf6;"></i>',
+            'bordado': '<i class="fas fa-gem" style="color: #1e40af;"></i>',
             'estampado': '<i class="fas fa-paint-brush" style="color: #ec4899;"></i>',
             'dtf': '<i class="fas fa-print" style="color: #06b6d4;"></i>',
             'sublimado': '<i class="fas fa-tint" style="color: #3b82f6;"></i>'

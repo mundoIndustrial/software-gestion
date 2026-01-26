@@ -163,6 +163,82 @@ class PedidoController extends Controller
     }
 
     /**
+     * PATCH /api/pedidos/{id}/actualizar-descripcion
+     * 
+     * Actualizar descripción de un pedido con justificación
+     */
+    public function actualizarDescripcion(Request $request, int $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'descripcion' => 'nullable|string|max:2000',
+                'cliente' => 'nullable|string|max:500',
+                'forma_de_pago' => 'nullable|string|max:500',
+                'novedades' => 'nullable|string|max:2000',
+                'justificacion' => 'nullable|string|max:1000'
+            ]);
+
+            // Obtener directamente del modelo (no usar repository que podría cachear)
+            $pedido = \App\Models\PedidoProduccion::findOrFail($id);
+            
+            // Actualizar cliente si viene
+            if ($request->has('cliente') && !is_null($request->input('cliente'))) {
+                $pedido->cliente = $request->input('cliente');
+            }
+            
+            // Actualizar forma_de_pago si viene
+            if ($request->has('forma_de_pago') && !is_null($request->input('forma_de_pago'))) {
+                $pedido->forma_de_pago = $request->input('forma_de_pago');
+            }
+            
+            // Actualizar novedades - PRIMERO
+            if ($request->has('novedades') && !is_null($request->input('novedades'))) {
+                $pedido->novedades = $request->input('novedades');
+            }
+            
+            // DESPUÉS agregar la justificación a novedades existentes
+            if ($request->has('justificacion') && !is_null($request->input('justificacion')) && !empty($request->input('justificacion'))) {
+                $justificacion = $request->input('justificacion');
+                $novedadesActuales = $pedido->novedades ?: '';
+                
+                // Si ya hay novedades, agregar con separador
+                if (!empty($novedadesActuales)) {
+                    $pedido->novedades = $novedadesActuales . "\n\n📝 Cambio realizado: " . $justificacion;
+                } else {
+                    $pedido->novedades = "📝 Cambio realizado: " . $justificacion;
+                }
+            }
+
+            // Guardar directamente en BD
+            $pedido->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cambios guardados exitosamente',
+                'data' => $pedido->toArray()
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+
+        } catch (\Exception $e) {
+            \Log::error('[actualizarDescripcion] Error:', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar cambios: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/pedidos/{id}
      * 
      * Obtener un pedido (lectura - CQRS read side)
@@ -354,7 +430,7 @@ class PedidoController extends Controller
             $pedido = \App\Models\PedidoProduccion::with([
                 'prendas.variantes',
                 'prendas.coloresTelas',
-                'prendas.procesos',
+                'prendas.procesos.tipoProceso',
                 'prendas.fotos',
                 'prendas.telaFotos',
                 'epps.epp',
@@ -450,6 +526,27 @@ class PedidoController extends Controller
             // Agregar EPPs a los datos de respuesta
             $datosRespuesta = $pedido->toArray();
             $datosRespuesta['epps_transformados'] = $eppsList;
+            
+            // CRÍTICO: Verificar que procesos se cargan correctamente con tipoProceso
+            if (!empty($datosRespuesta['prendas'])) {
+                foreach ($datosRespuesta['prendas'] as $idx => $prenda) {
+                    if (!empty($prenda['procesos'])) {
+                        \Log::info('[obtenerDatosEdicion] Prenda ' . $idx . ' tiene procesos:', [
+                            'prenda_id' => $prenda['id'],
+                            'procesos_count' => count($prenda['procesos']),
+                            'primer_proceso_keys' => array_keys($prenda['procesos'][0])
+                        ]);
+                        // Verificar que tipoProceso está en la estructura
+                        if (isset($prenda['procesos'][0]['tipo_proceso'])) {
+                            \Log::info('[obtenerDatosEdicion] tipoProceso encontrado:', $prenda['procesos'][0]['tipo_proceso']);
+                        } elseif (isset($prenda['procesos'][0]['tipoProceso'])) {
+                            \Log::info('[obtenerDatosEdicion] tipoProceso (camelCase) encontrado:', $prenda['procesos'][0]['tipoProceso']);
+                        } else {
+                            \Log::warning('[obtenerDatosEdicion] NO SE ENCONTRÓ tipoProceso en proceso');
+                        }
+                    }
+                }
+            }
 
             return response()->json([
                 'success' => true,

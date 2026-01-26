@@ -7,6 +7,16 @@
      * @param {string} modo - 'editar' (con botones) o 'ver' (solo lectura)
      */
     function abrirModalEditarPedido(pedidoId, datosCompletos, modo = 'editar') {
+        console.log('🎯 [MODAL-EDITAR-PEDIDO] ABIERTO:', {
+            pedidoId: pedidoId,
+            numeroPedido: datosCompletos.numero_pedido,
+            cliente: datosCompletos.cliente,
+            asesora: datosCompletos.asesora,
+            prendas: datosCompletos.prendas?.length || 0,
+            epps: datosCompletos.epps?.length || 0,
+            modo: modo
+        });
+        
         // Guardar datos en variable global
         window.datosEdicionPedido = datosCompletos;
         

@@ -126,7 +126,7 @@ function obtenerInfoPastilla(tipo) {
             nombre: 'Logo',
             icon: '',
             descripcion: 'Solo logos y diseños',
-            color: '#8b5cf6'
+            color: '#1e40af'
         },
         'prenda-bordado': {
             nombre: 'Prenda/Bordado',

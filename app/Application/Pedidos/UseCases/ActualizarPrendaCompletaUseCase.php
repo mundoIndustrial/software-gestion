@@ -104,7 +104,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarFotos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
+        // Patrón SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->fotos)) {
             return;
         }
@@ -217,7 +217,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarVariantes(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
+        // Patrón SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->variantes)) {
             return;
         }
@@ -265,7 +265,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarColoresTelas(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
+        // Patrón SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->coloresTelas)) {
             return;
         }
@@ -366,7 +366,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarFotosTelas(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATRÃ“N SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
+        // Patrón SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->fotosTelas)) {
             return;
         }

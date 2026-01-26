@@ -283,38 +283,6 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     btnImprimir.onclick = () => window.print();
     botonesAccion.appendChild(btnImprimir);
     
-    // Botón Descargar PDF (solo icono)
-    const btnPDF = document.createElement('button');
-    btnPDF.innerHTML = '<i class="fas fa-file-pdf"></i>';
-    btnPDF.title = 'Descargar PDF';
-    btnPDF.style.cssText = `
-        background: #f59e0b;
-        color: white;
-        border: none;
-        padding: 8px 10px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-    `;
-    btnPDF.onmouseover = () => {
-        btnPDF.style.background = '#d97706';
-        btnPDF.style.transform = 'scale(1.1)';
-    };
-    btnPDF.onmouseout = () => {
-        btnPDF.style.background = '#f59e0b';
-        btnPDF.style.transform = 'scale(1)';
-    };
-    btnPDF.onclick = () => {
-        alert('Función de descarga PDF en desarrollo');
-    };
-    botonesAccion.appendChild(btnPDF);
-    
     // Botón Cerrar
     const btnCerrar = document.createElement('button');
     btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 20px;">close</span>';
