@@ -31,20 +31,60 @@
             asesora: pedidoRaw.asesora,
             forma_de_pago: pedidoRaw.forma_de_pago,
             descripcion: pedidoRaw.descripcion || '',
-            items: []
         };
 
-        // Normalizar cada item (prenda)
-        if (Array.isArray(pedidoRaw.items)) {
-            pedidoRaw.items.forEach(function(item, idx) {
-                const itemNorm = normalizarItem(item);
-                pedidoNorm.items.push(itemNorm);
-                console.log('[PayloadNormalizer] ✅ Item ' + idx + ' normalizado:', itemNorm);
-            });
+        // ⭐ NUEVA ESTRUCTURA: Prendas y EPPs separados
+        if (Array.isArray(pedidoRaw.prendas) || Array.isArray(pedidoRaw.epps)) {
+            pedidoNorm.prendas = [];
+            pedidoNorm.epps = [];
+
+            // Normalizar prendas
+            if (Array.isArray(pedidoRaw.prendas)) {
+                pedidoRaw.prendas.forEach(function(prenda, idx) {
+                    const prendaNorm = normalizarItem(prenda);
+                    pedidoNorm.prendas.push(prendaNorm);
+                    console.log('[PayloadNormalizer] ✅ Prenda ' + idx + ' normalizada');
+                });
+            }
+
+            // Normalizar EPPs
+            if (Array.isArray(pedidoRaw.epps)) {
+                pedidoRaw.epps.forEach(function(epp, idx) {
+                    const eppNorm = normalizarEpp(epp);
+                    pedidoNorm.epps.push(eppNorm);
+                    console.log('[PayloadNormalizer] ✅ EPP ' + idx + ' normalizado');
+                });
+            }
+        } else {
+            // BACKWARDS COMPATIBILITY: Items antiguos
+            pedidoNorm.items = [];
+            if (Array.isArray(pedidoRaw.items)) {
+                pedidoRaw.items.forEach(function(item, idx) {
+                    const itemNorm = normalizarItem(item);
+                    pedidoNorm.items.push(itemNorm);
+                    console.log('[PayloadNormalizer] ✅ Item ' + idx + ' normalizado');
+                });
+            }
         }
 
         console.log('[PayloadNormalizer] ✅ Pedido completo normalizado');
         return pedidoNorm;
+    }
+
+    // Normalizar un EPP
+    function normalizarEpp(eppRaw) {
+        if (!eppRaw || typeof eppRaw !== 'object') {
+            return {};
+        }
+
+        return {
+            epp_id: eppRaw.epp_id,
+            nombre_epp: eppRaw.nombre_epp || 'EPP sin nombre',
+            categoria: eppRaw.categoria || 'General',
+            cantidad: eppRaw.cantidad || 1,
+            observaciones: eppRaw.observaciones || ''
+            // ❌ NO incluir imagenes en JSON - se enviarán en FormData
+        };
     }
 
     // Normalizar una prenda (item)
@@ -213,9 +253,77 @@
         }
     }
 
+    /**
+     * Construir FormData con JSON normalizado + archivos de prendas y EPPs
+     * Ej: prendas.0.imagenes.0 = archivo, epps.0.imagenes.0 = archivo, etc.
+     */
+    function buildFormData(pedidoNormalizado, filesExtraidos) {
+        const formData = new FormData();
+
+        // 1. Agregar JSON normalizado
+        formData.append('pedido', JSON.stringify(pedidoNormalizado));
+
+        // 2. Agregar archivos de prendas
+        if (filesExtraidos && filesExtraidos.prendas && Array.isArray(filesExtraidos.prendas)) {
+            filesExtraidos.prendas.forEach((prenda, prendasIdx) => {
+                // Imágenes de prendas
+                if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                    prenda.imagenes.forEach((imagen, imgIdx) => {
+                        if (imagen instanceof File) {
+                            formData.append(`prendas[${prendasIdx}][imagenes][${imgIdx}]`, imagen);
+                        }
+                    });
+                }
+
+                // Imágenes de telas
+                if (prenda.telas && Array.isArray(prenda.telas)) {
+                    prenda.telas.forEach((tela, telaIdx) => {
+                        if (tela.imagenes && Array.isArray(tela.imagenes)) {
+                            tela.imagenes.forEach((imagen, imgIdx) => {
+                                if (imagen instanceof File) {
+                                    formData.append(`prendas[${prendasIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`, imagen);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Imágenes de procesos
+                if (prenda.procesos && typeof prenda.procesos === 'object') {
+                    Object.entries(prenda.procesos).forEach(([procesoKey, proceso]) => {
+                        if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
+                            proceso.imagenes.forEach((imagen, imgIdx) => {
+                                if (imagen instanceof File) {
+                                    formData.append(`prendas[${prendasIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`, imagen);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        // 3. Agregar archivos de EPPs
+        if (filesExtraidos && filesExtraidos.epps && Array.isArray(filesExtraidos.epps)) {
+            filesExtraidos.epps.forEach((epp, eppIdx) => {
+                if (epp.imagenes && Array.isArray(epp.imagenes)) {
+                    epp.imagenes.forEach((imagen, imgIdx) => {
+                        if (imagen instanceof File) {
+                            formData.append(`epps[${eppIdx}][imagenes][${imgIdx}]`, imagen);
+                        }
+                    });
+                }
+            });
+        }
+
+        console.log('[PayloadNormalizer] ✅ FormData construido con archivos de prendas y EPPs');
+        return formData;
+    }
+
     // Exportar como objeto global
     window.PayloadNormalizer = {
         normalizar: normalizarPedido,
+        buildFormData: buildFormData,
         limpiarFiles: limpiarFiles,
         validarNoHayFiles: validarNoHayFiles,
         normalizarTallas: normalizarTallas,

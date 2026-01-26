@@ -449,4 +449,19 @@ class EppController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Subir imagen de EPP durante creación del pedido
+     * POST /api/epp/imagenes/upload
+     * 
+     * ✅ DEPRECADO: Las imágenes se envían directamente con FormData al crear el pedido
+     * No se suben por separado, se procesan junto con epps[] en crearPedido()
+     */
+    public function subirImagenEpp(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Este endpoint no debe usarse. Las imágenes se envían con FormData al crear el pedido.',
+        ], 400);
+    }
 }

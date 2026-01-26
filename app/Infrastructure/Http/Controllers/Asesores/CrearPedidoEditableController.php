@@ -14,6 +14,8 @@ use App\Models\Cliente;
 use App\Models\PedidoProduccion;
 use App\Models\Cotizacion;
 use App\Models\Talla;
+use App\Models\PedidoEpp;
+use App\Models\PedidoEppImagen;
 use App\Http\Requests\CrearPedidoCompletoRequest;
 use App\Domain\Pedidos\Services\PedidoWebService;
 use App\Application\Services\ImageUploadService;
@@ -287,57 +289,97 @@ class CrearPedidoEditableController extends Controller
     /**
      * Validar datos del pedido antes de crear
      * 
-     * 🔧 CORREGIDO (24 Enero 2026):
-     * - Ahora usa CrearPedidoCompletoRequest en lugar de validate() inline
-     * - Valida y retorna TODOS los campos: variaciones, procesos, telas, imagenes
-     * - Antes solo validaba: cliente, items, cantidad_talla (se perdían los demás)
+     * 🔧 REFACTORIZADO (26 Enero 2026):
+     * - Decodifica JSON del campo "pedido" 
+     * - Valida estructura con prendas y/o epps
+     * - Permite pedidos con SOLO epps (sin prendas)
      * 
-     * @param CrearPedidoCompletoRequest $request
+     * @param Request $request
      * @return JsonResponse
      */
-    public function validarPedido(CrearPedidoCompletoRequest $request): JsonResponse
+    public function validarPedido(Request $request): JsonResponse
     {
         try {
-            \Log::info('[CrearPedidoEditableController] validarPedido - Datos recibidos', [
-                'cliente' => $request->input('cliente'),
-                'items_count' => count($request->input('items', [])),
+            // PASO 1: Decodificar JSON metadata del campo "pedido"
+            $pedidoJSON = $request->input('pedido');
+            if (!$pedidoJSON) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Campo "pedido" JSON requerido',
+                    'errors' => ['pedido' => ['Campo "pedido" JSON requerido en FormData']],
+                ], 422);
+            }
+
+            $validated = json_decode($pedidoJSON, true);
+            if (!$validated) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'JSON inválido en campo "pedido"',
+                    'errors' => ['pedido' => ['JSON inválido']],
+                ], 422);
+            }
+
+            // DEBUG: Log estructura recibida
+            Log::info('[CrearPedidoEditableController] validarPedido - Estructura decodificada', [
+                'cliente' => $validated['cliente'] ?? 'SIN CLIENTE',
+                'tiene_prendas' => isset($validated['prendas']) ? count($validated['prendas']) : 'NO EXISTE',
+                'tiene_epps' => isset($validated['epps']) ? count($validated['epps']) : 'NO EXISTE',
+                'tiene_items_legacy' => isset($validated['items']) ? count($validated['items']) : 'NO EXISTE',
+                'keys_recibidas' => array_keys($validated),
             ]);
 
-            // ✅ CAMBIO: Usar validated() que retorna TODOS los campos validados por FormRequest
-            // Antes: $validated = $request->validate([...]) solo retornaba los campos de las reglas
-            // Ahora: $request->validated() retorna cliente, forma_de_pago, descripcion, items (COMPLETO)
-            $validated = $request->validated();
+            // PASO 2: Validar que exista al menos prendas O epps
+            $tienePrendas = !empty($validated['prendas']) && count($validated['prendas']) > 0;
+            $tieneEpps = !empty($validated['epps']) && count($validated['epps']) > 0;
+            $tieneItemsLegacy = !empty($validated['items']) && count($validated['items']) > 0;
 
-            \Log::info('[CrearPedidoEditableController] Validación pasada', [
-                'cliente' => $validated['cliente'] ?? null,
-                'items_count' => count($validated['items'] ?? []),
-                'first_item_keys' => count($validated['items'][0] ?? []) ? array_keys($validated['items'][0]) : [],
-            ]);
+            $errores = [];
 
-            // Obtener o crear el cliente
-            $clienteNombre = trim($request->input('cliente'));
+            // Validar cliente
+            if (empty($validated['cliente'])) {
+                $errores['cliente'] = ['El cliente es requerido'];
+            }
+
+            // Validar al menos prendas O epps O items
+            if (!$tienePrendas && !$tieneEpps && !$tieneItemsLegacy) {
+                $errores['items'] = ['Debe agregar al menos una prenda o un EPP'];
+            }
+
+            // Si hay errores, retornar
+            if (!empty($errores)) {
+                Log::warning('[CrearPedidoEditableController] validarPedido - Validación fallida', [
+                    'errores' => $errores,
+                    'tienePrendas' => $tienePrendas,
+                    'tieneEpps' => $tieneEpps,
+                    'tieneItems' => $tieneItemsLegacy,
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validación fallida',
+                    'errors' => $errores,
+                ], 422);
+            }
+
+            // PASO 3: Obtener o crear cliente
+            $clienteNombre = trim($validated['cliente']);
             $cliente = $this->obtenerOCrearCliente($clienteNombre);
+
+            Log::info('[CrearPedidoEditableController] validarPedido - ✅ Validación exitosa', [
+                'cliente_id' => $cliente->id,
+                'prendas' => $tienePrendas ? count($validated['prendas']) : 0,
+                'epps' => $tieneEpps ? count($validated['epps']) : 0,
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Validación exitosa',
                 'cliente_id' => $cliente->id,
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('[CrearPedidoEditableController] Validación fallida', [
-                'errors' => $e->errors(),
-                'input' => $request->all()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Validación fallida',
-                'errors' => $e->errors(),
-            ], 422);
+
         } catch (\Exception $e) {
-            \Log::error('[CrearPedidoEditableController] Error general', [
+            Log::error('[CrearPedidoEditableController] validarPedido - Error', [
                 'error' => $e->getMessage(),
-                'input' => $request->all()
             ]);
             
             return response()->json([
@@ -346,6 +388,7 @@ class CrearPedidoEditableController extends Controller
             ], 422);
         }
     }
+
 
     /**
      * Obtener cliente existente o crear uno nuevo
@@ -393,11 +436,18 @@ class CrearPedidoEditableController extends Controller
      * ✅ NO relocalización
      * ✅ Pedido + imágenes en una sola operación atómica
      * 
-     * Request multipart/form-data:
-     * - pedido: JSON string con estructura completa del pedido
+     * Soporta DOS estructuras:
+     * 
+     * NUEVA ESTRUCTURA (separada):
+     * - pedido: JSON con estructura {cliente, asesora, forma_de_pago, prendas[], epps[]}
+     * - prendas[i][imagenes][j]: archivos de imágenes de prendas
+     * - prendas[i][telas][k][imagenes][l]: archivos de imágenes de telas
+     * - prendas[i][procesos][m][imagenes][n]: archivos de imágenes de procesos
+     * - epps[i][imagenes][j]: archivos de imágenes de epps (convertirán a WebP)
+     * 
+     * ESTRUCTURA ANTIGUA (compatibilidad):
+     * - pedido: JSON con estructura {cliente, asesora, forma_de_pago, items[]}
      * - prendas[i][imagenes][j]: archivos de imágenes
-     * - prendas[i][telas][k][imagenes][l]: archivos de telas
-     * - prendas[i][procesos][m][imagenes][n]: archivos de procesos
      * 
      * @param Request $request
      * @return JsonResponse
@@ -423,7 +473,23 @@ class CrearPedidoEditableController extends Controller
                 throw new \Exception('JSON inválido en campo "pedido"');
             }
 
-            // PASO 2: Obtener o crear cliente
+            // Detectar estructura: nueva (prendas/epps) o antigua (items)
+            $esEstructuraNueva = isset($validated['prendas']) || isset($validated['epps']);
+            $esEstructuraAntiga = isset($validated['items']);
+
+            Log::info('[CrearPedidoEditableController] Estructura detectada', [
+                'nueva' => $esEstructuraNueva ? 'SÍ (prendas/epps)' : 'NO',
+                'antigua' => $esEstructuraAntiga ? 'SÍ (items)' : 'NO',
+            ]);
+
+            // PASO 2: Normalizar para compatibilidad con PedidoWebService
+            // Si es estructura nueva, convertir a formato esperado por servicio
+            if ($esEstructuraNueva && !$esEstructuraAntiga) {
+                $validated['items'] = $validated['prendas'] ?? [];
+                $validated['epps'] = $validated['epps'] ?? [];
+            }
+
+            // PASO 3: Obtener o crear cliente
             $clienteNombre = trim($validated['cliente']);
             $cliente = $this->obtenerOCrearCliente($clienteNombre);
             $validated['cliente_id'] = $cliente->id;
@@ -433,7 +499,8 @@ class CrearPedidoEditableController extends Controller
             // ========================================
             DB::beginTransaction();
 
-            // PASO 3: Crear pedido PRIMERO (para obtener pedido_id)
+            // PASO 4: Crear pedido PRIMERO (para obtener pedido_id)
+            // El servicio solo procesa prendas (items), los epps se procesan después
             $pedido = $this->pedidoWebService->crearPedidoCompleto(
                 $validated,
                 Auth::id()
@@ -444,12 +511,42 @@ class CrearPedidoEditableController extends Controller
             Log::info('[CrearPedidoEditableController] Pedido creado en transacción', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
+                'prendas_count' => count($validated['items'] ?? []),
             ]);
 
-            // PASO 4: Procesar imágenes UNA VEZ y guardar en carpetas finales específicas
+            // PASO 5: Procesar imágenes de prendas
             $this->procesarYAsignarImagenes($request, $pedidoId, $validated['items'] ?? []);
 
-            // PASO 5: Todo OK → COMMIT
+            Log::info('[CrearPedidoEditableController] ✅ Imágenes de prendas procesadas', [
+                'pedido_id' => $pedidoId,
+            ]);
+
+            // PASO 6: Procesar EPPs si existen en estructura nueva
+            if ($esEstructuraNueva && !empty($validated['epps'])) {
+                $this->procesarYAsignarEpps($request, $pedidoId, $validated['epps']);
+
+                Log::info('[CrearPedidoEditableController] ✅ EPPs procesados', [
+                    'pedido_id' => $pedidoId,
+                    'epps_count' => count($validated['epps']),
+                ]);
+            }
+
+            // PASO 7: Actualizar cantidad_total del pedido
+            // cantidad_total = suma de cantidades de prendas + suma de cantidades de EPPs
+            $cantidadPrendas = $this->calcularCantidadTotalPrendas($pedidoId);
+            $cantidadEpps = $this->calcularCantidadTotalEpps($pedidoId);
+            $cantidadTotal = $cantidadPrendas + $cantidadEpps;
+
+            $pedido->update(['cantidad_total' => $cantidadTotal]);
+
+            Log::info('[CrearPedidoEditableController] 📊 Cantidad total actualizada', [
+                'pedido_id' => $pedidoId,
+                'cantidad_prendas' => $cantidadPrendas,
+                'cantidad_epps' => $cantidadEpps,
+                'cantidad_total' => $cantidadTotal,
+            ]);
+
+            // PASO 8: Todo OK → COMMIT
             DB::commit();
 
             Log::info('[CrearPedidoEditableController] ✅ TRANSACCIÓN EXITOSA', [
@@ -646,6 +743,135 @@ class CrearPedidoEditableController extends Controller
         }
 
         Log::info('[CrearPedidoEditableController] ✅ Todas las imágenes procesadas y asignadas');
+    }
+
+    /**
+     * Procesar y asignar EPPs al pedido
+     * 
+     * ✅ 1 archivo EPP = 1 webp en su carpeta final
+     * ✅ Carpeta: pedidos/{id}/epps/{epp_id}/
+     * ✅ Crea registros en pedido_epp e pedido_epp_imagenes
+     * 
+     * Estructura esperada:
+     * - epps[i][epp_id]: ID del EPP catálogo
+     * - epps[i][nombre_epp]: Nombre descriptivo
+     * - epps[i][cantidad]: Cantidad solicitada
+     * - epps[i][observaciones]: Notas opcionales
+     * - epps[i][imagenes][j]: Archivos de imagen
+     * 
+     * @param Request $request
+     * @param int $pedidoId
+     * @param array $epps
+     */
+    private function procesarYAsignarEpps(Request $request, int $pedidoId, array $epps): void
+    {
+        Log::info('[CrearPedidoEditableController] 📦 Procesando EPPs', [
+            'pedido_id' => $pedidoId,
+            'epps_count' => count($epps),
+        ]);
+
+        foreach ($epps as $eppIdx => $eppData) {
+            // Validar estructura mínima
+            if (empty($eppData['epp_id'])) {
+                Log::warning('[CrearPedidoEditableController] EPP sin epp_id', [
+                    'epp_idx' => $eppIdx,
+                    'eppData' => $eppData,
+                ]);
+                continue;
+            }
+
+            // Verificar que el EPP existe en la tabla epps
+            $eppCatalogo = \DB::table('epps')
+                ->where('id', $eppData['epp_id'])
+                ->first();
+
+            if (!$eppCatalogo) {
+                Log::warning('[CrearPedidoEditableController] EPP no encontrado en catálogo', [
+                    'epp_id' => $eppData['epp_id'],
+                ]);
+                continue;
+            }
+
+            // Crear registro en pedido_epp
+            // ⚠️ NOTA: La tabla pedido_epp NO tiene columna nombre_epp
+            // Solo guarda: pedido_produccion_id, epp_id, cantidad, observaciones
+            $pedidoEpp = PedidoEpp::create([
+                'pedido_produccion_id' => $pedidoId,
+                'epp_id' => $eppData['epp_id'],
+                'cantidad' => $eppData['cantidad'] ?? 1,
+                'observaciones' => $eppData['observaciones'] ?? null,
+            ]);
+
+            Log::info('[CrearPedidoEditableController] ✅ EPP creado', [
+                'pedido_epp_id' => $pedidoEpp->id,
+                'epp_id' => $eppData['epp_id'],
+                'cantidad' => $eppData['cantidad'] ?? 1,
+            ]);
+
+            // ==================== IMÁGENES EPP ====================
+            $imgIdx = 0;
+            while (true) {
+                $formKey = "epps.{$eppIdx}.imagenes.{$imgIdx}";
+                if (!$request->hasFile($formKey)) {
+                    break;
+                }
+
+                try {
+                    $archivo = $request->file($formKey);
+                    
+                    // Guardar imagen en carpeta del EPP con conversión a WebP
+                    $resultado = $this->imageUploadService->guardarImagenDirecta(
+                        $archivo, 
+                        $pedidoId, 
+                        'epps',          // tipo
+                        null,            // subcarpeta
+                        "epp_{$eppData['epp_id']}_img_{$imgIdx}"
+                    );
+
+                    // Crear registro en pedido_epp_imagenes
+                    // ⚠️ NOTA: La columna se llama ruta_web (no ruta_webp)
+                    // y principal (no es_principal)
+                    PedidoEppImagen::create([
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'ruta_web' => $resultado['webp'],  // Convertida a WebP
+                        'orden' => $imgIdx + 1,
+                        'principal' => $imgIdx === 0 ? 1 : 0,  // Primera imagen es principal
+                    ]);
+
+                    Log::debug('[CrearPedidoEditableController] 📸 Imagen EPP guardada (WebP)', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'webp' => $resultado['webp'],
+                        'orden' => $imgIdx + 1,
+                    ]);
+
+                    $imgIdx++;
+                } catch (\Exception $e) {
+                    Log::error('[CrearPedidoEditableController] Error procesando imagen EPP', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'form_key' => $formKey,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            }
+
+            if ($imgIdx === 0) {
+                Log::warning('[CrearPedidoEditableController] EPP sin imágenes', [
+                    'pedido_epp_id' => $pedidoEpp->id,
+                    'epp_id' => $eppData['epp_id'],
+                ]);
+            } else {
+                Log::info('[CrearPedidoEditableController] ✅ Imágenes EPP procesadas', [
+                    'pedido_epp_id' => $pedidoEpp->id,
+                    'imagenes_count' => $imgIdx,
+                ]);
+            }
+        }
+
+        Log::info('[CrearPedidoEditableController] ✅ Todos los EPPs procesados exitosamente', [
+            'pedido_id' => $pedidoId,
+            'epps_count' => count($epps),
+        ]);
     }
 
     /**
@@ -1147,4 +1373,57 @@ class CrearPedidoEditableController extends Controller
             ], 422);
         }
     }
-}
+
+    /**
+     * Calcular cantidad total de prendas
+     * Suma todas las cantidades de tallas de todas las prendas del pedido
+     * 
+     * @param int $pedidoId
+     * @return int
+     */
+    private function calcularCantidadTotalPrendas(int $pedidoId): int
+    {
+        try {
+            // Primero verificar si existen prendas para este pedido
+            $prendasCount = DB::table('prendas_pedido')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->count();
+            
+            // Si no hay prendas, retornar 0 sin hacer query a prendas_pedido_tallas
+            if ($prendasCount === 0) {
+                return 0;
+            }
+            
+            $cantidad = DB::table('prendas_pedido_tallas')
+                ->whereIn('prenda_pedido_id', function($query) use ($pedidoId) {
+                    $query->select('id')
+                        ->from('prendas_pedido')
+                        ->where('pedido_produccion_id', $pedidoId);
+                })
+                ->sum('cantidad');
+
+            return (int) $cantidad;
+        } catch (\Exception $e) {
+            Log::warning('[CrearPedidoEditableController] calcularCantidadTotalPrendas - Error', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+            ]);
+            return 0;
+        }
+    }
+
+    /**
+     * Calcular cantidad total de EPPs
+     * Suma todas las cantidades de todos los EPPs del pedido
+     * 
+     * @param int $pedidoId
+     * @return int
+     */
+    private function calcularCantidadTotalEpps(int $pedidoId): int
+    {
+        $cantidad = DB::table('pedido_epp')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->sum('cantidad');
+
+        return (int) $cantidad;
+    }}

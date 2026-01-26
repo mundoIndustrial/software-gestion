@@ -19,6 +19,8 @@ class PedidoEppImagen extends Model
     protected $casts = [
         'principal' => 'boolean',
         'orden' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     /**

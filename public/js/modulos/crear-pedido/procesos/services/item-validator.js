@@ -73,18 +73,25 @@ class ItemValidator {
             errores.push('El cliente es requerido');
         }
 
-        // Validar ítems
-        if (!pedido.items || pedido.items.length === 0) {
-            errores.push('Debe agregar al menos un ítem al pedido');
+        // Validar ítems: permitir prendas O epps
+        const tienePrendas = pedido.prendas && pedido.prendas.length > 0;
+        const tieneEpps = pedido.epps && pedido.epps.length > 0;
+        const tieneItemsLegacy = pedido.items && pedido.items.length > 0;
+        
+        if (!tienePrendas && !tieneEpps && !tieneItemsLegacy) {
+            errores.push('Debe agregar al menos una prenda o un EPP');
         } else {
-            pedido.items.forEach((item, idx) => {
-                const validacion = this.validarItem(item);
-                if (!validacion.válido) {
-                    validacion.errores.forEach(err => {
-                        errores.push(`Ítem ${idx + 1}: ${err}`);
-                    });
-                }
-            });
+            // Validar items legacy si existen
+            if (tieneItemsLegacy) {
+                pedido.items.forEach((item, idx) => {
+                    const validacion = this.validarItem(item);
+                    if (!validacion.válido) {
+                        validacion.errores.forEach(err => {
+                            errores.push(`Ítem ${idx + 1}: ${err}`);
+                        });
+                    }
+                });
+            }
         }
 
         // Validar forma de pago si se especifica

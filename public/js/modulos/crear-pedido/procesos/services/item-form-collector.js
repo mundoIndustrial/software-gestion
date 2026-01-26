@@ -38,24 +38,10 @@ class ItemFormCollector {
         }
         
 
-        
         const itemsFormato = items.map((item, itemIndex) => {
+            // EPPs se manejan separadamente, no aquí
             if (item.tipo === 'epp') {
-                const epp = {
-                    tipo: 'epp',
-                    epp_id: item.epp_id,
-                    nombre: item.nombre || 'EPP sin nombre',
-                    categoria: item.categoria || 'General',
-                    cantidad: item.cantidad,
-                    observaciones: item.observaciones || null,
-                };
-                
-                // Incluir imágenes de EPP para que se envíen en FormData
-                if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
-                    epp.imagenes = item.imagenes;
-                }
-
-                return epp;
+                return null; // Los EPPs se procesarán después
             }
             
             const baseItem = {
@@ -238,25 +224,44 @@ class ItemFormCollector {
             });
         }
         
+        // ⭐ SEPARAR EPPs de prendas
+        const prendas = itemsFormato.filter(item => item !== null && item.tipo !== 'epp');
+        const epps = items.filter(item => item.tipo === 'epp').map(epp => ({
+            epp_id: epp.epp_id,
+            nombre_epp: epp.nombre_epp || epp.nombre_prenda || epp.nombre_completo || epp.nombre || 'EPP sin nombre',
+            categoria: epp.categoria || 'General',
+            cantidad: epp.cantidad,
+            observaciones: epp.observaciones || null,
+            imagenes: epp.imagenes || []
+        }));
+        
         const pedidoFinal = {
             cliente: document.getElementById('cliente_editable')?.value || '',
             asesora: document.getElementById('asesora_editable')?.value || '',
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
-            items: itemsFormato
+            prendas: prendas,
+            epps: epps
         };
         
-        // ✅ DEBUG: Verificar que NO hay File objects en el JSON
+        // ✅ DEBUG: Verificar estructura
         console.group('🔍 ItemFormCollector - Estructura pedidoFinal:');
-        itemsFormato.forEach((item, idx) => {
-            const nombreItem = item.tipo === 'epp' ? item.nombre : item.nombre_prenda;
-            console.log(`Item ${idx}:`, {
+        console.log('📦 Prendas:', prendas.length);
+        prendas.forEach((item, idx) => {
+            console.log(`  Prenda ${idx}:`, {
                 tipo: item.tipo,
-                nombre: nombreItem,
+                nombre: item.nombre_prenda,
                 tiene_imagenes: !!item.imagenes,
                 imagenes_count: item.imagenes?.length,
-                imagenes_es_file: item.imagenes?.[0] instanceof File,
-                imagenes_primero: typeof item.imagenes?.[0],
                 telas_count: item.telas?.length,
+            });
+        });
+        console.log('🛡️ EPPs:', epps.length);
+        epps.forEach((epp, idx) => {
+            console.log(`  EPP ${idx}:`, {
+                epp_id: epp.epp_id,
+                nombre: epp.nombre_epp,
+                cantidad: epp.cantidad,
+                imagenes_count: epp.imagenes?.length,
             });
         });
         console.groupEnd();

@@ -74,8 +74,8 @@ class EppModalManager {
         const nombreElement = document.getElementById('nombreProductoEPP');
         console.log('🎯 [ModalManager] Elemento nombreProductoEPP encontrado:', !!nombreElement);
         if (nombreElement) {
-            nombreElement.textContent = producto.nombre;
-            console.log('🎯 [ModalManager] Nombre mostrado:', producto.nombre);
+            nombreElement.textContent = producto.nombre_completo || producto.nombre;
+            console.log('🎯 [ModalManager] Nombre mostrado:', producto.nombre_completo || producto.nombre);
         } else {
             console.warn('❌ [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO');
         }
@@ -276,14 +276,14 @@ class EppModalManager {
      */
     _crearCardImagen(imagen) {
         // Manejar tanto strings como objetos
-        const imagenUrl = typeof imagen === 'string' ? imagen : (imagen.url || imagen.ruta_web || '');
+        const imagenUrl = typeof imagen === 'string' ? imagen : (imagen.preview || imagen.url || imagen.ruta_web || '');
         const imagenId = typeof imagen === 'string' ? `img-${Math.random()}` : (imagen.id || `img-${Math.random()}`);
         
         const card = document.createElement('div');
         card.id = `imagen-${imagenId}`;
-        card.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb;';
+        card.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; width: 100%; aspect-ratio: 1 / 1;';
         card.innerHTML = `
-            <img src="${imagenUrl}" alt="Imagen EPP" style="width: 100%; height: 80px; object-fit: cover; display: block;">
+            <img src="${imagenUrl}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             <button 
                 type="button"
                 onclick="window.eppImagenManager?.eliminarImagen('${imagenId}')"

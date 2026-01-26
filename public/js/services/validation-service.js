@@ -185,22 +185,26 @@ class ValidationService {
     }
 
     /**
-     * Validar array de prendas
+     * Validar prendas (permite cero prendas si hay EPPs)
      * @param {Array} prendas - Array de prendas
+     * @param {Array} epps - Array de EPPs (opcional)
      * @returns {boolean}
      */
-    validatePrendas(prendas) {
+    validatePrendas(prendas, epps = null) {
         this.clearErrors();
 
-        if (!prendas || prendas.length === 0) {
-            this.addError('prendas', 'Debe agregar al menos una prenda');
+        // Permitir cero prendas SI hay EPPs
+        if ((!prendas || prendas.length === 0) && (!epps || epps.length === 0)) {
+            this.addError('prendas', 'Debe agregar al menos una prenda o un EPP');
             return false;
         }
 
-        // Validar cada prenda
-        prendas.forEach((prenda, index) => {
-            this.validatePrenda(prenda, index);
-        });
+        // Si hay prendas, validarlas
+        if (prendas && prendas.length > 0) {
+            prendas.forEach((prenda, index) => {
+                this.validatePrenda(prenda, index);
+            });
+        }
 
         return !this.hasErrors();
     }
@@ -324,8 +328,8 @@ class ValidationService {
 
         // Validar según tipo de pedido
         if (formData.tipo === 'P' || formData.tipo === 'PL') {
-            // Pedido de prendas
-            if (!this.validatePrendas(formData.prendas)) {
+            // Pedido de prendas (permite prendas o EPPs)
+            if (!this.validatePrendas(formData.prendas, formData.epps)) {
                 return false;
             }
         }

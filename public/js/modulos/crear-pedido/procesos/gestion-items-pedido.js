@@ -432,9 +432,13 @@ class GestionItemsUI {
             const pedidoData = this.formCollector.recolectarDatosPedido();
             
 
-
-            if (!pedidoData.items || pedidoData.items.length === 0) {
-                this.notificationService.error('Debe agregar al menos un item al pedido');
+            // Permitir prendas O epps (al menos uno debe tener items)
+            const tienePrendas = pedidoData.prendas && pedidoData.prendas.length > 0;
+            const tieneEpps = pedidoData.epps && pedidoData.epps.length > 0;
+            const tieneItemsLegacy = pedidoData.items && pedidoData.items.length > 0;
+            
+            if (!tienePrendas && !tieneEpps && !tieneItemsLegacy) {
+                this.notificationService.error('Debe agregar al menos una prenda o un EPP');
                 return;
             }
 

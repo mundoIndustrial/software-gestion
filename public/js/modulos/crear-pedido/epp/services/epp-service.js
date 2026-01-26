@@ -139,11 +139,11 @@ class EppService {
             this.stateManager.iniciarEdicion(eppId, true);
             this.stateManager.setProductoSeleccionado({
                 id: epp.id,
-                nombre: epp.nombre
+                nombre: epp.nombre_completo || epp.nombre
             });
 
             this.modalManager.mostrarProductoSeleccionado({
-                nombre: epp.nombre
+                nombre: epp.nombre_completo || epp.nombre
             });
             this.modalManager.cargarValoresFormulario(null, epp.cantidad, epp.observaciones);
             this.modalManager.mostrarImagenes(epp.imagenes || []);
@@ -244,7 +244,7 @@ class EppService {
                 
                 this.itemManager.crearItem(
                     producto.id,
-                    producto.nombre,
+                    producto.nombre_completo || producto.nombre,
                     producto.categoria,
                     valores.cantidad,
                     valores.observaciones,
@@ -261,7 +261,7 @@ class EppService {
             const eppData = {
                 tipo: 'epp',
                 epp_id: producto.id,
-                nombre: producto.nombre || 'EPP sin nombre',
+                nombre_epp: producto.nombre_completo || producto.nombre || 'EPP sin nombre',
                 categoria: producto.categoria || 'General',
                 cantidad: valores.cantidad,
                 observaciones: valores.observaciones,
@@ -358,11 +358,11 @@ class EppService {
                 container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
             } else {
                 container.innerHTML = epps.map(epp => `
-                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre}', imagen: '${epp.imagen || 'https://via.placeholder.com/80?text=EPP'}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
+                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre_completo || epp.nombre}', imagen: '${epp.imagen || 'https://via.placeholder.com/80?text=EPP'}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
                          style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
                          onmouseover="this.style.background = '#f3f4f6';"
                          onmouseout="this.style.background = 'white';">
-                        <div style="font-weight: 500; color: #1f2937;">${epp.nombre}</div>
+                        <div style="font-weight: 500; color: #1f2937;">${epp.nombre_completo || epp.nombre}</div>
                     </div>
                 `).join('');
             }

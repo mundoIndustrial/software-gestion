@@ -56,8 +56,10 @@ class ImageUploadService
         // Generar nombre único si no se proporciona
         $filename = $customFilename ?? $this->generateUniqueFilename($tipo);
         
-        // Construir ruta base: pedidos/{pedido_id}/{tipo}/{subcarpeta}/
-        $basePath = "pedidos/{$pedidoId}/{$tipo}";
+        // Construir ruta base: pedido/{pedido_id}/{tipo_singular}/
+        // Convertir plural a singular si es necesario
+        $tipoSingular = rtrim($tipo, 's');  // epps → epp, prendas → prenda
+        $basePath = "pedido/{$pedidoId}/{$tipoSingular}";
         if ($subcarpeta) {
             $basePath .= "/{$subcarpeta}";
         }

@@ -35,6 +35,7 @@ class EppImagenManager {
 
     /**
      * Procesar imagen localmente (sin subir a API)
+     * Guarda en memoria hasta que se cree el pedido
      */
     async _procesarImagenLocal(archivo) {
         try {
@@ -51,24 +52,26 @@ class EppImagenManager {
                 return;
             }
 
-            // Crear URL local para la imagen
+            // ✅ Guardar archivo directamente en el estado (sin subir)
+            // Se enviará como FormData cuando se cree el pedido
+            const imagenData = {
+                id: Date.now(), // ID temporal basado en timestamp
+                nombre: archivo.name,
+                archivo: archivo, // Guardar el archivo para enviarlo después
+                preview: null // Preview generado localmente
+            };
+
+            // Generar preview local usando FileReader
             const reader = new FileReader();
             reader.onload = (e) => {
-                const imagenData = {
-                    id: Date.now(), // ID temporal basado en timestamp
-                    url: e.target.result, // Data URL
-                    nombre: archivo.name,
-                    archivo: archivo // Guardar el archivo para enviarlo después
-                };
-
+                imagenData.preview = e.target.result; // Data URL para preview
                 this.stateManager.agregarImagenSubida(imagenData);
                 this.modalManager.agregarImagenUI(imagenData);
-
+                console.log('[EppImagenManager] ✅ Imagen cargada en memoria:', imagenData);
             };
 
             reader.readAsDataURL(archivo);
         } catch (error) {
-
             alert('Error procesando imagen: ' + error.message);
         }
     }

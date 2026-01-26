@@ -154,7 +154,7 @@ class ItemRenderer {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
                         <span style="display: inline-block; background: #e0f2fe; color: #0066cc; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">EPP ${numeroItem}</span>
-                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${epp.nombre}</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${epp.nombre_epp || epp.nombre || 'EPP sin nombre'}</h4>
                     </div>
                     <!-- Contenedor del botón y menú con posicionamiento relativo -->
                     <div style="position: relative;">
@@ -217,7 +217,7 @@ class ItemRenderer {
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
                     ${imagenes.map(img => `
                         <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                            <img src="${img.url}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="${img.preview || img.url || ''}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </div>
                     `).join('')}
                 </div>

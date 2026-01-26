@@ -150,6 +150,33 @@ class EppApiService {
     }
 
     /**
+     * Subir imagen de EPP durante creación del pedido
+     * Guarda directamente en pedidos/{pedido_id}/epp/
+     * Retorna ruta webp en el servidor
+     */
+    async subirImagenEpp(formData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/epp/imagenes/upload`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': this._obtenerCsrfToken()
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Error al subir imagen: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('[EppApiService] Error subirImagenEpp:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Obtener token CSRF
      */
     _obtenerCsrfToken() {

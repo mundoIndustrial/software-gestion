@@ -26,9 +26,15 @@ class ItemAPIService {
      * @private
      */
     async realizarPeticion(url, opciones = {}) {
+        // ✅ IMPORTANTE: Si el body es FormData, NO establecer Content-Type
+        // FormData establece su propia cabecera con boundary
+        const tieneFormData = opciones.body instanceof FormData;
+        
         const configuracion = {
             headers: {
-                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                // Solo establecer Content-Type si NO es FormData
+                ...(tieneFormData ? {} : { 'Content-Type': 'application/json' }),
                 'X-CSRF-TOKEN': this.csrfToken,
                 ...opciones.headers
             },
@@ -114,20 +120,23 @@ class ItemAPIService {
     async validarPedido(pedidoData) {
         try {
             console.debug('[validarPedido] INICIO');
+            console.log('[validarPedido] 📦 Datos recibidos:', pedidoData);
+            console.log('[validarPedido] 📊 Prendas:', pedidoData.prendas?.length || 0);
+            console.log('[validarPedido] 📊 EPPs:', pedidoData.epps?.length || 0);
             
-            // ✅ PASO 1: Normalizar (sin mutación, elimina Files)
-            const pedidoNormalizado = window.PayloadNormalizer.normalizePedido(pedidoData);
-            console.debug('[validarPedido] ✅ Normalización completa');
-            
-            // ✅ PASO 2: Serializar JSON
-            const jsonString = JSON.stringify(pedidoNormalizado);
+            // ✅ PASO 1: Serializar JSON directamente (ya viene bien formado desde recolectarDatosPedido)
+            const jsonString = JSON.stringify(pedidoData);
             console.debug(`[validarPedido] ✅ JSON serializado: ${jsonString.length} bytes`);
+            console.log('[validarPedido] 📝 JSON String que se enviará:', jsonString);
             
-            // ✅ PASO 3: Enviar
-            console.debug('[validarPedido] 📤 Enviando a /validar...');
+            // ✅ PASO 2: Enviar en FormData con campo "pedido"
+            const formData = new FormData();
+            formData.append('pedido', jsonString);
+            
+            console.debug('[validarPedido] 📤 Enviando a /validar con FormData...');
             const respuesta = await this.realizarPeticion(`${this.baseUrl}/validar`, {
                 method: 'POST',
-                body: jsonString
+                body: formData
             });
             
             console.debug('[validarPedido] ✅ Respuesta:', respuesta);
@@ -159,8 +168,14 @@ class ItemAPIService {
 
             // ✅ PASO 2: Normalizar el pedido (elimina Files del JSON, evita ciclos)
             console.debug('[crearPedido] PASO 2: Normalizando...');
-            const pedidoNormalizado = window.PayloadNormalizer.normalizePedido(pedidoData);
-            console.debug('[crearPedido] ✅ PASO 2 completo - Items:', pedidoNormalizado.items.length);
+            const pedidoNormalizado = window.PayloadNormalizer.normalizar(pedidoData);
+            
+            // Log según estructura
+            if (pedidoNormalizado.prendas && pedidoNormalizado.epps) {
+                console.debug('[crearPedido] ✅ PASO 2 completo - Prendas:', pedidoNormalizado.prendas.length, '- EPPs:', pedidoNormalizado.epps.length);
+            } else {
+                console.debug('[crearPedido] ✅ PASO 2 completo - Items:', pedidoNormalizado.items?.length);
+            }
 
             // ✅ PASO 3: Construir FormData con JSON limpio + archivos
             console.debug('[crearPedido] PASO 3: Construyendo FormData...');
@@ -476,101 +491,168 @@ class ItemAPIService {
      */
     extraerFilesDelPedido(pedidoData) {
         console.debug('[extraerFilesDelPedido] INICIO');
-        const estructura = { prendas: [] };
+        const estructura = { prendas: [], epps: [] };
 
-        if (!Array.isArray(pedidoData.items)) {
-            return estructura;
-        }
+        // ✅ NUEVA ESTRUCTURA: prendas y epps separados
+        if (Array.isArray(pedidoData.prendas)) {
+            pedidoData.prendas.forEach((item, prendaIdx) => {
+                const prendaData = {
+                    idx: prendaIdx,
+                    imagenes: [],
+                    telas: [],
+                    procesos: {}
+                };
 
-        pedidoData.items.forEach((item, prendaIdx) => {
-            const prendaData = {
-                idx: prendaIdx,
-                imagenes: [],
-                telas: [],
-                procesos: {}
-            };
-
-            // ==========================================
-            // 1. IMÁGENES DE PRENDA
-            // ==========================================
-            console.debug(`[extraerFiles] Prenda ${prendaIdx}: Buscando imagenes...`);
-            if (Array.isArray(item.imagenes)) {
-                item.imagenes.forEach((img) => {
-                    if (img instanceof File) {
-                        prendaData.imagenes.push(img);
-                        console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].imagenes = ${img.name} (${(img.size / 1024).toFixed(2)} KB)`);
-                    }
-                });
-            }
-
-            // ==========================================
-            // 2. IMÁGENES DE TELAS
-            // ==========================================
-            if (Array.isArray(item.telas)) {
-                item.telas.forEach((tela, telaIdx) => {
-                    if (!prendaData.telas[telaIdx]) {
-                        prendaData.telas[telaIdx] = [];
-                    }
-
-                    // Buscar imagenes en tela.imagenes
-                    if (Array.isArray(tela.imagenes)) {
-                        tela.imagenes.forEach((img) => {
-                            if (img instanceof File) {
-                                prendaData.telas[telaIdx].push(img);
-                                console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].telas[${telaIdx}].imagenes = ${img.name}`);
-                            }
-                        });
-                    }
-                });
-            }
-
-            // ==========================================
-            // 3. IMÁGENES DE PROCESOS - MÚLTIPLES UBICACIONES
-            // ==========================================
-            if (item.procesos && typeof item.procesos === 'object' && !Array.isArray(item.procesos)) {
-                Object.entries(item.procesos).forEach(([procesoKey, proceso]) => {
-                    prendaData.procesos[procesoKey] = [];
-
-                    if (!proceso || typeof proceso !== 'object') {
-                        return;
-                    }
-
-                    // Búsqueda de imagenes en proceso (prioridad: datos.imagenes > imagenes)
-                    let imagenes = [];
-
-                    // UBICACIÓN 1: proceso.datos.imagenes (prioridad)
-                    if (proceso.datos && Array.isArray(proceso.datos.imagenes)) {
-                        console.debug(`[extraerFiles] 🔍 Encontrado: proceso.datos.imagenes`);
-                        imagenes = proceso.datos.imagenes;
-                    }
-                    // UBICACIÓN 2: proceso.imagenes (fallback)
-                    else if (Array.isArray(proceso.imagenes)) {
-                        console.debug(`[extraerFiles] 🔍 Encontrado: proceso.imagenes`);
-                        imagenes = proceso.imagenes;
-                    }
-
-                    // Agregar solo Files a la estructura
-                    imagenes.forEach((img) => {
+                // ==========================================
+                // 1. IMÁGENES DE PRENDA
+                // ==========================================
+                if (Array.isArray(item.imagenes)) {
+                    item.imagenes.forEach((img) => {
                         if (img instanceof File) {
-                            prendaData.procesos[procesoKey].push(img);
-                            console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].procesos[${procesoKey}] = ${img.name}`);
+                            prendaData.imagenes.push(img);
+                            console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].imagenes = ${img.name}`);
                         }
                     });
+                }
 
-                    if (prendaData.procesos[procesoKey].length === 0) {
-                        console.debug(`[extraerFiles] ℹ️  Prenda[${prendaIdx}].procesos[${procesoKey}] - Sin imagenes`);
-                    }
-                });
-            }
+                // ==========================================
+                // 2. IMÁGENES DE TELAS
+                // ==========================================
+                if (Array.isArray(item.telas)) {
+                    item.telas.forEach((tela, telaIdx) => {
+                        if (!prendaData.telas[telaIdx]) {
+                            prendaData.telas[telaIdx] = [];
+                        }
 
-            estructura.prendas.push(prendaData);
-        });
+                        if (Array.isArray(tela.imagenes)) {
+                            tela.imagenes.forEach((img) => {
+                                if (img instanceof File) {
+                                    prendaData.telas[telaIdx].push(img);
+                                    console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].telas[${telaIdx}].imagenes = ${img.name}`);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // ==========================================
+                // 3. IMÁGENES DE PROCESOS
+                // ==========================================
+                if (item.procesos && typeof item.procesos === 'object' && !Array.isArray(item.procesos)) {
+                    Object.entries(item.procesos).forEach(([procesoKey, proceso]) => {
+                        prendaData.procesos[procesoKey] = [];
+
+                        if (!proceso || typeof proceso !== 'object') {
+                            return;
+                        }
+
+                        let imagenes = [];
+                        if (proceso.datos && Array.isArray(proceso.datos.imagenes)) {
+                            imagenes = proceso.datos.imagenes;
+                        } else if (Array.isArray(proceso.imagenes)) {
+                            imagenes = proceso.imagenes;
+                        }
+
+                        imagenes.forEach((img) => {
+                            if (img instanceof File) {
+                                prendaData.procesos[procesoKey].push(img);
+                                console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].procesos[${procesoKey}] = ${img.name}`);
+                            }
+                        });
+                    });
+                }
+
+                estructura.prendas.push(prendaData);
+            });
+        }
+
+        // ✅ EXTRAER ARCHIVOS DE EPPs
+        if (Array.isArray(pedidoData.epps)) {
+            pedidoData.epps.forEach((epp, eppIdx) => {
+                const eppData = {
+                    idx: eppIdx,
+                    imagenes: []
+                };
+
+                // Extraer imágenes de EPP
+                if (Array.isArray(epp.imagenes)) {
+                    epp.imagenes.forEach((img) => {
+                        if (img instanceof File) {
+                            eppData.imagenes.push(img);
+                            console.debug(`[extraerFiles] ✅ EPP[${eppIdx}].imagenes = ${img.name}`);
+                        }
+                    });
+                }
+
+                estructura.epps.push(eppData);
+            });
+        }
+
+        // ✅ BACKWARDS COMPATIBILITY: estructura antigua con items[]
+        if (Array.isArray(pedidoData.items) && estructura.prendas.length === 0) {
+            pedidoData.items.forEach((item, prendaIdx) => {
+                const prendaData = {
+                    idx: prendaIdx,
+                    imagenes: [],
+                    telas: [],
+                    procesos: {}
+                };
+
+                if (Array.isArray(item.imagenes)) {
+                    item.imagenes.forEach((img) => {
+                        if (img instanceof File) {
+                            prendaData.imagenes.push(img);
+                        }
+                    });
+                }
+
+                if (Array.isArray(item.telas)) {
+                    item.telas.forEach((tela, telaIdx) => {
+                        if (!prendaData.telas[telaIdx]) {
+                            prendaData.telas[telaIdx] = [];
+                        }
+
+                        if (Array.isArray(tela.imagenes)) {
+                            tela.imagenes.forEach((img) => {
+                                if (img instanceof File) {
+                                    prendaData.telas[telaIdx].push(img);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (item.procesos && typeof item.procesos === 'object' && !Array.isArray(item.procesos)) {
+                    Object.entries(item.procesos).forEach(([procesoKey, proceso]) => {
+                        prendaData.procesos[procesoKey] = [];
+
+                        if (!proceso || typeof proceso !== 'object') {
+                            return;
+                        }
+
+                        let imagenes = [];
+                        if (proceso.datos && Array.isArray(proceso.datos.imagenes)) {
+                            imagenes = proceso.datos.imagenes;
+                        } else if (Array.isArray(proceso.imagenes)) {
+                            imagenes = proceso.imagenes;
+                        }
+
+                        imagenes.forEach((img) => {
+                            if (img instanceof File) {
+                                prendaData.procesos[procesoKey].push(img);
+                            }
+                        });
+                    });
+                }
+
+                estructura.prendas.push(prendaData);
+            });
+        }
 
         console.debug('[extraerFiles] RESUMEN:', {
             prendas: estructura.prendas.length,
-            imagenes_prenda: estructura.prendas.reduce((sum, p) => sum + p.imagenes.length, 0),
-            imagenes_telas: estructura.prendas.reduce((sum, p) => sum + p.telas.reduce((ts, t) => ts + t.length, 0), 0),
-            imagenes_procesos: estructura.prendas.reduce((sum, p) => sum + Object.values(p.procesos).reduce((ps, proc) => ps + proc.length, 0), 0)
+            epps: estructura.epps.length,
+            imagenes_epp: estructura.epps.reduce((sum, e) => sum + e.imagenes.length, 0)
         });
 
         return estructura;
